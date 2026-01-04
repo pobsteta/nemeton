@@ -45,7 +45,12 @@ data(massif_demo_units)
 layers <- massif_demo_layers()
 
 # Workflow complet en 5 lignes
-results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
+results <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = "all",
+  forest_values = c(1, 2, 3)  # Classes forestières pour fragmentation
+)
 normalized <- normalize_indicators(results, method = "minmax")
 health <- create_composite_index(
   normalized,
@@ -159,7 +164,12 @@ library(nemeton)
 # 1. Analyse complète
 data(massif_demo_units)
 layers <- massif_demo_layers()
-results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
+results <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = "all",
+  forest_values = c(1, 2, 3)
+)
 
 # 2. Visualiser les indicateurs bruts
 plot_indicators_map(
@@ -294,6 +304,7 @@ results <- nemeton_compute(
   massif_demo_units,
   layers,
   indicators = "all",
+  forest_values = c(1, 2, 3),  # Classes forestières pour fragmentation
   progress = TRUE
 )
 
@@ -584,7 +595,12 @@ results <- nemeton_compute(units, layers_masked, preprocess = FALSE)
 
 ```r
 # Si un indicateur échoue, les autres continuent
-results <- nemeton_compute(units, layers, indicators = "all")
+results <- nemeton_compute(
+  units,
+  layers,
+  indicators = "all",
+  forest_values = c(1, 2, 3)  # Requis pour fragmentation
+)
 # Warning: Indicator 'water' calculation failed
 # > Setting 'water' to NA
 
