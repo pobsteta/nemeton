@@ -1,0 +1,12 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.claude$
+^\.specify$
+^specs$
+^SPECIFICATION_TECHNIQUE\.md$
+^\.git$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^codecov\.yml$
