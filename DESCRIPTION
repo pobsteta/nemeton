@@ -1,0 +1,35 @@
+Package: nemeton
+Type: Package
+Title: Systemic Forest Analysis Using the Nemeton Method
+Version: 0.1.0
+Authors@R: c(
+    person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
+  )
+Description: Implement the Nemeton method for systemic forest territory analysis.
+    Calculate biophysical indicators (carbon, biodiversity, water, fragmentation,
+    accessibility) from open spatial data, normalize to composite indices, and
+    visualize results. Designed for foresters, ecologists, and land managers.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.1.0)
+Imports:
+    sf (>= 1.0-0),
+    terra (>= 1.7-0),
+    exactextractr (>= 0.9.0),
+    dplyr (>= 1.1.0),
+    ggplot2 (>= 3.4.0),
+    rlang (>= 1.1.0),
+    cli (>= 3.6.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    covr,
+    units,
+    here
+RoxygenNote: 7.3.0
+VignetteBuilder: knitr
+URL: https://github.com/pascalobstetar/nemeton
+BugReports: https://github.com/pascalobstetar/nemeton/issues

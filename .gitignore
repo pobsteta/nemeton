@@ -1,0 +1,26 @@
+# R package development
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Compiled files
+*.o
+*.so
+*.dll
+
+# Documentation
+/doc/
+/Meta/
+
+# Temporary files
+*~
+.DS_Store
+
+# Build files
+*.tar.gz
+*.zip
+
+# pkgdown
+docs/
