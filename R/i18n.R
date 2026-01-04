@@ -143,10 +143,12 @@ msg_error <- function(key, ...) {
     preprocess_layer_loaded = "Loaded layer: %s",
 
     # Indicators
-    indicator_computing = "Computing %d indicator%s...",
-    indicator_computed = "Computed %d/%d indicator%s",
+    indicator_computing = "Computing %d indicators...",
+    indicator_calculated = "Calculating: %s",
+    indicator_computed = "Computed %d/%d indicators",
     indicator_failed = "Indicator '%s' calculation failed",
     indicator_set_na = "Setting '%s' to NA",
+    indicator_no_valid = "No valid indicators to compute",
     indicator_carbon = "Carbon stock (biomass -> carbon)",
     indicator_biodiversity = "Biodiversity (species richness)",
     indicator_water = "Water regulation (TWI + proximity)",
@@ -154,25 +156,30 @@ msg_error <- function(key, ...) {
     indicator_accessibility = "Accessibility (distance to roads)",
 
     # Normalization
-    normalize_normalizing = "Normalizing %d indicator%s using %s method",
-    normalize_normalized = "Normalized %d indicator%s using %s method",
-    normalize_missing = "Indicator column%s not found: %s",
+    normalize_auto_detected = "Auto-detected %d indicators: %s",
+    normalize_normalized = "Normalized %d indicators using %s method",
+    normalize_missing = "Indicator columns not found: %s",
     normalize_no_indicators = "No indicators found to normalize",
+    normalize_ref_missing = "Reference data missing %s, using current data",
+    normalize_all_identical = "All values are identical, setting to 50",
+    normalize_sd_zero = "Standard deviation is 0, setting to 0",
 
     # Composite index
-    composite_creating = "Creating composite index: %s",
-    composite_created = "Created composite index: %s (from %d indicators)",
-    composite_missing = "Indicator%s missing: %s",
+    composite_equal_weights = "Using equal weights for %d indicators",
+    composite_created = "Created composite index '%s' from %d indicators",
+    composite_missing = "Indicators missing: %s",
+    composite_weights_length = "Number of weights must match number of indicators",
+    composite_weights_negative = "Weights must be non-negative",
+    composite_negative_geomean = "Negative values found, using absolute values for geometric mean",
 
     # Inversion
-    invert_inverting = "Inverting %d indicator%s",
-    invert_inverted = "Inverted %d indicator%s",
+    invert_inverted = "Inverted %d indicators",
 
     # Visualization
     viz_no_indicators = "No indicator columns found",
     viz_specify_indicators = "Specify indicators explicitly",
-    viz_detected = "Auto-detected %d indicator%s: %s",
-    viz_missing = "Indicator column%s not found: %s",
+    viz_detected = "Auto-detected %d indicators: %s",
+    viz_missing = "Indicator columns not found: %s",
     viz_multiple_no_facet = "Multiple indicators provided but facet = FALSE",
     viz_creating_facet = "Creating faceted plot anyway. Set facet = TRUE or select single indicator.",
     viz_not_sf = "data must be an sf object",
@@ -214,10 +221,12 @@ msg_error <- function(key, ...) {
     preprocess_layer_loaded = "Couche chargée : %s",
 
     # Indicateurs
-    indicator_computing = "Calcul de %d indicateur%s...",
-    indicator_computed = "%d/%d indicateur%s calculé%s",
+    indicator_computing = "Calcul de %d indicateurs...",
+    indicator_calculated = "Calcul en cours : %s",
+    indicator_computed = "%d/%d indicateurs calculés",
     indicator_failed = "Échec du calcul de l'indicateur '%s'",
     indicator_set_na = "Définition de '%s' à NA",
+    indicator_no_valid = "Aucun indicateur valide à calculer",
     indicator_carbon = "Stock de carbone (biomasse -> carbone)",
     indicator_biodiversity = "Biodiversité (richesse spécifique)",
     indicator_water = "Régulation hydrique (TWI + proximité)",
@@ -225,25 +234,30 @@ msg_error <- function(key, ...) {
     indicator_accessibility = "Accessibilité (distance aux routes)",
 
     # Normalisation
-    normalize_normalizing = "Normalisation de %d indicateur%s avec la méthode %s",
-    normalize_normalized = "%d indicateur%s normalisé%s avec la méthode %s",
-    normalize_missing = "Colonne%s d'indicateur introuvable%s : %s",
+    normalize_auto_detected = "%d indicateurs auto-détectés : %s",
+    normalize_normalized = "%d indicateurs normalisés avec la méthode %s",
+    normalize_missing = "Colonnes d'indicateur introuvables : %s",
     normalize_no_indicators = "Aucun indicateur trouvé à normaliser",
+    normalize_ref_missing = "Données de référence manquantes %s, utilisation des données actuelles",
+    normalize_all_identical = "Toutes les valeurs sont identiques, définition à 50",
+    normalize_sd_zero = "L'écart-type est 0, définition à 0",
 
     # Indice composite
-    composite_creating = "Création de l'indice composite : %s",
-    composite_created = "Indice composite créé : %s (à partir de %d indicateurs)",
-    composite_missing = "Indicateur%s manquant%s : %s",
+    composite_equal_weights = "Utilisation de poids égaux pour %d indicateurs",
+    composite_created = "Indice composite '%s' créé à partir de %d indicateurs",
+    composite_missing = "Indicateurs manquants : %s",
+    composite_weights_length = "Le nombre de poids doit correspondre au nombre d'indicateurs",
+    composite_weights_negative = "Les poids doivent être non négatifs",
+    composite_negative_geomean = "Valeurs négatives trouvées, utilisation de valeurs absolues pour la moyenne géométrique",
 
     # Inversion
-    invert_inverting = "Inversion de %d indicateur%s",
-    invert_inverted = "%d indicateur%s inversé%s",
+    invert_inverted = "%d indicateurs inversés",
 
     # Visualisation
     viz_no_indicators = "Aucune colonne d'indicateur trouvée",
     viz_specify_indicators = "Spécifiez les indicateurs explicitement",
-    viz_detected = "%d indicateur%s auto-détecté%s : %s",
-    viz_missing = "Colonne%s d'indicateur introuvable%s : %s",
+    viz_detected = "%d indicateurs auto-détectés : %s",
+    viz_missing = "Colonnes d'indicateur introuvables : %s",
     viz_multiple_no_facet = "Plusieurs indicateurs fournis mais facet = FALSE",
     viz_creating_facet = "Création d'un graphique à facettes. Définissez facet = TRUE ou sélectionnez un seul indicateur.",
     viz_not_sf = "data doit être un objet sf",

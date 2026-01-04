@@ -86,23 +86,22 @@ normalize_indicators <- function(data,
     indicators <- intersect(names(data), possible_indicators)
 
     if (length(indicators) == 0) {
-      cli::cli_abort(c(
-        "!" = "No indicator columns found",
-        "i" = "Specify {.arg indicators} explicitly",
-        ">" = "Example: {.code indicators = c('carbon', 'water')}"
-      ))
+      msg_error("viz_no_indicators")
+      cli::cli_inform("i" = msg("viz_specify_indicators"))
+      cli::cli_inform(">" = "Example: indicators = c('carbon', 'water')")
+      cli::cli_abort("")
     }
 
-    cli::cli_alert_info("Auto-detected {length(indicators)} indicator{?s}: {.field {indicators}}")
+    n_ind <- length(indicators)
+    ind_list <- paste(indicators, collapse = ", ")
+    msg_info("normalize_auto_detected", n_ind, ind_list)
   }
 
   # Validate that indicators exist
   missing <- setdiff(indicators, names(data))
   if (length(missing) > 0) {
-    cli::cli_abort(c(
-      "!" = "Indicator column{?s} not found: {.field {missing}}",
-      "i" = "Available columns: {.field {names(data)}}"
-    ))
+    missing_str <- paste(missing, collapse = ", ")
+    msg_error("normalize_missing", missing_str)
   }
 
   # Create result data
@@ -115,7 +114,7 @@ normalize_indicators <- function(data,
     # Use reference data if provided
     if (!is.null(reference_data)) {
       if (!ind %in% names(reference_data)) {
-        cli::cli_warn("Reference data missing {.field {ind}}, using current data")
+        msg_warn("normalize_ref_missing", ind)
         ref_values <- values
       } else {
         ref_values <- reference_data[[ind]]
@@ -156,7 +155,8 @@ normalize_indicators <- function(data,
     attr(result, "metadata") <- meta
   }
 
-  cli::cli_alert_success("Normalized {length(indicators)} indicator{?s} using {.field {method}} method")
+  n_ind <- length(indicators)
+  msg_success("normalize_normalized", n_ind, method)
 
   result
 }
@@ -180,7 +180,7 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
     max_val <- max(reference, na.rm = na.rm)
 
     if (max_val == min_val) {
-      cli::cli_warn("All values are identical, setting to 50")
+      msg_warn("normalize_all_identical")
       return(rep(50, length(x)))
     }
 
@@ -192,7 +192,7 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
     sd_val <- sd(reference, na.rm = na.rm)
 
     if (sd_val == 0) {
-      cli::cli_warn("Standard deviation is 0, setting to 0")
+      msg_warn("normalize_sd_zero")
       return(rep(0, length(x)))
     }
 
@@ -309,27 +309,24 @@ create_composite_index <- function(data,
   # Validate indicators exist
   missing <- setdiff(indicators, names(data))
   if (length(missing) > 0) {
-    cli::cli_abort(c(
-      "!" = "Indicator column{?s} not found: {.field {missing}}",
-      "i" = "Available columns: {.field {names(data)}}"
-    ))
+    missing_str <- paste(missing, collapse = ", ")
+    msg_error("composite_missing", missing_str)
   }
 
   # Handle weights
   if (is.null(weights)) {
     # Equal weights
     weights <- rep(1 / length(indicators), length(indicators))
-    cli::cli_alert_info("Using equal weights for {length(indicators)} indicator{?s}")
+    n_ind <- length(indicators)
+    msg_info("composite_equal_weights", n_ind)
   } else {
     # Validate weights
     if (length(weights) != length(indicators)) {
-      cli::cli_abort(c(
-        "!" = "Length of {.arg weights} ({length(weights)}) must match {.arg indicators} ({length(indicators)})"
-      ))
+      msg_error("composite_weights_length")
     }
 
     if (any(weights < 0)) {
-      cli::cli_abort("Weights must be non-negative")
+      msg_error("composite_weights_negative")
     }
 
     # Normalize weights to sum to 1
@@ -369,7 +366,7 @@ create_composite_index <- function(data,
       }
 
       if (any(row < 0, na.rm = TRUE)) {
-        cli::cli_warn("Negative values found, using absolute values for geometric mean")
+        msg_warn("composite_negative_geomean")
         row <- abs(row)
       }
 
@@ -411,7 +408,8 @@ create_composite_index <- function(data,
     attr(data, "metadata") <- meta
   }
 
-  cli::cli_alert_success("Created composite index {.field {name}} from {length(indicators)} indicator{?s}")
+  n_ind <- length(indicators)
+  msg_success("composite_created", name, n_ind)
 
   data
 }
@@ -456,9 +454,8 @@ invert_indicator <- function(data,
   # Validate indicators exist
   missing <- setdiff(indicators, names(data))
   if (length(missing) > 0) {
-    cli::cli_abort(c(
-      "!" = "Indicator column{?s} not found: {.field {missing}}"
-    ))
+    missing_str <- paste(missing, collapse = ", ")
+    msg_error("composite_missing", missing_str)
   }
 
   # Invert each indicator
@@ -473,7 +470,8 @@ invert_indicator <- function(data,
     }
   }
 
-  cli::cli_alert_success("Inverted {length(indicators)} indicator{?s}")
+  n_ind <- length(indicators)
+  msg_success("invert_inverted", n_ind)
 
   data
 }

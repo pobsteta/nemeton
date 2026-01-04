@@ -120,12 +120,12 @@ nemeton_compute <- function(units,
   }
 
   if (length(indicators) == 0) {
-    cli::cli_abort("No valid indicators to compute")
+    msg_error("indicator_no_valid")
   }
 
   # Preprocessing
   if (preprocess) {
-    cli::cli_alert_info("Preprocessing layers...")
+    msg_info("preprocess_harmonizing")
 
     # Harmonize CRS
     target_crs <- sf::st_crs(units)
@@ -142,14 +142,15 @@ nemeton_compute <- function(units,
   orig_metadata <- attr(units, "metadata")
 
   # Calculate each indicator
-  cli::cli_alert_info("Computing {length(indicators)} indicator{?s}...")
+  n_indicators <- length(indicators)
+  msg_info("indicator_computing", n_indicators)
 
   computed_indicators <- character()
   layers_used <- character()
 
   for (ind in indicators) {
     if (progress) {
-      cli::cli_alert("Calculating {.field {ind}}")
+      msg_info("indicator_calculated", ind)
     }
 
     tryCatch(
@@ -163,11 +164,8 @@ nemeton_compute <- function(units,
         computed_indicators <- c(computed_indicators, ind)
       },
       error = function(e) {
-        cli::cli_warn(c(
-          "!" = "Indicator {.field {ind}} calculation failed",
-          "i" = "Error: {e$message}",
-          ">" = "Setting {.field {ind}} to NA"
-        ))
+        msg_warn("indicator_failed", ind)
+        msg_info("indicator_set_na", ind)
         results[[ind]] <<- rep(NA_real_, nrow(results))
       }
     )
@@ -185,7 +183,9 @@ nemeton_compute <- function(units,
 
   attr(results, "metadata") <- new_metadata
 
-  cli::cli_alert_success("Computed {length(computed_indicators)}/{length(indicators)} indicator{?s}")
+  n_computed <- length(computed_indicators)
+  n_total <- length(indicators)
+  msg_success("indicator_computed", n_computed, n_total)
 
   results
 }

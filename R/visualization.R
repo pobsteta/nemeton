@@ -85,7 +85,7 @@ plot_indicators_map <- function(data,
                                  base_size = 11) {
   # Validate input
   if (!inherits(data, "sf")) {
-    cli::cli_abort("{.arg data} must be an {.cls sf} object")
+    msg_error("viz_not_sf")
   }
 
   # Match palette
@@ -102,23 +102,23 @@ plot_indicators_map <- function(data,
     indicators <- intersect(names(data), possible_indicators)
 
     if (length(indicators) == 0) {
-      cli::cli_abort(c(
-        "!" = "No indicator columns found",
-        "i" = "Specify {.arg indicators} explicitly"
-      ))
+      msg_error("viz_no_indicators")
+      cli::cli_inform("i" = msg("viz_specify_indicators"))
+      cli::cli_abort("")
     }
 
     if (length(indicators) > 1) {
-      cli::cli_alert_info("Auto-detected {length(indicators)} indicator{?s}: {.field {indicators}}")
+      n_ind <- length(indicators)
+      ind_list <- paste(indicators, collapse = ", ")
+      msg_info("viz_detected", n_ind, ind_list)
     }
   }
 
   # Validate indicators exist
   missing <- setdiff(indicators, names(data))
   if (length(missing) > 0) {
-    cli::cli_abort(c(
-      "!" = "Indicator column{?s} not found: {.field {missing}}"
-    ))
+    missing_str <- paste(missing, collapse = ", ")
+    msg_error("viz_missing", missing_str)
   }
 
   # Prepare data for plotting
@@ -154,10 +154,8 @@ plot_indicators_map <- function(data,
   } else {
     # Multiple indicators - faceted plot
     if (!facet) {
-      cli::cli_warn(c(
-        "!" = "Multiple indicators provided but {.code facet = FALSE}",
-        ">" = "Creating faceted plot anyway. Set {.code facet = TRUE} or select single indicator."
-      ))
+      msg_warn("viz_multiple_no_facet")
+      cli::cli_inform(">" = msg("viz_creating_facet"))
     }
 
     # Reshape data to long format for faceting
@@ -349,11 +347,11 @@ plot_comparison_map <- function(data1,
                                  ...) {
   # Validate inputs
   if (!inherits(data1, "sf") || !inherits(data2, "sf")) {
-    cli::cli_abort("Both {.arg data1} and {.arg data2} must be {.cls sf} objects")
+    msg_error("viz_both_not_sf")
   }
 
   if (!indicator %in% names(data1) || !indicator %in% names(data2)) {
-    cli::cli_abort("Indicator {.field {indicator}} must exist in both datasets")
+    msg_error("viz_indicator_missing_both", indicator)
   }
 
   # Add scenario labels
@@ -442,11 +440,11 @@ plot_difference_map <- function(data1,
 
   # Validate inputs
   if (!inherits(data1, "sf") || !inherits(data2, "sf")) {
-    cli::cli_abort("Both {.arg data1} and {.arg data2} must be {.cls sf} objects")
+    msg_error("viz_both_not_sf")
   }
 
   if (!indicator %in% names(data1) || !indicator %in% names(data2)) {
-    cli::cli_abort("Indicator {.field {indicator}} must exist in both datasets")
+    msg_error("viz_indicator_missing_both", indicator)
   }
 
   # Calculate difference
