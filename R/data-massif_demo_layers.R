@@ -126,7 +126,7 @@ massif_demo_layers <- function() {
   }
 
   # Create nemeton_layers object
-  cli::cli_alert_info("Loading Massif Demo spatial layers...")
+  msg_info("demo_loading")
 
   layers <- nemeton_layers(
     rasters = raster_files,
@@ -142,9 +142,7 @@ massif_demo_layers <- function() {
 
   n_rasters <- length(raster_files)
   n_vectors <- length(vector_files)
-  cli::cli_alert_success(
-    "Loaded {n_rasters} raster layer{?s} and {n_vectors} vector layer{?s}"
-  )
+  msg_success("demo_loaded", n_rasters, n_vectors)
 
   layers
 }

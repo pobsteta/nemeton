@@ -73,7 +73,7 @@ nemeton_units <- function(x, id_col = NULL, metadata = list(), validate = TRUE) 
     # Generate IDs
     n_ids <- nrow(x)
     x$nemeton_id <- generate_ids(n_ids)
-    cli::cli_alert_info("Generated {n_ids} unique ID{?s}")
+    msg_info("units_id_created", n_ids)
   } else {
     # Check if column exists
     if (!id_col %in% names(x)) {

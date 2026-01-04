@@ -1,0 +1,128 @@
+---
+title: "Internationalization (i18n)"
+author: "Pascal Obstétar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Internationalization (i18n)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Internationalisation / Internationalization
+
+Le package `nemeton` supporte l'anglais et le français pour tous les messages utilisateur.
+
+The `nemeton` package supports English and French for all user-facing messages.
+
+## Détection Automatique / Auto-Detection
+
+Par défaut, la langue est détectée automatiquement depuis la locale système :
+
+By default, the language is auto-detected from the system locale:
+
+```{r, eval = FALSE}
+library(nemeton)
+
+# La langue est auto-détectée
+# Language is auto-detected
+data(massif_demo_units)
+layers <- massif_demo_layers()
+```
+
+## Changement Manuel / Manual Override
+
+Vous pouvez changer la langue manuellement :
+
+You can manually change the language:
+
+```{r, eval = FALSE}
+# Définir en français / Set to French
+nemeton_set_language("fr")
+
+# Définir en anglais / Set to English
+nemeton_set_language("en")
+```
+
+## Langues Supportées / Supported Languages
+
+- **Français (fr)** : Langue complète / Full language support
+- **English (en)** : Full language support / Langue complète
+
+## Exemples / Examples
+
+### Français
+
+```{r, eval = FALSE}
+library(nemeton)
+nemeton_set_language("fr")
+
+# Messages en français
+data(massif_demo_units)
+layers <- massif_demo_layers()
+#> ℹ Chargement des couches spatiales Massif Demo...
+#> ✔ 4 couches raster et 2 couches vecteur chargées
+
+results <- nemeton_compute(massif_demo_units, layers, indicators = "carbon")
+#> ℹ Calcul de 1 indicateur...
+#> ✔ 1/1 indicateur calculé
+```
+
+### English
+
+```{r, eval = FALSE}
+library(nemeton)
+nemeton_set_language("en")
+
+# Messages in English
+data(massif_demo_units)
+layers <- massif_demo_layers()
+#> ℹ Loading Massif Demo spatial layers...
+#> ✔ Loaded 4 raster layers and 2 vector layers
+
+results <- nemeton_compute(massif_demo_units, layers, indicators = "carbon")
+#> ℹ Computing 1 indicator...
+#> ✔ Computed 1/1 indicators
+```
+
+## Contribution / Contributing
+
+Pour ajouter une nouvelle langue, éditez le fichier `R/i18n.R` et ajoutez une nouvelle entrée dans la liste `.messages`.
+
+To add a new language, edit the `R/i18n.R` file and add a new entry to the `.messages` list.
+
+Exemple / Example:
+
+```r
+.messages <- list(
+  en = list(...),
+  fr = list(...),
+  es = list(  # Spanish
+    units_created = "Unidades creadas: %d entidades, %s",
+    ...
+  )
+)
+```
+
+## Détails Techniques / Technical Details
+
+Le système d'internationalisation utilise :
+
+The internationalization system uses:
+
+- Détection de locale via `Sys.getenv("LANG")`
+- Stockage de la langue dans un environnement de package
+- Fonctions wrapper `msg_info()`, `msg_success()`, etc.
+- Dictionnaire centralisé dans `R/i18n.R`
+
+Locale detection via `Sys.getenv("LANG")`
+- Language storage in package environment
+- Wrapper functions `msg_info()`, `msg_success()`, etc.
+- Centralized dictionary in `R/i18n.R`
