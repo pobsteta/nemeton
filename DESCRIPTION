@@ -27,7 +27,8 @@ Suggests:
     knitr,
     rmarkdown,
     covr,
-    units
+    units,
+    here
 RoxygenNote: 7.3.0
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton

@@ -58,8 +58,9 @@ nemeton_units <- function(x, id_col = NULL, metadata = list(), validate = TRUE) 
     if (!file.exists(x)) {
       cli::cli_abort("File not found: {.path {x}}")
     }
-    message_nemeton("Loading spatial data from {.path {x}}")
-    x <- sf::st_read(x, quiet = TRUE)
+    file_path <- x
+    cli::cli_alert_info("Loading spatial data from {.path {file_path}}")
+    x <- sf::st_read(file_path, quiet = TRUE)
   }
 
   # Validate
@@ -70,8 +71,9 @@ nemeton_units <- function(x, id_col = NULL, metadata = list(), validate = TRUE) 
   # Handle ID column
   if (is.null(id_col)) {
     # Generate IDs
-    x$nemeton_id <- generate_ids(nrow(x))
-    message_nemeton("Generated {nrow(x)} unique IDs")
+    n_ids <- nrow(x)
+    x$nemeton_id <- generate_ids(n_ids)
+    cli::cli_alert_info("Generated {n_ids} unique ID{?s}")
   } else {
     # Check if column exists
     if (!id_col %in% names(x)) {
@@ -277,7 +279,9 @@ nemeton_layers <- function(rasters = NULL, vectors = NULL, validate = TRUE) {
   # Set class
   class(layers) <- "nemeton_layers"
 
-  message_nemeton("Created layer catalog: {layers$metadata$n_rasters} raster{?s}, {layers$metadata$n_vectors} vector{?s}")
+  n_r <- layers$metadata$n_rasters
+  n_v <- layers$metadata$n_vectors
+  cli::cli_alert_info("Created layer catalog: {n_r} raster{?s}, {n_v} vector{?s}")
 
   layers
 }

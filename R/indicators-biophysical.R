@@ -64,9 +64,12 @@ indicator_carbon <- function(units,
   }
 
   # Extract values using exactextractr
+  # Convert to plain sf for method dispatch
+  units_sf <- sf::st_as_sf(units)
+
   extracted <- exactextractr::exact_extract(
     layer$object,
-    units,
+    units_sf,
     fun = fun,
     progress = FALSE
   )
@@ -155,9 +158,11 @@ indicator_biodiversity <- function(units,
   }
 
   # Extract values
+  units_sf <- sf::st_as_sf(units)
+
   biodiv_values <- exactextractr::exact_extract(
     layer$object,
-    units,
+    units_sf,
     fun = fun,
     progress = FALSE
   )
@@ -248,9 +253,11 @@ indicator_water <- function(units,
       slope <- terra::terrain(dem$object, v = "slope", unit = "degrees")
 
       # Extract mean slope per unit
+      units_sf <- sf::st_as_sf(units)
+
       mean_slope <- exactextractr::exact_extract(
         slope,
-        units,
+        units_sf,
         fun = "mean",
         progress = FALSE
       )
@@ -400,9 +407,11 @@ indicator_fragmentation <- function(units,
 
   # Extract fraction of forest pixels
   # Use coverage_fraction from exactextractr for categorical rasters
+  units_sf <- sf::st_as_sf(units)
+
   extracted <- exactextractr::exact_extract(
     layer$object,
-    units,
+    units_sf,
     function(values, coverage_fraction) {
       # Calculate forest coverage
       forest_mask <- values %in% forest_values
