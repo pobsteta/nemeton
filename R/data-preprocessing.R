@@ -156,8 +156,8 @@ mask_to_units <- function(layers, units, verbose = TRUE) {
       layer$loaded <- TRUE
     }
 
-    # Convert sf to terra vector
-    units_vect <- terra::vect(units)
+    # Convert sf to terra vector (remove nemeton_units class for compatibility)
+    units_vect <- terra::vect(as_pure_sf(units))
 
     # Mask
     layer$object <- terra::mask(layer$object, units_vect)

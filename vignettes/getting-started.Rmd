@@ -142,7 +142,7 @@ Normalize to 0-100 scale for comparability:
 ```{r}
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "biodiversity", "water", "fragmentation"),
+  indicators = c("carbon", "biodiversity", "water", "fragmentation", "accessibility"),
   method = "minmax"
 )
 

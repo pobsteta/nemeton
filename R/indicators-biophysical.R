@@ -64,8 +64,8 @@ indicator_carbon <- function(units,
   }
 
   # Extract values using exactextractr
-  # Convert to plain sf for method dispatch
-  units_sf <- sf::st_as_sf(units)
+  # Convert to plain sf for method dispatch (remove nemeton_units class)
+  units_sf <- as_pure_sf(units)
 
   extracted <- exactextractr::exact_extract(
     layer$object,
@@ -158,7 +158,7 @@ indicator_biodiversity <- function(units,
   }
 
   # Extract values
-  units_sf <- sf::st_as_sf(units)
+  units_sf <- as_pure_sf(units)
 
   biodiv_values <- exactextractr::exact_extract(
     layer$object,
@@ -253,7 +253,7 @@ indicator_water <- function(units,
       slope <- terra::terrain(dem$object, v = "slope", unit = "degrees")
 
       # Extract mean slope per unit
-      units_sf <- sf::st_as_sf(units)
+      units_sf <- as_pure_sf(units)
 
       mean_slope <- exactextractr::exact_extract(
         slope,
@@ -267,8 +267,15 @@ indicator_water <- function(units,
       twi_component <- 1 / (mean_slope + 0.1)
 
       # Normalize to 0-1 range
-      twi_component <- (twi_component - min(twi_component, na.rm = TRUE)) /
-        (max(twi_component, na.rm = TRUE) - min(twi_component, na.rm = TRUE))
+      min_twi <- min(twi_component, na.rm = TRUE)
+      max_twi <- max(twi_component, na.rm = TRUE)
+
+      if (max_twi == min_twi) {
+        # All values identical - set to middle of range
+        twi_component <- rep(0.5, length(twi_component))
+      } else {
+        twi_component <- (twi_component - min_twi) / (max_twi - min_twi)
+      }
     }
   }
 
@@ -407,7 +414,7 @@ indicator_fragmentation <- function(units,
 
   # Extract fraction of forest pixels
   # Use coverage_fraction from exactextractr for categorical rasters
-  units_sf <- sf::st_as_sf(units)
+  units_sf <- as_pure_sf(units)
 
   extracted <- exactextractr::exact_extract(
     layer$object,

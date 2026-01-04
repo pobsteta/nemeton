@@ -124,3 +124,19 @@ message_nemeton <- function(...) {
 generate_ids <- function(n, prefix = "unit_") {
   sprintf(paste0(prefix, "%03d"), seq_len(n))
 }
+
+#' Strip nemeton_units class and return pure sf object
+#'
+#' This is needed for compatibility with packages that use S3 method dispatch
+#' on sf objects (e.g., exactextractr). The nemeton_units class can interfere
+#' with method resolution.
+#'
+#' @param x nemeton_units or sf object
+#' @return Pure sf object without nemeton_units class
+#' @keywords internal
+#' @noRd
+as_pure_sf <- function(x) {
+  x_sf <- sf::st_as_sf(x)
+  class(x_sf) <- setdiff(class(x_sf), "nemeton_units")
+  x_sf
+}

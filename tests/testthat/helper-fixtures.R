@@ -1,17 +1,22 @@
 # Test fixtures and helper functions
 # This file is automatically loaded before tests
 
+# Force English language for consistent test messages
+nemeton::nemeton_set_language("en")
+
 #' Create a test sf object (simple square polygon)
 #'
 #' @param crs CRS for the test object (default: EPSG:2154 - Lambert 93)
 #' @param n_features Number of features to create
 #' @return sf object with test geometries
 create_test_units <- function(crs = 2154, n_features = 3) {
-  # Create simple square polygons
+  # Create simple square polygons within raster extent
+  # Raster extent: 566400, 567000, 6615100, 6615500 (600m x 400m)
+  # Use smaller offset (120m) to keep all polygons inside
   polys <- lapply(seq_len(n_features), function(i) {
-    # Create a 100m x 100m square, offset by index
-    xmin <- 566500 + (i - 1) * 150
-    ymin <- 6615200 + (i - 1) * 150
+    # Create a 100m x 100m square, offset by 120m to stay inside raster
+    xmin <- 566450 + (i - 1) * 120
+    ymin <- 6615150 + (i - 1) * 120
     xmax <- xmin + 100
     ymax <- ymin + 100
 

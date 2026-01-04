@@ -9,4 +9,7 @@
 library(testthat)
 library(nemeton)
 
+# Force English language for consistent test messages
+nemeton_set_language("en")
+
 test_check("nemeton")
