@@ -35,6 +35,29 @@ remotes::install_github("pobsteta/nemeton")
 
 ## 🎯 Quick Start
 
+### Avec le dataset de démonstration (recommandé pour débuter)
+
+```r
+library(nemeton)
+
+# Charger le dataset de démonstration (136 ha, 20 parcelles forestières)
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+# Workflow complet en 5 lignes
+results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
+normalized <- normalize_indicators(results, method = "minmax")
+health <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  weights = c(0.4, 0.4, 0.2),
+  name = "ecosystem_health"
+)
+plot_indicators_map(health, indicators = "ecosystem_health", palette = "RdYlGn")
+```
+
+### Avec vos propres données
+
 ```r
 library(nemeton)
 library(sf)
@@ -96,15 +119,91 @@ plot_indicators_map(
 ggsave("ecosystem_health.png", width = 10, height = 8, dpi = 300)
 ```
 
+## 📦 Dataset de Démonstration
+
+Le package inclut `massif_demo`, un dataset synthétique représentant un massif forestier de 136 ha avec 20 parcelles.
+
+### Contenu
+
+```r
+# Charger les unités spatiales (parcelles)
+data(massif_demo_units)
+print(massif_demo_units)
+# 20 parcelles forestières en Lambert-93 (EPSG:2154)
+
+# Charger les couches environnementales
+layers <- massif_demo_layers()
+summary(layers)
+# 4 rasters : biomass, dem, landcover, species_richness
+# 2 vecteurs : roads, water
+```
+
+### Caractéristiques
+
+- **20 parcelles forestières** (surface totale : 136 ha)
+- **Projection** : Lambert-93 (EPSG:2154)
+- **Résolution rasters** : 25m
+- **Données incluses** :
+  - `biomass` : Biomasse aérienne (Mg/ha)
+  - `dem` : Modèle Numérique de Terrain (m)
+  - `landcover` : Occupation du sol (classes 1-5)
+  - `species_richness` : Richesse spécifique (nb espèces)
+  - `roads` : Réseau routier (5 routes)
+  - `water` : Cours d'eau (3 rivières)
+
+### Exemples d'utilisation
+
+```r
+library(nemeton)
+
+# 1. Analyse complète
+data(massif_demo_units)
+layers <- massif_demo_layers()
+results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
+
+# 2. Visualiser les indicateurs bruts
+plot_indicators_map(
+  results,
+  indicators = c("carbon", "biodiversity", "water"),
+  palette = "viridis",
+  facet = TRUE,
+  ncol = 3
+)
+
+# 3. Créer un indice composite
+normalized <- normalize_indicators(results, method = "minmax")
+health <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm", "fragmentation_norm"),
+  weights = c(0.3, 0.3, 0.2, 0.2),
+  name = "ecosystem_health"
+)
+
+# 4. Visualiser l'indice
+plot_indicators_map(
+  health,
+  indicators = "ecosystem_health",
+  palette = "RdYlGn",
+  title = "Santé Écosystémique - Massif Demo"
+)
+```
+
 ## 📚 Indicateurs disponibles
 
 ### 🌲 Indicateur Carbone
 Stock de carbone forestier à partir de biomasse aérienne.
 
 ```r
-indicator_carbon(units, layers,
-                 biomass_layer = "biomass",
-                 conversion_factor = 0.47)  # IPCC default
+# Exemple avec massif_demo
+data(massif_demo_units)
+layers <- massif_demo_layers()
+carbon <- indicator_carbon(
+  massif_demo_units,
+  layers,
+  biomass_layer = "biomass",
+  conversion_factor = 0.47  # IPCC default
+)
+summary(carbon)  # Stock de carbone en Mg C/ha
 ```
 
 **Données requises** : Raster de biomasse (tonnes/ha ou Mg/ha)
@@ -114,9 +213,14 @@ indicator_carbon(units, layers,
 Indices de diversité (richesse, Shannon, Simpson).
 
 ```r
-indicator_biodiversity(units, layers,
-                       richness_layer = "species_richness",
-                       index = "shannon")
+# Exemple avec massif_demo
+biodiv <- indicator_biodiversity(
+  massif_demo_units,
+  layers,
+  richness_layer = "species_richness",
+  index = "richness"
+)
+summary(biodiv)  # Nombre moyen d'espèces par parcelle
 ```
 
 **Données requises** : Raster de richesse spécifique ou indices pré-calculés
@@ -126,10 +230,15 @@ indicator_biodiversity(units, layers,
 Régulation hydrique (TWI + proximité cours d'eau).
 
 ```r
-indicator_water(units, layers,
-                dem_layer = "dem",
-                water_layer = "hydro",
-                weights = c(0.6, 0.4))
+# Exemple avec massif_demo
+water <- indicator_water(
+  massif_demo_units,
+  layers,
+  dem_layer = "dem",
+  water_layer = "water",
+  weights = c(0.6, 0.4)
+)
+summary(water)  # Indice 0-1 (0 = faible, 1 = fort)
 ```
 
 **Données requises** : MNT (DEM) + vecteur réseau hydrographique
@@ -139,9 +248,14 @@ indicator_water(units, layers,
 Fragmentation forestière (couverture, connectivité).
 
 ```r
-indicator_fragmentation(units, layers,
-                        landcover_layer = "oso",
-                        forest_values = c(1, 2, 3))  # Classes forestières
+# Exemple avec massif_demo
+frag <- indicator_fragmentation(
+  massif_demo_units,
+  layers,
+  landcover_layer = "landcover",
+  forest_values = c(1, 2, 3)  # Classes forestières
+)
+summary(frag)  # Pourcentage de couverture forestière
 ```
 
 **Données requises** : Raster d'occupation du sol
@@ -151,10 +265,14 @@ indicator_fragmentation(units, layers,
 Accessibilité humaine (distance routes/sentiers).
 
 ```r
-indicator_accessibility(units, layers,
-                        roads_layer = "routes",
-                        trails_layer = "sentiers",
-                        invert = TRUE)  # Pour indice de sauvagerie
+# Exemple avec massif_demo
+access <- indicator_accessibility(
+  massif_demo_units,
+  layers,
+  roads_layer = "roads",
+  invert = FALSE  # TRUE pour indice de sauvagerie
+)
+summary(access)  # Indice 0-1 (0 = inaccessible, 1 = très accessible)
 ```
 
 **Données requises** : Vecteurs routes et sentiers
@@ -162,10 +280,68 @@ indicator_accessibility(units, layers,
 
 ## 🔄 Workflow complet
 
-### 1. Préparation des données
+### Exemple 1 : Avec massif_demo (Débutants)
 
 ```r
-# Charger vos parcelles forestières
+library(nemeton)
+
+# 1️⃣ Charger les données de démonstration
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+# 2️⃣ Calculer tous les indicateurs
+results <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = "all",
+  progress = TRUE
+)
+
+# 3️⃣ Normaliser (échelle 0-100)
+normalized <- normalize_indicators(
+  results,
+  method = "minmax"
+)
+
+# 4️⃣ Créer des indices composites
+ecosystem_health <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  weights = c(0.4, 0.4, 0.2),
+  name = "ecosystem_health"
+)
+
+wilderness_index <- normalized %>%
+  invert_indicator(indicators = "accessibility_norm", suffix = "_wilderness") %>%
+  create_composite_index(
+    indicators = c("biodiversity_norm", "accessibility_norm_wilderness"),
+    weights = c(0.6, 0.4),
+    name = "wilderness"
+  )
+
+# 5️⃣ Visualiser
+plot_indicators_map(
+  ecosystem_health,
+  indicators = "ecosystem_health",
+  palette = "RdYlGn",
+  title = "Santé Écosystémique"
+)
+
+plot_indicators_map(
+  wilderness_index,
+  indicators = "wilderness",
+  palette = "Greens",
+  title = "Indice de Sauvagerie"
+)
+```
+
+### Exemple 2 : Avec vos propres données
+
+```r
+library(nemeton)
+library(sf)
+
+# 1️⃣ Charger vos parcelles forestières
 parcelles <- st_read("mes_parcelles.gpkg")
 
 # Créer l'objet nemeton_units
@@ -184,7 +360,8 @@ layers <- nemeton_layers(
   rasters = list(
     biomass = "biomass.tif",
     dem = "mnt.tif",
-    landcover = "occupation_sol.tif"
+    landcover = "occupation_sol.tif",
+    species_richness = "richesse_specifique.tif"
   ),
   vectors = list(
     roads = "routes.gpkg",
