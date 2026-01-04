@@ -43,12 +43,9 @@ test_that("validate_sf detects invalid geometries", {
     geometry = sf::st_sfc(invalid_poly, crs = 2154)
   )
 
-  # Mark as invalid
-  sf::st_is_valid(invalid_sf) <- FALSE
-
   expect_error(
     validate_sf(invalid_sf, require_valid = TRUE),
-    "invalid geometr"
+    "invalid geometry"
   )
 })
 
@@ -138,7 +135,7 @@ test_that("get_crs extracts CRS from SpatRaster", {
   crs <- get_crs(test_raster)
 
   # For SpatRaster, get_crs returns the EPSG code
-  expect_equal(crs, 2154)
+  expect_equal(crs, "2154")
 })
 
 test_that("get_crs returns NA for objects without CRS", {

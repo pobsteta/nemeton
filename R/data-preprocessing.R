@@ -122,7 +122,9 @@ crop_to_units <- function(layers, units, buffer = 0) {
     layers$vectors[[name]] <- layer
   }
 
-  message_nemeton("Cropped layers to extent of units (buffer: {buffer})")
+  # Message about cropping
+  buffer_value <- buffer
+  cli::cli_alert_info("Cropped layers to extent of units (buffer: {buffer_value}m)")
 
   layers
 }
