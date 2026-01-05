@@ -145,14 +145,15 @@ indicator_biodiversity_protection <- function(units,
 #'
 #' @param units An sf object with forest parcels.
 #' @param strata_field Character. Column name containing canopy strata classes
-#'   (e.g., "Emergent", "Dominant", "Intermediate", "Suppressed"). If NULL,
-#'   uses height_field for fallback.
-#' @param age_field Character. Column name containing age classes
-#'   (e.g., "Young", "Intermediate", "Mature", "Old", "Ancient").
+#'   (e.g., "Emergent", "Dominant", "Intermediate", "Suppressed").
+#' @param age_class_field Character. Column name containing age classes
+#'   (e.g., "young", "mature", "old", "ancient").
+#' @param species_field Character. Optional column name containing species names.
+#'   If NULL, species diversity is not included in calculation. Default NULL.
 #' @param method Character. Diversity calculation method. Currently only "shannon"
 #'   is supported.
-#' @param weights Named numeric vector. Weights for strata and age components.
-#'   Default c(strata = 0.6, age = 0.4).
+#' @param weights Named numeric vector. Weights for strata, age, and species components.
+#'   Default c(strata = 0.4, age = 0.3, species = 0.3).
 #' @param use_height_cv Logical. If TRUE and strata_field is NULL, use coefficient
 #'   of variation of height as proxy for vertical diversity. Default FALSE.
 #'
@@ -188,16 +189,18 @@ indicator_biodiversity_protection <- function(units,
 #' result <- indicator_biodiversity_structure(
 #'   units,
 #'   strata_field = "strata",
-#'   age_field = "age_class"
+#'   age_class_field = "age_class",
+#'   species_field = "species"
 #' )
 #'
 #' hist(result$B2, main = "Structural Diversity Distribution")
 #' }
 indicator_biodiversity_structure <- function(units,
-                                              strata_field = "strata_classes",
-                                              age_field = "age_classes",
+                                              strata_field = "strata",
+                                              age_class_field = "age_class",
+                                              species_field = NULL,
                                               method = "shannon",
-                                              weights = c(strata = 0.6, age = 0.4),
+                                              weights = c(strata = 0.4, age = 0.3, species = 0.3),
                                               use_height_cv = FALSE) {
   # Validate inputs
   validate_sf(units)
@@ -211,9 +214,12 @@ indicator_biodiversity_structure <- function(units,
     }
   }
 
-  if (!age_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", age_field), call. = FALSE)
+  if (!age_class_field %in% names(units)) {
+    stop(sprintf("Column '%s' not found in units", age_class_field), call. = FALSE)
   }
+
+  # Species field is optional
+  has_species <- !is.null(species_field) && species_field %in% names(units)
 
   # Calculate Shannon diversity for each parcel
   units$B2 <- numeric(nrow(units))
@@ -225,19 +231,34 @@ indicator_biodiversity_structure <- function(units,
     # Simplified: Convert categorical to diversity score
     # For MVP, use presence/absence as proxy (1 = present)
     strata_value <- units[[strata_field]][i]
-    age_value <- units[[age_field]][i]
+    age_value <- units[[age_class_field]][i]
 
     # Create dummy proportions (in real implementation, would have actual distributions)
     # For now, single category = H=0, assume some minimal diversity
     strata_h <- 0
     age_h <- 0
+    species_h <- 0
+
+    # Get species diversity if available
+    if (has_species) {
+      species_value <- units[[species_field]][i]
+    }
 
     # Normalize to 0-100 (H_max for 4 strata = log(4) ≈ 1.386)
     strata_h_norm <- (strata_h / 1.386) * 100
     age_h_norm <- (age_h / 1.609) * 100  # H_max for 5 age classes = log(5)
+    species_h_norm <- if (has_species) (species_h / 1.609) * 100 else 0
 
-    # Weighted combination
-    units$B2[i] <- weights["strata"] * strata_h_norm + weights["age"] * age_h_norm
+    # Weighted combination (adjust weights if no species)
+    if (has_species) {
+      units$B2[i] <- weights["strata"] * strata_h_norm +
+        weights["age"] * age_h_norm +
+        weights["species"] * species_h_norm
+    } else {
+      # Reweight without species component
+      w_adj <- c(strata = 0.6, age = 0.4)
+      units$B2[i] <- w_adj["strata"] * strata_h_norm + w_adj["age"] * age_h_norm
+    }
   }
 
   # For MVP: Use simplified scoring based on category diversity
@@ -247,16 +268,22 @@ indicator_biodiversity_structure <- function(units,
   # Create diversity score per parcel based on variation
   # Count unique values per parcel (for single-row parcels, use global diversity as proxy)
   n_strata_categories <- length(unique(units[[strata_field]]))
-  n_age_categories <- length(unique(units[[age_field]]))
+  n_age_categories <- length(unique(units[[age_class_field]]))
+  n_species_categories <- if (has_species) length(unique(units[[species_field]])) else 0
 
   # Calculate base score from dataset-wide diversity
-  # Normalize to 0-100: 4 strata classes max, 5 age classes max
-  strata_score <- (n_strata_categories / 4) * 60
-  age_score <- (n_age_categories / 5) * 40
-  base_score <- strata_score + age_score
+  # Normalize to 0-100: 4 strata classes max, 5 age classes max, 5 species max
+  strata_score <- (n_strata_categories / 4) * 40
+  age_score <- (n_age_categories / 5) * 30
+  species_score <- if (has_species) (n_species_categories / 5) * 30 else 0
+  base_score <- strata_score + age_score + species_score
 
-  # For monoculture (single category for both), cap at low value
-  if (n_strata_categories == 1 && n_age_categories == 1) {
+  # For monoculture (single category for all components), cap at low value
+  is_monoculture <- n_strata_categories == 1 && n_age_categories == 1
+  if (has_species) {
+    is_monoculture <- is_monoculture && n_species_categories == 1
+  }
+  if (is_monoculture) {
     base_score <- min(base_score, 20)  # Cap monoculture at 20
   }
 
@@ -283,6 +310,7 @@ indicator_biodiversity_structure <- function(units,
 #'
 #' @param units An sf object with forest parcels.
 #' @param corridors An sf object with ecological corridors (lines or polygons).
+#'   If NULL, uses fallback scoring (default medium score of 50). Default NULL.
 #' @param distance_method Character. Method for distance calculation:
 #'   "edge" (edge-to-edge), "centroid" (centroid-to-centroid). Default "edge".
 #' @param max_distance Numeric. Maximum distance threshold (meters). Distances
@@ -331,13 +359,22 @@ indicator_biodiversity_structure <- function(units,
 #' well_connected <- result[result$B3 < 500, ]
 #' }
 indicator_biodiversity_connectivity <- function(units,
-                                                 corridors,
+                                                 corridors = NULL,
                                                  distance_method = c("edge", "centroid"),
                                                  max_distance = 5000) {
   # Validate inputs
   validate_sf(units)
+
+  # Handle NULL corridors (use fallback scoring)
+  if (is.null(corridors)) {
+    msg_warn("biodiversity_no_corridors")
+    # Assign default medium score (50) when no corridor data available
+    units$B3 <- rep(50, nrow(units))
+    return(units)
+  }
+
   if (!inherits(corridors, "sf")) {
-    stop("corridors must be an sf object", call. = FALSE)
+    stop("corridors must be an sf object when provided", call. = FALSE)
   }
 
   distance_method <- match.arg(distance_method)

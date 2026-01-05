@@ -70,9 +70,9 @@ test_that("indicator_biodiversity_structure calculates Shannon diversity", {
   result <- indicator_biodiversity_structure(
     units,
     strata_field = "strata_classes",
-    age_field = "age_classes",
+    age_class_field = "age_classes",
     method = "shannon",
-    weights = c(strata = 0.6, age = 0.4)
+    weights = c(strata = 0.4, age = 0.3, species = 0.3)
   )
 
   # Tests
@@ -93,7 +93,7 @@ test_that("indicator_biodiversity_structure handles monoculture", {
   result <- indicator_biodiversity_structure(
     units,
     strata_field = "strata_classes",
-    age_field = "age_classes"
+    age_class_field = "age_classes"
   )
 
   # Low diversity should yield low scores
@@ -189,7 +189,7 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
   result <- units %>%
     indicator_biodiversity_protection(protected_areas = protected_areas, source = "local") %>%
     indicator_biodiversity_structure(strata_field = "strata_classes",
-                                     age_field = "age_classes") %>%
+                                     age_class_field = "age_classes") %>%
     indicator_biodiversity_connectivity(corridors = corridor) %>%
     normalize_indicators(indicators = c("B1", "B2", "B3")) %>%
     create_family_index(family_codes = "B")

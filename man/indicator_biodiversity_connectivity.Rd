@@ -6,7 +6,7 @@
 \usage{
 indicator_biodiversity_connectivity(
   units,
-  corridors,
+  corridors = NULL,
   distance_method = c("edge", "centroid"),
   max_distance = 5000
 )
@@ -14,7 +14,8 @@ indicator_biodiversity_connectivity(
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
-\item{corridors}{An sf object with ecological corridors (lines or polygons).}
+\item{corridors}{An sf object with ecological corridors (lines or polygons).
+If NULL, uses fallback scoring (default medium score of 50). Default NULL.}
 
 \item{distance_method}{Character. Method for distance calculation:
 "edge" (edge-to-edge), "centroid" (centroid-to-centroid). Default "edge".}

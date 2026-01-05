@@ -378,3 +378,160 @@ test_that("Family detection works with all family codes", {
   family_cols <- grep("^family_", names(result), value = TRUE)
   expect_true(length(family_cols) >= 10)  # At least most families
 })
+# ==============================================================================
+# v0.3.0: Tests for new family codes (B, R, T, A) - T059
+# ==============================================================================
+
+test_that("create_family_index handles B (Biodiversity) family correctly", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:5, ]
+  units$B1 <- c(0, 25, 50, 75, 100)      # Protection
+  units$B2 <- c(0.2, 0.4, 0.6, 0.8, 1.0) # Structure
+  units$B3 <- c(100, 200, 500, 1000, 2000) # Connectivity
+
+  result <- create_family_index(units, family_codes = "B")
+
+  expect_s3_class(result, "sf")
+  expect_true("family_B" %in% names(result))
+  expect_true(all(!is.na(result$family_B)))
+  expect_true(all(result$family_B >= 0))
+})
+
+test_that("create_family_index handles R (Risk/Resilience) family correctly", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:5, ]
+  units$R1 <- c(10, 30, 50, 70, 90)  # Fire risk
+  units$R2 <- c(5, 25, 45, 65, 85)   # Storm vulnerability
+  units$R3 <- c(15, 35, 55, 75, 95)  # Drought stress
+
+  result <- create_family_index(units, family_codes = "R")
+
+  expect_s3_class(result, "sf")
+  expect_true("family_R" %in% names(result))
+  expect_true(all(!is.na(result$family_R)))
+})
+
+test_that("create_family_index handles T (Temporal) family correctly", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:5, ]
+  units$T1 <- c(20, 50, 100, 150, 250)   # Age
+  units$T2 <- c(0, 0.5, 1.0, 2.0, 5.0)  # Change rate
+
+  result <- create_family_index(units, family_codes = "T")
+
+  expect_s3_class(result, "sf")
+  expect_true("family_T" %in% names(result))
+  expect_true(all(!is.na(result$family_T)))
+})
+
+test_that("create_family_index handles A (Air quality) family correctly", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:5, ]
+  units$A1 <- c(10, 30, 50, 70, 90)  # Coverage
+  units$A2 <- c(20, 40, 60, 80, 100) # Quality
+
+  result <- create_family_index(units, family_codes = "A")
+
+  expect_s3_class(result, "sf")
+  expect_true("family_A" %in% names(result))
+  expect_true(all(!is.na(result$family_A)))
+})
+
+test_that("create_family_index handles mixed v0.2.0 and v0.3.0 families", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:5, ]
+  # v0.2.0 families
+  units$C1 <- c(100, 200, 300, 400, 500)
+  units$W1 <- c(10, 20, 30, 40, 50)
+  # v0.3.0 families
+  units$B1 <- c(0, 25, 50, 75, 100)
+  units$R1 <- c(10, 30, 50, 70, 90)
+  units$T1 <- c(20, 50, 100, 150, 250)
+  units$A1 <- c(10, 30, 50, 70, 90)
+
+  result <- create_family_index(units, family_codes = c("C", "W", "B", "R", "T", "A"))
+
+  # Check all families created
+  expect_true(all(c("family_C", "family_W", "family_B", "family_R", "family_T", "family_A") %in% names(result)))
+
+  # All should have valid values
+  expect_true(all(!is.na(result$family_C)))
+  expect_true(all(!is.na(result$family_B)))
+  expect_true(all(!is.na(result$family_R)))
+})
+
+test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:3, ]
+  # v0.2.0 families (C, W, F, L)
+  units$C1 <- c(100, 200, 300)
+  units$W1 <- c(10, 20, 30)
+  units$F1 <- c(5, 10, 15)
+  units$L1 <- c(0.3, 0.5, 0.7)
+  # v0.3.0 families (B, R, T, A)
+  units$B1 <- c(25, 50, 75)
+  units$R1 <- c(30, 50, 70)
+  units$T1 <- c(50, 100, 150)
+  units$A1 <- c(40, 60, 80)
+
+  # Auto-detect all families
+  result <- create_family_index(units)
+
+  # Should detect all 8-9 families (C, W, F, L, B, R, T, A)
+  family_cols <- grep("^family_", names(result), value = TRUE)
+  expect_true(length(family_cols) >= 8)
+
+  # Verify key v0.3.0 families exist
+  expect_true("family_B" %in% names(result))
+  expect_true("family_R" %in% names(result))
+  expect_true("family_T" %in% names(result))
+  expect_true("family_A" %in% names(result))
+})
+
+test_that("create_family_index aggregation methods work for new families", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:3, ]
+  units$B1 <- c(20, 40, 60)
+  units$B2 <- c(30, 50, 70)
+  units$B3 <- c(40, 60, 80)
+
+  # Mean
+  result_mean <- create_family_index(units, family_codes = "B", method = "mean")
+  expect_equal(result_mean$family_B, c(30, 50, 70))
+
+  # Geometric mean
+  result_geom <- create_family_index(units, family_codes = "B", method = "geometric")
+  expected_geom <- (20 * 30 * 40)^(1/3)
+  expect_equal(result_geom$family_B[1], expected_geom, tolerance = 0.01)
+
+  # Min (bottleneck approach - worst indicator drives score)
+  result_min <- create_family_index(units, family_codes = "B", method = "min")
+  expect_equal(result_min$family_B, c(20, 40, 60))
+})
+
+test_that("create_family_index supports custom weights for new families", {
+  data(massif_demo_units)
+
+  units <- massif_demo_units[1:2, ]
+  units$R1 <- c(50, 60)
+  units$R2 <- c(40, 50)
+  units$R3 <- c(30, 40)
+
+  # Custom weights: R1 most important (fire risk)
+  result <- create_family_index(
+    units,
+    family_codes = "R",
+    weights = list(R = c(R1 = 0.5, R2 = 0.3, R3 = 0.2))
+  )
+
+  # Calculate expected weighted average
+  expected <- units$R1 * 0.5 + units$R2 * 0.3 + units$R3 * 0.2
+  expect_equal(result$family_R, expected)
+})

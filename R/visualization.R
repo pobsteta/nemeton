@@ -521,8 +521,9 @@ plot_difference_map <- function(data1,
 #' of indicators for a specific unit or the average across all units.
 #'
 #' @param data An sf object with indicator columns
-#' @param unit_id Optional. ID of the specific unit to plot. If NULL, plots
-#'   the average of all units.
+#' @param unit_id Optional. ID of the specific unit to plot. Can be a single value
+#'   or a vector of IDs for comparison mode (v0.3.0+). If NULL, plots the average
+#'   of all units.
 #' @param indicators Character vector of indicator names to include in the radar.
 #'   If NULL, auto-detects based on mode.
 #' @param mode Character. Display mode: "indicator" for individual indicators (default)
@@ -540,10 +541,15 @@ plot_difference_map <- function(data1,
 #' Each axis represents one indicator, with values scaled from center (0) to edge (100).
 #'
 #' If \code{unit_id} is specified, the chart shows the profile for that specific unit.
+#' If \code{unit_id} is a vector (v0.3.0+), creates a comparison chart with multiple
+#' overlaid polygons for comparing units side-by-side.
 #' If \code{unit_id} is NULL, the chart shows the mean values across all units.
 #'
 #' Normalization is recommended when indicators have different scales. The function
 #' applies min-max normalization to scale all values to 0-100.
+#'
+#' **v0.3.0 Enhancements**: Supports 9-12 family axes and comparison mode for
+#' multiple units.
 #'
 #' @examples
 #' \dontrun{
@@ -568,10 +574,13 @@ plot_difference_map <- function(data1,
 #'   fill_alpha = 0.5
 #' )
 #'
-#' # Family mode with 12 families
+#' # Family mode with 9+ families (v0.3.0)
 #' # First create family indices
 #' units_fam <- create_family_index(normalized)
 #' nemeton_radar(units_fam, unit_id = 1, mode = "family")
+#'
+#' # Comparison mode (v0.3.0) - compare multiple units
+#' nemeton_radar(units_fam, unit_id = c(1, 2, 3), mode = "family")
 #' }
 #'
 #' @seealso \code{\link{plot_indicators_map}}, \code{\link{normalize_indicators}}
@@ -626,8 +635,143 @@ nemeton_radar <- function(data,
     cli::cli_abort("Indicators not found in data: {.field {missing}}")
   }
 
-  # Extract data for the specified unit or calculate mean
+  # Extract data for the specified unit(s) or calculate mean
   if (!is.null(unit_id)) {
+    # Handle vector of unit_ids (comparison mode)
+    if (length(unit_id) > 1) {
+      # Comparison mode: multiple units
+      radar_data_list <- list()
+
+      for (uid in unit_id) {
+        # Try to find ID column and match uid
+        id_col <- NULL
+        unit_data <- NULL
+
+        for (col_name in c("nemeton_id", "parcel_id", "id", "geo_parcelle")) {
+          if (col_name %in% names(data)) {
+            id_col <- col_name
+            unit_data <- data[data[[id_col]] == uid, ]
+            if (nrow(unit_data) > 0) {
+              break
+            }
+          }
+        }
+
+        # If no ID match found and uid is numeric, try row index
+        if (is.null(unit_data) || nrow(unit_data) == 0) {
+          if (is.numeric(uid) && uid <= nrow(data)) {
+            unit_data <- data[uid, , drop = FALSE]
+          } else {
+            cli::cli_abort("Unit ID {.val {uid}} not found in data")
+          }
+        }
+
+        # Extract indicator values
+        unit_df <- sf::st_drop_geometry(unit_data)
+        unit_values <- as.numeric(unit_df[1, indicators])
+
+        radar_data_list[[length(radar_data_list) + 1]] <- data.frame(
+          indicator = indicators,
+          value = unit_values,
+          unit_id = as.character(uid),
+          stringsAsFactors = FALSE
+        )
+      }
+
+      # Combine all units
+      radar_data_multi <- do.call(rbind, radar_data_list)
+
+      # Normalize if requested
+      if (normalize) {
+        for (ind in unique(radar_data_multi$indicator)) {
+          all_values <- data[[ind]]
+          min_val <- min(all_values, na.rm = TRUE)
+          max_val <- max(all_values, na.rm = TRUE)
+
+          if (max_val == min_val) {
+            radar_data_multi$value[radar_data_multi$indicator == ind] <- 50
+          } else {
+            idx <- radar_data_multi$indicator == ind
+            radar_data_multi$value[idx] <- ((radar_data_multi$value[idx] - min_val) / (max_val - min_val)) * 100
+          }
+        }
+      }
+
+      # Clean indicator names and compute angles
+      radar_data_multi$indicator_clean <- sapply(radar_data_multi$indicator, clean_indicator_name)
+      n_indicators <- length(unique(radar_data_multi$indicator))
+      angles <- seq(0, 2 * pi, length.out = n_indicators + 1)[1:n_indicators]
+      radar_data_multi$angle <- angles[match(radar_data_multi$indicator, unique(radar_data_multi$indicator))]
+      radar_data_multi$x <- radar_data_multi$value * cos(radar_data_multi$angle)
+      radar_data_multi$y <- radar_data_multi$value * sin(radar_data_multi$angle)
+
+      # Create comparison plot (return early with comparison mode)
+      max_value <- if (normalize) 100 else max(radar_data_multi$value, na.rm = TRUE) * 1.2
+
+      # Create axis data
+      unique_indicators <- unique(radar_data_multi$indicator)
+      axis_angles <- seq(0, 2 * pi, length.out = length(unique_indicators) + 1)[1:length(unique_indicators)]
+      axis_data <- data.frame(
+        x0 = 0, y0 = 0,
+        x1 = max_value * cos(axis_angles),
+        y1 = max_value * sin(axis_angles)
+      )
+
+      # Create label data
+      label_distance <- max_value * 1.15
+      label_data <- data.frame(
+        x = label_distance * cos(axis_angles),
+        y = label_distance * sin(axis_angles),
+        label = sapply(unique_indicators, clean_indicator_name),
+        angle = axis_angles
+      )
+      label_data$text_angle <- label_data$angle * 180 / pi
+      label_data$text_angle <- ifelse(label_data$text_angle > 90 & label_data$text_angle < 270,
+                                      label_data$text_angle + 180,
+                                      label_data$text_angle)
+
+      # Create comparison plot
+      p <- ggplot2::ggplot(data = radar_data_multi) +
+        # Draw axis lines
+        ggplot2::geom_segment(
+          data = axis_data,
+          ggplot2::aes(x = x0, y = y0, xend = x1, yend = y1),
+          color = "gray80", linewidth = 0.5
+        ) +
+        # Draw concentric circles
+        ggplot2::geom_path(
+          data = data.frame(angle = seq(0, 2 * pi, length.out = 100), radius = max_value * 0.5),
+          ggplot2::aes(x = radius * cos(angle), y = radius * sin(angle)),
+          color = "gray90", linewidth = 0.3
+        ) +
+        ggplot2::geom_path(
+          data = data.frame(angle = seq(0, 2 * pi, length.out = 100), radius = max_value),
+          ggplot2::aes(x = radius * cos(angle), y = radius * sin(angle)),
+          color = "gray70", linewidth = 0.5
+        ) +
+        # Draw polygons for each unit (different colors)
+        ggplot2::geom_polygon(
+          ggplot2::aes(x = x, y = y, group = unit_id, fill = unit_id, color = unit_id),
+          alpha = 0.3, linewidth = 1
+        ) +
+        # Add labels
+        ggplot2::geom_text(
+          data = label_data,
+          ggplot2::aes(x = x, y = y, label = label, angle = text_angle),
+          size = 3, fontface = "bold"
+        ) +
+        ggplot2::coord_fixed() +
+        ggplot2::theme_void() +
+        ggplot2::theme(legend.position = "bottom") +
+        ggplot2::labs(
+          title = if (!is.null(title)) title else "Comparison: Multiple Units",
+          fill = "Unit", color = "Unit"
+        )
+
+      return(p)
+    }
+
+    # Single unit mode
     # Try to find ID column and match unit_id
     id_col <- NULL
     unit_data <- NULL
@@ -728,8 +872,8 @@ nemeton_radar <- function(data,
                                   label_data$text_angle + 180,
                                   label_data$text_angle)
 
-  # Create the plot
-  p <- ggplot2::ggplot() +
+  # Create the plot (with radar_data as main data for p$data access)
+  p <- ggplot2::ggplot(data = radar_data) +
     # Draw axis lines
     ggplot2::geom_segment(
       data = axis_data,

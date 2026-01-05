@@ -498,3 +498,146 @@ test_that("full normalization workflow works end-to-end", {
   expect_true("normalized_at" %in% names(meta))
   expect_true("composite_index_created_at" %in% names(meta))
 })
+# ==============================================================================
+# v0.3.0: Tests for new family indicators (B, R, T, A)
+# ==============================================================================
+
+test_that("normalize_indicators recognizes B* (Biodiversity) indicators", {
+  test_data <- data.frame(
+    id = 1:5,
+    B1 = c(0, 25, 50, 75, 100),      # Protection coverage
+    B2 = c(0.2, 0.4, 0.6, 0.8, 1.0), # Structural diversity
+    B3 = c(100, 200, 500, 1000, 2000) # Connectivity distance
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = c("B1", "B2", "B3"),
+    method = "minmax"
+  )
+
+  expect_true(all(c("B1_norm", "B2_norm", "B3_norm") %in% names(normalized)))
+  expect_true(all(normalized$B1_norm >= 0 & normalized$B1_norm <= 100))
+  expect_true(all(normalized$B2_norm >= 0 & normalized$B2_norm <= 100))
+  expect_true(all(normalized$B3_norm >= 0 & normalized$B3_norm <= 100))
+})
+
+test_that("normalize_indicators recognizes R* (Risk/Resilience) indicators", {
+  test_data <- data.frame(
+    id = 1:5,
+    R1 = c(10, 30, 50, 70, 90),  # Fire risk
+    R2 = c(5, 25, 45, 65, 85),   # Storm vulnerability
+    R3 = c(15, 35, 55, 75, 95)   # Drought stress
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = c("R1", "R2", "R3"),
+    method = "minmax"
+  )
+
+  expect_true(all(c("R1_norm", "R2_norm", "R3_norm") %in% names(normalized)))
+  expect_true(all(normalized$R1_norm >= 0 & normalized$R1_norm <= 100))
+})
+
+test_that("normalize_indicators recognizes T* (Temporal) indicators", {
+  test_data <- data.frame(
+    id = 1:5,
+    T1 = c(20, 50, 100, 150, 250),  # Stand age
+    T2 = c(0, 0.5, 1.0, 2.0, 5.0)   # Change rate
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = c("T1", "T2"),
+    method = "minmax"
+  )
+
+  expect_true(all(c("T1_norm", "T2_norm") %in% names(normalized)))
+  expect_true(all(normalized$T1_norm >= 0 & normalized$T1_norm <= 100))
+})
+
+test_that("normalize_indicators recognizes A* (Air quality) indicators", {
+  test_data <- data.frame(
+    id = 1:5,
+    A1 = c(10, 30, 50, 70, 90),  # Tree coverage
+    A2 = c(20, 40, 60, 80, 100)  # Air quality index
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = c("A1", "A2"),
+    method = "minmax"
+  )
+
+  expect_true(all(c("A1_norm", "A2_norm") %in% names(normalized)))
+  expect_true(all(normalized$A1_norm >= 0 & normalized$A1_norm <= 100))
+})
+
+test_that("normalize_indicators auto-detects all v0.3.0 family indicators", {
+  test_data <- data.frame(
+    id = 1:3,
+    # v0.2.0 families
+    C1 = c(100, 200, 300),
+    W1 = c(10, 20, 30),
+    F1 = c(5, 10, 15),
+    L1 = c(0.3, 0.5, 0.7),
+    # v0.3.0 families
+    B1 = c(25, 50, 75),
+    R1 = c(30, 50, 70),
+    T1 = c(50, 100, 150),
+    A1 = c(40, 60, 80),
+    # Non-indicator column
+    other = c(1, 2, 3)
+  )
+
+  # Should auto-detect all indicator families, ignore 'other'
+  normalized <- normalize_indicators(test_data, method = "minmax")
+
+  # Check all families detected
+  expected_norms <- c("C1_norm", "W1_norm", "F1_norm", "L1_norm",
+                       "B1_norm", "R1_norm", "T1_norm", "A1_norm")
+  expect_true(all(expected_norms %in% names(normalized)))
+  expect_false("other_norm" %in% names(normalized))
+})
+
+test_that("normalize_indicators applies correct method for each family", {
+  test_data <- data.frame(
+    id = 1:10,
+    B1 = runif(10, 0, 100),    # Linear scale (0-100%)
+    T1 = runif(10, 20, 300),   # Log scale (age in years)
+    R1 = runif(10, 0, 100)     # Linear scale (0-100 risk)
+  )
+
+  # All should use minmax by default
+  normalized <- normalize_indicators(test_data, method = "minmax")
+
+  # Check all normalized
+  expect_true(all(c("B1_norm", "T1_norm", "R1_norm") %in% names(normalized)))
+
+  # All should be in 0-100 range after normalization
+  expect_true(all(normalized$B1_norm >= 0 & normalized$B1_norm <= 100))
+  expect_true(all(normalized$T1_norm >= 0 & normalized$T1_norm <= 100))
+  expect_true(all(normalized$R1_norm >= 0 & normalized$R1_norm <= 100))
+})
+
+test_that("normalize_indicators handles mixed v0.2.0 and v0.3.0 families", {
+  test_data <- data.frame(
+    id = 1:5,
+    C1 = c(100, 200, 300, 400, 500),  # v0.2.0
+    B1 = c(0, 25, 50, 75, 100),       # v0.3.0
+    R2 = c(10, 30, 50, 70, 90)        # v0.3.0
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = c("C1", "B1", "R2"),
+    method = "minmax"
+  )
+
+  expect_true(all(c("C1_norm", "B1_norm", "R2_norm") %in% names(normalized)))
+  expect_equal(normalized$C1_norm[1], 0)
+  expect_equal(normalized$C1_norm[5], 100)
+  expect_equal(normalized$B1_norm[1], 0)
+  expect_equal(normalized$B1_norm[5], 100)
+})

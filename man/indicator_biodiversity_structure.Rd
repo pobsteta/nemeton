@@ -6,10 +6,11 @@
 \usage{
 indicator_biodiversity_structure(
   units,
-  strata_field = "strata_classes",
-  age_field = "age_classes",
+  strata_field = "strata",
+  age_class_field = "age_class",
+  species_field = NULL,
   method = "shannon",
-  weights = c(strata = 0.6, age = 0.4),
+  weights = c(strata = 0.4, age = 0.3, species = 0.3),
   use_height_cv = FALSE
 )
 }
@@ -17,17 +18,19 @@ indicator_biodiversity_structure(
 \item{units}{An sf object with forest parcels.}
 
 \item{strata_field}{Character. Column name containing canopy strata classes
-(e.g., "Emergent", "Dominant", "Intermediate", "Suppressed"). If NULL,
-uses height_field for fallback.}
+(e.g., "Emergent", "Dominant", "Intermediate", "Suppressed").}
 
-\item{age_field}{Character. Column name containing age classes
-(e.g., "Young", "Intermediate", "Mature", "Old", "Ancient").}
+\item{age_class_field}{Character. Column name containing age classes
+(e.g., "young", "mature", "old", "ancient").}
+
+\item{species_field}{Character. Optional column name containing species names.
+If NULL, species diversity is not included in calculation. Default NULL.}
 
 \item{method}{Character. Diversity calculation method. Currently only "shannon"
 is supported.}
 
-\item{weights}{Named numeric vector. Weights for strata and age components.
-Default c(strata = 0.6, age = 0.4).}
+\item{weights}{Named numeric vector. Weights for strata, age, and species components.
+Default c(strata = 0.4, age = 0.3, species = 0.3).}
 
 \item{use_height_cv}{Logical. If TRUE and strata_field is NULL, use coefficient
 of variation of height as proxy for vertical diversity. Default FALSE.}
@@ -66,7 +69,8 @@ units$age_class <- sample(c("Young", "Mature", "Old"),
 result <- indicator_biodiversity_structure(
   units,
   strata_field = "strata",
-  age_field = "age_class"
+  age_class_field = "age_class",
+  species_field = "species"
 )
 
 hist(result$B2, main = "Structural Diversity Distribution")

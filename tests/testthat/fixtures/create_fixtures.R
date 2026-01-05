@@ -76,9 +76,33 @@ change_cells <- sample(1:ncell(lc_2020), size = round(ncell(lc_2020) * 0.1))
 values(lc_2020)[change_cells] <- sample(c(311, 312, 313, 231), length(change_cells),
                                         replace = TRUE)
 
-saveRDS(lc_1990, "land_cover/land_cover_1990.rds")
-saveRDS(lc_2020, "land_cover/land_cover_2020.rds")
-message("✓ Created land_cover_1990.rds and land_cover_2020.rds (50x50 cells, ~10% change)")
+terra::writeRaster(lc_1990, "land_cover/land_cover_1990.tif", overwrite = TRUE)
+terra::writeRaster(lc_2020, "land_cover/land_cover_2020.tif", overwrite = TRUE)
+message("✓ Created land_cover_1990.tif and land_cover_2020.tif (50x50 cells, ~10% change)")
+
+# ===== T007b: Digital Elevation Model (DEM) =====
+# Create synthetic DEM for R1 (fire/slope), R2 (storm/exposure)
+
+set.seed(300)
+dem_raster <- rast(
+  nrows = nrow_raster, ncols = ncol_raster,
+  extent = ext_raster,
+  crs = "EPSG:2154"
+)
+
+# Elevation: 200-800m with gentle slope and some variability
+# Create realistic terrain with east-west gradient + noise
+x_coords <- rep(1:ncol(dem_raster), each = nrow(dem_raster))
+y_coords <- rep(1:nrow(dem_raster), times = ncol(dem_raster))
+
+elevation_base <- 400 + (x_coords / ncol(dem_raster)) * 200  # East-west gradient
+elevation_noise <- rnorm(ncell(dem_raster), mean = 0, sd = 50)  # Local variation
+elevation_values <- elevation_base + elevation_noise
+
+values(dem_raster) <- pmax(150, pmin(850, elevation_values))  # Clamp to realistic range
+
+terra::writeRaster(dem_raster, "climate/dem_demo.tif", overwrite = TRUE)
+message("✓ Created dem_demo.tif (200-800m elevation)")
 
 # ===== T008: Climate Data =====
 # Create synthetic climate rasters for R1 (fire risk) and R3 (drought)
@@ -105,18 +129,15 @@ precip_raster <- rast(
 precip_values <- 900 + rnorm(ncell(precip_raster), mean = 0, sd = 150)
 values(precip_raster) <- pmax(500, pmin(1400, precip_values))
 
-# Combine into climate data list
-climate_data <- list(
-  temperature = temp_raster,
-  precipitation = precip_raster
-)
-
-saveRDS(climate_data, "climate/climate_data.rds")
-message("✓ Created climate_data.rds (temperature & precipitation)")
+# Save as individual TIF files
+terra::writeRaster(temp_raster, "climate/temperature_demo.tif", overwrite = TRUE)
+terra::writeRaster(precip_raster, "climate/precipitation_demo.tif", overwrite = TRUE)
+message("✓ Created temperature_demo.tif and precipitation_demo.tif")
 
 message("\n=== All test fixtures created successfully ===")
 message("Location: tests/testthat/fixtures/")
 message("- protected_areas_demo.rds: 3 protected zones")
-message("- land_cover_1990.rds: 50x50 cells, CLC classes")
-message("- land_cover_2020.rds: 50x50 cells, ~10% change from 1990")
-message("- climate_data.rds: temperature & precipitation rasters")
+message("- land_cover_1990.tif: 50x50 cells, CLC classes")
+message("- land_cover_2020.tif: 50x50 cells, ~10% change from 1990")
+message("- dem_demo.tif: 200-800m elevation raster")
+message("- temperature_demo.tif, precipitation_demo.tif: climate rasters")
