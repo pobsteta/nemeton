@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/pascalobstetar/nemeton/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/pascalobstetar/nemeton/blob/v0.2.0/DESCRIPTION)
 
 Obstétar P (2026). *nemeton: Systemic Forest Analysis Using the Nemeton
 Method*. R package version 0.2.0,
