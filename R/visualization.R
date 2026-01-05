@@ -133,7 +133,8 @@ plot_indicators_map <- function(data,
         ggplot2::aes(fill = .data[[indicator_col]]),
         color = border_color,
         size = border_size,
-        alpha = alpha
+        alpha = alpha,
+        show.legend = TRUE
       )
 
     # Add color scale
@@ -167,7 +168,8 @@ plot_indicators_map <- function(data,
         ggplot2::aes(fill = value),
         color = border_color,
         size = border_size,
-        alpha = alpha
+        alpha = alpha,
+        show.legend = TRUE
       ) +
       ggplot2::facet_wrap(
         ~ indicator,
@@ -200,7 +202,13 @@ plot_indicators_map <- function(data,
       axis.text = ggplot2::element_text(size = ggplot2::rel(0.8)),
       legend.position = "right",
       panel.grid = ggplot2::element_blank()
-    )
+    ) +
+    ggplot2::guides(fill = ggplot2::guide_colorbar(
+      barwidth = 1,
+      barheight = 10,
+      title.position = "top",
+      title.hjust = 0.5
+    ))
 
   p
 }
@@ -220,23 +228,38 @@ plot_indicators_map <- function(data,
 #' @keywords internal
 #' @noRd
 add_color_scale <- function(p, palette, direction, breaks, labels, legend_title) {
+  # Create guide for legend
+  legend_guide <- ggplot2::guide_colorbar(
+    barwidth = 1.5,
+    barheight = 15,
+    title.position = "top",
+    title.hjust = 0.5
+  )
+
   if (palette == "viridis") {
-    p <- p + ggplot2::scale_fill_viridis_c(
+    # Build scale arguments conditionally
+    scale_args <- list(
       name = legend_title,
       option = "viridis",
       direction = direction,
-      breaks = breaks,
-      labels = labels
+      guide = legend_guide
     )
+    if (!is.null(breaks)) scale_args$breaks <- breaks
+    if (!is.null(labels)) scale_args$labels <- labels
+
+    p <- p + do.call(ggplot2::scale_fill_viridis_c, scale_args)
   } else {
-    # ColorBrewer palettes
-    p <- p + ggplot2::scale_fill_distiller(
+    # ColorBrewer palettes - build arguments conditionally
+    scale_args <- list(
       name = legend_title,
       palette = palette,
       direction = direction,
-      breaks = breaks,
-      labels = labels
+      guide = legend_guide
     )
+    if (!is.null(breaks)) scale_args$breaks <- breaks
+    if (!is.null(labels)) scale_args$labels <- labels
+
+    p <- p + do.call(ggplot2::scale_fill_distiller, scale_args)
   }
 
   p
