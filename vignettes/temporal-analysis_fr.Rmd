@@ -201,7 +201,7 @@ grep("_rate_", names(rates_both), value = TRUE)
 
 Visualiser l'évolution des indicateurs à travers toutes les périodes.
 
-```{r fig.cap = "Évolution du stock de carbone (2015-2025)", eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Évolution du stock de carbone (2015-2025)"}
 # Tendances du carbone dans le temps
 plot_temporal_trend(
   temporal_data,
@@ -210,7 +210,7 @@ plot_temporal_trend(
 )
 ```
 
-```{r fig.cap = "Tendances multi-indicateurs", fig.height = 8, eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Tendances multi-indicateurs", fig.height = 8}
 # Indicateurs multiples
 plot_temporal_trend(
   temporal_data,
@@ -274,7 +274,7 @@ cat("\nAnalyse des compromis :\n")
 print(tradeoff)
 ```
 
-```{r fig.cap = "Impact de l'intervention sur la biodiversité", eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Impact de l'intervention sur la biodiversité"}
 # Visualiser l'augmentation de la biodiversité
 plot_temporal_trend(
   intervention,
@@ -289,7 +289,7 @@ plot_temporal_trend(
 
 Combiner l'analyse temporelle avec le système multi-famille (voir `vignette("indicator-families_fr")`).
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Exemple de workflow (nécessite des indicateurs de famille calculés)
 
 # Calculer les indicateurs de famille pour chaque période
@@ -331,7 +331,7 @@ family_rates <- calculate_change_rate(
 
 Normaliser toutes les périodes en utilisant la première période comme référence :
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Extraire les données de la première période
 baseline <- temporal_data$periods[[1]]
 
@@ -381,7 +381,7 @@ if (nrow(anomalies) > 0) {
 
 ## Sauvegarder l'objet temporel
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Sauvegarder en RDS pour analyse future
 saveRDS(temporal_data, "results/temporal_data_2015_2025.rds")
 
@@ -391,7 +391,7 @@ temporal_data <- readRDS("results/temporal_data_2015_2025.rds")
 
 ## Exporter les taux de changement
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Exporter en GeoPackage
 sf::st_write(
   rates_both,
@@ -412,7 +412,7 @@ write.csv(
 
 ## Sauvegarder les graphiques
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Graphique de série temporelle
 p1 <- plot_temporal_trend(temporal_data, indicator = "carbon")
 ggsave("figures/carbon_trend_2015_2025.png", p1, width = 10, height = 6, dpi = 300)

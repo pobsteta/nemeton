@@ -28,7 +28,7 @@ Le package `nemeton` implémente un **cadre d'indicateurs multi-famille** pour l
 
 ## Les 12 familles
 
-```{r echo = FALSE, results = 'asis', eval = FALSE}
+```{r, eval = FALSE, echo = FALSE, results = 'asis'}
 families <- data.frame(
   Code = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
   Famille = c(
@@ -84,7 +84,7 @@ library(dplyr)
 
 Le graphique radar ci-dessous illustre le cadre multi-dimensionnel complet, montrant comment les 12 familles se combinent pour fournir une évaluation holistique des services écosystémiques forestiers.
 
-```{r fig.cap = "Graphique radar 12 familles - Cadre Nemeton complet", fig.width = 8, fig.height = 8, eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Graphique radar 12 familles - Cadre Nemeton complet", fig.width = 8, fig.height = 8}
 # Charger les données de démo
 data(massif_demo_units)
 
@@ -139,7 +139,7 @@ La **famille Carbone** quantifie le stockage de carbone et la vitalité de la v�
 
 Estime la biomasse aérienne en utilisant des **modèles allométriques** à partir des données BD Forêt v2.
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Nécessite BD Forêt v2 avec espèce, âge, densité
 carbon_biomass <- nemeton_compute(
   massif_demo_units,
@@ -154,7 +154,7 @@ carbon_biomass <- nemeton_compute(
 
 Extrait le NDVI moyen à partir d'images Sentinel-2.
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Nécessite raster NDVI (Sentinel-2)
 carbon_ndvi <- nemeton_compute(
   massif_demo_units,
@@ -171,7 +171,7 @@ La **famille Eau** évalue la capacité de régulation hydrique.
 
 ### W1 : Densité du réseau hydrographique
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 water_network <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -183,7 +183,7 @@ water_network <- nemeton_compute(
 
 ### W2 : Couverture en zones humides
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 water_wetlands <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -195,7 +195,7 @@ water_wetlands <- nemeton_compute(
 
 ### W3 : Indice d'humidité topographique (TWI)
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 water_twi <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -209,7 +209,7 @@ water_twi <- nemeton_compute(
 
 ### F1 : Fertilité du sol
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 soil_fertility <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -221,7 +221,7 @@ soil_fertility <- nemeton_compute(
 
 ### F2 : Risque d'érosion
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 soil_erosion <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -235,7 +235,7 @@ soil_erosion <- nemeton_compute(
 
 ### L1 : Fragmentation forestière
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 landscape_frag <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -247,7 +247,7 @@ landscape_frag <- nemeton_compute(
 
 ### L2 : Ratio lisière/surface
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 landscape_edge <- nemeton_compute(
   massif_demo_units,
   layers,
@@ -261,7 +261,7 @@ landscape_edge <- nemeton_compute(
 
 ## Calculer plusieurs familles
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Charger les données
 data(massif_demo_units)
 layers <- massif_demo_layers()
@@ -276,7 +276,7 @@ results <- nemeton_compute(
 
 ## Créer des indices par famille
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Créer des scores composites par famille
 family_scores <- create_family_index(
   results,
@@ -299,7 +299,7 @@ head(family_scores[, c("parcel_id", "family_C", "family_W", "family_F", "family_
 
 ## Visualiser les profils multi-familles
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Graphique radar pour une parcelle
 nemeton_radar(
   family_scores,
@@ -364,7 +364,7 @@ nemeton_radar(
 
 ## Codes de famille
 
-```{r echo = FALSE, results = 'asis', eval = FALSE}
+```{r, eval = FALSE, echo = FALSE, results = 'asis'}
 family_codes <- data.frame(
   Code = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
   Nom_FR = c(

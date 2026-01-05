@@ -61,7 +61,7 @@ cat("\nSurface totale:", sum(massif_demo_units$surface_ha), "ha\n")
 table(massif_demo_units$forest_type)
 ```
 
-```{r fig.cap = "Parcelles forestières par type", eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Parcelles forestières par type"}
 ggplot(massif_demo_units) +
   geom_sf(aes(fill = forest_type)) +
   theme_minimal() +
@@ -210,7 +210,7 @@ composite_min <- create_composite_index(
 
 ## Cartes thématiques
 
-```{r fig.cap = "Carte de l'indice de santé écosystémique", eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Carte de l'indice de santé écosystémique"}
 plot_indicators_map(
   composite,
   indicator = "ecosystem_health",
@@ -221,7 +221,7 @@ plot_indicators_map(
 
 ## Cartes de comparaison
 
-```{r fig.cap = "Comparaison carbone vs biodiversité", fig.width = 10, eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Comparaison carbone vs biodiversité", fig.width = 10}
 plot_comparison_map(
   normalized,
   indicators = c("carbon_norm", "biodiversity_norm"),
@@ -232,7 +232,7 @@ plot_comparison_map(
 
 ## Graphique radar
 
-```{r fig.cap = "Profil écosystémique - Parcelle P01", eval = FALSE}
+```{r, eval = FALSE, fig.cap = "Profil écosystémique - Parcelle P01"}
 nemeton_radar(
   normalized,
   unit_id = "P01",
@@ -329,7 +329,7 @@ nemeton_set_language("fr")  # Français
 
 # Export des résultats
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 # Export en GeoPackage
 sf::st_write(composite, "results/forest_quality.gpkg")
 
