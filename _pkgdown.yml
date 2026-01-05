@@ -8,47 +8,24 @@ template:
     success: "#4CAF50"
 
 home:
-  title: "nemeton - Systemic Forest Analysis / Analyse Systémique Forestière"
+  title: "nemeton - Analyse Systémique Forestière"
   description: >
-    Multi-family ecosystem service assessment for forest management using
-    the Nemeton method. Calculate, normalize, aggregate and visualize
-    biophysical indicators across 12 ecosystem service families.
-
     Évaluation multi-famille des services écosystémiques pour la gestion
     forestière avec la méthode Nemeton. Calculez, normalisez, agrégez et
     visualisez des indicateurs biophysiques à travers 12 familles de
     services écosystémiques.
   links:
-  - text: Français (French version)
-    href: index.html
-  - text: English (English version)
-    href: README_en.html
-  - text: View on GitHub
+  - text: Voir sur GitHub
     href: https://github.com/pobsteta/nemeton
 
 navbar:
   structure:
-    left:  [intro, reference, articles, tutorials, news]
-    right: [language, search, github]
+    left:  [intro, reference, articles, news]
+    right: [search, github]
   components:
-    intro:
-      text: Home
-      menu:
-      - text: "Accueil (Français)"
-        href: index.html
-      - text: "Home (English)"
-        href: README_en.html
-    language:
-      icon: fa-language
-      menu:
-      - text: "Français"
-        href: index.html
-      - text: "English"
-        href: README_en.html
     articles:
-      text: Vignettes / Articles
+      text: Articles
       menu:
-      - text: "Français 🇫🇷"
       - text: Démarrage rapide
         href: articles/getting-started_fr.html
       - text: Familles d'indicateurs (12 familles + radar)
@@ -56,16 +33,7 @@ navbar:
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
       - text: "---"
-      - text: "English 🇬🇧"
-      - text: Getting Started
-        href: articles/getting-started.html
-      - text: Indicator Families Reference (12 families + radar)
-        href: articles/indicator-families.html
-      - text: Temporal Analysis
-        href: articles/temporal-analysis.html
-      - text: "---"
-      - text: "Both Languages / Les deux langues"
-      - text: Internationalization (i18n)
+      - text: Internationalisation (i18n)
         href: articles/internationalization.html
 
 reference:
