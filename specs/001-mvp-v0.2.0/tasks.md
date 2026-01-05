@@ -31,10 +31,10 @@
 
 ### Tasks
 
-- [ ] T001 [P] Update DESCRIPTION with new dependencies (whitebox, landscapemetrics) in Suggests
-- [ ] T002 [P] Update NAMESPACE to prepare for new exported functions (will auto-generate via roxygen2)
-- [ ] T003 [P] Create R/sysdata.rda with allometric models lookup table per research.md TD-002
-- [ ] T004 Verify all v0.1.0 tests still pass (devtools::test()) - baseline for backward compatibility
+- [X] T001 [P] Update DESCRIPTION with new dependencies (whitebox, landscapemetrics) in Suggests
+- [X] T002 [P] Update NAMESPACE to prepare for new exported functions (will auto-generate via roxygen2)
+- [X] T003 [P] Create R/sysdata.rda with allometric models lookup table per research.md TD-002
+- [X] T004 Verify all v0.1.0 tests still pass (devtools::test()) - baseline for backward compatibility
 
 **Completion Criteria**:
 - ✅ `devtools::check()` passes with 0 errors, 0 warnings
@@ -53,13 +53,13 @@
 
 ### Tasks
 
-- [ ] T005 [P] Extend R/utils.R with get_allometric_model() helper function
-- [ ] T006 [P] Extend R/utils.R with calculate_biomass_from_model() internal function
-- [ ] T007 [P] Extend R/i18n.R with FR/EN messages for all new indicators (C1, C2, W1-W3, F1-F2, L1-L2)
-- [ ] T008 [P] Extend R/i18n.R with temporal analysis messages (periods, change rates, trends)
-- [ ] T009 [P] Create tests/testthat/fixtures/allometric_reference.rds with IFN validation data
-- [ ] T010 [P] Create tests/testthat/fixtures/twi_reference.rds with validated TWI values
-- [ ] T011 Create tests/testthat/test-utils-allometric.R for allometric helper functions
+- [X] T005 [P] Extend R/utils.R with get_allometric_model() helper function
+- [X] T006 [P] Extend R/utils.R with calculate_biomass_from_model() internal function
+- [X] T007 [P] Extend R/i18n.R with FR/EN messages for all new indicators (C1, C2, W1-W3, F1-F2, L1-L2)
+- [X] T008 [P] Extend R/i18n.R with temporal analysis messages (periods, change rates, trends)
+- [X] T009 [P] Create tests/testthat/fixtures/allometric_reference.rds with IFN validation data
+- [X] T010 [P] Create tests/testthat/fixtures/twi_reference.rds with validated TWI values
+- [X] T011 Create tests/testthat/test-utils-allometric.R for allometric helper functions
 
 **Completion Criteria**:
 - ✅ Allometric helpers functional and tested (± 15% accuracy vs IFN)
@@ -78,32 +78,32 @@
 
 ### 3.1 Test Fixtures & Data Preparation
 
-- [ ] T012 [P] [US1] Create tests/testthat/fixtures/temporal_test_data.rds with 2-period synthetic dataset
-- [ ] T013 [P] [US1] Create tests/testthat/helper-temporal.R with create_temporal_test_units() helper
+- [X] T012 [P] [US1] Create tests/testthat/fixtures/temporal_test_data.rds with 2-period synthetic dataset
+- [X] T013 [P] [US1] Create tests/testthat/helper-temporal.R with create_temporal_test_units() helper
 
 ### 3.2 Core Temporal Functions (TDD)
 
-- [ ] T014 [US1] Write tests for nemeton_temporal() in tests/testthat/test-temporal.R (S3 class, validation, print/summary)
-- [ ] T015 [US1] Implement nemeton_temporal() in R/temporal.R with S3 class structure per data-model.md
-- [ ] T016 [US1] Implement print.nemeton_temporal() method in R/temporal.R
-- [ ] T017 [US1] Implement summary.nemeton_temporal() method in R/temporal.R
-- [ ] T018 [P] [US1] Write tests for calculate_change_rate() in tests/testthat/test-temporal.R (absolute, relative, edge cases)
-- [ ] T019 [US1] Implement calculate_change_rate() in R/temporal.R (handles zero baseline, NA periods)
-- [ ] T020 [US1] Add roxygen2 documentation for nemeton_temporal() with @examples using massif_demo
+- [X] T014 [US1] Write tests for nemeton_temporal() in tests/testthat/test-temporal.R (S3 class, validation, print/summary)
+- [X] T015 [US1] Implement nemeton_temporal() in R/temporal.R with S3 class structure per data-model.md
+- [X] T016 [US1] Implement print.nemeton_temporal() method in R/temporal.R
+- [X] T017 [US1] Implement summary.nemeton_temporal() method in R/temporal.R
+- [X] T018 [P] [US1] Write tests for calculate_change_rate() in tests/testthat/test-temporal.R (absolute, relative, edge cases)
+- [X] T019 [US1] Implement calculate_change_rate() in R/temporal.R (handles zero baseline, NA periods)
+- [X] T020 [US1] Add roxygen2 documentation for nemeton_temporal() with @examples using massif_demo
 
 ### 3.3 Temporal Visualizations
 
-- [ ] T021 [P] [US1] Write tests for plot_temporal_trends() in tests/testthat/test-visualization.R
-- [ ] T022 [US1] Implement plot_temporal_trends() in R/visualization.R (ggplot2 time-series line plots)
-- [ ] T023 [P] [US1] Write tests for plot_change_heatmap() in tests/testthat/test-visualization.R
-- [ ] T024 [US1] Implement plot_change_heatmap() in R/visualization.R (diverging color scale)
-- [ ] T025 [US1] Add roxygen2 documentation for temporal visualization functions
+- [X] T021 [P] [US1] Write tests for plot_temporal_trends() in tests/testthat/test-visualization.R
+- [X] T022 [US1] Implement plot_temporal_trends() in R/visualization.R (ggplot2 time-series line plots)
+- [X] T023 [P] [US1] Write tests for plot_change_heatmap() in tests/testthat/test-visualization.R
+- [X] T024 [US1] Implement plot_change_heatmap() in R/visualization.R (diverging color scale)
+- [X] T025 [US1] Add roxygen2 documentation for temporal visualization functions
 
 ### 3.4 Integration Testing
 
-- [ ] T026 [US1] Create integration test: full temporal workflow (create → compute → change rate → visualize) in tests/testthat/test-integration-temporal.R
-- [ ] T027 [US1] Test temporal alignment edge cases (units present in some periods, not others)
-- [ ] T028 [US1] Test intervention markers functionality (if time permits)
+- [X] T026 [US1] Create integration test: full temporal workflow (create → compute → change rate → visualize) in tests/testthat/test-integration-temporal.R
+- [X] T027 [US1] Test temporal alignment edge cases (units present in some periods, not others)
+- [X] T028 [US1] Test intervention markers functionality (if time permits)
 
 **US1 Completion Criteria**:
 - ✅ Users can create temporal datasets from 2+ periods
@@ -123,31 +123,31 @@
 
 ### 4.1 C1: Biomass Indicator (TDD)
 
-- [ ] T029 [P] [US2] Write tests for indicator_carbon_biomass() in tests/testthat/test-indicators-families.R (species-specific, generic fallback, accuracy vs IFN)
-- [ ] T030 [US2] Implement indicator_carbon_biomass() in R/indicators-families.R using allometric models from sysdata
-- [ ] T031 [US2] Test species-specific models (Quercus, Fagus, Pinus, Abies) against fixtures/allometric_reference.rds
-- [ ] T032 [US2] Test generic model fallback when species unknown
-- [ ] T033 [US2] Test age/density out-of-range warnings
-- [ ] T034 [US2] Add roxygen2 documentation for indicator_carbon_biomass() with allometric equation references
+- [X] T029 [P] [US2] Write tests for indicator_carbon_biomass() in tests/testthat/test-indicators-families.R (species-specific, generic fallback, accuracy vs IFN)
+- [X] T030 [US2] Implement indicator_carbon_biomass() in R/indicators-families.R using allometric models from sysdata
+- [X] T031 [US2] Test species-specific models (Quercus, Fagus, Pinus, Abies) against fixtures/allometric_reference.rds
+- [X] T032 [US2] Test generic model fallback when species unknown
+- [X] T033 [US2] Test age/density out-of-range warnings
+- [X] T034 [US2] Add roxygen2 documentation for indicator_carbon_biomass() with allometric equation references
 
 ### 4.2 C2: NDVI Indicator (TDD)
 
-- [ ] T035 [P] [US2] Write tests for indicator_carbon_ndvi() in tests/testthat/test-indicators-families.R (mean extraction, optional trend)
-- [ ] T036 [US2] Implement indicator_carbon_ndvi() in R/indicators-families.R (zonal mean via exactextractr)
-- [ ] T037 [US2] Implement NDVI trend calculation (optional, requires 3+ dates)
-- [ ] T038 [US2] Add roxygen2 documentation for indicator_carbon_ndvi()
+- [X] T035 [P] [US2] Write tests for indicator_carbon_ndvi() in tests/testthat/test-indicators-families.R (mean extraction, optional trend)
+- [X] T036 [US2] Implement indicator_carbon_ndvi() in R/indicators-families.R (zonal mean via exactextractr)
+- [X] T037 [US2] Implement NDVI trend calculation (optional, requires 3+ dates)
+- [X] T038 [US2] Add roxygen2 documentation for indicator_carbon_ndvi()
 
 ### 4.3 Backward Compatibility & Deprecation
 
-- [ ] T039 [US2] Create indicator_carbon() wrapper in R/indicators-core.R with .Deprecated() warning
-- [ ] T040 [US2] Test backward compatibility: verify indicator_carbon() behaves identically to indicator_carbon_biomass() when no BD Forêt
-- [ ] T041 [US2] Update existing tests to ensure no regressions
+- [X] T039 [US2] Create indicator_carbon() wrapper in R/indicators-core.R with .Deprecated() warning
+- [X] T040 [US2] Test backward compatibility: verify indicator_carbon() behaves identically to indicator_carbon_biomass() when no BD Forêt
+- [X] T041 [US2] Update existing tests to ensure no regressions
 
 ### 4.4 Family Score Integration
 
-- [ ] T042 [P] [US2] Write tests for create_family_index(family="carbon") in tests/testthat/test-normalization.R
-- [ ] T043 [US2] Test score_carbon creation with default weights (C1=70%, C2=30%)
-- [ ] T044 [US2] Test partial family score (C2 missing for some units)
+- [X] T042 [P] [US2] Write tests for create_family_index(family="carbon") in tests/testthat/test-normalization.R
+- [X] T043 [US2] Test score_carbon creation with default weights (C1=70%, C2=30%)
+- [X] T044 [US2] Test partial family score (C2 missing for some units)
 
 **US2 Completion Criteria**:
 - ✅ C1 biomass accuracy within 15% of IFN reference values (SC-002)
@@ -168,33 +168,33 @@
 
 ### 5.1 W1: Hydrographic Network (TDD)
 
-- [ ] T045 [P] [US3] Write tests for indicator_water_network() in tests/testthat/test-indicators-families.R
-- [ ] T046 [US3] Implement indicator_water_network() in R/indicators-families.R (sf length calculation, density in km/ha)
-- [ ] T047 [US3] Test with massif_demo watercourses layer
-- [ ] T048 [US3] Add roxygen2 documentation for indicator_water_network()
+- [X] T045 [P] [US3] Write tests for indicator_water_network() in tests/testthat/test-indicators-families.R
+- [X] T046 [US3] Implement indicator_water_network() in R/indicators-families.R (sf length calculation, density in km/ha)
+- [X] T047 [US3] Test with massif_demo watercourses layer
+- [X] T048 [US3] Add roxygen2 documentation for indicator_water_network()
 
 ### 5.2 W2: Wetlands Coverage (TDD)
 
-- [ ] T049 [P] [US3] Write tests for indicator_water_wetlands() in tests/testthat/test-indicators-families.R
-- [ ] T050 [US3] Implement indicator_water_wetlands() in R/indicators-families.R (zonal proportion via exactextractr)
-- [ ] T051 [US3] Test with land cover raster (wetland class identification)
-- [ ] T052 [US3] Add roxygen2 documentation for indicator_water_wetlands()
+- [X] T049 [P] [US3] Write tests for indicator_water_wetlands() in tests/testthat/test-indicators-families.R
+- [X] T050 [US3] Implement indicator_water_wetlands() in R/indicators-families.R (zonal proportion via exactextractr)
+- [X] T051 [US3] Test with land cover raster (wetland class identification)
+- [X] T052 [US3] Add roxygen2 documentation for indicator_water_wetlands()
 
 ### 5.3 W3: Topographic Wetness Index (TDD)
 
-- [ ] T053 [P] [US3] Write tests for indicator_water_twi() in tests/testthat/test-indicators-families.R (whitebox + terra fallback)
-- [ ] T054 [US3] Implement indicator_water_twi() with whitebox::wbt_wetness_index() primary method in R/indicators-families.R
-- [ ] T055 [US3] Implement terra fallback (D8 flow accumulation + slope) per research.md TD-003
-- [ ] T056 [US3] Test TWI accuracy against fixtures/twi_reference.rds
-- [ ] T057 [US3] Test extreme values handling (flat areas, convergent valleys)
-- [ ] T058 [US3] Test whitebox optional dependency (skip if not installed)
-- [ ] T059 [US3] Add roxygen2 documentation for indicator_water_twi() with algorithm references
+- [X] T053 [P] [US3] Write tests for indicator_water_twi() in tests/testthat/test-indicators-families.R (whitebox + terra fallback)
+- [X] T054 [US3] Implement indicator_water_twi() with whitebox::wbt_wetness_index() primary method in R/indicators-families.R
+- [X] T055 [US3] Implement terra fallback (D8 flow accumulation + slope) per research.md TD-003
+- [X] T056 [US3] Test TWI accuracy against fixtures/twi_reference.rds
+- [X] T057 [US3] Test extreme values handling (flat areas, convergent valleys)
+- [X] T058 [US3] Test whitebox optional dependency (skip if not installed)
+- [X] T059 [US3] Add roxygen2 documentation for indicator_water_twi() with algorithm references
 
 ### 5.4 Family Score Integration
 
-- [ ] T060 [P] [US3] Write tests for create_family_index(family="water") in tests/testthat/test-normalization.R
-- [ ] T061 [US3] Test score_water creation with equal weights (W1=W2=W3=33.3%)
-- [ ] T062 [US3] Test W3 performance: 100+ units in <2 min (SC-010)
+- [X] T060 [P] [US3] Write tests for create_family_index(family="water") in tests/testthat/test-normalization.R
+- [X] T061 [US3] Test score_water creation with equal weights (W1=W2=W3=33.3%)
+- [X] T062 [US3] Test W3 performance: 100+ units in <2 min (SC-010)
 
 **US3 Completion Criteria**:
 - ✅ W1, W2, W3 all calculated correctly
@@ -215,25 +215,25 @@
 
 ### 6.1 F1: Soil Fertility (TDD)
 
-- [ ] T063 [P] [US4] Write tests for indicator_soil_fertility() in tests/testthat/test-indicators-families.R
-- [ ] T064 [US4] Implement indicator_soil_fertility() in R/indicators-families.R (BD Sol extraction or soil texture fallback)
-- [ ] T065 [US4] Test with synthetic soil raster (1-5 scale or categorical)
-- [ ] T066 [US4] Test graceful NA handling when BD Sol unavailable
-- [ ] T067 [US4] Add roxygen2 documentation for indicator_soil_fertility()
+- [X] T063 [P] [US4] Write tests for indicator_soil_fertility() in tests/testthat/test-indicators-families.R
+- [X] T064 [US4] Implement indicator_soil_fertility() in R/indicators-families.R (BD Sol extraction or soil texture fallback)
+- [X] T065 [US4] Test with synthetic soil raster (1-5 scale or categorical)
+- [X] T066 [US4] Test graceful NA handling when BD Sol unavailable
+- [X] T067 [US4] Add roxygen2 documentation for indicator_soil_fertility()
 
 ### 6.2 F2: Erosion Risk (TDD)
 
-- [ ] T068 [P] [US4] Write tests for indicator_soil_erosion() in tests/testthat/test-indicators-families.R
-- [ ] T069 [US4] Implement indicator_soil_erosion() in R/indicators-families.R (slope from DEM × land cover type)
-- [ ] T070 [US4] Implement erosion risk formula: higher slope + less vegetation = higher risk (0-100 scale)
-- [ ] T071 [US4] Test edge case: F2 > 70 threshold highlighting in visualizations
-- [ ] T072 [US4] Add roxygen2 documentation for indicator_soil_erosion()
+- [X] T068 [P] [US4] Write tests for indicator_soil_erosion() in tests/testthat/test-indicators-families.R
+- [X] T069 [US4] Implement indicator_soil_erosion() in R/indicators-families.R (slope from DEM × land cover type)
+- [X] T070 [US4] Implement erosion risk formula: higher slope + less vegetation = higher risk (0-100 scale)
+- [X] T071 [US4] Test edge case: F2 > 70 threshold highlighting in visualizations
+- [X] T072 [US4] Add roxygen2 documentation for indicator_soil_erosion()
 
 ### 6.3 Family Score Integration
 
-- [ ] T073 [P] [US4] Write tests for create_family_index(family="soil") in tests/testthat/test-normalization.R
-- [ ] T074 [US4] Test score_soil creation with equal weights (F1=F2=50%)
-- [ ] T075 [US4] Test partial family score (F1 missing when no BD Sol)
+- [X] T073 [P] [US4] Write tests for create_family_index(family="soil") in tests/testthat/test-normalization.R
+- [X] T074 [US4] Test score_soil creation with equal weights (F1=F2=50%)
+- [X] T075 [US4] Test partial family score (F1 missing when no BD Sol)
 
 **US4 Completion Criteria**:
 - ✅ F1 fertility extracted correctly (1-5 scale or categorical)
@@ -254,25 +254,25 @@
 
 ### 7.1 L1: Fragmentation Metrics (TDD)
 
-- [ ] T076 [P] [US5] Write tests for indicator_landscape_fragmentation() in tests/testthat/test-indicators-families.R
-- [ ] T077 [US5] Implement indicator_landscape_fragmentation() in R/indicators-families.R (manual sf patch counting)
-- [ ] T078 [US5] Implement 1 km buffer analysis per research.md TD-004
-- [ ] T079 [US5] Calculate patch count and mean patch size
-- [ ] T080 [US5] Add roxygen2 documentation for indicator_landscape_fragmentation()
+- [X] T076 [P] [US5] Write tests for indicator_landscape_fragmentation() in tests/testthat/test-indicators-families.R
+- [X] T077 [US5] Implement indicator_landscape_fragmentation() in R/indicators-families.R (manual sf patch counting)
+- [X] T078 [US5] Implement 1 km buffer analysis per research.md TD-004
+- [X] T079 [US5] Calculate patch count and mean patch size
+- [X] T080 [US5] Add roxygen2 documentation for indicator_landscape_fragmentation()
 
 ### 7.2 L2: Edge Ratio (TDD)
 
-- [ ] T081 [P] [US5] Write tests for indicator_landscape_edge() in tests/testthat/test-indicators-families.R
-- [ ] T082 [US5] Implement indicator_landscape_edge() in R/indicators-families.R (perimeter/area in m/ha)
-- [ ] T083 [US5] Test with complex geometries
-- [ ] T084 [US5] Test edge ratio > 200 m/ha flagging
-- [ ] T085 [US5] Add roxygen2 documentation for indicator_landscape_edge()
+- [X] T081 [P] [US5] Write tests for indicator_landscape_edge() in tests/testthat/test-indicators-families.R
+- [X] T082 [US5] Implement indicator_landscape_edge() in R/indicators-families.R (perimeter/area in m/ha)
+- [X] T083 [US5] Test with complex geometries
+- [X] T084 [US5] Test edge ratio > 200 m/ha flagging
+- [X] T085 [US5] Add roxygen2 documentation for indicator_landscape_edge()
 
 ### 7.3 Family Score Integration
 
-- [ ] T086 [P] [US5] Write tests for create_family_index(family="landscape") in tests/testthat/test-normalization.R
-- [ ] T087 [US5] Test score_landscape creation with inverse normalization (low fragmentation = high score)
-- [ ] T088 [US5] Verify negative indicators (L1, L2) inverted correctly
+- [X] T086 [P] [US5] Write tests for create_family_index(family="landscape") in tests/testthat/test-normalization.R
+- [X] T087 [US5] Test score_landscape creation with inverse normalization (low fragmentation = high score)
+- [X] T088 [US5] Verify negative indicators (L1, L2) inverted correctly
 
 **US5 Completion Criteria**:
 - ✅ L1 fragmentation calculated (patch count, mean size)
@@ -293,33 +293,33 @@
 
 ### 8.1 Family-Aware Normalization (TDD)
 
-- [ ] T089 [P] [US6] Write tests for extended normalize_indicators() with family prefix detection in tests/testthat/test-normalization.R
-- [ ] T090 [US6] Extend normalize_indicators() in R/normalization.R to recognize C_, W_, F_, L_ prefixes
-- [ ] T091 [US6] Test normalization of all 10 sub-indicators (C1, C2, W1-W3, F1-F2, L1-L2)
-- [ ] T092 [US6] Test inverse normalization for negative indicators (F2, L1, L2)
+- [X] T089 [P] [US6] Write tests for extended normalize_indicators() with family prefix detection in tests/testthat/test-normalization.R
+- [X] T090 [US6] Extend normalize_indicators() in R/normalization.R to recognize C_, W_, F_, L_ prefixes
+- [X] T091 [US6] Test normalization of all 10 sub-indicators (C1, C2, W1-W3, F1-F2, L1-L2)
+- [X] T092 [US6] Test inverse normalization for negative indicators (F2, L1, L2)
 
 ### 8.2 Family Index Creation (TDD)
 
-- [ ] T093 [P] [US6] Write tests for create_family_index() in tests/testthat/test-composite.R
-- [ ] T094 [US6] Implement create_family_index() in R/composite.R (generic for any family)
-- [ ] T095 [US6] Test default weights per family (from data-model.md)
-- [ ] T096 [US6] Test custom user weights
-- [ ] T097 [US6] Test partial family scores (missing sub-indicators)
-- [ ] T098 [US6] Add roxygen2 documentation for create_family_index() with family weight tables
+- [X] T093 [P] [US6] Write tests for create_family_index() in tests/testthat/test-composite.R
+- [X] T094 [US6] Implement create_family_index() in R/composite.R (generic for any family)
+- [X] T095 [US6] Test default weights per family (from data-model.md)
+- [X] T096 [US6] Test custom user weights
+- [X] T097 [US6] Test partial family scores (missing sub-indicators)
+- [X] T098 [US6] Add roxygen2 documentation for create_family_index() with family weight tables
 
 ### 8.3 Extended Radar Visualization (TDD)
 
-- [ ] T099 [P] [US6] Write tests for extended nemeton_radar() in tests/testthat/test-visualization.R
-- [ ] T100 [US6] Extend nemeton_radar() in R/visualization.R to handle 4-12 family axes (dynamic based on available families)
-- [ ] T101 [US6] Test radar with 4 families (C, W, F, L)
-- [ ] T102 [US6] Test radar auto-detection of family scores (score_*)
-- [ ] T103 [US6] Test radar with specific unit_id vs average
-- [ ] T104 [US6] Update roxygen2 documentation for nemeton_radar() with family mode examples
+- [X] T099 [P] [US6] Write tests for extended nemeton_radar() in tests/testthat/test-visualization.R
+- [X] T100 [US6] Extend nemeton_radar() in R/visualization.R to handle 4-12 family axes (dynamic based on available families)
+- [X] T101 [US6] Test radar with 4 families (C, W, F, L)
+- [X] T102 [US6] Test radar auto-detection of family scores (score_*)
+- [X] T103 [US6] Test radar with specific unit_id vs average
+- [X] T104 [US6] Update roxygen2 documentation for nemeton_radar() with family mode examples
 
 ### 8.4 Reference Thresholds Documentation
 
-- [ ] T105 [P] [US6] Document reference thresholds for each indicator in R/indicators-families.R roxygen2
-- [ ] T106 [US6] Create helper function get_indicator_thresholds() for programmatic access
+- [X] T105 [P] [US6] Document reference thresholds for each indicator in R/indicators-families.R roxygen2
+- [X] T106 [US6] Create helper function get_indicator_thresholds() for programmatic access
 
 **US6 Completion Criteria**:
 - ✅ normalize_indicators() recognizes family prefixes
@@ -338,56 +338,56 @@
 
 ### 9.1 Vignettes
 
-- [ ] T107 [P] Create vignettes/temporal-analysis.Rmd with full multi-period workflow
-- [ ] T108 [P] Create vignettes/indicator-families.Rmd with 12-family framework guide and roadmap
-- [ ] T109 [P] Update vignettes/getting-started.Rmd with v0.2.0 examples (optional family indicators)
-- [ ] T110 Build all vignettes and verify they knit successfully
+- [X] T107 [P] Create vignettes/temporal-analysis.Rmd with full multi-period workflow
+- [X] T108 [P] Create vignettes/indicator-families.Rmd with 12-family framework guide and roadmap
+- [X] T109 [P] Update vignettes/getting-started.Rmd with v0.2.0 examples (optional family indicators)
+- [X] T110 Build all vignettes and verify they knit successfully
 
 ### 9.2 Demo Data Extension
 
-- [ ] T111 [P] Attempt to create data/massif_demo_temporal.rda with synthetic 2-period data
-- [ ] T112 Document massif_demo_temporal in R/data.R with roxygen2
-- [ ] T113 If massif_demo_temporal infeasible, document limitation in quickstart.md
+- [X] T111 [P] Attempt to create data/massif_demo_temporal.rda with synthetic 2-period data
+- [X] T112 Document massif_demo_temporal in R/data.R with roxygen2
+- [X] T113 If massif_demo_temporal infeasible, document limitation in quickstart.md
 
 ### 9.3 README & Package Documentation
 
-- [ ] T114 [P] Update README.md with v0.2.0 examples (temporal workflow, family scores, radar)
-- [ ] T115 [P] Update README.md features list (4 families, temporal analysis, 12-axis radar)
-- [ ] T116 [P] Create man/nemeton-package.Rd overview with @family tags for indicator groups
+- [X] T114 [P] Update README.md with v0.2.0 examples (temporal workflow, family scores, radar)
+- [X] T115 [P] Update README.md features list (4 families, temporal analysis, 12-axis radar)
+- [X] T116 [P] Create man/nemeton-package.Rd overview with @family tags for indicator groups
 
 ### 9.4 Integration Testing & Quality Assurance
 
-- [ ] T117 Run full test suite: devtools::test() - verify >= 70% coverage target
-- [ ] T118 Run devtools::check() - verify 0 errors, 0 warnings, 0 notes
-- [ ] T119 Test backward compatibility: run all v0.1.0 example workflows
-- [ ] T120 Run lintr::lint_package() - verify code style compliance
-- [ ] T121 Verify all exported functions have complete roxygen2 (@param, @return, @examples, @seealso)
-- [ ] T122 Test package installation from source: R CMD INSTALL --build
+- [X] T117 Run full test suite: devtools::test() - verify >= 70% coverage target
+- [X] T118 Run devtools::check() - verify 0 errors, 0 warnings, 0 notes
+- [X] T119 Test backward compatibility: run all v0.1.0 example workflows
+- [X] T120 Run lintr::lint_package() - verify code style compliance
+- [X] T121 Verify all exported functions have complete roxygen2 (@param, @return, @examples, @seealso)
+- [X] T122 Test package installation from source: R CMD INSTALL --build
 
 ### 9.5 Real Data Validation
 
-- [ ] T123 [P] Test with real cadastral parcel (inst/extdata/360053000AS0090.gpkg)
-- [ ] T124 Validate allometric models against IFN data if available
-- [ ] T125 Create integration test with full 10-indicator workflow in tests/testthat/test-integration-full.R
+- [X] T123 [P] Test with real cadastral parcel (inst/extdata/360053000AS0090.gpkg)
+- [X] T124 Validate allometric models against IFN data if available
+- [X] T125 Create integration test with full 10-indicator workflow in tests/testthat/test-integration-full.R
 
 ### 9.6 i18n Completeness
 
-- [ ] T126 [P] Verify all new messages have FR + EN translations in R/i18n.R
-- [ ] T127 Test language switching: nemeton_set_language("en") / nemeton_set_language("fr")
-- [ ] T128 Verify console output messages in both languages
+- [X] T126 [P] Verify all new messages have FR + EN translations in R/i18n.R
+- [X] T127 Test language switching: nemeton_set_language("en") / nemeton_set_language("fr")
+- [X] T128 Verify console output messages in both languages
 
 ### 9.7 Performance Validation
 
-- [ ] T129 Benchmark temporal workflow: 50 units × 3 periods < 10 min (SC-006)
-- [ ] T130 Benchmark TWI calculation: 100+ units < 2 min (SC-010)
-- [ ] T131 Verify package size < 5 Mo excluding vignettes (constitution requirement)
+- [X] T129 Benchmark temporal workflow: 50 units × 3 periods < 10 min (SC-006)
+- [X] T130 Benchmark TWI calculation: 100+ units < 2 min (SC-010)
+- [X] T131 Verify package size < 5 Mo excluding vignettes (constitution requirement)
 
 ### 9.8 Final Package Checks
 
-- [ ] T132 Run covr::package_coverage() - verify >= 70% target (aim for 80%)
-- [ ] T133 Run goodpractice::gp() for additional quality checks
-- [ ] T134 Review DESCRIPTION: version bump to 0.2.0, update authors, check dependencies
-- [ ] T135 Review NEWS.md: document all v0.2.0 changes (if exists, or create)
+- [X] T132 Run covr::package_coverage() - verify >= 70% target (aim for 80%)
+- [X] T133 Run goodpractice::gp() for additional quality checks
+- [X] T134 Review DESCRIPTION: version bump to 0.2.0, update authors, check dependencies
+- [X] T135 Review NEWS.md: document all v0.2.0 changes (if exists, or create)
 
 **Phase 9 Completion Criteria**:
 - ✅ 2 new vignettes complete and buildable
