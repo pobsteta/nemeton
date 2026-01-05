@@ -71,9 +71,10 @@ Default: 80 (top 20<!-- %)} --></p>
 above threshold to be classified as a hotspot. Default: 3</p></dd>
 
 </dl><p>sf object with original data plus three new columns:
-  - `hotspot_count`: Number of families where parcel ranks above threshold
-  - `hotspot_families`: Comma-separated list of family names above threshold
-  - `is_hotspot`: Logical indicating if parcel meets min_families criterion
+  </p><ul><li><p>hotspot_count: Number of families where parcel ranks above threshold</p></li>
+<li><p>hotspot_families: Comma-separated list of family names above threshold</p></li>
+<li><p>is_hotspot: Logical indicating if parcel meets min_families criterion</p></li>
+</ul>
 
 
 Identifies parcels ranking in the top percentile across multiple ecosystem
@@ -88,7 +89,7 @@ The function identifies multi-criteria hotspots by:
 - Risk mitigation (high vulnerability across fire + storm + drought)
 - Multi-objective optimization (balancing competing services)
 
-Bilingual SupportThis function supports bilingual messages via `nemeton_set_language()`.</p>
+Bilingual SupportThis function supports bilingual messages via `nemeton_set_language()`.
 <p>[compute_family_correlations()], [plot_correlation_matrix()]Other analysis:
 <code><a href="compute_family_correlations.html">compute_family_correlations()</a></code>
 
