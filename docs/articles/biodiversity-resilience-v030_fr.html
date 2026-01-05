@@ -90,62 +90,79 @@ leur intégration dans des workflows multi-familles.</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="famille-b-biodiversité">Famille B : Biodiversité<a class="anchor" aria-label="anchor" href="#famille-b-biodiversit%C3%A9"></a>
+<h2 id="données-de-démonstration">Données de démonstration<a class="anchor" aria-label="anchor" href="#donn%C3%A9es-de-d%C3%A9monstration"></a>
 </h2>
-<p>La famille <strong>Biodiversité</strong> évalue la valeur écologique
-potentielle des parcelles forestières à travers trois dimensions
-complémentaires.</p>
-<div class="section level3">
-<h3 id="b1-protection-réglementaire">B1 : Protection réglementaire<a class="anchor" aria-label="anchor" href="#b1-protection-r%C3%A9glementaire"></a>
-</h3>
-<p>L’indicateur <strong>B1</strong> calcule le pourcentage de surface en
-zones de protection (ZNIEFF, Natura 2000, Parcs Nationaux, etc.).</p>
+<p>Nous utilisons les données <code>massif_demo_units</code> avec
+quelques attributs synthétiques pour illustrer les nouveaux
+indicateurs.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Charger les données de démonstration</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Simuler des zones protégées (dans un cas réel : données INPN)</span></span>
+<span><span class="co"># Ajouter des attributs synthétiques pour les exemples</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">units</span><span class="op">$</span><span class="va">strata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Emergent"</span>, <span class="st">"Dominant"</span>, <span class="st">"Intermediate"</span>, <span class="st">"Suppressed"</span><span class="op">)</span>,</span>
+<span>                       <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">units</span><span class="op">$</span><span class="va">age_class</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Young"</span>, <span class="st">"Intermediate"</span>, <span class="st">"Mature"</span>, <span class="st">"Old"</span>, <span class="st">"Ancient"</span><span class="op">)</span>,</span>
+<span>                          <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">units</span><span class="op">$</span><span class="va">species</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Quercus"</span>, <span class="st">"Fagus"</span>, <span class="st">"Pinus"</span>, <span class="st">"Abies"</span><span class="op">)</span>, <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">units</span><span class="op">$</span><span class="va">age</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">45</span>, <span class="fl">80</span>, <span class="fl">120</span>, <span class="fl">150</span>, <span class="fl">200</span><span class="op">)</span>, <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">units</span><span class="op">$</span><span class="va">height</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">30</span><span class="op">)</span></span>
+<span><span class="va">units</span><span class="op">$</span><span class="va">density</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">0.6</span>, <span class="fl">0.95</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Créer des zones protégées synthétiques</span></span>
+<span><span class="va">bbox</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_bbox.html" class="external-link">st_bbox</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
+<span><span class="va">zone1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_buffer</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_centroid</a></span><span class="op">(</span><span class="va">units</span><span class="op">[</span><span class="fl">2</span>, <span class="op">]</span><span class="op">)</span><span class="op">)</span>, <span class="fl">250</span><span class="op">)</span></span>
+<span><span class="va">zone2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_buffer</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_centroid</a></span><span class="op">(</span><span class="va">units</span><span class="op">[</span><span class="fl">7</span>, <span class="op">]</span><span class="op">)</span><span class="op">)</span>, <span class="fl">400</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">protected_areas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
 <span>  zone_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ZNIEFF_001"</span>, <span class="st">"N2000_042"</span><span class="op">)</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ZNIEFF Type I"</span>, <span class="st">"Natura 2000"</span><span class="op">)</span>,</span>
-<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_buffer</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_centroid</a></span><span class="op">(</span><span class="va">units</span><span class="op">[</span><span class="fl">2</span>, <span class="op">]</span><span class="op">)</span>, <span class="fl">300</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_buffer</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_centroid</a></span><span class="op">(</span><span class="va">units</span><span class="op">[</span><span class="fl">7</span>, <span class="op">]</span><span class="op">)</span>, <span class="fl">500</span><span class="op">)</span>,</span>
-<span>    crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ZNIEFF"</span>, <span class="st">"Natura2000"</span><span class="op">)</span>,</span>
+<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">zone1</span>, <span class="va">zone2</span><span class="op">)</span>,</span>
+<span>  crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Calculer B1 - % de surface protégée</span></span>
-<span><span class="va">result_b1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection</a></span><span class="op">(</span></span>
+<span><span class="co"># Créer un corridor écologique synthétique</span></span>
+<span><span class="va">corridor_geom</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_linestring</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"xmin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"xmax"</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"ymin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"ymax"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"ymin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"ymax"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">corridor</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
+<span>  corridor_id <span class="op">=</span> <span class="st">"TVB_001"</span>,</span>
+<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span><span class="va">corridor_geom</span>, crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="famille-b-biodiversité">Famille B : Biodiversité<a class="anchor" aria-label="anchor" href="#famille-b-biodiversit%C3%A9"></a>
+</h2>
+<div class="section level3">
+<h3 id="b1-protection-réglementaire">B1 : Protection réglementaire<a class="anchor" aria-label="anchor" href="#b1-protection-r%C3%A9glementaire"></a>
+</h3>
+<p>L’indicateur <strong>B1</strong> calcule le pourcentage de surface en
+zones de protection.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  protected_areas <span class="op">=</span> <span class="va">protected_areas</span>,</span>
 <span>  source <span class="op">=</span> <span class="st">"local"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_b1</span><span class="op">$</span><span class="va">B1</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;    0.00    0.00   15.30   28.45   42.10   95.70</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">B1</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;    0.00    0.00    0.00   22.46   18.43  100.00</span></span></code></pre></div>
 <p><strong>Interprétation</strong> : Les parcelles avec B1 &gt; 50%
-bénéficient d’une protection réglementaire significative.</p>
+bénéficient d’une protection significative.</p>
 </div>
 <div class="section level3">
 <h3 id="b2-diversité-structurelle">B2 : Diversité structurelle<a class="anchor" aria-label="anchor" href="#b2-diversit%C3%A9-structurelle"></a>
 </h3>
 <p>L’indicateur <strong>B2</strong> mesure la diversité de Shannon à
-travers les strates verticales, classes d’âge et essences.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Ajouter des attributs de diversité structurelle</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">strata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Emergent"</span>, <span class="st">"Dominant"</span>, <span class="st">"Intermediate"</span>, <span class="st">"Suppressed"</span><span class="op">)</span>,</span>
-<span>                       <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">age_class</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Young"</span>, <span class="st">"Intermediate"</span>, <span class="st">"Mature"</span>, <span class="st">"Old"</span>, <span class="st">"Ancient"</span><span class="op">)</span>,</span>
-<span>                          <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">species</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Quercus"</span>, <span class="st">"Fagus"</span>, <span class="st">"Pinus"</span>, <span class="st">"Abies"</span><span class="op">)</span>,</span>
-<span>                        <span class="fl">10</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer B2 - Indice de diversité structurelle</span></span>
-<span><span class="va">result_b2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
+travers les strates, âges et essences.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
 <span>  strata_field <span class="op">=</span> <span class="st">"strata"</span>,</span>
 <span>  age_class_field <span class="op">=</span> <span class="st">"age_class"</span>,</span>
 <span>  species_field <span class="op">=</span> <span class="st">"species"</span>,</span>
@@ -153,349 +170,269 @@ travers les strates verticales, classes d’âge et essences.</p>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>strata <span class="op">=</span> <span class="fl">0.4</span>, age <span class="op">=</span> <span class="fl">0.3</span>, species <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_b2</span><span class="op">$</span><span class="va">B2</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   12.40   34.20   52.80   51.30   68.50   89.10</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : B2 &gt; 60 indique une forte
-hétérogénéité structurelle favorable à la biodiversité.</p>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">B2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;    84.0    85.0    85.5    85.5    86.0    87.0</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="b3-connectivité-écologique">B3 : Connectivité écologique<a class="anchor" aria-label="anchor" href="#b3-connectivit%C3%A9-%C3%A9cologique"></a>
 </h3>
 <p>L’indicateur <strong>B3</strong> évalue la proximité aux corridors
-écologiques (Trame Verte et Bleue).</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Simuler un corridor TVB (dans un cas réel : données régionales)</span></span>
-<span><span class="va">bbox</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_bbox.html" class="external-link">st_bbox</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
-<span><span class="va">corridor</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
-<span>  corridor_id <span class="op">=</span> <span class="st">"TVB_001"</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"Corridor forestier"</span>,</span>
-<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_linestring</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"xmin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"xmax"</span><span class="op">]</span><span class="op">)</span>,</span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"ymin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"ymax"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"ymin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"ymax"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="op">)</span><span class="op">)</span>,</span>
-<span>    crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer B3 - Distance aux corridors</span></span>
-<span><span class="va">result_b3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
+écologiques.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
 <span>  corridors <span class="op">=</span> <span class="va">corridor</span>,</span>
 <span>  distance_method <span class="op">=</span> <span class="st">"edge"</span>,</span>
 <span>  max_distance <span class="op">=</span> <span class="fl">3000</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_b3</span><span class="op">$</span><span class="va">B3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   125.3   487.2   892.5  1024.8  1456.1  2897.4</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : B3 &lt; 500m indique une forte
-connectivité écologique.</p>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">B3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   721.7  1323.4  1566.1  1559.2  1927.8  2242.6</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="famille-r-risques-résilience">Famille R : Risques &amp; Résilience<a class="anchor" aria-label="anchor" href="#famille-r-risques-r%C3%A9silience"></a>
 </h2>
-<p>La famille <strong>Risques</strong> quantifie la vulnérabilité aux
-perturbations majeures (incendies, tempêtes, sécheresse).</p>
 <div class="section level3">
-<h3 id="r1-risque-incendie">R1 : Risque incendie<a class="anchor" aria-label="anchor" href="#r1-risque-incendie"></a>
+<h3 id="r1-r2-r3-risques-combinés">R1, R2, R3 : Risques combinés<a class="anchor" aria-label="anchor" href="#r1-r2-r3-risques-combin%C3%A9s"></a>
 </h3>
-<p>L’indicateur <strong>R1</strong> combine pente, essence et climat
-pour évaluer la susceptibilité aux feux de forêt.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Données requises : pente (DEM), essence, climat</span></span>
-<span><span class="va">slope_raster</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/dem_slope.tif"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">species</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Pinus"</span>, <span class="st">"Quercus"</span>, <span class="st">"Fagus"</span>, <span class="st">"Pinus"</span>, <span class="st">"Abies"</span>,</span>
-<span>                   <span class="st">"Pinus"</span>, <span class="st">"Quercus"</span>, <span class="st">"Fagus"</span>, <span class="st">"Pinus"</span>, <span class="st">"Quercus"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer R1 - Indice de risque incendie</span></span>
-<span><span class="va">result_r1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_risk_fire.html">indicator_risk_fire</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  slope <span class="op">=</span> <span class="va">slope_raster</span>,</span>
-<span>  species_field <span class="op">=</span> <span class="st">"species"</span>,</span>
-<span>  climate <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Optionnel : données Météo-France</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_r1</span><span class="op">$</span><span class="va">R1</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   18.20   32.50   45.60   47.80   62.30   85.40</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : R1 &gt; 60 indique une
-vulnérabilité élevée nécessitant des mesures préventives
-(débroussaillage, coupures).</p>
-</div>
-<div class="section level3">
-<h3 id="r2-risque-tempête">R2 : Risque tempête<a class="anchor" aria-label="anchor" href="#r2-risque-temp%C3%AAte"></a>
-</h3>
-<p>L’indicateur <strong>R2</strong> évalue la vulnérabilité au chablis
-en fonction de la hauteur, densité et exposition.</p>
+<p>Les indicateurs de risque évaluent les vulnérabilités aux
+perturbations. <em>Note: Dans cette vignette, nous simulons les valeurs.
+Pour un usage réel, utilisez les fonctions
+<code><a href="../reference/indicator_risk_fire.html">indicator_risk_fire()</a></code>, <code><a href="../reference/indicator_risk_storm.html">indicator_risk_storm()</a></code>
+et <code><a href="../reference/indicator_risk_drought.html">indicator_risk_drought()</a></code> avec des données DEM et
+climatiques.</em></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Données requises : DEM (pour exposition), hauteur, densité</span></span>
-<span><span class="va">dem_raster</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/dem.tif"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Simulation des indicateurs de risque</span></span>
+<span><span class="co"># (Dans un cas réel, utiliser les fonctions avec DEM et données climatiques)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">43</span><span class="op">)</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">40</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">20</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>  <span class="co"># Risque incendie</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">45</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">25</span>, <span class="fl">35</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>  <span class="co"># Vulnérabilité tempête</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">35</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">15</span>, <span class="fl">40</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>  <span class="co"># Stress hydrique</span></span>
 <span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">height</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">35</span><span class="op">)</span>  <span class="co"># Hauteur dominante (m)</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">density</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span><span class="op">)</span>  <span class="co"># Densité de couvert (0-1)</span></span>
+<span><span class="co"># Les pins en pente ont plus de risque incendie</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R1</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">species</span> <span class="op">==</span> <span class="st">"Pinus"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">R1</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">species</span> <span class="op">==</span> <span class="st">"Pinus"</span><span class="op">]</span> <span class="op">*</span> <span class="fl">1.3</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">result</span><span class="op">$</span><span class="va">R1</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Calculer R2 - Vulnérabilité aux tempêtes</span></span>
-<span><span class="va">result_r2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_risk_storm.html">indicator_risk_storm</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  dem <span class="op">=</span> <span class="va">dem_raster</span>,</span>
-<span>  height_field <span class="op">=</span> <span class="st">"height"</span>,</span>
-<span>  density_field <span class="op">=</span> <span class="st">"density"</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># Les peuplements hauts/denses ont plus de risque tempête</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R2</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">R2</span> <span class="op">*</span> <span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">height</span> <span class="op">/</span> <span class="fl">22</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">density</span> <span class="op">/</span> <span class="fl">0.8</span><span class="op">)</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="fl">100</span>, <span class="va">result</span><span class="op">$</span><span class="va">R2</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_r2</span><span class="op">$</span><span class="va">R2</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   22.10   38.70   51.20   52.40   66.80   89.30</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : R2 &gt; 70 signale des peuplements
-très vulnérables (crêtes exposées, arbres de grande taille).</p>
-</div>
-<div class="section level3">
-<h3 id="r3-stress-hydrique">R3 : Stress hydrique<a class="anchor" aria-label="anchor" href="#r3-stress-hydrique"></a>
-</h3>
-<p>L’indicateur <strong>R3</strong> combine disponibilité en eau (TWI)
-et tolérance à la sécheresse des essences.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Utiliser W3 (TWI) calculé précédemment</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">W3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">5</span>, <span class="fl">15</span><span class="op">)</span>  <span class="co"># TWI (0-20)</span></span>
-<span></span>
-<span><span class="co"># Calculer R3 - Indice de stress hydrique</span></span>
-<span><span class="va">result_r3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_risk_drought.html">indicator_risk_drought</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  twi_field <span class="op">=</span> <span class="st">"W3"</span>,</span>
-<span>  species_field <span class="op">=</span> <span class="st">"species"</span>,</span>
-<span>  climate <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Optionnel : précipitations</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_r3</span><span class="op">$</span><span class="va">R3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   15.60   29.40   42.80   45.20   58.70   78.90</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : R3 &gt; 60 indique un stress
-hydrique potentiel nécessitant une adaptation des essences.</p>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"R1"</span>, <span class="st">"R2"</span>, <span class="st">"R3"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;        R1              R2              R3                 geometry </span></span>
+<span><span class="co">#&gt;  Min.   :29.15   Min.   :19.16   Min.   :20.55   POLYGON      :10  </span></span>
+<span><span class="co">#&gt;  1st Qu.:37.82   1st Qu.:28.72   1st Qu.:31.86   epsg:2154    : 0  </span></span>
+<span><span class="co">#&gt;  Median :46.24   Median :30.68   Median :47.03   +proj=lcc ...: 0  </span></span>
+<span><span class="co">#&gt;  Mean   :48.88   Mean   :38.88   Mean   :48.04                     </span></span>
+<span><span class="co">#&gt;  3rd Qu.:54.94   3rd Qu.:47.93   3rd Qu.:65.54                     </span></span>
+<span><span class="co">#&gt;  Max.   :82.70   Max.   :71.67   Max.   :73.04</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="famille-t-dynamique-temporelle">Famille T : Dynamique Temporelle<a class="anchor" aria-label="anchor" href="#famille-t-dynamique-temporelle"></a>
 </h2>
-<p>La famille <strong>Temps</strong> caractérise l’ancienneté et les
-trajectoires d’évolution des forêts.</p>
 <div class="section level3">
-<h3 id="t1-ancienneté-des-peuplements">T1 : Ancienneté des peuplements<a class="anchor" aria-label="anchor" href="#t1-anciennet%C3%A9-des-peuplements"></a>
+<h3 id="t1-ancienneté">T1 : Ancienneté<a class="anchor" aria-label="anchor" href="#t1-anciennet%C3%A9"></a>
 </h3>
-<p>L’indicateur <strong>T1</strong> estime l’âge des forêts à partir de
-données historiques (BD Forêt, Cassini).</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Ajouter des données d'ancienneté</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">age</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">45</span>, <span class="fl">120</span>, <span class="fl">200</span>, <span class="fl">35</span>, <span class="fl">150</span>, <span class="fl">80</span>, <span class="fl">250</span>, <span class="fl">65</span>, <span class="fl">180</span>, <span class="fl">90</span><span class="op">)</span>  <span class="co"># Années</span></span>
-<span></span>
-<span><span class="co"># Calculer T1 - Ancienneté</span></span>
-<span><span class="va">result_t1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_temporal_age.html">indicator_temporal_age</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  age_field <span class="op">=</span> <span class="st">"age"</span>,</span>
-<span>  ancient_threshold <span class="op">=</span> <span class="fl">150</span>  <span class="co"># Forêts anciennes &gt; 150 ans</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_t1</span><span class="op">$</span><span class="va">T1</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;    35.0    68.8   100.0   121.5   172.5   250.0</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : T1 &gt; 150 ans identifie des
-forêts anciennes à haute valeur patrimoniale.</p>
+<p>L’indicateur <strong>T1</strong> mesure l’âge des peuplements.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Utiliser les âges déjà définis</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">T1</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">age</span>  <span class="co"># Directement l'âge en années</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">T1</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;    45.0    80.0   100.0   113.5   150.0   200.0</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="t2-changements-doccupation-du-sol">T2 : Changements d’occupation du sol<a class="anchor" aria-label="anchor" href="#t2-changements-doccupation-du-sol"></a>
+<h3 id="t2-changements-doccupation">T2 : Changements d’occupation<a class="anchor" aria-label="anchor" href="#t2-changements-doccupation"></a>
 </h3>
-<p>L’indicateur <strong>T2</strong> détecte les transformations
-d’occupation (Corine Land Cover, RPG).</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Simuler des données Corine Land Cover (1990 vs 2020)</span></span>
-<span><span class="va">lc_1990</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/clc_1990.tif"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">lc_2020</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/clc_2020.tif"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer T2 - Taux de changement</span></span>
-<span><span class="va">result_t2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_temporal_change.html">indicator_temporal_change</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  lc_t1 <span class="op">=</span> <span class="va">lc_1990</span>,</span>
-<span>  lc_t2 <span class="op">=</span> <span class="va">lc_2020</span>,</span>
-<span>  years_elapsed <span class="op">=</span> <span class="fl">30</span>,</span>
-<span>  interpretation <span class="op">=</span> <span class="st">"stability"</span>  <span class="co"># "stability" ou "dynamism"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_t2</span><span class="op">$</span><span class="va">T2</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;    0.00    2.30    8.50   12.40   18.70   45.20</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : T2 &lt; 5% (stable) vs T2 &gt; 20%
-(forte dynamique de transformation).</p>
+<p>L’indicateur <strong>T2</strong> détecte les transformations.
+<em>Note: Utiliser <code><a href="../reference/indicator_temporal_change.html">indicator_temporal_change()</a></code> avec des
+rasters Corine Land Cover multi-dates pour un usage réel.</em></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Simulation de taux de changement (%/an)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">44</span><span class="op">)</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">T2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">0</span>, <span class="fl">25</span><span class="op">)</span></span>
+<span><span class="co"># Les forêts anciennes sont plus stables</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">T2</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">T1</span> <span class="op">&gt;</span> <span class="fl">150</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">T2</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">T1</span> <span class="op">&gt;</span> <span class="fl">150</span><span class="op">]</span> <span class="op">*</span> <span class="fl">0.3</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">T2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;  0.8048  1.9630  9.1258  8.1851 12.3251 18.5854</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="famille-a-air-microclimat">Famille A : Air &amp; Microclimat<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat"></a>
 </h2>
-<p>La famille <strong>Air</strong> évalue le rôle des forêts dans la
-régulation climatique locale et la qualité de l’air.</p>
 <div class="section level3">
 <h3 id="a1-couverture-arborée">A1 : Couverture arborée<a class="anchor" aria-label="anchor" href="#a1-couverture-arbor%C3%A9e"></a>
 </h3>
-<p>L’indicateur <strong>A1</strong> calcule le pourcentage de couverture
-arborée dans un buffer de 1 km.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Données requises : raster de végétation haute résolution</span></span>
-<span><span class="va">vegetation_raster</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/vegetation.tif"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer A1 - % couverture arborée dans buffer 1km</span></span>
-<span><span class="va">result_a1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_air_coverage.html">indicator_air_coverage</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  vegetation <span class="op">=</span> <span class="va">vegetation_raster</span>,</span>
-<span>  buffer_distance <span class="op">=</span> <span class="fl">1000</span>,</span>
-<span>  tree_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>  <span class="co"># Codes des classes arborées</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_a1</span><span class="op">$</span><span class="va">A1</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   32.40   54.80   68.20   65.30   78.50   92.10</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : A1 &gt; 70% indique un fort
-potentiel de régulation thermique urbaine.</p>
+<p>L’indicateur <strong>A1</strong> mesure le % de couverture arborée
+dans un buffer de 1km. <em>Note: Utiliser
+<code><a href="../reference/indicator_air_coverage.html">indicator_air_coverage()</a></code> avec un raster de végétation pour
+un usage réel.</em></p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Simulation de couverture dans buffer 1km</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">45</span><span class="op">)</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">A1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">40</span>, <span class="fl">95</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">A1</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   40.29   52.71   56.92   57.56   60.45   74.84</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="a2-qualité-de-lair">A2 : Qualité de l’air<a class="anchor" aria-label="anchor" href="#a2-qualit%C3%A9-de-lair"></a>
 </h3>
-<p>L’indicateur <strong>A2</strong> intègre des données ATMO ou calcule
-un proxy basé sur la distance aux sources de pollution.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Option 1 : Données ATMO (si disponibles)</span></span>
-<span><span class="co"># air_quality_data &lt;- ...</span></span>
-<span></span>
-<span><span class="co"># Option 2 : Proxy (distance aux routes/industries)</span></span>
-<span><span class="va">pollution_sources</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
-<span>  source_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Route_N7"</span>, <span class="st">"Zone_industrielle"</span><span class="op">)</span>,</span>
-<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_point</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"xmin"</span><span class="op">]</span> <span class="op">-</span> <span class="fl">500</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"ymin"</span><span class="op">]</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"ymax"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_point</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">[</span><span class="st">"xmax"</span><span class="op">]</span> <span class="op">+</span> <span class="fl">800</span>, <span class="va">bbox</span><span class="op">[</span><span class="st">"ymax"</span><span class="op">]</span> <span class="op">+</span> <span class="fl">200</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    crs <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer A2 - Indice qualité de l'air</span></span>
-<span><span class="va">result_a2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_air_quality.html">indicator_air_quality</a></span><span class="op">(</span></span>
-<span>  <span class="va">units</span>,</span>
-<span>  air_quality_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  pollution_sources <span class="op">=</span> <span class="va">pollution_sources</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"proxy"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result_a2</span><span class="op">$</span><span class="va">A2</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.</span></span>
-<span><span class="co">#&gt;   45.20   62.30   74.50   71.80   84.60   95.30</span></span></code></pre></div>
-<p><strong>Interprétation</strong> : A2 &gt; 75 indique un air de bonne
-qualité éloigné des sources de pollution.</p>
+<p>L’indicateur <strong>A2</strong> évalue la qualité de l’air.
+<em>Note: Utiliser <code><a href="../reference/indicator_air_quality.html">indicator_air_quality()</a></code> avec des données
+ATMO ou sources de pollution pour un usage réel.</em></p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Simulation d'indice qualité air</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">46</span><span class="op">)</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">A2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">55</span>, <span class="fl">95</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">A2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   62.37   65.76   78.55   77.23   87.91   92.94</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="workflow-multi-familles-v0-3-0">Workflow Multi-Familles v0.3.0<a class="anchor" aria-label="anchor" href="#workflow-multi-familles-v0-3-0"></a>
 </h2>
-<p>Combinaison des 4 nouvelles familles (B, R, T, A) avec les 5
-existantes (C, W, F, L, T-analysis).</p>
 <div class="section level3">
-<h3 id="pipeline-complet">Pipeline complet<a class="anchor" aria-label="anchor" href="#pipeline-complet"></a>
+<h3 id="normalisation-et-agrégation">Normalisation et agrégation<a class="anchor" aria-label="anchor" href="#normalisation-et-agr%C3%A9gation"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Pipeline intégré : 9 familles d'indicateurs</span></span>
-<span><span class="va">result_full</span> <span class="op">&lt;-</span> <span class="va">units</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co"># Biodiversité (B)</span></span>
-<span>  <span class="fu"><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection</a></span><span class="op">(</span><span class="va">protected_areas</span>, source <span class="op">=</span> <span class="st">"local"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure</a></span><span class="op">(</span><span class="st">"strata"</span>, <span class="st">"age_class"</span>, <span class="st">"species"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity</a></span><span class="op">(</span><span class="va">corridor</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co"># Risques (R)</span></span>
-<span>  <span class="fu"><a href="../reference/indicator_risk_fire.html">indicator_risk_fire</a></span><span class="op">(</span><span class="va">slope_raster</span>, species_field <span class="op">=</span> <span class="st">"species"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/indicator_risk_storm.html">indicator_risk_storm</a></span><span class="op">(</span><span class="va">dem_raster</span>, <span class="st">"height"</span>, <span class="st">"density"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/indicator_risk_drought.html">indicator_risk_drought</a></span><span class="op">(</span>twi_field <span class="op">=</span> <span class="st">"W3"</span>, species_field <span class="op">=</span> <span class="st">"species"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co"># Temporel (T)</span></span>
-<span>  <span class="fu"><a href="../reference/indicator_temporal_age.html">indicator_temporal_age</a></span><span class="op">(</span>age_field <span class="op">=</span> <span class="st">"age"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/indicator_temporal_change.html">indicator_temporal_change</a></span><span class="op">(</span><span class="va">lc_1990</span>, <span class="va">lc_2020</span>, years_elapsed <span class="op">=</span> <span class="fl">30</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co"># Air (A)</span></span>
-<span>  <span class="fu"><a href="../reference/indicator_air_coverage.html">indicator_air_coverage</a></span><span class="op">(</span><span class="va">vegetation_raster</span>, buffer_distance <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/indicator_air_quality.html">indicator_air_quality</a></span><span class="op">(</span>pollution_sources <span class="op">=</span> <span class="va">pollution_sources</span>, method <span class="op">=</span> <span class="st">"proxy"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co"># Normalisation</span></span>
-<span>  <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
-<span>    indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B1"</span>, <span class="st">"B2"</span>, <span class="st">"B3"</span>, <span class="st">"R1"</span>, <span class="st">"R2"</span>, <span class="st">"R3"</span>,</span>
-<span>                   <span class="st">"T1"</span>, <span class="st">"T2"</span>, <span class="st">"A1"</span>, <span class="st">"A2"</span><span class="op">)</span>,</span>
-<span>    method <span class="op">=</span> <span class="st">"minmax"</span></span>
-<span>  <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co"># Agrégation par famille</span></span>
-<span>  <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
-<span>    family_codes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="st">"R"</span>, <span class="st">"T"</span>, <span class="st">"A"</span><span class="op">)</span>,</span>
-<span>    method <span class="op">=</span> <span class="st">"mean"</span></span>
-<span>  <span class="op">)</span></span>
+<p>Normalisons tous les indicateurs et créons les indices par
+famille.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Normaliser tous les nouveaux indicateurs</span></span>
+<span><span class="va">result_norm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B1"</span>, <span class="st">"B2"</span>, <span class="st">"B3"</span>, <span class="st">"R1"</span>, <span class="st">"R2"</span>, <span class="st">"R3"</span>, <span class="st">"T1"</span>, <span class="st">"T2"</span>, <span class="st">"A1"</span>, <span class="st">"A2"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"minmax"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Afficher les indices composites par famille</span></span>
-<span><span class="va">result_full</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="co"># Créer les indices composites par famille</span></span>
+<span><span class="va">result_norm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
+<span>  <span class="va">result_norm</span>,</span>
+<span>  family_codes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="st">"R"</span>, <span class="st">"T"</span>, <span class="st">"A"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"mean"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Afficher les indices par famille</span></span>
+<span><span class="va">result_norm</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_B</span>, <span class="va">family_R</span>, <span class="va">family_T</span>, <span class="va">family_A</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   parcel_id family_B family_R family_T family_A</span></span>
-<span><span class="co">#&gt; 1      P001     68.3     42.1     78.5     82.1</span></span>
-<span><span class="co">#&gt; 2      P002     85.7     38.4     92.3     75.4</span></span>
-<span><span class="co">#&gt; 3      P003     52.1     65.2     45.8     68.9</span></span></code></pre></div>
+<span><span class="co">#&gt; 1       P01 39.80832 60.45303 61.29032 50.00000</span></span>
+<span><span class="co">#&gt; 2       P02 68.82910 60.02550 17.62303 28.71851</span></span>
+<span><span class="co">#&gt; 3       P03 49.84050 39.18232 44.71207 44.90653</span></span>
+<span><span class="co">#&gt; 4       P04 29.08790 22.14935 62.47047 40.25588</span></span>
+<span><span class="co">#&gt; 5       P05 24.27117 34.80352 11.29032 30.80376</span></span>
+<span><span class="co">#&gt; 6       P06 55.55556 42.09048 41.69098 54.08198</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="agrégation-conservative-méthode-min">Agrégation conservative (méthode “min”)<a class="anchor" aria-label="anchor" href="#agr%C3%A9gation-conservative-m%C3%A9thode-min"></a>
 </h3>
-<p>Pour l’évaluation des risques, utiliser la méthode
-<strong>“min”</strong> (pire cas) :</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>Pour les risques, utilisons la méthode <strong>“min”</strong> (pire
+cas) :</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Agrégation conservative pour la famille Risques</span></span>
-<span><span class="va">result_risk_min</span> <span class="op">&lt;-</span> <span class="va">result_full</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
-<span>    family_codes <span class="op">=</span> <span class="st">"R"</span>,</span>
-<span>    method <span class="op">=</span> <span class="st">"min"</span>  <span class="co"># Score = pire indicateur (le plus vulnérable)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">result_risk_min</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
+<span>  <span class="va">result_norm</span>,</span>
+<span>  family_codes <span class="op">=</span> <span class="st">"R"</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"min"</span>  <span class="co"># Score = pire indicateur</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Comparer méthodes "mean" vs "min"</span></span>
-<span><span class="va">result_full</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="va">result_norm</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">family_R</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    risk_mean <span class="op">=</span> <span class="op">(</span><span class="va">R1_norm</span> <span class="op">+</span> <span class="va">R2_norm</span> <span class="op">+</span> <span class="va">R3_norm</span><span class="op">)</span> <span class="op">/</span> <span class="fl">3</span>,</span>
 <span>    risk_min <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">risk_mean</span>, <span class="va">risk_min</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   parcel_id risk_mean risk_min R1_norm R2_norm R3_norm</span></span>
-<span><span class="co">#&gt; 1      P001      54.2     32.1    65.3    32.1    65.2</span></span>
-<span><span class="co">#&gt; 2      P002      72.8     68.4    78.2    68.4    71.8</span></span></code></pre></div>
+<span></span>
+<span><span class="va">comparison</span></span>
+<span><span class="co">#&gt;   parcel_id   R1_norm   R2_norm   R3_norm family_R  risk_min</span></span>
+<span><span class="co">#&gt; 1       P01 28.205045  53.15405 100.00000 60.45303 28.205045</span></span>
+<span><span class="co">#&gt; 2       P02 67.956914  21.54089  90.57869 60.02550 21.540886</span></span>
+<span><span class="co">#&gt; 3       P03  1.120893 100.00000  16.42606 39.18232  1.120893</span></span>
+<span><span class="co">#&gt; 4       P04 48.780961  17.66709   0.00000 22.14935  0.000000</span></span>
+<span><span class="co">#&gt; 5       P05 12.187465  55.34306  36.88004 34.80352 12.187465</span></span>
+<span><span class="co">#&gt; 6       P06 33.620254  77.29592  15.35528 42.09048 15.355282</span></span></code></pre></div>
 <p><strong>Interprétation</strong> : La méthode “min” identifie le
-facteur limitant (ici P001 vulnérable aux tempêtes).</p>
+facteur limitant (risque le plus élevé).</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="visualisation-radar-multi-axes">Visualisation Radar Multi-Axes<a class="anchor" aria-label="anchor" href="#visualisation-radar-multi-axes"></a>
 </h2>
 <div class="section level3">
-<h3 id="radar-à-9-familles-mode-family">Radar à 9 familles (mode “family”)<a class="anchor" aria-label="anchor" href="#radar-%C3%A0-9-familles-mode-family"></a>
+<h3 id="radar-à-4-familles-nouvelles-v0-3-0">Radar à 4 familles (nouvelles v0.3.0)<a class="anchor" aria-label="anchor" href="#radar-%C3%A0-4-familles-nouvelles-v0-3-0"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Radar pour une parcelle (9 familles)</span></span>
+<p>Visualisons le profil écosystémique d’une parcelle avec les 4
+nouvelles familles :</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Radar pour une parcelle (4 nouvelles familles)</span></span>
 <span><span class="fu"><a href="../reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span></span>
-<span>  <span class="va">result_full</span>,</span>
+<span>  <span class="va">result_norm</span>,</span>
 <span>  unit_id <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  mode <span class="op">=</span> <span class="st">"family"</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Profil écosystémique - Parcelle P001"</span></span>
+<span>  title <span class="op">=</span> <span class="st">"Profil v0.3.0 - Parcelle 1 (nouvelles familles)"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p><img src="biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
-<h3 id="comparaison-de-parcelles">Comparaison de parcelles<a class="anchor" aria-label="anchor" href="#comparaison-de-parcelles"></a>
+<h3 id="radar-complet-avec-toutes-les-familles-disponibles">Radar complet avec toutes les familles disponibles<a class="anchor" aria-label="anchor" href="#radar-complet-avec-toutes-les-familles-disponibles"></a>
 </h3>
-<p>Nouveau en v0.3.0 : comparer plusieurs parcelles simultanément.</p>
+<p>Pour voir l’ensemble des services écosystémiques, ajoutons aussi les
+familles v0.2.0 existantes :</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Ajouter quelques indicateurs des familles existantes pour démonstration</span></span>
+<span><span class="va">result_norm</span><span class="op">$</span><span class="va">C1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">40</span>, <span class="fl">90</span><span class="op">)</span>  <span class="co"># Carbon biomass</span></span>
+<span><span class="va">result_norm</span><span class="op">$</span><span class="va">W1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">30</span>, <span class="fl">80</span><span class="op">)</span>  <span class="co"># Water network</span></span>
+<span><span class="va">result_norm</span><span class="op">$</span><span class="va">F1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">35</span>, <span class="fl">85</span><span class="op">)</span>  <span class="co"># Soil fertility</span></span>
+<span><span class="va">result_norm</span><span class="op">$</span><span class="va">L1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">25</span>, <span class="fl">75</span><span class="op">)</span>  <span class="co"># Landscape fragmentation</span></span>
+<span></span>
+<span><span class="co"># Normaliser</span></span>
+<span><span class="va">result_norm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
+<span>  <span class="va">result_norm</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C1"</span>, <span class="st">"W1"</span>, <span class="st">"F1"</span>, <span class="st">"L1"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"minmax"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Créer indices familles existantes</span></span>
+<span><span class="va">result_complete</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
+<span>  <span class="va">result_norm</span>,</span>
+<span>  family_codes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C"</span>, <span class="st">"W"</span>, <span class="st">"F"</span>, <span class="st">"L"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"mean"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Radar complet : 8 familles</span></span>
+<span><span class="fu"><a href="../reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span></span>
+<span>  <span class="va">result_complete</span>,</span>
+<span>  unit_id <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  mode <span class="op">=</span> <span class="st">"family"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Profil écosystémique complet - Parcelle 1 (8 familles)"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="672"></p>
+</div>
+<div class="section level3">
+<h3 id="comparaison-de-parcelles-nouveau-v0-3-0">Comparaison de parcelles (NOUVEAU v0.3.0)<a class="anchor" aria-label="anchor" href="#comparaison-de-parcelles-nouveau-v0-3-0"></a>
+</h3>
+<p>La v0.3.0 introduit le <strong>mode comparaison</strong> pour
+visualiser plusieurs parcelles simultanément :</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Comparer 3 parcelles sur le même radar</span></span>
 <span><span class="fu"><a href="../reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span></span>
-<span>  <span class="va">result_full</span>,</span>
-<span>  unit_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  <span class="va">result_complete</span>,</span>
+<span>  unit_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">8</span><span class="op">)</span>,</span>
 <span>  mode <span class="op">=</span> <span class="st">"family"</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Comparaison de 3 parcelles - 9 familles"</span></span>
+<span>  title <span class="op">=</span> <span class="st">"Comparaison de 3 parcelles - 8 familles"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><strong>Utilisation</strong> : Identifier rapidement les parcelles à
-haute biodiversité (famille_B) mais forte vulnérabilité (famille_R).</p>
+<p><img src="biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" alt="" width="672"></p>
+<p><strong>Utilisation</strong> : Identifiez rapidement les parcelles à
+haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 </div>
 </div>
 <div class="section level2">
@@ -505,56 +442,122 @@ haute biodiversité (famille_B) mais forte vulnérabilité (famille_R).</p>
 <h3 id="hotspots-biodiversité-ancienneté">Hotspots biodiversité + ancienneté<a class="anchor" aria-label="anchor" href="#hotspots-biodiversit%C3%A9-anciennet%C3%A9"></a>
 </h3>
 <p>Identifier les forêts anciennes à haute valeur écologique :</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hotspots_bio_ancien</span> <span class="op">&lt;-</span> <span class="va">result_full</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">family_B</span> <span class="op">&gt;</span> <span class="fl">70</span>, <span class="va">T1</span> <span class="op">&gt;</span> <span class="fl">150</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hotspots_bio</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">family_B</span> <span class="op">&gt;</span> <span class="fl">60</span>, <span class="va">T1</span> <span class="op">&gt;</span> <span class="fl">100</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">family_B</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Forêts anciennes à haute biodiversité :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hotspots_bio_ancien</span><span class="op">)</span>, <span class="st">"parcelles\n"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Forêts anciennes à haute biodiversité :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hotspots_bio</span><span class="op">)</span>, <span class="st">"parcelles\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Forêts anciennes à haute biodiversité : 1 parcelles</span></span>
+<span></span>
+<span><span class="co"># Afficher les parcelles identifiées</span></span>
+<span><span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hotspots_bio</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">hotspots_bio</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_B</span>, <span class="va">T1</span>, <span class="va">family_R</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt;   parcel_id family_B  T1 family_R</span></span>
+<span><span class="co">#&gt; 1       P07 90.94836 150 52.78104</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="parcelles-vulnérables-multi-risques">Parcelles vulnérables multi-risques<a class="anchor" aria-label="anchor" href="#parcelles-vuln%C3%A9rables-multi-risques"></a>
 </h3>
 <p>Détecter les parcelles cumulant plusieurs risques :</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">multi_risques</span> <span class="op">&lt;-</span> <span class="va">result_full</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">R1</span> <span class="op">&gt;</span> <span class="fl">60</span> <span class="op">|</span> <span class="va">R2</span> <span class="op">&gt;</span> <span class="fl">70</span> <span class="op">|</span> <span class="va">R3</span> <span class="op">&gt;</span> <span class="fl">60</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">multi_risques</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    nb_risques <span class="op">=</span> <span class="op">(</span><span class="va">R1</span> <span class="op">&gt;</span> <span class="fl">60</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="va">R2</span> <span class="op">&gt;</span> <span class="fl">70</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="va">R3</span> <span class="op">&gt;</span> <span class="fl">60</span><span class="op">)</span></span>
+<span>    nb_risques <span class="op">=</span> <span class="op">(</span><span class="va">R1_norm</span> <span class="op">&gt;</span> <span class="fl">60</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="va">R2_norm</span> <span class="op">&gt;</span> <span class="fl">60</span><span class="op">)</span> <span class="op">+</span> <span class="op">(</span><span class="va">R3_norm</span> <span class="op">&gt;</span> <span class="fl">60</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">nb_risques</span> <span class="op">&gt;=</span> <span class="fl">2</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">nb_risques</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Parcelles à risques multiples :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">multi_risques</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Parcelles à risques multiples (≥2) :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">multi_risques</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Parcelles à risques multiples (≥2) : 1</span></span>
+<span></span>
+<span><span class="co"># Détail des risques</span></span>
+<span><span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">multi_risques</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">multi_risques</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">nb_risques</span>, <span class="va">family_R</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt;   parcel_id  R1_norm  R2_norm  R3_norm nb_risques family_R</span></span>
+<span><span class="co">#&gt; 1       P02 67.95691 21.54089 90.57869          2  60.0255</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="services-climatiques-urbains">Services climatiques urbains<a class="anchor" aria-label="anchor" href="#services-climatiques-urbains"></a>
 </h3>
-<p>Évaluer le potentiel de régulation climatique péri-urbain :</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">services_climat</span> <span class="op">&lt;-</span> <span class="va">result_full</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">A1</span> <span class="op">&gt;</span> <span class="fl">70</span>, <span class="va">A2</span> <span class="op">&gt;</span> <span class="fl">75</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<p>Évaluer le potentiel de régulation climatique :</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">services_climat</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">A1</span> <span class="op">&gt;</span> <span class="fl">70</span>, <span class="va">A2</span> <span class="op">&gt;</span> <span class="fl">70</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">family_A</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Parcelles à fort potentiel climatique :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">services_climat</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Parcelles à fort potentiel climatique :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">services_climat</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Parcelles à fort potentiel climatique : 1</span></span>
+<span></span>
+<span><span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">services_climat</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">services_climat</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">A1</span>, <span class="va">A2</span>, <span class="va">family_A</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt;   parcel_id       A1       A2 family_A</span></span>
+<span><span class="co">#&gt; 1       P08 70.51631 78.73541 70.51087</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="cartographie-multi-critères">Cartographie Multi-Critères<a class="anchor" aria-label="anchor" href="#cartographie-multi-crit%C3%A8res"></a>
 </h2>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Carte des indices composites (familles B, R, T, A)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
+<p>Visualisons les indices composites pour les nouvelles familles :</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">p_bio</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_full</span>, indicator <span class="op">=</span> <span class="st">"family_B"</span>,</span>
+<span><span class="va">p_bio</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>, indicator <span class="op">=</span> <span class="st">"family_B"</span>,</span>
 <span>                              palette <span class="op">=</span> <span class="st">"Greens"</span>, title <span class="op">=</span> <span class="st">"Biodiversité (B)"</span><span class="op">)</span></span>
-<span><span class="va">p_risk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_full</span>, indicator <span class="op">=</span> <span class="st">"family_R"</span>,</span>
+<span><span class="va">p_risk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>, indicator <span class="op">=</span> <span class="st">"family_R"</span>,</span>
 <span>                               palette <span class="op">=</span> <span class="st">"YlOrRd"</span>, title <span class="op">=</span> <span class="st">"Risques (R)"</span><span class="op">)</span></span>
-<span><span class="va">p_temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_full</span>, indicator <span class="op">=</span> <span class="st">"family_T"</span>,</span>
-<span>                               palette <span class="op">=</span> <span class="st">"Blues"</span>, title <span class="op">=</span> <span class="st">"Ancienneté (T)"</span><span class="op">)</span></span>
-<span><span class="va">p_air</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_full</span>, indicator <span class="op">=</span> <span class="st">"family_A"</span>,</span>
-<span>                              palette <span class="op">=</span> <span class="st">"PuBuGn"</span>, title <span class="op">=</span> <span class="st">"Air &amp; Climat (A)"</span><span class="op">)</span></span>
+<span><span class="va">p_temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>, indicator <span class="op">=</span> <span class="st">"T1"</span>,</span>
+<span>                               palette <span class="op">=</span> <span class="st">"Blues"</span>, title <span class="op">=</span> <span class="st">"Ancienneté (T1)"</span><span class="op">)</span></span>
+<span><span class="va">p_air</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>, indicator <span class="op">=</span> <span class="st">"family_A"</span>,</span>
+<span>                              palette <span class="op">=</span> <span class="st">"viridis"</span>, title <span class="op">=</span> <span class="st">"Air &amp; Climat (A)"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="op">(</span><span class="va">p_bio</span> <span class="op">+</span> <span class="va">p_risk</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="va">p_temp</span> <span class="op">+</span> <span class="va">p_air</span><span class="op">)</span></span></code></pre></div>
+<p><img src="biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-20-1.png" class="r-plt" alt="" width="672"></p>
+</div>
+<div class="section level2">
+<h2 id="tableau-récapitulatif">Tableau récapitulatif<a class="anchor" aria-label="anchor" href="#tableau-r%C3%A9capitulatif"></a>
+</h2>
+<p>Vue d’ensemble des indicateurs calculés :</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Résumé des 10 nouveaux indicateurs v0.3.0</span></span>
+<span><span class="va">summary_table</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>,</span>
+<span>         <span class="co"># Biodiversité</span></span>
+<span>         <span class="va">B1</span>, <span class="va">B2</span>, <span class="va">B3</span>, <span class="va">family_B</span>,</span>
+<span>         <span class="co"># Risques</span></span>
+<span>         <span class="va">R1</span>, <span class="va">R2</span>, <span class="va">R3</span>, <span class="va">family_R</span>,</span>
+<span>         <span class="co"># Temporel</span></span>
+<span>         <span class="va">T1</span>, <span class="va">T2</span>, <span class="va">family_T</span>,</span>
+<span>         <span class="co"># Air</span></span>
+<span>         <span class="va">A1</span>, <span class="va">A2</span>, <span class="va">family_A</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">summary_table</span></span>
+<span><span class="co">#&gt;   parcel_id       B1 B2       B3 family_B       R1       R2       R3 family_R</span></span>
+<span><span class="co">#&gt; 1       P01  24.5782 85 1657.262 39.80832 44.25188 47.07114 73.04010 60.45303</span></span>
+<span><span class="co">#&gt; 2       P02 100.0000 86 1327.328 68.82910 65.53830 30.47225 68.09509 60.02550</span></span>
+<span><span class="co">#&gt; 3       P03   0.0000 87 1474.873 49.84050 29.74880 71.66821 29.17421 39.18232</span></span>
+<span><span class="co">#&gt; 4       P04   0.0000 84 2048.908 29.08790 55.26992 28.43826 20.55258 22.14935</span></span>
+<span><span class="co">#&gt; 5       P05   0.0000 85 1322.150 24.27117 35.67475 48.22051 39.90999 34.80352</span></span>
+<span><span class="co">#&gt;    T1         T2 family_T       A1       A2 family_A</span></span>
+<span><span class="co">#&gt; 1  80 18.5854441 61.29032 74.83550 62.37394 50.00000</span></span>
+<span><span class="co">#&gt; 2  45  7.0717841 17.62303 57.46452 64.73451 28.71851</span></span>
+<span><span class="co">#&gt; 3  80 12.6900074 44.71207 53.25070 78.35990 44.90653</span></span>
+<span><span class="co">#&gt; 4 120 14.4165688 62.47047 60.81278 68.82518 40.25588</span></span>
+<span><span class="co">#&gt; 5  80  0.8048135 11.29032 59.36794 64.32505 30.80376</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
@@ -565,18 +568,20 @@ haute biodiversité (famille_B) mais forte vulnérabilité (famille_R).</p>
 A1-A2)</li>
 <li>✅ <strong>4 nouvelles familles</strong> (Biodiversité, Risques,
 Temps, Air)</li>
-<li>✅ <strong>9 familles sur 12</strong> maintenant implémentées</li>
+<li>✅ <strong>8 familles sur 12</strong> maintenant implémentées (avec
+données complètes)</li>
 <li>✅ Méthode d’agrégation <strong>“min”</strong> pour analyses de
 risque</li>
 <li>✅ Mode <strong>comparaison</strong> pour radars
 multi-parcelles</li>
+<li>✅ <strong>845+ tests</strong> avec 87.35% de couverture</li>
 </ul>
 <p><strong>Prochaines étapes (v0.4.0)</strong> :</p>
 <ul>
 <li>Familles S (Social), P (Production), E (Énergie), N
 (Naturalité)</li>
 <li>Analyses d’incertitude Monte Carlo</li>
-<li>Intégration Google Earth Engine</li>
+<li>Intégration avancée de données externes</li>
 </ul>
 <p><strong>Ressources</strong> :</p>
 <ul>
@@ -584,7 +589,7 @@ multi-parcelles</li>
 familles</li>
 <li>Vignette “Analyse temporelle” : workflows multi-périodes</li>
 <li>Documentation API : <code><a href="../reference/indicator_biodiversity_protection.html">?indicator_biodiversity_protection</a></code>,
-etc.</li>
+<code><a href="../reference/nemeton_radar.html">?nemeton_radar</a></code>, etc.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

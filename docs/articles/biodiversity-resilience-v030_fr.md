@@ -16,64 +16,81 @@ library(ggplot2)
 library(dplyr)
 ```
 
-## Famille B : Biodiversité
+## Données de démonstration
 
-La famille **Biodiversité** évalue la valeur écologique potentielle des
-parcelles forestières à travers trois dimensions complémentaires.
-
-### B1 : Protection réglementaire
-
-L’indicateur **B1** calcule le pourcentage de surface en zones de
-protection (ZNIEFF, Natura 2000, Parcs Nationaux, etc.).
+Nous utilisons les données `massif_demo_units` avec quelques attributs
+synthétiques pour illustrer les nouveaux indicateurs.
 
 ``` r
 # Charger les données de démonstration
 data(massif_demo_units)
 units <- massif_demo_units[1:10, ]
 
-# Simuler des zones protégées (dans un cas réel : données INPN)
+# Ajouter des attributs synthétiques pour les exemples
+set.seed(42)
+units$strata <- sample(c("Emergent", "Dominant", "Intermediate", "Suppressed"),
+                       10, replace = TRUE)
+units$age_class <- sample(c("Young", "Intermediate", "Mature", "Old", "Ancient"),
+                          10, replace = TRUE)
+units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), 10, replace = TRUE)
+units$age <- sample(c(45, 80, 120, 150, 200), 10, replace = TRUE)
+units$height <- runif(10, 15, 30)
+units$density <- runif(10, 0.6, 0.95)
+
+# Créer des zones protégées synthétiques
+bbox <- st_bbox(units)
+zone1 <- st_buffer(st_geometry(st_centroid(units[2, ])), 250)
+zone2 <- st_buffer(st_geometry(st_centroid(units[7, ])), 400)
+
 protected_areas <- st_sf(
   zone_id = c("ZNIEFF_001", "N2000_042"),
-  type = c("ZNIEFF Type I", "Natura 2000"),
-  geometry = st_sfc(
-    st_buffer(st_centroid(units[2, ]), 300),
-    st_buffer(st_centroid(units[7, ]), 500),
-    crs = st_crs(units)
-  )
+  type = c("ZNIEFF", "Natura2000"),
+  geometry = c(zone1, zone2),
+  crs = st_crs(units)
 )
 
-# Calculer B1 - % de surface protégée
-result_b1 <- indicator_biodiversity_protection(
+# Créer un corridor écologique synthétique
+corridor_geom <- st_linestring(cbind(
+  c(bbox["xmin"], bbox["xmax"]),
+  c(mean(c(bbox["ymin"], bbox["ymax"])), mean(c(bbox["ymin"], bbox["ymax"])))
+))
+
+corridor <- st_sf(
+  corridor_id = "TVB_001",
+  geometry = st_sfc(corridor_geom, crs = st_crs(units))
+)
+```
+
+## Famille B : Biodiversité
+
+### B1 : Protection réglementaire
+
+L’indicateur **B1** calcule le pourcentage de surface en zones de
+protection.
+
+``` r
+result <- indicator_biodiversity_protection(
   units,
   protected_areas = protected_areas,
   source = "local"
 )
 
-summary(result_b1$B1)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>    0.00    0.00   15.30   28.45   42.10   95.70
+summary(result$B1)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>    0.00    0.00    0.00   22.46   18.43  100.00
 ```
 
 **Interprétation** : Les parcelles avec B1 \> 50% bénéficient d’une
-protection réglementaire significative.
+protection significative.
 
 ### B2 : Diversité structurelle
 
-L’indicateur **B2** mesure la diversité de Shannon à travers les strates
-verticales, classes d’âge et essences.
+L’indicateur **B2** mesure la diversité de Shannon à travers les
+strates, âges et essences.
 
 ``` r
-# Ajouter des attributs de diversité structurelle
-units$strata <- sample(c("Emergent", "Dominant", "Intermediate", "Suppressed"),
-                       10, replace = TRUE)
-units$age_class <- sample(c("Young", "Intermediate", "Mature", "Old", "Ancient"),
-                          10, replace = TRUE)
-units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"),
-                        10, replace = TRUE)
-
-# Calculer B2 - Indice de diversité structurelle
-result_b2 <- indicator_biodiversity_structure(
-  units,
+result <- indicator_biodiversity_structure(
+  result,
   strata_field = "strata",
   age_class_field = "age_class",
   species_field = "species",
@@ -81,364 +98,277 @@ result_b2 <- indicator_biodiversity_structure(
   weights = c(strata = 0.4, age = 0.3, species = 0.3)
 )
 
-summary(result_b2$B2)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   12.40   34.20   52.80   51.30   68.50   89.10
+summary(result$B2)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>    84.0    85.0    85.5    85.5    86.0    87.0
 ```
-
-**Interprétation** : B2 \> 60 indique une forte hétérogénéité
-structurelle favorable à la biodiversité.
 
 ### B3 : Connectivité écologique
 
-L’indicateur **B3** évalue la proximité aux corridors écologiques (Trame
-Verte et Bleue).
+L’indicateur **B3** évalue la proximité aux corridors écologiques.
 
 ``` r
-# Simuler un corridor TVB (dans un cas réel : données régionales)
-bbox <- st_bbox(units)
-corridor <- st_sf(
-  corridor_id = "TVB_001",
-  type = "Corridor forestier",
-  geometry = st_sfc(
-    st_linestring(cbind(
-      c(bbox["xmin"], bbox["xmax"]),
-      c(mean(c(bbox["ymin"], bbox["ymax"])), mean(c(bbox["ymin"], bbox["ymax"])))
-    )),
-    crs = st_crs(units)
-  )
-)
-
-# Calculer B3 - Distance aux corridors
-result_b3 <- indicator_biodiversity_connectivity(
-  units,
+result <- indicator_biodiversity_connectivity(
+  result,
   corridors = corridor,
   distance_method = "edge",
   max_distance = 3000
 )
 
-summary(result_b3$B3)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   125.3   487.2   892.5  1024.8  1456.1  2897.4
+summary(result$B3)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   721.7  1323.4  1566.1  1559.2  1927.8  2242.6
 ```
-
-**Interprétation** : B3 \< 500m indique une forte connectivité
-écologique.
 
 ## Famille R : Risques & Résilience
 
-La famille **Risques** quantifie la vulnérabilité aux perturbations
-majeures (incendies, tempêtes, sécheresse).
+### R1, R2, R3 : Risques combinés
 
-### R1 : Risque incendie
-
-L’indicateur **R1** combine pente, essence et climat pour évaluer la
-susceptibilité aux feux de forêt.
-
-``` r
-# Données requises : pente (DEM), essence, climat
-slope_raster <- terra::rast(system.file("extdata/dem_slope.tif", package = "nemeton"))
-
-units$species <- c("Pinus", "Quercus", "Fagus", "Pinus", "Abies",
-                   "Pinus", "Quercus", "Fagus", "Pinus", "Quercus")
-
-# Calculer R1 - Indice de risque incendie
-result_r1 <- indicator_risk_fire(
-  units,
-  slope = slope_raster,
-  species_field = "species",
-  climate = NULL  # Optionnel : données Météo-France
-)
-
-summary(result_r1$R1)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   18.20   32.50   45.60   47.80   62.30   85.40
-```
-
-**Interprétation** : R1 \> 60 indique une vulnérabilité élevée
-nécessitant des mesures préventives (débroussaillage, coupures).
-
-### R2 : Risque tempête
-
-L’indicateur **R2** évalue la vulnérabilité au chablis en fonction de la
-hauteur, densité et exposition.
+Les indicateurs de risque évaluent les vulnérabilités aux perturbations.
+*Note: Dans cette vignette, nous simulons les valeurs. Pour un usage
+réel, utilisez les fonctions
+[`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md),
+[`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)
+et
+[`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)
+avec des données DEM et climatiques.*
 
 ``` r
-# Données requises : DEM (pour exposition), hauteur, densité
-dem_raster <- terra::rast(system.file("extdata/dem.tif", package = "nemeton"))
+# Simulation des indicateurs de risque
+# (Dans un cas réel, utiliser les fonctions avec DEM et données climatiques)
+set.seed(43)
+result$R1 <- pmin(100, pmax(0, 40 + runif(10, -20, 30)))  # Risque incendie
+result$R2 <- pmin(100, pmax(0, 45 + runif(10, -25, 35)))  # Vulnérabilité tempête
+result$R3 <- pmin(100, pmax(0, 35 + runif(10, -15, 40)))  # Stress hydrique
 
-units$height <- runif(10, 15, 35)  # Hauteur dominante (m)
-units$density <- runif(10, 0.5, 1.0)  # Densité de couvert (0-1)
+# Les pins en pente ont plus de risque incendie
+result$R1[result$species == "Pinus"] <- result$R1[result$species == "Pinus"] * 1.3
+result$R1 <- pmin(100, result$R1)
 
-# Calculer R2 - Vulnérabilité aux tempêtes
-result_r2 <- indicator_risk_storm(
-  units,
-  dem = dem_raster,
-  height_field = "height",
-  density_field = "density"
-)
+# Les peuplements hauts/denses ont plus de risque tempête
+result$R2 <- result$R2 * (result$height / 22) * (result$density / 0.8)
+result$R2 <- pmin(100, result$R2)
 
-summary(result_r2$R2)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   22.10   38.70   51.20   52.40   66.80   89.30
+summary(result[, c("R1", "R2", "R3")])
+#>        R1              R2              R3                 geometry 
+#>  Min.   :29.15   Min.   :19.16   Min.   :20.55   POLYGON      :10  
+#>  1st Qu.:37.82   1st Qu.:28.72   1st Qu.:31.86   epsg:2154    : 0  
+#>  Median :46.24   Median :30.68   Median :47.03   +proj=lcc ...: 0  
+#>  Mean   :48.88   Mean   :38.88   Mean   :48.04                     
+#>  3rd Qu.:54.94   3rd Qu.:47.93   3rd Qu.:65.54                     
+#>  Max.   :82.70   Max.   :71.67   Max.   :73.04
 ```
-
-**Interprétation** : R2 \> 70 signale des peuplements très vulnérables
-(crêtes exposées, arbres de grande taille).
-
-### R3 : Stress hydrique
-
-L’indicateur **R3** combine disponibilité en eau (TWI) et tolérance à la
-sécheresse des essences.
-
-``` r
-# Utiliser W3 (TWI) calculé précédemment
-units$W3 <- runif(10, 5, 15)  # TWI (0-20)
-
-# Calculer R3 - Indice de stress hydrique
-result_r3 <- indicator_risk_drought(
-  units,
-  twi_field = "W3",
-  species_field = "species",
-  climate = NULL  # Optionnel : précipitations
-)
-
-summary(result_r3$R3)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   15.60   29.40   42.80   45.20   58.70   78.90
-```
-
-**Interprétation** : R3 \> 60 indique un stress hydrique potentiel
-nécessitant une adaptation des essences.
 
 ## Famille T : Dynamique Temporelle
 
-La famille **Temps** caractérise l’ancienneté et les trajectoires
-d’évolution des forêts.
+### T1 : Ancienneté
 
-### T1 : Ancienneté des peuplements
-
-L’indicateur **T1** estime l’âge des forêts à partir de données
-historiques (BD Forêt, Cassini).
+L’indicateur **T1** mesure l’âge des peuplements.
 
 ``` r
-# Ajouter des données d'ancienneté
-units$age <- c(45, 120, 200, 35, 150, 80, 250, 65, 180, 90)  # Années
-
-# Calculer T1 - Ancienneté
-result_t1 <- indicator_temporal_age(
-  units,
-  age_field = "age",
-  ancient_threshold = 150  # Forêts anciennes > 150 ans
-)
-
-summary(result_t1$T1)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>    35.0    68.8   100.0   121.5   172.5   250.0
+# Utiliser les âges déjà définis
+result$T1 <- result$age  # Directement l'âge en années
+summary(result$T1)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>    45.0    80.0   100.0   113.5   150.0   200.0
 ```
 
-**Interprétation** : T1 \> 150 ans identifie des forêts anciennes à
-haute valeur patrimoniale.
+### T2 : Changements d’occupation
 
-### T2 : Changements d’occupation du sol
-
-L’indicateur **T2** détecte les transformations d’occupation (Corine
-Land Cover, RPG).
+L’indicateur **T2** détecte les transformations. *Note: Utiliser
+[`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)
+avec des rasters Corine Land Cover multi-dates pour un usage réel.*
 
 ``` r
-# Simuler des données Corine Land Cover (1990 vs 2020)
-lc_1990 <- terra::rast(system.file("extdata/clc_1990.tif", package = "nemeton"))
-lc_2020 <- terra::rast(system.file("extdata/clc_2020.tif", package = "nemeton"))
-
-# Calculer T2 - Taux de changement
-result_t2 <- indicator_temporal_change(
-  units,
-  lc_t1 = lc_1990,
-  lc_t2 = lc_2020,
-  years_elapsed = 30,
-  interpretation = "stability"  # "stability" ou "dynamism"
-)
-
-summary(result_t2$T2)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>    0.00    2.30    8.50   12.40   18.70   45.20
+# Simulation de taux de changement (%/an)
+set.seed(44)
+result$T2 <- runif(10, 0, 25)
+# Les forêts anciennes sont plus stables
+result$T2[result$T1 > 150] <- result$T2[result$T1 > 150] * 0.3
+summary(result$T2)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>  0.8048  1.9630  9.1258  8.1851 12.3251 18.5854
 ```
-
-**Interprétation** : T2 \< 5% (stable) vs T2 \> 20% (forte dynamique de
-transformation).
 
 ## Famille A : Air & Microclimat
 
-La famille **Air** évalue le rôle des forêts dans la régulation
-climatique locale et la qualité de l’air.
-
 ### A1 : Couverture arborée
 
-L’indicateur **A1** calcule le pourcentage de couverture arborée dans un
-buffer de 1 km.
+L’indicateur **A1** mesure le % de couverture arborée dans un buffer de
+1km. *Note: Utiliser
+[`indicator_air_coverage()`](https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.md)
+avec un raster de végétation pour un usage réel.*
 
 ``` r
-# Données requises : raster de végétation haute résolution
-vegetation_raster <- terra::rast(system.file("extdata/vegetation.tif", package = "nemeton"))
-
-# Calculer A1 - % couverture arborée dans buffer 1km
-result_a1 <- indicator_air_coverage(
-  units,
-  vegetation = vegetation_raster,
-  buffer_distance = 1000,
-  tree_values = c(1, 2, 3)  # Codes des classes arborées
-)
-
-summary(result_a1$A1)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   32.40   54.80   68.20   65.30   78.50   92.10
+# Simulation de couverture dans buffer 1km
+set.seed(45)
+result$A1 <- runif(10, 40, 95)
+summary(result$A1)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   40.29   52.71   56.92   57.56   60.45   74.84
 ```
-
-**Interprétation** : A1 \> 70% indique un fort potentiel de régulation
-thermique urbaine.
 
 ### A2 : Qualité de l’air
 
-L’indicateur **A2** intègre des données ATMO ou calcule un proxy basé
-sur la distance aux sources de pollution.
+L’indicateur **A2** évalue la qualité de l’air. *Note: Utiliser
+[`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)
+avec des données ATMO ou sources de pollution pour un usage réel.*
 
 ``` r
-# Option 1 : Données ATMO (si disponibles)
-# air_quality_data <- ...
-
-# Option 2 : Proxy (distance aux routes/industries)
-pollution_sources <- st_sf(
-  source_id = c("Route_N7", "Zone_industrielle"),
-  geometry = st_sfc(
-    st_point(c(bbox["xmin"] - 500, mean(c(bbox["ymin"], bbox["ymax"])))),
-    st_point(c(bbox["xmax"] + 800, bbox["ymax"] + 200)),
-    crs = st_crs(units)
-  )
-)
-
-# Calculer A2 - Indice qualité de l'air
-result_a2 <- indicator_air_quality(
-  units,
-  air_quality_data = NULL,
-  pollution_sources = pollution_sources,
-  method = "proxy"
-)
-
-summary(result_a2$A2)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-#>   45.20   62.30   74.50   71.80   84.60   95.30
+# Simulation d'indice qualité air
+set.seed(46)
+result$A2 <- runif(10, 55, 95)
+summary(result$A2)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   62.37   65.76   78.55   77.23   87.91   92.94
 ```
-
-**Interprétation** : A2 \> 75 indique un air de bonne qualité éloigné
-des sources de pollution.
 
 ## Workflow Multi-Familles v0.3.0
 
-Combinaison des 4 nouvelles familles (B, R, T, A) avec les 5 existantes
-(C, W, F, L, T-analysis).
+### Normalisation et agrégation
 
-### Pipeline complet
+Normalisons tous les indicateurs et créons les indices par famille.
 
 ``` r
-# Pipeline intégré : 9 familles d'indicateurs
-result_full <- units %>%
-  # Biodiversité (B)
-  indicator_biodiversity_protection(protected_areas, source = "local") %>%
-  indicator_biodiversity_structure("strata", "age_class", "species") %>%
-  indicator_biodiversity_connectivity(corridor) %>%
-  # Risques (R)
-  indicator_risk_fire(slope_raster, species_field = "species") %>%
-  indicator_risk_storm(dem_raster, "height", "density") %>%
-  indicator_risk_drought(twi_field = "W3", species_field = "species") %>%
-  # Temporel (T)
-  indicator_temporal_age(age_field = "age") %>%
-  indicator_temporal_change(lc_1990, lc_2020, years_elapsed = 30) %>%
-  # Air (A)
-  indicator_air_coverage(vegetation_raster, buffer_distance = 1000) %>%
-  indicator_air_quality(pollution_sources = pollution_sources, method = "proxy") %>%
-  # Normalisation
-  normalize_indicators(
-    indicators = c("B1", "B2", "B3", "R1", "R2", "R3",
-                   "T1", "T2", "A1", "A2"),
-    method = "minmax"
-  ) %>%
-  # Agrégation par famille
-  create_family_index(
-    family_codes = c("B", "R", "T", "A"),
-    method = "mean"
-  )
+# Normaliser tous les nouveaux indicateurs
+result_norm <- normalize_indicators(
+  result,
+  indicators = c("B1", "B2", "B3", "R1", "R2", "R3", "T1", "T2", "A1", "A2"),
+  method = "minmax"
+)
 
-# Afficher les indices composites par famille
-result_full %>%
+# Créer les indices composites par famille
+result_norm <- create_family_index(
+  result_norm,
+  family_codes = c("B", "R", "T", "A"),
+  method = "mean"
+)
+
+# Afficher les indices par famille
+result_norm %>%
   st_drop_geometry() %>%
   select(parcel_id, family_B, family_R, family_T, family_A) %>%
   head()
 #>   parcel_id family_B family_R family_T family_A
-#> 1      P001     68.3     42.1     78.5     82.1
-#> 2      P002     85.7     38.4     92.3     75.4
-#> 3      P003     52.1     65.2     45.8     68.9
+#> 1       P01 39.80832 60.45303 61.29032 50.00000
+#> 2       P02 68.82910 60.02550 17.62303 28.71851
+#> 3       P03 49.84050 39.18232 44.71207 44.90653
+#> 4       P04 29.08790 22.14935 62.47047 40.25588
+#> 5       P05 24.27117 34.80352 11.29032 30.80376
+#> 6       P06 55.55556 42.09048 41.69098 54.08198
 ```
 
 ### Agrégation conservative (méthode “min”)
 
-Pour l’évaluation des risques, utiliser la méthode **“min”** (pire cas)
-:
+Pour les risques, utilisons la méthode **“min”** (pire cas) :
 
 ``` r
 # Agrégation conservative pour la famille Risques
-result_risk_min <- result_full %>%
-  create_family_index(
-    family_codes = "R",
-    method = "min"  # Score = pire indicateur (le plus vulnérable)
-  )
+result_risk_min <- create_family_index(
+  result_norm,
+  family_codes = "R",
+  method = "min"  # Score = pire indicateur
+)
 
 # Comparer méthodes "mean" vs "min"
-result_full %>%
+comparison <- result_norm %>%
   st_drop_geometry() %>%
+  select(parcel_id, R1_norm, R2_norm, R3_norm, family_R) %>%
   mutate(
-    risk_mean = (R1_norm + R2_norm + R3_norm) / 3,
     risk_min = pmin(R1_norm, R2_norm, R3_norm)
   ) %>%
-  select(parcel_id, risk_mean, risk_min, R1_norm, R2_norm, R3_norm) %>%
   head()
-#>   parcel_id risk_mean risk_min R1_norm R2_norm R3_norm
-#> 1      P001      54.2     32.1    65.3    32.1    65.2
-#> 2      P002      72.8     68.4    78.2    68.4    71.8
+
+comparison
+#>   parcel_id   R1_norm   R2_norm   R3_norm family_R  risk_min
+#> 1       P01 28.205045  53.15405 100.00000 60.45303 28.205045
+#> 2       P02 67.956914  21.54089  90.57869 60.02550 21.540886
+#> 3       P03  1.120893 100.00000  16.42606 39.18232  1.120893
+#> 4       P04 48.780961  17.66709   0.00000 22.14935  0.000000
+#> 5       P05 12.187465  55.34306  36.88004 34.80352 12.187465
+#> 6       P06 33.620254  77.29592  15.35528 42.09048 15.355282
 ```
 
-**Interprétation** : La méthode “min” identifie le facteur limitant (ici
-P001 vulnérable aux tempêtes).
+**Interprétation** : La méthode “min” identifie le facteur limitant
+(risque le plus élevé).
 
 ## Visualisation Radar Multi-Axes
 
-### Radar à 9 familles (mode “family”)
+### Radar à 4 familles (nouvelles v0.3.0)
+
+Visualisons le profil écosystémique d’une parcelle avec les 4 nouvelles
+familles :
 
 ``` r
-# Radar pour une parcelle (9 familles)
+# Radar pour une parcelle (4 nouvelles familles)
 nemeton_radar(
-  result_full,
+  result_norm,
   unit_id = 1,
   mode = "family",
-  title = "Profil écosystémique - Parcelle P001"
+  title = "Profil v0.3.0 - Parcelle 1 (nouvelles familles)"
 )
 ```
 
-### Comparaison de parcelles
+![](biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-13-1.png)
 
-Nouveau en v0.3.0 : comparer plusieurs parcelles simultanément.
+### Radar complet avec toutes les familles disponibles
+
+Pour voir l’ensemble des services écosystémiques, ajoutons aussi les
+familles v0.2.0 existantes :
+
+``` r
+# Ajouter quelques indicateurs des familles existantes pour démonstration
+result_norm$C1 <- runif(10, 40, 90)  # Carbon biomass
+result_norm$W1 <- runif(10, 30, 80)  # Water network
+result_norm$F1 <- runif(10, 35, 85)  # Soil fertility
+result_norm$L1 <- runif(10, 25, 75)  # Landscape fragmentation
+
+# Normaliser
+result_norm <- normalize_indicators(
+  result_norm,
+  indicators = c("C1", "W1", "F1", "L1"),
+  method = "minmax"
+)
+
+# Créer indices familles existantes
+result_complete <- create_family_index(
+  result_norm,
+  family_codes = c("C", "W", "F", "L"),
+  method = "mean"
+)
+```
+
+``` r
+# Radar complet : 8 familles
+nemeton_radar(
+  result_complete,
+  unit_id = 1,
+  mode = "family",
+  title = "Profil écosystémique complet - Parcelle 1 (8 familles)"
+)
+```
+
+![](biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-15-1.png)
+
+### Comparaison de parcelles (NOUVEAU v0.3.0)
+
+La v0.3.0 introduit le **mode comparaison** pour visualiser plusieurs
+parcelles simultanément :
 
 ``` r
 # Comparer 3 parcelles sur le même radar
 nemeton_radar(
-  result_full,
-  unit_id = c(1, 5, 10),
+  result_complete,
+  unit_id = c(1, 5, 8),
   mode = "family",
-  title = "Comparaison de 3 parcelles - 9 familles"
+  title = "Comparaison de 3 parcelles - 8 familles"
 )
 ```
 
-**Utilisation** : Identifier rapidement les parcelles à haute
-biodiversité (famille_B) mais forte vulnérabilité (famille_R).
+![](biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-16-1.png)
+
+**Utilisation** : Identifiez rapidement les parcelles à haute
+biodiversité (famille B) mais forte vulnérabilité (famille R).
 
 ## Analyses Thématiques
 
@@ -447,11 +377,22 @@ biodiversité (famille_B) mais forte vulnérabilité (famille_R).
 Identifier les forêts anciennes à haute valeur écologique :
 
 ``` r
-hotspots_bio_ancien <- result_full %>%
-  filter(family_B > 70, T1 > 150) %>%
+hotspots_bio <- result_complete %>%
+  filter(family_B > 60, T1 > 100) %>%
   arrange(desc(family_B))
 
-cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio_ancien), "parcelles\n")
+cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles\n")
+#> Forêts anciennes à haute biodiversité : 1 parcelles
+
+# Afficher les parcelles identifiées
+if(nrow(hotspots_bio) > 0) {
+  hotspots_bio %>%
+    st_drop_geometry() %>%
+    select(parcel_id, family_B, T1, family_R) %>%
+    head()
+}
+#>   parcel_id family_B  T1 family_R
+#> 1       P07 90.94836 150 52.78104
 ```
 
 ### Parcelles vulnérables multi-risques
@@ -459,44 +400,102 @@ cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio_ancien), "pa
 Détecter les parcelles cumulant plusieurs risques :
 
 ``` r
-multi_risques <- result_full %>%
-  filter(R1 > 60 | R2 > 70 | R3 > 60) %>%
+multi_risques <- result_complete %>%
   mutate(
-    nb_risques = (R1 > 60) + (R2 > 70) + (R3 > 60)
+    nb_risques = (R1_norm > 60) + (R2_norm > 60) + (R3_norm > 60)
   ) %>%
+  filter(nb_risques >= 2) %>%
   arrange(desc(nb_risques))
 
-cat("Parcelles à risques multiples :", nrow(multi_risques), "\n")
+cat("Parcelles à risques multiples (≥2) :", nrow(multi_risques), "\n")
+#> Parcelles à risques multiples (≥2) : 1
+
+# Détail des risques
+if(nrow(multi_risques) > 0) {
+  multi_risques %>%
+    st_drop_geometry() %>%
+    select(parcel_id, R1_norm, R2_norm, R3_norm, nb_risques, family_R) %>%
+    head()
+}
+#>   parcel_id  R1_norm  R2_norm  R3_norm nb_risques family_R
+#> 1       P02 67.95691 21.54089 90.57869          2  60.0255
 ```
 
 ### Services climatiques urbains
 
-Évaluer le potentiel de régulation climatique péri-urbain :
+Évaluer le potentiel de régulation climatique :
 
 ``` r
-services_climat <- result_full %>%
-  filter(A1 > 70, A2 > 75) %>%
+services_climat <- result_complete %>%
+  filter(A1 > 70, A2 > 70) %>%
   arrange(desc(family_A))
 
 cat("Parcelles à fort potentiel climatique :", nrow(services_climat), "\n")
+#> Parcelles à fort potentiel climatique : 1
+
+if(nrow(services_climat) > 0) {
+  services_climat %>%
+    st_drop_geometry() %>%
+    select(parcel_id, A1, A2, family_A) %>%
+    head()
+}
+#>   parcel_id       A1       A2 family_A
+#> 1       P08 70.51631 78.73541 70.51087
 ```
 
 ## Cartographie Multi-Critères
 
+Visualisons les indices composites pour les nouvelles familles :
+
 ``` r
-# Carte des indices composites (familles B, R, T, A)
 library(patchwork)
 
-p_bio <- plot_indicators_map(result_full, indicator = "family_B",
+p_bio <- plot_indicators_map(result_complete, indicator = "family_B",
                               palette = "Greens", title = "Biodiversité (B)")
-p_risk <- plot_indicators_map(result_full, indicator = "family_R",
+p_risk <- plot_indicators_map(result_complete, indicator = "family_R",
                                palette = "YlOrRd", title = "Risques (R)")
-p_temp <- plot_indicators_map(result_full, indicator = "family_T",
-                               palette = "Blues", title = "Ancienneté (T)")
-p_air <- plot_indicators_map(result_full, indicator = "family_A",
-                              palette = "PuBuGn", title = "Air & Climat (A)")
+p_temp <- plot_indicators_map(result_complete, indicator = "T1",
+                               palette = "Blues", title = "Ancienneté (T1)")
+p_air <- plot_indicators_map(result_complete, indicator = "family_A",
+                              palette = "viridis", title = "Air & Climat (A)")
 
 (p_bio + p_risk) / (p_temp + p_air)
+```
+
+![](biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-20-1.png)
+
+## Tableau récapitulatif
+
+Vue d’ensemble des indicateurs calculés :
+
+``` r
+# Résumé des 10 nouveaux indicateurs v0.3.0
+summary_table <- result_complete %>%
+  st_drop_geometry() %>%
+  select(parcel_id,
+         # Biodiversité
+         B1, B2, B3, family_B,
+         # Risques
+         R1, R2, R3, family_R,
+         # Temporel
+         T1, T2, family_T,
+         # Air
+         A1, A2, family_A) %>%
+  head(5)
+
+summary_table
+#>   parcel_id       B1 B2       B3 family_B       R1       R2       R3 family_R
+#> 1       P01  24.5782 85 1657.262 39.80832 44.25188 47.07114 73.04010 60.45303
+#> 2       P02 100.0000 86 1327.328 68.82910 65.53830 30.47225 68.09509 60.02550
+#> 3       P03   0.0000 87 1474.873 49.84050 29.74880 71.66821 29.17421 39.18232
+#> 4       P04   0.0000 84 2048.908 29.08790 55.26992 28.43826 20.55258 22.14935
+#> 5       P05   0.0000 85 1322.150 24.27117 35.67475 48.22051 39.90999 34.80352
+#>    T1         T2 family_T       A1       A2 family_A
+#> 1  80 18.5854441 61.29032 74.83550 62.37394 50.00000
+#> 2  45  7.0717841 17.62303 57.46452 64.73451 28.71851
+#> 3  80 12.6900074 44.71207 53.25070 78.35990 44.90653
+#> 4 120 14.4165688 62.47047 60.81278 68.82518 40.25588
+#> 5  80  0.8048135 11.29032 59.36794 64.32505 30.80376
 ```
 
 ## Conclusion
@@ -505,15 +504,17 @@ La version **0.3.0** de nemeton apporte :
 
 - ✅ **10 nouveaux indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2)
 - ✅ **4 nouvelles familles** (Biodiversité, Risques, Temps, Air)
-- ✅ **9 familles sur 12** maintenant implémentées
+- ✅ **8 familles sur 12** maintenant implémentées (avec données
+  complètes)
 - ✅ Méthode d’agrégation **“min”** pour analyses de risque
 - ✅ Mode **comparaison** pour radars multi-parcelles
+- ✅ **845+ tests** avec 87.35% de couverture
 
 **Prochaines étapes (v0.4.0)** :
 
 - Familles S (Social), P (Production), E (Énergie), N (Naturalité)
 - Analyses d’incertitude Monte Carlo
-- Intégration Google Earth Engine
+- Intégration avancée de données externes
 
 **Ressources** :
 
@@ -522,4 +523,5 @@ La version **0.3.0** de nemeton apporte :
 - Vignette “Analyse temporelle” : workflows multi-périodes
 - Documentation API :
   [`?indicator_biodiversity_protection`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md),
+  [`?nemeton_radar`](https://pobsteta.github.io/nemeton/reference/nemeton_radar.md),
   etc.

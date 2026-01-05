@@ -93,21 +93,21 @@ R package structure:
 
 ### Tests for User Story 2 (TDD: Write FIRST)
 
-- [ ] T026 [P] [US2] Unit test for indicator_risk_fire() in tests/testthat/test-indicators-risk.R (test slope factor, species flammability lookup, climate dryness, composite formula)
-- [ ] T027 [P] [US2] Unit test for indicator_risk_storm() in tests/testthat/test-indicators-risk.R (test height factor, density factor, topographic exposure, composite formula)
-- [ ] T028 [P] [US2] Unit test for indicator_risk_drought() in tests/testthat/test-indicators-risk.R (test inverse TWI, precipitation deficit, species sensitivity lookup, composite formula)
-- [ ] T029 [US2] Integration test for R family workflow in tests/testthat/test-indicators-risk.R (compute R1-R3 → normalize → create family_R → verify composite)
-- [ ] T030 [US2] Regression test fixture: Create expected_indicators_v030_risk.rds with known R1/R2/R3 values in tests/testthat/fixtures/
+- [X] T026 [P] [US2] Unit test for indicator_risk_fire() in tests/testthat/test-indicators-risk.R (test slope factor, species flammability lookup, climate dryness, composite formula)
+- [X] T027 [P] [US2] Unit test for indicator_risk_storm() in tests/testthat/test-indicators-risk.R (test height factor, density factor, topographic exposure, composite formula)
+- [X] T028 [P] [US2] Unit test for indicator_risk_drought() in tests/testthat/test-indicators-risk.R (test inverse TWI, precipitation deficit, species sensitivity lookup, composite formula)
+- [X] T029 [US2] Integration test for R family workflow in tests/testthat/test-indicators-risk.R (compute R1-R3 → normalize → create family_R → verify composite)
+- [X] T030 [US2] Regression test fixture: Create expected_indicators_v030_risk.rds with known R1/R2/R3 values in tests/testthat/fixtures/
 
 ### Implementation for User Story 2
 
-- [ ] T031 [P] [US2] Implement indicator_risk_fire() in R/indicators-risk.R (slope from DEM, species lookup, climate data, weighted composite, R1 output)
-- [ ] T032 [P] [US2] Implement indicator_risk_storm() in R/indicators-risk.R (height/density attributes, topographic position, weighted composite, R2 output)
-- [ ] T033 [P] [US2] Implement indicator_risk_drought() in R/indicators-risk.R (inverse TWI reuse W3, precip data, species lookup, weighted composite, R3 output)
-- [ ] T034 [US2] Add roxygen2 documentation for all 3 functions (indicator_risk_*) with @param, @return, @examples
-- [ ] T035 [US2] Add bilingual messages (FR/EN) for R1, R2, R3 calculations
-- [ ] T036 [US2] Run devtools::test() and verify all US2 tests pass (≥15 tests for R family)
-- [ ] T037 [US2] Run devtools::check() and ensure 0 errors, 0 warnings
+- [X] T031 [P] [US2] Implement indicator_risk_fire() in R/indicators-risk.R (slope from DEM, species lookup, climate data, weighted composite, R1 output)
+- [X] T032 [P] [US2] Implement indicator_risk_storm() in R/indicators-risk.R (height/density attributes, topographic position, weighted composite, R2 output)
+- [X] T033 [P] [US2] Implement indicator_risk_drought() in R/indicators-risk.R (inverse TWI reuse W3, precip data, species lookup, weighted composite, R3 output)
+- [X] T034 [US2] Add roxygen2 documentation for all 3 functions (indicator_risk_*) with @param, @return, @examples
+- [X] T035 [US2] Add bilingual messages (FR/EN) for R1, R2, R3 calculations
+- [X] T036 [US2] Run devtools::test() and verify all US2 tests pass (≥15 tests for R family)
+- [X] T037 [US2] Run devtools::check() and ensure 0 errors, 0 warnings
 
 **Checkpoint**: R family indicators (R1, R2, R3) fully functional and tested independently
 
@@ -121,19 +121,19 @@ R package structure:
 
 ### Tests for User Story 3 (TDD: Write FIRST)
 
-- [ ] T038 [P] [US3] Unit test for indicator_temporal_age() in tests/testthat/test-indicators-temporal.R (test age field, establishment year calculation, log normalization)
-- [ ] T039 [P] [US3] Unit test for indicator_temporal_change() in tests/testthat/test-indicators-temporal.R (test terra raster diff, exactextractr zonal stats, annualized rate, interpretation modes)
-- [ ] T040 [US3] Integration test for T family workflow in tests/testthat/test-indicators-temporal.R (compute T1-T2 → normalize → create family_T → verify composite)
-- [ ] T041 [US3] Regression test fixture: Create expected_indicators_v030_temporal.rds with known T1/T2 values in tests/testthat/fixtures/
+- [X] T038 [P] [US3] Unit test for indicator_temporal_age() in tests/testthat/test-indicators-temporal.R (test age field, establishment year calculation, log normalization)
+- [X] T039 [P] [US3] Unit test for indicator_temporal_change() in tests/testthat/test-indicators-temporal.R (test terra raster diff, exactextractr zonal stats, annualized rate, interpretation modes)
+- [X] T040 [US3] Integration test for T family workflow in tests/testthat/test-indicators-temporal.R (compute T1-T2 → normalize → create family_T → verify composite)
+- [X] T041 [US3] Regression test fixture: Create expected_indicators_v030_temporal.rds with known T1/T2 values in tests/testthat/fixtures/
 
 ### Implementation for User Story 3
 
-- [ ] T042 [P] [US3] Implement indicator_temporal_age() in R/indicators-temporal.R (age field or establishment year, current year default, log normalization, T1+T1_norm output)
-- [ ] T043 [P] [US3] Implement indicator_temporal_change() in R/indicators-temporal.R (terra raster algebra, exactextractr zonal stats, annualization, interpretation param, T2+T2_norm output)
-- [ ] T044 [US3] Add roxygen2 documentation for both functions (indicator_temporal_*) with @param, @return, @examples
-- [ ] T045 [US3] Add bilingual messages (FR/EN) for T1, T2 calculations
-- [ ] T046 [US3] Run devtools::test() and verify all US3 tests pass (≥10 tests for T family)
-- [ ] T047 [US3] Run devtools::check() and ensure 0 errors, 0 warnings
+- [X] T042 [P] [US3] Implement indicator_temporal_age() in R/indicators-temporal.R (age field or establishment year, current year default, log normalization, T1+T1_norm output)
+- [X] T043 [P] [US3] Implement indicator_temporal_change() in R/indicators-temporal.R (terra raster algebra, exactextractr zonal stats, annualization, interpretation param, T2+T2_norm output)
+- [X] T044 [US3] Add roxygen2 documentation for both functions (indicator_temporal_*) with @param, @return, @examples
+- [X] T045 [US3] Add bilingual messages (FR/EN) for T1, T2 calculations
+- [X] T046 [US3] Run devtools::test() and verify all US3 tests pass (≥10 tests for T family)
+- [X] T047 [US3] Run devtools::check() and ensure 0 errors, 0 warnings
 
 **Checkpoint**: T family indicators (T1, T2) fully functional and tested independently
 
@@ -147,19 +147,19 @@ R package structure:
 
 ### Tests for User Story 4 (TDD: Write FIRST)
 
-- [ ] T048 [P] [US4] Unit test for indicator_air_coverage() in tests/testthat/test-indicators-air.R (test buffer creation, forest class filtering, coverage calculation)
-- [ ] T049 [P] [US4] Unit test for indicator_air_quality() in tests/testthat/test-indicators-air.R (test direct ATMO method, proxy method, road/urban distance weighting, method detection)
-- [ ] T050 [US4] Integration test for A family workflow in tests/testthat/test-indicators-air.R (compute A1-A2 → normalize → create family_A → verify composite)
-- [ ] T051 [US4] Regression test fixture: Create expected_indicators_v030_air.rds with known A1/A2 values in tests/testthat/fixtures/
+- [X] T048 [P] [US4] Unit test for indicator_air_coverage() in tests/testthat/test-indicators-air.R (test buffer creation, forest class filtering, coverage calculation)
+- [X] T049 [P] [US4] Unit test for indicator_air_quality() in tests/testthat/test-indicators-air.R (test direct ATMO method, proxy method, road/urban distance weighting, method detection)
+- [X] T050 [US4] Integration test for A family workflow in tests/testthat/test-indicators-air.R (compute A1-A2 → normalize → create family_A → verify composite)
+- [X] T051 [US4] Regression test fixture: Create expected_indicators_v030_air.rds with known A1/A2 values in tests/testthat/fixtures/
 
 ### Implementation for User Story 4
 
-- [ ] T052 [P] [US4] Implement indicator_air_coverage() in R/indicators-air.R (sf buffer, land cover raster, forest class filter, coverage calc, A1 output)
-- [ ] T053 [P] [US4] Implement indicator_air_quality() in R/indicators-air.R (ATMO direct method, OSM/CLC proxy method, auto-detection, weighted distance, A2+A2_method output)
-- [ ] T054 [US4] Add roxygen2 documentation for both functions (indicator_air_*) with @param, @return, @examples
-- [ ] T055 [US4] Add bilingual messages (FR/EN) for A1, A2 calculations
-- [ ] T056 [US4] Run devtools::test() and verify all US4 tests pass (≥10 tests for A family)
-- [ ] T057 [US4] Run devtools::check() and ensure 0 errors, 0 warnings
+- [X] T052 [P] [US4] Implement indicator_air_coverage() in R/indicators-air.R (sf buffer, land cover raster, forest class filter, coverage calc, A1 output)
+- [X] T053 [P] [US4] Implement indicator_air_quality() in R/indicators-air.R (ATMO direct method, OSM/CLC proxy method, auto-detection, weighted distance, A2+A2_method output)
+- [X] T054 [US4] Add roxygen2 documentation for both functions (indicator_air_*) with @param, @return, @examples
+- [X] T055 [US4] Add bilingual messages (FR/EN) for A1, A2 calculations
+- [X] T056 [US4] Run devtools::test() and verify all US4 tests pass (≥10 tests for A family)
+- [X] T057 [US4] Run devtools::check() and ensure 0 errors, 0 warnings
 
 **Checkpoint**: A family indicators (A1, A2) fully functional and tested independently
 
@@ -173,19 +173,19 @@ R package structure:
 
 ### Tests for User Story 5 (TDD: Write FIRST)
 
-- [ ] T058 [P] [US5] Test normalize_indicators() extension in tests/testthat/test-normalization.R (verify B*, R*, T*, A* prefix recognition, appropriate methods)
-- [ ] T059 [P] [US5] Test create_family_index() extension in tests/testthat/test-family-system.R (verify B, R, T, A family codes, correct aggregation)
-- [ ] T060 [P] [US5] Test nemeton_radar() extension in tests/testthat/test-visualization.R (verify 9-axis plot, no visual artifacts, correct scaling)
-- [ ] T061 [US5] Integration test: Full workflow (load massif_demo → compute all 10 indicators → normalize → aggregate → radar plot) in tests/testthat/test-workflow-v030.R
+- [X] T058 [P] [US5] Test normalize_indicators() extension in tests/testthat/test-normalization.R (verify B*, R*, T*, A* prefix recognition, appropriate methods)
+- [X] T059 [P] [US5] Test create_family_index() extension in tests/testthat/test-family-system.R (verify B, R, T, A family codes, correct aggregation)
+- [X] T060 [P] [US5] Test nemeton_radar() extension in tests/testthat/test-visualization.R (verify 9-axis plot, no visual artifacts, correct scaling)
+- [X] T061 [US5] Integration test: Full workflow (load massif_demo → compute all 10 indicators → normalize → aggregate → radar plot) in tests/testthat/test-workflow-v030.R
 
 ### Implementation for User Story 5
 
-- [ ] T062 [US5] Extend R/normalization.R: Update normalize_indicators() to recognize B*, R*, T*, A* prefixes and apply appropriate methods (linear, inverse, log)
-- [ ] T063 [US5] Extend R/family-system.R: Update create_family_index() to handle family codes B, R, T, A (add to family_groups logic)
-- [ ] T064 [US5] Extend R/visualization.R: Update nemeton_radar() to support up to 12 axes (currently handles 5, extend to 9-12 for future families)
-- [ ] T065 [US5] Add roxygen2 documentation updates for extended functions (normalize_indicators, create_family_index, nemeton_radar) - note v0.3.0 capabilities
-- [ ] T066 [US5] Run devtools::test() and verify all US5 tests pass (≥10 tests for integration)
-- [ ] T067 [US5] Verify backward compatibility: Run all 661 v0.2.0 tests and ensure 100% pass rate
+- [X] T062 [US5] Extend R/normalization.R: Update normalize_indicators() to recognize B*, R*, T*, A* prefixes and apply appropriate methods (linear, inverse, log)
+- [X] T063 [US5] Extend R/family-system.R: Update create_family_index() to handle family codes B, R, T, A (add to family_groups logic)
+- [X] T064 [US5] Extend R/visualization.R: Update nemeton_radar() to support up to 12 axes (currently handles 5, extend to 9-12 for future families)
+- [X] T065 [US5] Add roxygen2 documentation updates for extended functions (normalize_indicators, create_family_index, nemeton_radar) - note v0.3.0 capabilities
+- [X] T066 [US5] Run devtools::test() and verify all US5 tests pass (≥10 tests for integration)
+- [X] T067 [US5] Verify backward compatibility: Run all 661 v0.2.0 tests and ensure 100% pass rate
 
 **Checkpoint**: Integration layer complete - all 9 families (C, B, W, A, F, L, T, R, existing) work together seamlessly
 
@@ -220,19 +220,19 @@ R package structure:
 
 **Purpose**: Documentation, vignettes, and final validation
 
-- [ ] T077 [P] Create vignette: vignettes/biodiversity-resilience.Rmd (demonstrate B, R, T, A families workflow ~1500-2000 words)
+- [X] T077 [P] Create vignette: vignettes/biodiversity-resilience.Rmd (demonstrate B, R, T, A families workflow ~1500-2000 words)
 - [ ] T078 [P] Update vignette: vignettes/indicator-families.Rmd (update to reflect 9/12 families implemented, add v0.3.0 examples)
 - [ ] T079 [P] Extend demo data: Add historical attributes to data/massif_demo_units.rda if feasible (age, establishment_year for T1 examples)
 - [ ] T080 [P] Create demo data: inst/extdata/massif_demo/protected_areas/ (synthetic ZNIEFF zones for B1 examples)
 - [ ] T081 [P] Create demo data: inst/extdata/massif_demo/land_cover_1990.tif (historical land cover for T2 examples)
 - [ ] T082 [P] Create demo data: inst/extdata/massif_demo/climate/ (temperature/precipitation rasters for R1, R3 examples)
-- [ ] T083 Update README.md: Add v0.3.0 features (9 families, 10 new indicators, cross-family analysis) with code examples
-- [ ] T084 Update NEWS.md: Document v0.3.0 changes (new indicators, extended functions, backward compatibility notes)
+- [X] T083 Update README.md: Add v0.3.0 features (9 families, 10 new indicators, cross-family analysis) with code examples
+- [X] T084 Update NEWS.md: Document v0.3.0 changes (new indicators, extended functions, backward compatibility notes)
 - [ ] T085 Run devtools::build_vignettes() and verify all vignettes knit successfully
-- [ ] T086 Run devtools::document() to regenerate all .Rd files from roxygen2
-- [ ] T087 Run devtools::check() final validation: 0 errors, 0 warnings (except UTF-8), 0 notes
-- [ ] T088 Run covr::package_coverage() and verify ≥70% total coverage (aim for ≥80% on new code)
-- [ ] T089 Build pkgdown site: pkgdown::build_site() and verify navigation, function reference, vignettes display correctly
+- [X] T086 Run devtools::document() to regenerate all .Rd files from roxygen2
+- [X] T087 Run devtools::check() final validation: 0 errors, 0 warnings (except UTF-8), 0 notes
+- [X] T088 Run covr::package_coverage() and verify ≥70% total coverage (aim for ≥80% on new code)
+- [X] T089 Build pkgdown site: pkgdown::build_site() and verify navigation, function reference, vignettes display correctly
 - [ ] T090 Run quickstart.md validation: Execute all code snippets from quickstart.md and verify expected outputs
 
 **Checkpoint**: Package ready for v0.3.0 release - all documentation, tests, and examples complete
