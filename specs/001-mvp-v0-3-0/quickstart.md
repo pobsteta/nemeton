@@ -349,49 +349,73 @@ nemeton_radar(
 
 ---
 
-## Step 9: Cross-Family Correlation Analysis
+## Step 9: Cross-Family Correlation Analysis (US6)
+
+### Compute Family Correlations
 
 ```r
-# Compute correlation matrix between families
-library(corrplot)
-
-family_cols <- c("family_C", "family_B", "family_W", "family_A",
-                 "family_F", "family_L", "family_T", "family_R")
-
-cor_matrix <- cor(
-  sf::st_drop_geometry(units[, family_cols]),
-  use = "complete.obs"
+# Compute correlation matrix using nemeton functions
+corr_matrix <- compute_family_correlations(
+  units,
+  families = NULL,  # Auto-detect all family_* columns
+  method = "pearson"
 )
 
-# Visualize
-corrplot(cor_matrix,
-         method = "color",
-         type = "upper",
-         tl.col = "black",
-         title = "Family Correlation Matrix")
+print(corr_matrix)
+#         family_C family_B family_W family_A family_F family_L family_T family_R
+# family_C     1.00     0.45     0.23     0.18     0.31     0.12     0.56    -0.22
+# family_B     0.45     1.00     0.38     0.29     0.19     0.15     0.67    -0.31
+# family_W     0.23     0.38     1.00     0.52     0.44     0.08     0.28    -0.18
+# ...
 
-# Expected relationships:
-# - family_B × family_T: POSITIVE (biodiversity correlates with ancient forests)
-# - family_R × family_B: NEGATIVE (high fire risk may reduce biodiversity)
-# - family_A × family_W: POSITIVE (water regulation supports air quality)
+# Visualize with built-in heatmap
+plot_correlation_matrix(
+  corr_matrix,
+  method = "circle",
+  palette = "RdBu",
+  title = "Ecosystem Service Synergies & Trade-offs"
+)
 ```
+
+**Interpretation**:
+- **Strong positive** (red, >0.5): Synergies (services co-occur)
+  - family_B × family_T: +0.67 (biodiversity ↔ ancient forests)
+  - family_W × family_A: +0.52 (water regulation ↔ air quality)
+- **Strong negative** (blue, <-0.5): Trade-offs (services conflict)
+  - family_R × family_B: -0.31 (high risk ↔ reduced biodiversity)
+- **Weak** (white, ~0): Independence
 
 ### Identify Multi-Criteria Hotspots
 
 ```r
-# Parcels in top 20% for ≥3 families
-hotspots <- units[
-  (units$family_B > quantile(units$family_B, 0.8, na.rm = TRUE)) +
-  (units$family_R < quantile(units$family_R, 0.2, na.rm = TRUE)) +  # Lower risk is better
-  (units$family_T > quantile(units$family_T, 0.8, na.rm = TRUE)) +
-  (units$family_A > quantile(units$family_A, 0.8, na.rm = TRUE)) >= 3,
-]
+# Use nemeton's hotspot identification function
+hotspots <- identify_hotspots(
+  units,
+  families = NULL,  # All families
+  threshold = 80,   # Top 20%
+  min_families = 3  # At least 3 families above threshold
+)
 
-nrow(hotspots)  # e.g., 3 parcels meet criteria
+# View hotspot summary
+summary(hotspots[, c("hotspot_count", "hotspot_families", "is_hotspot")])
+#  hotspot_count    hotspot_families     is_hotspot
+#  Min.   :0.00     Length:20          Mode :logical
+#  1st Qu.:1.00     Class :character   FALSE:17
+#  Median :2.00     Mode  :character   TRUE :3
+#  Mean   :2.15
+#  3rd Qu.:3.00
+#  Max.   :6.00
+
+# Filter to hotspot parcels only
+hotspot_parcels <- hotspots[hotspots$is_hotspot, ]
+nrow(hotspot_parcels)  # e.g., 3 parcels
 
 # Map hotspots
 plot(sf::st_geometry(units), col = "lightgray", main = "Multi-Criteria Hotspots")
-plot(sf::st_geometry(hotspots), col = "darkgreen", add = TRUE)
+plot(sf::st_geometry(hotspot_parcels), col = "darkgreen", add = TRUE)
+legend("topright",
+       legend = c("Standard", "Hotspot (≥3 families)"),
+       fill = c("lightgray", "darkgreen"))
 ```
 
 ---
