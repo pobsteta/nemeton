@@ -1,7 +1,7 @@
 # nemeton <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
 [![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.2.0)
 [![Tests](https://img.shields.io/badge/tests-661%20passing-success.svg)](https://github.com/pobsteta/nemeton)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
