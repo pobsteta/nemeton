@@ -31,6 +31,13 @@ navbar:
     left:  [intro, reference, articles, tutorials, news]
     right: [language, search, github]
   components:
+    intro:
+      text: Home
+      menu:
+      - text: "Accueil (Français)"
+        href: index.html
+      - text: "Home (English)"
+        href: README_en.html
     language:
       icon: fa-language
       menu:
