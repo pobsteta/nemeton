@@ -32,7 +32,6 @@ L'analyse temporelle permet de suivre l'évolution des services écosystémiques
 ```{r}
 library(nemeton)
 library(ggplot2)
-library(dplyr)
 ```
 
 # Principe de l'analyse temporelle

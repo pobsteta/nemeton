@@ -1,0 +1,359 @@
+---
+title: "Démarrage rapide avec nemeton"
+author: "Pascal Obstétar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Démarrage rapide avec nemeton}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction
+
+Le package `nemeton` implémente la méthode Nemeton pour l'analyse systémique de territoires forestiers. Il fournit des outils pour :
+
+- Calculer des indicateurs biophysiques multi-famille (carbone, eau, sols, paysage, etc.)
+- Normaliser les valeurs d'indicateurs selon plusieurs méthodes
+- Créer des indices composites pour une évaluation holistique
+- Visualiser les résultats avec des cartes et graphiques
+
+Cette vignette démontre le workflow complet avec le jeu de données `massif_demo`.
+
+# Installation
+
+```{r, eval = FALSE}
+# Depuis GitHub
+remotes::install_github("pobsteta/nemeton")
+```
+
+```{r}
+library(nemeton)
+library(ggplot2)
+```
+
+# Charger les données de démonstration
+
+Le package inclut un jeu de données synthétique (`massif_demo`) représentant une zone de 5km × 5km avec 20 parcelles forestières.
+
+```{r}
+# Charger les parcelles forestières
+data(massif_demo_units)
+
+# Inspecter les parcelles
+print(massif_demo_units)
+
+# Statistiques sommaires
+cat("\nSurface totale:", sum(massif_demo_units$surface_ha), "ha\n")
+table(massif_demo_units$forest_type)
+```
+
+```{r, fig.cap = "Parcelles forestières par type"}
+ggplot(massif_demo_units) +
+  geom_sf(aes(fill = forest_type)) +
+  theme_minimal() +
+  labs(title = "Massif Demo - Types forestiers",
+       fill = "Type de forêt")
+```
+
+# Charger les couches spatiales
+
+Utilisez `massif_demo_layers()` pour charger tous les rasters et vecteurs associés :
+
+```{r}
+layers <- massif_demo_layers()
+print(layers)
+```
+
+Le jeu de données inclut :
+- **Rasters** : biomasse, MNT, occupation du sol, richesse spécifique
+- **Vecteurs** : réseau routier, cours d'eau
+
+# Calculer les indicateurs
+
+## Indicateurs individuels
+
+```{r}
+# Carbone (stock de biomasse)
+carbon <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = "carbon"
+)
+
+# Eau (régulation hydrique)
+water <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = "water"
+)
+
+# Afficher les résultats
+head(carbon[, c("parcel_id", "forest_type", "carbon")])
+```
+
+## Indicateurs multiples simultanés
+
+```{r}
+# Calculer 5 indicateurs en une fois
+results <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = c("carbon", "biodiversity", "water",
+                 "fragmentation", "accessibility")
+)
+
+# Vue d'ensemble
+summary(results[, c("carbon", "biodiversity", "water")])
+```
+
+# Normalisation
+
+Normalisez les indicateurs pour les rendre comparables (échelle 0-100) :
+
+```{r}
+# Normalisation min-max
+normalized <- normalize_indicators(
+  results,
+  indicators = c("carbon", "biodiversity", "water"),
+  method = "minmax"
+)
+
+# Comparer avant/après
+cat("\nAvant normalisation (carbone):\n")
+summary(results$carbon)
+
+cat("\nAprès normalisation (carbone):\n")
+summary(normalized$carbon_norm)
+```
+
+## Méthodes de normalisation
+
+```{r}
+# z-score (distribution normale centrée-réduite)
+norm_zscore <- normalize_indicators(
+  results,
+  indicators = "carbon",
+  method = "zscore"
+)
+
+# Quantiles (distribution uniforme)
+norm_quantile <- normalize_indicators(
+  results,
+  indicators = "carbon",
+  method = "quantile"
+)
+```
+
+# Agrégation en indices composites
+
+Combinez plusieurs indicateurs en un indice unique :
+
+```{r}
+# Indice composite avec poids égaux
+composite <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  name = "ecosystem_health"
+)
+
+# Afficher les résultats
+head(composite[, c("parcel_id", "forest_type", "ecosystem_health")])
+```
+
+## Agrégation pondérée
+
+```{r}
+# Poids personnalisés (carbone 50%, biodiversité 30%, eau 20%)
+composite_weighted <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  weights = c(0.5, 0.3, 0.2),
+  name = "conservation_index"
+)
+```
+
+## Méthodes d'agrégation
+
+```{r}
+# Moyenne géométrique (effets multiplicatifs)
+composite_geom <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "water_norm"),
+  aggregation = "geometric_mean",
+  name = "water_carbon_index"
+)
+
+# Minimum (approche conservatrice, facteur limitant)
+composite_min <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm"),
+  aggregation = "min",
+  name = "minimum_performance"
+)
+```
+
+# Visualisation
+
+## Cartes thématiques
+
+```{r, fig.cap = "Carte de l'indice de santé écosystémique"}
+plot_indicators_map(
+  composite,
+  indicators = "ecosystem_health",
+  title = "Indice de santé écosystémique",
+  legend_title = "Score (0-100)"
+)
+```
+
+## Cartes multiples (facettes)
+
+```{r, fig.cap = "Comparaison carbone vs biodiversité", fig.width = 10}
+plot_indicators_map(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm"),
+  palette = "viridis",
+  facet = TRUE,
+  ncol = 2,
+  title = "Comparaison carbone vs biodiversité"
+)
+```
+
+## Graphique radar
+
+```{r, fig.cap = "Profil écosystémique - Parcelle P01"}
+nemeton_radar(
+  normalized,
+  unit_id = "P01",
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  title = "Profil multi-indicateurs - Parcelle P01"
+)
+```
+
+# Workflow complet
+
+Voici un exemple de workflow complet de bout en bout :
+
+```{r}
+# 1. Charger les données
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+# 2. Calculer les indicateurs
+results <- nemeton_compute(
+  massif_demo_units,
+  layers,
+  indicators = c("carbon", "biodiversity", "water",
+                 "fragmentation", "accessibility")
+)
+
+# 3. Normaliser (0-100)
+normalized <- normalize_indicators(
+  results,
+  indicators = c("carbon", "biodiversity", "water",
+                 "fragmentation", "accessibility"),
+  method = "minmax"
+)
+
+# 4. Créer un indice composite
+composite <- create_composite_index(
+  normalized,
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  weights = c(0.4, 0.4, 0.2),
+  name = "forest_quality"
+)
+
+# 5. Visualiser
+plot_indicators_map(
+  composite,
+  indicators = "forest_quality",
+  title = "Indice de qualité forestière",
+  legend_title = "Score (0-100)"
+)
+```
+
+# Analyses avancées
+
+## Inverser un indicateur
+
+Pour les indicateurs où une valeur faible est souhaitable :
+
+```{r, eval = FALSE}
+# Exemple: inverser un indicateur
+# (Utilisé pour les indicateurs où une valeur faible est souhaitable)
+normalized_inv <- invert_indicator(
+  normalized,
+  indicators = "water_norm",
+  suffix = "_inv"
+)
+
+# L'indicateur inversé
+head(normalized_inv[, c("parcel_id", "water_norm", "water_norm_inv")])
+```
+
+## Filtrage et sous-ensembles
+
+```{r}
+# Sélectionner uniquement les futaies feuillues
+broadleaf <- normalized[normalized$forest_type == "Futaie feuillue", ]
+
+# Créer un indice spécifique
+broadleaf_index <- create_composite_index(
+  broadleaf,
+  indicators = c("carbon_norm", "biodiversity_norm"),
+  name = "broadleaf_quality"
+)
+```
+
+# Internationalisation
+
+Le package supporte le français et l'anglais :
+
+```{r}
+# Définir la langue
+nemeton_set_language("fr")  # Français
+# nemeton_set_language("en")  # English
+
+# Les messages d'erreur/information seront dans la langue choisie
+```
+
+# Export des résultats
+
+```{r, eval = FALSE}
+# Export en GeoPackage
+sf::st_write(composite, "results/forest_quality.gpkg")
+
+# Export en CSV (sans géométrie)
+results_table <- composite %>%
+  sf::st_drop_geometry()
+write.csv(results_table, "results/forest_quality.csv", row.names = FALSE)
+```
+
+# Prochaines étapes
+
+- **Analyse temporelle** : `vignette("temporal-analysis_fr")` - Analyse multi-périodes
+- **Familles d'indicateurs** : `vignette("indicator-families_fr")` - Système 12 familles
+- **Internationalisation** : `vignette("internationalization")` - Système i18n
+
+# Références
+
+- Méthode Nemeton : Développée par Vivre en Forêt
+- Documentation complète : `help(package = "nemeton")`
+- Site web : https://pobsteta.github.io/nemeton/
+
+# Session Info
+
+```{r}
+sessionInfo()
+```
