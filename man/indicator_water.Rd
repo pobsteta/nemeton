@@ -32,7 +32,7 @@ indicator_water(
 \item{max_distance}{Numeric. Maximum distance to consider for proximity (meters). Default 1000.}
 
 \item{weights}{Numeric vector of length 2. Weights for TWI and proximity components.
-Default c(0.6, 0.4) (60% TWI, 40% proximity).}
+Default c(0.6, 0.4) (60\% TWI, 40\% proximity).}
 
 \item{...}{Additional arguments (not used)}
 }
@@ -43,11 +43,9 @@ Numeric vector of water regulation indicator values
 Estimates water regulation capacity from topography and hydrography.
 }
 \details{
-The water regulation indicator combines:
-\enumerate{
-  \item \strong{Topographic Wetness Index (TWI)}: Simplified proxy from DEM slope
-  \item \strong{Proximity to water}: Distance to nearest water body (inverse weighted)
-}
+The water regulation indicator combines two components:
+(1) Topographic Wetness Index (TWI) - Simplified proxy from DEM slope;
+(2) Proximity to water - Distance to nearest water body (inverse weighted).
 
 For MVP (v0.1.0), TWI is approximated from slope. Future versions will implement
 full flow accumulation analysis.

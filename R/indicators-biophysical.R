@@ -183,17 +183,14 @@ indicator_biodiversity <- function(units,
 #' @param calculate_proximity Logical. Calculate proximity to water bodies? Default TRUE.
 #' @param max_distance Numeric. Maximum distance to consider for proximity (meters). Default 1000.
 #' @param weights Numeric vector of length 2. Weights for TWI and proximity components.
-#'   Default c(0.6, 0.4) (60% TWI, 40% proximity).
+#'   Default c(0.6, 0.4) (60\% TWI, 40\% proximity).
 #' @param ... Additional arguments (not used)
-#'
 #' @return Numeric vector of water regulation indicator values
 #'
 #' @details
-#' The water regulation indicator combines:
-#' \enumerate{
-#'   \item \strong{Topographic Wetness Index (TWI)}: Simplified proxy from DEM slope
-#'   \item \strong{Proximity to water}: Distance to nearest water body (inverse weighted)
-#' }
+#' The water regulation indicator combines two components:
+#' (1) Topographic Wetness Index (TWI) - Simplified proxy from DEM slope;
+#' (2) Proximity to water - Distance to nearest water body (inverse weighted).
 #'
 #' For MVP (v0.1.0), TWI is approximated from slope. Future versions will implement
 #' full flow accumulation analysis.
@@ -210,7 +207,6 @@ indicator_biodiversity <- function(units,
 #' }
 #'
 #' @seealso \code{\link{nemeton_compute}}
-#'
 #' @export
 indicator_water <- function(units,
                             layers,
