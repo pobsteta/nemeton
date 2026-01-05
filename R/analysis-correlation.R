@@ -2,6 +2,9 @@
 # Cross-Family Correlation Analysis
 # MVP v0.3.0 - Multi-Family Indicator Extension
 
+#' @importFrom rlang .data
+NULL
+
 #' Compute Correlation Matrix Between Family Indices
 #'
 #' Calculates pairwise correlations between family composite indices to
@@ -342,7 +345,7 @@ plot_correlation_matrix <- function(corr_matrix,
   }
 
   # Create base heatmap
-  p <- ggplot2::ggplot(corr_df, ggplot2::aes(x = Family1, y = Family2, fill = Correlation)) +
+  p <- ggplot2::ggplot(corr_df, ggplot2::aes(x = .data$Family1, y = .data$Family2, fill = .data$Correlation)) +
     ggplot2::geom_tile(color = "white", linewidth = 0.5) +
     ggplot2::scale_fill_gradientn(
       colors = colors,
@@ -367,7 +370,7 @@ plot_correlation_matrix <- function(corr_matrix,
   # Add correlation values as text (except for "color" method)
   if (method %in% c("number", "circle", "square")) {
     p <- p + ggplot2::geom_text(
-      ggplot2::aes(label = sprintf("%.2f", Correlation)),
+      ggplot2::aes(label = sprintf("%.2f", .data$Correlation)),
       color = ifelse(abs(corr_df$Correlation) > 0.5, "white", "black"),
       size = 3.5
     )
@@ -376,7 +379,7 @@ plot_correlation_matrix <- function(corr_matrix,
   # Add circles for "circle" method
   if (method == "circle") {
     p <- p + ggplot2::geom_point(
-      ggplot2::aes(size = abs(Correlation)),
+      ggplot2::aes(size = abs(.data$Correlation)),
       shape = 21,
       color = "white",
       fill = "transparent"
