@@ -13,12 +13,26 @@ home:
     Multi-family ecosystem service assessment for forest management using
     the Nemeton method. Calculate, normalize, aggregate and visualize
     biophysical indicators across 12 ecosystem service families.
+  links:
+  - text: Français (French version)
+    href: index.html
+  - text: English (English version)
+    href: README_en.html
+  - text: View on GitHub
+    href: https://github.com/pobsteta/nemeton
 
 navbar:
   structure:
     left:  [intro, reference, articles, tutorials, news]
-    right: [search, github]
+    right: [language, search, github]
   components:
+    language:
+      icon: fa-language
+      menu:
+      - text: "Français"
+        href: index.html
+      - text: "English"
+        href: README_en.html
     articles:
       text: Vignettes
       menu:
