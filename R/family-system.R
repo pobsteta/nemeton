@@ -237,33 +237,33 @@ get_family_name <- function(family_code, lang = NULL) {
   }
 
   family_names_en <- c(
-    C = "Carbon & Vitality",
     B = "Biodiversity",
     W = "Water Regulation",
     A = "Air Quality & Microclimate",
     F = "Soil Fertility",
+    C = "Carbon & Vitality",
     L = "Landscape & Aesthetics",
-    T = "Temporal Dynamics",
-    R = "Risk Management",
+    T = "Temporal Dynamics & Trame",
+    R = "Risk Management & Resilience",
     S = "Social & Recreational",
     P = "Productive & Economic",
-    E = "Energy & Climate",
-    N = "Naturalness"
+    E = "Education & Climate",
+    N = "Naturalness & Night"
   )
 
   family_names_fr <- c(
-    C = "Carbone & Vitalité",
-    B = "Biodiversité",
-    W = "Régulation de l'Eau",
-    A = "Qualité de l'Air & Microclimat",
-    F = "Fertilité des Sols",
-    L = "Paysage & Esthétique",
-    T = "Dynamique Temporelle",
-    R = "Gestion des Risques",
-    S = "Social & Récréatif",
-    P = "Productif & Économique",
-    E = "Énergie & Climat",
-    N = "Naturalité"
+    B = "B – Biodiversité / V - Vivant",
+    W = "W – Water (eau) / I - Infiltrée",
+    A = "A – Air (microclimat) / V – Vaporeuse",
+    F = "F – Fertilité / R - Riche",
+    C = "C – Carbone / E – Énergétique",
+    L = "L – Landscape (paysage) / E – Esthétique",
+    T = "T – Trame / N - Nervurée",
+    R = "R – Résilience / F - Flexible",
+    S = "S – Santé / O – Ouverte",
+    P = "P – Patrimoine / R – Radicale",
+    E = "E – Éducation / E – Éducative",
+    N = "N – Nuit / T – Ténébreuse"
   )
 
   names_list <- if (lang == "fr") family_names_fr else family_names_en
