@@ -30,6 +30,25 @@ jobs:
         with:
           use-public-rspm: true
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgdal-dev \
+            libgeos-dev \
+            libproj-dev \
+            libudunits2-dev \
+            libssl-dev \
+            libcurl4-openssl-dev \
+            libxml2-dev \
+            libfontconfig1-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libfreetype6-dev \
+            libpng-dev \
+            libtiff5-dev \
+            libjpeg-dev
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::pkgdown, local::.
