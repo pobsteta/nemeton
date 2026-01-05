@@ -8,11 +8,16 @@ template:
     success: "#4CAF50"
 
 home:
-  title: nemeton - Systemic Forest Analysis
+  title: "nemeton - Systemic Forest Analysis / Analyse Systémique Forestière"
   description: >
     Multi-family ecosystem service assessment for forest management using
     the Nemeton method. Calculate, normalize, aggregate and visualize
     biophysical indicators across 12 ecosystem service families.
+
+    Évaluation multi-famille des services écosystémiques pour la gestion
+    forestière avec la méthode Nemeton. Calculez, normalisez, agrégez et
+    visualisez des indicateurs biophysiques à travers 12 familles de
+    services écosystémiques.
   links:
   - text: Français (French version)
     href: index.html
@@ -57,70 +62,70 @@ navbar:
         href: articles/internationalization.html
 
 reference:
-  - title: "Data Management"
-    desc: "Create and manage spatial units and layers"
+  - title: "Data Management / Gestion des données"
+    desc: "Create and manage spatial units and layers / Créer et gérer les unités spatiales et les couches"
     contents:
     - nemeton_units
     - nemeton_layers
     - massif_demo_units
     - massif_demo_layers
 
-  - title: "Core Workflow"
-    desc: "Main functions for indicator calculation"
+  - title: "Core Workflow / Workflow principal"
+    desc: "Main functions for indicator calculation / Fonctions principales pour le calcul d'indicateurs"
     contents:
     - nemeton_compute
     - list_indicators
 
-  - title: "Family C: Carbon & Vitality"
-    desc: "Carbon storage and vegetation vitality indicators"
+  - title: "Family C: Carbon & Vitality / Famille C : Carbone & Vitalité"
+    desc: "Carbon storage and vegetation vitality indicators / Indicateurs de stockage de carbone et de vitalité de la végétation"
     contents:
     - indicator_carbon
     - indicator_carbon_biomass
     - indicator_carbon_ndvi
 
-  - title: "Family W: Water Regulation"
-    desc: "Hydrological regulation and water-related indicators"
+  - title: "Family W: Water Regulation / Famille W : Régulation de l'eau"
+    desc: "Hydrological regulation and water-related indicators / Indicateurs de régulation hydrologique et relatifs à l'eau"
     contents:
     - indicator_water
     - indicator_water_network
     - indicator_water_wetlands
     - indicator_water_twi
 
-  - title: "Family F: Soil Fertility"
-    desc: "Soil quality and erosion risk indicators"
+  - title: "Family F: Soil Fertility / Famille F : Fertilité des sols"
+    desc: "Soil quality and erosion risk indicators / Indicateurs de qualité du sol et de risque d'érosion"
     contents:
     - indicator_soil_fertility
     - indicator_soil_erosion
 
-  - title: "Family L: Landscape Quality"
-    desc: "Landscape structure and connectivity indicators"
+  - title: "Family L: Landscape Quality / Famille L : Qualité du paysage"
+    desc: "Landscape structure and connectivity indicators / Indicateurs de structure du paysage et de connectivité"
     contents:
     - indicator_landscape_fragmentation
     - indicator_landscape_edge
 
-  - title: "Other Indicators (v0.1.0)"
-    desc: "Biodiversity, fragmentation, accessibility indicators"
+  - title: "Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)"
+    desc: "Biodiversity, fragmentation, accessibility indicators / Indicateurs de biodiversité, fragmentation, accessibilité"
     contents:
     - indicator_biodiversity
     - indicator_fragmentation
     - indicator_accessibility
 
-  - title: "Temporal Analysis"
-    desc: "Multi-period analysis and change detection"
+  - title: "Temporal Analysis / Analyse temporelle"
+    desc: "Multi-period analysis and change detection / Analyse multi-périodes et détection de changements"
     contents:
     - nemeton_temporal
     - calculate_change_rate
 
-  - title: "Normalization & Aggregation"
-    desc: "Transform and combine indicators"
+  - title: "Normalization & Aggregation / Normalisation & Agrégation"
+    desc: "Transform and combine indicators / Transformer et combiner les indicateurs"
     contents:
     - normalize_indicators
     - create_composite_index
     - create_family_index
     - invert_indicator
 
-  - title: "Visualization"
-    desc: "Maps and charts for results"
+  - title: "Visualization / Visualisation"
+    desc: "Maps and charts for results / Cartes et graphiques pour les résultats"
     contents:
     - plot_indicators_map
     - plot_comparison_map
@@ -129,13 +134,13 @@ reference:
     - plot_temporal_trend
     - plot_temporal_heatmap
 
-  - title: "Internationalization"
-    desc: "Multi-language support"
+  - title: "Internationalization / Internationalisation"
+    desc: "Multi-language support / Support multi-langues"
     contents:
     - nemeton_set_language
 
-  - title: "S3 Methods"
-    desc: "Print and summary methods for nemeton objects"
+  - title: "S3 Methods / Méthodes S3"
+    desc: "Print and summary methods for nemeton objects / Méthodes print et summary pour les objets nemeton"
     contents:
     - print.nemeton_units
     - print.nemeton_layers
@@ -144,12 +149,12 @@ reference:
     - summary.nemeton_layers
     - summary.nemeton_temporal
 
-  - title: "Package Documentation"
+  - title: "Package Documentation / Documentation du package"
     contents:
     - nemeton-package
 
-  - title: "Internal Functions"
-    desc: "Internal helper functions (for developers)"
+  - title: "Internal Functions / Fonctions internes"
+    desc: "Internal helper functions (for developers) / Fonctions d'aide internes (pour développeurs)"
     contents:
     - detect_indicator_family
     - get_family_name
