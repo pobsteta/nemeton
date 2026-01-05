@@ -189,7 +189,7 @@
 #'   \item Visualization: \code{\link{nemeton_radar}}
 #' }
 #'
-#' @docType package
+#' @docType _PACKAGE
 #' @name nemeton-package
 #' @aliases nemeton
 NULL

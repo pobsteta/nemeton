@@ -204,18 +204,15 @@ Visualize indicator evolution across all periods.
 plot_temporal_trend(
   temporal_data,
   indicator = "carbon",
-  title = "Carbon Stock Evolution (2015-2025)",
-  ylab = "Carbon (Mg C/parcel)"
+  title = "Carbon Stock Evolution (2015-2025)"
 )
 ```
 
 ```{r fig.cap = "Multiple indicator trends", fig.height = 8}
-# Multiple indicators (faceted)
+# Multiple indicators
 plot_temporal_trend(
   temporal_data,
   indicator = c("carbon", "biodiversity", "water"),
-  facet = TRUE,
-  ncol = 1,
   title = "Multi-Indicator Temporal Trends"
 )
 ```
@@ -247,7 +244,7 @@ Heatmaps help identify:
 ```{r}
 # Scenario: Selective thinning in 2020 affects carbon and biodiversity
 
-# Before intervention (2015-2020)
+# Before intervention (2015)
 units_before <- massif_demo_units[1:5, ]
 units_before$parcel_id <- paste0("P", 1:5)
 units_before$carbon <- c(120, 135, 128, 142, 138)
@@ -261,7 +258,7 @@ units_after$biodiversity <- c(14, 15, 13, 16, 14)     # +40% biodiversity
 
 # Create temporal object
 intervention <- nemeton_temporal(
-  periods = list("Before_2015" = units_before, "After_2025" = units_after),
+  periods = list("2015" = units_before, "2025" = units_after),
   id_column = "parcel_id"
 )
 
@@ -300,8 +297,7 @@ print(tradeoff)
 plot_temporal_trend(
   intervention,
   indicator = "biodiversity",
-  title = "Biodiversity Response to Thinning Intervention",
-  ylab = "Biodiversity Index"
+  title = "Biodiversity Response to Thinning Intervention"
 )
 ```
 
