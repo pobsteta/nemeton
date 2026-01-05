@@ -175,7 +175,7 @@ create_temp_test_files <- function() {
 get_cadastral_test_file <- function() {
   # Path relative to package root
   pkg_root <- here::here()
-  cadastral_path <- file.path(pkg_root, "data", "360053000AS0090.gpkg")
+  cadastral_path <- file.path(pkg_root, "inst/extdata", "360053000AS0090.gpkg")
 
   if (!file.exists(cadastral_path)) {
     skip("Cadastral test file not found")
