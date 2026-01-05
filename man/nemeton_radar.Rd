@@ -8,6 +8,7 @@ nemeton_radar(
   data,
   unit_id = NULL,
   indicators = NULL,
+  mode = c("indicator", "family"),
   normalize = TRUE,
   title = NULL,
   fill_color = "#3182bd",
@@ -21,7 +22,11 @@ nemeton_radar(
 the average of all units.}
 
 \item{indicators}{Character vector of indicator names to include in the radar.
-If NULL, auto-detects all numeric columns except geometry and standard metadata.}
+If NULL, auto-detects based on mode.}
+
+\item{mode}{Character. Display mode: "indicator" for individual indicators (default)
+or "family" for family indices (family_C, family_W, etc.). When mode = "family",
+supports 4-12 family axes dynamically.}
 
 \item{normalize}{Logical. If TRUE (default), normalizes values to 0-100 scale.}
 
@@ -56,7 +61,7 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
 normalized <- normalize_indicators(results)
 
-# Radar for a specific unit
+# Radar for a specific unit (indicator mode)
 nemeton_radar(normalized, unit_id = "unit_001")
 
 # Radar for average of all units
@@ -70,6 +75,11 @@ nemeton_radar(
   fill_color = "#d73027",
   fill_alpha = 0.5
 )
+
+# Family mode with 12 families
+# First create family indices
+units_fam <- create_family_index(normalized)
+nemeton_radar(units_fam, unit_id = 1, mode = "family")
 }
 
 }

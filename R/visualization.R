@@ -501,7 +501,10 @@ plot_difference_map <- function(data1,
 #' @param unit_id Optional. ID of the specific unit to plot. If NULL, plots
 #'   the average of all units.
 #' @param indicators Character vector of indicator names to include in the radar.
-#'   If NULL, auto-detects all numeric columns except geometry and standard metadata.
+#'   If NULL, auto-detects based on mode.
+#' @param mode Character. Display mode: "indicator" for individual indicators (default)
+#'   or "family" for family indices (family_C, family_W, etc.). When mode = "family",
+#'   supports 4-12 family axes dynamically.
 #' @param normalize Logical. If TRUE (default), normalizes values to 0-100 scale.
 #' @param title Optional plot title. If NULL, auto-generated based on unit_id.
 #' @param fill_color Color to fill the radar polygon. Default "#3182bd" (blue).
@@ -527,7 +530,7 @@ plot_difference_map <- function(data1,
 #' results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
 #' normalized <- normalize_indicators(results)
 #'
-#' # Radar for a specific unit
+#' # Radar for a specific unit (indicator mode)
 #' nemeton_radar(normalized, unit_id = "unit_001")
 #'
 #' # Radar for average of all units
@@ -541,6 +544,11 @@ plot_difference_map <- function(data1,
 #'   fill_color = "#d73027",
 #'   fill_alpha = 0.5
 #' )
+#'
+#' # Family mode with 12 families
+#' # First create family indices
+#' units_fam <- create_family_index(normalized)
+#' nemeton_radar(units_fam, unit_id = 1, mode = "family")
 #' }
 #'
 #' @seealso \code{\link{plot_indicators_map}}, \code{\link{normalize_indicators}}
@@ -548,6 +556,7 @@ plot_difference_map <- function(data1,
 nemeton_radar <- function(data,
                           unit_id = NULL,
                           indicators = NULL,
+                          mode = c("indicator", "family"),
                           normalize = TRUE,
                           title = NULL,
                           fill_color = "#3182bd",
@@ -558,17 +567,33 @@ nemeton_radar <- function(data,
     cli::cli_abort("{.arg data} must be an {.cls sf} object")
   }
 
+  # Match mode argument
+  mode <- match.arg(mode)
+
   # Auto-detect indicators if not specified
   if (is.null(indicators)) {
-    # Get numeric columns excluding geometry and standard metadata
     all_cols <- names(data)
-    exclude_cols <- c("geometry", "nemeton_id", "id", "area", "surface_geo",
-                      "geo_parcelle", "nomcommune", "codecommune")
-    numeric_cols <- all_cols[sapply(data, is.numeric)]
-    indicators <- setdiff(numeric_cols, exclude_cols)
 
-    if (length(indicators) == 0) {
-      cli::cli_abort("No numeric indicator columns found in data")
+    if (mode == "family") {
+      # Look for family_* columns (family_C, family_W, etc.)
+      family_pattern <- "^family_[A-Z]$"
+      indicators <- grep(family_pattern, all_cols, value = TRUE)
+
+      if (length(indicators) == 0) {
+        cli::cli_abort("No family indices found. Use {.fn create_family_index} first or set mode = \"indicator\"")
+      }
+    } else {
+      # Get numeric columns excluding geometry and standard metadata
+      exclude_cols <- c("geometry", "nemeton_id", "id", "area", "surface_geo",
+                        "geo_parcelle", "nomcommune", "codecommune")
+      # Also exclude family_* columns in indicator mode
+      exclude_patterns <- c(exclude_cols, grep("^family_", all_cols, value = TRUE))
+      numeric_cols <- all_cols[sapply(data, is.numeric)]
+      indicators <- setdiff(numeric_cols, exclude_patterns)
+
+      if (length(indicators) == 0) {
+        cli::cli_abort("No numeric indicator columns found in data")
+      }
     }
   }
 
@@ -580,28 +605,35 @@ nemeton_radar <- function(data,
 
   # Extract data for the specified unit or calculate mean
   if (!is.null(unit_id)) {
-    # Find ID column (try common names)
+    # Try to find ID column and match unit_id
     id_col <- NULL
+    unit_data <- NULL
+
     for (col_name in c("nemeton_id", "parcel_id", "id", "geo_parcelle")) {
       if (col_name %in% names(data)) {
         id_col <- col_name
-        break
+        unit_data <- data[data[[id_col]] == unit_id, ]
+        if (nrow(unit_data) > 0) {
+          break  # Found a match
+        }
       }
     }
 
-    if (is.null(id_col)) {
-      cli::cli_abort("{.arg data} must have an ID column (nemeton_id, parcel_id, id, or geo_parcelle) when {.arg unit_id} is specified")
-    }
-
-    unit_data <- data[data[[id_col]] == unit_id, ]
-    if (nrow(unit_data) == 0) {
-      cli::cli_abort("Unit ID {.val {unit_id}} not found in data")
+    # If no ID match found and unit_id is numeric, try row index
+    if (is.null(unit_data) || nrow(unit_data) == 0) {
+      if (is.numeric(unit_id) && unit_id <= nrow(data)) {
+        unit_data <- data[unit_id, , drop = FALSE]
+        unit_label <- paste("Unit", unit_id)
+      } else {
+        cli::cli_abort("Unit ID {.val {unit_id}} not found in data")
+      }
+    } else {
+      unit_label <- as.character(unit_id)
     }
 
     # Extract indicator values (drop geometry to avoid extra column)
     unit_df <- sf::st_drop_geometry(unit_data)
     values <- as.numeric(unit_df[1, indicators])
-    unit_label <- unit_id
   } else {
     # Calculate mean across all units
     values <- sapply(indicators, function(ind) {
@@ -763,6 +795,291 @@ nemeton_radar <- function(data,
     } else {
       title <- "Indicator Profile - Average"
     }
+  }
+
+  p <- p + ggplot2::labs(title = title)
+
+  p
+}
+
+#' Plot Temporal Trend (Time-Series)
+#'
+#' Creates line plots showing indicator evolution over time periods.
+#'
+#' @param temporal A nemeton_temporal object created by \code{\link{nemeton_temporal}}.
+#' @param indicator Character vector of one or more indicator names to plot.
+#' @param units Character vector of unit IDs to include. Default NULL uses all units.
+#' @param id_column Character. Column containing unit IDs. Default "parcel_id".
+#' @param title Character. Plot title. Default auto-generated.
+#' @param show_mean Logical. If TRUE, adds mean trend line. Default FALSE.
+#'
+#' @return A ggplot object
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' # Create temporal dataset
+#' temporal <- nemeton_temporal(
+#'   periods = list("2015" = units_2015, "2020" = units_2020)
+#' )
+#'
+#' # Plot carbon trend
+#' plot_temporal_trend(temporal, indicator = "C1")
+#'
+#' # Multiple indicators
+#' plot_temporal_trend(temporal, indicator = c("C1", "W1"))
+#' }
+plot_temporal_trend <- function(temporal,
+                                 indicator,
+                                 units = NULL,
+                                 id_column = "parcel_id",
+                                 title = NULL,
+                                 show_mean = FALSE) {
+  # Validate inputs
+  if (!inherits(temporal, "nemeton_temporal")) {
+    stop("temporal must be a nemeton_temporal object", call. = FALSE)
+  }
+
+  # Prepare data for plotting
+  plot_data <- list()
+
+  for (period_name in names(temporal$periods)) {
+    period_data <- temporal$periods[[period_name]]
+
+    # Check all indicators exist
+    missing_ind <- setdiff(indicator, names(period_data))
+    if (length(missing_ind) > 0) {
+      stop(sprintf("Indicator '%s' not found in period '%s'",
+                   missing_ind[1], period_name), call. = FALSE)
+    }
+
+    # Get unit IDs
+    if (id_column %in% names(period_data)) {
+      unit_ids <- as.character(period_data[[id_column]])
+    } else {
+      unit_ids <- as.character(seq_len(nrow(period_data)))
+    }
+
+    # Filter units if specified
+    if (!is.null(units)) {
+      keep_idx <- unit_ids %in% units
+      period_data <- period_data[keep_idx, ]
+      unit_ids <- unit_ids[keep_idx]
+    }
+
+    # Extract indicator values
+    for (ind in indicator) {
+      period_df <- data.frame(
+        unit_id = unit_ids,
+        period = period_name,
+        indicator = ind,
+        value = period_data[[ind]],
+        stringsAsFactors = FALSE
+      )
+
+      plot_data[[length(plot_data) + 1]] <- period_df
+    }
+  }
+
+  # Combine all data
+  plot_df <- do.call(rbind, plot_data)
+
+  # Add dates if available
+  if (!is.null(temporal$metadata$dates)) {
+    period_names <- names(temporal$periods)
+    date_lookup <- stats::setNames(temporal$metadata$dates, period_names)
+    plot_df$date <- date_lookup[plot_df$period]
+  } else {
+    # Try to parse as years
+    plot_df$date <- as.Date(paste0(plot_df$period, "-01-01"))
+  }
+
+  # Create plot
+  if (length(indicator) == 1) {
+    # Single indicator: plot all units
+    p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = date, y = value,
+                                                 group = unit_id, color = unit_id)) +
+      ggplot2::geom_line(alpha = 0.6) +
+      ggplot2::geom_point(alpha = 0.6) +
+      ggplot2::labs(
+        x = "Date",
+        y = indicator[1],
+        color = "Unit"
+      ) +
+      ggplot2::theme_minimal()
+
+    if (show_mean) {
+      # Add mean line
+      mean_df <- stats::aggregate(value ~ date, data = plot_df, FUN = mean)
+      p <- p + ggplot2::geom_line(data = mean_df,
+                                    ggplot2::aes(x = date, y = value),
+                                    inherit.aes = FALSE,
+                                    color = "black", linewidth = 1.2)
+    }
+  } else {
+    # Multiple indicators: facet by indicator
+    p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = date, y = value,
+                                                 group = unit_id, color = unit_id)) +
+      ggplot2::geom_line(alpha = 0.6) +
+      ggplot2::geom_point(alpha = 0.6, size = 1) +
+      ggplot2::facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+      ggplot2::labs(
+        x = "Date",
+        y = "Value",
+        color = "Unit"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(legend.position = "right")
+  }
+
+  # Add title
+  if (is.null(title)) {
+    if (length(indicator) == 1) {
+      title <- sprintf("Temporal Trend: %s", indicator[1])
+    } else {
+      title <- sprintf("Temporal Trends: %d Indicators", length(indicator))
+    }
+  }
+
+  p <- p + ggplot2::labs(title = title)
+
+  p
+}
+
+#' Plot Temporal Heatmap
+#'
+#' Creates a heatmap showing all indicator values across periods for a specific unit.
+#'
+#' @param temporal A nemeton_temporal object created by \code{\link{nemeton_temporal}}.
+#' @param unit_id Character. ID of the unit to visualize.
+#' @param indicators Character vector of indicators to include. Default NULL uses all.
+#' @param id_column Character. Column containing unit IDs. Default "parcel_id".
+#' @param normalize Logical. If TRUE, normalize indicators to 0-100 scale. Default FALSE.
+#' @param title Character. Plot title. Default auto-generated.
+#'
+#' @return A ggplot object
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' # Create temporal dataset
+#' temporal <- nemeton_temporal(
+#'   periods = list("2015" = units_2015, "2020" = units_2020),
+#'   id_column = "parcel_id"
+#' )
+#'
+#' # Plot heatmap for unit P1
+#' plot_temporal_heatmap(temporal, unit_id = "P1")
+#'
+#' # With normalization
+#' plot_temporal_heatmap(temporal, unit_id = "P1", normalize = TRUE)
+#' }
+plot_temporal_heatmap <- function(temporal,
+                                   unit_id,
+                                   indicators = NULL,
+                                   id_column = "parcel_id",
+                                   normalize = FALSE,
+                                   title = NULL) {
+  # Validate inputs
+  if (!inherits(temporal, "nemeton_temporal")) {
+    stop("temporal must be a nemeton_temporal object", call. = FALSE)
+  }
+
+  # Prepare data
+  plot_data <- list()
+
+  for (period_name in names(temporal$periods)) {
+    period_data <- temporal$periods[[period_name]]
+
+    # Get unit IDs
+    if (id_column %in% names(period_data)) {
+      unit_ids <- as.character(period_data[[id_column]])
+    } else {
+      unit_ids <- as.character(seq_len(nrow(period_data)))
+    }
+
+    # Find the unit
+    unit_idx <- which(unit_ids == unit_id)
+    if (length(unit_idx) == 0) {
+      next  # Unit not in this period
+    }
+
+    unit_row <- period_data[unit_idx[1], ]
+
+    # Get numeric indicator columns
+    if (is.null(indicators)) {
+      numeric_cols <- names(unit_row)[vapply(names(unit_row), function(col) {
+        is.numeric(unit_row[[col]]) &&
+          !col %in% c("geometry", "geom", "parcel_id", "unit_id")
+      }, logical(1))]
+    } else {
+      numeric_cols <- indicators
+    }
+
+    # Extract values
+    for (ind in numeric_cols) {
+      if (!ind %in% names(unit_row)) {
+        warning(sprintf("Indicator '%s' not found in period '%s'", ind, period_name),
+                call. = FALSE)
+        next
+      }
+
+      period_df <- data.frame(
+        indicator = ind,
+        period = period_name,
+        value = unit_row[[ind]],
+        stringsAsFactors = FALSE
+      )
+
+      plot_data[[length(plot_data) + 1]] <- period_df
+    }
+  }
+
+  # Check unit was found
+  if (length(plot_data) == 0) {
+    stop(sprintf("Unit '%s' not found in any period", unit_id), call. = FALSE)
+  }
+
+  # Combine data
+  plot_df <- do.call(rbind, plot_data)
+
+  # Normalize if requested
+  if (normalize) {
+    # Normalize each indicator to 0-100
+    for (ind in unique(plot_df$indicator)) {
+      ind_rows <- plot_df$indicator == ind
+      values <- plot_df$value[ind_rows]
+
+      min_val <- min(values, na.rm = TRUE)
+      max_val <- max(values, na.rm = TRUE)
+
+      if (max_val > min_val) {
+        plot_df$value[ind_rows] <- ((values - min_val) / (max_val - min_val)) * 100
+      } else {
+        plot_df$value[ind_rows] <- 50  # All same value
+      }
+    }
+  }
+
+  # Create heatmap
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = period, y = indicator, fill = value)) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.5) +
+    ggplot2::scale_fill_viridis_c(name = if (normalize) "Normalized\nValue (0-100)" else "Value") +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.1f", value)),
+                       color = "white", size = 3) +
+    ggplot2::labs(
+      x = "Period",
+      y = "Indicator"
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+      panel.grid = ggplot2::element_blank()
+    )
+
+  # Add title
+  if (is.null(title)) {
+    title <- sprintf("Temporal Evolution: Unit %s", unit_id)
   }
 
   p <- p + ggplot2::labs(title = title)

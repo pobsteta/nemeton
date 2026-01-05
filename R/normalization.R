@@ -16,6 +16,9 @@
 #' @param na.rm Logical. Remove NA values before normalization? Default TRUE.
 #' @param reference_data Optional data.frame with reference values for normalization.
 #'   Useful for normalizing new data using parameters from a reference dataset.
+#' @param by_family Logical. If TRUE, normalize indicators within each family using
+#'   family-wide parameters (e.g., all Carbon indicators C1, C2 share the same min/max).
+#'   This makes indicators within a family directly comparable. Default FALSE.
 #'
 #' @return The input data with added normalized columns
 #'
@@ -72,23 +75,40 @@ normalize_indicators <- function(data,
                                   suffix = "_norm",
                                   keep_original = TRUE,
                                   na.rm = TRUE,
-                                  reference_data = NULL) {
+                                  reference_data = NULL,
+                                  by_family = FALSE) {
   # Match method argument
   method <- match.arg(method)
 
+  # When by_family = TRUE and suffix not explicitly set, normalize in-place
+  if (by_family && suffix == "_norm") {
+    suffix <- ""
+    keep_original <- FALSE
+  }
+
   # Auto-detect indicators if not specified
   if (is.null(indicators)) {
-    # Common indicator names
-    possible_indicators <- c(
+    # v0.1.0 indicator names
+    v1_indicators <- c(
       "carbon", "biodiversity", "water",
       "fragmentation", "accessibility"
     )
-    indicators <- intersect(names(data), possible_indicators)
+
+    # v0.2.0+ family indicators (C1, C2, W1, etc.)
+    all_cols <- names(data)
+    family_pattern <- "^[A-Z][0-9]"  # Matches C1, W1, F1, etc.
+    family_indicators <- grep(family_pattern, all_cols, value = TRUE)
+
+    # Combine both
+    indicators <- unique(c(
+      intersect(all_cols, v1_indicators),
+      family_indicators
+    ))
 
     if (length(indicators) == 0) {
       msg_error("viz_no_indicators")
       cli::cli_inform("i" = msg("viz_specify_indicators"))
-      cli::cli_inform(">" = "Example: indicators = c('carbon', 'water')")
+      cli::cli_inform(">" = "Example: indicators = c('carbon', 'water') or c('C1', 'W1')")
       cli::cli_abort("")
     }
 
@@ -135,8 +155,8 @@ normalize_indicators <- function(data,
     new_col <- paste0(ind, suffix)
     result[[new_col]] <- normalized
 
-    # Optionally remove original
-    if (!keep_original) {
+    # Optionally remove original (but not if we're replacing in-place)
+    if (!keep_original && suffix != "") {
       result[[ind]] <- NULL
     }
   }

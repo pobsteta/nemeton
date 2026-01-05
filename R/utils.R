@@ -149,3 +149,122 @@ as_pure_sf <- function(x) {
   class(x_sf) <- setdiff(class(x_sf), "nemeton_units")
   x_sf
 }
+
+# ==============================================================================
+# v0.2.0 HELPERS - Allometric Models & Family Management
+# ==============================================================================
+
+#' Get Allometric Coefficients for Species
+#'
+#' Retrieves allometric equation coefficients from internal lookup table
+#' (allometric_models from R/sysdata.rda).
+#'
+#' @param species Character. Species name (e.g., "Quercus", "Fagus", "Pinus",
+#'   "Abies"). If not found, returns "Generic" equation.
+#'
+#' @return List with components: a, b, c (coefficients), source, citation
+#' @keywords internal
+#' @noRd
+get_allometric_coefficients <- function(species) {
+  # Access internal package data (created in data-raw/allometric_models.R)
+  models <- allometric_models
+
+  # Match species (case-insensitive)
+  idx <- match(tolower(species), tolower(models$species))
+
+  # Fallback to Generic if not found
+  if (is.na(idx)) {
+    idx <- which(models$species == "Generic")
+    if (length(idx) == 0) {
+      stop("Allometric models data missing - reinstall package")
+    }
+  }
+
+  # Return coefficients as list
+  list(
+    a = models$a[idx],
+    b = models$b[idx],
+    c = models$c[idx],
+    source = models$source[idx],
+    citation = models$citation[idx]
+  )
+}
+
+#' Calculate Biomass Using Allometric Equation
+#'
+#' Applies species-specific allometric equation: Biomass = a * Age^b * Density^c
+#'
+#' @param species Character vector. Species names
+#' @param age Numeric vector. Stand age (years)
+#' @param density Numeric vector. Stand density (0-1 scale)
+#'
+#' @return Numeric vector of biomass (tC/ha)
+#' @keywords internal
+#' @noRd
+calculate_allometric_biomass <- function(species, age, density) {
+  # Vectorized calculation
+  biomass <- numeric(length(species))
+
+  for (i in seq_along(species)) {
+    # Check for NA inputs
+    if (is.na(species[i]) || is.na(age[i]) || is.na(density[i])) {
+      biomass[i] <- NA_real_
+      next
+    }
+
+    coef <- get_allometric_coefficients(species[i])
+    biomass[i] <- coef$a * (age[i]^coef$b) * (density[i]^coef$c)
+  }
+
+  biomass
+}
+
+#' Detect Indicator Family from Column Name
+#'
+#' Extracts family code from indicator column name (e.g., "C1" -> "C",
+#' "W3_norm" -> "W").
+#'
+#' @param indicator_name Character. Indicator column name
+#'
+#' @return Character. Family code (single letter) or NA if not recognized
+#' @keywords internal
+#' @noRd
+detect_indicator_family <- function(indicator_name) {
+  # Extract first character if followed by digit
+  if (grepl("^[A-Z][0-9]", indicator_name)) {
+    return(substr(indicator_name, 1, 1))
+  }
+  NA_character_
+}
+
+#' Get Family Name from Code
+#'
+#' Returns full family name from single-letter code.
+#'
+#' @param family_code Character. Single letter (B, W, A, F, C, L, T, R, S, P, E, N)
+#'
+#' @return Character. Full family name
+#' @keywords internal
+#' @noRd
+get_family_name <- function(family_code) {
+  family_names <- c(
+    B = "Biodiversité/Vivant",
+    W = "Water/Infiltrée",
+    A = "Air/Vaporeuse",
+    F = "Fertilité/Riche",
+    C = "Carbone/Énergétique",
+    L = "Landscape/Esthétique",
+    T = "Trame/Nervurée",
+    R = "Résilience/Flexible",
+    S = "Santé/Ouverte",
+    P = "Patrimoine/Radicale",
+    E = "Éducation/Éducative",
+    N = "Nuit/Ténébreuse"
+  )
+
+  name <- family_names[family_code]
+  if (is.na(name)) {
+    return(paste0("Family ", family_code))
+  }
+  name
+}
