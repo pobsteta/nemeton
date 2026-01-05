@@ -34,16 +34,25 @@ navbar:
       - text: "English"
         href: README_en.html
     articles:
-      text: Vignettes
+      text: Vignettes / Articles
       menu:
+      - text: "Français 🇫🇷"
+      - text: Démarrage rapide
+        href: articles/getting-started_fr.html
+      - text: Familles d'indicateurs (12 familles + radar)
+        href: articles/indicator-families_fr.html
+      - text: Analyse temporelle
+        href: articles/temporal-analysis_fr.html
+      - text: "---"
+      - text: "English 🇬🇧"
       - text: Getting Started
         href: articles/getting-started.html
-      - text: "---"
-      - text: Indicator Families Reference
+      - text: Indicator Families Reference (12 families + radar)
         href: articles/indicator-families.html
       - text: Temporal Analysis
         href: articles/temporal-analysis.html
       - text: "---"
+      - text: "Both Languages / Les deux langues"
       - text: Internationalization (i18n)
         href: articles/internationalization.html
 
