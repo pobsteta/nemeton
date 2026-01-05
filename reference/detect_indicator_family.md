@@ -1,6 +1,6 @@
 # Detect Indicator Family from Name
 
-Extracts the family code from an indicator name (e.g., "C1" → "C").
+Extracts the family code from an indicator name (e.g., "C1" -\> "C").
 
 ## Usage
 
