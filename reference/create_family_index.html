@@ -11,7 +11,7 @@ score_water). Automatically detects indicator families from column name prefixes
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,8 @@ score_water). Automatically detects indicator families from column name prefixes
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ NOUVEAU v0.3.0: Biodiversité, Risques, Climat</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -41,7 +43,7 @@ score_water). Automatically detects indicator families from column name prefixes
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Create Family Composite Indices</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/v0.2.0/R/family-system.R" class="external-link"><code>R/family-system.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/main/R/family-system.R" class="external-link"><code>R/family-system.R</code></a></small>
       <div class="d-none name"><code>create_family_index.Rd</code></div>
     </div>
 
@@ -55,7 +57,7 @@ score_water). Automatically detects indicator families from column name prefixes
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_family_index</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"weighted"</span>, <span class="st">"geometric"</span>, <span class="st">"harmonic"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"weighted"</span>, <span class="st">"geometric"</span>, <span class="st">"harmonic"</span>, <span class="st">"min"</span><span class="op">)</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  family_codes <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -71,8 +73,8 @@ score_water). Automatically detects indicator families from column name prefixes
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>Character. Aggregation method: "mean", "weighted", "geometric", "harmonic".
-Default "mean".</p></dd>
+<dd><p>Character. Aggregation method: "mean", "weighted", "geometric",
+"harmonic", "min" (v0.3.0+). Default "mean".</p></dd>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
@@ -105,6 +107,7 @@ If NULL, equal weights are used.</p></dd>
 <li><p>weighted: Weighted average using provided weights</p></li>
 <li><p>geometric: Geometric mean (product^(1/n))</p></li>
 <li><p>harmonic: Harmonic mean (n / sum(1/x))</p></li>
+<li><p>min: Minimum value (worst-case, most conservative) - v0.3.0+</p></li>
 </ul></div>
 
     <div class="section level2">

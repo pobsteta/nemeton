@@ -267,14 +267,17 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] nemeton_0.2.0
+#> [1] nemeton_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] digest_0.6.39     desc_1.4.3        R6_2.6.1          fastmap_1.2.0    
-#>  [5] xfun_0.55         glue_1.8.0        cachem_1.1.0      knitr_1.51       
-#>  [9] htmltools_0.5.9   rmarkdown_2.30    lifecycle_1.0.4   cli_3.6.5        
-#> [13] sass_0.4.10       pkgdown_2.2.0     textshaping_1.0.4 jquerylib_0.1.4  
-#> [17] systemfonts_1.3.1 compiler_4.5.2    tools_4.5.2       ragg_1.5.0       
-#> [21] evaluate_1.0.5    bslib_0.9.0       yaml_2.3.12       jsonlite_2.0.0   
-#> [25] rlang_1.1.6       fs_1.6.6
+#>  [1] terra_1.8-86       cli_3.6.5          knitr_1.51         rlang_1.1.6       
+#>  [5] xfun_0.55          KernSmooth_2.23-26 DBI_1.2.3          textshaping_1.0.4 
+#>  [9] sf_1.0-23          jsonlite_2.0.0     glue_1.8.0         htmltools_0.5.9   
+#> [13] e1071_1.7-17       ragg_1.5.0         sass_0.4.10        rmarkdown_2.30    
+#> [17] grid_4.5.2         evaluate_1.0.5     jquerylib_0.1.4    classInt_0.4-11   
+#> [21] fastmap_1.2.0      yaml_2.3.12        lifecycle_1.0.4    compiler_4.5.2    
+#> [25] codetools_0.2-20   fs_1.6.6           Rcpp_1.1.0         systemfonts_1.3.1 
+#> [29] digest_0.6.39      R6_2.6.1           class_7.3-23       magrittr_2.0.4    
+#> [33] bslib_0.9.0        proxy_0.4-29       tools_4.5.2        units_1.0-0       
+#> [37] pkgdown_2.2.0      cachem_1.1.0       desc_1.4.3
 ```

@@ -10,7 +10,7 @@ weighted averages.
 ``` r
 create_family_index(
   data,
-  method = c("mean", "weighted", "geometric", "harmonic"),
+  method = c("mean", "weighted", "geometric", "harmonic", "min"),
   weights = NULL,
   na.rm = TRUE,
   family_codes = NULL
@@ -26,7 +26,7 @@ create_family_index(
 - method:
 
   Character. Aggregation method: "mean", "weighted", "geometric",
-  "harmonic". Default "mean".
+  "harmonic", "min" (v0.3.0+). Default "mean".
 
 - weights:
 
@@ -73,6 +73,8 @@ family_W).
 - geometric: Geometric mean (product^(1/n))
 
 - harmonic: Harmonic mean (n / sum(1/x))
+
+- min: Minimum value (worst-case, most conservative) - v0.3.0+
 
 ## Examples
 
