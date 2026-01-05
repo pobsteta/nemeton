@@ -424,3 +424,154 @@ test_that("nemeton_radar errors on invalid unit_id", {
     "Unit ID.*not found"
   )
 })
+
+# ==============================================================================
+# v0.3.0: Tests for 9-axis radar plot support (T060)
+# ==============================================================================
+
+test_that("nemeton_radar supports 9-family axes (v0.3.0)", {
+  skip_if_not_installed("nemeton")
+
+  data(massif_demo_units)
+  units <- massif_demo_units[1:5, ]
+
+  # Add all 9 implemented family indicators (v0.3.0: C, W, F, L, B, R, T, A)
+  units$C1 <- runif(5, 50, 100)
+  units$W1 <- runif(5, 10, 30)
+  units$F1 <- runif(5, 5, 20)
+  units$L1 <- runif(5, 0.3, 0.8)
+  units$B1 <- runif(5, 20, 80)
+  units$R1 <- runif(5, 10, 70)
+  units$T1 <- runif(5, 30, 200)
+  units$A1 <- runif(5, 30, 90)
+
+  # Create family indices
+  result <- create_family_index(units)
+
+  # Create 9-axis radar plot
+  p <- nemeton_radar(
+    result,
+    unit_id = 1,
+    indicators = grep("^family_", names(result), value = TRUE),
+    normalize = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+  expect_true(!is.null(p$data))
+
+  # Should have data for all families
+  expect_true(nrow(p$data) >= 8)  # At least 8-9 families
+})
+
+test_that("nemeton_radar scales correctly with 9-12 axes", {
+  data(massif_demo_units)
+  units <- massif_demo_units[1:3, ]
+
+  # Create 9 families
+  units$C1 <- c(50, 60, 70)
+  units$W1 <- c(40, 50, 60)
+  units$F1 <- c(30, 40, 50)
+  units$L1 <- c(0.5, 0.6, 0.7)
+  units$B1 <- c(45, 55, 65)
+  units$R1 <- c(35, 45, 55)
+  units$T1 <- c(100, 120, 140)
+  units$A1 <- c(55, 65, 75)
+
+  # Add one more to test 9+ axes
+  units$S1 <- c(25, 35, 45)  # Social (future family)
+
+  result <- create_family_index(units)
+
+  # Should handle 9 axes without visual artifacts
+  p <- nemeton_radar(
+    result,
+    unit_id = 1,
+    indicators = grep("^family_", names(result), value = TRUE),
+    normalize = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+
+  # Check plot has proper structure
+  expect_true(length(p$layers) > 0)
+  expect_true(!is.null(p$coordinates))
+})
+
+test_that("nemeton_radar handles new family names correctly", {
+  data(massif_demo_units)
+  units <- massif_demo_units[1:2, ]
+
+  units$B1 <- c(50, 60)
+  units$R1 <- c(40, 50)
+  units$T1 <- c(100, 120)
+  units$A1 <- c(55, 65)
+
+  result <- create_family_index(units, family_codes = c("B", "R", "T", "A"))
+
+  p <- nemeton_radar(
+    result,
+    unit_id = 1,
+    indicators = c("family_B", "family_R", "family_T", "family_A"),
+    normalize = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+
+  # Plot data should contain family indicator values
+  expect_true(any(grepl("family_", p$data$indicator)))
+})
+
+test_that("nemeton_radar displays correct scaling with mixed v0.2.0 and v0.3.0 families", {
+  data(massif_demo_units)
+  units <- massif_demo_units[1:3, ]
+
+  # Mix old and new families
+  units$C1 <- c(100, 200, 300)  # v0.2.0
+  units$W1 <- c(10, 20, 30)     # v0.2.0
+  units$B1 <- c(25, 50, 75)     # v0.3.0
+  units$R1 <- c(30, 50, 70)     # v0.3.0
+
+  result <- create_family_index(units)
+
+  # All families should be on same 0-100 scale
+  p <- nemeton_radar(
+    result,
+    unit_id = 1,
+    indicators = grep("^family_", names(result), value = TRUE),
+    normalize = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+
+  # Check that values are properly scaled
+  if (!is.null(p$data)) {
+    # All values should be in reasonable range after normalization
+    expect_true(all(p$data$value >= 0, na.rm = TRUE))
+  }
+})
+
+test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
+  data(massif_demo_units)
+  units <- massif_demo_units[1:3, ]
+
+  units$B1 <- c(50, 60, 70)
+  units$R1 <- c(40, 50, 60)
+  units$T1 <- c(100, 120, 140)
+
+  result <- create_family_index(units)
+
+  # Compare two units
+  p <- nemeton_radar(
+    result,
+    unit_id = c(1, 2),
+    indicators = c("family_B", "family_R", "family_T"),
+    normalize = FALSE
+  )
+
+  expect_s3_class(p, "ggplot")
+
+  # Should have data for both units
+  if (!is.null(p$data)) {
+    expect_true(length(unique(p$data$unit_id)) == 2)
+  }
+})

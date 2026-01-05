@@ -233,7 +233,42 @@ msg_error <- function(key, ...) {
     # v0.2.0 - Family system
     family_index_created = "Created family index '%s' from %d indicators",
     family_weights_applied = "Applied custom weights: %s",
-    family_no_indicators = "No indicators found for family '%s'"
+    family_no_indicators = "No indicators found for family '%s'",
+
+    # v0.3.0 - Family B: Biodiversity/Vivant
+    indicator_biodiversity_protection = "Protected area coverage (B: Biodiversity/Vivant)",
+    indicator_biodiversity_structure = "Structural diversity (B: Biodiversity/Vivant)",
+    indicator_biodiversity_connectivity = "Ecological connectivity (B: Biodiversity/Vivant)",
+    biodiversity_wfs_fetching = "Fetching protected areas from INPN WFS...",
+    biodiversity_wfs_fetched = "Retrieved %d protected area features",
+    biodiversity_wfs_failed = "WFS fetch failed, using local data fallback",
+    biodiversity_shannon_calculated = "Calculated Shannon diversity H=%0.2f",
+    biodiversity_corridor_distance = "Minimum corridor distance: %0.0f m",
+
+    # v0.3.0 - Family R: Risk & Resilience/Flexible
+    indicator_risk_fire = "Fire risk index (R: Risk & Resilience/Flexible)",
+    indicator_risk_storm = "Storm vulnerability (R: Risk & Resilience/Flexible)",
+    indicator_risk_drought = "Drought stress (R: Risk & Resilience/Flexible)",
+    risk_fire_factors = "Fire risk: slope=%0.1f, species=%0.1f, climate=%0.1f",
+    risk_storm_factors = "Storm vulnerability: height=%0.1f, density=%0.1f, exposure=%0.1f",
+    risk_drought_factors = "Drought stress: TWI=%0.1f, precip=%0.1f, species=%0.1f",
+    risk_species_unknown = "Unknown species '%s', using default sensitivity",
+
+    # v0.3.0 - Family T: Temporal Dynamics/Nervurée
+    indicator_temporal_age = "Stand age (T: Temporal Dynamics/Nervurée)",
+    indicator_temporal_change = "Land use change rate (T: Temporal Dynamics/Nervurée)",
+    temporal_age_calculated = "Calculated stand age: median=%0.0f years",
+    temporal_change_detected = "Detected %0.2f%% area change over %d years",
+    temporal_change_interpretation = "Using interpretation mode: %s",
+
+    # v0.3.0 - Family A: Air Quality & Microclimate/Vaporeuse
+    indicator_air_coverage = "Tree coverage buffer (A: Air Quality/Vaporeuse)",
+    indicator_air_quality = "Air quality index (A: Air Quality/Vaporeuse)",
+    air_coverage_calculated = "Forest coverage in buffer: %0.1f%%",
+    air_quality_method = "Using air quality method: %s",
+    air_quality_proxy_warning = "ATMO data unavailable, using distance proxy",
+    air_quality_roads_distance = "Mean distance to major roads: %0.0f m",
+    air_quality_urban_distance = "Mean distance to urban areas: %0.0f m"
   ),
 
   fr = list(
@@ -351,6 +386,41 @@ msg_error <- function(key, ...) {
     # v0.2.0 - Système de familles
     family_index_created = "Indice de famille '%s' créé à partir de %d indicateurs",
     family_weights_applied = "Poids personnalisés appliqués : %s",
-    family_no_indicators = "Aucun indicateur trouvé pour la famille '%s'"
+    family_no_indicators = "Aucun indicateur trouvé pour la famille '%s'",
+
+    # v0.3.0 - Famille B : Biodiversité/Vivant
+    indicator_biodiversity_protection = "Couverture en zones protégées (B: Biodiversité/Vivant)",
+    indicator_biodiversity_structure = "Diversité structurelle (B: Biodiversité/Vivant)",
+    indicator_biodiversity_connectivity = "Connectivité écologique (B: Biodiversité/Vivant)",
+    biodiversity_wfs_fetching = "Récupération des zones protégées depuis INPN WFS...",
+    biodiversity_wfs_fetched = "%d entités de zones protégées récupérées",
+    biodiversity_wfs_failed = "Échec WFS, utilisation des données locales",
+    biodiversity_shannon_calculated = "Diversité Shannon calculée H=%0.2f",
+    biodiversity_corridor_distance = "Distance minimale au corridor : %0.0f m",
+
+    # v0.3.0 - Famille R : Résilience/Flexible
+    indicator_risk_fire = "Indice de risque incendie (R: Résilience/Flexible)",
+    indicator_risk_storm = "Vulnérabilité tempête (R: Résilience/Flexible)",
+    indicator_risk_drought = "Stress hydrique (R: Résilience/Flexible)",
+    risk_fire_factors = "Risque incendie : pente=%0.1f, essence=%0.1f, climat=%0.1f",
+    risk_storm_factors = "Vulnérabilité tempête : hauteur=%0.1f, densité=%0.1f, exposition=%0.1f",
+    risk_drought_factors = "Stress hydrique : TWI=%0.1f, précip=%0.1f, essence=%0.1f",
+    risk_species_unknown = "Essence inconnue '%s', utilisation sensibilité par défaut",
+
+    # v0.3.0 - Famille T : Trame/Nervurée
+    indicator_temporal_age = "Ancienneté du peuplement (T: Trame/Nervurée)",
+    indicator_temporal_change = "Taux de changement d'occupation (T: Trame/Nervurée)",
+    temporal_age_calculated = "Ancienneté calculée : médiane=%0.0f ans",
+    temporal_change_detected = "%0.2f%% de changement détecté sur %d ans",
+    temporal_change_interpretation = "Mode d'interprétation : %s",
+
+    # v0.3.0 - Famille A : Air/Vaporeuse
+    indicator_air_coverage = "Couverture arborée buffer (A: Air/Vaporeuse)",
+    indicator_air_quality = "Indice qualité de l'air (A: Air/Vaporeuse)",
+    air_coverage_calculated = "Couverture forestière dans buffer : %0.1f%%",
+    air_quality_method = "Méthode qualité air utilisée : %s",
+    air_quality_proxy_warning = "Données ATMO indisponibles, utilisation proxy distance",
+    air_quality_roads_distance = "Distance moyenne routes principales : %0.0f m",
+    air_quality_urban_distance = "Distance moyenne zones urbaines : %0.0f m"
   )
 )

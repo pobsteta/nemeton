@@ -25,3 +25,11 @@
 # pkgdown
 # docs/ - Removed to allow pkgdown site deployment
 nemeton.Rcheck/
+
+# Package management
+packrat/
+renv/
+
+# Environment and logs
+.env*
+*.log

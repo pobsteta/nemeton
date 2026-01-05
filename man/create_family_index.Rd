@@ -6,7 +6,7 @@
 \usage{
 create_family_index(
   data,
-  method = c("mean", "weighted", "geometric", "harmonic"),
+  method = c("mean", "weighted", "geometric", "harmonic", "min"),
   weights = NULL,
   na.rm = TRUE,
   family_codes = NULL
@@ -15,8 +15,8 @@ create_family_index(
 \arguments{
 \item{data}{An sf object containing indicator columns with family prefixes.}
 
-\item{method}{Character. Aggregation method: "mean", "weighted", "geometric", "harmonic".
-Default "mean".}
+\item{method}{Character. Aggregation method: "mean", "weighted", "geometric",
+"harmonic", "min" (v0.3.0+). Default "mean".}
 
 \item{weights}{Named list of weight vectors per family. E.g.,
 \code{list(C = c(C1 = 0.6, C2 = 0.4), W = c(W1 = 0.5, W2 = 0.3, W3 = 0.2))}.
@@ -51,6 +51,7 @@ score_water). Automatically detects indicator families from column name prefixes
   \item weighted: Weighted average using provided weights
   \item geometric: Geometric mean (product^(1/n))
   \item harmonic: Harmonic mean (n / sum(1/x))
+  \item min: Minimum value (worst-case, most conservative) - v0.3.0+
 }
 }
 \examples{

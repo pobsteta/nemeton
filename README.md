@@ -2,8 +2,8 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.2.0)
-[![Tests](https://img.shields.io/badge/tests-661%20passing-success.svg)](https://github.com/pobsteta/nemeton)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.3.0)
+[![Tests](https://img.shields.io/badge/tests-845%2B%20passing-success.svg)](https://github.com/pobsteta/nemeton)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
@@ -14,14 +14,14 @@
 
 ## ✨ Fonctionnalités principales
 
-- 🌳 **Système multi-famille** : 12 familles d'indicateurs (5 implémentées : C, W, F, L + infrastructure)
-- 📊 **15 sous-indicateurs** : Carbone (C1, C2), Eau (W1-W3), Sols (F1-F2), Paysage (L1-L2) + legacy
+- 🌳 **Système multi-famille** : 12 familles d'indicateurs (9 implémentées : C, B, W, A, F, L, T, R + infrastructure)
+- 📊 **25 sous-indicateurs** : Carbone (C1-C2), Biodiversité (B1-B3), Eau (W1-W3), Air (A1-A2), Sols (F1-F2), Paysage (L1-L2), Temporel (T1-T2), Risques (R1-R3) + legacy
 - ⏱️ **Analyse temporelle** : Datasets multi-périodes, calcul de taux de changement, visualisations
 - 📈 **Normalisation avancée** : min-max, z-score, quantiles, par famille, avec référence
-- 🎯 **Agrégation flexible** : 4 méthodes (moyenne, pondérée, géométrique, harmonique)
-- 🗺️ **Visualisations riches** : Cartes, radar multi-famille, tendances temporelles, heatmaps
+- 🎯 **Agrégation flexible** : 5 méthodes (moyenne, pondérée, géométrique, harmonique, min)
+- 🗺️ **Visualisations riches** : Cartes, radar multi-famille (jusqu'à 12 axes), comparaisons, tendances temporelles
 - 🔄 **Workflow intégré** : De la donnée brute aux indices composites
-- 📦 **Production-ready** : 661 tests, >70% coverage, 100% backward compatible
+- 📦 **Production-ready** : 845+ tests, >70% coverage, 100% backward compatible
 
 ## 📋 Prérequis
 
@@ -69,8 +69,11 @@ family_scores <- create_family_index(
   )
 )
 
-# 4. Visualiser profil multi-famille
+# 4. Visualiser profil multi-famille (v0.3.0: support 9-12 familles)
 nemeton_radar(family_scores, unit_id = 1, mode = "family")
+
+# Comparer plusieurs unités (v0.3.0)
+nemeton_radar(family_scores, unit_id = c(1, 2, 3), mode = "family")
 ```
 
 ### Workflow Classique v0.1.0 (Compatible)
@@ -488,12 +491,10 @@ wilderness <- normalized %>%
     name = "wilderness_index"
   )
 
-# Approche conservatrice (facteur limitant)
-limiting <- create_composite_index(
+# Approche conservatrice (facteur limitant) - v0.3.0
+limiting <- create_family_index(
   normalized,
-  indicators = c("carbon_norm", "water_norm"),
-  aggregation = "min",  # Prend la valeur minimale
-  name = "limiting_factor"
+  method = "min"  # Prend la valeur minimale par famille
 )
 ```
 
@@ -718,7 +719,7 @@ Si vous utilisez `nemeton` dans vos travaux de recherche, veuillez citer :
 
 ```
 Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-R package version 0.2.0. https://github.com/pobsteta/nemeton
+R package version 0.3.0. https://github.com/pobsteta/nemeton
 ```
 
 BibTeX :
@@ -727,16 +728,25 @@ BibTeX :
   title = {nemeton: Systemic Forest Analysis Using the Nemeton Method},
   author = {Pascal Obstétar},
   year = {2026},
-  note = {R package version 0.2.0},
+  note = {R package version 0.3.0},
   url = {https://github.com/pobsteta/nemeton},
 }
 ```
 
-### Nouveautés v0.2.0
+### Nouveautés v0.3.0 (2026)
+
+- 🌿 **4 nouvelles familles** : Biodiversité (B), Résilience (R), Temporel (T), Air & Microclimat (A)
+- 📊 **10 nouveaux indicateurs** : B1-B3 (protection, structure, connectivité), R1-R3 (incendie, tempête, sécheresse), T1-T2 (ancienneté, changement), A1-A2 (couverture, qualité air)
+- 🎨 **Radar 9-axes** : Visualisation radar extensible jusqu'à 12 familles, mode comparaison multi-unités
+- 📈 **Agrégation min** : Nouvelle méthode d'agrégation conservatrice (facteur limitant)
+- 📈 **845+ tests** : +28% vs v0.2.0 (661 tests), 100% backward compatible
+- 🔄 **Infrastructure étendue** : Support complet des 9 familles dans normalisation, agrégation, visualisation
+
+### Nouveautés v0.2.0 (2025)
 
 - 🎯 **Système multi-famille** : 12 familles d'indicateurs (5 implémentées)
 - ⏱️ **Analyse temporelle** : Datasets multi-périodes, taux de changement
-- 📊 **10 nouveaux indicateurs** : C1-C2, W1-W3, F1-F2, L1-L2
+- 📊 **10 indicateurs biophysiques** : C1-C2, W1-W3, F1-F2, L1-L2
 - 📈 **661 tests** : +195% vs v0.1.0 (225 tests)
 - 🔄 **100% rétro-compatible** : Tous workflows v0.1.0 fonctionnent
 - 📚 **2 nouvelles vignettes** : temporal-analysis, indicator-families

@@ -13,8 +13,8 @@ NULL
 #' (C_, W_, F_, L_, etc.) and computes weighted averages.
 #'
 #' @param data An sf object containing indicator columns with family prefixes.
-#' @param method Character. Aggregation method: "mean", "weighted", "geometric", "harmonic".
-#'   Default "mean".
+#' @param method Character. Aggregation method: "mean", "weighted", "geometric",
+#'   "harmonic", "min" (v0.3.0+). Default "mean".
 #' @param weights Named list of weight vectors per family. E.g.,
 #'   \code{list(C = c(C1 = 0.6, C2 = 0.4), W = c(W1 = 0.5, W2 = 0.3, W3 = 0.2))}.
 #'   If NULL, equal weights are used.
@@ -40,6 +40,7 @@ NULL
 #'   \item weighted: Weighted average using provided weights
 #'   \item geometric: Geometric mean (product^(1/n))
 #'   \item harmonic: Harmonic mean (n / sum(1/x))
+#'   \item min: Minimum value (worst-case, most conservative) - v0.3.0+
 #' }
 #'
 #' @export
@@ -62,7 +63,7 @@ NULL
 #' )
 #' }
 create_family_index <- function(data,
-                                 method = c("mean", "weighted", "geometric", "harmonic"),
+                                 method = c("mean", "weighted", "geometric", "harmonic", "min"),
                                  weights = NULL,
                                  na.rm = TRUE,
                                  family_codes = NULL) {
@@ -94,7 +95,23 @@ create_family_index <- function(data,
     fam_indicators <- grep(pattern, indicator_cols, value = TRUE)
 
     if (length(fam_indicators) > 0) {
-      family_groups[[fam]] <- fam_indicators
+      # Prefer normalized indicators (_norm suffix) when both raw and normalized exist
+      # Extract base indicator names (without _norm)
+      base_names <- sub("_norm$", "", fam_indicators)
+      unique_bases <- unique(base_names)
+
+      # For each unique base, prefer the _norm version if it exists
+      preferred_indicators <- character(0)
+      for (base in unique_bases) {
+        norm_version <- paste0(base, "_norm")
+        if (norm_version %in% fam_indicators) {
+          preferred_indicators <- c(preferred_indicators, norm_version)
+        } else {
+          preferred_indicators <- c(preferred_indicators, base)
+        }
+      }
+
+      family_groups[[fam]] <- preferred_indicators
     }
   }
 
@@ -187,6 +204,17 @@ create_family_index <- function(data,
         }
 
         length(valid_values) / sum(1 / valid_values)
+      })
+
+    } else if (method == "min") {
+      # Minimum: worst-case indicator (most conservative)
+      family_score <- apply(indicator_data, 1, function(row) {
+        if (all(is.na(row))) return(NA_real_)
+
+        valid_values <- row[!is.na(row)]
+        if (length(valid_values) == 0) return(NA_real_)
+
+        min(valid_values, na.rm = na.rm)
       })
     }
 

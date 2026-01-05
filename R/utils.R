@@ -240,3 +240,138 @@ detect_indicator_family <- function(indicator_name) {
 #' Get Family Name from Code
 #'
 # get_family_name() moved to R/family-system.R (now supports bilingual names)
+
+# ==============================================================================
+# v0.3.0 HELPERS - Species Lookups & Shannon Diversity
+# ==============================================================================
+
+#' Get Species Flammability Score
+#'
+#' Retrieves fire risk flammability score from internal lookup table
+#' (species_flammability_lookup from R/sysdata.rda).
+#'
+#' @param species Character. Species name (e.g., "Pinus", "Quercus", "Fagus").
+#'   If not found, returns medium flammability (50).
+#'
+#' @return Numeric. Flammability score (0-100): High=80, Medium=50, Low=20
+#' @keywords internal
+#' @noRd
+get_species_flammability <- function(species) {
+  # Access internal package data (created in data-raw/create_sysdata.R)
+  lookup <- species_flammability_lookup
+
+  # Vectorized lookup
+  scores <- numeric(length(species))
+
+  for (i in seq_along(species)) {
+    if (is.na(species[i])) {
+      scores[i] <- NA_real_
+      next
+    }
+
+    # Match species (case-insensitive, partial matching)
+    idx <- which(tolower(lookup$species) == tolower(species[i]))
+
+    # If not found, try partial match
+    if (length(idx) == 0) {
+      idx <- grep(tolower(species[i]), tolower(lookup$species), fixed = TRUE)
+    }
+
+    # Return score or default to medium (50)
+    if (length(idx) > 0) {
+      scores[i] <- lookup$flammability_score[idx[1]]
+    } else {
+      scores[i] <- 50  # Default: medium flammability
+    }
+  }
+
+  scores
+}
+
+#' Get Species Drought Sensitivity Score
+#'
+#' Retrieves drought stress sensitivity score from internal lookup table
+#' (species_drought_sensitivity from R/sysdata.rda).
+#'
+#' @param species Character. Species name (e.g., "Fagus", "Quercus", "Pinus").
+#'   If not found, returns intermediate sensitivity (50).
+#'
+#' @return Numeric. Drought sensitivity (0-100): High=80, Intermediate=50, Low=20
+#' @keywords internal
+#' @noRd
+get_species_drought_sensitivity <- function(species) {
+  # Access internal package data
+  lookup <- species_drought_sensitivity
+
+  # Vectorized lookup
+  scores <- numeric(length(species))
+
+  for (i in seq_along(species)) {
+    if (is.na(species[i])) {
+      scores[i] <- NA_real_
+      next
+    }
+
+    # Match species (case-insensitive, partial matching)
+    idx <- which(tolower(lookup$species) == tolower(species[i]))
+
+    # If not found, try partial match
+    if (length(idx) == 0) {
+      idx <- grep(tolower(species[i]), tolower(lookup$species), fixed = TRUE)
+    }
+
+    # Return score or default to intermediate (50)
+    if (length(idx) > 0) {
+      scores[i] <- lookup$drought_sensitivity[idx[1]]
+    } else {
+      scores[i] <- 50  # Default: intermediate sensitivity
+    }
+  }
+
+  scores
+}
+
+#' Calculate Shannon Diversity Index
+#'
+#' Computes Shannon diversity index (H) from proportions of categories.
+#' Used for structural diversity (B2) indicator.
+#'
+#' Formula: H = -sum(p_i * log(p_i)) where p_i are proportions summing to 1.
+#'
+#' @param proportions Numeric vector. Proportions of categories (must sum to ~1).
+#'   Zero values are automatically removed.
+#' @param base Numeric. Logarithm base (default: exp(1) for natural log).
+#'
+#' @return Numeric. Shannon diversity index H. Returns 0 if only one category.
+#'   Returns NA if all proportions are zero or NA.
+#' @keywords internal
+#' @noRd
+#'
+#' @examples
+#' \dontrun{
+#' # Equal distribution of 4 strata classes
+#' calculate_shannon_h(c(0.25, 0.25, 0.25, 0.25))  # Returns ~1.386 (log(4))
+#'
+#' # Unequal distribution
+#' calculate_shannon_h(c(0.5, 0.3, 0.2))  # Returns ~1.03
+#'
+#' # Single category (no diversity)
+#' calculate_shannon_h(c(1.0))  # Returns 0
+#' }
+calculate_shannon_h <- function(proportions, base = exp(1)) {
+  # Remove zeros and NAs
+  p <- proportions[!is.na(proportions) & proportions > 0]
+
+  # Check if valid
+  if (length(p) == 0) {
+    return(NA_real_)
+  }
+
+  # Normalize to sum to 1 (in case not exactly 1 due to rounding)
+  p <- p / sum(p)
+
+  # Shannon formula: H = -sum(p_i * log(p_i))
+  H <- -sum(p * log(p, base = base))
+
+  return(H)
+}
