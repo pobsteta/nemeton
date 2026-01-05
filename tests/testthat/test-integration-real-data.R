@@ -174,9 +174,13 @@ test_that("Real parcel survives CRS harmonization", {
   # Create layers with different CRS (WGS84)
   temp_dir <- tempdir()
 
-  # Create raster in WGS84
+  # Get extent of parcel in WGS84 for creating overlapping raster
+  units_wgs84 <- sf::st_transform(units, 4326)
+  bbox <- sf::st_bbox(units_wgs84)
+
+  # Create raster in WGS84 covering the parcel with buffer
   r_wgs84 <- terra::rast(
-    extent = terra::ext(2.5, 2.6, 48.8, 48.9),
+    extent = terra::ext(bbox[1] - 0.01, bbox[3] + 0.01, bbox[2] - 0.01, bbox[4] + 0.01),
     resolution = 0.001,
     crs = "EPSG:4326"
   )
