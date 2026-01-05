@@ -491,3 +491,281 @@ plot_difference_map <- function(data1,
 
   p
 }
+
+#' Create radar chart for indicator profile
+#'
+#' Generates a radar (spider) chart showing the multi-dimensional profile
+#' of indicators for a specific unit or the average across all units.
+#'
+#' @param data An sf object with indicator columns
+#' @param unit_id Optional. ID of the specific unit to plot. If NULL, plots
+#'   the average of all units.
+#' @param indicators Character vector of indicator names to include in the radar.
+#'   If NULL, auto-detects all numeric columns except geometry and standard metadata.
+#' @param normalize Logical. If TRUE (default), normalizes values to 0-100 scale.
+#' @param title Optional plot title. If NULL, auto-generated based on unit_id.
+#' @param fill_color Color to fill the radar polygon. Default "#3182bd" (blue).
+#' @param fill_alpha Transparency of the fill (0-1). Default 0.3.
+#'
+#' @return A ggplot object
+#'
+#' @details
+#' The radar chart displays multiple indicators as axes radiating from a center point.
+#' Each axis represents one indicator, with values scaled from center (0) to edge (100).
+#'
+#' If \code{unit_id} is specified, the chart shows the profile for that specific unit.
+#' If \code{unit_id} is NULL, the chart shows the mean values across all units.
+#'
+#' Normalization is recommended when indicators have different scales. The function
+#' applies min-max normalization to scale all values to 0-100.
+#'
+#' @examples
+#' \dontrun{
+#' # Load demo data
+#' data(massif_demo_units)
+#' layers <- massif_demo_layers()
+#' results <- nemeton_compute(massif_demo_units, layers, indicators = "all")
+#' normalized <- normalize_indicators(results)
+#'
+#' # Radar for a specific unit
+#' nemeton_radar(normalized, unit_id = "unit_001")
+#'
+#' # Radar for average of all units
+#' nemeton_radar(normalized)
+#'
+#' # Custom indicators and styling
+#' nemeton_radar(
+#'   normalized,
+#'   unit_id = "unit_005",
+#'   indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+#'   fill_color = "#d73027",
+#'   fill_alpha = 0.5
+#' )
+#' }
+#'
+#' @seealso \code{\link{plot_indicators_map}}, \code{\link{normalize_indicators}}
+#' @export
+nemeton_radar <- function(data,
+                          unit_id = NULL,
+                          indicators = NULL,
+                          normalize = TRUE,
+                          title = NULL,
+                          fill_color = "#3182bd",
+                          fill_alpha = 0.3) {
+
+  # Validate inputs
+  if (!inherits(data, "sf")) {
+    cli::cli_abort("{.arg data} must be an {.cls sf} object")
+  }
+
+  # Auto-detect indicators if not specified
+  if (is.null(indicators)) {
+    # Get numeric columns excluding geometry and standard metadata
+    all_cols <- names(data)
+    exclude_cols <- c("geometry", "nemeton_id", "id", "area", "surface_geo",
+                      "geo_parcelle", "nomcommune", "codecommune")
+    numeric_cols <- all_cols[sapply(data, is.numeric)]
+    indicators <- setdiff(numeric_cols, exclude_cols)
+
+    if (length(indicators) == 0) {
+      cli::cli_abort("No numeric indicator columns found in data")
+    }
+  }
+
+  # Validate indicators exist
+  missing <- setdiff(indicators, names(data))
+  if (length(missing) > 0) {
+    cli::cli_abort("Indicators not found in data: {.field {missing}}")
+  }
+
+  # Extract data for the specified unit or calculate mean
+  if (!is.null(unit_id)) {
+    # Find ID column (try common names)
+    id_col <- NULL
+    for (col_name in c("nemeton_id", "parcel_id", "id", "geo_parcelle")) {
+      if (col_name %in% names(data)) {
+        id_col <- col_name
+        break
+      }
+    }
+
+    if (is.null(id_col)) {
+      cli::cli_abort("{.arg data} must have an ID column (nemeton_id, parcel_id, id, or geo_parcelle) when {.arg unit_id} is specified")
+    }
+
+    unit_data <- data[data[[id_col]] == unit_id, ]
+    if (nrow(unit_data) == 0) {
+      cli::cli_abort("Unit ID {.val {unit_id}} not found in data")
+    }
+
+    # Extract indicator values (drop geometry to avoid extra column)
+    unit_df <- sf::st_drop_geometry(unit_data)
+    values <- as.numeric(unit_df[1, indicators])
+    unit_label <- unit_id
+  } else {
+    # Calculate mean across all units
+    values <- sapply(indicators, function(ind) {
+      mean(data[[ind]], na.rm = TRUE)
+    })
+    unit_label <- "Average (all units)"
+  }
+
+  # Normalize values if requested
+  if (normalize) {
+    # Min-max normalization to 0-100
+    for (i in seq_along(values)) {
+      ind <- indicators[i]
+      all_values <- data[[ind]]
+      min_val <- min(all_values, na.rm = TRUE)
+      max_val <- max(all_values, na.rm = TRUE)
+
+      if (max_val == min_val) {
+        # All values identical
+        values[i] <- 50
+      } else {
+        values[i] <- ((values[i] - min_val) / (max_val - min_val)) * 100
+      }
+    }
+  }
+
+  # Create data frame for plotting
+  radar_data <- data.frame(
+    indicator = indicators,
+    value = values,
+    stringsAsFactors = FALSE
+  )
+
+  # Clean indicator names for display
+  radar_data$indicator_clean <- sapply(radar_data$indicator, clean_indicator_name)
+
+  # Add angle for each indicator (equally spaced around circle)
+  n_indicators <- nrow(radar_data)
+  radar_data$angle <- seq(0, 2 * pi, length.out = n_indicators + 1)[1:n_indicators]
+
+  # Convert to x, y coordinates
+  radar_data$x <- radar_data$value * cos(radar_data$angle)
+  radar_data$y <- radar_data$value * sin(radar_data$angle)
+
+  # Create closed polygon by repeating first point
+  radar_polygon <- rbind(radar_data, radar_data[1, ])
+
+  # Create axis lines data (from center to max value for each indicator)
+  max_value <- if (normalize) 100 else max(values, na.rm = TRUE) * 1.2
+  axis_data <- data.frame(
+    x0 = 0,
+    y0 = 0,
+    x1 = max_value * cos(radar_data$angle),
+    y1 = max_value * sin(radar_data$angle)
+  )
+
+  # Create label positions (slightly outside the max circle)
+  label_distance <- max_value * 1.15
+  label_data <- data.frame(
+    x = label_distance * cos(radar_data$angle),
+    y = label_distance * sin(radar_data$angle),
+    label = radar_data$indicator_clean,
+    angle = radar_data$angle
+  )
+
+  # Adjust text angle for readability
+  label_data$text_angle <- label_data$angle * 180 / pi
+  label_data$text_angle <- ifelse(label_data$text_angle > 90 & label_data$text_angle < 270,
+                                  label_data$text_angle + 180,
+                                  label_data$text_angle)
+
+  # Create the plot
+  p <- ggplot2::ggplot() +
+    # Draw axis lines
+    ggplot2::geom_segment(
+      data = axis_data,
+      ggplot2::aes(x = x0, y = y0, xend = x1, yend = y1),
+      color = "gray80",
+      linewidth = 0.5
+    ) +
+    # Draw concentric circles for scale
+    ggplot2::geom_path(
+      data = data.frame(
+        angle = seq(0, 2 * pi, length.out = 100),
+        radius = max_value * 0.25
+      ),
+      ggplot2::aes(x = radius * cos(angle), y = radius * sin(angle)),
+      color = "gray90",
+      linewidth = 0.3
+    ) +
+    ggplot2::geom_path(
+      data = data.frame(
+        angle = seq(0, 2 * pi, length.out = 100),
+        radius = max_value * 0.5
+      ),
+      ggplot2::aes(x = radius * cos(angle), y = radius * sin(angle)),
+      color = "gray90",
+      linewidth = 0.3
+    ) +
+    ggplot2::geom_path(
+      data = data.frame(
+        angle = seq(0, 2 * pi, length.out = 100),
+        radius = max_value * 0.75
+      ),
+      ggplot2::aes(x = radius * cos(angle), y = radius * sin(angle)),
+      color = "gray90",
+      linewidth = 0.3
+    ) +
+    ggplot2::geom_path(
+      data = data.frame(
+        angle = seq(0, 2 * pi, length.out = 100),
+        radius = max_value
+      ),
+      ggplot2::aes(x = radius * cos(angle), y = radius * sin(angle)),
+      color = "gray80",
+      linewidth = 0.5
+    ) +
+    # Draw the data polygon
+    ggplot2::geom_polygon(
+      data = radar_polygon,
+      ggplot2::aes(x = x, y = y),
+      fill = fill_color,
+      alpha = fill_alpha,
+      color = fill_color,
+      linewidth = 1
+    ) +
+    # Draw points at each indicator
+    ggplot2::geom_point(
+      data = radar_data,
+      ggplot2::aes(x = x, y = y),
+      color = fill_color,
+      size = 3
+    ) +
+    # Add indicator labels
+    ggplot2::geom_text(
+      data = label_data,
+      ggplot2::aes(x = x, y = y, label = label, angle = text_angle),
+      size = 3.5,
+      fontface = "bold"
+    ) +
+    # Equal aspect ratio (circle not ellipse)
+    ggplot2::coord_equal() +
+    # Clean theme
+    ggplot2::theme_void() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(
+        face = "bold",
+        hjust = 0.5,
+        size = 14,
+        margin = ggplot2::margin(b = 20)
+      ),
+      plot.margin = ggplot2::margin(20, 20, 20, 20)
+    )
+
+  # Add title
+  if (is.null(title)) {
+    if (!is.null(unit_id)) {
+      title <- sprintf("Indicator Profile - %s", unit_label)
+    } else {
+      title <- "Indicator Profile - Average"
+    }
+  }
+
+  p <- p + ggplot2::labs(title = title)
+
+  p
+}

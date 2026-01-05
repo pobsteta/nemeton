@@ -15,7 +15,7 @@
 - 🌳 **5 indicateurs biophysiques** : carbone, biodiversité, eau, fragmentation, accessibilité
 - 📊 **Normalisation multi-méthodes** : min-max, z-score, quantiles
 - 🎯 **Indices composites** : agrégation pondérée, moyenne géométrique, facteur limitant
-- 🗺️ **Visualisations cartographiques** : cartes thématiques, comparaisons, changements
+- 🗺️ **Visualisations** : cartes thématiques, comparaisons, changements, graphiques radar
 - 🔄 **Workflow intégré** : de la donnée brute à la carte finale
 - 📦 **Interopérable** : compatible sf, terra, ggplot2, tidyverse
 
@@ -518,6 +518,19 @@ plot_difference_map(
   indicator = "carbon",
   type = "relative",  # Pourcentage de changement
   title = "Évolution du Stock de Carbone (%)"
+)
+
+# Graphique radar - Profil multi-dimensionnel
+nemeton_radar(
+  normalized,
+  unit_id = "P01",
+  title = "Profil Écosystémique - Parcelle P01"
+)
+
+# Radar moyen de toutes les unités
+nemeton_radar(
+  normalized,
+  title = "Profil Moyen du Massif"
 )
 ```
 
