@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ NOUVEAU v0.3.0: Biodiversité, Risques, Climat</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -40,6 +42,180 @@
       <small>Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="nemeton-030-development">nemeton 0.3.0 (Development)<a class="anchor" aria-label="anchor" href="#nemeton-030-development"></a></h2>
+<div class="section level3">
+<h3 id="v030-mvp---multi-family-extension-b-r-t-a-0-3-0">v0.3.0 MVP - Multi-Family Extension (B, R, T, A)<a class="anchor" aria-label="anchor" href="#v030-mvp---multi-family-extension-b-r-t-a-0-3-0"></a></h3>
+<p><strong>Status</strong>: ✅ v0.3.0 Complete (845+ tests passing, 100% backward compatible)</p>
+<div class="section level4">
+<h4 id="overview-0-3-0">Overview<a class="anchor" aria-label="anchor" href="#overview-0-3-0"></a></h4>
+<p>Extension of the ecosystem service indicator framework with 4 new families (B, R, T, A), bringing the total to <strong>9 of 12 planned families</strong> implemented. This release adds 10 new indicator functions and enhances the family aggregation and visualization system.</p>
+</div>
+<div class="section level4">
+<h4 id="new-indicator-families-0-3-0">New Indicator Families<a class="anchor" aria-label="anchor" href="#new-indicator-families-0-3-0"></a></h4>
+<div class="section level5">
+<h5 id="biodiversity-family-famille-b---indicators-0-3-0">Biodiversity Family (Famille B) - 3 Indicators<a class="anchor" aria-label="anchor" href="#biodiversity-family-famille-b---indicators-0-3-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection()</a></code></strong> (B1) - Protected area coverage
+<ul><li>Calculates percentage of forest parcel within protected zones (ZNIEFF, Natura2000, etc.)</li>
+<li>Supports local or remote protected area datasets</li>
+<li>Output: 0-100% protection coverage</li>
+<li>Spatial overlay with area-weighted calculation</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure()</a></code></strong> (B2) - Structural diversity index
+<ul><li>Shannon diversity index across vegetation strata, age classes, and species</li>
+<li>Configurable weights for each diversity component (default: strata 0.4, age 0.3, species 0.3)</li>
+<li>Optional height coefficient of variation (CV) integration</li>
+<li>Output: 0-100 diversity score</li>
+<li>Handles monoculture scenarios (low diversity → low scores)</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity()</a></code></strong> (B3) - Ecological connectivity
+<ul><li>Distance to ecological corridors (TVB - Trame Verte et Bleue)</li>
+<li>Supports edge and centroid distance methods</li>
+<li>Configurable max distance threshold (default: 5000m)</li>
+<li>Fallback scoring when corridor data unavailable</li>
+<li>Output: Distance in meters (lower = better connectivity)</li>
+</ul></li>
+</ul></div>
+<div class="section level5">
+<h5 id="risk--resilience-family-famille-r---indicators-0-3-0">Risk &amp; Resilience Family (Famille R) - 3 Indicators<a class="anchor" aria-label="anchor" href="#risk--resilience-family-famille-r---indicators-0-3-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/indicator_risk_fire.html">indicator_risk_fire()</a></code></strong> (R1) - Fire risk index
+<ul><li>Multi-factor fire susceptibility: slope + species + climate</li>
+<li>Species flammability coefficients (conifer &gt; broadleaf)</li>
+<li>Slope amplification (higher slope = faster fire spread)</li>
+<li>Optional climate data integration (temperature, precipitation)</li>
+<li>Output: 0-100 risk score (higher = more vulnerable)</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/indicator_risk_storm.html">indicator_risk_storm()</a></code></strong> (R2) - Storm vulnerability index
+<ul><li>Wind damage risk: tree height × stand density × exposure</li>
+<li>Height coefficient (taller trees more vulnerable)</li>
+<li>Density factor (dense stands = higher windthrow risk)</li>
+<li>Topographic exposure from DEM (exposed ridges = higher risk)</li>
+<li>Output: 0-100 vulnerability score</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/indicator_risk_drought.html">indicator_risk_drought()</a></code></strong> (R3) - Drought stress index
+<ul><li>Combines water availability (TWI) and species drought tolerance</li>
+<li>Species tolerance coefficients (drought-resistant vs. water-demanding)</li>
+<li>Optional precipitation data integration</li>
+<li>Low TWI + intolerant species = high stress</li>
+<li>Output: 0-100 stress score</li>
+</ul></li>
+</ul></div>
+<div class="section level5">
+<h5 id="temporal-dynamics-family-famille-t---indicators-0-3-0">Temporal Dynamics Family (Famille T) - 2 Indicators<a class="anchor" aria-label="anchor" href="#temporal-dynamics-family-famille-t---indicators-0-3-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/indicator_temporal_age.html">indicator_temporal_age()</a></code></strong> (T1) - Stand age/ancientness
+<ul><li>Historical forest age from BD Forêt or Cassini maps</li>
+<li>Ancient forest detection (age &gt; 150 years)</li>
+<li>Supports multi-source age estimation</li>
+<li>Output: Years since establishment (or age class)</li>
+<li>Handles missing historical data gracefully</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/indicator_temporal_change.html">indicator_temporal_change()</a></code></strong> (T2) - Land cover change rate
+<ul><li>Temporal change detection using Corine Land Cover multi-dates</li>
+<li>Calculates change rate between two periods</li>
+<li>Supports custom date ranges</li>
+<li>Identifies stable vs. dynamic forests</li>
+<li>Output: % change per year (or absolute area change)</li>
+<li>Leverages existing nemeton_temporal() infrastructure</li>
+</ul></li>
+</ul></div>
+<div class="section level5">
+<h5 id="air-quality--microclimate-family-famille-a---indicators-0-3-0">Air Quality &amp; Microclimate Family (Famille A) - 2 Indicators<a class="anchor" aria-label="anchor" href="#air-quality--microclimate-family-famille-a---indicators-0-3-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/indicator_air_coverage.html">indicator_air_coverage()</a></code></strong> (A1) - Tree canopy coverage
+<ul><li>Percentage of tree cover within 1km buffer</li>
+<li>High-resolution vegetation data (sentinel-2 or lidar-derived)</li>
+<li>Urban microclimate regulation potential</li>
+<li>Output: 0-100% coverage in buffer zone</li>
+<li>Supports custom buffer distances</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/indicator_air_quality.html">indicator_air_quality()</a></code></strong> (A2) - Air quality index
+<ul><li>Integration with ATMO air quality data (when available)</li>
+<li>Fallback: distance to pollution sources (roads, industry)</li>
+<li>Supports custom air quality datasets</li>
+<li>Output: 0-100 air quality score (higher = better)</li>
+<li>Proxy mode for areas without monitoring stations</li>
+</ul></li>
+</ul></div>
+</div>
+<div class="section level4">
+<h4 id="extended-functions-0-3-0">Extended Functions<a class="anchor" aria-label="anchor" href="#extended-functions-0-3-0"></a></h4>
+<ul><li>
+<strong><code><a href="../reference/create_family_index.html">create_family_index()</a></code> - New “min” aggregation method</strong>
+<ul><li>Added conservative worst-case aggregation: <code>method = "min"</code>
+</li>
+<li>Useful for risk assessment (score = worst sub-indicator)</li>
+<li>Joins existing methods: mean, weighted, geometric, harmonic</li>
+<li>Example: <code>create_family_index(data, method = "min")</code>
+</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/nemeton_radar.html">nemeton_radar()</a></code> - Comparison mode for multiple units</strong>
+<ul><li>New: compare multiple forest parcels on same radar chart</li>
+<li>Overlaid polygons for visual comparison</li>
+<li>Syntax: <code>nemeton_radar(data, unit_id = c(1, 5, 10), mode = "family")</code>
+</li>
+<li>Supports 9-12 axes dynamically (adapts to available families)</li>
+<li>Enhanced legend and color differentiation</li>
+</ul></li>
+</ul></div>
+<div class="section level4">
+<h4 id="testing-0-3-0">Testing<a class="anchor" aria-label="anchor" href="#testing-0-3-0"></a></h4>
+<ul><li>
+<strong>186 new tests</strong> for v0.3.0 families
+<ul><li>Biodiversity (B1-B3): 56 tests (protection zones, diversity indices, corridors)</li>
+<li>Risk (R1-R3): 52 tests (fire models, storm factors, drought stress)</li>
+<li>Temporal (T1-T2): 38 tests (historical data, change detection)</li>
+<li>Air (A1-A2): 28 tests (coverage buffers, quality indices)</li>
+<li>Integration: 12 tests (multi-family workflows, normalization, radar)</li>
+</ul></li>
+<li>
+<strong>Total test suite: 845+ tests passing</strong> (up from 659)</li>
+<li>
+<strong>100% backward compatibility verified</strong> with v0.2.0 workflows</li>
+</ul></div>
+<div class="section level4">
+<h4 id="use-cases-0-3-0">Use Cases<a class="anchor" aria-label="anchor" href="#use-cases-0-3-0"></a></h4>
+<ul><li>
+<strong>Conservation prioritization</strong>: Identify high biodiversity + low risk parcels</li>
+<li>
+<strong>Climate adaptation planning</strong>: Map drought stress + storm vulnerability</li>
+<li>
+<strong>Urban forestry</strong>: Quantify air quality and microclimate benefits</li>
+<li>
+<strong>Historical ecology</strong>: Detect ancient forests + track land use change</li>
+<li>
+<strong>Multi-criteria decision support</strong>: 9-family composite indices for holistic management</li>
+</ul></div>
+<div class="section level4">
+<h4 id="implemented-families-status-0-3-0">Implemented Families Status (9/12)<a class="anchor" aria-label="anchor" href="#implemented-families-status-0-3-0"></a></h4>
+<ul><li>✅ <strong>C</strong> - Carbon &amp; Vitality (C1-C2)</li>
+<li>✅ <strong>B</strong> - Biodiversity (B1-B3) - <strong>NEW v0.3.0</strong>
+</li>
+<li>✅ <strong>W</strong> - Water Regulation (W1-W3)</li>
+<li>✅ <strong>A</strong> - Air Quality &amp; Microclimate (A1-A2) - <strong>NEW v0.3.0</strong>
+</li>
+<li>✅ <strong>F</strong> - Soil Fertility (F1-F2)</li>
+<li>✅ <strong>L</strong> - Landscape &amp; Aesthetics (L1-L2)</li>
+<li>✅ <strong>T</strong> - Temporal Dynamics &amp; Trame (T1-T2) - <strong>NEW v0.3.0</strong>
+</li>
+<li>✅ <strong>R</strong> - Risk Management &amp; Resilience (R1-R3) - <strong>NEW v0.3.0</strong>
+</li>
+<li>⏳ <strong>S</strong> - Social &amp; Recreational (planned v0.4.0)</li>
+<li>⏳ <strong>P</strong> - Productive &amp; Economic (planned v0.4.0)</li>
+<li>⏳ <strong>E</strong> - Energy &amp; Climate (planned v0.4.0)</li>
+<li>⏳ <strong>N</strong> - Naturalness &amp; Night (planned v0.4.0)</li>
+</ul><hr></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="nemeton-020-development">nemeton 0.2.0 (Development)<a class="anchor" aria-label="anchor" href="#nemeton-020-development"></a></h2>
 <div class="section level3">
@@ -439,7 +615,7 @@
 <li>
 <strong>W2 Wetland Coverage</strong>: Uses exactextractr for area-weighted raster value extraction</li>
 <li>
-<strong>W3 TWI</strong>: Terra hydrology functions (<code>terrain(v="flowdir")</code>, <code>flowAccumulation()</code>)</li>
+<strong>W3 TWI</strong>: Terra hydrology functions (<code>terrain(v="flowdir")</code>, <code><a href="https://rspatial.github.io/terra/reference/flowAccumulation.html" class="external-link">flowAccumulation()</a></code>)</li>
 <li>
 <strong>Flow algorithm</strong>: D8 (8-neighbor) for computational efficiency</li>
 <li>

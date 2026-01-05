@@ -1,5 +1,164 @@
 # Changelog
 
+## nemeton 0.3.0 (Development)
+
+### v0.3.0 MVP - Multi-Family Extension (B, R, T, A)
+
+**Status**: ✅ v0.3.0 Complete (845+ tests passing, 100% backward
+compatible)
+
+#### Overview
+
+Extension of the ecosystem service indicator framework with 4 new
+families (B, R, T, A), bringing the total to **9 of 12 planned
+families** implemented. This release adds 10 new indicator functions and
+enhances the family aggregation and visualization system.
+
+#### New Indicator Families
+
+##### Biodiversity Family (Famille B) - 3 Indicators
+
+- **[`indicator_biodiversity_protection()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md)**
+  (B1) - Protected area coverage
+  - Calculates percentage of forest parcel within protected zones
+    (ZNIEFF, Natura2000, etc.)
+  - Supports local or remote protected area datasets
+  - Output: 0-100% protection coverage
+  - Spatial overlay with area-weighted calculation
+- **[`indicator_biodiversity_structure()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.md)**
+  (B2) - Structural diversity index
+  - Shannon diversity index across vegetation strata, age classes, and
+    species
+  - Configurable weights for each diversity component (default: strata
+    0.4, age 0.3, species 0.3)
+  - Optional height coefficient of variation (CV) integration
+  - Output: 0-100 diversity score
+  - Handles monoculture scenarios (low diversity → low scores)
+- **[`indicator_biodiversity_connectivity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.md)**
+  (B3) - Ecological connectivity
+  - Distance to ecological corridors (TVB - Trame Verte et Bleue)
+  - Supports edge and centroid distance methods
+  - Configurable max distance threshold (default: 5000m)
+  - Fallback scoring when corridor data unavailable
+  - Output: Distance in meters (lower = better connectivity)
+
+##### Risk & Resilience Family (Famille R) - 3 Indicators
+
+- **[`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md)**
+  (R1) - Fire risk index
+  - Multi-factor fire susceptibility: slope + species + climate
+  - Species flammability coefficients (conifer \> broadleaf)
+  - Slope amplification (higher slope = faster fire spread)
+  - Optional climate data integration (temperature, precipitation)
+  - Output: 0-100 risk score (higher = more vulnerable)
+- **[`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)**
+  (R2) - Storm vulnerability index
+  - Wind damage risk: tree height × stand density × exposure
+  - Height coefficient (taller trees more vulnerable)
+  - Density factor (dense stands = higher windthrow risk)
+  - Topographic exposure from DEM (exposed ridges = higher risk)
+  - Output: 0-100 vulnerability score
+- **[`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)**
+  (R3) - Drought stress index
+  - Combines water availability (TWI) and species drought tolerance
+  - Species tolerance coefficients (drought-resistant
+    vs. water-demanding)
+  - Optional precipitation data integration
+  - Low TWI + intolerant species = high stress
+  - Output: 0-100 stress score
+
+##### Temporal Dynamics Family (Famille T) - 2 Indicators
+
+- **[`indicator_temporal_age()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.md)**
+  (T1) - Stand age/ancientness
+  - Historical forest age from BD Forêt or Cassini maps
+  - Ancient forest detection (age \> 150 years)
+  - Supports multi-source age estimation
+  - Output: Years since establishment (or age class)
+  - Handles missing historical data gracefully
+- **[`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)**
+  (T2) - Land cover change rate
+  - Temporal change detection using Corine Land Cover multi-dates
+  - Calculates change rate between two periods
+  - Supports custom date ranges
+  - Identifies stable vs. dynamic forests
+  - Output: % change per year (or absolute area change)
+  - Leverages existing nemeton_temporal() infrastructure
+
+##### Air Quality & Microclimate Family (Famille A) - 2 Indicators
+
+- **[`indicator_air_coverage()`](https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.md)**
+  (A1) - Tree canopy coverage
+  - Percentage of tree cover within 1km buffer
+  - High-resolution vegetation data (sentinel-2 or lidar-derived)
+  - Urban microclimate regulation potential
+  - Output: 0-100% coverage in buffer zone
+  - Supports custom buffer distances
+- **[`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)**
+  (A2) - Air quality index
+  - Integration with ATMO air quality data (when available)
+  - Fallback: distance to pollution sources (roads, industry)
+  - Supports custom air quality datasets
+  - Output: 0-100 air quality score (higher = better)
+  - Proxy mode for areas without monitoring stations
+
+#### Extended Functions
+
+- **[`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md) -
+  New “min” aggregation method**
+  - Added conservative worst-case aggregation: `method = "min"`
+  - Useful for risk assessment (score = worst sub-indicator)
+  - Joins existing methods: mean, weighted, geometric, harmonic
+  - Example: `create_family_index(data, method = "min")`
+- **[`nemeton_radar()`](https://pobsteta.github.io/nemeton/reference/nemeton_radar.md) -
+  Comparison mode for multiple units**
+  - New: compare multiple forest parcels on same radar chart
+  - Overlaid polygons for visual comparison
+  - Syntax:
+    `nemeton_radar(data, unit_id = c(1, 5, 10), mode = "family")`
+  - Supports 9-12 axes dynamically (adapts to available families)
+  - Enhanced legend and color differentiation
+
+#### Testing
+
+- **186 new tests** for v0.3.0 families
+  - Biodiversity (B1-B3): 56 tests (protection zones, diversity indices,
+    corridors)
+  - Risk (R1-R3): 52 tests (fire models, storm factors, drought stress)
+  - Temporal (T1-T2): 38 tests (historical data, change detection)
+  - Air (A1-A2): 28 tests (coverage buffers, quality indices)
+  - Integration: 12 tests (multi-family workflows, normalization, radar)
+- **Total test suite: 845+ tests passing** (up from 659)
+- **100% backward compatibility verified** with v0.2.0 workflows
+
+#### Use Cases
+
+- **Conservation prioritization**: Identify high biodiversity + low risk
+  parcels
+- **Climate adaptation planning**: Map drought stress + storm
+  vulnerability
+- **Urban forestry**: Quantify air quality and microclimate benefits
+- **Historical ecology**: Detect ancient forests + track land use change
+- **Multi-criteria decision support**: 9-family composite indices for
+  holistic management
+
+#### Implemented Families Status (9/12)
+
+- ✅ **C** - Carbon & Vitality (C1-C2)
+- ✅ **B** - Biodiversity (B1-B3) - **NEW v0.3.0**
+- ✅ **W** - Water Regulation (W1-W3)
+- ✅ **A** - Air Quality & Microclimate (A1-A2) - **NEW v0.3.0**
+- ✅ **F** - Soil Fertility (F1-F2)
+- ✅ **L** - Landscape & Aesthetics (L1-L2)
+- ✅ **T** - Temporal Dynamics & Trame (T1-T2) - **NEW v0.3.0**
+- ✅ **R** - Risk Management & Resilience (R1-R3) - **NEW v0.3.0**
+- ⏳ **S** - Social & Recreational (planned v0.4.0)
+- ⏳ **P** - Productive & Economic (planned v0.4.0)
+- ⏳ **E** - Energy & Climate (planned v0.4.0)
+- ⏳ **N** - Naturalness & Night (planned v0.4.0)
+
+------------------------------------------------------------------------
+
 ## nemeton 0.2.0 (Development)
 
 ### v0.2.0 - Phase 9: Multi-Family System (US6)
@@ -369,7 +528,7 @@
 - **W2 Wetland Coverage**: Uses exactextractr for area-weighted raster
   value extraction
 - **W3 TWI**: Terra hydrology functions (`terrain(v="flowdir")`,
-  `flowAccumulation()`)
+  [`flowAccumulation()`](https://rspatial.github.io/terra/reference/flowAccumulation.html))
 - **Flow algorithm**: D8 (8-neighbor) for computational efficiency
 - **Coordinate transformations**: Automatic CRS harmonization for vector
   layers

@@ -30,6 +30,9 @@ navbar:
         href: articles/getting-started_fr.html
       - text: Familles d'indicateurs (12 familles + radar)
         href: articles/indicator-families_fr.html
+      - text: "---"
+      - text: "✨ NOUVEAU v0.3.0: Biodiversité, Risques, Climat"
+        href: articles/biodiversity-resilience-v030_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
       - text: "---"
@@ -77,6 +80,32 @@ reference:
     contents:
     - indicator_landscape_fragmentation
     - indicator_landscape_edge
+
+  - title: "Family B: Biodiversity / Famille B : Biodiversité (v0.3.0)"
+    desc: "Biodiversity protection, structure, and connectivity / Protection, diversité structurelle et connectivité écologique"
+    contents:
+    - indicator_biodiversity_protection
+    - indicator_biodiversity_structure
+    - indicator_biodiversity_connectivity
+
+  - title: "Family R: Risk & Resilience / Famille R : Risques & Résilience (v0.3.0)"
+    desc: "Fire, storm, and drought vulnerability / Vulnérabilité aux incendies, tempêtes et sécheresse"
+    contents:
+    - indicator_risk_fire
+    - indicator_risk_storm
+    - indicator_risk_drought
+
+  - title: "Family T: Temporal Dynamics / Famille T : Dynamique temporelle (v0.3.0)"
+    desc: "Forest age and land cover change / Ancienneté des peuplements et changements d'occupation"
+    contents:
+    - indicator_temporal_age
+    - indicator_temporal_change
+
+  - title: "Family A: Air & Microclimate / Famille A : Air & Microclimat (v0.3.0)"
+    desc: "Tree coverage and air quality / Couverture arborée et qualité de l'air"
+    contents:
+    - indicator_air_coverage
+    - indicator_air_quality
 
   - title: "Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)"
     desc: "Biodiversity, fragmentation, accessibility indicators / Indicateurs de biodiversité, fragmentation, accessibilité"

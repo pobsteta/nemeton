@@ -26,8 +26,9 @@ nemeton_radar(
 
 - unit_id:
 
-  Optional. ID of the specific unit to plot. If NULL, plots the average
-  of all units.
+  Optional. ID of the specific unit to plot. Can be a single value or a
+  vector of IDs for comparison mode (v0.3.0+). If NULL, plots the
+  average of all units.
 
 - indicators:
 
@@ -67,11 +68,15 @@ center point. Each axis represents one indicator, with values scaled
 from center (0) to edge (100).
 
 If `unit_id` is specified, the chart shows the profile for that specific
-unit. If `unit_id` is NULL, the chart shows the mean values across all
-units.
+unit. If `unit_id` is a vector (v0.3.0+), creates a comparison chart
+with multiple overlaid polygons for comparing units side-by-side. If
+`unit_id` is NULL, the chart shows the mean values across all units.
 
 Normalization is recommended when indicators have different scales. The
 function applies min-max normalization to scale all values to 0-100.
+
+\*\*v0.3.0 Enhancements\*\*: Supports 9-12 family axes and comparison
+mode for multiple units.
 
 ## See also
 
@@ -103,9 +108,12 @@ nemeton_radar(
   fill_alpha = 0.5
 )
 
-# Family mode with 12 families
+# Family mode with 9+ families (v0.3.0)
 # First create family indices
 units_fam <- create_family_index(normalized)
 nemeton_radar(units_fam, unit_id = 1, mode = "family")
+
+# Comparison mode (v0.3.0) - compare multiple units
+nemeton_radar(units_fam, unit_id = c(1, 2, 3), mode = "family")
 } # }
 ```

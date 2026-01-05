@@ -427,18 +427,21 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1 nemeton_0.2.0
+#> [1] ggplot2_4.0.1 nemeton_0.3.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    
-#>  [5] tidyselect_1.2.1   dichromat_2.0-0.1  jquerylib_0.1.4    systemfonts_1.3.1 
-#>  [9] scales_1.4.0       textshaping_1.0.4  yaml_2.3.12        fastmap_1.2.0     
-#> [13] R6_2.6.1           generics_0.1.4     knitr_1.51         htmlwidgets_1.6.4 
-#> [17] tibble_3.3.0       desc_1.4.3         bslib_0.9.0        pillar_1.11.1     
-#> [21] RColorBrewer_1.1-3 rlang_1.1.6        cachem_1.1.0       xfun_0.55         
-#> [25] fs_1.6.6           sass_0.4.10        S7_0.2.1           otel_0.2.0        
-#> [29] cli_3.6.5          withr_3.0.2        pkgdown_2.2.0      magrittr_2.0.4    
-#> [33] digest_0.6.39      grid_4.5.2         lifecycle_1.0.4    vctrs_0.6.5       
-#> [37] evaluate_1.0.5     glue_1.8.0         farver_2.1.2       ragg_1.5.0        
-#> [41] rmarkdown_2.30     tools_4.5.2        pkgconfig_2.0.3    htmltools_0.5.9
+#>  [5] tidyselect_1.2.1   Rcpp_1.1.0         dichromat_2.0-0.1  jquerylib_0.1.4   
+#>  [9] systemfonts_1.3.1  scales_1.4.0       textshaping_1.0.4  yaml_2.3.12       
+#> [13] fastmap_1.2.0      R6_2.6.1           generics_0.1.4     classInt_0.4-11   
+#> [17] sf_1.0-23          knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.0      
+#> [21] desc_1.4.3         units_1.0-0        DBI_1.2.3          pillar_1.11.1     
+#> [25] RColorBrewer_1.1-3 bslib_0.9.0        rlang_1.1.6        cachem_1.1.0      
+#> [29] terra_1.8-86       xfun_0.55          S7_0.2.1           fs_1.6.6          
+#> [33] sass_0.4.10        otel_0.2.0         cli_3.6.5          withr_3.0.2       
+#> [37] pkgdown_2.2.0      magrittr_2.0.4     class_7.3-23       digest_0.6.39     
+#> [41] grid_4.5.2         lifecycle_1.0.4    vctrs_0.6.5        KernSmooth_2.23-26
+#> [45] proxy_0.4-29       evaluate_1.0.5     glue_1.8.0         farver_2.1.2      
+#> [49] codetools_0.2-20   ragg_1.5.0         e1071_1.7-17       rmarkdown_2.30    
+#> [53] pkgconfig_2.0.3    tools_4.5.2        htmltools_0.5.9
 ```

@@ -70,6 +70,49 @@ structure du paysage et de connectivité
 - [`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)
   : Edge-to-Area Ratio (L2)
 
+## Family B: Biodiversity / Famille B : Biodiversité (v0.3.0)
+
+Biodiversity protection, structure, and connectivity / Protection,
+diversité structurelle et connectivité écologique
+
+- [`indicator_biodiversity_protection()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md)
+  : Calculate Protected Area Coverage (B1)
+- [`indicator_biodiversity_structure()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.md)
+  : Calculate Structural Diversity (B2)
+- [`indicator_biodiversity_connectivity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.md)
+  : Calculate Ecological Connectivity (B3)
+
+## Family R: Risk & Resilience / Famille R : Risques & Résilience (v0.3.0)
+
+Fire, storm, and drought vulnerability / Vulnérabilité aux incendies,
+tempêtes et sécheresse
+
+- [`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md)
+  : Calculate Fire Risk Index (R1)
+- [`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)
+  : Calculate Storm Vulnerability Index (R2)
+- [`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)
+  : Calculate Drought Stress Index (R3)
+
+## Family T: Temporal Dynamics / Famille T : Dynamique temporelle (v0.3.0)
+
+Forest age and land cover change / Ancienneté des peuplements et
+changements d’occupation
+
+- [`indicator_temporal_age()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.md)
+  : Calculate Stand Age Index (T1)
+- [`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)
+  : Calculate Land Cover Change Rate Index (T2)
+
+## Family A: Air & Microclimate / Famille A : Air & Microclimat (v0.3.0)
+
+Tree coverage and air quality / Couverture arborée et qualité de l’air
+
+- [`indicator_air_coverage()`](https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.md)
+  : Calculate Tree Coverage Buffer Index (A1)
+- [`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)
+  : Calculate Air Quality Index (A2)
+
 ## Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)
 
 Biodiversity, fragmentation, accessibility indicators / Indicateurs de
