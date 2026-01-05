@@ -36,7 +36,8 @@ Suggests:
     rnaturalearth,
     osmdata,
     dplyr,
-    patchwork
+    patchwork,
+    viridisLite
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton
