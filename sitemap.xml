@@ -20,11 +20,13 @@
 <url><loc>https://pobsteta.github.io/nemeton/mvp_status.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/news/index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/calculate_change_rate.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/compute_family_correlations.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_composite_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_family_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/detect_indicator_family.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/family-system.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_family_name.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/identify_hotspots.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_accessibility.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.html</loc></url>
@@ -64,6 +66,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicators.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_comparison_map.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/plot_correlation_matrix.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_difference_map.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_indicators_map.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_temporal_heatmap.html</loc></url>

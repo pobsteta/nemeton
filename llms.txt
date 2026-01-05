@@ -938,6 +938,18 @@ détection de changements
 - [`calculate_change_rate()`](https://pobsteta.github.io/nemeton/reference/calculate_change_rate.md)
   : Calculate Change Rates Between Periods
 
+## Cross-Family Analysis / Analyse Croisée Inter-Familles (v0.3.0)
+
+Correlation analysis and multi-criteria hotspot identification / Analyse
+de corrélations et identification de hotspots multi-critères
+
+- [`compute_family_correlations()`](https://pobsteta.github.io/nemeton/reference/compute_family_correlations.md)
+  : Compute Correlation Matrix Between Family Indices
+- [`identify_hotspots()`](https://pobsteta.github.io/nemeton/reference/identify_hotspots.md)
+  : Identify Multi-Criteria Hotspots
+- [`plot_correlation_matrix()`](https://pobsteta.github.io/nemeton/reference/plot_correlation_matrix.md)
+  : Plot Correlation Matrix Heatmap
+
 ## Normalization & Aggregation / Normalisation & Agrégation
 
 Transform and combine indicators / Transformer et combiner les
