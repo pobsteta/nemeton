@@ -186,8 +186,6 @@ See the vignettes for comprehensive guides:
 - [`massif_demo_layers`](https://pobsteta.github.io/nemeton/reference/massif_demo_layers.md) -
   Demo spatial layers
 
-- `harmonize_crs` - CRS harmonization
-
 ## Package Options
 
 Control package behavior with options:

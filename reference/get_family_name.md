@@ -5,7 +5,7 @@ Returns the full family name for a given family code.
 ## Usage
 
 ``` r
-get_family_name(family_code)
+get_family_name(family_code, lang = NULL)
 ```
 
 ## Arguments

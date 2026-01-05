@@ -16,7 +16,6 @@ pour :
 ``` r
 library(nemeton)
 library(ggplot2)
-library(dplyr)
 ```
 
 ## Principe de l’analyse temporelle
@@ -426,7 +425,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.1.4   ggplot2_4.0.1 nemeton_0.2.0
+#> [1] ggplot2_4.0.1 nemeton_0.2.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.6.5        cli_3.6.5          knitr_1.51         rlang_1.1.6       
@@ -434,9 +433,10 @@ sessionInfo()
 #>  [9] jsonlite_2.0.0     glue_1.8.0         htmltools_0.5.9    ragg_1.5.0        
 #> [13] sass_0.4.10        scales_1.4.0       rmarkdown_2.30     grid_4.5.2        
 #> [17] tibble_3.3.0       evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0     
-#> [21] yaml_2.3.12        lifecycle_1.0.4    compiler_4.5.2     RColorBrewer_1.1-3
-#> [25] fs_1.6.6           pkgconfig_2.0.3    farver_2.1.2       systemfonts_1.3.1 
-#> [29] digest_0.6.39      R6_2.6.1           tidyselect_1.2.1   pillar_1.11.1     
-#> [33] magrittr_2.0.4     bslib_0.9.0        withr_3.0.2        tools_4.5.2       
-#> [37] gtable_0.3.6       pkgdown_2.2.0      cachem_1.1.0       desc_1.4.3
+#> [21] yaml_2.3.12        lifecycle_1.0.4    compiler_4.5.2     dplyr_1.1.4       
+#> [25] RColorBrewer_1.1-3 fs_1.6.6           pkgconfig_2.0.3    farver_2.1.2      
+#> [29] systemfonts_1.3.1  digest_0.6.39      R6_2.6.1           tidyselect_1.2.1  
+#> [33] pillar_1.11.1      magrittr_2.0.4     bslib_0.9.0        withr_3.0.2       
+#> [37] tools_4.5.2        gtable_0.3.6       pkgdown_2.2.0      cachem_1.1.0      
+#> [41] desc_1.4.3
 ```
