@@ -217,14 +217,16 @@ plot_indicators_map(
 )
 ```
 
-## Cartes de comparaison
+## Cartes multiples (facettes)
 
 ```{r, fig.cap = "Comparaison carbone vs biodiversité", fig.width = 10}
-plot_comparison_map(
+plot_indicators_map(
   normalized,
   indicators = c("carbon_norm", "biodiversity_norm"),
-  titles = c("Stock de carbone", "Biodiversité"),
-  ncol = 2
+  palette = "viridis",
+  facet = TRUE,
+  ncol = 2,
+  title = "Comparaison carbone vs biodiversité"
 )
 ```
 
@@ -234,8 +236,7 @@ plot_comparison_map(
 nemeton_radar(
   normalized,
   unit_id = "P01",
-  indicators = c("carbon_norm", "biodiversity_norm", "water_norm",
-                 "fragmentation_norm", "accessibility_norm"),
+  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
   title = "Profil multi-indicateurs - Parcelle P01"
 )
 ```
@@ -286,18 +287,19 @@ plot_indicators_map(
 
 ## Inverser un indicateur
 
-Pour les indicateurs où une valeur faible est souhaitable (ex: fragmentation) :
+Pour les indicateurs où une valeur faible est souhaitable :
 
-```{r}
-# Inverser la fragmentation (moins fragmenté = mieux)
+```{r, eval = FALSE}
+# Exemple: inverser un indicateur
+# (Utilisé pour les indicateurs où une valeur faible est souhaitable)
 normalized_inv <- invert_indicator(
   normalized,
-  indicators = "fragmentation_norm",
+  indicators = "water_norm",
   suffix = "_inv"
 )
 
-# La fragmentation inversée reflète maintenant la continuité
-head(normalized_inv[, c("parcel_id", "fragmentation_norm", "fragmentation_norm_inv")])
+# L'indicateur inversé
+head(normalized_inv[, c("parcel_id", "water_norm", "water_norm_inv")])
 ```
 
 ## Filtrage et sous-ensembles
