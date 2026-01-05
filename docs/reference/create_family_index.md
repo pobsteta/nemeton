@@ -52,15 +52,15 @@ family_W).
 
 \*\*Family Detection\*\*: Automatically identifies indicators by prefix:
 
-- C1, C2 → Carbon family (family_C)
+- C1, C2 -\> Carbon family (family_C)
 
-- W1, W2, W3 → Water family (family_W)
+- W1, W2, W3 -\> Water family (family_W)
 
-- F1, F2 → Soil fertility family (family_F)
+- F1, F2 -\> Soil fertility family (family_F)
 
-- L1, L2 → Landscape family (family_L)
+- L1, L2 -\> Landscape family (family_L)
 
-- B1, B2, B3 → Biodiversity family (family_B)
+- B1, B2, B3 -\> Biodiversity family (family_B)
 
 - And 7 other families (A, T, R, S, P, E, N)
 
