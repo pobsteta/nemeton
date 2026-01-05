@@ -199,18 +199,18 @@ R package structure:
 
 ### Tests for User Story 6 (TDD: Write FIRST)
 
-- [ ] T068 [P] [US6] Unit test for compute_family_correlations() in tests/testthat/test-analysis-correlation.R (test correlation matrix calculation, NA handling, family selection)
-- [ ] T069 [P] [US6] Unit test for identify_hotspots() in tests/testthat/test-analysis-correlation.R (test multi-criteria filtering, percentile thresholds, output format)
-- [ ] T070 [US6] Integration test for cross-family analysis workflow in tests/testthat/test-analysis-correlation.R (compute indicators → family indices → correlations → hotspots → verify)
+- [X] T068 [P] [US6] Unit test for compute_family_correlations() in tests/testthat/test-analysis-correlation.R (test correlation matrix calculation, NA handling, family selection)
+- [X] T069 [P] [US6] Unit test for identify_hotspots() in tests/testthat/test-analysis-correlation.R (test multi-criteria filtering, percentile thresholds, output format)
+- [X] T070 [US6] Integration test for cross-family analysis workflow in tests/testthat/test-analysis-correlation.R (compute indicators → family indices → correlations → hotspots → verify)
 
 ### Implementation for User Story 6
 
-- [ ] T071 [P] [US6] Implement compute_family_correlations() in R/analysis-correlation.R (correlation matrix for family_*, Pearson/Spearman methods, visualization helper)
-- [ ] T072 [P] [US6] Implement identify_hotspots() in R/analysis-correlation.R (multi-criteria filtering, percentile thresholds, spatial output with hotspot flag)
-- [ ] T073 [P] [US6] Implement plot_correlation_matrix() helper in R/analysis-correlation.R (corrplot-style visualization for family correlations)
-- [ ] T074 [US6] Add roxygen2 documentation for all functions in analysis-correlation.R with @param, @return, @examples
-- [ ] T075 [US6] Add bilingual messages (FR/EN) for correlation analysis operations
-- [ ] T076 [US6] Run devtools::test() and verify all US6 tests pass (≥10 tests for cross-family analysis)
+- [X] T071 [P] [US6] Implement compute_family_correlations() in R/analysis-correlation.R (correlation matrix for family_*, Pearson/Spearman methods, visualization helper)
+- [X] T072 [P] [US6] Implement identify_hotspots() in R/analysis-correlation.R (multi-criteria filtering, percentile thresholds, spatial output with hotspot flag)
+- [X] T073 [P] [US6] Implement plot_correlation_matrix() helper in R/analysis-correlation.R (corrplot-style visualization for family correlations)
+- [X] T074 [US6] Add roxygen2 documentation for all functions in analysis-correlation.R with @param, @return, @examples
+- [X] T075 [US6] Add bilingual messages (FR/EN) for correlation analysis operations
+- [X] T076 [US6] Run devtools::test() and verify all US6 tests pass (≥10 tests for cross-family analysis)
 
 **Checkpoint**: Cross-family analysis complete - users can explore synergies, trade-offs, and multi-criteria optimization
 

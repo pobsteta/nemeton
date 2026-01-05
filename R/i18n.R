@@ -268,7 +268,19 @@ msg_error <- function(key, ...) {
     air_quality_method = "Using air quality method: %s",
     air_quality_proxy_warning = "ATMO data unavailable, using distance proxy",
     air_quality_roads_distance = "Mean distance to major roads: %0.0f m",
-    air_quality_urban_distance = "Mean distance to urban areas: %0.0f m"
+    air_quality_urban_distance = "Mean distance to urban areas: %0.0f m",
+
+    # v0.3.0 - Cross-Family Correlation Analysis (US6)
+    correlation_computing = "Computing correlation matrix for %d families using %s method",
+    correlation_computed = "Correlation matrix computed: %d x %d",
+    correlation_auto_detected = "Auto-detected %d family indices: %s",
+    correlation_synergy = "Strong positive correlation detected: %s × %s (r=%0.2f)",
+    correlation_tradeoff = "Trade-off detected: %s × %s (r=%0.2f)",
+    hotspot_identifying = "Identifying hotspots: threshold=%0.0f%%, min_families=%d",
+    hotspot_identified = "Identified %d hotspot parcels (%0.1f%% of total)",
+    hotspot_parcel = "Hotspot parcel %s: high in %d families (%s)",
+    hotspot_none = "No hotspots found with current thresholds",
+    correlation_matrix_plotting = "Creating correlation matrix heatmap"
   ),
 
   fr = list(
@@ -421,6 +433,18 @@ msg_error <- function(key, ...) {
     air_quality_method = "Méthode qualité air utilisée : %s",
     air_quality_proxy_warning = "Données ATMO indisponibles, utilisation proxy distance",
     air_quality_roads_distance = "Distance moyenne routes principales : %0.0f m",
-    air_quality_urban_distance = "Distance moyenne zones urbaines : %0.0f m"
+    air_quality_urban_distance = "Distance moyenne zones urbaines : %0.0f m",
+
+    # v0.3.0 - Analyse Croisée Inter-Familles (US6)
+    correlation_computing = "Calcul matrice de corrélation pour %d familles (méthode %s)",
+    correlation_computed = "Matrice de corrélation calculée : %d x %d",
+    correlation_auto_detected = "%d indices familles auto-détectés : %s",
+    correlation_synergy = "Forte corrélation positive détectée : %s × %s (r=%0.2f)",
+    correlation_tradeoff = "Conflit détecté : %s × %s (r=%0.2f)",
+    hotspot_identifying = "Identification hotspots : seuil=%0.0f%%, min_familles=%d",
+    hotspot_identified = "%d parcelles hotspots identifiées (%0.1f%% du total)",
+    hotspot_parcel = "Parcelle hotspot %s : élevée dans %d familles (%s)",
+    hotspot_none = "Aucun hotspot trouvé avec les seuils actuels",
+    correlation_matrix_plotting = "Création heatmap matrice de corrélation"
   )
 )

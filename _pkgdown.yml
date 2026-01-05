@@ -120,6 +120,13 @@ reference:
     - nemeton_temporal
     - calculate_change_rate
 
+  - title: "Cross-Family Analysis / Analyse Croisée Inter-Familles (v0.3.0)"
+    desc: "Correlation analysis and multi-criteria hotspot identification / Analyse de corrélations et identification de hotspots multi-critères"
+    contents:
+    - compute_family_correlations
+    - identify_hotspots
+    - plot_correlation_matrix
+
   - title: "Normalization & Aggregation / Normalisation & Agrégation"
     desc: "Transform and combine indicators / Transformer et combiner les indicateurs"
     contents:
