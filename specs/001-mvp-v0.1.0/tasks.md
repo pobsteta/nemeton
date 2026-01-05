@@ -27,13 +27,13 @@ R package structure:
 
 **Purpose**: R package initialization and basic structure
 
-- [ ] T001 Create R package structure with usethis::create_package("nemeton")
-- [ ] T002 Configure DESCRIPTION file with dependencies (sf, terra, exactextractr, dplyr, ggplot2, rlang, cli)
-- [ ] T003 [P] Create directory structure (R/, tests/testthat/, data/, data-raw/, inst/extdata/, vignettes/)
-- [ ] T004 [P] Setup .gitignore for R package (.Rproj.user, .Rhistory, .RData, etc.)
-- [ ] T005 [P] Configure testthat framework with usethis::use_testthat()
-- [ ] T006 [P] Create LICENSE file (MIT or GPL-3)
-- [ ] T007 [P] Initialize NEWS.md for changelog
+- [X] T001 Create R package structure with usethis::create_package("nemeton")
+- [X] T002 Configure DESCRIPTION file with dependencies (sf, terra, exactextractr, dplyr, ggplot2, rlang, cli)
+- [X] T003 [P] Create directory structure (R/, tests/testthat/, data/, data-raw/, inst/extdata/, vignettes/)
+- [X] T004 [P] Setup .gitignore for R package (.Rproj.user, .Rhistory, .RData, etc.)
+- [X] T005 [P] Configure testthat framework with usethis::use_testthat()
+- [X] T006 [P] Create LICENSE file (MIT or GPL-3)
+- [X] T007 [P] Initialize NEWS.md for changelog
 
 ---
 
@@ -45,46 +45,46 @@ R package structure:
 
 ### Core Utilities
 
-- [ ] T008 [P] Implement check_crs() helper in R/utils.R
-- [ ] T009 [P] Implement validate_sf() helper in R/utils.R
-- [ ] T010 [P] Implement message_nemeton() for cli messages in R/utils.R
-- [ ] T011 [P] Write tests for utils functions in tests/testthat/test-utils.R
+- [X] T008 [P] Implement check_crs() helper in R/utils.R
+- [X] T009 [P] Implement validate_sf() helper in R/utils.R
+- [X] T010 [P] Implement message_nemeton() for cli messages in R/utils.R
+- [X] T011 [P] Write tests for utils functions in tests/testthat/test-utils.R
 
 ### S3 Classes - nemeton_units
 
-- [ ] T012 Create nemeton_units() constructor in R/nemeton-class.R
-- [ ] T013 [P] Implement print.nemeton_units() method in R/nemeton-class.R
-- [ ] T014 [P] Implement summary.nemeton_units() method in R/nemeton-class.R
-- [ ] T015 Implement validate_units() internal function in R/data-units.R
-- [ ] T016 Add roxygen2 documentation for nemeton_units() in R/nemeton-class.R
+- [X] T012 Create nemeton_units() constructor in R/nemeton-class.R
+- [X] T013 [P] Implement print.nemeton_units() method in R/nemeton-class.R
+- [X] T014 [P] Implement summary.nemeton_units() method in R/nemeton-class.R
+- [X] T015 Implement validate_units() internal function in R/data-units.R
+- [X] T016 Add roxygen2 documentation for nemeton_units() in R/nemeton-class.R
 
 ### S3 Classes - nemeton_layers
 
-- [ ] T017 Create nemeton_layers() constructor in R/nemeton-class.R
-- [ ] T018 [P] Implement print.nemeton_layers() method in R/nemeton-class.R
-- [ ] T019 [P] Implement summary.nemeton_layers() method in R/nemeton-class.R
-- [ ] T020 Add roxygen2 documentation for nemeton_layers() in R/nemeton-class.R
+- [X] T017 Create nemeton_layers() constructor in R/nemeton-class.R
+- [X] T018 [P] Implement print.nemeton_layers() method in R/nemeton-class.R
+- [X] T019 [P] Implement summary.nemeton_layers() method in R/nemeton-class.R
+- [X] T020 Add roxygen2 documentation for nemeton_layers() in R/nemeton-class.R
 
 ### Tests for Core Classes
 
-- [ ] T021 [P] Write tests for nemeton_units() creation in tests/testthat/test-units.R
-- [ ] T022 [P] Write tests for nemeton_units() validation in tests/testthat/test-units.R
-- [ ] T023 [P] Write tests for nemeton_units() metadata in tests/testthat/test-units.R
-- [ ] T024 [P] Write tests for nemeton_layers() creation in tests/testthat/test-layers.R
-- [ ] T025 [P] Write tests for nemeton_layers() validation in tests/testthat/test-layers.R
+- [X] T021 [P] Write tests for nemeton_units() creation in tests/testthat/test-units.R
+- [X] T022 [P] Write tests for nemeton_units() validation in tests/testthat/test-units.R
+- [X] T023 [P] Write tests for nemeton_units() metadata in tests/testthat/test-units.R
+- [X] T024 [P] Write tests for nemeton_layers() creation in tests/testthat/test-layers.R
+- [X] T025 [P] Write tests for nemeton_layers() validation in tests/testthat/test-layers.R
 
 ### Test Fixtures
 
-- [ ] T026 [P] Create test fixtures: demo_units.gpkg (10 polygons) in tests/testthat/fixtures/
-- [ ] T027 [P] Create test fixtures: demo_raster_small.tif in tests/testthat/fixtures/
-- [ ] T028 [P] Create test fixtures: demo_hydro.gpkg (vectors) in tests/testthat/fixtures/
+- [X] T026 [P] Create test fixtures: demo_units.gpkg (10 polygons) in tests/testthat/fixtures/
+- [X] T027 [P] Create test fixtures: demo_raster_small.tif in tests/testthat/fixtures/
+- [X] T028 [P] Create test fixtures: demo_hydro.gpkg (vectors) in tests/testthat/fixtures/
 
 ### Preprocessing Functions
 
-- [ ] T029 [P] Implement harmonize_crs() in R/data-preprocessing.R
-- [ ] T030 [P] Implement crop_to_units() in R/data-preprocessing.R
-- [ ] T031 [P] Implement mask_to_units() in R/data-preprocessing.R
-- [ ] T032 Write tests for preprocessing functions in tests/testthat/test-preprocessing.R
+- [X] T029 [P] Implement harmonize_crs() in R/data-preprocessing.R
+- [X] T030 [P] Implement crop_to_units() in R/data-preprocessing.R
+- [X] T031 [P] Implement mask_to_units() in R/data-preprocessing.R
+- [X] T032 Write tests for preprocessing functions in tests/testthat/test-preprocessing.R
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -105,52 +105,52 @@ R package structure:
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (TDD)**
 
-- [ ] T033 [P] [US1] Write test for nemeton_compute() basic functionality in tests/testthat/test-indicators.R
-- [ ] T034 [P] [US1] Write test for nemeton_compute() with CRS mismatch in tests/testthat/test-indicators.R
-- [ ] T035 [P] [US1] Write test for nemeton_compute() with missing layer (warning) in tests/testthat/test-indicators.R
-- [ ] T036 [P] [US1] Write test for indicator_carbon() in tests/testthat/test-indicators.R
-- [ ] T037 [P] [US1] Write test for indicator_biodiversity() in tests/testthat/test-indicators.R
-- [ ] T038 [P] [US1] Write test for indicator_water() in tests/testthat/test-indicators.R
-- [ ] T039 [P] [US1] Write test for indicator_fragmentation() in tests/testthat/test-indicators.R
-- [ ] T040 [P] [US1] Write test for indicator_accessibility() in tests/testthat/test-indicators.R
+- [X] T033 [P] [US1] Write test for nemeton_compute() basic functionality in tests/testthat/test-indicators.R
+- [X] T034 [P] [US1] Write test for nemeton_compute() with CRS mismatch in tests/testthat/test-indicators.R
+- [X] T035 [P] [US1] Write test for nemeton_compute() with missing layer (warning) in tests/testthat/test-indicators.R
+- [X] T036 [P] [US1] Write test for indicator_carbon() in tests/testthat/test-indicators.R
+- [X] T037 [P] [US1] Write test for indicator_biodiversity() in tests/testthat/test-indicators.R
+- [X] T038 [P] [US1] Write test for indicator_water() in tests/testthat/test-indicators.R
+- [X] T039 [P] [US1] Write test for indicator_fragmentation() in tests/testthat/test-indicators.R
+- [X] T040 [P] [US1] Write test for indicator_accessibility() in tests/testthat/test-indicators.R
 
 ### Implementation for User Story 1
 
 #### Core Compute Engine
 
-- [ ] T041 [US1] Implement nemeton_compute() core orchestration in R/indicators-core.R
-- [ ] T042 [US1] Implement compute_indicator() internal dispatcher in R/indicators-core.R
-- [ ] T043 [US1] Add roxygen2 documentation for nemeton_compute() in R/indicators-core.R
+- [X] T041 [US1] Implement nemeton_compute() core orchestration in R/indicators-core.R
+- [X] T042 [US1] Implement compute_indicator() internal dispatcher in R/indicators-core.R
+- [X] T043 [US1] Add roxygen2 documentation for nemeton_compute() in R/indicators-core.R
 
 #### Indicator: Carbon
 
-- [ ] T044 [P] [US1] Implement indicator_carbon() in R/indicators-biophysical.R
-- [ ] T045 [P] [US1] Add roxygen2 documentation for indicator_carbon() in R/indicators-biophysical.R
+- [X] T044 [P] [US1] Implement indicator_carbon() in R/indicators-biophysical.R
+- [X] T045 [P] [US1] Add roxygen2 documentation for indicator_carbon() in R/indicators-biophysical.R
 
 #### Indicator: Biodiversity
 
-- [ ] T046 [P] [US1] Implement indicator_biodiversity() in R/indicators-biophysical.R
-- [ ] T047 [P] [US1] Add roxygen2 documentation for indicator_biodiversity() in R/indicators-biophysical.R
+- [X] T046 [P] [US1] Implement indicator_biodiversity() in R/indicators-biophysical.R
+- [X] T047 [P] [US1] Add roxygen2 documentation for indicator_biodiversity() in R/indicators-biophysical.R
 
 #### Indicator: Water
 
-- [ ] T048 [P] [US1] Implement indicator_water() in R/indicators-biophysical.R
-- [ ] T049 [P] [US1] Add roxygen2 documentation for indicator_water() in R/indicators-biophysical.R
+- [X] T048 [P] [US1] Implement indicator_water() in R/indicators-biophysical.R
+- [X] T049 [P] [US1] Add roxygen2 documentation for indicator_water() in R/indicators-biophysical.R
 
 #### Indicator: Fragmentation
 
-- [ ] T050 [P] [US1] Implement indicator_fragmentation() in R/indicators-biophysical.R
-- [ ] T051 [P] [US1] Add roxygen2 documentation for indicator_fragmentation() in R/indicators-biophysical.R
+- [X] T050 [P] [US1] Implement indicator_fragmentation() in R/indicators-biophysical.R
+- [X] T051 [P] [US1] Add roxygen2 documentation for indicator_fragmentation() in R/indicators-biophysical.R
 
 #### Indicator: Accessibility
 
-- [ ] T052 [P] [US1] Implement indicator_accessibility() in R/indicators-biophysical.R
-- [ ] T053 [P] [US1] Add roxygen2 documentation for indicator_accessibility() in R/indicators-biophysical.R
+- [X] T052 [P] [US1] Implement indicator_accessibility() in R/indicators-biophysical.R
+- [X] T053 [P] [US1] Add roxygen2 documentation for indicator_accessibility() in R/indicators-biophysical.R
 
 ### Integration Tests for User Story 1
 
-- [ ] T054 [US1] Write integration test: full workflow units → layers → compute in tests/testthat/test-workflow.R
-- [ ] T055 [US1] Create expected values fixture for regression tests in tests/testthat/fixtures/expected_carbon.rds
+- [X] T054 [US1] Write integration test: full workflow units → layers → compute in tests/testthat/test-workflow.R
+- [X] T055 [US1] Create expected values fixture for regression tests in tests/testthat/fixtures/expected_carbon.rds
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - can calculate 5 indicators independently ✅
 
@@ -171,39 +171,39 @@ R package structure:
 
 > **NOTE: Write these tests FIRST (TDD)**
 
-- [ ] T056 [P] [US2] Write test for normalize_indicators() with minmax method in tests/testthat/test-normalization.R
-- [ ] T057 [P] [US2] Write test for normalize_indicators() with zscore method in tests/testthat/test-normalization.R
-- [ ] T058 [P] [US2] Write test for normalize_indicators() with polarity inversion in tests/testthat/test-normalization.R
-- [ ] T059 [P] [US2] Write test for nemeton_index() weighted aggregation in tests/testthat/test-normalization.R
-- [ ] T060 [P] [US2] Write test for nemeton_index() with thematic groups in tests/testthat/test-normalization.R
-- [ ] T061 [P] [US2] Write test for nemeton_index() edge case (no variance) in tests/testthat/test-normalization.R
+- [X] T056 [P] [US2] Write test for normalize_indicators() with minmax method in tests/testthat/test-normalization.R
+- [X] T057 [P] [US2] Write test for normalize_indicators() with zscore method in tests/testthat/test-normalization.R
+- [X] T058 [P] [US2] Write test for normalize_indicators() with polarity inversion in tests/testthat/test-normalization.R
+- [X] T059 [P] [US2] Write test for nemeton_index() weighted aggregation in tests/testthat/test-normalization.R
+- [X] T060 [P] [US2] Write test for nemeton_index() with thematic groups in tests/testthat/test-normalization.R
+- [X] T061 [P] [US2] Write test for nemeton_index() edge case (no variance) in tests/testthat/test-normalization.R
 
 ### Implementation for User Story 2
 
 #### Normalization Functions
 
-- [ ] T062 [P] [US2] Implement normalize_indicators() with minmax method in R/normalization.R
-- [ ] T063 [P] [US2] Implement normalize_indicators() with zscore method in R/normalization.R
-- [ ] T064 [P] [US2] Implement normalize_indicators() with rank method in R/normalization.R
-- [ ] T065 [US2] Add polarity handling in normalize_indicators() in R/normalization.R
-- [ ] T066 [P] [US2] Add roxygen2 documentation for normalize_indicators() in R/normalization.R
+- [X] T062 [P] [US2] Implement normalize_indicators() with minmax method in R/normalization.R
+- [X] T063 [P] [US2] Implement normalize_indicators() with zscore method in R/normalization.R
+- [X] T064 [P] [US2] Implement normalize_indicators() with rank method in R/normalization.R
+- [X] T065 [US2] Add polarity handling in normalize_indicators() in R/normalization.R
+- [X] T066 [P] [US2] Add roxygen2 documentation for normalize_indicators() in R/normalization.R
 
 #### Aggregation Functions
 
-- [ ] T067 [P] [US2] Implement aggregate_weighted() helper in R/normalization.R
-- [ ] T068 [P] [US2] Implement aggregate_geometric() helper in R/normalization.R
-- [ ] T069 [P] [US2] Implement aggregate_harmonic() helper in R/normalization.R
+- [X] T067 [P] [US2] Implement aggregate_weighted() helper in R/normalization.R
+- [X] T068 [P] [US2] Implement aggregate_geometric() helper in R/normalization.R
+- [X] T069 [P] [US2] Implement aggregate_harmonic() helper in R/normalization.R
 
 #### Index Computation
 
-- [ ] T070 [US2] Implement nemeton_index() main function in R/normalization.R
-- [ ] T071 [US2] Add thematic groups support in nemeton_index() in R/normalization.R
-- [ ] T072 [US2] Add metadata tracking in nemeton_index() in R/normalization.R
-- [ ] T073 [P] [US2] Add roxygen2 documentation for nemeton_index() in R/normalization.R
+- [X] T070 [US2] Implement nemeton_index() main function in R/normalization.R
+- [X] T071 [US2] Add thematic groups support in nemeton_index() in R/normalization.R
+- [X] T072 [US2] Add metadata tracking in nemeton_index() in R/normalization.R
+- [X] T073 [P] [US2] Add roxygen2 documentation for nemeton_index() in R/normalization.R
 
 ### Integration Tests for User Story 2
 
-- [ ] T074 [US2] Write integration test: compute → normalize → index workflow in tests/testthat/test-workflow.R
+- [X] T074 [US2] Write integration test: compute → normalize → index workflow in tests/testthat/test-workflow.R
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently ✅
 
@@ -224,25 +224,25 @@ R package structure:
 
 > **NOTE: Write these tests FIRST (TDD)**
 
-- [ ] T075 [P] [US3] Write test for nemeton_map() basic functionality in tests/testthat/test-visualization.R
-- [ ] T076 [P] [US3] Write test for nemeton_map() with custom palette in tests/testthat/test-visualization.R
-- [ ] T077 [P] [US3] Write test for nemeton_map() with custom breaks in tests/testthat/test-visualization.R
-- [ ] T078 [P] [US3] Write test for nemeton_map() error on invalid indicator in tests/testthat/test-visualization.R
-- [ ] T079 [P] [US3] Write test for nemeton_map() returns ggplot object in tests/testthat/test-visualization.R
+- [X] T075 [P] [US3] Write test for nemeton_map() basic functionality in tests/testthat/test-visualization.R
+- [X] T076 [P] [US3] Write test for nemeton_map() with custom palette in tests/testthat/test-visualization.R
+- [X] T077 [P] [US3] Write test for nemeton_map() with custom breaks in tests/testthat/test-visualization.R
+- [X] T078 [P] [US3] Write test for nemeton_map() error on invalid indicator in tests/testthat/test-visualization.R
+- [X] T079 [P] [US3] Write test for nemeton_map() returns ggplot object in tests/testthat/test-visualization.R
 
 ### Implementation for User Story 3
 
 #### Map Visualization
 
-- [ ] T080 [P] [US3] Implement classify_values() helper for breaks in R/visualization.R
-- [ ] T081 [US3] Implement nemeton_map() core function in R/visualization.R
-- [ ] T082 [US3] Add palette support (viridis, RColorBrewer) in nemeton_map() in R/visualization.R
-- [ ] T083 [US3] Add classification methods (quantile, equal, jenks) in nemeton_map() in R/visualization.R
-- [ ] T084 [P] [US3] Add roxygen2 documentation for nemeton_map() in R/visualization.R
+- [X] T080 [P] [US3] Implement classify_values() helper for breaks in R/visualization.R
+- [X] T081 [US3] Implement nemeton_map() core function in R/visualization.R
+- [X] T082 [US3] Add palette support (viridis, RColorBrewer) in nemeton_map() in R/visualization.R
+- [X] T083 [US3] Add classification methods (quantile, equal, jenks) in nemeton_map() in R/visualization.R
+- [X] T084 [P] [US3] Add roxygen2 documentation for nemeton_map() in R/visualization.R
 
 ### Integration Tests for User Story 3
 
-- [ ] T085 [US3] Write integration test: compute → map workflow in tests/testthat/test-workflow.R
+- [X] T085 [US3] Write integration test: compute → map workflow in tests/testthat/test-workflow.R
 
 **Checkpoint**: At this point, User Stories 1, 2 AND 3 should all work independently ✅
 
@@ -263,25 +263,25 @@ R package structure:
 
 > **NOTE: Write these tests FIRST (TDD)**
 
-- [ ] T086 [P] [US4] Write test for nemeton_radar() with specific unit in tests/testthat/test-visualization.R
-- [ ] T087 [P] [US4] Write test for nemeton_radar() with average (unit_id = NULL) in tests/testthat/test-visualization.R
-- [ ] T088 [P] [US4] Write test for nemeton_radar() with normalization in tests/testthat/test-visualization.R
-- [ ] T089 [P] [US4] Write test for nemeton_radar() error on invalid unit_id in tests/testthat/test-visualization.R
-- [ ] T090 [P] [US4] Write test for nemeton_radar() returns ggplot object in tests/testthat/test-visualization.R
+- [X] T086 [P] [US4] Write test for nemeton_radar() with specific unit in tests/testthat/test-visualization.R
+- [X] T087 [P] [US4] Write test for nemeton_radar() with average (unit_id = NULL) in tests/testthat/test-visualization.R
+- [X] T088 [P] [US4] Write test for nemeton_radar() with normalization in tests/testthat/test-visualization.R
+- [X] T089 [P] [US4] Write test for nemeton_radar() error on invalid unit_id in tests/testthat/test-visualization.R
+- [X] T090 [P] [US4] Write test for nemeton_radar() returns ggplot object in tests/testthat/test-visualization.R
 
 ### Implementation for User Story 4
 
 #### Radar Visualization
 
-- [ ] T091 [P] [US4] Implement prepare_radar_data() helper in R/visualization.R
-- [ ] T092 [US4] Implement nemeton_radar() core function with coord_polar() in R/visualization.R
-- [ ] T093 [US4] Add unit selection logic in nemeton_radar() in R/visualization.R
-- [ ] T094 [US4] Add custom axis labels support in nemeton_radar() in R/visualization.R
-- [ ] T095 [P] [US4] Add roxygen2 documentation for nemeton_radar() in R/visualization.R
+- [X] T091 [P] [US4] Implement prepare_radar_data() helper in R/visualization.R
+- [X] T092 [US4] Implement nemeton_radar() core function with coord_polar() in R/visualization.R
+- [X] T093 [US4] Add unit selection logic in nemeton_radar() in R/visualization.R
+- [X] T094 [US4] Add custom axis labels support in nemeton_radar() in R/visualization.R
+- [X] T095 [P] [US4] Add roxygen2 documentation for nemeton_radar() in R/visualization.R
 
 ### Integration Tests for User Story 4
 
-- [ ] T096 [US4] Write integration test: compute → index → radar workflow in tests/testthat/test-workflow.R
+- [X] T096 [US4] Write integration test: compute → index → radar workflow in tests/testthat/test-workflow.R
 
 **Checkpoint**: All 4 user stories should now be independently functional ✅
 
@@ -293,36 +293,36 @@ R package structure:
 
 ### Example Dataset
 
-- [ ] T097 [P] Create massif_demo dataset generation script in data-raw/massif_demo.R
-- [ ] T098 [P] Generate 50 synthetic forest parcels with st_sf() in data-raw/massif_demo.R
-- [ ] T099 [P] Add metadata attributes to massif_demo in data-raw/massif_demo.R
-- [ ] T100 Create massif_demo.rda with usethis::use_data() in data-raw/massif_demo.R
-- [ ] T101 [P] Add roxygen2 documentation for massif_demo in R/data.R
+- [X] T097 [P] Create massif_demo dataset generation script in data-raw/massif_demo.R
+- [X] T098 [P] Generate 50 synthetic forest parcels with st_sf() in data-raw/massif_demo.R
+- [X] T099 [P] Add metadata attributes to massif_demo in data-raw/massif_demo.R
+- [X] T100 Create massif_demo.rda with usethis::use_data() in data-raw/massif_demo.R
+- [X] T101 [P] Add roxygen2 documentation for massif_demo in R/data.R
 
 ### Example Rasters
 
-- [ ] T102 [P] Create synthetic NDVI raster in inst/extdata/demo_ndvi.tif
-- [ ] T103 [P] Create synthetic DEM raster in inst/extdata/demo_dem.tif
-- [ ] T104 [P] Create synthetic hydro vector in inst/extdata/demo_hydro.gpkg
+- [X] T102 [P] Create synthetic NDVI raster in inst/extdata/demo_ndvi.tif
+- [X] T103 [P] Create synthetic DEM raster in inst/extdata/demo_dem.tif
+- [X] T104 [P] Create synthetic hydro vector in inst/extdata/demo_hydro.gpkg
 
 ### Package Documentation
 
-- [ ] T105 [P] Create R/nemeton-package.R with package-level documentation
-- [ ] T106 [P] Add CITATION file in inst/CITATION
-- [ ] T107 [P] Create R/zzz.R with .onLoad() and .onAttach() hooks
+- [X] T105 [P] Create R/nemeton-package.R with package-level documentation
+- [X] T106 [P] Add CITATION file in inst/CITATION
+- [X] T107 [P] Create R/zzz.R with .onLoad() and .onAttach() hooks
 
 ### Vignettes
 
-- [ ] T108 [P] Create vignette intro-nemeton.Rmd with usethis::use_vignette()
-- [ ] T109 Write intro vignette: method explanation + package overview in vignettes/intro-nemeton.Rmd
-- [ ] T110 [P] Create vignette workflow-basic.Rmd with usethis::use_vignette()
-- [ ] T111 Write workflow vignette: complete A-Z example in vignettes/workflow-basic.Rmd
+- [X] T108 [P] Create vignette intro-nemeton.Rmd with usethis::use_vignette()
+- [X] T109 Write intro vignette: method explanation + package overview in vignettes/intro-nemeton.Rmd
+- [X] T110 [P] Create vignette workflow-basic.Rmd with usethis::use_vignette()
+- [X] T111 Write workflow vignette: complete A-Z example in vignettes/workflow-basic.Rmd
 
 ### README
 
-- [ ] T112 Create README.md with installation instructions and quick example
-- [ ] T113 Add badges (R CMD check, codecov) to README.md
-- [ ] T114 Add example workflow code to README.md
+- [X] T112 Create README.md with installation instructions and quick example
+- [X] T113 Add badges (R CMD check, codecov) to README.md
+- [X] T114 Add example workflow code to README.md
 
 ---
 
@@ -332,50 +332,50 @@ R package structure:
 
 ### Documentation Completion
 
-- [ ] T115 [P] Run devtools::document() to generate all man/*.Rd files
-- [ ] T116 [P] Verify all exported functions have complete roxygen2 docs
-- [ ] T117 [P] Add examples to all roxygen2 documentation
-- [ ] T118 Build vignettes with devtools::build_vignettes()
+- [X] T115 [P] Run devtools::document() to generate all man/*.Rd files
+- [X] T116 [P] Verify all exported functions have complete roxygen2 docs
+- [X] T117 [P] Add examples to all roxygen2 documentation
+- [X] T118 Build vignettes with devtools::build_vignettes()
 
 ### Testing & Coverage
 
-- [ ] T119 Run devtools::test() and verify all tests pass
-- [ ] T120 Run covr::package_coverage() and verify >= 70% coverage
-- [ ] T121 Add additional tests if coverage < 70%
-- [ ] T122 Create regression test fixtures: save expected values for all indicators
+- [X] T119 Run devtools::test() and verify all tests pass
+- [X] T120 Run covr::package_coverage() and verify >= 70% coverage
+- [X] T121 Add additional tests if coverage < 70%
+- [X] T122 Create regression test fixtures: save expected values for all indicators
 
 ### Code Quality
 
-- [ ] T123 [P] Run lintr::lint_package() and fix all style issues
-- [ ] T124 [P] Run styler::style_pkg() for consistent formatting
-- [ ] T125 Verify all files <= 300 lines (refactor if needed)
-- [ ] T126 Verify all lines <= 80 characters
+- [X] T123 [P] Run lintr::lint_package() and fix all style issues
+- [X] T124 [P] Run styler::style_pkg() for consistent formatting
+- [X] T125 Verify all files <= 300 lines (refactor if needed)
+- [X] T126 Verify all lines <= 80 characters
 
 ### Package Checks
 
-- [ ] T127 Run devtools::check() and fix all ERRORs
-- [ ] T128 Run devtools::check() and fix all WARNINGs
-- [ ] T129 Run devtools::check() and fix all NOTEs (if possible)
-- [ ] T130 Verify package size < 10 MB
-- [ ] T131 Verify data/ size < 5 MB
+- [X] T127 Run devtools::check() and fix all ERRORs
+- [X] T128 Run devtools::check() and fix all WARNINGs
+- [X] T129 Run devtools::check() and fix all NOTEs (if possible)
+- [X] T130 Verify package size < 10 MB
+- [X] T131 Verify data/ size < 5 MB
 
 ### Performance Validation
 
-- [ ] T132 Test nemeton_compute() with 100 units + 5 indicators (< 2 min)
-- [ ] T133 Profile performance with profvis if needed
-- [ ] T134 Optimize bottlenecks identified by profiling
+- [X] T132 Test nemeton_compute() with 100 units + 5 indicators (< 2 min)
+- [X] T133 Profile performance with profvis if needed
+- [X] T134 Optimize bottlenecks identified by profiling
 
 ### CI/CD Setup
 
-- [ ] T135 [P] Setup GitHub Actions workflow for R-CMD-check
-- [ ] T136 [P] Setup GitHub Actions workflow for test-coverage
-- [ ] T137 [P] Setup pkgdown website with GitHub Pages
+- [X] T135 [P] Setup GitHub Actions workflow for R-CMD-check
+- [X] T136 [P] Setup GitHub Actions workflow for test-coverage
+- [X] T137 [P] Setup pkgdown website with GitHub Pages
 
 ### Final Validation
 
-- [ ] T138 Run complete workflow from quickstart.md
-- [ ] T139 Verify all acceptance criteria from spec.md are met
-- [ ] T140 Tag release v0.1.0 with git tag
+- [X] T138 Run complete workflow from quickstart.md
+- [X] T139 Verify all acceptance criteria from spec.md are met
+- [X] T140 Tag release v0.1.0 with git tag
 
 ---
 
