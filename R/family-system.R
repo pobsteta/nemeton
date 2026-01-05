@@ -94,7 +94,23 @@ create_family_index <- function(data,
     fam_indicators <- grep(pattern, indicator_cols, value = TRUE)
 
     if (length(fam_indicators) > 0) {
-      family_groups[[fam]] <- fam_indicators
+      # Prefer normalized indicators (_norm suffix) when both raw and normalized exist
+      # Extract base indicator names (without _norm)
+      base_names <- sub("_norm$", "", fam_indicators)
+      unique_bases <- unique(base_names)
+
+      # For each unique base, prefer the _norm version if it exists
+      preferred_indicators <- character(0)
+      for (base in unique_bases) {
+        norm_version <- paste0(base, "_norm")
+        if (norm_version %in% fam_indicators) {
+          preferred_indicators <- c(preferred_indicators, norm_version)
+        } else {
+          preferred_indicators <- c(preferred_indicators, base)
+        }
+      }
+
+      family_groups[[fam]] <- preferred_indicators
     }
   }
 

@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -31,7 +31,9 @@ Suggests:
     units,
     here,
     whitebox (>= 2.3.0),
-    landscapemetrics (>= 2.0.0)
+    landscapemetrics (>= 2.0.0),
+    rnaturalearth,
+    osmdata
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton
