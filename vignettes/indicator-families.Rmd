@@ -78,6 +78,55 @@ library(ggplot2)
 library(dplyr)
 ```
 
+## Visual Overview: The 12-Family Framework
+
+The radar chart below illustrates the complete multi-dimensional framework, showing how all 12 families combine to provide a holistic assessment of forest ecosystem services.
+
+```{r fig.cap = "12-Family Radar Chart - Complete Nemeton Framework", fig.width = 8, fig.height = 8}
+# Load demo data
+data(massif_demo_units)
+
+# Create sample family scores for demonstration (0-100 scale)
+# In practice, these would be computed from real indicators
+demo_unit <- massif_demo_units[1, ]
+
+# Simulate family scores for all 12 families
+# Higher values = better performance in that dimension
+demo_unit$family_C <- 75  # Carbon/Vitality - Good carbon storage
+demo_unit$family_B <- 65  # Biodiversity - Moderate species richness
+demo_unit$family_W <- 82  # Water - Excellent water regulation
+demo_unit$family_A <- 70  # Air/Microclimate - Good air quality
+demo_unit$family_F <- 68  # Soil Fertility - Moderate fertility
+demo_unit$family_L <- 55  # Landscape - Some fragmentation
+demo_unit$family_T <- 78  # Time/Dynamics - Old-growth characteristics
+demo_unit$family_R <- 60  # Resilience/Risks - Moderate climate risk
+demo_unit$family_S <- 85  # Social/Uses - High recreational value
+demo_unit$family_P <- 72  # Productive - Good timber potential
+demo_unit$family_E <- 80  # Energy/Climate - Strong carbon sequestration
+demo_unit$family_N <- 62  # Naturalness - Moderate naturalness
+
+# Create 12-family radar chart
+nemeton_radar(
+  demo_unit,
+  mode = "family",
+  indicators = c("family_C", "family_B", "family_W", "family_A",
+                 "family_F", "family_L", "family_T", "family_R",
+                 "family_S", "family_P", "family_E", "family_N"),
+  normalize = FALSE,  # Already on 0-100 scale
+  title = "Complete 12-Family Ecosystem Profile",
+  fill_color = "#2E7D32",
+  fill_alpha = 0.25
+)
+```
+
+**Interpretation**: This example parcel shows:
+
+- **Strengths** (> 75): Social value (S), Water regulation (W), Energy/Climate (E), Time/Dynamics (T)
+- **Good performance** (65-75): Carbon (C), Air (A), Productive (P), Biodiversity (B)
+- **Areas for improvement** (< 65): Naturalness (N), Resilience (R), Landscape (L)
+
+The radar chart reveals the **multi-dimensional trade-offs** inherent in forest management: high productivity (P) and social value (S) may come at the expense of naturalness (N) and landscape integrity (L).
+
 # Implemented Families (v0.2.0)
 
 ## Family C: Carbon & Vitality
