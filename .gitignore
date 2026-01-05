@@ -24,3 +24,4 @@
 
 # pkgdown
 # docs/ - Removed to allow pkgdown site deployment
+nemeton.Rcheck/

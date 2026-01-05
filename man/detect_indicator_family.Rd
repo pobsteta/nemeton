@@ -13,6 +13,6 @@ detect_indicator_family(indicator_name)
 Character. Family code (C, W, F, L, etc.) or NA if not detected.
 }
 \description{
-Extracts the family code from an indicator name (e.g., "C1" → "C").
+Extracts the family code from an indicator name (e.g., "C1" -> "C").
 }
 \keyword{internal}

@@ -10,3 +10,12 @@
 ^docs$
 ^pkgdown$
 ^codecov\.yml$
+^CLAUDE\.md$
+^MVP_STATUS_FINAL\.md$
+^RELEASE_INSTRUCTIONS\.md$
+^RELEASE_NOTES_.*\.md$
+^RELEASE_SUMMARY_.*\.txt$
+^create-release\.sh$
+^mvp_status\.md$
+^test_v0\.2\.0\.R$
+^data-raw$

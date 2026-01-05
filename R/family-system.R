@@ -26,11 +26,11 @@ NULL
 #' @details
 #' **Family Detection**: Automatically identifies indicators by prefix:
 #' \itemize{
-#'   \item C1, C2 → Carbon family (family_C)
-#'   \item W1, W2, W3 → Water family (family_W)
-#'   \item F1, F2 → Soil fertility family (family_F)
-#'   \item L1, L2 → Landscape family (family_L)
-#'   \item B1, B2, B3 → Biodiversity family (family_B)
+#'   \item C1, C2 -> Carbon family (family_C)
+#'   \item W1, W2, W3 -> Water family (family_W)
+#'   \item F1, F2 -> Soil fertility family (family_F)
+#'   \item L1, L2 -> Landscape family (family_L)
+#'   \item B1, B2, B3 -> Biodiversity family (family_B)
 #'   \item And 7 other families (A, T, R, S, P, E, N)
 #' }
 #'
@@ -203,7 +203,7 @@ create_family_index <- function(data,
 
 #' Detect Indicator Family from Name
 #'
-#' Extracts the family code from an indicator name (e.g., "C1" → "C").
+#' Extracts the family code from an indicator name (e.g., "C1" -> "C").
 #'
 #' @param indicator_name Character. Indicator name.
 #'
@@ -227,6 +227,8 @@ detect_indicator_family <- function(indicator_name) {
 #' @param lang Character. Language ("en" or "fr"). Default uses current locale.
 #'
 #' @return Character. Full family name.
+#'
+#' @usage get_family_name(family_code, lang = NULL)
 #'
 #' @keywords internal
 get_family_name <- function(family_code, lang = NULL) {
