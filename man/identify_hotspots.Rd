@@ -20,9 +20,11 @@ above threshold to be classified as a hotspot. Default: 3}
 }
 \value{
 sf object with original data plus three new columns:
-  - `hotspot_count`: Number of families where parcel ranks above threshold
-  - `hotspot_families`: Comma-separated list of family names above threshold
-  - `is_hotspot`: Logical indicating if parcel meets min_families criterion
+  \itemize{
+    \item{hotspot_count: Number of families where parcel ranks above threshold}
+    \item{hotspot_families: Comma-separated list of family names above threshold}
+    \item{is_hotspot: Logical indicating if parcel meets min_families criterion}
+  }
 }
 \description{
 Identifies parcels ranking in the top percentile across multiple ecosystem
