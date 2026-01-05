@@ -239,32 +239,4 @@ detect_indicator_family <- function(indicator_name) {
 
 #' Get Family Name from Code
 #'
-#' Returns full family name from single-letter code.
-#'
-#' @param family_code Character. Single letter (B, W, A, F, C, L, T, R, S, P, E, N)
-#'
-#' @return Character. Full family name
-#' @keywords internal
-#' @noRd
-get_family_name <- function(family_code) {
-  family_names <- c(
-    B = "Biodiversité/Vivant",
-    W = "Water/Infiltrée",
-    A = "Air/Vaporeuse",
-    F = "Fertilité/Riche",
-    C = "Carbone/Énergétique",
-    L = "Landscape/Esthétique",
-    T = "Trame/Nervurée",
-    R = "Résilience/Flexible",
-    S = "Santé/Ouverte",
-    P = "Patrimoine/Radicale",
-    E = "Éducation/Éducative",
-    N = "Nuit/Ténébreuse"
-  )
-
-  name <- family_names[family_code]
-  if (is.na(name)) {
-    return(paste0("Family ", family_code))
-  }
-  name
-}
+# get_family_name() moved to R/family-system.R (now supports bilingual names)

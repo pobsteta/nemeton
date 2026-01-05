@@ -135,7 +135,6 @@
 #' \itemize{
 #'   \item \code{\link{massif_demo_units}} - Demo forest parcels dataset
 #'   \item \code{\link{massif_demo_layers}} - Demo spatial layers
-#'   \item \code{\link{harmonize_crs}} - CRS harmonization
 #' }
 #'
 #' @section Package Options:
