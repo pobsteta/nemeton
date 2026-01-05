@@ -29,7 +29,7 @@ harmonize_crs <- function(layers, target_crs, verbose = TRUE) {
 
     if (!is.na(layer_crs) && layer_crs != target_crs$epsg) {
       if (verbose) {
-        message_nemeton("Reprojecting raster {.field {name}} from EPSG:{layer_crs} to EPSG:{target_crs$epsg}")
+        message_nemeton("Reprojecting raster ", name, " from EPSG:", layer_crs, " to EPSG:", target_crs$epsg)
       }
       layer$object <- terra::project(layer$object, paste0("EPSG:", target_crs$epsg))
     }
@@ -52,7 +52,7 @@ harmonize_crs <- function(layers, target_crs, verbose = TRUE) {
 
     if (!is.na(layer_crs) && !sf::st_crs(layer_crs) == target_crs) {
       if (verbose) {
-        message_nemeton("Reprojecting vector {.field {name}} to {target_crs$input}")
+        message_nemeton("Reprojecting vector ", name, " to ", target_crs$input)
       }
       layer$object <- sf::st_transform(layer$object, target_crs)
     }

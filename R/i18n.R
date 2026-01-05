@@ -104,7 +104,7 @@ msg_success <- function(key, ...) {
 }
 
 msg_warn <- function(key, ...) {
-  cli::cli_alert_warning(msg(key, ...))
+  warning(msg(key, ...), call. = FALSE)
 }
 
 msg_error <- function(key, ...) {
@@ -136,6 +136,7 @@ msg_error <- function(key, ...) {
     layers_invalid_type = "Invalid layer type: %s (expected SpatRaster or sf)",
 
     # Preprocessing
+    preprocess_start = "Preprocessing layers...",
     preprocess_harmonizing = "Harmonizing CRS...",
     preprocess_crs_harmonized = "CRS harmonized to %s",
     preprocess_cropping = "Cropping layers...",
@@ -214,6 +215,7 @@ msg_error <- function(key, ...) {
     layers_invalid_type = "Type de couche invalide : %s (attendu SpatRaster ou sf)",
 
     # Prétraitement
+    preprocess_start = "Prétraitement des couches...",
     preprocess_harmonizing = "Harmonisation du CRS...",
     preprocess_crs_harmonized = "CRS harmonisé vers %s",
     preprocess_cropping = "Recadrage des couches...",

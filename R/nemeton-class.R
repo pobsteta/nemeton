@@ -117,28 +117,27 @@ nemeton_units <- function(x, id_col = NULL, metadata = list(), validate = TRUE) 
 print.nemeton_units <- function(x, ...) {
   meta <- attr(x, "metadata")
 
-  cli::cli_h1("nemeton_units object")
+  cat("\n── nemeton_units ───────────────\n\n")
 
   if (!is.null(meta$site_name)) {
-    cli::cli_text("Site: {.strong {meta$site_name}}")
+    cat("Site:", meta$site_name, "\n")
   }
   if (!is.null(meta$year)) {
-    cli::cli_text("Year: {meta$year}")
+    cat("Year:", meta$year, "\n")
   }
 
-  cli::cli_text("Units: {.strong {nrow(x)}}")
+  cat("Units:", nrow(x), "\n")
 
   if (!is.null(meta$area_total)) {
     area_ha <- as.numeric(units::set_units(meta$area_total, "ha"))
-    cli::cli_text("Total area: {.strong {round(area_ha, 1)}} ha")
+    cat("Total area:", round(area_ha, 1), "ha\n")
   }
 
   if (!is.null(meta$crs)) {
-    cli::cli_text("CRS: {.strong {meta$crs$input}}")
+    cat("CRS:", meta$crs$input, "\n")
   }
 
-  cli::cli_text("")
-  NextMethod()
+  cat("\n")
 
   invisible(x)
 }
@@ -153,26 +152,21 @@ print.nemeton_units <- function(x, ...) {
 summary.nemeton_units <- function(object, ...) {
   meta <- attr(object, "metadata")
 
-  cli::cli_h2("Nemeton Units Summary")
+  cat("\n── Nemeton Units Summary ───────\n\n")
 
-  cli::cli_dl(c(
-    "Number of units" = nrow(object),
-    "CRS" = if (!is.null(meta$crs)) meta$crs$input else "Unknown",
-    "Site" = if (!is.null(meta$site_name)) meta$site_name else "Not specified",
-    "Year" = if (!is.null(meta$year)) as.character(meta$year) else "Not specified",
-    "Source" = if (!is.null(meta$source)) meta$source else "Not specified"
-  ))
+  cat("Number of units:", nrow(object), "\n")
+  cat("CRS:", if (!is.null(meta$crs)) meta$crs$input else "Unknown", "\n")
+  cat("Site:", if (!is.null(meta$site_name)) meta$site_name else "Not specified", "\n")
+  cat("Year:", if (!is.null(meta$year)) as.character(meta$year) else "Not specified", "\n")
+  cat("Source:", if (!is.null(meta$source)) meta$source else "Not specified", "\n")
 
   if (!is.null(meta$area_total)) {
     area_ha <- as.numeric(units::set_units(meta$area_total, "ha"))
-    cli::cli_text("")
-    cli::cli_text("Total area: {round(area_ha, 2)} ha")
-    cli::cli_text("Mean area: {round(area_ha / nrow(object), 2)} ha/unit")
+    cat("\nTotal area:", round(area_ha, 2), "ha\n")
+    cat("Mean area:", round(area_ha / nrow(object), 2), "ha/unit\n")
   }
 
-  cli::cli_text("")
-  cli::cli_h3("Attributes")
-  print(names(object))
+  cat("\nAttributes:", paste(names(object), collapse = ", "), "\n\n")
 
   invisible(object)
 }
@@ -294,27 +288,29 @@ nemeton_layers <- function(rasters = NULL, vectors = NULL, validate = TRUE) {
 #' @return Invisible x
 #' @export
 print.nemeton_layers <- function(x, ...) {
-  cli::cli_h1("nemeton_layers object")
+  cat("\n── nemeton_layers object ───────\n\n")
 
-  cli::cli_h2("Rasters ({length(x$rasters)})")
+  cat("── Rasters (", length(x$rasters), ") ──\n\n", sep = "")
   if (length(x$rasters) > 0) {
     for (name in names(x$rasters)) {
       status <- if (x$rasters[[name]]$loaded) "[loaded]" else "[not loaded]"
-      cli::cli_li("{.strong {name}}: {.path {basename(x$rasters[[name]]$path)}} {status}")
+      cat("•", name, ":", basename(x$rasters[[name]]$path), status, "\n")
     }
   } else {
-    cli::cli_text("  (none)")
+    cat("  (none)\n")
   }
 
-  cli::cli_h2("Vectors ({length(x$vectors)})")
+  cat("\n── Vectors (", length(x$vectors), ") ──\n\n", sep = "")
   if (length(x$vectors) > 0) {
     for (name in names(x$vectors)) {
       status <- if (x$vectors[[name]]$loaded) "[loaded]" else "[not loaded]"
-      cli::cli_li("{.strong {name}}: {.path {basename(x$vectors[[name]]$path)}} {status}")
+      cat("•", name, ":", basename(x$vectors[[name]]$path), status, "\n")
     }
   } else {
-    cli::cli_text("  (none)")
+    cat("  (none)\n")
   }
+
+  cat("\n")
 
   invisible(x)
 }
@@ -327,11 +323,11 @@ print.nemeton_layers <- function(x, ...) {
 #' @return Invisible object
 #' @export
 summary.nemeton_layers <- function(object, ...) {
-  cli::cli_h2("Nemeton Layers Summary")
+  cat("\n── Nemeton Layers Summary ──────\n\n")
 
-  cli::cli_text("Rasters: {length(object$rasters)}")
-  cli::cli_text("Vectors: {length(object$vectors)}")
-  cli::cli_text("Created: {format(object$metadata$created_at, '%Y-%m-%d %H:%M')}")
+  cat("Rasters:", length(object$rasters), "\n")
+  cat("Vectors:", length(object$vectors), "\n")
+  cat("Created:", format(object$metadata$created_at, '%Y-%m-%d %H:%M'), "\n\n")
 
   invisible(object)
 }

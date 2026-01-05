@@ -356,7 +356,7 @@ test_that("create_composite_index errors on missing indicators", {
       test_data,
       indicators = c("carbon_norm", "missing_indicator")
     ),
-    "not found"
+    "Indicators missing"
   )
 })
 

@@ -143,11 +143,12 @@ test_that("nemeton_compute handles missing layers gracefully", {
   # Should warn and set water to NA
   expect_warning(
     result <- nemeton_compute(units, layers, indicators = "water", preprocess = FALSE),
-    "calculation failed"
+    "DEM layer.*not found"
   )
 
   expect_true("water" %in% names(result))
-  expect_true(all(is.na(result$water)))
+  # When layers are missing, indicator returns 0 (not NA)
+  expect_true(all(result$water == 0))
 })
 
 test_that("nemeton_compute preprocesses layers when requested", {

@@ -13,9 +13,8 @@ test_that("harmonize_crs reprojects rasters to target CRS", {
   # Harmonize
   harmonized <- harmonize_crs(layers, target_crs, verbose = FALSE)
 
-  # Load raster to check CRS
-  harmonized$rasters$biomass$object <- terra::rast(harmonized$rasters$biomass$path)
-  harmonized$rasters$biomass$loaded <- TRUE
+  # Check that raster was loaded and reprojected
+  expect_true(harmonized$rasters$biomass$loaded)
 
   # Check that it was reprojected
   raster_crs <- terra::crs(harmonized$rasters$biomass$object, describe = TRUE)$code
@@ -36,11 +35,8 @@ test_that("harmonize_crs reprojects vectors to target CRS", {
   # Harmonize
   harmonized <- harmonize_crs(layers, target_crs, verbose = FALSE)
 
-  # Load and check
-  harmonized$vectors$roads$object <- sf::st_read(
-    harmonized$vectors$roads$path,
-    quiet = TRUE
-  )
+  # Check that vector was loaded and reprojected
+  expect_true(harmonized$vectors$roads$loaded)
 
   result_crs <- sf::st_crs(harmonized$vectors$roads$object)
   expect_equal(result_crs$epsg, 4326)
@@ -165,8 +161,8 @@ test_that("mask_to_units masks rasters to unit geometries", {
   # Mask
   masked <- mask_to_units(layers, units, verbose = FALSE)
 
-  # Load and check that values outside units are NA
-  masked$rasters$biomass$object <- terra::rast(masked$rasters$biomass$path)
+  # Check that raster was loaded and masked
+  expect_true(masked$rasters$biomass$loaded)
 
   # Should have some NA values (outside the unit polygon)
   expect_true(any(is.na(terra::values(masked$rasters$biomass$object))))

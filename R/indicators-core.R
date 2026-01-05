@@ -111,10 +111,11 @@ nemeton_compute <- function(units,
   # Validate indicator names
   unknown <- setdiff(indicators, available_indicators)
   if (length(unknown) > 0) {
+    n_unknown <- length(unknown)
     cli::cli_warn(c(
-      "!" = "Unknown indicator{?s}: {.field {unknown}}",
+      "!" = "Unknown indicator{cli::qty(n_unknown)}{?s}: {.field {unknown}}",
       "i" = "Available: {.field {available_indicators}}",
-      ">" = "Skipping unknown indicator{?s}"
+      ">" = "Skipping unknown indicator{cli::qty(n_unknown)}{?s}"
     ))
     indicators <- intersect(indicators, available_indicators)
   }
@@ -125,6 +126,7 @@ nemeton_compute <- function(units,
 
   # Preprocessing
   if (preprocess) {
+    msg_info("preprocess_start")
     msg_info("preprocess_harmonizing")
 
     # Harmonize CRS

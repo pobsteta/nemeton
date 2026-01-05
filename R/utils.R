@@ -110,7 +110,16 @@ validate_sf <- function(x, require_crs = TRUE, require_valid = TRUE) {
 #' @keywords internal
 #' @noRd
 message_nemeton <- function(...) {
-  cli::cli_alert_info(...)
+  # Format message with glue interpolation, handling cli syntax gracefully
+  msg_raw <- paste0(...)
+  # Try glue interpolation first
+  msg <- tryCatch({
+    glue::glue(msg_raw, .envir = parent.frame())
+  }, error = function(e) {
+    # If glue fails (e.g., cli syntax), just use the raw message
+    msg_raw
+  })
+  cat(msg, "\n", sep = "")
 }
 
 #' Generate unique IDs for units

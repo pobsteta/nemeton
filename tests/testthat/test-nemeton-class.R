@@ -82,7 +82,7 @@ test_that("nemeton_units rejects invalid inputs", {
   # Non-sf object
   expect_error(
     nemeton_units(data.frame(x = 1:3, y = 1:3)),
-    NA # Should fail validation
+    "must be an.*sf.*object" # Should fail validation
   )
 
   # Missing ID column
