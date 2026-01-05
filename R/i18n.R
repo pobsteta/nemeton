@@ -194,7 +194,46 @@ msg_error <- function(key, ...) {
     demo_install_first = "Install the package first: devtools::install()",
     demo_dir_not_found = "Demo data directory not found: %s",
     demo_reinstall = "Reinstall the package to include demo data",
-    demo_files_missing = "Missing demo data file%s: %s"
+    demo_files_missing = "Missing demo data file%s: %s",
+
+    # v0.2.0 - Temporal analysis
+    temporal_created = "Created temporal dataset: %d periods, %d units",
+    temporal_no_periods = "No periods provided",
+    temporal_alignment_warning = "%d units not present in all periods",
+    temporal_change_calculated = "Calculated change rates for %d indicators",
+    temporal_period_missing = "Period '%s' not found in temporal dataset",
+
+    # v0.2.0 - Family C: Carbone/Énergétique
+    indicator_carbon_biomass = "Carbon stock via allometric models (C: Carbone/Énergétique)",
+    indicator_carbon_ndvi = "NDVI vitality index (C: Carbone/Énergétique)",
+    carbon_species_missing = "Species column '%s' not found",
+    carbon_age_missing = "Age column '%s' not found",
+    carbon_density_missing = "Density column '%s' not found",
+    carbon_allometric_applied = "Applied allometric equation: %s",
+
+    # v0.2.0 - Family W: Water/Infiltrée
+    indicator_water_network = "Hydrographic network density (W: Water/Infiltrée)",
+    indicator_water_wetlands = "Wetland coverage (W: Water/Infiltrée)",
+    indicator_water_twi = "Topographic Wetness Index (W: Water/Infiltrée)",
+    water_twi_method = "Using TWI method: %s",
+    water_wetland_detected = "Detected %d wetland pixels",
+
+    # v0.2.0 - Family F: Fertilité/Riche
+    indicator_soil_fertility = "Soil fertility (F: Fertilité/Riche)",
+    indicator_soil_erosion = "Erosion risk index (F: Fertilité/Riche)",
+    soil_fertility_extracted = "Extracted fertility data for %d parcels",
+    soil_erosion_calculated = "Calculated erosion risk (slope × land cover)",
+
+    # v0.2.0 - Family L: Landscape/Esthétique
+    indicator_landscape_fragmentation = "Landscape fragmentation (L: Landscape/Esthétique)",
+    indicator_landscape_edge = "Edge-to-area ratio (L: Landscape/Esthétique)",
+    landscape_patches_detected = "Detected %d forest patches in buffer zone",
+    landscape_edge_calculated = "Calculated edge density for %d parcels",
+
+    # v0.2.0 - Family system
+    family_index_created = "Created family index '%s' from %d indicators",
+    family_weights_applied = "Applied custom weights: %s",
+    family_no_indicators = "No indicators found for family '%s'"
   ),
 
   fr = list(
@@ -273,6 +312,45 @@ msg_error <- function(key, ...) {
     demo_install_first = "Installez d'abord le package : devtools::install()",
     demo_dir_not_found = "Répertoire de données démo introuvable : %s",
     demo_reinstall = "Réinstallez le package pour inclure les données démo",
-    demo_files_missing = "Fichier%s de données démo manquant%s : %s"
+    demo_files_missing = "Fichier%s de données démo manquant%s : %s",
+
+    # v0.2.0 - Analyse temporelle
+    temporal_created = "Dataset temporel créé : %d périodes, %d unités",
+    temporal_no_periods = "Aucune période fournie",
+    temporal_alignment_warning = "%d unités absentes dans certaines périodes",
+    temporal_change_calculated = "Taux de changement calculés pour %d indicateurs",
+    temporal_period_missing = "Période '%s' introuvable dans le dataset temporel",
+
+    # v0.2.0 - Famille C : Carbone/Énergétique
+    indicator_carbon_biomass = "Stock de carbone via modèles allométriques (C: Carbone/Énergétique)",
+    indicator_carbon_ndvi = "Indice de vitalité NDVI (C: Carbone/Énergétique)",
+    carbon_species_missing = "Colonne d'essence '%s' introuvable",
+    carbon_age_missing = "Colonne d'âge '%s' introuvable",
+    carbon_density_missing = "Colonne de densité '%s' introuvable",
+    carbon_allometric_applied = "Équation allométrique appliquée : %s",
+
+    # v0.2.0 - Famille W : Water/Infiltrée
+    indicator_water_network = "Densité du réseau hydrographique (W: Water/Infiltrée)",
+    indicator_water_wetlands = "Couverture en zones humides (W: Water/Infiltrée)",
+    indicator_water_twi = "Indice topographique d'humidité (W: Water/Infiltrée)",
+    water_twi_method = "Méthode TWI utilisée : %s",
+    water_wetland_detected = "%d pixels de zones humides détectés",
+
+    # v0.2.0 - Famille F : Fertilité/Riche
+    indicator_soil_fertility = "Fertilité du sol (F: Fertilité/Riche)",
+    indicator_soil_erosion = "Indice de risque d'érosion (F: Fertilité/Riche)",
+    soil_fertility_extracted = "Données de fertilité extraites pour %d parcelles",
+    soil_erosion_calculated = "Risque d'érosion calculé (pente × couvert)",
+
+    # v0.2.0 - Famille L : Landscape/Esthétique
+    indicator_landscape_fragmentation = "Fragmentation du paysage (L: Landscape/Esthétique)",
+    indicator_landscape_edge = "Ratio lisière-surface (L: Landscape/Esthétique)",
+    landscape_patches_detected = "%d taches forestières détectées dans la zone tampon",
+    landscape_edge_calculated = "Densité de lisière calculée pour %d parcelles",
+
+    # v0.2.0 - Système de familles
+    family_index_created = "Indice de famille '%s' créé à partir de %d indicateurs",
+    family_weights_applied = "Poids personnalisés appliqués : %s",
+    family_no_indicators = "Aucun indicateur trouvé pour la famille '%s'"
   )
 )

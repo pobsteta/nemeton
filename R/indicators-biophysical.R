@@ -37,6 +37,15 @@ indicator_carbon <- function(units,
                              conversion_factor = 0.47,
                              fun = "mean",
                              ...) {
+  # Deprecation warning
+  warning(
+    "indicator_carbon() is deprecated as of nemeton v0.2.0.\n",
+    "  Use indicator_carbon_biomass() for BD Forêt support with allometric models,\n",
+    "  or indicator_carbon_ndvi() for NDVI-based vitality assessment.\n",
+    "  This function will be removed in v1.0.0.",
+    call. = FALSE
+  )
+
   # Validate inputs
   if (!inherits(units, "sf")) {
     cli::cli_abort("{.arg units} must be an {.cls sf} object")

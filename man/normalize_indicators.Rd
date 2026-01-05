@@ -11,7 +11,8 @@ normalize_indicators(
   suffix = "_norm",
   keep_original = TRUE,
   na.rm = TRUE,
-  reference_data = NULL
+  reference_data = NULL,
+  by_family = FALSE
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ If NULL, auto-detects indicator columns.}
 
 \item{reference_data}{Optional data.frame with reference values for normalization.
 Useful for normalizing new data using parameters from a reference dataset.}
+
+\item{by_family}{Logical. If TRUE, normalize indicators within each family using
+family-wide parameters (e.g., all Carbon indicators C1, C2 share the same min/max).
+This makes indicators within a family directly comparable. Default FALSE.}
 }
 \value{
 The input data with added normalized columns
