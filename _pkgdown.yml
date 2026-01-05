@@ -1,0 +1,144 @@
+url: https://pobsteta.github.io/nemeton/
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  theme: arrow-light
+  bslib:
+    primary: "#2E7D32"
+    success: "#4CAF50"
+
+home:
+  title: nemeton - Systemic Forest Analysis
+  description: >
+    Multi-family ecosystem service assessment for forest management using
+    the Nemeton method. Calculate, normalize, aggregate and visualize
+    biophysical indicators across 12 ecosystem service families.
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, tutorials, news]
+    right: [search, github]
+  components:
+    articles:
+      text: Vignettes
+      menu:
+      - text: Getting Started
+        href: articles/getting-started.html
+      - text: "---"
+      - text: Indicator Families Reference
+        href: articles/indicator-families.html
+      - text: Temporal Analysis
+        href: articles/temporal-analysis.html
+      - text: "---"
+      - text: Internationalization (i18n)
+        href: articles/internationalization.html
+
+reference:
+  - title: "Data Management"
+    desc: "Create and manage spatial units and layers"
+    contents:
+    - nemeton_units
+    - nemeton_layers
+    - massif_demo_units
+    - massif_demo_layers
+
+  - title: "Core Workflow"
+    desc: "Main functions for indicator calculation"
+    contents:
+    - nemeton_compute
+    - list_indicators
+
+  - title: "Family C: Carbon & Vitality"
+    desc: "Carbon storage and vegetation vitality indicators"
+    contents:
+    - indicator_carbon
+    - indicator_carbon_biomass
+    - indicator_carbon_ndvi
+
+  - title: "Family W: Water Regulation"
+    desc: "Hydrological regulation and water-related indicators"
+    contents:
+    - indicator_water
+    - indicator_water_network
+    - indicator_water_wetlands
+    - indicator_water_twi
+
+  - title: "Family F: Soil Fertility"
+    desc: "Soil quality and erosion risk indicators"
+    contents:
+    - indicator_soil_fertility
+    - indicator_soil_erosion
+
+  - title: "Family L: Landscape Quality"
+    desc: "Landscape structure and connectivity indicators"
+    contents:
+    - indicator_landscape_fragmentation
+    - indicator_landscape_edge
+
+  - title: "Other Indicators (v0.1.0)"
+    desc: "Biodiversity, fragmentation, accessibility indicators"
+    contents:
+    - indicator_biodiversity
+    - indicator_fragmentation
+    - indicator_accessibility
+
+  - title: "Temporal Analysis"
+    desc: "Multi-period analysis and change detection"
+    contents:
+    - nemeton_temporal
+    - calculate_change_rate
+
+  - title: "Normalization & Aggregation"
+    desc: "Transform and combine indicators"
+    contents:
+    - normalize_indicators
+    - create_composite_index
+    - create_family_index
+    - invert_indicator
+
+  - title: "Visualization"
+    desc: "Maps and charts for results"
+    contents:
+    - plot_indicators_map
+    - plot_comparison_map
+    - plot_difference_map
+    - nemeton_radar
+    - plot_temporal_trend
+    - plot_temporal_heatmap
+
+  - title: "Internationalization"
+    desc: "Multi-language support"
+    contents:
+    - nemeton_set_language
+
+  - title: "S3 Methods"
+    desc: "Print and summary methods for nemeton objects"
+    contents:
+    - print.nemeton_units
+    - print.nemeton_layers
+    - print.nemeton_temporal
+    - summary.nemeton_units
+    - summary.nemeton_layers
+    - summary.nemeton_temporal
+
+  - title: "Package Documentation"
+    contents:
+    - nemeton-package
+
+  - title: "Internal Functions"
+    desc: "Internal helper functions (for developers)"
+    contents:
+    - detect_indicator_family
+    - get_family_name
+    - family-system
+    - indicators-families
+    - temporal
+
+authors:
+  Pascal Obstétar:
+    href: https://github.com/pobsteta
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with

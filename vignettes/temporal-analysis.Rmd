@@ -221,7 +221,7 @@ plot_temporal_trend(
 
 Heatmaps show spatial-temporal patterns (parcels × periods).
 
-```{r fig.cap = "Multi-indicator evolution heatmap for parcel P001", fig.height = 5}
+```{r fig.cap = "Multi-indicator evolution heatmap for parcel P001", fig.height = 5, eval = FALSE}
 # Multi-indicator heatmap for a single parcel
 plot_temporal_heatmap(
   temporal_data,
