@@ -24,6 +24,8 @@ knitr::opts_chunk$set(
 
 Le package `nemeton` structure l'évaluation des services écosystémiques forestiers autour de **12 familles d'indicateurs** couvrant les dimensions biophysiques, écologiques et socio-économiques. Cette vignette présente le référentiel complet et démontre l'utilisation du système de familles.
 
+**Version actuelle : v0.3.0** - **9 familles sur 12 implémentées** avec 23 indicateurs opérationnels.
+
 ```{r}
 library(nemeton)
 library(ggplot2)
@@ -143,6 +145,121 @@ landscape_edge <- nemeton_compute(
 **Interprétation** :
 - L1 faible : Continuité forestière
 - L2 élevé : Forte proportion de lisière (effet de bord)
+
+## Famille B : Biodiversité (v0.3.0)
+
+```{r, eval = FALSE}
+# B1 - Protection réglementaire (% surface en zones protégées)
+biodiversity_protection <- indicator_biodiversity_protection(
+  units,
+  protected_areas = protected_areas,  # sf object ZNIEFF, Natura2000
+  source = "local"  # ou "wfs" pour téléchargement automatique
+)
+
+# B2 - Diversité structurelle (Shannon)
+biodiversity_structure <- indicator_biodiversity_structure(
+  units,
+  strata_field = "strata",          # Strates (Emergent, Dominant, etc.)
+  age_class_field = "age_class",    # Classes d'âge
+  species_field = "species",        # Essences
+  method = "shannon",               # ou "simpson"
+  weights = c(strata = 0.4, age = 0.3, species = 0.3)
+)
+
+# B3 - Connectivité écologique (distance corridors)
+biodiversity_connectivity <- indicator_biodiversity_connectivity(
+  units,
+  corridors = corridors_sf,  # Trames vertes et bleues
+  distance_method = "edge",  # ou "centroid"
+  max_distance = 3000        # Distance max en mètres
+)
+```
+
+**Interprétation** :
+- B1 > 50% : Protection significative
+- B2 (Shannon) > 1.5 : Diversité structurelle élevée
+- B3 < 500m : Excellente connectivité écologique
+
+## Famille R : Risques & Résilience (v0.3.0)
+
+```{r, eval = FALSE}
+# R1 - Risque incendie (pente + essence + climat)
+risk_fire <- indicator_risk_fire(
+  units,
+  dem = dem_raster,              # Modèle numérique de terrain
+  species_field = "species",     # Champ essence
+  climate = climate_data         # Température, précipitations
+)
+
+# R2 - Vulnérabilité tempête (hauteur + densité + exposition)
+risk_storm <- indicator_risk_storm(
+  units,
+  dem = dem_raster,
+  height_field = "height",       # Hauteur dominante (m)
+  density_field = "density"      # Densité (0-1)
+)
+
+# R3 - Stress hydrique (TWI + climat + essences)
+risk_drought <- indicator_risk_drought(
+  units,
+  twi_field = "W3",              # Topographic Wetness Index
+  climate = climate_data,
+  species_field = "species"
+)
+```
+
+**Interprétation** :
+- R1, R2, R3 > 60 : Vulnérabilité élevée
+- Risques cumulés (≥2 indicateurs élevés) : Priorité gestion préventive
+
+## Famille T : Trame Temporelle (v0.3.0)
+
+```{r, eval = FALSE}
+# T1 - Ancienneté des peuplements (années)
+temporal_age <- indicator_temporal_age(
+  units,
+  age_field = "age",                    # Âge actuel
+  establishment_year_field = "planted"  # Année plantation (optionnel)
+)
+
+# T2 - Changements d'occupation du sol (%/an)
+temporal_change <- indicator_temporal_change(
+  units,
+  land_cover_early = lc_1990_raster,
+  land_cover_late = lc_2020_raster,
+  years_elapsed = 30,
+  interpretation = "stability"  # ou "dynamism"
+)
+```
+
+**Interprétation** :
+- T1 > 150 ans : Forêt ancienne (haute valeur patrimoniale)
+- T2 < 1%/an : Stabilité de l'occupation
+- T2 > 3%/an : Dynamique forte (urbanisation, déprise agricole)
+
+## Famille A : Air & Microclimat (v0.3.0)
+
+```{r, eval = FALSE}
+# A1 - Couverture arborée dans buffer 1km (%)
+air_coverage <- indicator_air_coverage(
+  units,
+  land_cover = land_cover_raster,
+  buffer_radius = 1000  # Rayon en mètres
+)
+
+# A2 - Qualité de l'air (indice ou proxy distance)
+air_quality <- indicator_air_quality(
+  units,
+  roads = roads_sf,           # Réseau routier (optionnel)
+  urban_areas = urban_sf,     # Zones urbaines (optionnel)
+  atmo_data = NULL,           # Données ATMO si disponibles
+  method = "proxy"            # "atmo" si données disponibles
+)
+```
+
+**Interprétation** :
+- A1 > 70% : Couverture arborée dense (forte régulation climatique)
+- A2 > 70 : Bonne qualité de l'air
 
 # Système de préfixes et détection automatique
 
@@ -269,6 +386,64 @@ plot_indicators_map(
 )
 ```
 
+# Analyse croisée inter-familles (v0.3.0)
+
+La v0.3.0 introduit des outils d'**analyse croisée** pour identifier synergies et conflits entre familles.
+
+## Matrice de corrélations
+
+```{r, eval = FALSE}
+# Calculer les corrélations entre indices de familles
+corr_matrix <- compute_family_correlations(
+  units,
+  families = NULL,      # Auto-détection des family_*
+  method = "pearson"    # ou "spearman", "kendall"
+)
+
+# Visualiser les corrélations
+plot_correlation_matrix(
+  corr_matrix,
+  method = "circle",    # ou "square", "number", "color"
+  palette = "RdBu",     # Rouge=synergies, Bleu=conflits
+  title = "Synergies et conflits entre services écosystémiques"
+)
+```
+
+**Interprétation** :
+- **Corrélation positive (rouge)** : Synergies (ex: Biodiversité × Ancienneté)
+- **Corrélation négative (bleu)** : Conflits/trade-offs (ex: Protection × Risques)
+- **Corrélation faible (blanc)** : Indépendance
+
+## Identification de hotspots multi-critères
+
+```{r, eval = FALSE}
+# Identifier parcelles excellentes sur plusieurs familles
+hotspots <- identify_hotspots(
+  units,
+  threshold = 80,      # Top 20% pour chaque famille
+  min_families = 3     # Au moins 3 familles élevées
+)
+
+# Filtrer les hotspots
+hotspot_parcels <- hotspots[hotspots$is_hotspot, ]
+
+# Afficher détails
+hotspot_parcels[, c("parcel_id", "hotspot_count", "hotspot_families")]
+
+# Cartographier
+plot_indicators_map(
+  hotspots,
+  indicator = "hotspot_count",
+  palette = "YlOrRd",
+  title = "Nombre de familles à haute valeur"
+)
+```
+
+**Cas d'usage** :
+- **Conservation** : Parcelles à haute biodiversité + ancienneté + connectivité
+- **Gestion des risques** : Parcelles cumulant fire + storm + drought
+- **Optimisation multi-objectif** : Équilibre production/protection
+
 # Exemple complet : Workflow multi-famille
 
 ```{r, eval = FALSE}
@@ -330,21 +505,28 @@ list_indicators(family = "C")
 list_indicators(family = "W")
 ```
 
-# Roadmap v0.2.0 → v1.0.0
+# Roadmap v0.3.0 → v1.0.0
 
-**Version actuelle (v0.2.0)** : 5 familles partiellement implémentées (C, W, F, L + infrastructure temporelle)
+**Version actuelle (v0.3.0)** : **9 familles sur 12 implémentées** (C, B, W, A, F, L, T, R + partiel S)
+
+**Indicateurs opérationnels** :
+- ✅ **23 indicateurs** pleinement fonctionnels
+- ✅ **Analyse croisée inter-familles** (corrélations, hotspots multi-critères)
+- ✅ **Infrastructure temporelle complète** (analyse multi-périodes, détection de changements)
+- ✅ **Support bilingue FR/EN**
+- ✅ **845+ tests** avec 87% de couverture
 
 **Versions futures** :
-- **v0.3.0** : Familles B, T, R complètes
-- **v0.4.0** : Familles A, S
-- **v0.5.0** : Familles P, E, N + Dashboard Shiny
-- **v1.0.0** : Référentiel complet 12 familles (36 indicateurs)
+- **v0.4.0** : Familles S, P complètes (usages sociaux, production)
+- **v0.5.0** : Familles E, N + Dashboard Shiny interactif
+- **v1.0.0** : Référentiel complet 12 familles (36 indicateurs) + analyses avancées
 
 # Références
 
 - Référentiel Nemeton : Documentation technique Vivre en Forêt
 - Guide méthodologique : `vignette("getting-started_fr")`
 - Analyse temporelle : `vignette("temporal-analysis_fr")`
+- **Nouveautés v0.3.0** : `vignette("biodiversity-resilience-v030_fr")` - Familles B, R, T, A + Analyse croisée
 
 # Session Info
 
