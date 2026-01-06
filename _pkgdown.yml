@@ -31,7 +31,12 @@ navbar:
       - text: Familles d'indicateurs (12 familles + radar)
         href: articles/indicator-families_fr.html
       - text: "---"
-      - text: "✨ NOUVEAU v0.3.0: Biodiversité, Risques, Climat"
+      - text: "🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles"
+        href: articles/complete-referential_fr.html
+      - text: "🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères"
+        href: articles/multi-criteria-optimization_fr.html
+      - text: "---"
+      - text: "✨ v0.3.0: Biodiversité, Risques, Climat"
         href: articles/biodiversity-resilience-v030_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
@@ -46,6 +51,7 @@ reference:
     - nemeton_units
     - nemeton_layers
     - massif_demo_units
+    - massif_demo_units_extended
     - massif_demo_layers
 
   - title: "Core Workflow / Workflow principal"
@@ -107,6 +113,33 @@ reference:
     - indicator_air_coverage
     - indicator_air_quality
 
+  - title: "Family S: Social & Recreation / Famille S : Social & Usages récréatifs (v0.4.0)"
+    desc: "Trail density, accessibility, and population proximity / Densité de sentiers, accessibilité et proximité population"
+    contents:
+    - indicator_social_trails
+    - indicator_social_accessibility
+    - indicator_social_proximity
+
+  - title: "Family P: Production & Economy / Famille P : Production & Économie (v0.4.0)"
+    desc: "Wood volume, site productivity, and timber quality / Volume bois, productivité station et qualité bois d'œuvre"
+    contents:
+    - indicator_productive_volume
+    - indicator_productive_station
+    - indicator_productive_quality
+
+  - title: "Family E: Energy & Climate / Famille E : Énergie & Climat (v0.4.0)"
+    desc: "Fuelwood potential and carbon avoidance / Potentiel bois-énergie et évitement carbone"
+    contents:
+    - indicator_energy_fuelwood
+    - indicator_energy_avoidance
+
+  - title: "Family N: Naturalness & Wilderness / Famille N : Naturalité (v0.4.0)"
+    desc: "Infrastructure distance, forest continuity, and wilderness composite / Distance infrastructures, continuité forestière et indice wilderness"
+    contents:
+    - indicator_naturalness_distance
+    - indicator_naturalness_continuity
+    - indicator_naturalness_composite
+
   - title: "Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)"
     desc: "Biodiversity, fragmentation, accessibility indicators / Indicateurs de biodiversité, fragmentation, accessibilité"
     contents:
@@ -126,6 +159,13 @@ reference:
     - compute_family_correlations
     - identify_hotspots
     - plot_correlation_matrix
+
+  - title: "Advanced Multi-Criteria Analysis / Analyse Avancée Multi-Critères (v0.4.0)"
+    desc: "Pareto optimality, clustering, and trade-off analysis / Optimisation Pareto, clustering et analyse de trade-offs"
+    contents:
+    - identify_pareto_optimal
+    - cluster_parcels
+    - plot_tradeoff
 
   - title: "Normalization & Aggregation / Normalisation & Agrégation"
     desc: "Transform and combine indicators / Transformer et combiner les indicateurs"
