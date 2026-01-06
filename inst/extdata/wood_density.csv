@@ -1,0 +1,23 @@
+species_code,species_name,density_kg_m3,density_source,carbon_content_fraction,notes
+ABAL,Abies alba,430,IFN_2020,0.50,White fir - softwood
+ACPS,Acer pseudoplatanus,610,IFN_2020,0.50,Sycamore maple - hardwood
+ALGL,Alnus glutinosa,530,IFN_2020,0.50,Black alder - hardwood
+BEPE,Betula pendula,620,IFN_2020,0.50,Silver birch - hardwood
+CABE,Carpinus betulus,720,IFN_2020,0.50,European hornbeam - hardwood
+CASA,Castanea sativa,560,IFN_2020,0.50,Sweet chestnut - hardwood
+FASY,Fagus sylvatica,680,IFN_2020,0.50,European beech - hardwood
+FREX,Fraxinus excelsior,670,IFN_2020,0.50,European ash - hardwood
+LADE,Larix decidua,550,IFN_2020,0.50,European larch - softwood
+PIAB,Picea abies,450,IFN_2020,0.50,Norway spruce - softwood
+PIME,Pinus menziesii,490,IFN_2020,0.50,Douglas fir - softwood
+PINI,Pinus nigra,520,IFN_2020,0.50,Black pine - softwood
+PIPI,Pinus pinaster,510,IFN_2020,0.50,Maritime pine - softwood
+PISY,Pinus sylvestris,510,IFN_2020,0.50,Scots pine - softwood
+POTR,Populus tremula,450,IFN_2020,0.50,Aspen - hardwood
+PRAV,Prunus avium,600,IFN_2020,0.50,Wild cherry - hardwood
+QUPE,Quercus petraea,690,IFN_2020,0.50,Sessile oak - hardwood
+QURO,Quercus robur,690,IFN_2020,0.50,Pedunculate oak - hardwood
+SOAU,Sorbus aucuparia,630,IFN_2020,0.50,Rowan - hardwood
+TIPL,Tilia platyphyllos,530,IFN_2020,0.50,Large-leaved lime - hardwood
+BROADLEAF_GENUS,Genus-level fallback,620,IFN_2020,0.50,Generic broadleaf density
+CONIFER_GENUS,Genus-level fallback,490,IFN_2020,0.50,Generic conifer density

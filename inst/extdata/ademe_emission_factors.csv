@@ -1,0 +1,12 @@
+material_type,substitution_scenario,emission_factor_kgCO2eq_per_unit,unit,reference,year,notes
+wood_energy,vs_natural_gas,0.222,kgCO2eq_per_kWh,ADEME_Base_Carbone_2023,2023,Natural gas heating substitution
+wood_energy,vs_fuel_oil,0.324,kgCO2eq_per_kWh,ADEME_Base_Carbone_2023,2023,Fuel oil heating substitution
+wood_energy,vs_electricity,0.079,kgCO2eq_per_kWh,ADEME_Base_Carbone_2023,2023,Electric heating substitution (FR grid mix)
+wood_energy,vs_coal,0.384,kgCO2eq_per_kWh,ADEME_Base_Carbone_2023,2023,Coal heating substitution
+wood_construction,vs_concrete,1.140,kgCO2eq_per_kg,ADEME_Base_Carbone_2023,2023,Concrete substitution (1 kg wood replaces 1.8 kg concrete)
+wood_construction,vs_steel,1.890,kgCO2eq_per_kg,ADEME_Base_Carbone_2023,2023,Steel substitution (1 kg wood replaces 0.8 kg steel)
+wood_construction,vs_brick,0.650,kgCO2eq_per_kg,ADEME_Base_Carbone_2023,2023,Brick substitution
+wood_biogenic_storage,sequestration,-1.866,kgCO2eq_per_kg_wood,IPCC_2019,2019,CO2 stored in wood products (44/12 * 0.5)
+wood_combustion,energy_content,4.5,kWh_per_kg_dry_matter,IFN_2020,2020,Energy content of dry wood
+fuelwood_extraction,harvest_emissions,0.120,kgCO2eq_per_m3,ADEME_Base_Carbone_2023,2023,Harvesting and transport emissions
+residues_biomass,energy_recovery,0.035,kgCO2eq_per_kg,ADEME_Base_Carbone_2023,2023,Biomass residue processing

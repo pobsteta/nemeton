@@ -1,0 +1,23 @@
+species_code,species_name,equation_type,a,b,c,dbh_min,dbh_max,height_min,height_max,source
+ABAL,Abies alba,tarif_ifn,0.000042,2.631,0.945,7.5,100,5,50,IFN_tarifs_2016
+ACPS,Acer pseudoplatanus,tarif_ifn,0.000038,2.456,1.023,7.5,90,5,45,IFN_tarifs_2016
+ALGL,Alnus glutinosa,tarif_ifn,0.000035,2.389,1.012,7.5,80,5,40,IFN_tarifs_2016
+BEPE,Betula pendula,tarif_ifn,0.000033,2.421,0.987,7.5,75,5,35,IFN_tarifs_2016
+CABE,Carpinus betulus,tarif_ifn,0.000036,2.398,1.045,7.5,70,5,30,IFN_tarifs_2016
+CASA,Castanea sativa,tarif_ifn,0.000041,2.512,0.978,7.5,95,5,40,IFN_tarifs_2016
+FASY,Fagus sylvatica,tarif_ifn,0.000039,2.523,0.991,7.5,100,5,50,IFN_tarifs_2016
+FREX,Fraxinus excelsior,tarif_ifn,0.000037,2.467,1.008,7.5,90,5,45,IFN_tarifs_2016
+LADE,Larix decidua,tarif_ifn,0.000040,2.498,0.956,7.5,85,5,45,IFN_tarifs_2016
+PIAB,Picea abies,tarif_ifn,0.000043,2.587,0.967,7.5,95,5,50,IFN_tarifs_2016
+PIME,Pinus menziesii,tarif_ifn,0.000044,2.612,0.945,7.5,100,5,55,IFN_tarifs_2016
+PINI,Pinus nigra,tarif_ifn,0.000041,2.534,0.963,7.5,85,5,40,IFN_tarifs_2016
+PIPI,Pinus pinaster,tarif_ifn,0.000042,2.556,0.952,7.5,90,5,45,IFN_tarifs_2016
+PISY,Pinus sylvestris,tarif_ifn,0.000040,2.523,0.968,7.5,85,5,40,IFN_tarifs_2016
+POTR,Populus tremula,tarif_ifn,0.000034,2.387,1.015,7.5,75,5,35,IFN_tarifs_2016
+PRAV,Prunus avium,tarif_ifn,0.000038,2.445,1.002,7.5,80,5,35,IFN_tarifs_2016
+QUPE,Quercus petraea,tarif_ifn,0.000040,2.498,0.989,7.5,100,5,45,IFN_tarifs_2016
+QURO,Quercus robur,tarif_ifn,0.000040,2.501,0.991,7.5,100,5,45,IFN_tarifs_2016
+SOAU,Sorbus aucuparia,tarif_ifn,0.000035,2.378,1.025,7.5,60,5,25,IFN_tarifs_2016
+TIPL,Tilia platyphyllos,tarif_ifn,0.000036,2.412,1.018,7.5,85,5,40,IFN_tarifs_2016
+BROADLEAF_GENUS,Genus-level fallback,generic,0.000037,2.420,1.005,7.5,85,5,40,IFN_generic
+CONIFER_GENUS,Genus-level fallback,generic,0.000041,2.540,0.965,7.5,90,5,45,IFN_generic

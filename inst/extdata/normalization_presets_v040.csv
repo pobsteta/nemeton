@@ -1,0 +1,12 @@
+indicator,family,method,reference_min,reference_max,interpretation_low,interpretation_high,notes
+S1,Social,minmax,0,3,Low trail density - limited recreational access,High trail density - intensive recreational use,Trail density in km/ha from OSM footways/cycleway/bridleway
+S2,Social,minmax,0,100,Poor accessibility - remote areas,Excellent accessibility - near roads/transport,Multimodal accessibility score combining roads and public transport
+S3,Social,minmax,0,500000,Low population proximity - isolated forest,High population proximity - peri-urban forest,Total population within 5/10/20km radii
+P1,Productive,minmax,0,800,Low standing volume - young/sparse stands,High standing volume - mature/dense stands,Standing timber volume m³/ha from allometric equations
+P2,Productive,minmax,0,15,Low site productivity - poor site conditions,High site productivity - optimal growth conditions,Site productivity index m³/ha/yr based on fertility × climate × species
+P3,Productive,minmax,0,100,Poor timber quality - defects/low diameter,Excellent timber quality - straight/large diameter,Composite timber quality score for construction/sawlog use
+E1,Energy,minmax,0,10,Low fuelwood potential - limited biomass,High fuelwood potential - abundant residues,Mobilizable fuelwood tonnes dry matter/year from harvest residues + coppice
+E2,Energy,minmax,0,20,Low carbon substitution - minimal climate benefit,High carbon substitution - strong climate mitigation,CO2 emission avoidance tCO2eq/year via energy + material substitution
+N1,Naturalness,minmax,0,5000,Low remoteness - near infrastructure,High remoteness - wilderness character,Minimum distance to roads/buildings/powerlines in meters
+N2,Naturalness,minmax,0,2000,Low continuity - fragmented forest,High continuity - extensive unbroken forest,Continuous forest patch area in hectares after 100m buffer-dissolve
+N3,Naturalness,minmax,0,100,Low wilderness - disturbed/managed,High wilderness - pristine/undisturbed,Composite wilderness index integrating N1 × N2 × ancientness × protection

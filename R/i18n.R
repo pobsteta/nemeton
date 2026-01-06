@@ -280,7 +280,69 @@ msg_error <- function(key, ...) {
     hotspot_identified = "Identified %d hotspot parcels (%0.1f%% of total)",
     hotspot_parcel = "Hotspot parcel %s: high in %d families (%s)",
     hotspot_none = "No hotspots found with current thresholds",
-    correlation_matrix_plotting = "Creating correlation matrix heatmap"
+    correlation_matrix_plotting = "Creating correlation matrix heatmap",
+
+    # v0.4.0 - Family S: Social & Recreational/Usages récréatifs
+    indicator_social_trails = "Trail density (S: Social & Recreational)",
+    indicator_social_accessibility = "Multimodal accessibility (S: Social & Recreational)",
+    indicator_social_proximity = "Population proximity (S: Social & Recreational)",
+    social_trails_detected = "Detected %0.1f km of trails (density: %0.2f km/ha)",
+    social_osm_fetching = "Fetching trail data from OpenStreetMap...",
+    social_osm_fetched = "Retrieved %d trail features",
+    social_accessibility_scored = "Accessibility score: %0.1f/100 (road=%0.1f, transit=%0.1f)",
+    social_population_calculated = "Population within buffers: 5km=%d, 10km=%d, 20km=%d",
+
+    # v0.4.0 - Family P: Productive & Economic/Productif
+    indicator_productive_volume = "Standing timber volume (P: Productive & Economic)",
+    indicator_productive_station = "Site productivity index (P: Productive & Economic)",
+    indicator_productive_quality = "Timber quality score (P: Productive & Economic)",
+    productive_volume_calculated = "Standing volume: %0.1f m³/ha (species: %s)",
+    productive_allometry_applied = "Applied IFN equation: %s (DBH=%0.1f cm, H=%0.1f m)",
+    productive_station_score = "Station productivity: %0.1f m³/ha/yr (fertility=%s, climate=%s)",
+    productive_quality_assessed = "Timber quality: %0.1f/100 (form=%0.1f, diameter=%0.1f, defects=%0.1f)",
+
+    # v0.4.0 - Family E: Energy & Climate/Énergie
+    indicator_energy_fuelwood = "Mobilizable fuelwood potential (E: Energy & Climate)",
+    indicator_energy_avoidance = "Carbon emission avoidance (E: Energy & Climate)",
+    energy_fuelwood_calculated = "Fuelwood potential: %0.1f tonnes DM/yr (residues=%0.1f, coppice=%0.1f)",
+    energy_avoidance_calculated = "CO2 avoided: %0.1f tCO2eq/yr (energy=%0.1f, material=%0.1f)",
+    energy_substitution_scenario = "Substitution scenario: %s (factor=%0.3f kgCO2eq/unit)",
+
+    # v0.4.0 - Family N: Naturalness & Wilderness/Naturalité
+    indicator_naturalness_distance = "Infrastructure distance (N: Naturalness & Wilderness)",
+    indicator_naturalness_continuity = "Forest continuity (N: Naturalness & Wilderness)",
+    indicator_naturalness_composite = "Wilderness composite index (N: Naturalness & Wilderness)",
+    naturalness_distance_calculated = "Min distance to infrastructure: %0.0f m (roads=%0.0f, buildings=%0.0f)",
+    naturalness_continuity_calculated = "Continuous forest patch: %0.1f ha (connectivity=%dm)",
+    naturalness_composite_score = "Wilderness score: %0.1f/100 (distance=%0.1f, continuity=%0.1f, age=%0.1f)",
+
+    # v0.4.0 - Advanced Analysis (US7)
+    # Pareto analysis
+    msg_pareto_computing = "Computing Pareto optimality for %d parcels across %d objectives...",
+    msg_pareto_complete = "Found %d Pareto optimal parcels (%.1f%%)",
+
+    # Clustering analysis
+    msg_cluster_auto_k = "Determining optimal k using silhouette analysis (k=2 to %d)...",
+    msg_cluster_optimal_k = "Optimal k determined: %d (silhouette = %.3f)",
+    msg_cluster_computing = "Clustering %d parcels into %d groups using %s...",
+    msg_cluster_complete = "Clustering complete. Cluster sizes: %s",
+
+    # Errors
+    error_invalid_data_type = "Data must be a data.frame or sf object",
+    error_objectives_not_found = "Objectives not found in data: %s",
+    error_non_numeric_objectives = "Objectives must be numeric: %s",
+    error_maximize_length = "Length of 'maximize' (%d) must match length of 'objectives' (%d)",
+    error_na_values = "Variables contain NA values: %s",
+    error_families_not_found = "Families not found in data: %s",
+    error_non_numeric_families = "Families must be numeric: %s",
+    error_invalid_method = "Method must be either 'kmeans' or 'hierarchical'",
+    error_k_too_small = "k must be at least 2",
+    error_k_too_large = "k must be less than number of parcels (%d)",
+    error_ggplot2_required = "Package 'ggplot2' is required for plotting. Install with: install.packages('ggplot2')",
+    error_variable_not_found = "Variable '%s' not found in data",
+    error_non_numeric_variable = "Variable '%s' must be numeric",
+    error_is_optimal_required = "Column 'is_optimal' is required for Pareto frontier overlay. Run identify_pareto_optimal() first.",
+    warning_ggrepel_not_installed = "Package 'ggrepel' not installed. Labels may overlap. Install with: install.packages('ggrepel')"
   ),
 
   fr = list(
@@ -445,6 +507,68 @@ msg_error <- function(key, ...) {
     hotspot_identified = "%d parcelles hotspots identifiées (%0.1f%% du total)",
     hotspot_parcel = "Parcelle hotspot %s : élevée dans %d familles (%s)",
     hotspot_none = "Aucun hotspot trouvé avec les seuils actuels",
-    correlation_matrix_plotting = "Création heatmap matrice de corrélation"
+    correlation_matrix_plotting = "Création heatmap matrice de corrélation",
+
+    # v0.4.0 - Famille S : Social & Usages récréatifs
+    indicator_social_trails = "Densité de sentiers (S : Social & Usages récréatifs)",
+    indicator_social_accessibility = "Accessibilité multimodale (S : Social & Usages récréatifs)",
+    indicator_social_proximity = "Proximité de population (S : Social & Usages récréatifs)",
+    social_trails_detected = "%0.1f km de sentiers détectés (densité : %0.2f km/ha)",
+    social_osm_fetching = "Récupération données sentiers OpenStreetMap...",
+    social_osm_fetched = "%d entités sentiers récupérées",
+    social_accessibility_scored = "Score accessibilité : %0.1f/100 (route=%0.1f, transports=%0.1f)",
+    social_population_calculated = "Population dans les buffers : 5km=%d, 10km=%d, 20km=%d",
+
+    # v0.4.0 - Famille P : Productif & Économie forestière
+    indicator_productive_volume = "Volume bois sur pied (P : Productif & Économie)",
+    indicator_productive_station = "Indice productivité station (P : Productif & Économie)",
+    indicator_productive_quality = "Score qualité bois œuvre (P : Productif & Économie)",
+    productive_volume_calculated = "Volume sur pied : %0.1f m³/ha (essence : %s)",
+    productive_allometry_applied = "Équation IFN appliquée : %s (DHP=%0.1f cm, H=%0.1f m)",
+    productive_station_score = "Productivité station : %0.1f m³/ha/an (fertilité=%s, climat=%s)",
+    productive_quality_assessed = "Qualité bois : %0.1f/100 (forme=%0.1f, diamètre=%0.1f, défauts=%0.1f)",
+
+    # v0.4.0 - Famille E : Énergie & Climat
+    indicator_energy_fuelwood = "Potentiel bois-énergie mobilisable (E : Énergie & Climat)",
+    indicator_energy_avoidance = "Évitement émissions carbone (E : Énergie & Climat)",
+    energy_fuelwood_calculated = "Potentiel bois-énergie : %0.1f tonnes MS/an (rémanents=%0.1f, taillis=%0.1f)",
+    energy_avoidance_calculated = "CO2 évité : %0.1f tCO2eq/an (énergie=%0.1f, matériaux=%0.1f)",
+    energy_substitution_scenario = "Scénario substitution : %s (facteur=%0.3f kgCO2eq/unité)",
+
+    # v0.4.0 - Famille N : Naturalité & Caractère sauvage
+    indicator_naturalness_distance = "Distance infrastructures (N : Naturalité & Caractère sauvage)",
+    indicator_naturalness_continuity = "Continuité forestière (N : Naturalité & Caractère sauvage)",
+    indicator_naturalness_composite = "Indice composite wilderness (N : Naturalité & Caractère sauvage)",
+    naturalness_distance_calculated = "Distance min infrastructures : %0.0f m (routes=%0.0f, bâtiments=%0.0f)",
+    naturalness_continuity_calculated = "Patch forêt continue : %0.1f ha (connectivité=%dm)",
+    naturalness_composite_score = "Score wilderness : %0.1f/100 (distance=%0.1f, continuité=%0.1f, âge=%0.1f)",
+
+    # v0.4.0 - Analyse Avancée (US7)
+    # Analyse Pareto
+    msg_pareto_computing = "Calcul optimalité Pareto pour %d parcelles sur %d objectifs...",
+    msg_pareto_complete = "%d parcelles Pareto-optimales trouvées (%.1f%%)",
+
+    # Analyse de clustering
+    msg_cluster_auto_k = "Détermination k optimal par analyse silhouette (k=2 à %d)...",
+    msg_cluster_optimal_k = "k optimal déterminé : %d (silhouette = %.3f)",
+    msg_cluster_computing = "Clustering de %d parcelles en %d groupes via %s...",
+    msg_cluster_complete = "Clustering terminé. Tailles clusters : %s",
+
+    # Erreurs
+    error_invalid_data_type = "Les données doivent être un objet data.frame ou sf",
+    error_objectives_not_found = "Objectifs introuvables dans les données : %s",
+    error_non_numeric_objectives = "Les objectifs doivent être numériques : %s",
+    error_maximize_length = "Longueur de 'maximize' (%d) doit correspondre à longueur de 'objectives' (%d)",
+    error_na_values = "Les variables contiennent des valeurs NA : %s",
+    error_families_not_found = "Familles introuvables dans les données : %s",
+    error_non_numeric_families = "Les familles doivent être numériques : %s",
+    error_invalid_method = "La méthode doit être 'kmeans' ou 'hierarchical'",
+    error_k_too_small = "k doit être au moins 2",
+    error_k_too_large = "k doit être inférieur au nombre de parcelles (%d)",
+    error_ggplot2_required = "Le package 'ggplot2' est requis pour les graphiques. Installer avec : install.packages('ggplot2')",
+    error_variable_not_found = "Variable '%s' introuvable dans les données",
+    error_non_numeric_variable = "La variable '%s' doit être numérique",
+    error_is_optimal_required = "La colonne 'is_optimal' est requise pour l'affichage frontière Pareto. Exécuter identify_pareto_optimal() d'abord.",
+    warning_ggrepel_not_installed = "Package 'ggrepel' non installé. Les étiquettes peuvent se chevaucher. Installer avec : install.packages('ggrepel')"
   )
 )

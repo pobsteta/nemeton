@@ -1,0 +1,170 @@
+#' Complete Demo Dataset with 12-Family Ecosystem Services Referential
+#'
+#' Extended demonstration dataset containing 20 forest parcels with all 29 indicators
+#' across the complete 12-family referential for ecosystem services assessment.
+#' This dataset is synthetically generated for package demonstration and testing purposes.
+#'
+#' @format An \code{sf} object with 20 forest parcels and 100+ columns:
+#' \describe{
+#'   \item{id}{Numeric parcel identifier (1-20)}
+#'   \item{name}{Parcel name (Parcel_01 to Parcel_20)}
+#'   \item{parcel_id}{Legacy identifier (P01-P20)}
+#'   \item{species}{Tree species code (4-letter IFN codes: FASY, PIAB, QUPE, etc.)}
+#'   \item{area_ha}{Parcel area in hectares}
+#'   \item{forest_type}{Forest type classification}
+#'   \item{age_class}{Forest age class}
+#'   \item{management}{Management objective}
+#'   \item{geometry}{Spatial geometry (POLYGON, EPSG:2154 - Lambert 93)}
+#'
+#'   \strong{Family C - Carbon & Vitality (2 indicators):}
+#'   \item{C1}{Biomass carbon stock (tC/ha)}
+#'   \item{C2}{NDVI trend (annual rate of change)}
+#'
+#'   \strong{Family B - Biodiversity (3 indicators):}
+#'   \item{B1}{Protection status (0=none, 1=local, 2=regional, 3=national)}
+#'   \item{B2}{Structural diversity index}
+#'   \item{B3}{Landscape connectivity (0-1)}
+#'
+#'   \strong{Family W - Water Regulation (3 indicators):}
+#'   \item{W1}{Hydrographic network density (km/ha)}
+#'   \item{W2}{Wetland area percentage}
+#'   \item{W3}{Topographic Wetness Index}
+#'
+#'   \strong{Family A - Air Quality & Microclimate (2 indicators):}
+#'   \item{A1}{Forest cover within 1km buffer (0-1)}
+#'   \item{A2}{Air quality index}
+#'
+#'   \strong{Family F - Soil Fertility (2 indicators):}
+#'   \item{F1}{Soil fertility class (1-5)}
+#'   \item{F2}{Slope percentage (erosion risk)}
+#'
+#'   \strong{Family L - Landscape & Aesthetics (2 indicators):}
+#'   \item{L1}{Landscape fragmentation index (0-1)}
+#'   \item{L2}{Edge-to-area ratio}
+#'
+#'   \strong{Family T - Temporal Dynamics (2 indicators):}
+#'   \item{T1}{Forest ancientness (years)}
+#'   \item{T2}{Land cover change rate (percentage)}
+#'
+#'   \strong{Family R - Risk Management & Resilience (3 indicators):}
+#'   \item{R1}{Fire risk level (1-5)}
+#'   \item{R2}{Storm/windthrow risk (1-5)}
+#'   \item{R3}{Water stress index (0-1)}
+#'
+#'   \strong{Family S - Social & Recreational (3 indicators) - NEW v0.4.0:}
+#'   \item{S1}{Trail density (km/ha)}
+#'   \item{S2}{Accessibility score (0-100)}
+#'   \item{S3}{Population proximity (persons within 5/10/20km)}
+#'
+#'   \strong{Family P - Productive & Economic (3 indicators) - NEW v0.4.0:}
+#'   \item{P1}{Standing timber volume (m³/ha)}
+#'   \item{P2}{Site productivity (m³/ha/yr)}
+#'   \item{P3}{Timber quality score (0-100)}
+#'
+#'   \strong{Family E - Energy & Climate (2 indicators) - NEW v0.4.0:}
+#'   \item{E1}{Fuelwood potential (tonnes DM/yr)}
+#'   \item{E2}{CO2 emission avoidance (tCO2eq/yr)}
+#'
+#'   \strong{Family N - Naturalness & Wilderness (3 indicators) - NEW v0.4.0:}
+#'   \item{N1}{Infrastructure distance (m)}
+#'   \item{N2}{Forest continuity (ha)}
+#'   \item{N3}{Wilderness composite score (0-100)}
+#'
+#'   \strong{Normalized indicators:}
+#'   \item{*_norm}{Normalized versions (0-100 scale) for all 29 indicators}
+#'
+#'   \strong{Family composite indices:}
+#'   \item{family_C, family_B, ..., family_N}{Aggregated family scores (0-100)}
+#' }
+#'
+#' @details
+#' This dataset extends \code{massif_demo_units} with complete indicator coverage
+#' across all 12 families in the nemeton ecosystem services framework. It includes:
+#'
+#' \itemize{
+#'   \item \strong{29 primary indicators} measuring different ecosystem service dimensions
+#'   \item \strong{29 normalized indicators} (0-100 scale) for direct comparison
+#'   \item \strong{12 family composite indices} aggregating related indicators
+#'   \item \strong{Spatial coverage}: Synthetic 5km × 5km forest area in Lambert 93
+#'   \item \strong{Realistic value ranges}: Based on French forest inventory data (IFN)
+#' }
+#'
+#' The data generation methodology combines:
+#' \itemize{
+#'   \item Allometric models from IFN for volume calculations
+#'   \item ADEME emission factors for climate indicators
+#'   \item Spatial relationships (accessibility, naturalness, continuity)
+#'   \item Stochastic variation to simulate real-world heterogeneity
+#' }
+#'
+#' @section Families v0.4.0:
+#' The complete 12-family referential includes:
+#' \itemize{
+#'   \item \strong{v0.2.0}: C, W, F, L (biophysical services)
+#'   \item \strong{v0.3.0}: B, A, T, R (biodiversity, climate, temporal, risks)
+#'   \item \strong{v0.4.0}: S, P, E, N (social, productive, energy, naturalness)
+#' }
+#'
+#' @section Usage:
+#' This dataset is ideal for:
+#' \itemize{
+#'   \item Package vignettes demonstrating multi-criteria analysis
+#'   \item Testing visualization functions (radar plots, correlation matrices)
+#'   \item Prototyping composite indices and decision support tools
+#'   \item Educational examples of ecosystem services assessment
+#' }
+#'
+#' @source
+#' Synthetically generated using \code{data-raw/generate_extended_demo.R}.
+#' Based on:
+#' \itemize{
+#'   \item French National Forest Inventory (IFN) allometric equations
+#'   \item ADEME Base Carbone® emission factors
+#'   \item OpenStreetMap infrastructure data patterns
+#'   \item INSEE population distribution models
+#' }
+#'
+#' @seealso
+#' \code{\link{massif_demo_units}} for the base dataset without indicators.
+#'
+#' \code{\link{create_family_index}} for creating family composites.
+#'
+#' \code{\link{normalize_indicators}} for indicator normalization.
+#'
+#' \code{\link{nemeton_radar}} for visualizing the 12-family profile.
+#'
+#' @examples
+#' \dontrun{
+#' # Load the extended demo dataset
+#' data("massif_demo_units_extended")
+#'
+#' # Explore structure
+#' library(sf)
+#' plot(massif_demo_units_extended["family_S"])  # Social services
+#' plot(massif_demo_units_extended["family_E"])  # Energy services
+#'
+#' # Create 12-axis radar plot for parcel 1
+#' library(nemeton)
+#' nemeton_radar(
+#'   massif_demo_units_extended,
+#'   unit_id = 1,
+#'   mode = "family"
+#' )
+#'
+#' # Compute correlations across all 12 families
+#' cor_matrix <- compute_family_correlations(massif_demo_units_extended)
+#' plot_correlation_matrix(cor_matrix)
+#'
+#' # Identify multi-service hotspots
+#' hotspots <- identify_hotspots(
+#'   massif_demo_units_extended,
+#'   threshold = 75,
+#'   min_families = 6
+#' )
+#'
+#' # Summary statistics
+#' summary(massif_demo_units_extended[, c("family_S", "family_P", "family_E", "family_N")])
+#' }
+#'
+#' @keywords datasets
+"massif_demo_units_extended"

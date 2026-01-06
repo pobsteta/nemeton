@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -23,7 +23,10 @@ Imports:
     cli (>= 3.6.0),
     tidyr (>= 1.3.0),
     glue (>= 1.6.0),
-    rlang
+    rlang,
+    dplyr (>= 1.1.0),
+    cluster (>= 2.1.0),
+    ggrepel (>= 0.9.0)
 Suggests:
     testthat (>= 3.0.0),
     knitr,
@@ -35,7 +38,6 @@ Suggests:
     landscapemetrics (>= 2.0.0),
     rnaturalearth,
     osmdata,
-    dplyr,
     patchwork,
     viridisLite
 RoxygenNote: 7.3.3
