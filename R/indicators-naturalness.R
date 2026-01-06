@@ -144,6 +144,7 @@ indicator_naturalness_continuity <- function(units,
 #'
 #' @return sf object with added columns: N3 (composite 0-100), N3_*_norm (normalized components)
 #'
+#' @importFrom stats quantile
 #' @export
 indicator_naturalness_composite <- function(units,
                                              n1_field = "N1",

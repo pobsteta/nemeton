@@ -100,8 +100,8 @@ indicator_social_trails <- function(units,
       # Query each trail type and combine
       trails_list <- list()
       for (trail_type in trail_types) {
-        osm_result <- osm_query %>%
-          osmdata::add_osm_feature(key = "highway", value = trail_type) %>%
+        osm_result <- osm_query |>
+          osmdata::add_osm_feature(key = "highway", value = trail_type) |>
           osmdata::osmdata_sf()
 
         if (!is.null(osm_result$osm_lines) && nrow(osm_result$osm_lines) > 0) {
