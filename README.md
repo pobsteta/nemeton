@@ -2,9 +2,10 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.3.0)
-[![Tests](https://img.shields.io/badge/tests-845%2B%20passing-success.svg)](https://github.com/pobsteta/nemeton)
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.4.0)
+[![Tests](https://img.shields.io/badge/tests-1322%20passing-success.svg)](https://github.com/pobsteta/nemeton)
+[![Coverage](https://img.shields.io/badge/coverage-85.8%25-brightgreen.svg)](https://github.com/pobsteta/nemeton)
+[![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
@@ -14,14 +15,29 @@
 
 ## ✨ Fonctionnalités principales
 
-- 🌳 **Système multi-famille** : 12 familles d'indicateurs (9 implémentées : C, B, W, A, F, L, T, R + infrastructure)
-- 📊 **25 sous-indicateurs** : Carbone (C1-C2), Biodiversité (B1-B3), Eau (W1-W3), Air (A1-A2), Sols (F1-F2), Paysage (L1-L2), Temporel (T1-T2), Risques (R1-R3) + legacy
+### Référentiel Complet (v0.4.0)
+
+- 🌳 **12 familles d'indicateurs** (100% implémenté) :
+  - **C** - Carbone & Vitalité | **B** - Biodiversité | **W** - Eau | **A** - Air & Microclimat
+  - **F** - Fertilité Sols | **L** - Paysage | **T** - Temporel | **R** - Risques & Résilience
+  - **S** - Social & Usages 🆕 | **P** - Production & Économie 🆕 | **E** - Énergie & Climat 🆕 | **N** - Naturalité 🆕
+
+- 📊 **31 sous-indicateurs** : C1-C2, B1-B3, W1-W3, A1-A2, F1-F2, L1-L2, T1-T2, R1-R3, S1-S3, P1-P3, E1-E2, N1-N3
+
+### Outils d'Analyse Avancée (v0.4.0)
+
+- 🎯 **Optimisation multi-critères** : Analyse de Pareto, identification des solutions non-dominées
+- 🔍 **Clustering intelligent** : K-means & hiérarchique avec auto-détermination du k optimal (silhouette)
+- ⚖️ **Trade-off analysis** : Visualisation des compromis entre services écosystémiques
+
+### Infrastructure & Qualité
+
 - ⏱️ **Analyse temporelle** : Datasets multi-périodes, calcul de taux de changement, visualisations
 - 📈 **Normalisation avancée** : min-max, z-score, quantiles, par famille, avec référence
 - 🎯 **Agrégation flexible** : 5 méthodes (moyenne, pondérée, géométrique, harmonique, min)
-- 🗺️ **Visualisations riches** : Cartes, radar multi-famille (jusqu'à 12 axes), comparaisons, tendances temporelles
-- 🔄 **Workflow intégré** : De la donnée brute aux indices composites
-- 📦 **Production-ready** : 845+ tests, >70% coverage, 100% backward compatible
+- 🗺️ **Visualisations riches** : Cartes, radar 12-axes, matrices de corrélation, frontières de Pareto
+- 🔄 **Workflow intégré** : De la donnée brute aux zonages multifonctionnels
+- 📦 **Production-ready** : 1322 tests (100% pass), 85.8% coverage, backward compatible
 
 ## 📋 Prérequis
 
@@ -37,43 +53,93 @@
 remotes::install_github("pobsteta/nemeton")
 ```
 
+## 🌟 Nouveautés v0.4.0 (Janvier 2026)
+
+### 4 Nouvelles Familles d'Indicateurs
+
+- **Famille S (Social & Usages)** : Densité sentiers, accessibilité multimodale, proximité population
+- **Famille P (Production & Économie)** : Volume bois, productivité station, qualité bois d'œuvre
+- **Famille E (Énergie & Climat)** : Potentiel bois-énergie, évitement CO₂ par substitution
+- **Famille N (Naturalité & Wilderness)** : Distance infrastructures, continuité forestière, indice composite
+
+### Analyse Multi-Critères Avancée
+
+```r
+# Identifier les parcelles Pareto-optimales (non-dominées)
+result <- identify_pareto_optimal(
+  data,
+  objectives = c("family_C", "family_B", "family_P"),
+  maximize = c(TRUE, TRUE, TRUE)
+)
+
+# Clustering automatique (k optimal via silhouette)
+clusters <- cluster_parcels(
+  data,
+  families = c("family_C", "family_B", "family_P", "family_S"),
+  k = NULL  # Auto-détermination
+)
+
+# Visualiser les trade-offs avec frontière de Pareto
+plot_tradeoff(
+  result,
+  x = "family_C",
+  y = "family_B",
+  pareto_frontier = TRUE
+)
+```
+
+### Dataset Étendu
+
+- `massif_demo_units_extended` : 20 parcelles avec **toutes les 12 familles** calculées
+- Prêt à l'emploi pour tester le référentiel complet
+
 ## 🎯 Quick Start
 
-### Workflow Multi-Famille v0.2.0 (Recommandé)
+### Workflow Complet 12 Familles (v0.4.0 - Recommandé)
 
 ```r
 library(nemeton)
+library(ggplot2)
 
-# Charger le dataset de démonstration (136 ha, 20 parcelles forestières)
-data(massif_demo_units)
-layers <- massif_demo_layers()
+# Charger le dataset étendu (20 parcelles, 12 familles calculées)
+data(massif_demo_units_extended)
 
-# 1. Créer des indicateurs synthétiques multi-famille
-units <- massif_demo_units[1:10, ]
-units$C1 <- rnorm(10, 150, 20)  # Biomasse carbone
-units$C2 <- runif(10, 0.7, 0.9) # NDVI
-units$W1 <- rnorm(10, 0.8, 0.2) # Réseau hydro
-units$W2 <- runif(10, 5, 15)    # Zones humides
-units$W3 <- rnorm(10, 8, 2)     # TWI
+# 1. Créer les indices de famille (auto-détection des 12 familles)
+result <- create_family_index(massif_demo_units_extended)
 
-# 2. Normaliser par famille
-normalized <- normalize_indicators(units, method = "minmax", by_family = TRUE)
-
-# 3. Créer indices de famille
-family_scores <- create_family_index(
-  normalized,
-  method = "weighted",
-  weights = list(
-    C = c(C1 = 0.7, C2 = 0.3),
-    W = c(W1 = 0.3, W2 = 0.3, W3 = 0.4)
-  )
+# 2. Visualiser le profil 12-axes d'une parcelle
+nemeton_radar(
+  result,
+  parcel_id = "parcel_1",
+  families = c("family_C", "family_B", "family_W", "family_A",
+               "family_F", "family_L", "family_T", "family_R",
+               "family_S", "family_P", "family_E", "family_N")
 )
 
-# 4. Visualiser profil multi-famille (v0.3.0: support 9-12 familles)
-nemeton_radar(family_scores, unit_id = 1, mode = "family")
+# 3. Analyse de Pareto (identifier les meilleures parcelles)
+pareto <- identify_pareto_optimal(
+  result,
+  objectives = c("family_C", "family_B", "family_P"),
+  maximize = c(TRUE, TRUE, TRUE)
+)
+sum(pareto$is_optimal)  # Nombre de parcelles Pareto-optimales
 
-# Comparer plusieurs unités (v0.3.0)
-nemeton_radar(family_scores, unit_id = c(1, 2, 3), mode = "family")
+# 4. Clustering & zonage multifonctionnel
+zones <- cluster_parcels(
+  result,
+  families = c("family_C", "family_B", "family_P", "family_S"),
+  k = NULL  # Auto-détermination du k optimal
+)
+attr(zones, "optimal_k")  # k optimal déterminé
+
+# 5. Visualiser les trade-offs
+plot_tradeoff(
+  pareto,
+  x = "family_C",
+  y = "family_B",
+  pareto_frontier = TRUE,
+  title = "Trade-off Carbone vs Biodiversité"
+)
 ```
 
 ### Workflow Classique v0.1.0 (Compatible)
