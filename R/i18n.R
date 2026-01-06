@@ -314,7 +314,34 @@ msg_error <- function(key, ...) {
     indicator_naturalness_composite = "Wilderness composite index (N: Naturalness & Wilderness)",
     naturalness_distance_calculated = "Min distance to infrastructure: %0.0f m (roads=%0.0f, buildings=%0.0f)",
     naturalness_continuity_calculated = "Continuous forest patch: %0.1f ha (connectivity=%dm)",
-    naturalness_composite_score = "Wilderness score: %0.1f/100 (distance=%0.1f, continuity=%0.1f, age=%0.1f)"
+    naturalness_composite_score = "Wilderness score: %0.1f/100 (distance=%0.1f, continuity=%0.1f, age=%0.1f)",
+
+    # v0.4.0 - Advanced Analysis (US7)
+    # Pareto analysis
+    msg_pareto_computing = "Computing Pareto optimality for %d parcels across %d objectives...",
+    msg_pareto_complete = "Found %d Pareto optimal parcels (%.1f%%)",
+
+    # Clustering analysis
+    msg_cluster_auto_k = "Determining optimal k using silhouette analysis (k=2 to %d)...",
+    msg_cluster_optimal_k = "Optimal k determined: %d (silhouette = %.3f)",
+    msg_cluster_computing = "Clustering %d parcels into %d groups using %s...",
+    msg_cluster_complete = "Clustering complete. Cluster sizes: %s",
+
+    # Errors
+    error_invalid_data_type = "Data must be a data.frame or sf object",
+    error_objectives_not_found = "Objectives not found in data: %s",
+    error_non_numeric_objectives = "Objectives must be numeric: %s",
+    error_maximize_length = "Length of 'maximize' (%d) must match length of 'objectives' (%d)",
+    error_families_not_found = "Families not found in data: %s",
+    error_non_numeric_families = "Families must be numeric: %s",
+    error_invalid_method = "Method must be either 'kmeans' or 'hierarchical'",
+    error_k_too_small = "k must be at least 2",
+    error_k_too_large = "k must be less than number of parcels (%d)",
+    error_ggplot2_required = "Package 'ggplot2' is required for plotting. Install with: install.packages('ggplot2')",
+    error_variable_not_found = "Variable '%s' not found in data",
+    error_non_numeric_variable = "Variable '%s' must be numeric",
+    error_is_optimal_required = "Column 'is_optimal' is required for Pareto frontier overlay. Run identify_pareto_optimal() first.",
+    warning_ggrepel_not_installed = "Package 'ggrepel' not installed. Labels may overlap. Install with: install.packages('ggrepel')"
   ),
 
   fr = list(
@@ -513,6 +540,33 @@ msg_error <- function(key, ...) {
     indicator_naturalness_composite = "Indice composite wilderness (N : Naturalité & Caractère sauvage)",
     naturalness_distance_calculated = "Distance min infrastructures : %0.0f m (routes=%0.0f, bâtiments=%0.0f)",
     naturalness_continuity_calculated = "Patch forêt continue : %0.1f ha (connectivité=%dm)",
-    naturalness_composite_score = "Score wilderness : %0.1f/100 (distance=%0.1f, continuité=%0.1f, âge=%0.1f)"
+    naturalness_composite_score = "Score wilderness : %0.1f/100 (distance=%0.1f, continuité=%0.1f, âge=%0.1f)",
+
+    # v0.4.0 - Analyse Avancée (US7)
+    # Analyse Pareto
+    msg_pareto_computing = "Calcul optimalité Pareto pour %d parcelles sur %d objectifs...",
+    msg_pareto_complete = "%d parcelles Pareto-optimales trouvées (%.1f%%)",
+
+    # Analyse de clustering
+    msg_cluster_auto_k = "Détermination k optimal par analyse silhouette (k=2 à %d)...",
+    msg_cluster_optimal_k = "k optimal déterminé : %d (silhouette = %.3f)",
+    msg_cluster_computing = "Clustering de %d parcelles en %d groupes via %s...",
+    msg_cluster_complete = "Clustering terminé. Tailles clusters : %s",
+
+    # Erreurs
+    error_invalid_data_type = "Les données doivent être un objet data.frame ou sf",
+    error_objectives_not_found = "Objectifs introuvables dans les données : %s",
+    error_non_numeric_objectives = "Les objectifs doivent être numériques : %s",
+    error_maximize_length = "Longueur de 'maximize' (%d) doit correspondre à longueur de 'objectives' (%d)",
+    error_families_not_found = "Familles introuvables dans les données : %s",
+    error_non_numeric_families = "Les familles doivent être numériques : %s",
+    error_invalid_method = "La méthode doit être 'kmeans' ou 'hierarchical'",
+    error_k_too_small = "k doit être au moins 2",
+    error_k_too_large = "k doit être inférieur au nombre de parcelles (%d)",
+    error_ggplot2_required = "Le package 'ggplot2' est requis pour les graphiques. Installer avec : install.packages('ggplot2')",
+    error_variable_not_found = "Variable '%s' introuvable dans les données",
+    error_non_numeric_variable = "La variable '%s' doit être numérique",
+    error_is_optimal_required = "La colonne 'is_optimal' est requise pour l'affichage frontière Pareto. Exécuter identify_pareto_optimal() d'abord.",
+    warning_ggrepel_not_installed = "Package 'ggrepel' non installé. Les étiquettes peuvent se chevaucher. Installer avec : install.packages('ggrepel')"
   )
 )
