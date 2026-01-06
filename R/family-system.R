@@ -275,8 +275,8 @@ get_family_name <- function(family_code, lang = NULL) {
     R = "Risk Management & Resilience",
     S = "Social & Recreational",
     P = "Productive & Economic",
-    E = "Education & Climate",
-    N = "Naturalness & Night"
+    E = "Energy & Climate",
+    N = "Naturalness & Wilderness"
   )
 
   family_names_fr <- c(
@@ -288,10 +288,10 @@ get_family_name <- function(family_code, lang = NULL) {
     L = "L – Landscape (paysage) / E – Esthétique",
     T = "T – Trame / N - Nervurée",
     R = "R – Résilience / F - Flexible",
-    S = "S – Santé / O – Ouverte",
-    P = "P – Patrimoine / R – Radicale",
-    E = "E – Éducation / E – Éducative",
-    N = "N – Nuit / T – Ténébreuse"
+    S = "S – Social / U – Usages récréatifs",
+    P = "P – Productif / É – Économie forestière",
+    E = "E – Énergie / C – Climat",
+    N = "N – Naturalité / S – Sauvage"
   )
 
   names_list <- if (lang == "fr") family_names_fr else family_names_en

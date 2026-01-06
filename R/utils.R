@@ -375,3 +375,184 @@ calculate_shannon_h <- function(proportions, base = exp(1)) {
 
   return(H)
 }
+
+# ============================================================================
+# v0.4.0 - New Helper Functions for S, P, E, N Families
+# ============================================================================
+
+#' Get OSM Bounding Box from Spatial Units
+#'
+#' Automatically detects the bounding box from sf units for OpenStreetMap queries.
+#' Adds optional buffer to ensure complete data coverage.
+#'
+#' @param units sf object (POLYGON or MULTIPOLYGON)
+#' @param buffer_m Numeric. Buffer distance in meters to expand bbox. Default 1000m.
+#'
+#' @return Numeric vector of length 4: c(xmin, ymin, xmax, ymax) in WGS84 (EPSG:4326)
+#'
+#' @keywords internal
+#' @noRd
+get_osm_bbox <- function(units, buffer_m = 1000) {
+  # Validate input
+  if (!inherits(units, "sf")) {
+    stop("units must be an sf object", call. = FALSE)
+  }
+
+  # Get CRS
+  units_crs <- sf::st_crs(units)
+
+  # Buffer in native CRS if metric
+  if (buffer_m > 0 && !is.na(units_crs) && units_crs$input != "EPSG:4326") {
+    units_buffered <- sf::st_buffer(units, dist = buffer_m)
+  } else {
+    units_buffered <- units
+  }
+
+  # Transform to WGS84 for OSM
+  units_wgs84 <- sf::st_transform(units_buffered, crs = 4326)
+
+  # Extract bbox
+  bbox <- sf::st_bbox(units_wgs84)
+
+  # Return as named vector (OSM expects xmin, ymin, xmax, ymax)
+  return(c(
+    xmin = unname(bbox["xmin"]),
+    ymin = unname(bbox["ymin"]),
+    xmax = unname(bbox["xmax"]),
+    ymax = unname(bbox["ymax"])
+  ))
+}
+
+#' Lookup IFN Allometric Equation
+#'
+#' Retrieves IFN volume equation parameters for a given species from bundled lookup table.
+#' Falls back to genus-level equations if species not found.
+#'
+#' @param species_code Character. IFN species code (e.g., "FASY", "QUPE", "PIAB")
+#' @param fallback_genus Character. Genus fallback: "broadleaf" or "conifer". Default NULL (auto-detect).
+#'
+#' @return Named list with equation parameters: a, b, c, dbh_min, dbh_max, height_min, height_max
+#'   Returns NULL if species not found and no fallback specified.
+#'
+#' @keywords internal
+#' @noRd
+lookup_ifn_equation <- function(species_code, fallback_genus = NULL) {
+  # Load bundled IFN equations table
+  equations_path <- system.file("extdata", "ifn_volume_equations.csv", package = "nemeton")
+
+  if (!file.exists(equations_path)) {
+    warning("IFN equations table not found: ", equations_path)
+    return(NULL)
+  }
+
+  equations <- utils::read.csv(equations_path, stringsAsFactors = FALSE)
+
+  # Lookup species
+  species_row <- equations[equations$species_code == toupper(species_code), ]
+
+  if (nrow(species_row) > 0) {
+    # Species found - return first match
+    return(as.list(species_row[1, ]))
+  }
+
+  # Species not found - try fallback
+  if (!is.null(fallback_genus)) {
+    fallback_code <- if (fallback_genus == "broadleaf") {
+      "BROADLEAF_GENUS"
+    } else if (fallback_genus == "conifer") {
+      "CONIFER_GENUS"
+    } else {
+      NULL
+    }
+
+    if (!is.null(fallback_code)) {
+      fallback_row <- equations[equations$species_code == fallback_code, ]
+      if (nrow(fallback_row) > 0) {
+        return(as.list(fallback_row[1, ]))
+      }
+    }
+  }
+
+  # No equation found
+  return(NULL)
+}
+
+#' Lookup Species-Specific Threshold or Parameter
+#'
+#' Generic lookup function for species-specific thresholds, densities, or other parameters
+#' from bundled lookup tables (e.g., wood density, fire susceptibility, drought tolerance).
+#'
+#' @param species_code Character. Species code (e.g., "FASY", "PIAB")
+#' @param parameter Character. Parameter name: "density", "fire_risk", "drought_tolerance", etc.
+#' @param table_name Character. Lookup table filename (without .csv extension). Default "wood_density".
+#'
+#' @return Numeric value or NA if not found
+#'
+#' @keywords internal
+#' @noRd
+lookup_species_threshold <- function(species_code, parameter = "density_kg_m3", table_name = "wood_density") {
+  # Load bundled lookup table
+  table_path <- system.file("extdata", paste0(table_name, ".csv"), package = "nemeton")
+
+  if (!file.exists(table_path)) {
+    warning("Lookup table not found: ", table_path)
+    return(NA_real_)
+  }
+
+  lookup_table <- utils::read.csv(table_path, stringsAsFactors = FALSE)
+
+  # Lookup species
+  species_row <- lookup_table[lookup_table$species_code == toupper(species_code), ]
+
+  if (nrow(species_row) > 0 && parameter %in% names(species_row)) {
+    return(species_row[1, parameter])
+  }
+
+  # Try genus fallback
+  genus_row <- lookup_table[lookup_table$species_code == "BROADLEAF_GENUS", ]
+  if (nrow(genus_row) > 0 && parameter %in% names(genus_row)) {
+    return(genus_row[1, parameter])
+  }
+
+  # Not found
+  return(NA_real_)
+}
+
+#' Lookup ADEME Emission Factor
+#'
+#' Retrieves carbon emission factors from ADEME Base Carbone for substitution scenarios.
+#'
+#' @param material_type Character. Material type: "wood_energy", "wood_construction", "fuelwood_extraction", etc.
+#' @param scenario Character. Substitution scenario: "vs_natural_gas", "vs_concrete", "vs_steel", etc.
+#'
+#' @return Named list with: emission_factor_kgCO2eq_per_unit, unit, reference, year, notes
+#'   Returns NULL if not found.
+#'
+#' @keywords internal
+#' @noRd
+lookup_ademe_factor <- function(material_type, scenario = NULL) {
+  # Load bundled ADEME factors table
+  factors_path <- system.file("extdata", "ademe_emission_factors.csv", package = "nemeton")
+
+  if (!file.exists(factors_path)) {
+    warning("ADEME emission factors table not found: ", factors_path)
+    return(NULL)
+  }
+
+  factors <- utils::read.csv(factors_path, stringsAsFactors = FALSE)
+
+  # Lookup by material type and scenario
+  if (!is.null(scenario)) {
+    factor_row <- factors[factors$material_type == material_type &
+                            factors$substitution_scenario == scenario, ]
+  } else {
+    factor_row <- factors[factors$material_type == material_type, ]
+  }
+
+  if (nrow(factor_row) > 0) {
+    return(as.list(factor_row[1, ]))
+  }
+
+  # Not found
+  return(NULL)
+}

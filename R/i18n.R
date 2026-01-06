@@ -280,7 +280,41 @@ msg_error <- function(key, ...) {
     hotspot_identified = "Identified %d hotspot parcels (%0.1f%% of total)",
     hotspot_parcel = "Hotspot parcel %s: high in %d families (%s)",
     hotspot_none = "No hotspots found with current thresholds",
-    correlation_matrix_plotting = "Creating correlation matrix heatmap"
+    correlation_matrix_plotting = "Creating correlation matrix heatmap",
+
+    # v0.4.0 - Family S: Social & Recreational/Usages récréatifs
+    indicator_social_trails = "Trail density (S: Social & Recreational)",
+    indicator_social_accessibility = "Multimodal accessibility (S: Social & Recreational)",
+    indicator_social_proximity = "Population proximity (S: Social & Recreational)",
+    social_trails_detected = "Detected %0.1f km of trails (density: %0.2f km/ha)",
+    social_osm_fetching = "Fetching trail data from OpenStreetMap...",
+    social_osm_fetched = "Retrieved %d trail features",
+    social_accessibility_scored = "Accessibility score: %0.1f/100 (road=%0.1f, transit=%0.1f)",
+    social_population_calculated = "Population within buffers: 5km=%d, 10km=%d, 20km=%d",
+
+    # v0.4.0 - Family P: Productive & Economic/Productif
+    indicator_productive_volume = "Standing timber volume (P: Productive & Economic)",
+    indicator_productive_station = "Site productivity index (P: Productive & Economic)",
+    indicator_productive_quality = "Timber quality score (P: Productive & Economic)",
+    productive_volume_calculated = "Standing volume: %0.1f m³/ha (species: %s)",
+    productive_allometry_applied = "Applied IFN equation: %s (DBH=%0.1f cm, H=%0.1f m)",
+    productive_station_score = "Station productivity: %0.1f m³/ha/yr (fertility=%s, climate=%s)",
+    productive_quality_assessed = "Timber quality: %0.1f/100 (form=%0.1f, diameter=%0.1f, defects=%0.1f)",
+
+    # v0.4.0 - Family E: Energy & Climate/Énergie
+    indicator_energy_fuelwood = "Mobilizable fuelwood potential (E: Energy & Climate)",
+    indicator_energy_avoidance = "Carbon emission avoidance (E: Energy & Climate)",
+    energy_fuelwood_calculated = "Fuelwood potential: %0.1f tonnes DM/yr (residues=%0.1f, coppice=%0.1f)",
+    energy_avoidance_calculated = "CO2 avoided: %0.1f tCO2eq/yr (energy=%0.1f, material=%0.1f)",
+    energy_substitution_scenario = "Substitution scenario: %s (factor=%0.3f kgCO2eq/unit)",
+
+    # v0.4.0 - Family N: Naturalness & Wilderness/Naturalité
+    indicator_naturalness_distance = "Infrastructure distance (N: Naturalness & Wilderness)",
+    indicator_naturalness_continuity = "Forest continuity (N: Naturalness & Wilderness)",
+    indicator_naturalness_composite = "Wilderness composite index (N: Naturalness & Wilderness)",
+    naturalness_distance_calculated = "Min distance to infrastructure: %0.0f m (roads=%0.0f, buildings=%0.0f)",
+    naturalness_continuity_calculated = "Continuous forest patch: %0.1f ha (connectivity=%dm)",
+    naturalness_composite_score = "Wilderness score: %0.1f/100 (distance=%0.1f, continuity=%0.1f, age=%0.1f)"
   ),
 
   fr = list(
@@ -445,6 +479,40 @@ msg_error <- function(key, ...) {
     hotspot_identified = "%d parcelles hotspots identifiées (%0.1f%% du total)",
     hotspot_parcel = "Parcelle hotspot %s : élevée dans %d familles (%s)",
     hotspot_none = "Aucun hotspot trouvé avec les seuils actuels",
-    correlation_matrix_plotting = "Création heatmap matrice de corrélation"
+    correlation_matrix_plotting = "Création heatmap matrice de corrélation",
+
+    # v0.4.0 - Famille S : Social & Usages récréatifs
+    indicator_social_trails = "Densité de sentiers (S : Social & Usages récréatifs)",
+    indicator_social_accessibility = "Accessibilité multimodale (S : Social & Usages récréatifs)",
+    indicator_social_proximity = "Proximité de population (S : Social & Usages récréatifs)",
+    social_trails_detected = "%0.1f km de sentiers détectés (densité : %0.2f km/ha)",
+    social_osm_fetching = "Récupération données sentiers OpenStreetMap...",
+    social_osm_fetched = "%d entités sentiers récupérées",
+    social_accessibility_scored = "Score accessibilité : %0.1f/100 (route=%0.1f, transports=%0.1f)",
+    social_population_calculated = "Population dans les buffers : 5km=%d, 10km=%d, 20km=%d",
+
+    # v0.4.0 - Famille P : Productif & Économie forestière
+    indicator_productive_volume = "Volume bois sur pied (P : Productif & Économie)",
+    indicator_productive_station = "Indice productivité station (P : Productif & Économie)",
+    indicator_productive_quality = "Score qualité bois œuvre (P : Productif & Économie)",
+    productive_volume_calculated = "Volume sur pied : %0.1f m³/ha (essence : %s)",
+    productive_allometry_applied = "Équation IFN appliquée : %s (DHP=%0.1f cm, H=%0.1f m)",
+    productive_station_score = "Productivité station : %0.1f m³/ha/an (fertilité=%s, climat=%s)",
+    productive_quality_assessed = "Qualité bois : %0.1f/100 (forme=%0.1f, diamètre=%0.1f, défauts=%0.1f)",
+
+    # v0.4.0 - Famille E : Énergie & Climat
+    indicator_energy_fuelwood = "Potentiel bois-énergie mobilisable (E : Énergie & Climat)",
+    indicator_energy_avoidance = "Évitement émissions carbone (E : Énergie & Climat)",
+    energy_fuelwood_calculated = "Potentiel bois-énergie : %0.1f tonnes MS/an (rémanents=%0.1f, taillis=%0.1f)",
+    energy_avoidance_calculated = "CO2 évité : %0.1f tCO2eq/an (énergie=%0.1f, matériaux=%0.1f)",
+    energy_substitution_scenario = "Scénario substitution : %s (facteur=%0.3f kgCO2eq/unité)",
+
+    # v0.4.0 - Famille N : Naturalité & Caractère sauvage
+    indicator_naturalness_distance = "Distance infrastructures (N : Naturalité & Caractère sauvage)",
+    indicator_naturalness_continuity = "Continuité forestière (N : Naturalité & Caractère sauvage)",
+    indicator_naturalness_composite = "Indice composite wilderness (N : Naturalité & Caractère sauvage)",
+    naturalness_distance_calculated = "Distance min infrastructures : %0.0f m (routes=%0.0f, bâtiments=%0.0f)",
+    naturalness_continuity_calculated = "Patch forêt continue : %0.1f ha (connectivité=%dm)",
+    naturalness_composite_score = "Score wilderness : %0.1f/100 (distance=%0.1f, continuité=%0.1f, âge=%0.1f)"
   )
 )
