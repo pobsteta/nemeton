@@ -155,7 +155,8 @@ silhouette_scores <- attr(result_auto, "silhouette_scores")
 print(silhouette_scores)
 
 # Visualiser les scores de silhouette
-plot(2:length(silhouette_scores)+1, silhouette_scores,
+k_values <- as.integer(names(silhouette_scores))
+plot(k_values, silhouette_scores,
      type = "b", pch = 19, col = "blue",
      xlab = "Nombre de clusters (k)",
      ylab = "Score de silhouette moyen",

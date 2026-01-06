@@ -61,19 +61,8 @@ Le système de famille permet d'agréger les indicateurs individuels en indices 
 
 ```{r}
 # Créer tous les indices de famille (12 familles)
-result <- massif_demo_units_extended %>%
-  create_family_index("C", c("C1", "C2")) %>%
-  create_family_index("B", c("B1", "B2", "B3")) %>%
-  create_family_index("W", c("W1", "W2", "W3")) %>%
-  create_family_index("A", c("A1", "A2")) %>%
-  create_family_index("F", c("F1", "F2")) %>%
-  create_family_index("L", c("L1", "L2")) %>%
-  create_family_index("T", c("T1", "T2")) %>%
-  create_family_index("R", c("R1", "R2", "R3")) %>%
-  create_family_index("S", c("S1", "S2", "S3")) %>%
-  create_family_index("P", c("P1", "P2", "P3")) %>%
-  create_family_index("E", c("E1", "E2")) %>%
-  create_family_index("N", c("N1", "N2", "N3"))
+# create_family_index() détecte automatiquement toutes les familles par préfixe
+result <- create_family_index(massif_demo_units_extended)
 
 # Afficher les indices de famille
 result %>%
