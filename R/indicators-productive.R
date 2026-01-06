@@ -6,6 +6,7 @@
 #' - P3: Timber quality score (commercial value potential)
 #'
 #' @name indicators-productive
+#' @keywords internal
 #' @family indicators
 NULL
 

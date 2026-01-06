@@ -5,6 +5,7 @@
 #' - E2: Carbon emission avoidance through substitution
 #'
 #' @name indicators-energy
+#' @keywords internal
 #' @family indicators
 NULL
 

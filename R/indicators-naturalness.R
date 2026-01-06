@@ -6,6 +6,7 @@
 #' - N3: Composite naturalness index (integrating multiple dimensions)
 #'
 #' @name indicators-naturalness
+#' @keywords internal
 #' @family indicators
 NULL
 

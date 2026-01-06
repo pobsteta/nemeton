@@ -3,11 +3,13 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   biodiversity-resilience-v030_fr: biodiversity-resilience-v030_fr.html
+  complete-referential_fr: complete-referential_fr.html
   getting-started_fr: getting-started_fr.html
   indicator-families_fr: indicator-families_fr.html
   internationalization: internationalization.html
+  multi-criteria-optimization_fr: multi-criteria-optimization_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
-last_built: 2026-01-05T21:11Z
+last_built: 2026-01-06T09:05Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

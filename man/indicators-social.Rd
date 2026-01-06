@@ -16,3 +16,4 @@ Other indicators:
 \code{\link{indicators-productive}}
 }
 \concept{indicators}
+\keyword{internal}

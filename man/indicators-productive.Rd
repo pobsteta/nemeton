@@ -16,3 +16,4 @@ Other indicators:
 \code{\link{indicators-social}}
 }
 \concept{indicators}
+\keyword{internal}

@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,10 @@
 <li><a class="dropdown-item" href="articles/getting-started_fr.html">Démarrage rapide</a></li>
     <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">✨ NOUVEAU v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
+    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -72,16 +75,44 @@
 <div class="section level2">
 <h2 id="id_-fonctionnalités-principales">✨ Fonctionnalités principales<a class="anchor" aria-label="anchor" href="#id_-fonctionnalit%C3%A9s-principales"></a>
 </h2>
+<div class="section level3">
+<h3 id="référentiel-complet-v040">Référentiel Complet (v0.4.0)<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rentiel-complet-v040"></a>
+</h3>
 <ul>
-<li>🌳 <strong>Système multi-famille</strong> : 12 familles d’indicateurs (9 implémentées : C, B, W, A, F, L, T, R + infrastructure)</li>
-<li>📊 <strong>25 sous-indicateurs</strong> : Carbone (C1-C2), Biodiversité (B1-B3), Eau (W1-W3), Air (A1-A2), Sols (F1-F2), Paysage (L1-L2), Temporel (T1-T2), Risques (R1-R3) + legacy</li>
+<li>🌳 <strong>12 familles d’indicateurs</strong> (100% implémenté) :
+<ul>
+<li>
+<strong>C</strong> - Carbone &amp; Vitalité | <strong>B</strong> - Biodiversité | <strong>W</strong> - Eau | <strong>A</strong> - Air &amp; Microclimat</li>
+<li>
+<strong>F</strong> - Fertilité Sols | <strong>L</strong> - Paysage | <strong>T</strong> - Temporel | <strong>R</strong> - Risques &amp; Résilience</li>
+<li>
+<strong>S</strong> - Social &amp; Usages 🆕 | <strong>P</strong> - Production &amp; Économie 🆕 | <strong>E</strong> - Énergie &amp; Climat 🆕 | <strong>N</strong> - Naturalité 🆕</li>
+</ul>
+</li>
+<li>📊 <strong>31 sous-indicateurs</strong> : C1-C2, B1-B3, W1-W3, A1-A2, F1-F2, L1-L2, T1-T2, R1-R3, S1-S3, P1-P3, E1-E2, N1-N3</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="outils-danalyse-avancée-v040">Outils d’Analyse Avancée (v0.4.0)<a class="anchor" aria-label="anchor" href="#outils-danalyse-avanc%C3%A9e-v040"></a>
+</h3>
+<ul>
+<li>🎯 <strong>Optimisation multi-critères</strong> : Analyse de Pareto, identification des solutions non-dominées</li>
+<li>🔍 <strong>Clustering intelligent</strong> : K-means &amp; hiérarchique avec auto-détermination du k optimal (silhouette)</li>
+<li>⚖️ <strong>Trade-off analysis</strong> : Visualisation des compromis entre services écosystémiques</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="infrastructure--qualité">Infrastructure &amp; Qualité<a class="anchor" aria-label="anchor" href="#infrastructure--qualit%C3%A9"></a>
+</h3>
+<ul>
 <li>⏱️ <strong>Analyse temporelle</strong> : Datasets multi-périodes, calcul de taux de changement, visualisations</li>
 <li>📈 <strong>Normalisation avancée</strong> : min-max, z-score, quantiles, par famille, avec référence</li>
 <li>🎯 <strong>Agrégation flexible</strong> : 5 méthodes (moyenne, pondérée, géométrique, harmonique, min)</li>
-<li>🗺️ <strong>Visualisations riches</strong> : Cartes, radar multi-famille (jusqu’à 12 axes), comparaisons, tendances temporelles</li>
-<li>🔄 <strong>Workflow intégré</strong> : De la donnée brute aux indices composites</li>
-<li>📦 <strong>Production-ready</strong> : 845+ tests, &gt;70% coverage, 100% backward compatible</li>
+<li>🗺️ <strong>Visualisations riches</strong> : Cartes, radar 12-axes, matrices de corrélation, frontières de Pareto</li>
+<li>🔄 <strong>Workflow intégré</strong> : De la donnée brute aux zonages multifonctionnels</li>
+<li>📦 <strong>Production-ready</strong> : 1322 tests (100% pass), 85.8% coverage, backward compatible</li>
 </ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="id_-prérequis">📋 Prérequis<a class="anchor" aria-label="anchor" href="#id_-pr%C3%A9requis"></a>
@@ -103,49 +134,112 @@
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemeton"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="id_-nouveautés-v040-janvier-2026">🌟 Nouveautés v0.4.0 (Janvier 2026)<a class="anchor" aria-label="anchor" href="#id_-nouveaut%C3%A9s-v040-janvier-2026"></a>
+</h2>
+<div class="section level3">
+<h3 id="id_4-nouvelles-familles-dindicateurs">4 Nouvelles Familles d’Indicateurs<a class="anchor" aria-label="anchor" href="#id_4-nouvelles-familles-dindicateurs"></a>
+</h3>
+<ul>
+<li>
+<strong>Famille S (Social &amp; Usages)</strong> : Densité sentiers, accessibilité multimodale, proximité population</li>
+<li>
+<strong>Famille P (Production &amp; Économie)</strong> : Volume bois, productivité station, qualité bois d’œuvre</li>
+<li>
+<strong>Famille E (Énergie &amp; Climat)</strong> : Potentiel bois-énergie, évitement CO₂ par substitution</li>
+<li>
+<strong>Famille N (Naturalité &amp; Wilderness)</strong> : Distance infrastructures, continuité forestière, indice composite</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="analyse-multi-critères-avancée">Analyse Multi-Critères Avancée<a class="anchor" aria-label="anchor" href="#analyse-multi-crit%C3%A8res-avanc%C3%A9e"></a>
+</h3>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Identifier les parcelles Pareto-optimales (non-dominées)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span><span class="op">)</span>,</span>
+<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Clustering automatique (k optimal via silhouette)</span></span>
+<span><span class="va">clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
+<span>  k <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Auto-détermination</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualiser les trade-offs avec frontière de Pareto</span></span>
+<span><span class="fu"><a href="reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
+<span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
+<span>  pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="dataset-étendu">Dataset Étendu<a class="anchor" aria-label="anchor" href="#dataset-%C3%A9tendu"></a>
+</h3>
+<ul>
+<li>
+<code>massif_demo_units_extended</code> : 20 parcelles avec <strong>toutes les 12 familles</strong> calculées</li>
+<li>Prêt à l’emploi pour tester le référentiel complet</li>
+</ul>
+</div>
+</div>
+<div class="section level2">
 <h2 id="id_-quick-start">🎯 Quick Start<a class="anchor" aria-label="anchor" href="#id_-quick-start"></a>
 </h2>
 <div class="section level3">
-<h3 id="workflow-multi-famille-v020-recommandé">Workflow Multi-Famille v0.2.0 (Recommandé)<a class="anchor" aria-label="anchor" href="#workflow-multi-famille-v020-recommand%C3%A9"></a>
+<h3 id="workflow-complet-12-familles-v040---recommandé">Workflow Complet 12 Familles (v0.4.0 - Recommandé)<a class="anchor" aria-label="anchor" href="#workflow-complet-12-familles-v040---recommand%C3%A9"></a>
 </h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Charger le dataset de démonstration (136 ha, 20 parcelles forestières)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
-<span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># Charger le dataset étendu (20 parcelles, 12 familles calculées)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Créer des indicateurs synthétiques multi-famille</span></span>
-<span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="op">]</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">C1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">150</span>, <span class="fl">20</span><span class="op">)</span>  <span class="co"># Biomasse carbone</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">C2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">0.7</span>, <span class="fl">0.9</span><span class="op">)</span> <span class="co"># NDVI</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">W1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">0.8</span>, <span class="fl">0.2</span><span class="op">)</span> <span class="co"># Réseau hydro</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">W2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">5</span>, <span class="fl">15</span><span class="op">)</span>    <span class="co"># Zones humides</span></span>
-<span><span class="va">units</span><span class="op">$</span><span class="va">W3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">8</span>, <span class="fl">2</span><span class="op">)</span>     <span class="co"># TWI</span></span>
+<span><span class="co"># 1. Créer les indices de famille (auto-détection des 12 familles)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_family_index.html">create_family_index</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Normaliser par famille</span></span>
-<span><span class="va">normalized</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span><span class="va">units</span>, method <span class="op">=</span> <span class="st">"minmax"</span>, by_family <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Créer indices de famille</span></span>
-<span><span class="va">family_scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
-<span>  <span class="va">normalized</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"weighted"</span>,</span>
-<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    C <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>C1 <span class="op">=</span> <span class="fl">0.7</span>, C2 <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span>,</span>
-<span>    W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>W1 <span class="op">=</span> <span class="fl">0.3</span>, W2 <span class="op">=</span> <span class="fl">0.3</span>, W3 <span class="op">=</span> <span class="fl">0.4</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="co"># 2. Visualiser le profil 12-axes d'une parcelle</span></span>
+<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  parcel_id <span class="op">=</span> <span class="st">"parcel_1"</span>,</span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_W"</span>, <span class="st">"family_A"</span>,</span>
+<span>               <span class="st">"family_F"</span>, <span class="st">"family_L"</span>, <span class="st">"family_T"</span>, <span class="st">"family_R"</span>,</span>
+<span>               <span class="st">"family_S"</span>, <span class="st">"family_P"</span>, <span class="st">"family_E"</span>, <span class="st">"family_N"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Visualiser profil multi-famille (v0.3.0: support 9-12 familles)</span></span>
-<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">family_scores</span>, unit_id <span class="op">=</span> <span class="fl">1</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span>
+<span><span class="co"># 3. Analyse de Pareto (identifier les meilleures parcelles)</span></span>
+<span><span class="va">pareto</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span><span class="op">)</span>,</span>
+<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">pareto</span><span class="op">$</span><span class="va">is_optimal</span><span class="op">)</span>  <span class="co"># Nombre de parcelles Pareto-optimales</span></span>
 <span></span>
-<span><span class="co"># Comparer plusieurs unités (v0.3.0)</span></span>
-<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">family_scores</span>, unit_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># 4. Clustering &amp; zonage multifonctionnel</span></span>
+<span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
+<span>  <span class="va">result</span>,</span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
+<span>  k <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Auto-détermination du k optimal</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">zones</span>, <span class="st">"optimal_k"</span><span class="op">)</span>  <span class="co"># k optimal déterminé</span></span>
+<span></span>
+<span><span class="co"># 5. Visualiser les trade-offs</span></span>
+<span><span class="fu"><a href="reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span></span>
+<span>  <span class="va">pareto</span>,</span>
+<span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
+<span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
+<span>  pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Trade-off Carbone vs Biodiversité"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="workflow-classique-v010-compatible">Workflow Classique v0.1.0 (Compatible)<a class="anchor" aria-label="anchor" href="#workflow-classique-v010-compatible"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Toujours fonctionnel pour compatibilité arrière</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="va">layers</span>, indicators <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span></span>
 <span><span class="va">normalized</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span><span class="va">results</span>, method <span class="op">=</span> <span class="st">"minmax"</span><span class="op">)</span></span>
@@ -159,7 +253,7 @@
 <div class="section level3">
 <h3 id="avec-vos-propres-données">Avec vos propres données<a class="anchor" aria-label="anchor" href="#avec-vos-propres-donn%C3%A9es"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
@@ -217,7 +311,7 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 7️⃣ Sauvegarder</span></span>
-<span><span class="fu">ggsave</span><span class="op">(</span><span class="st">"ecosystem_health.png"</span>, width <span class="op">=</span> <span class="fl">10</span>, height <span class="op">=</span> <span class="fl">8</span>, dpi <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span><span class="st">"ecosystem_health.png"</span>, width <span class="op">=</span> <span class="fl">10</span>, height <span class="op">=</span> <span class="fl">8</span>, dpi <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -227,7 +321,7 @@
 <div class="section level3">
 <h3 id="contenu">Contenu<a class="anchor" aria-label="anchor" href="#contenu"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Charger les unités spatiales (parcelles)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
@@ -271,7 +365,7 @@
 <div class="section level3">
 <h3 id="exemples-dutilisation">Exemples d’utilisation<a class="anchor" aria-label="anchor" href="#exemples-dutilisation"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Analyse complète</span></span>
@@ -318,7 +412,7 @@
 <h3 id="id_-indicateur-carbone">🌲 Indicateur Carbone<a class="anchor" aria-label="anchor" href="#id_-indicateur-carbone"></a>
 </h3>
 <p>Stock de carbone forestier à partir de biomasse aérienne.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -335,7 +429,7 @@
 <h3 id="id_-indicateur-biodiversité">🦋 Indicateur Biodiversité<a class="anchor" aria-label="anchor" href="#id_-indicateur-biodiversit%C3%A9"></a>
 </h3>
 <p>Indices de diversité (richesse, Shannon, Simpson).</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
 <span><span class="va">biodiv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_biodiversity.html">indicator_biodiversity</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
@@ -350,7 +444,7 @@
 <h3 id="id_-indicateur-eau">💧 Indicateur Eau<a class="anchor" aria-label="anchor" href="#id_-indicateur-eau"></a>
 </h3>
 <p>Régulation hydrique (TWI + proximité cours d’eau).</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
 <span><span class="va">water</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_water.html">indicator_water</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
@@ -366,7 +460,7 @@
 <h3 id="id_-indicateur-fragmentation">🌿 Indicateur Fragmentation<a class="anchor" aria-label="anchor" href="#id_-indicateur-fragmentation"></a>
 </h3>
 <p>Fragmentation forestière (couverture, connectivité).</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
 <span><span class="va">frag</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_fragmentation.html">indicator_fragmentation</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
@@ -381,7 +475,7 @@
 <h3 id="id_️-indicateur-accessibilité">🛤️ Indicateur Accessibilité<a class="anchor" aria-label="anchor" href="#id_%EF%B8%8F-indicateur-accessibilit%C3%A9"></a>
 </h3>
 <p>Accessibilité humaine (distance routes/sentiers).</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
 <span><span class="va">access</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_accessibility.html">indicator_accessibility</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
@@ -399,7 +493,7 @@
 <div class="section level3">
 <h3 id="exemple-1--avec-massif_demo-débutants">Exemple 1 : Avec massif_demo (Débutants)<a class="anchor" aria-label="anchor" href="#exemple-1--avec-massif_demo-d%C3%A9butants"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1️⃣ Charger les données de démonstration</span></span>
@@ -455,7 +549,7 @@
 <div class="section level3">
 <h3 id="exemple-2--avec-vos-propres-données">Exemple 2 : Avec vos propres données<a class="anchor" aria-label="anchor" href="#exemple-2--avec-vos-propres-donn%C3%A9es"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
@@ -490,7 +584,7 @@
 <div class="section level3">
 <h3 id="id_2-calcul-des-indicateurs">2. Calcul des indicateurs<a class="anchor" aria-label="anchor" href="#id_2-calcul-des-indicateurs"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculer tous les indicateurs</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
@@ -511,7 +605,7 @@
 <div class="section level3">
 <h3 id="id_3-normalisation">3. Normalisation<a class="anchor" aria-label="anchor" href="#id_3-normalisation"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Méthode 1 : Min-max (0-100, par défaut)</span></span>
 <span><span class="va">normalized</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
 <span>  <span class="va">results</span>,</span>
@@ -541,7 +635,7 @@
 <div class="section level3">
 <h3 id="id_4-indices-composites">4. Indices composites<a class="anchor" aria-label="anchor" href="#id_4-indices-composites"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Indice de santé écosystémique (pondération égale)</span></span>
 <span><span class="va">ecosystem</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
 <span>  <span class="va">normalized</span>,</span>
@@ -578,7 +672,7 @@
 <div class="section level3">
 <h3 id="id_5-visualisations">5. Visualisations<a class="anchor" aria-label="anchor" href="#id_5-visualisations"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Carte simple - Un indicateur</span></span>
 <span><span class="fu"><a href="reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span></span>
 <span>  <span class="va">results</span>,</span>
@@ -642,7 +736,7 @@
 <div class="section level2">
 <h2 id="id_-palettes-de-couleurs">🎨 Palettes de couleurs<a class="anchor" aria-label="anchor" href="#id_-palettes-de-couleurs"></a>
 </h2>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Viridis (défaut) - Perceptuellement uniforme, daltonien-friendly</span></span>
 <span><span class="fu"><a href="reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">data</span>, indicators <span class="op">=</span> <span class="st">"carbon"</span>, palette <span class="op">=</span> <span class="st">"viridis"</span><span class="op">)</span></span>
 <span></span>
@@ -721,7 +815,7 @@
 <div class="section level3">
 <h3 id="métadonnées-et-traçabilité">Métadonnées et traçabilité<a class="anchor" aria-label="anchor" href="#m%C3%A9tadonn%C3%A9es-et-tra%C3%A7abilit%C3%A9"></a>
 </h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_units.html">nemeton_units</a></span><span class="op">(</span></span>
 <span>  <span class="va">parcelles</span>,</span>
 <span>  metadata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -743,7 +837,7 @@
 <div class="section level3">
 <h3 id="préprocessing-manuel">Préprocessing manuel<a class="anchor" aria-label="anchor" href="#pr%C3%A9processing-manuel"></a>
 </h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sans préprocessing automatique</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span><span class="va">units</span>, <span class="va">layers</span>, preprocess <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
@@ -757,7 +851,7 @@
 <div class="section level3">
 <h3 id="gestion-des-erreurs">Gestion des erreurs<a class="anchor" aria-label="anchor" href="#gestion-des-erreurs"></a>
 </h3>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Si un indicateur échoue, les autres continuent</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
@@ -779,7 +873,7 @@
 <div class="section level3">
 <h3 id="vignettes-guides-complets">Vignettes (Guides Complets)<a class="anchor" aria-label="anchor" href="#vignettes-guides-complets"></a>
 </h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Introduction et workflows de base</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"getting-started"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
 <span></span>
@@ -835,21 +929,21 @@
 <div class="section level3">
 <h3 id="développement">Développement<a class="anchor" aria-label="anchor" href="#d%C3%A9veloppement"></a>
 </h3>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="co"># Cloner le dépôt</span></span>
-<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>git clone https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>pobsteta<span class="sc">/</span>nemeton.git</span>
-<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>cd nemeton</span>
-<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a></span>
-<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a><span class="co"># Installer les dépendances de développement</span></span>
-<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_deps</span>(<span class="at">dependencies =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a></span>
-<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a><span class="co"># Charger le package</span></span>
-<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">load_all</span>()</span>
-<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a></span>
-<span id="cb23-11"><a href="#cb23-11" tabindex="-1"></a><span class="co"># Lancer les tests</span></span>
-<span id="cb23-12"><a href="#cb23-12" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">test</span>()</span>
-<span id="cb23-13"><a href="#cb23-13" tabindex="-1"></a></span>
-<span id="cb23-14"><a href="#cb23-14" tabindex="-1"></a><span class="co"># Vérifier le package</span></span>
-<span id="cb23-15"><a href="#cb23-15" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="co"># Cloner le dépôt</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>git clone https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>pobsteta<span class="sc">/</span>nemeton.git</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>cd nemeton</span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="co"># Installer les dépendances de développement</span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_deps</span>(<span class="at">dependencies =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a><span class="co"># Charger le package</span></span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">load_all</span>()</span>
+<span id="cb24-10"><a href="#cb24-10" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" tabindex="-1"></a><span class="co"># Lancer les tests</span></span>
+<span id="cb24-12"><a href="#cb24-12" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">test</span>()</span>
+<span id="cb24-13"><a href="#cb24-13" tabindex="-1"></a></span>
+<span id="cb24-14"><a href="#cb24-14" tabindex="-1"></a><span class="co"># Vérifier le package</span></span>
+<span id="cb24-15"><a href="#cb24-15" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()</span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -864,13 +958,13 @@
 <pre><code>Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
 R package version 0.3.0. https://github.com/pobsteta/nemeton</code></pre>
 <p>BibTeX :</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="va">@Manual</span>{<span class="ot">nemeton2026</span>,</span>
-<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  <span class="dt">title</span> = {nemeton: Systemic Forest Analysis Using the Nemeton Method},</span>
-<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>  <span class="dt">author</span> = {Pascal Obstétar},</span>
-<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>  <span class="dt">year</span> = {2026},</span>
-<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>  <span class="dt">note</span> = {R package version 0.3.0},</span>
-<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>  <span class="dt">url</span> = {https://github.com/pobsteta/nemeton},</span>
-<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="va">@Manual</span>{<span class="ot">nemeton2026</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>  <span class="dt">title</span> = {nemeton: Systemic Forest Analysis Using the Nemeton Method},</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>  <span class="dt">author</span> = {Pascal Obstétar},</span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>  <span class="dt">year</span> = {2026},</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>  <span class="dt">note</span> = {R package version 0.3.0},</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>  <span class="dt">url</span> = {https://github.com/pobsteta/nemeton},</span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a>}</span></code></pre></div>
 <div class="section level3">
 <h3 id="nouveautés-v030-2026">Nouveautés v0.3.0 (2026)<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-v030-2026"></a>
 </h3>
@@ -959,9 +1053,10 @@ R package version 0.3.0. https://github.com/pobsteta/nemeton</code></pre>
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/pobsteta/nemeton/actions/workflows/r.yml" class="external-link"><img src="https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://github.com/pobsteta/nemeton/releases/tag/v0.3.0" class="external-link"><img src="https://img.shields.io/badge/version-0.3.0-blue.svg" alt="Version"></a></li>
-<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/tests-845%2B%20passing-success.svg" alt="Tests"></a></li>
-<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://github.com/pobsteta/nemeton/releases/tag/v0.4.0" class="external-link"><img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version"></a></li>
+<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/tests-1322%20passing-success.svg" alt="Tests"></a></li>
+<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/coverage-85.8%25-brightgreen.svg" alt="Coverage"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#maturing" class="external-link"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="Lifecycle: maturing"></a></li>
 <li><a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a></li>
 </ul>
 </div>

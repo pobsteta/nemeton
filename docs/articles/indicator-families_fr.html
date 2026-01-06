@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,10 @@
 <li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ NOUVEAU v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -66,7 +69,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-01-05</h4>
+            <h4 data-toc-skip class="date">2026-01-06</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/vignettes/indicator-families_fr.Rmd" class="external-link"><code>vignettes/indicator-families_fr.Rmd</code></a></small>
       <div class="d-none name"><code>indicator-families_fr.Rmd</code></div>
@@ -82,6 +85,8 @@ Obstétar</h4>
 d’indicateurs</strong> couvrant les dimensions biophysiques, écologiques
 et socio-économiques. Cette vignette présente le référentiel complet et
 démontre l’utilisation du système de familles.</p>
+<p><strong>Version actuelle : v0.3.0</strong> - <strong>9 familles sur
+12 implémentées</strong> avec 23 indicateurs opérationnels.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
@@ -269,13 +274,122 @@ pauvre) - F2 &gt; 5 : Risque d’érosion élevé</p>
 <p><strong>Interprétation</strong> : - L1 faible : Continuité forestière
 - L2 élevé : Forte proportion de lisière (effet de bord)</p>
 </div>
+<div class="section level3">
+<h3 id="famille-b-biodiversité-v0-3-0">Famille B : Biodiversité (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-b-biodiversit%C3%A9-v0-3-0"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># B1 - Protection réglementaire (% surface en zones protégées)</span></span>
+<span><span class="va">biodiversity_protection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  protected_areas <span class="op">=</span> <span class="va">protected_areas</span>,  <span class="co"># sf object ZNIEFF, Natura2000</span></span>
+<span>  source <span class="op">=</span> <span class="st">"local"</span>  <span class="co"># ou "wfs" pour téléchargement automatique</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># B2 - Diversité structurelle (Shannon)</span></span>
+<span><span class="va">biodiversity_structure</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  strata_field <span class="op">=</span> <span class="st">"strata"</span>,          <span class="co"># Strates (Emergent, Dominant, etc.)</span></span>
+<span>  age_class_field <span class="op">=</span> <span class="st">"age_class"</span>,    <span class="co"># Classes d'âge</span></span>
+<span>  species_field <span class="op">=</span> <span class="st">"species"</span>,        <span class="co"># Essences</span></span>
+<span>  method <span class="op">=</span> <span class="st">"shannon"</span>,               <span class="co"># ou "simpson"</span></span>
+<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>strata <span class="op">=</span> <span class="fl">0.4</span>, age <span class="op">=</span> <span class="fl">0.3</span>, species <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># B3 - Connectivité écologique (distance corridors)</span></span>
+<span><span class="va">biodiversity_connectivity</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  corridors <span class="op">=</span> <span class="va">corridors_sf</span>,  <span class="co"># Trames vertes et bleues</span></span>
+<span>  distance_method <span class="op">=</span> <span class="st">"edge"</span>,  <span class="co"># ou "centroid"</span></span>
+<span>  max_distance <span class="op">=</span> <span class="fl">3000</span>        <span class="co"># Distance max en mètres</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Interprétation</strong> : - B1 &gt; 50% : Protection
+significative - B2 (Shannon) &gt; 1.5 : Diversité structurelle élevée -
+B3 &lt; 500m : Excellente connectivité écologique</p>
+</div>
+<div class="section level3">
+<h3 id="famille-r-risques-résilience-v0-3-0">Famille R : Risques &amp; Résilience (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-r-risques-r%C3%A9silience-v0-3-0"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># R1 - Risque incendie (pente + essence + climat)</span></span>
+<span><span class="va">risk_fire</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_risk_fire.html">indicator_risk_fire</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  dem <span class="op">=</span> <span class="va">dem_raster</span>,              <span class="co"># Modèle numérique de terrain</span></span>
+<span>  species_field <span class="op">=</span> <span class="st">"species"</span>,     <span class="co"># Champ essence</span></span>
+<span>  climate <span class="op">=</span> <span class="va">climate_data</span>         <span class="co"># Température, précipitations</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># R2 - Vulnérabilité tempête (hauteur + densité + exposition)</span></span>
+<span><span class="va">risk_storm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_risk_storm.html">indicator_risk_storm</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  dem <span class="op">=</span> <span class="va">dem_raster</span>,</span>
+<span>  height_field <span class="op">=</span> <span class="st">"height"</span>,       <span class="co"># Hauteur dominante (m)</span></span>
+<span>  density_field <span class="op">=</span> <span class="st">"density"</span>      <span class="co"># Densité (0-1)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># R3 - Stress hydrique (TWI + climat + essences)</span></span>
+<span><span class="va">risk_drought</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_risk_drought.html">indicator_risk_drought</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  twi_field <span class="op">=</span> <span class="st">"W3"</span>,              <span class="co"># Topographic Wetness Index</span></span>
+<span>  climate <span class="op">=</span> <span class="va">climate_data</span>,</span>
+<span>  species_field <span class="op">=</span> <span class="st">"species"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Interprétation</strong> : - R1, R2, R3 &gt; 60 :
+Vulnérabilité élevée - Risques cumulés (≥2 indicateurs élevés) :
+Priorité gestion préventive</p>
+</div>
+<div class="section level3">
+<h3 id="famille-t-trame-temporelle-v0-3-0">Famille T : Trame Temporelle (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-t-trame-temporelle-v0-3-0"></a>
+</h3>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># T1 - Ancienneté des peuplements (années)</span></span>
+<span><span class="va">temporal_age</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_temporal_age.html">indicator_temporal_age</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  age_field <span class="op">=</span> <span class="st">"age"</span>,                    <span class="co"># Âge actuel</span></span>
+<span>  establishment_year_field <span class="op">=</span> <span class="st">"planted"</span>  <span class="co"># Année plantation (optionnel)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># T2 - Changements d'occupation du sol (%/an)</span></span>
+<span><span class="va">temporal_change</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_temporal_change.html">indicator_temporal_change</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  land_cover_early <span class="op">=</span> <span class="va">lc_1990_raster</span>,</span>
+<span>  land_cover_late <span class="op">=</span> <span class="va">lc_2020_raster</span>,</span>
+<span>  years_elapsed <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  interpretation <span class="op">=</span> <span class="st">"stability"</span>  <span class="co"># ou "dynamism"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Interprétation</strong> : - T1 &gt; 150 ans : Forêt ancienne
+(haute valeur patrimoniale) - T2 &lt; 1%/an : Stabilité de l’occupation
+- T2 &gt; 3%/an : Dynamique forte (urbanisation, déprise agricole)</p>
+</div>
+<div class="section level3">
+<h3 id="famille-a-air-microclimat-v0-3-0">Famille A : Air &amp; Microclimat (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat-v0-3-0"></a>
+</h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># A1 - Couverture arborée dans buffer 1km (%)</span></span>
+<span><span class="va">air_coverage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_air_coverage.html">indicator_air_coverage</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  land_cover <span class="op">=</span> <span class="va">land_cover_raster</span>,</span>
+<span>  buffer_radius <span class="op">=</span> <span class="fl">1000</span>  <span class="co"># Rayon en mètres</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># A2 - Qualité de l'air (indice ou proxy distance)</span></span>
+<span><span class="va">air_quality</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_air_quality.html">indicator_air_quality</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  roads <span class="op">=</span> <span class="va">roads_sf</span>,           <span class="co"># Réseau routier (optionnel)</span></span>
+<span>  urban_areas <span class="op">=</span> <span class="va">urban_sf</span>,     <span class="co"># Zones urbaines (optionnel)</span></span>
+<span>  atmo_data <span class="op">=</span> <span class="cn">NULL</span>,           <span class="co"># Données ATMO si disponibles</span></span>
+<span>  method <span class="op">=</span> <span class="st">"proxy"</span>            <span class="co"># "atmo" si données disponibles</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Interprétation</strong> : - A1 &gt; 70% : Couverture arborée
+dense (forte régulation climatique) - A2 &gt; 70 : Bonne qualité de
+l’air</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="système-de-préfixes-et-détection-automatique">Système de préfixes et détection automatique<a class="anchor" aria-label="anchor" href="#syst%C3%A8me-de-pr%C3%A9fixes-et-d%C3%A9tection-automatique"></a>
 </h2>
 <p>Le package utilise un système de <strong>préfixes de famille</strong>
 pour organiser les indicateurs :</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Les indicateurs bruts suivent le pattern : famille_nom</span></span>
 <span><span class="co"># Exemples :</span></span>
 <span><span class="va">carbon_biomass</span>    <span class="co"># Famille C</span></span>
@@ -288,7 +402,7 @@ pour organiser les indicateurs :</p>
 <div class="section level3">
 <h3 id="détection-automatique-de-famille">Détection automatique de famille<a class="anchor" aria-label="anchor" href="#d%C3%A9tection-automatique-de-famille"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Détecter la famille d'un indicateur</span></span>
 <span><span class="fu"><a href="../reference/detect_indicator_family.html">detect_indicator_family</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span><span class="op">)</span></span>
 <span><span class="co"># [1] "C"</span></span>
@@ -308,7 +422,7 @@ pour organiser les indicateurs :</p>
 <h2 id="normalisation-par-famille">Normalisation par famille<a class="anchor" aria-label="anchor" href="#normalisation-par-famille"></a>
 </h2>
 <p>Normalisez tous les indicateurs d’une ou plusieurs familles :</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Charger les données</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -335,7 +449,7 @@ pour organiser les indicateurs :</p>
 </h2>
 <p>Créez des indices agrégés par famille avec
 <code><a href="../reference/create_family_index.html">create_family_index()</a></code> :</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple fictif (nécessite indicateurs C1 et C2)</span></span>
 <span><span class="co"># Indice famille C (Carbone)</span></span>
 <span><span class="va">score_carbon</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span></span>
@@ -360,7 +474,7 @@ indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
 <div class="section level3">
 <h3 id="radar-chart-12-familles">Radar chart 12 familles<a class="anchor" aria-label="anchor" href="#radar-chart-12-familles"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Créer scores pour chaque famille</span></span>
 <span><span class="va">families</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C"</span>, <span class="st">"W"</span>, <span class="st">"F"</span>, <span class="st">"L"</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">fam</span> <span class="kw">in</span> <span class="va">families</span><span class="op">)</span> <span class="op">{</span></span>
@@ -382,7 +496,7 @@ indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
 <div class="section level3">
 <h3 id="cartes-par-famille">Cartes par famille<a class="anchor" aria-label="anchor" href="#cartes-par-famille"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Visualiser les scores de famille</span></span>
 <span><span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span></span>
 <span>  <span class="va">normalized</span>,</span>
@@ -395,9 +509,69 @@ indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
 </div>
 </div>
 <div class="section level2">
+<h2 id="analyse-croisée-inter-familles-v0-3-0">Analyse croisée inter-familles (v0.3.0)<a class="anchor" aria-label="anchor" href="#analyse-crois%C3%A9e-inter-familles-v0-3-0"></a>
+</h2>
+<p>La v0.3.0 introduit des outils d’<strong>analyse croisée</strong>
+pour identifier synergies et conflits entre familles.</p>
+<div class="section level3">
+<h3 id="matrice-de-corrélations">Matrice de corrélations<a class="anchor" aria-label="anchor" href="#matrice-de-corr%C3%A9lations"></a>
+</h3>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Calculer les corrélations entre indices de familles</span></span>
+<span><span class="va">corr_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_family_correlations.html">compute_family_correlations</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  families <span class="op">=</span> <span class="cn">NULL</span>,      <span class="co"># Auto-détection des family_*</span></span>
+<span>  method <span class="op">=</span> <span class="st">"pearson"</span>    <span class="co"># ou "spearman", "kendall"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualiser les corrélations</span></span>
+<span><span class="fu"><a href="../reference/plot_correlation_matrix.html">plot_correlation_matrix</a></span><span class="op">(</span></span>
+<span>  <span class="va">corr_matrix</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"circle"</span>,    <span class="co"># ou "square", "number", "color"</span></span>
+<span>  palette <span class="op">=</span> <span class="st">"RdBu"</span>,     <span class="co"># Rouge=synergies, Bleu=conflits</span></span>
+<span>  title <span class="op">=</span> <span class="st">"Synergies et conflits entre services écosystémiques"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Interprétation</strong> : - <strong>Corrélation positive
+(rouge)</strong> : Synergies (ex: Biodiversité × Ancienneté) -
+<strong>Corrélation négative (bleu)</strong> : Conflits/trade-offs (ex:
+Protection × Risques) - <strong>Corrélation faible (blanc)</strong> :
+Indépendance</p>
+</div>
+<div class="section level3">
+<h3 id="identification-de-hotspots-multi-critères">Identification de hotspots multi-critères<a class="anchor" aria-label="anchor" href="#identification-de-hotspots-multi-crit%C3%A8res"></a>
+</h3>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Identifier parcelles excellentes sur plusieurs familles</span></span>
+<span><span class="va">hotspots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_hotspots.html">identify_hotspots</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>,</span>
+<span>  threshold <span class="op">=</span> <span class="fl">80</span>,      <span class="co"># Top 20% pour chaque famille</span></span>
+<span>  min_families <span class="op">=</span> <span class="fl">3</span>     <span class="co"># Au moins 3 familles élevées</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Filtrer les hotspots</span></span>
+<span><span class="va">hotspot_parcels</span> <span class="op">&lt;-</span> <span class="va">hotspots</span><span class="op">[</span><span class="va">hotspots</span><span class="op">$</span><span class="va">is_hotspot</span>, <span class="op">]</span></span>
+<span></span>
+<span><span class="co"># Afficher détails</span></span>
+<span><span class="va">hotspot_parcels</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parcel_id"</span>, <span class="st">"hotspot_count"</span>, <span class="st">"hotspot_families"</span><span class="op">)</span><span class="op">]</span></span>
+<span></span>
+<span><span class="co"># Cartographier</span></span>
+<span><span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span></span>
+<span>  <span class="va">hotspots</span>,</span>
+<span>  indicator <span class="op">=</span> <span class="st">"hotspot_count"</span>,</span>
+<span>  palette <span class="op">=</span> <span class="st">"YlOrRd"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Nombre de familles à haute valeur"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Cas d’usage</strong> : - <strong>Conservation</strong> :
+Parcelles à haute biodiversité + ancienneté + connectivité -
+<strong>Gestion des risques</strong> : Parcelles cumulant fire + storm +
+drought - <strong>Optimisation multi-objectif</strong> : Équilibre
+production/protection</p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="exemple-complet-workflow-multi-famille">Exemple complet : Workflow multi-famille<a class="anchor" aria-label="anchor" href="#exemple-complet-workflow-multi-famille"></a>
 </h2>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Charger données</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -446,7 +620,7 @@ indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
 <h2 id="liste-des-indicateurs-disponibles">Liste des indicateurs disponibles<a class="anchor" aria-label="anchor" href="#liste-des-indicateurs-disponibles"></a>
 </h2>
 <p>Consultez la liste complète des indicateurs implémentés :</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Lister tous les indicateurs disponibles</span></span>
 <span><span class="fu"><a href="../reference/list_indicators.html">list_indicators</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -455,15 +629,22 @@ indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
 <span><span class="fu"><a href="../reference/list_indicators.html">list_indicators</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"W"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="roadmap-v0-2-0-v1-0-0">Roadmap v0.2.0 → v1.0.0<a class="anchor" aria-label="anchor" href="#roadmap-v0-2-0-v1-0-0"></a>
+<h2 id="roadmap-v0-3-0-v1-0-0">Roadmap v0.3.0 → v1.0.0<a class="anchor" aria-label="anchor" href="#roadmap-v0-3-0-v1-0-0"></a>
 </h2>
-<p><strong>Version actuelle (v0.2.0)</strong> : 5 familles partiellement
-implémentées (C, W, F, L + infrastructure temporelle)</p>
-<p><strong>Versions futures</strong> : - <strong>v0.3.0</strong> :
-Familles B, T, R complètes - <strong>v0.4.0</strong> : Familles A, S -
-<strong>v0.5.0</strong> : Familles P, E, N + Dashboard Shiny -
+<p><strong>Version actuelle (v0.3.0)</strong> : <strong>9 familles sur
+12 implémentées</strong> (C, B, W, A, F, L, T, R + partiel S)</p>
+<p><strong>Indicateurs opérationnels</strong> : - ✅ <strong>23
+indicateurs</strong> pleinement fonctionnels - ✅ <strong>Analyse
+croisée inter-familles</strong> (corrélations, hotspots multi-critères)
+- ✅ <strong>Infrastructure temporelle complète</strong> (analyse
+multi-périodes, détection de changements) - ✅ <strong>Support bilingue
+FR/EN</strong> - ✅ <strong>845+ tests</strong> avec 87% de
+couverture</p>
+<p><strong>Versions futures</strong> : - <strong>v0.4.0</strong> :
+Familles S, P complètes (usages sociaux, production) -
+<strong>v0.5.0</strong> : Familles E, N + Dashboard Shiny interactif -
 <strong>v1.0.0</strong> : Référentiel complet 12 familles (36
-indicateurs)</p>
+indicateurs) + analyses avancées</p>
 </div>
 <div class="section level2">
 <h2 id="références">Références<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences"></a>
@@ -476,12 +657,16 @@ indicateurs)</p>
 <li>Analyse temporelle :
 <code><a href="../articles/temporal-analysis_fr.html">vignette("temporal-analysis_fr")</a></code>
 </li>
+<li>
+<strong>Nouveautés v0.3.0</strong> :
+<code><a href="../articles/biodiversity-resilience-v030_fr.html">vignette("biodiversity-resilience-v030_fr")</a></code> - Familles B,
+R, T, A + Analyse croisée</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="session-info">Session Info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -506,7 +691,7 @@ indicateurs)</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_4.0.1 nemeton_0.3.0</span></span>
+<span><span class="co">#&gt; [1] ggplot2_4.0.1 nemeton_0.4.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    </span></span>

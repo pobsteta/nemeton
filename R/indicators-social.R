@@ -6,6 +6,7 @@
 #' - S3: Population proximity (visitor pressure potential)
 #'
 #' @name indicators-social
+#' @keywords internal
 #' @family indicators
 NULL
 
