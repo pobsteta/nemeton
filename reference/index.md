@@ -11,6 +11,8 @@ spatiales et les couches
   : Create nemeton_layers object
 - [`massif_demo_units`](https://pobsteta.github.io/nemeton/reference/massif_demo_units.md)
   : Massif Demo - Example Forest Dataset
+- [`massif_demo_units_extended`](https://pobsteta.github.io/nemeton/reference/massif_demo_units_extended.md)
+  : Complete Demo Dataset with 12-Family Ecosystem Services Referential
 - [`massif_demo_layers()`](https://pobsteta.github.io/nemeton/reference/massif_demo_layers.md)
   : Load Massif Demo Spatial Layers
 
@@ -113,6 +115,52 @@ Tree coverage and air quality / Couverture arborée et qualité de l’air
 - [`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)
   : Calculate Air Quality Index (A2)
 
+## Family S: Social & Recreation / Famille S : Social & Usages récréatifs (v0.4.0)
+
+Trail density, accessibility, and population proximity / Densité de
+sentiers, accessibilité et proximité population
+
+- [`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)
+  : S1: Trail Density Indicator
+- [`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)
+  : S2: Multimodal Accessibility Indicator
+- [`indicator_social_proximity()`](https://pobsteta.github.io/nemeton/reference/indicator_social_proximity.md)
+  : S3: Population Proximity Indicator
+
+## Family P: Production & Economy / Famille P : Production & Économie (v0.4.0)
+
+Wood volume, site productivity, and timber quality / Volume bois,
+productivité station et qualité bois d’œuvre
+
+- [`indicator_productive_volume()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_volume.md)
+  : P1: Standing Timber Volume Indicator
+- [`indicator_productive_station()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_station.md)
+  : P2: Site Productivity Index Indicator
+- [`indicator_productive_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_quality.md)
+  : P3: Timber Quality Score Indicator
+
+## Family E: Energy & Climate / Famille E : Énergie & Climat (v0.4.0)
+
+Fuelwood potential and carbon avoidance / Potentiel bois-énergie et
+évitement carbone
+
+- [`indicator_energy_fuelwood()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_fuelwood.md)
+  : E1: Fuelwood Potential Indicator
+- [`indicator_energy_avoidance()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_avoidance.md)
+  : E2: Carbon Emission Avoidance Indicator
+
+## Family N: Naturalness & Wilderness / Famille N : Naturalité (v0.4.0)
+
+Infrastructure distance, forest continuity, and wilderness composite /
+Distance infrastructures, continuité forestière et indice wilderness
+
+- [`indicator_naturalness_distance()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_distance.md)
+  : N1: Infrastructure Distance Indicator
+- [`indicator_naturalness_continuity()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_continuity.md)
+  : N2: Forest Continuity Indicator
+- [`indicator_naturalness_composite()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_composite.md)
+  : N3: Composite Naturalness Index
+
 ## Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)
 
 Biodiversity, fragmentation, accessibility indicators / Indicateurs de
@@ -146,6 +194,18 @@ de corrélations et identification de hotspots multi-critères
   : Identify Multi-Criteria Hotspots
 - [`plot_correlation_matrix()`](https://pobsteta.github.io/nemeton/reference/plot_correlation_matrix.md)
   : Plot Correlation Matrix Heatmap
+
+## Advanced Multi-Criteria Analysis / Analyse Avancée Multi-Critères (v0.4.0)
+
+Pareto optimality, clustering, and trade-off analysis / Optimisation
+Pareto, clustering et analyse de trade-offs
+
+- [`identify_pareto_optimal()`](https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.md)
+  : Identify Pareto Optimal Solutions
+- [`cluster_parcels()`](https://pobsteta.github.io/nemeton/reference/cluster_parcels.md)
+  : Cluster Parcels by Multi-Family Profiles
+- [`plot_tradeoff()`](https://pobsteta.github.io/nemeton/reference/plot_tradeoff.md)
+  : Plot Trade-off Analysis Between Two Objectives
 
 ## Normalization & Aggregation / Normalisation & Agrégation
 
