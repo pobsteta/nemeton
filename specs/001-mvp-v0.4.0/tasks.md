@@ -203,20 +203,20 @@ R package structure (from plan.md):
 
 ### Tests for User Story 5
 
-- [ ] T085 [P] [US5] Create test fixture for 12-family dataset in tests/testthat/fixtures/dataset_12families.rds
-- [ ] T086 [US5] Write tests for 12-axis radar plot generation in tests/testthat/test-visualization.R
-- [ ] T087 [US5] Add tests for 12×12 correlation matrix in tests/testthat/test-analysis-correlation.R
-- [ ] T088 [US5] Add tests for 12-family hotspot detection in tests/testthat/test-analysis-correlation.R
-- [ ] T089 [US5] Add tests for normalization of all 11 new indicators in tests/testthat/test-normalization.R
+- [X] T085 [P] [US5] Create test fixture for 12-family dataset in tests/testthat/fixtures/dataset_12families.rds
+- [X] T086 [US5] Write tests for 12-axis radar plot generation in tests/testthat/test-visualization.R
+- [X] T087 [US5] Add tests for 12×12 correlation matrix in tests/testthat/test-analysis-correlation.R
+- [X] T088 [US5] Add tests for 12-family hotspot detection in tests/testthat/test-analysis-correlation.R
+- [X] T089 [US5] Add tests for normalization of all 11 new indicators in tests/testthat/test-normalization.R
 
 ### Implementation for User Story 5
 
-- [ ] T090 [US5] Verify 12-axis radar plot works with nemeton_radar() (already extended in Phase 2)
-- [ ] T091 [US5] Verify 12×12 correlation matrix generation (already extended in Phase 2)
-- [ ] T092 [US5] Verify 12-family hotspot detection (already extended in Phase 2)
-- [ ] T093 [US5] Add normalization presets for S, P, E, N families to R/normalization.R
-- [ ] T094 [US5] Document suitability of normalization methods per new indicator (linear vs log vs inverse)
-- [ ] T095 [US5] Verify all integration tests pass for 12-family system
+- [X] T090 [US5] Verify 12-axis radar plot works with nemeton_radar() (already extended in Phase 2)
+- [X] T091 [US5] Verify 12×12 correlation matrix generation (already extended in Phase 2)
+- [X] T092 [US5] Verify 12-family hotspot detection (already extended in Phase 2)
+- [X] T093 [US5] Add normalization presets for S, P, E, N families to R/normalization.R
+- [X] T094 [US5] Document suitability of normalization methods per new indicator (linear vs log vs inverse)
+- [X] T095 [US5] Verify all integration tests pass for 12-family system
 
 **Checkpoint**: All 12 families integrated seamlessly with existing infrastructure
 
