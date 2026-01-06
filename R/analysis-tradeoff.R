@@ -109,9 +109,7 @@ plot_tradeoff <- function(data,
 
   # Check ggplot2 is available
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop(msg("error_ggplot2_required",
-                       "Package 'ggplot2' is required for plotting. Install with: install.packages('ggplot2')"),
-         call. = FALSE)
+    stop(msg("error_ggplot2_required"), call. = FALSE)
   }
 
   # Check data
@@ -250,8 +248,7 @@ plot_tradeoff <- function(data,
         max.overlaps = 20
       )
     } else {
-      warning(msg("warning_ggrepel_not_installed",
-                            "Package 'ggrepel' not installed. Labels may overlap. Install with: install.packages('ggrepel')"))
+      warning(msg("warning_ggrepel_not_installed"))
       p <- p + ggplot2::geom_text(
         ggplot2::aes(label = .data[[label]]),
         size = 3,

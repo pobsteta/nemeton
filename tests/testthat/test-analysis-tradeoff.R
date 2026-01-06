@@ -22,8 +22,8 @@ test_that("plot_tradeoff creates valid ggplot object (T117)", {
   expect_gte(length(p$layers), 1)
 
   # Check axes are correctly mapped
-  expect_equal(as.character(p$mapping$x), "family_C")
-  expect_equal(as.character(p$mapping$y), "family_B")
+  expect_equal(rlang::as_label(p$mapping$x), "family_C")
+  expect_equal(rlang::as_label(p$mapping$y), "family_B")
 
   # Check labels
   expect_true(!is.null(p$labels$x))
@@ -46,7 +46,7 @@ test_that("plot_tradeoff handles point customization", {
     color = "family_P"
   )
   expect_s3_class(p_color, "ggplot")
-  expect_equal(as.character(p_color$mapping$colour), "family_P")
+  expect_equal(rlang::as_label(p_color$mapping$colour), "family_P")
 
   # Test with size mapping
   p_size <- plot_tradeoff(
@@ -56,7 +56,7 @@ test_that("plot_tradeoff handles point customization", {
     size = "family_P"
   )
   expect_s3_class(p_size, "ggplot")
-  expect_equal(as.character(p_size$mapping$size), "family_P")
+  expect_equal(rlang::as_label(p_size$mapping$size), "family_P")
 
   # Test with both color and size
   p_both <- plot_tradeoff(

@@ -175,25 +175,25 @@ test_that("cluster_parcels parameter validation", {
   # Test invalid families (column doesn't exist)
   expect_error(
     cluster_parcels(data, families = c("invalid_fam"), k = 3, method = "kmeans"),
-    "families.*not found"
+    "(?i)families.*not found"
   )
 
   # Test invalid method
   expect_error(
     cluster_parcels(data, families = families, k = 3, method = "invalid_method"),
-    "method.*must be"
+    "(?i)method.*must be"
   )
 
   # Test invalid k (too small)
   expect_error(
     cluster_parcels(data, families = families, k = 1, method = "kmeans"),
-    "k.*must be.*least 2"
+    "(?i)k.*must be.*least 2"
   )
 
   # Test invalid k (too large)
   expect_error(
     cluster_parcels(data, families = families, k = nrow(data), method = "kmeans"),
-    "k.*must be.*less than"
+    "(?i)k.*must be.*less than"
   )
 
   # Test with non-numeric families
@@ -241,6 +241,6 @@ test_that("cluster_parcels handles missing values appropriately", {
   # Should error or handle gracefully
   expect_error(
     cluster_parcels(data_na, families = families, k = 3, method = "kmeans"),
-    "NA|missing"
+    "(?i)NA|missing"
   )
 })

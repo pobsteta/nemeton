@@ -126,16 +126,14 @@ cluster_parcels <- function(data,
 
   # Check method
   if (!method %in% c("kmeans", "hierarchical")) {
-    stop(msg("error_invalid_method",
-                       "Method must be either 'kmeans' or 'hierarchical'"),
-         call. = FALSE)
+    stop(msg("error_invalid_method"), call. = FALSE)
   }
 
   # Check k validity
   n <- nrow(data)
   if (!is.null(k)) {
     if (k < 2) {
-      stop(msg("error_k_too_small", "k must be at least 2"), call. = FALSE)
+      stop(msg("error_k_too_small"), call. = FALSE)
     }
     if (k >= n) {
       stop(sprintf(msg("error_k_too_large"), n),
@@ -182,7 +180,7 @@ cluster_parcels <- function(data,
     }
 
     # Select k with highest silhouette
-    optimal_k <- which.max(silhouette_scores) + 1
+    optimal_k <- as.integer(which.max(silhouette_scores) + 1)
     cli::cli_alert_success(sprintf(msg("msg_cluster_optimal_k"), optimal_k, silhouette_scores[optimal_k - 1]))
   }
 
@@ -203,16 +201,16 @@ cluster_parcels <- function(data,
   # === COMPUTE CLUSTER PROFILES ===
 
   # Calculate mean family values per cluster
-  cluster_profile <- data.frame(cluster = 1:optimal_k)
+  # Each row represents a cluster (row 1 = cluster 1, etc.)
+  cluster_profile <- data.frame(row.names = 1:optimal_k)
   for (fam in families) {
     cluster_profile[[fam]] <- sapply(1:optimal_k, function(cl) {
       mean(data[[fam]][clusters == cl], na.rm = TRUE)
     })
   }
 
-  cli::cli_alert_success(msg("msg_cluster_complete",
-                                        sprintf("Clustering complete. Cluster sizes: %s",
-                                               paste(table(clusters), collapse = ", "))))
+  cli::cli_alert_success(sprintf(msg("msg_cluster_complete"),
+                                        paste(table(clusters), collapse = ", ")))
 
   # === RETURN RESULT ===
 
