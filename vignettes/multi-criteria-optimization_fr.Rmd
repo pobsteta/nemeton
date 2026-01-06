@@ -30,13 +30,12 @@ Cette vignette présente les outils d'**optimisation multi-critères** du packag
 2. **Clustering** : Regrouper les parcelles selon leurs profils multi-familles
 3. **Trade-off Analysis** : Visualiser les compromis entre objectifs
 
-```{r}
+```{r, message=FALSE}
 library(nemeton)
 library(ggplot2)
 library(dplyr)
 
-# Charger le jeu de données étendu
-data("massif_demo_units_extended")
+# Le jeu de données étendu est disponible via LazyData
 ```
 
 # 1. Analyse de Pareto Optimality

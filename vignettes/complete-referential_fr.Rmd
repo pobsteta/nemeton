@@ -43,14 +43,14 @@ Avec la version 0.4.0, le package `nemeton` propose un référentiel complet de 
 
 # Chargement des Données
 
-```{r}
+```{r, message=FALSE}
 library(nemeton)
 library(ggplot2)
 library(dplyr)
+```
 
-# Charger le jeu de données étendu avec toutes les 12 familles
-data("massif_demo_units_extended")
-
+```{r}
+# Le jeu de données étendu avec toutes les 12 familles est disponible via LazyData
 # Aperçu des données
 head(massif_demo_units_extended)
 ```
@@ -79,10 +79,8 @@ Le radar 12-axes permet de visualiser le profil complet d'une parcelle sur l'ens
 # Radar pour la parcelle 1 (toutes les 12 familles)
 nemeton_radar(
   result,
-  parcel_id = "parcel_1",
-  families = c("family_C", "family_B", "family_W", "family_A",
-               "family_F", "family_L", "family_T", "family_R",
-               "family_S", "family_P", "family_E", "family_N")
+  unit_id = 1,
+  mode = "family"
 )
 ```
 
@@ -236,7 +234,7 @@ result_composite <- create_composite_index(
   result_norm,
   indicators = families_all,
   weights = rep(1, 12),  # Poids égaux pour toutes les familles
-  index_name = "nemeton_index_12"
+  name = "nemeton_index_12"
 )
 
 # Visualiser l'indice composite
@@ -257,7 +255,7 @@ composite_conservation <- create_composite_index(
   result_norm,
   indicators = c("family_C", "family_B", "family_W", "family_N"),
   weights = c(0.3, 0.4, 0.15, 0.15),
-  index_name = "conservation"
+  name = "conservation"
 )
 
 # Scénario 2: Production durable
@@ -265,7 +263,7 @@ composite_production <- create_composite_index(
   result_norm,
   indicators = c("family_P", "family_E", "family_F", "family_C"),
   weights = c(0.4, 0.25, 0.2, 0.15),
-  index_name = "production"
+  name = "production"
 )
 
 # Scénario 3: Services sociaux
@@ -273,7 +271,7 @@ composite_social <- create_composite_index(
   result_norm,
   indicators = c("family_S", "family_A", "family_L", "family_R"),
   weights = c(0.35, 0.25, 0.2, 0.2),
-  index_name = "social"
+  name = "social"
 )
 
 # Comparer les scénarios
