@@ -239,7 +239,15 @@ identify_hotspots <- function(units,
       fam_value <- result[[fam]][i]
       fam_threshold <- thresholds_list[[fam]]
 
-      if (!is.na(fam_value) && !is.na(fam_threshold) && fam_value >= fam_threshold) {
+      # For threshold=100, use strict > (no values can be above max)
+      # For other thresholds, use >= (include values at the percentile)
+      is_above <- if (threshold == 100) {
+        fam_value > fam_threshold
+      } else {
+        fam_value >= fam_threshold
+      }
+
+      if (!is.na(fam_value) && !is.na(fam_threshold) && is_above) {
         high_families <- c(high_families, fam)
       }
     }
