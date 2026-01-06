@@ -7,7 +7,7 @@
 
 **Organization**: Tasks grouped by user story to enable independent implementation and testing.
 
-**Progress**: 0/135 tasks complete (0%)
+**Progress**: 84/141 tasks complete (60%)
 
 ---
 
@@ -33,13 +33,13 @@ R package structure (from plan.md):
 
 **Purpose**: Project initialization and dependency updates
 
-- [ ] T001 Update DESCRIPTION file with new dependencies (osmdata, cluster, ggrepel)
-- [ ] T002 [P] Create internal data files structure for lookup tables (inst/extdata/)
-- [ ] T003 [P] Bundle IFN volume equations table in inst/extdata/ifn_volume_equations.csv
-- [ ] T004 [P] Bundle ADEME emission factors table in inst/extdata/ademe_emission_factors.csv
-- [ ] T005 [P] Bundle wood density lookup table in inst/extdata/wood_density.csv
-- [ ] T006 [P] Bundle productivity tables in inst/extdata/productivity_tables.csv
-- [ ] T007 [P] Create test fixtures directory structure (tests/testthat/fixtures/)
+- [X] T001 Update DESCRIPTION file with new dependencies (osmdata, cluster, ggrepel)
+- [X] T002 [P] Create internal data files structure for lookup tables (inst/extdata/)
+- [X] T003 [P] Bundle IFN volume equations table in inst/extdata/ifn_volume_equations.csv
+- [X] T004 [P] Bundle ADEME emission factors table in inst/extdata/ademe_emission_factors.csv
+- [X] T005 [P] Bundle wood density lookup table in inst/extdata/wood_density.csv
+- [X] T006 [P] Bundle productivity tables in inst/extdata/productivity_tables.csv
+- [X] T007 [P] Create test fixtures directory structure (tests/testthat/fixtures/)
 
 ---
 
@@ -49,17 +49,17 @@ R package structure (from plan.md):
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Extend R/normalization.R to add normalization methods for 11 new indicators
-- [ ] T009 Extend R/family-system.R to support families S, P, E, N in create_family_index()
-- [ ] T010 Extend R/family-system.R to support families S, P, E, N in get_family_name()
-- [ ] T011 Extend R/visualization.R to support 12-axis radar plots in nemeton_radar()
-- [ ] T012 Extend R/analysis-correlation.R to handle 12×12 family matrices in compute_family_correlations()
-- [ ] T013 Extend R/analysis-correlation.R to handle 12 families in identify_hotspots()
-- [ ] T014 Extend R/i18n.R to add FR/EN messages for new indicator families
-- [ ] T015 Extend R/utils.R to add helper for OSM bounding box detection
-- [ ] T016 [P] Extend R/utils.R to add helper for IFN equation lookup (extend existing allometric infrastructure)
-- [ ] T017 [P] Extend R/utils.R to add helper for species threshold lookup
-- [ ] T018 [P] Extend R/utils.R to add helper for ADEME emission factor lookup
+- [X] T008 Extend R/normalization.R to add normalization methods for 11 new indicators
+- [X] T009 Extend R/family-system.R to support families S, P, E, N in create_family_index()
+- [X] T010 Extend R/family-system.R to support families S, P, E, N in get_family_name()
+- [X] T011 Extend R/visualization.R to support 12-axis radar plots in nemeton_radar()
+- [X] T012 Extend R/analysis-correlation.R to handle 12×12 family matrices in compute_family_correlations()
+- [X] T013 Extend R/analysis-correlation.R to handle 12 families in identify_hotspots()
+- [X] T014 Extend R/i18n.R to add FR/EN messages for new indicator families
+- [X] T015 Extend R/utils.R to add helper for OSM bounding box detection
+- [X] T016 [P] Extend R/utils.R to add helper for IFN equation lookup (extend existing allometric infrastructure)
+- [X] T017 [P] Extend R/utils.R to add helper for species threshold lookup
+- [X] T018 [P] Extend R/utils.R to add helper for ADEME emission factor lookup
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -73,25 +73,25 @@ R package structure (from plan.md):
 
 ### Tests for User Story 1 (TDD: Write these FIRST, ensure they FAIL)
 
-- [ ] T019 [P] [US1] Create test fixture for S1 (trail density) in tests/testthat/fixtures/social_trails.rds
-- [ ] T020 [P] [US1] Create test fixture for S2 (accessibility) in tests/testthat/fixtures/social_accessibility.rds
-- [ ] T021 [P] [US1] Create test fixture for S3 (population) in tests/testthat/fixtures/social_population.rds
-- [ ] T022 [P] [US1] Create reference output fixture in tests/testthat/fixtures/social_reference.rds
-- [ ] T023 [US1] Write test_indicators_social.R with tests for indicator_social_trails()
-- [ ] T024 [US1] Add tests for indicator_social_accessibility() to tests/testthat/test-indicators-social.R
-- [ ] T025 [US1] Add tests for indicator_social_proximity() to tests/testthat/test-indicators-social.R
-- [ ] T026 [US1] Add test for family_S composite creation to tests/testthat/test-indicators-social.R
+- [X] T019 [P] [US1] Create test fixture for S1 (trail density) in tests/testthat/fixtures/social_trails.rds
+- [X] T020 [P] [US1] Create test fixture for S2 (accessibility) in tests/testthat/fixtures/social_accessibility.rds
+- [X] T021 [P] [US1] Create test fixture for S3 (population) in tests/testthat/fixtures/social_population.rds
+- [X] T022 [P] [US1] Create reference output fixture in tests/testthat/fixtures/social_reference.rds
+- [X] T023 [US1] Write test_indicators_social.R with tests for indicator_social_trails()
+- [X] T024 [US1] Add tests for indicator_social_accessibility() to tests/testthat/test-indicators-social.R
+- [X] T025 [US1] Add tests for indicator_social_proximity() to tests/testthat/test-indicators-social.R
+- [X] T026 [US1] Add test for family_S composite creation to tests/testthat/test-indicators-social.R
 
 ### Implementation for User Story 1
 
-- [ ] T027 [US1] Create R/indicators-social.R file with roxygen2 skeleton
-- [ ] T028 [US1] Implement indicator_social_trails() in R/indicators-social.R (OSM + local methods)
-- [ ] T029 [US1] Implement indicator_social_accessibility() in R/indicators-social.R (multimodal scoring)
-- [ ] T030 [US1] Implement indicator_social_proximity() in R/indicators-social.R (buffer + population sum)
-- [ ] T031 [US1] Add parameter validation and error handling to all S indicators
-- [ ] T032 [US1] Add bilingual cli messages (FR/EN) to all S indicator functions
-- [ ] T033 [US1] Update NAMESPACE to export indicator_social_* functions
-- [ ] T034 [US1] Verify all tests pass for Social family indicators
+- [X] T027 [US1] Create R/indicators-social.R file with roxygen2 skeleton
+- [X] T028 [US1] Implement indicator_social_trails() in R/indicators-social.R (OSM + local methods)
+- [X] T029 [US1] Implement indicator_social_accessibility() in R/indicators-social.R (multimodal scoring)
+- [X] T030 [US1] Implement indicator_social_proximity() in R/indicators-social.R (buffer + population sum)
+- [X] T031 [US1] Add parameter validation and error handling to all S indicators
+- [X] T032 [US1] Add bilingual cli messages (FR/EN) to all S indicator functions
+- [X] T033 [US1] Update NAMESPACE to export indicator_social_* functions
+- [X] T034 [US1] Verify all tests pass for Social family indicators
 
 **Checkpoint**: Social family (S1, S2, S3) fully functional and testable independently
 
@@ -105,26 +105,26 @@ R package structure (from plan.md):
 
 ### Tests for User Story 2 (TDD: Write these FIRST, ensure they FAIL)
 
-- [ ] T035 [P] [US2] Create test fixture for P1 (standing volume) in tests/testthat/fixtures/productive_volume.rds
-- [ ] T036 [P] [US2] Create test fixture for P2 (site productivity) in tests/testthat/fixtures/productive_station.rds
-- [ ] T037 [P] [US2] Create test fixture for P3 (wood quality) in tests/testthat/fixtures/productive_quality.rds
-- [ ] T038 [P] [US2] Create reference output fixture in tests/testthat/fixtures/productive_reference.rds
-- [ ] T039 [US2] Write test_indicators_productive.R with tests for indicator_productive_volume()
-- [ ] T040 [US2] Add tests for indicator_productive_station() to tests/testthat/test-indicators-productive.R
-- [ ] T041 [US2] Add tests for indicator_productive_quality() to tests/testthat/test-indicators-productive.R
-- [ ] T042 [US2] Add test for family_P composite creation to tests/testthat/test-indicators-productive.R
+- [X] T035 [P] [US2] Create test fixture for P1 (standing volume) in tests/testthat/fixtures/productive_volume.rds
+- [X] T036 [P] [US2] Create test fixture for P2 (site productivity) in tests/testthat/fixtures/productive_station.rds
+- [X] T037 [P] [US2] Create test fixture for P3 (wood quality) in tests/testthat/fixtures/productive_quality.rds
+- [X] T038 [P] [US2] Create reference output fixture in tests/testthat/fixtures/productive_reference.rds
+- [X] T039 [US2] Write test_indicators_productive.R with tests for indicator_productive_volume()
+- [X] T040 [US2] Add tests for indicator_productive_station() to tests/testthat/test-indicators-productive.R
+- [X] T041 [US2] Add tests for indicator_productive_quality() to tests/testthat/test-indicators-productive.R
+- [X] T042 [US2] Add test for family_P composite creation to tests/testthat/test-indicators-productive.R
 
 ### Implementation for User Story 2
 
-- [ ] T043 [US2] Create R/indicators-productive.R file with roxygen2 skeleton
-- [ ] T044 [US2] Implement indicator_productive_volume() in R/indicators-productive.R (IFN allometry)
-- [ ] T045 [US2] Implement indicator_productive_station() in R/indicators-productive.R (fertility × climate × species)
-- [ ] T046 [US2] Implement indicator_productive_quality() in R/indicators-productive.R (form + diameter + defects)
-- [ ] T047 [US2] Add genus-level fallback logic to P1 for rare species
-- [ ] T048 [US2] Add parameter validation and error handling to all P indicators
-- [ ] T049 [US2] Add bilingual cli messages (FR/EN) to all P indicator functions
-- [ ] T050 [US2] Update NAMESPACE to export indicator_productive_* functions
-- [ ] T051 [US2] Verify all tests pass for Productive family indicators
+- [X] T043 [US2] Create R/indicators-productive.R file with roxygen2 skeleton
+- [X] T044 [US2] Implement indicator_productive_volume() in R/indicators-productive.R (IFN allometry)
+- [X] T045 [US2] Implement indicator_productive_station() in R/indicators-productive.R (fertility × climate × species)
+- [X] T046 [US2] Implement indicator_productive_quality() in R/indicators-productive.R (form + diameter + defects)
+- [X] T047 [US2] Add genus-level fallback logic to P1 for rare species
+- [X] T048 [US2] Add parameter validation and error handling to all P indicators
+- [X] T049 [US2] Add bilingual cli messages (FR/EN) to all P indicator functions
+- [X] T050 [US2] Update NAMESPACE to export indicator_productive_* functions
+- [X] T051 [US2] Verify all tests pass for Productive family indicators
 
 **Checkpoint**: Productive family (P1, P2, P3) fully functional and testable independently
 
@@ -138,24 +138,24 @@ R package structure (from plan.md):
 
 ### Tests for User Story 3 (TDD: Write these FIRST, ensure they FAIL)
 
-- [ ] T052 [P] [US3] Create test fixture for E1 (fuelwood potential) in tests/testthat/fixtures/energy_fuelwood.rds
-- [ ] T053 [P] [US3] Create test fixture for E2 (carbon avoidance) in tests/testthat/fixtures/energy_avoidance.rds
-- [ ] T054 [P] [US3] Create reference output fixture in tests/testthat/fixtures/energy_reference.rds
-- [ ] T055 [US3] Write test_indicators_energy.R with tests for indicator_energy_fuelwood()
-- [ ] T056 [US3] Add tests for indicator_energy_avoidance() to tests/testthat/test-indicators-energy.R
-- [ ] T057 [US3] Add test for family_E composite creation to tests/testthat/test-indicators-energy.R
-- [ ] T058 [US3] Add test for energy vs material substitution scenarios to tests/testthat/test-indicators-energy.R
+- [X] T052 [P] [US3] Create test fixture for E1 (fuelwood potential) in tests/testthat/fixtures/energy_fuelwood.rds
+- [X] T053 [P] [US3] Create test fixture for E2 (carbon avoidance) in tests/testthat/fixtures/energy_avoidance.rds
+- [X] T054 [P] [US3] Create reference output fixture in tests/testthat/fixtures/energy_reference.rds
+- [X] T055 [US3] Write test_indicators_energy.R with tests for indicator_energy_fuelwood()
+- [X] T056 [US3] Add tests for indicator_energy_avoidance() to tests/testthat/test-indicators-energy.R
+- [X] T057 [US3] Add test for family_E composite creation to tests/testthat/test-indicators-energy.R
+- [X] T058 [US3] Add test for energy vs material substitution scenarios to tests/testthat/test-indicators-energy.R
 
 ### Implementation for User Story 3
 
-- [ ] T059 [US3] Create R/indicators-energy.R file with roxygen2 skeleton
-- [ ] T060 [US3] Implement indicator_energy_fuelwood() in R/indicators-energy.R (residues + coppice)
-- [ ] T061 [US3] Implement indicator_energy_avoidance() in R/indicators-energy.R (ADEME factors)
-- [ ] T062 [US3] Add energy+material substitution scenario logic to E2
-- [ ] T063 [US3] Add parameter validation and error handling to all E indicators
-- [ ] T064 [US3] Add bilingual cli messages (FR/EN) to all E indicator functions
-- [ ] T065 [US3] Update NAMESPACE to export indicator_energy_* functions
-- [ ] T066 [US3] Verify all tests pass for Energy family indicators
+- [X] T059 [US3] Create R/indicators-energy.R file with roxygen2 skeleton
+- [X] T060 [US3] Implement indicator_energy_fuelwood() in R/indicators-energy.R (residues + coppice)
+- [X] T061 [US3] Implement indicator_energy_avoidance() in R/indicators-energy.R (ADEME factors)
+- [X] T062 [US3] Add energy+material substitution scenario logic to E2
+- [X] T063 [US3] Add parameter validation and error handling to all E indicators
+- [X] T064 [US3] Add bilingual cli messages (FR/EN) to all E indicator functions
+- [X] T065 [US3] Update NAMESPACE to export indicator_energy_* functions
+- [X] T066 [US3] Verify all tests pass for Energy family indicators
 
 **Checkpoint**: Energy family (E1, E2) fully functional and testable independently
 
@@ -169,27 +169,27 @@ R package structure (from plan.md):
 
 ### Tests for User Story 4 (TDD: Write these FIRST, ensure they FAIL)
 
-- [ ] T067 [P] [US4] Create test fixture for N1 (infrastructure distance) in tests/testthat/fixtures/naturalness_distance.rds
-- [ ] T068 [P] [US4] Create test fixture for N2 (forest continuity) in tests/testthat/fixtures/naturalness_continuity.rds
-- [ ] T069 [P] [US4] Create test fixture for N3 (composite naturalness) in tests/testthat/fixtures/naturalness_composite.rds
-- [ ] T070 [P] [US4] Create reference output fixture in tests/testthat/fixtures/naturalness_reference.rds
-- [ ] T071 [US4] Write test_indicators_naturalness.R with tests for indicator_naturalness_distance()
-- [ ] T072 [US4] Add tests for indicator_naturalness_continuity() to tests/testthat/test-indicators-naturalness.R
-- [ ] T073 [US4] Add tests for indicator_naturalness_composite() to tests/testthat/test-indicators-naturalness.R
-- [ ] T074 [US4] Add test for family_N composite creation to tests/testthat/test-indicators-naturalness.R
-- [ ] T075 [US4] Add tests for N3 aggregation methods (multiplicative vs weighted) to tests/testthat/test-indicators-naturalness.R
+- [X] T067 [P] [US4] Create test fixture for N1 (infrastructure distance) in tests/testthat/fixtures/naturalness_distance.rds
+- [X] T068 [P] [US4] Create test fixture for N2 (forest continuity) in tests/testthat/fixtures/naturalness_continuity.rds
+- [X] T069 [P] [US4] Create test fixture for N3 (composite naturalness) in tests/testthat/fixtures/naturalness_composite.rds
+- [X] T070 [P] [US4] Create reference output fixture in tests/testthat/fixtures/naturalness_reference.rds
+- [X] T071 [US4] Write test_indicators_naturalness.R with tests for indicator_naturalness_distance()
+- [X] T072 [US4] Add tests for indicator_naturalness_continuity() to tests/testthat/test-indicators-naturalness.R
+- [X] T073 [US4] Add tests for indicator_naturalness_composite() to tests/testthat/test-indicators-naturalness.R
+- [X] T074 [US4] Add test for family_N composite creation to tests/testthat/test-indicators-naturalness.R
+- [X] T075 [US4] Add tests for N3 aggregation methods (multiplicative vs weighted) to tests/testthat/test-indicators-naturalness.R
 
 ### Implementation for User Story 4
 
-- [ ] T076 [US4] Create R/indicators-naturalness.R file with roxygen2 skeleton
-- [ ] T077 [US4] Implement indicator_naturalness_distance() in R/indicators-naturalness.R (OSM infrastructure)
-- [ ] T078 [US4] Implement indicator_naturalness_continuity() in R/indicators-naturalness.R (patch connectivity)
-- [ ] T079 [US4] Implement indicator_naturalness_composite() in R/indicators-naturalness.R (N1×N2×T1×B1)
-- [ ] T080 [US4] Add multiplicative and weighted aggregation options to N3
-- [ ] T081 [US4] Add parameter validation and error handling to all N indicators
-- [ ] T082 [US4] Add bilingual cli messages (FR/EN) to all N indicator functions
-- [ ] T083 [US4] Update NAMESPACE to export indicator_naturalness_* functions
-- [ ] T084 [US4] Verify all tests pass for Naturalness family indicators
+- [X] T076 [US4] Create R/indicators-naturalness.R file with roxygen2 skeleton
+- [X] T077 [US4] Implement indicator_naturalness_distance() in R/indicators-naturalness.R (OSM infrastructure)
+- [X] T078 [US4] Implement indicator_naturalness_continuity() in R/indicators-naturalness.R (patch connectivity)
+- [X] T079 [US4] Implement indicator_naturalness_composite() in R/indicators-naturalness.R (N1×N2×T1×B1)
+- [X] T080 [US4] Add multiplicative and weighted aggregation options to N3
+- [X] T081 [US4] Add parameter validation and error handling to all N indicators
+- [X] T082 [US4] Add bilingual cli messages (FR/EN) to all N indicator functions
+- [X] T083 [US4] Update NAMESPACE to export indicator_naturalness_* functions
+- [X] T084 [US4] Verify all tests pass for Naturalness family indicators
 
 **Checkpoint**: Naturalness family (N1, N2, N3) fully functional and testable independently
 
