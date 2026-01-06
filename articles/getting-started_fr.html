@@ -503,7 +503,7 @@ Profil écosystémique - Parcelle P01
 <span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_write.html" class="external-link">st_write</a></span><span class="op">(</span><span class="va">composite</span>, <span class="st">"results/forest_quality.gpkg"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Export en CSV (sans géométrie)</span></span>
-<span><span class="va">results_table</span> <span class="op">&lt;-</span> <span class="va">composite</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">results_table</span> <span class="op">&lt;-</span> <span class="va">composite</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">results_table</span>, <span class="st">"results/forest_quality.csv"</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 </div>

@@ -134,9 +134,9 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <span><span class="co">#&gt;    13     7</span></span>
 <span></span>
 <span><span class="co"># Quelles parcelles sont optimales ?</span></span>
-<span><span class="va">result_pareto</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">result_pareto</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">family_C</span>, <span class="va">family_B</span>, <span class="va">family_P</span>, <span class="va">is_optimal</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        name family_C family_B family_P is_optimal</span></span>
 <span><span class="co">#&gt; 1 Parcel_01 94.92197 44.14061 47.68739       TRUE</span></span>
@@ -180,9 +180,9 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <span><span class="co">#&gt;    14     6</span></span>
 <span></span>
 <span><span class="co"># Profil des parcelles optimales</span></span>
-<span><span class="va">result_mixed</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">result_mixed</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">family_C</span>, <span class="va">family_B</span>, <span class="va">R1</span>, <span class="va">is_optimal</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        name family_C family_B R1 is_optimal</span></span>
 <span><span class="co">#&gt; 1 Parcel_01 94.92197 44.14061  1       TRUE</span></span>
@@ -491,16 +491,16 @@ carbone, et la naturalité.</p>
 <span><span class="co">#&gt; Nombre de parcelles Pareto-optimales: 8</span></span>
 <span></span>
 <span><span class="co"># Étape 2: Classer les parcelles Pareto-optimales par score composite</span></span>
-<span><span class="va">conservation_subset</span> <span class="op">&lt;-</span> <span class="va">conservation_pareto</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>composite_score <span class="op">=</span> <span class="op">(</span><span class="va">family_B</span> <span class="op">+</span> <span class="va">family_C</span> <span class="op">+</span> <span class="va">family_N</span><span class="op">)</span> <span class="op">/</span> <span class="fl">3</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">conservation_subset</span> <span class="op">&lt;-</span> <span class="va">conservation_pareto</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>composite_score <span class="op">=</span> <span class="op">(</span><span class="va">family_B</span> <span class="op">+</span> <span class="va">family_C</span> <span class="op">+</span> <span class="va">family_N</span><span class="op">)</span> <span class="op">/</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">composite_score</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Top 5 parcelles</span></span>
 <span><span class="va">top5</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">conservation_subset</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">top5</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">top5</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">family_B</span>, <span class="va">family_C</span>, <span class="va">family_N</span>, <span class="va">composite_score</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        name family_B family_C family_N composite_score</span></span>
 <span><span class="co">#&gt; 1 Parcel_07 93.35580 69.72693 52.46156        71.84810</span></span>
@@ -514,7 +514,7 @@ carbone, et la naturalité.</p>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Cartographier les 5 parcelles sélectionnées</span></span>
-<span><span class="va">conservation_pareto</span> <span class="op">&lt;-</span> <span class="va">conservation_pareto</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">conservation_pareto</span> <span class="op">&lt;-</span> <span class="va">conservation_pareto</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    selected <span class="op">=</span> <span class="va">name</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="va">top5</span><span class="op">$</span><span class="va">name</span></span>
 <span>  <span class="op">)</span></span>
@@ -577,7 +577,7 @@ profils multi-familles des parcelles.</p>
 <span><span class="co">#&gt; 4 65.20213 32.08343 53.14786 37.58738 49.92845  9.802700 29.53996 65.46039</span></span>
 <span></span>
 <span><span class="co"># Attribuer des noms de zones selon les profils</span></span>
-<span><span class="va">zonage</span> <span class="op">&lt;-</span> <span class="va">zonage</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">zonage</span> <span class="op">&lt;-</span> <span class="va">zonage</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    zone_name <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
 <span>      <span class="va">cluster</span> <span class="op">==</span> <span class="fl">1</span> <span class="op">~</span> <span class="st">"Conservation intégrale"</span>,</span>
@@ -612,9 +612,9 @@ profils multi-familles des parcelles.</p>
 </h3>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Résumer les caractéristiques de chaque zone</span></span>
-<span><span class="va">zonage</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">zone_name</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">zonage</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">zone_name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
 <span>    n_parcelles <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>    C_mean <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">family_C</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -622,7 +622,7 @@ profils multi-familles des parcelles.</p>
 <span>    P_mean <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">family_P</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>    S_mean <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">family_S</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>    N_mean <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">family_N</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span>  <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">.</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 7</span></span></span>
 <span><span class="co">#&gt;   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean</span></span>

@@ -132,9 +132,9 @@ indices synthétiques par famille :
 result <- create_family_index(massif_demo_units_extended)
 
 # Afficher les indices de famille
-result %>%
-  sf::st_drop_geometry() %>%
-  select(name, starts_with("family_")) %>%
+result |>
+  sf::st_drop_geometry() |>
+  select(name, starts_with("family_")) |>
   head()
 #>        name family_C family_B  family_W family_A family_F family_L family_T
 #> 1 Parcel_01 94.92197 44.14061  9.825682 24.26917 56.76703 31.33202 54.11307
@@ -272,17 +272,17 @@ p_naturalness <- ggplot(result) +
 
 ``` r
 # Créer une facette pour toutes les 12 familles
-result_long <- result %>%
-  sf::st_drop_geometry() %>%
+result_long <- result |>
+  sf::st_drop_geometry() |>
   tidyr::pivot_longer(
     cols = starts_with("family_"),
     names_to = "famille",
     values_to = "valeur"
-  ) %>%
+  ) |>
   left_join(
-    result %>% select(name, geometry),
+    result |> select(name, geometry),
     by = "name"
-  ) %>%
+  ) |>
   sf::st_as_sf()
 
 # Labels des familles pour la facette
@@ -377,14 +377,14 @@ composite_social <- create_composite_index(
 )
 
 # Comparer les scénarios
-comparison <- result %>%
+comparison <- result |>
   mutate(
     conservation = composite_conservation$conservation,
     production = composite_production$production,
     social = composite_social$social
-  ) %>%
-  sf::st_drop_geometry() %>%
-  select(name, conservation, production, social) %>%
+  ) |>
+  sf::st_drop_geometry() |>
+  select(name, conservation, production, social) |>
   tidyr::pivot_longer(cols = -name, names_to = "scenario", values_to = "score")
 
 # Visualiser le classement des parcelles selon les scénarios

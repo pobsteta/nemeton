@@ -324,7 +324,7 @@ de chaque indicateur par période et parcelle.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Filtrer les parcelles avec forte dynamique</span></span>
-<span><span class="va">high_change</span> <span class="op">&lt;-</span> <span class="va">rates</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">high_change</span> <span class="op">&lt;-</span> <span class="va">rates</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">carbon_rate</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">2.0</span><span class="op">)</span>  <span class="co"># &gt; ±2% par an</span></span>
 <span></span>
 <span><span class="co"># Visualiser sur carte</span></span>
@@ -341,7 +341,7 @@ de chaque indicateur par période et parcelle.</p>
 </h3>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Classer les trajectoires</span></span>
-<span><span class="va">rates</span> <span class="op">&lt;-</span> <span class="va">rates</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">rates</span> <span class="op">&lt;-</span> <span class="va">rates</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    trajectory <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
 <span>      <span class="va">carbon_rate</span> <span class="op">&gt;</span> <span class="fl">1.0</span> <span class="op">~</span> <span class="st">"Forte augmentation"</span>,</span>
@@ -416,8 +416,8 @@ périodes.</p>
 </h3>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Créer tableau récapitulatif</span></span>
-<span><span class="va">summary_table</span> <span class="op">&lt;-</span> <span class="va">temporal_results</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">period</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span><span class="va">summary_table</span> <span class="op">&lt;-</span> <span class="va">temporal_results</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">period</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
 <span>    carbon_mean <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">carbon</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>    carbon_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">carbon</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>

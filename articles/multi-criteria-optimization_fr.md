@@ -51,9 +51,9 @@ table(result_pareto$is_optimal)
 #>    13     7
 
 # Quelles parcelles sont optimales ?
-result_pareto %>%
-  sf::st_drop_geometry() %>%
-  filter(is_optimal) %>%
+result_pareto |>
+  sf::st_drop_geometry() |>
+  filter(is_optimal) |>
   select(name, family_C, family_B, family_P, is_optimal)
 #>        name family_C family_B family_P is_optimal
 #> 1 Parcel_01 94.92197 44.14061 47.68739       TRUE
@@ -98,9 +98,9 @@ table(result_mixed$is_optimal)
 #>    14     6
 
 # Profil des parcelles optimales
-result_mixed %>%
-  sf::st_drop_geometry() %>%
-  filter(is_optimal) %>%
+result_mixed |>
+  sf::st_drop_geometry() |>
+  filter(is_optimal) |>
   select(name, family_C, family_B, R1, is_optimal)
 #>        name family_C family_B R1 is_optimal
 #> 1 Parcel_01 94.92197 44.14061  1       TRUE
@@ -411,16 +411,16 @@ cat("Nombre de parcelles Pareto-optimales:", n_optimal, "\n")
 #> Nombre de parcelles Pareto-optimales: 8
 
 # Étape 2: Classer les parcelles Pareto-optimales par score composite
-conservation_subset <- conservation_pareto %>%
-  filter(is_optimal) %>%
-  mutate(composite_score = (family_B + family_C + family_N) / 3) %>%
+conservation_subset <- conservation_pareto |>
+  filter(is_optimal) |>
+  mutate(composite_score = (family_B + family_C + family_N) / 3) |>
   arrange(desc(composite_score))
 
 # Top 5 parcelles
 top5 <- head(conservation_subset, 5)
 
-top5 %>%
-  sf::st_drop_geometry() %>%
+top5 |>
+  sf::st_drop_geometry() |>
   select(name, family_B, family_C, family_N, composite_score)
 #>        name family_B family_C family_N composite_score
 #> 1 Parcel_07 93.35580 69.72693 52.46156        71.84810
@@ -434,7 +434,7 @@ top5 %>%
 
 ``` r
 # Cartographier les 5 parcelles sélectionnées
-conservation_pareto <- conservation_pareto %>%
+conservation_pareto <- conservation_pareto |>
   mutate(
     selected = name %in% top5$name
   )
@@ -498,7 +498,7 @@ print(profiles_zonage)
 #> 4 65.20213 32.08343 53.14786 37.58738 49.92845  9.802700 29.53996 65.46039
 
 # Attribuer des noms de zones selon les profils
-zonage <- zonage %>%
+zonage <- zonage |>
   mutate(
     zone_name = case_when(
       cluster == 1 ~ "Conservation intégrale",
@@ -534,9 +534,9 @@ ggplot(zonage) +
 
 ``` r
 # Résumer les caractéristiques de chaque zone
-zonage %>%
-  sf::st_drop_geometry() %>%
-  group_by(zone_name) %>%
+zonage |>
+  sf::st_drop_geometry() |>
+  group_by(zone_name) |>
   summarise(
     n_parcelles = n(),
     C_mean = mean(family_C, na.rm = TRUE),
@@ -544,7 +544,7 @@ zonage %>%
     P_mean = mean(family_P, na.rm = TRUE),
     S_mean = mean(family_S, na.rm = TRUE),
     N_mean = mean(family_N, na.rm = TRUE)
-  ) %>%
+  ) |>
   mutate(across(where(is.numeric), ~ round(., 2)))
 #> # A tibble: 4 × 7
 #>   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean

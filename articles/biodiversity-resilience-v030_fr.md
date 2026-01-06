@@ -245,9 +245,9 @@ result_norm <- create_family_index(
 )
 
 # Afficher les indices par famille
-result_norm %>%
-  st_drop_geometry() %>%
-  select(parcel_id, family_B, family_R, family_T, family_A) %>%
+result_norm |>
+  st_drop_geometry() |>
+  select(parcel_id, family_B, family_R, family_T, family_A) |>
   head()
 #>   parcel_id family_B family_R family_T family_A
 #> 1       P01 39.80832 60.45303 61.29032 50.00000
@@ -271,12 +271,12 @@ result_risk_min <- create_family_index(
 )
 
 # Comparer méthodes "mean" vs "min"
-comparison <- result_norm %>%
-  st_drop_geometry() %>%
-  select(parcel_id, R1_norm, R2_norm, R3_norm, family_R) %>%
+comparison <- result_norm |>
+  st_drop_geometry() |>
+  select(parcel_id, R1_norm, R2_norm, R3_norm, family_R) |>
   mutate(
     risk_min = pmin(R1_norm, R2_norm, R3_norm)
-  ) %>%
+  ) |>
   head()
 
 comparison
@@ -377,8 +377,8 @@ biodiversité (famille B) mais forte vulnérabilité (famille R).
 Identifier les forêts anciennes à haute valeur écologique :
 
 ``` r
-hotspots_bio <- result_complete %>%
-  filter(family_B > 60, T1 > 100) %>%
+hotspots_bio <- result_complete |>
+  filter(family_B > 60, T1 > 100) |>
   arrange(desc(family_B))
 
 cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles\n")
@@ -386,9 +386,9 @@ cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles
 
 # Afficher les parcelles identifiées
 if(nrow(hotspots_bio) > 0) {
-  hotspots_bio %>%
-    st_drop_geometry() %>%
-    select(parcel_id, family_B, T1, family_R) %>%
+  hotspots_bio |>
+    st_drop_geometry() |>
+    select(parcel_id, family_B, T1, family_R) |>
     head()
 }
 #>   parcel_id family_B  T1 family_R
@@ -400,11 +400,11 @@ if(nrow(hotspots_bio) > 0) {
 Détecter les parcelles cumulant plusieurs risques :
 
 ``` r
-multi_risques <- result_complete %>%
+multi_risques <- result_complete |>
   mutate(
     nb_risques = (R1_norm > 60) + (R2_norm > 60) + (R3_norm > 60)
-  ) %>%
-  filter(nb_risques >= 2) %>%
+  ) |>
+  filter(nb_risques >= 2) |>
   arrange(desc(nb_risques))
 
 cat("Parcelles à risques multiples (≥2) :", nrow(multi_risques), "\n")
@@ -412,9 +412,9 @@ cat("Parcelles à risques multiples (≥2) :", nrow(multi_risques), "\n")
 
 # Détail des risques
 if(nrow(multi_risques) > 0) {
-  multi_risques %>%
-    st_drop_geometry() %>%
-    select(parcel_id, R1_norm, R2_norm, R3_norm, nb_risques, family_R) %>%
+  multi_risques |>
+    st_drop_geometry() |>
+    select(parcel_id, R1_norm, R2_norm, R3_norm, nb_risques, family_R) |>
     head()
 }
 #>   parcel_id  R1_norm  R2_norm  R3_norm nb_risques family_R
@@ -426,17 +426,17 @@ if(nrow(multi_risques) > 0) {
 Évaluer le potentiel de régulation climatique :
 
 ``` r
-services_climat <- result_complete %>%
-  filter(A1 > 70, A2 > 70) %>%
+services_climat <- result_complete |>
+  filter(A1 > 70, A2 > 70) |>
   arrange(desc(family_A))
 
 cat("Parcelles à fort potentiel climatique :", nrow(services_climat), "\n")
 #> Parcelles à fort potentiel climatique : 1
 
 if(nrow(services_climat) > 0) {
-  services_climat %>%
-    st_drop_geometry() %>%
-    select(parcel_id, A1, A2, family_A) %>%
+  services_climat |>
+    st_drop_geometry() |>
+    select(parcel_id, A1, A2, family_A) |>
     head()
 }
 #>   parcel_id       A1       A2 family_A
@@ -470,8 +470,8 @@ Vue d’ensemble des indicateurs calculés :
 
 ``` r
 # Résumé des 10 nouveaux indicateurs v0.3.0
-summary_table <- result_complete %>%
-  st_drop_geometry() %>%
+summary_table <- result_complete |>
+  st_drop_geometry() |>
   select(parcel_id,
          # Biodiversité
          B1, B2, B3, family_B,
@@ -480,7 +480,7 @@ summary_table <- result_complete %>%
          # Temporel
          T1, T2, family_T,
          # Air
-         A1, A2, family_A) %>%
+         A1, A2, family_A) |>
   head(5)
 
 summary_table

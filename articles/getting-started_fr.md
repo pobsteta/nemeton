@@ -428,7 +428,7 @@ nemeton_set_language("fr")  # Français
 sf::st_write(composite, "results/forest_quality.gpkg")
 
 # Export en CSV (sans géométrie)
-results_table <- composite %>%
+results_table <- composite |>
   sf::st_drop_geometry()
 write.csv(results_table, "results/forest_quality.csv", row.names = FALSE)
 ```

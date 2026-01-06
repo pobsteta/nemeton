@@ -234,7 +234,7 @@ rates <- calculate_change_rate(
 )
 
 # Filtrer les parcelles avec forte dynamique
-high_change <- rates %>%
+high_change <- rates |>
   filter(abs(carbon_rate) > 2.0)  # > ±2% par an
 
 # Visualiser sur carte
@@ -251,7 +251,7 @@ plot_indicators_map(
 
 ``` r
 # Classer les trajectoires
-rates <- rates %>%
+rates <- rates |>
   mutate(
     trajectory = case_when(
       carbon_rate > 1.0 ~ "Forte augmentation",
@@ -322,8 +322,8 @@ plot_temporal_trend(
 
 ``` r
 # Créer tableau récapitulatif
-summary_table <- temporal_results %>%
-  group_by(period) %>%
+summary_table <- temporal_results |>
+  group_by(period) |>
   summarise(
     carbon_mean = mean(carbon, na.rm = TRUE),
     carbon_sd = sd(carbon, na.rm = TRUE),
