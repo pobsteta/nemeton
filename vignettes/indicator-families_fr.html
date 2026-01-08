@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Pascal Obstétar" />
+
+<meta name="date" content="2026-01-06" />
+
+<title>Familles d’indicateurs - Référentiel complet</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Familles d’indicateurs - Référentiel
+complet</h1>
+<h4 class="author">Pascal Obstétar</h4>
+<h4 class="date">2026-01-06</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Le package <code>nemeton</code> structure l’évaluation des services
+écosystémiques forestiers autour de <strong>12 familles
+d’indicateurs</strong> couvrant les dimensions biophysiques, écologiques
+et socio-économiques. Cette vignette présente le référentiel complet et
+démontre l’utilisation du système de familles.</p>
+<p><strong>Version actuelle : v0.3.0</strong> - <strong>9 familles sur
+12 implémentées</strong> avec 23 indicateurs opérationnels.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(nemeton)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+</div>
+<div id="référentiel-des-12-familles" class="section level1">
+<h1>Référentiel des 12 familles</h1>
+<div id="vue-densemble" class="section level2">
+<h2>Vue d’ensemble</h2>
+<table>
+<colgroup>
+<col width="13%" />
+<col width="20%" />
+<col width="29%" />
+<col width="36%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Code</th>
+<th>Famille</th>
+<th>Description</th>
+<th>Nb indicateurs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>C</strong></td>
+<td>Carbone &amp; Vitalité</td>
+<td>Stock carbone et santé végétation</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td><strong>B</strong></td>
+<td>Biodiversité</td>
+<td>Diversité structurelle et habitats</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td><strong>W</strong></td>
+<td>Eau</td>
+<td>Régulation hydrique</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td><strong>A</strong></td>
+<td>Air &amp; Microclimat</td>
+<td>Qualité de l’air et régulation climatique</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td><strong>F</strong></td>
+<td>Fertilité des sols</td>
+<td>Qualité pédologique et érosion</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td><strong>L</strong></td>
+<td>Landscape (Paysage)</td>
+<td>Structure et connectivité paysagère</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td><strong>T</strong></td>
+<td>Temps &amp; Dynamique</td>
+<td>Ancienneté et trajectoires</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td><strong>R</strong></td>
+<td>Risques</td>
+<td>Vulnérabilité aux perturbations</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td><strong>S</strong></td>
+<td>Social &amp; Usages</td>
+<td>Accessibilité et services récréatifs</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td><strong>P</strong></td>
+<td>Production</td>
+<td>Productivité forestière</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td><strong>E</strong></td>
+<td>Énergie</td>
+<td>Potentiel énergétique et climat</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td><strong>N</strong></td>
+<td>Naturalité</td>
+<td>Degré de naturalité</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="famille-c-carbone-vitalité" class="section level2">
+<h2>Famille C : Carbone &amp; Vitalité</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># C1 - Stock de biomasse aérienne (tC/ha)</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>carbon_biomass <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  units,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  layers,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;carbon_biomass&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># C2 - NDVI et tendance vitalité</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>carbon_ndvi <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  units,</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  layers,</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;carbon_ndvi&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - C1 &gt; 100 tC/ha : Fort stock de
+carbone - C2 (NDVI) &gt; 0.7 : Végétation très active</p>
+</div>
+<div id="famille-w-eau" class="section level2">
+<h2>Famille W : Eau</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># W1 - Densité réseau hydrographique (m/ha)</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>water_network <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  units,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  layers,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;water_network&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># W2 - Surface en zones humides (%)</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>water_wetlands <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  units,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  layers,</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;water_wetlands&quot;</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>)</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co"># W3 - Topographic Wetness Index</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>water_twi <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  units,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  layers,</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;water_twi&quot;</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - W1 &gt; 50 m/ha : Dense réseau
+hydrographique - W2 &gt; 20% : Zone humide significative - W3 &gt; 10 :
+Fort potentiel d’accumulation d’eau</p>
+</div>
+<div id="famille-f-fertilité-des-sols" class="section level2">
+<h2>Famille F : Fertilité des sols</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># F1 - Classe de fertilité (BD Sol)</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>soil_fertility <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  units,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  layers,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;soil_fertility&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co"># F2 - Risque d&#39;érosion (pente × couverture)</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>soil_erosion <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  units,</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  layers,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;soil_erosion&quot;</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - F1 : 1 (très fertile) à 5 (très
+pauvre) - F2 &gt; 5 : Risque d’érosion élevé</p>
+</div>
+<div id="famille-l-landscape-paysage" class="section level2">
+<h2>Famille L : Landscape (Paysage)</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># L1 - Fragmentation (nb patches / surface moyenne)</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>landscape_frag <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  units,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  layers,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;landscape_fragmentation&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co"># L2 - Ratio lisière / surface</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>landscape_edge <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  units,</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  layers,</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;landscape_edge&quot;</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - L1 faible : Continuité forestière
+- L2 élevé : Forte proportion de lisière (effet de bord)</p>
+</div>
+<div id="famille-b-biodiversité-v0.3.0" class="section level2">
+<h2>Famille B : Biodiversité (v0.3.0)</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># B1 - Protection réglementaire (% surface en zones protégées)</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>biodiversity_protection <span class="ot">&lt;-</span> <span class="fu">indicator_biodiversity_protection</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  units,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">protected_areas =</span> protected_areas,  <span class="co"># sf object ZNIEFF, Natura2000</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">&quot;local&quot;</span>  <span class="co"># ou &quot;wfs&quot; pour téléchargement automatique</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co"># B2 - Diversité structurelle (Shannon)</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>biodiversity_structure <span class="ot">&lt;-</span> <span class="fu">indicator_biodiversity_structure</span>(</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  units,</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="at">strata_field =</span> <span class="st">&quot;strata&quot;</span>,          <span class="co"># Strates (Emergent, Dominant, etc.)</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="at">age_class_field =</span> <span class="st">&quot;age_class&quot;</span>,    <span class="co"># Classes d&#39;âge</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>  <span class="at">species_field =</span> <span class="st">&quot;species&quot;</span>,        <span class="co"># Essences</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;shannon&quot;</span>,               <span class="co"># ou &quot;simpson&quot;</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  <span class="at">weights =</span> <span class="fu">c</span>(<span class="at">strata =</span> <span class="fl">0.4</span>, <span class="at">age =</span> <span class="fl">0.3</span>, <span class="at">species =</span> <span class="fl">0.3</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>)</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co"># B3 - Connectivité écologique (distance corridors)</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>biodiversity_connectivity <span class="ot">&lt;-</span> <span class="fu">indicator_biodiversity_connectivity</span>(</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>  units,</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>  <span class="at">corridors =</span> corridors_sf,  <span class="co"># Trames vertes et bleues</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>  <span class="at">distance_method =</span> <span class="st">&quot;edge&quot;</span>,  <span class="co"># ou &quot;centroid&quot;</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>  <span class="at">max_distance =</span> <span class="dv">3000</span>        <span class="co"># Distance max en mètres</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - B1 &gt; 50% : Protection
+significative - B2 (Shannon) &gt; 1.5 : Diversité structurelle élevée -
+B3 &lt; 500m : Excellente connectivité écologique</p>
+</div>
+<div id="famille-r-risques-résilience-v0.3.0" class="section level2">
+<h2>Famille R : Risques &amp; Résilience (v0.3.0)</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># R1 - Risque incendie (pente + essence + climat)</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>risk_fire <span class="ot">&lt;-</span> <span class="fu">indicator_risk_fire</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  units,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">dem =</span> dem_raster,              <span class="co"># Modèle numérique de terrain</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">species_field =</span> <span class="st">&quot;species&quot;</span>,     <span class="co"># Champ essence</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">climate =</span> climate_data         <span class="co"># Température, précipitations</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co"># R2 - Vulnérabilité tempête (hauteur + densité + exposition)</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>risk_storm <span class="ot">&lt;-</span> <span class="fu">indicator_risk_storm</span>(</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  units,</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="at">dem =</span> dem_raster,</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  <span class="at">height_field =</span> <span class="st">&quot;height&quot;</span>,       <span class="co"># Hauteur dominante (m)</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  <span class="at">density_field =</span> <span class="st">&quot;density&quot;</span>      <span class="co"># Densité (0-1)</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>)</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co"># R3 - Stress hydrique (TWI + climat + essences)</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>risk_drought <span class="ot">&lt;-</span> <span class="fu">indicator_risk_drought</span>(</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  units,</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="at">twi_field =</span> <span class="st">&quot;W3&quot;</span>,              <span class="co"># Topographic Wetness Index</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>  <span class="at">climate =</span> climate_data,</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>  <span class="at">species_field =</span> <span class="st">&quot;species&quot;</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - R1, R2, R3 &gt; 60 :
+Vulnérabilité élevée - Risques cumulés (≥2 indicateurs élevés) :
+Priorité gestion préventive</p>
+</div>
+<div id="famille-t-trame-temporelle-v0.3.0" class="section level2">
+<h2>Famille T : Trame Temporelle (v0.3.0)</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># T1 - Ancienneté des peuplements (années)</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>temporal_age <span class="ot">&lt;-</span> <span class="fu">indicator_temporal_age</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  units,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">age_field =</span> <span class="st">&quot;age&quot;</span>,                    <span class="co"># Âge actuel</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">establishment_year_field =</span> <span class="st">&quot;planted&quot;</span>  <span class="co"># Année plantation (optionnel)</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co"># T2 - Changements d&#39;occupation du sol (%/an)</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>temporal_change <span class="ot">&lt;-</span> <span class="fu">indicator_temporal_change</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  units,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  <span class="at">land_cover_early =</span> lc_1990_raster,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">land_cover_late =</span> lc_2020_raster,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">years_elapsed =</span> <span class="dv">30</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">interpretation =</span> <span class="st">&quot;stability&quot;</span>  <span class="co"># ou &quot;dynamism&quot;</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - T1 &gt; 150 ans : Forêt ancienne
+(haute valeur patrimoniale) - T2 &lt; 1%/an : Stabilité de l’occupation
+- T2 &gt; 3%/an : Dynamique forte (urbanisation, déprise agricole)</p>
+</div>
+<div id="famille-a-air-microclimat-v0.3.0" class="section level2">
+<h2>Famille A : Air &amp; Microclimat (v0.3.0)</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># A1 - Couverture arborée dans buffer 1km (%)</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>air_coverage <span class="ot">&lt;-</span> <span class="fu">indicator_air_coverage</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  units,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">land_cover =</span> land_cover_raster,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">buffer_radius =</span> <span class="dv">1000</span>  <span class="co"># Rayon en mètres</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co"># A2 - Qualité de l&#39;air (indice ou proxy distance)</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>air_quality <span class="ot">&lt;-</span> <span class="fu">indicator_air_quality</span>(</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  units,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="at">roads =</span> roads_sf,           <span class="co"># Réseau routier (optionnel)</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  <span class="at">urban_areas =</span> urban_sf,     <span class="co"># Zones urbaines (optionnel)</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="at">atmo_data =</span> <span class="cn">NULL</span>,           <span class="co"># Données ATMO si disponibles</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;proxy&quot;</span>            <span class="co"># &quot;atmo&quot; si données disponibles</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - A1 &gt; 70% : Couverture arborée
+dense (forte régulation climatique) - A2 &gt; 70 : Bonne qualité de
+l’air</p>
+</div>
+</div>
+<div id="système-de-préfixes-et-détection-automatique" class="section level1">
+<h1>Système de préfixes et détection automatique</h1>
+<p>Le package utilise un système de <strong>préfixes de famille</strong>
+pour organiser les indicateurs :</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Les indicateurs bruts suivent le pattern : famille_nom</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co"># Exemples :</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>carbon_biomass    <span class="co"># Famille C</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>water_network     <span class="co"># Famille W</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>soil_fertility    <span class="co"># Famille F</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co"># Les indicateurs normalisés ajoutent le suffixe _norm :</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>carbon_biomass_norm</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>water_network_norm</span></code></pre></div>
+<div id="détection-automatique-de-famille" class="section level2">
+<h2>Détection automatique de famille</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Détecter la famille d&#39;un indicateur</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">detect_indicator_family</span>(<span class="st">&quot;carbon_biomass&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co"># [1] &quot;C&quot;</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">detect_indicator_family</span>(<span class="st">&quot;water_twi_norm&quot;</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co"># [1] &quot;W&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co"># Obtenir le nom complet de la famille</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">get_family_name</span>(<span class="st">&quot;C&quot;</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co"># [1] &quot;Carbone &amp; Vitalité&quot;</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="fu">get_family_name</span>(<span class="st">&quot;W&quot;</span>, <span class="at">lang =</span> <span class="st">&quot;en&quot;</span>)</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co"># [1] &quot;Water Regulation&quot;</span></span></code></pre></div>
+</div>
+</div>
+<div id="normalisation-par-famille" class="section level1">
+<h1>Normalisation par famille</h1>
+<p>Normalisez tous les indicateurs d’une ou plusieurs familles :</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Charger les données</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">data</span>(massif_demo_units)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>layers <span class="ot">&lt;-</span> <span class="fu">massif_demo_layers</span>()</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co"># Calculer indicateurs des familles C et W</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  massif_demo_units,</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  layers,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(<span class="st">&quot;carbon&quot;</span>, <span class="st">&quot;water&quot;</span>, <span class="st">&quot;biodiversity&quot;</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>)</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co"># Normaliser tous les indicateurs</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>normalized <span class="ot">&lt;-</span> <span class="fu">normalize_indicators</span>(</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  results,</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(<span class="st">&quot;carbon&quot;</span>, <span class="st">&quot;water&quot;</span>, <span class="st">&quot;biodiversity&quot;</span>),</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;minmax&quot;</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>)</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co"># Les colonnes normalisées ont le suffixe _norm</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="fu">names</span>(normalized)</span></code></pre></div>
+</div>
+<div id="indices-composites-par-famille" class="section level1">
+<h1>Indices composites par famille</h1>
+<p>Créez des indices agrégés par famille avec
+<code>create_family_index()</code> :</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Exemple fictif (nécessite indicateurs C1 et C2)</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co"># Indice famille C (Carbone)</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>score_carbon <span class="ot">&lt;-</span> <span class="fu">create_family_index</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  normalized,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">&quot;C&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;score_carbon&quot;</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>)</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co"># Indice famille W (Eau)</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>score_water <span class="ot">&lt;-</span> <span class="fu">create_family_index</span>(</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  normalized,</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">&quot;W&quot;</span>,</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;score_water&quot;</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Fonctionnement</strong> : - Détecte automatiquement les
+indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
+(par défaut) - Crée une nouvelle colonne avec le nom spécifié</p>
+</div>
+<div id="visualisation-multi-famille" class="section level1">
+<h1>Visualisation multi-famille</h1>
+<div id="radar-chart-12-familles" class="section level2">
+<h2>Radar chart 12 familles</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Créer scores pour chaque famille</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>families <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;C&quot;</span>, <span class="st">&quot;W&quot;</span>, <span class="st">&quot;F&quot;</span>, <span class="st">&quot;L&quot;</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="cf">for</span> (fam <span class="cf">in</span> families) {</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  normalized <span class="ot">&lt;-</span> <span class="fu">create_family_index</span>(</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>    normalized,</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>    <span class="at">family =</span> fam,</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>    <span class="at">name =</span> <span class="fu">paste0</span>(<span class="st">&quot;score_&quot;</span>, <span class="fu">tolower</span>(fam))</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  )</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>}</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co"># Radar avec 4 familles</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="fu">nemeton_radar</span>(</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>  normalized,</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  <span class="at">unit_id =</span> <span class="st">&quot;P01&quot;</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(<span class="st">&quot;score_c&quot;</span>, <span class="st">&quot;score_w&quot;</span>, <span class="st">&quot;score_f&quot;</span>, <span class="st">&quot;score_l&quot;</span>),</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Profil multi-famille - Parcelle P01&quot;</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="cartes-par-famille" class="section level2">
+<h2>Cartes par famille</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Visualiser les scores de famille</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">plot_indicators_map</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  normalized,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(<span class="st">&quot;score_c&quot;</span>, <span class="st">&quot;score_w&quot;</span>, <span class="st">&quot;score_f&quot;</span>),</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">palette =</span> <span class="st">&quot;viridis&quot;</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">facet =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">ncol =</span> <span class="dv">3</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Scores par famille&quot;</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="analyse-croisée-inter-familles-v0.3.0" class="section level1">
+<h1>Analyse croisée inter-familles (v0.3.0)</h1>
+<p>La v0.3.0 introduit des outils d’<strong>analyse croisée</strong>
+pour identifier synergies et conflits entre familles.</p>
+<div id="matrice-de-corrélations" class="section level2">
+<h2>Matrice de corrélations</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Calculer les corrélations entre indices de familles</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>corr_matrix <span class="ot">&lt;-</span> <span class="fu">compute_family_correlations</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  units,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">families =</span> <span class="cn">NULL</span>,      <span class="co"># Auto-détection des family_*</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;pearson&quot;</span>    <span class="co"># ou &quot;spearman&quot;, &quot;kendall&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>)</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co"># Visualiser les corrélations</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="fu">plot_correlation_matrix</span>(</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  corr_matrix,</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;circle&quot;</span>,    <span class="co"># ou &quot;square&quot;, &quot;number&quot;, &quot;color&quot;</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>  <span class="at">palette =</span> <span class="st">&quot;RdBu&quot;</span>,     <span class="co"># Rouge=synergies, Bleu=conflits</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Synergies et conflits entre services écosystémiques&quot;</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Interprétation</strong> : - <strong>Corrélation positive
+(rouge)</strong> : Synergies (ex: Biodiversité × Ancienneté) -
+<strong>Corrélation négative (bleu)</strong> : Conflits/trade-offs (ex:
+Protection × Risques) - <strong>Corrélation faible (blanc)</strong> :
+Indépendance</p>
+</div>
+<div id="identification-de-hotspots-multi-critères" class="section level2">
+<h2>Identification de hotspots multi-critères</h2>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Identifier parcelles excellentes sur plusieurs familles</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>hotspots <span class="ot">&lt;-</span> <span class="fu">identify_hotspots</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  units,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">threshold =</span> <span class="dv">80</span>,      <span class="co"># Top 20% pour chaque famille</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="at">min_families =</span> <span class="dv">3</span>     <span class="co"># Au moins 3 familles élevées</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>)</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co"># Filtrer les hotspots</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>hotspot_parcels <span class="ot">&lt;-</span> hotspots[hotspots<span class="sc">$</span>is_hotspot, ]</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co"># Afficher détails</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>hotspot_parcels[, <span class="fu">c</span>(<span class="st">&quot;parcel_id&quot;</span>, <span class="st">&quot;hotspot_count&quot;</span>, <span class="st">&quot;hotspot_families&quot;</span>)]</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a></span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a><span class="co"># Cartographier</span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a><span class="fu">plot_indicators_map</span>(</span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>  hotspots,</span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>  <span class="at">indicator =</span> <span class="st">&quot;hotspot_count&quot;</span>,</span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a>  <span class="at">palette =</span> <span class="st">&quot;YlOrRd&quot;</span>,</span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Nombre de familles à haute valeur&quot;</span></span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Cas d’usage</strong> : - <strong>Conservation</strong> :
+Parcelles à haute biodiversité + ancienneté + connectivité -
+<strong>Gestion des risques</strong> : Parcelles cumulant fire + storm +
+drought - <strong>Optimisation multi-objectif</strong> : Équilibre
+production/protection</p>
+</div>
+</div>
+<div id="exemple-complet-workflow-multi-famille" class="section level1">
+<h1>Exemple complet : Workflow multi-famille</h1>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># 1. Charger données</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">data</span>(massif_demo_units)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>layers <span class="ot">&lt;-</span> <span class="fu">massif_demo_layers</span>()</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co"># 2. Calculer indicateurs de 3 familles</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">nemeton_compute</span>(</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>  massif_demo_units,</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>  layers,</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>    <span class="st">&quot;carbon&quot;</span>,        <span class="co"># Famille C</span></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>    <span class="st">&quot;water&quot;</span>,         <span class="co"># Famille W</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>    <span class="st">&quot;biodiversity&quot;</span>   <span class="co"># Famille B</span></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>  )</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>)</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co"># 3. Normaliser</span></span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>normalized <span class="ot">&lt;-</span> <span class="fu">normalize_indicators</span>(</span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>  results,</span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(<span class="st">&quot;carbon&quot;</span>, <span class="st">&quot;water&quot;</span>, <span class="st">&quot;biodiversity&quot;</span>),</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;minmax&quot;</span></span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>)</span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a></span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="co"># 4. Créer indices par famille</span></span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a>normalized <span class="ot">&lt;-</span> <span class="fu">create_family_index</span>(normalized, <span class="at">family =</span> <span class="st">&quot;C&quot;</span>, <span class="at">name =</span> <span class="st">&quot;score_carbon&quot;</span>)</span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a>normalized <span class="ot">&lt;-</span> <span class="fu">create_family_index</span>(normalized, <span class="at">family =</span> <span class="st">&quot;W&quot;</span>, <span class="at">name =</span> <span class="st">&quot;score_water&quot;</span>)</span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a>normalized <span class="ot">&lt;-</span> <span class="fu">create_family_index</span>(normalized, <span class="at">family =</span> <span class="st">&quot;B&quot;</span>, <span class="at">name =</span> <span class="st">&quot;score_bio&quot;</span>)</span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a></span>
+<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a><span class="co"># 5. Indice global multi-famille</span></span>
+<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a>global_index <span class="ot">&lt;-</span> <span class="fu">create_composite_index</span>(</span>
+<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a>  normalized,</span>
+<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="fu">c</span>(<span class="st">&quot;score_carbon&quot;</span>, <span class="st">&quot;score_water&quot;</span>, <span class="st">&quot;score_bio&quot;</span>),</span>
+<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a>  <span class="at">weights =</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="fl">0.3</span>, <span class="fl">0.3</span>),</span>
+<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;ecosystem_services_index&quot;</span></span>
+<span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a>)</span>
+<span id="cb18-35"><a href="#cb18-35" tabindex="-1"></a></span>
+<span id="cb18-36"><a href="#cb18-36" tabindex="-1"></a><span class="co"># 6. Visualisation</span></span>
+<span id="cb18-37"><a href="#cb18-37" tabindex="-1"></a><span class="fu">plot_indicators_map</span>(</span>
+<span id="cb18-38"><a href="#cb18-38" tabindex="-1"></a>  global_index,</span>
+<span id="cb18-39"><a href="#cb18-39" tabindex="-1"></a>  <span class="at">indicators =</span> <span class="st">&quot;ecosystem_services_index&quot;</span>,</span>
+<span id="cb18-40"><a href="#cb18-40" tabindex="-1"></a>  <span class="at">palette =</span> <span class="st">&quot;RdYlGn&quot;</span>,</span>
+<span id="cb18-41"><a href="#cb18-41" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Indice global de services écosystémiques&quot;</span>,</span>
+<span id="cb18-42"><a href="#cb18-42" tabindex="-1"></a>  <span class="at">legend_title =</span> <span class="st">&quot;Score (0-100)&quot;</span></span>
+<span id="cb18-43"><a href="#cb18-43" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="liste-des-indicateurs-disponibles" class="section level1">
+<h1>Liste des indicateurs disponibles</h1>
+<p>Consultez la liste complète des indicateurs implémentés :</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Lister tous les indicateurs disponibles</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="fu">list_indicators</span>()</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="co"># Filtrer par famille</span></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="fu">list_indicators</span>(<span class="at">family =</span> <span class="st">&quot;C&quot;</span>)</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="fu">list_indicators</span>(<span class="at">family =</span> <span class="st">&quot;W&quot;</span>)</span></code></pre></div>
+</div>
+<div id="roadmap-v0.3.0-v1.0.0" class="section level1">
+<h1>Roadmap v0.3.0 → v1.0.0</h1>
+<p><strong>Version actuelle (v0.3.0)</strong> : <strong>9 familles sur
+12 implémentées</strong> (C, B, W, A, F, L, T, R + partiel S)</p>
+<p><strong>Indicateurs opérationnels</strong> : - ✅ <strong>23
+indicateurs</strong> pleinement fonctionnels - ✅ <strong>Analyse
+croisée inter-familles</strong> (corrélations, hotspots multi-critères)
+- ✅ <strong>Infrastructure temporelle complète</strong> (analyse
+multi-périodes, détection de changements) - ✅ <strong>Support bilingue
+FR/EN</strong> - ✅ <strong>845+ tests</strong> avec 87% de
+couverture</p>
+<p><strong>Versions futures</strong> : - <strong>v0.4.0</strong> :
+Familles S, P complètes (usages sociaux, production) -
+<strong>v0.5.0</strong> : Familles E, N + Dashboard Shiny interactif -
+<strong>v1.0.0</strong> : Référentiel complet 12 familles (36
+indicateurs) + analyses avancées</p>
+</div>
+<div id="références" class="section level1">
+<h1>Références</h1>
+<ul>
+<li>Référentiel Nemeton : Documentation technique Vivre en Forêt</li>
+<li>Guide méthodologique :
+<code>vignette(&quot;getting-started_fr&quot;)</code></li>
+<li>Analyse temporelle :
+<code>vignette(&quot;temporal-analysis_fr&quot;)</code></li>
+<li><strong>Nouveautés v0.3.0</strong> :
+<code>vignette(&quot;biodiversity-resilience-v030_fr&quot;)</code> - Familles B,
+R, T, A + Analyse croisée</li>
+</ul>
+</div>
+<div id="session-info" class="section level1">
+<h1>Session Info</h1>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.0 </span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0</span></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="co">#&gt;  [1] LC_CTYPE=fr_FR.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a><span class="co">#&gt;  [3] LC_TIME=fr_FR.UTF-8        LC_COLLATE=C              </span></span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a><span class="co">#&gt;  [5] LC_MONETARY=fr_FR.UTF-8    LC_MESSAGES=fr_FR.UTF-8   </span></span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a><span class="co">#&gt;  [7] LC_PAPER=fr_FR.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a><span class="co">#&gt; [11] LC_MEASUREMENT=fr_FR.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Paris</span></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb20-22"><a href="#cb20-22" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb20-23"><a href="#cb20-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-24"><a href="#cb20-24" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb20-25"><a href="#cb20-25" tabindex="-1"></a><span class="co">#&gt; [1] patchwork_1.3.2 dplyr_1.1.4     ggplot2_4.0.1   sf_1.0-23      </span></span>
+<span id="cb20-26"><a href="#cb20-26" tabindex="-1"></a><span class="co">#&gt; [5] nemeton_0.4.1  </span></span>
+<span id="cb20-27"><a href="#cb20-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb20-28"><a href="#cb20-28" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb20-29"><a href="#cb20-29" tabindex="-1"></a><span class="co">#&gt;  [1] gtable_0.3.6         bslib_0.9.0          xfun_0.55           </span></span>
+<span id="cb20-30"><a href="#cb20-30" tabindex="-1"></a><span class="co">#&gt;  [4] raster_3.6-32        devtools_2.4.6       remotes_2.5.0       </span></span>
+<span id="cb20-31"><a href="#cb20-31" tabindex="-1"></a><span class="co">#&gt;  [7] ggrepel_0.9.6        lattice_0.22-7       vctrs_0.6.5         </span></span>
+<span id="cb20-32"><a href="#cb20-32" tabindex="-1"></a><span class="co">#&gt; [10] tools_4.5.2          generics_0.1.4       tibble_3.3.0        </span></span>
+<span id="cb20-33"><a href="#cb20-33" tabindex="-1"></a><span class="co">#&gt; [13] proxy_0.4-29         cluster_2.1.8.1      pkgconfig_2.0.3     </span></span>
+<span id="cb20-34"><a href="#cb20-34" tabindex="-1"></a><span class="co">#&gt; [16] KernSmooth_2.23-26   RColorBrewer_1.1-3   S7_0.2.1            </span></span>
+<span id="cb20-35"><a href="#cb20-35" tabindex="-1"></a><span class="co">#&gt; [19] desc_1.4.3           lifecycle_1.0.4      compiler_4.5.2      </span></span>
+<span id="cb20-36"><a href="#cb20-36" tabindex="-1"></a><span class="co">#&gt; [22] farver_2.1.2         stringr_1.6.0        terra_1.8-86        </span></span>
+<span id="cb20-37"><a href="#cb20-37" tabindex="-1"></a><span class="co">#&gt; [25] codetools_0.2-20     sass_0.4.10          htmltools_0.5.9     </span></span>
+<span id="cb20-38"><a href="#cb20-38" tabindex="-1"></a><span class="co">#&gt; [28] usethis_3.2.1        class_7.3-23         yaml_2.3.12         </span></span>
+<span id="cb20-39"><a href="#cb20-39" tabindex="-1"></a><span class="co">#&gt; [31] jquerylib_0.1.4      pillar_1.11.1        exactextractr_0.10.1</span></span>
+<span id="cb20-40"><a href="#cb20-40" tabindex="-1"></a><span class="co">#&gt; [34] tidyr_1.3.2          ellipsis_0.3.2       classInt_0.4-11     </span></span>
+<span id="cb20-41"><a href="#cb20-41" tabindex="-1"></a><span class="co">#&gt; [37] cachem_1.1.0         sessioninfo_1.2.3    tidyselect_1.2.1    </span></span>
+<span id="cb20-42"><a href="#cb20-42" tabindex="-1"></a><span class="co">#&gt; [40] digest_0.6.39        stringi_1.8.7        purrr_1.2.0         </span></span>
+<span id="cb20-43"><a href="#cb20-43" tabindex="-1"></a><span class="co">#&gt; [43] labeling_0.4.3       rprojroot_2.1.1      fastmap_1.2.0       </span></span>
+<span id="cb20-44"><a href="#cb20-44" tabindex="-1"></a><span class="co">#&gt; [46] grid_4.5.2           cli_3.6.5            magrittr_2.0.4      </span></span>
+<span id="cb20-45"><a href="#cb20-45" tabindex="-1"></a><span class="co">#&gt; [49] dichromat_2.0-0.1    pkgbuild_1.4.8       e1071_1.7-17        </span></span>
+<span id="cb20-46"><a href="#cb20-46" tabindex="-1"></a><span class="co">#&gt; [52] withr_3.0.2          scales_1.4.0         sp_2.2-0            </span></span>
+<span id="cb20-47"><a href="#cb20-47" tabindex="-1"></a><span class="co">#&gt; [55] roxygen2_7.3.3       rmarkdown_2.30       otel_0.2.0          </span></span>
+<span id="cb20-48"><a href="#cb20-48" tabindex="-1"></a><span class="co">#&gt; [58] memoise_2.0.1        evaluate_1.0.5       knitr_1.51          </span></span>
+<span id="cb20-49"><a href="#cb20-49" tabindex="-1"></a><span class="co">#&gt; [61] viridisLite_0.4.2    rlang_1.1.6          Rcpp_1.1.0          </span></span>
+<span id="cb20-50"><a href="#cb20-50" tabindex="-1"></a><span class="co">#&gt; [64] glue_1.8.0           DBI_1.2.3            xml2_1.5.1          </span></span>
+<span id="cb20-51"><a href="#cb20-51" tabindex="-1"></a><span class="co">#&gt; [67] pkgload_1.4.1        jsonlite_2.0.0       rstudioapi_0.17.1   </span></span>
+<span id="cb20-52"><a href="#cb20-52" tabindex="-1"></a><span class="co">#&gt; [70] R6_2.6.1             fs_1.6.6             units_1.0-0</span></span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
