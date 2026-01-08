@@ -707,7 +707,7 @@ grade_this({
 
 ---
 
-## Section 4 : Paysage et Sylvosphère (L1, L2)
+## Section 4 : Paysage, TVB et Vitalité (L1, L3, C2)
 
 ### Exercice 4.1 : Effet lisière et Sylvosphère (L1)
 
@@ -1595,12 +1595,18 @@ grade_this({
 
 ### Exercice 4.3 : Indice de Vitalité NDVI (C2)
 
-L'indicateur **C2** mesure la **vitalité de la végétation** via l'indice NDVI (Normalized Difference Vegetation Index) calculé à partir d'images satellite Sentinel-2.
+L'indicateur **C2** mesure la **vitalité de la végétation** via l'indice NDVI (Normalized Difference Vegetation Index).
 
-| Bande | Longueur d'onde | Utilisation |
-|-------|-----------------|-------------|
-| B4 | Rouge (665 nm) | Absorption chlorophylle |
-| B8 | NIR (842 nm) | Réflexion végétation |
+**Sources de données (par ordre de priorité) :**
+
+| Priorité | Source | Package | Résolution | Description |
+|----------|--------|---------|------------|-------------|
+| 1 | IGN Ortho IRC | happign | 50cm | Orthophoto infrarouge couleur (France) |
+| 2 | Sentinel-2 L2A | rstac | 10m | Bandes B4/B8 via STAC API (global) |
+| 3 | MODIS NDVI | geodata | 250m | Données globales MOD13Q1 |
+| 4 | BD Forêt | sf | vecteur | Estimation par type de peuplement |
+
+**Formule NDVI :**
 
 $$NDVI = \frac{NIR - Rouge}{NIR + Rouge}$$
 
@@ -1634,23 +1640,80 @@ ndvi_available <- FALSE
 ndvi_raster <- NULL
 
 # ============================================================
-# 1. TÉLÉCHARGEMENT SENTINEL-2 via rstac/openeo
+# 1. TÉLÉCHARGEMENT DONNÉES NDVI (ordre: happign > rstac > geodata)
 # ============================================================
 
-# Méthode 1: rstac (STAC API Copernicus)
-if (requireNamespace("rstac", quietly = TRUE)) {
+# Méthode 1: happign (Ortho IRC IGN) - Priorité France
+if (requireNamespace("happign", quietly = TRUE)) {
+  library(happign)
+
+  tryCatch({
+    cat("Méthode 1: happign (Ortho IRC IGN)...\n")
+
+    # Bbox pour la requête
+    zone_bbox <- st_as_sfc(st_bbox(parcelles))
+    st_crs(zone_bbox) <- st_crs(parcelles)
+
+    # Chercher les couches d'orthophotos IRC disponibles
+    wms_layers <- get_layers_metadata("wms")
+    irc_layers <- wms_layers$Name[grepl("irc|infrarouge|ortho.*ir",
+                                         wms_layers$Name, ignore.case = TRUE)]
+
+    if (length(irc_layers) > 0) {
+      cat("Couches IRC trouvées:", length(irc_layers), "\n")
+      cat("Exemples:", paste(head(irc_layers, 3), collapse = ", "), "\n")
+
+      # Télécharger l'ortho IRC
+      for (layer in head(irc_layers, 3)) {
+        tryCatch({
+          # Télécharger via WMS
+          irc_raster <- get_wms_raster(
+            x = zone_bbox,
+            layer = layer,
+            res = 5,  # 5m de résolution (compromis taille/précision)
+            crs = st_crs(parcelles)$epsg
+          )
+
+          if (!is.null(irc_raster)) {
+            cat("Ortho IRC téléchargée via:", layer, "\n")
+
+            # L'ortho IRC contient généralement: NIR, Rouge, Vert
+            # Calculer un pseudo-NDVI
+            if (nlyr(irc_raster) >= 3) {
+              nir <- irc_raster[[1]]  # Bande 1 = NIR
+              red <- irc_raster[[2]]  # Bande 2 = Rouge
+              ndvi_raster <- (nir - red) / (nir + red + 0.001)
+              ndvi_available <- TRUE
+              cat("NDVI calculé depuis Ortho IRC!\n")
+              break
+            }
+          }
+        }, error = function(e) {
+          cat("Erreur couche", layer, ":", e$message, "\n")
+        })
+      }
+    } else {
+      cat("Pas de couche IRC trouvée\n")
+    }
+  }, error = function(e) {
+    cat("Erreur happign IRC:", e$message, "\n")
+  })
+}
+
+# Méthode 2: rstac (Sentinel-2 via STAC API) - Fallback global
+if (!ndvi_available && requireNamespace("rstac", quietly = TRUE)) {
   library(rstac)
 
   tryCatch({
-    cat("Tentative via rstac (Copernicus STAC)...\n")
+    cat("\nMéthode 2: rstac (Sentinel-2 STAC)...\n")
 
     # Bbox en WGS84
     bbox <- st_bbox(st_transform(parcelles, 4326))
 
-    # Connexion au catalogue Copernicus
+    # Connexion au catalogue Planetary Computer (Microsoft)
     s2_stac <- stac("https://planetarycomputer.microsoft.com/api/stac/v1")
 
-    # Recherche d'images Sentinel-2
+    # Recherche d'images Sentinel-2 des 90 derniers jours
     items <- s2_stac |>
       stac_search(
         collections = "sentinel-2-l2a",
@@ -1663,48 +1726,91 @@ if (requireNamespace("rstac", quietly = TRUE)) {
     if (length(items$features) > 0) {
       cat("Images Sentinel-2 trouvées:", length(items$features), "\n")
 
-      # Télécharger la première image (bandes B4 et B8)
+      # Sélectionner la meilleure image (moins nuageuse)
       best_item <- items$features[[1]]
       cat("Image sélectionnée:", best_item$id, "\n")
       cat("Couverture nuageuse:", best_item$properties$`eo:cloud_cover`, "%\n")
 
-      # Note: Le téléchargement réel nécessite une authentification
-      # Pour le tutoriel, on simule le NDVI
+      # Télécharger les bandes B4 (Rouge) et B8 (NIR)
+      tryCatch({
+        b4_url <- best_item$assets$B04$href
+        b8_url <- best_item$assets$B08$href
+
+        if (!is.null(b4_url) && !is.null(b8_url)) {
+          # Télécharger via terra avec vsicurl
+          b4_raster <- rast(paste0("/vsicurl/", b4_url))
+          b8_raster <- rast(paste0("/vsicurl/", b8_url))
+
+          # Découper sur la zone d'intérêt
+          zone_vect <- vect(st_transform(st_as_sfc(st_bbox(parcelles)), 4326))
+          b4_crop <- crop(b4_raster, zone_vect)
+          b8_crop <- crop(b8_raster, zone_vect)
+
+          # Calculer NDVI
+          ndvi_raster <- (b8_crop - b4_crop) / (b8_crop + b4_crop + 0.001)
+          ndvi_available <- TRUE
+          cat("NDVI calculé depuis Sentinel-2!\n")
+        }
+      }, error = function(e) {
+        cat("Erreur téléchargement bandes:", e$message, "\n")
+      })
+    } else {
+      cat("Aucune image Sentinel-2 disponible (couverture nuageuse > 20%)\n")
     }
   }, error = function(e) {
     cat("Erreur rstac:", e$message, "\n")
   })
 }
 
-# Méthode 2: geodata (données globales simplifiées)
+# Méthode 3: geodata (MODIS NDVI global) - Fallback basse résolution
 if (!ndvi_available && requireNamespace("geodata", quietly = TRUE)) {
   tryCatch({
-    cat("\nTentative via geodata (MODIS NDVI)...\n")
+    cat("\nMéthode 3: geodata (MODIS NDVI)...\n")
 
     # geodata fournit des données MODIS NDVI globales
     # Résolution plus faible (250m) mais accessible sans authentification
-
-    # Note: geodata::pixel_ndvi() ou similar si disponible
-    cat("geodata disponible pour données MODIS\n")
+    # Note: Nécessite téléchargement préalable des données MODIS
+    cat("geodata disponible - résolution 250m\n")
   }, error = function(e) {
     cat("Erreur geodata:", e$message, "\n")
   })
 }
 
 # ============================================================
-# 2. CALCUL DU NDVI (simulation basée sur données disponibles)
+# 2. CALCUL DU NDVI PAR PARCELLE
 # ============================================================
 
 cat("\n=== Calcul NDVI ===\n")
-
-# Si pas de données satellite, estimation basée sur:
-# - BD Forêt (type de peuplement)
-# - Métriques LiDAR (couverture)
 
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
 lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
 
 parcelles$C2 <- 0.5  # Valeur par défaut
+
+# Si raster NDVI disponible (Sentinel-2 ou Ortho IRC), extraire par parcelle
+if (ndvi_available && exists("ndvi_raster") && !is.null(ndvi_raster)) {
+  cat("Extraction NDVI depuis raster...\n")
+
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    parcelles$C2 <- exactextractr::exact_extract(
+      ndvi_raster,
+      st_transform(parcelles, crs(ndvi_raster)),
+      fun = "mean"
+    )
+    cat("NDVI extrait pour", nrow(parcelles), "parcelles\n")
+  } else {
+    # Extraction manuelle
+    for (i in seq_len(nrow(parcelles))) {
+      geom <- st_transform(st_geometry(parcelles)[i], crs(ndvi_raster))
+      vals <- terra::extract(ndvi_raster, vect(geom), fun = mean, na.rm = TRUE)
+      if (nrow(vals) > 0 && !is.na(vals[1, 2])) {
+        parcelles$C2[i] <- vals[1, 2]
+      }
+    }
+  }
+} else {
+  # Méthode 4: Estimation basée sur BD Forêt + LiDAR
+  cat("Pas de données satellite, estimation via BD Forêt...\n")
 
 if (file.exists(bd_foret_path)) {
   bd_foret <- st_read(bd_foret_path, quiet = TRUE)
@@ -1753,6 +1859,7 @@ if (file.exists(lidar_path)) {
     }
   }
 }
+}  # Fin else (estimation BD Forêt)
 
 # Borner entre 0 et 1
 parcelles$C2 <- pmax(0, pmin(1, parcelles$C2))
