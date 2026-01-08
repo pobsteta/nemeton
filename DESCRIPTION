@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.4.10
+Version: 0.4.18
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -54,6 +54,9 @@ Suggests:
     RSQLite,
     leaflet (>= 2.1.0),
     rappdirs
+Remotes:
+    Jean-Roc/lidarHD,
+    rstudio/gradethis
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton

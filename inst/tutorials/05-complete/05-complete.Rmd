@@ -148,39 +148,75 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   cache_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 
-# Charger les données des tutoriels précédents
+# Fonction pour trouver ou créer la colonne ID
+ensure_id_column <- function(df, id_name = "idu") {
+  # Chercher une colonne ID existante
+  id_candidates <- c("idu", "IDU", "id", "ID", "fid", "FID", "OBJECTID", "id_parcelle")
+  found_id <- intersect(id_candidates, names(df))
+
+
+  if (length(found_id) > 0) {
+    # Renommer la première colonne trouvée en 'idu'
+    if (found_id[1] != id_name) {
+      df[[id_name]] <- df[[found_id[1]]]
+    }
+  } else {
+    # Créer un ID basé sur le numéro de ligne
+    df[[id_name]] <- seq_len(nrow(df))
+  }
+  return(df)
+}
+
+# Charger et préparer les données
 parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- ensure_id_column(parcelles)
+
 metriques_lidar <- st_read(file.path(cache_dir, "metriques_lidar.gpkg"), quiet = TRUE)
+metriques_lidar <- ensure_id_column(metriques_lidar)
+
 indic_terrain <- st_read(file.path(cache_dir, "indicateurs_terrain.gpkg"), quiet = TRUE)
+indic_terrain <- ensure_id_column(indic_terrain)
+
 indic_eco <- st_read(file.path(cache_dir, "indicateurs_ecologiques.gpkg"), quiet = TRUE)
+indic_eco <- ensure_id_column(indic_eco)
 ```
 
-```{r assemble-indicators, exercise=TRUE, exercise.lines=50, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
+```{r assemble-indicators, exercise=TRUE, exercise.lines=45, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
 # ============================================================
 # ASSEMBLAGE DES 32 INDICATEURS NEMETON
-# Clé de jointure : idu (identifiant cadastral unique)
+# Clé de jointure : idu
 # ============================================================
 
 # 1. Partir des parcelles (géométrie de base)
 indicateurs <- parcelles
+cat("Parcelles:", nrow(indicateurs), "\n")
 
 # 2. Joindre les métriques LiDAR (T02) → C1, P1, P3, E1, A1
 cols_lidar <- c("idu", "C1", "P1", "P3", "E1", "A1")
-lidar_data <- st_drop_geometry(metriques_lidar)[, intersect(cols_lidar, names(metriques_lidar))]
-indicateurs <- merge(indicateurs, lidar_data, by = "idu", all.x = TRUE)
-cat("✓ LiDAR: 5 indicateurs\n")
+cols_present <- intersect(cols_lidar, names(metriques_lidar))
+if ("idu" %in% cols_present && length(cols_present) > 1) {
+  lidar_data <- st_drop_geometry(metriques_lidar)[, cols_present, drop = FALSE]
+  indicateurs <- merge(indicateurs, lidar_data, by = "idu", all.x = TRUE)
+  cat("✓ LiDAR:", length(cols_present) - 1, "indicateurs\n")
+}
 
-# 3. Joindre les indicateurs terrain (T03) → W1-3, R1-4, S1-3, P2, F1
+# 3. Joindre les indicateurs terrain (T03)
 cols_terrain <- c("idu", "W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2", "F1")
-terrain_data <- st_drop_geometry(indic_terrain)[, intersect(cols_terrain, names(indic_terrain))]
-indicateurs <- merge(indicateurs, terrain_data, by = "idu", all.x = TRUE)
-cat("✓ Terrain: 12 indicateurs\n")
+cols_present <- intersect(cols_terrain, names(indic_terrain))
+if ("idu" %in% cols_present && length(cols_present) > 1) {
+  terrain_data <- st_drop_geometry(indic_terrain)[, cols_present, drop = FALSE]
+  indicateurs <- merge(indicateurs, terrain_data, by = "idu", all.x = TRUE)
+  cat("✓ Terrain:", length(cols_present) - 1, "indicateurs\n")
+}
 
-# 4. Joindre les indicateurs écologiques (T04) → B1-3, L1-3, C2, T1-2, A2, F2, N1-3
+# 4. Joindre les indicateurs écologiques (T04)
 cols_eco <- c("idu", "B1", "B2", "B3", "L1", "L2", "L3", "C2", "T1", "T2", "A2", "F2", "N1", "N2", "N3")
-eco_data <- st_drop_geometry(indic_eco)[, intersect(cols_eco, names(indic_eco))]
-indicateurs <- merge(indicateurs, eco_data, by = "idu", all.x = TRUE)
-cat("✓ Écologique: 14 indicateurs\n")
+cols_present <- intersect(cols_eco, names(indic_eco))
+if ("idu" %in% cols_present && length(cols_present) > 1) {
+  eco_data <- st_drop_geometry(indic_eco)[, cols_present, drop = FALSE]
+  indicateurs <- merge(indicateurs, eco_data, by = "idu", all.x = TRUE)
+  cat("✓ Écologique:", length(cols_present) - 1, "indicateurs\n")
+}
 
 # ============================================================
 # BILAN
@@ -193,25 +229,34 @@ indicateurs_attendus <- c("C1", "P1", "P3", "E1", "A1",
 presents <- sum(indicateurs_attendus %in% names(indicateurs))
 
 cat("\n=== BILAN ===\n")
-cat("Parcelles:", nrow(indicateurs), "\n")
-cat("Indicateurs:", presents, "/ 31 (+ E2 à calculer = 32)\n")
+cat("Colonnes:", ncol(indicateurs), "\n")
+cat("Indicateurs:", presents, "/ 31 (+ E2 = 32)\n")
 ```
 
 ```{r assemble-indicators-solution}
-# Assemblage simplifié avec idu comme clé de jointure
+# Assemblage avec idu comme clé de jointure
 indicateurs <- parcelles
 
 # Joindre LiDAR
 cols_lidar <- c("idu", "C1", "P1", "P3", "E1", "A1")
-indicateurs <- merge(indicateurs, st_drop_geometry(metriques_lidar)[, intersect(cols_lidar, names(metriques_lidar))], by = "idu", all.x = TRUE)
+cols_present <- intersect(cols_lidar, names(metriques_lidar))
+if ("idu" %in% cols_present) {
+  indicateurs <- merge(indicateurs, st_drop_geometry(metriques_lidar)[, cols_present, drop = FALSE], by = "idu", all.x = TRUE)
+}
 
 # Joindre Terrain
 cols_terrain <- c("idu", "W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2", "F1")
-indicateurs <- merge(indicateurs, st_drop_geometry(indic_terrain)[, intersect(cols_terrain, names(indic_terrain))], by = "idu", all.x = TRUE)
+cols_present <- intersect(cols_terrain, names(indic_terrain))
+if ("idu" %in% cols_present) {
+  indicateurs <- merge(indicateurs, st_drop_geometry(indic_terrain)[, cols_present, drop = FALSE], by = "idu", all.x = TRUE)
+}
 
 # Joindre Écologique
 cols_eco <- c("idu", "B1", "B2", "B3", "L1", "L2", "L3", "C2", "T1", "T2", "A2", "F2", "N1", "N2", "N3")
-indicateurs <- merge(indicateurs, st_drop_geometry(indic_eco)[, intersect(cols_eco, names(indic_eco))], by = "idu", all.x = TRUE)
+cols_present <- intersect(cols_eco, names(indic_eco))
+if ("idu" %in% cols_present) {
+  indicateurs <- merge(indicateurs, st_drop_geometry(indic_eco)[, cols_present, drop = FALSE], by = "idu", all.x = TRUE)
+}
 
 cat("Assemblage terminé:", ncol(indicateurs), "colonnes\n")
 ```
