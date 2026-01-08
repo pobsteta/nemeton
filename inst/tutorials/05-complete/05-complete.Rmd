@@ -1,0 +1,833 @@
+---
+title: "Tutorial 05 : Assemblage — Famille E (E2) + Indice Composite I_nemeton"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+runtime: shiny_prerendered
+description: >
+  Assemblage des 31 indicateurs, calcul E2 (évitement carbone), normalisation
+  Min-Max, et calcul de l'indice composite pondéré I_nemeton.
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(gradethis)
+library(sf)
+library(terra)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+gradethis::gradethis_setup()
+
+# Répertoire cache
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+```
+
+## Introduction
+
+### Objectifs du Tutorial
+
+Bienvenue dans le **cinquième tutorial** de la série nemeton !
+
+Dans les tutoriels précédents, vous avez calculé des indicateurs appartenant aux 12 familles :
+- **T01** : Zone d'étude et données de base
+- **T02** : Métriques LiDAR (C1, P1, P3, B2, E1, A1)
+- **T03** : Indicateurs terrain (W1-W3, R1-R3, S1-S3, P2, F1)
+- **T04** : Indicateurs écologiques (B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3)
+
+Maintenant, vous allez :
+1. **Assembler** tous les indicateurs dans un tableau unique
+2. **Normaliser** les valeurs pour les rendre comparables
+3. **Calculer E2** (évitement carbone) pour compléter la famille Énergie
+4. **Calculer l'indice composite** nemeton
+5. **Analyser** la distribution des résultats
+
+### Les 12 Familles d'Indicateurs
+
+```{r familles-diagram, echo=FALSE}
+familles <- data.frame(
+  Code = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
+  Famille = c("Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
+              "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"),
+  Nb_Indicateurs = c(3, 3, 3, 2, 2, 2, 2, 3, 3, 3, 2, 3),
+  Source_Principale = c("LiDAR", "INPN/LiDAR", "MNT", "LiDAR/BD Forêt",
+                        "MNT/Pédologie", "BD Forêt", "BD Forêt", "MNT",
+                        "BD TOPO", "LiDAR/BD Forêt", "LiDAR/BD Forêt", "Multi")
+)
+knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton")
+```
+
+## Chargement des Données
+
+### Vérification des Prérequis
+
+Avant de commencer, vérifions que toutes les données des tutoriaux précédents sont disponibles :
+
+```{r verif-prerequis, exercise=TRUE}
+# Répertoire de cache
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+# Fichiers attendus des tutoriaux précédents
+fichiers_requis <- c(
+  "parcelles.gpkg",           # T01
+  "metriques_lidar.gpkg",     # T02
+  "indicateurs_terrain.gpkg", # T03
+  "indicateurs_ecologiques.gpkg"  # T04
+)
+
+# Vérification
+for (f in fichiers_requis) {
+  chemin <- file.path(cache_dir, f)
+  existe <- file.exists(chemin)
+  cat(sprintf("%s : %s\n", f, ifelse(existe, "✓ OK", "✗ MANQUANT")))
+}
+```
+
+### Chargement des Couches
+
+```{r load-layers, exercise=TRUE, exercise.setup="verif-prerequis"}
+# Charger toutes les couches d'indicateurs
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+
+# Métriques LiDAR (T02)
+if (file.exists(file.path(cache_dir, "metriques_lidar.gpkg"))) {
+  metriques_lidar <- st_read(file.path(cache_dir, "metriques_lidar.gpkg"), quiet = TRUE)
+  cat("Métriques LiDAR:", ncol(metriques_lidar) - 1, "colonnes\n")
+}
+
+# Indicateurs Terrain (T03)
+if (file.exists(file.path(cache_dir, "indicateurs_terrain.gpkg"))) {
+  indic_terrain <- st_read(file.path(cache_dir, "indicateurs_terrain.gpkg"), quiet = TRUE)
+  cat("Indicateurs Terrain:", ncol(indic_terrain) - 1, "colonnes\n")
+}
+
+# Indicateurs Écologiques (T04)
+if (file.exists(file.path(cache_dir, "indicateurs_ecologiques.gpkg"))) {
+  indic_eco <- st_read(file.path(cache_dir, "indicateurs_ecologiques.gpkg"), quiet = TRUE)
+  cat("Indicateurs Écologiques:", ncol(indic_eco) - 1, "colonnes\n")
+}
+
+cat("\nTotal parcelles:", nrow(parcelles))
+```
+
+## Assemblage des Indicateurs
+
+### Principe de la Jointure Spatiale
+
+Pour assembler les indicateurs, nous devons joindre les différentes couches.
+Deux approches sont possibles :
+1. **Jointure attributaire** si les couches partagent un identifiant commun
+2. **Jointure spatiale** basée sur la géométrie
+
+```{r jointure-concept, echo=FALSE}
+cat("
+Parcelles (base)
+     │
+     ├── + Métriques LiDAR (T02)
+     │       → C1, P1, P3, B2_lidar, E1, A1
+     │
+     ├── + Indicateurs Terrain (T03)
+     │       → W1, W2, W3, R1, R2, R3, S1, S2, S3, P2, F1
+     │
+     ├── + Indicateurs Écologiques (T04)
+     │       → B1, B2, B3, L1, L2, L3, C2, T1, T2, A2, F2, N1, N2, N3
+     │
+     └── + Calcul E2 (T05)
+             → E2 (évitement carbone = E1 × facteur substitution)
+")
+```
+
+### Exercice : Assembler les Indicateurs
+
+Écrivez le code pour fusionner toutes les couches d'indicateurs :
+
+```{r assemble-indicators, exercise=TRUE, exercise.lines=25}
+# À compléter : assembler les indicateurs
+# Commencer par les parcelles de base
+indicateurs_complet <- parcelles
+
+# Joindre les métriques LiDAR (conserver uniquement les colonnes d'indicateurs)
+# Utiliser st_join() ou merge() selon la structure
+
+# Joindre les indicateurs terrain
+
+# Joindre les indicateurs écologiques
+
+# Afficher le résultat
+names(indicateurs_complet)
+```
+
+```{r assemble-indicators-solution}
+# Assembler les indicateurs par jointure attributaire
+# Supposons que toutes les couches ont un identifiant 'id_parcelle'
+
+indicateurs_complet <- parcelles
+
+# Joindre métriques LiDAR
+if (exists("metriques_lidar")) {
+  cols_lidar <- c("id_parcelle", "zmax", "zmean", "zsd", "zq95", "pzabove2")
+  cols_present <- intersect(cols_lidar, names(metriques_lidar))
+  if (length(cols_present) > 1) {
+    indicateurs_complet <- merge(
+      indicateurs_complet,
+      st_drop_geometry(metriques_lidar)[, cols_present],
+      by = "id_parcelle",
+      all.x = TRUE
+    )
+  }
+}
+
+# Joindre indicateurs terrain
+if (exists("indic_terrain")) {
+  cols_terrain <- c("id_parcelle", "W1", "W2", "W3", "R1", "R2", "R3",
+                    "S1", "S2", "S3", "P2", "F1")
+  cols_present <- intersect(cols_terrain, names(indic_terrain))
+  if (length(cols_present) > 1) {
+    indicateurs_complet <- merge(
+      indicateurs_complet,
+      st_drop_geometry(indic_terrain)[, cols_present],
+      by = "id_parcelle",
+      all.x = TRUE
+    )
+  }
+}
+
+# Joindre indicateurs écologiques
+if (exists("indic_eco")) {
+  cols_eco <- c("id_parcelle", "B1", "B2", "B3", "L1", "L2", "T1", "T2",
+                "A2", "F2", "N1", "N2", "N3")
+  cols_present <- intersect(cols_eco, names(indic_eco))
+  if (length(cols_present) > 1) {
+    indicateurs_complet <- merge(
+      indicateurs_complet,
+      st_drop_geometry(indic_eco)[, cols_present],
+      by = "id_parcelle",
+      all.x = TRUE
+    )
+  }
+}
+
+names(indicateurs_complet)
+```
+
+```{r assemble-indicators-check}
+grade_result(
+  pass_if(~ "sf" %in% class(.result) || is.character(.result),
+          "Bon assemblage des indicateurs !"),
+  fail_if(~ TRUE, "Vérifiez la structure de jointure")
+)
+```
+
+## Normalisation des Indicateurs
+
+### Pourquoi Normaliser ?
+
+Les indicateurs ont des unités et échelles très différentes :
+- Hauteur maximale (zmax) : 0-50 mètres
+- TWI (W1) : 2-20 sans unité
+- Distance routes (S1) : 0-5000 mètres
+- Zones protégées (B1) : 0-1 (booléen ou proportion)
+
+Pour les **comparer** et les **agréger**, il faut les ramener sur une échelle commune.
+
+### Méthodes de Normalisation
+
+```{r normalisation-methods, echo=FALSE}
+methods <- data.frame(
+  Méthode = c("Min-Max", "Z-score", "Rang percentile", "Bornes fixes"),
+  Formule = c("(x - min) / (max - min)", "(x - μ) / σ", "rang(x) / n", "(x - borne_inf) / (borne_sup - borne_inf)"),
+  Résultat = c("[0, 1]", "[-∞, +∞]", "[0, 1]", "[0, 1] (clippé)"),
+  Usage = c("Défaut nemeton", "Comparaison statistique", "Robuste aux outliers", "Seuils experts")
+)
+knitr::kable(methods, caption = "Méthodes de normalisation")
+```
+
+### Normalisation Min-Max
+
+La méthode **Min-Max** est la plus courante. Elle transforme chaque valeur selon :
+
+$$x_{norm} = \frac{x - x_{min}}{x_{max} - x_{min}}$$
+
+```{r minmax-function, exercise=TRUE}
+# Fonction de normalisation Min-Max
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+
+  if (max_val == min_val) {
+    return(rep(0.5, length(x)))  # Valeur constante
+  }
+
+  (x - min_val) / (max_val - min_val)
+}
+
+# Test
+valeurs <- c(10, 20, 30, 40, 50)
+normalize_minmax(valeurs)
+```
+
+### Exercice : Normaliser les Indicateurs
+
+Appliquez la normalisation Min-Max à tous les indicateurs numériques :
+
+```{r normalize-all, exercise=TRUE, exercise.lines=20}
+# Fonction de normalisation
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
+}
+
+# Simuler des données pour l'exercice
+set.seed(42)
+n <- 50
+indicateurs <- data.frame(
+  id_parcelle = 1:n,
+  zmax = runif(n, 5, 45),
+  W1 = runif(n, 3, 18),
+  S1 = runif(n, 50, 3000),
+  B1 = rbinom(n, 1, 0.3)
+)
+
+# À compléter : normaliser toutes les colonnes numériques sauf id_parcelle
+# Créer un nouveau data.frame 'indicateurs_norm'
+
+```
+
+```{r normalize-all-solution}
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
+}
+
+set.seed(42)
+n <- 50
+indicateurs <- data.frame(
+  id_parcelle = 1:n,
+  zmax = runif(n, 5, 45),
+  W1 = runif(n, 3, 18),
+  S1 = runif(n, 50, 3000),
+  B1 = rbinom(n, 1, 0.3)
+)
+
+# Identifier les colonnes à normaliser
+cols_num <- setdiff(names(indicateurs), "id_parcelle")
+
+# Normaliser chaque colonne
+indicateurs_norm <- indicateurs
+for (col in cols_num) {
+  indicateurs_norm[[paste0(col, "_norm")]] <- normalize_minmax(indicateurs[[col]])
+}
+
+# Afficher un aperçu
+head(indicateurs_norm[, c("zmax", "zmax_norm", "W1", "W1_norm")])
+```
+
+```{r normalize-all-check}
+grade_result(
+  pass_if(~ is.data.frame(.result),
+          "Normalisation réussie !"),
+  fail_if(~ TRUE, "Vérifiez la structure du résultat")
+)
+```
+
+### Inversion des Indicateurs Négatifs
+
+Certains indicateurs ont une logique **inverse** : une valeur élevée est défavorable.
+
+| Indicateur | Logique | Action |
+|------------|---------|--------|
+| R1 (risque feu) | Élevé = mauvais | Inverser : 1 - x_norm |
+| S1 (distance routes) | Élevé = bon (tranquillité) | Conserver |
+| N2 (distance infrastructures) | Élevé = bon | Conserver |
+| F1 (risque érosion) | Élevé = mauvais | Inverser |
+
+```{r inversion, exercise=TRUE}
+# Indicateurs à inverser (valeur élevée = défavorable)
+indicateurs_negatifs <- c("R1", "R2", "R3", "F1", "L1")  # L1 = fragmentation
+
+# Fonction d'inversion
+inverser_indicateur <- function(x_norm) {
+  1 - x_norm
+}
+
+# Exemple
+risque_feu_norm <- c(0.2, 0.5, 0.8)  # Normalisé
+risque_feu_inv <- inverser_indicateur(risque_feu_norm)
+
+cat("Original (normalisé):", risque_feu_norm, "\n")
+cat("Inversé:", risque_feu_inv, "\n")
+cat("Interprétation: fort risque (0.8) devient score faible (0.2)")
+```
+
+## Indicateur E2 : Évitement Carbone
+
+### Concept de l'Évitement d'Émissions
+
+L'indicateur **E2** quantifie les **émissions de CO₂ évitées** grâce à la substitution du bois
+aux énergies fossiles. C'est un indicateur clé de la famille Énergie (E) qui complète E1
+(potentiel de production énergétique).
+
+**Principe** : Chaque m³ de bois-énergie utilisé à la place de combustibles fossiles évite
+l'émission d'environ **0.5 à 0.9 tCO₂** selon le combustible remplacé.
+
+```{r e2-concept, echo=FALSE}
+substitution <- data.frame(
+  Combustible_Remplace = c("Fioul domestique", "Gaz naturel", "Charbon", "Électricité (mix FR)"),
+  tCO2_evite_par_m3 = c(0.72, 0.55, 0.90, 0.15),
+  Usage_Typique = c("Chauffage individuel", "Chauffage collectif", "Industrie", "Pointe")
+)
+knitr::kable(substitution, caption = "Facteurs de substitution carbone")
+```
+
+### Calcul de E2
+
+L'indicateur E2 est calculé à partir de :
+1. **E1** : Potentiel de production bois-énergie (tep/ha/an)
+2. **Facteur de substitution** : tCO₂ évitées par tep de bois
+
+$$E2 = E1 \times f_{substitution} \times \eta_{conversion}$$
+
+Où :
+- $E1$ : Production énergétique potentielle (tep/ha/an)
+- $f_{substitution}$ : Facteur de substitution moyen (≈ 2.5 tCO₂/tep)
+- $\eta_{conversion}$ : Rendement de conversion (≈ 0.85)
+
+### Exercice : Calculer E2
+
+```{r calc-e2, exercise=TRUE, exercise.lines=30}
+# Simuler des données d'entrée
+set.seed(42)
+n <- 50
+
+parcelles <- data.frame(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 8),
+  # E1 déjà calculé dans Tutorial 02 (tep/ha/an)
+  E1 = runif(n, 0.3, 2.5),
+  # Type de peuplement (influence le rendement)
+  type_peuplement = sample(c("feuillus", "resineux", "mixte"), n, replace = TRUE,
+                           prob = c(0.5, 0.35, 0.15))
+)
+
+# Paramètres de calcul E2
+facteur_substitution <- 2.5  # tCO2 évitées par tep de bois-énergie
+rendement_conversion <- 0.85  # Efficacité moyenne des chaufferies
+
+# À compléter : calculer E2 (évitement carbone en tCO2/ha/an)
+# Puis calculer l'évitement total par parcelle (tCO2/an)
+
+```
+
+```{r calc-e2-solution}
+set.seed(42)
+n <- 50
+
+parcelles <- data.frame(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 8),
+  E1 = runif(n, 0.3, 2.5),
+  type_peuplement = sample(c("feuillus", "resineux", "mixte"), n, replace = TRUE,
+                           prob = c(0.5, 0.35, 0.15))
+)
+
+# Paramètres
+facteur_substitution <- 2.5
+rendement_conversion <- 0.85
+
+# Ajuster le rendement selon le type de peuplement
+parcelles$rendement_ajuste <- ifelse(
+  parcelles$type_peuplement == "feuillus", 0.88,
+  ifelse(parcelles$type_peuplement == "resineux", 0.82, 0.85)
+)
+
+# Calculer E2 : évitement carbone (tCO2/ha/an)
+parcelles$E2 <- parcelles$E1 * facteur_substitution * parcelles$rendement_ajuste
+
+# Évitement total par parcelle (tCO2/an)
+parcelles$E2_total <- parcelles$E2 * parcelles$surface_ha
+
+# Résumé
+cat("E2 - Évitement carbone (tCO2/ha/an):\n")
+summary(parcelles$E2)
+
+cat("\nÉvitement total sur la zone d'étude:",
+    round(sum(parcelles$E2_total), 1), "tCO2/an\n")
+
+# Visualisation
+hist(parcelles$E2, main = "Distribution de E2 (Évitement Carbone)",
+     xlab = "tCO2 évitées/ha/an", col = "darkgreen", breaks = 10)
+```
+
+```{r calc-e2-check}
+grade_result(
+  pass_if(~ is.numeric(.result) || "histogram" %in% class(.result),
+          "Excellent ! E2 calculé avec succès."),
+  fail_if(~ TRUE, "Vérifiez la formule E2 = E1 × facteur × rendement")
+)
+```
+
+### E2 par Type de Peuplement
+
+```{r e2-by-type, exercise=TRUE}
+# Analyser E2 par type de peuplement
+set.seed(42)
+n <- 50
+
+parcelles <- data.frame(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 8),
+  E1 = runif(n, 0.3, 2.5),
+  type_peuplement = sample(c("feuillus", "resineux", "mixte"), n, replace = TRUE,
+                           prob = c(0.5, 0.35, 0.15))
+)
+
+# Calcul E2 avec rendement par type
+parcelles$rendement <- c(feuillus = 0.88, resineux = 0.82, mixte = 0.85)[parcelles$type_peuplement]
+parcelles$E2 <- parcelles$E1 * 2.5 * parcelles$rendement
+
+# Statistiques par type
+stats_type <- aggregate(E2 ~ type_peuplement, data = parcelles,
+                        FUN = function(x) c(moy = mean(x), med = median(x), max = max(x)))
+print(stats_type)
+
+# Boxplot
+boxplot(E2 ~ type_peuplement, data = parcelles,
+        main = "E2 par type de peuplement",
+        xlab = "Type", ylab = "tCO2/ha/an",
+        col = c("burlywood", "darkseagreen", "lightsteelblue"))
+```
+
+### Intégration de E2 dans le GeoPackage
+
+```{r e2-export, exercise=TRUE}
+# Mise à jour du fichier d'indicateurs avec E2
+# (Code conceptuel - en situation réelle avec les vraies données)
+
+cat("Indicateurs Énergie à ajouter au GeoPackage:\n")
+cat("- E1: Production énergétique potentielle (tep/ha/an)\n")
+cat("- E2: Évitement carbone (tCO2/ha/an)\n\n")
+
+cat("Mise à jour du fichier:\n")
+cat("indicateurs_ecologiques.gpkg + E2 → indicateurs_complets.gpkg\n")
+
+# Code d'export (non exécuté)
+# indic_eco$E2 <- E2_calcule
+# st_write(indic_eco, file.path(cache_dir, "indicateurs_complets.gpkg"),
+#          layer = "indicateurs", delete_layer = TRUE)
+```
+
+## Calcul de l'Indice Composite
+
+### Pondération des Familles
+
+L'indice composite nemeton agrège les 12 familles avec des pondérations reflétant les priorités de gestion :
+
+```{r ponderations, echo=FALSE}
+poids <- data.frame(
+  Famille = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
+  Nom = c("Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
+          "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"),
+  Poids_Default = c(10, 12, 8, 6, 6, 5, 4, 10, 8, 8, 5, 8),
+  stringsAsFactors = FALSE
+)
+poids$Poids_Relatif <- round(poids$Poids_Default / sum(poids$Poids_Default) * 100, 1)
+knitr::kable(poids, caption = "Pondérations par défaut des familles nemeton")
+```
+
+### Formule de l'Indice Composite
+
+$$I_{nemeton} = \sum_{f=1}^{12} w_f \cdot \bar{I}_f$$
+
+Où :
+- $w_f$ : poids normalisé de la famille f
+- $\bar{I}_f$ : moyenne des indicateurs normalisés de la famille f
+
+### Exercice : Calculer l'Indice Composite
+
+```{r composite-index, exercise=TRUE, exercise.lines=35}
+# Simuler des indicateurs normalisés pour l'exercice
+set.seed(42)
+n <- 30
+
+indic_norm <- data.frame(
+  id = 1:n,
+  # Carbone (C)
+  C1 = runif(n), C2 = runif(n), C3 = runif(n),
+  # Biodiversité (B)
+  B1 = runif(n), B2 = runif(n), B3 = runif(n),
+  # Eau (W)
+  W1 = runif(n), W2 = runif(n), W3 = runif(n),
+  # Risques (R) - déjà inversés
+  R1 = runif(n), R2 = runif(n), R3 = runif(n)
+)
+
+# Poids des familles (sous-ensemble)
+poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
+
+# À compléter : calculer l'indice composite
+# 1. Calculer la moyenne par famille pour chaque parcelle
+# 2. Appliquer les poids
+# 3. Sommer pour obtenir l'indice final
+
+```
+
+```{r composite-index-solution}
+set.seed(42)
+n <- 30
+
+indic_norm <- data.frame(
+  id = 1:n,
+  C1 = runif(n), C2 = runif(n), C3 = runif(n),
+  B1 = runif(n), B2 = runif(n), B3 = runif(n),
+  W1 = runif(n), W2 = runif(n), W3 = runif(n),
+  R1 = runif(n), R2 = runif(n), R3 = runif(n)
+)
+
+poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
+
+# Calculer la moyenne par famille
+indic_norm$moy_C <- rowMeans(indic_norm[, c("C1", "C2", "C3")])
+indic_norm$moy_B <- rowMeans(indic_norm[, c("B1", "B2", "B3")])
+indic_norm$moy_W <- rowMeans(indic_norm[, c("W1", "W2", "W3")])
+indic_norm$moy_R <- rowMeans(indic_norm[, c("R1", "R2", "R3")])
+
+# Calculer l'indice composite pondéré
+indic_norm$I_nemeton <- (
+  poids["C"] * indic_norm$moy_C +
+  poids["B"] * indic_norm$moy_B +
+  poids["W"] * indic_norm$moy_W +
+  poids["R"] * indic_norm$moy_R
+) / sum(poids)  # Normaliser par la somme des poids utilisés
+
+# Résultat
+summary(indic_norm$I_nemeton)
+hist(indic_norm$I_nemeton, main = "Distribution de l'Indice Nemeton",
+     xlab = "Score", col = "forestgreen", breaks = 10)
+```
+
+```{r composite-index-check}
+grade_result(
+  pass_if(~ is.numeric(.result) || "histogram" %in% class(.result),
+          "Indice composite calculé !"),
+  fail_if(~ TRUE, "Vérifiez le calcul de l'indice")
+)
+```
+
+## Utilisation de nemeton
+
+### Fonction create_composite_index()
+
+Le package nemeton fournit une fonction dédiée :
+
+```{r nemeton-composite, eval=FALSE}
+library(nemeton)
+
+# Créer l'indice composite avec pondérations par défaut
+resultat <- create_composite_index(
+  data = indicateurs_sf,
+  weights = NULL,  # Utilise les poids par défaut
+  normalize = TRUE,
+  invert_negative = TRUE
+)
+
+# Avec pondérations personnalisées
+poids_perso <- list(
+  C = 15, B = 20, W = 10, A = 5, F = 5, L = 5,
+  T = 5, R = 10, S = 5, P = 10, E = 5, N = 5
+)
+
+resultat_perso <- create_composite_index(
+  data = indicateurs_sf,
+  weights = poids_perso
+)
+```
+
+### Exercice : Intégration nemeton
+
+```{r nemeton-integration, exercise=TRUE, exercise.lines=20}
+# Simulation de la fonction nemeton
+# (Dans la vraie vie, utiliser library(nemeton))
+
+create_composite_index_demo <- function(data, weights = NULL) {
+  # Poids par défaut
+  if (is.null(weights)) {
+    weights <- list(C = 10, B = 12, W = 8, R = 10)
+  }
+
+  # Normaliser les poids
+  total <- sum(unlist(weights))
+  weights_norm <- lapply(weights, function(x) x / total)
+
+  # Calculer (simplifié)
+  data$I_nemeton <- runif(nrow(data))  # Simulation
+  return(data)
+}
+
+# Test avec vos données
+test_data <- data.frame(
+  id = 1:10,
+  C1 = runif(10), B1 = runif(10), W1 = runif(10), R1 = runif(10)
+)
+
+resultat <- create_composite_index_demo(test_data)
+head(resultat)
+```
+
+## Export des Résultats
+
+### Sauvegarde du Tableau Complet
+
+```{r export-gpkg, exercise=TRUE}
+# Préparer les données finales
+# (En situation réelle avec les vraies données)
+
+# Simuler le résultat final
+set.seed(42)
+n <- 30
+resultat_final <- data.frame(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  I_nemeton = runif(n, 0.3, 0.8),
+  classe = cut(runif(n, 0.3, 0.8),
+               breaks = c(0, 0.4, 0.6, 0.8, 1),
+               labels = c("Faible", "Moyen", "Bon", "Excellent"))
+)
+
+# Afficher le résumé
+cat("Résumé de l'indice nemeton:\n")
+summary(resultat_final$I_nemeton)
+
+cat("\nDistribution par classe:\n")
+table(resultat_final$classe)
+```
+
+### Export vers GeoPackage
+
+```{r export-final, exercise=TRUE, exercise.setup="export-gpkg"}
+# Code d'export (non exécuté dans le tutorial)
+#
+# # Convertir en sf si nécessaire
+# resultat_sf <- st_as_sf(resultat_final,
+#                         geometry = geometries,
+#                         crs = 2154)
+#
+# # Exporter
+# output_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+# st_write(resultat_sf, output_path, delete_dsn = TRUE)
+#
+# cat("Export réussi:", output_path)
+
+cat("Le fichier serait exporté vers:\n")
+cat(file.path(cache_dir, "indicateurs_complets.gpkg"))
+```
+
+## Quiz Final
+
+### Question 1
+
+```{r quiz-norm}
+quiz(
+  question("Pourquoi normalise-t-on les indicateurs ?",
+    answer("Pour réduire le temps de calcul"),
+    answer("Pour rendre les indicateurs comparables entre eux", correct = TRUE),
+    answer("Pour supprimer les valeurs manquantes"),
+    answer("Pour augmenter la précision des données"),
+    correct = "Exact ! La normalisation ramène tous les indicateurs sur une échelle commune [0,1].",
+    incorrect = "La normalisation sert à comparer des indicateurs ayant des unités différentes."
+  )
+)
+```
+
+### Question 2
+
+```{r quiz-inversion}
+quiz(
+  question("Quel indicateur doit être inversé après normalisation ?",
+    answer("zmax (hauteur maximale)"),
+    answer("B1 (zones protégées)"),
+    answer("R1 (risque feu)", correct = TRUE),
+    answer("W1 (indice humidité)"),
+    correct = "Oui ! Un risque élevé est défavorable, donc on inverse pour que 0 = risque fort.",
+    incorrect = "On inverse les indicateurs où une valeur élevée est défavorable."
+  )
+)
+```
+
+### Question 3
+
+```{r quiz-composite}
+quiz(
+  question("Comment est calculé l'indice composite nemeton ?",
+    answer("Somme simple de tous les indicateurs"),
+    answer("Moyenne pondérée des moyennes par famille", correct = TRUE),
+    answer("Maximum des indicateurs"),
+    answer("Produit de tous les indicateurs"),
+    correct = "L'indice agrège les 12 familles avec des pondérations reflétant les priorités.",
+    incorrect = "L'indice utilise une moyenne pondérée par famille."
+  )
+)
+```
+
+### Question 4
+
+```{r quiz-poids}
+quiz(
+  question("Quelle famille a le poids le plus élevé par défaut ?",
+    answer("Carbone (C)"),
+    answer("Biodiversité (B)", correct = TRUE),
+    answer("Production (P)"),
+    answer("Énergie (E)"),
+    correct = "La biodiversité (12%) est prioritaire dans les pondérations par défaut.",
+    incorrect = "Consultez le tableau des pondérations - la biodiversité a le poids le plus fort."
+  )
+)
+```
+
+## Conclusion
+
+### Récapitulatif
+
+Dans ce tutoriel, vous avez appris à :
+
+1. ✅ **Assembler** les indicateurs de plusieurs sources
+2. ✅ **Normaliser** avec la méthode Min-Max
+3. ✅ **Inverser** les indicateurs négatifs
+4. ✅ **Calculer E2** (évitement carbone) complétant la famille Énergie
+5. ✅ **Calculer** l'indice composite pondéré
+6. ✅ **Exporter** les résultats en GeoPackage
+
+### Données Produites
+
+```
+~/nemeton_tutorial_data/
+└── indicateurs_complets.gpkg
+    ├── Tous les indicateurs normalisés (*_norm)
+    ├── Moyennes par famille (moy_C, moy_B, ...)
+    ├── Indice composite (I_nemeton)
+    └── Classification (classe)
+```
+
+### Prochaine Étape
+
+**Tutorial 06 : Analyse Multi-Critères et Export**
+- Identification des parcelles prioritaires
+- Analyse de sensibilité des pondérations
+- Export cartographique et rapports
+
+```{r next-step, echo=FALSE}
+cat("
+Lancez le prochain tutoriel avec :
+learnr::run_tutorial('06-analysis', package = 'nemeton')
+")
+```
+
+### Ressources
+
+- [Documentation nemeton](https://forestsoils.github.io/nemeton/)
+- [Vignette : Indice composite](https://forestsoils.github.io/nemeton/articles/composite-index.html)
+- [Référentiel des 12 familles](https://forestsoils.github.io/nemeton/articles/complete-referential_fr.html)

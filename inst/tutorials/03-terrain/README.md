@@ -1,0 +1,90 @@
+# Tutorial 03 : Terrain — Familles W, R, S, P, F (W1-3, R1-3, S1-3, P2, F1)
+
+## Description
+
+Ce tutoriel calcule **11 indicateurs** terrain dérivés du MNT et de la BD TOPO, appartenant à **5 familles** nemeton.
+
+## Indicateurs Calculés
+
+| Famille | Code | Indicateur | Source | Description |
+|---------|------|------------|--------|-------------|
+| **W** (Eau) | W1 | Densité réseau hydro | BD TOPO | m linéaires / ha |
+| **W** (Eau) | W2 | Zones humides | MNT (TWI) | % surface TWI > seuil |
+| **W** (Eau) | W3 | TWI moyen | MNT | Indice topographique d'humidité |
+| **R** (Risques) | R1 | Risque incendie | BD Forêt + exposition | Score 0-1 |
+| **R** (Risques) | R2 | Risque tempête | Exposition + altitude | Score 0-1 |
+| **R** (Risques) | R3 | Risque sécheresse | Pente + TWI | Score 0-1 |
+| **S** (Social) | S1 | Distance routes | BD TOPO | Accessibilité (m) |
+| **S** (Social) | S2 | Distance bâtiments | BD TOPO | Éloignement habitat (m) |
+| **S** (Social) | S3 | Densité sentiers | OSM | Fréquentation potentielle |
+| **P** (Production) | P2 | Fertilité station | Pente + altitude | Potentiel sylvicole |
+| **F** (Sol) | F1 | Risque érosion | Pente + ruissellement | Score RUSLE simplifié |
+
+## Prérequis
+
+- Tutorial 01 complété (données en cache)
+- Packages de base: sf, terra
+
+```r
+install.packages(c("sf", "terra", "whitebox"))
+```
+
+### Fichiers requis du Tutorial 01
+
+```
+~/nemeton_tutorial_data/
+├── mnt.tif           # MNT RGE Alti 5m
+├── parcelles.gpkg    # Parcelles cadastrales
+├── bd_foret.gpkg     # BD Forêt IGN
+└── bd_topo.gpkg      # BD TOPO (routes, hydro, bâtiments)
+```
+
+## Données de Sortie
+
+```
+~/nemeton_tutorial_data/
+├── pente.tif                    # Pente (degrés)
+├── exposition.tif               # Exposition (degrés)
+├── twi.tif                      # Topographic Wetness Index
+├── distance_routes.tif          # Distance euclidienne routes
+├── distance_batiments.tif       # Distance euclidienne bâtiments
+└── indicateurs_terrain.gpkg     # Parcelles + 11 indicateurs
+    └── Colonnes: W1, W2, W3, R1, R2, R3, S1, S2, S3, P2, F1
+```
+
+## Sections
+
+1. Introduction aux indicateurs terrain
+2. Calcul de la pente et exposition
+3. Calcul du TWI (Topographic Wetness Index)
+4. Famille W : Indicateurs Eau (W1, W2, W3)
+5. Famille R : Indicateurs Risques (R1, R2, R3)
+6. Famille S : Indicateurs Sociaux (S1, S2, S3)
+7. Indicateurs P2 (Fertilité) et F1 (Érosion)
+8. Export GeoPackage
+9. Quiz final
+
+## Lancement
+
+```r
+learnr::run_tutorial("03-terrain", package = "nemeton")
+```
+
+## Connexion avec nemeton
+
+Fonctions principales utilisées :
+- `indicator_water_network()` → W1
+- `indicator_water_wetlands()` → W2
+- `indicator_water_twi()` → W3
+- `indicator_risk_fire()` → R1
+- `indicator_risk_storm()` → R2
+- `indicator_risk_drought()` → R3
+- `indicator_social_roads()` → S1
+- `indicator_social_buildings()` → S2
+- `indicator_social_trails()` → S3
+- `indicator_production_fertility()` → P2
+- `indicator_soil_erosion()` → F1
+
+## Tutoriel Suivant
+
+→ **Tutorial 04** : Écologie — Familles B, L, C, T, A, F, N (14 indicateurs)

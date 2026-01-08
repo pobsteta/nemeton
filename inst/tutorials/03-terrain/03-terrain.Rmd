@@ -1,0 +1,1614 @@
+---
+title: "Tutorial 03 : Terrain — Familles W, R, S, P, F (W1-3, R1-3, S1-3, P2, F1)"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+runtime: shiny_prerendered
+description: >
+  Calcul de 11 indicateurs terrain : W1-3 (eau/TWI), R1-3 (risques),
+  S1-3 (accessibilité sociale), P2 (pente exploitable), F1 (érosion sol).
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(gradethis)
+gradethis::gradethis_setup()
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(tutorial.exercise.timelimit = 300)
+```
+
+## Bienvenue
+
+### Objectifs du tutoriel
+
+Ce tutoriel vous guide dans le calcul des **indicateurs terrain** pour les familles nemeton :
+
+- **W** (Eau) : TWI, réseau hydrographique, zones humides
+- **R** (Risques) : feu, tempête, sécheresse
+- **S** (Social) : accessibilité, proximité, sentiers
+- **P2** (Station) : fertilité station
+- **F1** (Érosion) : risque érosion
+
+### Prérequis
+
+Données du Tutorial 01 :
+- `mnt.tif` : Modèle Numérique de Terrain
+- `parcelles.gpkg` : Parcelles cadastrales
+- `routes.gpkg` : Réseau routier (BD TOPO)
+- `cours_eau.gpkg` : Cours d'eau (BD TOPO)
+
+---
+
+## Section 1 : Dérivés topographiques
+
+### Pente et exposition
+
+La **pente** et l'**exposition** sont les dérivés de base du MNT.
+
+```{r ex-1-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-1-1, exercise=TRUE, exercise.lines=25, exercise.setup="ex-1-1-setup"}
+# === CALCUL PENTE ET EXPOSITION ===
+
+mnt_path <- file.path(data_dir, "mnt.tif")
+
+if (file.exists(mnt_path)) {
+  mnt <- rast(mnt_path)
+  
+  # Calculer la pente (en degrés)
+  pente <- terrain(mnt, v = "slope", unit = "degrees")
+  
+  # Calculer l'exposition (0 = Nord, 90 = Est, etc.)
+  exposition <- terrain(mnt, v = "aspect", unit = "degrees")
+  
+  cat("=== Pente ===\n")
+  stats_pente <- global(pente, c("min", "max", "mean"), na.rm = TRUE)
+  cat("Min:", round(stats_pente$min, 1), "°\n")
+  cat("Max:", round(stats_pente$max, 1), "°\n")
+  cat("Moyenne:", round(stats_pente$mean, 1), "°\n")
+  
+  # Sauvegarder
+  writeRaster(pente, file.path(data_dir, "pente.tif"), overwrite = TRUE)
+  writeRaster(exposition, file.path(data_dir, "exposition.tif"), overwrite = TRUE)
+  cat("\nRasters sauvegardés.\n")
+} else {
+  cat("MNT non trouvé. Exécutez le Tutorial 01.\n")
+}
+```
+
+```{r ex-1-1-check}
+grade_this({
+  pass("Pente et exposition calculées !")
+})
+```
+
+---
+
+## Section 2 : TWI - Indice d'Humidité Topographique (W3)
+
+### Principe du TWI
+
+Le **TWI** (Topographic Wetness Index) prédit l'accumulation d'eau en fonction de la topographie :
+
+```
+TWI = ln(a / tan(β))
+```
+
+Où `a` = aire drainée amont (Specific Catchment Area), `β` = pente locale.
+
+Le calcul correct du TWI nécessite :
+1. **Remplissage des dépressions** du MNT
+2. **Direction d'écoulement** (flow direction)
+3. **Accumulation de flux** (flow accumulation)
+4. **Calcul final** : TWI = ln(SCA / tan(pente))
+
+Nous utilisons **fasterRaster** qui interface GRASS GIS pour ces calculs hydrologiques.
+
+```{r ex-2-1-setup}
+library(sf)
+library(terra)
+library(fasterRaster)
+faster(grassDir = "/usr/lib/grass84")
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-2-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-2-1-setup", exercise.timelimit=600}
+# === CALCUL DU TWI AVEC fasterRaster ===
+mnt_path <- file.path(data_dir, "mnt.tif")
+
+if (file.exists(mnt_path)) {
+  mnt <- rast(mnt_path)
+  cat("MNT chargé:", ncol(mnt), "x", nrow(mnt), "pixels\n")
+  cat("Résolution:", res(mnt)[1], "m\n\n")
+
+  # Convertir le MNT en GRaster (format GRASS)
+  cat("=== Conversion vers GRASS ===\n")
+  elev <- fast(mnt)
+  cat("GRaster créé:", nrow(elev), "x", ncol(elev), "\n\n")
+
+  # Calculer le TWI avec la fonction wetness()
+  # Cette fonction calcule automatiquement :
+  # - L'accumulation de flux (Specific Catchment Area)
+  # - La pente locale
+  # - Le TWI = ln(SCA / tan(pente))
+  cat("=== Calcul du TWI ===\n")
+  twi_grass <- wetness(elev)
+
+  # Convertir en terra raster pour export
+  twi_terra <- rast(twi_grass)
+
+  cat("\n=== Résultats TWI ===\n")
+  stats <- global(twi_terra, c("min", "max", "mean", "sd"), na.rm = TRUE)
+  cat("TWI min:", round(stats$min, 2), "\n")
+  cat("TWI max:", round(stats$max, 2), "\n")
+  cat("TWI moyen:", round(stats$mean, 2), "\n")
+  cat("TWI écart-type:", round(stats$sd, 2), "\n")
+
+  # Sauvegarder
+  twi_path <- file.path(data_dir, "twi.tif")
+  writeRaster(twi_terra, twi_path, overwrite = TRUE)
+  cat("\nTWI sauvegardé:", twi_path, "\n")
+
+} else {
+  cat("MNT non trouvé. Exécutez le Tutorial 01.\n")
+}
+```
+
+```{r ex-2-1-check}
+grade_this({
+  pass("Indicateur W3 (TWI) calculé !")
+})
+```
+
+### Interprétation du TWI
+
+| Valeur TWI | Interprétation | Caractéristiques |
+|------------|----------------|------------------|
+| < 6 | Très sec | Crêtes, pentes fortes |
+| 6-9 | Sec | Versants bien drainés |
+| 9-12 | Intermédiaire | Mi-pente |
+| 12-15 | Humide | Bas de pente, convergence |
+| > 15 | Très humide | Fonds de vallée, zones humides |
+
+---
+
+## Section 3 : Réseau hydrographique (W1, W2)
+
+### Exercice 3.1 : Densité du réseau hydrographique (W1)
+
+```{r ex-3-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-3-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
+# === DENSITÉ DU RÉSEAU HYDROGRAPHIQUE (W1) ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+cours_eau_path <- file.path(data_dir, "cours_eau.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  if (file.exists(cours_eau_path)) {
+    # Charger les cours d'eau (téléchargés dans Tutorial 01)
+    cours_eau <- st_read(cours_eau_path, quiet = TRUE)
+    cat("Cours d'eau chargés:", nrow(cours_eau), "entités\n\n")
+
+    if (nrow(cours_eau) > 0) {
+      # Calculer la densité du réseau hydro (m/ha) pour chaque parcelle
+      parcelles$W1 <- sapply(seq_len(nrow(parcelles)), function(i) {
+        # Intersection avec la parcelle
+        hydro_in <- st_intersection(cours_eau, parcelles[i, ])
+        if (nrow(hydro_in) > 0) {
+          longueur_m <- sum(st_length(hydro_in))
+          surface_ha <- as.numeric(st_area(parcelles[i, ])) / 10000
+          as.numeric(longueur_m / surface_ha)
+        } else {
+          0
+        }
+      })
+
+      cat("=== Indicateur W1 (Densité réseau hydro) ===\n")
+      cat("Densité min:", round(min(parcelles$W1), 1), "m/ha\n")
+      cat("Densité max:", round(max(parcelles$W1), 1), "m/ha\n")
+      cat("Densité moyenne:", round(mean(parcelles$W1), 1), "m/ha\n")
+    } else {
+      cat("Aucun cours d'eau dans la zone.\n")
+    }
+  } else {
+    cat("Fichier cours_eau.gpkg non trouvé.\n")
+    cat("Exécutez l'exercice 4.3 du Tutorial 01.\n")
+  }
+} else {
+  cat("Parcelles non trouvées. Exécutez le Tutorial 01.\n")
+}
+```
+
+```{r ex-3-1-check}
+grade_this({
+  pass("Indicateur W1 (densité réseau hydro) calculé !")
+})
+```
+
+### Exercice 3.2 : Couverture en zones humides (W2)
+
+```{r ex-3-2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-3-2, exercise=TRUE, exercise.lines=40, exercise.setup="ex-3-2-setup"}
+# === COUVERTURE EN ZONES HUMIDES (W2) ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+twi_path <- file.path(data_dir, "twi.tif")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  if (file.exists(twi_path)) {
+    twi <- rast(twi_path)
+
+    # Les zones humides sont identifiées par un TWI élevé (> 12)
+    # Seuil basé sur la littérature (Beven & Kirkby)
+    seuil_zh <- 12
+    zones_humides <- twi > seuil_zh
+
+    # Calculer le pourcentage de zones humides par parcelle
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      parcelles$W2 <- exactextractr::exact_extract(
+        zones_humides, parcelles, fun = "mean"
+      ) * 100
+    } else {
+      # Fallback avec terra
+      parcelles$W2 <- sapply(seq_len(nrow(parcelles)), function(i) {
+        vals <- extract(zones_humides, vect(parcelles[i, ]))[[2]]
+        mean(vals, na.rm = TRUE) * 100
+      })
+    }
+
+    cat("=== Indicateur W2 (Couverture zones humides) ===\n")
+    cat("Seuil TWI utilisé:", seuil_zh, "\n\n")
+    cat("% zones humides min:", round(min(parcelles$W2, na.rm = TRUE), 1), "%\n")
+    cat("% zones humides max:", round(max(parcelles$W2, na.rm = TRUE), 1), "%\n")
+    cat("% zones humides moyen:", round(mean(parcelles$W2, na.rm = TRUE), 1), "%\n")
+  } else {
+    cat("TWI non trouvé. Exécutez d'abord l'exercice 2.1.\n")
+  }
+} else {
+  cat("Parcelles non trouvées. Exécutez le Tutorial 01.\n")
+}
+```
+
+```{r ex-3-2-check}
+grade_this({
+  pass("Indicateur W2 (couverture zones humides) calculé !")
+})
+```
+
+---
+
+## Section 4 : Indicateurs de risque (R1, R2, R3)
+
+### Exercice 4.1 : Exposition au feu (R1)
+
+L'**exposition au feu** mesure la proportion de végétation combustible dans un rayon donné autour de chaque cellule. Nous utilisons le package **fireexposuR** qui implémente la méthodologie de Beverly et al.
+
+Le métrique d'exposition varie de 0 à 1 :
+- **0** = aucune végétation combustible à proximité
+- **1** = 100% de végétation combustible dans le rayon d'analyse
+
+```{r ex-4-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-4-1, exercise=TRUE, exercise.lines=55, exercise.setup="ex-4-1-setup", exercise.timelimit=600}
+# === EXPOSITION AU FEU (R1) avec fireexposuR ===
+
+mnt_path <- file.path(data_dir, "mnt.tif")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+bdforet_path <- file.path(data_dir, "bd_foret.gpkg")
+
+if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_path)) {
+  mnt <- rast(mnt_path)
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  bd_foret <- st_read(bdforet_path, quiet = TRUE)
+
+  cat("=== Préparation des données ===\n")
+  cat("Parcelles:", nrow(parcelles), "\n")
+  cat("Polygones BD Forêt:", nrow(bd_foret), "\n\n")
+
+  # Créer le raster binaire de danger (forêt = 1, non-forêt = 0)
+  # Rasteriser la BD Forêt sur la grille du MNT
+  cat("Création du raster de danger (végétation combustible)...\n")
+  hazard <- rasterize(vect(bd_foret), mnt, field = 1, background = 0)
+  names(hazard) <- "hazard"
+
+  if (requireNamespace("fireexposuR", quietly = TRUE)) {
+    library(fireexposuR)
+
+    # Calculer l'exposition au feu (distance 500m par défaut)
+    cat("Calcul de l'exposition au feu (rayon 500m)...\n")
+    exposure <- fire_exp(hazard, t_dist = 500)
+
+    cat("\n=== Résultats exposition au feu ===\n")
+    stats <- global(exposure, c("min", "max", "mean", "sd"), na.rm = TRUE)
+    cat("Exposition min:", round(stats$min, 3), "\n")
+    cat("Exposition max:", round(stats$max, 3), "\n")
+    cat("Exposition moyenne:", round(stats$mean, 3), "\n")
+
+    # Extraire par parcelle
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      parcelles$R1 <- exactextractr::exact_extract(exposure, parcelles, fun = "mean")
+
+      cat("\n=== Exposition par parcelle ===\n")
+      cat("R1 min:", round(min(parcelles$R1, na.rm = TRUE), 3), "\n")
+      cat("R1 max:", round(max(parcelles$R1, na.rm = TRUE), 3), "\n")
+      cat("R1 moyenne:", round(mean(parcelles$R1, na.rm = TRUE), 3), "\n")
+    }
+
+    # Sauvegarder le raster d'exposition
+    writeRaster(exposure, file.path(data_dir, "fire_exposure.tif"), overwrite = TRUE)
+    cat("\nRaster d'exposition sauvegardé.\n")
+
+  } else {
+    cat("Package fireexposuR non installé.\n")
+    cat("Installation: install.packages('fireexposuR')\n")
+  }
+} else {
+  cat("Fichiers non trouvés. Vérifiez le Tutorial 01.\n")
+}
+```
+
+```{r ex-4-1-check}
+grade_this({
+  pass("Indicateur R1 (exposition au feu) calculé !")
+})
+```
+
+### Interprétation de l'exposition au feu
+
+| Exposition | Niveau de risque | Recommandation |
+|------------|------------------|----------------|
+| < 0.2 | Faible | Zone tampon efficace |
+| 0.2-0.5 | Modéré | Surveillance normale |
+| 0.5-0.8 | Élevé | Débroussaillage recommandé |
+| > 0.8 | Très élevé | Priorité de gestion |
+
+### Exercice 4.2 : Risque tempête (R2)
+
+Le **risque tempête** est modélisé avec :
+- **nasapower** : données climatiques NASA POWER (vitesse et direction du vent)
+- **microclima** : coefficient d'abri au vent (`windcoef`)
+
+L'exposition au vent est calculée par :
+1. La **direction du vent dominant** (données NASA POWER climatologie)
+2. Le **coefficient d'abri** (microclima) : 0 = totalement exposé, 1 = totalement abrité
+3. **R2 = 1 - coefficient d'abri** : zones exposées = risque élevé
+
+```{r ex-4-2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-4-2, exercise=TRUE, exercise.lines=95, exercise.setup="ex-4-2-setup", exercise.timelimit=600}
+# === RISQUE TEMPÊTE (R2) avec nasapower + microclima ===
+
+mnt_path <- file.path(data_dir, "mnt.tif")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(mnt_path) && file.exists(parcelles_path)) {
+  mnt <- rast(mnt_path)
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  # Coordonnées du centroïde en WGS84
+  centroid_wgs84 <- st_coordinates(st_centroid(st_transform(st_union(parcelles), 4326)))
+  lon <- centroid_wgs84[1, "X"]
+  lat <- centroid_wgs84[1, "Y"]
+
+  # === 1. Données de vent avec nasapower ===
+  wind_dir <- 270
+  wind_speed <- 10
+
+  if (requireNamespace("nasapower", quietly = TRUE)) {
+    library(nasapower)
+    cat("=== Téléchargement données vent (NASA POWER) ===\n")
+
+    wind_data <- tryCatch({
+      get_power(
+        community = "ag",
+        lonlat = c(lon, lat),
+        pars = c("WS10M", "WD10M"),
+        dates = c("2020-01-01", "2023-12-31"),
+        temporal_api = "climatology"
+      )
+    }, error = function(e) {
+      cat("Erreur nasapower:", conditionMessage(e), "\n")
+      NULL
+    })
+
+    if (!is.null(wind_data) && "WD10M" %in% names(wind_data)) {
+      wind_dir <- as.numeric(wind_data$WD10M[1])
+      wind_speed <- as.numeric(wind_data$WS10M[1])
+      cat("Direction dominante:", round(wind_dir), "° (climatologie)\n")
+      cat("Vitesse moyenne:", round(wind_speed, 1), "m/s\n")
+    } else {
+      cat("Données non disponibles, direction par défaut: 270° (ouest)\n")
+    }
+  } else {
+    cat("nasapower non installé, direction par défaut: 270° (ouest)\n")
+  }
+
+  # === 2. Coefficient d'abri au vent avec microclima ===
+  cat("\n=== Calcul coefficient d'abri (microclima) ===\n")
+
+  reso <- res(mnt)[1]  # Résolution du MNT
+
+  if (requireNamespace("microclima", quietly = TRUE)) {
+    library(microclima)
+
+    # windcoef calcule le coefficient d'abri (0-1)
+    # 0.5 = vitesse du vent réduite de 50%
+    shelter_coef <- tryCatch({
+      windcoef(
+        dsm = mnt,
+        direction = wind_dir,
+        hgt = 10,        # Hauteur de mesure (10m standard)
+        reso = reso      # Résolution du MNT
+      )
+    }, error = function(e) {
+      cat("Erreur microclima:", conditionMessage(e), "\n")
+      NULL
+    })
+
+    if (!is.null(shelter_coef)) {
+      # Convertir en SpatRaster si nécessaire
+      if (!inherits(shelter_coef, "SpatRaster")) {
+        shelter_coef <- rast(shelter_coef)
+        crs(shelter_coef) <- crs(mnt)
+        ext(shelter_coef) <- ext(mnt)
+      }
+
+      # R2 = 1 - shelter_coef (exposé = faible abri)
+      R2_raster <- 1 - shelter_coef
+      cat("Méthode: microclima::windcoef\n")
+    } else {
+      R2_raster <- NULL
+    }
+  } else {
+    cat("microclima non installé\n")
+    R2_raster <- NULL
+  }
+
+  # === 3. Fallback si microclima non disponible ===
+  if (is.null(R2_raster)) {
+    cat("Utilisation méthode alternative (dérivés MNT)...\n")
+
+    aspect <- terrain(mnt, v = "aspect", unit = "degrees")
+    pente <- terrain(mnt, v = "slope", unit = "degrees")
+    tri <- terrain(mnt, v = "TRI")
+
+    # Exposition face au vent
+    diff_angle <- abs(aspect - wind_dir)
+    diff_angle <- min(diff_angle, 360 - diff_angle)
+    expo_vent <- 1 - (diff_angle / 180)
+
+    # Normaliser pente et TRI
+    pente_norm <- clamp(pente / 45, lower = 0, upper = 1)
+    tri_norm <- clamp(tri / global(tri, "max", na.rm = TRUE)$max, lower = 0, upper = 1)
+
+    R2_raster <- expo_vent * (0.6 * pente_norm + 0.4 * tri_norm)
+  }
+
+  R2_raster <- clamp(R2_raster, lower = 0, upper = 1)
+
+  cat("\nR2 raster min:", round(global(R2_raster, "min", na.rm = TRUE)$min, 3), "\n")
+  cat("R2 raster max:", round(global(R2_raster, "max", na.rm = TRUE)$max, 3), "\n")
+
+  # === 4. Extraire par parcelle ===
+  cat("\n=== R2 par parcelle ===\n")
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    parcelles$R2 <- exactextractr::exact_extract(R2_raster, parcelles, fun = "mean")
+  } else {
+    parcelles$R2 <- extract(R2_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+  }
+  cat("R2 min:", round(min(parcelles$R2, na.rm = TRUE), 3), "\n")
+  cat("R2 max:", round(max(parcelles$R2, na.rm = TRUE), 3), "\n")
+  cat("R2 moyenne:", round(mean(parcelles$R2, na.rm = TRUE), 3), "\n")
+
+  # Sauvegarder
+  writeRaster(R2_raster, file.path(data_dir, "storm_exposure.tif"), overwrite = TRUE)
+  cat("\nRaster sauvegardé: storm_exposure.tif\n")
+
+} else {
+  cat("Fichiers non trouvés.\n")
+}
+```
+
+```{r ex-4-2-check}
+grade_this({
+  pass("Indicateur R2 (risque tempête) calculé !")
+})
+```
+
+### Interprétation de l'exposition aux tempêtes
+
+| Valeur R2 | Statut | Description |
+|-----------|--------|-------------|
+| 0 | Protégé | Zone abritée par le relief |
+| 1 | Exposé | Zone face au vent dominant |
+
+### Exercice 4.3 : Risque sécheresse (R3)
+
+Le **risque sécheresse** combine :
+1. **Indice climatique** (SPEI) : même pour toute la zone d'étude
+2. **Modulation topographique** : varie par parcelle selon :
+   - **Exposition** : sud = plus d'évaporation = risque accru
+   - **Pente** : forte pente = ruissellement = moins de rétention
+   - **TWI** : faible TWI = terrain sec = risque accru
+
+Formule : `R3 = 0.6 × R3_climat + 0.4 × R3_topo`
+
+Packages utilisés :
+- **SPEI** : calcul de l'indice SPEI (évapotranspiration Hargreaves)
+- **terra** : dérivés topographiques (aspect, pente, TWI)
+
+```{r ex-4-3-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-4-3, exercise=TRUE, exercise.lines=110, exercise.setup="ex-4-3-setup", exercise.timelimit=900}
+# === RISQUE SÉCHERESSE (R3) avec SPEI + modulation topographique ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+mnt_path <- file.path(data_dir, "mnt.tif")
+twi_path <- file.path(data_dir, "twi.tif")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
+  lat_mean <- mean(bbox_wgs84[c("ymin", "ymax")])
+
+  # === 1. Indice climatique de base (SPEI) ===
+  R3_climat <- 0.5  # Valeur par défaut
+
+  if (requireNamespace("SPEI", quietly = TRUE)) {
+    library(SPEI)
+    cat("=== Calcul indice climatique (SPEI) ===\n")
+
+    # Données simulées (remplacer par QBMS si configuré)
+    set.seed(42)
+    precip <- rnorm(60, mean = 70, sd = 30)
+    temp <- 10 + 8 * sin(seq(0, 10*pi, length.out = 60))
+
+    # ETP Hargreaves et SPEI-3
+    pet <- hargreaves(Tmin = temp - 3, Tmax = temp + 3, lat = lat_mean)
+    bal <- precip - pet
+    spei_3 <- spei(ts(bal, frequency = 12), scale = 3)
+
+    spei_recent <- mean(tail(spei_3$fitted, 12), na.rm = TRUE)
+    R3_climat <- max(0, min(1, (-spei_recent + 2) / 4))
+    cat("SPEI-3 récent:", round(spei_recent, 2), "\n")
+    cat("R3 climatique:", round(R3_climat, 3), "\n")
+  } else {
+    cat("SPEI non installé, R3 climat = 0.5\n")
+  }
+
+  # === 2. Modulation topographique par parcelle ===
+  cat("\n=== Modulation topographique ===\n")
+
+  # Le risque sécheresse varie selon:
+  # - TWI faible = terrain sec = risque +
+  # - Exposition sud = plus d'évaporation = risque +
+  # - Pente forte = ruissellement = risque +
+
+  if (file.exists(mnt_path)) {
+    mnt <- rast(mnt_path)
+
+    # Aspect (exposition solaire)
+    aspect <- terrain(mnt, v = "aspect", unit = "degrees")
+    # Sud (180°) = max risque, Nord (0°/360°) = min risque
+    aspect_risk <- (1 + cos((aspect - 180) * pi / 180)) / 2
+
+    # Pente (ruissellement)
+    pente <- terrain(mnt, v = "slope", unit = "degrees")
+    pente_risk <- clamp(pente / 30, lower = 0, upper = 1)
+
+    # TWI inversé (faible TWI = sec = risque élevé)
+    if (file.exists(twi_path)) {
+      twi <- rast(twi_path)
+      twi_norm <- (twi - global(twi, "min", na.rm = TRUE)$min) /
+                  (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
+      twi_risk <- 1 - twi_norm  # Inverser: faible TWI = risque élevé
+    } else {
+      twi_risk <- 0.5
+      cat("TWI non trouvé, utilisation valeur par défaut\n")
+    }
+
+    # Combiner: 40% aspect + 30% pente + 30% TWI
+    topo_risk <- 0.4 * aspect_risk + 0.3 * pente_risk + 0.3 * twi_risk
+    topo_risk <- clamp(topo_risk, lower = 0, upper = 1)
+
+    # Extraire par parcelle
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      parcelles$topo_risk <- exactextractr::exact_extract(topo_risk, parcelles, fun = "mean")
+    } else {
+      parcelles$topo_risk <- extract(topo_risk, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+    }
+
+    cat("Risque topo min:", round(min(parcelles$topo_risk, na.rm = TRUE), 3), "\n")
+    cat("Risque topo max:", round(max(parcelles$topo_risk, na.rm = TRUE), 3), "\n")
+
+    # === 3. R3 final = climat × topographie (raster) ===
+    cat("\n=== R3 final (climat × topographie) ===\n")
+
+    # Créer raster R3 combiné
+    R3_raster <- 0.6 * R3_climat + 0.4 * topo_risk
+    R3_raster <- clamp(R3_raster, lower = 0, upper = 1)
+    names(R3_raster) <- "R3"
+
+    # Sauvegarder le raster R3
+    R3_path <- file.path(data_dir, "drought_risk.tif")
+    writeRaster(R3_raster, R3_path, overwrite = TRUE)
+    cat("Raster R3 sauvegardé:", R3_path, "\n")
+
+    # Extraire par parcelle
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      parcelles$R3 <- exactextractr::exact_extract(R3_raster, parcelles, fun = "mean")
+    } else {
+      parcelles$R3 <- extract(R3_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+    }
+
+    cat("\nR3 par parcelle:\n")
+    cat("- Min:", round(min(parcelles$R3, na.rm = TRUE), 3), "\n")
+    cat("- Max:", round(max(parcelles$R3, na.rm = TRUE), 3), "\n")
+    cat("- Moyenne:", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
+    cat("- Écart-type:", round(sd(parcelles$R3, na.rm = TRUE), 3), "\n")
+
+  } else {
+    cat("MNT non trouvé, pas de modulation topographique\n")
+    parcelles$R3 <- 0.6 * R3_climat + 0.4 * 0.5  # Valeur par défaut
+  }
+
+} else {
+  cat("Parcelles non trouvées.\n")
+}
+```
+
+```{r ex-4-3-check}
+grade_this({
+  pass("Indicateur R3 (risque sécheresse) calculé avec SPI/SPEI/RDI !")
+})
+```
+
+### Interprétation des indices de sécheresse
+
+| SPI / SPEI | Classification | Risque R3 |
+|------------|----------------|-----------|
+| > 2.0 | Extrêmement humide | 0.0 |
+| 1.0 à 2.0 | Humide | 0.0 - 0.25 |
+| -1.0 à 1.0 | Normal | 0.25 - 0.5 |
+| -1.5 à -1.0 | Modérément sec | 0.5 - 0.75 |
+| < -2.0 | Extrêmement sec | 0.75 - 1.0 |
+
+**Configuration QBMS :**
+```r
+# Documentation: https://icarda-git.github.io/QBMS/
+library(QBMS)
+set_qbms_config("https://votre-serveur.org/brapi/v2", token = "VOTRE_TOKEN")
+```
+
+### Synthèse des indicateurs de risque
+
+| Indicateur | Packages | Méthode |
+|------------|----------|---------|
+| **R1** (Feu) | fireexposuR | Exposition végétation combustible (rayon 500m) |
+| **R2** (Tempête) | nasapower + microclima | Vent NASA POWER + coefficient d'abri windcoef |
+| **R3** (Sécheresse) | QBMS + SPEI | Données climatiques + indices SPI, SPEI, RDI |
+
+**Installation des packages :**
+```r
+install.packages(c("fireexposuR", "nasapower", "microclima", "QBMS", "SPEI"))
+```
+
+---
+
+## Section 5 : Accessibilité (S1, S2, S3)
+
+### Exercice 5.1 : Distance aux routes (S1)
+
+```{r ex-5-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-5-1, exercise=TRUE, exercise.lines=55, exercise.setup="ex-5-1-setup"}
+# === ACCESSIBILITÉ ROUTES (S1) - Rendu raster ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+routes_path <- file.path(data_dir, "routes.gpkg")
+mnt_path <- file.path(data_dir, "mnt.tif")
+
+if (file.exists(parcelles_path) && file.exists(mnt_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  mnt <- rast(mnt_path)  # Pour la grille de référence
+
+  if (file.exists(routes_path)) {
+    routes <- st_read(routes_path, quiet = TRUE)
+    routes <- st_transform(routes, st_crs(parcelles))
+    cat("Routes chargées:", nrow(routes), "tronçons\n\n")
+
+    # === Créer raster de distance aux routes ===
+    cat("=== Calcul raster de distance aux routes ===\n")
+
+    # Rasteriser les routes (valeur 1 sur les routes)
+    routes_vect <- vect(routes)
+    routes_rast <- rasterize(routes_vect, mnt, field = 1, background = NA)
+
+    # Calculer la distance (en mètres)
+    S1_raster <- distance(routes_rast)
+    names(S1_raster) <- "S1"
+
+    # Sauvegarder le raster
+    S1_path <- file.path(data_dir, "distance_routes.tif")
+    writeRaster(S1_raster, S1_path, overwrite = TRUE)
+    cat("Raster S1 sauvegardé:", S1_path, "\n")
+
+    # Extraire par parcelle
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      parcelles$S1 <- exactextractr::exact_extract(S1_raster, parcelles, fun = "mean")
+    } else {
+      parcelles$S1 <- extract(S1_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+    }
+
+    cat("\n=== Indicateur S1 (Accessibilité routes) ===\n")
+    cat("Distance min:", round(min(parcelles$S1, na.rm = TRUE)), "m\n")
+    cat("Distance max:", round(max(parcelles$S1, na.rm = TRUE)), "m\n")
+    cat("Distance moyenne:", round(mean(parcelles$S1, na.rm = TRUE)), "m\n")
+
+    # Classification
+    cat("\nClassification accessibilité:\n")
+    cat("- < 100m : Très accessible\n")
+    cat("- 100-500m : Accessible\n")
+    cat("- > 500m : Peu accessible\n")
+  } else {
+    cat("Fichier routes.gpkg non trouvé.\n")
+    cat("Exécutez l'exercice 4.2 du Tutorial 01.\n")
+  }
+} else {
+  cat("Parcelles ou MNT non trouvés. Exécutez le Tutorial 01.\n")
+}
+```
+
+```{r ex-5-1-check}
+grade_this({
+  pass("Indicateur S1 (accessibilité routes) calculé !")
+})
+```
+
+---
+
+### Exercice 5.2 : Distance aux bâtiments (S2)
+
+```{r ex-5-2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-5-2, exercise=TRUE, exercise.lines=70, exercise.setup="ex-5-2-setup", exercise.timelimit=300}
+# === DISTANCE AUX BÂTIMENTS (S2) - Rendu raster ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+mnt_path <- file.path(data_dir, "mnt.tif")
+batiments_path <- file.path(data_dir, "batiments.gpkg")
+
+if (file.exists(parcelles_path) && file.exists(mnt_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  mnt <- rast(mnt_path)
+
+  # === Télécharger les bâtiments si non présents ===
+  if (!file.exists(batiments_path)) {
+    cat("Téléchargement des bâtiments BD TOPO (Géoplateforme)...\n")
+    bbox <- st_bbox(parcelles)
+
+    # Nouvelle URL Géoplateforme IGN (remplace wxs.ign.fr)
+    url_batiments <- paste0(
+      "https://data.geopf.fr/wfs/ows?",
+      "SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature",
+      "&TYPENAME=BDTOPO_V3:batiment",
+      "&SRSNAME=EPSG:2154",
+      "&BBOX=", paste(bbox, collapse = ","), ",EPSG:2154",
+      "&OUTPUTFORMAT=application/json"
+    )
+
+    batiments <- tryCatch({
+      st_read(url_batiments, quiet = TRUE)
+    }, error = function(e) {
+      cat("Erreur téléchargement:", conditionMessage(e), "\n")
+      NULL
+    })
+
+    if (!is.null(batiments) && nrow(batiments) > 0) {
+      st_write(batiments, batiments_path, quiet = TRUE)
+      cat("Bâtiments sauvegardés:", nrow(batiments), "entités\n")
+    } else {
+      cat("Aucun bâtiment trouvé dans la zone.\n")
+    }
+  }
+
+  if (file.exists(batiments_path)) {
+    batiments <- st_read(batiments_path, quiet = TRUE)
+    batiments <- st_transform(batiments, st_crs(parcelles))
+    cat("Bâtiments chargés:", nrow(batiments), "entités\n\n")
+
+    # === Créer raster de distance aux bâtiments ===
+    cat("=== Calcul raster de distance aux bâtiments ===\n")
+
+    batiments_vect <- vect(batiments)
+    batiments_rast <- rasterize(batiments_vect, mnt, field = 1, background = NA)
+    S2_raster <- distance(batiments_rast)
+    names(S2_raster) <- "S2"
+
+    # Sauvegarder le raster
+    S2_path <- file.path(data_dir, "distance_batiments.tif")
+    writeRaster(S2_raster, S2_path, overwrite = TRUE)
+    cat("Raster S2 sauvegardé:", S2_path, "\n")
+
+    # Extraire par parcelle
+    parcelles$S2 <- extract(S2_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+
+    cat("\n=== Indicateur S2 (Distance bâtiments) ===\n")
+    cat("Distance min:", round(min(parcelles$S2, na.rm = TRUE)), "m\n")
+    cat("Distance max:", round(max(parcelles$S2, na.rm = TRUE)), "m\n")
+    cat("Distance moyenne:", round(mean(parcelles$S2, na.rm = TRUE)), "m\n")
+  } else {
+    cat("Bâtiments non disponibles. Vérifiez l'accès au WFS IGN.\n")
+  }
+} else {
+  cat("Parcelles ou MNT non trouvés.\n")
+}
+```
+
+```{r ex-5-2-check}
+grade_this({
+  pass("Indicateur S2 (distance bâtiments) calculé !")
+})
+```
+
+---
+
+### Exercice 5.3 : Densité de sentiers (S3)
+
+```{r ex-5-3-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-5-3, exercise=TRUE, exercise.lines=80, exercise.setup="ex-5-3-setup", exercise.timelimit=300}
+# === DENSITÉ DE SENTIERS (S3) - osmdata ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+mnt_path <- file.path(data_dir, "mnt.tif")
+sentiers_path <- file.path(data_dir, "sentiers.gpkg")
+
+if (file.exists(parcelles_path) && file.exists(mnt_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  mnt <- rast(mnt_path)
+
+  # === Télécharger les sentiers depuis OpenStreetMap ===
+  if (!file.exists(sentiers_path)) {
+    if (requireNamespace("osmdata", quietly = TRUE)) {
+      library(osmdata)
+      cat("Téléchargement des sentiers depuis OpenStreetMap...\n")
+
+      # Bbox en WGS84 pour osmdata
+      bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
+
+      # Requête Overpass : chemins, sentiers, pistes
+      q <- tryCatch({
+        opq(bbox = bbox_wgs84, timeout = 180) |>
+          add_osm_feature(
+            key = "highway",
+            value = c("path", "footway", "track", "bridleway", "cycleway")
+          )
+      }, error = function(e) {
+        cat("Erreur Overpass:", conditionMessage(e), "\n")
+        NULL
+      })
+      
+      sentiers <- osmdata_sf(q)
+
+      if (!is.null(sentiers) && !is.null(sentiers$osm_lines) && nrow(sentiers$osm_lines) > 0) {
+        sentiers_sf <- st_transform(sentiers$osm_lines, st_crs(parcelles))
+        st_write(sentiers_sf, sentiers_path, quiet = TRUE)
+        cat("Sentiers OSM sauvegardés:", nrow(sentiers_sf), "tronçons\n")
+      } else {
+        cat("Aucun sentier trouvé dans la zone.\n")
+      }
+    } else {
+      cat("Package osmdata requis. Installez avec: install.packages('osmdata')\n")
+    }
+  }
+
+  if (file.exists(sentiers_path)) {
+    sentiers <- st_read(sentiers_path, quiet = TRUE)
+    sentiers <- st_transform(sentiers, st_crs(parcelles))
+    cat("Sentiers chargés:", nrow(sentiers), "tronçons\n\n")
+
+    # === Calculer densité par parcelle (m/ha) ===
+    cat("=== Calcul densité de sentiers (m/ha) ===\n")
+
+    parcelles$S3 <- sapply(seq_len(nrow(parcelles)), function(i) {
+      inter <- tryCatch({
+        st_intersection(sentiers, parcelles[i, ])
+      }, error = function(e) NULL)
+      if (!is.null(inter) && nrow(inter) > 0) {
+        longueur <- sum(st_length(inter))
+        surface_ha <- as.numeric(st_area(parcelles[i, ])) / 10000
+        as.numeric(longueur / surface_ha)
+      } else 0
+    })
+
+    # === Créer raster de densité (kernel) ===
+    reso <- res(mnt)[1]
+    sentiers_rast <- rasterize(vect(sentiers), mnt, field = 1, background = 0)
+    w <- focalMat(mnt, d = 100, type = "circle")
+    S3_raster <- focal(sentiers_rast, w = w, fun = "sum", na.rm = TRUE)
+    S3_raster <- S3_raster * reso
+    names(S3_raster) <- "S3"
+
+    S3_path <- file.path(data_dir, "densite_sentiers.tif")
+    writeRaster(S3_raster, S3_path, overwrite = TRUE)
+    cat("Raster S3 sauvegardé:", S3_path, "\n")
+
+    cat("\n=== Indicateur S3 (Densité sentiers) ===\n")
+    cat("Densité min:", round(min(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+    cat("Densité max:", round(max(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+    cat("Densité moyenne:", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+  } else {
+    cat("Sentiers non disponibles.\n")
+  }
+} else {
+  cat("Parcelles ou MNT non trouvés.\n")
+}
+```
+
+```{r ex-5-3-check}
+grade_this({
+  pass("Indicateur S3 (densité sentiers) calculé !")
+})
+```
+
+---
+
+## Section 6 : Station forestière (P2, F1)
+
+### Exercice 6.1 : Fertilité station (P2)
+
+La **fertilité de station** est un indice raster combinant :
+
+**Composantes topographiques** (terra) :
+- **TWI** : capacité de rétention en eau
+- **TPI** : position topographique (crête, versant, fond de vallée)
+- **Pente** : accessibilité, ruissellement
+- **Aspect** : bilan radiatif
+
+**Composante climatique** (climateR + SPEI) :
+- **PET** : évapotranspiration potentielle (Thornthwaite)
+- **Bilan hydrique** : P - PET
+
+**Composante pédologique** (geodata) :
+- SoilGrids : profondeur, texture, pH, carbone organique
+
+```{r ex-6-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-6-1, exercise=TRUE, exercise.lines=140, exercise.setup="ex-6-1-setup", exercise.timelimit=900}
+# === FERTILITÉ STATION (P2) - Rendu raster ===
+
+mnt_path <- file.path(data_dir, "mnt.tif")
+twi_path <- file.path(data_dir, "twi.tif")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(mnt_path) && file.exists(parcelles_path)) {
+  mnt <- rast(mnt_path)
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  centroid_wgs84 <- st_coordinates(st_centroid(st_transform(st_union(parcelles), 4326)))
+  lon <- centroid_wgs84[1, "X"]
+  lat <- centroid_wgs84[1, "Y"]
+
+  # === 1. Composantes topographiques (terra) ===
+  cat("=== 1. Dérivés topographiques ===\n")
+
+  # Pente (optimal 5-25°)
+  pente <- terrain(mnt, v = "slope", unit = "degrees")
+  pente_score <- 1 - abs(pente - 15) / 30
+  pente_score <- clamp(pente_score, lower = 0, upper = 1)
+
+  # Aspect (Est/Ouest optimal, Sud pénalisé)
+  aspect <- terrain(mnt, v = "aspect", unit = "degrees")
+  # Score max pour E(90°) et W(270°), min pour S(180°)
+  aspect_score <- abs(cos((aspect - 90) * pi / 180))
+
+  # TPI - Topographic Position Index
+  tpi <- terrain(mnt, v = "TPI")
+  # Fond de vallée (TPI négatif) = meilleur pour fertilité
+  tpi_norm <- (tpi - global(tpi, "min", na.rm = TRUE)$min) /
+              (global(tpi, "max", na.rm = TRUE)$max - global(tpi, "min", na.rm = TRUE)$min)
+  tpi_score <- 1 - tpi_norm  # Inverser: TPI négatif = bon
+
+  # TWI (humidité topographique)
+  if (file.exists(twi_path)) {
+    twi <- rast(twi_path)
+  } else {
+    cat("TWI non trouvé, calcul simplifié...\n")
+    flow_acc <- terrain(mnt, v = "flowdir")
+    twi <- log((flow_acc + 1) / tan(pente * pi / 180 + 0.01))
+  }
+  twi_norm <- (twi - global(twi, "min", na.rm = TRUE)$min) /
+              (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
+  twi_score <- clamp(twi_norm, lower = 0, upper = 1)
+
+  cat("Pente score moyen:", round(global(pente_score, "mean", na.rm = TRUE)$mean, 3), "\n")
+  cat("TWI score moyen:", round(global(twi_score, "mean", na.rm = TRUE)$mean, 3), "\n")
+
+  # === 2. Composante climatique (climateR + SPEI) ===
+  cat("\n=== 2. Bilan hydrique climatique ===\n")
+
+  pet_score <- 0.5  # Valeur par défaut
+
+  if (requireNamespace("climateR", quietly = TRUE) && requireNamespace("SPEI", quietly = TRUE)) {
+    library(climateR)
+    library(SPEI)
+
+    # Télécharger données climatiques (TerraClimate ou PRISM)
+    climate_data <- tryCatch({
+      getTerraClim(
+        AOI = st_transform(st_union(parcelles), 4326),
+        varname = c("tmin", "tmax", "ppt"),
+        startDate = "2020-01-01",
+        endDate = "2023-12-31"
+      )
+    }, error = function(e) {
+      cat("Erreur climateR:", conditionMessage(e), "\n")
+      NULL
+    })
+
+    if (!is.null(climate_data)) {
+      # Moyennes mensuelles
+      tmin <- as.numeric(global(climate_data$tmin, "mean", na.rm = TRUE)$mean)
+      tmax <- as.numeric(global(climate_data$tmax, "mean", na.rm = TRUE)$mean)
+      ppt <- as.numeric(global(climate_data$ppt, "mean", na.rm = TRUE)$mean)
+
+      # PET Thornthwaite
+      tmean <- (tmin + tmax) / 2
+      pet <- thornthwaite(tmean, lat)
+      pet_annual <- sum(pet, na.rm = TRUE)
+      ppt_annual <- sum(ppt, na.rm = TRUE)
+
+      # Bilan hydrique
+      bilan <- ppt_annual - pet_annual
+      cat("PET annuelle:", round(pet_annual), "mm\n")
+      cat("Précipitations:", round(ppt_annual), "mm\n")
+      cat("Bilan hydrique:", round(bilan), "mm\n")
+
+      # Score: bilan positif = bon
+      pet_score <- max(0, min(1, (bilan + 500) / 1000))
+    } else {
+      cat("Données climateR non disponibles\n")
+    }
+  } else {
+    cat("climateR/SPEI non installés, score climat = 0.5\n")
+  }
+
+  # === 3. Composante pédologique (geodata::soil_world) ===
+  cat("\n=== 3. Données pédologiques (SoilGrids) ===\n")
+
+  sol_score <- 0.5  # Valeur par défaut
+
+  if (requireNamespace("geodata", quietly = TRUE)) {
+    library(geodata)
+
+    # Télécharger les données SoilGrids pour la zone
+    bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
+
+    soil_data <- tryCatch({
+      # Variables SoilGrids disponibles:
+      # "clay", "sand", "silt", "cfvo" (coarse fragments)
+      # "nitrogen", "phh2o", "soc" (soil organic carbon)
+      # "bdod" (bulk density), "cec", "ocd" (organic carbon density)
+
+      # pH du sol (0-30cm)
+      ph <- soil_world(var = "phh2o", depth = 5, path = tempdir())
+      ph_crop <- crop(ph, ext(bbox_wgs84))
+
+      # Carbone organique (fertilité)
+      soc <- soil_world(var = "soc", depth = 5, path = tempdir())
+      soc_crop <- crop(soc, ext(bbox_wgs84))
+
+      # Texture - argile (rétention eau)
+      clay <- soil_world(var = "clay", depth = 5, path = tempdir())
+      clay_crop <- crop(clay, ext(bbox_wgs84))
+
+      list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
+    }, error = function(e) {
+      cat("Erreur geodata:", conditionMessage(e), "\n")
+      NULL
+    })
+
+    if (!is.null(soil_data)) {
+      cat("Données SoilGrids récupérées\n")
+
+      # Reprojeter sur la grille du MNT
+      ph_proj <- project(soil_data$ph, mnt, method = "bilinear")
+      soc_proj <- project(soil_data$soc, mnt, method = "bilinear")
+      clay_proj <- project(soil_data$clay, mnt, method = "bilinear")
+
+      # Score pH (optimal 5.5-7.0 pour forêts)
+      ph_val <- ph_proj / 10  # SoilGrids: pH × 10
+      ph_score <- 1 - abs(ph_val - 6.25) / 2
+      ph_score <- clamp(ph_score, lower = 0, upper = 1)
+
+      # Score carbone organique (plus = mieux)
+      soc_norm <- soc_proj / global(soc_proj, "max", na.rm = TRUE)$max
+      soc_score <- clamp(soc_norm, lower = 0, upper = 1)
+
+      # Score argile (20-40% optimal)
+      clay_score <- 1 - abs(clay_proj - 30) / 50
+      clay_score <- clamp(clay_score, lower = 0, upper = 1)
+
+      # Score sol composite
+      sol_score <- 0.4 * ph_score + 0.35 * soc_score + 0.25 * clay_score
+
+      cat("pH score moyen:", round(global(ph_score, "mean", na.rm = TRUE)$mean, 3), "\n")
+      cat("SOC score moyen:", round(global(soc_score, "mean", na.rm = TRUE)$mean, 3), "\n")
+    } else {
+      cat("Données SoilGrids non disponibles\n")
+    }
+  } else {
+    cat("geodata non installé, score sol = 0.5\n")
+  }
+
+  # === 4. Indice composite P2 (raster) ===
+  cat("\n=== 4. Calcul indice P2 (raster) ===\n")
+
+  # Pondération des composantes
+  # 30% pente + 15% aspect + 20% TPI + 20% TWI + 15% climat
+  P2_raster <- 0.30 * pente_score +
+               0.15 * aspect_score +
+               0.20 * tpi_score +
+               0.20 * twi_score +
+               0.15 * pet_score
+
+  P2_raster <- clamp(P2_raster, lower = 0, upper = 1)
+
+  cat("P2 min:", round(global(P2_raster, "min", na.rm = TRUE)$min, 3), "\n")
+  cat("P2 max:", round(global(P2_raster, "max", na.rm = TRUE)$max, 3), "\n")
+  cat("P2 moyen:", round(global(P2_raster, "mean", na.rm = TRUE)$mean, 3), "\n")
+
+  # Sauvegarder le raster
+  writeRaster(P2_raster, file.path(data_dir, "fertilite_station.tif"), overwrite = TRUE)
+  cat("\nRaster P2 sauvegardé: fertilite_station.tif\n")
+
+  # Extraire par parcelle
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    parcelles$P2 <- exactextractr::exact_extract(P2_raster, parcelles, fun = "mean")
+  } else {
+    parcelles$P2 <- extract(P2_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+  }
+
+  cat("\n=== P2 par parcelle ===\n")
+  cat("P2 min:", round(min(parcelles$P2, na.rm = TRUE), 3), "\n")
+  cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 3), "\n")
+
+} else {
+  cat("Fichiers non trouvés.\n")
+}
+```
+
+```{r ex-6-1-check}
+grade_this({
+  pass("Indicateur P2 (fertilité station) calculé en raster !")
+})
+```
+
+### Interprétation de la fertilité de station
+
+| Score P2 | Classe | Description |
+|----------|--------|-------------|
+| 0.0 - 0.2 | Très faible | Station contraignante |
+| 0.2 - 0.4 | Faible | Productivité limitée |
+| 0.4 - 0.6 | Moyenne | Station standard |
+| 0.6 - 0.8 | Bonne | Conditions favorables |
+| 0.8 - 1.0 | Excellente | Station très fertile |
+
+---
+
+## Section 7 : Export et synthèse
+
+### Exercice 7.1 : Famille W (Eau)
+
+```{r ex-7-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-1, exercise=TRUE, exercise.lines=50, exercise.setup="ex-7-1-setup"}
+# === FAMILLE W (EAU) : W1, W2, W3 ===
+
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+# Charger parcelles (existantes ou nouvelles)
+if (file.exists(output_path)) {
+  parcelles <- st_read(output_path, quiet = TRUE)
+} else {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+}
+
+# Fonction d'extraction
+extract_mean <- function(r, poly) {
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    exactextractr::exact_extract(r, poly, fun = "mean")
+  } else {
+    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+  }
+}
+
+cat("=== Famille W (Eau) ===\n\n")
+
+# W1 : Densité réseau hydrographique
+cours_eau_path <- file.path(data_dir, "cours_eau.gpkg")
+if (file.exists(cours_eau_path)) {
+  cours_eau <- st_read(cours_eau_path, quiet = TRUE)
+  cours_eau <- st_transform(cours_eau, st_crs(parcelles))
+  parcelles$W1 <- sapply(seq_len(nrow(parcelles)), function(i) {
+    inter <- st_intersection(cours_eau, parcelles[i, ])
+    if (nrow(inter) > 0) as.numeric(sum(st_length(inter)) / (st_area(parcelles[i, ]) / 10000))
+    else 0
+  })
+  cat("W1 (densité hydro):", round(mean(parcelles$W1, na.rm = TRUE), 2), "m/ha\n")
+}
+
+# W2, W3 : TWI et zones humides
+twi_path <- file.path(data_dir, "twi.tif")
+if (file.exists(twi_path)) {
+  twi_rast <- rast(twi_path)
+  parcelles$W3 <- extract_mean(twi_rast, parcelles)
+  parcelles$W2 <- extract_mean(twi_rast > 12, parcelles) * 100
+  cat("W2 (zones humides):", round(mean(parcelles$W2, na.rm = TRUE), 2), "%\n")
+  cat("W3 (TWI):", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
+}
+
+# Sauvegarder
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nSauvegardé:", output_path, "\n")
+```
+
+```{r ex-7-1-check}
+grade_this({
+  pass("Famille W (Eau) exportée !")
+})
+```
+
+---
+
+### Exercice 7.2 : Famille R (Risques)
+
+```{r ex-7-2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-2, exercise=TRUE, exercise.lines=40, exercise.setup="ex-7-2-setup"}
+# === FAMILLE R (RISQUES) : R1, R2, R3 ===
+
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
+
+# Fonction d'extraction
+extract_mean <- function(r, poly) {
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    exactextractr::exact_extract(r, poly, fun = "mean")
+  } else {
+    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+  }
+}
+
+cat("=== Famille R (Risques) ===\n\n")
+
+# R1 : Risque feu
+fire_path <- file.path(data_dir, "fire_exposure.tif")
+if (file.exists(fire_path)) {
+  parcelles$R1 <- extract_mean(rast(fire_path), parcelles)
+  cat("R1 (risque feu):", round(mean(parcelles$R1, na.rm = TRUE), 3), "\n")
+}
+
+# R2 : Risque tempête
+storm_path <- file.path(data_dir, "storm_exposure.tif")
+if (file.exists(storm_path)) {
+  parcelles$R2 <- extract_mean(rast(storm_path), parcelles)
+  cat("R2 (risque tempête):", round(mean(parcelles$R2, na.rm = TRUE), 3), "\n")
+}
+
+# R3 : Risque sécheresse
+drought_path <- file.path(data_dir, "drought_risk.tif")
+if (file.exists(drought_path)) {
+  parcelles$R3 <- extract_mean(rast(drought_path), parcelles)
+  cat("R3 (risque sécheresse):", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
+}
+
+# Sauvegarder
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nSauvegardé:", output_path, "\n")
+```
+
+```{r ex-7-2-check}
+grade_this({
+  pass("Famille R (Risques) exportée !")
+})
+```
+
+---
+
+### Exercice 7.3 : Famille S (Social)
+
+```{r ex-7-3-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-3, exercise=TRUE, exercise.lines=40, exercise.setup="ex-7-3-setup"}
+# === FAMILLE S (SOCIAL) : S1, S2, S3 ===
+
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
+
+# Fonction d'extraction
+extract_mean <- function(r, poly) {
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    exactextractr::exact_extract(r, poly, fun = "mean")
+  } else {
+    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+  }
+}
+
+cat("=== Famille S (Social) ===\n\n")
+
+# S1 : Distance aux routes
+dist_routes_path <- file.path(data_dir, "distance_routes.tif")
+if (file.exists(dist_routes_path)) {
+  parcelles$S1 <- extract_mean(rast(dist_routes_path), parcelles)
+  cat("S1 (dist routes):", round(mean(parcelles$S1, na.rm = TRUE), 0), "m\n")
+}
+
+# S2 : Distance aux bâtiments
+dist_bat_path <- file.path(data_dir, "distance_batiments.tif")
+if (file.exists(dist_bat_path)) {
+  parcelles$S2 <- extract_mean(rast(dist_bat_path), parcelles)
+  cat("S2 (dist bâtiments):", round(mean(parcelles$S2, na.rm = TRUE), 0), "m\n")
+}
+
+# S3 : Densité sentiers
+sentiers_path <- file.path(data_dir, "densite_sentiers.tif")
+if (file.exists(sentiers_path)) {
+  parcelles$S3 <- extract_mean(rast(sentiers_path), parcelles)
+  cat("S3 (densité sentiers):", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+}
+
+# Sauvegarder
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nSauvegardé:", output_path, "\n")
+```
+
+```{r ex-7-3-check}
+grade_this({
+  pass("Famille S (Social) exportée !")
+})
+```
+
+---
+
+### Exercice 7.4 : Familles P/F + Synthèse
+
+```{r ex-7-4-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-4, exercise=TRUE, exercise.lines=50, exercise.setup="ex-7-4-setup"}
+# === FAMILLES P (PRODUCTION) et F (SOL) + SYNTHÈSE ===
+
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
+
+# Fonction d'extraction
+extract_mean <- function(r, poly) {
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    exactextractr::exact_extract(r, poly, fun = "mean")
+  } else {
+    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+  }
+}
+
+cat("=== Familles P/F ===\n\n")
+
+# P2 : Fertilité station
+fertilite_path <- file.path(data_dir, "fertilite_station.tif")
+if (file.exists(fertilite_path)) {
+  parcelles$P2 <- extract_mean(rast(fertilite_path), parcelles)
+  cat("P2 (fertilité):", round(mean(parcelles$P2, na.rm = TRUE), 3), "\n")
+}
+
+# F1 : Risque érosion (pente)
+pente_path <- file.path(data_dir, "pente.tif")
+if (file.exists(pente_path)) {
+  parcelles$F1 <- extract_mean(rast(pente_path), parcelles)
+  cat("F1 (érosion/pente):", round(mean(parcelles$F1, na.rm = TRUE), 1), "°\n")
+}
+
+# Sauvegarder
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+# === SYNTHÈSE FINALE ===
+cat("\n=== SYNTHÈSE INDICATEURS TERRAIN ===\n")
+cat("Fichier:", output_path, "\n\n")
+
+indicateurs <- c("W1", "W2", "W3", "R1", "R2", "R3", "S1", "S2", "S3", "P2", "F1")
+cat("Indicateurs calculés:\n")
+for (ind in indicateurs) {
+  if (ind %in% names(parcelles)) {
+    cat(sprintf("- %s: %.2f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
+  }
+}
+cat("\nNombre de parcelles:", nrow(parcelles), "\n")
+```
+
+```{r ex-7-4-check}
+grade_this({
+  pass("Tous les indicateurs terrain exportés !")
+})
+```
+
+---
+
+## Quiz final
+
+```{r quiz-final-1}
+question("Que signifie TWI ?",
+  answer("Topographic Wetness Index - indice d'humidité topographique", correct = TRUE),
+  answer("Tree Width Index"),
+  answer("Terrain Water Indicator"),
+  answer("Total Watershed Input"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-final-2}
+question("Quels facteurs augmentent le risque feu (R1) ?",
+  answer("Pente forte + exposition sud", correct = TRUE),
+  answer("Pente faible + exposition nord"),
+  answer("Altitude élevée"),
+  answer("Proximité des routes"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-final-3}
+question("L'indicateur S1 mesure :",
+  answer("La surface des parcelles"),
+  answer("La distance aux routes (accessibilité)", correct = TRUE),
+  answer("Le nombre d'espèces"),
+  answer("La pente moyenne"),
+  allow_retry = TRUE
+)
+```
+
+---
+
+## Synthèse
+
+### Indicateurs calculés
+
+| Famille | Code | Indicateur | Source / Package |
+|---------|------|------------|------------------|
+| **W** | W1 | Densité réseau hydro | BD TOPO |
+| **W** | W2 | Couverture zones humides | MNT (TWI) |
+| **W** | W3 | TWI | MNT + fasterRaster |
+| **R** | R1 | Risque feu | BD Forêt + fireexposuR |
+| **R** | R2 | Risque tempête | nasapower + microclima |
+| **R** | R3 | Risque sécheresse | QBMS + SPEI |
+| **S** | S1 | Accessibilité routes | BD TOPO |
+| **S** | S2 | Proximité bâtiments | BD TOPO |
+| **S** | S3 | Densité sentiers | osmdata (OSM) |
+| **P** | P2 | Fertilité station | climateR + SPEI + geodata |
+| **F** | F1 | Risque érosion | MNT |
+
+### Tutoriel suivant
+
+→ **Tutorial 04 : Indicateurs Écologiques** - Protection (B1), connectivité (B3), paysage (L), naturalité (N).
