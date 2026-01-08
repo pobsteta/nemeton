@@ -2641,10 +2641,12 @@ grade_this({
 
 ---
 
-### Exercice 6.5 : Famille N (Naturalité) + Synthèse
+### Exercice 6.5 : Famille N (Naturalité) + Synthèse — Calcul Optimisé
 
 ```{r ex-6-5-setup}
 library(sf)
+library(terra)
+library(purrr)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -2652,136 +2654,163 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-5, exercise=TRUE, exercise.lines=100, exercise.setup="ex-6-5-setup", exercise.timelimit=600}
+```{r ex-6-5, exercise=TRUE, exercise.lines=130, exercise.setup="ex-6-5-setup", exercise.timelimit=600}
 # === FAMILLE N (NATURALITÉ) : N1, N2, N3 + SYNTHÈSE ===
+# Version optimisée avec extraction batch et purrr/furrr
 
 output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Famille N (Naturalité) ===\n\n")
+cat("=== Famille N (Naturalité) — Calcul Optimisé ===\n\n")
 
-# N1 : Distance aux infrastructures (routes, bâtiments, zones urbaines)
-# Score 0-100 (100 = très éloigné = naturel)
+# ============================================================
+# Fonction d'extraction batch (toutes les parcelles en une fois)
+# ============================================================
+extract_batch <- function(raster_path, parcelles) {
+  if (!file.exists(raster_path)) return(rep(NA, nrow(parcelles)))
+
+  r <- rast(raster_path)
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    exactextractr::exact_extract(r, parcelles, fun = "mean")
+  } else {
+    terra::extract(r, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+  }
+}
+
+# ============================================================
+# N1 : Distance aux infrastructures (extraction batch)
+# ============================================================
+cat("Calcul N1 (distance infrastructures)...\n")
+
 dist_routes_path <- file.path(data_dir, "distance_routes.tif")
 dist_bat_path <- file.path(data_dir, "distance_batiments.tif")
 
-extract_mean <- function(r, poly) {
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    exactextractr::exact_extract(r, poly, fun = "mean")
-  } else {
-    terra::extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
-  }
-}
+# Extraction batch des distances
+dist_routes_vals <- extract_batch(dist_routes_path, parcelles)
+dist_bat_vals <- extract_batch(dist_bat_path, parcelles)
 
-parcelles$N1 <- 50  # Valeur par défaut
+# Calcul vectorisé de N1
+dist_min <- pmin(
+  ifelse(is.na(dist_routes_vals), 1000, dist_routes_vals),
+  ifelse(is.na(dist_bat_vals), 1000, dist_bat_vals),
+  na.rm = TRUE
+)
 
-for (i in seq_len(nrow(parcelles))) {
-  dist_min <- 1000  # Distance minimale par défaut
-
-  if (file.exists(dist_routes_path)) {
-    dist_r <- extract_mean(rast(dist_routes_path), parcelles[i, ])
-    if (!is.na(dist_r)) dist_min <- min(dist_min, dist_r)
-  }
-
-  if (file.exists(dist_bat_path)) {
-    dist_b <- extract_mean(rast(dist_bat_path), parcelles[i, ])
-    if (!is.na(dist_b)) dist_min <- min(dist_min, dist_b)
-  }
-
-  # Normalisation: 0m = 0, 2000m+ = 100
-  parcelles$N1[i] <- min(100, max(0, dist_min / 20))
-}
+# Normalisation: 0m = 0, 2000m+ = 100
+parcelles$N1 <- pmin(100, pmax(0, dist_min / 20))
 cat("N1 (distance infra):", round(mean(parcelles$N1, na.rm = TRUE), 1), "(moy)\n")
 
-# N2 : Continuité forestière (ancienneté)
-# Score 0-100 basé sur BD Forêt Anciennes
+# ============================================================
+# N2 : Continuité forestière (parallélisé si intersection nécessaire)
+# ============================================================
+cat("\nCalcul N2 (continuité forestière)...\n")
+
 bd_foret_anciennes_path <- file.path(data_dir, "bd_foret_anciennes.gpkg")
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
 
-parcelles$N2 <- 30  # Valeur par défaut (forêt récente)
+parcelles$N2 <- 30  # Valeur par défaut
 
 if (file.exists(bd_foret_anciennes_path)) {
-  foret_anc <- st_read(bd_foret_anciennes_path, quiet = TRUE)
-  foret_anc <- st_transform(foret_anc, st_crs(parcelles))
+  foret_anc <- st_read(bd_foret_anciennes_path, quiet = TRUE) |>
+    st_transform(st_crs(parcelles))
+  cat("BD Forêt Anciennes chargée:", nrow(foret_anc), "polygones\n")
 
-  for (i in seq_len(nrow(parcelles))) {
-    geom <- st_geometry(parcelles)[i]
+  # Fonction de calcul N2 pour une parcelle
+  calc_N2 <- function(idx, parcelles, foret_anc) {
+    geom <- st_geometry(parcelles)[idx]
     surface <- as.numeric(st_area(geom))
     inter <- suppressWarnings(st_intersection(foret_anc, geom))
 
     if (nrow(inter) > 0) {
       taux_ancien <- as.numeric(sum(st_area(inter))) / surface * 100
-      # Forêt ancienne (1818-1866): score 60-100
-      parcelles$N2[i] <- 60 + min(40, taux_ancien * 0.4)
+      return(60 + min(40, taux_ancien * 0.4))
     }
+    30
   }
-} else if (file.exists(bd_foret_path)) {
-  # Estimation basée sur le type de peuplement
+
+  # Calcul avec furrr si disponible
+  if (requireNamespace("furrr", quietly = TRUE) &&
+      requireNamespace("future", quietly = TRUE)) {
+    library(furrr)
+    library(future)
+
+    plan(multisession, workers = min(4, parallel::detectCores() - 1))
+    cat("Mode: PARALLÈLE (", future::nbrOfWorkers(), "workers)\n")
+
+    parcelles$N2 <- future_map_dbl(
+      seq_len(nrow(parcelles)),
+      ~calc_N2(.x, parcelles, foret_anc),
+      .progress = TRUE,
+      .options = furrr_options(seed = TRUE)
+    )
+
+    plan(sequential)
+  } else {
+    cat("Mode: SÉQUENTIEL (purrr)\n")
+    parcelles$N2 <- map_dbl(seq_len(nrow(parcelles)), ~calc_N2(.x, parcelles, foret_anc))
+  }
+} else if (file.exists(bd_foret_path) && "T1" %in% names(parcelles)) {
+  # Estimation vectorisée basée sur l'âge T1
   parcelles$N2 <- ifelse(parcelles$T1 > 80, 70, ifelse(parcelles$T1 > 50, 50, 30))
 }
 cat("N2 (continuité):", round(mean(parcelles$N2, na.rm = TRUE), 1), "(moy)\n")
 
-# N3 : Indice composite de naturalité
-# Moyenne pondérée de N1 et N2 avec bonus biodiversité
-parcelles$N3 <- (parcelles$N1 * 0.4 + parcelles$N2 * 0.4 +
-                 ifelse(!is.na(parcelles$B1), parcelles$B1 * 0.2, 10))
+# ============================================================
+# N3 : Indice composite de naturalité (vectorisé)
+# ============================================================
+cat("\nCalcul N3 (naturalité composite)...\n")
+
+# Calcul vectorisé avec gestion des NA
+B1_contrib <- if ("B1" %in% names(parcelles)) {
+  ifelse(is.na(parcelles$B1), 10, parcelles$B1 * 0.2)
+} else {
+  10
+}
+
+parcelles$N3 <- parcelles$N1 * 0.4 + parcelles$N2 * 0.4 + B1_contrib
 cat("N3 (naturalité composite):", round(mean(parcelles$N3, na.rm = TRUE), 1), "(moy)\n")
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 
-# === SYNTHÈSE FINALE ===
-cat("\n" , rep("=", 50), "\n", sep = "")
-cat("=== SYNTHÈSE INDICATEURS ÉCOLOGIQUES ===\n")
-cat(rep("=", 50), "\n\n", sep = "")
+# ============================================================
+# SYNTHÈSE FINALE
+# ============================================================
+cat("\n", strrep("=", 50), "\n", sep = "")
+cat("SYNTHÈSE INDICATEURS ÉCOLOGIQUES\n")
+cat(strrep("=", 50), "\n\n", sep = "")
 
-cat("Fichier:", output_path, "\n\n")
+cat("Fichier:", basename(output_path), "\n\n")
 
-indicateurs_eco <- c("B1", "B2", "B3", "L1", "L2", "T1", "T2", "A2", "F2", "N1", "N2", "N3")
+# Affichage par famille avec purrr::walk
+familles <- list(
+  "B (Biodiversité)" = c("B1", "B2", "B3"),
+  "L (Paysage)" = c("L1", "L2", "L3"),
+  "C (Carbone)" = c("C2"),
+  "T (Temporel)" = c("T1", "T2"),
+  "A/F (Air/Fertilité)" = c("A2", "F2"),
+  "N (Naturalité)" = c("N1", "N2", "N3")
+)
 
-cat("Indicateurs par famille:\n\n")
-cat("FAMILLE B (Biodiversité):\n")
-for (ind in c("B1", "B2", "B3")) {
-  if (ind %in% names(parcelles)) {
-    cat(sprintf("  - %s: %.1f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
-  }
-}
+walk(names(familles), function(fam) {
+  cat("FAMILLE", fam, ":\n")
+  walk(familles[[fam]], function(ind) {
+    if (ind %in% names(parcelles)) {
+      cat(sprintf("  - %s: %.1f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
+    }
+  })
+  cat("\n")
+})
 
-cat("\nFAMILLE L (Paysage):\n")
-for (ind in c("L1", "L2")) {
-  if (ind %in% names(parcelles)) {
-    cat(sprintf("  - %s: %.1f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
-  }
-}
-
-cat("\nFAMILLE T (Temporel):\n")
-for (ind in c("T1", "T2")) {
-  if (ind %in% names(parcelles)) {
-    cat(sprintf("  - %s: %.1f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
-  }
-}
-
-cat("\nFAMILLES A/F (Air/Fertilité):\n")
-for (ind in c("A2", "F2")) {
-  if (ind %in% names(parcelles)) {
-    cat(sprintf("  - %s: %.1f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
-  }
-}
-
-cat("\nFAMILLE N (Naturalité):\n")
-for (ind in c("N1", "N2", "N3")) {
-  if (ind %in% names(parcelles)) {
-    cat(sprintf("  - %s: %.1f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
-  }
-}
-
-cat("\nNombre de parcelles:", nrow(parcelles), "\n")
-cat("Nombre d'indicateurs:", sum(indicateurs_eco %in% names(parcelles)), "/", length(indicateurs_eco), "\n")
+indicateurs_eco <- unlist(familles)
+cat("Parcelles:", nrow(parcelles), "| Indicateurs:",
+    sum(indicateurs_eco %in% names(parcelles)), "/", length(indicateurs_eco), "\n")
+cat("\n✓ Famille N + Synthèse terminées\n")
 ```
 
 ```{r ex-6-5-check}
 grade_this({
-  pass("Tous les indicateurs écologiques exportés !")
+  pass("Tous les indicateurs écologiques calculés et exportés avec succès !")
 })
 ```
 
