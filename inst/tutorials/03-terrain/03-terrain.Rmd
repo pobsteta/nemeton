@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 03 : Terrain — Familles W, R, S, P, F (W1-3, R1-3, S1-3, P2, F1)"
+title: "Tutorial 03 : Terrain — Familles W, R, S, P, F (W1-3, R1-4, S1-3, P2, F1)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,7 +7,7 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Calcul de 11 indicateurs terrain : W1-3 (eau/TWI), R1-3 (risques),
+  Calcul de 12 indicateurs terrain : W1-3 (eau/TWI), R1-4 (risques),
   S1-3 (accessibilité sociale), P2 (pente exploitable), F1 (érosion sol).
 ---
 
@@ -740,6 +740,262 @@ library(QBMS)
 set_qbms_config("https://votre-serveur.org/brapi/v2", token = "VOTRE_TOKEN")
 ```
 
+### Exercice 4.4 : Pression gibier (R4)
+
+L'indicateur **R4** évalue la **pression d'abroutissement** par les ongulés (cervidés, sangliers) sur les parcelles forestières.
+
+| Composante | Description | Poids |
+|------------|-------------|-------|
+| **Palatabilité** | Appétence des essences pour le gibier | 35% |
+| **Vulnérabilité** | Jeunes peuplements (<10m) plus exposés | 30% |
+| **Effet lisière** | Abroutissement concentré en bordure | 20% |
+| **Densité gibier** | Tableaux de chasse départementaux | 15% |
+
+**Source des données de chasse :**
+- data.gouv.fr : Tableaux de chasse départementaux (OFB/ONCFS)
+- Espèces : Chevreuil (50%), Cerf (35%), Sanglier (15%)
+
+```{r ex-4-4-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-4-4, exercise=TRUE, exercise.lines=150, exercise.setup="ex-4-4-setup", exercise.timelimit=900}
+# === PRESSION GIBIER (R4) avec données de chasse ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
+
+if (!file.exists(parcelles_path)) {
+  stop("Parcelles non trouvées. Exécutez d'abord le Tutorial 01.")
+}
+
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+cat("=== Indicateur R4 : Pression Gibier ===\n\n")
+
+# ============================================================
+# 1. TÉLÉCHARGEMENT DES DONNÉES DE CHASSE (data.gouv.fr)
+# ============================================================
+
+cat("--- 1. Données de chasse départementales ---\n")
+
+pressure_data <- NULL
+
+if (requireNamespace("nemeton", quietly = TRUE)) {
+  tryCatch({
+    # Utiliser les fonctions nemeton
+    pressure_data <- nemeton::compute_game_pressure_index()
+    cat("Indice de pression calculé pour", nrow(pressure_data), "départements\n")
+
+    # Afficher les 5 départements avec la plus forte pression
+    cat("\nTop 5 départements (pression gibier) :\n")
+    top5 <- head(pressure_data[order(-pressure_data$pressure_index), ], 5)
+    for (i in seq_len(nrow(top5))) {
+      cat(sprintf("  %s (%s): %.1f\n",
+                  top5$nom_dept[i], top5$code_dept[i], top5$pressure_index[i]))
+    }
+  }, error = function(e) {
+    cat("Erreur téléchargement données chasse:", e$message, "\n")
+  })
+}
+
+# ============================================================
+# 2. CALCUL DE LA PALATABILITÉ PAR PARCELLE
+# ============================================================
+
+cat("\n--- 2. Palatabilité des essences ---\n")
+
+# Table de palatabilité (appétence pour le gibier)
+palatabilite <- data.frame(
+  pattern = c("chene", "quercus", "sapin", "abies", "hetre", "fagus",
+              "erable", "frene", "charme", "merisier",
+              "bouleau", "peuplier", "pin", "pinus", "epicea", "picea", "douglas"),
+  score = c(90, 90, 85, 85, 70, 70,
+            88, 85, 72, 75,
+            55, 50, 30, 30, 15, 15, 32),
+  stringsAsFactors = FALSE
+)
+
+parcelles$R4_palatabilite <- 50  # Valeur par défaut
+
+if (file.exists(bd_foret_path)) {
+  bd_foret <- st_read(bd_foret_path, quiet = TRUE)
+  bd_foret <- st_transform(bd_foret, st_crs(parcelles))
+
+  essence_col <- intersect(names(bd_foret), c("essence", "tfv", "libelle", "code_tfv"))
+
+  if (length(essence_col) > 0) {
+    for (i in seq_len(nrow(parcelles))) {
+      inter <- suppressWarnings(st_intersection(bd_foret, st_geometry(parcelles)[i]))
+      if (nrow(inter) > 0) {
+        essence <- tolower(as.character(inter[[essence_col[1]]][1]))
+        for (j in seq_len(nrow(palatabilite))) {
+          if (grepl(palatabilite$pattern[j], essence)) {
+            parcelles$R4_palatabilite[i] <- palatabilite$score[j]
+            break
+          }
+        }
+      }
+    }
+  }
+}
+
+cat("Palatabilité moyenne:", round(mean(parcelles$R4_palatabilite), 1), "\n")
+
+# ============================================================
+# 3. VULNÉRABILITÉ (hauteur/âge du peuplement)
+# ============================================================
+
+cat("\n--- 3. Vulnérabilité du peuplement ---\n")
+
+# Utiliser les métriques LiDAR si disponibles
+lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
+
+if (file.exists(lidar_path)) {
+  lidar <- st_read(lidar_path, quiet = TRUE)
+  if ("zmean" %in% names(lidar)) {
+    # Joindre par géométrie ou ID
+    lidar_heights <- st_drop_geometry(lidar)[, c("zmean")]
+    # Vulnérabilité: <2m = 100, 2-10m = décroissant, >10m = 0
+    parcelles$R4_vulnerabilite <- pmax(0, pmin(100, (10 - lidar$zmean) / 8 * 100))
+    cat("Vulnérabilité calculée depuis LiDAR (zmean)\n")
+  } else {
+    parcelles$R4_vulnerabilite <- 50
+  }
+} else {
+  parcelles$R4_vulnerabilite <- 50
+  cat("Pas de données LiDAR - vulnérabilité par défaut: 50\n")
+}
+
+cat("Vulnérabilité moyenne:", round(mean(parcelles$R4_vulnerabilite, na.rm = TRUE), 1), "\n")
+
+# ============================================================
+# 4. EFFET LISIÈRE
+# ============================================================
+
+cat("\n--- 4. Effet lisière ---\n")
+
+edge_buffer <- 50  # mètres
+
+parcelles$R4_lisiere <- sapply(seq_len(nrow(parcelles)), function(i) {
+  geom <- st_geometry(parcelles)[i]
+  area_total <- as.numeric(st_area(geom))
+  inner <- tryCatch(st_buffer(geom, -edge_buffer), error = function(e) NULL)
+
+  if (!is.null(inner) && !st_is_empty(inner)) {
+    area_inner <- as.numeric(st_area(inner))
+    (area_total - area_inner) / area_total * 100
+  } else {
+    100  # Petite parcelle entièrement en lisière
+  }
+})
+
+cat("Effet lisière moyen:", round(mean(parcelles$R4_lisiere), 1), "%\n")
+
+# ============================================================
+# 5. DENSITÉ GIBIER PAR DÉPARTEMENT
+# ============================================================
+
+cat("\n--- 5. Densité gibier locale ---\n")
+
+parcelles$R4_densite <- 50  # Valeur par défaut
+
+if (!is.null(pressure_data) && nrow(pressure_data) > 0) {
+  # Déterminer le département de chaque parcelle
+  # (simplifié: utiliser le centroïde)
+
+  if (requireNamespace("happign", quietly = TRUE)) {
+    tryCatch({
+      # Télécharger les limites départementales
+      bbox <- st_as_sfc(st_bbox(parcelles))
+      st_crs(bbox) <- st_crs(parcelles)
+
+      depts <- happign::get_wfs(
+        x = bbox,
+        layer = "ADMINEXPRESS-COG-CARTO.LATEST:departement"
+      )
+
+      if (!is.null(depts) && nrow(depts) > 0) {
+        depts <- st_transform(depts, st_crs(parcelles))
+
+        # Identifier le code département pour chaque parcelle
+        dept_col <- intersect(names(depts), c("code_insee", "insee_dep", "code_dept"))
+        if (length(dept_col) > 0) {
+          centroids <- st_centroid(parcelles)
+          join <- st_join(centroids, depts[, dept_col[1]])
+          parcelles$code_dept <- join[[dept_col[1]]]
+
+          # Joindre l'indice de pression
+          for (i in seq_len(nrow(parcelles))) {
+            dept <- parcelles$code_dept[i]
+            if (!is.na(dept)) {
+              idx <- which(pressure_data$code_dept == dept)
+              if (length(idx) > 0) {
+                parcelles$R4_densite[i] <- pressure_data$pressure_index[idx[1]]
+              }
+            }
+          }
+          cat("Densité gibier assignée depuis tableaux de chasse\n")
+        }
+      }
+    }, error = function(e) {
+      cat("Erreur récupération départements:", e$message, "\n")
+    })
+  }
+}
+
+cat("Densité gibier moyenne:", round(mean(parcelles$R4_densite, na.rm = TRUE), 1), "\n")
+
+# ============================================================
+# 6. CALCUL DE L'INDICE R4 COMPOSITE
+# ============================================================
+
+cat("\n--- 6. Indice R4 composite ---\n")
+
+# Pondération
+w_palatabilite <- 0.35
+w_vulnerabilite <- 0.30
+w_lisiere <- 0.20
+w_densite <- 0.15
+
+parcelles$R4 <- w_palatabilite * parcelles$R4_palatabilite +
+                w_vulnerabilite * parcelles$R4_vulnerabilite +
+                w_lisiere * parcelles$R4_lisiere +
+                w_densite * parcelles$R4_densite
+
+# Borner 0-100
+parcelles$R4 <- pmax(0, pmin(100, parcelles$R4))
+
+cat("\n=== Résultats R4 ===\n")
+cat("R4 min:", round(min(parcelles$R4, na.rm = TRUE), 1), "\n")
+cat("R4 max:", round(max(parcelles$R4, na.rm = TRUE), 1), "\n")
+cat("R4 moyen:", round(mean(parcelles$R4, na.rm = TRUE), 1), "\n")
+
+# Classification
+parcelles$R4_classe <- cut(parcelles$R4,
+  breaks = c(0, 25, 50, 75, 100),
+  labels = c("Faible", "Modéré", "Élevé", "Très élevé"),
+  include.lowest = TRUE)
+
+cat("\nDistribution:\n")
+print(table(parcelles$R4_classe))
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nParcelles sauvegardées avec R4.\n")
+```
+
+```{r ex-4-4-check}
+grade_this({
+  pass("Indicateur R4 (pression gibier) calculé avec données de chasse !")
+})
+```
+
 ### Synthèse des indicateurs de risque
 
 | Indicateur | Packages | Méthode |
@@ -747,6 +1003,7 @@ set_qbms_config("https://votre-serveur.org/brapi/v2", token = "VOTRE_TOKEN")
 | **R1** (Feu) | fireexposuR | Exposition végétation combustible (rayon 500m) |
 | **R2** (Tempête) | nasapower + microclima | Vent NASA POWER + coefficient d'abri windcoef |
 | **R3** (Sécheresse) | QBMS + SPEI | Données climatiques + indices SPI, SPEI, RDI |
+| **R4** (Gibier) | nemeton + data.gouv.fr | Palatabilité + vulnérabilité + lisière + tableaux chasse |
 
 **Installation des packages :**
 ```r
