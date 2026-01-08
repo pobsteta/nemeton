@@ -1912,7 +1912,7 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== SYNTHÈSE INDICATEURS TERRAIN ===\n")
 cat("Fichier:", output_path, "\n\n")
 
-indicateurs <- c("W1", "W2", "W3", "R1", "R2", "R3", "S1", "S2", "S3", "P2", "F1")
+indicateurs <- c("W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2", "F1")
 cat("Indicateurs calculés:\n")
 for (ind in indicateurs) {
   if (ind %in% names(parcelles)) {
