@@ -145,7 +145,35 @@ Parcelles (base)
 
 Écrivez le code pour fusionner toutes les couches d'indicateurs :
 
-```{r assemble-indicators, exercise=TRUE, exercise.lines=100, exercise.timelimit=300}
+```{r assemble-indicators-setup}
+library(sf)
+
+# Répertoire de cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  cache_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Charger les données des tutoriels précédents
+if (file.exists(file.path(cache_dir, "parcelles.gpkg"))) {
+  parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+}
+
+if (file.exists(file.path(cache_dir, "metriques_lidar.gpkg"))) {
+  metriques_lidar <- st_read(file.path(cache_dir, "metriques_lidar.gpkg"), quiet = TRUE)
+}
+
+if (file.exists(file.path(cache_dir, "indicateurs_terrain.gpkg"))) {
+  indic_terrain <- st_read(file.path(cache_dir, "indicateurs_terrain.gpkg"), quiet = TRUE)
+}
+
+if (file.exists(file.path(cache_dir, "indicateurs_ecologiques.gpkg"))) {
+  indic_eco <- st_read(file.path(cache_dir, "indicateurs_ecologiques.gpkg"), quiet = TRUE)
+}
+```
+
+```{r assemble-indicators, exercise=TRUE, exercise.lines=100, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
 # ============================================================
 # ASSEMBLAGE DES 32 INDICATEURS NEMETON
 # ============================================================
