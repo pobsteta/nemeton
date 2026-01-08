@@ -1451,13 +1451,19 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
     library(climateR)
     library(SPEI)
 
-    # Cache pour données climatiques
-    climate_cache <- file.path(cache_dir, "climate_data.rds")
+    # Cache pour données climatiques (format .tif pour SpatRaster)
+    tmin_cache <- file.path(cache_dir, "climate_tmin.tif")
+    tmax_cache <- file.path(cache_dir, "climate_tmax.tif")
+    ppt_cache <- file.path(cache_dir, "climate_ppt.tif")
 
     climate_data <- NULL
-    if (file.exists(climate_cache)) {
+    if (file.exists(tmin_cache) && file.exists(tmax_cache) && file.exists(ppt_cache)) {
       cat("Chargement données climatiques depuis cache...\n")
-      climate_data <- readRDS(climate_cache)
+      climate_data <- list(
+        tmin = rast(tmin_cache),
+        tmax = rast(tmax_cache),
+        ppt = rast(ppt_cache)
+      )
     } else {
       # Télécharger données climatiques (TerraClimate)
       climate_data <- tryCatch({
@@ -1467,9 +1473,11 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
           startDate = "2020-01-01",
           endDate = "2023-12-31"
         )
-        # Sauvegarder en cache
-        saveRDS(data, climate_cache)
-        cat("Données climatiques mises en cache\n")
+        # Sauvegarder chaque raster en cache
+        writeRaster(data$tmin, tmin_cache, overwrite = TRUE)
+        writeRaster(data$tmax, tmax_cache, overwrite = TRUE)
+        writeRaster(data$ppt, ppt_cache, overwrite = TRUE)
+        cat("Données climatiques mises en cache (3 fichiers .tif)\n")
         data
       }, error = function(e) {
         cat("Erreur climateR:", conditionMessage(e), "\n")
@@ -1512,14 +1520,20 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   if (requireNamespace("geodata", quietly = TRUE)) {
     library(geodata)
 
-    # Cache pour données SoilGrids
-    soil_cache <- file.path(cache_dir, "soilgrids_data.rds")
+    # Cache pour données SoilGrids (format .tif pour SpatRaster)
+    ph_cache <- file.path(cache_dir, "soil_ph.tif")
+    soc_cache <- file.path(cache_dir, "soil_soc.tif")
+    clay_cache <- file.path(cache_dir, "soil_clay.tif")
     bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
 
     soil_data <- NULL
-    if (file.exists(soil_cache)) {
+    if (file.exists(ph_cache) && file.exists(soc_cache) && file.exists(clay_cache)) {
       cat("Chargement données SoilGrids depuis cache...\n")
-      soil_data <- readRDS(soil_cache)
+      soil_data <- list(
+        ph = rast(ph_cache),
+        soc = rast(soc_cache),
+        clay = rast(clay_cache)
+      )
     } else {
       soil_data <- tryCatch({
         # Variables SoilGrids: phh2o, soc, clay
@@ -1537,11 +1551,13 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
         clay <- soil_world(var = "clay", depth = 5, path = cache_dir)
         clay_crop <- crop(clay, ext(bbox_wgs84))
 
-        data <- list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
-        # Sauvegarder en cache
-        saveRDS(data, soil_cache)
-        cat("Données SoilGrids mises en cache\n")
-        data
+        # Sauvegarder chaque raster en cache
+        writeRaster(ph_crop, ph_cache, overwrite = TRUE)
+        writeRaster(soc_crop, soc_cache, overwrite = TRUE)
+        writeRaster(clay_crop, clay_cache, overwrite = TRUE)
+        cat("Données SoilGrids mises en cache (3 fichiers .tif)\n")
+
+        list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
       }, error = function(e) {
         cat("Erreur geodata:", conditionMessage(e), "\n")
         NULL
