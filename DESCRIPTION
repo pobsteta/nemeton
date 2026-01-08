@@ -45,7 +45,6 @@ Suggests:
     happign (>= 0.2.0),
     lidR (>= 4.0.0),
     lidaRtRee,
-    lidarHD,
     learnr (>= 0.11.0),
     gradethis (>= 0.2.0),
     fmsb,
@@ -55,7 +54,6 @@ Suggests:
     leaflet (>= 2.1.0),
     rappdirs
 Remotes:
-    git::https://forge.inrae.fr/lidar/lidarHD,
     rstudio/gradethis
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
