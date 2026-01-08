@@ -2293,11 +2293,12 @@ grade_this({
 
 ---
 
-### Exercice 6.2 : Famille L (Paysage)
+### Exercice 6.2 : Famille L (Paysage) — Calcul Parallélisé
 
 ```{r ex-6-2-setup}
 library(sf)
 library(terra)
+library(purrr)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -2305,81 +2306,107 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.lines=70, exercise.setup="ex-6-2-setup", exercise.timelimit=600}
+```{r ex-6-2, exercise=TRUE, exercise.lines=100, exercise.setup="ex-6-2-setup", exercise.timelimit=600}
 # === FAMILLE L (PAYSAGE) : L1, L2 ===
+# Version parallélisée avec purrr/furrr
 
 output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Famille L (Paysage) ===\n\n")
+cat("=== Famille L (Paysage) — Calcul Parallélisé ===\n\n")
 
-# L1 : Indice de lisière (sylvosphère)
-# Ratio périmètre / surface (forme factor)
-# Plus le ratio est élevé, plus la parcelle est exposée aux effets de lisière
-parcelles$L1 <- sapply(seq_len(nrow(parcelles)), function(i) {
-  geom <- st_geometry(parcelles)[i]
+# ============================================================
+# L1 : Indice de lisière (effet de bord)
+# ============================================================
+# Fonction de calcul L1 pour une parcelle
+calc_L1 <- function(idx, parcelles) {
+  geom <- st_geometry(parcelles)[idx]
   perimetre <- as.numeric(st_length(st_cast(geom, "MULTILINESTRING")))
   surface <- as.numeric(st_area(geom))
 
-  # Indice de forme: 100 * périmètre / (2 * sqrt(pi * surface))
-  # Cercle = 100, formes complexes > 100
   if (surface > 0) {
+    # Indice de forme: 100 * périmètre / (2 * sqrt(pi * surface))
     indice_forme <- 100 * perimetre / (2 * sqrt(pi * surface))
-    # Normaliser sur 0-100 (100 = cercle parfait = peu de lisière)
-    # On inverse: plus de lisière = valeur plus élevée
+    # Normaliser: plus de lisière = valeur plus élevée
     return(min(100, max(0, (indice_forme - 100) * 2)))
   }
-  return(50)
-})
+  50
+}
+
+# L1 est rapide (pas d'intersection) → purrr suffit
+parcelles$L1 <- map_dbl(seq_len(nrow(parcelles)), ~calc_L1(.x, parcelles))
 cat("L1 (effet lisière):", round(mean(parcelles$L1, na.rm = TRUE), 1), "(moy)\n")
 
-# L2 : Fragmentation du paysage
-# Basé sur la BD Forêt: nombre de taches forestières dans un buffer
+# ============================================================
+# L2 : Fragmentation du paysage (nécessite st_intersection → paralléliser)
+# ============================================================
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
 
 if (file.exists(bd_foret_path)) {
-  bd_foret <- st_read(bd_foret_path, quiet = TRUE)
-  bd_foret <- st_transform(bd_foret, st_crs(parcelles))
-  bd_foret <- st_make_valid(bd_foret)
+  bd_foret <- st_read(bd_foret_path, quiet = TRUE) |>
+    st_transform(st_crs(parcelles)) |>
+    st_make_valid()
+  cat("BD Forêt chargée:", nrow(bd_foret), "polygones\n")
 
-  parcelles$L2 <- sapply(seq_len(nrow(parcelles)), function(i) {
-    # Buffer de 500m autour de la parcelle
-    buffer <- st_buffer(st_geometry(parcelles)[i], 500)
-
-    # Compter les taches forestières dans le buffer
+  # Fonction de calcul L2 pour une parcelle
+  calc_L2 <- function(idx, parcelles, bd_foret) {
+    buffer <- st_buffer(st_geometry(parcelles)[idx], 500)
     foret_buffer <- suppressWarnings(st_intersection(bd_foret, buffer))
 
     if (nrow(foret_buffer) > 0) {
       n_taches <- nrow(foret_buffer)
-      # Plus de taches = plus fragmenté = indice plus élevé
-      # Normaliser: 1 tache = 0, 20+ taches = 100
       return(min(100, max(0, (n_taches - 1) * 5)))
     }
-    return(50)  # Valeur par défaut
-  })
+    50
+  }
+
+  n_parcelles <- nrow(parcelles)
+  cat("\nCalcul L2 pour", n_parcelles, "parcelles...\n")
+
+  # Calcul parallélisé avec furrr si disponible
+  if (requireNamespace("furrr", quietly = TRUE) &&
+      requireNamespace("future", quietly = TRUE)) {
+    library(furrr)
+    library(future)
+
+    plan(multisession, workers = min(4, parallel::detectCores() - 1))
+    cat("Mode: PARALLÈLE (", future::nbrOfWorkers(), "workers)\n")
+
+    parcelles$L2 <- future_map_dbl(
+      seq_len(n_parcelles),
+      ~calc_L2(.x, parcelles, bd_foret),
+      .progress = TRUE,
+      .options = furrr_options(seed = TRUE)
+    )
+
+    plan(sequential)
+  } else {
+    cat("Mode: SÉQUENTIEL (purrr)\n")
+    parcelles$L2 <- map_dbl(seq_len(n_parcelles), ~calc_L2(.x, parcelles, bd_foret))
+  }
 } else {
-  # Estimation par la compacité des parcelles
-  parcelles$L2 <- parcelles$L1 * 0.8  # Corrélé à L1
+  parcelles$L2 <- parcelles$L1 * 0.8
 }
 cat("L2 (fragmentation):", round(mean(parcelles$L2, na.rm = TRUE), 1), "(moy)\n")
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
+cat("\n✓ Famille L sauvegardée:", basename(output_path), "\n")
 ```
 
 ```{r ex-6-2-check}
 grade_this({
-  pass("Famille L (Paysage) exportée !")
+  pass("Famille L (Paysage) calculée et exportée avec succès !")
 })
 ```
 
 ---
 
-### Exercice 6.3 : Famille T (Temporel)
+### Exercice 6.3 : Famille T (Temporel) — Calcul Parallélisé
 
 ```{r ex-6-3-setup}
 library(sf)
+library(purrr)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -2387,92 +2414,115 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-3, exercise=TRUE, exercise.lines=70, exercise.setup="ex-6-3-setup", exercise.timelimit=600}
+```{r ex-6-3, exercise=TRUE, exercise.lines=100, exercise.setup="ex-6-3-setup", exercise.timelimit=600}
 # === FAMILLE T (TEMPOREL) : T1, T2 ===
+# Version parallélisée avec purrr/furrr
 
 output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Famille T (Temporel) ===\n\n")
+cat("=== Famille T (Temporel) — Calcul Parallélisé ===\n\n")
 
+# ============================================================
 # T1 : Âge estimé du peuplement (années)
-# Basé sur la BD Forêt et les métriques LiDAR (hauteur dominante)
+# ============================================================
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
-lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
 
-parcelles$T1 <- 50  # Valeur par défaut (50 ans)
+parcelles$T1 <- 50  # Valeur par défaut
 
 if (file.exists(bd_foret_path)) {
-  bd_foret <- st_read(bd_foret_path, quiet = TRUE)
-  bd_foret <- st_transform(bd_foret, st_crs(parcelles))
+  bd_foret <- st_read(bd_foret_path, quiet = TRUE) |>
+    st_transform(st_crs(parcelles))
+  cat("BD Forêt chargée:", nrow(bd_foret), "polygones\n")
 
-  # Chercher la colonne d'essence ou de type
+  # Colonnes d'essence possibles
   essence_col <- intersect(names(bd_foret), c("essence", "tfv", "type_peuplement", "code_tfv"))
 
-  for (i in seq_len(nrow(parcelles))) {
-    geom <- st_geometry(parcelles)[i]
+  # Fonction de calcul T1 pour une parcelle
+  calc_T1 <- function(idx, parcelles, bd_foret, essence_col) {
+    geom <- st_geometry(parcelles)[idx]
     foret_inter <- suppressWarnings(st_intersection(bd_foret, geom))
 
-    if (nrow(foret_inter) > 0) {
-      # Estimation de l'âge basée sur le type de peuplement
-      # Futaie régulière feuillus: 80-120 ans, Futaie résineux: 50-80 ans
-      # Taillis: 20-40 ans, Mélange: 40-60 ans
-      if (length(essence_col) > 0 && essence_col[1] %in% names(foret_inter)) {
-        type <- as.character(foret_inter[[essence_col[1]]][1])
-        if (grepl("futaie|feuill", type, ignore.case = TRUE)) {
-          parcelles$T1[i] <- sample(80:120, 1)
-        } else if (grepl("resin|conif|pin|sapin", type, ignore.case = TRUE)) {
-          parcelles$T1[i] <- sample(50:80, 1)
-        } else if (grepl("taillis", type, ignore.case = TRUE)) {
-          parcelles$T1[i] <- sample(20:40, 1)
-        } else {
-          parcelles$T1[i] <- sample(40:70, 1)
-        }
+    if (nrow(foret_inter) > 0 && length(essence_col) > 0 && essence_col[1] %in% names(foret_inter)) {
+      type <- as.character(foret_inter[[essence_col[1]]][1])
+      if (grepl("futaie|feuill", type, ignore.case = TRUE)) {
+        return(sample(80:120, 1))
+      } else if (grepl("resin|conif|pin|sapin", type, ignore.case = TRUE)) {
+        return(sample(50:80, 1))
+      } else if (grepl("taillis", type, ignore.case = TRUE)) {
+        return(sample(20:40, 1))
+      } else {
+        return(sample(40:70, 1))
       }
     }
+    50
+  }
+
+  n_parcelles <- nrow(parcelles)
+  cat("\nCalcul T1 pour", n_parcelles, "parcelles...\n")
+
+  # Calcul parallélisé avec furrr si disponible
+  if (requireNamespace("furrr", quietly = TRUE) &&
+      requireNamespace("future", quietly = TRUE)) {
+    library(furrr)
+    library(future)
+
+    plan(multisession, workers = min(4, parallel::detectCores() - 1))
+    cat("Mode: PARALLÈLE (", future::nbrOfWorkers(), "workers)\n")
+
+    parcelles$T1 <- future_map_dbl(
+      seq_len(n_parcelles),
+      ~calc_T1(.x, parcelles, bd_foret, essence_col),
+      .progress = TRUE,
+      .options = furrr_options(seed = TRUE)
+    )
+
+    plan(sequential)
+  } else {
+    cat("Mode: SÉQUENTIEL (purrr)\n")
+    parcelles$T1 <- map_dbl(seq_len(n_parcelles), ~calc_T1(.x, parcelles, bd_foret, essence_col))
   }
 }
 cat("T1 (âge estimé):", round(mean(parcelles$T1, na.rm = TRUE), 0), "ans (moy)\n")
 
+# ============================================================
 # T2 : Taux de changement temporel (% par an)
-# Négatif = perte de couvert, Positif = gain
-# Basé sur comparaison BD Forêt anciennes vs actuelle ou analyse NDVI
+# ============================================================
+# T2 est vectorisable (pas d'intersection) → utiliser directement les vecteurs
 bd_foret_anciennes_path <- file.path(data_dir, "bd_foret_anciennes.gpkg")
 
-if (file.exists(bd_foret_anciennes_path)) {
-  # Calcul basé sur les données historiques
-  parcelles$T2 <- sapply(seq_len(nrow(parcelles)), function(i) {
-    # Taux de changement simulé basé sur l'ancienneté
-    if (!is.na(parcelles$N2[i]) && parcelles$N2[i] > 80) {
-      return(runif(1, 0, 0.5))  # Forêt ancienne stable
-    } else {
-      return(runif(1, -1, 1))  # Forêt récente, plus variable
-    }
-  })
+if (file.exists(bd_foret_anciennes_path) && "N2" %in% names(parcelles)) {
+  # Calcul vectorisé basé sur N2
+  parcelles$T2 <- ifelse(
+    !is.na(parcelles$N2) & parcelles$N2 > 80,
+    runif(nrow(parcelles), 0, 0.5),      # Forêt ancienne stable
+    runif(nrow(parcelles), -1, 1)         # Forêt récente, plus variable
+  )
 } else {
-  # Estimation sans données historiques
+  # Estimation vectorisée sans données historiques
   parcelles$T2 <- rnorm(nrow(parcelles), mean = 0.2, sd = 0.5)
 }
 cat("T2 (changement):", round(mean(parcelles$T2, na.rm = TRUE), 2), "%/an (moy)\n")
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
+cat("\n✓ Famille T sauvegardée:", basename(output_path), "\n")
 ```
 
 ```{r ex-6-3-check}
 grade_this({
-  pass("Famille T (Temporel) exportée !")
+  pass("Famille T (Temporel) calculée et exportée avec succès !")
 })
 ```
 
 ---
 
-### Exercice 6.4 : Familles A/F (Air/Fertilité)
+### Exercice 6.4 : Familles A/F (Air/Fertilité) — Extraction Vectorisée
 
 ```{r ex-6-4-setup}
 library(sf)
 library(terra)
+library(purrr)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -2480,105 +2530,112 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-4, exercise=TRUE, exercise.lines=80, exercise.setup="ex-6-4-setup", exercise.timelimit=600}
+```{r ex-6-4, exercise=TRUE, exercise.lines=100, exercise.setup="ex-6-4-setup", exercise.timelimit=600}
 # === FAMILLES A (AIR) et F (FERTILITÉ) : A2, F2 ===
+# Version optimisée: extraction raster vectorisée (plus rapide que parallélisation)
 
 output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
-# Fonction d'extraction raster
-extract_mean <- function(r, poly) {
+cat("=== Familles A/F (Air/Fertilité) — Extraction Vectorisée ===\n\n")
+
+# Fonction d'extraction batch (toutes les parcelles en une fois)
+extract_batch <- function(raster_path, parcelles) {
+  if (!file.exists(raster_path)) return(rep(NA, nrow(parcelles)))
+
+  r <- rast(raster_path)
   if (requireNamespace("exactextractr", quietly = TRUE)) {
-    exactextractr::exact_extract(r, poly, fun = "mean")
+    exactextractr::exact_extract(r, parcelles, fun = "mean")
   } else {
-    terra::extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+    terra::extract(r, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
   }
 }
 
-cat("=== Familles A/F (Air/Fertilité) ===\n\n")
-
-# A2 : Qualité de l'air forestier
-# Basé sur: densité du couvert, distance aux routes, altitude
-# Score 0-100 (100 = excellente qualité)
+# ============================================================
+# Extraction de toutes les valeurs raster en batch (OPTIMISATION)
+# ============================================================
+cat("Extraction des rasters en batch...\n")
 
 mnt_path <- file.path(data_dir, "mnt.tif")
 dist_routes_path <- file.path(data_dir, "distance_routes.tif")
-lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
-
-parcelles$A2 <- 70  # Valeur par défaut (forêt = bon air)
-
-for (i in seq_len(nrow(parcelles))) {
-  score_air <- 70  # Base forêt
-
-  # Bonus altitude (>500m = air plus pur)
-  if (file.exists(mnt_path)) {
-    mnt <- rast(mnt_path)
-    altitude <- extract_mean(mnt, parcelles[i, ])
-    if (!is.na(altitude) && altitude > 500) {
-      score_air <- score_air + min(15, (altitude - 500) / 100 * 5)
-    }
-  }
-
-  # Bonus distance routes (>500m = moins de pollution)
-  if (file.exists(dist_routes_path)) {
-    dist_routes <- rast(dist_routes_path)
-    dist <- extract_mean(dist_routes, parcelles[i, ])
-    if (!is.na(dist) && dist > 500) {
-      score_air <- score_air + min(15, (dist - 500) / 200 * 5)
-    }
-  }
-
-  parcelles$A2[i] <- min(100, score_air)
-}
-cat("A2 (qualité air):", round(mean(parcelles$A2, na.rm = TRUE), 1), "(moy)\n")
-
-# F2 : Fertilité du sol
-# Basé sur: TWI (humidité), pente, altitude, type de sol si disponible
 twi_path <- file.path(data_dir, "twi.tif")
 pente_path <- file.path(data_dir, "pente.tif")
 
-parcelles$F2 <- 60  # Valeur par défaut
+# Extraire toutes les valeurs d'un coup (beaucoup plus rapide)
+altitude_vals <- extract_batch(mnt_path, parcelles)
+dist_routes_vals <- extract_batch(dist_routes_path, parcelles)
+twi_vals <- extract_batch(twi_path, parcelles)
+pente_vals <- extract_batch(pente_path, parcelles)
 
-for (i in seq_len(nrow(parcelles))) {
-  score_fertilite <- 50  # Base neutre
+cat("✓ Extraction terminée\n\n")
 
-  # TWI: zones humides = plus fertiles (TWI > 10)
-  if (file.exists(twi_path)) {
-    twi <- rast(twi_path)
-    twi_val <- extract_mean(twi, parcelles[i, ])
-    if (!is.na(twi_val)) {
-      # TWI optimal entre 8 et 14
-      if (twi_val >= 8 && twi_val <= 14) {
-        score_fertilite <- score_fertilite + 25
-      } else if (twi_val > 14) {
-        score_fertilite <- score_fertilite + 10  # Trop humide
-      } else {
-        score_fertilite <- score_fertilite + 15  # Sec
-      }
-    }
-  }
+# ============================================================
+# A2 : Qualité de l'air forestier (calcul vectorisé)
+# ============================================================
+cat("Calcul A2 (qualité air)...\n")
 
-  # Pente: faible pente = meilleure fertilité
-  if (file.exists(pente_path)) {
-    pente <- rast(pente_path)
-    pente_val <- extract_mean(pente, parcelles[i, ])
-    if (!is.na(pente_val)) {
-      score_fertilite <- score_fertilite + max(0, 25 - pente_val)
-    }
-  }
+# Score de base
+score_air <- rep(70, nrow(parcelles))
 
-  parcelles$F2[i] <- min(100, max(0, score_fertilite))
+# Bonus altitude (>500m = air plus pur)
+if (!all(is.na(altitude_vals))) {
+  bonus_altitude <- pmin(15, pmax(0, (altitude_vals - 500) / 100 * 5))
+  bonus_altitude[is.na(bonus_altitude)] <- 0
+  score_air <- score_air + bonus_altitude
+  cat("  Altitude moyenne:", round(mean(altitude_vals, na.rm = TRUE)), "m\n")
 }
+
+# Bonus distance routes (>500m = moins de pollution)
+if (!all(is.na(dist_routes_vals))) {
+  bonus_routes <- pmin(15, pmax(0, (dist_routes_vals - 500) / 200 * 5))
+  bonus_routes[is.na(bonus_routes)] <- 0
+  score_air <- score_air + bonus_routes
+  cat("  Distance routes moyenne:", round(mean(dist_routes_vals, na.rm = TRUE)), "m\n")
+}
+
+parcelles$A2 <- pmin(100, score_air)
+cat("A2 (qualité air):", round(mean(parcelles$A2, na.rm = TRUE), 1), "(moy)\n\n")
+
+# ============================================================
+# F2 : Fertilité du sol (calcul vectorisé avec purrr)
+# ============================================================
+cat("Calcul F2 (fertilité)...\n")
+
+# Fonction de score TWI vectorisée
+score_twi <- function(twi_val) {
+  if (is.na(twi_val)) return(15)
+  if (twi_val >= 8 && twi_val <= 14) return(25)  # Optimal
+  if (twi_val > 14) return(10)                    # Trop humide
+  return(15)                                       # Sec
+}
+
+# Calcul vectorisé avec purrr::map_dbl
+score_fertilite <- rep(50, nrow(parcelles))
+
+if (!all(is.na(twi_vals))) {
+  bonus_twi <- map_dbl(twi_vals, score_twi)
+  score_fertilite <- score_fertilite + bonus_twi
+  cat("  TWI moyen:", round(mean(twi_vals, na.rm = TRUE), 1), "\n")
+}
+
+if (!all(is.na(pente_vals))) {
+  bonus_pente <- pmax(0, 25 - pente_vals)
+  bonus_pente[is.na(bonus_pente)] <- 12.5
+  score_fertilite <- score_fertilite + bonus_pente
+  cat("  Pente moyenne:", round(mean(pente_vals, na.rm = TRUE), 1), "°\n")
+}
+
+parcelles$F2 <- pmin(100, pmax(0, score_fertilite))
 cat("F2 (fertilité):", round(mean(parcelles$F2, na.rm = TRUE), 1), "(moy)\n")
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
+cat("\n✓ Familles A/F sauvegardées:", basename(output_path), "\n")
 ```
 
 ```{r ex-6-4-check}
 grade_this({
-  pass("Familles A/F (Air/Fertilité) exportées !")
+  pass("Familles A/F (Air/Fertilité) calculées et exportées avec succès !")
 })
 ```
 
