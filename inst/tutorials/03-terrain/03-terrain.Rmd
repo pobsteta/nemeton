@@ -752,8 +752,19 @@ L'indicateur **R4** évalue la **pression d'abroutissement** par les ongulés (c
 | **Densité gibier** | Tableaux de chasse départementaux | 15% |
 
 **Source des données de chasse :**
-- data.gouv.fr : Tableaux de chasse départementaux (OFB/ONCFS)
-- Espèces : Chevreuil (50%), Cerf (35%), Sanglier (15%)
+- data.gouv.fr : Tableaux de chasse départementaux (OFB)
+- 8 espèces pondérées selon leur impact sur la forêt :
+
+| Espèce | Poids | Impact principal |
+|--------|-------|------------------|
+| Chevreuil | 30% | Broutage régénération |
+| Cerf élaphe | 25% | Écorçage + broutage |
+| Sanglier | 15% | Racines, graines |
+| Chamois | 8% | Zones alpines |
+| Mouflon | 7% | Zones méditerranéennes |
+| Daim | 6% | Broutage localisé |
+| Isard | 5% | Pyrénées |
+| Cerf sika | 4% | Écorçage, limité |
 
 ```{r ex-4-4-setup}
 library(sf)
