@@ -2138,10 +2138,11 @@ grade_this({
 
 ## Section 6 : Export et Synthèse
 
-### Exercice 6.1 : Famille B (Biodiversité)
+### Exercice 6.1 : Famille B (Biodiversité) — Calcul Parallélisé
 
 ```{r ex-6-1-setup}
 library(sf)
+library(purrr)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -2149,8 +2150,9 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.lines=80, exercise.setup="ex-6-1-setup", exercise.timelimit=600}
+```{r ex-6-1, exercise=TRUE, exercise.lines=120, exercise.setup="ex-6-1-setup", exercise.timelimit=600}
 # === FAMILLE B (BIODIVERSITÉ) : B1, B2, B3 ===
+# Version parallélisée avec purrr/furrr
 
 output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -2162,80 +2164,130 @@ if (file.exists(output_path)) {
   parcelles <- st_read(parcelles_path, quiet = TRUE)
 }
 
-cat("=== Famille B (Biodiversité) ===\n\n")
+cat("=== Famille B (Biodiversité) — Calcul Parallélisé ===\n\n")
 
+# ============================================================
 # B1 : Taux de couverture par zones protégées (ZNIEFF, Natura 2000)
-# Valeur en % de la surface de la parcelle couverte
+# ============================================================
 znieff_path <- file.path(data_dir, "znieff.gpkg")
 natura_path <- file.path(data_dir, "natura2000.gpkg")
 
-parcelles$B1 <- 0
-for (i in seq_len(nrow(parcelles))) {
-  taux_protection <- 0
-  parcelle_geom <- st_geometry(parcelles)[i]
-  surface_parcelle <- as.numeric(st_area(parcelle_geom))
+# Charger les données de protection UNE SEULE FOIS (optimisation)
+znieff <- NULL
+natura <- NULL
 
-  # ZNIEFF
-  if (file.exists(znieff_path)) {
-    znieff <- st_read(znieff_path, quiet = TRUE)
-    znieff <- st_transform(znieff, st_crs(parcelles))
-    inter_znieff <- suppressWarnings(st_intersection(znieff, parcelle_geom))
-    if (nrow(inter_znieff) > 0) {
-      taux_protection <- taux_protection + as.numeric(sum(st_area(inter_znieff))) / surface_parcelle * 100
-    }
-  }
-
-  # Natura 2000
-  if (file.exists(natura_path)) {
-    natura <- st_read(natura_path, quiet = TRUE)
-    natura <- st_transform(natura, st_crs(parcelles))
-    inter_natura <- suppressWarnings(st_intersection(natura, parcelle_geom))
-    if (nrow(inter_natura) > 0) {
-      taux_protection <- taux_protection + as.numeric(sum(st_area(inter_natura))) / surface_parcelle * 50
-    }
-  }
-
-  parcelles$B1[i] <- min(100, taux_protection)  # Plafonner à 100%
+if (file.exists(znieff_path)) {
+  znieff <- st_read(znieff_path, quiet = TRUE) |>
+    st_transform(st_crs(parcelles))
+  cat("ZNIEFF chargé:", nrow(znieff), "zones\n")
 }
+
+if (file.exists(natura_path)) {
+  natura <- st_read(natura_path, quiet = TRUE) |>
+    st_transform(st_crs(parcelles))
+  cat("Natura 2000 chargé:", nrow(natura), "zones\n")
+}
+
+# Fonction de calcul B1 pour une parcelle
+calc_B1 <- function(idx, parcelles, znieff, natura) {
+  parcelle_geom <- st_geometry(parcelles)[idx]
+  surface_parcelle <- as.numeric(st_area(parcelle_geom))
+  taux_protection <- 0
+
+  # ZNIEFF (poids 100%)
+  if (!is.null(znieff)) {
+    inter <- suppressWarnings(st_intersection(znieff, parcelle_geom))
+    if (nrow(inter) > 0) {
+      taux_protection <- taux_protection +
+        as.numeric(sum(st_area(inter))) / surface_parcelle * 100
+    }
+  }
+
+  # Natura 2000 (poids 50% additionnel)
+  if (!is.null(natura)) {
+    inter <- suppressWarnings(st_intersection(natura, parcelle_geom))
+    if (nrow(inter) > 0) {
+      taux_protection <- taux_protection +
+        as.numeric(sum(st_area(inter))) / surface_parcelle * 50
+    }
+  }
+
+  min(100, taux_protection)
+}
+
+# Calcul parallélisé avec furrr (si disponible) ou purrr
+n_parcelles <- nrow(parcelles)
+cat("\nCalcul B1 pour", n_parcelles, "parcelles...\n")
+
+if (requireNamespace("furrr", quietly = TRUE) &&
+    requireNamespace("future", quietly = TRUE)) {
+  library(furrr)
+  library(future)
+
+  # Activer le parallélisme (utilise tous les cœurs disponibles)
+  plan(multisession, workers = min(4, parallel::detectCores() - 1))
+  cat("Mode: PARALLÈLE (", future::nbrOfWorkers(), "workers)\n")
+
+  # Calcul parallèle avec future_map_dbl
+  parcelles$B1 <- future_map_dbl(
+    seq_len(n_parcelles),
+    ~calc_B1(.x, parcelles, znieff, natura),
+    .progress = TRUE,
+    .options = furrr_options(seed = TRUE)
+  )
+
+  # Revenir au mode séquentiel
+  plan(sequential)
+} else {
+  cat("Mode: SÉQUENTIEL (purrr)\n")
+  # Fallback séquentiel avec purrr
+  parcelles$B1 <- map_dbl(
+    seq_len(n_parcelles),
+    ~calc_B1(.x, parcelles, znieff, natura)
+  )
+}
+
 cat("B1 (protection):", round(mean(parcelles$B1, na.rm = TRUE), 1), "% (moy)\n")
 
+# ============================================================
 # B2 : Diversité structurelle verticale (depuis métriques LiDAR)
+# ============================================================
 lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
 if (file.exists(lidar_path)) {
-  lidar_metrics <- st_read(lidar_path, quiet = TRUE)
-  lidar_metrics <- st_drop_geometry(lidar_metrics)
+  lidar_metrics <- st_read(lidar_path, quiet = TRUE) |> st_drop_geometry()
 
-  # Joindre par id_parcelle ou spatiale
   if ("id_parcelle" %in% names(lidar_metrics) && "id_parcelle" %in% names(parcelles)) {
+    # Jointure vectorisée (pas besoin de paralléliser)
     parcelles <- merge(parcelles, lidar_metrics[, c("id_parcelle", "zsd", "entropy")],
                        by = "id_parcelle", all.x = TRUE)
-    # B2 = fonction de l'écart-type des hauteurs et entropie
-    parcelles$B2 <- ifelse(!is.na(parcelles$zsd),
-                           pmin(100, (parcelles$zsd / 15) * 50 +
-                                     ifelse(!is.na(parcelles$entropy), parcelles$entropy * 25, 25)),
-                           50)  # Valeur par défaut si pas de LiDAR
+    # B2 vectorisé
+    parcelles$B2 <- pmin(100,
+      ifelse(!is.na(parcelles$zsd),
+             (parcelles$zsd / 15) * 50 +
+               ifelse(!is.na(parcelles$entropy), parcelles$entropy * 25, 25),
+             50))
   } else {
     parcelles$B2 <- 50
   }
 } else {
-  # Estimation basée sur BD Forêt
   parcelles$B2 <- 50
 }
 cat("B2 (structure):", round(mean(parcelles$B2, na.rm = TRUE), 1), "(moy)\n")
 
-# B3 : Connectivité écologique (calculé dans ex-3-2, on récupère ou recalcule)
-# Valeur composite sur 100
+# ============================================================
+# B3 : Connectivité écologique
+# ============================================================
 parcelles$B3 <- ifelse("B3" %in% names(parcelles), parcelles$B3, 50)
 cat("B3 (connectivité):", round(mean(parcelles$B3, na.rm = TRUE), 1), "(moy)\n")
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
+cat("\n✓ Famille B sauvegardée:", basename(output_path), "\n")
 ```
 
 ```{r ex-6-1-check}
 grade_this({
-  pass("Famille B (Biodiversité) exportée !")
+  pass("Famille B (Biodiversité) calculée et exportée avec succès !")
 })
 ```
 
