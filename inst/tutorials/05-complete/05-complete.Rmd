@@ -173,35 +173,55 @@ if (file.exists(file.path(cache_dir, "indicateurs_ecologiques.gpkg"))) {
 }
 ```
 
-```{r assemble-indicators, exercise=TRUE, exercise.lines=100, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
+```{r assemble-indicators, exercise=TRUE, exercise.lines=120, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
 # ============================================================
 # ASSEMBLAGE DES 32 INDICATEURS NEMETON
 # ============================================================
 
+# Fonction pour trouver la colonne ID commune
+find_id_col <- function(df) {
+  id_cols <- c("id_parcelle", "ID", "id", "fid", "FID", "OBJECTID")
+  for (col in id_cols) {
+    if (col %in% names(df)) return(col)
+  }
+  return(NULL)
+}
+
+# Ajouter id_parcelle si absent
+if (!"id_parcelle" %in% names(parcelles)) {
+  parcelles$id_parcelle <- seq_len(nrow(parcelles))
+}
+
 indicateurs_complet <- parcelles
+cat("Parcelles:", nrow(indicateurs_complet), "lignes\n")
 
 # ============================================================
 # 1. MÉTRIQUES LIDAR (T02) → C1, P1, P3, E1, A1
 # ============================================================
-if (exists("metriques_lidar")) {
+if (exists("metriques_lidar") && nrow(metriques_lidar) > 0) {
+  # Ajouter id_parcelle si absent
+  if (!"id_parcelle" %in% names(metriques_lidar)) {
+    metriques_lidar$id_parcelle <- seq_len(nrow(metriques_lidar))
+  }
+
   cols_lidar <- c("id_parcelle", "zmax", "zmean", "zsd", "zq95", "pzabove2")
   cols_present <- intersect(cols_lidar, names(metriques_lidar))
 
   if (length(cols_present) > 1) {
-    lidar_data <- st_drop_geometry(metriques_lidar)[, cols_present]
+    lidar_data <- st_drop_geometry(metriques_lidar)[, cols_present, drop = FALSE]
     indicateurs_complet <- merge(indicateurs_complet, lidar_data,
                                   by = "id_parcelle", all.x = TRUE)
 
-    # C1 : Stock carbone (hauteur × couverture)
+    # C1 : Stock carbone
     indicateurs_complet$C1 <- with(indicateurs_complet,
       ifelse(!is.na(zmax) & !is.na(pzabove2),
              pmin(100, (zmax / 40) * 50 + (pzabove2 / 100) * 50), 50))
 
-    # P1 : Hauteur dominante (percentile 95)
+    # P1 : Hauteur dominante
     indicateurs_complet$P1 <- with(indicateurs_complet,
       ifelse(!is.na(zq95), pmin(100, (zq95 / 35) * 100), 50))
 
-    # P3 : Volume estimé (hauteur moyenne × couverture)
+    # P3 : Volume estimé
     indicateurs_complet$P3 <- with(indicateurs_complet,
       ifelse(!is.na(zmean) & !is.na(pzabove2),
              pmin(100, (zmean / 25) * 60 + (pzabove2 / 100) * 40), 50))
@@ -211,52 +231,60 @@ if (exists("metriques_lidar")) {
       ifelse(!is.na(pzabove2) & !is.na(zmean),
              pmin(100, (pzabove2 / 100) * 60 + (zmean / 30) * 40), 50))
 
-    # A1 : Interception pluie (couverture canopée)
+    # A1 : Interception pluie
     indicateurs_complet$A1 <- with(indicateurs_complet,
       ifelse(!is.na(pzabove2), pzabove2, 50))
 
-    cat("✓ Indicateurs LiDAR calculés: C1, P1, P3, E1, A1\n")
+    cat("✓ LiDAR: C1, P1, P3, E1, A1\n")
   }
 } else {
   indicateurs_complet$C1 <- indicateurs_complet$P1 <- indicateurs_complet$P3 <- 50
   indicateurs_complet$E1 <- indicateurs_complet$A1 <- 50
-  cat("⚠ Pas de LiDAR, valeurs par défaut (50)\n")
+  cat("⚠ Pas de LiDAR\n")
 }
 
 # ============================================================
 # 2. INDICATEURS TERRAIN (T03) → W1-3, R1-4, S1-3, P2, F1
 # ============================================================
-if (exists("indic_terrain")) {
+if (exists("indic_terrain") && nrow(indic_terrain) > 0) {
+  if (!"id_parcelle" %in% names(indic_terrain)) {
+    indic_terrain$id_parcelle <- seq_len(nrow(indic_terrain))
+  }
+
   cols_terrain <- c("id_parcelle", "W1", "W2", "W3", "R1", "R2", "R3", "R4",
                     "S1", "S2", "S3", "P2", "F1")
   cols_present <- intersect(cols_terrain, names(indic_terrain))
 
   if (length(cols_present) > 1) {
-    terrain_data <- st_drop_geometry(indic_terrain)[, cols_present]
+    terrain_data <- st_drop_geometry(indic_terrain)[, cols_present, drop = FALSE]
     indicateurs_complet <- merge(indicateurs_complet, terrain_data,
                                   by = "id_parcelle", all.x = TRUE)
-    cat("✓ Indicateurs Terrain joints: W1-3, R1-4, S1-3, P2, F1\n")
+    cat("✓ Terrain:", paste(setdiff(cols_present, "id_parcelle"), collapse = ", "), "\n")
   }
 } else {
-  cat("⚠ Pas de données Terrain (T03)\n")
+  cat("⚠ Pas de données Terrain\n")
 }
 
 # ============================================================
 # 3. INDICATEURS ÉCOLOGIQUES (T04) → B1-3, L1-3, C2, T1-2, A2, F2, N1-3
 # ============================================================
-if (exists("indic_eco")) {
+if (exists("indic_eco") && nrow(indic_eco) > 0) {
+  if (!"id_parcelle" %in% names(indic_eco)) {
+    indic_eco$id_parcelle <- seq_len(nrow(indic_eco))
+  }
+
   cols_eco <- c("id_parcelle", "B1", "B2", "B3", "L1", "L2", "L3", "C2",
                 "T1", "T2", "A2", "F2", "N1", "N2", "N3")
   cols_present <- intersect(cols_eco, names(indic_eco))
 
   if (length(cols_present) > 1) {
-    eco_data <- st_drop_geometry(indic_eco)[, cols_present]
+    eco_data <- st_drop_geometry(indic_eco)[, cols_present, drop = FALSE]
     indicateurs_complet <- merge(indicateurs_complet, eco_data,
                                   by = "id_parcelle", all.x = TRUE)
-    cat("✓ Indicateurs Écologiques joints: B1-3, L1-3, C2, T1-2, A2, F2, N1-3\n")
+    cat("✓ Écologique:", paste(setdiff(cols_present, "id_parcelle"), collapse = ", "), "\n")
   }
 } else {
-  cat("⚠ Pas de données Écologiques (T04)\n")
+  cat("⚠ Pas de données Écologiques\n")
 }
 
 # ============================================================
@@ -269,117 +297,12 @@ indicateurs_31 <- c("C1", "P1", "P3", "E1", "A1",
                     "T1", "T2", "A2", "F2", "N1", "N2", "N3")
 presents <- sum(indicateurs_31 %in% names(indicateurs_complet))
 cat("\n=== BILAN ===\n")
-cat("Indicateurs assemblés:", presents, "/ 31 (+ E2 à calculer = 32)\n")
-
-names(indicateurs_complet)
+cat("Indicateurs:", presents, "/ 31 (+ E2 = 32)\n")
+cat("Colonnes:", ncol(indicateurs_complet), "\n")
 ```
 
 ```{r assemble-indicators-solution}
-# ============================================================
-# ASSEMBLAGE DES 32 INDICATEURS NEMETON
-# ============================================================
-# Sources:
-# - T02 (LiDAR): C1, P1, P3, E1, A1 (5 indicateurs calculés)
-# - T03 (Terrain): W1-3, R1-4, S1-3, P2, F1 (12 indicateurs)
-# - T04 (Écologique): B1, B2, B3, L1-3, C2, T1-2, A2, F2, N1-3 (14 indicateurs)
-# - T05: E2 (1 indicateur calculé plus tard)
-# Total: 5 + 12 + 14 + 1 = 32 indicateurs
-
-indicateurs_complet <- parcelles
-
-# ============================================================
-# 1. MÉTRIQUES LIDAR (T02) → C1, P1, P3, E1, A1
-# ============================================================
-if (exists("metriques_lidar")) {
-  cols_lidar <- c("id_parcelle", "zmax", "zmean", "zsd", "zq95", "pzabove2")
-  cols_present <- intersect(cols_lidar, names(metriques_lidar))
-
-  if (length(cols_present) > 1) {
-    lidar_data <- st_drop_geometry(metriques_lidar)[, cols_present]
-    indicateurs_complet <- merge(indicateurs_complet, lidar_data,
-                                  by = "id_parcelle", all.x = TRUE)
-
-    # C1 : Stock carbone (hauteur × couverture)
-    indicateurs_complet$C1 <- with(indicateurs_complet,
-      ifelse(!is.na(zmax) & !is.na(pzabove2),
-             pmin(100, (zmax / 40) * 50 + (pzabove2 / 100) * 50), 50))
-
-    # P1 : Hauteur dominante (percentile 95)
-    indicateurs_complet$P1 <- with(indicateurs_complet,
-      ifelse(!is.na(zq95), pmin(100, (zq95 / 35) * 100), 50))
-
-    # P3 : Volume estimé (hauteur moyenne × couverture)
-    indicateurs_complet$P3 <- with(indicateurs_complet,
-      ifelse(!is.na(zmean) & !is.na(pzabove2),
-             pmin(100, (zmean / 25) * 60 + (pzabove2 / 100) * 40), 50))
-
-    # E1 : Potentiel bois-énergie
-    indicateurs_complet$E1 <- with(indicateurs_complet,
-      ifelse(!is.na(pzabove2) & !is.na(zmean),
-             pmin(100, (pzabove2 / 100) * 60 + (zmean / 30) * 40), 50))
-
-    # A1 : Interception pluie (couverture canopée)
-    indicateurs_complet$A1 <- with(indicateurs_complet,
-      ifelse(!is.na(pzabove2), pzabove2, 50))
-
-    cat("✓ Indicateurs LiDAR calculés: C1, P1, P3, E1, A1\n")
-  }
-} else {
-  indicateurs_complet$C1 <- indicateurs_complet$P1 <- indicateurs_complet$P3 <- 50
-  indicateurs_complet$E1 <- indicateurs_complet$A1 <- 50
-  cat("⚠ Pas de LiDAR, valeurs par défaut (50)\n")
-}
-
-# ============================================================
-# 2. INDICATEURS TERRAIN (T03) → W1-3, R1-4, S1-3, P2, F1
-# ============================================================
-if (exists("indic_terrain")) {
-  cols_terrain <- c("id_parcelle", "W1", "W2", "W3", "R1", "R2", "R3", "R4",
-                    "S1", "S2", "S3", "P2", "F1")
-  cols_present <- intersect(cols_terrain, names(indic_terrain))
-
-  if (length(cols_present) > 1) {
-    terrain_data <- st_drop_geometry(indic_terrain)[, cols_present]
-    indicateurs_complet <- merge(indicateurs_complet, terrain_data,
-                                  by = "id_parcelle", all.x = TRUE)
-    cat("✓ Indicateurs Terrain joints: W1-3, R1-4, S1-3, P2, F1\n")
-  }
-} else {
-  cat("⚠ Pas de données Terrain (T03)\n")
-}
-
-# ============================================================
-# 3. INDICATEURS ÉCOLOGIQUES (T04) → B1, B2, B3, L1-3, C2, T1-2, A2, F2, N1-3
-# ============================================================
-if (exists("indic_eco")) {
-  # B2 vient de T04 (enrichi avec entropie), pas recalculé depuis LiDAR
-  cols_eco <- c("id_parcelle", "B1", "B2", "B3", "L1", "L2", "L3", "C2",
-                "T1", "T2", "A2", "F2", "N1", "N2", "N3")
-  cols_present <- intersect(cols_eco, names(indic_eco))
-
-  if (length(cols_present) > 1) {
-    eco_data <- st_drop_geometry(indic_eco)[, cols_present]
-    indicateurs_complet <- merge(indicateurs_complet, eco_data,
-                                  by = "id_parcelle", all.x = TRUE)
-    cat("✓ Indicateurs Écologiques joints: B1-3, L1-3, C2, T1-2, A2, F2, N1-3\n")
-  }
-} else {
-  cat("⚠ Pas de données Écologiques (T04)\n")
-}
-
-# ============================================================
-# BILAN: 31 indicateurs présents (+ E2 calculé ensuite)
-# ============================================================
-indicateurs_31 <- c("C1", "P1", "P3", "E1", "A1",
-                    "W1", "W2", "W3", "R1", "R2", "R3", "R4",
-                    "S1", "S2", "S3", "P2", "F1",
-                    "B1", "B2", "B3", "L1", "L2", "L3", "C2",
-                    "T1", "T2", "A2", "F2", "N1", "N2", "N3")
-presents <- sum(indicateurs_31 %in% names(indicateurs_complet))
-cat("\n=== BILAN ===\n")
-cat("Indicateurs assemblés:", presents, "/ 31 (+ E2 à calculer = 32)\n")
-
-names(indicateurs_complet)
+# Solution identique à l'exercice - voir code ci-dessus
 ```
 
 ```{r assemble-indicators-check}
