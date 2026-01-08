@@ -1479,7 +1479,7 @@ grade_this({
 
 ## Section 9 : Quiz Final
 
-```{r quiz-final}
+```{r quiz-final, echo=FALSE}
 quiz(
   caption = "Testez vos connaissances",
   question("Qu'est-ce qu'un hotspot dans l'analyse nemeton ?",

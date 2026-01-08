@@ -2927,7 +2927,7 @@ grade_this({
 
 ## Quiz final
 
-```{r quiz-final}
+```{r quiz-final, echo=FALSE}
 quiz(
   caption = "Testez vos connaissances",
   question("L'indicateur B1 mesure :",

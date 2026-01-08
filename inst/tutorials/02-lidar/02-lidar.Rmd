@@ -65,7 +65,7 @@ cat("- exactextractr : Extraction par polygone\n")
 
 ### Quiz d'introduction
 
-```{r quiz-intro}
+```{r quiz-intro, echo=FALSE}
 question("Qu'est-ce que le LiDAR ?",
   answer("Un capteur radar pour la pluie"),
   answer("Light Detection And Ranging - mesure de distance par laser", correct = TRUE),
@@ -76,7 +76,7 @@ question("Qu'est-ce que le LiDAR ?",
 )
 ```
 
-```{r quiz-intro-2}
+```{r quiz-intro-2, echo=FALSE}
 question("Que mesure principalement le LiDAR aéroporté en foresterie ?",
   answer("La température des arbres"),
   answer("La hauteur et la structure verticale de la végétation", correct = TRUE),
@@ -87,7 +87,7 @@ question("Que mesure principalement le LiDAR aéroporté en foresterie ?",
 )
 ```
 
-```{r quiz-intro-3}
+```{r quiz-intro-3, echo=FALSE}
 question("Qu'est-ce que la normalisation des hauteurs LiDAR ?",
   answer("Convertir les coordonnées en mètres"),
   answer("Soustraire l'altitude du terrain pour obtenir la hauteur au-dessus du sol", correct = TRUE),
@@ -559,7 +559,7 @@ grade_this({
 
 ### Testez vos connaissances
 
-```{r quiz-final-1}
+```{r quiz-final-1, echo=FALSE}
 question("Quelle fonction lidR permet de normaliser les hauteurs ?",
   answer("normalize_height()", correct = TRUE),
   answer("standardize_z()"),
@@ -569,7 +569,7 @@ question("Quelle fonction lidR permet de normaliser les hauteurs ?",
 )
 ```
 
-```{r quiz-final-2}
+```{r quiz-final-2, echo=FALSE}
 question("Qu'est-ce que le MNH (CHM) ?",
   answer("Le Modèle Numérique de Hauteur - hauteur de la canopée", correct = TRUE),
   answer("Le Modèle Numérique Hydrologique"),
@@ -579,7 +579,7 @@ question("Qu'est-ce que le MNH (CHM) ?",
 )
 ```
 
-```{r quiz-final-3}
+```{r quiz-final-3, echo=FALSE}
 question("Quelle métrique représente la hauteur des arbres dominants ?",
   answer("zmean (hauteur moyenne)"),
   answer("zmax (hauteur maximale)"),
@@ -589,7 +589,7 @@ question("Quelle métrique représente la hauteur des arbres dominants ?",
 )
 ```
 
-```{r quiz-final-4}
+```{r quiz-final-4, echo=FALSE}
 question("Pourquoi filtrer les points avec Z < 0 après normalisation ?",
   answer("Pour améliorer la vitesse de calcul"),
   answer("Pour supprimer les points sous le sol (erreurs)", correct = TRUE),
@@ -599,7 +599,7 @@ question("Pourquoi filtrer les points avec Z < 0 après normalisation ?",
 )
 ```
 
-```{r quiz-final-5}
+```{r quiz-final-5, echo=FALSE}
 question("Quelle résolution est recommandée pour le MNH en foresterie ?",
   answer("10 cm"),
   answer("50 cm - 1 m", correct = TRUE),

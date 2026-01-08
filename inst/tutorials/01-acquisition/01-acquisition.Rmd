@@ -461,7 +461,7 @@ ggplot() +
 
 ### Quiz Section 1
 
-```{r quiz-section-1}
+```{r quiz-section-1, echo=FALSE}
 quiz(
  question("Quel est le système de coordonnées utilisé par l'IGN en France ?",
    answer("WGS84 (EPSG:4326)"),
@@ -1395,7 +1395,7 @@ cat("Couches:", paste(st_layers(gpkg_export)$name, collapse = ", "), "\n")
 
 ## Quiz final
 
-```{r quiz-final}
+```{r quiz-final, echo=FALSE}
 quiz(
  caption = "Vérifiez vos connaissances",
 

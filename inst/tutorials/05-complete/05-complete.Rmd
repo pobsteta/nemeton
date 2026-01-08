@@ -728,7 +728,7 @@ cat(file.path(cache_dir, "indicateurs_complets.gpkg"))
 
 ## Quiz Final
 
-```{r quiz-final}
+```{r quiz-final, echo=FALSE}
 quiz(
   caption = "Testez vos connaissances",
   question("Pourquoi normalise-t-on les indicateurs ?",
