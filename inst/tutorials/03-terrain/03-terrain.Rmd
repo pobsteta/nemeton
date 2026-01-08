@@ -1722,10 +1722,11 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-2, exercise=TRUE, exercise.lines=40, exercise.setup="ex-7-2-setup"}
-# === FAMILLE R (RISQUES) : R1, R2, R3 ===
+```{r ex-7-2, exercise=TRUE, exercise.lines=50, exercise.setup="ex-7-2-setup"}
+# === FAMILLE R (RISQUES) : R1, R2, R3, R4 ===
 
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
 # Fonction d'extraction
@@ -1758,6 +1759,15 @@ drought_path <- file.path(data_dir, "drought_risk.tif")
 if (file.exists(drought_path)) {
   parcelles$R3 <- extract_mean(rast(drought_path), parcelles)
   cat("R3 (risque sécheresse):", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
+}
+
+# R4 : Pression gibier (calculé dans exercice 4.4)
+if (file.exists(parcelles_path)) {
+  parc_r4 <- st_read(parcelles_path, quiet = TRUE)
+  if ("R4" %in% names(parc_r4)) {
+    parcelles$R4 <- parc_r4$R4
+    cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
+  }
 }
 
 # Sauvegarder
@@ -1950,6 +1960,7 @@ quiz(
 | **R** | R1 | Risque feu | BD Forêt + fireexposuR |
 | **R** | R2 | Risque tempête | nasapower + microclima |
 | **R** | R3 | Risque sécheresse | QBMS + SPEI |
+| **R** | R4 | Pression gibier | data.gouv.fr + BD Forêt |
 | **S** | S1 | Accessibilité routes | BD TOPO |
 | **S** | S2 | Proximité bâtiments | BD TOPO |
 | **S** | S3 | Densité sentiers | osmdata (OSM) |
