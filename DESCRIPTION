@@ -52,7 +52,8 @@ Suggests:
     DBI,
     RSQLite,
     leaflet (>= 2.1.0),
-    rappdirs
+    rappdirs,
+    rsconnect
 Remotes:
     rstudio/gradethis
 RoxygenNote: 7.3.3
