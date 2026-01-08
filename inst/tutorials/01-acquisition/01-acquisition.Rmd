@@ -289,6 +289,19 @@ cat("\nÉtendue:", round(bbox["xmax"] - bbox["xmin"]), "m x",
    round(bbox["ymax"] - bbox["ymin"]), "m\n")
 ```
 
+```{r ex-1-3-check}
+grade_this({
+  if (!inherits(.result, "sf")) {
+    fail("Le résultat doit être un objet sf.")
+  }
+  if (nrow(.result) < 20 || nrow(.result) > 35) {
+    fail(paste0("Nombre de placettes (", nrow(.result), ") inattendu. ",
+               "Vérifiez les clusters sélectionnés."))
+  }
+  pass(paste0("Parfait ! Vous avez sélectionné ", nrow(.result), " placettes du groupe Centre."))
+})
+```
+
 ### Exercice 1.4 : Créer le contour de la zone d'étude
 
 Créez un polygone englobant les placettes avec un **buffer de 500m** :
@@ -843,6 +856,23 @@ cat(" Moyenne:", round(global(pente, "mean", na.rm = TRUE)$mean, 1), "°\n")
 print(topo)
 ```
 
+```{r ex-3-2-check}
+grade_this({
+  if (!inherits(.result, "SpatRaster")) {
+    fail("Le résultat doit être un SpatRaster (terra).")
+  }
+  if (nlyr(.result) != 3) {
+    fail(paste0("Le stack doit contenir 3 couches (altitude, pente, exposition). ",
+               "Vous avez ", nlyr(.result), " couche(s)."))
+  }
+  expected_names <- c("altitude", "pente", "exposition")
+  if (!all(names(.result) == expected_names)) {
+    fail("Les couches doivent être nommées 'altitude', 'pente', 'exposition'.")
+  }
+  pass("Excellent ! Stack topographique créé avec 3 couches.")
+})
+```
+
 ### Visualisation du MNT
 
 ```{r viz-mnt-setup}
@@ -956,6 +986,21 @@ surface_foret <- sum(st_area(bd_foret))
 cat("\nSurface forestière:", round(as.numeric(surface_foret)/10000, 1), "ha\n")
 ```
 
+```{r ex-4-1-check}
+grade_this({
+  if (!inherits(.result, "sf")) {
+    fail("Le résultat doit être un objet sf.")
+  }
+  if (nrow(.result) < 5) {
+    fail("Trop peu de formations végétales. Vérifiez le téléchargement.")
+  }
+  if (!"tfv" %in% names(.result)) {
+    fail("La colonne 'tfv' (type de formation végétale) est absente.")
+  }
+  pass(paste0("Bravo ! BD Forêt téléchargée avec ", nrow(.result), " formations végétales."))
+})
+```
+
 ### Exercice 4.2 : Télécharger les routes
 
 ```{r ex-4-2-setup}
@@ -1011,6 +1056,18 @@ if ("nature" %in% names(routes)) {
 }
 ```
 
+```{r ex-4-2-check}
+grade_this({
+  if (!inherits(.result, "sf")) {
+    fail("Le résultat doit être un objet sf.")
+  }
+  if (nrow(.result) < 1) {
+    fail("Aucune route téléchargée. Vérifiez la zone d'étude.")
+  }
+  pass(paste0("Parfait ! ", nrow(.result), " tronçons routiers téléchargés."))
+})
+```
+
 ### Exercice 4.3 : Télécharger les cours d'eau
 
 ```{r ex-4-3-setup}
@@ -1062,6 +1119,16 @@ if (nrow(cours_eau) > 0) {
 } else {
   cat("Aucun cours d'eau dans la zone d'étude\n")
 }
+```
+
+```{r ex-4-3-check}
+grade_this({
+  if (!inherits(.result, "sf")) {
+    fail("Le résultat doit être un objet sf.")
+  }
+  # Note: 0 cours d'eau est acceptable selon la zone
+  pass(paste0("Téléchargement terminé : ", nrow(.result), " cours d'eau."))
+})
 ```
 
 ### Visualisation BD Forêt
