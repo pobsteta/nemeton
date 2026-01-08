@@ -116,16 +116,11 @@ compute_family_correlations <- function(units,
 #' @param families Character vector of family column names to analyze.
 #'   If NULL (default), uses all columns starting with "family_"
 #' @param threshold Numeric percentile threshold (0-100) for defining "high" values.
-#'   Default: 80 (top 20%)
+#'   Default: 80 (top 20 percent)
 #' @param min_families Minimum number of families in which a parcel must rank
 #'   above threshold to be classified as a hotspot. Default: 3
 #'
-#' @return sf object with original data plus three new columns:
-#'   \itemize{
-#'     \item{hotspot_count: Number of families where parcel ranks above threshold}
-#'     \item{hotspot_families: Comma-separated list of family names above threshold}
-#'     \item{is_hotspot: Logical indicating if parcel meets min_families criterion}
-#'   }
+#' @return sf object with original data plus three new columns: hotspot_count (number of families where parcel ranks above threshold), hotspot_families (comma-separated list of family names above threshold), is_hotspot (logical indicating if parcel meets min_families criterion)
 #'
 #' @details
 #' The function identifies multi-criteria hotspots by:
@@ -151,7 +146,7 @@ compute_family_correlations <- function(units,
 #' units$family_C <- runif(nrow(units), 45, 80)
 #' units$family_W <- runif(nrow(units), 35, 75)
 #'
-#' # Identify hotspots: top 20% in at least 3 families
+#' # Identify hotspots: top 20\\% in at least 3 families
 #' hotspots <- identify_hotspots(
 #'   units,
 #'   threshold = 80,
@@ -162,7 +157,7 @@ compute_family_correlations <- function(units,
 #' hotspot_parcels <- hotspots[hotspots$is_hotspot, ]
 #' print(hotspot_parcels[, c("parcel_id", "hotspot_count", "hotspot_families")])
 #'
-#' # Conservative threshold: top 10% in 4+ families
+#' # Conservative threshold: top 10\\% in 4+ families
 #' elite_hotspots <- identify_hotspots(
 #'   units,
 #'   threshold = 90,

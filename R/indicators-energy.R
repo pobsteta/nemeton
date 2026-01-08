@@ -17,8 +17,8 @@ NULL
 #' @param units sf object (POLYGON) of spatial units to assess
 #' @param volume_field Character. Column name containing standing volume (m³/ha). Default "volume".
 #' @param species_field Character. Column name containing species codes. Default "species".
-#' @param harvest_rate Numeric. Annual harvest rate (fraction of volume). Default 0.02 (2%/year).
-#' @param residue_fraction Numeric. Fraction of harvest available as residues. Default 0.3 (30%).
+#' @param harvest_rate Numeric. Annual harvest rate (fraction of volume). Default 0.02 (2 percent/year).
+#' @param residue_fraction Numeric. Fraction of harvest available as residues. Default 0.3 (30 percent).
 #' @param coppice_area_field Character. Column name for coppice area fraction. Optional.
 #' @param column_name Character. Name for output column. Default "E1".
 #' @param lang Character. Message language. Default "en".
