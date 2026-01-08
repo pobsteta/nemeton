@@ -1,10 +1,12 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.4.0
+Version: 0.4.4
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
+Author: Pascal Obstétar [aut, cre]
+Maintainer: Pascal Obstétar <pascal.obstetar@gmail.com>
 Description: Implement the Nemeton method for systemic forest territory analysis.
     Calculate multi-family biophysical indicators across 12 ecosystem service
     families (carbon, water, soil, landscape, biodiversity, etc.), perform
@@ -39,7 +41,19 @@ Suggests:
     rnaturalearth,
     osmdata,
     patchwork,
-    viridisLite
+    viridisLite,
+    happign (>= 0.2.0),
+    lidR (>= 4.0.0),
+    lidaRtRee,
+    lidarHD,
+    learnr (>= 0.11.0),
+    gradethis (>= 0.2.0),
+    fmsb,
+    corrplot,
+    DBI,
+    RSQLite,
+    leaflet (>= 2.1.0),
+    rappdirs
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton
