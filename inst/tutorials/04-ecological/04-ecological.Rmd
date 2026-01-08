@@ -2953,7 +2953,7 @@ quiz(
 
 ## Synthèse
 
-### Indicateurs calculés
+### Indicateurs calculés (14)
 
 | Famille | Code | Indicateur |
 |---------|------|------------|
@@ -2962,6 +2962,8 @@ quiz(
 | **B** | B3 | Connectivité écologique |
 | **L** | L1 | Effet lisière |
 | **L** | L2 | Fragmentation |
+| **L** | L3 | Diversité paysagère |
+| **C** | C2 | Vitalité (NDVI) |
 | **T** | T1 | Âge du peuplement |
 | **T** | T2 | Taux de changement |
 | **A** | A2 | Qualité air forestier |
