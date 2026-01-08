@@ -1443,7 +1443,7 @@ quiz(
 
 ---
 
-## Conclusion
+## Synthèse
 
 ### Ce que vous avez appris
 
