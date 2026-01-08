@@ -22,9 +22,9 @@ indicator_energy_fuelwood(
 
 \item{species_field}{Character. Column name containing species codes. Default "species".}
 
-\item{harvest_rate}{Numeric. Annual harvest rate (fraction of volume). Default 0.02 (2%/year).}
+\item{harvest_rate}{Numeric. Annual harvest rate (fraction of volume). Default 0.02 (2 percent/year).}
 
-\item{residue_fraction}{Numeric. Fraction of harvest available as residues. Default 0.3 (30%).}
+\item{residue_fraction}{Numeric. Fraction of harvest available as residues. Default 0.3 (30 percent).}
 
 \item{coppice_area_field}{Character. Column name for coppice area fraction. Optional.}
 

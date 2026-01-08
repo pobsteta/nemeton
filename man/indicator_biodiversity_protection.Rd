@@ -40,7 +40,7 @@ areas (ZNIEFF, Natura2000, National/Regional Parks).
 **Calculation**: B1 = (area_protected / area_total) × 100
 
 **Interpretation**: Higher values indicate better protection status.
-Parcels with B1 > 75% are highly protected.
+Parcels with B1 > 75\\% are highly protected.
 }
 \examples{
 \dontrun{
