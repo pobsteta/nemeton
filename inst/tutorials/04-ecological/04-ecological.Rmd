@@ -1655,9 +1655,9 @@ if (requireNamespace("happign", quietly = TRUE)) {
     st_crs(zone_bbox) <- st_crs(parcelles)
 
     # Chercher les couches d'orthophotos IRC disponibles
-    wms_layers <- get_layers_metadata("wms")
-    irc_layers <- wms_layers$Name[grepl("irc|infrarouge|ortho.*ir",
-                                         wms_layers$Name, ignore.case = TRUE)]
+    wms_layers <- get_layers_metadata("wmts", "ortho")
+    irc_layers <- wms_layers$Identifier[grepl("irc|infrarouge|ortho.*ir",
+                                        wms_layers$Identifier, ignore.case = TRUE)]
 
     if (length(irc_layers) > 0) {
       cat("Couches IRC trouvées:", length(irc_layers), "\n")
@@ -1867,6 +1867,8 @@ parcelles$C2 <- pmax(0, pmin(1, parcelles$C2))
 # Convertir en score 0-100
 parcelles$C2_score <- parcelles$C2 * 100
 
+cat("NDVI min:", round(min(parcelles$C2, na.rm = TRUE), 3), "\n")
+cat("NDVI max:", round(max(parcelles$C2, na.rm = TRUE), 3), "\n")
 cat("NDVI moyen:", round(mean(parcelles$C2, na.rm = TRUE), 3), "\n")
 cat("C2 score moyen:", round(mean(parcelles$C2_score, na.rm = TRUE), 1), "/ 100\n")
 
@@ -2243,7 +2245,7 @@ grade_this({
 
 ---
 
-## Section 6 : Export et Synthèse
+## Section 6 : Indicateurs Complémentaires (L2, T1, T2, A2, F2)
 
 ### Exercice 6.1 : Famille B (Biodiversité) — Calcul Parallélisé
 

@@ -313,7 +313,7 @@ grade_this({
 
 ---
 
-## Section 4 : Indicateurs de risque (R1, R2, R3)
+## Section 4 : Indicateurs de risque (R1, R2, R3, R4)
 
 ### Exercice 4.1 : Exposition au feu (R1)
 
