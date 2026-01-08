@@ -2,7 +2,7 @@
 
 ## Description
 
-Ce tutoriel assemble les **31 indicateurs** calculés dans les tutoriels précédents, calcule **E2** (évitement carbone), normalise les valeurs, et produit l'**indice composite I_nemeton**.
+Ce tutoriel assemble les **32 indicateurs** calculés dans les tutoriels précédents, calcule **E2** (évitement carbone), normalise les valeurs, et produit l'**indice composite I_nemeton**.
 
 ## Indicateur Calculé
 
@@ -26,7 +26,7 @@ Ce tutoriel assemble les **31 indicateurs** calculés dans les tutoriels précé
 ~/nemeton_tutorial_data/
 ├── parcelles.gpkg              # T01: Base géométrique
 ├── metriques_lidar.gpkg        # T02: C1, P1, P3, B2, E1, A1
-├── indicateurs_terrain.gpkg    # T03: W1-3, R1-3, S1-3, P2, F1
+├── indicateurs_terrain.gpkg    # T03: W1-3, R1-4, S1-3, P2, F1
 └── indicateurs_ecologiques.gpkg # T04: B1-3, L1-3, C2, T1-2, A2, F2, N1-3
 ```
 
@@ -43,7 +43,7 @@ x_norm = (x - x_min) / (x_max) - x_min)
 ### Inversion des Indicateurs Négatifs
 
 Indicateurs où une valeur élevée est défavorable :
-- R1, R2, R3 (risques)
+- R1, R2, R3, R4 (risques)
 - F1 (érosion)
 - L1 (fragmentation)
 
@@ -73,8 +73,8 @@ $$I_{nemeton} = \sum_{f=1}^{12} w_f \cdot \bar{I}_f$$
 ```
 ~/nemeton_tutorial_data/
 └── indicateurs_complets.gpkg
-    ├── 31 indicateurs bruts (C1, C2, C3, B1, ...)
-    ├── 31 indicateurs normalisés (*_norm)
+    ├── 32 indicateurs bruts (C1, C2, C3, B1, ...)
+    ├── 32 indicateurs normalisés (*_norm)
     ├── 12 moyennes par famille (moy_C, moy_B, ...)
     ├── Indice composite (I_nemeton)
     └── Classification (classe: Faible/Moyen/Bon/Excellent)

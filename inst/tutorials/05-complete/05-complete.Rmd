@@ -7,7 +7,7 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Assemblage des 31 indicateurs, calcul E2 (évitement carbone), normalisation
+  Assemblage des 32 indicateurs, calcul E2 (évitement carbone), normalisation
   Min-Max, et calcul de l'indice composite pondéré I_nemeton.
 ---
 
@@ -33,7 +33,7 @@ Bienvenue dans le **cinquième tutorial** de la série nemeton !
 Dans les tutoriels précédents, vous avez calculé des indicateurs appartenant aux 12 familles :
 - **T01** : Zone d'étude et données de base
 - **T02** : Métriques LiDAR (C1, P1, P3, B2, E1, A1)
-- **T03** : Indicateurs terrain (W1-W3, R1-R3, S1-S3, P2, F1)
+- **T03** : Indicateurs terrain (W1-W3, R1-R4, S1-S3, P2, F1)
 - **T04** : Indicateurs écologiques (B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3)
 
 Maintenant, vous allez :
@@ -50,7 +50,7 @@ familles <- data.frame(
   Code = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
   Famille = c("Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
               "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"),
-  Nb_Indicateurs = c(3, 3, 3, 2, 2, 2, 2, 3, 3, 3, 2, 3),
+  Nb_Indicateurs = c(3, 3, 3, 2, 2, 3, 2, 4, 3, 3, 2, 3),
   Source_Principale = c("LiDAR", "INPN/LiDAR", "MNT", "LiDAR/BD Forêt",
                         "MNT/Pédologie", "BD Forêt", "BD Forêt", "MNT",
                         "BD TOPO", "LiDAR/BD Forêt", "LiDAR/BD Forêt", "Multi")
@@ -128,7 +128,7 @@ Parcelles (base)
      │       → C1, P1, P3, B2_lidar, E1, A1
      │
      ├── + Indicateurs Terrain (T03)
-     │       → W1, W2, W3, R1, R2, R3, S1, S2, S3, P2, F1
+     │       → W1, W2, W3, R1, R2, R3, R4, S1, S2, S3, P2, F1
      │
      ├── + Indicateurs Écologiques (T04)
      │       → B1, B2, B3, L1, L2, L3, C2, T1, T2, A2, F2, N1, N2, N3
@@ -180,7 +180,7 @@ if (exists("metriques_lidar")) {
 
 # Joindre indicateurs terrain
 if (exists("indic_terrain")) {
-  cols_terrain <- c("id_parcelle", "W1", "W2", "W3", "R1", "R2", "R3",
+  cols_terrain <- c("id_parcelle", "W1", "W2", "W3", "R1", "R2", "R3", "R4",
                     "S1", "S2", "S3", "P2", "F1")
   cols_present <- intersect(cols_terrain, names(indic_terrain))
   if (length(cols_present) > 1) {
@@ -195,8 +195,8 @@ if (exists("indic_terrain")) {
 
 # Joindre indicateurs écologiques
 if (exists("indic_eco")) {
-  cols_eco <- c("id_parcelle", "B1", "B2", "B3", "L1", "L2", "T1", "T2",
-                "A2", "F2", "N1", "N2", "N3")
+  cols_eco <- c("id_parcelle", "B1", "B2", "B3", "L1", "L2", "L3", "C2",
+                "T1", "T2", "A2", "F2", "N1", "N2", "N3")
   cols_present <- intersect(cols_eco, names(indic_eco))
   if (length(cols_present) > 1) {
     indicateurs_complet <- merge(
@@ -348,7 +348,7 @@ Certains indicateurs ont une logique **inverse** : une valeur élevée est défa
 
 ```{r inversion, exercise=TRUE}
 # Indicateurs à inverser (valeur élevée = défavorable)
-indicateurs_negatifs <- c("R1", "R2", "R3", "F1", "L1")  # L1 = fragmentation
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")  # L1 = fragmentation, R4 = pression gibier
 
 # Fonction d'inversion
 inverser_indicateur <- function(x_norm) {
@@ -563,7 +563,7 @@ indic_norm <- data.frame(
   # Eau (W)
   W1 = runif(n), W2 = runif(n), W3 = runif(n),
   # Risques (R) - déjà inversés
-  R1 = runif(n), R2 = runif(n), R3 = runif(n)
+  R1 = runif(n), R2 = runif(n), R3 = runif(n), R4 = runif(n)
 )
 
 # Poids des familles (sous-ensemble)
@@ -585,7 +585,7 @@ indic_norm <- data.frame(
   C1 = runif(n), C2 = runif(n), C3 = runif(n),
   B1 = runif(n), B2 = runif(n), B3 = runif(n),
   W1 = runif(n), W2 = runif(n), W3 = runif(n),
-  R1 = runif(n), R2 = runif(n), R3 = runif(n)
+  R1 = runif(n), R2 = runif(n), R3 = runif(n), R4 = runif(n)
 )
 
 poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
@@ -594,7 +594,7 @@ poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
 indic_norm$moy_C <- rowMeans(indic_norm[, c("C1", "C2", "C3")])
 indic_norm$moy_B <- rowMeans(indic_norm[, c("B1", "B2", "B3")])
 indic_norm$moy_W <- rowMeans(indic_norm[, c("W1", "W2", "W3")])
-indic_norm$moy_R <- rowMeans(indic_norm[, c("R1", "R2", "R3")])
+indic_norm$moy_R <- rowMeans(indic_norm[, c("R1", "R2", "R3", "R4")])
 
 # Calculer l'indice composite pondéré
 indic_norm$I_nemeton <- (
