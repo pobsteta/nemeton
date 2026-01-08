@@ -809,14 +809,25 @@ pressure_data <- NULL
 
 if (requireNamespace("nemeton", quietly = TRUE)) {
   tryCatch({
+    # Vérifier si le cache existe et est valide (contient colonne tableau)
+    force_dl <- FALSE
+    cache_file <- file.path(hunting_cache, "chevreuil_tableaux_chasse.csv")
+    if (file.exists(cache_file)) {
+      test_data <- read.csv(cache_file, nrows = 1)
+      if (!"prelevements" %in% names(test_data)) {
+        cat("Cache obsolète détecté, re-téléchargement...\n")
+        force_dl <- TRUE
+      }
+    }
+
     # Télécharger avec cache local
     hunting_raw <- nemeton::download_hunting_data(
       species = "all",
       cache_dir = hunting_cache,
-      force_download = FALSE
+      force_download = force_dl
     )
 
-    if (!is.null(hunting_raw)) {
+    if (!is.null(hunting_raw) && "tableau" %in% names(hunting_raw)) {
       # Calculer l'indice de pression
       pressure_data <- nemeton::compute_game_pressure_index(hunting_data = hunting_raw)
       cat("Données en cache:", hunting_cache, "\n")
@@ -826,8 +837,7 @@ if (requireNamespace("nemeton", quietly = TRUE)) {
       cat("\nTop 5 départements (pression gibier) :\n")
       top5 <- head(pressure_data[order(-pressure_data$pressure_index), ], 5)
       for (i in seq_len(nrow(top5))) {
-        cat(sprintf("  %s (%s): %.1f\n",
-                    top5$nom_dept[i], top5$code_dept[i], top5$pressure_index[i]))
+        cat(sprintf("  %s: %.1f\n", top5$code_dept[i], top5$pressure_index[i]))
       }
     }
   }, error = function(e) {
