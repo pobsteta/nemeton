@@ -10,12 +10,28 @@ NULL
 # Data source URLs (data.gouv.fr - OFB/ONCFS)
 # ==============================================================================
 
-#' URLs for hunting statistics datasets
+#' URLs for hunting statistics datasets (data.gouv.fr - OFB)
+#' Updated 2025-06-05 with all 8 large game species
 #' @noRd
 HUNTING_DATA_URLS <- list(
-  chevreuil = "https://www.data.gouv.fr/fr/datasets/r/13f0d2bc-724c-4417-8bb4-751e455a1d5f",
-  cerf = "https://www.data.gouv.fr/fr/datasets/r/8280cff4-c77d-4fbd-93a9-ad6de81a6455",
-  sanglier = "https://www.data.gouv.fr/fr/datasets/r/72a13de7-f7b1-426b-ba48-e2c79c8d2d6d"
+
+  # Principal browsers - high impact on forest regeneration
+
+  chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
+  cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
+  sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
+
+
+  # Mountain ungulates - localized impact
+
+  chamois = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
+  isard = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
+  mouflon = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
+
+  # Other deer species
+
+  daim = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
+  cerf_sika = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
 )
 
 # ==============================================================================
@@ -154,12 +170,12 @@ download_hunting_data <- function(species = "all",
 #' Standardize Hunting Data Column Names
 #' @noRd
 standardize_hunting_columns <- function(data, species_name) {
-  # Common column name patterns
+  # Common column name patterns (data.gouv.fr format 2025)
   col_patterns <- list(
-    code_dept = c("code_dept", "dept", "departement", "code"),
-    nom_dept = c("nom_dept", "nom", "libelle"),
-    saison = c("saison", "campagne", "annee", "year", "an"),
-    tableau = c("tableau", "realisations", "nb", "nombre", "count", "total")
+    code_dept = c("dept", "code_dept", "departement", "code"),
+    nom_dept = c("nom_dept", "nom", "libelle", "nom_departement"),
+    saison = c("annee", "saison", "campagne", "year", "an"),
+    tableau = c("prelevements", "tableau", "realisations", "nb", "nombre", "count", "total")
   )
 
   # Find and rename columns
@@ -206,7 +222,9 @@ standardize_hunting_columns <- function(data, species_name) {
 #' @param season Character. Hunting season to use (e.g., "2022-2023").
 #'   Default "latest" uses most recent available.
 #' @param weights Named numeric vector. Weights for species contribution to
-#'   browsing pressure. Default: c(chevreuil = 0.5, cerf = 0.35, sanglier = 0.15).
+#'   browsing pressure. Default weights reflect relative forest impact:
+#'   chevreuil (0.30), cerf (0.25), sanglier (0.15), chamois (0.08),
+#'   mouflon (0.07), daim (0.06), isard (0.05), cerf_sika (0.04).
 #' @param normalize_by Character. How to normalize harvest numbers:
 #'   "area" (per km2 of forest, requires dept_forest_area), "rank" (percentile rank),
 #'   or "minmax" (min-max scaling). Default "rank".
@@ -218,21 +236,26 @@ standardize_hunting_columns <- function(data, species_name) {
 #'     \item code_dept: Department code
 #'     \item nom_dept: Department name
 #'     \item pressure_index: Browsing pressure index (0-100)
-#'     \item chevreuil_harvest: Roe deer harvest count
-#'     \item cerf_harvest: Red deer harvest count
-#'     \item sanglier_harvest: Wild boar harvest count
+#'     \item <species>_harvest: Harvest count for each species present
 #'   }
 #'
 #' @details
-#' The pressure index combines harvest statistics for the three main game species
+#' The pressure index combines harvest statistics for 8 large game species
 #' affecting forest regeneration:
 #' \itemize{
 #'   \item Chevreuil (roe deer): Main browser, high impact on regeneration
 #'   \item Cerf (red deer): Significant browser, bark stripping
 #'   \item Sanglier (wild boar): Root damage, seed predation
+#'   \item Chamois: Alpine browser, localized impact
+#'   \item Isard (Pyrenean chamois): Pyrenees only
+#'   \item Mouflon: Mediterranean zones
+#'   \item Daim (fallow deer): Browser, localized populations
+#'   \item Cerf sika (sika deer): Bark stripping, limited range
 #' }
 #'
 #' Weights reflect relative impact on forest browsing (not total damage).
+#' Mountain ungulates (chamois, isard, mouflon) have lower weights as they
+#' primarily affect alpine/subalpine forests.
 #'
 #' @family data-acquisition
 #' @export
@@ -250,7 +273,9 @@ standardize_hunting_columns <- function(data, species_name) {
 #' }
 compute_game_pressure_index <- function(hunting_data = NULL,
                                          season = "latest",
-                                         weights = c(chevreuil = 0.5, cerf = 0.35, sanglier = 0.15),
+                                         weights = c(chevreuil = 0.30, cerf = 0.25, sanglier = 0.15,
+                                                     chamois = 0.08, mouflon = 0.07, daim = 0.06,
+                                                     isard = 0.05, cerf_sika = 0.04),
                                          normalize_by = "rank",
                                          dept_forest_area = NULL) {
   # Download data if not provided
@@ -292,12 +317,23 @@ compute_game_pressure_index <- function(hunting_data = NULL,
     stringsAsFactors = FALSE
   )
 
-  # Add department names
-  nom_lookup <- unique(hunting_data[, c("code_dept", "nom_dept")])
-  result <- merge(result, nom_lookup, by = "code_dept", all.x = TRUE)
+  # Add department names (if available)
+  if ("nom_dept" %in% names(hunting_data)) {
+    nom_lookup <- unique(hunting_data[, c("code_dept", "nom_dept"), drop = FALSE])
+    result <- merge(result, nom_lookup, by = "code_dept", all.x = TRUE)
+  } else {
+    result$nom_dept <- NA_character_
+  }
+
+  # Get all species present in data
+  all_species <- names(HUNTING_DATA_URLS)
+  available_species <- unique(hunting_data$espece)
+  species_to_process <- intersect(all_species, available_species)
+
+  cli::cli_alert_info("Processing {length(species_to_process)} species: {paste(species_to_process, collapse = ', ')}")
 
   # Extract harvest by species
-  for (sp in c("chevreuil", "cerf", "sanglier")) {
+  for (sp in species_to_process) {
     sp_data <- hunting_data[hunting_data$espece == sp, c("code_dept", "tableau")]
     names(sp_data)[2] <- paste0(sp, "_harvest")
     result <- merge(result, sp_data, by = "code_dept", all.x = TRUE)
@@ -313,8 +349,10 @@ compute_game_pressure_index <- function(hunting_data = NULL,
   # Normalize harvest numbers
   normalized <- list()
 
-  for (sp in c("chevreuil", "cerf", "sanglier")) {
+  for (sp in species_to_process) {
     col <- paste0(sp, "_harvest")
+    if (!col %in% names(result)) next
+
     values <- result[[col]]
 
     if (normalize_by == "rank") {

@@ -7,7 +7,8 @@
 compute_game_pressure_index(
   hunting_data = NULL,
   season = "latest",
-  weights = c(chevreuil = 0.5, cerf = 0.35, sanglier = 0.15),
+  weights = c(chevreuil = 0.3, cerf = 0.25, sanglier = 0.15, chamois = 0.08, mouflon =
+    0.07, daim = 0.06, isard = 0.05, cerf_sika = 0.04),
   normalize_by = "rank",
   dept_forest_area = NULL
 )
@@ -20,7 +21,9 @@ to download automatically.}
 Default "latest" uses most recent available.}
 
 \item{weights}{Named numeric vector. Weights for species contribution to
-browsing pressure. Default: c(chevreuil = 0.5, cerf = 0.35, sanglier = 0.15).}
+browsing pressure. Default weights reflect relative forest impact:
+chevreuil (0.30), cerf (0.25), sanglier (0.15), chamois (0.08),
+mouflon (0.07), daim (0.06), isard (0.05), cerf_sika (0.04).}
 
 \item{normalize_by}{Character. How to normalize harvest numbers:
 "area" (per km2 of forest, requires dept_forest_area), "rank" (percentile rank),
@@ -35,9 +38,7 @@ A data.frame with columns:
     \item code_dept: Department code
     \item nom_dept: Department name
     \item pressure_index: Browsing pressure index (0-100)
-    \item chevreuil_harvest: Roe deer harvest count
-    \item cerf_harvest: Red deer harvest count
-    \item sanglier_harvest: Wild boar harvest count
+    \item <species>_harvest: Harvest count for each species present
   }
 }
 \description{
@@ -46,15 +47,22 @@ hunting harvest statistics. Higher values indicate higher game populations
 and thus higher browsing pressure on forests.
 }
 \details{
-The pressure index combines harvest statistics for the three main game species
+The pressure index combines harvest statistics for 8 large game species
 affecting forest regeneration:
 \itemize{
   \item Chevreuil (roe deer): Main browser, high impact on regeneration
   \item Cerf (red deer): Significant browser, bark stripping
   \item Sanglier (wild boar): Root damage, seed predation
+  \item Chamois: Alpine browser, localized impact
+  \item Isard (Pyrenean chamois): Pyrenees only
+  \item Mouflon: Mediterranean zones
+  \item Daim (fallow deer): Browser, localized populations
+  \item Cerf sika (sika deer): Bark stripping, limited range
 }
 
 Weights reflect relative impact on forest browsing (not total damage).
+Mountain ungulates (chamois, isard, mouflon) have lower weights as they
+primarily affect alpine/subalpine forests.
 }
 \examples{
 \dontrun{
