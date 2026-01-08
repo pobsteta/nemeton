@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.4.0)
+[![Version](https://img.shields.io/badge/version-0.4.18-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.4.18)
 [![Tests](https://img.shields.io/badge/tests-1322%20passing-success.svg)](https://github.com/pobsteta/nemeton)
 [![Coverage](https://img.shields.io/badge/coverage-85.8%25-brightgreen.svg)](https://github.com/pobsteta/nemeton)
 [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
@@ -15,16 +15,16 @@
 
 ## ✨ Fonctionnalités principales
 
-### Référentiel Complet (v0.4.0)
+### Référentiel Complet (v0.4.18)
 
 - 🌳 **12 familles d'indicateurs** (100% implémenté) :
   - **C** - Carbone & Vitalité | **B** - Biodiversité | **W** - Eau | **A** - Air & Microclimat
   - **F** - Fertilité Sols | **L** - Paysage | **T** - Temporel | **R** - Risques & Résilience
   - **S** - Social & Usages 🆕 | **P** - Production & Économie 🆕 | **E** - Énergie & Climat 🆕 | **N** - Naturalité 🆕
 
-- 📊 **31 sous-indicateurs** : C1-C2, B1-B3, W1-W3, A1-A2, F1-F2, L1-L2, T1-T2, R1-R3, S1-S3, P1-P3, E1-E2, N1-N3
+- 📊 **32 sous-indicateurs** : C1-C2, B1-B3, W1-W3, A1-A2, F1-F2, L1-L3, T1-T2, R1-R4, S1-S3, P1-P3, E1-E2, N1-N3
 
-### Outils d'Analyse Avancée (v0.4.0)
+### Outils d'Analyse Avancée
 
 - 🎯 **Optimisation multi-critères** : Analyse de Pareto, identification des solutions non-dominées
 - 🔍 **Clustering intelligent** : K-means & hiérarchique avec auto-détermination du k optimal (silhouette)
@@ -53,7 +53,7 @@
 remotes::install_github("pobsteta/nemeton")
 ```
 
-## 🌟 Nouveautés v0.4.0 (Janvier 2026)
+## 🌟 Nouveautés v0.4.x (Janvier 2026)
 
 ### 4 Nouvelles Familles d'Indicateurs
 
@@ -95,7 +95,7 @@ plot_tradeoff(
 
 ## 🎯 Quick Start
 
-### Workflow Complet 12 Familles (v0.4.0 - Recommandé)
+### Workflow Complet 12 Familles (Recommandé)
 
 ```r
 library(nemeton)
