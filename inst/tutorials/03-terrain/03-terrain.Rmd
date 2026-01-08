@@ -1388,12 +1388,16 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.lines=140, exercise.setup="ex-6-1-setup", exercise.timelimit=900}
+```{r ex-6-1, exercise=TRUE, exercise.lines=160, exercise.setup="ex-6-1-setup", exercise.timelimit=900}
 # === FERTILITÉ STATION (P2) - Rendu raster ===
 
 mnt_path <- file.path(data_dir, "mnt.tif")
 twi_path <- file.path(data_dir, "twi.tif")
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+# === Dossier cache pour données externes ===
+cache_dir <- file.path(data_dir, "station_cache")
+if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
 
 if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   mnt <- rast(mnt_path)
@@ -1447,18 +1451,31 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
     library(climateR)
     library(SPEI)
 
-    # Télécharger données climatiques (TerraClimate ou PRISM)
-    climate_data <- tryCatch({
-      getTerraClim(
-        AOI = st_transform(st_union(parcelles), 4326),
-        varname = c("tmin", "tmax", "ppt"),
-        startDate = "2020-01-01",
-        endDate = "2023-12-31"
-      )
-    }, error = function(e) {
-      cat("Erreur climateR:", conditionMessage(e), "\n")
-      NULL
-    })
+    # Cache pour données climatiques
+    climate_cache <- file.path(cache_dir, "climate_data.rds")
+
+    climate_data <- NULL
+    if (file.exists(climate_cache)) {
+      cat("Chargement données climatiques depuis cache...\n")
+      climate_data <- readRDS(climate_cache)
+    } else {
+      # Télécharger données climatiques (TerraClimate)
+      climate_data <- tryCatch({
+        data <- getTerraClim(
+          AOI = st_transform(st_union(parcelles), 4326),
+          varname = c("tmin", "tmax", "ppt"),
+          startDate = "2020-01-01",
+          endDate = "2023-12-31"
+        )
+        # Sauvegarder en cache
+        saveRDS(data, climate_cache)
+        cat("Données climatiques mises en cache\n")
+        data
+      }, error = function(e) {
+        cat("Erreur climateR:", conditionMessage(e), "\n")
+        NULL
+      })
+    }
 
     if (!is.null(climate_data)) {
       # Moyennes mensuelles
@@ -1495,32 +1512,41 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   if (requireNamespace("geodata", quietly = TRUE)) {
     library(geodata)
 
-    # Télécharger les données SoilGrids pour la zone
+    # Cache pour données SoilGrids
+    soil_cache <- file.path(cache_dir, "soilgrids_data.rds")
     bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
 
-    soil_data <- tryCatch({
-      # Variables SoilGrids disponibles:
-      # "clay", "sand", "silt", "cfvo" (coarse fragments)
-      # "nitrogen", "phh2o", "soc" (soil organic carbon)
-      # "bdod" (bulk density), "cec", "ocd" (organic carbon density)
+    soil_data <- NULL
+    if (file.exists(soil_cache)) {
+      cat("Chargement données SoilGrids depuis cache...\n")
+      soil_data <- readRDS(soil_cache)
+    } else {
+      soil_data <- tryCatch({
+        # Variables SoilGrids: phh2o, soc, clay
+        cat("Téléchargement SoilGrids (ph, soc, clay)...\n")
 
-      # pH du sol (0-30cm)
-      ph <- soil_world(var = "phh2o", depth = 5, path = tempdir())
-      ph_crop <- crop(ph, ext(bbox_wgs84))
+        # pH du sol (0-30cm)
+        ph <- soil_world(var = "phh2o", depth = 5, path = cache_dir)
+        ph_crop <- crop(ph, ext(bbox_wgs84))
 
-      # Carbone organique (fertilité)
-      soc <- soil_world(var = "soc", depth = 5, path = tempdir())
-      soc_crop <- crop(soc, ext(bbox_wgs84))
+        # Carbone organique (fertilité)
+        soc <- soil_world(var = "soc", depth = 5, path = cache_dir)
+        soc_crop <- crop(soc, ext(bbox_wgs84))
 
-      # Texture - argile (rétention eau)
-      clay <- soil_world(var = "clay", depth = 5, path = tempdir())
-      clay_crop <- crop(clay, ext(bbox_wgs84))
+        # Texture - argile (rétention eau)
+        clay <- soil_world(var = "clay", depth = 5, path = cache_dir)
+        clay_crop <- crop(clay, ext(bbox_wgs84))
 
-      list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
-    }, error = function(e) {
-      cat("Erreur geodata:", conditionMessage(e), "\n")
-      NULL
-    })
+        data <- list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
+        # Sauvegarder en cache
+        saveRDS(data, soil_cache)
+        cat("Données SoilGrids mises en cache\n")
+        data
+      }, error = function(e) {
+        cat("Erreur geodata:", conditionMessage(e), "\n")
+        NULL
+      })
+    }
 
     if (!is.null(soil_data)) {
       cat("Données SoilGrids récupérées\n")
