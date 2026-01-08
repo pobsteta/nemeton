@@ -765,8 +765,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-4, exercise=TRUE, exercise.lines=150, exercise.setup="ex-4-4-setup", exercise.timelimit=900}
-# === PRESSION GIBIER (R4) avec données de chasse ===
+```{r ex-4-4, exercise=TRUE, exercise.lines=180, exercise.setup="ex-4-4-setup", exercise.timelimit=900}
+# === PRESSION GIBIER (R4) avec données de chasse (parallélisé) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
@@ -776,28 +776,59 @@ if (!file.exists(parcelles_path)) {
 }
 
 parcelles <- st_read(parcelles_path, quiet = TRUE)
-cat("=== Indicateur R4 : Pression Gibier ===\n\n")
+cat("=== Indicateur R4 : Pression Gibier (parallélisé) ===\n\n")
 
 # ============================================================
-# 1. TÉLÉCHARGEMENT DES DONNÉES DE CHASSE (data.gouv.fr)
+# 0. CONFIGURATION PARALLÉLISATION
 # ============================================================
 
-cat("--- 1. Données de chasse départementales ---\n")
+use_parallel <- FALSE
+if (requireNamespace("furrr", quietly = TRUE) &&
+    requireNamespace("future", quietly = TRUE)) {
+  future::plan(future::multisession, workers = min(4, parallel::detectCores() - 1))
+  use_parallel <- TRUE
+  cat("Mode parallèle activé (furrr)\n")
+} else {
+  cat("Mode séquentiel (installez furrr pour accélérer)\n")
+}
+
+# Fonction map selon mode
+map_func <- if (use_parallel) furrr::future_map_dbl else purrr::map_dbl
+
+# ============================================================
+# 1. TÉLÉCHARGEMENT DES DONNÉES DE CHASSE (avec cache)
+# ============================================================
+
+cat("\n--- 1. Données de chasse départementales (cache local) ---\n")
+
+# Cache dans le répertoire du tutoriel
+hunting_cache <- file.path(data_dir, "hunting_cache")
+if (!dir.exists(hunting_cache)) dir.create(hunting_cache, recursive = TRUE)
 
 pressure_data <- NULL
 
 if (requireNamespace("nemeton", quietly = TRUE)) {
   tryCatch({
-    # Utiliser les fonctions nemeton
-    pressure_data <- nemeton::compute_game_pressure_index()
-    cat("Indice de pression calculé pour", nrow(pressure_data), "départements\n")
+    # Télécharger avec cache local
+    hunting_raw <- nemeton::download_hunting_data(
+      species = "all",
+      cache_dir = hunting_cache,
+      force_download = FALSE
+    )
 
-    # Afficher les 5 départements avec la plus forte pression
-    cat("\nTop 5 départements (pression gibier) :\n")
-    top5 <- head(pressure_data[order(-pressure_data$pressure_index), ], 5)
-    for (i in seq_len(nrow(top5))) {
-      cat(sprintf("  %s (%s): %.1f\n",
-                  top5$nom_dept[i], top5$code_dept[i], top5$pressure_index[i]))
+    if (!is.null(hunting_raw)) {
+      # Calculer l'indice de pression
+      pressure_data <- nemeton::compute_game_pressure_index(hunting_data = hunting_raw)
+      cat("Données en cache:", hunting_cache, "\n")
+      cat("Indice calculé pour", nrow(pressure_data), "départements\n")
+
+      # Top 5 départements
+      cat("\nTop 5 départements (pression gibier) :\n")
+      top5 <- head(pressure_data[order(-pressure_data$pressure_index), ], 5)
+      for (i in seq_len(nrow(top5))) {
+        cat(sprintf("  %s (%s): %.1f\n",
+                    top5$nom_dept[i], top5$code_dept[i], top5$pressure_index[i]))
+      }
     }
   }, error = function(e) {
     cat("Erreur téléchargement données chasse:", e$message, "\n")
@@ -805,12 +836,11 @@ if (requireNamespace("nemeton", quietly = TRUE)) {
 }
 
 # ============================================================
-# 2. CALCUL DE LA PALATABILITÉ PAR PARCELLE
+# 2. CALCUL DE LA PALATABILITÉ PAR PARCELLE (parallélisé)
 # ============================================================
 
-cat("\n--- 2. Palatabilité des essences ---\n")
+cat("\n--- 2. Palatabilité des essences (parallélisé) ---\n")
 
-# Table de palatabilité (appétence pour le gibier)
 palatabilite <- data.frame(
   pattern = c("chene", "quercus", "sapin", "abies", "hetre", "fagus",
               "erable", "frene", "charme", "merisier",
@@ -826,22 +856,21 @@ parcelles$R4_palatabilite <- 50  # Valeur par défaut
 if (file.exists(bd_foret_path)) {
   bd_foret <- st_read(bd_foret_path, quiet = TRUE)
   bd_foret <- st_transform(bd_foret, st_crs(parcelles))
-
   essence_col <- intersect(names(bd_foret), c("essence", "tfv", "libelle", "code_tfv"))
 
   if (length(essence_col) > 0) {
-    for (i in seq_len(nrow(parcelles))) {
+    calc_palatabilite <- function(i) {
       inter <- suppressWarnings(st_intersection(bd_foret, st_geometry(parcelles)[i]))
       if (nrow(inter) > 0) {
         essence <- tolower(as.character(inter[[essence_col[1]]][1]))
         for (j in seq_len(nrow(palatabilite))) {
-          if (grepl(palatabilite$pattern[j], essence)) {
-            parcelles$R4_palatabilite[i] <- palatabilite$score[j]
-            break
-          }
+          if (grepl(palatabilite$pattern[j], essence)) return(palatabilite$score[j])
         }
       }
+      50  # Défaut
     }
+
+    parcelles$R4_palatabilite <- map_func(seq_len(nrow(parcelles)), calc_palatabilite)
   }
 }
 
@@ -853,15 +882,11 @@ cat("Palatabilité moyenne:", round(mean(parcelles$R4_palatabilite), 1), "\n")
 
 cat("\n--- 3. Vulnérabilité du peuplement ---\n")
 
-# Utiliser les métriques LiDAR si disponibles
 lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
 
 if (file.exists(lidar_path)) {
   lidar <- st_read(lidar_path, quiet = TRUE)
   if ("zmean" %in% names(lidar)) {
-    # Joindre par géométrie ou ID
-    lidar_heights <- st_drop_geometry(lidar)[, c("zmean")]
-    # Vulnérabilité: <2m = 100, 2-10m = décroissant, >10m = 0
     parcelles$R4_vulnerabilite <- pmax(0, pmin(100, (10 - lidar$zmean) / 8 * 100))
     cat("Vulnérabilité calculée depuis LiDAR (zmean)\n")
   } else {
@@ -875,14 +900,14 @@ if (file.exists(lidar_path)) {
 cat("Vulnérabilité moyenne:", round(mean(parcelles$R4_vulnerabilite, na.rm = TRUE), 1), "\n")
 
 # ============================================================
-# 4. EFFET LISIÈRE
+# 4. EFFET LISIÈRE (parallélisé)
 # ============================================================
 
-cat("\n--- 4. Effet lisière ---\n")
+cat("\n--- 4. Effet lisière (parallélisé) ---\n")
 
 edge_buffer <- 50  # mètres
 
-parcelles$R4_lisiere <- sapply(seq_len(nrow(parcelles)), function(i) {
+calc_lisiere <- function(i) {
   geom <- st_geometry(parcelles)[i]
   area_total <- as.numeric(st_area(geom))
   inner <- tryCatch(st_buffer(geom, -edge_buffer), error = function(e) NULL)
@@ -891,27 +916,25 @@ parcelles$R4_lisiere <- sapply(seq_len(nrow(parcelles)), function(i) {
     area_inner <- as.numeric(st_area(inner))
     (area_total - area_inner) / area_total * 100
   } else {
-    100  # Petite parcelle entièrement en lisière
+    100
   }
-})
+}
+
+parcelles$R4_lisiere <- map_func(seq_len(nrow(parcelles)), calc_lisiere)
 
 cat("Effet lisière moyen:", round(mean(parcelles$R4_lisiere), 1), "%\n")
 
 # ============================================================
-# 5. DENSITÉ GIBIER PAR DÉPARTEMENT
+# 5. DENSITÉ GIBIER PAR DÉPARTEMENT (vectorisé)
 # ============================================================
 
 cat("\n--- 5. Densité gibier locale ---\n")
 
-parcelles$R4_densite <- 50  # Valeur par défaut
+parcelles$R4_densite <- 50
 
 if (!is.null(pressure_data) && nrow(pressure_data) > 0) {
-  # Déterminer le département de chaque parcelle
-  # (simplifié: utiliser le centroïde)
-
   if (requireNamespace("happign", quietly = TRUE)) {
     tryCatch({
-      # Télécharger les limites départementales
       bbox <- st_as_sfc(st_bbox(parcelles))
       st_crs(bbox) <- st_crs(parcelles)
 
@@ -922,24 +945,18 @@ if (!is.null(pressure_data) && nrow(pressure_data) > 0) {
 
       if (!is.null(depts) && nrow(depts) > 0) {
         depts <- st_transform(depts, st_crs(parcelles))
-
-        # Identifier le code département pour chaque parcelle
         dept_col <- intersect(names(depts), c("code_insee", "insee_dep", "code_dept"))
+
         if (length(dept_col) > 0) {
+          # Jointure spatiale vectorisée
           centroids <- st_centroid(parcelles)
           join <- st_join(centroids, depts[, dept_col[1]])
           parcelles$code_dept <- join[[dept_col[1]]]
 
-          # Joindre l'indice de pression
-          for (i in seq_len(nrow(parcelles))) {
-            dept <- parcelles$code_dept[i]
-            if (!is.na(dept)) {
-              idx <- which(pressure_data$code_dept == dept)
-              if (length(idx) > 0) {
-                parcelles$R4_densite[i] <- pressure_data$pressure_index[idx[1]]
-              }
-            }
-          }
+          # Joindre l'indice de pression (vectorisé avec match)
+          idx <- match(parcelles$code_dept, pressure_data$code_dept)
+          parcelles$R4_densite <- ifelse(is.na(idx), 50, pressure_data$pressure_index[idx])
+
           cat("Densité gibier assignée depuis tableaux de chasse\n")
         }
       }
@@ -957,7 +974,6 @@ cat("Densité gibier moyenne:", round(mean(parcelles$R4_densite, na.rm = TRUE), 
 
 cat("\n--- 6. Indice R4 composite ---\n")
 
-# Pondération
 w_palatabilite <- 0.35
 w_vulnerabilite <- 0.30
 w_lisiere <- 0.20
@@ -968,7 +984,6 @@ parcelles$R4 <- w_palatabilite * parcelles$R4_palatabilite +
                 w_lisiere * parcelles$R4_lisiere +
                 w_densite * parcelles$R4_densite
 
-# Borner 0-100
 parcelles$R4 <- pmax(0, pmin(100, parcelles$R4))
 
 cat("\n=== Résultats R4 ===\n")
@@ -976,7 +991,6 @@ cat("R4 min:", round(min(parcelles$R4, na.rm = TRUE), 1), "\n")
 cat("R4 max:", round(max(parcelles$R4, na.rm = TRUE), 1), "\n")
 cat("R4 moyen:", round(mean(parcelles$R4, na.rm = TRUE), 1), "\n")
 
-# Classification
 parcelles$R4_classe <- cut(parcelles$R4,
   breaks = c(0, 25, 50, 75, 100),
   labels = c("Faible", "Modéré", "Élevé", "Très élevé"),
@@ -985,7 +999,9 @@ parcelles$R4_classe <- cut(parcelles$R4,
 cat("\nDistribution:\n")
 print(table(parcelles$R4_classe))
 
-# Sauvegarder
+# Nettoyer parallélisation
+if (use_parallel) future::plan(future::sequential)
+
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec R4.\n")
 ```
