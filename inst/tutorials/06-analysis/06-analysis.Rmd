@@ -1,0 +1,1600 @@
+---
+title: "Tutorial 06 : Analyse Multi-Critères — 12 Familles + Export"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+runtime: shiny_prerendered
+description: >
+  Visualisation (cartes, radar, corrélations), identification des hotspots,
+  clustering des parcelles, et export des résultats nemeton.
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(gradethis)
+library(sf)
+library(terra)
+library(ggplot2)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+gradethis::gradethis_setup()
+
+# Répertoire cache
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+```
+
+## Introduction
+
+### Objectifs du Tutorial
+
+Bienvenue dans le **sixième et dernier tutoriel** de la série nemeton !
+
+Vous avez calculé tous les indicateurs des 12 familles dans les tutoriels précédents. Maintenant, vous allez apprendre à :
+
+1. **Visualiser** les résultats avec des cartes thématiques
+2. **Analyser** les profils multi-critères avec des diagrammes radar
+3. **Explorer** les synergies et compromis entre familles
+4. **Identifier** les hotspots et parcelles Pareto-optimales
+5. **Clustériser** les parcelles par profil similaire
+6. **Exporter** les résultats en GeoPackage, CSV et carte interactive
+
+### Prérequis
+
+Ce tutoriel utilise les données produites par le Tutorial 05 :
+
+```
+~/nemeton_tutorial_data/
+└── indicateurs_complets.gpkg
+    ├── Indicateurs normalisés (*_norm)
+    ├── Moyennes par famille (moy_C, moy_B, ...)
+    └── Indice composite (I_nemeton)
+```
+
+---
+
+## Section 1 : Cartes Thématiques
+
+### Exercice 1.1 : Carte par famille
+
+Créez des cartes thématiques montrant la distribution spatiale de chaque famille d'indicateurs.
+
+```{r ex-1-1-setup}
+library(sf)
+library(ggplot2)
+library(terra)
+
+# Répertoire cache
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+# Simuler des données si le fichier n'existe pas
+set.seed(42)
+n <- 50
+
+# Créer des polygones fictifs
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  nrow <- ceiling(n / ncol)
+
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    x2 <- x1 + size
+    y2 <- y1 + size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x2, y1, x2, y2, x1, y2, x1, y1),
+                                          ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+# Données simulées
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  # Indicateurs normalisés par famille
+  moy_C = runif(n, 0.3, 0.9),
+  moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8),
+  moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85),
+  moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9),
+  moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75),
+  moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8),
+  moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-1-1, exercise=TRUE, exercise.lines=30, exercise.setup="ex-1-1-setup"}
+# === CARTES THÉMATIQUES PAR FAMILLE ===
+
+# Charger les données réelles ou utiliser simulation
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+  cat("Données réelles chargées:", nrow(parcelles), "parcelles\n")
+} else {
+  parcelles <- parcelles_sim
+  cat("Données simulées utilisées:", nrow(parcelles), "parcelles\n")
+}
+
+# À compléter : créer une carte pour la famille Carbone (moy_C)
+# Utilisez ggplot2 avec geom_sf() et scale_fill_viridis_c()
+
+carte_carbone <- ggplot(parcelles) +
+  geom_sf(aes(fill = ___), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(
+    name = "Score Carbone",
+    option = "D",
+    limits = c(0, 1)
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Famille Carbone (C)",
+    subtitle = "Score normalisé [0-1]"
+  )
+
+print(carte_carbone)
+```
+
+```{r ex-1-1-solution}
+# Charger les données
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Carte pour la famille Carbone
+carte_carbone <- ggplot(parcelles) +
+  geom_sf(aes(fill = moy_C), color = "white", linewidth = 0.2) +
+  scale_fill_viridis_c(
+    name = "Score Carbone",
+    option = "D",
+    limits = c(0, 1)
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Famille Carbone (C)",
+    subtitle = "Score normalisé [0-1]"
+  )
+
+print(carte_carbone)
+```
+
+```{r ex-1-1-check}
+grade_this({
+  pass("Carte thématique créée avec succès !")
+})
+```
+
+### Exercice 1.2 : Multi-cartes des 12 familles
+
+Créez un panneau de 12 cartes montrant toutes les familles :
+
+```{r ex-1-2-setup}
+library(sf)
+library(ggplot2)
+library(patchwork)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+# Réutiliser les données simulées
+set.seed(42)
+n <- 50
+
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-1-2, exercise=TRUE, exercise.lines=40, exercise.setup="ex-1-2-setup"}
+# === PANNEAU MULTI-CARTES ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Définir les familles et leurs noms
+familles <- c("C" = "Carbone", "B" = "Biodiversité", "W" = "Eau", "A" = "Air",
+              "F" = "Sol", "L" = "Paysage", "T" = "Temporel", "R" = "Risques",
+              "S" = "Social", "P" = "Production", "E" = "Énergie", "N" = "Naturalité")
+
+# Fonction pour créer une mini-carte
+create_mini_map <- function(data, famille, titre) {
+  col_name <- paste0("moy_", famille)
+  if (!col_name %in% names(data)) return(NULL)
+
+  ggplot(data) +
+    geom_sf(aes(fill = .data[[col_name]]), color = NA) +
+    scale_fill_viridis_c(limits = c(0, 1), guide = "none") +
+    theme_void() +
+    labs(title = titre) +
+    theme(plot.title = element_text(size = 8, hjust = 0.5))
+}
+
+# Créer les 12 cartes
+cartes <- lapply(names(familles), function(f) {
+  create_mini_map(parcelles, f, familles[f])
+})
+
+# Assembler avec patchwork
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  combined <- patchwork::wrap_plots(cartes, ncol = 4)
+  print(combined)
+} else {
+  # Alternative sans patchwork
+  print(cartes[[1]])
+  cat("Installez patchwork pour voir les 12 cartes assemblées")
+}
+```
+
+```{r ex-1-2-check}
+grade_this({
+  pass("Panneau multi-cartes créé !")
+})
+```
+
+---
+
+## Section 2 : Profils Radar
+
+### Le diagramme radar (spider chart)
+
+Le diagramme radar permet de visualiser le profil multi-critères d'une parcelle sur les 12 familles simultanément.
+
+```{r radar-concept, echo=FALSE}
+cat("
+       Carbone (C)
+            │
+   Énergie ─┼─ Biodiversité
+     (E)    │     (B)
+            │
+Naturalité ─┼─── Eau (W)
+    (N)     │
+            │
+Production ─┼─ Air (A)
+    (P)     │
+            │
+   Social ──┼─── Sol (F)
+    (S)     │
+            │
+  Risques ──┼─ Paysage (L)
+    (R)     │
+            │
+       Temporel (T)
+")
+```
+
+### Exercice 2.1 : Créer un radar pour une parcelle
+
+```{r ex-2-1-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-2-1, exercise=TRUE, exercise.lines=45, exercise.setup="ex-2-1-setup"}
+# === DIAGRAMME RADAR AVEC fmsb ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Sélectionner une parcelle (ex: parcelle 1)
+parcelle_id <- 1
+parcelle_data <- parcelles[parcelles$id_parcelle == parcelle_id, ]
+
+# Extraire les scores par famille
+familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
+scores <- sapply(familles, function(f) {
+  col_name <- paste0("moy_", f)
+  if (col_name %in% names(parcelle_data)) {
+    return(as.numeric(st_drop_geometry(parcelle_data)[, col_name]))
+  }
+  return(NA)
+})
+
+# Créer le radar avec fmsb
+if (requireNamespace("fmsb", quietly = TRUE)) {
+  # Préparer les données pour fmsb (max, min, valeurs)
+  radar_data <- rbind(
+    rep(1, 12),      # Maximum
+    rep(0, 12),      # Minimum
+    scores           # Valeurs
+  )
+  colnames(radar_data) <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
+                            "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
+  radar_data <- as.data.frame(radar_data)
+
+  # Tracer le radar
+  fmsb::radarchart(radar_data,
+    axistype = 1,
+    pcol = "forestgreen",
+    pfcol = rgb(0.2, 0.5, 0.3, 0.5),
+    plwd = 2,
+    cglcol = "grey",
+    cglty = 1,
+    axislabcol = "grey",
+    caxislabels = seq(0, 1, 0.25),
+    vlcex = 0.8,
+    title = paste("Profil Parcelle", parcelle_id)
+  )
+} else {
+  cat("Le package fmsb n'est pas installé.\n")
+  cat("Scores de la parcelle", parcelle_id, ":\n")
+  print(scores)
+}
+```
+
+```{r ex-2-1-check}
+grade_this({
+  pass("Diagramme radar créé !")
+})
+```
+
+### Exercice 2.2 : Comparer plusieurs parcelles
+
+```{r ex-2-2-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-2-2, exercise=TRUE, exercise.lines=55, exercise.setup="ex-2-2-setup"}
+# === COMPARAISON MULTI-PARCELLES ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Sélectionner 3 parcelles à comparer
+parcelles_ids <- c(1, 10, 25)
+
+# Extraire les scores pour chaque parcelle
+familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
+
+extract_scores <- function(data, id) {
+  row <- data[data$id_parcelle == id, ]
+  sapply(familles, function(f) {
+    col_name <- paste0("moy_", f)
+    if (col_name %in% names(row)) as.numeric(st_drop_geometry(row)[, col_name])
+    else NA
+  })
+}
+
+scores_list <- lapply(parcelles_ids, function(id) extract_scores(parcelles, id))
+
+# Radar multi-parcelles avec fmsb
+if (requireNamespace("fmsb", quietly = TRUE)) {
+  radar_data <- rbind(
+    rep(1, 12),   # Max
+    rep(0, 12),   # Min
+    do.call(rbind, scores_list)
+  )
+  colnames(radar_data) <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
+                            "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
+  radar_data <- as.data.frame(radar_data)
+
+  # Couleurs distinctes
+  colors <- c("forestgreen", "steelblue", "coral")
+
+  fmsb::radarchart(radar_data,
+    axistype = 1,
+    pcol = colors,
+    pfcol = adjustcolor(colors, alpha.f = 0.3),
+    plwd = 2,
+    cglcol = "grey",
+    cglty = 1,
+    vlcex = 0.7,
+    title = "Comparaison de parcelles"
+  )
+
+  legend("topright",
+    legend = paste("Parcelle", parcelles_ids),
+    col = colors,
+    lwd = 2,
+    bty = "n"
+  )
+}
+```
+
+```{r ex-2-2-check}
+grade_this({
+  pass("Comparaison radar réussie !")
+})
+```
+
+---
+
+## Section 3 : Matrice de Corrélation
+
+### Synergies et compromis entre familles
+
+L'analyse des corrélations entre familles révèle :
+- **Synergies** (r > 0.5) : améliorer une famille améliore l'autre
+- **Compromis** (r < -0.5) : améliorer une famille dégrade l'autre
+- **Indépendance** (-0.3 < r < 0.3) : pas de relation
+
+### Exercice 3.1 : Calculer la matrice de corrélation
+
+```{r ex-3-1-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+# Simuler des corrélations réalistes
+set.seed(42)
+n <- 50
+
+# Base aléatoire
+base_eco <- runif(n, 0.3, 0.8)
+base_prod <- runif(n, 0.3, 0.8)
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  # Corrélées positivement (écologiques)
+  moy_C = base_eco + rnorm(n, 0, 0.1),
+  moy_B = base_eco + rnorm(n, 0, 0.15),
+  moy_N = base_eco + rnorm(n, 0, 0.12),
+  # Corrélées positivement (production)
+  moy_P = base_prod + rnorm(n, 0, 0.1),
+  moy_E = base_prod + rnorm(n, 0, 0.12),
+  # Indépendantes
+  moy_W = runif(n, 0.25, 0.8),
+  moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85),
+  moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9),
+  moy_R = 1 - base_eco + rnorm(n, 0, 0.1),  # Corrélé négativement
+  moy_S = runif(n, 0.3, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+
+# Normaliser entre 0 et 1
+for (col in grep("^moy_", names(parcelles_sim), value = TRUE)) {
+  vals <- parcelles_sim[[col]]
+  parcelles_sim[[col]] <- (vals - min(vals)) / (max(vals) - min(vals))
+}
+```
+
+```{r ex-3-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
+# === MATRICE DE CORRÉLATION ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Extraire les colonnes de scores par famille
+cols_familles <- grep("^moy_", names(parcelles), value = TRUE)
+data_familles <- st_drop_geometry(parcelles)[, cols_familles]
+
+# Renommer les colonnes pour lisibilité
+colnames(data_familles) <- gsub("moy_", "", colnames(data_familles))
+
+# Calculer la matrice de corrélation
+cor_matrix <- cor(data_familles, use = "pairwise.complete.obs")
+
+# Afficher la matrice
+cat("=== Matrice de Corrélation entre Familles ===\n\n")
+print(round(cor_matrix, 2))
+
+# Identifier les paires avec forte corrélation
+cat("\n=== Synergies (r > 0.5) ===\n")
+for (i in 1:(ncol(cor_matrix) - 1)) {
+  for (j in (i + 1):ncol(cor_matrix)) {
+    if (cor_matrix[i, j] > 0.5) {
+      cat(sprintf("%s - %s : %.2f\n",
+                  colnames(cor_matrix)[i], colnames(cor_matrix)[j], cor_matrix[i, j]))
+    }
+  }
+}
+```
+
+```{r ex-3-1-check}
+grade_this({
+  pass("Matrice de corrélation calculée !")
+})
+```
+
+### Exercice 3.2 : Visualiser avec corrplot
+
+```{r ex-3-2-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+base_eco <- runif(n, 0.3, 0.8)
+base_prod <- runif(n, 0.3, 0.8)
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  moy_C = base_eco + rnorm(n, 0, 0.1),
+  moy_B = base_eco + rnorm(n, 0, 0.15),
+  moy_N = base_eco + rnorm(n, 0, 0.12),
+  moy_P = base_prod + rnorm(n, 0, 0.1),
+  moy_E = base_prod + rnorm(n, 0, 0.12),
+  moy_W = runif(n, 0.25, 0.8),
+  moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85),
+  moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9),
+  moy_R = 1 - base_eco + rnorm(n, 0, 0.1),
+  moy_S = runif(n, 0.3, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+
+for (col in grep("^moy_", names(parcelles_sim), value = TRUE)) {
+  vals <- parcelles_sim[[col]]
+  parcelles_sim[[col]] <- (vals - min(vals)) / (max(vals) - min(vals))
+}
+```
+
+```{r ex-3-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-3-2-setup"}
+# === VISUALISATION CORRPLOT ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Extraire et préparer les données
+cols_familles <- grep("^moy_", names(parcelles), value = TRUE)
+data_familles <- st_drop_geometry(parcelles)[, cols_familles]
+colnames(data_familles) <- gsub("moy_", "", colnames(data_familles))
+
+# Matrice de corrélation
+cor_matrix <- cor(data_familles, use = "pairwise.complete.obs")
+
+# Visualiser avec corrplot
+if (requireNamespace("corrplot", quietly = TRUE)) {
+  corrplot::corrplot(cor_matrix,
+    method = "color",
+    type = "upper",
+    order = "hclust",  # Clustering hiérarchique
+    addCoef.col = "black",
+    number.cex = 0.7,
+    tl.col = "black",
+    tl.srt = 45,
+    title = "Corrélations entre familles d'indicateurs",
+    mar = c(0, 0, 2, 0)
+  )
+} else {
+  cat("Package corrplot non installé. Voici la matrice numérique:\n")
+  print(round(cor_matrix, 2))
+}
+```
+
+```{r ex-3-2-check}
+grade_this({
+  pass("Visualisation corrplot créée !")
+})
+```
+
+---
+
+## Section 4 : Identification des Hotspots
+
+### Qu'est-ce qu'un hotspot ?
+
+Un **hotspot** est une parcelle dont l'indice composite dépasse un seuil critique (ex: top 10%, ou I > 0.7).
+
+Ces parcelles représentent des zones à **haute valeur** pour les services écosystémiques forestiers.
+
+### Exercice 4.1 : Identifier les hotspots
+
+```{r ex-4-1-setup}
+library(sf)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-4-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
+# === IDENTIFICATION DES HOTSPOTS ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Définir le seuil de hotspot (percentile 90)
+seuil_hotspot <- quantile(parcelles$I_nemeton, probs = 0.90, na.rm = TRUE)
+cat("Seuil hotspot (P90):", round(seuil_hotspot, 3), "\n\n")
+
+# Identifier les hotspots
+parcelles$is_hotspot <- parcelles$I_nemeton >= seuil_hotspot
+
+# Résumé
+cat("=== Résumé Hotspots ===\n")
+cat("Nombre total de parcelles:", nrow(parcelles), "\n")
+cat("Nombre de hotspots:", sum(parcelles$is_hotspot), "\n")
+cat("Surface hotspots (ha):", round(sum(parcelles$surface_ha[parcelles$is_hotspot]), 1), "\n")
+
+# Afficher les hotspots
+cat("\n=== Top 5 Hotspots ===\n")
+hotspots <- parcelles[parcelles$is_hotspot, ]
+hotspots_sorted <- hotspots[order(-hotspots$I_nemeton), ]
+print(st_drop_geometry(hotspots_sorted)[1:min(5, nrow(hotspots_sorted)),
+                                         c("id_parcelle", "surface_ha", "I_nemeton")])
+```
+
+```{r ex-4-1-check}
+grade_this({
+  pass("Hotspots identifiés !")
+})
+```
+
+### Exercice 4.2 : Cartographier les hotspots
+
+```{r ex-4-2-setup}
+library(sf)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-4-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
+# === CARTE DES HOTSPOTS ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Identifier les hotspots
+seuil_hotspot <- quantile(parcelles$I_nemeton, probs = 0.90, na.rm = TRUE)
+parcelles$is_hotspot <- parcelles$I_nemeton >= seuil_hotspot
+
+# Créer la carte
+carte_hotspots <- ggplot() +
+  # Toutes les parcelles en fond
+  geom_sf(data = parcelles, aes(fill = I_nemeton), color = "grey50", linewidth = 0.3) +
+  scale_fill_viridis_c(name = "Indice\nnemeton", limits = c(0, 1)) +
+  # Contour des hotspots en rouge
+  geom_sf(data = parcelles[parcelles$is_hotspot, ],
+          fill = NA, color = "red", linewidth = 1.5) +
+  theme_minimal() +
+  labs(
+    title = "Carte des Hotspots nemeton",
+    subtitle = paste("Seuil P90 =", round(seuil_hotspot, 2)),
+    caption = "Contour rouge = hotspots"
+  )
+
+print(carte_hotspots)
+```
+
+```{r ex-4-2-check}
+grade_this({
+  pass("Carte des hotspots créée !")
+})
+```
+
+---
+
+## Section 5 : Trade-offs et Front de Pareto
+
+### Qu'est-ce qu'un front de Pareto ?
+
+Le **front de Pareto** identifie les parcelles optimales où on ne peut améliorer une dimension sans dégrader une autre.
+
+### Exercice 5.1 : Visualiser les trade-offs
+
+```{r ex-5-1-setup}
+library(sf)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+# Simuler un trade-off Production vs Biodiversité
+base <- runif(n, 0, 1)
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_P = base + rnorm(n, 0, 0.15),  # Production
+  moy_B = (1 - base) + rnorm(n, 0, 0.15),  # Biodiversité (trade-off)
+  moy_C = runif(n, 0.3, 0.9),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+
+# Normaliser
+parcelles_sim$moy_P <- pmax(0, pmin(1, parcelles_sim$moy_P))
+parcelles_sim$moy_B <- pmax(0, pmin(1, parcelles_sim$moy_B))
+```
+
+```{r ex-5-1, exercise=TRUE, exercise.lines=30, exercise.setup="ex-5-1-setup"}
+# === GRAPHIQUE TRADE-OFF ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Extraire les données pour le scatter plot
+data_plot <- st_drop_geometry(parcelles)
+
+# Trade-off Production vs Biodiversité
+tradeoff_plot <- ggplot(data_plot, aes(x = moy_P, y = moy_B)) +
+  geom_point(aes(color = I_nemeton, size = surface_ha), alpha = 0.7) +
+  scale_color_viridis_c(name = "Indice\nnemeton") +
+  scale_size_continuous(name = "Surface (ha)", range = c(2, 8)) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linetype = "dashed") +
+  theme_minimal() +
+  labs(
+    title = "Trade-off Production vs Biodiversité",
+    x = "Score Production (P)",
+    y = "Score Biodiversité (B)",
+    subtitle = "Corrélation négative = compromis"
+  )
+
+print(tradeoff_plot)
+
+# Calculer la corrélation
+cor_PB <- cor(data_plot$moy_P, data_plot$moy_B, use = "complete.obs")
+cat("\nCorrélation P-B:", round(cor_PB, 2))
+```
+
+```{r ex-5-1-check}
+grade_this({
+  pass("Trade-off visualisé !")
+})
+```
+
+### Exercice 5.2 : Identifier le front de Pareto
+
+```{r ex-5-2-setup}
+library(sf)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+base <- runif(n, 0, 1)
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_P = pmax(0, pmin(1, base + rnorm(n, 0, 0.15))),
+  moy_B = pmax(0, pmin(1, (1 - base) + rnorm(n, 0, 0.15))),
+  moy_C = runif(n, 0.3, 0.9),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-5-2, exercise=TRUE, exercise.lines=45, exercise.setup="ex-5-2-setup"}
+# === FRONT DE PARETO ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+data_plot <- st_drop_geometry(parcelles)
+
+# Fonction pour identifier les points Pareto-optimaux (2D)
+identify_pareto <- function(x, y) {
+  n <- length(x)
+  is_pareto <- logical(n)
+
+  for (i in seq_len(n)) {
+    is_pareto[i] <- TRUE
+    for (j in seq_len(n)) {
+      if (i != j) {
+        # j domine i si j est meilleur ou égal sur les deux dimensions
+        # et strictement meilleur sur au moins une
+        if (x[j] >= x[i] && y[j] >= y[i] && (x[j] > x[i] || y[j] > y[i])) {
+          is_pareto[i] <- FALSE
+          break
+        }
+      }
+    }
+  }
+  return(is_pareto)
+}
+
+# Identifier le front de Pareto pour P vs B
+data_plot$is_pareto <- identify_pareto(data_plot$moy_P, data_plot$moy_B)
+
+cat("Points sur le front de Pareto:", sum(data_plot$is_pareto), "/", nrow(data_plot), "\n")
+
+# Visualiser
+pareto_plot <- ggplot(data_plot, aes(x = moy_P, y = moy_B)) +
+  geom_point(aes(color = is_pareto), size = 3, alpha = 0.7) +
+  scale_color_manual(values = c("FALSE" = "grey60", "TRUE" = "red"),
+                     labels = c("Dominé", "Pareto-optimal"),
+                     name = "Statut") +
+  theme_minimal() +
+  labs(
+    title = "Front de Pareto: Production vs Biodiversité",
+    x = "Score Production",
+    y = "Score Biodiversité",
+    subtitle = "Points rouges = optimaux (non dominés)"
+  )
+
+print(pareto_plot)
+```
+
+```{r ex-5-2-check}
+grade_this({
+  pass("Front de Pareto identifié !")
+})
+```
+
+---
+
+## Section 6 : Clustering des Parcelles
+
+### Principe du clustering
+
+Le clustering permet de regrouper les parcelles ayant des profils multi-critères similaires.
+
+### Exercice 6.1 : Clustering hiérarchique
+
+```{r ex-6-1-setup}
+library(sf)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+```
+
+```{r ex-6-1, exercise=TRUE, exercise.lines=40, exercise.setup="ex-6-1-setup"}
+# === CLUSTERING HIÉRARCHIQUE ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Extraire les colonnes de scores
+cols_familles <- grep("^moy_", names(parcelles), value = TRUE)
+data_cluster <- st_drop_geometry(parcelles)[, cols_familles]
+
+# Standardiser les données
+data_scaled <- scale(data_cluster)
+
+# Clustering hiérarchique
+dist_matrix <- dist(data_scaled)
+hc <- hclust(dist_matrix, method = "ward.D2")
+
+# Couper en k clusters
+k <- 4
+parcelles$cluster <- as.factor(cutree(hc, k = k))
+
+# Résumé par cluster
+cat("=== Profils des Clusters ===\n\n")
+for (cl in 1:k) {
+  parcelles_cl <- parcelles[parcelles$cluster == cl, ]
+  n_cl <- nrow(parcelles_cl)
+  mean_score <- mean(parcelles_cl$I_nemeton, na.rm = TRUE)
+  cat(sprintf("Cluster %d: %d parcelles, score moyen = %.2f\n", cl, n_cl, mean_score))
+}
+
+# Dendrogramme
+plot(hc, labels = FALSE, main = "Dendrogramme - Clustering Parcelles")
+rect.hclust(hc, k = k, border = 2:5)
+```
+
+```{r ex-6-1-check}
+grade_this({
+  pass("Clustering réalisé !")
+})
+```
+
+### Exercice 6.2 : Cartographier les clusters
+
+```{r ex-6-2-setup}
+library(sf)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+
+# Ajouter clusters
+cols_familles <- grep("^moy_", names(parcelles_sim), value = TRUE)
+data_cluster <- st_drop_geometry(parcelles_sim)[, cols_familles]
+data_scaled <- scale(data_cluster)
+dist_matrix <- dist(data_scaled)
+hc <- hclust(dist_matrix, method = "ward.D2")
+parcelles_sim$cluster <- as.factor(cutree(hc, k = 4))
+```
+
+```{r ex-6-2, exercise=TRUE, exercise.lines=25, exercise.setup="ex-6-2-setup"}
+# === CARTE DES CLUSTERS ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+  # Refaire le clustering si nécessaire
+  cols_familles <- grep("^moy_", names(parcelles), value = TRUE)
+  data_cluster <- st_drop_geometry(parcelles)[, cols_familles]
+  data_scaled <- scale(data_cluster)
+  hc <- hclust(dist(data_scaled), method = "ward.D2")
+  parcelles$cluster <- as.factor(cutree(hc, k = 4))
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Carte des clusters
+carte_clusters <- ggplot(parcelles) +
+  geom_sf(aes(fill = cluster), color = "white", linewidth = 0.3) +
+  scale_fill_brewer(palette = "Set2", name = "Cluster") +
+  theme_minimal() +
+  labs(
+    title = "Carte des Clusters de Parcelles",
+    subtitle = "Regroupement par profil multi-critères similaire"
+  )
+
+print(carte_clusters)
+```
+
+```{r ex-6-2-check}
+grade_this({
+  pass("Carte des clusters créée !")
+})
+```
+
+---
+
+## Section 7 : Export GeoPackage et CSV
+
+### Exercice 7.1 : Export GeoPackage final
+
+```{r ex-7-1-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- xmin + col * size
+    y1 <- ymin + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 2154)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_A = runif(n, 0.4, 0.75),
+  moy_F = runif(n, 0.35, 0.85), moy_L = runif(n, 0.3, 0.8),
+  moy_T = runif(n, 0.4, 0.9), moy_R = runif(n, 0.2, 0.7),
+  moy_S = runif(n, 0.3, 0.75), moy_P = runif(n, 0.35, 0.85),
+  moy_E = runif(n, 0.4, 0.8), moy_N = runif(n, 0.25, 0.75),
+  I_nemeton = runif(n, 0.35, 0.75),
+  geometry = create_grid_polygons(n)
+)
+
+# Ajouter colonnes
+seuil <- quantile(parcelles_sim$I_nemeton, 0.9)
+parcelles_sim$is_hotspot <- parcelles_sim$I_nemeton >= seuil
+parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
+  breaks = c(0, 0.4, 0.55, 0.7, 1),
+  labels = c("Faible", "Moyen", "Bon", "Excellent"))
+```
+
+```{r ex-7-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-7-1-setup"}
+# === EXPORT GEOPACKAGE FINAL ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Ajouter les colonnes d'analyse si absentes
+if (!"is_hotspot" %in% names(parcelles)) {
+  seuil <- quantile(parcelles$I_nemeton, 0.9, na.rm = TRUE)
+  parcelles$is_hotspot <- parcelles$I_nemeton >= seuil
+}
+
+if (!"classe" %in% names(parcelles)) {
+  parcelles$classe <- cut(parcelles$I_nemeton,
+    breaks = c(0, 0.4, 0.55, 0.7, 1),
+    labels = c("Faible", "Moyen", "Bon", "Excellent"))
+}
+
+# Afficher le résumé avant export
+cat("=== Résumé des données à exporter ===\n")
+cat("Nombre de parcelles:", nrow(parcelles), "\n")
+cat("Nombre de colonnes:", ncol(parcelles), "\n")
+cat("CRS:", st_crs(parcelles)$epsg, "\n\n")
+
+cat("Distribution par classe:\n")
+print(table(parcelles$classe))
+
+# Code d'export (commenté pour le tutoriel)
+# output_path <- file.path(cache_dir, "analyse_finale.gpkg")
+# st_write(parcelles, output_path, delete_dsn = TRUE)
+# cat("\nExport réussi:", output_path)
+
+cat("\n\nFichier serait exporté vers:", file.path(cache_dir, "analyse_finale.gpkg"))
+```
+
+```{r ex-7-1-check}
+grade_this({
+  pass("Export GeoPackage préparé !")
+})
+```
+
+### Exercice 7.2 : Export CSV des attributs
+
+```{r ex-7-2-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 50
+parcelles_sim <- data.frame(
+  id_parcelle = 1:n,
+  surface_ha = runif(n, 0.5, 10),
+  moy_C = runif(n, 0.3, 0.9), moy_B = runif(n, 0.2, 0.85),
+  moy_W = runif(n, 0.25, 0.8), moy_P = runif(n, 0.35, 0.85),
+  I_nemeton = runif(n, 0.35, 0.75)
+)
+parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
+  breaks = c(0, 0.4, 0.55, 0.7, 1),
+  labels = c("Faible", "Moyen", "Bon", "Excellent"))
+```
+
+```{r ex-7-2, exercise=TRUE, exercise.lines=25, exercise.setup="ex-7-2-setup"}
+# === EXPORT CSV ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+  data_export <- st_drop_geometry(parcelles)
+} else {
+  data_export <- parcelles_sim
+}
+
+# Sélectionner les colonnes pertinentes
+cols_export <- c("id_parcelle", "surface_ha",
+                 grep("^moy_", names(data_export), value = TRUE),
+                 "I_nemeton", "classe")
+cols_present <- intersect(cols_export, names(data_export))
+
+data_csv <- data_export[, cols_present]
+
+# Aperçu
+cat("=== Aperçu des données CSV ===\n")
+print(head(data_csv, 10))
+
+# Code d'export
+# csv_path <- file.path(cache_dir, "indicateurs_nemeton.csv")
+# write.csv(data_csv, csv_path, row.names = FALSE)
+# cat("\nExport CSV réussi:", csv_path)
+
+cat("\n\nFichier CSV serait exporté vers:", file.path(cache_dir, "indicateurs_nemeton.csv"))
+```
+
+```{r ex-7-2-check}
+grade_this({
+  pass("Export CSV préparé !")
+})
+```
+
+---
+
+## Section 8 : Carte Interactive Leaflet
+
+### Exercice 8.1 : Créer une carte Leaflet
+
+```{r ex-8-1-setup}
+library(sf)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+set.seed(42)
+n <- 30
+
+# Créer des polygones en WGS84 pour Leaflet
+create_wgs84_polygons <- function(n, lon_min = -0.6, lat_min = 44.5, size = 0.01) {
+  ncol <- ceiling(sqrt(n))
+  polys <- vector("list", n)
+  for (i in seq_len(n)) {
+    row <- (i - 1) %/% ncol
+    col <- (i - 1) %% ncol
+    x1 <- lon_min + col * size
+    y1 <- lat_min + row * size
+    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
+                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
+  }
+  st_sfc(polys, crs = 4326)
+}
+
+parcelles_sim <- st_sf(
+  id_parcelle = 1:n,
+  surface_ha = round(runif(n, 0.5, 10), 2),
+  moy_C = round(runif(n, 0.3, 0.9), 2),
+  moy_B = round(runif(n, 0.2, 0.85), 2),
+  I_nemeton = round(runif(n, 0.35, 0.75), 2),
+  geometry = create_wgs84_polygons(n)
+)
+parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
+  breaks = c(0, 0.4, 0.55, 0.7, 1),
+  labels = c("Faible", "Moyen", "Bon", "Excellent"))
+```
+
+```{r ex-8-1, exercise=TRUE, exercise.lines=45, exercise.setup="ex-8-1-setup"}
+# === CARTE LEAFLET INTERACTIVE ===
+
+indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+if (file.exists(indicateurs_path)) {
+  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+  # Reprojeter en WGS84 pour Leaflet
+  parcelles <- st_transform(parcelles, 4326)
+} else {
+  parcelles <- parcelles_sim
+}
+
+# Créer la carte avec Leaflet
+if (requireNamespace("leaflet", quietly = TRUE)) {
+
+  # Palette de couleurs
+  pal <- leaflet::colorNumeric(
+    palette = "YlGn",
+    domain = parcelles$I_nemeton
+  )
+
+  # Créer les popups
+  parcelles$popup <- paste0(
+    "<b>Parcelle ", parcelles$id_parcelle, "</b><br>",
+    "Surface: ", round(parcelles$surface_ha, 2), " ha<br>",
+    "Indice nemeton: ", round(parcelles$I_nemeton, 2), "<br>",
+    "Classe: ", parcelles$classe
+  )
+
+  # Créer la carte
+  carte <- leaflet::leaflet(parcelles) |>
+    leaflet::addProviderTiles("OpenStreetMap") |>
+    leaflet::addPolygons(
+      fillColor = ~pal(I_nemeton),
+      fillOpacity = 0.7,
+      color = "white",
+      weight = 1,
+      popup = ~popup
+    ) |>
+    leaflet::addLegend(
+      position = "bottomright",
+      pal = pal,
+      values = ~I_nemeton,
+      title = "Indice nemeton"
+    )
+
+  carte
+
+} else {
+  cat("Le package leaflet n'est pas installé.\n")
+  cat("Installez-le avec: install.packages('leaflet')")
+}
+```
+
+```{r ex-8-1-check}
+grade_this({
+  pass("Carte Leaflet créée !")
+})
+```
+
+---
+
+## Section 9 : Quiz Final
+
+```{r quiz-final-1}
+quiz(
+  question("Qu'est-ce qu'un hotspot dans l'analyse nemeton ?",
+    answer("Une parcelle avec un indice faible"),
+    answer("Une parcelle dont l'indice dépasse un seuil élevé (ex: P90)", correct = TRUE),
+    answer("Une parcelle avec beaucoup de biodiversité"),
+    answer("Une parcelle à risque incendie"),
+    correct = "Les hotspots sont les parcelles ayant les meilleurs scores globaux.",
+    incorrect = "Un hotspot est une parcelle avec un indice composite très élevé."
+  )
+)
+```
+
+```{r quiz-final-2}
+quiz(
+  question("Que signifie une corrélation négative entre Production et Biodiversité ?",
+    answer("Ces deux familles n'ont aucun lien"),
+    answer("Améliorer la production améliore la biodiversité"),
+    answer("Il existe un compromis (trade-off) entre les deux", correct = TRUE),
+    answer("Les données sont incorrectes"),
+    correct = "Une corrélation négative indique un trade-off : optimiser une dimension peut dégrader l'autre.",
+    incorrect = "Une corrélation négative révèle un compromis entre les deux dimensions."
+  )
+)
+```
+
+```{r quiz-final-3}
+quiz(
+  question("Qu'est-ce que le front de Pareto ?",
+    answer("L'ensemble des parcelles les plus grandes"),
+    answer("L'ensemble des solutions optimales non dominées", correct = TRUE),
+    answer("L'ensemble des parcelles à risque"),
+    answer("La moyenne des indicateurs"),
+    correct = "Le front de Pareto identifie les solutions où on ne peut améliorer une dimension sans dégrader une autre.",
+    incorrect = "Les points Pareto-optimaux sont ceux qui ne sont dominés par aucun autre point."
+  )
+)
+```
+
+```{r quiz-final-4}
+quiz(
+  question("Pourquoi utilise-t-on le clustering des parcelles ?",
+    answer("Pour réduire le nombre de parcelles"),
+    answer("Pour regrouper les parcelles avec des profils similaires", correct = TRUE),
+    answer("Pour augmenter la précision des indicateurs"),
+    answer("Pour corriger les erreurs de calcul"),
+    correct = "Le clustering permet d'identifier des groupes de parcelles partageant des caractéristiques communes.",
+    incorrect = "Le clustering regroupe les parcelles ayant des profils multi-critères similaires."
+  )
+)
+```
+
+```{r quiz-final-5}
+quiz(
+  question("Quel format est recommandé pour exporter des données spatiales avec leurs attributs ?",
+    answer("CSV uniquement"),
+    answer("PNG"),
+    answer("GeoPackage (.gpkg)", correct = TRUE),
+    answer("Word document"),
+    correct = "Le GeoPackage préserve à la fois la géométrie et les attributs dans un format standard.",
+    incorrect = "Le GeoPackage est le format moderne recommandé pour les données géospatiales."
+  )
+)
+```
+
+---
+
+## Conclusion
+
+### Félicitations !
+
+Vous avez terminé la série complète des tutoriels nemeton !
+
+### Récapitulatif de la série
+
+| Tutorial | Contenu | Indicateurs |
+|----------|---------|-------------|
+| T01 | Acquisition données | Zone d'étude, cache |
+| T02 | Traitement LiDAR | C1, P1, P3, B2, E1, A1 |
+| T03 | Indicateurs terrain | W1-W3, R1-R3, S1-S3, P2, F1 |
+| T04 | Indicateurs écologiques | B1-B3, L1-L2, T1-T2, A2, F2, N1-N3 |
+| T05 | Assemblage & normalisation | Indices famille, I_nemeton |
+| T06 | Analyse & export | Cartes, radar, hotspots, Pareto |
+
+### Compétences acquises
+
+- Télécharger et gérer des données géographiques françaises
+- Traiter des nuages de points LiDAR HD
+- Calculer 40+ indicateurs forestiers
+- Normaliser et agréger en indices composites
+- Visualiser avec des cartes thématiques et radars
+- Identifier hotspots et solutions Pareto-optimales
+- Exporter en GeoPackage, CSV et carte interactive
+
+### Prochaines étapes
+
+1. **Appliquer** nemeton à votre propre territoire
+2. **Personnaliser** les pondérations selon vos priorités
+3. **Explorer** les fonctions avancées du package
+4. **Contribuer** au projet sur GitHub
+
+### Ressources
+
+- [Documentation nemeton](https://forestsoils.github.io/nemeton/)
+- [GitHub nemeton](https://github.com/forestsoils/nemeton)
+- [Référentiel des 12 familles](https://forestsoils.github.io/nemeton/articles/complete-referential_fr.html)
+
+```{r conclusion, echo=FALSE}
+cat("
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║   Merci d'avoir suivi la série de tutoriels nemeton !        ║
+║                                                               ║
+║   Pour toute question ou contribution, visitez :              ║
+║   https://github.com/forestsoils/nemeton                      ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+")
+```

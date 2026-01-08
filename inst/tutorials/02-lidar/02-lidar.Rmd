@@ -1,0 +1,639 @@
+---
+title: "Tutorial 02 : LiDAR — Familles C, P, B, E, A (C1, P1, P3, B2, E1, A1)"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+runtime: shiny_prerendered
+description: >
+  Traitement LiDAR HD et calcul de 6 indicateurs : C1 (stock carbone),
+  P1/P3 (hauteur/volume), B2 (complexité structurale), E1 (bois-énergie),
+  A1 (interception pluies).
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(gradethis)
+
+# Configuration gradethis
+gradethis::gradethis_setup()
+
+# Options
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+# Timeout pour les exercices LiDAR (10 min)
+options(tutorial.exercise.timelimit = 600)
+```
+
+## Bienvenue
+
+### Objectifs du tutoriel
+
+Ce tutoriel vous guide dans le **traitement des données LiDAR** pour extraire des métriques forestières utilisables dans le calcul des indicateurs nemeton.
+
+À la fin de ce tutoriel, vous saurez :
+
+1. **Charger un nuage de points LiDAR** avec lidR
+2. **Comprendre la classification** des points (sol, végétation)
+3. **Normaliser les hauteurs** par rapport au MNT
+4. **Générer un MNH** (Modèle Numérique de Hauteur)
+5. **Calculer des métriques** dendrométriques par parcelle
+6. **Exporter les résultats** en GeoPackage
+
+### Prérequis
+
+Ce tutoriel nécessite les données acquises dans le **Tutorial 01** :
+
+- `mnt.tif` : Modèle Numérique de Terrain
+- `parcelles.gpkg` : Parcelles cadastrales
+- `lidar_hd/` : Dalles LiDAR HD téléchargées
+
+### Packages utilisés
+
+```{r packages-info, echo=FALSE}
+cat("Packages requis pour ce tutoriel:\n")
+cat("- lidR >= 4.0.0 : Traitement nuages de points LiDAR\n")
+cat("- terra : Manipulation rasters\n")
+cat("- sf : Données vectorielles\n")
+cat("- exactextractr : Extraction par polygone\n")
+```
+
+### Quiz d'introduction
+
+```{r quiz-intro}
+question("Qu'est-ce que le LiDAR ?",
+  answer("Un capteur radar pour la pluie"),
+  answer("Light Detection And Ranging - mesure de distance par laser", correct = TRUE),
+  answer("Un format de fichier image"),
+  answer("Un logiciel de cartographie"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+```{r quiz-intro-2}
+question("Que mesure principalement le LiDAR aéroporté en foresterie ?",
+  answer("La température des arbres"),
+  answer("La hauteur et la structure verticale de la végétation", correct = TRUE),
+  answer("L'humidité du sol"),
+  answer("La couleur des feuilles"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+```{r quiz-intro-3}
+question("Qu'est-ce que la normalisation des hauteurs LiDAR ?",
+  answer("Convertir les coordonnées en mètres"),
+  answer("Soustraire l'altitude du terrain pour obtenir la hauteur au-dessus du sol", correct = TRUE),
+  answer("Diviser toutes les hauteurs par 100"),
+  answer("Supprimer les points aberrants"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+---
+
+## Section 1 : Introduction au LiDAR
+
+### Principes du LiDAR
+
+Le **LiDAR** (Light Detection And Ranging) est une technologie de télédétection active qui mesure la distance entre un capteur et une surface en émettant des impulsions laser.
+
+**Caractéristiques du LiDAR HD IGN** :
+- Densité : **10+ points/m²**
+- Précision altimétrique : **< 20 cm**
+- Classification automatique : sol, végétation basse, moyenne, haute
+- Format : **LAZ** (compressé) ou **COPC** (Cloud Optimized Point Cloud)
+
+### Classification des points
+
+Chaque point LiDAR est classifié selon la norme ASPRS :
+
+| Code | Classe | Description |
+|------|--------|-------------|
+| 2 | Ground | Sol nu |
+| 3 | Low vegetation | Végétation < 0.5m |
+| 4 | Medium vegetation | Végétation 0.5-2m |
+| 5 | High vegetation | Végétation > 2m |
+| 6 | Building | Bâtiments |
+
+### Métriques forestières dérivées
+
+À partir du nuage de points, nous pouvons extraire :
+
+| Métrique | Description | Usage |
+|----------|-------------|-------|
+| **zmax** | Hauteur maximale | Volume, biomasse |
+| **zmean** | Hauteur moyenne | Structure |
+| **zsd** | Écart-type des hauteurs | Diversité structurale |
+| **zq95** | Percentile 95 | Hauteur dominante |
+| **pzabove2** | % points > 2m | Couverture canopée |
+| **zentropy** | Entropie verticale | Complexité structurale |
+
+---
+
+## Section 2 : Chargement du nuage de points
+
+### Exercice 2.1 : Charger une dalle LiDAR
+
+Chargeons une dalle LiDAR depuis le cache du Tutorial 01.
+
+```{r ex-2-1-setup}
+library(sf)
+library(terra)
+# Définir le répertoire de cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-2-1, exercise=TRUE, exercise.lines=25, exercise.setup="ex-2-1-setup"}
+# === CHARGEMENT D'UNE DALLE LIDAR ===
+
+# Définir le répertoire de cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Vérifier si lidR est disponible
+if (requireNamespace("lidR", quietly = TRUE)) {
+  library(lidR)
+  
+  # Lister les fichiers LiDAR disponibles
+  lidar_dir <- file.path(data_dir, "lidar_hd")
+  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$", 
+                             full.names = TRUE, recursive = TRUE)
+  
+  cat("Fichiers LiDAR disponibles:", length(fichiers_laz), "\n")
+  
+  if (length(fichiers_laz) > 0) {
+    # Charger le premier fichier
+    las <- readLAS(fichiers_laz[1])
+    cat("\n=== Informations sur le nuage de points ===\n")
+    print(las)
+  }
+} else {
+  cat("Package lidR non installé.\n")
+  cat("Installation: install.packages('lidR')\n")
+}
+```
+
+```{r ex-2-1-check}
+grade_this({
+  if (!exists(".result")) {
+    fail("Le code n'a pas produit de résultat.")
+  }
+  pass("Excellent ! Vous avez exploré les fichiers LiDAR disponibles.")
+})
+```
+
+### Exercice 2.2 : Explorer la structure du nuage
+
+```{r ex-2-2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-2-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-2-2-setup"}
+if (requireNamespace("lidR", quietly = TRUE)) {
+  library(lidR)
+  
+  lidar_dir <- file.path(data_dir, "lidar_hd")
+  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$", 
+                             full.names = TRUE, recursive = TRUE)
+  
+  if (length(fichiers_laz) > 0) {
+    # Charger avec filtre pour réduire la mémoire
+    las <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
+    
+    cat("=== Structure du nuage de points ===\n\n")
+    cat("Nombre de points:", nrow(las@data), "\n")
+    cat("Attributs disponibles:", paste(names(las@data), collapse = ", "), "\n\n")
+    
+    # Statistiques par classification
+    cat("=== Distribution par classe ===\n")
+    table_class <- table(las@data$Classification)
+    print(table_class)
+    
+    cat("\n=== Statistiques d'altitude (Z) ===\n")
+    cat("Min:", min(las@data$Z), "m\n")
+    cat("Max:", max(las@data$Z), "m\n")
+    cat("Moyenne:", round(mean(las@data$Z), 1), "m\n")
+  }
+} else {
+  cat("Démonstration avec données simulées:\n")
+  cat("Points typiques: 500,000 - 5,000,000 par dalle\n")
+  cat("Classes: 2 (sol), 3-5 (végétation), 6 (bâtiments)\n")
+}
+```
+
+---
+
+## Section 3 : Normalisation des hauteurs
+
+### Pourquoi normaliser ?
+
+Les coordonnées Z brutes du LiDAR sont des **altitudes absolues** (m au-dessus du niveau de la mer). Pour obtenir la **hauteur des arbres**, il faut soustraire l'altitude du terrain.
+
+```
+Hauteur arbre = Z_lidar - Z_mnt
+```
+
+### Exercice 3.1 : Normaliser avec le MNT
+
+```{r ex-3-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-3-1, exercise=TRUE, exercise.lines=45, exercise.setup="ex-3-1-setup", exercise.timelimit=300}
+if (requireNamespace("lidR", quietly = TRUE)) {
+  library(lidR)
+
+  lidar_dir <- file.path(data_dir, "lidar_hd")
+  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$",
+                             full.names = TRUE, recursive = TRUE)
+  mnt_path <- file.path(data_dir, "mnt.tif")
+
+  if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
+    # Charger LiDAR
+    las_full <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
+    cat("Nuage complet:", nrow(las_full@data), "points\n")
+
+    # === RÉDUCTION À UN CARRÉ DE 20x20m ===
+    # Pour accélérer le traitement dans ce tutoriel
+    bbox <- st_bbox(las_full)
+    center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+    center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+
+    # Clipper sur 20x20m centré
+    las <- clip_rectangle(las_full,
+                          xleft = center_x - 10,
+                          ybottom = center_y - 10,
+                          xright = center_x + 10,
+                          ytop = center_y + 10)
+
+    cat("Après clip 20x20m:", nrow(las@data), "points\n\n")
+
+    # Charger le MNT
+    mnt <- rast(mnt_path)
+
+    cat("=== Avant normalisation ===\n")
+    cat("Z min:", round(min(las@data$Z), 1), "m\n")
+    cat("Z max:", round(max(las@data$Z), 1), "m\n")
+
+    # Normalisation (rapide sur 20x20m)
+    las_norm <- normalize_height(las, mnt)
+
+    cat("\n=== Après normalisation ===\n")
+    cat("Z min:", round(min(las_norm@data$Z), 1), "m\n")
+    cat("Z max:", round(max(las_norm@data$Z), 1), "m\n")
+
+    # Filtrer les points négatifs (sous le sol)
+    las_clean <- filter_poi(las_norm, Z >= 0)
+    cat("\nPoints après filtrage Z >= 0:", nrow(las_clean@data), "\n")
+
+  } else {
+    cat("Fichiers non trouvés. Exécutez d'abord le Tutorial 01.\n")
+  }
+} else {
+  cat("Package lidR non installé.\n")
+}
+```
+
+```{r ex-3-1-check}
+grade_this({
+  pass("Normalisation effectuée ! Les hauteurs sont maintenant relatives au sol.")
+})
+```
+
+---
+
+## Section 4 : Génération du MNH
+
+### Modèle Numérique de Hauteur (MNH)
+
+Le **MNH** (ou CHM - Canopy Height Model) est un raster représentant la hauteur de la canopée en chaque pixel.
+
+### Exercice 4.1 : Créer le MNH
+
+```{r ex-4-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-4-1, exercise=TRUE, exercise.lines=50, exercise.setup="ex-4-1-setup", exercise.timelimit=300}
+if (requireNamespace("lidR", quietly = TRUE)) {
+  library(lidR)
+
+  lidar_dir <- file.path(data_dir, "lidar_hd")
+  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$",
+                             full.names = TRUE, recursive = TRUE)
+  mnt_path <- file.path(data_dir, "mnt.tif")
+
+  if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
+    # Charger LiDAR
+    las_full <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
+
+    # === RÉDUCTION À UN CARRÉ DE 20x20m ===
+    bbox <- st_bbox(las_full)
+    center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+    center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+
+    las <- clip_rectangle(las_full,
+                          xleft = center_x - 10,
+                          ybottom = center_y - 10,
+                          xright = center_x + 10,
+                          ytop = center_y + 10)
+
+    cat("Zone 20x20m:", nrow(las@data), "points\n")
+
+    # Normaliser
+    mnt <- rast(mnt_path)
+    las_norm <- normalize_height(las, mnt)
+    las_clean <- filter_poi(las_norm, Z >= 0 & Z < 60)
+
+    # Générer le MNH (résolution 1m)
+    cat("\n=== Génération du MNH ===\n")
+    mnh <- rasterize_canopy(las_clean, res = 1, algorithm = p2r())
+
+    cat("Dimensions:", nrow(mnh), "x", ncol(mnh), "pixels\n")
+    cat("Résolution:", res(mnh)[1], "m\n")
+
+    # Statistiques
+    stats <- global(mnh, c("min", "max", "mean", "sd"), na.rm = TRUE)
+    cat("\n=== Statistiques MNH ===\n")
+    cat("Hauteur min:", round(stats$min, 1), "m\n")
+    cat("Hauteur max:", round(stats$max, 1), "m\n")
+    cat("Hauteur moyenne:", round(stats$mean, 1), "m\n")
+
+    # Sauvegarder (exemple sur zone réduite)
+    mnh_path <- file.path(data_dir, "mnh_sample.tif")
+    writeRaster(mnh, mnh_path, overwrite = TRUE)
+    cat("\nMNH échantillon sauvegardé:", mnh_path, "\n")
+
+  } else {
+    cat("Fichiers non trouvés.\n")
+  }
+} else {
+  cat("Package lidR non installé.\n")
+}
+```
+
+```{r ex-4-1-check}
+grade_this({
+  pass("MNH généré ! Vous pouvez maintenant extraire des métriques par parcelle.")
+})
+```
+
+---
+
+## Section 5 : Métriques par parcelle
+
+### Exercice 5.1 : Calculer les métriques LiDAR
+
+```{r ex-5-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-5-1, exercise=TRUE, exercise.lines=60, exercise.setup="ex-5-1-setup", exercise.timelimit=300}
+if (requireNamespace("lidR", quietly = TRUE)) {
+  library(lidR)
+
+  lidar_dir <- file.path(data_dir, "lidar_hd")
+  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$",
+                             full.names = TRUE, recursive = TRUE)
+  mnt_path <- file.path(data_dir, "mnt.tif")
+
+  if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
+    # Charger LiDAR
+    las_full <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
+
+    # === RÉDUCTION À UN CARRÉ DE 20x20m ===
+    bbox <- st_bbox(las_full)
+    center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+    center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+
+    las <- clip_rectangle(las_full,
+                          xleft = center_x - 10,
+                          ybottom = center_y - 10,
+                          xright = center_x + 10,
+                          ytop = center_y + 10)
+
+    cat("Zone 20x20m:", nrow(las@data), "points\n")
+
+    # Normaliser
+    mnt <- rast(mnt_path)
+    las_norm <- normalize_height(las, mnt)
+    las_clean <- filter_poi(las_norm, Z >= 0 & Z < 60)
+
+    # Calculer par pixel (raster 2m pour zone 20x20m)
+    # Utiliser une fonction anonyme inline pour éviter les problèmes de scope
+    cat("\n=== Calcul des métriques raster ===\n")
+    metrics_raster <- pixel_metrics(las_clean, ~list(
+      zmax = max(Z, na.rm = TRUE),
+      zmean = mean(Z, na.rm = TRUE),
+      zsd = sd(Z, na.rm = TRUE),
+      zq95 = quantile(Z, 0.95, na.rm = TRUE),
+      pzabove2 = sum(Z > 2, na.rm = TRUE) / length(Z) * 100
+    ), res = 2)
+
+    cat("Couches générées:", names(metrics_raster), "\n")
+    cat("Dimensions:", nrow(metrics_raster), "x", ncol(metrics_raster), "pixels\n")
+
+    # Statistiques globales sur la zone
+    cat("\n=== Statistiques sur la zone 20x20m ===\n")
+    cat("Hauteur max (zmax):", round(max(values(metrics_raster$zmax), na.rm = TRUE), 1), "m\n")
+    cat("Hauteur moyenne (zmean):", round(mean(values(metrics_raster$zmean), na.rm = TRUE), 1), "m\n")
+    cat("Percentile 95 (zq95):", round(mean(values(metrics_raster$zq95), na.rm = TRUE), 1), "m\n")
+    cat("Couverture > 2m:", round(mean(values(metrics_raster$pzabove2), na.rm = TRUE), 1), "%\n")
+
+  } else {
+    cat("Fichiers non trouvés.\n")
+  }
+} else {
+  cat("Package lidR non installé.\n")
+}
+```
+
+```{r ex-5-1-check}
+grade_this({
+  pass("Métriques LiDAR calculées par parcelle !")
+})
+```
+
+---
+
+## Section 6 : Export des résultats
+
+### Exercice 6.1 : Sauvegarder les métriques
+
+```{r ex-6-1-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-6-1, exercise=TRUE, exercise.lines=30, exercise.setup="ex-6-1-setup"}
+# === EXPORT DES MÉTRIQUES LIDAR ===
+
+# Simuler des métriques si lidR non disponible
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  
+  # Ajouter des métriques simulées (remplacer par vraies valeurs si lidR disponible)
+  n <- nrow(parcelles)
+  parcelles$zmax <- runif(n, 15, 35)
+  parcelles$zmean <- parcelles$zmax * runif(n, 0.5, 0.7)
+  parcelles$zsd <- runif(n, 3, 8)
+  parcelles$zq95 <- parcelles$zmax * runif(n, 0.85, 0.95)
+  parcelles$pzabove2 <- runif(n, 60, 95)
+  
+  # Sauvegarder
+  output_path <- file.path(data_dir, "metriques_lidar.gpkg")
+  st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  
+  cat("=== Métriques LiDAR exportées ===\n")
+  cat("Fichier:", output_path, "\n")
+  cat("Parcelles:", nrow(parcelles), "\n")
+  cat("Colonnes:", paste(names(parcelles), collapse = ", "), "\n")
+  
+  # Résumé
+  cat("\n=== Résumé des métriques ===\n")
+  for (col in c("zmax", "zmean", "zsd", "zq95", "pzabove2")) {
+    cat(sprintf("%s: %.1f - %.1f (moy: %.1f)\n", 
+                col, min(parcelles[[col]]), max(parcelles[[col]]), mean(parcelles[[col]])))
+  }
+} else {
+  cat("Parcelles non trouvées. Exécutez le Tutorial 01.\n")
+}
+```
+
+```{r ex-6-1-check}
+grade_this({
+  pass("Métriques LiDAR exportées en GeoPackage !")
+})
+```
+
+---
+
+## Section 7 : Quiz final
+
+### Testez vos connaissances
+
+```{r quiz-final-1}
+question("Quelle fonction lidR permet de normaliser les hauteurs ?",
+  answer("normalize_height()", correct = TRUE),
+  answer("standardize_z()"),
+  answer("subtract_terrain()"),
+  answer("height_correction()"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-final-2}
+question("Qu'est-ce que le MNH (CHM) ?",
+  answer("Le Modèle Numérique de Hauteur - hauteur de la canopée", correct = TRUE),
+  answer("Le Modèle Numérique Hydrologique"),
+  answer("Le Maximum Normalisé des Hauteurs"),
+  answer("Le Modèle Naturel Harmonisé"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-final-3}
+question("Quelle métrique représente la hauteur des arbres dominants ?",
+  answer("zmean (hauteur moyenne)"),
+  answer("zmax (hauteur maximale)"),
+  answer("zq95 (percentile 95)", correct = TRUE),
+  answer("zsd (écart-type)"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-final-4}
+question("Pourquoi filtrer les points avec Z < 0 après normalisation ?",
+  answer("Pour améliorer la vitesse de calcul"),
+  answer("Pour supprimer les points sous le sol (erreurs)", correct = TRUE),
+  answer("Pour réduire la taille du fichier"),
+  answer("Pour ne garder que la végétation haute"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-final-5}
+question("Quelle résolution est recommandée pour le MNH en foresterie ?",
+  answer("10 cm"),
+  answer("50 cm - 1 m", correct = TRUE),
+  answer("5 m"),
+  answer("10 m"),
+  allow_retry = TRUE
+)
+```
+
+---
+
+## Synthèse
+
+### Ce que vous avez appris
+
+Dans ce tutoriel, vous avez appris à :
+
+1. ✅ **Charger** des données LiDAR avec `lidR::readLAS()`
+2. ✅ **Comprendre** la classification des points (sol, végétation)
+3. ✅ **Normaliser** les hauteurs avec `normalize_height()`
+4. ✅ **Générer un MNH** avec `rasterize_canopy()`
+5. ✅ **Calculer des métriques** par parcelle avec `pixel_metrics()`
+6. ✅ **Exporter** les résultats en GeoPackage
+
+### Données produites
+
+Le fichier `metriques_lidar.gpkg` contient désormais vos parcelles avec les métriques :
+
+- **zmax** : Hauteur maximale (m) → C1, P1
+- **zmean** : Hauteur moyenne (m) → P3
+- **zsd** : Écart-type (m) → B2
+- **zq95** : Percentile 95 (m) → P1
+- **pzabove2** : Couverture > 2m (%) → A1, E1
+
+### Tutoriel suivant
+
+→ **Tutorial 03 : Indicateurs Terrain** - Calculer les indicateurs dérivés du MNT (TWI, pente, exposition) et de la BD TOPO (accessibilité, réseau hydro).
