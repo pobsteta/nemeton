@@ -60,6 +60,7 @@ summary(result$R2)
 }
 \seealso{
 Other risk-indicators: 
+\code{\link{indicator_risk_browsing}()},
 \code{\link{indicator_risk_drought}()},
 \code{\link{indicator_risk_fire}()}
 }

@@ -64,6 +64,7 @@ summary(result$R3)
 }
 \seealso{
 Other risk-indicators: 
+\code{\link{indicator_risk_browsing}()},
 \code{\link{indicator_risk_fire}()},
 \code{\link{indicator_risk_storm}()}
 }
