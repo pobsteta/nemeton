@@ -55,7 +55,7 @@ Suggests:
     leaflet (>= 2.1.0),
     rappdirs
 Remotes:
-    Jean-Roc/lidarHD,
+    git::https://forge.inrae.fr/lidar/lidarHD,
     rstudio/gradethis
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
