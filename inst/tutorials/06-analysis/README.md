@@ -114,10 +114,10 @@ Ce tutoriel conclut la série des **6 tutoriels nemeton** :
 | Tutorial | Titre | Indicateurs |
 |----------|-------|-------------|
 | 01 | Acquisition des Données | Données sources |
-| 02 | LiDAR — Familles C, P, B, E, A | 6 indicateurs |
+| 02 | LiDAR — Familles C, P, E, A | 5 indicateurs (C1, P1, P3, E1, A1) |
 | 03 | Terrain — Familles W, R, S, P, F | 12 indicateurs |
-| 04 | Écologie — Familles B, L, C, T, A, F, N | 14 indicateurs |
+| 04 | Écologie — Familles B, L, C, T, A, F, N | 14 indicateurs (dont B2) |
 | 05 | Assemblage — Famille E (E2) | 1 indicateur + I_nemeton |
 | 06 | Analyse Multi-Critères | Visualisation + Export |
 
-**Total : 32 indicateurs couvrant les 12 familles nemeton**
+**Total : 32 indicateurs (5+12+14+1) couvrant les 12 familles nemeton**

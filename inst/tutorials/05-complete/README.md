@@ -25,7 +25,7 @@ Ce tutoriel assemble les **32 indicateurs** calculés dans les tutoriels précé
 ```
 ~/nemeton_tutorial_data/
 ├── parcelles.gpkg              # T01: Base géométrique
-├── metriques_lidar.gpkg        # T02: C1, P1, P3, B2, E1, A1
+├── metriques_lidar.gpkg        # T02: métriques brutes → C1, P1, P3, E1, A1
 ├── indicateurs_terrain.gpkg    # T03: W1-3, R1-4, S1-3, P2, F1
 └── indicateurs_ecologiques.gpkg # T04: B1-3, L1-3, C2, T1-2, A2, F2, N1-3
 ```
