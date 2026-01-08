@@ -955,23 +955,50 @@ if (!is.null(pressure_data) && nrow(pressure_data) > 0) {
 
       if (!is.null(depts) && nrow(depts) > 0) {
         depts <- st_transform(depts, st_crs(parcelles))
-        dept_col <- intersect(names(depts), c("code_insee", "insee_dep", "code_dept"))
 
-        if (length(dept_col) > 0) {
-          # Jointure spatiale vectorisée
-          centroids <- st_centroid(parcelles)
-          join <- st_join(centroids, depts[, dept_col[1]])
-          parcelles$code_dept <- join[[dept_col[1]]]
+        # Trouver la colonne code département
+        dept_col <- NULL
+        for (col in c("code_insee", "insee_dep", "code_dept")) {
+          if (col %in% names(depts)) {
+            dept_col <- col
+            break
+          }
+        }
 
-          # Joindre l'indice de pression (vectorisé avec match)
-          idx <- match(parcelles$code_dept, pressure_data$code_dept)
-          parcelles$R4_densite <- ifelse(is.na(idx), 50, pressure_data$pressure_index[idx])
+        if (!is.null(dept_col)) {
+          # Extraire le code département (2 premiers caractères si code_insee)
+          depts$code_dept_norm <- substr(as.character(depts[[dept_col]]), 1, 2)
+          # Cas spéciaux DOM-TOM et Corse
+          depts$code_dept_norm <- ifelse(
+            nchar(as.character(depts[[dept_col]])) <= 3,
+            as.character(depts[[dept_col]]),
+            depts$code_dept_norm
+          )
 
-          cat("Densité gibier assignée depuis tableaux de chasse\n")
+          # Jointure spatiale avec centroïdes
+          centroids <- suppressWarnings(st_centroid(parcelles))
+          join <- st_join(centroids, depts["code_dept_norm"], left = TRUE)
+
+          # Normaliser les codes dans pressure_data (sans zéro devant)
+          pressure_data$code_norm <- gsub("^0+", "", pressure_data$code_dept)
+
+          # Match avec codes normalisés
+          parcelles_codes <- gsub("^0+", "", join$code_dept_norm)
+          idx <- match(parcelles_codes, pressure_data$code_norm)
+
+          # Assigner les valeurs de pression
+          parcelles$R4_densite <- ifelse(
+            is.na(idx), 50,
+            pressure_data$pressure_index[idx]
+          )
+
+          n_matched <- sum(!is.na(idx))
+          cat("Densité gibier assignée pour", n_matched, "/", nrow(parcelles), "parcelles\n")
         }
       }
     }, error = function(e) {
       cat("Erreur récupération départements:", e$message, "\n")
+      cat("Utilisation valeur par défaut: 50\n")
     })
   }
 }
