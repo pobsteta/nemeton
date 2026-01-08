@@ -336,3 +336,174 @@ indicator_risk_drought <- function(units,
 
   units
 }
+
+# ==============================================================================
+# T034: R4 - Game Browsing Pressure Index
+# ==============================================================================
+
+#' Calculate Game Browsing Pressure Index (R4)
+#'
+#' Computes browsing pressure risk from ungulates (deer, wild boar) based on
+#' species palatability, stand vulnerability, edge exposure, and local game density.
+#'
+#' @param units An sf object with forest parcels.
+#' @param species_field Character. Column name with species names.
+#' @param height_field Character. Column name with stand height (meters). Optional.
+#' @param age_field Character. Column name with stand age (years). Optional.
+#' @param game_density SpatRaster with game density index (0-100), or NULL.
+#' @param edge_buffer Numeric. Buffer distance (m) for edge effect calculation. Default 50.
+#' @param weights Named numeric vector. Weights for components:
+#'   c(palatability, vulnerability, edge, density). Default c(0.35, 0.30, 0.20, 0.15).
+#'
+#' @return The input sf object with added columns:
+#'   \itemize{
+#'     \item R4: Browsing pressure risk (0-100). Higher = higher risk.
+#'     \item R4_palatability: Species palatability score (0-100).
+#'     \item R4_vulnerability: Stand vulnerability score (0-100).
+#'   }
+#'
+#' @details
+#' **Formula**: R4 = w1*palatability + w2*vulnerability + w3*edge_exposure + w4*game_density
+#'
+#' **Components**:
+#' \itemize{
+#'   \item palatability: Species attractiveness to browsers (Quercus=90, Abies=85, Fagus=70, Pinus=30)
+#'   \item vulnerability: Young/short stands more vulnerable (<2m = 100, >10m = 0)
+#'   \item edge_exposure: Proportion of parcel within buffer of forest edge
+#'   \item game_density: Local ungulate population index if available
+#' }
+#'
+#' **Data sources for game density**:
+#' \itemize{
+#'   \item ONF/CNPF: Consumption indices from field surveys
+#'   \item Hunting federations: Harvest statistics by commune
+#'   \item ONCFS/OFB: Wildlife monitoring data
+#' }
+#'
+#' @family risk-indicators
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' library(nemeton)
+#'
+#' data(massif_demo_units)
+#' units <- massif_demo_units
+#' units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), nrow(units), replace = TRUE
+#' units$height <- runif(nrow(units), 1, 25)
+#' units$age <- runif(nrow(units), 5, 80)
+#'
+#' # Without game density data
+#' result <- indicator_risk_browsing(units, species_field = "species", height_field = "height")
+#' summary(result$R4)
+#'
+#' # With game density raster
+#' game_raster <- rast("path/to/game_density.tif")
+#' result <- indicator_risk_browsing(units, species_field = "species", game_density = game_raster)
+#' }
+indicator_risk_browsing <- function(units,
+                                     species_field = "species",
+                                     height_field = NULL,
+                                     age_field = NULL,
+                                     game_density = NULL,
+                                     edge_buffer = 50,
+                                     weights = c(palatability = 0.35, vulnerability = 0.30,
+                                                 edge = 0.20, density = 0.15)) {
+  # Validate inputs
+
+  validate_sf(units)
+
+  if (!species_field %in% names(units)) {
+    stop(sprintf("Column '%s' not found in units", species_field), call. = FALSE)
+  }
+
+  # Normalize weights
+  weights <- weights / sum(weights)
+
+  n_units <- nrow(units)
+
+  # ==========================================================================
+  # Component 1: Species palatability
+  # ==========================================================================
+  species <- units[[species_field]]
+  palatability_factor <- get_species_palatability(species)
+  units$R4_palatability <- palatability_factor
+
+  # ==========================================================================
+  # Component 2: Stand vulnerability (young/short stands more vulnerable)
+  # ==========================================================================
+  if (!is.null(height_field) && height_field %in% names(units)) {
+    height_values <- units[[height_field]]
+    # Vulnerability: <2m = 100, 2-10m = decreasing, >10m = 0
+    vulnerability_factor <- pmax(0, pmin(100, (10 - height_values) / 8 * 100))
+  } else if (!is.null(age_field) && age_field %in% names(units)) {
+    age_values <- units[[age_field]]
+    # Vulnerability: <10 years = 100, 10-40 years = decreasing, >40 years = 0
+    vulnerability_factor <- pmax(0, pmin(100, (40 - age_values) / 30 * 100))
+  } else {
+    # Default: moderate vulnerability
+    vulnerability_factor <- rep(50, n_units)
+  }
+  units$R4_vulnerability <- vulnerability_factor
+
+  # ==========================================================================
+  # Component 3: Edge exposure
+  # ==========================================================================
+  # Calculate proportion of parcel within buffer distance of edge
+  edge_factor <- numeric(n_units)
+
+  for (i in seq_len(n_units)) {
+    geom <- sf::st_geometry(units)[i]
+    area_total <- as.numeric(sf::st_area(geom))
+
+    if (area_total > 0) {
+      # Create inner buffer (negative buffer)
+      inner <- tryCatch({
+        sf::st_buffer(geom, -edge_buffer)
+      }, error = function(e) NULL)
+
+      if (!is.null(inner) && !sf::st_is_empty(inner)) {
+        area_inner <- as.numeric(sf::st_area(inner))
+        # Edge proportion: area in edge zone / total area
+        edge_proportion <- (area_total - area_inner) / area_total
+      } else {
+        # Small parcel entirely in edge zone
+        edge_proportion <- 1
+      }
+
+      edge_factor[i] <- edge_proportion * 100
+    } else {
+      edge_factor[i] <- 50
+    }
+  }
+
+  # ==========================================================================
+  # Component 4: Game density (if available)
+  # ==========================================================================
+  if (!is.null(game_density) && inherits(game_density, "SpatRaster")) {
+    density_values <- terra::extract(game_density, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+    density_factor <- pmin(pmax(density_values, 0), 100)
+  } else {
+    # No game density data: use neutral value and redistribute weight
+    density_factor <- rep(50, n_units)
+    weights["palatability"] <- weights["palatability"] + weights["density"] / 3
+    weights["vulnerability"] <- weights["vulnerability"] + weights["density"] / 3
+    weights["edge"] <- weights["edge"] + weights["density"] / 3
+    weights["density"] <- 0
+  }
+
+  # ==========================================================================
+  # Composite R4
+  # ==========================================================================
+  units$R4 <- weights["palatability"] * palatability_factor +
+              weights["vulnerability"] * vulnerability_factor +
+              weights["edge"] * edge_factor +
+              weights["density"] * density_factor
+
+  # Cap at 0-100
+  units$R4 <- pmin(pmax(units$R4, 0), 100)
+
+  msg_info("indicator_risk_browsing")
+
+  units
+}

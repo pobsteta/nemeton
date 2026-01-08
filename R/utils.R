@@ -331,6 +331,127 @@ get_species_drought_sensitivity <- function(species) {
   scores
 }
 
+#' Get Species Palatability for Browsing
+#'
+#' Returns palatability scores indicating how attractive species are to
+#' ungulate browsers (deer, wild boar). Used for R4 (browsing pressure) indicator.
+#'
+#' @param species Character vector. Species names to look up.
+#'
+#' @return Numeric vector. Palatability scores (0-100).
+#'   Higher = more palatable = higher browsing risk.
+#'
+#' @details
+#' Palatability scores based on forestry literature:
+#' \itemize{
+#'   \item Very high (80-100): Quercus (oak), Abies (fir), Acer (maple), Fraxinus (ash)
+#'   \item High (60-80): Fagus (beech), Carpinus (hornbeam), Prunus, Sorbus
+#'   \item Medium (40-60): Betula (birch), Populus (poplar), Salix (willow)
+#'   \item Low (20-40): Pinus (pine), Larix (larch)
+#'   \item Very low (0-20): Picea (spruce), Robinia
+#' }
+#'
+#' @keywords internal
+#' @noRd
+get_species_palatability <- function(species) {
+  # Palatability lookup table (0-100 scale)
+  # Based on: ONF technical guides, CNPF browsing studies
+  lookup <- data.frame(
+    species = c(
+      # Very high palatability (80-100)
+      "quercus", "chene", "oak",
+      "abies", "sapin", "fir",
+      "acer", "erable", "maple",
+      "fraxinus", "frene", "ash",
+      "castanea", "chataignier", "chestnut",
+      # High palatability (60-80)
+      "fagus", "hetre", "beech",
+      "carpinus", "charme", "hornbeam",
+      "prunus", "merisier", "cerisier", "cherry",
+      "sorbus", "alisier", "sorbier",
+      "tilia", "tilleul", "lime",
+      # Medium palatability (40-60)
+      "betula", "bouleau", "birch",
+      "populus", "peuplier", "poplar",
+      "salix", "saule", "willow",
+      "alnus", "aulne", "alder",
+      # Low palatability (20-40)
+      "pinus", "pin", "pine",
+      "larix", "meleze", "larch",
+      "pseudotsuga", "douglas",
+      # Very low palatability (0-20)
+      "picea", "epicea", "spruce",
+      "robinia", "robinier", "acacia"
+    ),
+    palatability = c(
+      # Very high
+      90, 90, 90,
+      85, 85, 85,
+      88, 88, 88,
+      85, 85, 85,
+      80, 80, 80,
+      # High
+      70, 70, 70,
+      72, 72, 72,
+      75, 75, 75, 75,
+      68, 68, 68,
+      65, 65, 65,
+      # Medium
+      55, 55, 55,
+      50, 50, 50,
+      52, 52, 52,
+      48, 48, 48,
+      # Low
+      30, 30, 30,
+      35, 35, 35,
+      32, 32,
+      # Very low
+      15, 15, 15,
+      10, 10, 10
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  # Vectorized lookup
+  scores <- numeric(length(species))
+
+  for (i in seq_along(species)) {
+    if (is.na(species[i])) {
+      scores[i] <- NA_real_
+      next
+    }
+
+    species_lower <- tolower(species[i])
+
+    # Exact match first
+    idx <- which(lookup$species == species_lower)
+
+    # If not found, try partial match
+    if (length(idx) == 0) {
+      idx <- grep(species_lower, lookup$species, fixed = TRUE)
+    }
+
+    # If still not found, try reverse partial match
+    if (length(idx) == 0) {
+      for (j in seq_len(nrow(lookup))) {
+        if (grepl(lookup$species[j], species_lower, fixed = TRUE)) {
+          idx <- j
+          break
+        }
+      }
+    }
+
+    # Return score or default to medium (50)
+    if (length(idx) > 0) {
+      scores[i] <- lookup$palatability[idx[1]]
+    } else {
+      scores[i] <- 50  # Default: medium palatability
+    }
+  }
+
+  scores
+}
+
 #' Calculate Shannon Diversity Index
 #'
 #' Computes Shannon diversity index (H) from proportions of categories.
