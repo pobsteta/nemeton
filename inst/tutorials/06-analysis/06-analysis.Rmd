@@ -1479,67 +1479,58 @@ grade_this({
 
 ## Section 9 : Quiz Final
 
-```{r quiz-final-1}
+```{r quiz-final}
 quiz(
+  caption = "Testez vos connaissances",
   question("Qu'est-ce qu'un hotspot dans l'analyse nemeton ?",
     answer("Une parcelle avec un indice faible"),
     answer("Une parcelle dont l'indice dépasse un seuil élevé (ex: P90)", correct = TRUE),
     answer("Une parcelle avec beaucoup de biodiversité"),
     answer("Une parcelle à risque incendie"),
     correct = "Les hotspots sont les parcelles ayant les meilleurs scores globaux.",
-    incorrect = "Un hotspot est une parcelle avec un indice composite très élevé."
-  )
-)
-```
-
-```{r quiz-final-2}
-quiz(
+    incorrect = "Un hotspot est une parcelle avec un indice composite très élevé.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Que signifie une corrélation négative entre Production et Biodiversité ?",
     answer("Ces deux familles n'ont aucun lien"),
     answer("Améliorer la production améliore la biodiversité"),
     answer("Il existe un compromis (trade-off) entre les deux", correct = TRUE),
     answer("Les données sont incorrectes"),
     correct = "Une corrélation négative indique un trade-off : optimiser une dimension peut dégrader l'autre.",
-    incorrect = "Une corrélation négative révèle un compromis entre les deux dimensions."
-  )
-)
-```
-
-```{r quiz-final-3}
-quiz(
+    incorrect = "Une corrélation négative révèle un compromis entre les deux dimensions.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Qu'est-ce que le front de Pareto ?",
     answer("L'ensemble des parcelles les plus grandes"),
     answer("L'ensemble des solutions optimales non dominées", correct = TRUE),
     answer("L'ensemble des parcelles à risque"),
     answer("La moyenne des indicateurs"),
     correct = "Le front de Pareto identifie les solutions où on ne peut améliorer une dimension sans dégrader une autre.",
-    incorrect = "Les points Pareto-optimaux sont ceux qui ne sont dominés par aucun autre point."
-  )
-)
-```
-
-```{r quiz-final-4}
-quiz(
+    incorrect = "Les points Pareto-optimaux sont ceux qui ne sont dominés par aucun autre point.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Pourquoi utilise-t-on le clustering des parcelles ?",
     answer("Pour réduire le nombre de parcelles"),
     answer("Pour regrouper les parcelles avec des profils similaires", correct = TRUE),
     answer("Pour augmenter la précision des indicateurs"),
     answer("Pour corriger les erreurs de calcul"),
     correct = "Le clustering permet d'identifier des groupes de parcelles partageant des caractéristiques communes.",
-    incorrect = "Le clustering regroupe les parcelles ayant des profils multi-critères similaires."
-  )
-)
-```
-
-```{r quiz-final-5}
-quiz(
+    incorrect = "Le clustering regroupe les parcelles ayant des profils multi-critères similaires.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Quel format est recommandé pour exporter des données spatiales avec leurs attributs ?",
     answer("CSV uniquement"),
     answer("PNG"),
     answer("GeoPackage (.gpkg)", correct = TRUE),
     answer("Word document"),
     correct = "Le GeoPackage préserve à la fois la géométrie et les attributs dans un format standard.",
-    incorrect = "Le GeoPackage est le format moderne recommandé pour les données géospatiales."
+    incorrect = "Le GeoPackage est le format moderne recommandé pour les données géospatiales.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
   )
 )
 ```

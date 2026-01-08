@@ -2927,23 +2927,25 @@ grade_this({
 
 ## Quiz final
 
-```{r quiz-final-1}
-question("L'indicateur B1 mesure :",
-  answer("Le taux de couverture par des zones protégées (ZNIEFF, N2000)", correct = TRUE),
-  answer("La biomasse totale"),
-  answer("La biodiversité génétique"),
-  answer("Le nombre d'espèces"),
-  allow_retry = TRUE
-)
-```
-
-```{r quiz-final-2}
-question("Qu'est-ce que la naturalité (N) ?",
-  answer("Le degré d'éloignement par rapport à l'état naturel, non perturbé", correct = TRUE),
-  answer("La présence d'espèces natives"),
-  answer("La productivité naturelle"),
-  answer("Le pH naturel du sol"),
-  allow_retry = TRUE
+```{r quiz-final}
+quiz(
+  caption = "Testez vos connaissances",
+  question("L'indicateur B1 mesure :",
+    answer("Le taux de couverture par des zones protégées (ZNIEFF, N2000)", correct = TRUE),
+    answer("La biomasse totale"),
+    answer("La biodiversité génétique"),
+    answer("Le nombre d'espèces"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Qu'est-ce que la naturalité (N) ?",
+    answer("Le degré d'éloignement par rapport à l'état naturel, non perturbé", correct = TRUE),
+    answer("La présence d'espèces natives"),
+    answer("La productivité naturelle"),
+    answer("Le pH naturel du sol"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
 )
 ```
 

@@ -728,62 +728,48 @@ cat(file.path(cache_dir, "indicateurs_complets.gpkg"))
 
 ## Quiz Final
 
-### Question 1
-
-```{r quiz-norm}
+```{r quiz-final}
 quiz(
+  caption = "Testez vos connaissances",
   question("Pourquoi normalise-t-on les indicateurs ?",
     answer("Pour réduire le temps de calcul"),
     answer("Pour rendre les indicateurs comparables entre eux", correct = TRUE),
     answer("Pour supprimer les valeurs manquantes"),
     answer("Pour augmenter la précision des données"),
     correct = "Exact ! La normalisation ramène tous les indicateurs sur une échelle commune [0,1].",
-    incorrect = "La normalisation sert à comparer des indicateurs ayant des unités différentes."
-  )
-)
-```
-
-### Question 2
-
-```{r quiz-inversion}
-quiz(
+    incorrect = "La normalisation sert à comparer des indicateurs ayant des unités différentes.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Quel indicateur doit être inversé après normalisation ?",
     answer("zmax (hauteur maximale)"),
     answer("B1 (zones protégées)"),
     answer("R1 (risque feu)", correct = TRUE),
     answer("W1 (indice humidité)"),
     correct = "Oui ! Un risque élevé est défavorable, donc on inverse pour que 0 = risque fort.",
-    incorrect = "On inverse les indicateurs où une valeur élevée est défavorable."
-  )
-)
-```
-
-### Question 3
-
-```{r quiz-composite}
-quiz(
+    incorrect = "On inverse les indicateurs où une valeur élevée est défavorable.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Comment est calculé l'indice composite nemeton ?",
     answer("Somme simple de tous les indicateurs"),
     answer("Moyenne pondérée des moyennes par famille", correct = TRUE),
     answer("Maximum des indicateurs"),
     answer("Produit de tous les indicateurs"),
     correct = "L'indice agrège les 12 familles avec des pondérations reflétant les priorités.",
-    incorrect = "L'indice utilise une moyenne pondérée par famille."
-  )
-)
-```
-
-### Question 4
-
-```{r quiz-poids}
-quiz(
+    incorrect = "L'indice utilise une moyenne pondérée par famille.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
   question("Quelle famille a le poids le plus élevé par défaut ?",
     answer("Carbone (C)"),
     answer("Biodiversité (B)", correct = TRUE),
     answer("Production (P)"),
     answer("Énergie (E)"),
     correct = "La biodiversité (12%) est prioritaire dans les pondérations par défaut.",
-    incorrect = "Consultez le tableau des pondérations - la biodiversité a le poids le plus fort."
+    incorrect = "Consultez le tableau des pondérations - la biodiversité a le poids le plus fort.",
+    allow_retry = TRUE,
+    random_answer_order = TRUE
   )
 )
 ```

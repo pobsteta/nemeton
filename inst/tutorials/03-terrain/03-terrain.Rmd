@@ -1869,33 +1869,33 @@ grade_this({
 
 ## Quiz final
 
-```{r quiz-final-1}
-question("Que signifie TWI ?",
-  answer("Topographic Wetness Index - indice d'humidité topographique", correct = TRUE),
-  answer("Tree Width Index"),
-  answer("Terrain Water Indicator"),
-  answer("Total Watershed Input"),
-  allow_retry = TRUE
-)
-```
-
-```{r quiz-final-2}
-question("Quels facteurs augmentent le risque feu (R1) ?",
-  answer("Pente forte + exposition sud", correct = TRUE),
-  answer("Pente faible + exposition nord"),
-  answer("Altitude élevée"),
-  answer("Proximité des routes"),
-  allow_retry = TRUE
-)
-```
-
-```{r quiz-final-3}
-question("L'indicateur S1 mesure :",
-  answer("La surface des parcelles"),
-  answer("La distance aux routes (accessibilité)", correct = TRUE),
-  answer("Le nombre d'espèces"),
-  answer("La pente moyenne"),
-  allow_retry = TRUE
+```{r quiz-final}
+quiz(
+  caption = "Testez vos connaissances",
+  question("Que signifie TWI ?",
+    answer("Topographic Wetness Index - indice d'humidité topographique", correct = TRUE),
+    answer("Tree Width Index"),
+    answer("Terrain Water Indicator"),
+    answer("Total Watershed Input"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("Quels facteurs augmentent le risque feu (R1) ?",
+    answer("Pente forte + exposition sud", correct = TRUE),
+    answer("Pente faible + exposition nord"),
+    answer("Altitude élevée"),
+    answer("Proximité des routes"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  ),
+  question("L'indicateur S1 mesure :",
+    answer("La surface des parcelles"),
+    answer("La distance aux routes (accessibilité)", correct = TRUE),
+    answer("Le nombre d'espèces"),
+    answer("La pente moyenne"),
+    allow_retry = TRUE,
+    random_answer_order = TRUE
+  )
 )
 ```
 
