@@ -204,7 +204,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   output_path <- file.path(data_dir, "metriques_erosion.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
   st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-  cat("\n=== Métriques F1 exportées ===\n")
+  cat("\n=== Métriques F1 érosion exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
@@ -315,7 +315,7 @@ if (file.exists(mnt_path)) {
     output_path <- file.path(data_dir, "metriques_twi.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques TWI exportées ===\n")
+    cat("\n=== Métriques W3 TWI exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   }
@@ -389,7 +389,7 @@ if (file.exists(parcelles_path)) {
       output_path <- file.path(data_dir, "metriques_densite_hydro.gpkg")
       st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
       st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-      cat("\n=== Métriques Densité réseau hydro exportées ===\n")
+      cat("\n=== Métriques W1 Densité réseau hydro exportées ===\n")
       cat("Fichier:", output_path, "\n")
       cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
     } else {
@@ -457,7 +457,7 @@ if (file.exists(parcelles_path)) {
     output_path <- file.path(data_dir, "metriques_couverture_zone_humide.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques ouverture zones humides exportées ===\n")
+    cat("\n=== Métriques W2 Couverture zones humides exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
@@ -544,7 +544,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
     output_path <- file.path(data_dir, "metriques_exposition_feu.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques exposition au feu exportées ===\n")
+    cat("\n=== Métriques R1 Exposition au feu exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
@@ -720,7 +720,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   output_path <- file.path(data_dir, "metriques_exposition_tempete.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
   st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-  cat("\n=== Métriques exposition au tempête exportées ===\n")
+  cat("\n=== Métriques R2 Exposition au tempête exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 } else {
@@ -873,7 +873,7 @@ if (file.exists(parcelles_path)) {
     output_path <- file.path(data_dir, "metriques_risque_secheresse.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques risque sécheresse exportées ===\n")
+    cat("\n=== Métriques R3 Risque sécheresse exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
@@ -1219,7 +1219,7 @@ if (use_parallel) future::plan(future::sequential)
 output_path <- file.path(data_dir, "metriques_pression_gibier.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n=== Métriques pression du gibier exportées ===\n")
+cat("\n=== Métriques R4 Pression du gibier exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
@@ -1533,9 +1533,9 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
 
 ---
 
-## Section 6 : Station forestière (P2, F1)
+## Section 6 : Fertilité de station (P2)
 
-### Exercice 6.1 : Fertilité station (P2)
+### Exercice 6.1 : Indice de fertilité station (P2)
 
 La **fertilité de station** est un indice raster combinant :
 
