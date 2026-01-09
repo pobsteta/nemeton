@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 03 : Terrain — Familles W, R, S, P, F (W1-3, R1-4, S1-3, P2, F1)"
+title: "Tutorial 03 : Terrain — Familles W, R, S, P, F (12 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true

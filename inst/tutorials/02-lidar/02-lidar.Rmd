@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 02 : LiDAR — Familles C, P, B, E, A (C1, P1, P3, B2, E1, A1)"
+title: "Tutorial 02 : LiDAR — Familles C, P, B, E, A (7 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,8 +7,8 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Traitement LiDAR HD et calcul de 6 indicateurs : C1 (stock carbone),
-  P1/P3 (hauteur/volume), B2 (complexité structurale), E1 (bois-énergie),
+  Traitement LiDAR HD et calcul de 7 indicateurs : C1 (stock carbone),
+  P1/P3 (hauteur/volume), B2 (complexité structurale), E1/E2 (énergie),
   A1 (interception pluies).
 ---
 
@@ -773,8 +773,9 @@ L'histogramme **E2 : Évitement carbone** montre la distribution des émissions 
 
 **Ce que représente E2** : le bénéfice climatique potentiel si le bois de la parcelle était utilisé comme source d'énergie à la place des combustibles fossiles (fioul, gaz, charbon).
 
+=== Grille d'interprétation E2 ===
+
 ```{r e2-interpretation, echo=FALSE}
-cat("=== Grille d'interprétation E2 ===\n\n")
 interpretation <- data.frame(
   Valeur_E2 = c("0 - 0.5", "0.5 - 1.5", "> 1.5"),
   Interpretation = c(
@@ -784,18 +785,21 @@ interpretation <- data.frame(
   )
 )
 knitr::kable(interpretation, col.names = c("E2 (tCO2/ha/an)", "Interprétation"))
-
-cat("\n=== Exemple concret ===\n")
-cat("Une parcelle avec E2 = 1.0 tCO2/ha/an signifie :\n")
-cat("  → 1 tonne de CO2 évitée par hectare chaque année\n")
-cat("  → Sur 10 ha : 10 tCO2/an évitées\n")
-cat("  → Équivalent à ~5 allers-retours Paris-New York en avion\n\n")
-
-cat("=== Forme de la distribution ===\n")
-cat("  • Étalée à droite : quelques parcelles très productives\n")
-cat("  • Pic à gauche : beaucoup de jeunes peuplements\n")
-cat("  • Normale : forêt homogène en productivité\n")
 ```
+
+=== Exemple concret ===
+
+Une parcelle avec E2 = 1.0 tCO2/ha/an signifie :
+
+- 1 tonne de CO2 évitée par hectare chaque année
+- Sur 10 ha : 10 tCO2/an évitées
+- Équivalent à ~5 allers-retours Paris-New York en avion
+
+=== Forme de la distribution ===
+
+- Étalée à droite : quelques parcelles très productives
+- Pic à gauche : beaucoup de jeunes peuplements
+- Normale : forêt homogène en productivité
 
 ### Quiz : Indicateurs Énergie
 
