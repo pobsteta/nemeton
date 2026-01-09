@@ -61,6 +61,7 @@ w3×climate_dryness
 ## See also
 
 Other risk-indicators:
+[`indicator_risk_browsing()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.md),
 [`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md),
 [`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)
 

@@ -51,7 +51,7 @@ The input sf object with added column:
 \*\*Calculation\*\*: B1 = (area_protected / area_total) × 100
 
 \*\*Interpretation\*\*: Higher values indicate better protection status.
-Parcels with B1 \> 75
+Parcels with B1 \> 75\\
 
 ## See also
 

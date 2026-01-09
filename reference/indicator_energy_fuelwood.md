@@ -1,5 +1,8 @@
 # E1: Fuelwood Potential Indicator
 
+Calculates mobilizable fuelwood potential (tonnes dry matter/year) from
+forest harvest residues and coppice biomass.
+
 ## Usage
 
 ``` r
@@ -33,11 +36,26 @@ indicator_energy_fuelwood(
 - harvest_rate:
 
   Numeric. Annual harvest rate (fraction of volume). Default 0.02 (2
+  percent/year).
 
-  residue_fractionNumeric. Fraction of harvest available as residues.
-  Default 0.3 (30coppice_area_fieldCharacter. Column name for coppice
-  area fraction. Optional.column_nameCharacter. Name for output column.
-  Default "E1".langCharacter. Message language. Default "en". sf object
-  with added columns: E1 (fuelwood potential tonnes DM/yr), E1_residues,
-  E1_coppice Calculates mobilizable fuelwood potential (tonnes dry
-  matter/year) from forest harvest residues and coppice biomass.
+- residue_fraction:
+
+  Numeric. Fraction of harvest available as residues. Default 0.3 (30
+  percent).
+
+- coppice_area_field:
+
+  Character. Column name for coppice area fraction. Optional.
+
+- column_name:
+
+  Character. Name for output column. Default "E1".
+
+- lang:
+
+  Character. Message language. Default "en".
+
+## Value
+
+sf object with added columns: E1 (fuelwood potential tonnes DM/yr),
+E1_residues, E1_coppice

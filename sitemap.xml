@@ -24,11 +24,14 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/calculate_change_rate.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_family_correlations.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/compute_game_pressure_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_composite_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_family_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/detect_indicator_family.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/download_hunting_data.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/family-system.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_family_name.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/get_game_pressure_raster.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_hotspots.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/index.html</loc></url>
@@ -53,6 +56,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_productive_quality.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_productive_station.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_productive_volume.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.html</loc></url>

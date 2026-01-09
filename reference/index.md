@@ -95,6 +95,14 @@ tempêtes et sécheresse
   : Calculate Storm Vulnerability Index (R2)
 - [`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)
   : Calculate Drought Stress Index (R3)
+- [`indicator_risk_browsing()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.md)
+  : Calculate Game Browsing Pressure Index (R4)
+- [`compute_game_pressure_index()`](https://pobsteta.github.io/nemeton/reference/compute_game_pressure_index.md)
+  : Compute Game Browsing Pressure Index by Department
+- [`download_hunting_data()`](https://pobsteta.github.io/nemeton/reference/download_hunting_data.md)
+  : Download Hunting Statistics from data.gouv.fr
+- [`get_game_pressure_raster()`](https://pobsteta.github.io/nemeton/reference/get_game_pressure_raster.md)
+  : Get Game Pressure Raster for R4 Indicator
 
 ## Family T: Temporal Dynamics / Famille T : Dynamique temporelle (v0.3.0)
 
@@ -282,5 +290,13 @@ Internal helper functions (for developers) / Fonctions d’aide internes
   : Multi-Family Indicator System
 - [`indicators-families`](https://pobsteta.github.io/nemeton/reference/indicators-families.md)
   : Indicator Family Functions - v0.2.0 Extension
+- [`indicators-energy`](https://pobsteta.github.io/nemeton/reference/indicators-energy.md)
+  : Energy & Climate Services Indicators (Family E)
+- [`indicators-naturalness`](https://pobsteta.github.io/nemeton/reference/indicators-naturalness.md)
+  : Naturalness & Wilderness Character Indicators (Family N)
+- [`indicators-productive`](https://pobsteta.github.io/nemeton/reference/indicators-productive.md)
+  : Productive & Economic Services Indicators (Family P)
+- [`indicators-social`](https://pobsteta.github.io/nemeton/reference/indicators-social.md)
+  : Social & Recreational Services Indicators (Family S)
 - [`temporal`](https://pobsteta.github.io/nemeton/reference/temporal.md)
   : Multi-Temporal Analysis Infrastructure
