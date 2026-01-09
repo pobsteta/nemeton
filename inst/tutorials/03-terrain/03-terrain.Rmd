@@ -121,9 +121,10 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-2-1-setup", exercise.timelimit=600}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=65, exercise.setup="ex-2-1-setup", exercise.timelimit=600}
 # === CALCUL DU TWI AVEC fasterRaster ===
 mnt_path <- file.path(data_dir, "mnt.tif")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 
 if (file.exists(mnt_path)) {
   mnt <- rast(mnt_path)
@@ -146,17 +147,39 @@ if (file.exists(mnt_path)) {
   # Convertir en terra raster pour export
   twi_terra <- rast(twi_grass)
 
-  cat("\n=== Résultats TWI ===\n")
+  cat("\n=== Résultats TWI (raster) ===\n")
   stats <- global(twi_terra, c("min", "max", "mean", "sd"), na.rm = TRUE)
   cat("TWI min:", round(stats$min, 2), "\n")
   cat("TWI max:", round(stats$max, 2), "\n")
   cat("TWI moyen:", round(stats$mean, 2), "\n")
   cat("TWI écart-type:", round(stats$sd, 2), "\n")
 
-  # Sauvegarder
+  # Sauvegarder le raster
   twi_path <- file.path(data_dir, "twi.tif")
   writeRaster(twi_terra, twi_path, overwrite = TRUE)
-  cat("\nTWI sauvegardé:", twi_path, "\n")
+  cat("\nTWI raster sauvegardé:", twi_path, "\n")
+
+  # === EXTRACTION PAR PARCELLE (W3) ===
+  if (file.exists(parcelles_path)) {
+    parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+    cat("\n=== Extraction W3 par parcelle ===\n")
+    cat("Parcelles:", nrow(parcelles), "\n")
+
+    # Extraire le TWI moyen par parcelle avec exactextractr
+    library(exactextractr)
+    parcelles$W3 <- exact_extract(twi_terra, parcelles, fun = "mean")
+
+    cat("\n=== Indicateur W3 (TWI moyen par parcelle) ===\n")
+    cat("W3 min:", round(min(parcelles$W3, na.rm = TRUE), 2), "\n")
+    cat("W3 max:", round(max(parcelles$W3, na.rm = TRUE), 2), "\n")
+    cat("W3 moyen:", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
+
+    # Sauvegarder les parcelles avec W3
+    output_path <- file.path(data_dir, "metriques_twi.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\nMétriques W3 exportées:", output_path, "\n")
+  }
 
 } else {
   cat("MNT non trouvé. Exécutez le Tutorial 01.\n")
@@ -222,6 +245,14 @@ if (file.exists(parcelles_path)) {
       cat("Densité min:", round(min(parcelles$W1), 1), "m/ha\n")
       cat("Densité max:", round(max(parcelles$W1), 1), "m/ha\n")
       cat("Densité moyenne:", round(mean(parcelles$W1), 1), "m/ha\n")
+      
+      # Sauvegarder
+      output_path <- file.path(data_dir, "metriques_densite_hydro.gpkg")
+      st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+      
+      cat("\n=== Métriques Densité réseau hydro exportées ===\n")
+      cat("Fichier:", output_path, "\n")
+      cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
     } else {
       cat("Aucun cours d'eau dans la zone.\n")
     }
@@ -282,6 +313,14 @@ if (file.exists(parcelles_path)) {
     cat("% zones humides min:", round(min(parcelles$W2, na.rm = TRUE), 1), "%\n")
     cat("% zones humides max:", round(max(parcelles$W2, na.rm = TRUE), 1), "%\n")
     cat("% zones humides moyen:", round(mean(parcelles$W2, na.rm = TRUE), 1), "%\n")
+    
+    # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_couverture_zone_humide.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    
+    cat("\n=== Métriques ouverture zones humides exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("TWI non trouvé. Exécutez d'abord l'exercice 2.1.\n")
   }
@@ -1015,8 +1054,11 @@ print(table(parcelles$R4_classe))
 # Nettoyer parallélisation
 if (use_parallel) future::plan(future::sequential)
 
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nParcelles sauvegardées avec R4.\n")
+# Sauvegarder
+output_path <- file.path(data_dir, "metriques_pression_gibier.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+cat("\nMétriques pression du gibier sauvegardées.\n")
 ```
 
 
