@@ -267,7 +267,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] nemeton_0.4.18
+#> [1] nemeton_0.4.19
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] terra_1.8-86       cli_3.6.5          knitr_1.51         rlang_1.1.6       
