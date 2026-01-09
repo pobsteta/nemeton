@@ -2024,7 +2024,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-4-setup"}
+```{r ex-7-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-7-4-setup"}
 # === FAMILLES P (PRODUCTION) et F (SOL) + SYNTHÈSE ===
 
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
@@ -2041,21 +2041,28 @@ extract_mean <- function(r, poly) {
 
 cat("=== Familles P/F ===\n\n")
 
-# P2 : Fertilité station
+# P2 : Fertilité station (Section 6)
+# Indice composite : pente + aspect + TPI + TWI + climat
 fertilite_path <- file.path(data_dir, "fertilite_station.tif")
 if (file.exists(fertilite_path)) {
   parcelles$P2 <- extract_mean(rast(fertilite_path), parcelles)
-  cat("P2 (fertilité):", round(mean(parcelles$P2, na.rm = TRUE), 3), "\n")
+  cat("P2 (fertilité station):", round(mean(parcelles$P2, na.rm = TRUE), 3), "\n")
+  cat("   Score 0-1 (0=contraignant, 1=fertile)\n\n")
 }
 
-# F1 : Risque érosion (pente)
-pente_path <- file.path(data_dir, "pente.tif")
-if (file.exists(pente_path)) {
-  parcelles$F1 <- extract_mean(rast(pente_path), parcelles)
-  cat("F1 (érosion/pente):", round(mean(parcelles$F1, na.rm = TRUE), 1), "°\n")
+# F1 : Risque érosion RUSLE simplifié (Section 1)
+# F1 = LS (facteur pente-longueur) × C (couverture végétale)
+erosion_path <- file.path(data_dir, "erosion_f1.tif")
+if (file.exists(erosion_path)) {
+  parcelles$F1 <- extract_mean(rast(erosion_path), parcelles)
+  cat("F1 (érosion RUSLE):", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
+  cat("   Score 0-1 (0=faible risque, 1=fort risque)\n")
+} else {
+  cat("F1: Fichier erosion_f1.tif non trouvé.\n")
+  cat("   Exécutez l'exercice 1.2 (RUSLE simplifié)\n")
 }
 
-# Sauvegarder
+# Sauvegarder avec P2 et F1
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 
 # === SYNTHÈSE FINALE ===
@@ -2066,10 +2073,11 @@ indicateurs <- c("W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2
 cat("Indicateurs calculés:\n")
 for (ind in indicateurs) {
   if (ind %in% names(parcelles)) {
-    cat(sprintf("- %s: %.2f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
+    cat(sprintf("- %s: %.3f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
   }
 }
 cat("\nNombre de parcelles:", nrow(parcelles), "\n")
+cat("Colonnes:", ncol(parcelles), "\n")
 ```
 
 
