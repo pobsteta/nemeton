@@ -156,7 +156,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.lines=25, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-2-1-setup"}
 # === CHARGEMENT D'UNE DALLE LIDAR ===
 
 # Définir le répertoire de cache
@@ -210,7 +210,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-2-setup"}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
   
@@ -267,7 +267,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.lines=45, exercise.setup="ex-3-1-setup", exercise.timelimit=300}
+```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-3-1-setup", exercise.timelimit=300}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
@@ -348,7 +348,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.lines=50, exercise.setup="ex-4-1-setup", exercise.timelimit=300}
+```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-4-1-setup", exercise.timelimit=300}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
@@ -428,7 +428,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-5-1, exercise=TRUE, exercise.lines=60, exercise.setup="ex-5-1-setup", exercise.timelimit=300}
+```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-5-1-setup", exercise.timelimit=300}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
@@ -510,7 +510,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.lines=30, exercise.setup="ex-6-1-setup"}
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-6-1-setup"}
 # === EXPORT DES MÉTRIQUES LIDAR ===
 
 # Simuler des métriques si lidR non disponible

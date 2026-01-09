@@ -101,7 +101,7 @@ Le package `rappdirs` permet de trouver le bon emplacement selon votre système 
 - **Windows** : `C:\Users\<user>\AppData\Local\nemeton\tutorial_data\`
 - **macOS** : `~/Library/Application Support/nemeton/tutorial_data/`
 
-```{r show-data-dir, exercise=TRUE, exercise.lines=20}
+```{r show-data-dir, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
 # === CRÉER LE RÉPERTOIRE DE CACHE ===
 
 # Utiliser rappdirs si disponible, sinon le répertoire home
@@ -152,7 +152,7 @@ Le jeu de données `quatre_montagnes` contient **96 placettes forestières** inv
 
 Chargez et explorez les données `quatre_montagnes` :
 
-```{r ex-1-1, exercise=TRUE, exercise.lines=15}
+```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=15}
 # Charger les données
 data("quatre_montagnes", package = "lidaRtRee")
 
@@ -196,7 +196,7 @@ library(lidaRtRee)
 data("quatre_montagnes", package = "lidaRtRee")
 ```
 
-```{r ex-1-2, exercise=TRUE, exercise.lines=12, exercise.setup="ex-1-2-setup"}
+```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=12, exercise.setup="ex-1-2-setup"}
 # Convertir en sf avec les colonnes X et Y
 placettes_sf <- st_as_sf(
  quatre_montagnes,
@@ -247,7 +247,7 @@ data("quatre_montagnes", package = "lidaRtRee")
 placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
 ```
 
-```{r ex-1-3, exercise=TRUE, exercise.lines=18, exercise.setup="ex-1-3-setup"}
+```{r ex-1-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=18, exercise.setup="ex-1-3-setup"}
 # Clusters du groupe Centre (altitude intermédiaire)
 clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
                     "Verc-C4", "Verc-C2", "Verc-05")
@@ -316,7 +316,7 @@ clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
 placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
 ```
 
-```{r ex-1-4, exercise=TRUE, exercise.lines=20, exercise.setup="ex-1-4-setup"}
+```{r ex-1-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20, exercise.setup="ex-1-4-setup"}
 # Créer l'enveloppe convexe des placettes
 enveloppe <- st_convex_hull(st_union(placettes_centre))
 
@@ -395,7 +395,7 @@ zone_etude <- st_buffer(enveloppe, dist = 500)
 zone_etude_sf <- st_sf(id = 1, nom = "Quatre Montagnes - Centre", geometry = zone_etude)
 ```
 
-```{r ex-1-5, exercise=TRUE, exercise.lines=25, exercise.setup="ex-1-5-setup"}
+```{r ex-1-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-1-5-setup"}
 # Définir le chemin de sauvegarde
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -448,7 +448,7 @@ placettes_centre <- st_read(filepath, layer = "placettes", quiet = TRUE)
 enveloppe <- st_convex_hull(st_union(placettes_centre))
 ```
 
-```{r viz-zone, exercise=TRUE, exercise.lines=20, exercise.setup="viz-zone-setup"}
+```{r viz-zone, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20, exercise.setup="viz-zone-setup"}
 # Visualiser la zone d'étude avec les placettes
 ggplot() +
   # Zone d'étude (buffer)
@@ -538,7 +538,7 @@ zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
 zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-2-1-setup"}
 # === PATTERN DE CACHE ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -639,7 +639,7 @@ parcelles_filepath <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_filepath, quiet = TRUE)
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.lines=22, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=22, exercise.setup="ex-2-2-setup"}
 # Les parcelles sont déjà chargées depuis le cache (setup)
 cat("Parcelles chargées depuis le cache\n\n")
 
@@ -678,7 +678,7 @@ parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 placettes_centre <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "placettes", quiet = TRUE)
 ```
 
-```{r viz-parcelles, exercise=TRUE, exercise.lines=16, exercise.setup="viz-parcelles-setup"}
+```{r viz-parcelles, exercise=TRUE, exercise.eval=FALSE, exercise.lines=16, exercise.setup="viz-parcelles-setup"}
 # Les données sont chargées depuis le cache (setup)
 parcelles$surface_ha <- as.numeric(st_area(parcelles)) / 10000
 
@@ -728,7 +728,7 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
+```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
 # === PATTERN DE CACHE POUR RASTER ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -832,7 +832,7 @@ mnt_filepath <- file.path(data_dir, "mnt.tif")
 mnt <- rast(mnt_filepath)
 ```
 
-```{r ex-3-2, exercise=TRUE, exercise.lines=22, exercise.setup="ex-3-2-setup"}
+```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=22, exercise.setup="ex-3-2-setup"}
 # Le MNT est chargé depuis le cache (setup)
 cat("MNT chargé depuis le cache\n\n")
 
@@ -894,7 +894,7 @@ placettes_centre <- tryCatch(
 )
 ```
 
-```{r viz-mnt, exercise=TRUE, exercise.lines=15, exercise.setup="viz-mnt-setup"}
+```{r viz-mnt, exercise=TRUE, exercise.eval=FALSE, exercise.lines=15, exercise.setup="viz-mnt-setup"}
 if (!is.null(mnt)) {
  # Convertir en data.frame pour ggplot
  mnt_df <- as.data.frame(mnt, xy = TRUE)
@@ -945,7 +945,7 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
+```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
 # === PATTERN DE CACHE ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -1017,7 +1017,7 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-4-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
+```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
 # === PATTERN DE CACHE ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -1084,7 +1084,7 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-4-3, exercise=TRUE, exercise.lines=30, exercise.setup="ex-4-3-setup"}
+```{r ex-4-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-3-setup"}
 # === PATTERN DE CACHE ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -1149,7 +1149,7 @@ placettes_centre <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "pla
 bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
 ```
 
-```{r viz-bdforet, exercise=TRUE, exercise.lines=15, exercise.setup="viz-bdforet-setup"}
+```{r viz-bdforet, exercise=TRUE, exercise.eval=FALSE, exercise.lines=15, exercise.setup="viz-bdforet-setup"}
 if (!is.null(bd_foret) && nrow(bd_foret) > 0) {
   ggplot() +
     geom_sf(data = bd_foret, aes(fill = tfv), color = NA) +
@@ -1196,7 +1196,7 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-5-1, exercise=TRUE, exercise.lines=30, exercise.timelimit=600, exercise.setup="ex-5-1-setup"}
+```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.timelimit=600, exercise.setup="ex-5-1-setup"}
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
@@ -1251,7 +1251,7 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
 ```
 
-```{r ex-5-2, exercise=TRUE, exercise.lines=45, exercise.timelimit=600, exercise.setup="ex-5-2-setup"}
+```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.timelimit=600, exercise.setup="ex-5-2-setup"}
 if (requireNamespace("lidarHD", quietly = TRUE)) {
   library(lidarHD)
   
@@ -1310,7 +1310,7 @@ if (requireNamespace("lidarHD", quietly = TRUE)) {
 
 Si le téléchargement LiDAR est trop long, vous pouvez utiliser les **métriques pré-calculées** dans `quatre_montagnes` :
 
-```{r ex-5-alt, exercise=TRUE, exercise.lines=20}
+```{r ex-5-alt, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
 library(lidaRtRee)
 data("quatre_montagnes", package = "lidaRtRee")
 
@@ -1352,7 +1352,7 @@ library(sf)
 library(terra)
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-6-1-setup"}
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-6-1-setup"}
 # === INVENTAIRE DU CACHE ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -1398,7 +1398,7 @@ library(sf)
 library(terra)
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.lines=55, exercise.setup="ex-6-2-setup"}
+```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-2-setup"}
 # === EXPORT CONSOLIDÉ ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {

@@ -57,7 +57,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-1-1, exercise=TRUE, exercise.lines=25, exercise.setup="ex-1-1-setup"}
+```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-1-1-setup"}
 # === CALCUL PENTE ET EXPOSITION ===
 
 mnt_path <- file.path(data_dir, "mnt.tif")
@@ -126,7 +126,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-2-1-setup", exercise.timelimit=600}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-2-1-setup", exercise.timelimit=600}
 # === CALCUL DU TWI AVEC fasterRaster ===
 mnt_path <- file.path(data_dir, "mnt.tif")
 
@@ -200,7 +200,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
+```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
 # === DENSITÉ DU RÉSEAU HYDROGRAPHIQUE (W1) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -262,7 +262,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-3-2, exercise=TRUE, exercise.lines=40, exercise.setup="ex-3-2-setup"}
+```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-3-2-setup"}
 # === COUVERTURE EN ZONES HUMIDES (W2) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -333,7 +333,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.lines=55, exercise.setup="ex-4-1-setup", exercise.timelimit=600}
+```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-4-1-setup", exercise.timelimit=600}
 # === EXPOSITION AU FEU (R1) avec fireexposuR ===
 
 mnt_path <- file.path(data_dir, "mnt.tif")
@@ -427,7 +427,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-2, exercise=TRUE, exercise.lines=95, exercise.setup="ex-4-2-setup", exercise.timelimit=600}
+```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=95, exercise.setup="ex-4-2-setup", exercise.timelimit=600}
 # === RISQUE TEMPÊTE (R2) avec nasapower + microclima ===
 
 mnt_path <- file.path(data_dir, "mnt.tif")
@@ -599,7 +599,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-3, exercise=TRUE, exercise.lines=110, exercise.setup="ex-4-3-setup", exercise.timelimit=900}
+```{r ex-4-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=110, exercise.setup="ex-4-3-setup", exercise.timelimit=900}
 # === RISQUE SÉCHERESSE (R3) avec SPEI + modulation topographique ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -776,7 +776,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-4, exercise=TRUE, exercise.lines=180, exercise.setup="ex-4-4-setup", exercise.timelimit=900}
+```{r ex-4-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=180, exercise.setup="ex-4-4-setup", exercise.timelimit=900}
 # === PRESSION GIBIER (R4) avec données de chasse (parallélisé) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -1090,7 +1090,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-5-1, exercise=TRUE, exercise.lines=55, exercise.setup="ex-5-1-setup"}
+```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-5-1-setup"}
 # === ACCESSIBILITÉ ROUTES (S1) - Rendu raster ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -1168,7 +1168,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-5-2, exercise=TRUE, exercise.lines=70, exercise.setup="ex-5-2-setup", exercise.timelimit=300}
+```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-5-2-setup", exercise.timelimit=300}
 # === DISTANCE AUX BÂTIMENTS (S2) - Rendu raster ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -1262,7 +1262,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-5-3, exercise=TRUE, exercise.lines=80, exercise.setup="ex-5-3-setup", exercise.timelimit=300}
+```{r ex-5-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=80, exercise.setup="ex-5-3-setup", exercise.timelimit=300}
 # === DENSITÉ DE SENTIERS (S3) - osmdata ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -1388,7 +1388,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.lines=160, exercise.setup="ex-6-1-setup", exercise.timelimit=900}
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=160, exercise.setup="ex-6-1-setup", exercise.timelimit=900}
 # === FERTILITÉ STATION (P2) - Rendu raster ===
 
 mnt_path <- file.path(data_dir, "mnt.tif")
@@ -1666,7 +1666,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-1, exercise=TRUE, exercise.lines=50, exercise.setup="ex-7-1-setup"}
+```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-1-setup"}
 # === FAMILLE W (EAU) : W1, W2, W3 ===
 
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
@@ -1738,7 +1738,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-2, exercise=TRUE, exercise.lines=50, exercise.setup="ex-7-2-setup"}
+```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-2-setup"}
 # === FAMILLE R (RISQUES) : R1, R2, R3, R4 ===
 
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
@@ -1811,7 +1811,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-3, exercise=TRUE, exercise.lines=40, exercise.setup="ex-7-3-setup"}
+```{r ex-7-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-7-3-setup"}
 # === FAMILLE S (SOCIAL) : S1, S2, S3 ===
 
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
@@ -1874,7 +1874,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-4, exercise=TRUE, exercise.lines=50, exercise.setup="ex-7-4-setup"}
+```{r ex-7-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-4-setup"}
 # === FAMILLES P (PRODUCTION) et F (SOL) + SYNTHÈSE ===
 
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")

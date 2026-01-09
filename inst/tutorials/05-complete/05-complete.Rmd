@@ -64,7 +64,7 @@ knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton")
 
 Avant de commencer, vérifions que toutes les données des tutoriaux précédents sont disponibles :
 
-```{r verif-prerequis, exercise=TRUE}
+```{r verif-prerequis, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Répertoire de cache
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
@@ -86,7 +86,7 @@ for (f in fichiers_requis) {
 
 ### Chargement des Couches
 
-```{r load-layers, exercise=TRUE, exercise.setup="verif-prerequis"}
+```{r load-layers, exercise=TRUE, exercise.eval=FALSE, exercise.setup="verif-prerequis"}
 # Charger toutes les couches d'indicateurs
 parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
 
@@ -181,7 +181,7 @@ indic_eco <- st_read(file.path(cache_dir, "indicateurs_ecologiques.gpkg"), quiet
 indic_eco <- ensure_id_column(indic_eco)
 ```
 
-```{r assemble-indicators, exercise=TRUE, exercise.lines=45, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
+```{r assemble-indicators, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
 # ============================================================
 # ASSEMBLAGE DES 32 INDICATEURS NEMETON
 # Clé de jointure : idu
@@ -300,7 +300,7 @@ La méthode **Min-Max** est la plus courante. Elle transforme chaque valeur selo
 
 $$x_{norm} = \frac{x - x_{min}}{x_{max} - x_{min}}$$
 
-```{r minmax-function, exercise=TRUE}
+```{r minmax-function, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Fonction de normalisation Min-Max
 normalize_minmax <- function(x, na.rm = TRUE) {
   min_val <- min(x, na.rm = na.rm)
@@ -322,7 +322,7 @@ normalize_minmax(valeurs)
 
 Appliquez la normalisation Min-Max à tous les indicateurs numériques :
 
-```{r normalize-all, exercise=TRUE, exercise.lines=20}
+```{r normalize-all, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
 # Fonction de normalisation
 normalize_minmax <- function(x, na.rm = TRUE) {
   min_val <- min(x, na.rm = na.rm)
@@ -397,7 +397,7 @@ Certains indicateurs ont une logique **inverse** : une valeur élevée est défa
 | N2 (distance infrastructures) | Élevé = bon | Conserver |
 | F1 (risque érosion) | Élevé = mauvais | Inverser |
 
-```{r inversion, exercise=TRUE}
+```{r inversion, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Indicateurs à inverser (valeur élevée = défavorable)
 indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")  # L1 = fragmentation, R4 = pression gibier
 
@@ -450,7 +450,7 @@ Où :
 
 ### Exercice : Calculer E2
 
-```{r calc-e2, exercise=TRUE, exercise.lines=30}
+```{r calc-e2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30}
 # Simuler des données d'entrée
 set.seed(42)
 n <- 50
@@ -524,7 +524,7 @@ grade_result(
 
 ### E2 par Type de Peuplement
 
-```{r e2-by-type, exercise=TRUE}
+```{r e2-by-type, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Analyser E2 par type de peuplement
 set.seed(42)
 n <- 50
@@ -555,7 +555,7 @@ boxplot(E2 ~ type_peuplement, data = parcelles,
 
 ### Intégration de E2 dans le GeoPackage
 
-```{r e2-export, exercise=TRUE}
+```{r e2-export, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Mise à jour du fichier d'indicateurs avec E2
 # (Code conceptuel - en situation réelle avec les vraies données)
 
@@ -600,7 +600,7 @@ Où :
 
 ### Exercice : Calculer l'Indice Composite
 
-```{r composite-index, exercise=TRUE, exercise.lines=35}
+```{r composite-index, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35}
 # Simuler des indicateurs normalisés pour l'exercice
 set.seed(42)
 n <- 30
@@ -700,7 +700,7 @@ resultat_perso <- create_composite_index(
 
 ### Exercice : Intégration nemeton
 
-```{r nemeton-integration, exercise=TRUE, exercise.lines=20}
+```{r nemeton-integration, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
 # Simulation de la fonction nemeton
 # (Dans la vraie vie, utiliser library(nemeton))
 
@@ -733,7 +733,7 @@ head(resultat)
 
 ### Sauvegarde du Tableau Complet
 
-```{r export-gpkg, exercise=TRUE}
+```{r export-gpkg, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Préparer les données finales
 # (En situation réelle avec les vraies données)
 
@@ -759,7 +759,7 @@ table(resultat_final$classe)
 
 ### Export vers GeoPackage
 
-```{r export-final, exercise=TRUE, exercise.setup="export-gpkg"}
+```{r export-final, exercise=TRUE, exercise.eval=FALSE, exercise.setup="export-gpkg"}
 # Code d'export (non exécuté dans le tutorial)
 #
 # # Convertir en sf si nécessaire

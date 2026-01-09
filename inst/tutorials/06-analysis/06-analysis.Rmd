@@ -113,7 +113,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-1-1, exercise=TRUE, exercise.lines=30, exercise.setup="ex-1-1-setup"}
+```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-1-1-setup"}
 # === CARTES THÉMATIQUES PAR FAMILLE ===
 
 # Charger les données réelles ou utiliser simulation
@@ -221,7 +221,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-1-2, exercise=TRUE, exercise.lines=40, exercise.setup="ex-1-2-setup"}
+```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-1-2-setup"}
 # === PANNEAU MULTI-CARTES ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -338,7 +338,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.lines=45, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-2-1-setup"}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -436,7 +436,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.lines=55, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-2-2-setup"}
 # === COMPARAISON MULTI-PARCELLES ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -573,7 +573,7 @@ for (col in grep("^moy_", names(parcelles_sim), value = TRUE)) {
 }
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
+```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
 # === MATRICE DE CORRÉLATION ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -665,7 +665,7 @@ for (col in grep("^moy_", names(parcelles_sim), value = TRUE)) {
 }
 ```
 
-```{r ex-3-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-3-2-setup"}
+```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-3-2-setup"}
 # === VISUALISATION CORRPLOT ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -756,7 +756,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
+```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
 # === IDENTIFICATION DES HOTSPOTS ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -826,7 +826,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-4-2, exercise=TRUE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
+```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
 # === CARTE DES HOTSPOTS ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -913,7 +913,7 @@ parcelles_sim$moy_P <- pmax(0, pmin(1, parcelles_sim$moy_P))
 parcelles_sim$moy_B <- pmax(0, pmin(1, parcelles_sim$moy_B))
 ```
 
-```{r ex-5-1, exercise=TRUE, exercise.lines=30, exercise.setup="ex-5-1-setup"}
+```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-5-1-setup"}
 # === GRAPHIQUE TRADE-OFF ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -989,7 +989,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-5-2, exercise=TRUE, exercise.lines=45, exercise.setup="ex-5-2-setup"}
+```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-5-2-setup"}
 # === FRONT DE PARETO ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -1096,7 +1096,7 @@ parcelles_sim <- st_sf(
 )
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.lines=40, exercise.setup="ex-6-1-setup"}
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-6-1-setup"}
 # === CLUSTERING HIÉRARCHIQUE ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -1187,7 +1187,7 @@ hc <- hclust(dist_matrix, method = "ward.D2")
 parcelles_sim$cluster <- as.factor(cutree(hc, k = 4))
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.lines=25, exercise.setup="ex-6-2-setup"}
+```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-6-2-setup"}
 # === CARTE DES CLUSTERS ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -1270,7 +1270,7 @@ parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
   labels = c("Faible", "Moyen", "Bon", "Excellent"))
 ```
 
-```{r ex-7-1, exercise=TRUE, exercise.lines=35, exercise.setup="ex-7-1-setup"}
+```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-7-1-setup"}
 # === EXPORT GEOPACKAGE FINAL ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -1336,7 +1336,7 @@ parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
   labels = c("Faible", "Moyen", "Bon", "Excellent"))
 ```
 
-```{r ex-7-2, exercise=TRUE, exercise.lines=25, exercise.setup="ex-7-2-setup"}
+```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-7-2-setup"}
 # === EXPORT CSV ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
@@ -1415,7 +1415,7 @@ parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
   labels = c("Faible", "Moyen", "Bon", "Excellent"))
 ```
 
-```{r ex-8-1, exercise=TRUE, exercise.lines=45, exercise.setup="ex-8-1-setup"}
+```{r ex-8-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-8-1-setup"}
 # === CARTE LEAFLET INTERACTIVE ===
 
 indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
