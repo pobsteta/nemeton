@@ -28,6 +28,25 @@ knitr::opts_chunk$set(
 
 # Timeout pour les exercices avec téléchargement
 options(tutorial.exercise.timelimit = 300)
+
+# Configuration des timeouts réseau (en secondes)
+options(
+  timeout = 300,                    # Timeout général R
+  HTTPUserAgent = "nemeton-tutorial/1.0"
+)
+
+# Configuration httr si disponible
+if (requireNamespace("httr", quietly = TRUE)) {
+  httr::set_config(httr::timeout(300))
+}
+
+# Configuration curl si disponible
+if (requireNamespace("curl", quietly = TRUE)) {
+  Sys.setenv(
+    CURL_SSL_BACKEND = "openssl",
+    R_CURL_TIMEOUT = "300"
+  )
+}
 ```
 
 ## Bienvenue

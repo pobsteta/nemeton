@@ -43,6 +43,33 @@ if (DRY_RUN) cat(">>> MODE DRY-RUN (pas d'exécution réelle) <<<\n\n")
 tutorials_dir <- "inst/tutorials"
 temp_dir <- tempdir()
 
+# Configuration des timeouts réseau (5 minutes)
+NETWORK_TIMEOUT <- 300
+
+cat("Configuration réseau:\n")
+cat(sprintf("  Timeout: %d secondes\n", NETWORK_TIMEOUT))
+
+options(
+  timeout = NETWORK_TIMEOUT,
+  HTTPUserAgent = "nemeton-tutorial/1.0"
+)
+
+# Configuration httr si disponible
+if (requireNamespace("httr", quietly = TRUE)) {
+  httr::set_config(httr::timeout(NETWORK_TIMEOUT))
+  cat("  httr: configuré\n")
+}
+
+# Configuration curl si disponible
+if (requireNamespace("curl", quietly = TRUE)) {
+  Sys.setenv(
+    CURL_SSL_BACKEND = "openssl",
+    R_CURL_TIMEOUT = as.character(NETWORK_TIMEOUT)
+  )
+  cat("  curl: configuré\n")
+}
+cat("\n")
+
 # Créer le répertoire de données si nécessaire
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
