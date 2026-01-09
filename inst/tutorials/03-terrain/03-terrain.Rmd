@@ -201,7 +201,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("F1 moyen:", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
 
   # Sauvegarder les parcelles avec F1
-  output_path <- file.path(data_dir, "metriques_erosion.gpkg")
+  output_path <- file.path(data_dir, "metriques_erosion_f1.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
   st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques F1 érosion exportées ===\n")
@@ -312,7 +312,7 @@ if (file.exists(mnt_path)) {
     cat("W3 moyen:", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
 
     # Sauvegarder les parcelles avec W3
-    output_path <- file.path(data_dir, "metriques_twi.gpkg")
+    output_path <- file.path(data_dir, "metriques_twi_w3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques W3 TWI exportées ===\n")
@@ -368,8 +368,7 @@ if (file.exists(parcelles_path)) {
 
     if (nrow(cours_eau) > 0) {
       # Calculer la densité du réseau hydro (m/ha) pour chaque parcelle
-      parcelles$W1 <- sapply(seq_len(nrow(parcelles)), function(i) {
-        # Intersection avec la parcelle
+      calc_w1 <- function(i) {
         hydro_in <- st_intersection(cours_eau, parcelles[i, ])
         if (nrow(hydro_in) > 0) {
           longueur_m <- sum(st_length(hydro_in))
@@ -378,7 +377,24 @@ if (file.exists(parcelles_path)) {
         } else {
           0
         }
-      })
+      }
+
+      # Parallélisation avec furrr si disponible
+      if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+        library(furrr)
+        library(future)
+        plan(multisession, workers = max(1, availableCores() - 1))
+        cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
+        parcelles$W1 <- future_map_dbl(seq_len(nrow(parcelles)), calc_w1, .progress = TRUE)
+        plan(sequential)
+      } else if (requireNamespace("purrr", quietly = TRUE)) {
+        library(purrr)
+        cat("Mode séquentiel (purrr)...\n")
+        parcelles$W1 <- map_dbl(seq_len(nrow(parcelles)), calc_w1)
+      } else {
+        cat("Mode séquentiel (base R)...\n")
+        parcelles$W1 <- sapply(seq_len(nrow(parcelles)), calc_w1)
+      }
 
       cat("=== Indicateur W1 (Densité réseau hydro) ===\n")
       cat("Densité min:", round(min(parcelles$W1), 1), "m/ha\n")
@@ -386,7 +402,7 @@ if (file.exists(parcelles_path)) {
       cat("Densité moyenne:", round(mean(parcelles$W1), 1), "m/ha\n")
       
       # Sauvegarder
-      output_path <- file.path(data_dir, "metriques_densite_hydro.gpkg")
+      output_path <- file.path(data_dir, "metriques_densite_hydro_w1.gpkg")
       st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
       st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
       cat("\n=== Métriques W1 Densité réseau hydro exportées ===\n")
@@ -454,7 +470,7 @@ if (file.exists(parcelles_path)) {
     cat("% zones humides moyen:", round(mean(parcelles$W2, na.rm = TRUE), 1), "%\n")
     
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_couverture_zone_humide.gpkg")
+    output_path <- file.path(data_dir, "metriques_couverture_zone_humide_w2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques W2 Couverture zones humides exportées ===\n")
@@ -541,7 +557,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
     cat("\nRaster d'exposition sauvegardé.\n")
     
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_exposition_feu.gpkg")
+    output_path <- file.path(data_dir, "metriques_exposition_feu_r1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques R1 Exposition au feu exportées ===\n")
@@ -603,19 +619,22 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   lat <- centroid_wgs84[1, "Y"]
 
   # === 1. Données de vent avec nasapower ===
+  # Pour le risque tempête : vitesse MAX (pas moyenne)
   wind_dir <- 270
-  wind_speed <- 10
+  wind_speed_max <- 15
 
   if (requireNamespace("nasapower", quietly = TRUE)) {
     library(nasapower)
     cat("=== Téléchargement données vent (NASA POWER) ===\n")
 
     wind_data <- tryCatch({
-      get_power(
+      # Climatologie mensuelle (moyenne 30 ans)
+      # WS10M_MAX = vitesse maximale du vent à 10m
+      # WD10M = direction du vent à 10m
+      nasapower::get_power(
         community = "ag",
         lonlat = c(lon, lat),
-        pars = c("WS10M", "WD10M"),
-        dates = c("2020-01-01", "2023-12-31"),
+        pars = c("WS10M_MAX", "WD10M"),
         temporal_api = "climatology"
       )
     }, error = function(e) {
@@ -623,17 +642,28 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
       NULL
     })
 
-    if (!is.null(wind_data) && "WD10M" %in% names(wind_data)) {
-      wind_dir <- as.numeric(wind_data$WD10M[1])
-      wind_speed <- as.numeric(wind_data$WS10M[1])
-      cat("Direction dominante:", round(wind_dir), "° (climatologie)\n")
-      cat("Vitesse moyenne:", round(wind_speed, 1), "m/s\n")
+    if (!is.null(wind_data) && nrow(wind_data) > 0) {
+      # Extraire les valeurs mensuelles (colonnes JAN à DEC = 4:15)
+      wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
+      ws_max_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M_MAX", 4:15])
+
+      # Direction dominante = moyenne pondérée par la vitesse max
+      wind_dir <- round(weighted.mean(wd_values, ws_max_values, na.rm = TRUE))
+      # Vitesse max = maximum des maximums mensuels (pire cas sur 30 ans)
+      wind_speed_max <- round(max(ws_max_values, na.rm = TRUE), 1)
+
+      cat("✓ Direction dominante:", wind_dir, "° (climatologie MERRA-2)\n")
+      cat("✓ Vitesse max enregistrée:", wind_speed_max, "m/s\n")
+      cat("  Source: NASA POWER WS10M_MAX (max sur 30 ans)\n")
     } else {
-      cat("Données non disponibles, direction par défaut: 270° (ouest)\n")
+      cat("⚠ Données non disponibles, valeurs par défaut\n")
     }
   } else {
-    cat("nasapower non installé, direction par défaut: 270° (ouest)\n")
+    cat("nasapower non installé, valeurs par défaut\n")
+    cat("Installez nasapower: install.packages('nasapower')\n")
   }
+
+  cat("Direction utilisée:", wind_dir, "° | Vitesse max:", wind_speed_max, "m/s\n")
 
   # === 2. Coefficient d'abri au vent avec microclima ===
   cat("\n=== Calcul coefficient d'abri (microclima) ===\n")
@@ -717,7 +747,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("\nRaster sauvegardé: storm_exposure.tif\n")
   
   # Sauvegarder
-  output_path <- file.path(data_dir, "metriques_exposition_tempete.gpkg")
+  output_path <- file.path(data_dir, "metriques_exposition_tempete_r2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
   st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques R2 Exposition au tempête exportées ===\n")
@@ -870,7 +900,7 @@ if (file.exists(parcelles_path)) {
     cat("- Écart-type:", round(sd(parcelles$R3, na.rm = TRUE), 3), "\n")
     
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_risque_secheresse.gpkg")
+    output_path <- file.path(data_dir, "metriques_risque_secheresse_r3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques R3 Risque sécheresse exportées ===\n")
@@ -1216,7 +1246,7 @@ print(table(parcelles$R4_classe))
 if (use_parallel) future::plan(future::sequential)
 
 # Sauvegarder
-output_path <- file.path(data_dir, "metriques_pression_gibier.gpkg")
+output_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques R4 Pression du gibier exportées ===\n")
@@ -1306,10 +1336,10 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("- > 500m : Peu accessible\n")
     
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_access_route.gpkg")
+    output_path <- file.path(data_dir, "metriques_access_route_a1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques accessibilité route exportées ===\n")
+    cat("\n=== Métriques S1 Accessibilité route exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
@@ -1404,10 +1434,10 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Distance moyenne:", round(mean(parcelles$S2, na.rm = TRUE)), "m\n")
     
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_distance_batiment.gpkg")
+    output_path <- file.path(data_dir, "metriques_distance_batiment_a2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques distance au batiment exportées ===\n")
+    cat("\n=== Métriques S2 Distance au batiment exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
@@ -1487,7 +1517,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # === Calculer densité par parcelle (m/ha) ===
     cat("=== Calcul densité de sentiers (m/ha) ===\n")
 
-    parcelles$S3 <- sapply(seq_len(nrow(parcelles)), function(i) {
+    calc_s3 <- function(i) {
       inter <- tryCatch({
         st_intersection(sentiers, parcelles[i, ])
       }, error = function(e) NULL)
@@ -1496,7 +1526,24 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
         surface_ha <- as.numeric(st_area(parcelles[i, ])) / 10000
         as.numeric(longueur / surface_ha)
       } else 0
-    })
+    }
+
+    # Parallélisation avec furrr si disponible
+    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+      library(furrr)
+      library(future)
+      plan(multisession, workers = max(1, availableCores() - 1))
+      cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
+      parcelles$S3 <- future_map_dbl(seq_len(nrow(parcelles)), calc_s3, .progress = TRUE)
+      plan(sequential)
+    } else if (requireNamespace("purrr", quietly = TRUE)) {
+      library(purrr)
+      cat("Mode séquentiel (purrr)...\n")
+      parcelles$S3 <- map_dbl(seq_len(nrow(parcelles)), calc_s3)
+    } else {
+      cat("Mode séquentiel (base R)...\n")
+      parcelles$S3 <- sapply(seq_len(nrow(parcelles)), calc_s3)
+    }
 
     # === Créer raster de densité (kernel) ===
     reso <- res(mnt)[1]
@@ -1516,10 +1563,10 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Densité moyenne:", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
     
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_densite_sentiers.gpkg")
+    output_path <- file.path(data_dir, "metriques_densite_sentiers_a3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\n=== Métriques densité sentiers exportées ===\n")
+    cat("\n=== Métriques S3 Densité sentiers exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
@@ -1804,10 +1851,10 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 3), "\n")
   
   # Sauvegarder
-  output_path <- file.path(data_dir, "metriques_fertilite_station.gpkg")
+  output_path <- file.path(data_dir, "metriques_fertilite_station_p2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
   st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-  cat("\n=== Métriques fertilité station exportées ===\n")
+  cat("\n=== Métriques P2 Fertilité station exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
@@ -1864,11 +1911,27 @@ cours_eau_path <- file.path(data_dir, "cours_eau.gpkg")
 if (file.exists(cours_eau_path)) {
   cours_eau <- st_read(cours_eau_path, quiet = TRUE)
   cours_eau <- st_transform(cours_eau, st_crs(parcelles))
-  parcelles$W1 <- sapply(seq_len(nrow(parcelles)), function(i) {
+
+  calc_w1_synth <- function(i) {
     inter <- st_intersection(cours_eau, parcelles[i, ])
     if (nrow(inter) > 0) as.numeric(sum(st_length(inter)) / (st_area(parcelles[i, ]) / 10000))
     else 0
-  })
+  }
+
+  # Parallélisation avec furrr si disponible
+  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+    library(furrr)
+    library(future)
+    plan(multisession, workers = max(1, availableCores() - 1))
+    parcelles$W1 <- future_map_dbl(seq_len(nrow(parcelles)), calc_w1_synth, .progress = TRUE)
+    plan(sequential)
+  } else if (requireNamespace("purrr", quietly = TRUE)) {
+    library(purrr)
+    parcelles$W1 <- map_dbl(seq_len(nrow(parcelles)), calc_w1_synth)
+  } else {
+    parcelles$W1 <- sapply(seq_len(nrow(parcelles)), calc_w1_synth)
+  }
+
   cat("W1 (densité hydro):", round(mean(parcelles$W1, na.rm = TRUE), 2), "m/ha\n")
   cat("   0 = pas de cours d'eau, >50 = réseau dense\n\n")
 }
@@ -1947,8 +2010,8 @@ if (file.exists(drought_path)) {
 }
 
 # R4 : Pression gibier (score 0-100 → normalisé 0-1)
-# Calculé en exercice 4.4 et sauvegardé dans metriques_pression_gibier.gpkg
-r4_path <- file.path(data_dir, "metriques_pression_gibier.gpkg")
+# Calculé en exercice 4.4 et sauvegardé dans metriques_pression_gibier_r4.gpkg
+r4_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
 if (file.exists(r4_path)) {
   r4_data <- st_read(r4_path, quiet = TRUE)
   if ("R4" %in% names(r4_data)) {
@@ -2110,48 +2173,6 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("╔══════════════════════════════════════════════════════════════╗\n")
-cat("║          SYNTHÈSE INDICATEURS TERRAIN (Tutorial 03)         ║\n")
-cat("╚══════════════════════════════════════════════════════════════╝\n\n")
-
-cat("Fichier:", output_path, "\n")
-cat("Parcelles:", nrow(parcelles), "\n\n")
-
-# Définition des indicateurs avec leurs unités et légendes
-indicateurs_info <- list(
-  W1 = list(nom = "Densité hydro", unite = "m/ha", legende = "0=aucun, >50=dense"),
-  W2 = list(nom = "Zones humides", unite = "%", legende = "% surface TWI>12"),
-  W3 = list(nom = "TWI moyen", unite = "", legende = "<6=sec, 9-12=moyen, >12=humide"),
-  R1 = list(nom = "Risque feu", unite = "0-1", legende = "0=faible, 1=fort"),
-  R2 = list(nom = "Risque tempête", unite = "0-1", legende = "0=abrité, 1=exposé"),
-  R3 = list(nom = "Risque sécheresse", unite = "0-1", legende = "0=humide, 1=sec"),
-  R4 = list(nom = "Pression gibier", unite = "0-1", legende = "0=faible, 1=forte"),
-  S1 = list(nom = "Dist routes", unite = "m", legende = "<100=accessible, >500=isolé"),
-  S2 = list(nom = "Dist bâtiments", unite = "m", legende = "<200=proche, >1000=rural"),
-  S3 = list(nom = "Densité sentiers", unite = "m/ha", legende = "0=aucun, >20=récréatif"),
-  P2 = list(nom = "Fertilité station", unite = "0-1", legende = "0=contraignant, 1=fertile"),
-  F1 = list(nom = "Érosion RUSLE", unite = "0-1", legende = "0=faible, 1=fort risque")
-)
-
-cat("┌────────┬──────────────────┬─────────┬─────────┬─────────┬────────────────────────┐\n")
-cat("│ Indic. │ Description      │   Min   │   Moy   │   Max   │ Interprétation         │\n")
-cat("├────────┼──────────────────┼─────────┼─────────┼─────────┼────────────────────────┤\n")
-
-for (ind in names(indicateurs_info)) {
-  if (ind %in% names(parcelles)) {
-    info <- indicateurs_info[[ind]]
-    vals <- parcelles[[ind]]
-    cat(sprintf("│ %-6s │ %-16s │ %7.2f │ %7.2f │ %7.2f │ %-22s │\n",
-                ind, substr(info$nom, 1, 16),
-                min(vals, na.rm = TRUE),
-                mean(vals, na.rm = TRUE),
-                max(vals, na.rm = TRUE),
-                substr(info$legende, 1, 22)))
-  }
-}
-
-cat("└────────┴──────────────────┴─────────┴─────────┴─────────┴────────────────────────┘\n")
-
 # Résumé par famille
 cat("\n=== Résumé par famille ===\n")
 familles <- list(
@@ -2230,11 +2251,19 @@ quiz(
 
 | Fichier | Contenu | Indicateurs |
 |---------|---------|-------------|
-| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, S1-3, P2, F1 |
-| `metriques_twi.gpkg` | Humidité topographique | W3 |
-| `metriques_pression_gibier.gpkg` | Pression gibier détaillée | R4 + composantes |
-| `metriques_erosion.gpkg` | Érosion RUSLE | F1 |
-| `metriques_fertilite_station.gpkg` | Fertilité station | P2 |
+| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, A1-3, P2, F1 |
+| `metriques_erosion_f1.gpkg` | Érosion RUSLE | F1 |
+| `metriques_twi_w3.gpkg` | Humidité topographique | W3 |
+| `metriques_densite_hydro_w1.gpkg` | Densité réseau hydro | W1 |
+| `metriques_couverture_zone_humide_w2.gpkg` | Zones humides | W2 |
+| `metriques_exposition_feu_r1.gpkg` | Exposition au feu | R1 |
+| `metriques_exposition_tempete_r2.gpkg` | Exposition tempête | R2 |
+| `metriques_risque_secheresse_r3.gpkg` | Risque sécheresse | R3 |
+| `metriques_pression_gibier_r4.gpkg` | Pression gibier | R4 + composantes |
+| `metriques_access_route_a1.gpkg` | Accessibilité route | A1 |
+| `metriques_distance_batiment_a2.gpkg` | Distance bâtiments | A2 |
+| `metriques_densite_sentiers_a3.gpkg` | Densité sentiers | A3 |
+| `metriques_fertilite_station_p2.gpkg` | Fertilité station | P2 |
 | `twi.tif` | Raster TWI | - |
 | `erosion_f1.tif` | Raster érosion RUSLE | - |
 | `fertilite_station.tif` | Raster fertilité | - |
