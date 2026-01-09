@@ -1946,17 +1946,21 @@ if (file.exists(drought_path)) {
   cat("   Score 0-1 (0=humide, 1=sec) - TWI inverse + expo sud\n\n")
 }
 
-# R4 : Pression gibier (score 0-1)
-game_path <- file.path(data_dir, "game_pressure.tif")
-if (file.exists(game_path)) {
-  parcelles$R4 <- extract_mean(rast(game_path), parcelles)
-  cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 (0=faible, 1=forte) - données chasse\n")
+# R4 : Pression gibier (score 0-100 → normalisé 0-1)
+# Calculé en exercice 4.4 et sauvegardé dans metriques_pression_gibier.gpkg
+r4_path <- file.path(data_dir, "metriques_pression_gibier.gpkg")
+if (file.exists(r4_path)) {
+  r4_data <- st_read(r4_path, quiet = TRUE)
+  if ("R4" %in% names(r4_data)) {
+    parcelles$R4 <- r4_data$R4 / 100  # Normaliser 0-100 → 0-1
+    cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
+    cat("   Score 0-1 : palatabilité 35% + vulnérabilité 25%\n")
+    cat("              + effet lisière 25% + densité chasse 15%\n")
+  }
 } else {
-  # Valeur par défaut si pas de données
   parcelles$R4 <- 0.5
   cat("R4 (pression gibier): 0.5 (valeur par défaut)\n")
-  cat("   Données chasse non disponibles\n")
+  cat("   Exécutez l'exercice 4.4 pour calculer R4\n")
 }
 
 # Sauvegarder
