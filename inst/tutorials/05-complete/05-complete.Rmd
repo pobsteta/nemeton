@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 05 : Assemblage — Indice Composite I_nemeton"
+title: "Tutorial 05 : Normalisation et Indice Composite I_nemeton"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,15 +7,16 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Assemblage des 32 indicateurs, normalisation Min-Max, et calcul de
-  l'indice composite pondéré I_nemeton.
+  Normalisation des 32 indicateurs, inversion des indicateurs négatifs,
+  et calcul de l'indice composite pondéré I_nemeton.
 ---
 
 ```{r setup, include=FALSE}
 library(learnr)
 library(gradethis)
 library(sf)
-library(terra)
+library(dplyr)
+library(ggplot2)
 
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 gradethis::gradethis_setup()
@@ -28,19 +29,22 @@ cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 ### Objectifs du Tutorial
 
-Bienvenue dans le **cinquième tutorial** de la série nemeton !
+Bienvenue dans le **cinquième tutoriel** de la série nemeton !
 
-Dans les tutoriels précédents, vous avez calculé des indicateurs appartenant aux 12 familles :
-- **T01** : Zone d'étude et données de base
-- **T02** : Métriques LiDAR → C1, P1, P3, E1, E2, A1 (6 indicateurs)
+Dans les tutoriels précédents, vous avez calculé progressivement tous les indicateurs :
+- **T01** : Zone d'étude, parcelles et données de base
+- **T02** : Métriques LiDAR → C1, C2, C3, P1, P3, E1, A1 (7 indicateurs)
 - **T03** : Indicateurs terrain → W1-W3, R1-R4, S1-S3, P2, F1 (12 indicateurs)
 - **T04** : Indicateurs écologiques → B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3 (14 indicateurs)
 
-Maintenant, vous allez :
-1. **Assembler** tous les indicateurs dans un tableau unique
-2. **Normaliser** les valeurs pour les rendre comparables
-3. **Calculer l'indice composite** nemeton
-4. **Analyser** la distribution des résultats
+Tous ces indicateurs sont maintenant dans votre fichier **`parcelles.gpkg`**.
+
+Dans ce tutoriel, vous allez :
+1. **Vérifier** la complétude des indicateurs
+2. **Normaliser** les valeurs sur une échelle [0, 1]
+3. **Inverser** les indicateurs négatifs (risques, érosion)
+4. **Calculer** les moyennes par famille
+5. **Créer** l'indice composite I_nemeton
 
 ### Les 12 Familles d'Indicateurs
 
@@ -51,307 +55,477 @@ familles <- data.frame(
     "Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
     "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"
   ),
-  Nb_Indicateurs = c(3, 3, 3, 2, 2, 3, 2, 4, 3, 3, 2, 3),
-  Source_Principale = c(
-    "LiDAR", "INPN/LiDAR", "MNT", "LiDAR/BD Forêt",
-    "MNT/Pédologie", "BD Forêt", "BD Forêt", "MNT",
-    "BD TOPO", "LiDAR/BD Forêt", "LiDAR/BD Forêt", "Multi"
-  )
+  Indicateurs = c(
+    "C1, C2, C3", "B1, B2, B3", "W1, W2, W3", "A1, A2",
+    "F1, F2", "L1, L2, L3", "T1, T2", "R1, R2, R3, R4",
+    "S1, S2, S3", "P1, P2, P3", "E1, E2", "N1, N2, N3"
+  ),
+  Nb = c(3, 3, 3, 2, 2, 3, 2, 4, 3, 3, 2, 3)
 )
-knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton")
+knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton (33 indicateurs)")
 ```
 
-## Chargement des Données
+## Chargement et Vérification
 
-### Vérification des Prérequis
+### Chargement des Parcelles
 
-Avant de commencer, vérifions que toutes les données des tutoriaux précédents sont disponibles :
+Toutes vos données sont maintenant dans un seul fichier `parcelles.gpkg` :
 
-```{r verif-prerequis, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
+```{r load-parcelles-setup}
+library(sf)
+library(dplyr)
+
 # Répertoire de cache
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
-# Fichiers attendus des tutoriaux précédents
-fichiers_requis <- c(
-  "parcelles.gpkg", # T01
-  "metriques_lidar.gpkg", # T02
-  "indicateurs_terrain.gpkg", # T03
-  "indicateurs_ecologiques.gpkg" # T04
+# Liste des indicateurs attendus par famille
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
 )
-
-# Vérification
-for (f in fichiers_requis) {
-  chemin <- file.path(cache_dir, f)
-  existe <- file.exists(chemin)
-  cat(sprintf("%s : %s\n", f, ifelse(existe, "✓ OK", "✗ MANQUANT")))
-}
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
 ```
 
-### Chargement des Couches
+```{r load-parcelles, exercise=TRUE, exercise.setup="load-parcelles-setup"}
+# Chemin vers les parcelles
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
 
-```{r load-layers, exercise=TRUE, exercise.eval=FALSE, exercise.setup="verif-prerequis"}
-# Charger toutes les couches d'indicateurs
+# Vérifier que le fichier existe
+if (!file.exists(parcelles_path)) {
+  stop("Fichier parcelles.gpkg non trouvé. Avez-vous complété les tutoriels 01-04 ?")
+}
+
+# Charger les parcelles
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== DONNÉES CHARGÉES ===\n")
+cat("Parcelles:", nrow(parcelles), "\n")
+cat("Colonnes:", ncol(parcelles), "\n")
+cat("CRS:", st_crs(parcelles)$epsg, "\n")
+
+# Aperçu des colonnes
+cat("\nColonnes disponibles:\n")
+cat(paste(names(parcelles), collapse = ", "))
+```
+
+### Vérification des Indicateurs
+
+```{r verif-indicateurs, exercise=TRUE, exercise.setup="load-parcelles-setup"}
+# Charger les parcelles
 parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
 
-# Métriques LiDAR (T02)
-if (file.exists(file.path(cache_dir, "metriques_lidar.gpkg"))) {
-  metriques_lidar <- st_read(file.path(cache_dir, "metriques_lidar.gpkg"), quiet = TRUE)
-  cat("Métriques LiDAR:", ncol(metriques_lidar) - 1, "colonnes\n")
-}
+# Vérifier chaque famille
+cat("=== VÉRIFICATION DES INDICATEURS ===\n\n")
 
-# Indicateurs Terrain (T03)
-if (file.exists(file.path(cache_dir, "indicateurs_terrain.gpkg"))) {
-  indic_terrain <- st_read(file.path(cache_dir, "indicateurs_terrain.gpkg"), quiet = TRUE)
-  cat("Indicateurs Terrain:", ncol(indic_terrain) - 1, "colonnes\n")
-}
+for (famille in names(indicateurs_par_famille)) {
+  indics <- indicateurs_par_famille[[famille]]
+  presents <- indics[indics %in% names(parcelles)]
+  manquants <- indics[!indics %in% names(parcelles)]
 
-# Indicateurs Écologiques (T04)
-if (file.exists(file.path(cache_dir, "indicateurs_ecologiques.gpkg"))) {
-  indic_eco <- st_read(file.path(cache_dir, "indicateurs_ecologiques.gpkg"), quiet = TRUE)
-  cat("Indicateurs Écologiques:", ncol(indic_eco) - 1, "colonnes\n")
-}
+  status <- if (length(manquants) == 0) "✓" else "⚠"
+  cat(sprintf("%s Famille %s: %d/%d indicateurs\n",
+              status, famille, length(presents), length(indics)))
 
-cat("\nTotal parcelles:", nrow(parcelles))
-```
-
-## Assemblage des Indicateurs
-
-### Principe de la Jointure
-
-Toutes les couches partagent l'identifiant unique **`idu`** (identifiant cadastral unique).
-La jointure est donc simple : on fusionne les tables attributaires sur cette clé commune.
-
-```{r jointure-concept, echo=FALSE}
-cat("
-Parcelles (base) — clé: idu
-     │
-     ├── + Métriques LiDAR (T02) → C1, P1, P3, E1, E2, A1
-     │
-     ├── + Indicateurs Terrain (T03) → W1-3, R1-4, S1-3, P2, F1
-     │
-     └── + Indicateurs Écologiques (T04) → B1-3, L1-3, C2, T1-2, A2, F2, N1-3
-
-     TOTAL: 6 + 12 + 14 = 32 indicateurs
-")
-```
-
-### Exercice : Assembler les Indicateurs
-
-Fusionnez toutes les couches d'indicateurs en utilisant **`idu`** comme clé de jointure :
-
-```{r assemble-indicators-setup}
-library(sf)
-
-# Répertoire de cache
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  cache_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-
-# Fonction pour trouver ou créer la colonne ID
-ensure_id_column <- function(df, id_name = "idu") {
-  # Chercher une colonne ID existante
-  id_candidates <- c("idu", "IDU", "id", "ID", "fid", "FID", "OBJECTID", "id_parcelle")
-  found_id <- intersect(id_candidates, names(df))
-
-
-  if (length(found_id) > 0) {
-    # Renommer la première colonne trouvée en 'idu'
-    if (found_id[1] != id_name) {
-      df[[id_name]] <- df[[found_id[1]]]
-    }
-  } else {
-    # Créer un ID basé sur le numéro de ligne
-    df[[id_name]] <- seq_len(nrow(df))
+  if (length(manquants) > 0) {
+    cat(sprintf("  Manquants: %s\n", paste(manquants, collapse = ", ")))
   }
-  return(df)
 }
 
-# Charger et préparer les données
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
-parcelles <- ensure_id_column(parcelles)
-
-metriques_lidar <- st_read(file.path(cache_dir, "metriques_lidar.gpkg"), quiet = TRUE)
-metriques_lidar <- ensure_id_column(metriques_lidar)
-
-indic_terrain <- st_read(file.path(cache_dir, "indicateurs_terrain.gpkg"), quiet = TRUE)
-indic_terrain <- ensure_id_column(indic_terrain)
-
-indic_eco <- st_read(file.path(cache_dir, "indicateurs_ecologiques.gpkg"), quiet = TRUE)
-indic_eco <- ensure_id_column(indic_eco)
+# Bilan global
+presents <- sum(tous_indicateurs %in% names(parcelles))
+cat(sprintf("\n=== BILAN: %d/%d indicateurs présents ===\n",
+            presents, length(tous_indicateurs)))
 ```
 
-```{r assemble-indicators, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.timelimit=300, exercise.setup="assemble-indicators-setup"}
-# ============================================================
-# ASSEMBLAGE DES 32 INDICATEURS NEMETON
-# Clé de jointure : idu
-# ============================================================
+```{r verif-indicateurs-check}
+grade_this({
+  pass("Vérification effectuée !")
+})
+```
 
-# 1. Partir des parcelles (géométrie de base)
-indicateurs <- parcelles
-cat("Parcelles:", nrow(indicateurs), "\n")
+### Statistiques Descriptives
 
-# 2. Joindre les métriques LiDAR (T02) → C1, P1, P3, E1, A1
-cols_lidar <- c("idu", "C1", "P1", "P3", "E1", "A1")
-cols_present <- intersect(cols_lidar, names(metriques_lidar))
-if ("idu" %in% cols_present && length(cols_present) > 1) {
-  lidar_data <- st_drop_geometry(metriques_lidar)[, cols_present, drop = FALSE]
-  indicateurs <- merge(indicateurs, lidar_data, by = "idu", all.x = TRUE)
-  cat("✓ LiDAR:", length(cols_present) - 1, "indicateurs\n")
-}
+```{r stats-indicateurs-setup}
+library(sf)
+library(dplyr)
 
-# 3. Joindre les indicateurs terrain (T03)
-cols_terrain <- c("idu", "W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2", "F1")
-cols_present <- intersect(cols_terrain, names(indic_terrain))
-if ("idu" %in% cols_present && length(cols_present) > 1) {
-  terrain_data <- st_drop_geometry(indic_terrain)[, cols_present, drop = FALSE]
-  indicateurs <- merge(indicateurs, terrain_data, by = "idu", all.x = TRUE)
-  cat("✓ Terrain:", length(cols_present) - 1, "indicateurs\n")
-}
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
-# 4. Joindre les indicateurs écologiques (T04)
-cols_eco <- c("idu", "B1", "B2", "B3", "L1", "L2", "L3", "C2", "T1", "T2", "A2", "F2", "N1", "N2", "N3")
-cols_present <- intersect(cols_eco, names(indic_eco))
-if ("idu" %in% cols_present && length(cols_present) > 1) {
-  eco_data <- st_drop_geometry(indic_eco)[, cols_present, drop = FALSE]
-  indicateurs <- merge(indicateurs, eco_data, by = "idu", all.x = TRUE)
-  cat("✓ Écologique:", length(cols_present) - 1, "indicateurs\n")
-}
-
-# ============================================================
-# BILAN
-# ============================================================
-indicateurs_attendus <- c(
-  "C1", "P1", "P3", "E1", "E2", "A1",
-  "W1", "W2", "W3", "R1", "R2", "R3", "R4",
-  "S1", "S2", "S3", "P2", "F1",
-  "B1", "B2", "B3", "L1", "L2", "L3", "C2",
-  "T1", "T2", "A2", "F2", "N1", "N2", "N3"
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
 )
-presents <- sum(indicateurs_attendus %in% names(indicateurs))
-
-cat("\n=== BILAN ===\n")
-cat("Colonnes:", ncol(indicateurs), "\n")
-cat("Indicateurs:", presents, "/ 32\n")
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
 ```
 
+```{r stats-indicateurs, exercise=TRUE, exercise.setup="stats-indicateurs-setup"}
+# Charger les données
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
 
+# Indicateurs présents
+indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
 
-## Normalisation des Indicateurs
+if (length(indics_presents) > 0) {
+  # Extraire les données numériques
+  data_indics <- parcelles %>%
+    st_drop_geometry() %>%
+    select(all_of(indics_presents))
+
+  # Statistiques par indicateur
+  stats <- data.frame(
+    Indicateur = indics_presents,
+    Min = sapply(data_indics, min, na.rm = TRUE),
+    Max = sapply(data_indics, max, na.rm = TRUE),
+    Moyenne = sapply(data_indics, mean, na.rm = TRUE),
+    NA_count = sapply(data_indics, function(x) sum(is.na(x)))
+  )
+
+  print(stats)
+} else {
+  cat("Aucun indicateur trouvé dans les données.\n")
+}
+```
+
+## Normalisation Min-Max
 
 ### Pourquoi Normaliser ?
 
-Les indicateurs ont des unités et échelles très différentes :
-- Hauteur maximale (zmax) : 0-50 mètres
-- TWI (W1) : 2-20 sans unité
-- Distance routes (S1) : 0-5000 mètres
-- Zones protégées (B1) : 0-1 (booléen ou proportion)
+Les indicateurs ont des **unités et échelles très différentes** :
 
-Pour les **comparer** et les **agréger**, il faut les ramener sur une échelle commune.
+| Indicateur | Unité | Plage typique |
+|------------|-------|---------------|
+| C1 (stock carbone) | tC/ha | 0 - 300 |
+| W1 (TWI) | sans unité | 2 - 20 |
+| S1 (distance routes) | mètres | 0 - 5000 |
+| B1 (protection) | score 0-100 | 0 - 100 |
+| R1 (risque feu) | score 0-100 | 0 - 100 |
 
-### Méthodes de Normalisation
+Pour les **comparer** et les **agréger**, il faut les ramener sur une échelle commune **[0, 1]**.
 
-```{r normalisation-methods, echo=FALSE}
-methods <- data.frame(
-  Méthode = c("Min-Max", "Z-score", "Rang percentile", "Bornes fixes"),
-  Formule = c("(x - min) / (max - min)", "(x - μ) / σ", "rang(x) / n", "(x - borne_inf) / (borne_sup - borne_inf)"),
-  Résultat = c("[0, 1]", "[-∞, +∞]", "[0, 1]", "[0, 1] (clippé)"),
-  Usage = c("Défaut nemeton", "Comparaison statistique", "Robuste aux outliers", "Seuils experts")
-)
-knitr::kable(methods, caption = "Méthodes de normalisation")
-```
+### Méthode Min-Max
 
-### Normalisation Min-Max
-
-La méthode **Min-Max** est la plus courante. Elle transforme chaque valeur selon :
+La normalisation **Min-Max** transforme chaque valeur selon :
 
 $$x_{norm} = \frac{x - x_{min}}{x_{max} - x_{min}}$$
 
-```{r minmax-function, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
+- Résultat : valeurs entre 0 et 1
+- 0 = valeur minimale observée
+- 1 = valeur maximale observée
+
+```{r normalize-function-setup}
+library(sf)
+library(dplyr)
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+```
+
+```{r normalize-function, exercise=TRUE, exercise.setup="normalize-function-setup"}
 # Fonction de normalisation Min-Max
 normalize_minmax <- function(x, na.rm = TRUE) {
   min_val <- min(x, na.rm = na.rm)
   max_val <- max(x, na.rm = na.rm)
 
-  if (max_val == min_val) {
-    return(rep(0.5, length(x))) # Valeur constante
-  }
+  # Cas particulier : valeur constante
 
-  (x - min_val) / (max_val - min_val)
-}
-
-# Test
-valeurs <- c(10, 20, 30, 40, 50)
-normalize_minmax(valeurs)
-```
-
-### Exercice : Normaliser les Indicateurs
-
-Appliquez la normalisation Min-Max à tous les indicateurs numériques :
-
-```{r normalize-all, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
-# Fonction de normalisation
-normalize_minmax <- function(x, na.rm = TRUE) {
-  min_val <- min(x, na.rm = na.rm)
-  max_val <- max(x, na.rm = na.rm)
   if (max_val == min_val) {
     return(rep(0.5, length(x)))
   }
+
   (x - min_val) / (max_val - min_val)
 }
 
-# Simuler des données pour l'exercice
-set.seed(42)
-n <- 50
-indicateurs <- data.frame(
-  id_parcelle = 1:n,
-  zmax = runif(n, 5, 45),
-  W1 = runif(n, 3, 18),
-  S1 = runif(n, 50, 3000),
-  B1 = rbinom(n, 1, 0.3)
-)
+# Test sur des valeurs exemple
+valeurs_test <- c(10, 25, 50, 75, 100)
+valeurs_norm <- normalize_minmax(valeurs_test)
 
-# À compléter : normaliser toutes les colonnes numériques sauf id_parcelle
-# Créer un nouveau data.frame 'indicateurs_norm'
+cat("Valeurs originales:", valeurs_test, "\n")
+cat("Valeurs normalisées:", round(valeurs_norm, 3), "\n")
+cat("\nVérification: min =", min(valeurs_norm), ", max =", max(valeurs_norm))
 ```
 
+### Exercice : Normaliser Tous les Indicateurs
 
+Appliquez la normalisation Min-Max à tous les indicateurs présents :
 
-### Inversion des Indicateurs Négatifs
+```{r normalize-all-setup}
+library(sf)
+library(dplyr)
 
-Certains indicateurs ont une logique **inverse** : une valeur élevée est défavorable.
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
-| Indicateur | Logique | Action |
-|------------|---------|--------|
-| R1 (risque feu) | Élevé = mauvais | Inverser : 1 - x_norm |
-| S1 (distance routes) | Élevé = bon (tranquillité) | Conserver |
-| N2 (distance infrastructures) | Élevé = bon | Conserver |
-| F1 (risque érosion) | Élevé = mauvais | Inverser |
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
+)
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
 
-```{r inversion, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
-# Indicateurs à inverser (valeur élevée = défavorable)
-indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1") # L1 = fragmentation, R4 = pression gibier
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
+}
+```
 
-# Fonction d'inversion
-inverser_indicateur <- function(x_norm) {
-  1 - x_norm
+```{r normalize-all, exercise=TRUE, exercise.lines=35, exercise.setup="normalize-all-setup"}
+# Charger les données
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+
+# Indicateurs présents
+indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
+
+cat("Normalisation de", length(indics_presents), "indicateurs...\n\n")
+
+# Normaliser chaque indicateur
+for (indic in indics_presents) {
+  # Nom de la colonne normalisée
+  col_norm <- paste0(indic, "_norm")
+
+  # Appliquer la normalisation
+  parcelles[[col_norm]] <- normalize_minmax(parcelles[[indic]])
+
+  # Afficher le résultat
+  cat(sprintf("%s: [%.1f - %.1f] → %s: [0 - 1]\n",
+              indic,
+              min(parcelles[[indic]], na.rm = TRUE),
+              max(parcelles[[indic]], na.rm = TRUE),
+              col_norm))
 }
 
-# Exemple
-risque_feu_norm <- c(0.2, 0.5, 0.8) # Normalisé
-risque_feu_inv <- inverser_indicateur(risque_feu_norm)
-
-cat("Original (normalisé):", risque_feu_norm, "\n")
-cat("Inversé:", risque_feu_inv, "\n")
-cat("Interprétation: fort risque (0.8) devient score faible (0.2)")
+# Vérifier les nouvelles colonnes
+cols_norm <- grep("_norm$", names(parcelles), value = TRUE)
+cat("\n=== BILAN ===\n")
+cat(length(cols_norm), "indicateurs normalisés créés\n")
 ```
 
-## Calcul de l'Indice Composite
+```{r normalize-all-check}
+grade_this({
+  pass("Normalisation réussie !")
+})
+```
+
+## Inversion des Indicateurs Négatifs
+
+### Indicateurs à Logique Inverse
+
+Certains indicateurs ont une logique **inverse** : une valeur élevée est **défavorable**.
+
+| Indicateur | Signification | Logique | Action |
+|------------|---------------|---------|--------|
+| R1 | Risque feu | Élevé = mauvais | **Inverser** |
+| R2 | Risque tempête | Élevé = mauvais | **Inverser** |
+| R3 | Risque sécheresse | Élevé = mauvais | **Inverser** |
+| R4 | Pression gibier | Élevé = mauvais | **Inverser** |
+| F1 | Risque érosion | Élevé = mauvais | **Inverser** |
+| L1 | Densité lisières | Élevé = fragmenté | **Inverser** |
+
+Pour ces indicateurs, on applique : `score_final = 1 - score_normalisé`
+
+### Exercice : Inverser les Indicateurs Négatifs
+
+```{r invert-setup}
+library(sf)
+library(dplyr)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
+)
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
+
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
+}
+
+# Indicateurs à inverser
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
+```
+
+```{r invert-indicators, exercise=TRUE, exercise.lines=40, exercise.setup="invert-setup"}
+# Charger et normaliser
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+
+# D'abord normaliser tous les indicateurs présents
+indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
+for (indic in indics_presents) {
+  parcelles[[paste0(indic, "_norm")]] <- normalize_minmax(parcelles[[indic]])
+}
+
+# Indicateurs à inverser (valeur élevée = défavorable)
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
+
+cat("=== INVERSION DES INDICATEURS NÉGATIFS ===\n\n")
+
+for (indic in indicateurs_negatifs) {
+  col_norm <- paste0(indic, "_norm")
+
+  if (col_norm %in% names(parcelles)) {
+    # Valeurs avant inversion
+    avant <- mean(parcelles[[col_norm]], na.rm = TRUE)
+
+    # Inverser : 1 - x
+    parcelles[[col_norm]] <- 1 - parcelles[[col_norm]]
+
+    # Valeurs après inversion
+    apres <- mean(parcelles[[col_norm]], na.rm = TRUE)
+
+    cat(sprintf("%s: moyenne %.3f → %.3f (inversé)\n", indic, avant, apres))
+  }
+}
+
+cat("\nInterprétation après inversion:\n")
+cat("- Risque élevé (ex: R1=0.9) → score faible (0.1)\n")
+cat("- Risque faible (ex: R1=0.1) → score élevé (0.9)\n")
+```
+
+```{r invert-indicators-check}
+grade_this({
+  pass("Inversion des indicateurs négatifs effectuée !")
+})
+```
+
+## Calcul des Moyennes par Famille
+
+### Agrégation par Famille
+
+Chaque famille est représentée par la **moyenne** de ses indicateurs normalisés.
+
+```{r family-means-setup}
+library(sf)
+library(dplyr)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
+)
+
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
+}
+
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
+```
+
+```{r family-means, exercise=TRUE, exercise.lines=50, exercise.setup="family-means-setup"}
+# Charger les données
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+
+# Normaliser tous les indicateurs présents
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
+indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
+
+for (indic in indics_presents) {
+  parcelles[[paste0(indic, "_norm")]] <- normalize_minmax(parcelles[[indic]])
+}
+
+# Inverser les indicateurs négatifs
+for (indic in indicateurs_negatifs) {
+  col_norm <- paste0(indic, "_norm")
+  if (col_norm %in% names(parcelles)) {
+    parcelles[[col_norm]] <- 1 - parcelles[[col_norm]]
+  }
+}
+
+# Calculer la moyenne par famille
+cat("=== MOYENNES PAR FAMILLE ===\n\n")
+
+for (famille in names(indicateurs_par_famille)) {
+  # Colonnes normalisées pour cette famille
+  cols_norm <- paste0(indicateurs_par_famille[[famille]], "_norm")
+  cols_presentes <- cols_norm[cols_norm %in% names(parcelles)]
+
+  if (length(cols_presentes) > 0) {
+    # Calculer la moyenne (en gérant les NA)
+    famille_col <- paste0("family_", famille)
+    parcelles[[famille_col]] <- rowMeans(
+      st_drop_geometry(parcelles)[, cols_presentes, drop = FALSE],
+      na.rm = TRUE
+    )
+
+    # Statistiques
+    moy <- mean(parcelles[[famille_col]], na.rm = TRUE)
+    cat(sprintf("Famille %s: %d indicateurs → %s (moyenne: %.3f)\n",
+                famille, length(cols_presentes), famille_col, moy))
+  } else {
+    cat(sprintf("Famille %s: aucun indicateur disponible\n", famille))
+  }
+}
+
+# Vérifier les colonnes famille créées
+cols_famille <- grep("^family_", names(parcelles), value = TRUE)
+cat("\n", length(cols_famille), "familles calculées\n")
+```
+
+```{r family-means-check}
+grade_this({
+  pass("Moyennes par famille calculées !")
+})
+```
+
+## Indice Composite I_nemeton
 
 ### Pondération des Familles
 
-L'indice composite nemeton agrège les 12 familles avec des pondérations reflétant les priorités de gestion :
+L'indice composite agrège les 12 familles avec des **pondérations** reflétant les priorités :
 
 ```{r ponderations, echo=FALSE}
 poids <- data.frame(
@@ -360,11 +534,10 @@ poids <- data.frame(
     "Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
     "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"
   ),
-  Poids_Default = c(10, 12, 8, 6, 6, 5, 4, 10, 8, 8, 5, 8),
-  stringsAsFactors = FALSE
+  Poids = c(10, 12, 8, 6, 6, 5, 4, 10, 8, 8, 5, 8)
 )
-poids$Poids_Relatif <- round(poids$Poids_Default / sum(poids$Poids_Default) * 100, 1)
-knitr::kable(poids, caption = "Pondérations par défaut des familles nemeton")
+poids$Pct <- round(poids$Poids / sum(poids$Poids) * 100, 1)
+knitr::kable(poids, caption = "Pondérations par défaut des familles")
 ```
 
 ### Formule de l'Indice Composite
@@ -372,146 +545,312 @@ knitr::kable(poids, caption = "Pondérations par défaut des familles nemeton")
 $$I_{nemeton} = \sum_{f=1}^{12} w_f \cdot \bar{I}_f$$
 
 Où :
-- $w_f$ : poids normalisé de la famille f
+- $w_f$ : poids normalisé de la famille f (somme = 1)
 - $\bar{I}_f$ : moyenne des indicateurs normalisés de la famille f
 
-### Exercice : Calculer l'Indice Composite
+### Exercice : Calculer I_nemeton
 
-```{r composite-index, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35}
-# Simuler des indicateurs normalisés pour l'exercice
-set.seed(42)
-n <- 30
+```{r composite-setup}
+library(sf)
+library(dplyr)
 
-indic_norm <- data.frame(
-  id = 1:n,
-  # Carbone (C)
-  C1 = runif(n), C2 = runif(n), C3 = runif(n),
-  # Biodiversité (B)
-  B1 = runif(n), B2 = runif(n), B3 = runif(n),
-  # Eau (W)
-  W1 = runif(n), W2 = runif(n), W3 = runif(n),
-  # Risques (R) - déjà inversés
-  R1 = runif(n), R2 = runif(n), R3 = runif(n), R4 = runif(n)
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
 )
 
-# Poids des familles (sous-ensemble)
-poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
-
-# À compléter : calculer l'indice composite
-# 1. Calculer la moyenne par famille pour chaque parcelle
-# 2. Appliquer les poids
-# 3. Sommer pour obtenir l'indice final
-```
-
-
-
-## Utilisation de nemeton
-
-### Fonction create_composite_index()
-
-Le package nemeton fournit une fonction dédiée :
-
-```{r nemeton-composite, eval=FALSE}
-library(nemeton)
-
-# Créer l'indice composite avec pondérations par défaut
-resultat <- create_composite_index(
-  data = indicateurs_sf,
-  weights = NULL, # Utilise les poids par défaut
-  normalize = TRUE,
-  invert_negative = TRUE
-)
-
-# Avec pondérations personnalisées
-poids_perso <- list(
-  C = 15, B = 20, W = 10, A = 5, F = 5, L = 5,
-  T = 5, R = 10, S = 5, P = 10, E = 5, N = 5
-)
-
-resultat_perso <- create_composite_index(
-  data = indicateurs_sf,
-  weights = poids_perso
-)
-```
-
-### Exercice : Intégration nemeton
-
-```{r nemeton-integration, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
-# Simulation de la fonction nemeton
-# (Dans la vraie vie, utiliser library(nemeton))
-
-create_composite_index_demo <- function(data, weights = NULL) {
-  # Poids par défaut
-  if (is.null(weights)) {
-    weights <- list(C = 10, B = 12, W = 8, R = 10)
-  }
-
-  # Normaliser les poids
-  total <- sum(unlist(weights))
-  weights_norm <- lapply(weights, function(x) x / total)
-
-  # Calculer (simplifié)
-  data$I_nemeton <- runif(nrow(data)) # Simulation
-  return(data)
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
 }
 
-# Test avec vos données
-test_data <- data.frame(
-  id = 1:10,
-  C1 = runif(10), B1 = runif(10), W1 = runif(10), R1 = runif(10)
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
+
+# Poids des familles
+poids_familles <- c(
+  C = 10, B = 12, W = 8, A = 6, F = 6, L = 5,
+  T = 4, R = 10, S = 8, P = 8, E = 5, N = 8
+)
+```
+
+```{r composite-index, exercise=TRUE, exercise.lines=60, exercise.setup="composite-setup"}
+# Charger les données
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+
+# === ÉTAPE 1: Normaliser tous les indicateurs ===
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
+indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
+
+for (indic in indics_presents) {
+  parcelles[[paste0(indic, "_norm")]] <- normalize_minmax(parcelles[[indic]])
+}
+
+# === ÉTAPE 2: Inverser les indicateurs négatifs ===
+for (indic in indicateurs_negatifs) {
+  col_norm <- paste0(indic, "_norm")
+  if (col_norm %in% names(parcelles)) {
+    parcelles[[col_norm]] <- 1 - parcelles[[col_norm]]
+  }
+}
+
+# === ÉTAPE 3: Calculer les moyennes par famille ===
+for (famille in names(indicateurs_par_famille)) {
+  cols_norm <- paste0(indicateurs_par_famille[[famille]], "_norm")
+  cols_presentes <- cols_norm[cols_norm %in% names(parcelles)]
+
+  if (length(cols_presentes) > 0) {
+    parcelles[[paste0("family_", famille)]] <- rowMeans(
+      st_drop_geometry(parcelles)[, cols_presentes, drop = FALSE],
+      na.rm = TRUE
+    )
+  }
+}
+
+# === ÉTAPE 4: Calculer I_nemeton ===
+# Normaliser les poids
+poids_norm <- poids_familles / sum(poids_familles)
+
+# Initialiser l'indice à 0
+parcelles$I_nemeton <- 0
+
+# Ajouter la contribution de chaque famille
+for (famille in names(poids_familles)) {
+  col_famille <- paste0("family_", famille)
+  if (col_famille %in% names(parcelles)) {
+    contribution <- poids_norm[famille] * parcelles[[col_famille]]
+    contribution[is.na(contribution)] <- 0
+    parcelles$I_nemeton <- parcelles$I_nemeton + contribution
+  }
+}
+
+# === RÉSULTATS ===
+cat("=== INDICE COMPOSITE I_NEMETON ===\n\n")
+cat("Statistiques:\n")
+cat(sprintf("  Min: %.3f\n", min(parcelles$I_nemeton, na.rm = TRUE)))
+cat(sprintf("  Max: %.3f\n", max(parcelles$I_nemeton, na.rm = TRUE)))
+cat(sprintf("  Moyenne: %.3f\n", mean(parcelles$I_nemeton, na.rm = TRUE)))
+cat(sprintf("  Écart-type: %.3f\n", sd(parcelles$I_nemeton, na.rm = TRUE)))
+```
+
+```{r composite-index-check}
+grade_this({
+  pass("Indice composite I_nemeton calculé avec succès !")
+})
+```
+
+### Classification des Parcelles
+
+```{r classification-setup}
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+```
+
+```{r classification, exercise=TRUE, exercise.setup="classification-setup"}
+# Simuler des résultats I_nemeton pour l'exercice
+set.seed(42)
+n <- 50
+resultats <- data.frame(
+  id = seq_len(n),
+  I_nemeton = rbeta(n, 2, 2)  # Distribution entre 0 et 1
 )
 
-resultat <- create_composite_index_demo(test_data)
-head(resultat)
+# Classifier en 4 classes
+resultats$classe <- cut(
+  resultats$I_nemeton,
+  breaks = c(0, 0.25, 0.5, 0.75, 1),
+  labels = c("Faible", "Moyen", "Bon", "Excellent"),
+  include.lowest = TRUE
+)
+
+# Distribution
+cat("=== DISTRIBUTION DES CLASSES ===\n\n")
+print(table(resultats$classe))
+
+cat("\nStatistiques par classe:\n")
+resultats %>%
+  group_by(classe) %>%
+  summarise(
+    n = n(),
+    I_moy = round(mean(I_nemeton), 3),
+    I_min = round(min(I_nemeton), 3),
+    I_max = round(max(I_nemeton), 3)
+  ) %>%
+  print()
+```
+
+### Visualisation de l'Indice
+
+```{r visu-index, exercise=TRUE, exercise.setup="classification-setup"}
+# Données simulées
+set.seed(42)
+n <- 50
+resultats <- data.frame(
+  id = seq_len(n),
+  I_nemeton = rbeta(n, 2, 2)
+)
+resultats$classe <- cut(
+  resultats$I_nemeton,
+  breaks = c(0, 0.25, 0.5, 0.75, 1),
+  labels = c("Faible", "Moyen", "Bon", "Excellent"),
+  include.lowest = TRUE
+)
+
+# Histogramme
+ggplot(resultats, aes(x = I_nemeton, fill = classe)) +
+  geom_histogram(bins = 20, color = "white", alpha = 0.8) +
+  scale_fill_manual(values = c(
+    "Faible" = "#d73027",
+    "Moyen" = "#fc8d59",
+    "Bon" = "#91cf60",
+    "Excellent" = "#1a9850"
+  )) +
+  labs(
+    title = "Distribution de l'Indice Composite I_nemeton",
+    x = "I_nemeton",
+    y = "Nombre de parcelles",
+    fill = "Classe"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 ## Export des Résultats
 
-### Sauvegarde du Tableau Complet
+### Sauvegarde Finale
 
-```{r export-gpkg, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
-# Préparer les données finales
-# (En situation réelle avec les vraies données)
+```{r export-final-setup}
+library(sf)
+library(dplyr)
 
-# Simuler le résultat final
-set.seed(42)
-n <- 30
-resultat_final <- data.frame(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  I_nemeton = runif(n, 0.3, 0.8),
-  classe = cut(runif(n, 0.3, 0.8),
-    breaks = c(0, 0.4, 0.6, 0.8, 1),
-    labels = c("Faible", "Moyen", "Bon", "Excellent")
-  )
+cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+
+indicateurs_par_famille <- list(
+  C = c("C1", "C2", "C3"),
+  B = c("B1", "B2", "B3"),
+  W = c("W1", "W2", "W3"),
+  A = c("A1", "A2"),
+  F = c("F1", "F2"),
+  L = c("L1", "L2", "L3"),
+  T = c("T1", "T2"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  N = c("N1", "N2", "N3")
 )
 
-# Afficher le résumé
-cat("Résumé de l'indice nemeton:\n")
-summary(resultat_final$I_nemeton)
+normalize_minmax <- function(x, na.rm = TRUE) {
+  min_val <- min(x, na.rm = na.rm)
+  max_val <- max(x, na.rm = na.rm)
+  if (max_val == min_val) return(rep(0.5, length(x)))
+  (x - min_val) / (max_val - min_val)
+}
 
-cat("\nDistribution par classe:\n")
-table(resultat_final$classe)
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
+
+poids_familles <- c(
+  C = 10, B = 12, W = 8, A = 6, F = 6, L = 5,
+  T = 4, R = 10, S = 8, P = 8, E = 5, N = 8
+)
 ```
 
-### Export vers GeoPackage
+```{r export-final, exercise=TRUE, exercise.lines=80, exercise.setup="export-final-setup"}
+# ============================================================
+# WORKFLOW COMPLET : Normalisation → Familles → I_nemeton → Export
+# ============================================================
 
-```{r export-final, exercise=TRUE, exercise.eval=FALSE, exercise.setup="export-gpkg"}
-# Code d'export (non exécuté dans le tutorial)
-#
-# # Convertir en sf si nécessaire
-# resultat_sf <- st_as_sf(resultat_final,
-#                         geometry = geometries,
-#                         crs = 2154)
-#
-# # Exporter
-# output_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-# st_write(resultat_sf, output_path, delete_dsn = TRUE)
-#
-# cat("Export réussi:", output_path)
+# Charger les données
+parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
 
-cat("Le fichier serait exporté vers:\n")
-cat(file.path(cache_dir, "indicateurs_complets.gpkg"))
+# 1. Normaliser tous les indicateurs
+tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
+indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
+
+for (indic in indics_presents) {
+  parcelles[[paste0(indic, "_norm")]] <- normalize_minmax(parcelles[[indic]])
+}
+
+# 2. Inverser les indicateurs négatifs
+for (indic in indicateurs_negatifs) {
+  col_norm <- paste0(indic, "_norm")
+  if (col_norm %in% names(parcelles)) {
+    parcelles[[col_norm]] <- 1 - parcelles[[col_norm]]
+  }
+}
+
+# 3. Calculer les moyennes par famille
+for (famille in names(indicateurs_par_famille)) {
+  cols_norm <- paste0(indicateurs_par_famille[[famille]], "_norm")
+  cols_presentes <- cols_norm[cols_norm %in% names(parcelles)]
+  if (length(cols_presentes) > 0) {
+    parcelles[[paste0("family_", famille)]] <- rowMeans(
+      st_drop_geometry(parcelles)[, cols_presentes, drop = FALSE],
+      na.rm = TRUE
+    )
+  }
+}
+
+# 4. Calculer I_nemeton
+poids_norm <- poids_familles / sum(poids_familles)
+parcelles$I_nemeton <- 0
+for (famille in names(poids_familles)) {
+  col_famille <- paste0("family_", famille)
+  if (col_famille %in% names(parcelles)) {
+    contribution <- poids_norm[famille] * parcelles[[col_famille]]
+    contribution[is.na(contribution)] <- 0
+    parcelles$I_nemeton <- parcelles$I_nemeton + contribution
+  }
+}
+
+# 5. Classifier
+parcelles$classe_nemeton <- cut(
+  parcelles$I_nemeton,
+  breaks = c(0, 0.25, 0.5, 0.75, 1),
+  labels = c("Faible", "Moyen", "Bon", "Excellent"),
+  include.lowest = TRUE
+)
+
+# 6. Exporter
+output_path <- file.path(cache_dir, "parcelles.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+cat("=== EXPORT TERMINÉ ===\n\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), "\n")
+cat("Colonnes:", ncol(parcelles), "\n")
+
+# Résumé final
+cat("\n=== RÉSUMÉ I_NEMETON ===\n")
+cat(sprintf("Min: %.3f | Max: %.3f | Moyenne: %.3f\n",
+            min(parcelles$I_nemeton, na.rm = TRUE),
+            max(parcelles$I_nemeton, na.rm = TRUE),
+            mean(parcelles$I_nemeton, na.rm = TRUE)))
+
+cat("\nDistribution par classe:\n")
+print(table(parcelles$classe_nemeton))
+```
+
+```{r export-final-check}
+grade_this({
+  pass("Export réussi ! Vos données sont prêtes pour l'analyse multicritères.")
+})
 ```
 
 ## Quiz Final
@@ -519,45 +858,50 @@ cat(file.path(cache_dir, "indicateurs_complets.gpkg"))
 ```{r quiz-final, echo=FALSE}
 quiz(
   caption = "Testez vos connaissances",
+
   question("Pourquoi normalise-t-on les indicateurs ?",
     answer("Pour réduire le temps de calcul"),
     answer("Pour rendre les indicateurs comparables entre eux", correct = TRUE),
     answer("Pour supprimer les valeurs manquantes"),
     answer("Pour augmenter la précision des données"),
-    correct = "Exact ! La normalisation ramène tous les indicateurs sur une échelle commune [0,1].",
-    incorrect = "La normalisation sert à comparer des indicateurs ayant des unités différentes.",
-    allow_retry = TRUE,
-    random_answer_order = TRUE
+    correct = "La normalisation ramène tous les indicateurs sur une échelle commune [0,1].",
+    allow_retry = TRUE
   ),
-  question("Quel indicateur doit être inversé après normalisation ?",
-    answer("zmax (hauteur maximale)"),
-    answer("B1 (zones protégées)"),
-    answer("R1 (risque feu)", correct = TRUE),
-    answer("W1 (indice humidité)"),
-    correct = "Oui ! Un risque élevé est défavorable, donc on inverse pour que 0 = risque fort.",
-    incorrect = "On inverse les indicateurs où une valeur élevée est défavorable.",
-    allow_retry = TRUE,
-    random_answer_order = TRUE
+
+  question("Quels indicateurs doivent être inversés après normalisation ?",
+    answer("C1, C2, C3 (carbone)"),
+    answer("B1, B2, B3 (biodiversité)"),
+    answer("R1, R2, R3, R4 (risques)", correct = TRUE),
+    answer("P1, P2, P3 (production)"),
+    correct = "Les risques sont inversés car une valeur élevée est défavorable.",
+    allow_retry = TRUE
   ),
-  question("Comment est calculé l'indice composite nemeton ?",
+
+  question("Comment est calculé l'indice composite I_nemeton ?",
     answer("Somme simple de tous les indicateurs"),
     answer("Moyenne pondérée des moyennes par famille", correct = TRUE),
     answer("Maximum des indicateurs"),
-    answer("Produit de tous les indicateurs"),
-    correct = "L'indice agrège les 12 familles avec des pondérations reflétant les priorités.",
-    incorrect = "L'indice utilise une moyenne pondérée par famille.",
-    allow_retry = TRUE,
-    random_answer_order = TRUE
+    answer("Médiane de tous les indicateurs"),
+    correct = "I_nemeton = somme(poids × moyenne_famille) pour les 12 familles.",
+    allow_retry = TRUE
   ),
+
   question("Quelle famille a le poids le plus élevé par défaut ?",
-    answer("Carbone (C)"),
-    answer("Biodiversité (B)", correct = TRUE),
-    answer("Production (P)"),
-    answer("Énergie (E)"),
-    correct = "La biodiversité (12%) est prioritaire dans les pondérations par défaut.",
-    incorrect = "Consultez le tableau des pondérations - la biodiversité a le poids le plus fort.",
-    allow_retry = TRUE,
-    random_answer_order = TRUE
+    answer("Carbone (C) - 10%"),
+    answer("Biodiversité (B) - 12%", correct = TRUE),
+    answer("Risques (R) - 10%"),
+    answer("Production (P) - 8%"),
+    correct = "La biodiversité (12%) est la priorité dans les pondérations par défaut.",
+    allow_retry = TRUE
+  ),
+
+  question("Quelle est la plage de valeurs de I_nemeton ?",
+    answer("0 à 100"),
+    answer("0 à 1", correct = TRUE),
+    answer("-1 à 1"),
+    answer("Pas de limite"),
+    correct = "I_nemeton varie de 0 (faible) à 1 (excellent).",
+    allow_retry = TRUE
   )
 )
 ```
@@ -568,29 +912,32 @@ quiz(
 
 Dans ce tutoriel, vous avez appris à :
 
-1. ✅ **Assembler** les indicateurs de plusieurs sources
-2. ✅ **Normaliser** avec la méthode Min-Max
-3. ✅ **Inverser** les indicateurs négatifs
-4. ✅ **Calculer** l'indice composite pondéré
-5. ✅ **Exporter** les résultats en GeoPackage
+1. **Vérifier** la complétude des indicateurs dans `parcelles.gpkg`
+2. **Normaliser** avec la méthode Min-Max (échelle 0-1)
+3. **Inverser** les indicateurs négatifs (R1-R4, F1, L1)
+4. **Calculer** les moyennes par famille (12 familles)
+5. **Créer** l'indice composite pondéré I_nemeton
+6. **Classifier** les parcelles en 4 niveaux
 
-### Données Produites
+### Structure Finale des Données
 
 ```
-~/nemeton_tutorial_data/
-└── indicateurs_complets.gpkg
-    ├── Tous les indicateurs normalisés (*_norm)
-    ├── Moyennes par famille (moy_C, moy_B, ...)
-    ├── Indice composite (I_nemeton)
-    └── Classification (classe)
+parcelles.gpkg
+├── Indicateurs bruts (C1, B1, W1, ...)
+├── Indicateurs normalisés (*_norm)
+├── Moyennes par famille (family_C, family_B, ...)
+├── Indice composite (I_nemeton)
+└── Classification (classe_nemeton)
 ```
 
 ### Prochaine Étape
 
-**Tutorial 06 : Analyse Multi-Critères et Export**
-- Identification des parcelles prioritaires
-- Analyse de sensibilité des pondérations
-- Export cartographique et rapports
+**Tutorial 06 : Analyse Multi-Critères**
+- Visualisation radar 12 axes
+- Matrices de corrélation entre familles
+- Identification des hotspots
+- Front de Pareto et trade-offs
+- Export cartographique interactif
 
 ```{r next-step, echo=FALSE}
 cat("
@@ -601,6 +948,6 @@ learnr::run_tutorial('06-analysis', package = 'nemeton')
 
 ### Ressources
 
-- [Documentation nemeton](https://forestsoils.github.io/nemeton/)
-- [Vignette : Indice composite](https://forestsoils.github.io/nemeton/articles/composite-index.html)
-- [Référentiel des 12 familles](https://forestsoils.github.io/nemeton/articles/complete-referential_fr.html)
+- [Documentation nemeton](https://pobsteta.github.io/nemeton/)
+- [Vignette : Référentiel complet](https://pobsteta.github.io/nemeton/articles/complete-referential_fr.html)
+- [Vignette : Optimisation multicritères](https://pobsteta.github.io/nemeton/articles/multi-criteria-optimization_fr.html)
