@@ -605,13 +605,14 @@ La **famille Énergie (E)** du référentiel nemeton quantifie le potentiel éne
 - **E1** : Potentiel de production de bois-énergie (tep/ha/an)
 - **E2** : Évitement carbone par substitution aux énergies fossiles (tCO₂/ha/an)
 
-```{r energie-concept, echo=FALSE}
-cat("=== Famille Énergie (E) ===\n\n")
-cat("La biomasse forestière peut se substituer aux énergies fossiles :\n")
-cat("  - Chauffage (bois bûche, plaquettes, granulés)\n")
-cat("  - Cogénération (électricité + chaleur)\n")
-cat("  - Biocarburants de 2ème génération\n\n")
+La biomasse forestière peut se substituer aux énergies fossiles :
 
+- Chauffage (bois bûche, plaquettes, granulés)
+- Cogénération (électricité + chaleur)
+- Biocarburants de 2ème génération
+
+
+```{r energie-concept, echo=FALSE}
 substitution <- data.frame(
   Indicateur = c("E1", "E2"),
   Nom = c("Potentiel bois-énergie", "Évitement carbone"),
@@ -764,6 +765,36 @@ if (file.exists(parcelles_path)) {
 } else {
   cat("Fichier parcelles.gpkg non trouvé.\n")
 }
+```
+
+### Interprétation de l'histogramme E2
+
+L'histogramme **E2 : Évitement carbone** montre la distribution des émissions de CO₂ évitées par parcelle, exprimées en **tCO₂/ha/an**.
+
+**Ce que représente E2** : le bénéfice climatique potentiel si le bois de la parcelle était utilisé comme source d'énergie à la place des combustibles fossiles (fioul, gaz, charbon).
+
+```{r e2-interpretation, echo=FALSE}
+cat("=== Grille d'interprétation E2 ===\n\n")
+interpretation <- data.frame(
+  Valeur_E2 = c("0 - 0.5", "0.5 - 1.5", "> 1.5"),
+  Interpretation = c(
+    "Faible potentiel (parcelle peu productive ou jeune)",
+    "Potentiel modéré (forêt moyenne)",
+    "Fort potentiel (forêt productive, mature)"
+  )
+)
+knitr::kable(interpretation, col.names = c("E2 (tCO2/ha/an)", "Interprétation"))
+
+cat("\n=== Exemple concret ===\n")
+cat("Une parcelle avec E2 = 1.0 tCO2/ha/an signifie :\n")
+cat("  → 1 tonne de CO2 évitée par hectare chaque année\n")
+cat("  → Sur 10 ha : 10 tCO2/an évitées\n")
+cat("  → Équivalent à ~5 allers-retours Paris-New York en avion\n\n")
+
+cat("=== Forme de la distribution ===\n")
+cat("  • Étalée à droite : quelques parcelles très productives\n")
+cat("  • Pic à gauche : beaucoup de jeunes peuplements\n")
+cat("  • Normale : forêt homogène en productivité\n")
 ```
 
 ### Quiz : Indicateurs Énergie
