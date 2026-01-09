@@ -64,19 +64,19 @@ mnt_path <- file.path(data_dir, "mnt.tif")
 
 if (file.exists(mnt_path)) {
   mnt <- rast(mnt_path)
-  
+
   # Calculer la pente (en degrés)
   pente <- terrain(mnt, v = "slope", unit = "degrees")
-  
+
   # Calculer l'exposition (0 = Nord, 90 = Est, etc.)
   exposition <- terrain(mnt, v = "aspect", unit = "degrees")
-  
+
   cat("=== Pente ===\n")
   stats_pente <- global(pente, c("min", "max", "mean"), na.rm = TRUE)
   cat("Min:", round(stats_pente$min, 1), "°\n")
   cat("Max:", round(stats_pente$max, 1), "°\n")
   cat("Moyenne:", round(stats_pente$mean, 1), "°\n")
-  
+
   # Sauvegarder
   writeRaster(pente, file.path(data_dir, "pente.tif"), overwrite = TRUE)
   writeRaster(exposition, file.path(data_dir, "exposition.tif"), overwrite = TRUE)
@@ -86,6 +86,139 @@ if (file.exists(mnt_path)) {
 }
 ```
 
+### Exercice 1.2 : Risque d'érosion F1 (RUSLE simplifié)
+
+L'indicateur **F1** évalue le risque d'érosion des sols selon une version simplifiée de l'équation **RUSLE** (Revised Universal Soil Loss Equation) :
+
+```
+A = R × K × LS × C × P
+```
+
+| Facteur | Description | Valeur utilisée |
+|---------|-------------|-----------------|
+| **R** | Érosivité des pluies | 1.0 (normalisé) |
+| **K** | Érodabilité du sol | 0.3 (sol moyen) |
+| **LS** | Facteur pente/longueur | Calculé depuis MNT |
+| **C** | Couverture végétale | 0.01 (forêt) à 1.0 (sol nu) |
+| **P** | Pratiques conservation | 1.0 (pas de pratiques) |
+
+Pour simplifier, nous calculons :
+```
+F1 = LS × C_forest
+```
+
+Où **LS** est dérivé de la pente et **C_forest** est inversement proportionnel à la couverture forestière.
+
+```{r ex-1-2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=75, exercise.setup="ex-1-2-setup"}
+# === CALCUL F1 - RISQUE ÉROSION (RUSLE SIMPLIFIÉ) ===
+
+mnt_path <- file.path(data_dir, "mnt.tif")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+bdforet_path <- file.path(data_dir, "bd_foret.gpkg")
+
+if (file.exists(mnt_path) && file.exists(parcelles_path)) {
+  mnt <- rast(mnt_path)
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul F1 (RUSLE simplifié) ===\n\n")
+
+  # 1. Calculer la pente en radians
+  pente_deg <- terrain(mnt, v = "slope", unit = "degrees")
+  pente_rad <- pente_deg * pi / 180
+
+  # 2. Calculer le facteur LS (McCool et al., 1987)
+  # LS = (flow_accumulation / 22.13)^0.4 × (sin(pente) / 0.0896)^1.3
+  # Version simplifiée sans accumulation de flux :
+  # LS = (pente_deg / 9)^1.4 pour pente < 9%
+  # LS = (sin(pente) / 0.0896)^1.3 pour pente >= 9%
+
+  cat("1. Calcul du facteur LS (longueur-pente)...\n")
+  LS <- ifel(pente_deg < 5,
+             (pente_deg / 5)^1.2,
+             (sin(pente_rad) / 0.0896)^1.3)
+  LS <- clamp(LS, lower = 0, upper = 20)  # Limiter les valeurs extrêmes
+
+  cat("   LS min:", round(global(LS, "min", na.rm = TRUE)$min, 2), "\n")
+  cat("   LS max:", round(global(LS, "max", na.rm = TRUE)$max, 2), "\n")
+  cat("   LS moyen:", round(global(LS, "mean", na.rm = TRUE)$mean, 2), "\n")
+
+  # 3. Calculer le facteur C (couverture végétale)
+  # C = 0.01 pour forêt dense, 0.1 pour forêt claire, 1.0 pour sol nu
+  cat("\n2. Calcul du facteur C (couverture)...\n")
+
+  if (file.exists(bdforet_path)) {
+    bd_foret <- st_read(bdforet_path, quiet = TRUE)
+    # Rasteriser la BD Forêt (1 = forêt, 0 = non-forêt)
+    foret_raster <- rasterize(vect(bd_foret), mnt, field = 1, background = 0)
+    # C = 0.01 pour forêt, 0.5 pour non-forêt (prairie/culture)
+    C_factor <- ifel(foret_raster == 1, 0.01, 0.5)
+    cat("   BD Forêt utilisée pour le facteur C\n")
+  } else {
+    # Si pas de BD Forêt, utiliser une valeur par défaut (forêt)
+    C_factor <- mnt * 0 + 0.05  # Valeur intermédiaire forêt
+    cat("   BD Forêt non disponible, C = 0.05 (forêt moyenne)\n")
+  }
+
+  # 4. Calculer F1 = LS × C (normalisé 0-1)
+  cat("\n3. Calcul de F1 = LS × C...\n")
+  F1_raster <- LS * C_factor
+
+  # Normaliser entre 0 et 1 (0 = pas d'érosion, 1 = érosion maximale)
+  F1_max <- global(F1_raster, "max", na.rm = TRUE)$max
+  F1_raster <- F1_raster / F1_max
+  F1_raster <- clamp(F1_raster, lower = 0, upper = 1)
+
+  cat("\n=== Résultats F1 (raster) ===\n")
+  cat("F1 min:", round(global(F1_raster, "min", na.rm = TRUE)$min, 3), "\n")
+  cat("F1 max:", round(global(F1_raster, "max", na.rm = TRUE)$max, 3), "\n")
+  cat("F1 moyen:", round(global(F1_raster, "mean", na.rm = TRUE)$mean, 3), "\n")
+
+  # Sauvegarder le raster F1
+  writeRaster(F1_raster, file.path(data_dir, "erosion_f1.tif"), overwrite = TRUE)
+  cat("\nRaster F1 sauvegardé: erosion_f1.tif\n")
+
+  # 5. Extraire F1 par parcelle
+  cat("\n4. Extraction F1 par parcelle...\n")
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    parcelles$F1 <- exactextractr::exact_extract(F1_raster, parcelles, fun = "mean")
+  } else {
+    parcelles$F1 <- terra::extract(F1_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
+  }
+
+  cat("\n=== F1 par parcelle ===\n")
+  cat("F1 min:", round(min(parcelles$F1, na.rm = TRUE), 3), "\n")
+  cat("F1 max:", round(max(parcelles$F1, na.rm = TRUE), 3), "\n")
+  cat("F1 moyen:", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
+
+  # Sauvegarder
+  output_path <- file.path(data_dir, "metriques_erosion.gpkg")
+  st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  cat("\nMétriques F1 exportées:", output_path, "\n")
+
+} else {
+  cat("Fichiers non trouvés. Exécutez le Tutorial 01.\n")
+}
+```
+
+### Interprétation de F1
+
+| Score F1 | Classe | Description |
+|----------|--------|-------------|
+| 0.0 - 0.1 | Très faible | Risque négligeable (forêt dense, pente faible) |
+| 0.1 - 0.3 | Faible | Risque limité (bonne couverture) |
+| 0.3 - 0.5 | Modéré | Vigilance requise |
+| 0.5 - 0.7 | Élevé | Risque significatif |
+| 0.7 - 1.0 | Très élevé | Risque majeur (pente forte, sol nu) |
 
 ---
 
@@ -178,7 +311,10 @@ if (file.exists(mnt_path)) {
     # Sauvegarder les parcelles avec W3
     output_path <- file.path(data_dir, "metriques_twi.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("\nMétriques W3 exportées:", output_path, "\n")
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\n=== Métriques TWI exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   }
 
 } else {
@@ -249,7 +385,7 @@ if (file.exists(parcelles_path)) {
       # Sauvegarder
       output_path <- file.path(data_dir, "metriques_densite_hydro.gpkg")
       st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-      
+      st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
       cat("\n=== Métriques Densité réseau hydro exportées ===\n")
       cat("Fichier:", output_path, "\n")
       cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -317,7 +453,7 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_couverture_zone_humide.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques ouverture zones humides exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -400,7 +536,14 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
     # Sauvegarder le raster d'exposition
     writeRaster(exposure, file.path(data_dir, "fire_exposure.tif"), overwrite = TRUE)
     cat("\nRaster d'exposition sauvegardé.\n")
-
+    
+    # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_exposition_feu.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\n=== Métriques exposition au feu exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Package fireexposuR non installé.\n")
     cat("Installation: install.packages('fireexposuR')\n")
@@ -569,7 +712,14 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Sauvegarder
   writeRaster(R2_raster, file.path(data_dir, "storm_exposure.tif"), overwrite = TRUE)
   cat("\nRaster sauvegardé: storm_exposure.tif\n")
-
+  
+  # Sauvegarder
+  output_path <- file.path(data_dir, "metriques_exposition_tempete.gpkg")
+  st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+  cat("\n=== Métriques exposition au tempête exportées ===\n")
+  cat("Fichier:", output_path, "\n")
+  cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 } else {
   cat("Fichiers non trouvés.\n")
 }
@@ -715,6 +865,14 @@ if (file.exists(parcelles_path)) {
     cat("- Max:", round(max(parcelles$R3, na.rm = TRUE), 3), "\n")
     cat("- Moyenne:", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
     cat("- Écart-type:", round(sd(parcelles$R3, na.rm = TRUE), 3), "\n")
+    
+    # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_risque_secheresse.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\n=== Métriques risque sécheresse exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
   } else {
     cat("MNT non trouvé, pas de modulation topographique\n")
@@ -1057,8 +1215,10 @@ if (use_parallel) future::plan(future::sequential)
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_pression_gibier.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-
-cat("\nMétriques pression du gibier sauvegardées.\n")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n=== Métriques pression du gibier exportées ===\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
 
 
@@ -1141,6 +1301,14 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("- < 100m : Très accessible\n")
     cat("- 100-500m : Accessible\n")
     cat("- > 500m : Peu accessible\n")
+    
+    # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_access_route.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\n=== Métriques accessibilité route exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Fichier routes.gpkg non trouvé.\n")
     cat("Exécutez l'exercice 4.2 du Tutorial 01.\n")
@@ -1231,6 +1399,14 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Distance min:", round(min(parcelles$S2, na.rm = TRUE)), "m\n")
     cat("Distance max:", round(max(parcelles$S2, na.rm = TRUE)), "m\n")
     cat("Distance moyenne:", round(mean(parcelles$S2, na.rm = TRUE)), "m\n")
+    
+    # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_distance_batiment.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\n=== Métriques distance au batiment exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Bâtiments non disponibles. Vérifiez l'accès au WFS IGN.\n")
   }
@@ -1335,6 +1511,14 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Densité min:", round(min(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
     cat("Densité max:", round(max(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
     cat("Densité moyenne:", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+    
+    # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_densite_sentiers.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("\n=== Métriques densité sentiers exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Sentiers non disponibles.\n")
   }
@@ -1615,6 +1799,14 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("\n=== P2 par parcelle ===\n")
   cat("P2 min:", round(min(parcelles$P2, na.rm = TRUE), 3), "\n")
   cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 3), "\n")
+  
+  # Sauvegarder
+  output_path <- file.path(data_dir, "metriques_fertilite_station.gpkg")
+  st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+  cat("\n=== Métriques fertilité station exportées ===\n")
+  cat("Fichier:", output_path, "\n")
+  cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
 } else {
   cat("Fichiers non trouvés.\n")
@@ -1694,10 +1886,6 @@ if (file.exists(twi_path)) {
   cat("W2 (zones humides):", round(mean(parcelles$W2, na.rm = TRUE), 2), "%\n")
   cat("W3 (TWI):", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
 }
-
-# Sauvegarder
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
 ```
 
 
@@ -1754,7 +1942,7 @@ if (file.exists(drought_path)) {
   cat("R3 (risque sécheresse):", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
 }
 
-# R4 : Pression gibier (calculé dans exercice 4.4)
+# R4 : Pression gibier
 if (file.exists(parcelles_path)) {
   parc_r4 <- st_read(parcelles_path, quiet = TRUE)
   if ("R4" %in% names(parc_r4)) {
@@ -1762,10 +1950,6 @@ if (file.exists(parcelles_path)) {
     cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
   }
 }
-
-# Sauvegarder
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
 ```
 
 
@@ -1820,10 +2004,6 @@ if (file.exists(sentiers_path)) {
   parcelles$S3 <- extract_mean(rast(sentiers_path), parcelles)
   cat("S3 (densité sentiers):", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
 }
-
-# Sauvegarder
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nSauvegardé:", output_path, "\n")
 ```
 
 
