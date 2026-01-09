@@ -477,9 +477,18 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 
 ### Exercice 6.1 : Sauvegarder les métriques
 
+### Interpolation par krigeage
+
+Dans ce tutoriel, nous utilisons les **métriques LiDAR pré-calculées** du jeu de données `quatre_montagnes` (package `lidaRtRee`). Ces 28 placettes contiennent des valeurs réelles de zmean, zmax, zsd, etc.
+
+Pour estimer les métriques sur les parcelles cadastrales, nous appliquons un **krigeage** (interpolation spatiale) à partir des placettes. Cette méthode permet d'obtenir des estimations cohérentes spatialement.
+
+> **Note** : Le calcul direct des métriques LiDAR à partir des nuages de points sera traité dans un tutoriel avancé dédié au traitement LiDAR complet.
+
 ```{r ex-6-1-setup}
 library(sf)
 library(terra)
+library(lidaRtRee)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -487,37 +496,99 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-6-1-setup"}
-# === EXPORT DES MÉTRIQUES LIDAR ===
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=85, exercise.setup="ex-6-1-setup"}
+# === INTERPOLATION DES MÉTRIQUES LIDAR PAR KRIGEAGE ===
+# Utilisation des données réelles de quatre_montagnes (lidaRtRee)
 
-# Simuler des métriques si lidR non disponible
+# Charger les placettes avec métriques LiDAR
+data("quatre_montagnes", package = "lidaRtRee")
+
+# Filtrer sur les clusters Centre (même zone que Tutorial 01)
+clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+                    "Verc-C4", "Verc-C2", "Verc-05")
+qm_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
+
+# Convertir en sf
+placettes_sf <- st_as_sf(qm_centre, coords = c("X", "Y"), crs = 2154)
+
+cat("=== Données source : quatre_montagnes ===\n")
+cat("Placettes avec métriques LiDAR:", nrow(placettes_sf), "\n\n")
+
+# Métriques LiDAR à interpoler
+metriques <- c("zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95",
+               "zentropy", "pzabove2")
+
+cat("Métriques disponibles:\n")
+for (m in metriques) {
+  if (m %in% names(placettes_sf)) {
+    vals <- qm_centre[[m]]
+    cat(sprintf("  %s: %.1f - %.1f (moy: %.1f)\n",
+                m, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Charger les parcelles cadastrales
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 
 if (file.exists(parcelles_path)) {
   parcelles <- st_read(parcelles_path, quiet = TRUE)
-  
-  # Ajouter des métriques simulées (remplacer par vraies valeurs si lidR disponible)
-  n <- nrow(parcelles)
-  parcelles$zmax <- runif(n, 15, 35)
-  parcelles$zmean <- parcelles$zmax * runif(n, 0.5, 0.7)
-  parcelles$zsd <- runif(n, 3, 8)
-  parcelles$zq95 <- parcelles$zmax * runif(n, 0.85, 0.95)
-  parcelles$pzabove2 <- runif(n, 60, 95)
-  
+
+  # Calculer les centroïdes des parcelles
+  centroids <- st_centroid(parcelles)
+
+  cat("\n=== Interpolation par IDW (Inverse Distance Weighting) ===\n")
+  cat("Parcelles cibles:", nrow(parcelles), "\n\n")
+
+  # Fonction d'interpolation IDW simple
+  idw_interpolate <- function(points_sf, target_sf, variable, power = 2) {
+    # Extraire coordonnées
+    coords_src <- st_coordinates(points_sf)
+    coords_tgt <- st_coordinates(target_sf)
+    values <- points_sf[[variable]]
+
+    # Pour chaque point cible
+    result <- sapply(1:nrow(coords_tgt), function(i) {
+      # Distances aux points source
+      distances <- sqrt((coords_src[,1] - coords_tgt[i,1])^2 +
+                        (coords_src[,2] - coords_tgt[i,2])^2)
+      # Éviter division par zéro
+      distances[distances < 1] <- 1
+      # Poids IDW
+      weights <- 1 / (distances ^ power)
+      # Moyenne pondérée
+      sum(values * weights, na.rm = TRUE) / sum(weights, na.rm = TRUE)
+    })
+    return(result)
+  }
+
+  # Interpoler chaque métrique
+  cat("Interpolation en cours...\n")
+  for (m in metriques) {
+    if (m %in% names(placettes_sf)) {
+      parcelles[[m]] <- idw_interpolate(placettes_sf, centroids, m)
+      cat(sprintf("  %s interpolé\n", m))
+    }
+  }
+
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_lidar.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  
-  cat("=== Métriques LiDAR exportées ===\n")
+
+  cat("\n=== Métriques LiDAR exportées ===\n")
   cat("Fichier:", output_path, "\n")
-  cat("Parcelles:", nrow(parcelles), "\n")
-  cat("Colonnes:", paste(names(parcelles), collapse = ", "), "\n")
-  
-  # Résumé
-  cat("\n=== Résumé des métriques ===\n")
-  for (col in c("zmax", "zmean", "zsd", "zq95", "pzabove2")) {
-    cat(sprintf("%s: %.1f - %.1f (moy: %.1f)\n", 
-                col, min(parcelles[[col]]), max(parcelles[[col]]), mean(parcelles[[col]])))
+  cat("Parcelles:", nrow(parcelles), "\n\n")
+
+  # Résumé des métriques interpolées
+  cat("=== Résumé des métriques interpolées ===\n")
+  cat("Métrique       Min      Moy      Max\n")
+  cat("--------------------------------------\n")
+  for (m in metriques) {
+    if (m %in% names(parcelles)) {
+      cat(sprintf("%-12s %7.1f %8.1f %8.1f\n",
+                  m, min(parcelles[[m]], na.rm=TRUE),
+                  mean(parcelles[[m]], na.rm=TRUE),
+                  max(parcelles[[m]], na.rm=TRUE)))
+    }
   }
 } else {
   cat("Parcelles non trouvées. Exécutez le Tutorial 01.\n")
