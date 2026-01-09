@@ -571,7 +571,7 @@ if (file.exists(parcelles_path)) {
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_lidar.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques LiDAR exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -596,7 +596,211 @@ if (file.exists(parcelles_path)) {
 
 ---
 
-## Section 7 : Quiz final
+## Section 7 : Indicateurs Énergie (E1, E2)
+
+### Introduction à la famille Énergie
+
+La **famille Énergie (E)** du référentiel nemeton quantifie le potentiel énergétique de la forêt :
+
+- **E1** : Potentiel de production de bois-énergie (tep/ha/an)
+- **E2** : Évitement carbone par substitution aux énergies fossiles (tCO₂/ha/an)
+
+```{r energie-concept, echo=FALSE}
+cat("=== Famille Énergie (E) ===\n\n")
+cat("La biomasse forestière peut se substituer aux énergies fossiles :\n")
+cat("  - Chauffage (bois bûche, plaquettes, granulés)\n")
+cat("  - Cogénération (électricité + chaleur)\n")
+cat("  - Biocarburants de 2ème génération\n\n")
+
+substitution <- data.frame(
+  Indicateur = c("E1", "E2"),
+  Nom = c("Potentiel bois-énergie", "Évitement carbone"),
+  Unite = c("tep/ha/an", "tCO₂/ha/an"),
+  Source = c("pzabove2, zmean", "E1 × facteur substitution")
+)
+knitr::kable(substitution, caption = "Indicateurs de la famille Énergie")
+```
+
+### Exercice 7.1 : Calculer E1 (Bois-énergie)
+
+L'indicateur **E1** estime le potentiel de production de bois-énergie à partir des métriques LiDAR :
+
+- **pzabove2** : Couverture forestière > 2m (%)
+- **zmean** : Hauteur moyenne de la canopée (m)
+
+$$E1 = \frac{pzabove2}{100} \times zmean \times k_{conversion}$$
+
+Où $k_{conversion}$ ≈ 0.015 tep/m/ha/an (tonne équivalent pétrole)
+
+```{r ex-7-1-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-1-setup"}
+# === CALCUL DE E1 : POTENTIEL BOIS-ÉNERGIE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de E1 (Bois-énergie) ===\n\n")
+
+  # Vérifier les métriques nécessaires
+  if (all(c("pzabove2", "zmean") %in% names(parcelles))) {
+
+    # Facteur de conversion (tep/m/ha/an)
+    # Basé sur productivité moyenne et pouvoir calorifique du bois
+    k_conversion <- 0.015
+
+    # Calcul E1
+    parcelles$E1 <- (parcelles$pzabove2 / 100) * parcelles$zmean * k_conversion
+
+    cat("Formule: E1 = (pzabove2/100) × zmean × k_conversion\n")
+    cat("k_conversion =", k_conversion, "tep/m/ha/an\n\n")
+
+    cat("=== Résultats E1 ===\n")
+    cat("E1 min:", round(min(parcelles$E1, na.rm = TRUE), 3), "tep/ha/an\n")
+    cat("E1 moy:", round(mean(parcelles$E1, na.rm = TRUE), 3), "tep/ha/an\n")
+    cat("E1 max:", round(max(parcelles$E1, na.rm = TRUE), 3), "tep/ha/an\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ E1 ajouté aux parcelles\n")
+
+  } else {
+    cat("Métriques pzabove2 et zmean non trouvées.\n")
+    cat("Exécutez l'exercice 6.1 d'abord.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+  cat("Exécutez le Tutorial 01 d'abord.\n")
+}
+```
+
+### Exercice 7.2 : Calculer E2 (Évitement carbone)
+
+L'indicateur **E2** quantifie les **émissions de CO₂ évitées** grâce à la substitution du bois aux énergies fossiles :
+
+$$E2 = E1 \times f_{substitution} \times \eta_{conversion}$$
+
+Où :
+- $E1$ : Production énergétique potentielle (tep/ha/an)
+- $f_{substitution}$ ≈ 2.5 tCO₂/tep (facteur moyen de substitution)
+- $\eta_{conversion}$ ≈ 0.85 (rendement des chaufferies bois)
+
+```{r e2-table, echo=FALSE}
+substitution <- data.frame(
+  Combustible_Remplace = c("Fioul domestique", "Gaz naturel", "Charbon", "Électricité (mix FR)"),
+  tCO2_evite_par_tep = c(2.9, 2.3, 3.4, 0.5),
+  Usage_Typique = c("Chauffage individuel", "Chauffage collectif", "Industrie", "Pointe")
+)
+knitr::kable(substitution, caption = "Facteurs de substitution carbone par combustible")
+```
+
+```{r ex-7-2-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-7-2-setup"}
+# === CALCUL DE E2 : ÉVITEMENT CARBONE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de E2 (Évitement carbone) ===\n\n")
+
+  # Vérifier que E1 existe
+  if ("E1" %in% names(parcelles)) {
+
+    # Paramètres de calcul
+    facteur_substitution <- 2.5  # tCO2 évitées par tep de bois-énergie
+    rendement_conversion <- 0.85  # Efficacité moyenne des chaufferies
+
+    cat("Paramètres:\n")
+    cat("  Facteur substitution:", facteur_substitution, "tCO2/tep\n")
+    cat("  Rendement conversion:", rendement_conversion, "\n\n")
+
+    # Calcul E2
+    parcelles$E2 <- parcelles$E1 * facteur_substitution * rendement_conversion
+
+    cat("Formule: E2 = E1 × f_substitution × η_conversion\n\n")
+
+    cat("=== Résultats E2 ===\n")
+    cat("E2 min:", round(min(parcelles$E2, na.rm = TRUE), 3), "tCO2/ha/an\n")
+    cat("E2 moy:", round(mean(parcelles$E2, na.rm = TRUE), 3), "tCO2/ha/an\n")
+    cat("E2 max:", round(max(parcelles$E2, na.rm = TRUE), 3), "tCO2/ha/an\n\n")
+
+    # Évitement total sur la zone
+    parcelles$evitement_total <- parcelles$E2 * parcelles$surface_ha
+    total_evitement <- sum(parcelles$evitement_total, na.rm = TRUE)
+    cat("Évitement total zone:", round(total_evitement, 1), "tCO2/an\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ E2 ajouté aux parcelles\n")
+
+    # Visualisation
+    cat("\n=== Distribution E2 ===\n")
+    hist(parcelles$E2, breaks = 15, col = "darkorange",
+         main = "E2 : Évitement carbone",
+         xlab = "tCO2/ha/an", ylab = "Fréquence")
+
+  } else {
+    cat("E1 non trouvé. Exécutez l'exercice 7.1 d'abord.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+}
+```
+
+### Quiz : Indicateurs Énergie
+
+```{r quiz-energie-1, echo=FALSE}
+question("Que représente l'indicateur E1 ?",
+  answer("Le stock de carbone"),
+  answer("Le potentiel de production bois-énergie", correct = TRUE),
+  answer("L'évitement d'émissions CO2"),
+  answer("La consommation énergétique"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-energie-2, echo=FALSE}
+question("Quelle unité est utilisée pour E2 ?",
+  answer("kWh/ha/an"),
+  answer("tep/ha/an"),
+  answer("tCO2/ha/an", correct = TRUE),
+  answer("m³/ha/an"),
+  allow_retry = TRUE
+)
+```
+
+```{r quiz-energie-3, echo=FALSE}
+question("Quel facteur n'influence PAS le calcul de E2 ?",
+  answer("Le potentiel E1"),
+  answer("Le facteur de substitution"),
+  answer("Le rendement de conversion"),
+  answer("La pente du terrain", correct = TRUE),
+  allow_retry = TRUE
+)
+```
+
+---
+
+## Section 8 : Quiz final
 
 ### Testez vos connaissances
 

@@ -1,19 +1,8 @@
-# Tutorial 05 : Assemblage — Famille E (E2) + Indice Composite I_nemeton
+# Tutorial 05 : Assemblage — Indice Composite I_nemeton
 
 ## Description
 
-Ce tutoriel assemble les **32 indicateurs** calculés dans les tutoriels précédents, calcule **E2** (évitement carbone), normalise les valeurs, et produit l'**indice composite I_nemeton**.
-
-## Indicateur Calculé
-
-| Famille | Code | Indicateur | Formule | Description |
-|---------|------|------------|---------|-------------|
-| **E** (Énergie) | E2 | Évitement carbone | E1 × 2.5 × η | tCO₂ évitées par substitution bois-énergie |
-
-**Formule E2** : `E2 = E1 × facteur_substitution × rendement_conversion`
-- E1 : Potentiel bois-énergie (tep/ha/an) - calculé en T02
-- Facteur substitution : 2.5 tCO₂/tep (remplacement fossiles)
-- Rendement : 0.82-0.88 selon essence
+Ce tutoriel assemble les **32 indicateurs** calculés dans les tutoriels précédents, normalise les valeurs, et produit l'**indice composite I_nemeton**.
 
 ## Prérequis
 
@@ -25,7 +14,7 @@ Ce tutoriel assemble les **32 indicateurs** calculés dans les tutoriels précé
 ```
 ~/nemeton_tutorial_data/
 ├── parcelles.gpkg              # T01: Base géométrique
-├── metriques_lidar.gpkg        # T02: métriques brutes → C1, P1, P3, E1, A1
+├── metriques_lidar.gpkg        # T02: métriques brutes → C1, P1, P3, E1, E2, A1
 ├── indicateurs_terrain.gpkg    # T03: W1-3, R1-4, S1-3, P2, F1
 └── indicateurs_ecologiques.gpkg # T04: B1-3, L1-3, C2, T1-2, A2, F2, N1-3
 ```
@@ -37,7 +26,7 @@ Ce tutoriel assemble les **32 indicateurs** calculés dans les tutoriels précé
 Transformation des indicateurs sur l'échelle [0, 1] :
 
 ```
-x_norm = (x - x_min) / (x_max) - x_min)
+x_norm = (x - x_min) / (x_max - x_min)
 ```
 
 ### Inversion des Indicateurs Négatifs
@@ -87,10 +76,9 @@ $$I_{nemeton} = \sum_{f=1}^{12} w_f \cdot \bar{I}_f$$
 3. Assemblage des indicateurs
 4. Normalisation Min-Max
 5. Inversion des indicateurs négatifs
-6. Indicateur E2 (Évitement carbone)
-7. Calcul de l'indice composite
-8. Export des résultats
-9. Quiz final
+6. Calcul de l'indice composite
+7. Export des résultats
+8. Quiz final
 
 ## Lancement
 
@@ -101,7 +89,6 @@ learnr::run_tutorial("05-complete", package = "nemeton")
 ## Connexion avec nemeton
 
 Fonctions principales utilisées :
-- `indicator_energy_avoidance()` → E2
 - `normalize_indicators()` → Normalisation Min-Max
 - `create_composite_index()` → Calcul de I_nemeton
 

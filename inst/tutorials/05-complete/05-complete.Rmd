@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 05 : Assemblage — Famille E (E2) + Indice Composite I_nemeton"
+title: "Tutorial 05 : Assemblage — Indice Composite I_nemeton"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,8 +7,8 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Assemblage des 32 indicateurs, calcul E2 (évitement carbone), normalisation
-  Min-Max, et calcul de l'indice composite pondéré I_nemeton.
+  Assemblage des 32 indicateurs, normalisation Min-Max, et calcul de
+  l'indice composite pondéré I_nemeton.
 ---
 
 ```{r setup, include=FALSE}
@@ -32,16 +32,15 @@ Bienvenue dans le **cinquième tutorial** de la série nemeton !
 
 Dans les tutoriels précédents, vous avez calculé des indicateurs appartenant aux 12 familles :
 - **T01** : Zone d'étude et données de base
-- **T02** : Métriques LiDAR → C1, P1, P3, E1, A1 (5 indicateurs)
+- **T02** : Métriques LiDAR → C1, P1, P3, E1, E2, A1 (6 indicateurs)
 - **T03** : Indicateurs terrain → W1-W3, R1-R4, S1-S3, P2, F1 (12 indicateurs)
 - **T04** : Indicateurs écologiques → B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3 (14 indicateurs)
 
 Maintenant, vous allez :
 1. **Assembler** tous les indicateurs dans un tableau unique
 2. **Normaliser** les valeurs pour les rendre comparables
-3. **Calculer E2** (évitement carbone) pour compléter la famille Énergie
-4. **Calculer l'indice composite** nemeton
-5. **Analyser** la distribution des résultats
+3. **Calculer l'indice composite** nemeton
+4. **Analyser** la distribution des résultats
 
 ### Les 12 Familles d'Indicateurs
 
@@ -122,15 +121,13 @@ La jointure est donc simple : on fusionne les tables attributaires sur cette cl�
 cat("
 Parcelles (base) — clé: idu
      │
-     ├── + Métriques LiDAR (T02) → C1, P1, P3, E1, A1
+     ├── + Métriques LiDAR (T02) → C1, P1, P3, E1, E2, A1
      │
      ├── + Indicateurs Terrain (T03) → W1-3, R1-4, S1-3, P2, F1
      │
-     ├── + Indicateurs Écologiques (T04) → B1-3, L1-3, C2, T1-2, A2, F2, N1-3
-     │
-     └── + Calcul E2 (T05) → E2
+     └── + Indicateurs Écologiques (T04) → B1-3, L1-3, C2, T1-2, A2, F2, N1-3
 
-     TOTAL: 5 + 12 + 14 + 1 = 32 indicateurs
+     TOTAL: 6 + 12 + 14 = 32 indicateurs
 ")
 ```
 
@@ -221,7 +218,7 @@ if ("idu" %in% cols_present && length(cols_present) > 1) {
 # ============================================================
 # BILAN
 # ============================================================
-indicateurs_attendus <- c("C1", "P1", "P3", "E1", "A1",
+indicateurs_attendus <- c("C1", "P1", "P3", "E1", "E2", "A1",
                           "W1", "W2", "W3", "R1", "R2", "R3", "R4",
                           "S1", "S2", "S3", "P2", "F1",
                           "B1", "B2", "B3", "L1", "L2", "L3", "C2",
@@ -230,7 +227,7 @@ presents <- sum(indicateurs_attendus %in% names(indicateurs))
 
 cat("\n=== BILAN ===\n")
 cat("Colonnes:", ncol(indicateurs), "\n")
-cat("Indicateurs:", presents, "/ 31 (+ E2 = 32)\n")
+cat("Indicateurs:", presents, "/ 32\n")
 ```
 
 
@@ -341,117 +338,6 @@ risque_feu_inv <- inverser_indicateur(risque_feu_norm)
 cat("Original (normalisé):", risque_feu_norm, "\n")
 cat("Inversé:", risque_feu_inv, "\n")
 cat("Interprétation: fort risque (0.8) devient score faible (0.2)")
-```
-
-## Indicateur E2 : Évitement Carbone
-
-### Concept de l'Évitement d'Émissions
-
-L'indicateur **E2** quantifie les **émissions de CO₂ évitées** grâce à la substitution du bois
-aux énergies fossiles. C'est un indicateur clé de la famille Énergie (E) qui complète E1
-(potentiel de production énergétique).
-
-**Principe** : Chaque m³ de bois-énergie utilisé à la place de combustibles fossiles évite
-l'émission d'environ **0.5 à 0.9 tCO₂** selon le combustible remplacé.
-
-```{r e2-concept, echo=FALSE}
-substitution <- data.frame(
-  Combustible_Remplace = c("Fioul domestique", "Gaz naturel", "Charbon", "Électricité (mix FR)"),
-  tCO2_evite_par_m3 = c(0.72, 0.55, 0.90, 0.15),
-  Usage_Typique = c("Chauffage individuel", "Chauffage collectif", "Industrie", "Pointe")
-)
-knitr::kable(substitution, caption = "Facteurs de substitution carbone")
-```
-
-### Calcul de E2
-
-L'indicateur E2 est calculé à partir de :
-1. **E1** : Potentiel de production bois-énergie (tep/ha/an)
-2. **Facteur de substitution** : tCO₂ évitées par tep de bois
-
-$$E2 = E1 \times f_{substitution} \times \eta_{conversion}$$
-
-Où :
-- $E1$ : Production énergétique potentielle (tep/ha/an)
-- $f_{substitution}$ : Facteur de substitution moyen (≈ 2.5 tCO₂/tep)
-- $\eta_{conversion}$ : Rendement de conversion (≈ 0.85)
-
-### Exercice : Calculer E2
-
-```{r calc-e2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30}
-# Simuler des données d'entrée
-set.seed(42)
-n <- 50
-
-parcelles <- data.frame(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 8),
-  # E1 déjà calculé dans Tutorial 02 (tep/ha/an)
-  E1 = runif(n, 0.3, 2.5),
-  # Type de peuplement (influence le rendement)
-  type_peuplement = sample(c("feuillus", "resineux", "mixte"), n, replace = TRUE,
-                           prob = c(0.5, 0.35, 0.15))
-)
-
-# Paramètres de calcul E2
-facteur_substitution <- 2.5  # tCO2 évitées par tep de bois-énergie
-rendement_conversion <- 0.85  # Efficacité moyenne des chaufferies
-
-# À compléter : calculer E2 (évitement carbone en tCO2/ha/an)
-# Puis calculer l'évitement total par parcelle (tCO2/an)
-
-```
-
-
-
-### E2 par Type de Peuplement
-
-```{r e2-by-type, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
-# Analyser E2 par type de peuplement
-set.seed(42)
-n <- 50
-
-parcelles <- data.frame(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 8),
-  E1 = runif(n, 0.3, 2.5),
-  type_peuplement = sample(c("feuillus", "resineux", "mixte"), n, replace = TRUE,
-                           prob = c(0.5, 0.35, 0.15))
-)
-
-# Calcul E2 avec rendement par type
-parcelles$rendement <- c(feuillus = 0.88, resineux = 0.82, mixte = 0.85)[parcelles$type_peuplement]
-parcelles$E2 <- parcelles$E1 * 2.5 * parcelles$rendement
-
-# Statistiques par type
-stats_type <- aggregate(E2 ~ type_peuplement, data = parcelles,
-                        FUN = function(x) c(moy = mean(x), med = median(x), max = max(x)))
-print(stats_type)
-
-# Boxplot
-boxplot(E2 ~ type_peuplement, data = parcelles,
-        main = "E2 par type de peuplement",
-        xlab = "Type", ylab = "tCO2/ha/an",
-        col = c("burlywood", "darkseagreen", "lightsteelblue"))
-```
-
-### Intégration de E2 dans le GeoPackage
-
-```{r e2-export, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
-# Mise à jour du fichier d'indicateurs avec E2
-# (Code conceptuel - en situation réelle avec les vraies données)
-
-cat("Indicateurs Énergie à ajouter au GeoPackage:\n")
-cat("- E1: Production énergétique potentielle (tep/ha/an)\n")
-cat("- E2: Évitement carbone (tCO2/ha/an)\n\n")
-
-cat("Mise à jour du fichier:\n")
-cat("indicateurs_ecologiques.gpkg + E2 → indicateurs_complets.gpkg\n")
-
-# Code d'export (non exécuté)
-# indic_eco$E2 <- E2_calcule
-# st_write(indic_eco, file.path(cache_dir, "indicateurs_complets.gpkg"),
-#          layer = "indicateurs", delete_layer = TRUE)
 ```
 
 ## Calcul de l'Indice Composite
@@ -676,9 +562,8 @@ Dans ce tutoriel, vous avez appris à :
 1. ✅ **Assembler** les indicateurs de plusieurs sources
 2. ✅ **Normaliser** avec la méthode Min-Max
 3. ✅ **Inverser** les indicateurs négatifs
-4. ✅ **Calculer E2** (évitement carbone) complétant la famille Énergie
-5. ✅ **Calculer** l'indice composite pondéré
-6. ✅ **Exporter** les résultats en GeoPackage
+4. ✅ **Calculer** l'indice composite pondéré
+5. ✅ **Exporter** les résultats en GeoPackage
 
 ### Données Produites
 
