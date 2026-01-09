@@ -2808,7 +2808,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 # === INDICATEUR A2 (QUALITÉ AIR FORESTIER) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-bd_topo_routes_path <- file.path(data_dir, "bd_topo_routes.gpkg")
+routes_path <- file.path(data_dir, "routes.gpkg")  # Téléchargé en tutoriel 01
 
 if (!file.exists(parcelles_path)) {
   stop("Données manquantes. Exécutez d'abord les tutoriels précédents.")
@@ -2821,46 +2821,30 @@ cat("=== INDICATEUR A2 : Qualité air forestier ===\n\n")
 # ============================================================
 # 1. DISTANCE AUX ROUTES (source principale de pollution)
 # ============================================================
-cat("1. Distance aux routes...\n")
+cat("1. Chargement des routes (BD TOPO v3)...\n")
 
 routes <- NULL
 
-# Essayer de charger les routes depuis BD TOPO
-if (file.exists(bd_topo_routes_path)) {
-  routes <- st_read(bd_topo_routes_path, quiet = TRUE)
-  cat("   Routes BD TOPO:", nrow(routes), "segments\n")
-}
-
-# Fallback : télécharger via happign ou OSM
-if (is.null(routes) || nrow(routes) == 0) {
-  if (requireNamespace("happign", quietly = TRUE)) {
-    library(happign)
-    cat("   Téléchargement routes via happign...\n")
-
-    zone_buffer <- st_buffer(st_union(parcelles), 2000)
-
-    tryCatch({
-      routes <- get_wfs(
-        x = zone_buffer,
-        layer = "BDTOPO_V3:route",
-        spatial_filter = "intersects"
-      )
-      if (!is.null(routes) && nrow(routes) > 0) {
-        cat("   Routes téléchargées:", nrow(routes), "\n")
-      }
-    }, error = function(e) {
-      cat("   Erreur téléchargement routes:", e$message, "\n")
-    })
-  }
+# Charger les routes depuis le fichier téléchargé en tutoriel 01
+if (file.exists(routes_path)) {
+  routes <- st_read(routes_path, quiet = TRUE)
+  routes <- st_transform(routes, st_crs(parcelles))
+  cat("   Routes BD TOPO chargées:", nrow(routes), "segments\n")
+} else {
+  cat("   Fichier routes.gpkg non trouvé.\n")
+  cat("   Exécutez d'abord le tutoriel 01-acquisition pour télécharger les routes.\n")
 }
 
 # Calcul de la distance minimale aux routes pour chaque parcelle
+cat("\n2. Calcul des distances aux routes...\n")
+
 if (!is.null(routes) && nrow(routes) > 0) {
-  routes <- st_transform(routes, st_crs(parcelles))
   routes_union <- st_union(routes)
 
   parcelles$dist_routes <- as.numeric(st_distance(st_centroid(parcelles), routes_union))
   cat("   Distance moyenne aux routes:", round(mean(parcelles$dist_routes, na.rm = TRUE)), "m\n")
+  cat("   Distance min:", round(min(parcelles$dist_routes, na.rm = TRUE)), "m\n")
+  cat("   Distance max:", round(max(parcelles$dist_routes, na.rm = TRUE)), "m\n")
 } else {
   # Fallback : distance par défaut (zone éloignée)
   parcelles$dist_routes <- 500
