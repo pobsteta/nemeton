@@ -2835,39 +2835,125 @@ if (file.exists(routes_path)) {
   cat("   Exécutez d'abord le tutoriel 01-acquisition pour télécharger les routes.\n")
 }
 
-# Calcul de la distance minimale aux routes pour chaque parcelle
-cat("\n2. Calcul des distances aux routes...\n")
+# ============================================================
+# 2. PONDÉRATION PAR TYPE DE ROUTE (pollution)
+# ============================================================
+cat("\n2. Pondération par type de route...\n")
+
+# Coefficients de pollution par type de route BD TOPO v3
+# Plus le coefficient est élevé, plus la route pollue
+pollution_weights <- data.frame(
+  nature = c("Autoroute", "Quasi-autoroute", "Route à 2 chaussées",
+             "Route à 1 chaussée", "Route empierrée", "Chemin",
+             "Bretelle", "Rond-point", "Piste cyclable", "Sentier"),
+  poids = c(1.0, 0.9, 0.8, 0.6, 0.3, 0.1, 0.7, 0.5, 0.05, 0.02),
+  stringsAsFactors = FALSE
+)
+
+cat("\n   Coefficients de pollution par type:\n")
+print(pollution_weights)
 
 if (!is.null(routes) && nrow(routes) > 0) {
+
+  # Identifier le champ "nature" dans BD TOPO
+  nature_field <- NULL
+  for (field in c("nature", "NATURE", "classe", "importance", "type")) {
+    if (field %in% names(routes)) {
+      nature_field <- field
+      break
+    }
+  }
+
+  if (!is.null(nature_field)) {
+    cat("\n   Champ type de route:", nature_field, "\n")
+    cat("   Types présents:\n")
+    print(table(routes[[nature_field]]))
+
+    # Assigner les poids aux routes
+    routes$pollution_weight <- 0.5  # Défaut
+    for (i in seq_len(nrow(pollution_weights))) {
+      mask <- grepl(pollution_weights$nature[i], routes[[nature_field]], ignore.case = TRUE)
+      routes$pollution_weight[mask] <- pollution_weights$poids[i]
+    }
+  } else {
+    cat("   Champ nature non trouvé - poids uniforme appliqué\n")
+    routes$pollution_weight <- 0.5
+  }
+
+  # ============================================================
+  # 3. CALCUL DISTANCE PONDÉRÉE PAR PARCELLE
+  # ============================================================
+  cat("\n3. Calcul des distances pondérées par parcelle...\n")
+
+  # Pour chaque parcelle, calculer un score de pollution
+  # basé sur la distance ET le type de route
+  parcelles_centroids <- st_centroid(parcelles)
+
+  # Fonction de calcul du score pollution pour une parcelle
+  calc_pollution_score <- function(centroid, routes, max_dist = 2000) {
+    # Distance à toutes les routes
+    dists <- as.numeric(st_distance(centroid, routes))
+
+    # Ne considérer que les routes dans le rayon d'influence
+    in_range <- dists < max_dist
+
+    if (sum(in_range) == 0) return(0)  # Pas de route proche = pas de pollution
+
+    # Score pollution = somme(poids / distance²)
+    # Les routes proches et polluantes ont plus d'impact
+    weights <- routes$pollution_weight[in_range]
+    distances <- pmax(dists[in_range], 10)  # Min 10m pour éviter division par 0
+
+    # Modèle de dispersion simplifié (décroissance quadratique)
+    pollution_contribution <- sum(weights / (distances / 100)^2)
+
+    return(pollution_contribution)
+  }
+
+  # Calcul pour chaque parcelle
+  cat("   Calcul en cours...\n")
+  pollution_scores <- sapply(seq_len(nrow(parcelles)), function(i) {
+    calc_pollution_score(parcelles_centroids[i, ], routes)
+  })
+
+  parcelles$pollution_score <- pollution_scores
+
+  # Distance simple (pour référence)
   routes_union <- st_union(routes)
+  parcelles$dist_routes <- as.numeric(st_distance(parcelles_centroids, routes_union))
 
-  parcelles$dist_routes <- as.numeric(st_distance(st_centroid(parcelles), routes_union))
   cat("   Distance moyenne aux routes:", round(mean(parcelles$dist_routes, na.rm = TRUE)), "m\n")
-  cat("   Distance min:", round(min(parcelles$dist_routes, na.rm = TRUE)), "m\n")
-  cat("   Distance max:", round(max(parcelles$dist_routes, na.rm = TRUE)), "m\n")
+  cat("   Score pollution moyen:", round(mean(parcelles$pollution_score, na.rm = TRUE), 2), "\n")
+
 } else {
-  # Fallback : distance par défaut (zone éloignée)
   parcelles$dist_routes <- 500
-  cat("   Routes non disponibles - valeur par défaut: 500m\n")
+  parcelles$pollution_score <- 0.1
+  cat("   Routes non disponibles - valeurs par défaut\n")
 }
 
 # ============================================================
-# 2. CALCUL DE L'INDICE A2
+# 4. CALCUL DE L'INDICE A2
 # ============================================================
-cat("\n2. Calcul de l'indice A2...\n")
+cat("\n4. Calcul de l'indice A2...\n")
 
-# Normalisation de la distance (0-100)
-# Plus la distance est grande, meilleure est la qualité de l'air
-# Seuils : 0m = 0, 100m = 50, 500m = 80, >1000m = 100
+# Normalisation du score pollution (0-100)
+# Score pollution élevé = mauvaise qualité air = A2 faible
+# Score pollution faible = bonne qualité air = A2 élevé
 
-normalize_distance <- function(d) {
-  score <- ifelse(d < 100, d / 2,
-           ifelse(d < 500, 50 + (d - 100) * 0.075,
-           ifelse(d < 1000, 80 + (d - 500) * 0.04, 100)))
-  return(pmin(score, 100))
+# Normaliser le score pollution (échelle log pour gérer les valeurs extrêmes)
+max_pollution <- max(parcelles$pollution_score, na.rm = TRUE)
+if (max_pollution > 0) {
+  # Transformation log pour compresser la distribution
+  pollution_norm <- log1p(parcelles$pollution_score) / log1p(max_pollution)
+  # Inverser : 0 = très pollué, 100 = air pur
+  parcelles$A2 <- round((1 - pollution_norm) * 100, 1)
+} else {
+  # Pas de pollution = air pur
+  parcelles$A2 <- 100
 }
 
-parcelles$A2 <- round(normalize_distance(parcelles$dist_routes), 1)
+# Assurer les bornes [0, 100]
+parcelles$A2 <- pmax(0, pmin(100, parcelles$A2))
 
 cat("\n=== Résultats A2 ===\n")
 cat("A2 moyen:", round(mean(parcelles$A2, na.rm = TRUE), 1), "/ 100\n")
