@@ -78,14 +78,40 @@ if (requireNamespace("curl", quietly = TRUE)) {
   cat("  curl: configuré (connect + timeout)\n")
 }
 
-# Configuration pour happign (utilise httr2/curl en interne)
+# Configuration GDAL pour sf/terra (variables d'environnement)
 Sys.setenv(
-  HAPPIGN_TIMEOUT = as.character(NETWORK_TIMEOUT),
   GDAL_HTTP_TIMEOUT = as.character(NETWORK_TIMEOUT),
   GDAL_HTTP_CONNECTTIMEOUT = as.character(NETWORK_TIMEOUT),
-  CPL_CURL_VERBOSE = "NO"
+  GDAL_HTTP_MAX_RETRY = "5",
+  GDAL_HTTP_RETRY_DELAY = "5",
+  VSI_CURL_CACHE_SIZE = "100000000",  # 100MB cache
+  CPL_CURL_VERBOSE = "NO",
+  CPL_VSIL_CURL_USE_HEAD = "NO"
 )
-cat("  GDAL/happign: configuré\n")
+cat("  GDAL: configuré (timeout + retry)\n")
+
+# Configuration httr2 si disponible (utilisé par happign)
+if (requireNamespace("httr2", quietly = TRUE)) {
+  # httr2 ne supporte pas de config globale, on configure via options
+  options(
+    httr2_timeout = NETWORK_TIMEOUT,
+    httr2_retry_max_wait = NETWORK_TIMEOUT
+  )
+  cat("  httr2: options configurées\n")
+}
+
+# Configuration curl globale via handle par défaut
+if (requireNamespace("curl", quietly = TRUE)) {
+  # Créer un handle avec les bons timeouts
+  default_handle <- curl::new_handle(
+    connecttimeout = NETWORK_TIMEOUT,
+    timeout = NETWORK_TIMEOUT,
+    low_speed_time = NETWORK_TIMEOUT,
+    low_speed_limit = 1
+  )
+  # Note: curl n'a pas de handle global, mais on peut créer une fonction wrapper
+  cat("  curl: handle créé avec timeouts\n")
+}
 cat("\n")
 
 # Créer le répertoire de données si nécessaire
@@ -206,7 +232,16 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
   # Pré-charger les packages courants dans l'environnement
   suppressPackageStartupMessages({
     if (requireNamespace("sf", quietly = TRUE)) library(sf)
-    if (requireNamespace("terra", quietly = TRUE)) library(terra)
+    if (requireNamespace("terra", quietly = TRUE)) {
+      library(terra)
+      # Configurer GDAL après chargement de terra
+      tryCatch({
+        terra::setGDALconfig("GDAL_HTTP_TIMEOUT", as.character(NETWORK_TIMEOUT))
+        terra::setGDALconfig("GDAL_HTTP_CONNECTTIMEOUT", as.character(NETWORK_TIMEOUT))
+        terra::setGDALconfig("GDAL_HTTP_MAX_RETRY", "5")
+        terra::setGDALconfig("GDAL_HTTP_RETRY_DELAY", "5")
+      }, error = function(e) NULL)
+    }
   })
 
   # Assigner data_dir dans l'environnement
@@ -263,23 +298,41 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
       next
     }
 
-    # Exécuter l'expression
-    result <- tryCatch({
-      withCallingHandlers({
-        eval(expr, envir = env)
-        "OK"
-      }, warning = function(w) {
-        if (!grepl("package|namespace|replacing|masked", conditionMessage(w))) {
-          warnings_list <<- c(warnings_list, conditionMessage(w))
-        }
-        invokeRestart("muffleWarning")
-      }, message = function(m) {
-        # Ignorer les messages
-        invokeRestart("muffleMessage")
+    # Exécuter l'expression avec retry pour erreurs réseau
+    max_retries <- 3
+    retry_delay <- 10  # secondes entre les retries
+
+    for (attempt in 1:max_retries) {
+      result <- tryCatch({
+        withCallingHandlers({
+          eval(expr, envir = env)
+          "OK"
+        }, warning = function(w) {
+          if (!grepl("package|namespace|replacing|masked", conditionMessage(w))) {
+            warnings_list <<- c(warnings_list, conditionMessage(w))
+          }
+          invokeRestart("muffleWarning")
+        }, message = function(m) {
+          # Ignorer les messages
+          invokeRestart("muffleMessage")
+        })
+      }, error = function(e) {
+        paste("ERREUR:", conditionMessage(e))
       })
-    }, error = function(e) {
-      paste("ERREUR:", conditionMessage(e))
-    })
+
+      # Vérifier si c'est une erreur réseau
+      is_network_error <- is.character(result) &&
+        grepl("Timeout|timeout|curl|HTTP|Failed to connect|Connection refused", result, ignore.case = TRUE)
+
+      if (result == "OK" || !is_network_error || attempt == max_retries) {
+        break
+      }
+
+      # Retry après délai (toujours afficher les retries)
+      cat(sprintf("\n    [RETRY %d/%d] Erreur réseau, nouvel essai dans %ds...\n",
+                  attempt, max_retries, retry_delay))
+      Sys.sleep(retry_delay)
+    }
 
     if (is.character(result) && startsWith(result, "ERREUR")) {
       errors <- c(errors, paste0("\n    [", i, "] ", expr_preview, "\n        ", result))
