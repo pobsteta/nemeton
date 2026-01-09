@@ -1596,7 +1596,9 @@ if (requireNamespace("landscapemetrics", quietly = TRUE)) {
   cat("1. Création du raster de couverture forestière...\n")
 
   # Résolution 10m pour les métriques paysagères
-  r_template <- rast(ext(zone_buffer), resolution = 10, crs = st_crs(parcelles)$wkt)
+  # Convertir la zone buffer en extent via vect() pour compatibilité terra
+  zone_vect <- vect(zone_buffer)
+  r_template <- rast(zone_vect, resolution = 10, crs = st_crs(parcelles)$wkt)
 
   # Rasteriser : 1 = forêt, 0 = non-forêt
   if (!is.null(bd_foret) && nrow(bd_foret) > 0) {
