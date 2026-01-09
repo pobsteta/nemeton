@@ -477,8 +477,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 
 ### Exercice 6.1 : Sauvegarder les métriques
 
-### Interpolation par krigeage
-
 Dans ce tutoriel, nous utilisons les **métriques LiDAR pré-calculées** du jeu de données `quatre_montagnes` (package `lidaRtRee`). Ces 28 placettes contiennent des valeurs réelles de zmean, zmax, zsd, etc.
 
 Pour estimer les métriques sur les parcelles cadastrales, nous appliquons un **krigeage** (interpolation spatiale) à partir des placettes. Cette méthode permet d'obtenir des estimations cohérentes spatialement.
@@ -576,7 +574,7 @@ if (file.exists(parcelles_path)) {
 
   cat("\n=== Métriques LiDAR exportées ===\n")
   cat("Fichier:", output_path, "\n")
-  cat("Parcelles:", nrow(parcelles), "\n\n")
+  cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
   # Résumé des métriques interpolées
   cat("=== Résumé des métriques interpolées ===\n")
@@ -669,13 +667,21 @@ Dans ce tutoriel, vous avez appris à :
 
 ### Données produites
 
-Le fichier `metriques_lidar.gpkg` contient désormais vos parcelles avec les métriques :
+Le fichier `metriques_lidar.gpkg` contient désormais vos parcelles avec les métriques interpolées depuis `quatre_montagnes` :
 
-- **zmax** : Hauteur maximale (m) → C1, P1
-- **zmean** : Hauteur moyenne (m) → P3
-- **zsd** : Écart-type (m) → B2
-- **zq95** : Percentile 95 (m) → P1
-- **pzabove2** : Couverture > 2m (%) → A1, E1
+| Métrique | Description | Indicateurs |
+|----------|-------------|-------------|
+| **zmax** | Hauteur maximale (m) | C1, P1 |
+| **zmean** | Hauteur moyenne (m) | P3 |
+| **zsd** | Écart-type des hauteurs (m) | B2 |
+| **zq25** | Percentile 25 (m) | Structure |
+| **zq50** | Percentile 50 / médiane (m) | Structure |
+| **zq75** | Percentile 75 (m) | Structure |
+| **zq95** | Percentile 95 (m) | P1 |
+| **zentropy** | Entropie verticale | B2 |
+| **pzabove2** | Couverture > 2m (%) | A1, E1 |
+
+> **Note** : Ces valeurs sont estimées par interpolation IDW à partir des 28 placettes de référence. Un tutoriel avancé couvrira le calcul direct depuis les nuages de points LiDAR.
 
 ### Tutoriel suivant
 
