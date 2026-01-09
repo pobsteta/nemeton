@@ -146,38 +146,7 @@ carte_carbone <- ggplot(parcelles) +
 print(carte_carbone)
 ```
 
-```{r ex-1-1-solution}
-# Charger les données
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
 
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
-
-# Carte pour la famille Carbone
-carte_carbone <- ggplot(parcelles) +
-  geom_sf(aes(fill = moy_C), color = "white", linewidth = 0.2) +
-  scale_fill_viridis_c(
-    name = "Score Carbone",
-    option = "D",
-    limits = c(0, 1)
-  ) +
-  theme_minimal() +
-  labs(
-    title = "Famille Carbone (C)",
-    subtitle = "Score normalisé [0-1]"
-  )
-
-print(carte_carbone)
-```
-
-```{r ex-1-1-check}
-grade_this({
-  pass("Carte thématique créée avec succès !")
-})
-```
 
 ### Exercice 1.2 : Multi-cartes des 12 familles
 
@@ -265,11 +234,6 @@ if (requireNamespace("patchwork", quietly = TRUE)) {
 }
 ```
 
-```{r ex-1-2-check}
-grade_this({
-  pass("Panneau multi-cartes créé !")
-})
-```
 
 ---
 
@@ -394,11 +358,6 @@ if (requireNamespace("fmsb", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-1-check}
-grade_this({
-  pass("Diagramme radar créé !")
-})
-```
 
 ### Exercice 2.2 : Comparer plusieurs parcelles
 
@@ -497,11 +456,6 @@ if (requireNamespace("fmsb", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-2-check}
-grade_this({
-  pass("Comparaison radar réussie !")
-})
-```
 
 ---
 
@@ -609,11 +563,6 @@ for (i in 1:(ncol(cor_matrix) - 1)) {
 }
 ```
 
-```{r ex-3-1-check}
-grade_this({
-  pass("Matrice de corrélation calculée !")
-})
-```
 
 ### Exercice 3.2 : Visualiser avec corrplot
 
@@ -702,11 +651,6 @@ if (requireNamespace("corrplot", quietly = TRUE)) {
 }
 ```
 
-```{r ex-3-2-check}
-grade_this({
-  pass("Visualisation corrplot créée !")
-})
-```
 
 ---
 
@@ -787,11 +731,6 @@ print(st_drop_geometry(hotspots_sorted)[1:min(5, nrow(hotspots_sorted)),
                                          c("id_parcelle", "surface_ha", "I_nemeton")])
 ```
 
-```{r ex-4-1-check}
-grade_this({
-  pass("Hotspots identifiés !")
-})
-```
 
 ### Exercice 4.2 : Cartographier les hotspots
 
@@ -858,11 +797,6 @@ carte_hotspots <- ggplot() +
 print(carte_hotspots)
 ```
 
-```{r ex-4-2-check}
-grade_this({
-  pass("Carte des hotspots créée !")
-})
-```
 
 ---
 
@@ -947,11 +881,6 @@ cor_PB <- cor(data_plot$moy_P, data_plot$moy_B, use = "complete.obs")
 cat("\nCorrélation P-B:", round(cor_PB, 2))
 ```
 
-```{r ex-5-1-check}
-grade_this({
-  pass("Trade-off visualisé !")
-})
-```
 
 ### Exercice 5.2 : Identifier le front de Pareto
 
@@ -1044,11 +973,6 @@ pareto_plot <- ggplot(data_plot, aes(x = moy_P, y = moy_B)) +
 print(pareto_plot)
 ```
 
-```{r ex-5-2-check}
-grade_this({
-  pass("Front de Pareto identifié !")
-})
-```
 
 ---
 
@@ -1135,11 +1059,6 @@ plot(hc, labels = FALSE, main = "Dendrogramme - Clustering Parcelles")
 rect.hclust(hc, k = k, border = 2:5)
 ```
 
-```{r ex-6-1-check}
-grade_this({
-  pass("Clustering réalisé !")
-})
-```
 
 ### Exercice 6.2 : Cartographier les clusters
 
@@ -1216,11 +1135,6 @@ carte_clusters <- ggplot(parcelles) +
 print(carte_clusters)
 ```
 
-```{r ex-6-2-check}
-grade_this({
-  pass("Carte des clusters créée !")
-})
-```
 
 ---
 
@@ -1309,11 +1223,6 @@ print(table(parcelles$classe))
 cat("\n\nFichier serait exporté vers:", file.path(cache_dir, "analyse_finale.gpkg"))
 ```
 
-```{r ex-7-1-check}
-grade_this({
-  pass("Export GeoPackage préparé !")
-})
-```
 
 ### Exercice 7.2 : Export CSV des attributs
 
@@ -1367,11 +1276,6 @@ print(head(data_csv, 10))
 cat("\n\nFichier CSV serait exporté vers:", file.path(cache_dir, "indicateurs_nemeton.csv"))
 ```
 
-```{r ex-7-2-check}
-grade_this({
-  pass("Export CSV préparé !")
-})
-```
 
 ---
 
@@ -1469,11 +1373,6 @@ if (requireNamespace("leaflet", quietly = TRUE)) {
 }
 ```
 
-```{r ex-8-1-check}
-grade_this({
-  pass("Carte Leaflet créée !")
-})
-```
 
 ---
 

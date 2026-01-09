@@ -81,11 +81,6 @@ if (file.exists(bd_foret_path)) {
 }
 ```
 
-```{r ex-1-1-check}
-grade_this({
-  pass("BD Forêt explorée !")
-})
-```
 
 ---
 
@@ -181,11 +176,6 @@ if (file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-2-1-check}
-grade_this({
-  pass("Zones protégées téléchargées !")
-})
-```
 
 ### Exercice 2.2 : Calculer B1 (Protection)
 
@@ -287,11 +277,6 @@ if (file.exists(parcelles_path) && requireNamespace("purrr", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-2-check}
-grade_this({
-  pass("Indicateur B1 (protection) calculé !")
-})
-```
 
 ---
 
@@ -339,11 +324,6 @@ if (file.exists(metriques_path)) {
 }
 ```
 
-```{r ex-3-1-check}
-grade_this({
-  pass("Indicateur B2 (structure verticale) calculé !")
-})
-```
 
 ### Exercice 3.2 : Connectivité écologique (B3)
 
@@ -699,11 +679,6 @@ st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec B3.\n")
 ```
 
-```{r ex-3-2-check}
-grade_this({
-  pass("Indicateur B3 (connectivité multi-approches) calculé !")
-})
-```
 
 ---
 
@@ -1447,11 +1422,6 @@ st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec L1 et composantes.\n")
 ```
 
-```{r ex-4-1-check}
-grade_this({
-  pass("Indicateur L1 (Sylvosphère) calculé avec intensité, contraste et exposition !")
-})
-```
 
 ### Exercice 4.2 : Trame Verte et Bleue (L3)
 
@@ -1587,11 +1557,6 @@ st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec L3.\n")
 ```
 
-```{r ex-4-2-check}
-grade_this({
-  pass("Indicateur L3 (Trame Verte et Bleue) calculé !")
-})
-```
 
 ### Exercice 4.3 : Indice de Vitalité NDVI (C2)
 
@@ -1886,11 +1851,6 @@ st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec C2 (NDVI).\n")
 ```
 
-```{r ex-4-3-check}
-grade_this({
-  pass("Indicateur C2 (NDVI - Vitalité) calculé !")
-})
-```
 
 ---
 
@@ -2237,11 +2197,6 @@ st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec N1, N2, N3.\n")
 ```
 
-```{r ex-5-1-check}
-grade_this({
-  pass("Indicateurs de naturalité (N1, N2, N3) calculés !")
-})
-```
 
 ---
 
@@ -2394,11 +2349,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n✓ Famille B sauvegardée:", basename(output_path), "\n")
 ```
 
-```{r ex-6-1-check}
-grade_this({
-  pass("Famille B (Biodiversité) calculée et exportée avec succès !")
-})
-```
 
 ---
 
@@ -2569,11 +2519,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n✓ Famille L sauvegardée:", basename(output_path), "\n")
 ```
 
-```{r ex-6-2-check}
-grade_this({
-  pass("Famille L (Paysage: L1, L2, L3) calculée et exportée avec succès !")
-})
-```
 
 ---
 
@@ -2670,11 +2615,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n✓ Famille C sauvegardée:", basename(output_path), "\n")
 ```
 
-```{r ex-6-2b-check}
-grade_this({
-  pass("Famille C (Vitalité: C2 NDVI) calculée et exportée avec succès !")
-})
-```
 
 ---
 
@@ -2785,11 +2725,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n✓ Famille T sauvegardée:", basename(output_path), "\n")
 ```
 
-```{r ex-6-3-check}
-grade_this({
-  pass("Famille T (Temporel) calculée et exportée avec succès !")
-})
-```
 
 ---
 
@@ -2909,11 +2844,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n✓ Familles A/F sauvegardées:", basename(output_path), "\n")
 ```
 
-```{r ex-6-4-check}
-grade_this({
-  pass("Familles A/F (Air/Fertilité) calculées et exportées avec succès !")
-})
-```
 
 ---
 
@@ -3084,11 +3014,6 @@ cat("Parcelles:", nrow(parcelles), "| Indicateurs:",
 cat("\n✓ Famille N + Synthèse terminées\n")
 ```
 
-```{r ex-6-5-check}
-grade_this({
-  pass("Tous les indicateurs écologiques calculés et exportés avec succès !")
-})
-```
 
 ---
 

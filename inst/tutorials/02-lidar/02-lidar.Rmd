@@ -189,14 +189,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 }
 ```
 
-```{r ex-2-1-check}
-grade_this({
-  if (!exists(".result")) {
-    fail("Le code n'a pas produit de résultat.")
-  }
-  pass("Excellent ! Vous avez exploré les fichiers LiDAR disponibles.")
-})
-```
 
 ### Exercice 2.2 : Explorer la structure du nuage
 
@@ -322,11 +314,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 }
 ```
 
-```{r ex-3-1-check}
-grade_this({
-  pass("Normalisation effectuée ! Les hauteurs sont maintenant relatives au sol.")
-})
-```
 
 ---
 
@@ -406,11 +393,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-1-check}
-grade_this({
-  pass("MNH généré ! Vous pouvez maintenant extraire des métriques par parcelle.")
-})
-```
 
 ---
 
@@ -488,11 +470,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 }
 ```
 
-```{r ex-5-1-check}
-grade_this({
-  pass("Métriques LiDAR calculées par parcelle !")
-})
-```
 
 ---
 
@@ -547,11 +524,6 @@ if (file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-6-1-check}
-grade_this({
-  pass("Métriques LiDAR exportées en GeoPackage !")
-})
-```
 
 ---
 

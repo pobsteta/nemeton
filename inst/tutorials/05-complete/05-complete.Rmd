@@ -233,42 +233,7 @@ cat("Colonnes:", ncol(indicateurs), "\n")
 cat("Indicateurs:", presents, "/ 31 (+ E2 = 32)\n")
 ```
 
-```{r assemble-indicators-solution}
-# Assemblage avec idu comme clé de jointure
-indicateurs <- parcelles
 
-# Joindre LiDAR
-cols_lidar <- c("idu", "C1", "P1", "P3", "E1", "A1")
-cols_present <- intersect(cols_lidar, names(metriques_lidar))
-if ("idu" %in% cols_present) {
-  indicateurs <- merge(indicateurs, st_drop_geometry(metriques_lidar)[, cols_present, drop = FALSE], by = "idu", all.x = TRUE)
-}
-
-# Joindre Terrain
-cols_terrain <- c("idu", "W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2", "F1")
-cols_present <- intersect(cols_terrain, names(indic_terrain))
-if ("idu" %in% cols_present) {
-  indicateurs <- merge(indicateurs, st_drop_geometry(indic_terrain)[, cols_present, drop = FALSE], by = "idu", all.x = TRUE)
-}
-
-# Joindre Écologique
-cols_eco <- c("idu", "B1", "B2", "B3", "L1", "L2", "L3", "C2", "T1", "T2", "A2", "F2", "N1", "N2", "N3")
-cols_present <- intersect(cols_eco, names(indic_eco))
-if ("idu" %in% cols_present) {
-  indicateurs <- merge(indicateurs, st_drop_geometry(indic_eco)[, cols_present, drop = FALSE], by = "idu", all.x = TRUE)
-}
-
-cat("Assemblage terminé:", ncol(indicateurs), "colonnes\n")
-```
-
-```{r assemble-indicators-check}
-grade_this({
-  if (!inherits(.result, "sf")) {
-    fail("Le résultat doit être un objet sf.")
-  }
-  pass(paste0("Assemblage réussi ! ", ncol(.result), " colonnes."))
-})
-```
 
 ## Normalisation des Indicateurs
 
@@ -347,44 +312,7 @@ indicateurs <- data.frame(
 
 ```
 
-```{r normalize-all-solution}
-normalize_minmax <- function(x, na.rm = TRUE) {
-  min_val <- min(x, na.rm = na.rm)
-  max_val <- max(x, na.rm = na.rm)
-  if (max_val == min_val) return(rep(0.5, length(x)))
-  (x - min_val) / (max_val - min_val)
-}
 
-set.seed(42)
-n <- 50
-indicateurs <- data.frame(
-  id_parcelle = 1:n,
-  zmax = runif(n, 5, 45),
-  W1 = runif(n, 3, 18),
-  S1 = runif(n, 50, 3000),
-  B1 = rbinom(n, 1, 0.3)
-)
-
-# Identifier les colonnes à normaliser
-cols_num <- setdiff(names(indicateurs), "id_parcelle")
-
-# Normaliser chaque colonne
-indicateurs_norm <- indicateurs
-for (col in cols_num) {
-  indicateurs_norm[[paste0(col, "_norm")]] <- normalize_minmax(indicateurs[[col]])
-}
-
-# Afficher un aperçu
-head(indicateurs_norm[, c("zmax", "zmax_norm", "W1", "W1_norm")])
-```
-
-```{r normalize-all-check}
-grade_result(
-  pass_if(~ is.data.frame(.result),
-          "Normalisation réussie !"),
-  fail_if(~ TRUE, "Vérifiez la structure du résultat")
-)
-```
 
 ### Inversion des Indicateurs Négatifs
 
@@ -474,53 +402,7 @@ rendement_conversion <- 0.85  # Efficacité moyenne des chaufferies
 
 ```
 
-```{r calc-e2-solution}
-set.seed(42)
-n <- 50
 
-parcelles <- data.frame(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 8),
-  E1 = runif(n, 0.3, 2.5),
-  type_peuplement = sample(c("feuillus", "resineux", "mixte"), n, replace = TRUE,
-                           prob = c(0.5, 0.35, 0.15))
-)
-
-# Paramètres
-facteur_substitution <- 2.5
-rendement_conversion <- 0.85
-
-# Ajuster le rendement selon le type de peuplement
-parcelles$rendement_ajuste <- ifelse(
-  parcelles$type_peuplement == "feuillus", 0.88,
-  ifelse(parcelles$type_peuplement == "resineux", 0.82, 0.85)
-)
-
-# Calculer E2 : évitement carbone (tCO2/ha/an)
-parcelles$E2 <- parcelles$E1 * facteur_substitution * parcelles$rendement_ajuste
-
-# Évitement total par parcelle (tCO2/an)
-parcelles$E2_total <- parcelles$E2 * parcelles$surface_ha
-
-# Résumé
-cat("E2 - Évitement carbone (tCO2/ha/an):\n")
-summary(parcelles$E2)
-
-cat("\nÉvitement total sur la zone d'étude:",
-    round(sum(parcelles$E2_total), 1), "tCO2/an\n")
-
-# Visualisation
-hist(parcelles$E2, main = "Distribution de E2 (Évitement Carbone)",
-     xlab = "tCO2 évitées/ha/an", col = "darkgreen", breaks = 10)
-```
-
-```{r calc-e2-check}
-grade_result(
-  pass_if(~ is.numeric(.result) || "histogram" %in% class(.result),
-          "Excellent ! E2 calculé avec succès."),
-  fail_if(~ TRUE, "Vérifiez la formule E2 = E1 × facteur × rendement")
-)
-```
 
 ### E2 par Type de Peuplement
 
@@ -627,47 +509,7 @@ poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
 
 ```
 
-```{r composite-index-solution}
-set.seed(42)
-n <- 30
 
-indic_norm <- data.frame(
-  id = 1:n,
-  C1 = runif(n), C2 = runif(n), C3 = runif(n),
-  B1 = runif(n), B2 = runif(n), B3 = runif(n),
-  W1 = runif(n), W2 = runif(n), W3 = runif(n),
-  R1 = runif(n), R2 = runif(n), R3 = runif(n), R4 = runif(n)
-)
-
-poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
-
-# Calculer la moyenne par famille
-indic_norm$moy_C <- rowMeans(indic_norm[, c("C1", "C2", "C3")])
-indic_norm$moy_B <- rowMeans(indic_norm[, c("B1", "B2", "B3")])
-indic_norm$moy_W <- rowMeans(indic_norm[, c("W1", "W2", "W3")])
-indic_norm$moy_R <- rowMeans(indic_norm[, c("R1", "R2", "R3", "R4")])
-
-# Calculer l'indice composite pondéré
-indic_norm$I_nemeton <- (
-  poids["C"] * indic_norm$moy_C +
-  poids["B"] * indic_norm$moy_B +
-  poids["W"] * indic_norm$moy_W +
-  poids["R"] * indic_norm$moy_R
-) / sum(poids)  # Normaliser par la somme des poids utilisés
-
-# Résultat
-summary(indic_norm$I_nemeton)
-hist(indic_norm$I_nemeton, main = "Distribution de l'Indice Nemeton",
-     xlab = "Score", col = "forestgreen", breaks = 10)
-```
-
-```{r composite-index-check}
-grade_result(
-  pass_if(~ is.numeric(.result) || "histogram" %in% class(.result),
-          "Indice composite calculé !"),
-  fail_if(~ TRUE, "Vérifiez le calcul de l'indice")
-)
-```
 
 ## Utilisation de nemeton
 

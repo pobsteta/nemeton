@@ -169,22 +169,6 @@ cat("Clusters:", length(unique(quatre_montagnes$cluster_id)), "\n")
 cat(paste(unique(quatre_montagnes$cluster_id), collapse = ", "))
 ```
 
-```{r ex-1-1-solution}
-# Charger les données
-data("quatre_montagnes", package = "lidaRtRee")
-
-# Structure des données
-cat("Dimensions:", nrow(quatre_montagnes), "placettes x",
-   ncol(quatre_montagnes), "variables\n\n")
-
-# Aperçu des premières colonnes
-cat("Variables principales:\n")
-cat(paste(names(quatre_montagnes)[1:10], collapse = ", "), "\n\n")
-
-# Clusters disponibles
-cat("Clusters:", length(unique(quatre_montagnes$cluster_id)), "\n")
-cat(paste(unique(quatre_montagnes$cluster_id), collapse = ", "))
-```
 
 ### Exercice 1.2 : Créer un objet sf
 
@@ -210,31 +194,7 @@ cat("CRS:", st_crs(placettes_sf)$input, "\n")
 cat("Nombre de points:", nrow(placettes_sf), "\n")
 ```
 
-```{r ex-1-2-solution}
-# Convertir en sf avec les colonnes X et Y
-placettes_sf <- st_as_sf(
- quatre_montagnes,
- coords = c("X", "Y"),
- crs = 2154  # Lambert-93
-)
 
-# Vérifier
-cat("Classe:", class(placettes_sf)[1], "\n")
-cat("CRS:", st_crs(placettes_sf)$input, "\n")
-cat("Nombre de points:", nrow(placettes_sf), "\n")
-```
-
-```{r ex-1-2-check}
-grade_this({
- if (!inherits(.result, "sf")) {
-   fail("L'objet doit être de classe 'sf'. Utilisez st_as_sf().")
- }
- if (st_crs(.result)$epsg != 2154) {
-   fail("Le CRS doit être EPSG:2154 (Lambert-93).")
- }
- pass("Excellent ! Vous avez créé un objet sf en Lambert-93.")
-})
-```
 
 ### Exercice 1.3 : Sélectionner le groupe Centre
 
@@ -268,39 +228,7 @@ cat("\nÉtendue:", round(bbox["xmax"] - bbox["xmin"]), "m x",
    round(bbox["ymax"] - bbox["ymin"]), "m\n")
 ```
 
-```{r ex-1-3-solution}
-# Clusters du groupe Centre (altitude intermédiaire)
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
 
-# Filtrer les placettes
-placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
-
-cat("Placettes sélectionnées:", nrow(placettes_centre), "\n")
-
-# Calculer l'emprise
-bbox <- st_bbox(placettes_centre)
-cat("\nEmprise (Lambert-93):\n")
-cat(" xmin:", round(bbox["xmin"]), "\n")
-cat(" ymin:", round(bbox["ymin"]), "\n")
-cat(" xmax:", round(bbox["xmax"]), "\n")
-cat(" ymax:", round(bbox["ymax"]), "\n")
-cat("\nÉtendue:", round(bbox["xmax"] - bbox["xmin"]), "m x",
-   round(bbox["ymax"] - bbox["ymin"]), "m\n")
-```
-
-```{r ex-1-3-check}
-grade_this({
-  if (!inherits(.result, "sf")) {
-    fail("Le résultat doit être un objet sf.")
-  }
-  if (nrow(.result) < 20 || nrow(.result) > 35) {
-    fail(paste0("Nombre de placettes (", nrow(.result), ") inattendu. ",
-               "Vérifiez les clusters sélectionnés."))
-  }
-  pass(paste0("Parfait ! Vous avez sélectionné ", nrow(.result), " placettes du groupe Centre."))
-})
-```
 
 ### Exercice 1.4 : Créer le contour de la zone d'étude
 
@@ -340,43 +268,7 @@ zone_etude_sf <- st_sf(
 print(zone_etude_sf)
 ```
 
-```{r ex-1-4-solution}
-# Créer l'enveloppe convexe des placettes
-enveloppe <- st_convex_hull(st_union(placettes_centre))
 
-# Ajouter un buffer de 500m
-zone_etude <- st_buffer(enveloppe, dist = 500)
-
-# Calculer la surface
-surface_ha <- as.numeric(st_area(zone_etude)) / 10000
-
-cat("Zone d'étude créée !\n")
-cat("Surface:", round(surface_ha), "hectares\n")
-
-# Convertir en sf pour manipulation ultérieure
-zone_etude_sf <- st_sf(
- id = 1,
- nom = "Quatre Montagnes - Centre",
- geometry = zone_etude
-)
-
-# Afficher
-print(zone_etude_sf)
-```
-
-```{r ex-1-4-check}
-grade_this({
- if (!inherits(.result, "sf")) {
-   fail("L'objet doit être de classe 'sf'.")
- }
- area <- as.numeric(st_area(.result)) / 10000
- if (area < 1000 || area > 2500) {
-   fail(paste0("La surface (", round(area), " ha) semble incorrecte. ",
-              "Vérifiez le buffer de 500m."))
- }
- pass("Parfait ! Votre zone d'étude de ~1600 ha est prête.")
-})
-```
 
 ### Exercice 1.5 : Sauvegarder la zone d'étude
 
@@ -582,44 +474,7 @@ surface_totale <- sum(st_area(parcelles))
 cat("\nSurface totale:", round(as.numeric(surface_totale)/10000, 1), "ha\n")
 ```
 
-```{r ex-2-1-solution}
-# === PATTERN DE CACHE ===
-# Définir le répertoire de cache
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-parcelles_filepath <- file.path(data_dir, "parcelles.gpkg")
 
-if (file.exists(parcelles_filepath)) {
-  cat("Chargement depuis le cache...\n")
-  parcelles <- st_read(parcelles_filepath, quiet = TRUE)
-} else {
-  cat("Téléchargement depuis l'API IGN...\n")
-  parcelles <- get_wfs(
-    x = zone_etude_sf,
-    layer = "CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle"
-  )
-  parcelles <- st_transform(parcelles, 2154)
-  st_write(parcelles, parcelles_filepath, quiet = TRUE)
-}
-
-cat("Nombre de parcelles:", nrow(parcelles), "\n")
-```
-
-```{r ex-2-1-check}
-grade_this({
- if (!inherits(.result, "sf")) {
-   fail("Le résultat doit être un objet sf.")
- }
- if (nrow(.result) < 10) {
-   fail("Trop peu de parcelles téléchargées. Vérifiez la zone d'étude.")
- }
- pass(paste0("Bravo ! Vous avez téléchargé ", nrow(.result), " parcelles cadastrales."))
-})
-```
 
 ### Exercice 2.2 : Explorer les parcelles
 
@@ -779,41 +634,7 @@ cat("Altitude moyenne:", round(stats$mean), "m\n")
 cat("Écart-type:", round(stats$sd), "m\n")
 ```
 
-```{r ex-3-1-solution}
-# Définir le répertoire de cache
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-mnt_filepath <- file.path(data_dir, "mnt.tif")
 
-if (file.exists(mnt_filepath)) {
-  mnt <- rast(mnt_filepath)
-} else {
-  mnt <- get_wms_raster(
-    x = zone_etude_sf,
-    layer = "ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES",
-    res = 5, crs = 2154, rgb = FALSE
-  )
-  writeRaster(mnt, mnt_filepath, overwrite = TRUE)
-}
-
-cat("Dimensions:", nrow(mnt), "x", ncol(mnt), "\n")
-```
-
-```{r ex-3-1-check}
-grade_this({
- if (!inherits(.result, "SpatRaster")) {
-   fail("Le résultat doit être un SpatRaster (terra).")
- }
- if (res(.result)[1] != 5) {
-   fail("La résolution doit être de 5 mètres.")
- }
- pass("Excellent ! MNT téléchargé à 5m de résolution.")
-})
-```
 
 ### Exercice 3.2 : Calculer pente et exposition
 
@@ -856,22 +677,6 @@ cat(" Moyenne:", round(global(pente, "mean", na.rm = TRUE)$mean, 1), "°\n")
 print(topo)
 ```
 
-```{r ex-3-2-check}
-grade_this({
-  if (!inherits(.result, "SpatRaster")) {
-    fail("Le résultat doit être un SpatRaster (terra).")
-  }
-  if (nlyr(.result) != 3) {
-    fail(paste0("Le stack doit contenir 3 couches (altitude, pente, exposition). ",
-               "Vous avez ", nlyr(.result), " couche(s)."))
-  }
-  expected_names <- c("altitude", "pente", "exposition")
-  if (!all(names(.result) == expected_names)) {
-    fail("Les couches doivent être nommées 'altitude', 'pente', 'exposition'.")
-  }
-  pass("Excellent ! Stack topographique créé avec 3 couches.")
-})
-```
 
 ### Visualisation du MNT
 
@@ -986,20 +791,6 @@ surface_foret <- sum(st_area(bd_foret))
 cat("\nSurface forestière:", round(as.numeric(surface_foret)/10000, 1), "ha\n")
 ```
 
-```{r ex-4-1-check}
-grade_this({
-  if (!inherits(.result, "sf")) {
-    fail("Le résultat doit être un objet sf.")
-  }
-  if (nrow(.result) < 5) {
-    fail("Trop peu de formations végétales. Vérifiez le téléchargement.")
-  }
-  if (!"tfv" %in% names(.result)) {
-    fail("La colonne 'tfv' (type de formation végétale) est absente.")
-  }
-  pass(paste0("Bravo ! BD Forêt téléchargée avec ", nrow(.result), " formations végétales."))
-})
-```
 
 ### Exercice 4.2 : Télécharger les routes
 
@@ -1056,17 +847,6 @@ if ("nature" %in% names(routes)) {
 }
 ```
 
-```{r ex-4-2-check}
-grade_this({
-  if (!inherits(.result, "sf")) {
-    fail("Le résultat doit être un objet sf.")
-  }
-  if (nrow(.result) < 1) {
-    fail("Aucune route téléchargée. Vérifiez la zone d'étude.")
-  }
-  pass(paste0("Parfait ! ", nrow(.result), " tronçons routiers téléchargés."))
-})
-```
 
 ### Exercice 4.3 : Télécharger les cours d'eau
 
@@ -1121,15 +901,6 @@ if (nrow(cours_eau) > 0) {
 }
 ```
 
-```{r ex-4-3-check}
-grade_this({
-  if (!inherits(.result, "sf")) {
-    fail("Le résultat doit être un objet sf.")
-  }
-  # Note: 0 cours d'eau est acceptable selon la zone
-  pass(paste0("Téléchargement terminé : ", nrow(.result), " cours d'eau."))
-})
-```
 
 ### Visualisation BD Forêt
 

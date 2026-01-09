@@ -86,11 +86,6 @@ if (file.exists(mnt_path)) {
 }
 ```
 
-```{r ex-1-1-check}
-grade_this({
-  pass("Pente et exposition calculées !")
-})
-```
 
 ---
 
@@ -168,11 +163,6 @@ if (file.exists(mnt_path)) {
 }
 ```
 
-```{r ex-2-1-check}
-grade_this({
-  pass("Indicateur W3 (TWI) calculé !")
-})
-```
 
 ### Interprétation du TWI
 
@@ -244,11 +234,6 @@ if (file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-3-1-check}
-grade_this({
-  pass("Indicateur W1 (densité réseau hydro) calculé !")
-})
-```
 
 ### Exercice 3.2 : Couverture en zones humides (W2)
 
@@ -305,11 +290,6 @@ if (file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-3-2-check}
-grade_this({
-  pass("Indicateur W2 (couverture zones humides) calculé !")
-})
-```
 
 ---
 
@@ -391,11 +371,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
 }
 ```
 
-```{r ex-4-1-check}
-grade_this({
-  pass("Indicateur R1 (exposition au feu) calculé !")
-})
-```
 
 ### Interprétation de l'exposition au feu
 
@@ -561,11 +536,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-4-2-check}
-grade_this({
-  pass("Indicateur R2 (risque tempête) calculé !")
-})
-```
 
 ### Interprétation de l'exposition aux tempêtes
 
@@ -717,11 +687,6 @@ if (file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-4-3-check}
-grade_this({
-  pass("Indicateur R3 (risque sécheresse) calculé avec SPI/SPEI/RDI !")
-})
-```
 
 ### Interprétation des indices de sécheresse
 
@@ -1054,11 +1019,6 @@ st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nParcelles sauvegardées avec R4.\n")
 ```
 
-```{r ex-4-4-check}
-grade_this({
-  pass("Indicateur R4 (pression gibier) calculé avec données de chasse !")
-})
-```
 
 ### Synthèse des indicateurs de risque
 
@@ -1148,11 +1108,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
 }
 ```
 
-```{r ex-5-1-check}
-grade_this({
-  pass("Indicateur S1 (accessibilité routes) calculé !")
-})
-```
 
 ---
 
@@ -1242,11 +1197,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
 }
 ```
 
-```{r ex-5-2-check}
-grade_this({
-  pass("Indicateur S2 (distance bâtiments) calculé !")
-})
-```
 
 ---
 
@@ -1351,11 +1301,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
 }
 ```
 
-```{r ex-5-3-check}
-grade_this({
-  pass("Indicateur S3 (densité sentiers) calculé !")
-})
-```
 
 ---
 
@@ -1634,11 +1579,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
 }
 ```
 
-```{r ex-6-1-check}
-grade_this({
-  pass("Indicateur P2 (fertilité station) calculé en raster !")
-})
-```
 
 ### Interprétation de la fertilité de station
 
@@ -1718,11 +1658,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nSauvegardé:", output_path, "\n")
 ```
 
-```{r ex-7-1-check}
-grade_this({
-  pass("Famille W (Eau) exportée !")
-})
-```
 
 ---
 
@@ -1791,11 +1726,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nSauvegardé:", output_path, "\n")
 ```
 
-```{r ex-7-2-check}
-grade_this({
-  pass("Famille R (Risques) exportée !")
-})
-```
 
 ---
 
@@ -1854,11 +1784,6 @@ st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\nSauvegardé:", output_path, "\n")
 ```
 
-```{r ex-7-3-check}
-grade_this({
-  pass("Famille S (Social) exportée !")
-})
-```
 
 ---
 
@@ -1922,11 +1847,6 @@ for (ind in indicateurs) {
 cat("\nNombre de parcelles:", nrow(parcelles), "\n")
 ```
 
-```{r ex-7-4-check}
-grade_this({
-  pass("Tous les indicateurs terrain exportés !")
-})
-```
 
 ---
 
