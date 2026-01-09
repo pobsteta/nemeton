@@ -56,18 +56,36 @@ options(
 
 # Configuration httr si disponible
 if (requireNamespace("httr", quietly = TRUE)) {
-  httr::set_config(httr::timeout(NETWORK_TIMEOUT))
-  cat("  httr: configuré\n")
+  httr::set_config(httr::config(
+    connecttimeout = NETWORK_TIMEOUT,
+    timeout = NETWORK_TIMEOUT
+  ))
+  cat("  httr: configuré (connect + timeout)\n")
 }
 
 # Configuration curl si disponible
 if (requireNamespace("curl", quietly = TRUE)) {
+  # Créer un handle curl avec les bons timeouts
   Sys.setenv(
     CURL_SSL_BACKEND = "openssl",
-    R_CURL_TIMEOUT = as.character(NETWORK_TIMEOUT)
+    R_LIBCURL_SSL_REVOKE_BEST_EFFORT = "true"
   )
-  cat("  curl: configuré\n")
+  # Configuration globale des timeouts curl
+  options(
+    curl_timeout = NETWORK_TIMEOUT,
+    curl_connecttimeout = NETWORK_TIMEOUT
+  )
+  cat("  curl: configuré (connect + timeout)\n")
 }
+
+# Configuration pour happign (utilise httr2/curl en interne)
+Sys.setenv(
+  HAPPIGN_TIMEOUT = as.character(NETWORK_TIMEOUT),
+  GDAL_HTTP_TIMEOUT = as.character(NETWORK_TIMEOUT),
+  GDAL_HTTP_CONNECTTIMEOUT = as.character(NETWORK_TIMEOUT),
+  CPL_CURL_VERBOSE = "NO"
+)
+cat("  GDAL/happign: configuré\n")
 cat("\n")
 
 # Créer le répertoire de données si nécessaire

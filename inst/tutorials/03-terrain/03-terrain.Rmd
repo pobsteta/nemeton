@@ -18,24 +18,27 @@ gradethis::gradethis_setup()
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(tutorial.exercise.timelimit = 300)
 
-# Configuration des timeouts réseau (en secondes)
+# Configuration des timeouts réseau (5 minutes)
+NETWORK_TIMEOUT <- 300
 options(
-  timeout = 300,                    # Timeout général R
+  timeout = NETWORK_TIMEOUT,
   HTTPUserAgent = "nemeton-tutorial/1.0"
 )
 
-# Configuration httr si disponible
+# Configuration httr (connect + request timeout)
 if (requireNamespace("httr", quietly = TRUE)) {
-  httr::set_config(httr::timeout(300))
+  httr::set_config(httr::config(
+    connecttimeout = NETWORK_TIMEOUT,
+    timeout = NETWORK_TIMEOUT
+  ))
 }
 
-# Configuration curl si disponible
-if (requireNamespace("curl", quietly = TRUE)) {
-  Sys.setenv(
-    CURL_SSL_BACKEND = "openssl",
-    R_CURL_TIMEOUT = "300"
-  )
-}
+# Configuration GDAL/curl pour happign
+Sys.setenv(
+  GDAL_HTTP_TIMEOUT = as.character(NETWORK_TIMEOUT),
+  GDAL_HTTP_CONNECTTIMEOUT = as.character(NETWORK_TIMEOUT),
+  CURL_SSL_BACKEND = "openssl"
+)
 ```
 
 ## Bienvenue
