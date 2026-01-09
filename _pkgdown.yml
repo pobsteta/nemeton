@@ -100,6 +100,10 @@ reference:
     - indicator_risk_fire
     - indicator_risk_storm
     - indicator_risk_drought
+    - indicator_risk_browsing
+    - compute_game_pressure_index
+    - download_hunting_data
+    - get_game_pressure_raster
 
   - title: "Family T: Temporal Dynamics / Famille T : Dynamique temporelle (v0.3.0)"
     desc: "Forest age and land cover change / Ancienneté des peuplements et changements d'occupation"
@@ -211,6 +215,10 @@ reference:
     - get_family_name
     - family-system
     - indicators-families
+    - indicators-energy
+    - indicators-naturalness
+    - indicators-productive
+    - indicators-social
     - temporal
 
 authors:
