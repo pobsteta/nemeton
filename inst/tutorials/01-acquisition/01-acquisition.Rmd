@@ -497,6 +497,8 @@ parcelles <- st_read(parcelles_filepath, quiet = TRUE)
 ```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=22, exercise.setup="ex-2-2-setup"}
 # Les parcelles sont déjà chargées depuis le cache (setup)
 cat("Parcelles chargées depuis le cache\n\n")
+cat("Nombre de ligne:", nrow(parcelles), "\n")
+cat("Nombre de colonne:", ncol(parcelles), "\n")
 
 # Calculer la surface de chaque parcelle
 parcelles$surface_ha <- as.numeric(st_area(parcelles)) / 10000
@@ -1121,9 +1123,10 @@ Toutes les données téléchargées sont déjà sauvegardées dans votre **répe
 ```{r ex-6-1-setup}
 library(sf)
 library(terra)
+library(lidaRtRee)
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-6-1-setup"}
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-6-1-setup"}
 # === INVENTAIRE DU CACHE ===
 # Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -1156,6 +1159,35 @@ for (gpkg in gpkg_files) {
   couches <- st_layers(gpkg)
   for (i in seq_len(nrow(couches))) {
     cat("  -", couches$name[i], ":", couches$features[i], "entités\n")
+  }
+}
+
+# === MÉTRIQUES LIDAR DEPUIS QUATRE_MONTAGNES ===
+cat("\n=== Métriques LiDAR (quatre_montagnes) ===\n")
+data("quatre_montagnes", package = "lidaRtRee")
+
+# Filtrer sur les clusters Centre utilisés dans le tutoriel
+clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+                    "Verc-C4", "Verc-C2", "Verc-05")
+qm_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
+
+cat("Placettes:", nrow(qm_centre), "\n\n")
+
+# Métriques LiDAR disponibles
+metriques <- c("zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95",
+               "zentropy", "pzabove2", "Tree_density")
+
+cat("Métrique         Min      Moy      Max    Unité\n")
+cat("------------------------------------------------\n")
+for (m in metriques) {
+  if (m %in% names(qm_centre)) {
+    vals <- qm_centre[[m]]
+    unite <- ifelse(m %in% c("zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95"), "m",
+             ifelse(m == "pzabove2", "%",
+             ifelse(m == "Tree_density", "arb/ha", "")))
+    cat(sprintf("%-12s %8.1f %8.1f %8.1f    %s\n",
+                m, min(vals, na.rm = TRUE), mean(vals, na.rm = TRUE),
+                max(vals, na.rm = TRUE), unite))
   }
 }
 ```
