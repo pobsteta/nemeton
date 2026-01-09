@@ -41,9 +41,9 @@ Données du Tutorial 01 :
 
 ---
 
-## Section 1 : Dérivés topographiques
+## Section 1 : Dérivés topographiques et érosion (F1)
 
-### Pente et exposition
+### Exercice 1.1 : Pente et exposition
 
 La **pente** et l'**exposition** sont les dérivés de base du MNT.
 
@@ -200,10 +200,13 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("F1 max:", round(max(parcelles$F1, na.rm = TRUE), 3), "\n")
   cat("F1 moyen:", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
 
-  # Sauvegarder
+  # Sauvegarder les parcelles avec F1
   output_path <- file.path(data_dir, "metriques_erosion.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  cat("\nMétriques F1 exportées:", output_path, "\n")
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+  cat("\n=== Métriques F1 exportées ===\n")
+  cat("Fichier:", output_path, "\n")
+  cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
 } else {
   cat("Fichiers non trouvés. Exécutez le Tutorial 01.\n")
