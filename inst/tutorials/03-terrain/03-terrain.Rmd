@@ -2211,20 +2211,33 @@ quiz(
 
 ### Indicateurs calculés
 
-| Famille | Code | Indicateur | Source / Package |
-|---------|------|------------|------------------|
-| **W** | W1 | Densité réseau hydro | BD TOPO |
-| **W** | W2 | Couverture zones humides | MNT (TWI) |
-| **W** | W3 | TWI | MNT + fasterRaster |
-| **R** | R1 | Risque feu | BD Forêt + fireexposuR |
-| **R** | R2 | Risque tempête | nasapower + microclima |
-| **R** | R3 | Risque sécheresse | QBMS + SPEI |
-| **R** | R4 | Pression gibier | data.gouv.fr + BD Forêt |
-| **S** | S1 | Accessibilité routes | BD TOPO |
-| **S** | S2 | Proximité bâtiments | BD TOPO |
-| **S** | S3 | Densité sentiers | osmdata (OSM) |
-| **P** | P2 | Fertilité station | climateR + SPEI + geodata |
-| **F** | F1 | Risque érosion | MNT |
+| Famille | Code | Indicateur | Source | Unité | Interprétation |
+|---------|------|------------|--------|-------|----------------|
+| **W** | W1 | Densité réseau hydro | BD TOPO cours_eau | m/ha | 0=aucun, >50=dense |
+| **W** | W2 | Zones humides | MNT → TWI > 12 | % | % surface humide |
+| **W** | W3 | TWI moyen | MNT + fasterRaster | - | <6=sec, >12=humide |
+| **R** | R1 | Risque feu | fireexposuR | 0-1 | 0=faible, 1=fort |
+| **R** | R2 | Risque tempête | nasapower + microclima | 0-1 | 0=abrité, 1=exposé |
+| **R** | R3 | Risque sécheresse | QBMS + SPEI | 0-1 | 0=humide, 1=sec |
+| **R** | R4 | Pression gibier | nemeton + data.gouv.fr | 0-1 | palatab.+vulnér.+lisière+chasse |
+| **S** | S1 | Distance routes | BD TOPO routes | m | <100=accessible, >500=isolé |
+| **S** | S2 | Distance bâtiments | BD TOPO bâtiments | m | <200=proche, >1000=rural |
+| **S** | S3 | Densité sentiers | osmdata (OSM) | m/ha | 0=aucun, >20=récréatif |
+| **P** | P2 | Fertilité station | MNT + climateR | 0-1 | pente+TWI+aspect+TPI+climat |
+| **F** | F1 | Érosion RUSLE | MNT + BD Forêt | 0-1 | LS × C (pente × couverture) |
+
+### Fichiers produits
+
+| Fichier | Contenu | Indicateurs |
+|---------|---------|-------------|
+| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, S1-3, P2, F1 |
+| `metriques_twi.gpkg` | Humidité topographique | W3 |
+| `metriques_pression_gibier.gpkg` | Pression gibier détaillée | R4 + composantes |
+| `metriques_erosion.gpkg` | Érosion RUSLE | F1 |
+| `metriques_fertilite_station.gpkg` | Fertilité station | P2 |
+| `twi.tif` | Raster TWI | - |
+| `erosion_f1.tif` | Raster érosion RUSLE | - |
+| `fertilite_station.tif` | Raster fertilité | - |
 
 ### Tutoriel suivant
 
