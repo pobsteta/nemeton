@@ -485,7 +485,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1  nemeton_0.4.22
+#> [1] ggplot2_4.0.1  nemeton_0.4.23
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] tidyr_1.3.2          sass_0.4.10          generics_0.1.4      
