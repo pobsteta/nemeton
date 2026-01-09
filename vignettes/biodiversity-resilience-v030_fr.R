@@ -223,7 +223,7 @@ hotspots_bio <- result_complete |>
 cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles\n")
 
 # Afficher les parcelles identifiées
-if(nrow(hotspots_bio) > 0) {
+if (nrow(hotspots_bio) > 0) {
   hotspots_bio |>
     st_drop_geometry() |>
     select(parcel_id, family_B, T1, family_R) |>
@@ -241,7 +241,7 @@ multi_risques <- result_complete |>
 cat("Parcelles à risques multiples (≥2) :", nrow(multi_risques), "\n")
 
 # Détail des risques
-if(nrow(multi_risques) > 0) {
+if (nrow(multi_risques) > 0) {
   multi_risques |>
     st_drop_geometry() |>
     select(parcel_id, R1_norm, R2_norm, R3_norm, nb_risques, family_R) |>
@@ -255,7 +255,7 @@ services_climat <- result_complete |>
 
 cat("Parcelles à fort potentiel climatique :", nrow(services_climat), "\n")
 
-if(nrow(services_climat) > 0) {
+if (nrow(services_climat) > 0) {
   services_climat |>
     st_drop_geometry() |>
     select(parcel_id, A1, A2, family_A) |>
@@ -292,4 +292,3 @@ summary_table <- result_complete |>
   head(5)
 
 summary_table
-

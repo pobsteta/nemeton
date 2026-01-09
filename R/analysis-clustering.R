@@ -91,11 +91,10 @@
 #'
 #' @export
 cluster_parcels <- function(data,
-                             families,
-                             k = NULL,
-                             method = "kmeans",
-                             max_k = 10) {
-
+                            families,
+                            k = NULL,
+                            method = "kmeans",
+                            max_k = 10) {
   # === VALIDATION ===
 
   # Check data
@@ -107,21 +106,24 @@ cluster_parcels <- function(data,
   missing_fam <- setdiff(families, names(data))
   if (length(missing_fam) > 0) {
     stop(sprintf(msg("error_families_not_found"), paste(missing_fam, collapse = ", ")),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check families are numeric
   non_numeric <- families[!sapply(families, function(fam) is.numeric(data[[fam]]))]
   if (length(non_numeric) > 0) {
     stop(sprintf(msg("error_non_numeric_families"), paste(non_numeric, collapse = ", ")),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check for NA values
   has_na <- sapply(data[families], function(x) any(is.na(x)))
   if (any(has_na)) {
     stop(sprintf(msg("error_na_values"), paste(families[has_na], collapse = ", ")),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check method
@@ -137,7 +139,8 @@ cluster_parcels <- function(data,
     }
     if (k >= n) {
       stop(sprintf(msg("error_k_too_large"), n),
-           call. = FALSE)
+        call. = FALSE
+      )
     }
   }
 
@@ -209,8 +212,10 @@ cluster_parcels <- function(data,
     })
   }
 
-  cli::cli_alert_success(sprintf(msg("msg_cluster_complete"),
-                                        paste(table(clusters), collapse = ", ")))
+  cli::cli_alert_success(sprintf(
+    msg("msg_cluster_complete"),
+    paste(table(clusters), collapse = ", ")
+  ))
 
   # === RETURN RESULT ===
 

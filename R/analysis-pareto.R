@@ -64,15 +64,16 @@
 #' ggplot(result, aes(x = family_C, y = family_B, color = is_optimal)) +
 #'   geom_point(size = 3) +
 #'   scale_color_manual(values = c("gray", "red")) +
-#'   labs(title = "Pareto Optimal Parcels",
-#'        x = "Carbon Storage", y = "Biodiversity")
+#'   labs(
+#'     title = "Pareto Optimal Parcels",
+#'     x = "Carbon Storage", y = "Biodiversity"
+#'   )
 #' }
 #'
 #' @export
 identify_pareto_optimal <- function(data,
-                                     objectives,
-                                     maximize = rep(TRUE, length(objectives))) {
-
+                                    objectives,
+                                    maximize = rep(TRUE, length(objectives))) {
   # === VALIDATION ===
 
   # Check data
@@ -126,7 +127,7 @@ identify_pareto_optimal <- function(data,
   is_dominated <- rep(FALSE, n)
 
   for (i in 1:n) {
-    if (is_dominated[i]) next  # Skip if already dominated
+    if (is_dominated[i]) next # Skip if already dominated
 
     # Compare parcel i against all other parcels
     for (j in 1:n) {

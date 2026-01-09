@@ -179,7 +179,7 @@ test_that("indicator_air_quality handles missing data gracefully", {
   # No ATMO, no roads, no urban → should fail or use defaults
   expect_error(
     indicator_air_quality(units, atmo_data = NULL, roads = NULL, urban_areas = NULL, method = "proxy"),
-    "roads"  # Should error about missing proxy data
+    "roads" # Should error about missing proxy data
   )
 })
 

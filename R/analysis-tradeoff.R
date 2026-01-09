@@ -104,7 +104,6 @@ plot_tradeoff <- function(data,
                           xlab = NULL,
                           ylab = NULL,
                           title = NULL) {
-
   # === VALIDATION ===
 
   # Check ggplot2 is available
@@ -120,39 +119,46 @@ plot_tradeoff <- function(data,
   # Check x variable
   if (!x %in% names(data)) {
     stop(sprintf(msg("error_variable_not_found"), x),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
   if (!is.numeric(data[[x]])) {
     stop(sprintf(msg("error_non_numeric_variable"), x),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check y variable
   if (!y %in% names(data)) {
     stop(sprintf(msg("error_variable_not_found"), y),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
   if (!is.numeric(data[[y]])) {
     stop(sprintf(msg("error_non_numeric_variable"), y),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check color variable if specified
   if (!is.null(color) && !color %in% names(data)) {
     stop(sprintf(msg("error_variable_not_found"), color),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check size variable if specified
   if (!is.null(size) && !size %in% names(data)) {
     stop(sprintf(msg("error_variable_not_found"), size),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check label variable if specified
   if (!is.null(label) && !label %in% names(data)) {
     stop(sprintf(msg("error_variable_not_found"), label),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Check is_optimal if pareto_frontier requested
@@ -225,7 +231,6 @@ plot_tradeoff <- function(data,
         alpha = 0.8
       )
     }
-
   } else {
     # Standard scatterplot (no Pareto frontier)
     p <- p + ggplot2::geom_point(alpha = 0.7)
@@ -236,7 +241,7 @@ plot_tradeoff <- function(data,
     if (requireNamespace("ggrepel", quietly = TRUE)) {
       # Use ggrepel for non-overlapping labels
       label_data <- if (pareto_frontier && "is_optimal" %in% names(plot_data)) {
-        plot_data[plot_data$is_optimal, ]  # Only label optimal parcels
+        plot_data[plot_data$is_optimal, ] # Only label optimal parcels
       } else {
         plot_data
       }

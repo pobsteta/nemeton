@@ -47,12 +47,16 @@ Maintenant, vous allez :
 ```{r familles-diagram, echo=FALSE}
 familles <- data.frame(
   Code = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
-  Famille = c("Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
-              "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"),
+  Famille = c(
+    "Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
+    "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"
+  ),
   Nb_Indicateurs = c(3, 3, 3, 2, 2, 3, 2, 4, 3, 3, 2, 3),
-  Source_Principale = c("LiDAR", "INPN/LiDAR", "MNT", "LiDAR/BD Forêt",
-                        "MNT/Pédologie", "BD Forêt", "BD Forêt", "MNT",
-                        "BD TOPO", "LiDAR/BD Forêt", "LiDAR/BD Forêt", "Multi")
+  Source_Principale = c(
+    "LiDAR", "INPN/LiDAR", "MNT", "LiDAR/BD Forêt",
+    "MNT/Pédologie", "BD Forêt", "BD Forêt", "MNT",
+    "BD TOPO", "LiDAR/BD Forêt", "LiDAR/BD Forêt", "Multi"
+  )
 )
 knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton")
 ```
@@ -69,10 +73,10 @@ cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 # Fichiers attendus des tutoriaux précédents
 fichiers_requis <- c(
-  "parcelles.gpkg",           # T01
-  "metriques_lidar.gpkg",     # T02
+  "parcelles.gpkg", # T01
+  "metriques_lidar.gpkg", # T02
   "indicateurs_terrain.gpkg", # T03
-  "indicateurs_ecologiques.gpkg"  # T04
+  "indicateurs_ecologiques.gpkg" # T04
 )
 
 # Vérification
@@ -218,11 +222,13 @@ if ("idu" %in% cols_present && length(cols_present) > 1) {
 # ============================================================
 # BILAN
 # ============================================================
-indicateurs_attendus <- c("C1", "P1", "P3", "E1", "E2", "A1",
-                          "W1", "W2", "W3", "R1", "R2", "R3", "R4",
-                          "S1", "S2", "S3", "P2", "F1",
-                          "B1", "B2", "B3", "L1", "L2", "L3", "C2",
-                          "T1", "T2", "A2", "F2", "N1", "N2", "N3")
+indicateurs_attendus <- c(
+  "C1", "P1", "P3", "E1", "E2", "A1",
+  "W1", "W2", "W3", "R1", "R2", "R3", "R4",
+  "S1", "S2", "S3", "P2", "F1",
+  "B1", "B2", "B3", "L1", "L2", "L3", "C2",
+  "T1", "T2", "A2", "F2", "N1", "N2", "N3"
+)
 presents <- sum(indicateurs_attendus %in% names(indicateurs))
 
 cat("\n=== BILAN ===\n")
@@ -269,7 +275,7 @@ normalize_minmax <- function(x, na.rm = TRUE) {
   max_val <- max(x, na.rm = na.rm)
 
   if (max_val == min_val) {
-    return(rep(0.5, length(x)))  # Valeur constante
+    return(rep(0.5, length(x))) # Valeur constante
   }
 
   (x - min_val) / (max_val - min_val)
@@ -289,7 +295,9 @@ Appliquez la normalisation Min-Max à tous les indicateurs numériques :
 normalize_minmax <- function(x, na.rm = TRUE) {
   min_val <- min(x, na.rm = na.rm)
   max_val <- max(x, na.rm = na.rm)
-  if (max_val == min_val) return(rep(0.5, length(x)))
+  if (max_val == min_val) {
+    return(rep(0.5, length(x)))
+  }
   (x - min_val) / (max_val - min_val)
 }
 
@@ -306,7 +314,6 @@ indicateurs <- data.frame(
 
 # À compléter : normaliser toutes les colonnes numériques sauf id_parcelle
 # Créer un nouveau data.frame 'indicateurs_norm'
-
 ```
 
 
@@ -324,7 +331,7 @@ Certains indicateurs ont une logique **inverse** : une valeur élevée est défa
 
 ```{r inversion, exercise=TRUE, exercise.eval=FALSE, exercise.eval=FALSE}
 # Indicateurs à inverser (valeur élevée = défavorable)
-indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")  # L1 = fragmentation, R4 = pression gibier
+indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1") # L1 = fragmentation, R4 = pression gibier
 
 # Fonction d'inversion
 inverser_indicateur <- function(x_norm) {
@@ -332,7 +339,7 @@ inverser_indicateur <- function(x_norm) {
 }
 
 # Exemple
-risque_feu_norm <- c(0.2, 0.5, 0.8)  # Normalisé
+risque_feu_norm <- c(0.2, 0.5, 0.8) # Normalisé
 risque_feu_inv <- inverser_indicateur(risque_feu_norm)
 
 cat("Original (normalisé):", risque_feu_norm, "\n")
@@ -349,8 +356,10 @@ L'indice composite nemeton agrège les 12 familles avec des pondérations reflé
 ```{r ponderations, echo=FALSE}
 poids <- data.frame(
   Famille = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"),
-  Nom = c("Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
-          "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"),
+  Nom = c(
+    "Carbone", "Biodiversité", "Eau", "Air", "Sol", "Paysage",
+    "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"
+  ),
   Poids_Default = c(10, 12, 8, 6, 6, 5, 4, 10, 8, 8, 5, 8),
   stringsAsFactors = FALSE
 )
@@ -392,7 +401,6 @@ poids <- c(C = 0.15, B = 0.18, W = 0.12, R = 0.15)
 # 1. Calculer la moyenne par famille pour chaque parcelle
 # 2. Appliquer les poids
 # 3. Sommer pour obtenir l'indice final
-
 ```
 
 
@@ -409,7 +417,7 @@ library(nemeton)
 # Créer l'indice composite avec pondérations par défaut
 resultat <- create_composite_index(
   data = indicateurs_sf,
-  weights = NULL,  # Utilise les poids par défaut
+  weights = NULL, # Utilise les poids par défaut
   normalize = TRUE,
   invert_negative = TRUE
 )
@@ -443,7 +451,7 @@ create_composite_index_demo <- function(data, weights = NULL) {
   weights_norm <- lapply(weights, function(x) x / total)
 
   # Calculer (simplifié)
-  data$I_nemeton <- runif(nrow(data))  # Simulation
+  data$I_nemeton <- runif(nrow(data)) # Simulation
   return(data)
 }
 
@@ -473,8 +481,9 @@ resultat_final <- data.frame(
   surface_ha = runif(n, 0.5, 10),
   I_nemeton = runif(n, 0.3, 0.8),
   classe = cut(runif(n, 0.3, 0.8),
-               breaks = c(0, 0.4, 0.6, 0.8, 1),
-               labels = c("Faible", "Moyen", "Bon", "Excellent"))
+    breaks = c(0, 0.4, 0.6, 0.8, 1),
+    labels = c("Faible", "Moyen", "Bon", "Excellent")
+  )
 )
 
 # Afficher le résumé

@@ -64,7 +64,7 @@ temporal_data <- nemeton_temporal(
       layers = layers_2025
     )
   ),
-  unit_id = "parcel_id"  # Colonne identifiant les parcelles
+  unit_id = "parcel_id" # Colonne identifiant les parcelles
 )
 ```
 
@@ -137,7 +137,7 @@ differences <- calculate_change_rate(
   indicators = "carbon",
   period_start = "2020",
   period_end = "2025",
-  method = "absolute"  # Différence absolue au lieu de taux
+  method = "absolute" # Différence absolue au lieu de taux
 )
 ```
 
@@ -248,7 +248,7 @@ rates <- calculate_change_rate(
 
 # Filtrer les parcelles avec forte dynamique
 high_change <- rates |>
-  filter(abs(carbon_rate) > 2.0)  # > ±2% par an
+  filter(abs(carbon_rate) > 2.0) # > ±2% par an
 
 # Visualiser sur carte
 plot_indicators_map(
@@ -289,7 +289,7 @@ temporal_norm <- normalize_indicators(
   temporal_results,
   indicators = c("carbon", "biodiversity", "water"),
   method = "minmax",
-  by_period = TRUE  # Normalisation intra-période
+  by_period = TRUE # Normalisation intra-période
 )
 ```
 
@@ -303,7 +303,7 @@ temporal_norm_global <- normalize_indicators(
   temporal_results,
   indicators = c("carbon", "biodiversity", "water"),
   method = "minmax",
-  by_period = FALSE  # Normalisation sur toutes les données
+  by_period = FALSE # Normalisation sur toutes les données
 )
 ```
 

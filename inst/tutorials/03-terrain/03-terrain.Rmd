@@ -165,10 +165,12 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # LS = (sin(pente) / 0.0896)^1.3 pour pente >= 9%
 
   cat("1. Calcul du facteur LS (longueur-pente)...\n")
-  LS <- ifel(pente_deg < 5,
-             (pente_deg / 5)^1.2,
-             (sin(pente_rad) / 0.0896)^1.3)
-  LS <- clamp(LS, lower = 0, upper = 20)  # Limiter les valeurs extrêmes
+  LS <- ifel(
+    pente_deg < 5,
+    (pente_deg / 5)^1.2,
+    (sin(pente_rad) / 0.0896)^1.3
+  )
+  LS <- clamp(LS, lower = 0, upper = 20) # Limiter les valeurs extrêmes
 
   cat("   LS min:", round(global(LS, "min", na.rm = TRUE)$min, 2), "\n")
   cat("   LS max:", round(global(LS, "max", na.rm = TRUE)$max, 2), "\n")
@@ -187,7 +189,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
     cat("   BD Forêt utilisée pour le facteur C\n")
   } else {
     # Si pas de BD Forêt, utiliser une valeur par défaut (forêt)
-    C_factor <- mnt * 0 + 0.05  # Valeur intermédiaire forêt
+    C_factor <- mnt * 0 + 0.05 # Valeur intermédiaire forêt
     cat("   BD Forêt non disponible, C = 0.05 (forêt moyenne)\n")
   }
 
@@ -229,7 +231,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("\n=== Métriques F1 érosion exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
-
 } else {
   cat("Fichiers non trouvés. Exécutez le Tutorial 01.\n")
 }
@@ -341,7 +342,6 @@ if (file.exists(mnt_path)) {
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   }
-
 } else {
   cat("MNT non trouvé. Exécutez le Tutorial 01.\n")
 }
@@ -422,7 +422,7 @@ if (file.exists(parcelles_path)) {
       cat("Densité min:", round(min(parcelles$W1), 1), "m/ha\n")
       cat("Densité max:", round(max(parcelles$W1), 1), "m/ha\n")
       cat("Densité moyenne:", round(mean(parcelles$W1), 1), "m/ha\n")
-      
+
       # Sauvegarder
       output_path <- file.path(data_dir, "metriques_densite_hydro_w1.gpkg")
       st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -475,7 +475,8 @@ if (file.exists(parcelles_path)) {
     # Calculer le pourcentage de zones humides par parcelle
     if (requireNamespace("exactextractr", quietly = TRUE)) {
       parcelles$W2 <- exactextractr::exact_extract(
-        zones_humides, parcelles, fun = "mean"
+        zones_humides, parcelles,
+        fun = "mean"
       ) * 100
     } else {
       # Fallback avec terra
@@ -490,7 +491,7 @@ if (file.exists(parcelles_path)) {
     cat("% zones humides min:", round(min(parcelles$W2, na.rm = TRUE), 1), "%\n")
     cat("% zones humides max:", round(max(parcelles$W2, na.rm = TRUE), 1), "%\n")
     cat("% zones humides moyen:", round(mean(parcelles$W2, na.rm = TRUE), 1), "%\n")
-    
+
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_couverture_zone_humide_w2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -577,7 +578,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
     # Sauvegarder le raster d'exposition
     writeRaster(exposure, file.path(data_dir, "fire_exposure.tif"), overwrite = TRUE)
     cat("\nRaster d'exposition sauvegardé.\n")
-    
+
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_exposition_feu_r1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -649,20 +650,23 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
     library(nasapower)
     cat("=== Téléchargement données vent (NASA POWER) ===\n")
 
-    wind_data <- tryCatch({
-      # Climatologie mensuelle (moyenne 30 ans)
-      # WS10M_MAX = vitesse maximale du vent à 10m
-      # WD10M = direction du vent à 10m
-      nasapower::get_power(
-        community = "ag",
-        lonlat = c(lon, lat),
-        pars = c("WS10M_MAX", "WD10M"),
-        temporal_api = "climatology"
-      )
-    }, error = function(e) {
-      cat("Erreur nasapower:", conditionMessage(e), "\n")
-      NULL
-    })
+    wind_data <- tryCatch(
+      {
+        # Climatologie mensuelle (moyenne 30 ans)
+        # WS10M_MAX = vitesse maximale du vent à 10m
+        # WD10M = direction du vent à 10m
+        nasapower::get_power(
+          community = "ag",
+          lonlat = c(lon, lat),
+          pars = c("WS10M_MAX", "WD10M"),
+          temporal_api = "climatology"
+        )
+      },
+      error = function(e) {
+        cat("Erreur nasapower:", conditionMessage(e), "\n")
+        NULL
+      }
+    )
 
     if (!is.null(wind_data) && nrow(wind_data) > 0) {
       # Extraire les valeurs mensuelles (colonnes JAN à DEC = 4:15)
@@ -690,24 +694,27 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # === 2. Coefficient d'abri au vent avec microclima ===
   cat("\n=== Calcul coefficient d'abri (microclima) ===\n")
 
-  reso <- res(mnt)[1]  # Résolution du MNT
+  reso <- res(mnt)[1] # Résolution du MNT
 
   if (requireNamespace("microclima", quietly = TRUE)) {
     library(microclima)
 
     # windcoef calcule le coefficient d'abri (0-1)
     # 0.5 = vitesse du vent réduite de 50%
-    shelter_coef <- tryCatch({
-      windcoef(
-        dsm = mnt,
-        direction = wind_dir,
-        hgt = 10,        # Hauteur de mesure (10m standard)
-        reso = reso      # Résolution du MNT
-      )
-    }, error = function(e) {
-      cat("Erreur microclima:", conditionMessage(e), "\n")
-      NULL
-    })
+    shelter_coef <- tryCatch(
+      {
+        windcoef(
+          dsm = mnt,
+          direction = wind_dir,
+          hgt = 10, # Hauteur de mesure (10m standard)
+          reso = reso # Résolution du MNT
+        )
+      },
+      error = function(e) {
+        cat("Erreur microclima:", conditionMessage(e), "\n")
+        NULL
+      }
+    )
 
     if (!is.null(shelter_coef)) {
       # Convertir en SpatRaster si nécessaire
@@ -767,7 +774,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Sauvegarder
   writeRaster(R2_raster, file.path(data_dir, "storm_exposure.tif"), overwrite = TRUE)
   cat("\nRaster sauvegardé: storm_exposure.tif\n")
-  
+
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_exposition_tempete_r2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -826,7 +833,7 @@ if (file.exists(parcelles_path)) {
   lat_mean <- mean(bbox_wgs84[c("ymin", "ymax")])
 
   # === 1. Indice climatique de base (SPEI) ===
-  R3_climat <- 0.5  # Valeur par défaut
+  R3_climat <- 0.5 # Valeur par défaut
 
   if (requireNamespace("SPEI", quietly = TRUE)) {
     library(SPEI)
@@ -835,7 +842,7 @@ if (file.exists(parcelles_path)) {
     # Données simulées (remplacer par QBMS si configuré)
     set.seed(42)
     precip <- rnorm(60, mean = 70, sd = 30)
-    temp <- 10 + 8 * sin(seq(0, 10*pi, length.out = 60))
+    temp <- 10 + 8 * sin(seq(0, 10 * pi, length.out = 60))
 
     # ETP Hargreaves et SPEI-3
     pet <- hargreaves(Tmin = temp - 3, Tmax = temp + 3, lat = lat_mean)
@@ -874,8 +881,8 @@ if (file.exists(parcelles_path)) {
     if (file.exists(twi_path)) {
       twi <- rast(twi_path)
       twi_norm <- (twi - global(twi, "min", na.rm = TRUE)$min) /
-                  (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
-      twi_risk <- 1 - twi_norm  # Inverser: faible TWI = risque élevé
+        (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
+      twi_risk <- 1 - twi_norm # Inverser: faible TWI = risque élevé
     } else {
       twi_risk <- 0.5
       cat("TWI non trouvé, utilisation valeur par défaut\n")
@@ -920,7 +927,7 @@ if (file.exists(parcelles_path)) {
     cat("- Max:", round(max(parcelles$R3, na.rm = TRUE), 3), "\n")
     cat("- Moyenne:", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
     cat("- Écart-type:", round(sd(parcelles$R3, na.rm = TRUE), 3), "\n")
-    
+
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_risque_secheresse_r3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -928,12 +935,10 @@ if (file.exists(parcelles_path)) {
     cat("\n=== Métriques R3 Risque sécheresse exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
-
   } else {
     cat("MNT non trouvé, pas de modulation topographique\n")
-    parcelles$R3 <- 0.6 * R3_climat + 0.4 * 0.5  # Valeur par défaut
+    parcelles$R3 <- 0.6 * R3_climat + 0.4 * 0.5 # Valeur par défaut
   }
-
 } else {
   cat("Parcelles non trouvées.\n")
 }
@@ -1012,7 +1017,7 @@ cat("=== Indicateur R4 : Pression Gibier (parallélisé) ===\n\n")
 
 use_parallel <- FALSE
 if (requireNamespace("furrr", quietly = TRUE) &&
-    requireNamespace("future", quietly = TRUE)) {
+  requireNamespace("future", quietly = TRUE)) {
   future::plan(future::multisession, workers = min(4, parallel::detectCores() - 1))
   use_parallel <- TRUE
   cat("Mode parallèle activé (furrr)\n")
@@ -1036,41 +1041,44 @@ if (!dir.exists(hunting_cache)) dir.create(hunting_cache, recursive = TRUE)
 pressure_data <- NULL
 
 if (requireNamespace("nemeton", quietly = TRUE)) {
-  tryCatch({
-    # Vérifier si le cache existe et est valide (contient colonne tableau)
-    force_dl <- FALSE
-    cache_file <- file.path(hunting_cache, "chevreuil_tableaux_chasse.csv")
-    if (file.exists(cache_file)) {
-      test_data <- read.csv(cache_file, nrows = 1)
-      if (!"prelevements" %in% names(test_data)) {
-        cat("Cache obsolète détecté, re-téléchargement...\n")
-        force_dl <- TRUE
+  tryCatch(
+    {
+      # Vérifier si le cache existe et est valide (contient colonne tableau)
+      force_dl <- FALSE
+      cache_file <- file.path(hunting_cache, "chevreuil_tableaux_chasse.csv")
+      if (file.exists(cache_file)) {
+        test_data <- read.csv(cache_file, nrows = 1)
+        if (!"prelevements" %in% names(test_data)) {
+          cat("Cache obsolète détecté, re-téléchargement...\n")
+          force_dl <- TRUE
+        }
       }
-    }
 
-    # Télécharger avec cache local
-    hunting_raw <- nemeton::download_hunting_data(
-      species = "all",
-      cache_dir = hunting_cache,
-      force_download = force_dl
-    )
+      # Télécharger avec cache local
+      hunting_raw <- nemeton::download_hunting_data(
+        species = "all",
+        cache_dir = hunting_cache,
+        force_download = force_dl
+      )
 
-    if (!is.null(hunting_raw) && "tableau" %in% names(hunting_raw)) {
-      # Calculer l'indice de pression
-      pressure_data <- nemeton::compute_game_pressure_index(hunting_data = hunting_raw)
-      cat("Données en cache:", hunting_cache, "\n")
-      cat("Indice calculé pour", nrow(pressure_data), "départements\n")
+      if (!is.null(hunting_raw) && "tableau" %in% names(hunting_raw)) {
+        # Calculer l'indice de pression
+        pressure_data <- nemeton::compute_game_pressure_index(hunting_data = hunting_raw)
+        cat("Données en cache:", hunting_cache, "\n")
+        cat("Indice calculé pour", nrow(pressure_data), "départements\n")
 
-      # Top 5 départements
-      cat("\nTop 5 départements (pression gibier) :\n")
-      top5 <- head(pressure_data[order(-pressure_data$pressure_index), ], 5)
-      for (i in seq_len(nrow(top5))) {
-        cat(sprintf("  %s: %.1f\n", top5$code_dept[i], top5$pressure_index[i]))
+        # Top 5 départements
+        cat("\nTop 5 départements (pression gibier) :\n")
+        top5 <- head(pressure_data[order(-pressure_data$pressure_index), ], 5)
+        for (i in seq_len(nrow(top5))) {
+          cat(sprintf("  %s: %.1f\n", top5$code_dept[i], top5$pressure_index[i]))
+        }
       }
+    },
+    error = function(e) {
+      cat("Erreur téléchargement données chasse:", e$message, "\n")
     }
-  }, error = function(e) {
-    cat("Erreur téléchargement données chasse:", e$message, "\n")
-  })
+  )
 }
 
 # ============================================================
@@ -1080,16 +1088,20 @@ if (requireNamespace("nemeton", quietly = TRUE)) {
 cat("\n--- 2. Palatabilité des essences (parallélisé) ---\n")
 
 palatabilite <- data.frame(
-  pattern = c("chene", "quercus", "sapin", "abies", "hetre", "fagus",
-              "erable", "frene", "charme", "merisier",
-              "bouleau", "peuplier", "pin", "pinus", "epicea", "picea", "douglas"),
-  score = c(90, 90, 85, 85, 70, 70,
-            88, 85, 72, 75,
-            55, 50, 30, 30, 15, 15, 32),
+  pattern = c(
+    "chene", "quercus", "sapin", "abies", "hetre", "fagus",
+    "erable", "frene", "charme", "merisier",
+    "bouleau", "peuplier", "pin", "pinus", "epicea", "picea", "douglas"
+  ),
+  score = c(
+    90, 90, 85, 85, 70, 70,
+    88, 85, 72, 75,
+    55, 50, 30, 30, 15, 15, 32
+  ),
   stringsAsFactors = FALSE
 )
 
-parcelles$R4_palatabilite <- 50  # Valeur par défaut
+parcelles$R4_palatabilite <- 50 # Valeur par défaut
 
 if (file.exists(bd_foret_path)) {
   bd_foret <- st_read(bd_foret_path, quiet = TRUE)
@@ -1102,10 +1114,12 @@ if (file.exists(bd_foret_path)) {
       if (nrow(inter) > 0) {
         essence <- tolower(as.character(inter[[essence_col[1]]][1]))
         for (j in seq_len(nrow(palatabilite))) {
-          if (grepl(palatabilite$pattern[j], essence)) return(palatabilite$score[j])
+          if (grepl(palatabilite$pattern[j], essence)) {
+            return(palatabilite$score[j])
+          }
         }
       }
-      50  # Défaut
+      50 # Défaut
     }
 
     parcelles$R4_palatabilite <- map_func(seq_len(nrow(parcelles)), calc_palatabilite)
@@ -1143,7 +1157,7 @@ cat("Vulnérabilité moyenne:", round(mean(parcelles$R4_vulnerabilite, na.rm = T
 
 cat("\n--- 4. Effet lisière (parallélisé) ---\n")
 
-edge_buffer <- 50  # mètres
+edge_buffer <- 50 # mètres
 
 calc_lisiere <- function(i) {
   geom <- st_geometry(parcelles)[i]
@@ -1172,62 +1186,65 @@ parcelles$R4_densite <- 50
 
 if (!is.null(pressure_data) && nrow(pressure_data) > 0) {
   if (requireNamespace("happign", quietly = TRUE)) {
-    tryCatch({
-      bbox <- st_as_sfc(st_bbox(parcelles))
-      st_crs(bbox) <- st_crs(parcelles)
+    tryCatch(
+      {
+        bbox <- st_as_sfc(st_bbox(parcelles))
+        st_crs(bbox) <- st_crs(parcelles)
 
-      depts <- happign::get_wfs(
-        x = bbox,
-        layer = "ADMINEXPRESS-COG-CARTO.LATEST:departement"
-      )
+        depts <- happign::get_wfs(
+          x = bbox,
+          layer = "ADMINEXPRESS-COG-CARTO.LATEST:departement"
+        )
 
-      if (!is.null(depts) && nrow(depts) > 0) {
-        depts <- st_transform(depts, st_crs(parcelles))
+        if (!is.null(depts) && nrow(depts) > 0) {
+          depts <- st_transform(depts, st_crs(parcelles))
 
-        # Trouver la colonne code département
-        dept_col <- NULL
-        for (col in c("code_insee", "insee_dep", "code_dept")) {
-          if (col %in% names(depts)) {
-            dept_col <- col
-            break
+          # Trouver la colonne code département
+          dept_col <- NULL
+          for (col in c("code_insee", "insee_dep", "code_dept")) {
+            if (col %in% names(depts)) {
+              dept_col <- col
+              break
+            }
+          }
+
+          if (!is.null(dept_col)) {
+            # Extraire le code département (2 premiers caractères si code_insee)
+            depts$code_dept_norm <- substr(as.character(depts[[dept_col]]), 1, 2)
+            # Cas spéciaux DOM-TOM et Corse
+            depts$code_dept_norm <- ifelse(
+              nchar(as.character(depts[[dept_col]])) <= 3,
+              as.character(depts[[dept_col]]),
+              depts$code_dept_norm
+            )
+
+            # Jointure spatiale avec centroïdes
+            centroids <- suppressWarnings(st_centroid(parcelles))
+            join <- st_join(centroids, depts["code_dept_norm"], left = TRUE)
+
+            # Normaliser les codes dans pressure_data (sans zéro devant)
+            pressure_data$code_norm <- gsub("^0+", "", pressure_data$code_dept)
+
+            # Match avec codes normalisés
+            parcelles_codes <- gsub("^0+", "", join$code_dept_norm)
+            idx <- match(parcelles_codes, pressure_data$code_norm)
+
+            # Assigner les valeurs de pression
+            parcelles$R4_densite <- ifelse(
+              is.na(idx), 50,
+              pressure_data$pressure_index[idx]
+            )
+
+            n_matched <- sum(!is.na(idx))
+            cat("Densité gibier assignée pour", n_matched, "/", nrow(parcelles), "parcelles\n")
           }
         }
-
-        if (!is.null(dept_col)) {
-          # Extraire le code département (2 premiers caractères si code_insee)
-          depts$code_dept_norm <- substr(as.character(depts[[dept_col]]), 1, 2)
-          # Cas spéciaux DOM-TOM et Corse
-          depts$code_dept_norm <- ifelse(
-            nchar(as.character(depts[[dept_col]])) <= 3,
-            as.character(depts[[dept_col]]),
-            depts$code_dept_norm
-          )
-
-          # Jointure spatiale avec centroïdes
-          centroids <- suppressWarnings(st_centroid(parcelles))
-          join <- st_join(centroids, depts["code_dept_norm"], left = TRUE)
-
-          # Normaliser les codes dans pressure_data (sans zéro devant)
-          pressure_data$code_norm <- gsub("^0+", "", pressure_data$code_dept)
-
-          # Match avec codes normalisés
-          parcelles_codes <- gsub("^0+", "", join$code_dept_norm)
-          idx <- match(parcelles_codes, pressure_data$code_norm)
-
-          # Assigner les valeurs de pression
-          parcelles$R4_densite <- ifelse(
-            is.na(idx), 50,
-            pressure_data$pressure_index[idx]
-          )
-
-          n_matched <- sum(!is.na(idx))
-          cat("Densité gibier assignée pour", n_matched, "/", nrow(parcelles), "parcelles\n")
-        }
+      },
+      error = function(e) {
+        cat("Erreur récupération départements:", e$message, "\n")
+        cat("Utilisation valeur par défaut: 50\n")
       }
-    }, error = function(e) {
-      cat("Erreur récupération départements:", e$message, "\n")
-      cat("Utilisation valeur par défaut: 50\n")
-    })
+    )
   }
 }
 
@@ -1245,9 +1262,9 @@ w_lisiere <- 0.20
 w_densite <- 0.15
 
 parcelles$R4 <- w_palatabilite * parcelles$R4_palatabilite +
-                w_vulnerabilite * parcelles$R4_vulnerabilite +
-                w_lisiere * parcelles$R4_lisiere +
-                w_densite * parcelles$R4_densite
+  w_vulnerabilite * parcelles$R4_vulnerabilite +
+  w_lisiere * parcelles$R4_lisiere +
+  w_densite * parcelles$R4_densite
 
 parcelles$R4 <- pmax(0, pmin(100, parcelles$R4))
 
@@ -1259,7 +1276,8 @@ cat("R4 moyen:", round(mean(parcelles$R4, na.rm = TRUE), 1), "\n")
 parcelles$R4_classe <- cut(parcelles$R4,
   breaks = c(0, 25, 50, 75, 100),
   labels = c("Faible", "Modéré", "Élevé", "Très élevé"),
-  include.lowest = TRUE)
+  include.lowest = TRUE
+)
 
 cat("\nDistribution:\n")
 print(table(parcelles$R4_classe))
@@ -1316,7 +1334,7 @@ mnt_path <- file.path(data_dir, "mnt.tif")
 
 if (file.exists(parcelles_path) && file.exists(mnt_path)) {
   parcelles <- st_read(parcelles_path, quiet = TRUE)
-  mnt <- rast(mnt_path)  # Pour la grille de référence
+  mnt <- rast(mnt_path) # Pour la grille de référence
 
   if (file.exists(routes_path)) {
     routes <- st_read(routes_path, quiet = TRUE)
@@ -1356,7 +1374,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("- < 100m : Très accessible\n")
     cat("- 100-500m : Accessible\n")
     cat("- > 500m : Peu accessible\n")
-    
+
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_access_route_a1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -1414,12 +1432,15 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
       "&OUTPUTFORMAT=application/json"
     )
 
-    batiments <- tryCatch({
-      st_read(url_batiments, quiet = TRUE)
-    }, error = function(e) {
-      cat("Erreur téléchargement:", conditionMessage(e), "\n")
-      NULL
-    })
+    batiments <- tryCatch(
+      {
+        st_read(url_batiments, quiet = TRUE)
+      },
+      error = function(e) {
+        cat("Erreur téléchargement:", conditionMessage(e), "\n")
+        NULL
+      }
+    )
 
     if (!is.null(batiments) && nrow(batiments) > 0) {
       st_write(batiments, batiments_path, quiet = TRUE)
@@ -1454,7 +1475,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Distance min:", round(min(parcelles$S2, na.rm = TRUE)), "m\n")
     cat("Distance max:", round(max(parcelles$S2, na.rm = TRUE)), "m\n")
     cat("Distance moyenne:", round(mean(parcelles$S2, na.rm = TRUE)), "m\n")
-    
+
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_distance_batiment_a2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -1506,17 +1527,20 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
       bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
 
       # Requête Overpass : chemins, sentiers, pistes
-      q <- tryCatch({
-        opq(bbox = bbox_wgs84, timeout = 180) |>
-          add_osm_feature(
-            key = "highway",
-            value = c("path", "footway", "track", "bridleway", "cycleway")
-          )
-      }, error = function(e) {
-        cat("Erreur Overpass:", conditionMessage(e), "\n")
-        NULL
-      })
-      
+      q <- tryCatch(
+        {
+          opq(bbox = bbox_wgs84, timeout = 180) |>
+            add_osm_feature(
+              key = "highway",
+              value = c("path", "footway", "track", "bridleway", "cycleway")
+            )
+        },
+        error = function(e) {
+          cat("Erreur Overpass:", conditionMessage(e), "\n")
+          NULL
+        }
+      )
+
       sentiers <- osmdata_sf(q)
 
       if (!is.null(sentiers) && !is.null(sentiers$osm_lines) && nrow(sentiers$osm_lines) > 0) {
@@ -1540,14 +1564,19 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("=== Calcul densité de sentiers (m/ha) ===\n")
 
     calc_s3 <- function(i) {
-      inter <- tryCatch({
-        st_intersection(sentiers, parcelles[i, ])
-      }, error = function(e) NULL)
+      inter <- tryCatch(
+        {
+          st_intersection(sentiers, parcelles[i, ])
+        },
+        error = function(e) NULL
+      )
       if (!is.null(inter) && nrow(inter) > 0) {
         longueur <- sum(st_length(inter))
         surface_ha <- as.numeric(st_area(parcelles[i, ])) / 10000
         as.numeric(longueur / surface_ha)
-      } else 0
+      } else {
+        0
+      }
     }
 
     # Parallélisation avec furrr si disponible
@@ -1583,7 +1612,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Densité min:", round(min(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
     cat("Densité max:", round(max(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
     cat("Densité moyenne:", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
-    
+
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_densite_sentiers_a3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -1667,8 +1696,8 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   tpi <- terrain(mnt, v = "TPI")
   # Fond de vallée (TPI négatif) = meilleur pour fertilité
   tpi_norm <- (tpi - global(tpi, "min", na.rm = TRUE)$min) /
-              (global(tpi, "max", na.rm = TRUE)$max - global(tpi, "min", na.rm = TRUE)$min)
-  tpi_score <- 1 - tpi_norm  # Inverser: TPI négatif = bon
+    (global(tpi, "max", na.rm = TRUE)$max - global(tpi, "min", na.rm = TRUE)$min)
+  tpi_score <- 1 - tpi_norm # Inverser: TPI négatif = bon
 
   # TWI (humidité topographique)
   if (file.exists(twi_path)) {
@@ -1679,7 +1708,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
     twi <- log((flow_acc + 1) / tan(pente * pi / 180 + 0.01))
   }
   twi_norm <- (twi - global(twi, "min", na.rm = TRUE)$min) /
-              (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
+    (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
   twi_score <- clamp(twi_norm, lower = 0, upper = 1)
 
   cat("Pente score moyen:", round(global(pente_score, "mean", na.rm = TRUE)$mean, 3), "\n")
@@ -1688,7 +1717,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # === 2. Composante climatique (climateR + SPEI) ===
   cat("\n=== 2. Bilan hydrique climatique ===\n")
 
-  pet_score <- 0.5  # Valeur par défaut
+  pet_score <- 0.5 # Valeur par défaut
 
   if (requireNamespace("climateR", quietly = TRUE) && requireNamespace("SPEI", quietly = TRUE)) {
     library(climateR)
@@ -1709,23 +1738,26 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
       )
     } else {
       # Télécharger données climatiques (TerraClimate)
-      climate_data <- tryCatch({
-        data <- getTerraClim(
-          AOI = st_transform(st_union(parcelles), 4326),
-          varname = c("tmin", "tmax", "ppt"),
-          startDate = "2020-01-01",
-          endDate = "2023-12-31"
-        )
-        # Sauvegarder chaque raster en cache
-        writeRaster(data$tmin, tmin_cache, overwrite = TRUE)
-        writeRaster(data$tmax, tmax_cache, overwrite = TRUE)
-        writeRaster(data$ppt, ppt_cache, overwrite = TRUE)
-        cat("Données climatiques mises en cache (3 fichiers .tif)\n")
-        data
-      }, error = function(e) {
-        cat("Erreur climateR:", conditionMessage(e), "\n")
-        NULL
-      })
+      climate_data <- tryCatch(
+        {
+          data <- getTerraClim(
+            AOI = st_transform(st_union(parcelles), 4326),
+            varname = c("tmin", "tmax", "ppt"),
+            startDate = "2020-01-01",
+            endDate = "2023-12-31"
+          )
+          # Sauvegarder chaque raster en cache
+          writeRaster(data$tmin, tmin_cache, overwrite = TRUE)
+          writeRaster(data$tmax, tmax_cache, overwrite = TRUE)
+          writeRaster(data$ppt, ppt_cache, overwrite = TRUE)
+          cat("Données climatiques mises en cache (3 fichiers .tif)\n")
+          data
+        },
+        error = function(e) {
+          cat("Erreur climateR:", conditionMessage(e), "\n")
+          NULL
+        }
+      )
     }
 
     if (!is.null(climate_data)) {
@@ -1758,7 +1790,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # === 3. Composante pédologique (geodata::soil_world) ===
   cat("\n=== 3. Données pédologiques (SoilGrids) ===\n")
 
-  sol_score <- 0.5  # Valeur par défaut
+  sol_score <- 0.5 # Valeur par défaut
 
   if (requireNamespace("geodata", quietly = TRUE)) {
     library(geodata)
@@ -1778,33 +1810,36 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
         clay = rast(clay_cache)
       )
     } else {
-      soil_data <- tryCatch({
-        # Variables SoilGrids: phh2o, soc, clay
-        cat("Téléchargement SoilGrids (ph, soc, clay)...\n")
+      soil_data <- tryCatch(
+        {
+          # Variables SoilGrids: phh2o, soc, clay
+          cat("Téléchargement SoilGrids (ph, soc, clay)...\n")
 
-        # pH du sol (0-30cm)
-        ph <- soil_world(var = "phh2o", depth = 5, path = cache_dir)
-        ph_crop <- crop(ph, ext(bbox_wgs84))
+          # pH du sol (0-30cm)
+          ph <- soil_world(var = "phh2o", depth = 5, path = cache_dir)
+          ph_crop <- crop(ph, ext(bbox_wgs84))
 
-        # Carbone organique (fertilité)
-        soc <- soil_world(var = "soc", depth = 5, path = cache_dir)
-        soc_crop <- crop(soc, ext(bbox_wgs84))
+          # Carbone organique (fertilité)
+          soc <- soil_world(var = "soc", depth = 5, path = cache_dir)
+          soc_crop <- crop(soc, ext(bbox_wgs84))
 
-        # Texture - argile (rétention eau)
-        clay <- soil_world(var = "clay", depth = 5, path = cache_dir)
-        clay_crop <- crop(clay, ext(bbox_wgs84))
+          # Texture - argile (rétention eau)
+          clay <- soil_world(var = "clay", depth = 5, path = cache_dir)
+          clay_crop <- crop(clay, ext(bbox_wgs84))
 
-        # Sauvegarder chaque raster en cache
-        writeRaster(ph_crop, ph_cache, overwrite = TRUE)
-        writeRaster(soc_crop, soc_cache, overwrite = TRUE)
-        writeRaster(clay_crop, clay_cache, overwrite = TRUE)
-        cat("Données SoilGrids mises en cache (3 fichiers .tif)\n")
+          # Sauvegarder chaque raster en cache
+          writeRaster(ph_crop, ph_cache, overwrite = TRUE)
+          writeRaster(soc_crop, soc_cache, overwrite = TRUE)
+          writeRaster(clay_crop, clay_cache, overwrite = TRUE)
+          cat("Données SoilGrids mises en cache (3 fichiers .tif)\n")
 
-        list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
-      }, error = function(e) {
-        cat("Erreur geodata:", conditionMessage(e), "\n")
-        NULL
-      })
+          list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
+        },
+        error = function(e) {
+          cat("Erreur geodata:", conditionMessage(e), "\n")
+          NULL
+        }
+      )
     }
 
     if (!is.null(soil_data)) {
@@ -1816,7 +1851,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
       clay_proj <- project(soil_data$clay, mnt, method = "bilinear")
 
       # Score pH (optimal 5.5-7.0 pour forêts)
-      ph_val <- ph_proj / 10  # SoilGrids: pH × 10
+      ph_val <- ph_proj / 10 # SoilGrids: pH × 10
       ph_score <- 1 - abs(ph_val - 6.25) / 2
       ph_score <- clamp(ph_score, lower = 0, upper = 1)
 
@@ -1846,10 +1881,10 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Pondération des composantes
   # 30% pente + 15% aspect + 20% TPI + 20% TWI + 15% climat
   P2_raster <- 0.30 * pente_score +
-               0.15 * aspect_score +
-               0.20 * tpi_score +
-               0.20 * twi_score +
-               0.15 * pet_score
+    0.15 * aspect_score +
+    0.20 * tpi_score +
+    0.20 * twi_score +
+    0.15 * pet_score
 
   P2_raster <- clamp(P2_raster, lower = 0, upper = 1)
 
@@ -1871,7 +1906,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("\n=== P2 par parcelle ===\n")
   cat("P2 min:", round(min(parcelles$P2, na.rm = TRUE), 3), "\n")
   cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 3), "\n")
-  
+
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_fertilite_station_p2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
@@ -1879,7 +1914,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   cat("\n=== Métriques P2 Fertilité station exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
-
 } else {
   cat("Fichiers non trouvés.\n")
 }
@@ -1936,8 +1970,11 @@ if (file.exists(cours_eau_path)) {
 
   calc_w1_synth <- function(i) {
     inter <- st_intersection(cours_eau, parcelles[i, ])
-    if (nrow(inter) > 0) as.numeric(sum(st_length(inter)) / (st_area(parcelles[i, ]) / 10000))
-    else 0
+    if (nrow(inter) > 0) {
+      as.numeric(sum(st_length(inter)) / (st_area(parcelles[i, ]) / 10000))
+    } else {
+      0
+    }
   }
 
   # Parallélisation avec furrr si disponible
@@ -2037,7 +2074,7 @@ r4_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
 if (file.exists(r4_path)) {
   r4_data <- st_read(r4_path, quiet = TRUE)
   if ("R4" %in% names(r4_data)) {
-    parcelles$R4 <- r4_data$R4 / 100  # Normaliser 0-100 → 0-1
+    parcelles$R4 <- r4_data$R4 / 100 # Normaliser 0-100 → 0-1
     cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
     cat("   Score 0-1 : palatabilité 35% + vulnérabilité 25%\n")
     cat("              + effet lisière 25% + densité chasse 15%\n")

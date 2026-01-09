@@ -12,9 +12,9 @@ test_that("indicator_productive_volume (P1) calculates with IFN equations", {
     height = c(25, 22, 30),
     density = c(250, 320, 180),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -31,10 +31,10 @@ test_that("indicator_productive_volume (P1) calculates with IFN equations", {
   expect_s3_class(result, "sf")
   expect_true("P1" %in% names(result))
   expect_type(result$P1, "double")
-  expect_true(all(result$P1 > 0, na.rm = TRUE))  # All should have positive volume
+  expect_true(all(result$P1 > 0, na.rm = TRUE)) # All should have positive volume
 
   # Volume should be reasonable (not extreme values)
-  expect_true(all(result$P1 < 5000, na.rm = TRUE))  # Not > 5000 m³/ha (very dense stands can reach 1000+)
+  expect_true(all(result$P1 < 5000, na.rm = TRUE)) # Not > 5000 m³/ha (very dense stands can reach 1000+)
 })
 
 test_that("indicator_productive_volume (P1) handles missing height with estimation", {
@@ -46,7 +46,7 @@ test_that("indicator_productive_volume (P1) handles missing height with estimati
     dbh = 35,
     density = 250,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -73,9 +73,9 @@ test_that("indicator_productive_station (P2) looks up productivity tables", {
     fertility = c(1, 2, 2),
     climate = c("temperate_oceanic", "mountainous", "temperate_oceanic"),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -93,7 +93,7 @@ test_that("indicator_productive_station (P2) looks up productivity tables", {
   expect_type(result$P2, "double")
 
   # Productivity values should be reasonable (annual increment)
-  expect_true(all(result$P2 > 0 & result$P2 < 20, na.rm = TRUE))  # 0-20 m³/ha/yr
+  expect_true(all(result$P2 > 0 & result$P2 < 20, na.rm = TRUE)) # 0-20 m³/ha/yr
 })
 
 test_that("indicator_productive_quality (P3) scores timber quality", {
@@ -101,14 +101,14 @@ test_that("indicator_productive_quality (P3) scores timber quality", {
 
   test_units <- sf::st_sf(
     id = 1:3,
-    dbh = c(45, 28, 15),  # sawlog, mid, pulpwood
+    dbh = c(45, 28, 15), # sawlog, mid, pulpwood
     species = c("FASY", "PIAB", "QUPE"),
     form_score = c(85, 70, 60),
     defects = c(0, 0, 1),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -145,8 +145,8 @@ test_that("Productive indicators handle missing data correctly", {
     fertility = c(1, 2),
     climate = c("temperate_oceanic", "mountainous"),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -159,8 +159,8 @@ test_that("Productive indicators handle missing data correctly", {
     density_field = "density"
   )
 
-  expect_false(is.na(result_p1$P1[1]))  # Valid data
-  expect_true(is.na(result_p1$P1[2]))   # Missing density
+  expect_false(is.na(result_p1$P1[1])) # Valid data
+  expect_true(is.na(result_p1$P1[2])) # Missing density
 
   # P2 with missing species should return NA
   result_p2 <- indicator_productive_station(
@@ -170,8 +170,8 @@ test_that("Productive indicators handle missing data correctly", {
     climate_field = "climate"
   )
 
-  expect_false(is.na(result_p2$P2[1]))  # Valid data
-  expect_true(is.na(result_p2$P2[2]))   # Missing species
+  expect_false(is.na(result_p2$P2[1])) # Valid data
+  expect_true(is.na(result_p2$P2[2])) # Missing species
 })
 
 test_that("Productive family indicators integrate with family system", {
@@ -188,8 +188,8 @@ test_that("Productive family indicators integrate with family system", {
     form_score = c(85, 70),
     defects = c(0, 0),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )

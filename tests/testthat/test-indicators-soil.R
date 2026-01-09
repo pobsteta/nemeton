@@ -168,7 +168,7 @@ test_that("indicator_soil_erosion shows lower risk with forest cover", {
 
   # In general, forest cover should reduce erosion (though not guaranteed for every parcel)
   # At least some parcels should show this pattern
-  expect_true(mean(erosion_forest) < mean(erosion_no_forest) + 10)  # Loose check
+  expect_true(mean(erosion_forest) < mean(erosion_no_forest) + 10) # Loose check
 })
 
 test_that("indicator_soil_erosion with different forest definitions", {
@@ -187,7 +187,7 @@ test_that("indicator_soil_erosion with different forest definitions", {
   expect_length(erosion_123, 3)
 
   # More forest cover should generally mean lower erosion
-  expect_true(mean(erosion_123) <= mean(erosion_1) + 5)  # Allow some tolerance
+  expect_true(mean(erosion_123) <= mean(erosion_1) + 5) # Allow some tolerance
 })
 
 test_that("indicator_soil_erosion errors when DEM missing", {

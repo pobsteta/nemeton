@@ -13,18 +13,18 @@ test_that("12-family dataset fixture loads correctly", {
 
   # Verify all 12 families have representative indicators
   required_indicators <- c(
-    "C1", "C2",           # Carbon
-    "B1", "B2", "B3",     # Biodiversity
-    "W1", "W2", "W3",     # Water
-    "A1", "A2",           # Air
-    "F1", "F2",           # Fertility
-    "L1", "L2",           # Landscape
-    "T1", "T2",           # Temporal
-    "R1", "R2", "R3",     # Risks
-    "S1", "S2", "S3",     # Social (NEW)
-    "P1", "P2", "P3",     # Production (NEW)
-    "E1", "E2",           # Energy (NEW)
-    "N1", "N2", "N3"      # Naturalness (NEW)
+    "C1", "C2", # Carbon
+    "B1", "B2", "B3", # Biodiversity
+    "W1", "W2", "W3", # Water
+    "A1", "A2", # Air
+    "F1", "F2", # Fertility
+    "L1", "L2", # Landscape
+    "T1", "T2", # Temporal
+    "R1", "R2", "R3", # Risks
+    "S1", "S2", "S3", # Social (NEW)
+    "P1", "P2", "P3", # Production (NEW)
+    "E1", "E2", # Energy (NEW)
+    "N1", "N2", "N3" # Naturalness (NEW)
   )
 
   missing <- setdiff(required_indicators, names(twelve_families))
@@ -43,7 +43,8 @@ test_that("create_family_index handles all 12 families", {
     result <- create_family_index(twelve_families, family_codes = fam)
     family_col <- paste0("family_", fam)
     expect_true(family_col %in% names(result),
-                info = paste("Family", fam, "should have family index"))
+      info = paste("Family", fam, "should have family index")
+    )
     expect_type(result[[family_col]], "double")
     expect_true(all(!is.na(result[[family_col]])))
   }
@@ -76,10 +77,14 @@ test_that("12-axis radar plot works with all families (T086)", {
   )
 
   # Generate 12-axis radar plot
-  p <- nemeton_radar(result, unit_id = 1, mode = "family",
-                     indicators = c("family_C", "family_B", "family_W", "family_A",
-                                    "family_F", "family_L", "family_T", "family_R",
-                                    "family_S", "family_P", "family_E", "family_N"))
+  p <- nemeton_radar(result,
+    unit_id = 1, mode = "family",
+    indicators = c(
+      "family_C", "family_B", "family_W", "family_A",
+      "family_F", "family_L", "family_T", "family_R",
+      "family_S", "family_P", "family_E", "family_N"
+    )
+  )
 
   expect_s3_class(p, "gg")
   expect_s3_class(p, "ggplot")
@@ -108,8 +113,10 @@ test_that("12×12 correlation matrix generation works (T087)", {
   expect_equal(ncol(cor_matrix), 12)
 
   # Column/row names should be family_*
-  expected_names <- c("family_C", "family_B", "family_W", "family_A", "family_F", "family_L",
-                      "family_T", "family_R", "family_S", "family_P", "family_E", "family_N")
+  expected_names <- c(
+    "family_C", "family_B", "family_W", "family_A", "family_F", "family_L",
+    "family_T", "family_R", "family_S", "family_P", "family_E", "family_N"
+  )
   expect_true(all(rownames(cor_matrix) %in% expected_names))
   expect_true(all(colnames(cor_matrix) %in% expected_names))
 
@@ -252,9 +259,11 @@ test_that("create_composite_index works with 12-family dataset", {
   # Create composite index from all 12 families
   composite <- create_composite_index(
     normalized,
-    indicators = c("C1_norm", "B1_norm", "W1_norm", "A1_norm", "F1_norm", "L1_norm",
-                   "T1_norm", "R1_norm", "S1_norm", "P1_norm", "E1_norm", "N1_norm"),
-    weights = rep(1/12, 12),
+    indicators = c(
+      "C1_norm", "B1_norm", "W1_norm", "A1_norm", "F1_norm", "L1_norm",
+      "T1_norm", "R1_norm", "S1_norm", "P1_norm", "E1_norm", "N1_norm"
+    ),
+    weights = rep(1 / 12, 12),
     aggregation = "weighted_mean"
   )
 

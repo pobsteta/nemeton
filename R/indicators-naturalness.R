@@ -28,13 +28,13 @@ NULL
 #'
 #' @export
 indicator_naturalness_distance <- function(units,
-                                            infrastructure = NULL,
-                                            method = c("osm", "local"),
-                                            osm_bbox = NULL,
-                                            infra_types = c("roads", "buildings", "power"),
-                                            osm_road_tags = c("motorway", "trunk", "primary", "secondary", "tertiary"),
-                                            column_name = "N1",
-                                            lang = "en") {
+                                           infrastructure = NULL,
+                                           method = c("osm", "local"),
+                                           osm_bbox = NULL,
+                                           infra_types = c("roads", "buildings", "power"),
+                                           osm_road_tags = c("motorway", "trunk", "primary", "secondary", "tertiary"),
+                                           column_name = "N1",
+                                           lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
   method <- match.arg(method)
 
@@ -50,8 +50,8 @@ indicator_naturalness_distance <- function(units,
   # For now, use distance-based proxy
   for (i in seq_len(nrow(units))) {
     # Proxy: larger/more remote areas have higher distances
-    area_ha <- as.numeric(sf::st_area(units[i,])) / 10000
-    base_distance <- sqrt(area_ha) * 100  # Rough approximation
+    area_ha <- as.numeric(sf::st_area(units[i, ])) / 10000
+    base_distance <- sqrt(area_ha) * 100 # Rough approximation
 
     n1_roads[i] <- base_distance * 1.0
     n1_buildings[i] <- base_distance * 1.5
@@ -63,8 +63,10 @@ indicator_naturalness_distance <- function(units,
   result$N1_power <- n1_power
   result[[column_name]] <- pmin(n1_roads, n1_buildings, n1_power, na.rm = TRUE)
 
-  msg_info("naturalness_distance_calculated", median(result[[column_name]], na.rm = TRUE),
-           median(n1_roads, na.rm = TRUE), median(n1_buildings, na.rm = TRUE))
+  msg_info(
+    "naturalness_distance_calculated", median(result[[column_name]], na.rm = TRUE),
+    median(n1_roads, na.rm = TRUE), median(n1_buildings, na.rm = TRUE)
+  )
 
   cli::cli_alert_success("Calculated {column_name}: Infrastructure distance (m)")
   return(result)
@@ -86,12 +88,12 @@ indicator_naturalness_distance <- function(units,
 #'
 #' @export
 indicator_naturalness_continuity <- function(units,
-                                              land_cover = NULL,
-                                              forest_classes = c("forest", "woodland"),
-                                              connectivity_distance = 100,
-                                              method = c("local", "corine", "osm"),
-                                              column_name = "N2",
-                                              lang = "en") {
+                                             land_cover = NULL,
+                                             forest_classes = c("forest", "woodland"),
+                                             connectivity_distance = 100,
+                                             method = c("local", "corine", "osm"),
+                                             column_name = "N2",
+                                             lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
   method <- match.arg(method)
 
@@ -107,14 +109,14 @@ indicator_naturalness_continuity <- function(units,
   patch_areas <- numeric(nrow(units))
   for (i in seq_len(nrow(units))) {
     # Find which patch contains this unit
-    intersects <- sf::st_intersects(units[i,], patches, sparse = FALSE)
+    intersects <- sf::st_intersects(units[i, ], patches, sparse = FALSE)
     if (any(intersects)) {
       patch_idx <- which(intersects)[1]
       patch_area_m2 <- as.numeric(sf::st_area(patches[patch_idx]))
-      patch_areas[i] <- patch_area_m2 / 10000  # Convert to hectares
+      patch_areas[i] <- patch_area_m2 / 10000 # Convert to hectares
     } else {
       # Isolated unit
-      patch_areas[i] <- as.numeric(sf::st_area(units[i,])) / 10000
+      patch_areas[i] <- as.numeric(sf::st_area(units[i, ])) / 10000
     }
   }
 
@@ -147,16 +149,16 @@ indicator_naturalness_continuity <- function(units,
 #' @importFrom stats quantile
 #' @export
 indicator_naturalness_composite <- function(units,
-                                             n1_field = "N1",
-                                             n2_field = "N2",
-                                             t1_field = "T1",
-                                             b1_field = "B1",
-                                             aggregation = c("multiplicative", "weighted"),
-                                             weights = c(N1 = 0.25, N2 = 0.25, T1 = 0.25, B1 = 0.25),
-                                             normalization = "quantile",
-                                             quantiles = c(0.1, 0.9),
-                                             column_name = "N3",
-                                             lang = "en") {
+                                            n1_field = "N1",
+                                            n2_field = "N2",
+                                            t1_field = "T1",
+                                            b1_field = "B1",
+                                            aggregation = c("multiplicative", "weighted"),
+                                            weights = c(N1 = 0.25, N2 = 0.25, T1 = 0.25, B1 = 0.25),
+                                            normalization = "quantile",
+                                            quantiles = c(0.1, 0.9),
+                                            column_name = "N3",
+                                            lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
   aggregation <- match.arg(aggregation)
 
@@ -172,7 +174,7 @@ indicator_naturalness_composite <- function(units,
   # Normalize each component to 0-1 scale
   normalize_component <- function(x, q_low, q_high) {
     x_norm <- (x - q_low) / (q_high - q_low)
-    pmax(0, pmin(1, x_norm))  # Clip to [0,1]
+    pmax(0, pmin(1, x_norm)) # Clip to [0,1]
   }
 
   components <- list(
@@ -201,20 +203,22 @@ indicator_naturalness_composite <- function(units,
   # Aggregate
   if (aggregation == "multiplicative") {
     # Geometric mean scaled to 0-100
-    n3_values <- (normalized$N1 * normalized$N2 * normalized$T1 * normalized$B1) ^ 0.25 * 100
+    n3_values <- (normalized$N1 * normalized$N2 * normalized$T1 * normalized$B1)^0.25 * 100
   } else {
     # Weighted average
     n3_values <- (weights["N1"] * normalized$N1 +
-                   weights["N2"] * normalized$N2 +
-                   weights["T1"] * normalized$T1 +
-                   weights["B1"] * normalized$B1) * 100
+      weights["N2"] * normalized$N2 +
+      weights["T1"] * normalized$T1 +
+      weights["B1"] * normalized$B1) * 100
   }
 
   result[[column_name]] <- n3_values
-  msg_info("naturalness_composite_score", median(n3_values, na.rm = TRUE),
-           median(normalized$N1, na.rm = TRUE),
-           median(normalized$N2, na.rm = TRUE),
-           median(normalized$T1, na.rm = TRUE))
+  msg_info(
+    "naturalness_composite_score", median(n3_values, na.rm = TRUE),
+    median(normalized$N1, na.rm = TRUE),
+    median(normalized$N2, na.rm = TRUE),
+    median(normalized$T1, na.rm = TRUE)
+  )
 
   cli::cli_alert_success("Calculated {column_name}: Composite naturalness (0-100)")
   return(result)

@@ -63,9 +63,13 @@ test_that("indicator_biodiversity_structure calculates Shannon diversity", {
 
   # Add synthetic strata and age class attributes
   units$strata_classes <- sample(c("Emergent", "Dominant", "Intermediate", "Suppressed"),
-                                  5, replace = TRUE)
+    5,
+    replace = TRUE
+  )
   units$age_classes <- sample(c("Young", "Intermediate", "Mature", "Old", "Ancient"),
-                               5, replace = TRUE)
+    5,
+    replace = TRUE
+  )
 
   result <- indicator_biodiversity_structure(
     units,
@@ -143,7 +147,7 @@ test_that("indicator_biodiversity_connectivity handles max_distance cap", {
   far_corridor <- st_sf(
     corridor_id = "TVB_FAR",
     geometry = st_sfc(
-      st_point(c(800000, 6600000)),  # Very far from units
+      st_point(c(800000, 6600000)), # Very far from units
       crs = st_crs(units)
     )
   )
@@ -173,23 +177,31 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
 
   # Add attributes
   units$strata_classes <- sample(c("Emergent", "Dominant", "Intermediate", "Suppressed"),
-                                  10, replace = TRUE)
+    10,
+    replace = TRUE
+  )
   units$age_classes <- sample(c("Young", "Intermediate", "Mature", "Old"), 10, replace = TRUE)
 
   # Create corridor
   bbox <- st_bbox(units)
   corridor <- st_sf(
     corridor_id = "TVB",
-    geometry = st_sfc(st_point(c(mean(c(bbox["xmin"], bbox["xmax"])),
-                                  mean(c(bbox["ymin"], bbox["ymax"])))),
-                      crs = st_crs(units))
+    geometry = st_sfc(
+      st_point(c(
+        mean(c(bbox["xmin"], bbox["xmax"])),
+        mean(c(bbox["ymin"], bbox["ymax"]))
+      )),
+      crs = st_crs(units)
+    )
   )
 
   # Full workflow
   result <- units %>%
     indicator_biodiversity_protection(protected_areas = protected_areas, source = "local") %>%
-    indicator_biodiversity_structure(strata_field = "strata_classes",
-                                     age_class_field = "age_classes") %>%
+    indicator_biodiversity_structure(
+      strata_field = "strata_classes",
+      age_class_field = "age_classes"
+    ) %>%
     indicator_biodiversity_connectivity(corridors = corridor) %>%
     normalize_indicators(indicators = c("B1", "B2", "B3")) %>%
     create_family_index(family_codes = "B")

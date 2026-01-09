@@ -7,9 +7,9 @@ test_that("indicator_naturalness_distance (N1) calculates infrastructure remoten
   test_units <- sf::st_sf(
     id = 1:3,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 3000,0, 3000,2000, 1000,2000, 1000,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(5000,0, 6000,0, 6000,1000, 5000,1000, 5000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 3000, 0, 3000, 2000, 1000, 2000, 1000, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(5000, 0, 6000, 0, 6000, 1000, 5000, 1000, 5000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -30,8 +30,8 @@ test_that("indicator_naturalness_continuity (N2) calculates forest patch size", 
   test_units <- sf::st_sf(
     id = 1:2,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 500,0, 500,500, 0,500, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(600,0, 1100,0, 1100,500, 600,500, 600,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 500, 0, 500, 500, 0, 500, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(600, 0, 1100, 0, 1100, 500, 600, 500, 600, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -57,9 +57,9 @@ test_that("indicator_naturalness_composite (N3) integrates multiple dimensions",
     T1 = c(80, 120, 40),
     B1 = c(60, 80, 30),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -86,8 +86,8 @@ test_that("Naturalness family integrates with family system", {
     T1 = c(80, 100),
     B1 = c(60, 70),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )

@@ -327,7 +327,7 @@ summary.nemeton_layers <- function(object, ...) {
 
   cat("Rasters:", length(object$rasters), "\n")
   cat("Vectors:", length(object$vectors), "\n")
-  cat("Created:", format(object$metadata$created_at, '%Y-%m-%d %H:%M'), "\n\n")
+  cat("Created:", format(object$metadata$created_at, "%Y-%m-%d %H:%M"), "\n\n")
 
   invisible(object)
 }

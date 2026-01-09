@@ -113,12 +113,15 @@ message_nemeton <- function(...) {
   # Format message with glue interpolation, handling cli syntax gracefully
   msg_raw <- paste0(...)
   # Try glue interpolation first
-  msg <- tryCatch({
-    glue::glue(msg_raw, .envir = parent.frame())
-  }, error = function(e) {
-    # If glue fails (e.g., cli syntax), just use the raw message
-    msg_raw
-  })
+  msg <- tryCatch(
+    {
+      glue::glue(msg_raw, .envir = parent.frame())
+    },
+    error = function(e) {
+      # If glue fails (e.g., cli syntax), just use the raw message
+      msg_raw
+    }
+  )
   cat(msg, "\n", sep = "")
 }
 
@@ -281,7 +284,7 @@ get_species_flammability <- function(species) {
     if (length(idx) > 0) {
       scores[i] <- lookup$flammability_score[idx[1]]
     } else {
-      scores[i] <- 50  # Default: medium flammability
+      scores[i] <- 50 # Default: medium flammability
     }
   }
 
@@ -324,7 +327,7 @@ get_species_drought_sensitivity <- function(species) {
     if (length(idx) > 0) {
       scores[i] <- lookup$drought_sensitivity[idx[1]]
     } else {
-      scores[i] <- 50  # Default: intermediate sensitivity
+      scores[i] <- 50 # Default: intermediate sensitivity
     }
   }
 
@@ -445,7 +448,7 @@ get_species_palatability <- function(species) {
     if (length(idx) > 0) {
       scores[i] <- lookup$palatability[idx[1]]
     } else {
-      scores[i] <- 50  # Default: medium palatability
+      scores[i] <- 50 # Default: medium palatability
     }
   }
 
@@ -471,13 +474,13 @@ get_species_palatability <- function(species) {
 #' @examples
 #' \dontrun{
 #' # Equal distribution of 4 strata classes
-#' calculate_shannon_h(c(0.25, 0.25, 0.25, 0.25))  # Returns ~1.386 (log(4))
+#' calculate_shannon_h(c(0.25, 0.25, 0.25, 0.25)) # Returns ~1.386 (log(4))
 #'
 #' # Unequal distribution
-#' calculate_shannon_h(c(0.5, 0.3, 0.2))  # Returns ~1.03
+#' calculate_shannon_h(c(0.5, 0.3, 0.2)) # Returns ~1.03
 #'
 #' # Single category (no diversity)
-#' calculate_shannon_h(c(1.0))  # Returns 0
+#' calculate_shannon_h(c(1.0)) # Returns 0
 #' }
 calculate_shannon_h <- function(proportions, base = exp(1)) {
   # Remove zeros and NAs
@@ -665,7 +668,7 @@ lookup_ademe_factor <- function(material_type, scenario = NULL) {
   # Lookup by material type and scenario
   if (!is.null(scenario)) {
     factor_row <- factors[factors$material_type == material_type &
-                            factors$substitution_scenario == scenario, ]
+      factors$substitution_scenario == scenario, ]
   } else {
     factor_row <- factors[factors$material_type == material_type, ]
   }

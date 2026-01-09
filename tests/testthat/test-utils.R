@@ -30,11 +30,13 @@ test_that("validate_sf checks CRS when required", {
 test_that("validate_sf detects invalid geometries", {
   # Create a self-intersecting polygon (invalid)
   invalid_poly <- sf::st_polygon(list(matrix(
-    c(0, 0,
+    c(
+      0, 0,
       1, 1,
       1, 0,
       0, 1,
-      0, 0),
+      0, 0
+    ),
     ncol = 2, byrow = TRUE
   )))
 

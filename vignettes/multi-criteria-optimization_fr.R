@@ -131,7 +131,7 @@ table(comparison)
 profiles_kmeans <- attr(result_kmeans, "cluster_profile")
 
 # Identifier les caractéristiques de chaque cluster
-for (i in 1:nrow(profiles_kmeans)) {
+for (i in seq_len(nrow(profiles_kmeans))) {
   cat("\n=== Cluster", i, "===\n")
   cat("Carbone (C):", round(profiles_kmeans[i, "family_C"], 2), "\n")
   cat("Biodiversité (B):", round(profiles_kmeans[i, "family_B"], 2), "\n")
@@ -331,4 +331,3 @@ zonage |>
     N_mean = mean(family_N, na.rm = TRUE)
   ) |>
   mutate(across(where(is.numeric), ~ round(., 2)))
-

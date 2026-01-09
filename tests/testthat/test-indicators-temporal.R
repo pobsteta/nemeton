@@ -29,7 +29,7 @@ test_that("indicator_temporal_age calculates age from age field", {
   expect_equal(result$T1, c(25, 75, 150, 200, 300))
 
   # Normalization: log scale, ancient forests score high
-  expect_true(result$T1_norm[5] > result$T1_norm[1])  # 300yr > 25yr
+  expect_true(result$T1_norm[5] > result$T1_norm[1]) # 300yr > 25yr
   expect_true(all(result$T1_norm >= 0 & result$T1_norm <= 100))
 })
 
@@ -50,7 +50,7 @@ test_that("indicator_temporal_age calculates age from establishment year", {
   # Should calculate: 2025 - planted
   expect_equal(result$T1, c(175, 75, 25))
   expect_true(all(result$T1_norm >= 0 & result$T1_norm <= 100))
-  expect_true(result$T1_norm[1] > result$T1_norm[3])  # 175yr > 25yr
+  expect_true(result$T1_norm[1] > result$T1_norm[3]) # 175yr > 25yr
 })
 
 test_that("indicator_temporal_age uses default current year", {
@@ -123,11 +123,13 @@ test_that("indicator_temporal_change supports dynamism interpretation", {
   lc_2020 <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
 
   result_stability <- indicator_temporal_change(
-    units, lc_1990, lc_2020, 30, interpretation = "stability"
+    units, lc_1990, lc_2020, 30,
+    interpretation = "stability"
   )
 
   result_dynamism <- indicator_temporal_change(
-    units, lc_1990, lc_2020, 30, interpretation = "dynamism"
+    units, lc_1990, lc_2020, 30,
+    interpretation = "dynamism"
   )
 
   # Same T2 raw values

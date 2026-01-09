@@ -33,7 +33,7 @@ test_that("indicator_risk_fire calculates composite risk correctly", {
     dem = dem,
     species_field = "species",
     climate = climate,
-    weights = c(slope = 1/3, species = 1/3, climate = 1/3)
+    weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3)
   )
 
   # Tests
@@ -72,8 +72,8 @@ test_that("indicator_risk_storm calculates vulnerability correctly", {
   units <- massif_demo_units[1:5, ]
 
   # Add stand attributes
-  units$height <- runif(5, 10, 35)  # meters
-  units$density <- runif(5, 0.5, 1.0)  # 0-1 scale
+  units$height <- runif(5, 10, 35) # meters
+  units$density <- runif(5, 0.5, 1.0) # 0-1 scale
 
   dem <- terra::rast(test_path("fixtures/climate/dem_demo.tif"))
 
@@ -82,7 +82,7 @@ test_that("indicator_risk_storm calculates vulnerability correctly", {
     dem = dem,
     height_field = "height",
     density_field = "density",
-    weights = c(height = 1/3, density = 1/3, exposure = 1/3)
+    weights = c(height = 1 / 3, density = 1 / 3, exposure = 1 / 3)
   )
 
   # Tests
@@ -109,7 +109,7 @@ test_that("indicator_risk_storm handles missing attributes with defaults", {
   # Missing height/density attributes should not crash
   expect_error(
     indicator_risk_storm(units, dem = dem),
-    "height"  # Should error mentioning missing height field
+    "height" # Should error mentioning missing height field
   )
 })
 
@@ -122,7 +122,7 @@ test_that("indicator_risk_drought calculates stress correctly", {
   units <- massif_demo_units[1:5, ]
 
   # Add TWI (reuse from W3) and species
-  units$W3 <- runif(5, 5, 15)  # TWI values
+  units$W3 <- runif(5, 5, 15) # TWI values
   units$species <- sample(c("Fagus", "Quercus", "Pinus"), 5, replace = TRUE)
 
   climate <- list(
@@ -145,7 +145,7 @@ test_that("indicator_risk_drought calculates stress correctly", {
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 
   # Low TWI (dry sites) + sensitive species should have high R3
-  fagus_parcels <- which(units$species == "Fagus")  # Fagus is drought-sensitive
+  fagus_parcels <- which(units$species == "Fagus") # Fagus is drought-sensitive
   if (length(fagus_parcels) > 0) {
     fagus_low_twi <- fagus_parcels[units$W3[fagus_parcels] < 10]
     if (length(fagus_low_twi) > 0) {
@@ -171,7 +171,7 @@ test_that("indicator_risk_drought reuses W3 TWI correctly", {
 
   # Inverse TWI component: low TWI = high drought stress
   expect_true(all(!is.na(result$R3)))
-  expect_true(result$R3[1] > result$R3[3])  # TWI=8 should have higher R3 than TWI=15
+  expect_true(result$R3[1] > result$R3[3]) # TWI=8 should have higher R3 than TWI=15
 })
 
 # ==============================================================================

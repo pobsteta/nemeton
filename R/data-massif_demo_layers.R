@@ -74,7 +74,7 @@
 #'   massif_demo_units,
 #'   layers,
 #'   indicators = "fragmentation",
-#'   forest_values = c(1, 2, 3),  # Forest classes
+#'   forest_values = c(1, 2, 3), # Forest classes
 #'   preprocess = TRUE
 #' )
 #' }

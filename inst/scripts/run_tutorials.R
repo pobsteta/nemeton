@@ -84,7 +84,7 @@ Sys.setenv(
   GDAL_HTTP_CONNECTTIMEOUT = as.character(NETWORK_TIMEOUT),
   GDAL_HTTP_MAX_RETRY = "5",
   GDAL_HTTP_RETRY_DELAY = "5",
-  VSI_CURL_CACHE_SIZE = "100000000",  # 100MB cache
+  VSI_CURL_CACHE_SIZE = "100000000", # 100MB cache
   CPL_CURL_VERBOSE = "NO",
   CPL_VSIL_CURL_USE_HEAD = "NO"
 )
@@ -201,9 +201,11 @@ extract_executable_code <- function(rmd_file) {
         chunk_name <- sub(".*\\{r\\s*([^,}]+).*", "\\1", chunk_options)
         if (chunk_name == chunk_options) chunk_name <- paste0("chunk_", chunk_count)
 
-        all_code <- c(all_code,
-                      paste0("\n# === ", chunk_name, " ==="),
-                      chunk_content)
+        all_code <- c(
+          all_code,
+          paste0("\n# === ", chunk_name, " ==="),
+          chunk_content
+        )
       } else {
         skipped_count <- skipped_count + 1
       }
@@ -235,12 +237,15 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
     if (requireNamespace("terra", quietly = TRUE)) {
       library(terra)
       # Configurer GDAL après chargement de terra
-      tryCatch({
-        terra::setGDALconfig("GDAL_HTTP_TIMEOUT", as.character(NETWORK_TIMEOUT))
-        terra::setGDALconfig("GDAL_HTTP_CONNECTTIMEOUT", as.character(NETWORK_TIMEOUT))
-        terra::setGDALconfig("GDAL_HTTP_MAX_RETRY", "5")
-        terra::setGDALconfig("GDAL_HTTP_RETRY_DELAY", "5")
-      }, error = function(e) NULL)
+      tryCatch(
+        {
+          terra::setGDALconfig("GDAL_HTTP_TIMEOUT", as.character(NETWORK_TIMEOUT))
+          terra::setGDALconfig("GDAL_HTTP_CONNECTTIMEOUT", as.character(NETWORK_TIMEOUT))
+          terra::setGDALconfig("GDAL_HTTP_MAX_RETRY", "5")
+          terra::setGDALconfig("GDAL_HTTP_RETRY_DELAY", "5")
+        },
+        error = function(e) NULL
+      )
     }
   })
 
@@ -258,14 +263,19 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
   code_text <- gsub("gradethis_setup\\(\\)", "# gradethis_setup()", code_text)
 
   # Parser le code
-  parsed <- tryCatch({
-    parse(text = code_text)
-  }, error = function(e) {
-    cat("    ERREUR DE PARSING:", conditionMessage(e), "\n")
-    return(NULL)
-  })
+  parsed <- tryCatch(
+    {
+      parse(text = code_text)
+    },
+    error = function(e) {
+      cat("    ERREUR DE PARSING:", conditionMessage(e), "\n")
+      return(NULL)
+    }
+  )
 
-  if (is.null(parsed)) return(FALSE)
+  if (is.null(parsed)) {
+    return(FALSE)
+  }
 
   n_expr <- length(parsed)
   cat(sprintf("    Expressions à exécuter: %d\n", n_expr))
@@ -285,8 +295,10 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
     # Progression
     pct <- floor(i / n_expr * 100)
     filled <- floor(i / n_expr * pb_width)
-    bar <- paste0("[", paste(rep("=", filled), collapse = ""),
-                  paste(rep(" ", pb_width - filled), collapse = ""), "]")
+    bar <- paste0(
+      "[", paste(rep("=", filled), collapse = ""),
+      paste(rep(" ", pb_width - filled), collapse = ""), "]"
+    )
     cat(sprintf("\r    %s %3d%% ", bar, pct))
 
     if (VERBOSE) {
@@ -300,25 +312,32 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
 
     # Exécuter l'expression avec retry pour erreurs réseau
     max_retries <- 3
-    retry_delay <- 10  # secondes entre les retries
+    retry_delay <- 10 # secondes entre les retries
 
     for (attempt in 1:max_retries) {
-      result <- tryCatch({
-        withCallingHandlers({
-          eval(expr, envir = env)
-          "OK"
-        }, warning = function(w) {
-          if (!grepl("package|namespace|replacing|masked", conditionMessage(w))) {
-            warnings_list <<- c(warnings_list, conditionMessage(w))
-          }
-          invokeRestart("muffleWarning")
-        }, message = function(m) {
-          # Ignorer les messages
-          invokeRestart("muffleMessage")
-        })
-      }, error = function(e) {
-        paste("ERREUR:", conditionMessage(e))
-      })
+      result <- tryCatch(
+        {
+          withCallingHandlers(
+            {
+              eval(expr, envir = env)
+              "OK"
+            },
+            warning = function(w) {
+              if (!grepl("package|namespace|replacing|masked", conditionMessage(w))) {
+                warnings_list <<- c(warnings_list, conditionMessage(w))
+              }
+              invokeRestart("muffleWarning")
+            },
+            message = function(m) {
+              # Ignorer les messages
+              invokeRestart("muffleMessage")
+            }
+          )
+        },
+        error = function(e) {
+          paste("ERREUR:", conditionMessage(e))
+        }
+      )
 
       # Vérifier si c'est une erreur réseau
       is_network_error <- is.character(result) &&
@@ -329,8 +348,10 @@ run_tutorial_code <- function(code_lines, tutorial_name) {
       }
 
       # Retry après délai (toujours afficher les retries)
-      cat(sprintf("\n    [RETRY %d/%d] Erreur réseau, nouvel essai dans %ds...\n",
-                  attempt, max_retries, retry_delay))
+      cat(sprintf(
+        "\n    [RETRY %d/%d] Erreur réseau, nouvel essai dans %ds...\n",
+        attempt, max_retries, retry_delay
+      ))
       Sys.sleep(retry_delay)
     }
 
@@ -429,11 +450,13 @@ cat(paste(rep("-", 52), collapse = ""), "\n")
 
 for (tuto in names(results)) {
   res <- results[[tuto]]
-  cat(sprintf("%-20s %-10s %10d %9.1fs\n",
-              tuto,
-              res$status,
-              ifelse(is.null(res$lines), 0, res$lines),
-              res$time))
+  cat(sprintf(
+    "%-20s %-10s %10d %9.1fs\n",
+    tuto,
+    res$status,
+    ifelse(is.null(res$lines), 0, res$lines),
+    res$time
+  ))
 }
 
 cat(paste(rep("-", 52), collapse = ""), "\n")

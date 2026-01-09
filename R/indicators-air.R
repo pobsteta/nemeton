@@ -60,9 +60,9 @@ NULL
 #' result <- indicator_air_coverage(units, land_cover = land_cover, buffer_radius = 500)
 #' }
 indicator_air_coverage <- function(units,
-                                    land_cover,
-                                    forest_classes = c(311, 312, 313),
-                                    buffer_radius = 1000) {
+                                   land_cover,
+                                   forest_classes = c(311, 312, 313),
+                                   buffer_radius = 1000) {
   # Validate inputs
   validate_sf(units)
 
@@ -104,7 +104,7 @@ indicator_air_coverage <- function(units,
   } else {
     # Fallback using terra::extract
     for (i in seq_len(nrow(units))) {
-      lc_values <- terra::extract(land_cover, buffers[i, ], ID = FALSE)[,1]
+      lc_values <- terra::extract(land_cover, buffers[i, ], ID = FALSE)[, 1]
 
       if (length(lc_values) > 0) {
         forest_pixels <- sum(lc_values %in% forest_classes, na.rm = TRUE)
@@ -185,10 +185,10 @@ indicator_air_coverage <- function(units,
 #' result <- indicator_air_quality(units, roads = roads, urban_areas = urban, method = "proxy")
 #' }
 indicator_air_quality <- function(units,
-                                   atmo_data = NULL,
-                                   roads = NULL,
-                                   urban_areas = NULL,
-                                   method = "auto") {
+                                  atmo_data = NULL,
+                                  roads = NULL,
+                                  urban_areas = NULL,
+                                  method = "auto") {
   # Validate inputs
   validate_sf(units)
 
@@ -220,12 +220,12 @@ indicator_air_quality <- function(units,
 
     for (i in seq_len(nrow(units))) {
       # Calculate distances to all stations
-      distances <- sf::st_distance(parcel_centroids[i, ], atmo_data)[1,]
+      distances <- sf::st_distance(parcel_centroids[i, ], atmo_data)[1, ]
 
       # Inverse distance weighting (nearest 3 stations)
-      nearest_idx <- order(distances)[1:min(3, length(distances))]
+      nearest_idx <- order(distances)[seq_len(min(3, length(distances)))]
       nearest_dist <- as.numeric(distances[nearest_idx])
-      nearest_dist[nearest_dist == 0] <- 1  # Avoid division by zero
+      nearest_dist[nearest_dist == 0] <- 1 # Avoid division by zero
 
       weights <- 1 / nearest_dist
       weights <- weights / sum(weights)
@@ -246,10 +246,8 @@ indicator_air_quality <- function(units,
 
     units$A2 <- a2_scores
     units$A2_method <- "direct"
-  }
-
-  # Proxy method: distance to pollution sources
-  else if (method == "proxy") {
+  } else if (method == "proxy") {
+    # Proxy method: distance to pollution sources
     if (is.null(roads) && is.null(urban_areas)) {
       stop("Either roads or urban_areas must be provided for proxy method", call. = FALSE)
     }
@@ -280,7 +278,7 @@ indicator_air_quality <- function(units,
       if (length(scores) > 0) {
         a2_scores[i] <- mean(scores)
       } else {
-        a2_scores[i] <- 50  # Neutral default
+        a2_scores[i] <- 50 # Neutral default
       }
     }
 

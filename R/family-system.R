@@ -49,9 +49,9 @@ NULL
 #' # Setup multi-family indicators
 #' data(massif_demo_units)
 #' units <- massif_demo_units[1:5, ]
-#' units$C1 <- rnorm(5, 50, 10)  # Carbon biomass
-#' units$C2 <- rnorm(5, 70, 10)  # Carbon NDVI
-#' units$W1 <- rnorm(5, 15, 5)   # Water network
+#' units$C1 <- rnorm(5, 50, 10) # Carbon biomass
+#' units$C2 <- rnorm(5, 70, 10) # Carbon NDVI
+#' units$W1 <- rnorm(5, 15, 5) # Water network
 #'
 #' # Create family indices
 #' units_fam <- create_family_index(units)
@@ -63,10 +63,10 @@ NULL
 #' )
 #' }
 create_family_index <- function(data,
-                                 method = c("mean", "weighted", "geometric", "harmonic", "min"),
-                                 weights = NULL,
-                                 na.rm = TRUE,
-                                 family_codes = NULL) {
+                                method = c("mean", "weighted", "geometric", "harmonic", "min"),
+                                weights = NULL,
+                                na.rm = TRUE,
+                                family_codes = NULL) {
   # Validate inputs
   if (!inherits(data, "sf")) {
     stop("data must be an sf object", call. = FALSE)
@@ -118,7 +118,8 @@ create_family_index <- function(data,
   # Check if any families were detected
   if (length(family_groups) == 0) {
     stop("No family indicators found. Indicators must have family prefix (C1, W1, F1, etc.)",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Create family composite scores
@@ -137,8 +138,10 @@ create_family_index <- function(data,
 
       # Ensure weights match indicators
       if (!all(indicators %in% names(fam_weights))) {
-        warning(sprintf("Not all indicators in family %s have weights, using equal weights",
-                        fam), call. = FALSE)
+        warning(sprintf(
+          "Not all indicators in family %s have weights, using equal weights",
+          fam
+        ), call. = FALSE)
         fam_weights <- rep(1 / length(indicators), length(indicators))
         names(fam_weights) <- indicators
       } else {
@@ -156,10 +159,14 @@ create_family_index <- function(data,
     if (method == "mean" || method == "weighted") {
       # Always use weighted average (mean is just weighted with equal weights)
       family_score <- apply(indicator_data, 1, function(row) {
-        if (all(is.na(row))) return(NA_real_)
+        if (all(is.na(row))) {
+          return(NA_real_)
+        }
 
         valid_idx <- !is.na(row)
-        if (!any(valid_idx)) return(NA_real_)
+        if (!any(valid_idx)) {
+          return(NA_real_)
+        }
 
         valid_values <- row[valid_idx]
         valid_weights <- fam_weights[valid_idx]
@@ -169,50 +176,61 @@ create_family_index <- function(data,
 
         sum(valid_values * valid_weights)
       })
-
     } else if (method == "geometric") {
       # Geometric mean: (product of values)^(1/n)
       family_score <- apply(indicator_data, 1, function(row) {
-        if (all(is.na(row))) return(NA_real_)
+        if (all(is.na(row))) {
+          return(NA_real_)
+        }
 
         valid_values <- row[!is.na(row)]
-        if (length(valid_values) == 0) return(NA_real_)
+        if (length(valid_values) == 0) {
+          return(NA_real_)
+        }
 
         # Handle negative values
         if (any(valid_values <= 0)) {
           warning("Geometric mean requires positive values, using absolute values",
-                  call. = FALSE)
+            call. = FALSE
+          )
           valid_values <- abs(valid_values)
         }
 
         exp(mean(log(valid_values)))
       })
-
     } else if (method == "harmonic") {
       # Harmonic mean: n / sum(1/x)
       family_score <- apply(indicator_data, 1, function(row) {
-        if (all(is.na(row))) return(NA_real_)
+        if (all(is.na(row))) {
+          return(NA_real_)
+        }
 
         valid_values <- row[!is.na(row)]
-        if (length(valid_values) == 0) return(NA_real_)
+        if (length(valid_values) == 0) {
+          return(NA_real_)
+        }
 
         # Handle zeros
         if (any(valid_values == 0)) {
           warning("Harmonic mean undefined for zero values, replacing with small value",
-                  call. = FALSE)
+            call. = FALSE
+          )
           valid_values[valid_values == 0] <- 1e-6
         }
 
         length(valid_values) / sum(1 / valid_values)
       })
-
     } else if (method == "min") {
       # Minimum: worst-case indicator (most conservative)
       family_score <- apply(indicator_data, 1, function(row) {
-        if (all(is.na(row))) return(NA_real_)
+        if (all(is.na(row))) {
+          return(NA_real_)
+        }
 
         valid_values <- row[!is.na(row)]
-        if (length(valid_values) == 0) return(NA_real_)
+        if (length(valid_values) == 0) {
+          return(NA_real_)
+        }
 
         min(valid_values, na.rm = na.rm)
       })
@@ -300,5 +318,5 @@ get_family_name <- function(family_code, lang = NULL) {
     return(names_list[[family_code]])
   }
 
-  family_code  # Return code if name not found
+  family_code # Return code if name not found
 }

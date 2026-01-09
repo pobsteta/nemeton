@@ -9,9 +9,9 @@ test_that("indicator_energy_fuelwood (E1) calculates biomass potential", {
     volume = c(200, 150, 180),
     species = c("FASY", "PIAB", "QUPE"),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -33,10 +33,10 @@ test_that("indicator_energy_avoidance (E2) calculates CO2 substitution", {
 
   test_units <- sf::st_sf(
     id = 1:2,
-    E1 = c(5.0, 3.5),  # tonnes DM/yr
+    E1 = c(5.0, 3.5), # tonnes DM/yr
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -61,8 +61,8 @@ test_that("Energy family integrates with family system", {
     volume = c(200, 150),
     species = c("FASY", "PIAB"),
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1000,0, 2000,0, 2000,1000, 1000,1000, 1000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )

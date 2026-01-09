@@ -8,8 +8,8 @@ test_that("indicator_social_trails (S1) works with local data", {
   test_units <- sf::st_sf(
     id = 1:2,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1,0, 1,1, 0,1, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1,0, 2,0, 2,1, 1,1, 1,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -17,7 +17,7 @@ test_that("indicator_social_trails (S1) works with local data", {
   test_trails <- sf::st_sf(
     id = 1,
     geometry = sf::st_sfc(
-      sf::st_linestring(matrix(c(0.5,0, 0.5,1), ncol=2, byrow=TRUE)),
+      sf::st_linestring(matrix(c(0.5, 0, 0.5, 1), ncol = 2, byrow = TRUE)),
       crs = 2154
     )
   )
@@ -47,7 +47,7 @@ test_that("indicator_social_trails (S1) handles empty trail data", {
   test_units <- sf::st_sf(
     id = 1,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1,0, 1,1, 0,1, 0,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -73,16 +73,16 @@ test_that("indicator_social_accessibility (S2) calculates scores", {
   test_units <- sf::st_sf(
     id = 1:3,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1,0, 1,1, 0,1, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(1,0, 2,0, 2,1, 1,1, 1,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2,0, 3,0, 3,1, 2,1, 2,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
 
   result <- indicator_social_accessibility(
     units = test_units,
-    method = "osm"  # Will use proxy calculation in test
+    method = "osm" # Will use proxy calculation in test
   )
 
   # Assertions
@@ -100,8 +100,8 @@ test_that("indicator_social_proximity (S3) calculates population buffers", {
   test_units <- sf::st_sf(
     id = 1:2,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -131,7 +131,7 @@ test_that("Social family indicators handle NA values correctly", {
   test_units <- sf::st_sf(
     id = 1,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1,0, 1,1, 0,1, 0,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
@@ -158,8 +158,8 @@ test_that("Social indicators integrate with family system", {
   test_units <- sf::st_sf(
     id = 1:2,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0,0, 1000,0, 1000,1000, 0,1000, 0,0), ncol=2, byrow=TRUE))),
-      sf::st_polygon(list(matrix(c(2000,0, 3000,0, 3000,1000, 2000,1000, 2000,0), ncol=2, byrow=TRUE))),
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )

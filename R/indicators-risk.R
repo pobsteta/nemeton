@@ -61,10 +61,10 @@ NULL
 #' summary(result$R1)
 #' }
 indicator_risk_fire <- function(units,
-                                 dem,
-                                 species_field = "species",
-                                 climate = NULL,
-                                 weights = c(slope = 1/3, species = 1/3, climate = 1/3)) {
+                                dem,
+                                species_field = "species",
+                                climate = NULL,
+                                weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3)) {
   # Validate inputs
   validate_sf(units)
   if (!inherits(dem, "SpatRaster")) {
@@ -83,7 +83,7 @@ indicator_risk_fire <- function(units,
   slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
 
   # Extract slope for each parcel (mean)
-  slope_values <- terra::extract(slope_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[,1]
+  slope_values <- terra::extract(slope_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
 
   # Normalize: 0° = 0, 30°+ = 100
   slope_factor <- pmin(slope_values / 30, 1) * 100
@@ -95,8 +95,8 @@ indicator_risk_fire <- function(units,
   # Component 3: Climate dryness (if available)
   if (!is.null(climate) && all(c("temperature", "precipitation") %in% names(climate))) {
     # Extract temperature and precipitation
-    temp_values <- terra::extract(climate$temperature, units, fun = mean, na.rm = TRUE, ID = FALSE)[,1]
-    precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[,1]
+    temp_values <- terra::extract(climate$temperature, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+    precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
 
     # Dryness: high temp + low precip = high dryness
     # Normalize temperature: 8°C=0, 16°C=100
@@ -117,8 +117,8 @@ indicator_risk_fire <- function(units,
 
   # Composite R1
   units$R1 <- weights["slope"] * slope_factor +
-               weights["species"] * species_factor +
-               weights["climate"] * climate_factor
+    weights["species"] * species_factor +
+    weights["climate"] * climate_factor
 
   # Cap at 0-100
   units$R1 <- pmin(pmax(units$R1, 0), 100)
@@ -176,10 +176,10 @@ indicator_risk_fire <- function(units,
 #' summary(result$R2)
 #' }
 indicator_risk_storm <- function(units,
-                                  dem,
-                                  height_field = "height",
-                                  density_field = "density",
-                                  weights = c(height = 1/3, density = 1/3, exposure = 1/3)) {
+                                 dem,
+                                 height_field = "height",
+                                 density_field = "density",
+                                 weights = c(height = 1 / 3, density = 1 / 3, exposure = 1 / 3)) {
   # Validate inputs
   validate_sf(units)
   if (!inherits(dem, "SpatRaster")) {
@@ -212,7 +212,7 @@ indicator_risk_storm <- function(units,
   tpi_raster <- terra::terrain(dem, v = "TPI")
 
   # Extract TPI for each parcel
-  tpi_values <- terra::extract(tpi_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[,1]
+  tpi_values <- terra::extract(tpi_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
 
   # Normalize TPI: negative (valleys) = 0, positive (ridges) = 100
   # Typical TPI range: -50 to +50
@@ -220,8 +220,8 @@ indicator_risk_storm <- function(units,
 
   # Composite R2
   units$R2 <- weights["height"] * height_factor +
-               weights["density"] * density_factor +
-               weights["exposure"] * exposure_factor
+    weights["density"] * density_factor +
+    weights["exposure"] * exposure_factor
 
   # Cap at 0-100
   units$R2 <- pmin(pmax(units$R2, 0), 100)
@@ -283,10 +283,10 @@ indicator_risk_storm <- function(units,
 #' summary(result$R3)
 #' }
 indicator_risk_drought <- function(units,
-                                    twi_field = "W3",
-                                    climate = NULL,
-                                    species_field = "species",
-                                    weights = c(twi = 0.4, precip = 0.4, species = 0.2)) {
+                                   twi_field = "W3",
+                                   climate = NULL,
+                                   species_field = "species",
+                                   weights = c(twi = 0.4, precip = 0.4, species = 0.2)) {
   # Validate inputs
   validate_sf(units)
 
@@ -309,7 +309,7 @@ indicator_risk_drought <- function(units,
 
   # Component 2: Precipitation deficit (if available)
   if (!is.null(climate) && "precipitation" %in% names(climate)) {
-    precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[,1]
+    precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
 
     # Normalize precipitation (inverse): 1200mm+=0, 600mm-=100
     precip_factor <- pmin(pmax((1200 - precip_values) / 600, 0), 1) * 100
@@ -326,8 +326,8 @@ indicator_risk_drought <- function(units,
 
   # Composite R3
   units$R3 <- weights["twi"] * twi_factor +
-               weights["precip"] * precip_factor +
-               weights["species"] * species_factor
+    weights["precip"] * precip_factor +
+    weights["species"] * species_factor
 
   # Cap at 0-100
   units$R3 <- pmin(pmax(units$R3, 0), 100)
@@ -402,13 +402,13 @@ indicator_risk_drought <- function(units,
 #' result <- indicator_risk_browsing(units, species_field = "species", game_density = game_raster)
 #' }
 indicator_risk_browsing <- function(units,
-                                     species_field = "species",
-                                     height_field = NULL,
-                                     age_field = NULL,
-                                     game_density = NULL,
-                                     edge_buffer = 50,
-                                     weights = c(palatability = 0.35, vulnerability = 0.30,
-                                                 edge = 0.20, density = 0.15)) {
+                                    species_field = "species",
+                                    height_field = NULL,
+                                    age_field = NULL,
+                                    game_density = NULL,
+                                    edge_buffer = 50,
+                                    weights = c(palatability = 0.35, vulnerability = 0.30,
+                                                edge = 0.20, density = 0.15)) {
   # Validate inputs
 
   validate_sf(units)
@@ -496,9 +496,9 @@ indicator_risk_browsing <- function(units,
   # Composite R4
   # ==========================================================================
   units$R4 <- weights["palatability"] * palatability_factor +
-              weights["vulnerability"] * vulnerability_factor +
-              weights["edge"] * edge_factor +
-              weights["density"] * density_factor
+    weights["vulnerability"] * vulnerability_factor +
+    weights["edge"] * edge_factor +
+    weights["density"] * density_factor
 
   # Cap at 0-100
   units$R4 <- pmin(pmax(units$R4, 0), 100)

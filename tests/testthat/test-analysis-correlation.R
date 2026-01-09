@@ -35,14 +35,16 @@ test_that("compute_family_correlations returns correlation matrix for family ind
   # Test structure
   expect_true(is.matrix(result))
   expect_true(is.numeric(result))
-  expect_equal(nrow(result), ncol(result))  # Square matrix
-  expect_true(all(colnames(result) %in% c("family_C", "family_B", "family_W",
-                                           "family_R", "family_T", "family_A")))
+  expect_equal(nrow(result), ncol(result)) # Square matrix
+  expect_true(all(colnames(result) %in% c(
+    "family_C", "family_B", "family_W",
+    "family_R", "family_T", "family_A"
+  )))
 
   # Test properties of correlation matrix
-  expect_true(all(result >= -1 & result <= 1))  # Correlations in [-1, 1]
-  expect_true(all(diag(result) == 1))  # Diagonal = 1
-  expect_true(isSymmetric(result))  # Symmetric matrix
+  expect_true(all(result >= -1 & result <= 1)) # Correlations in [-1, 1]
+  expect_true(all(diag(result) == 1)) # Diagonal = 1
+  expect_true(isSymmetric(result)) # Symmetric matrix
 })
 
 test_that("compute_family_correlations works with subset of families", {
@@ -89,7 +91,7 @@ test_that("compute_family_correlations handles NA values gracefully", {
   units <- massif_demo_units[1:10, ]
   units$family_C <- runif(10, 40, 90)
   units$family_B <- runif(10, 30, 85)
-  units$family_B[c(3, 7)] <- NA  # Introduce NAs
+  units$family_B[c(3, 7)] <- NA # Introduce NAs
 
   # Should work with na.rm equivalent
   result <- compute_family_correlations(units)
@@ -105,7 +107,7 @@ test_that("compute_family_correlations auto-detects family columns", {
   units$family_C <- runif(10, 40, 90)
   units$family_B <- runif(10, 30, 85)
   units$family_W <- runif(10, 35, 80)
-  units$other_col <- runif(10)  # Non-family column
+  units$other_col <- runif(10) # Non-family column
 
   # Auto-detect (families = NULL)
   result <- compute_family_correlations(units, families = NULL)
@@ -131,7 +133,7 @@ test_that("identify_hotspots identifies parcels ranking high on multiple familie
   # Identify hotspots: top 20% in at least 3 families
   result <- identify_hotspots(
     units,
-    threshold = 80,  # 80th percentile
+    threshold = 80, # 80th percentile
     min_families = 3
   )
 
@@ -150,7 +152,7 @@ test_that("identify_hotspots respects threshold parameter", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:15, ]
-  units$family_C <- c(rep(90, 3), rep(50, 12))  # 3 high, 12 low
+  units$family_C <- c(rep(90, 3), rep(50, 12)) # 3 high, 12 low
   units$family_B <- c(rep(85, 3), rep(45, 12))
   units$family_W <- c(rep(88, 3), rep(48, 12))
 
@@ -181,7 +183,7 @@ test_that("identify_hotspots handles min_families parameter", {
 
   expect_true(sum(result1$is_hotspot) >= sum(result2$is_hotspot))
   expect_true(sum(result2$is_hotspot) >= sum(result3$is_hotspot))
-  expect_true(result3$is_hotspot[1])  # Parcel 1 high in all 3
+  expect_true(result3$is_hotspot[1]) # Parcel 1 high in all 3
 })
 
 test_that("identify_hotspots works with specific family subset", {
@@ -228,8 +230,8 @@ test_that("identify_hotspots handles no hotspots when threshold very high", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- runif(10, 30, 50)  # Low-mid range
-  units$family_B <- runif(10, 25, 45)  # Low-mid range
+  units$family_C <- runif(10, 30, 50) # Low-mid range
+  units$family_B <- runif(10, 25, 45) # Low-mid range
 
   # With 100th percentile threshold, no parcels can be above it
   result <- identify_hotspots(units, threshold = 100, min_families = 2)
@@ -251,12 +253,12 @@ test_that("Complete workflow: correlation + hotspot identification", {
 
   # Simulate family indices with realistic relationships
   set.seed(42)
-  units$family_B <- runif(15, 30, 90)  # Biodiversity
-  units$family_T <- 20 + 0.6 * units$family_B + rnorm(15, 0, 10)  # Age correlates with biodiversity
-  units$family_R <- 100 - 0.3 * units$family_B + rnorm(15, 0, 15)  # Risk inversely correlated
-  units$family_C <- 40 + 0.5 * units$family_T + rnorm(15, 0, 12)  # Carbon correlates with age
-  units$family_W <- runif(15, 30, 80)  # Independent
-  units$family_A <- runif(15, 40, 85)  # Independent
+  units$family_B <- runif(15, 30, 90) # Biodiversity
+  units$family_T <- 20 + 0.6 * units$family_B + rnorm(15, 0, 10) # Age correlates with biodiversity
+  units$family_R <- 100 - 0.3 * units$family_B + rnorm(15, 0, 15) # Risk inversely correlated
+  units$family_C <- 40 + 0.5 * units$family_T + rnorm(15, 0, 12) # Carbon correlates with age
+  units$family_W <- runif(15, 30, 80) # Independent
+  units$family_A <- runif(15, 40, 85) # Independent
 
   # Step 1: Compute correlations
   corr_matrix <- compute_family_correlations(units)
@@ -265,8 +267,8 @@ test_that("Complete workflow: correlation + hotspot identification", {
   expect_equal(nrow(corr_matrix), 6)
 
   # Verify expected relationships
-  expect_true(corr_matrix["family_B", "family_T"] > 0.3)  # Positive
-  expect_true(corr_matrix["family_B", "family_R"] < 0)    # Negative
+  expect_true(corr_matrix["family_B", "family_T"] > 0.3) # Positive
+  expect_true(corr_matrix["family_B", "family_R"] < 0) # Negative
 
   # Step 2: Identify hotspots
   hotspots <- identify_hotspots(
@@ -311,9 +313,9 @@ test_that("Workflow detects biodiversity-age synergy (US6 acceptance scenario)",
   units <- massif_demo_units[1:20, ]
 
   # Create deliberate synergy: high biodiversity + high age
-  units$family_B <- c(rep(85, 5), rep(45, 15))  # 5 high biodiversity
-  units$family_T <- c(rep(90, 5), rep(40, 15))  # Same 5 high age
-  units$family_C <- runif(20, 40, 70)           # Neutral
+  units$family_B <- c(rep(85, 5), rep(45, 15)) # 5 high biodiversity
+  units$family_T <- c(rep(90, 5), rep(40, 15)) # Same 5 high age
+  units$family_C <- runif(20, 40, 70) # Neutral
 
   # Correlation should be positive
   corr_matrix <- compute_family_correlations(units)
@@ -350,7 +352,9 @@ test_that("Functions work with tibble sf objects", {
 
   data(massif_demo_units, package = "nemeton")
 
-  units <- massif_demo_units[1:10, ] %>% dplyr::as_tibble() %>% sf::st_as_sf()
+  units <- massif_demo_units[1:10, ] %>%
+    dplyr::as_tibble() %>%
+    sf::st_as_sf()
   units$family_C <- runif(10, 40, 90)
   units$family_B <- runif(10, 30, 85)
 

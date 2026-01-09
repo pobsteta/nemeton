@@ -344,7 +344,6 @@ msg_error <- function(key, ...) {
     error_is_optimal_required = "Column 'is_optimal' is required for Pareto frontier overlay. Run identify_pareto_optimal() first.",
     warning_ggrepel_not_installed = "Package 'ggrepel' not installed. Labels may overlap. Install with: install.packages('ggrepel')"
   ),
-
   fr = list(
     # Général
     language_set = "Langue définie : %s",

@@ -59,9 +59,9 @@ NULL
 #' result <- indicator_temporal_age(units, age_field = NULL, establishment_year_field = "planted", current_year = 2025)
 #' }
 indicator_temporal_age <- function(units,
-                                    age_field = "age",
-                                    establishment_year_field = NULL,
-                                    current_year = NULL) {
+                                   age_field = "age",
+                                   establishment_year_field = NULL,
+                                   current_year = NULL) {
   # Validate inputs
   validate_sf(units)
 
@@ -88,8 +88,8 @@ indicator_temporal_age <- function(units,
   # Log transformation: log(1 + age) scaled to 0-100
   # Reference points: 30yr=30, 100yr=60, 200yr=80, 300yr=90
   log_age <- log(1 + age_values)
-  log_min <- log(1 + 20)   # Minimum age ~20 years
-  log_max <- log(1 + 300)  # Maximum ancient forest ~300 years
+  log_min <- log(1 + 20) # Minimum age ~20 years
+  log_max <- log(1 + 300) # Maximum ancient forest ~300 years
 
   units$T1_norm <- pmin(pmax((log_age - log_min) / (log_max - log_min), 0), 1) * 100
 
@@ -154,10 +154,10 @@ indicator_temporal_age <- function(units,
 #' result <- indicator_temporal_change(units, lc_1990, lc_2020, years_elapsed = 30, interpretation = "dynamism")
 #' }
 indicator_temporal_change <- function(units,
-                                       land_cover_early,
-                                       land_cover_late,
-                                       years_elapsed,
-                                       interpretation = "stability") {
+                                      land_cover_early,
+                                      land_cover_late,
+                                      years_elapsed,
+                                      interpretation = "stability") {
   # Validate inputs
   validate_sf(units)
 
@@ -216,8 +216,8 @@ indicator_temporal_change <- function(units,
     }
   } else {
     # Fallback using terra::extract (less efficient)
-    early_vals <- terra::extract(land_cover_early, units, fun = "modal", na.rm = TRUE, ID = FALSE)[,1]
-    late_vals <- terra::extract(land_cover_late, units, fun = "modal", na.rm = TRUE, ID = FALSE)[,1]
+    early_vals <- terra::extract(land_cover_early, units, fun = "modal", na.rm = TRUE, ID = FALSE)[, 1]
+    late_vals <- terra::extract(land_cover_late, units, fun = "modal", na.rm = TRUE, ID = FALSE)[, 1]
 
     # Simple binary change detection: did the modal class change?
     changed <- (early_vals != late_vals)

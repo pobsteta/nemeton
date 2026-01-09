@@ -37,7 +37,6 @@ allometric_models <- data.frame(
     "Wutzler, T., et al. (2008). Allgemeine Forst- und Jagdzeitung, 179(10/11), 195-206.",
     "Wutzler, T., et al. (2008). Pan-European equation. Allgemeine Forst- und Jagdzeitung, 179(10/11), 195-206."
   ),
-
   stringsAsFactors = FALSE
 )
 

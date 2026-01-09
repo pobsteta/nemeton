@@ -227,4 +227,3 @@ ggplot(comparison, aes(x = reorder(name, score), y = score, fill = scenario)) +
     fill = "Scénario"
   ) +
   theme_minimal()
-

@@ -182,7 +182,7 @@ test_that("plot_comparison_map errors when indicator missing", {
   units1$carbon <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$water <- c(10, 20, 30)  # Different indicator
+  units2$water <- c(10, 20, 30) # Different indicator
 
   expect_error(
     plot_comparison_map(units1, units2, indicator = "carbon"),
@@ -195,7 +195,7 @@ test_that("plot_difference_map creates absolute difference map", {
   units1$carbon <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$carbon <- c(150, 250, 350)  # +50 each
+  units2$carbon <- c(150, 250, 350) # +50 each
 
   p <- plot_difference_map(
     units1,
@@ -212,7 +212,7 @@ test_that("plot_difference_map creates relative difference map", {
   units1$carbon <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$carbon <- c(150, 250, 350)  # +50% for first, +25% for second, etc.
+  units2$carbon <- c(150, 250, 350) # +50% for first, +25% for second, etc.
 
   p <- plot_difference_map(
     units1,
@@ -358,7 +358,7 @@ test_that("plots can be saved to file", {
 test_that("nemeton_radar creates a ggplot object for average", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1,2,3))
+  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
   normalized <- normalize_indicators(results)
 
   # Average radar
@@ -370,7 +370,7 @@ test_that("nemeton_radar creates a ggplot object for average", {
 test_that("nemeton_radar creates a ggplot object for specific unit", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1,2,3))
+  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
   normalized <- normalize_indicators(results)
 
   # Specific unit
@@ -382,7 +382,7 @@ test_that("nemeton_radar creates a ggplot object for specific unit", {
 test_that("nemeton_radar works with explicit indicators", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1,2,3))
+  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
   normalized <- normalize_indicators(results)
 
   # Explicit indicators
@@ -416,7 +416,7 @@ test_that("nemeton_radar errors on missing indicators", {
 test_that("nemeton_radar errors on invalid unit_id", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1,2,3))
+  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
   normalized <- normalize_indicators(results)
 
   expect_error(
@@ -460,7 +460,7 @@ test_that("nemeton_radar supports 9-family axes (v0.3.0)", {
   expect_true(!is.null(p$data))
 
   # Should have data for all families
-  expect_true(nrow(p$data) >= 8)  # At least 8-9 families
+  expect_true(nrow(p$data) >= 8) # At least 8-9 families
 })
 
 test_that("nemeton_radar scales correctly with 9-12 axes", {
@@ -478,7 +478,7 @@ test_that("nemeton_radar scales correctly with 9-12 axes", {
   units$A1 <- c(55, 65, 75)
 
   # Add one more to test 9+ axes
-  units$S1 <- c(25, 35, 45)  # Social (future family)
+  units$S1 <- c(25, 35, 45) # Social (future family)
 
   result <- create_family_index(units)
 
@@ -526,10 +526,10 @@ test_that("nemeton_radar displays correct scaling with mixed v0.2.0 and v0.3.0 f
   units <- massif_demo_units[1:3, ]
 
   # Mix old and new families
-  units$C1 <- c(100, 200, 300)  # v0.2.0
-  units$W1 <- c(10, 20, 30)     # v0.2.0
-  units$B1 <- c(25, 50, 75)     # v0.3.0
-  units$R1 <- c(30, 50, 70)     # v0.3.0
+  units$C1 <- c(100, 200, 300) # v0.2.0
+  units$W1 <- c(10, 20, 30) # v0.2.0
+  units$B1 <- c(25, 50, 75) # v0.3.0
+  units$R1 <- c(30, 50, 70) # v0.3.0
 
   result <- create_family_index(units)
 

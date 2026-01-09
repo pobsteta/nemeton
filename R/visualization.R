@@ -70,19 +70,19 @@
 #'
 #' @export
 plot_indicators_map <- function(data,
-                                 indicators = NULL,
-                                 palette = c("viridis", "RdYlGn", "YlOrRd", "Greens", "Blues"),
-                                 direction = 1,
-                                 title = NULL,
-                                 legend_title = NULL,
-                                 breaks = NULL,
-                                 labels = NULL,
-                                 alpha = 0.9,
-                                 border_color = "white",
-                                 border_size = 0.3,
-                                 facet = TRUE,
-                                 ncol = 2,
-                                 base_size = 11) {
+                                indicators = NULL,
+                                palette = c("viridis", "RdYlGn", "YlOrRd", "Greens", "Blues"),
+                                direction = 1,
+                                title = NULL,
+                                legend_title = NULL,
+                                breaks = NULL,
+                                labels = NULL,
+                                alpha = 0.9,
+                                border_color = "white",
+                                border_size = 0.3,
+                                facet = TRUE,
+                                ncol = 2,
+                                base_size = 11) {
   # Validate input
   if (!inherits(data, "sf")) {
     msg_error("viz_not_sf")
@@ -151,7 +151,6 @@ plot_indicators_map <- function(data,
     if (is.null(title)) {
       title <- sprintf("Map of %s", clean_indicator_name(indicator_col))
     }
-
   } else {
     # Multiple indicators - faceted plot
     if (!facet) {
@@ -172,7 +171,7 @@ plot_indicators_map <- function(data,
         show.legend = TRUE
       ) +
       ggplot2::facet_wrap(
-        ~ indicator,
+        ~indicator,
         ncol = ncol,
         labeller = ggplot2::labeller(indicator = clean_indicator_name)
       )
@@ -362,12 +361,12 @@ reshape_for_facet <- function(data, indicators) {
 #'
 #' @export
 plot_comparison_map <- function(data1,
-                                 data2,
-                                 indicator,
-                                 labels = c("Scenario 1", "Scenario 2"),
-                                 palette = "viridis",
-                                 title = NULL,
-                                 ...) {
+                                data2,
+                                indicator,
+                                labels = c("Scenario 1", "Scenario 2"),
+                                palette = "viridis",
+                                title = NULL,
+                                ...) {
   # Validate inputs
   if (!inherits(data1, "sf") || !inherits(data2, "sf")) {
     msg_error("viz_both_not_sf")
@@ -395,7 +394,7 @@ plot_comparison_map <- function(data1,
       size = 0.3,
       alpha = 0.9
     ) +
-    ggplot2::facet_wrap(~ scenario, ncol = 2)
+    ggplot2::facet_wrap(~scenario, ncol = 2)
 
   # Add color scale
   p <- add_color_scale(
@@ -452,13 +451,13 @@ plot_comparison_map <- function(data1,
 #'
 #' @export
 plot_difference_map <- function(data1,
-                                 data2,
-                                 indicator,
-                                 type = c("absolute", "relative"),
-                                 palette = "RdBu",
-                                 title = NULL,
-                                 legend_title = NULL,
-                                 ...) {
+                                data2,
+                                indicator,
+                                type = c("absolute", "relative"),
+                                palette = "RdBu",
+                                title = NULL,
+                                legend_title = NULL,
+                                ...) {
   type <- match.arg(type)
 
   # Validate inputs
@@ -593,7 +592,6 @@ nemeton_radar <- function(data,
                           title = NULL,
                           fill_color = "#3182bd",
                           fill_alpha = 0.3) {
-
   # Validate inputs
   if (!inherits(data, "sf")) {
     cli::cli_abort("{.arg data} must be an {.cls sf} object")
@@ -616,8 +614,10 @@ nemeton_radar <- function(data,
       }
     } else {
       # Get numeric columns excluding geometry and standard metadata
-      exclude_cols <- c("geometry", "nemeton_id", "id", "area", "surface_geo",
-                        "geo_parcelle", "nomcommune", "codecommune")
+      exclude_cols <- c(
+        "geometry", "nemeton_id", "id", "area", "surface_geo",
+        "geo_parcelle", "nomcommune", "codecommune"
+      )
       # Also exclude family_* columns in indicator mode
       exclude_patterns <- c(exclude_cols, grep("^family_", all_cols, value = TRUE))
       numeric_cols <- all_cols[sapply(data, is.numeric)]
@@ -710,7 +710,7 @@ nemeton_radar <- function(data,
 
       # Create axis data
       unique_indicators <- unique(radar_data_multi$indicator)
-      axis_angles <- seq(0, 2 * pi, length.out = length(unique_indicators) + 1)[1:length(unique_indicators)]
+      axis_angles <- seq(0, 2 * pi, length.out = length(unique_indicators) + 1)[seq_along(unique_indicators)]
       axis_data <- data.frame(
         x0 = 0, y0 = 0,
         x1 = max_value * cos(axis_angles),
@@ -727,8 +727,9 @@ nemeton_radar <- function(data,
       )
       label_data$text_angle <- label_data$angle * 180 / pi
       label_data$text_angle <- ifelse(label_data$text_angle > 90 & label_data$text_angle < 270,
-                                      label_data$text_angle + 180,
-                                      label_data$text_angle)
+        label_data$text_angle + 180,
+        label_data$text_angle
+      )
 
       # Create comparison plot
       p <- ggplot2::ggplot(data = radar_data_multi) +
@@ -781,7 +782,7 @@ nemeton_radar <- function(data,
         id_col <- col_name
         unit_data <- data[data[[id_col]] == unit_id, ]
         if (nrow(unit_data) > 0) {
-          break  # Found a match
+          break # Found a match
         }
       }
     }
@@ -869,8 +870,9 @@ nemeton_radar <- function(data,
   # Adjust text angle for readability
   label_data$text_angle <- label_data$angle * 180 / pi
   label_data$text_angle <- ifelse(label_data$text_angle > 90 & label_data$text_angle < 270,
-                                  label_data$text_angle + 180,
-                                  label_data$text_angle)
+    label_data$text_angle + 180,
+    label_data$text_angle
+  )
 
   # Create the plot (with radar_data as main data for p$data access)
   p <- ggplot2::ggplot(data = radar_data) +
@@ -997,11 +999,11 @@ nemeton_radar <- function(data,
 #' plot_temporal_trend(temporal, indicator = c("C1", "W1"))
 #' }
 plot_temporal_trend <- function(temporal,
-                                 indicator,
-                                 units = NULL,
-                                 id_column = "parcel_id",
-                                 title = NULL,
-                                 show_mean = FALSE) {
+                                indicator,
+                                units = NULL,
+                                id_column = "parcel_id",
+                                title = NULL,
+                                show_mean = FALSE) {
   # Validate inputs
   if (!inherits(temporal, "nemeton_temporal")) {
     stop("temporal must be a nemeton_temporal object", call. = FALSE)
@@ -1016,8 +1018,10 @@ plot_temporal_trend <- function(temporal,
     # Check all indicators exist
     missing_ind <- setdiff(indicator, names(period_data))
     if (length(missing_ind) > 0) {
-      stop(sprintf("Indicator '%s' not found in period '%s'",
-                   missing_ind[1], period_name), call. = FALSE)
+      stop(sprintf(
+        "Indicator '%s' not found in period '%s'",
+        missing_ind[1], period_name
+      ), call. = FALSE)
     }
 
     # Get unit IDs
@@ -1064,8 +1068,10 @@ plot_temporal_trend <- function(temporal,
   # Create plot
   if (length(indicator) == 1) {
     # Single indicator: plot all units
-    p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = date, y = value,
-                                                 group = unit_id, color = unit_id)) +
+    p <- ggplot2::ggplot(plot_df, ggplot2::aes(
+      x = date, y = value,
+      group = unit_id, color = unit_id
+    )) +
       ggplot2::geom_line(alpha = 0.6) +
       ggplot2::geom_point(alpha = 0.6) +
       ggplot2::labs(
@@ -1078,18 +1084,22 @@ plot_temporal_trend <- function(temporal,
     if (show_mean) {
       # Add mean line
       mean_df <- stats::aggregate(value ~ date, data = plot_df, FUN = mean)
-      p <- p + ggplot2::geom_line(data = mean_df,
-                                    ggplot2::aes(x = date, y = value),
-                                    inherit.aes = FALSE,
-                                    color = "black", linewidth = 1.2)
+      p <- p + ggplot2::geom_line(
+        data = mean_df,
+        ggplot2::aes(x = date, y = value),
+        inherit.aes = FALSE,
+        color = "black", linewidth = 1.2
+      )
     }
   } else {
     # Multiple indicators: facet by indicator
-    p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = date, y = value,
-                                                 group = unit_id, color = unit_id)) +
+    p <- ggplot2::ggplot(plot_df, ggplot2::aes(
+      x = date, y = value,
+      group = unit_id, color = unit_id
+    )) +
       ggplot2::geom_line(alpha = 0.6) +
       ggplot2::geom_point(alpha = 0.6, size = 1) +
-      ggplot2::facet_wrap(~ indicator, scales = "free_y", ncol = 2) +
+      ggplot2::facet_wrap(~indicator, scales = "free_y", ncol = 2) +
       ggplot2::labs(
         x = "Date",
         y = "Value",
@@ -1142,11 +1152,11 @@ plot_temporal_trend <- function(temporal,
 #' plot_temporal_heatmap(temporal, unit_id = "P1", normalize = TRUE)
 #' }
 plot_temporal_heatmap <- function(temporal,
-                                   unit_id,
-                                   indicators = NULL,
-                                   id_column = "parcel_id",
-                                   normalize = FALSE,
-                                   title = NULL) {
+                                  unit_id,
+                                  indicators = NULL,
+                                  id_column = "parcel_id",
+                                  normalize = FALSE,
+                                  title = NULL) {
   # Validate inputs
   if (!inherits(temporal, "nemeton_temporal")) {
     stop("temporal must be a nemeton_temporal object", call. = FALSE)
@@ -1168,7 +1178,7 @@ plot_temporal_heatmap <- function(temporal,
     # Find the unit
     unit_idx <- which(unit_ids == unit_id)
     if (length(unit_idx) == 0) {
-      next  # Unit not in this period
+      next # Unit not in this period
     }
 
     unit_row <- period_data[unit_idx[1], ]
@@ -1187,7 +1197,8 @@ plot_temporal_heatmap <- function(temporal,
     for (ind in numeric_cols) {
       if (!ind %in% names(unit_row)) {
         warning(sprintf("Indicator '%s' not found in period '%s'", ind, period_name),
-                call. = FALSE)
+          call. = FALSE
+        )
         next
       }
 
@@ -1223,7 +1234,7 @@ plot_temporal_heatmap <- function(temporal,
       if (max_val > min_val) {
         plot_df$value[ind_rows] <- ((values - min_val) / (max_val - min_val)) * 100
       } else {
-        plot_df$value[ind_rows] <- 50  # All same value
+        plot_df$value[ind_rows] <- 50 # All same value
       }
     }
   }
@@ -1233,7 +1244,8 @@ plot_temporal_heatmap <- function(temporal,
     ggplot2::geom_tile(color = "white", linewidth = 0.5) +
     ggplot2::scale_fill_viridis_c(name = if (normalize) "Normalized\nValue (0-100)" else "Value") +
     ggplot2::geom_text(ggplot2::aes(label = sprintf("%.1f", value)),
-                       color = "white", size = 3) +
+      color = "white", size = 3
+    ) +
     ggplot2::labs(
       x = "Period",
       y = "Indicator"

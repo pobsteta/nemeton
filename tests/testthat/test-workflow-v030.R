@@ -47,7 +47,7 @@ test_that("Complete v0.3.0 workflow: All 10 new indicators → families → rada
       strata_field = "strata",
       species_field = "species"
     ) %>%
-    indicator_biodiversity_connectivity(corridors = NULL)  # Will use default fallback
+    indicator_biodiversity_connectivity(corridors = NULL) # Will use default fallback
 
   # Risk/Resilience family (R1-R3)
   result <- result %>%
@@ -261,9 +261,9 @@ test_that("v0.3.0 workflow handles partial indicator sets gracefully", {
   families <- create_family_index(normalized)
 
   # Should create families from available indicators
-  expect_true("family_B" %in% names(families))  # From B1, B2
-  expect_true("family_R" %in% names(families))  # From R1 only
-  expect_true("family_T" %in% names(families))  # From T1, T2
+  expect_true("family_B" %in% names(families)) # From B1, B2
+  expect_true("family_R" %in% names(families)) # From R1 only
+  expect_true("family_T" %in% names(families)) # From T1, T2
 
   # Family B should average B1 and B2
   expect_true(all(!is.na(families$family_B)))

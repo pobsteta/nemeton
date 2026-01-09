@@ -36,10 +36,10 @@ library(ggplot2)
 # # Charger les données de base
 # data(massif_demo_units)
 # layers_2020 <- massif_demo_layers()
-# 
+#
 # # Simuler des données pour 2015 et 2025 (pour la démo)
 # # En pratique, vous chargerez vos vrais datasets historiques
-# 
+#
 # # Créer le dataset temporel
 # temporal <- nemeton_temporal(
 #   periods = list(
@@ -49,7 +49,7 @@ library(ggplot2)
 #   ),
 #   unit_id = "parcel_id"
 # )
-# 
+#
 # print(temporal)
 
 ## ----eval = FALSE-------------------------------------------------------------
@@ -58,7 +58,7 @@ library(ggplot2)
 #   temporal,
 #   indicators = c("carbon", "biodiversity", "water")
 # )
-# 
+#
 # # Afficher la structure
 # summary(temporal_results)
 
@@ -70,7 +70,7 @@ library(ggplot2)
 #   period_start = "2015",
 #   period_end = "2025"
 # )
-# 
+#
 # # Afficher les taux de changement
 # head(change_rates[, c("parcel_id", "carbon_rate", "biodiversity_rate", "water_rate")])
 
@@ -117,7 +117,7 @@ library(ggplot2)
 # # - Avant intervention (2018)
 # # - Après intervention (2020)
 # # - Suivi à 5 ans (2025)
-# 
+#
 # temporal_intervention <- nemeton_temporal(
 #   periods = list(
 #     "avant_2018" = list(units = units_avant, layers = layers_avant),
@@ -126,13 +126,13 @@ library(ggplot2)
 #   ),
 #   unit_id = "parcel_id"
 # )
-# 
+#
 # # 2. Calculer indicateurs
 # results <- nemeton_compute(
 #   temporal_intervention,
 #   indicators = c("carbon", "biodiversity", "water", "fragmentation")
 # )
-# 
+#
 # # 3. Analyser les impacts
 # impact_2020 <- calculate_change_rate(
 #   results,
@@ -140,14 +140,14 @@ library(ggplot2)
 #   period_end = "apres_2020",
 #   indicators = c("carbon", "biodiversity")
 # )
-# 
+#
 # recovery_2025 <- calculate_change_rate(
 #   results,
 #   period_start = "apres_2020",
 #   period_end = "suivi_2025",
 #   indicators = c("carbon", "biodiversity")
 # )
-# 
+#
 # # 4. Visualiser trajectoire
 # plot_temporal_trend(
 #   results,
@@ -164,11 +164,11 @@ library(ggplot2)
 #   period_start = "2015",
 #   period_end = "2025"
 # )
-# 
+#
 # # Filtrer les parcelles avec forte dynamique
 # high_change <- rates |>
 #   filter(abs(carbon_rate) > 2.0)  # > ±2% par an
-# 
+#
 # # Visualiser sur carte
 # plot_indicators_map(
 #   high_change,
@@ -190,7 +190,7 @@ library(ggplot2)
 #       TRUE ~ "Forte diminution"
 #     )
 #   )
-# 
+#
 # # Compter les trajectoires
 # table(rates$trajectory)
 
@@ -220,7 +220,7 @@ library(ggplot2)
 #   weights = c(0.4, 0.3, 0.3),
 #   name = "ecosystem_quality"
 # )
-# 
+#
 # # Analyser l'évolution de l'indice
 # plot_temporal_trend(
 #   composite_temporal,
@@ -239,7 +239,7 @@ library(ggplot2)
 #     biodiv_mean = mean(biodiversity, na.rm = TRUE),
 #     biodiv_sd = sd(biodiversity, na.rm = TRUE)
 #   )
-# 
+#
 # print(summary_table)
 
 ## ----eval = FALSE-------------------------------------------------------------
@@ -249,7 +249,7 @@ library(ggplot2)
 #   "results/temporal_change_rates.csv",
 #   row.names = FALSE
 # )
-# 
+#
 # # Export cartes temporelles
 # for (period in c("2015", "2020", "2025")) {
 #   p <- plot_indicators_map(
@@ -267,4 +267,3 @@ library(ggplot2)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()
-

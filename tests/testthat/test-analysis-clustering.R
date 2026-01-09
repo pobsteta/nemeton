@@ -28,8 +28,8 @@ test_that("cluster_parcels performs K-means clustering correctly (T114)", {
   # Check cluster profiles are computed
   expect_true("cluster_profile" %in% names(attributes(result)))
   profiles <- attr(result, "cluster_profile")
-  expect_equal(nrow(profiles), 3)  # 3 clusters
-  expect_equal(ncol(profiles), length(families))  # 4 families
+  expect_equal(nrow(profiles), 3) # 3 clusters
+  expect_equal(ncol(profiles), length(families)) # 4 families
 
   # Given the clear separation in fixture, clusters should match reasonably
   # Parcels 1-3 should be in same cluster (high performers)
@@ -64,8 +64,8 @@ test_that("cluster_parcels auto-determines optimal k with silhouette method (T11
   expect_true("optimal_k" %in% names(attributes(result)))
   optimal_k <- attr(result, "optimal_k")
   expect_type(optimal_k, "integer")
-  expect_gte(optimal_k, 2)  # At least 2 clusters
-  expect_lte(optimal_k, nrow(data) - 1)  # At most n-1 clusters
+  expect_gte(optimal_k, 2) # At least 2 clusters
+  expect_lte(optimal_k, nrow(data) - 1) # At most n-1 clusters
 
   # For the clear 3-cluster fixture, optimal k should be 3 or close
   expect_gte(optimal_k, 2)
@@ -149,7 +149,7 @@ test_that("cluster_parcels computes cluster profiles correctly", {
 
   # Check that profile values are within data range
   for (fam in families) {
-    expect_gte(min(profiles[[fam]]), min(data[[fam]]) - 1)  # Allow small tolerance
+    expect_gte(min(profiles[[fam]]), min(data[[fam]]) - 1) # Allow small tolerance
     expect_lte(max(profiles[[fam]]), max(data[[fam]]) + 1)
   }
 

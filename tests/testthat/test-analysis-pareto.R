@@ -30,9 +30,9 @@ test_that("identify_pareto_optimal identifies correct Pareto optimal parcels (T1
   # Parcel 1 has highest family_C
   # Parcel 5 has highest family_B
   # Parcel 9 has highest family_P
-  expect_true(result$is_optimal[1])  # Highest C
-  expect_true(result$is_optimal[5])  # Highest B
-  expect_true(result$is_optimal[9])  # Highest P
+  expect_true(result$is_optimal[1]) # Highest C
+  expect_true(result$is_optimal[5]) # Highest B
+  expect_true(result$is_optimal[9]) # Highest P
 })
 
 test_that("identify_pareto_optimal handles maximize vs minimize correctly (T113)", {
@@ -66,8 +66,8 @@ test_that("identify_pareto_optimal handles maximize vs minimize correctly (T113)
   # The optimal sets should be different
   # When maximizing, parcel 1 (highest C) is optimal
   # When minimizing, parcel 3 (lowest C=150) might be optimal
-  expect_true(result_max$is_optimal[1])   # Highest C when maximizing
-  expect_false(result_min$is_optimal[1])  # Highest C NOT optimal when minimizing
+  expect_true(result_max$is_optimal[1]) # Highest C when maximizing
+  expect_false(result_min$is_optimal[1]) # Highest C NOT optimal when minimizing
 
   # Test 3: Mixed objectives (maximize C and B, minimize P)
   result_mixed <- identify_pareto_optimal(
@@ -93,7 +93,7 @@ test_that("identify_pareto_optimal handles edge cases", {
   # Test with single objective (all should be "Pareto optimal" with respect to that single dimension)
   result_single <- identify_pareto_optimal(
     data,
-    objectives = objectives[1],  # Just family_C
+    objectives = objectives[1], # Just family_C
     maximize = TRUE
   )
   # With single objective, only the maximum point is optimal
@@ -101,7 +101,7 @@ test_that("identify_pareto_optimal handles edge cases", {
   expect_equal(which(result_single$is_optimal), which.max(data[[objectives[1]]]))
 
   # Test with duplicate parcels (should handle gracefully)
-  data_dup <- rbind(data[1:5, ], data[1, ])  # Duplicate parcel 1
+  data_dup <- rbind(data[1:5, ], data[1, ]) # Duplicate parcel 1
   result_dup <- identify_pareto_optimal(
     data_dup,
     objectives = objectives,

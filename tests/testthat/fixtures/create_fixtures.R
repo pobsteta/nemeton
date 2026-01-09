@@ -67,14 +67,16 @@ lc_1990 <- rast(
 )
 # CLC classes: 311 = broadleaf, 312 = conifer, 313 = mixed, 231 = grassland
 values(lc_1990) <- sample(c(311, 312, 313, 231), ncol_raster * nrow_raster,
-                           replace = TRUE, prob = c(0.4, 0.3, 0.2, 0.1))
+  replace = TRUE, prob = c(0.4, 0.3, 0.2, 0.1)
+)
 
 # Land cover 2020 (with some changes ~10% transition)
 set.seed(2020)
 lc_2020 <- lc_1990 # Start with 1990
 change_cells <- sample(1:ncell(lc_2020), size = round(ncell(lc_2020) * 0.1))
 values(lc_2020)[change_cells] <- sample(c(311, 312, 313, 231), length(change_cells),
-                                        replace = TRUE)
+  replace = TRUE
+)
 
 terra::writeRaster(lc_1990, "land_cover/land_cover_1990.tif", overwrite = TRUE)
 terra::writeRaster(lc_2020, "land_cover/land_cover_2020.tif", overwrite = TRUE)
@@ -92,14 +94,14 @@ dem_raster <- rast(
 
 # Elevation: 200-800m with gentle slope and some variability
 # Create realistic terrain with east-west gradient + noise
-x_coords <- rep(1:ncol(dem_raster), each = nrow(dem_raster))
-y_coords <- rep(1:nrow(dem_raster), times = ncol(dem_raster))
+x_coords <- rep(seq_len(ncol(dem_raster)), each = nrow(dem_raster))
+y_coords <- rep(seq_len(nrow(dem_raster)), times = ncol(dem_raster))
 
-elevation_base <- 400 + (x_coords / ncol(dem_raster)) * 200  # East-west gradient
-elevation_noise <- rnorm(ncell(dem_raster), mean = 0, sd = 50)  # Local variation
+elevation_base <- 400 + (x_coords / ncol(dem_raster)) * 200 # East-west gradient
+elevation_noise <- rnorm(ncell(dem_raster), mean = 0, sd = 50) # Local variation
 elevation_values <- elevation_base + elevation_noise
 
-values(dem_raster) <- pmax(150, pmin(850, elevation_values))  # Clamp to realistic range
+values(dem_raster) <- pmax(150, pmin(850, elevation_values)) # Clamp to realistic range
 
 terra::writeRaster(dem_raster, "climate/dem_demo.tif", overwrite = TRUE)
 message("✓ Created dem_demo.tif (200-800m elevation)")

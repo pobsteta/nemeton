@@ -307,8 +307,10 @@ test_that("Temporal visualizations handle three or more periods", {
   units_2030$C1 <- c(65, 75, 70)
 
   temporal <- nemeton_temporal(
-    periods = list("2015" = units_2015, "2020" = units_2020,
-                   "2025" = units_2025, "2030" = units_2030),
+    periods = list(
+      "2015" = units_2015, "2020" = units_2020,
+      "2025" = units_2025, "2030" = units_2030
+    ),
     id_column = "parcel_id"
   )
 

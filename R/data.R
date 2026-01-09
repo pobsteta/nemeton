@@ -140,8 +140,8 @@
 #'
 #' # Explore structure
 #' library(sf)
-#' plot(massif_demo_units_extended["family_S"])  # Social services
-#' plot(massif_demo_units_extended["family_E"])  # Energy services
+#' plot(massif_demo_units_extended["family_S"]) # Social services
+#' plot(massif_demo_units_extended["family_E"]) # Energy services
 #'
 #' # Create 12-axis radar plot for parcel 1
 #' library(nemeton)

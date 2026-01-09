@@ -42,9 +42,9 @@ NULL
 #' )
 #' }
 nemeton_temporal <- function(periods,
-                              dates = NULL,
-                              labels = NULL,
-                              id_column = "parcel_id") {
+                             dates = NULL,
+                             labels = NULL,
+                             id_column = "parcel_id") {
   # Validate inputs
   if (length(periods) == 0) {
     stop("No periods provided", call. = FALSE)
@@ -167,10 +167,10 @@ nemeton_temporal <- function(periods,
 #' summary(rates[, c("C1_rate_abs", "C1_rate_rel")])
 #' }
 calculate_change_rate <- function(temporal,
-                                   indicators = "all",
-                                   period_start = NULL,
-                                   period_end = NULL,
-                                   type = c("both", "absolute", "relative")) {
+                                  indicators = "all",
+                                  period_start = NULL,
+                                  period_end = NULL,
+                                  type = c("both", "absolute", "relative")) {
   # Validate input
   if (!inherits(temporal, "nemeton_temporal")) {
     stop("temporal must be a nemeton_temporal object", call. = FALSE)
@@ -210,13 +210,13 @@ calculate_change_rate <- function(temporal,
       temporal$metadata$dates[idx_end],
       temporal$metadata$dates[idx_start],
       units = "days"
-    )) / 365.25  # Years
+    )) / 365.25 # Years
   } else {
     # Try to parse years from period names
     year_start <- as.numeric(period_start)
     year_end <- as.numeric(period_end)
     if (is.na(year_start) || is.na(year_end)) {
-      time_diff <- 1  # Default to 1 year if can't determine
+      time_diff <- 1 # Default to 1 year if can't determine
       warning("Cannot determine time difference, assuming 1 year", call. = FALSE)
     } else {
       time_diff <- year_end - year_start
@@ -245,7 +245,8 @@ calculate_change_rate <- function(temporal,
   for (ind in indicators) {
     if (!ind %in% names(data_start) || !ind %in% names(data_end)) {
       warning(sprintf("Indicator '%s' not found in both periods, skipping", ind),
-              call. = FALSE)
+        call. = FALSE
+      )
       next
     }
 
@@ -281,21 +282,27 @@ calculate_change_rate <- function(temporal,
 #' @keywords internal
 print.nemeton_temporal <- function(x, ...) {
   cat("nemeton_temporal object\n")
-  cat(sprintf("  %d periods: %s\n",
-              x$metadata$n_periods,
-              paste(x$metadata$period_labels, collapse = ", ")))
+  cat(sprintf(
+    "  %d periods: %s\n",
+    x$metadata$n_periods,
+    paste(x$metadata$period_labels, collapse = ", ")
+  ))
   cat(sprintf("  %d units tracked across periods\n", x$metadata$n_units))
 
   if (!is.null(x$metadata$dates)) {
     date_range <- range(x$metadata$dates, na.rm = TRUE)
-    cat(sprintf("  Date range: %s to %s\n",
-                format(date_range[1], "%Y-%m-%d"),
-                format(date_range[2], "%Y-%m-%d")))
+    cat(sprintf(
+      "  Date range: %s to %s\n",
+      format(date_range[1], "%Y-%m-%d"),
+      format(date_range[2], "%Y-%m-%d")
+    ))
   }
 
   if (x$metadata$n_complete < x$metadata$n_units) {
-    cat(sprintf("  ⚠ %d units not present in all periods\n",
-                x$metadata$n_units - x$metadata$n_complete))
+    cat(sprintf(
+      "  ⚠ %d units not present in all periods\n",
+      x$metadata$n_units - x$metadata$n_complete
+    ))
   }
 
   # List indicators (from first period)
@@ -346,11 +353,13 @@ summary.nemeton_temporal <- function(object, ...) {
       cat("    Indicator ranges:\n")
       for (col in numeric_cols) {
         values <- period_data[[col]]
-        cat(sprintf("      %s: [%.2f, %.2f] (mean: %.2f)\n",
-                    col,
-                    min(values, na.rm = TRUE),
-                    max(values, na.rm = TRUE),
-                    mean(values, na.rm = TRUE)))
+        cat(sprintf(
+          "      %s: [%.2f, %.2f] (mean: %.2f)\n",
+          col,
+          min(values, na.rm = TRUE),
+          max(values, na.rm = TRUE),
+          mean(values, na.rm = TRUE)
+        ))
       }
     }
   }

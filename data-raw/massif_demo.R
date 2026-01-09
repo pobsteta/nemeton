@@ -5,14 +5,14 @@ library(sf)
 library(terra)
 library(dplyr)
 
-set.seed(42)  # Reproductibilité
+set.seed(42) # Reproductibilité
 
 # Paramètres du Massif Demo
 # Zone fictive inspirée des massifs français
 # Coordonnées en Lambert-93 (EPSG:2154)
-center_x <- 700000  # Centre approximatif France
+center_x <- 700000 # Centre approximatif France
 center_y <- 6500000
-extent_size <- 5000  # 5km x 5km
+extent_size <- 5000 # 5km x 5km
 
 # 1. CRÉER LES PARCELLES FORESTIÈRES ==========================================
 
@@ -42,21 +42,21 @@ for (i in 1:n_parcels) {
 
   # Taille variable (2-20 ha)
   area_ha <- runif(1, 2, 20)
-  side <- sqrt(area_ha * 10000) * runif(1, 0.7, 1.3)  # Forme irrégulière
+  side <- sqrt(area_ha * 10000) * runif(1, 0.7, 1.3) # Forme irrégulière
 
   # Rotation aléatoire
-  angle <- runif(1, 0, 2*pi)
+  angle <- runif(1, 0, 2 * pi)
 
   # Points du polygone (hexagone irrégulier)
   n_sides <- 6
-  angles <- seq(0, 2*pi, length.out = n_sides + 1)[1:n_sides] + angle
-  distances <- side/2 * runif(n_sides, 0.7, 1.3)
+  angles <- seq(0, 2 * pi, length.out = n_sides + 1)[1:n_sides] + angle
+  distances <- side / 2 * runif(n_sides, 0.7, 1.3)
 
   coords <- data.frame(
     x = px + distances * cos(angles),
     y = py + distances * sin(angles)
   )
-  coords <- rbind(coords, coords[1,])  # Fermer le polygone
+  coords <- rbind(coords, coords[1, ]) # Fermer le polygone
 
   parcels_list[[i]] <- st_polygon(list(as.matrix(coords)))
 }
@@ -95,7 +95,7 @@ cat(sprintf("  ✓ %d parcelles créées\n", n_parcels))
 
 # Extent global
 bbox <- st_bbox(massif_demo_units)
-bbox_buffered <- bbox + c(-500, -500, 500, 500)  # Buffer 500m
+bbox_buffered <- bbox + c(-500, -500, 500, 500) # Buffer 500m
 
 # Résolution 25m (comme IGN)
 res <- 25
@@ -104,7 +104,7 @@ cat("Création des rasters...\n")
 
 # Raster template
 r_template <- rast(
-  extent = ext(bbox_buffered[c(1,3,2,4)]),
+  extent = ext(bbox_buffered[c(1, 3, 2, 4)]),
   resolution = res,
   crs = "EPSG:2154"
 )
@@ -115,23 +115,23 @@ biomass <- r_template
 
 # Générer pattern réaliste avec gradient + bruit
 coords <- xyFromCell(biomass, 1:ncell(biomass))
-x_norm <- (coords[,1] - bbox_buffered[1]) / (bbox_buffered[3] - bbox_buffered[1])
-y_norm <- (coords[,2] - bbox_buffered[2]) / (bbox_buffered[4] - bbox_buffered[2])
+x_norm <- (coords[, 1] - bbox_buffered[1]) / (bbox_buffered[3] - bbox_buffered[1])
+y_norm <- (coords[, 2] - bbox_buffered[2]) / (bbox_buffered[4] - bbox_buffered[2])
 
 # Gradient de biomasse (augmente vers nord-ouest)
 gradient <- 100 + 150 * (0.5 * (1 - x_norm) + 0.5 * y_norm)
 
 # Ajouter structure spatiale (patches)
-patch_size <- 10  # Nombre de patches
+patch_size <- 10 # Nombre de patches
 patch_centers <- data.frame(
   x = runif(patch_size, bbox_buffered[1], bbox_buffered[3]),
   y = runif(patch_size, bbox_buffered[2], bbox_buffered[4]),
   intensity = rnorm(patch_size, 0, 50)
 )
 
-patches <- sapply(1:nrow(coords), function(i) {
-  dists <- sqrt((coords[i,1] - patch_centers$x)^2 + (coords[i,2] - patch_centers$y)^2)
-  weights <- exp(-dists / 500)  # Décroissance exponentielle
+patches <- sapply(seq_len(nrow(coords)), function(i) {
+  dists <- sqrt((coords[i, 1] - patch_centers$x)^2 + (coords[i, 2] - patch_centers$y)^2)
+  weights <- exp(-dists / 500) # Décroissance exponentielle
   sum(weights * patch_centers$intensity) / sum(weights)
 })
 
@@ -144,13 +144,13 @@ dem <- r_template
 
 # Générer relief réaliste
 # Pente générale + ondulations
-slope_x <- (coords[,1] - mean(coords[,1])) / 2000 * 15  # Pente douce
+slope_x <- (coords[, 1] - mean(coords[, 1])) / 2000 * 15 # Pente douce
 noise_large <- rnorm(ncell(dem), 0, 30)
 noise_small <- rnorm(ncell(dem), 0, 10)
 
 # Altitude de base 400-600m
 values(dem) <- 500 + slope_x + noise_large + noise_small
-values(dem) <- pmax(350, pmin(700, values(dem)))  # Limiter 350-700m
+values(dem) <- pmax(350, pmin(700, values(dem))) # Limiter 350-700m
 
 # 2.3 Occupation du sol (classes)
 cat("  - Occupation du sol...\n")
@@ -175,7 +175,7 @@ for (i in 1:ncell(landcover)) {
 # Ajouter cohérence spatiale (moyennage avec voisins)
 for (pass in 1:3) {
   temp <- focal(rast(r_template, vals = lc_values), w = 3, fun = "modal", na.policy = "omit")
-  lc_values <- values(temp)[,1]
+  lc_values <- values(temp)[, 1]
 }
 
 values(landcover) <- round(lc_values)
@@ -187,7 +187,7 @@ species_richness <- r_template
 # Corrélée avec biomasse et diversité d'habitats
 # Plus de biomasse = plus d'espèces (généralement)
 biomass_norm <- (values(biomass) - min(values(biomass))) /
-                (max(values(biomass)) - min(values(biomass)))
+  (max(values(biomass)) - min(values(biomass)))
 
 # Diversité d'occupation du sol (calculée localement)
 lc_diversity <- focal(landcover, w = 5, fun = function(x) length(unique(x)))
@@ -242,7 +242,7 @@ rivers_list <- list()
 for (i in 1:n_rivers) {
   # Les rivières suivent généralement les vallées (altitudes basses)
   start_x <- runif(1, bbox_buffered[1], bbox_buffered[3])
-  start_y <- bbox_buffered[4]  # Commence en haut
+  start_y <- bbox_buffered[4] # Commence en haut
 
   # Descendre en suivant la pente
   n_pts <- 20
@@ -254,8 +254,8 @@ for (i in 1:n_rivers) {
 
   for (j in 2:n_pts) {
     # Avancer vers le bas avec sinuosité
-    x_pts[j] <- x_pts[j-1] + rnorm(1, 0, 150)
-    y_pts[j] <- y_pts[j-1] - abs(rnorm(1, 200, 50))  # Descendre
+    x_pts[j] <- x_pts[j - 1] + rnorm(1, 0, 150)
+    y_pts[j] <- y_pts[j - 1] - abs(rnorm(1, 200, 50)) # Descendre
   }
 
   coords <- cbind(x_pts, y_pts)
@@ -300,12 +300,16 @@ cat("  ✓ Dataset R sauvegardé dans data/\n")
 # 5. RÉSUMÉ ==================================================================
 
 cat("\n=== MASSIF DEMO DATASET CRÉÉ ===\n")
-cat(sprintf("Parcelles: %d (%.1f ha total)\n",
-            nrow(massif_demo_units),
-            sum(massif_demo_units$surface_ha)))
-cat(sprintf("Extent: %.0f x %.0f m\n",
-            bbox_buffered[3] - bbox_buffered[1],
-            bbox_buffered[4] - bbox_buffered[2]))
+cat(sprintf(
+  "Parcelles: %d (%.1f ha total)\n",
+  nrow(massif_demo_units),
+  sum(massif_demo_units$surface_ha)
+))
+cat(sprintf(
+  "Extent: %.0f x %.0f m\n",
+  bbox_buffered[3] - bbox_buffered[1],
+  bbox_buffered[4] - bbox_buffered[2]
+))
 cat(sprintf("Rasters: 4 (résolution %dm)\n", res))
 cat(sprintf("Routes: %d\n", nrow(massif_demo_roads)))
 cat(sprintf("Cours d'eau: %d\n", nrow(massif_demo_water)))

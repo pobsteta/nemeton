@@ -22,11 +22,11 @@ test_that("indicator_water_network calculates stream density within parcels", {
   expect_type(density, "double")
   expect_length(density, 5)
   expect_true(all(!is.na(density)))
-  expect_true(all(density >= 0))  # Density should be non-negative
+  expect_true(all(density >= 0)) # Density should be non-negative
 
   # Reasonable range check (km/ha should be small values)
   # Dense network: ~0.5-2 km/ha, sparse: 0-0.1 km/ha
-  expect_true(all(density < 5))  # Upper bound check
+  expect_true(all(density < 5)) # Upper bound check
 })
 
 test_that("indicator_water_network with buffer expands search area", {
@@ -55,7 +55,7 @@ test_that("indicator_water_network handles parcels with no watercourses", {
   density <- indicator_water_network(units, layers, watercourse_layer = "water")
 
   expect_length(density, 6)
-  expect_true(all(density >= 0))  # Should be 0 for parcels without streams
+  expect_true(all(density >= 0)) # Should be 0 for parcels without streams
   expect_true(all(!is.na(density)))
 })
 
@@ -127,7 +127,7 @@ test_that("indicator_water_wetlands handles multiple wetland codes", {
     units,
     layers,
     wetland_layer = "landcover",
-    wetland_values = c(3, 4)  # Two landcover classes as wetlands
+    wetland_values = c(3, 4) # Two landcover classes as wetlands
   )
 
   expect_length(coverage, 3)
@@ -214,7 +214,7 @@ test_that("indicator_water_twi calculates TWI from DEM", {
 
   # TWI typically ranges from ~0 to ~20+ (higher = wetter)
   expect_true(all(twi >= 0))
-  expect_true(all(twi < 50))  # Upper bound sanity check
+  expect_true(all(twi < 50)) # Upper bound sanity check
 })
 
 test_that("indicator_water_twi with explicit d8 method", {
@@ -243,8 +243,8 @@ test_that("indicator_water_twi shows higher values in depressions", {
   twi <- indicator_water_twi(units, layers, dem_layer = "dem")
 
   # Check variation - TWI should vary across landscape
-  expect_true(sd(twi) > 0)  # Not all identical
-  expect_true(max(twi) > min(twi))  # Some variation in wetness
+  expect_true(sd(twi) > 0) # Not all identical
+  expect_true(max(twi) > min(twi)) # Some variation in wetness
 })
 
 test_that("indicator_water_twi errors when DEM layer missing", {

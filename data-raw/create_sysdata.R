@@ -17,17 +17,17 @@ allometric_models <- data.frame(
   a = c(
     0.35, 0.40, 0.38, 0.42, 0.40,
     0.36, 0.38, 0.37, 0.33, 0.32,
-    0.37  # Generic fallback
+    0.37 # Generic fallback
   ),
   b = c(
     1.15, 1.20, 1.18, 1.22, 1.20,
     1.16, 1.18, 1.17, 1.14, 1.12,
-    1.18  # Generic fallback
+    1.18 # Generic fallback
   ),
   c = c(
     0.85, 0.90, 0.88, 0.92, 0.90,
     0.86, 0.88, 0.87, 0.84, 0.82,
-    0.88  # Generic fallback
+    0.88 # Generic fallback
   ),
   source = c(
     rep("Literature", 10),

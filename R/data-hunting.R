@@ -14,9 +14,7 @@ NULL
 #' Updated 2025-06-05 with all 8 large game species
 #' @noRd
 HUNTING_DATA_URLS <- list(
-
   # Principal browsers - high impact on forest regeneration
-
   chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
   cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
   sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
@@ -80,8 +78,8 @@ HUNTING_DATA_URLS <- list(
 #' gironde <- subset(all_data, code_dept == "33")
 #' }
 download_hunting_data <- function(species = "all",
-                                   cache_dir = NULL,
-                                   force_download = FALSE) {
+                                  cache_dir = NULL,
+                                  force_download = FALSE) {
   # Set cache directory
 
   if (is.null(cache_dir)) {
@@ -107,7 +105,8 @@ download_hunting_data <- function(species = "all",
   valid_species <- intersect(species, names(HUNTING_DATA_URLS))
   if (length(valid_species) == 0) {
     stop("No valid species specified. Use: ", paste(names(HUNTING_DATA_URLS), collapse = ", "),
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   # Download and combine data
@@ -120,39 +119,48 @@ download_hunting_data <- function(species = "all",
     if (!file.exists(cache_file) || force_download) {
       cli::cli_alert_info("Downloading hunting data for {sp}...")
 
-      tryCatch({
-        download.file(
-          url = HUNTING_DATA_URLS[[sp]],
-          destfile = cache_file,
-          mode = "wb",
-          quiet = TRUE
-        )
-        cli::cli_alert_success("Downloaded {sp} data")
-      }, error = function(e) {
-        cli::cli_alert_warning("Failed to download {sp}: {e$message}")
-        return(NULL)
-      })
+      tryCatch(
+        {
+          download.file(
+            url = HUNTING_DATA_URLS[[sp]],
+            destfile = cache_file,
+            mode = "wb",
+            quiet = TRUE
+          )
+          cli::cli_alert_success("Downloaded {sp} data")
+        },
+        error = function(e) {
+          cli::cli_alert_warning("Failed to download {sp}: {e$message}")
+          return(NULL)
+        }
+      )
     }
 
     # Read data
     if (file.exists(cache_file)) {
-      tryCatch({
-        # Try different encodings and separators
-        data <- tryCatch({
-          read.csv(cache_file, stringsAsFactors = FALSE, encoding = "UTF-8")
-        }, error = function(e) {
-          read.csv(cache_file, stringsAsFactors = FALSE, encoding = "latin1", sep = ";")
-        })
+      tryCatch(
+        {
+          # Try different encodings and separators
+          data <- tryCatch(
+            {
+              read.csv(cache_file, stringsAsFactors = FALSE, encoding = "UTF-8")
+            },
+            error = function(e) {
+              read.csv(cache_file, stringsAsFactors = FALSE, encoding = "latin1", sep = ";")
+            }
+          )
 
-        # Standardize column names
-        data <- standardize_hunting_columns(data, sp)
+          # Standardize column names
+          data <- standardize_hunting_columns(data, sp)
 
-        if (nrow(data) > 0) {
-          all_data[[sp]] <- data
+          if (nrow(data) > 0) {
+            all_data[[sp]] <- data
+          }
+        },
+        error = function(e) {
+          cli::cli_alert_warning("Failed to read {sp} data: {e$message}")
         }
-      }, error = function(e) {
-        cli::cli_alert_warning("Failed to read {sp} data: {e$message}")
-      })
+      )
     }
   }
 
@@ -272,12 +280,14 @@ standardize_hunting_columns <- function(data, species_name) {
 #' # (Convert to spatial and join with parcels)
 #' }
 compute_game_pressure_index <- function(hunting_data = NULL,
-                                         season = "latest",
-                                         weights = c(chevreuil = 0.30, cerf = 0.25, sanglier = 0.15,
-                                                     chamois = 0.08, mouflon = 0.07, daim = 0.06,
-                                                     isard = 0.05, cerf_sika = 0.04),
-                                         normalize_by = "rank",
-                                         dept_forest_area = NULL) {
+                                        season = "latest",
+                                        weights = c(
+                                          chevreuil = 0.30, cerf = 0.25, sanglier = 0.15,
+                                          chamois = 0.08, mouflon = 0.07, daim = 0.06,
+                                          isard = 0.05, cerf_sika = 0.04
+                                        ),
+                                        normalize_by = "rank",
+                                        dept_forest_area = NULL) {
   # Download data if not provided
 
   if (is.null(hunting_data)) {
@@ -448,8 +458,8 @@ compute_game_pressure_index <- function(hunting_data = NULL,
 #' )
 #' }
 get_game_pressure_raster <- function(units,
-                                      pressure_data = NULL,
-                                      dept_boundaries = NULL) {
+                                     pressure_data = NULL,
+                                     dept_boundaries = NULL) {
   # Validate input
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -466,33 +476,37 @@ get_game_pressure_raster <- function(units,
 
     if (requireNamespace("happign", quietly = TRUE)) {
       # Use happign to get department boundaries
-      tryCatch({
-        bbox <- sf::st_bbox(units)
-        bbox_sfc <- sf::st_as_sfc(bbox)
-        sf::st_crs(bbox_sfc) <- sf::st_crs(units)
+      tryCatch(
+        {
+          bbox <- sf::st_bbox(units)
+          bbox_sfc <- sf::st_as_sfc(bbox)
+          sf::st_crs(bbox_sfc) <- sf::st_crs(units)
 
-        dept_boundaries <- happign::get_wfs(
-          x = bbox_sfc,
-          layer = "ADMINEXPRESS-COG-CARTO.LATEST:departement"
-        )
+          dept_boundaries <- happign::get_wfs(
+            x = bbox_sfc,
+            layer = "ADMINEXPRESS-COG-CARTO.LATEST:departement"
+          )
 
-        if (!is.null(dept_boundaries) && nrow(dept_boundaries) > 0) {
-          # Standardize column name
-          if ("code_insee" %in% names(dept_boundaries)) {
-            dept_boundaries$code_dept <- dept_boundaries$code_insee
-          } else if ("insee_dep" %in% names(dept_boundaries)) {
-            dept_boundaries$code_dept <- dept_boundaries$insee_dep
+          if (!is.null(dept_boundaries) && nrow(dept_boundaries) > 0) {
+            # Standardize column name
+            if ("code_insee" %in% names(dept_boundaries)) {
+              dept_boundaries$code_dept <- dept_boundaries$code_insee
+            } else if ("insee_dep" %in% names(dept_boundaries)) {
+              dept_boundaries$code_dept <- dept_boundaries$insee_dep
+            }
           }
+        },
+        error = function(e) {
+          cli::cli_alert_warning("Could not download boundaries: {e$message}")
+          dept_boundaries <- NULL
         }
-      }, error = function(e) {
-        cli::cli_alert_warning("Could not download boundaries: {e$message}")
-        dept_boundaries <- NULL
-      })
+      )
     }
 
     if (is.null(dept_boundaries)) {
       stop("Could not get department boundaries. Please provide dept_boundaries parameter.",
-           call. = FALSE)
+        call. = FALSE
+      )
     }
   }
 
@@ -533,4 +547,3 @@ get_game_pressure_raster <- function(units,
 
   return(pressure_raster)
 }
-

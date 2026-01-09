@@ -62,13 +62,13 @@ NULL
 #' )
 #' }
 indicator_social_trails <- function(units,
-                                     trails = NULL,
-                                     method = c("osm", "local"),
-                                     osm_bbox = NULL,
-                                     trail_types = c("path", "footway", "cycleway", "bridleway"),
-                                     buffer_m = 0,
-                                     column_name = "S1",
-                                     lang = "en") {
+                                    trails = NULL,
+                                    method = c("osm", "local"),
+                                    osm_bbox = NULL,
+                                    trail_types = c("path", "footway", "cycleway", "bridleway"),
+                                    buffer_m = 0,
+                                    column_name = "S1",
+                                    lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -80,7 +80,8 @@ indicator_social_trails <- function(units,
   if (method == "osm") {
     if (!requireNamespace("osmdata", quietly = TRUE)) {
       stop("Package 'osmdata' required for method='osm'. Install with: install.packages('osmdata')",
-           call. = FALSE)
+        call. = FALSE
+      )
     }
   }
 
@@ -94,35 +95,37 @@ indicator_social_trails <- function(units,
     }
 
     # Query OSM for trails
-    tryCatch({
-      osm_query <- osmdata::opq(bbox = osm_bbox)
+    tryCatch(
+      {
+        osm_query <- osmdata::opq(bbox = osm_bbox)
 
-      # Query each trail type and combine
-      trails_list <- list()
-      for (trail_type in trail_types) {
-        osm_result <- osm_query |>
-          osmdata::add_osm_feature(key = "highway", value = trail_type) |>
-          osmdata::osmdata_sf()
+        # Query each trail type and combine
+        trails_list <- list()
+        for (trail_type in trail_types) {
+          osm_result <- osm_query |>
+            osmdata::add_osm_feature(key = "highway", value = trail_type) |>
+            osmdata::osmdata_sf()
 
-        if (!is.null(osm_result$osm_lines) && nrow(osm_result$osm_lines) > 0) {
-          trails_list[[trail_type]] <- osm_result$osm_lines
+          if (!is.null(osm_result$osm_lines) && nrow(osm_result$osm_lines) > 0) {
+            trails_list[[trail_type]] <- osm_result$osm_lines
+          }
         }
-      }
 
-      if (length(trails_list) == 0) {
-        cli::cli_warn("No trails found in OSM for specified types")
-        trails <- sf::st_sfc(crs = sf::st_crs(units))  # Empty geometry
-      } else {
-        # Combine all trail types
-        trails <- do.call(rbind, trails_list)
-        trails <- sf::st_transform(trails, crs = sf::st_crs(units))
-        msg_info("social_osm_fetched", nrow(trails))
+        if (length(trails_list) == 0) {
+          cli::cli_warn("No trails found in OSM for specified types")
+          trails <- sf::st_sfc(crs = sf::st_crs(units)) # Empty geometry
+        } else {
+          # Combine all trail types
+          trails <- do.call(rbind, trails_list)
+          trails <- sf::st_transform(trails, crs = sf::st_crs(units))
+          msg_info("social_osm_fetched", nrow(trails))
+        }
+      },
+      error = function(e) {
+        cli::cli_warn(c("OSM query failed: {e$message}", "i" = "Setting S1 = NA"))
+        trails <- NULL
       }
-    }, error = function(e) {
-      cli::cli_warn(c("OSM query failed: {e$message}", "i" = "Setting S1 = NA"))
-      trails <- NULL
-    })
-
+    )
   } else if (method == "local") {
     if (is.null(trails)) {
       stop("trails parameter required for method='local'", call. = FALSE)
@@ -221,14 +224,14 @@ indicator_social_trails <- function(units,
 #' )
 #' }
 indicator_social_accessibility <- function(units,
-                                            roads = NULL,
-                                            transit_stops = NULL,
-                                            method = c("osm", "local"),
-                                            osm_bbox = NULL,
-                                            road_types = c("primary", "secondary", "tertiary", "unclassified"),
-                                            weights = c(road = 0.5, transit = 0.3, cycling = 0.2),
-                                            column_name = "S2",
-                                            lang = "en") {
+                                           roads = NULL,
+                                           transit_stops = NULL,
+                                           method = c("osm", "local"),
+                                           osm_bbox = NULL,
+                                           road_types = c("primary", "secondary", "tertiary", "unclassified"),
+                                           weights = c(road = 0.5, transit = 0.3, cycling = 0.2),
+                                           column_name = "S2",
+                                           lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -247,13 +250,15 @@ indicator_social_accessibility <- function(units,
   result <- units
 
   # Placeholder calculation - score based on area (smaller = more accessible)
-  unit_areas <- as.numeric(sf::st_area(units)) / 10000  # hectares
+  unit_areas <- as.numeric(sf::st_area(units)) / 10000 # hectares
   accessibility_scores <- pmin(100, 100 * exp(-unit_areas / 100))
 
   result[[column_name]] <- accessibility_scores
 
-  msg_info("social_accessibility_scored", mean(accessibility_scores, na.rm = TRUE),
-           mean(accessibility_scores, na.rm = TRUE), mean(accessibility_scores, na.rm = TRUE))
+  msg_info(
+    "social_accessibility_scored", mean(accessibility_scores, na.rm = TRUE),
+    mean(accessibility_scores, na.rm = TRUE), mean(accessibility_scores, na.rm = TRUE)
+  )
 
   cli::cli_alert_success("Calculated {column_name}: Multimodal accessibility (0-100)")
 
@@ -299,11 +304,11 @@ indicator_social_accessibility <- function(units,
 #' )
 #' }
 indicator_social_proximity <- function(units,
-                                        population_grid = NULL,
-                                        method = c("proxy", "insee", "local"),
-                                        buffer_radii = c(5000, 10000, 20000),
-                                        column_name = "S3",
-                                        lang = "en") {
+                                       population_grid = NULL,
+                                       method = c("proxy", "insee", "local"),
+                                       buffer_radii = c(5000, 10000, 20000),
+                                       column_name = "S3",
+                                       lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -323,7 +328,7 @@ indicator_social_proximity <- function(units,
 
   # Placeholder calculation - proxy based on inverse area
   # (larger buffers would typically contain more population)
-  area_5km <- as.numeric(sf::st_area(buffer_5km)) / 1000000  # km²
+  area_5km <- as.numeric(sf::st_area(buffer_5km)) / 1000000 # km²
   area_10km <- as.numeric(sf::st_area(buffer_10km)) / 1000000
   area_20km <- as.numeric(sf::st_area(buffer_20km)) / 1000000
 
@@ -336,7 +341,7 @@ indicator_social_proximity <- function(units,
   result$S3_5km <- pop_5km
   result$S3_10km <- pop_10km
   result$S3_20km <- pop_20km
-  result[[column_name]] <- pop_5km  # Primary indicator is 5km buffer
+  result[[column_name]] <- pop_5km # Primary indicator is 5km buffer
 
   msg_info("social_population_calculated", median(pop_5km), median(pop_10km), median(pop_20km))
 

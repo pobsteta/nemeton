@@ -191,14 +191,16 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 # Vérifier si lidR est disponible
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
-  
+
   # Lister les fichiers LiDAR disponibles
   lidar_dir <- file.path(data_dir, "lidar_hd")
-  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$", 
-                             full.names = TRUE, recursive = TRUE)
-  
+  fichiers_laz <- list.files(lidar_dir,
+    pattern = "\\.laz$",
+    full.names = TRUE, recursive = TRUE
+  )
+
   cat("Fichiers LiDAR disponibles:", length(fichiers_laz), "\n")
-  
+
   if (length(fichiers_laz) > 0) {
     # Charger le premier fichier
     las <- readLAS(fichiers_laz[1])
@@ -227,24 +229,26 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-2-setup"}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
-  
+
   lidar_dir <- file.path(data_dir, "lidar_hd")
-  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$", 
-                             full.names = TRUE, recursive = TRUE)
-  
+  fichiers_laz <- list.files(lidar_dir,
+    pattern = "\\.laz$",
+    full.names = TRUE, recursive = TRUE
+  )
+
   if (length(fichiers_laz) > 0) {
     # Charger avec filtre pour réduire la mémoire
     las <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
-    
+
     cat("=== Structure du nuage de points ===\n\n")
     cat("Nombre de points:", nrow(las@data), "\n")
     cat("Attributs disponibles:", paste(names(las@data), collapse = ", "), "\n\n")
-    
+
     # Statistiques par classification
     cat("=== Distribution par classe ===\n")
     table_class <- table(las@data$Classification)
     print(table_class)
-    
+
     cat("\n=== Statistiques d'altitude (Z) ===\n")
     cat("Min:", min(las@data$Z), "m\n")
     cat("Max:", max(las@data$Z), "m\n")
@@ -286,8 +290,10 @@ if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
   lidar_dir <- file.path(data_dir, "lidar_hd")
-  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$",
-                             full.names = TRUE, recursive = TRUE)
+  fichiers_laz <- list.files(lidar_dir,
+    pattern = "\\.laz$",
+    full.names = TRUE, recursive = TRUE
+  )
   mnt_path <- file.path(data_dir, "mnt.tif")
 
   if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
@@ -303,10 +309,11 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 
     # Clipper sur 20x20m centré
     las <- clip_rectangle(las_full,
-                          xleft = center_x - 10,
-                          ybottom = center_y - 10,
-                          xright = center_x + 10,
-                          ytop = center_y + 10)
+      xleft = center_x - 10,
+      ybottom = center_y - 10,
+      xright = center_x + 10,
+      ytop = center_y + 10
+    )
 
     cat("Après clip 20x20m:", nrow(las@data), "points\n\n")
 
@@ -327,7 +334,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
     # Filtrer les points négatifs (sous le sol)
     las_clean <- filter_poi(las_norm, Z >= 0)
     cat("\nPoints après filtrage Z >= 0:", nrow(las_clean@data), "\n")
-
   } else {
     cat("Fichiers non trouvés. Exécutez d'abord le Tutorial 01.\n")
   }
@@ -362,8 +368,10 @@ if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
   lidar_dir <- file.path(data_dir, "lidar_hd")
-  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$",
-                             full.names = TRUE, recursive = TRUE)
+  fichiers_laz <- list.files(lidar_dir,
+    pattern = "\\.laz$",
+    full.names = TRUE, recursive = TRUE
+  )
   mnt_path <- file.path(data_dir, "mnt.tif")
 
   if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
@@ -376,10 +384,11 @@ if (requireNamespace("lidR", quietly = TRUE)) {
     center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
 
     las <- clip_rectangle(las_full,
-                          xleft = center_x - 10,
-                          ybottom = center_y - 10,
-                          xright = center_x + 10,
-                          ytop = center_y + 10)
+      xleft = center_x - 10,
+      ybottom = center_y - 10,
+      xright = center_x + 10,
+      ytop = center_y + 10
+    )
 
     cat("Zone 20x20m:", nrow(las@data), "points\n")
 
@@ -406,7 +415,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
     mnh_path <- file.path(data_dir, "mnh_sample.tif")
     writeRaster(mnh, mnh_path, overwrite = TRUE)
     cat("\nMNH échantillon sauvegardé:", mnh_path, "\n")
-
   } else {
     cat("Fichiers non trouvés.\n")
   }
@@ -437,8 +445,10 @@ if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
   lidar_dir <- file.path(data_dir, "lidar_hd")
-  fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$",
-                             full.names = TRUE, recursive = TRUE)
+  fichiers_laz <- list.files(lidar_dir,
+    pattern = "\\.laz$",
+    full.names = TRUE, recursive = TRUE
+  )
   mnt_path <- file.path(data_dir, "mnt.tif")
 
   if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
@@ -451,10 +461,11 @@ if (requireNamespace("lidR", quietly = TRUE)) {
     center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
 
     las <- clip_rectangle(las_full,
-                          xleft = center_x - 10,
-                          ybottom = center_y - 10,
-                          xright = center_x + 10,
-                          ytop = center_y + 10)
+      xleft = center_x - 10,
+      ybottom = center_y - 10,
+      xright = center_x + 10,
+      ytop = center_y + 10
+    )
 
     cat("Zone 20x20m:", nrow(las@data), "points\n")
 
@@ -466,7 +477,7 @@ if (requireNamespace("lidR", quietly = TRUE)) {
     # Calculer par pixel (raster 2m pour zone 20x20m)
     # Utiliser une fonction anonyme inline pour éviter les problèmes de scope
     cat("\n=== Calcul des métriques raster ===\n")
-    metrics_raster <- pixel_metrics(las_clean, ~list(
+    metrics_raster <- pixel_metrics(las_clean, ~ list(
       zmax = max(Z, na.rm = TRUE),
       zmean = mean(Z, na.rm = TRUE),
       zsd = sd(Z, na.rm = TRUE),
@@ -483,7 +494,6 @@ if (requireNamespace("lidR", quietly = TRUE)) {
     cat("Hauteur moyenne (zmean):", round(mean(values(metrics_raster$zmean), na.rm = TRUE), 1), "m\n")
     cat("Percentile 95 (zq95):", round(mean(values(metrics_raster$zq95), na.rm = TRUE), 1), "m\n")
     cat("Couverture > 2m:", round(mean(values(metrics_raster$pzabove2), na.rm = TRUE), 1), "%\n")
-
   } else {
     cat("Fichiers non trouvés.\n")
   }
@@ -524,8 +534,10 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 data("quatre_montagnes", package = "lidaRtRee")
 
 # Filtrer sur les clusters Centre (même zone que Tutorial 01)
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
+clusters_centre <- c(
+  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+  "Verc-C4", "Verc-C2", "Verc-05"
+)
 qm_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
 
 # Convertir en sf
@@ -535,15 +547,19 @@ cat("=== Données source : quatre_montagnes ===\n")
 cat("Placettes avec métriques LiDAR:", nrow(placettes_sf), "\n\n")
 
 # Métriques LiDAR à interpoler
-metriques <- c("zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95",
-               "zentropy", "pzabove2")
+metriques <- c(
+  "zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95",
+  "zentropy", "pzabove2"
+)
 
 cat("Métriques disponibles:\n")
 for (m in metriques) {
   if (m %in% names(placettes_sf)) {
     vals <- qm_centre[[m]]
-    cat(sprintf("  %s: %.1f - %.1f (moy: %.1f)\n",
-                m, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+    cat(sprintf(
+      "  %s: %.1f - %.1f (moy: %.1f)\n",
+      m, min(vals, na.rm = TRUE), mean(vals, na.rm = TRUE), max(vals, na.rm = TRUE)
+    ))
   }
 }
 
@@ -567,14 +583,14 @@ if (file.exists(parcelles_path)) {
     values <- points_sf[[variable]]
 
     # Pour chaque point cible
-    result <- sapply(1:nrow(coords_tgt), function(i) {
+    result <- sapply(seq_len(nrow(coords_tgt)), function(i) {
       # Distances aux points source
-      distances <- sqrt((coords_src[,1] - coords_tgt[i,1])^2 +
-                        (coords_src[,2] - coords_tgt[i,2])^2)
+      distances <- sqrt((coords_src[, 1] - coords_tgt[i, 1])^2 +
+        (coords_src[, 2] - coords_tgt[i, 2])^2)
       # Éviter division par zéro
       distances[distances < 1] <- 1
       # Poids IDW
-      weights <- 1 / (distances ^ power)
+      weights <- 1 / (distances^power)
       # Moyenne pondérée
       sum(values * weights, na.rm = TRUE) / sum(weights, na.rm = TRUE)
     })
@@ -604,10 +620,12 @@ if (file.exists(parcelles_path)) {
   cat("--------------------------------------\n")
   for (m in metriques) {
     if (m %in% names(parcelles)) {
-      cat(sprintf("%-12s %7.1f %8.1f %8.1f\n",
-                  m, min(parcelles[[m]], na.rm=TRUE),
-                  mean(parcelles[[m]], na.rm=TRUE),
-                  max(parcelles[[m]], na.rm=TRUE)))
+      cat(sprintf(
+        "%-12s %7.1f %8.1f %8.1f\n",
+        m, min(parcelles[[m]], na.rm = TRUE),
+        mean(parcelles[[m]], na.rm = TRUE),
+        max(parcelles[[m]], na.rm = TRUE)
+      ))
     }
   }
 } else {
@@ -676,7 +694,6 @@ if (file.exists(parcelles_path)) {
 
   # Vérifier les métriques nécessaires
   if (all(c("pzabove2", "zmean") %in% names(parcelles))) {
-
     # Facteur de conversion (tep/m/ha/an)
     # Basé sur productivité moyenne et pouvoir calorifique du bois
     k_conversion <- 0.015
@@ -695,7 +712,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("✓ E1 ajouté aux parcelles\n")
-
   } else {
     cat("Métriques pzabove2 et zmean non trouvées.\n")
     cat("Exécutez l'exercice 6.1 d'abord.\n")
@@ -747,10 +763,9 @@ if (file.exists(parcelles_path)) {
 
   # Vérifier que E1 existe
   if ("E1" %in% names(parcelles)) {
-
     # Paramètres de calcul
-    facteur_substitution <- 2.5  # tCO2 évitées par tep de bois-énergie
-    rendement_conversion <- 0.85  # Efficacité moyenne des chaufferies
+    facteur_substitution <- 2.5 # tCO2 évitées par tep de bois-énergie
+    rendement_conversion <- 0.85 # Efficacité moyenne des chaufferies
 
     cat("Paramètres:\n")
     cat("  Facteur substitution:", facteur_substitution, "tCO2/tep\n")
@@ -777,10 +792,11 @@ if (file.exists(parcelles_path)) {
 
     # Visualisation
     cat("\n=== Distribution E2 ===\n")
-    hist(parcelles$E2, breaks = 15, col = "darkorange",
-         main = "E2 : Évitement carbone",
-         xlab = "tCO2/ha/an", ylab = "Fréquence")
-
+    hist(parcelles$E2,
+      breaks = 15, col = "darkorange",
+      main = "E2 : Évitement carbone",
+      xlab = "tCO2/ha/an", ylab = "Fréquence"
+    )
   } else {
     cat("E1 non trouvé. Exécutez l'exercice 7.1 d'abord.\n")
   }

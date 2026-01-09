@@ -56,7 +56,7 @@ test_that("normalize_indicators normalizes with quantile method", {
   )
 
   # Quantile normalization should create uniform distribution
-  expect_equal(min(normalized$carbon_norm), 1)  # Lowest percentile
+  expect_equal(min(normalized$carbon_norm), 1) # Lowest percentile
   expect_equal(max(normalized$carbon_norm), 100) # Highest percentile
   expect_equal(normalized$carbon_norm[50], 50) # Median
 })
@@ -319,7 +319,7 @@ test_that("create_composite_index normalizes weights", {
   )
 
   # With weights 2:1, index[1] = (0*2 + 100*1)/3 = 33.33
-  expect_equal(result$composite_index[1], 100/3, tolerance = 0.01)
+  expect_equal(result$composite_index[1], 100 / 3, tolerance = 0.01)
 })
 
 test_that("create_composite_index handles NA values", {
@@ -410,8 +410,8 @@ test_that("invert_indicator inverts values correctly", {
 
   # Check inversion
   expect_equal(inverted$accessibility_norm_inv[1], 100) # 0 becomes 100
-  expect_equal(inverted$accessibility_norm_inv[3], 50)  # 50 stays 50
-  expect_equal(inverted$accessibility_norm_inv[5], 0)   # 100 becomes 0
+  expect_equal(inverted$accessibility_norm_inv[3], 50) # 50 stays 50
+  expect_equal(inverted$accessibility_norm_inv[5], 0) # 100 becomes 0
 })
 
 test_that("invert_indicator can remove original", {
@@ -505,7 +505,7 @@ test_that("full normalization workflow works end-to-end", {
 test_that("normalize_indicators recognizes B* (Biodiversity) indicators", {
   test_data <- data.frame(
     id = 1:5,
-    B1 = c(0, 25, 50, 75, 100),      # Protection coverage
+    B1 = c(0, 25, 50, 75, 100), # Protection coverage
     B2 = c(0.2, 0.4, 0.6, 0.8, 1.0), # Structural diversity
     B3 = c(100, 200, 500, 1000, 2000) # Connectivity distance
   )
@@ -525,9 +525,9 @@ test_that("normalize_indicators recognizes B* (Biodiversity) indicators", {
 test_that("normalize_indicators recognizes R* (Risk/Resilience) indicators", {
   test_data <- data.frame(
     id = 1:5,
-    R1 = c(10, 30, 50, 70, 90),  # Fire risk
-    R2 = c(5, 25, 45, 65, 85),   # Storm vulnerability
-    R3 = c(15, 35, 55, 75, 95)   # Drought stress
+    R1 = c(10, 30, 50, 70, 90), # Fire risk
+    R2 = c(5, 25, 45, 65, 85), # Storm vulnerability
+    R3 = c(15, 35, 55, 75, 95) # Drought stress
   )
 
   normalized <- normalize_indicators(
@@ -543,8 +543,8 @@ test_that("normalize_indicators recognizes R* (Risk/Resilience) indicators", {
 test_that("normalize_indicators recognizes T* (Temporal) indicators", {
   test_data <- data.frame(
     id = 1:5,
-    T1 = c(20, 50, 100, 150, 250),  # Stand age
-    T2 = c(0, 0.5, 1.0, 2.0, 5.0)   # Change rate
+    T1 = c(20, 50, 100, 150, 250), # Stand age
+    T2 = c(0, 0.5, 1.0, 2.0, 5.0) # Change rate
   )
 
   normalized <- normalize_indicators(
@@ -560,8 +560,8 @@ test_that("normalize_indicators recognizes T* (Temporal) indicators", {
 test_that("normalize_indicators recognizes A* (Air quality) indicators", {
   test_data <- data.frame(
     id = 1:5,
-    A1 = c(10, 30, 50, 70, 90),  # Tree coverage
-    A2 = c(20, 40, 60, 80, 100)  # Air quality index
+    A1 = c(10, 30, 50, 70, 90), # Tree coverage
+    A2 = c(20, 40, 60, 80, 100) # Air quality index
   )
 
   normalized <- normalize_indicators(
@@ -595,8 +595,10 @@ test_that("normalize_indicators auto-detects all v0.3.0 family indicators", {
   normalized <- normalize_indicators(test_data, method = "minmax")
 
   # Check all families detected
-  expected_norms <- c("C1_norm", "W1_norm", "F1_norm", "L1_norm",
-                       "B1_norm", "R1_norm", "T1_norm", "A1_norm")
+  expected_norms <- c(
+    "C1_norm", "W1_norm", "F1_norm", "L1_norm",
+    "B1_norm", "R1_norm", "T1_norm", "A1_norm"
+  )
   expect_true(all(expected_norms %in% names(normalized)))
   expect_false("other_norm" %in% names(normalized))
 })
@@ -604,9 +606,9 @@ test_that("normalize_indicators auto-detects all v0.3.0 family indicators", {
 test_that("normalize_indicators applies correct method for each family", {
   test_data <- data.frame(
     id = 1:10,
-    B1 = runif(10, 0, 100),    # Linear scale (0-100%)
-    T1 = runif(10, 20, 300),   # Log scale (age in years)
-    R1 = runif(10, 0, 100)     # Linear scale (0-100 risk)
+    B1 = runif(10, 0, 100), # Linear scale (0-100%)
+    T1 = runif(10, 20, 300), # Log scale (age in years)
+    R1 = runif(10, 0, 100) # Linear scale (0-100 risk)
   )
 
   # All should use minmax by default
@@ -624,9 +626,9 @@ test_that("normalize_indicators applies correct method for each family", {
 test_that("normalize_indicators handles mixed v0.2.0 and v0.3.0 families", {
   test_data <- data.frame(
     id = 1:5,
-    C1 = c(100, 200, 300, 400, 500),  # v0.2.0
-    B1 = c(0, 25, 50, 75, 100),       # v0.3.0
-    R2 = c(10, 30, 50, 70, 90)        # v0.3.0
+    C1 = c(100, 200, 300, 400, 500), # v0.2.0
+    B1 = c(0, 25, 50, 75, 100), # v0.3.0
+    R2 = c(10, 30, 50, 70, 90) # v0.3.0
   )
 
   normalized <- normalize_indicators(

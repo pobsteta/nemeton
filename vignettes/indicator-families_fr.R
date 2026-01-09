@@ -19,7 +19,7 @@ library(ggplot2)
 #   layers,
 #   indicators = "carbon_biomass"
 # )
-# 
+#
 # # C2 - NDVI et tendance vitalité
 # carbon_ndvi <- nemeton_compute(
 #   units,
@@ -34,14 +34,14 @@ library(ggplot2)
 #   layers,
 #   indicators = "water_network"
 # )
-# 
+#
 # # W2 - Surface en zones humides (%)
 # water_wetlands <- nemeton_compute(
 #   units,
 #   layers,
 #   indicators = "water_wetlands"
 # )
-# 
+#
 # # W3 - Topographic Wetness Index
 # water_twi <- nemeton_compute(
 #   units,
@@ -56,7 +56,7 @@ library(ggplot2)
 #   layers,
 #   indicators = "soil_fertility"
 # )
-# 
+#
 # # F2 - Risque d'érosion (pente × couverture)
 # soil_erosion <- nemeton_compute(
 #   units,
@@ -71,7 +71,7 @@ library(ggplot2)
 #   layers,
 #   indicators = "landscape_fragmentation"
 # )
-# 
+#
 # # L2 - Ratio lisière / surface
 # landscape_edge <- nemeton_compute(
 #   units,
@@ -86,7 +86,7 @@ library(ggplot2)
 #   protected_areas = protected_areas,  # sf object ZNIEFF, Natura2000
 #   source = "local"  # ou "wfs" pour téléchargement automatique
 # )
-# 
+#
 # # B2 - Diversité structurelle (Shannon)
 # biodiversity_structure <- indicator_biodiversity_structure(
 #   units,
@@ -96,7 +96,7 @@ library(ggplot2)
 #   method = "shannon",               # ou "simpson"
 #   weights = c(strata = 0.4, age = 0.3, species = 0.3)
 # )
-# 
+#
 # # B3 - Connectivité écologique (distance corridors)
 # biodiversity_connectivity <- indicator_biodiversity_connectivity(
 #   units,
@@ -113,7 +113,7 @@ library(ggplot2)
 #   species_field = "species",     # Champ essence
 #   climate = climate_data         # Température, précipitations
 # )
-# 
+#
 # # R2 - Vulnérabilité tempête (hauteur + densité + exposition)
 # risk_storm <- indicator_risk_storm(
 #   units,
@@ -121,7 +121,7 @@ library(ggplot2)
 #   height_field = "height",       # Hauteur dominante (m)
 #   density_field = "density"      # Densité (0-1)
 # )
-# 
+#
 # # R3 - Stress hydrique (TWI + climat + essences)
 # risk_drought <- indicator_risk_drought(
 #   units,
@@ -137,7 +137,7 @@ library(ggplot2)
 #   age_field = "age",                    # Âge actuel
 #   establishment_year_field = "planted"  # Année plantation (optionnel)
 # )
-# 
+#
 # # T2 - Changements d'occupation du sol (%/an)
 # temporal_change <- indicator_temporal_change(
 #   units,
@@ -154,7 +154,7 @@ library(ggplot2)
 #   land_cover = land_cover_raster,
 #   buffer_radius = 1000  # Rayon en mètres
 # )
-# 
+#
 # # A2 - Qualité de l'air (indice ou proxy distance)
 # air_quality <- indicator_air_quality(
 #   units,
@@ -170,7 +170,7 @@ library(ggplot2)
 # carbon_biomass    # Famille C
 # water_network     # Famille W
 # soil_fertility    # Famille F
-# 
+#
 # # Les indicateurs normalisés ajoutent le suffixe _norm :
 # carbon_biomass_norm
 # water_network_norm
@@ -179,14 +179,14 @@ library(ggplot2)
 # # Détecter la famille d'un indicateur
 # detect_indicator_family("carbon_biomass")
 # # [1] "C"
-# 
+#
 # detect_indicator_family("water_twi_norm")
 # # [1] "W"
-# 
+#
 # # Obtenir le nom complet de la famille
 # get_family_name("C")
 # # [1] "Carbone & Vitalité"
-# 
+#
 # get_family_name("W", lang = "en")
 # # [1] "Water Regulation"
 
@@ -194,21 +194,21 @@ library(ggplot2)
 # # Charger les données
 # data(massif_demo_units)
 # layers <- massif_demo_layers()
-# 
+#
 # # Calculer indicateurs des familles C et W
 # results <- nemeton_compute(
 #   massif_demo_units,
 #   layers,
 #   indicators = c("carbon", "water", "biodiversity")
 # )
-# 
+#
 # # Normaliser tous les indicateurs
 # normalized <- normalize_indicators(
 #   results,
 #   indicators = c("carbon", "water", "biodiversity"),
 #   method = "minmax"
 # )
-# 
+#
 # # Les colonnes normalisées ont le suffixe _norm
 # names(normalized)
 
@@ -220,7 +220,7 @@ library(ggplot2)
 #   family = "C",
 #   name = "score_carbon"
 # )
-# 
+#
 # # Indice famille W (Eau)
 # score_water <- create_family_index(
 #   normalized,
@@ -238,7 +238,7 @@ library(ggplot2)
 #     name = paste0("score_", tolower(fam))
 #   )
 # }
-# 
+#
 # # Radar avec 4 familles
 # nemeton_radar(
 #   normalized,
@@ -265,7 +265,7 @@ library(ggplot2)
 #   families = NULL,      # Auto-détection des family_*
 #   method = "pearson"    # ou "spearman", "kendall"
 # )
-# 
+#
 # # Visualiser les corrélations
 # plot_correlation_matrix(
 #   corr_matrix,
@@ -281,13 +281,13 @@ library(ggplot2)
 #   threshold = 80,      # Top 20% pour chaque famille
 #   min_families = 3     # Au moins 3 familles élevées
 # )
-# 
+#
 # # Filtrer les hotspots
 # hotspot_parcels <- hotspots[hotspots$is_hotspot, ]
-# 
+#
 # # Afficher détails
 # hotspot_parcels[, c("parcel_id", "hotspot_count", "hotspot_families")]
-# 
+#
 # # Cartographier
 # plot_indicators_map(
 #   hotspots,
@@ -300,7 +300,7 @@ library(ggplot2)
 # # 1. Charger données
 # data(massif_demo_units)
 # layers <- massif_demo_layers()
-# 
+#
 # # 2. Calculer indicateurs de 3 familles
 # results <- nemeton_compute(
 #   massif_demo_units,
@@ -311,19 +311,19 @@ library(ggplot2)
 #     "biodiversity"   # Famille B
 #   )
 # )
-# 
+#
 # # 3. Normaliser
 # normalized <- normalize_indicators(
 #   results,
 #   indicators = c("carbon", "water", "biodiversity"),
 #   method = "minmax"
 # )
-# 
+#
 # # 4. Créer indices par famille
 # normalized <- create_family_index(normalized, family = "C", name = "score_carbon")
 # normalized <- create_family_index(normalized, family = "W", name = "score_water")
 # normalized <- create_family_index(normalized, family = "B", name = "score_bio")
-# 
+#
 # # 5. Indice global multi-famille
 # global_index <- create_composite_index(
 #   normalized,
@@ -331,7 +331,7 @@ library(ggplot2)
 #   weights = c(0.4, 0.3, 0.3),
 #   name = "ecosystem_services_index"
 # )
-# 
+#
 # # 6. Visualisation
 # plot_indicators_map(
 #   global_index,
@@ -344,11 +344,10 @@ library(ggplot2)
 ## ----eval = FALSE-------------------------------------------------------------
 # # Lister tous les indicateurs disponibles
 # list_indicators()
-# 
+#
 # # Filtrer par famille
 # list_indicators(family = "C")
 # list_indicators(family = "W")
 
 ## -----------------------------------------------------------------------------
 sessionInfo()
-

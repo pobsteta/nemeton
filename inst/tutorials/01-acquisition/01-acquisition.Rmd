@@ -84,12 +84,12 @@ Pour ce tutoriel, nous travaillerons sur un sous-ensemble de **28 placettes** (g
 
 ```{r prerequis, echo=FALSE}
 question("Quels packages sont nécessaires pour ce tutoriel ?",
- answer("sf, terra, ggplot2", message = "Incomplet - il manque les packages d'acquisition"),
- answer("happign, lidarHD, lidaRtRee", message = "Incomplet - il manque les packages de base"),
- answer("sf, terra, happign, lidarHD, lidaRtRee", correct = TRUE),
- answer("dplyr, tidyr, purrr", message = "Ces packages sont utiles mais pas essentiels ici"),
- allow_retry = TRUE,
- random_answer_order = TRUE
+  answer("sf, terra, ggplot2", message = "Incomplet - il manque les packages d'acquisition"),
+  answer("happign, lidarHD, lidaRtRee", message = "Incomplet - il manque les packages de base"),
+  answer("sf, terra, happign, lidarHD, lidaRtRee", correct = TRUE),
+  answer("dplyr, tidyr, purrr", message = "Ces packages sont utiles mais pas essentiels ici"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
 )
 ```
 
@@ -179,8 +179,10 @@ Chargez et explorez les données `quatre_montagnes` :
 data("quatre_montagnes", package = "lidaRtRee")
 
 # Structure des données
-cat("Dimensions:", nrow(quatre_montagnes), "placettes x",
-   ncol(quatre_montagnes), "variables\n\n")
+cat(
+  "Dimensions:", nrow(quatre_montagnes), "placettes x",
+  ncol(quatre_montagnes), "variables\n\n"
+)
 
 # Aperçu des premières colonnes
 cat("Variables principales:\n")
@@ -205,9 +207,9 @@ data("quatre_montagnes", package = "lidaRtRee")
 ```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=12, exercise.setup="ex-1-2-setup"}
 # Convertir en sf avec les colonnes X et Y
 placettes_sf <- st_as_sf(
- quatre_montagnes,
- coords = c("X", "Y"),
- crs = 2154  # Lambert-93
+  quatre_montagnes,
+  coords = c("X", "Y"),
+  crs = 2154 # Lambert-93
 )
 
 # Vérifier
@@ -231,8 +233,10 @@ placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
 
 ```{r ex-1-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=18, exercise.setup="ex-1-3-setup"}
 # Clusters du groupe Centre (altitude intermédiaire)
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
+clusters_centre <- c(
+  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+  "Verc-C4", "Verc-C2", "Verc-05"
+)
 
 # Filtrer les placettes
 placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
@@ -246,8 +250,10 @@ cat(" xmin:", round(bbox["xmin"]), "\n")
 cat(" ymin:", round(bbox["ymin"]), "\n")
 cat(" xmax:", round(bbox["xmax"]), "\n")
 cat(" ymax:", round(bbox["ymax"]), "\n")
-cat("\nÉtendue:", round(bbox["xmax"] - bbox["xmin"]), "m x",
-   round(bbox["ymax"] - bbox["ymin"]), "m\n")
+cat(
+  "\nÉtendue:", round(bbox["xmax"] - bbox["xmin"]), "m x",
+  round(bbox["ymax"] - bbox["ymin"]), "m\n"
+)
 ```
 
 
@@ -261,8 +267,10 @@ library(sf)
 library(lidaRtRee)
 data("quatre_montagnes", package = "lidaRtRee")
 placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
+clusters_centre <- c(
+  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+  "Verc-C4", "Verc-C2", "Verc-05"
+)
 placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
 ```
 
@@ -281,9 +289,9 @@ cat("Surface:", round(surface_ha), "hectares\n")
 
 # Convertir en sf pour manipulation ultérieure
 zone_etude_sf <- st_sf(
- id = 1,
- nom = "Quatre Montagnes - Centre",
- geometry = zone_etude
+  id = 1,
+  nom = "Quatre Montagnes - Centre",
+  geometry = zone_etude
 )
 
 # Afficher
@@ -301,8 +309,10 @@ library(sf)
 library(lidaRtRee)
 data("quatre_montagnes", package = "lidaRtRee")
 placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
+clusters_centre <- c(
+  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+  "Verc-C4", "Verc-C2", "Verc-05"
+)
 placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
 enveloppe <- st_convex_hull(st_union(placettes_centre))
 zone_etude <- st_buffer(enveloppe, dist = 500)
@@ -325,13 +335,17 @@ cat("Répertoire:", data_dir, "\n")
 cat("Fichier:", filepath, "\n\n")
 
 # Sauvegarder la zone d'étude (couche 1)
-st_write(zone_etude_sf, filepath, layer = "zone_etude",
-         delete_layer = TRUE, quiet = TRUE)
+st_write(zone_etude_sf, filepath,
+  layer = "zone_etude",
+  delete_layer = TRUE, quiet = TRUE
+)
 cat("Zone d'étude sauvegardée (couche: zone_etude)\n")
 
 # Sauvegarder les placettes (couche 2 dans le même fichier)
-st_write(placettes_centre, filepath, layer = "placettes",
-         append = TRUE, quiet = TRUE)
+st_write(placettes_centre, filepath,
+  layer = "placettes",
+  append = TRUE, quiet = TRUE
+)
 cat("Placettes sauvegardées (couche: placettes)\n")
 
 # Vérifier le contenu du GeoPackage
@@ -366,11 +380,15 @@ enveloppe <- st_convex_hull(st_union(placettes_centre))
 # Visualiser la zone d'étude avec les placettes
 ggplot() +
   # Zone d'étude (buffer)
-  geom_sf(data = zone_etude_sf, fill = "lightgreen", alpha = 0.3,
-          color = "darkgreen", linewidth = 1) +
+  geom_sf(
+    data = zone_etude_sf, fill = "lightgreen", alpha = 0.3,
+    color = "darkgreen", linewidth = 1
+  ) +
   # Enveloppe convexe
-  geom_sf(data = st_sf(geometry = enveloppe), fill = NA,
-          color = "darkgreen", linetype = "dashed") +
+  geom_sf(
+    data = st_sf(geometry = enveloppe), fill = NA,
+    color = "darkgreen", linetype = "dashed"
+  ) +
   # Placettes
   geom_sf(data = placettes_centre, aes(color = cluster_id), size = 3) +
   # Forcer l'affichage en Lambert-93 (mètres)
@@ -379,8 +397,10 @@ ggplot() +
   scale_color_viridis_d(name = "Cluster") +
   labs(
     title = "Zone d'étude : Quatre Montagnes (Centre)",
-    subtitle = paste(nrow(placettes_centre), "placettes -",
-                    round(as.numeric(st_area(zone_etude_sf))/10000), "ha"),
+    subtitle = paste(
+      nrow(placettes_centre), "placettes -",
+      round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha"
+    ),
     x = "X (m)", y = "Y (m)"
   ) +
   theme_minimal()
@@ -390,27 +410,27 @@ ggplot() +
 
 ```{r quiz-section-1, echo=FALSE}
 quiz(
- question("Quel est le système de coordonnées utilisé par l'IGN en France ?",
-   answer("WGS84 (EPSG:4326)"),
-   answer("Lambert-93 (EPSG:2154)", correct = TRUE),
-   answer("UTM zone 31N (EPSG:32631)"),
-   answer("Web Mercator (EPSG:3857)"),
-   allow_retry = TRUE
- ),
- question("Pourquoi ajoute-t-on un buffer autour des placettes ?",
-   answer("Pour réduire la taille de la zone"),
-   answer("Pour inclure le contexte spatial autour des points d'intérêt", correct = TRUE),
-   answer("Pour changer le système de coordonnées"),
-   answer("Pour fusionner les placettes"),
-   allow_retry = TRUE
- ),
- question("Quelle fonction sf permet de créer une enveloppe convexe ?",
-   answer("st_buffer()"),
-   answer("st_union()"),
-   answer("st_convex_hull()", correct = TRUE),
-   answer("st_intersection()"),
-   allow_retry = TRUE
- )
+  question("Quel est le système de coordonnées utilisé par l'IGN en France ?",
+    answer("WGS84 (EPSG:4326)"),
+    answer("Lambert-93 (EPSG:2154)", correct = TRUE),
+    answer("UTM zone 31N (EPSG:32631)"),
+    answer("Web Mercator (EPSG:3857)"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi ajoute-t-on un buffer autour des placettes ?",
+    answer("Pour réduire la taille de la zone"),
+    answer("Pour inclure le contexte spatial autour des points d'intérêt", correct = TRUE),
+    answer("Pour changer le système de coordonnées"),
+    answer("Pour fusionner les placettes"),
+    allow_retry = TRUE
+  ),
+  question("Quelle fonction sf permet de créer une enveloppe convexe ?",
+    answer("st_buffer()"),
+    answer("st_union()"),
+    answer("st_convex_hull()", correct = TRUE),
+    answer("st_intersection()"),
+    allow_retry = TRUE
+  )
 )
 ```
 
@@ -469,7 +489,6 @@ if (file.exists(parcelles_filepath)) {
   cat("Chargement depuis le cache...\n")
   parcelles <- st_read(parcelles_filepath, quiet = TRUE)
   cat("Parcelles chargées depuis:", parcelles_filepath, "\n\n")
-
 } else {
   # CACHE MISS : Télécharger depuis l'API IGN
   cat("Téléchargement depuis l'API IGN...\n")
@@ -489,11 +508,11 @@ cat("=== Parcelles cadastrales ===\n")
 cat("Nombre de parcelles:", nrow(parcelles), "\n")
 cat("CRS:", st_crs(parcelles)$epsg, "(Lambert-93)\n")
 cat("\nColonnes disponibles:\n")
-cat(paste(names(parcelles)[1:min(8, ncol(parcelles))], collapse = ", "), "\n")
+cat(paste(names(parcelles)[seq_len(min(8, ncol(parcelles)))], collapse = ", "), "\n")
 
 # Surface totale
 surface_totale <- sum(st_area(parcelles))
-cat("\nSurface totale:", round(as.numeric(surface_totale)/10000, 1), "ha\n")
+cat("\nSurface totale:", round(as.numeric(surface_totale) / 10000, 1), "ha\n")
 ```
 
 
@@ -624,7 +643,6 @@ if (file.exists(mnt_filepath)) {
   cat("Chargement du MNT depuis le cache...\n")
   mnt <- rast(mnt_filepath)
   cat("MNT chargé depuis:", mnt_filepath, "\n\n")
-
 } else {
   # CACHE MISS : Télécharger depuis l'API IGN
   cat("Téléchargement du MNT depuis l'API IGN...\n")
@@ -725,20 +743,22 @@ placettes_centre <- tryCatch(
 
 ```{r viz-mnt, exercise=TRUE, exercise.eval=FALSE, exercise.lines=15, exercise.setup="viz-mnt-setup"}
 if (!is.null(mnt)) {
- # Convertir en data.frame pour ggplot
- mnt_df <- as.data.frame(mnt, xy = TRUE)
- names(mnt_df)[3] <- "altitude"
+  # Convertir en data.frame pour ggplot
+  mnt_df <- as.data.frame(mnt, xy = TRUE)
+  names(mnt_df)[3] <- "altitude"
 
- ggplot(mnt_df, aes(x = x, y = y, fill = altitude)) +
-   geom_raster() +
-   scale_fill_viridis_c(name = "Altitude (m)", option = "terrain") +
-   geom_sf(data = placettes_centre, color = "red", size = 1, inherit.aes = FALSE) +
-   coord_sf(datum = NA) +
-   labs(title = "MNT RGE Alti 5m", subtitle = "Zone d'étude Quatre Montagnes",
-        x = "X (m)", y = "Y (m)") +
-   theme_minimal()
+  ggplot(mnt_df, aes(x = x, y = y, fill = altitude)) +
+    geom_raster() +
+    scale_fill_viridis_c(name = "Altitude (m)", option = "terrain") +
+    geom_sf(data = placettes_centre, color = "red", size = 1, inherit.aes = FALSE) +
+    coord_sf(datum = NA) +
+    labs(
+      title = "MNT RGE Alti 5m", subtitle = "Zone d'étude Quatre Montagnes",
+      x = "X (m)", y = "Y (m)"
+    ) +
+    theme_minimal()
 } else {
- cat("MNT non disponible")
+  cat("MNT non disponible")
 }
 ```
 
@@ -802,7 +822,7 @@ if (file.exists(bdforet_filepath)) {
 cat("\n=== BD Forêt V2 ===\n")
 cat("Formations téléchargées:", nrow(bd_foret), "\n")
 cat("\nColonnes disponibles:\n")
-cat(paste(names(bd_foret)[1:min(8, ncol(bd_foret))], collapse = ", "), "\n")
+cat(paste(names(bd_foret)[seq_len(min(8, ncol(bd_foret)))], collapse = ", "), "\n")
 
 # Types de formations
 if ("tfv" %in% names(bd_foret)) {
@@ -812,7 +832,7 @@ if ("tfv" %in% names(bd_foret)) {
 
 # Surface forestière totale
 surface_foret <- sum(st_area(bd_foret))
-cat("\nSurface forestière:", round(as.numeric(surface_foret)/10000, 1), "ha\n")
+cat("\nSurface forestière:", round(as.numeric(surface_foret) / 10000, 1), "ha\n")
 ```
 
 
@@ -862,7 +882,7 @@ cat("Tronçons téléchargés:", nrow(routes), "\n")
 
 # Longueur totale
 longueur_totale <- sum(st_length(routes))
-cat("Longueur totale:", round(as.numeric(longueur_totale)/1000, 1), "km\n")
+cat("Longueur totale:", round(as.numeric(longueur_totale) / 1000, 1), "km\n")
 
 # Types de routes
 if ("nature" %in% names(routes)) {
@@ -919,7 +939,7 @@ if (nrow(cours_eau) > 0) {
   cat("\n=== Hydrographie ===\n")
   cat("Cours d'eau téléchargés:", nrow(cours_eau), "\n")
   longueur_totale <- sum(st_length(cours_eau))
-  cat("Longueur totale:", round(as.numeric(longueur_totale)/1000, 1), "km\n")
+  cat("Longueur totale:", round(as.numeric(longueur_totale) / 1000, 1), "km\n")
 } else {
   cat("Aucun cours d'eau dans la zone d'étude\n")
 }
@@ -1008,14 +1028,16 @@ if (requireNamespace("lidarHD", quietly = TRUE)) {
 
   # Charger le tableau d'assemblage des dalles classifiées
   # La fonction interroge le WFS de l'IGN
-  ta <- load_classified_ta(bbox = st_bbox(st_transform(zone_etude_sf, 4326)),
-                           save_dir = data_dir)
+  ta <- load_classified_ta(
+    bbox = st_bbox(st_transform(zone_etude_sf, 4326)),
+    save_dir = data_dir
+  )
 
   cat("Dalles disponibles dans la zone:", nrow(ta), "\n\n")
 
   if (nrow(ta) > 0) {
     cat("=== Informations sur les dalles ===\n")
-    cat("Colonnes disponibles:", paste(names(ta)[1:min(5, ncol(ta))], collapse = ", "), "\n\n")
+    cat("Colonnes disponibles:", paste(names(ta)[seq_len(min(5, ncol(ta)))], collapse = ", "), "\n\n")
 
     # Afficher quelques dalles
     cat("Premières dalles:\n")
@@ -1049,7 +1071,7 @@ zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_e
 ```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.timelimit=600, exercise.setup="ex-5-2-setup"}
 if (requireNamespace("lidarHD", quietly = TRUE)) {
   library(lidarHD)
-  
+
   # === DÉFINIR LE RÉPERTOIRE DE CACHE ===
   if (requireNamespace("rappdirs", quietly = TRUE)) {
     data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
@@ -1059,40 +1081,49 @@ if (requireNamespace("lidarHD", quietly = TRUE)) {
   dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
   lidar_dir <- file.path(data_dir, "lidar_hd")
   dir.create(lidar_dir, showWarnings = FALSE, recursive = TRUE)
-  
+
   cat("=== Téléchargement LiDAR HD ===\n")
   cat("Répertoire de sortie:", lidar_dir, "\n\n")
-  
+
   # calcule le nombre de fichiers qui sont à télécharger
   # La fonction interroge le WFS de l'IGN
-  ta <- load_classified_ta(bbox = st_bbox(st_transform(zone_etude_sf, 4326)),
-                           save_dir = data_dir)
+  ta <- load_classified_ta(
+    bbox = st_bbox(st_transform(zone_etude_sf, 4326)),
+    save_dir = data_dir
+  )
   # Vérifier si tous les fichiers existent déjà
-  fichiers_existants <- list.files(lidar_dir, pattern = "\\.copc\\.laz$",
-                                   full.names = TRUE, recursive = TRUE)
-  
+  fichiers_existants <- list.files(lidar_dir,
+    pattern = "\\.copc\\.laz$",
+    full.names = TRUE, recursive = TRUE
+  )
+
   if (length(fichiers_existants) >= nrow(ta)) {
     cat("Fichiers déjà téléchargés:", length(fichiers_existants), "\n")
     cat("Utilisez le cache existant.\n")
   } else {
     cat("Chargement du tableau d'assemblage...\n")
     cat("Dalles à télécharger:", nrow(ta), "\n\n")
-    
+
     if (nrow(ta) > 0) {
       cat("Téléchargement en cours...\n")
       cat("(Attention: plusieurs centaines de Mo par dalle)\n\n")
-      
+
       # Télécharger les dalles (prompt=FALSE pour mode non-interactif)
-      tryCatch({
-        ta_result <- download_files(ta, roi = zone_etude_sf,
-                                    folder = lidar_dir, prompt = FALSE)
-        cat("Téléchargement terminé.\n")
-      }, error = function(e) {
-        cat("Erreur:", e$message, "\n")
-      })
+      tryCatch(
+        {
+          ta_result <- download_files(ta,
+            roi = zone_etude_sf,
+            folder = lidar_dir, prompt = FALSE
+          )
+          cat("Téléchargement terminé.\n")
+        },
+        error = function(e) {
+          cat("Erreur:", e$message, "\n")
+        }
+      )
     }
   }
-  
+
   # Lister les fichiers disponibles
   fichiers_laz <- list.files(lidar_dir, pattern = "\\.laz$", recursive = TRUE)
   cat("\nFichiers LiDAR disponibles:", length(fichiers_laz), "\n")
@@ -1110,22 +1141,28 @@ library(lidaRtRee)
 data("quatre_montagnes", package = "lidaRtRee")
 
 # Les métriques LiDAR sont déjà dans le jeu de données
-metriques_lidar <- c("zmax", "zmean", "zsd", "zq50", "zq95",
-                    "zentropy", "pzabove2", "Tree_density")
+metriques_lidar <- c(
+  "zmax", "zmean", "zsd", "zq50", "zq95",
+  "zentropy", "pzabove2", "Tree_density"
+)
 
 cat("=== Métriques LiDAR pré-calculées ===\n\n")
 
 # Afficher les statistiques pour les clusters Centre
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
+clusters_centre <- c(
+  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+  "Verc-C4", "Verc-C2", "Verc-05"
+)
 data_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
 
 for (m in metriques_lidar) {
- if (m %in% names(data_centre)) {
-   vals <- data_centre[[m]]
-   cat(sprintf("%s: min=%.1f, moy=%.1f, max=%.1f\n",
-              m, min(vals), mean(vals), max(vals)))
- }
+  if (m %in% names(data_centre)) {
+    vals <- data_centre[[m]]
+    cat(sprintf(
+      "%s: min=%.1f, moy=%.1f, max=%.1f\n",
+      m, min(vals), mean(vals), max(vals)
+    ))
+  }
 }
 ```
 
@@ -1189,15 +1226,19 @@ cat("\n=== Métriques LiDAR (quatre_montagnes) ===\n")
 data("quatre_montagnes", package = "lidaRtRee")
 
 # Filtrer sur les clusters Centre utilisés dans le tutoriel
-clusters_centre <- c("Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-                    "Verc-C4", "Verc-C2", "Verc-05")
+clusters_centre <- c(
+  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
+  "Verc-C4", "Verc-C2", "Verc-05"
+)
 qm_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
 
 cat("Placettes:", nrow(qm_centre), "\n\n")
 
 # Métriques LiDAR disponibles
-metriques <- c("zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95",
-               "zentropy", "pzabove2", "Tree_density")
+metriques <- c(
+  "zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95",
+  "zentropy", "pzabove2", "Tree_density"
+)
 
 cat("Métrique         Min      Moy      Max    Unité\n")
 cat("------------------------------------------------\n")
@@ -1205,11 +1246,15 @@ for (m in metriques) {
   if (m %in% names(qm_centre)) {
     vals <- qm_centre[[m]]
     unite <- ifelse(m %in% c("zmax", "zmean", "zsd", "zq25", "zq50", "zq75", "zq95"), "m",
-             ifelse(m == "pzabove2", "%",
-             ifelse(m == "Tree_density", "arb/ha", "")))
-    cat(sprintf("%-12s %8.1f %8.1f %8.1f    %s\n",
-                m, min(vals, na.rm = TRUE), mean(vals, na.rm = TRUE),
-                max(vals, na.rm = TRUE), unite))
+      ifelse(m == "pzabove2", "%",
+        ifelse(m == "Tree_density", "arb/ha", "")
+      )
+    )
+    cat(sprintf(
+      "%-12s %8.1f %8.1f %8.1f    %s\n",
+      m, min(vals, na.rm = TRUE), mean(vals, na.rm = TRUE),
+      max(vals, na.rm = TRUE), unite
+    ))
   }
 }
 ```
@@ -1240,46 +1285,61 @@ cat("=== Export consolidé ===\n")
 cat("Destination:", gpkg_export, "\n\n")
 
 # 1. Zone d'étude et placettes
-tryCatch({
-  zone <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
-  placettes <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "placettes", quiet = TRUE)
-  st_write(zone, gpkg_export, layer = "zone_etude", delete_layer = TRUE, quiet = TRUE)
-  st_write(placettes, gpkg_export, layer = "placettes", append = TRUE, quiet = TRUE)
-  cat("Zone et placettes exportées\n")
-}, error = function(e) cat("Zone: non disponible\n"))
+tryCatch(
+  {
+    zone <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+    placettes <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "placettes", quiet = TRUE)
+    st_write(zone, gpkg_export, layer = "zone_etude", delete_layer = TRUE, quiet = TRUE)
+    st_write(placettes, gpkg_export, layer = "placettes", append = TRUE, quiet = TRUE)
+    cat("Zone et placettes exportées\n")
+  },
+  error = function(e) cat("Zone: non disponible\n")
+)
 
 # 2. Parcelles cadastrales
-tryCatch({
-  parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
-  st_write(parcelles, gpkg_export, layer = "parcelles", append = TRUE, quiet = TRUE)
-  cat("Cadastre exporté:", nrow(parcelles), "parcelles\n")
-}, error = function(e) cat("Cadastre: non disponible (exécuter ex 2.1)\n"))
+tryCatch(
+  {
+    parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
+    st_write(parcelles, gpkg_export, layer = "parcelles", append = TRUE, quiet = TRUE)
+    cat("Cadastre exporté:", nrow(parcelles), "parcelles\n")
+  },
+  error = function(e) cat("Cadastre: non disponible (exécuter ex 2.1)\n")
+)
 
 # 3. BD Forêt
-tryCatch({
-  bd_foret <- st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE)
-  st_write(bd_foret, gpkg_export, layer = "bd_foret", append = TRUE, quiet = TRUE)
-  cat("BD Forêt exportée:", nrow(bd_foret), "formations\n")
-}, error = function(e) cat("BD Forêt: non disponible (exécuter ex 4.1)\n"))
+tryCatch(
+  {
+    bd_foret <- st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE)
+    st_write(bd_foret, gpkg_export, layer = "bd_foret", append = TRUE, quiet = TRUE)
+    cat("BD Forêt exportée:", nrow(bd_foret), "formations\n")
+  },
+  error = function(e) cat("BD Forêt: non disponible (exécuter ex 4.1)\n")
+)
 
 # 4. Routes
-tryCatch({
-  routes <- st_read(file.path(data_dir, "routes.gpkg"), quiet = TRUE)
-  st_write(routes, gpkg_export, layer = "routes", append = TRUE, quiet = TRUE)
-  cat("Routes exportées:", nrow(routes), "tronçons\n")
-}, error = function(e) cat("Routes: non disponible (exécuter ex 4.2)\n"))
+tryCatch(
+  {
+    routes <- st_read(file.path(data_dir, "routes.gpkg"), quiet = TRUE)
+    st_write(routes, gpkg_export, layer = "routes", append = TRUE, quiet = TRUE)
+    cat("Routes exportées:", nrow(routes), "tronçons\n")
+  },
+  error = function(e) cat("Routes: non disponible (exécuter ex 4.2)\n")
+)
 
 # 5. Cours d'eau
-tryCatch({
-  cours_eau <- st_read(file.path(data_dir, "cours_eau.gpkg"), quiet = TRUE)
-  st_write(cours_eau, gpkg_export, layer = "cours_eau", append = TRUE, quiet = TRUE)
-  cat("Cours d'eau exportés:", nrow(cours_eau), "\n")
-}, error = function(e) cat("Cours d'eau: non disponible (exécuter ex 4.3)\n"))
+tryCatch(
+  {
+    cours_eau <- st_read(file.path(data_dir, "cours_eau.gpkg"), quiet = TRUE)
+    st_write(cours_eau, gpkg_export, layer = "cours_eau", append = TRUE, quiet = TRUE)
+    cat("Cours d'eau exportés:", nrow(cours_eau), "\n")
+  },
+  error = function(e) cat("Cours d'eau: non disponible (exécuter ex 4.3)\n")
+)
 
 # Résumé
 cat("\n=== GeoPackage créé ===\n")
 cat("Fichier:", gpkg_export, "\n")
-cat("Taille:", round(file.size(gpkg_export)/(1024*1024), 2), "Mo\n")
+cat("Taille:", round(file.size(gpkg_export) / (1024 * 1024), 2), "Mo\n")
 cat("Couches:", paste(st_layers(gpkg_export)$name, collapse = ", "), "\n")
 ```
 
@@ -1289,47 +1349,42 @@ cat("Couches:", paste(st_layers(gpkg_export)$name, collapse = ", "), "\n")
 
 ```{r quiz-final, echo=FALSE}
 quiz(
- caption = "Vérifiez vos connaissances",
-
- question("Quelle fonction happign permet de télécharger des données vectorielles ?",
-   answer("get_wms_raster()"),
-   answer("get_wfs()", correct = TRUE),
-   answer("get_wmts()"),
-   answer("download_ign()"),
-   allow_retry = TRUE
- ),
-
- question("Quelle est la résolution du MNT RGE Alti haute résolution ?",
-   answer("1 mètre"),
-   answer("5 mètres", correct = TRUE),
-   answer("10 mètres"),
-   answer("25 mètres"),
-   allow_retry = TRUE
- ),
-
- question("Quel format de fichier permet de stocker plusieurs couches géographiques ?",
-   answer("Shapefile (.shp)"),
-   answer("GeoTIFF (.tif)"),
-   answer("GeoPackage (.gpkg)", correct = TRUE),
-   answer("CSV (.csv)"),
-   allow_retry = TRUE
- ),
-
- question("Quelle couche WFS contient les parcelles cadastrales ?",
-   answer("BDTOPO_V3:parcelle"),
-   answer("CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle", correct = TRUE),
-   answer("LANDCOVER.FORESTINVENTORY.V2:parcelle"),
-   answer("IGN.CADASTRE:parcelle"),
-   allow_retry = TRUE
- ),
-
- question("Pourquoi ajoute-t-on un buffer de 500m autour des placettes ?",
-   answer("Pour réduire le temps de calcul"),
-   answer("Pour avoir un contexte spatial et éviter les effets de bord", correct = TRUE),
-   answer("Pour corriger les erreurs GPS"),
-   answer("Pour convertir les coordonnées"),
-   allow_retry = TRUE
- )
+  caption = "Vérifiez vos connaissances",
+  question("Quelle fonction happign permet de télécharger des données vectorielles ?",
+    answer("get_wms_raster()"),
+    answer("get_wfs()", correct = TRUE),
+    answer("get_wmts()"),
+    answer("download_ign()"),
+    allow_retry = TRUE
+  ),
+  question("Quelle est la résolution du MNT RGE Alti haute résolution ?",
+    answer("1 mètre"),
+    answer("5 mètres", correct = TRUE),
+    answer("10 mètres"),
+    answer("25 mètres"),
+    allow_retry = TRUE
+  ),
+  question("Quel format de fichier permet de stocker plusieurs couches géographiques ?",
+    answer("Shapefile (.shp)"),
+    answer("GeoTIFF (.tif)"),
+    answer("GeoPackage (.gpkg)", correct = TRUE),
+    answer("CSV (.csv)"),
+    allow_retry = TRUE
+  ),
+  question("Quelle couche WFS contient les parcelles cadastrales ?",
+    answer("BDTOPO_V3:parcelle"),
+    answer("CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle", correct = TRUE),
+    answer("LANDCOVER.FORESTINVENTORY.V2:parcelle"),
+    answer("IGN.CADASTRE:parcelle"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi ajoute-t-on un buffer de 500m autour des placettes ?",
+    answer("Pour réduire le temps de calcul"),
+    answer("Pour avoir un contexte spatial et éviter les effets de bord", correct = TRUE),
+    answer("Pour corriger les erreurs GPS"),
+    answer("Pour convertir les coordonnées"),
+    allow_retry = TRUE
+  )
 )
 ```
 

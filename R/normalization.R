@@ -70,13 +70,13 @@
 #'
 #' @export
 normalize_indicators <- function(data,
-                                  indicators = NULL,
-                                  method = c("minmax", "zscore", "quantile"),
-                                  suffix = "_norm",
-                                  keep_original = TRUE,
-                                  na.rm = TRUE,
-                                  reference_data = NULL,
-                                  by_family = FALSE) {
+                                 indicators = NULL,
+                                 method = c("minmax", "zscore", "quantile"),
+                                 suffix = "_norm",
+                                 keep_original = TRUE,
+                                 na.rm = TRUE,
+                                 reference_data = NULL,
+                                 by_family = FALSE) {
   # Match method argument
   method <- match.arg(method)
 
@@ -96,7 +96,7 @@ normalize_indicators <- function(data,
 
     # v0.2.0+ family indicators (C1, C2, W1, etc.)
     all_cols <- names(data)
-    family_pattern <- "^[A-Z][0-9]"  # Matches C1, W1, F1, etc.
+    family_pattern <- "^[A-Z][0-9]" # Matches C1, W1, F1, etc.
     family_indicators <- grep(family_pattern, all_cols, value = TRUE)
 
     # Combine both
@@ -205,7 +205,6 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
     }
 
     normalized <- ((x - min_val) / (max_val - min_val)) * 100
-
   } else if (method == "zscore") {
     # Z-score standardization
     mean_val <- mean(reference, na.rm = na.rm)
@@ -217,7 +216,6 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
     }
 
     normalized <- (x - mean_val) / sd_val
-
   } else if (method == "quantile") {
     # Quantile-based (percentile rank)
     # Remove NAs from reference for ranking
@@ -284,7 +282,7 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
 #'   indicators = c("carbon_norm", "biodiversity_norm", "water_norm")
 #' )
 #'
-#' # Custom weights (carbon 50\\%, biodiversity 30\\%, water 20\\%)
+#' # Custom weights (carbon 50\%, biodiversity 30\%, water 20\%)
 #' results <- create_composite_index(
 #'   normalized_data,
 #'   indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
@@ -312,12 +310,12 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
 #'
 #' @export
 create_composite_index <- function(data,
-                                    indicators,
-                                    weights = NULL,
-                                    name = "composite_index",
-                                    aggregation = c("weighted_mean", "geometric_mean", "min", "max"),
-                                    na.rm = TRUE,
-                                    scale_to_100 = NULL) {
+                                   indicators,
+                                   weights = NULL,
+                                   name = "composite_index",
+                                   aggregation = c("weighted_mean", "geometric_mean", "min", "max"),
+                                   na.rm = TRUE,
+                                   scale_to_100 = NULL) {
   # Match aggregation method
   aggregation <- match.arg(aggregation)
 
@@ -370,19 +368,22 @@ create_composite_index <- function(data,
       if (na.rm) {
         # Remove NAs and renormalize weights
         valid <- !is.na(row)
-        if (sum(valid) == 0) return(NA_real_)
+        if (sum(valid) == 0) {
+          return(NA_real_)
+        }
         sum(row[valid] * weights[valid]) / sum(weights[valid])
       } else {
         sum(row * weights)
       }
     })
-
   } else if (aggregation == "geometric_mean") {
     # Weighted geometric mean
     composite <- apply(indicator_matrix, 1, function(row) {
       if (na.rm) {
         row <- row[!is.na(row)]
-        if (length(row) == 0) return(NA_real_)
+        if (length(row) == 0) {
+          return(NA_real_)
+        }
       }
 
       if (any(row < 0, na.rm = TRUE)) {
@@ -393,11 +394,9 @@ create_composite_index <- function(data,
       # Weighted geometric mean: exp(sum(w * log(x)))
       exp(sum(weights[!is.na(row)] * log(row)))
     })
-
   } else if (aggregation == "min") {
     # Minimum (limiting factor)
     composite <- apply(indicator_matrix, 1, min, na.rm = na.rm)
-
   } else if (aggregation == "max") {
     # Maximum (optimistic)
     composite <- apply(indicator_matrix, 1, max, na.rm = na.rm)
@@ -467,10 +466,10 @@ create_composite_index <- function(data,
 #'
 #' @export
 invert_indicator <- function(data,
-                              indicators,
-                              scale = 100,
-                              suffix = "_inv",
-                              keep_original = FALSE) {
+                             indicators,
+                             scale = 100,
+                             suffix = "_inv",
+                             keep_original = FALSE) {
   # Validate indicators exist
   missing <- setdiff(indicators, names(data))
   if (length(missing) > 0) {

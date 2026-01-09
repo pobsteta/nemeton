@@ -27,14 +27,14 @@ nemeton_set_language("en")
 
 ## ----eval = FALSE-------------------------------------------------------------
 # nemeton_set_language("fr")
-# 
+#
 # # Erreur si données manquantes
 # nemeton_compute(NULL, NULL, "carbon")
 # # Erreur : Les données 'data' doivent être un objet sf
 
 ## ----eval = FALSE-------------------------------------------------------------
 # nemeton_set_language("en")
-# 
+#
 # # Error with missing data
 # nemeton_compute(NULL, NULL, "carbon")
 # # Error: 'data' must be an sf object
@@ -44,22 +44,22 @@ nemeton_set_language("en")
 # nemeton_set_language("fr")
 # get_family_name("C")
 # # [1] "Carbone & Vitalité"
-# 
+#
 # get_family_name("W")
 # # [1] "Eau"
-# 
+#
 # # In English
 # nemeton_set_language("en")
 # get_family_name("C")
 # # [1] "Carbon & Vitality"
-# 
+#
 # get_family_name("W")
 # # [1] "Water Regulation"
 
 ## ----eval = FALSE-------------------------------------------------------------
 # # Définir le français au début du script
 # nemeton_set_language("fr")
-# 
+#
 # # Tous les appels suivants utilisent le français
 # results <- nemeton_compute(...)
 # normalized <- normalize_indicators(...)
@@ -85,10 +85,10 @@ nemeton_set_language("en")
 ## ----eval = FALSE-------------------------------------------------------------
 # # ===== VERSION FRANÇAISE =====
 # nemeton_set_language("fr")
-# 
+#
 # data(massif_demo_units)
 # layers <- massif_demo_layers()
-# 
+#
 # results <- nemeton_compute(
 #   massif_demo_units,
 #   layers,
@@ -96,20 +96,20 @@ nemeton_set_language("en")
 # )
 # # ℹ Calcul de 1 indicateurs...
 # # ✔ 1/1 indicateurs calculés
-# 
+#
 # plot_indicators_map(
 #   results,
 #   indicators = "carbon",
 #   title = "Stock de carbone",
 #   legend_title = "Mg C/parcel"
 # )
-# 
+#
 # # ===== ENGLISH VERSION =====
 # nemeton_set_language("en")
-# 
+#
 # data(massif_demo_units)
 # layers <- massif_demo_layers()
-# 
+#
 # results <- nemeton_compute(
 #   massif_demo_units,
 #   layers,
@@ -117,7 +117,7 @@ nemeton_set_language("en")
 # )
 # # ℹ Computing 1 indicators...
 # # ✔ 1/1 indicators computed
-# 
+#
 # plot_indicators_map(
 #   results,
 #   indicators = "carbon",
@@ -127,4 +127,3 @@ nemeton_set_language("en")
 
 ## -----------------------------------------------------------------------------
 sessionInfo()
-

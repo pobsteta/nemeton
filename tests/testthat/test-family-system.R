@@ -11,19 +11,19 @@ test_that("create_family_index aggregates indicators by family", {
 
   # Create dataset with multiple family indicators
   units <- massif_demo_units[1:5, ]
-  units$C1 <- c(50, 60, 55, 65, 70)  # Carbon biomass
-  units$C2 <- c(70, 75, 72, 78, 80)  # Carbon NDVI
-  units$W1 <- c(10, 15, 12, 18, 20)  # Water network
-  units$W2 <- c(30, 35, 32, 38, 40)  # Water wetlands
-  units$W3 <- c(5, 8, 6, 10, 12)     # Water TWI
+  units$C1 <- c(50, 60, 55, 65, 70) # Carbon biomass
+  units$C2 <- c(70, 75, 72, 78, 80) # Carbon NDVI
+  units$W1 <- c(10, 15, 12, 18, 20) # Water network
+  units$W2 <- c(30, 35, 32, 38, 40) # Water wetlands
+  units$W3 <- c(5, 8, 6, 10, 12) # Water TWI
 
   # Create family indices
   result <- create_family_index(units, method = "mean")
 
   # Test output structure
   expect_s3_class(result, "sf")
-  expect_true("family_C" %in% names(result))  # Carbon family score
-  expect_true("family_W" %in% names(result))  # Water family score
+  expect_true("family_C" %in% names(result)) # Carbon family score
+  expect_true("family_W" %in% names(result)) # Water family score
 
   # Test values are in 0-100 range (if normalized)
   expect_true(all(!is.na(result$family_C)))
@@ -64,16 +64,16 @@ test_that("create_family_index handles partial families", {
   result <- create_family_index(units)
 
   # Should create indices for available families
-  expect_true("family_C" %in% names(result))  # Single indicator
-  expect_true("family_W" %in% names(result))  # Two indicators
+  expect_true("family_C" %in% names(result)) # Single indicator
+  expect_true("family_W" %in% names(result)) # Two indicators
 })
 
 test_that("create_family_index detects family from indicator names", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:2, ]
-  units$C1_biomass <- c(50, 60)  # Alternative naming
-  units$carbon_ndvi <- c(70, 75)  # Non-standard
+  units$C1_biomass <- c(50, 60) # Alternative naming
+  units$carbon_ndvi <- c(70, 75) # Non-standard
   units$W1 <- c(10, 15)
 
   # Should detect C1 prefix
@@ -163,7 +163,7 @@ test_that("normalize_indicators can normalize by family", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
-  units$C1 <- c(50, 60, 55)   # Range: 50-60
+  units$C1 <- c(50, 60, 55) # Range: 50-60
   units$C2 <- c(700, 750, 725) # Range: 700-750 (different scale)
 
   # Normalize within each family separately
@@ -359,24 +359,24 @@ test_that("Family detection works with all family codes", {
   units <- massif_demo_units[1:2, ]
 
   # All 12 families
-  units$C1 <- c(50, 60)  # Carbon
-  units$B1 <- c(5, 6)    # Biodiversity
-  units$W1 <- c(10, 15)  # Water
-  units$A1 <- c(20, 25)  # Air
-  units$F1 <- c(30, 35)  # Soil (Fertilité)
-  units$L1 <- c(3, 4)    # Landscape
-  units$T1 <- c(40, 45)  # Time (Temps)
-  units$R1 <- c(15, 18)  # Risks (Risques)
-  units$S1 <- c(25, 28)  # Social
-  units$P1 <- c(35, 38)  # Productive
-  units$E1 <- c(45, 48)  # Energy
-  units$N1 <- c(55, 58)  # Naturalité
+  units$C1 <- c(50, 60) # Carbon
+  units$B1 <- c(5, 6) # Biodiversity
+  units$W1 <- c(10, 15) # Water
+  units$A1 <- c(20, 25) # Air
+  units$F1 <- c(30, 35) # Soil (Fertilité)
+  units$L1 <- c(3, 4) # Landscape
+  units$T1 <- c(40, 45) # Time (Temps)
+  units$R1 <- c(15, 18) # Risks (Risques)
+  units$S1 <- c(25, 28) # Social
+  units$P1 <- c(35, 38) # Productive
+  units$E1 <- c(45, 48) # Energy
+  units$N1 <- c(55, 58) # Naturalité
 
   result <- create_family_index(units)
 
   # Should detect all families
   family_cols <- grep("^family_", names(result), value = TRUE)
-  expect_true(length(family_cols) >= 10)  # At least most families
+  expect_true(length(family_cols) >= 10) # At least most families
 })
 # ==============================================================================
 # v0.3.0: Tests for new family codes (B, R, T, A) - T059
@@ -386,7 +386,7 @@ test_that("create_family_index handles B (Biodiversity) family correctly", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
-  units$B1 <- c(0, 25, 50, 75, 100)      # Protection
+  units$B1 <- c(0, 25, 50, 75, 100) # Protection
   units$B2 <- c(0.2, 0.4, 0.6, 0.8, 1.0) # Structure
   units$B3 <- c(100, 200, 500, 1000, 2000) # Connectivity
 
@@ -402,9 +402,9 @@ test_that("create_family_index handles R (Risk/Resilience) family correctly", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
-  units$R1 <- c(10, 30, 50, 70, 90)  # Fire risk
-  units$R2 <- c(5, 25, 45, 65, 85)   # Storm vulnerability
-  units$R3 <- c(15, 35, 55, 75, 95)  # Drought stress
+  units$R1 <- c(10, 30, 50, 70, 90) # Fire risk
+  units$R2 <- c(5, 25, 45, 65, 85) # Storm vulnerability
+  units$R3 <- c(15, 35, 55, 75, 95) # Drought stress
 
   result <- create_family_index(units, family_codes = "R")
 
@@ -417,8 +417,8 @@ test_that("create_family_index handles T (Temporal) family correctly", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
-  units$T1 <- c(20, 50, 100, 150, 250)   # Age
-  units$T2 <- c(0, 0.5, 1.0, 2.0, 5.0)  # Change rate
+  units$T1 <- c(20, 50, 100, 150, 250) # Age
+  units$T2 <- c(0, 0.5, 1.0, 2.0, 5.0) # Change rate
 
   result <- create_family_index(units, family_codes = "T")
 
@@ -431,7 +431,7 @@ test_that("create_family_index handles A (Air quality) family correctly", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
-  units$A1 <- c(10, 30, 50, 70, 90)  # Coverage
+  units$A1 <- c(10, 30, 50, 70, 90) # Coverage
   units$A2 <- c(20, 40, 60, 80, 100) # Quality
 
   result <- create_family_index(units, family_codes = "A")
@@ -508,7 +508,7 @@ test_that("create_family_index aggregation methods work for new families", {
 
   # Geometric mean
   result_geom <- create_family_index(units, family_codes = "B", method = "geometric")
-  expected_geom <- (20 * 30 * 40)^(1/3)
+  expected_geom <- (20 * 30 * 40)^(1 / 3)
   expect_equal(result_geom$family_B[1], expected_geom, tolerance = 0.01)
 
   # Min (bottleneck approach - worst indicator drives score)

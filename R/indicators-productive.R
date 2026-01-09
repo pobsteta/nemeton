@@ -67,13 +67,13 @@ NULL
 #' )
 #' }
 indicator_productive_volume <- function(units,
-                                         species_field = "species",
-                                         dbh_field = "dbh",
-                                         height_field = "height",
-                                         density_field = "density",
-                                         method = c("ifn_tarif", "allometric"),
-                                         column_name = "P1",
-                                         lang = "en") {
+                                        species_field = "species",
+                                        dbh_field = "dbh",
+                                        height_field = "height",
+                                        density_field = "density",
+                                        method = c("ifn_tarif", "allometric"),
+                                        column_name = "P1",
+                                        lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -109,7 +109,7 @@ indicator_productive_volume <- function(units,
       height_m <- units[[height_field]][i]
     } else {
       # Simple height estimation from DBH (Näslund function approximation)
-      height_m <- 1.3 + (dbh_cm * 0.65)  # Rough approximation
+      height_m <- 1.3 + (dbh_cm * 0.65) # Rough approximation
     }
 
     # Lookup IFN equation
@@ -126,7 +126,7 @@ indicator_productive_volume <- function(units,
     b <- as.numeric(equation$b)
     c <- as.numeric(equation$c)
 
-    volume_individual_m3 <- a * (dbh_cm ^ b) * (height_m ^ c)
+    volume_individual_m3 <- a * (dbh_cm^b) * (height_m^c)
 
     # Scale by density to get m³/ha
     volume_per_ha <- volume_individual_m3 * density_ha
@@ -199,12 +199,12 @@ indicator_productive_volume <- function(units,
 #' )
 #' }
 indicator_productive_station <- function(units,
-                                          species_field = "species",
-                                          fertility_field = "fertility",
-                                          climate_field = "climate",
-                                          productivity_table = NULL,
-                                          column_name = "P2",
-                                          lang = "en") {
+                                         species_field = "species",
+                                         fertility_field = "fertility",
+                                         climate_field = "climate",
+                                         productivity_table = NULL,
+                                         column_name = "P2",
+                                         lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -247,8 +247,8 @@ indicator_productive_station <- function(units,
     # Lookup in productivity table
     prod_row <- productivity_table[
       productivity_table$species_code == toupper(species_code) &
-      productivity_table$fertility_class == fertility_class &
-      productivity_table$climate_zone == climate_zone,
+        productivity_table$fertility_class == fertility_class &
+        productivity_table$climate_zone == climate_zone,
     ]
 
     if (nrow(prod_row) > 0) {
@@ -258,7 +258,7 @@ indicator_productive_station <- function(units,
       # Fallback to genus average
       genus_row <- productivity_table[
         productivity_table$species_code %in% c("BROADLEAF_GENUS", "CONIFER_GENUS") &
-        productivity_table$fertility_class == fertility_class,
+          productivity_table$fertility_class == fertility_class,
       ]
 
       if (nrow(genus_row) > 0) {
@@ -329,13 +329,13 @@ indicator_productive_station <- function(units,
 #' )
 #' }
 indicator_productive_quality <- function(units,
-                                          dbh_field = "dbh",
-                                          form_score_field = "form_score",
-                                          defects_field = "defects",
-                                          species_field = "species",
-                                          weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
-                                          column_name = "P3",
-                                          lang = "en") {
+                                         dbh_field = "dbh",
+                                         form_score_field = "form_score",
+                                         defects_field = "defects",
+                                         species_field = "species",
+                                         weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
+                                         column_name = "P3",
+                                         lang = "en") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -362,11 +362,11 @@ indicator_productive_quality <- function(units,
     if (species_field %in% names(units)) {
       species_code <- units[[species_field]][i]
       # Simple heuristic: conifer vs broadleaf thresholds
-      is_conifer <- grepl("^P[IML]", toupper(species_code))  # PI*, PM*, PL* (pines)
+      is_conifer <- grepl("^P[IML]", toupper(species_code)) # PI*, PM*, PL* (pines)
       sawlog_threshold <- if (is_conifer) 30 else 40
       pulp_threshold <- if (is_conifer) 15 else 20
     } else {
-      sawlog_threshold <- 35  # Generic
+      sawlog_threshold <- 35 # Generic
       pulp_threshold <- 18
     }
 
@@ -391,15 +391,15 @@ indicator_productive_quality <- function(units,
     # Component 3: Defects penalty
     if (defects_field %in% names(units) && !is.na(units[[defects_field]][i])) {
       has_defects <- units[[defects_field]][i]
-      defects_score <- if (has_defects > 0) 50 else 100  # 50% penalty for defects
+      defects_score <- if (has_defects > 0) 50 else 100 # 50% penalty for defects
     } else {
-      defects_score <- 85  # Assume minor defects
+      defects_score <- 85 # Assume minor defects
     }
 
     # Weighted composite
     p3_values[i] <- weights["form"] * form_score +
-                    weights["diameter"] * diameter_score +
-                    weights["defects"] * defects_score
+      weights["diameter"] * diameter_score +
+      weights["defects"] * defects_score
 
     msg_info("productive_quality_assessed", p3_values[i], form_score, diameter_score, defects_score)
   }

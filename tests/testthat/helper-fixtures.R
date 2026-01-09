@@ -21,11 +21,13 @@ create_test_units <- function(crs = 2154, n_features = 3) {
     ymax <- ymin + 100
 
     sf::st_polygon(list(matrix(
-      c(xmin, ymin,
+      c(
+        xmin, ymin,
         xmax, ymin,
         xmax, ymax,
         xmin, ymax,
-        xmin, ymin),
+        xmin, ymin
+      ),
       ncol = 2, byrow = TRUE
     )))
   })
@@ -49,9 +51,9 @@ create_test_units <- function(crs = 2154, n_features = 3) {
 #' @param res Resolution in map units
 #' @return SpatRaster object
 create_test_raster <- function(extent = c(566400, 567000, 6615100, 6615500),
-                                crs = "EPSG:2154",
-                                values = "random",
-                                res = 10) {
+                               crs = "EPSG:2154",
+                               values = "random",
+                               res = 10) {
   # Create raster
   r <- terra::rast(
     extent = terra::ext(extent),
@@ -80,14 +82,18 @@ create_test_vector <- function(crs = 2154, type = "lines") {
   if (type == "lines") {
     # Create two diagonal lines crossing the test area
     line1 <- sf::st_linestring(matrix(
-      c(566400, 6615100,
-        567000, 6615500),
+      c(
+        566400, 6615100,
+        567000, 6615500
+      ),
       ncol = 2, byrow = TRUE
     ))
 
     line2 <- sf::st_linestring(matrix(
-      c(566400, 6615500,
-        567000, 6615100),
+      c(
+        566400, 6615500,
+        567000, 6615100
+      ),
       ncol = 2, byrow = TRUE
     ))
 
@@ -102,15 +108,17 @@ create_test_vector <- function(crs = 2154, type = "lines") {
   } else if (type == "points") {
     # Create 5 random points
     coords <- matrix(
-      c(566500, 6615200,
+      c(
+        566500, 6615200,
         566600, 6615300,
         566700, 6615250,
         566800, 6615400,
-        566900, 6615350),
+        566900, 6615350
+      ),
       ncol = 2, byrow = TRUE
     )
 
-    sfc <- sf::st_sfc(lapply(1:nrow(coords), function(i) {
+    sfc <- sf::st_sfc(lapply(seq_len(nrow(coords)), function(i) {
       sf::st_point(coords[i, ])
     }), crs = crs)
 

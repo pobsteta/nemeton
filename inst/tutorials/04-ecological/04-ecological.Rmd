@@ -82,17 +82,17 @@ bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
 
 if (file.exists(bd_foret_path)) {
   bd_foret <- st_read(bd_foret_path, quiet = TRUE)
-  
+
   cat("=== BD Forêt V2 ===\n")
   cat("Polygones:", nrow(bd_foret), "\n")
-  cat("Colonnes:", paste(names(bd_foret)[1:min(10, ncol(bd_foret))], collapse = ", "), "\n\n")
-  
+  cat("Colonnes:", paste(names(bd_foret)[seq_len(min(10, ncol(bd_foret)))], collapse = ", "), "\n\n")
+
   # Types de peuplement
   if ("tfv" %in% names(bd_foret)) {
     cat("=== Types de formation végétale ===\n")
     print(head(table(bd_foret$tfv), 10))
   }
-  
+
   # Essences
   if ("essence" %in% names(bd_foret)) {
     cat("\n=== Essences principales ===\n")
@@ -145,15 +145,20 @@ if (file.exists(parcelles_path)) {
 
       # Fonction de téléchargement d'une couche
       download_layer <- function(layer_name, shape) {
-        tryCatch({
-          z <- get_wfs(shape, layer_name)
-          if (!is.null(z) && nrow(z) > 0) {
-            z$type_protection <- layer_name
-            geom_col <- names(z)[grepl("geom", names(z), ignore.case = TRUE)]
-            cols <- intersect(c("type_protection", "nom_site"), names(z))
-            z[, c(cols, geom_col)]
-          } else NULL
-        }, error = function(e) NULL)
+        tryCatch(
+          {
+            z <- get_wfs(shape, layer_name)
+            if (!is.null(z) && nrow(z) > 0) {
+              z$type_protection <- layer_name
+              geom_col <- names(z)[grepl("geom", names(z), ignore.case = TRUE)]
+              cols <- intersect(c("type_protection", "nom_site"), names(z))
+              z[, c(cols, geom_col)]
+            } else {
+              NULL
+            }
+          },
+          error = function(e) NULL
+        )
       }
 
       # Parallélisation avec furrr si disponible
@@ -163,8 +168,10 @@ if (file.exists(parcelles_path)) {
         plan(multisession, workers = min(4, length(patrinat_layers)))
         cat("Mode: parallèle (furrr, ", nbrOfWorkers(), " workers)\n\n")
 
-        all_zones <- future_map(patrinat_layers, download_layer, shape = parcelles,
-                                .progress = TRUE, .options = furrr_options(seed = TRUE))
+        all_zones <- future_map(patrinat_layers, download_layer,
+          shape = parcelles,
+          .progress = TRUE, .options = furrr_options(seed = TRUE)
+        )
         plan(sequential)
       } else {
         cat("Mode: séquentiel (purrr)\n\n")
@@ -175,7 +182,7 @@ if (file.exists(parcelles_path)) {
       all_zones <- compact(all_zones)
 
       if (length(all_zones) > 0) {
-          zones <- dplyr::bind_rows(all_zones)
+        zones <- dplyr::bind_rows(all_zones)
         zones <- st_transform(zones, st_crs(parcelles))
         st_write(zones, zones_path, quiet = TRUE)
         cat("\n", nrow(zones), "zones protégées sauvegardées.\n")
@@ -240,13 +247,17 @@ if (file.exists(parcelles_path) && requireNamespace("purrr", quietly = TRUE)) {
       inter_union <- tryCatch(st_intersection(zones_union_geom, parcelle_i), error = function(e) NULL)
       pct <- if (!is.null(inter_union) && length(inter_union) > 0 && !st_is_empty(inter_union)) {
         min(100, as.numeric(st_area(inter_union)) / surface * 100)
-      } else 0
+      } else {
+        0
+      }
 
       # Nombre de statuts
       inter_zones <- tryCatch(st_intersection(zones_df, parcelle_i), error = function(e) NULL)
       nb <- if (!is.null(inter_zones) && nrow(inter_zones) > 0) {
         length(unique(inter_zones$type_protection))
-      } else 0
+      } else {
+        0
+      }
 
       list(pct = pct, nb = nb)
     }
@@ -262,13 +273,15 @@ if (file.exists(parcelles_path) && requireNamespace("purrr", quietly = TRUE)) {
       cat("Mode: parallèle (", nbrOfWorkers(), "workers)\n\n")
 
       results <- future_map(idx_list, calc_b1,
-                            parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union,
-                            .progress = TRUE, .options = furrr_options(seed = TRUE))
+        parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union,
+        .progress = TRUE, .options = furrr_options(seed = TRUE)
+      )
       plan(sequential)
     } else {
       cat("Mode: séquentiel (purrr)\n\n")
       results <- map(idx_list, calc_b1,
-                     parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union)
+        parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union
+      )
     }
 
     # Extraire résultats
@@ -279,12 +292,16 @@ if (file.exists(parcelles_path) && requireNamespace("purrr", quietly = TRUE)) {
     max_statuts <- max(parcelles$B1_nb, na.rm = TRUE)
     parcelles$B1 <- if (max_statuts > 0) {
       0.7 * parcelles$B1_pct + 0.3 * (parcelles$B1_nb / max_statuts * 100)
-    } else parcelles$B1_pct
+    } else {
+      parcelles$B1_pct
+    }
 
     # Résumé
     cat("\n--- B1_pct (surface) ---\n")
-    cat(sprintf("Min: %.1f%% | Max: %.1f%% | Moy: %.1f%%\n",
-                min(parcelles$B1_pct), max(parcelles$B1_pct), mean(parcelles$B1_pct)))
+    cat(sprintf(
+      "Min: %.1f%% | Max: %.1f%% | Moy: %.1f%%\n",
+      min(parcelles$B1_pct), max(parcelles$B1_pct), mean(parcelles$B1_pct)
+    ))
 
     cat("\n--- B1_nb (statuts) ---\n")
     walk(sort(unique(parcelles$B1_nb)), ~ cat(sprintf("  %d statut(s): %d parcelles\n", .x, sum(parcelles$B1_nb == .x))))
@@ -332,7 +349,7 @@ metriques_path <- file.path(data_dir, "metriques_lidar.gpkg")
 
 if (file.exists(metriques_path)) {
   parcelles <- st_read(metriques_path, quiet = TRUE)
-  
+
   # B2 basé sur l'écart-type et l'entropie des hauteurs
   if ("zsd" %in% names(parcelles)) {
     # Plus l'écart-type est élevé, plus la structure est diverse
@@ -340,7 +357,7 @@ if (file.exists(metriques_path)) {
   } else {
     parcelles$B2 <- runif(nrow(parcelles), 20, 80)
   }
-  
+
   cat("=== Indicateur B2 (Structure verticale) ===\n")
   cat("B2 min:", round(min(parcelles$B2), 1), "\n")
   cat("B2 max:", round(max(parcelles$B2), 1), "\n")
@@ -429,7 +446,7 @@ values(raster_resistance) <- ifelse(values(raster_foret) == 1, 1, 10)
 names(raster_resistance) <- "resistance"
 
 cat("Dimensions:", ncol(raster_foret), "x", nrow(raster_foret), "pixels\n")
-cat("Couverture forestière:", round(global(raster_foret, "mean", na.rm = TRUE)[1,1] * 100, 1), "%\n\n")
+cat("Couverture forestière:", round(global(raster_foret, "mean", na.rm = TRUE)[1, 1] * 100, 1), "%\n\n")
 
 # ============================================================
 # 2. MÉTRIQUES STRUCTURELLES (landscapemetrics)
@@ -468,7 +485,11 @@ if (requireNamespace("landscapemetrics", quietly = TRUE)) {
   lsm_available <- TRUE
 } else {
   cat("landscapemetrics non disponible - valeurs par défaut\n\n")
-  cohesion_val <- 50; enn_val <- 500; ai_val <- 50; np_val <- 10; area_val <- 10
+  cohesion_val <- 50
+  enn_val <- 500
+  ai_val <- 50
+  np_val <- 10
+  area_val <- 10
   lsm_available <- FALSE
 }
 
@@ -484,8 +505,8 @@ if (requireNamespace("gdistance", quietly = TRUE)) {
   resistance_raster <- raster::raster(raster_resistance)
 
   # Matrice de transition (conductance = 1/résistance)
-  tr <- transition(resistance_raster, transitionFunction = function(x) 1/mean(x), directions = 8)
-  tr <- geoCorrection(tr, type = "c")  # Correction géographique
+  tr <- transition(resistance_raster, transitionFunction = function(x) 1 / mean(x), directions = 8)
+  tr <- geoCorrection(tr, type = "c") # Correction géographique
 
   # Centroïdes des taches forestières
   if (lsm_available) {
@@ -548,7 +569,7 @@ if (requireNamespace("igraph", quietly = TRUE) && lsm_available) {
     dist_mat <- as.matrix(dist(coords_mat))
 
     # Seuil de connexion (ex: 500m = distance de dispersion typique)
-    seuil_connexion <- 500  # mètres
+    seuil_connexion <- 500 # mètres
 
     # Créer la matrice d'adjacence (connecté si distance < seuil)
     adj_mat <- dist_mat < seuil_connexion
@@ -578,7 +599,6 @@ if (requireNamespace("igraph", quietly = TRUE) && lsm_available) {
     cat("Densité du graphe:", round(graph_density, 3), "\n")
     cat("Connectivité graphe:", round(graph_connectivity, 1), "%\n")
     cat("Centralité moyenne:", round(mean_betweenness, 3), "\n\n")
-
   } else {
     graph_connectivity <- 50
     graph_density <- 0.5
@@ -613,32 +633,34 @@ if (requireNamespace("adehabitatHR", quietly = TRUE) && requireNamespace("sp", q
 
     # Kernel de densité (simule la probabilité de présence/dispersion)
     # h = paramètre de lissage (distance de dispersion typique)
-    h_dispersion <- 300  # 300m = dispersion typique petits mammifères
+    h_dispersion <- 300 # 300m = dispersion typique petits mammifères
 
-    tryCatch({
-      # Calcul du kernel
-      kde <- kernelUD(centroids_sp, h = h_dispersion, grid = 50)
+    tryCatch(
+      {
+        # Calcul du kernel
+        kde <- kernelUD(centroids_sp, h = h_dispersion, grid = 50)
 
-      # Extraire le volume du home range à 95%
-      hr95 <- kernel.area(kde, percent = 95)
+        # Extraire le volume du home range à 95%
+        hr95 <- kernel.area(kde, percent = 95)
 
-      # Surface du kernel (proxy de connectivité fonctionnelle)
-      kernel_area <- hr95[[1]]
+        # Surface du kernel (proxy de connectivité fonctionnelle)
+        kernel_area <- hr95[[1]]
 
-      # Ratio surface kernel / surface parcelles (indice d'étalement)
-      total_parcel_area <- sum(st_area(parcelles_forest)) / 10000  # ha
-      kernel_ratio <- kernel_area / as.numeric(total_parcel_area)
+        # Ratio surface kernel / surface parcelles (indice d'étalement)
+        total_parcel_area <- sum(st_area(parcelles_forest)) / 10000 # ha
+        kernel_ratio <- kernel_area / as.numeric(total_parcel_area)
 
-      cat("Surface kernel 95%:", round(kernel_area, 1), "ha\n")
-      cat("Ratio kernel/parcelles:", round(kernel_ratio, 2), "\n")
-      cat("(ratio > 1 = bonne connectivité fonctionnelle)\n\n")
+        cat("Surface kernel 95%:", round(kernel_area, 1), "ha\n")
+        cat("Ratio kernel/parcelles:", round(kernel_ratio, 2), "\n")
+        cat("(ratio > 1 = bonne connectivité fonctionnelle)\n\n")
 
-      kernel_connectivity <- min(100, kernel_ratio * 50)  # Normaliser 0-100
-
-    }, error = function(e) {
-      cat("Erreur kernel:", e$message, "\n")
-      kernel_connectivity <<- 50
-    })
+        kernel_connectivity <- min(100, kernel_ratio * 50) # Normaliser 0-100
+      },
+      error = function(e) {
+        cat("Erreur kernel:", e$message, "\n")
+        kernel_connectivity <<- 50
+      }
+    )
   } else {
     cat("Pas assez de parcelles forestières\n\n")
     kernel_connectivity <- 50
@@ -658,10 +680,10 @@ cat("=== 6. Calcul de l'indice B3 de synthèse ===\n")
 
 # Normalisation des composantes (0-100)
 cohesion_norm <- cohesion_val
-enn_norm <- max(0, 100 - (enn_val / 10))  # 0m=100, 1000m=0
+enn_norm <- max(0, 100 - (enn_val / 10)) # 0m=100, 1000m=0
 ai_norm <- ai_val
-np_norm <- max(0, 100 - (np_val - 1) * 2)  # 1 tache=100, 50+=0
-cost_norm <- max(0, 100 - (mean_cost_dist / 10))  # Distance coût normalisée
+np_norm <- max(0, 100 - (np_val - 1) * 2) # 1 tache=100, 50+=0
+cost_norm <- max(0, 100 - (mean_cost_dist / 10)) # Distance coût normalisée
 graph_norm <- graph_connectivity
 kernel_norm <- kernel_connectivity
 
@@ -676,7 +698,7 @@ cat("- Kernel (adehabitatHR):", round(kernel_norm, 1), "\n")
 
 # Pondération selon disponibilité des packages
 weights <- c(
-  landscapemetrics = 0.25,  # Cohésion + ENN + AI
+  landscapemetrics = 0.25, # Cohésion + ENN + AI
   gdistance = 0.25,
   igraph = 0.25,
   adehabitatHR = 0.25
@@ -687,9 +709,9 @@ score_lsm <- 0.4 * cohesion_norm + 0.3 * enn_norm + 0.2 * ai_norm + 0.1 * np_nor
 
 # Calcul B3 global
 B3_global <- weights["landscapemetrics"] * score_lsm +
-             weights["gdistance"] * cost_norm +
-             weights["igraph"] * graph_norm +
-             weights["adehabitatHR"] * kernel_norm
+  weights["gdistance"] * cost_norm +
+  weights["igraph"] * graph_norm +
+  weights["adehabitatHR"] * kernel_norm
 
 cat("\n=== Scores par approche ===\n")
 cat("- Structurel (landscapemetrics):", round(score_lsm, 1), "\n")
@@ -777,7 +799,7 @@ parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
 
 if (!file.exists(parcelles_path)) {
- stop("Données manquantes. Exécutez d'abord les tutoriels précédents.")
+  stop("Données manquantes. Exécutez d'abord les tutoriels précédents.")
 }
 
 parcelles <- st_read(parcelles_path, quiet = TRUE)
@@ -802,18 +824,24 @@ ocs_source <- "none"
 ocsge_contrast <- data.frame(
   # Codes usage (US) - niveau 1
   code_usage = c("US1", "US2", "US235", "US3", "US4", "US5", "US6", "US7"),
-  label_usage = c("Agriculture", "Sylviculture", "Secondaire/Tertiaire",
-                  "Tertiaire", "Transport", "Résidentiel", "Loisirs", "Sans usage"),
+  label_usage = c(
+    "Agriculture", "Sylviculture", "Secondaire/Tertiaire",
+    "Tertiaire", "Transport", "Résidentiel", "Loisirs", "Sans usage"
+  ),
   contraste_usage = c(50, 0, 90, 85, 75, 80, 35, 40),
   stringsAsFactors = FALSE
 )
 
 # Codes couverture (CS) pour affiner
 ocsge_couverture <- data.frame(
-  code_couv = c("CS1.1.1", "CS1.1.2", "CS1.2.1", "CS1.2.2", "CS1.2.3",
-                "CS2.1.1", "CS2.1.2", "CS2.1.3", "CS2.2.1", "CS2.2.2"),
-  label_couv = c("Bâti", "Serre/Hangar", "Route", "Voie ferrée", "Autre revêtu",
-                 "Forêt feuillus", "Forêt conifères", "Forêt mixte", "Lande", "Pelouse"),
+  code_couv = c(
+    "CS1.1.1", "CS1.1.2", "CS1.2.1", "CS1.2.2", "CS1.2.3",
+    "CS2.1.1", "CS2.1.2", "CS2.1.3", "CS2.2.1", "CS2.2.2"
+  ),
+  label_couv = c(
+    "Bâti", "Serre/Hangar", "Route", "Voie ferrée", "Autre revêtu",
+    "Forêt feuillus", "Forêt conifères", "Forêt mixte", "Lande", "Pelouse"
+  ),
   contraste_couv = c(95, 70, 80, 75, 60, 0, 0, 0, 15, 20),
   stringsAsFactors = FALSE
 )
@@ -834,123 +862,130 @@ ocsge_wfs_url <- "https://data.geopf.fr/wfs/ows"
 if (requireNamespace("happign", quietly = TRUE)) {
   library(happign)
 
-  tryCatch({
-    # Méthode 1: Chercher les couches OCS GE dans le catalogue WFS
-    wfs_layers <- get_layers_metadata("wfs")
+  tryCatch(
+    {
+      # Méthode 1: Chercher les couches OCS GE dans le catalogue WFS
+      wfs_layers <- get_layers_metadata("wfs")
 
-    # Filtrer les couches OCS GE (couverture ou occupation)
-    ocsge_layers <- wfs_layers$Name[grepl("ocsge", wfs_layers$Name, ignore.case = TRUE)]
+      # Filtrer les couches OCS GE (couverture ou occupation)
+      ocsge_layers <- wfs_layers$Name[grepl("ocsge", wfs_layers$Name, ignore.case = TRUE)]
 
-    cat("Couches OCS GE trouvées:", length(ocsge_layers), "\n")
-    if (length(ocsge_layers) > 0) {
-      cat("Exemples:", paste(head(ocsge_layers, 3), collapse = ", "), "\n")
-    }
-
-    # Chercher en priorité : couverture > occupation > zone_construite
-    layer_patterns <- c("couverture", "occupation", "zone_construite", "usage")
-    selected_layer <- NULL
-
-    for (pattern in layer_patterns) {
-      matches <- ocsge_layers[grepl(pattern, ocsge_layers, ignore.case = TRUE)]
-      # Exclure les couches de différence/évolution
-      matches <- matches[!grepl("diff|evol|changement", matches, ignore.case = TRUE)]
-      if (length(matches) > 0) {
-        selected_layer <- matches[1]
-        break
+      cat("Couches OCS GE trouvées:", length(ocsge_layers), "\n")
+      if (length(ocsge_layers) > 0) {
+        cat("Exemples:", paste(head(ocsge_layers, 3), collapse = ", "), "\n")
       }
-    }
 
-    if (!is.null(selected_layer)) {
-      cat("Couche sélectionnée:", selected_layer, "\n")
+      # Chercher en priorité : couverture > occupation > zone_construite
+      layer_patterns <- c("couverture", "occupation", "zone_construite", "usage")
+      selected_layer <- NULL
 
-      # Convertir zone_analyse en bbox pour la requête
-      zone_bbox <- st_as_sfc(st_bbox(zone_analyse))
-      st_crs(zone_bbox) <- st_crs(zone_analyse)
-
-      # Télécharger via happign
-      ocs_data <- get_wfs(
-        x = zone_bbox,
-        layer = selected_layer,
-        spatial_filter = "bbox"
-      )
-
-      if (!is.null(ocs_data) && nrow(ocs_data) > 0) {
-        # Découper sur la zone d'analyse
-        ocs_data <- st_make_valid(ocs_data)
-        ocs_data <- suppressWarnings(st_intersection(ocs_data, zone_analyse))
-
-        if (nrow(ocs_data) > 0) {
-          cat("OCS GE récupéré:", nrow(ocs_data), "polygones\n")
-          cat("Colonnes:", paste(head(names(ocs_data), 8), collapse = ", "), "\n")
-          ocs_available <- TRUE
-          ocs_source <- "ocsge"
+      for (pattern in layer_patterns) {
+        matches <- ocsge_layers[grepl(pattern, ocsge_layers, ignore.case = TRUE)]
+        # Exclure les couches de différence/évolution
+        matches <- matches[!grepl("diff|evol|changement", matches, ignore.case = TRUE)]
+        if (length(matches) > 0) {
+          selected_layer <- matches[1]
+          break
         }
       }
-    }
 
-  }, error = function(e) {
-    cat("Erreur happign OCS GE:", e$message, "\n")
-  })
+      if (!is.null(selected_layer)) {
+        cat("Couche sélectionnée:", selected_layer, "\n")
+
+        # Convertir zone_analyse en bbox pour la requête
+        zone_bbox <- st_as_sfc(st_bbox(zone_analyse))
+        st_crs(zone_bbox) <- st_crs(zone_analyse)
+
+        # Télécharger via happign
+        ocs_data <- get_wfs(
+          x = zone_bbox,
+          layer = selected_layer,
+          spatial_filter = "bbox"
+        )
+
+        if (!is.null(ocs_data) && nrow(ocs_data) > 0) {
+          # Découper sur la zone d'analyse
+          ocs_data <- st_make_valid(ocs_data)
+          ocs_data <- suppressWarnings(st_intersection(ocs_data, zone_analyse))
+
+          if (nrow(ocs_data) > 0) {
+            cat("OCS GE récupéré:", nrow(ocs_data), "polygones\n")
+            cat("Colonnes:", paste(head(names(ocs_data), 8), collapse = ", "), "\n")
+            ocs_available <- TRUE
+            ocs_source <- "ocsge"
+          }
+        }
+      }
+    },
+    error = function(e) {
+      cat("Erreur happign OCS GE:", e$message, "\n")
+    }
+  )
 }
 
 # Méthode 2: Requête WFS directe si happign échoue
 if (!ocs_available) {
   cat("Tentative requête WFS directe...\n")
 
-  tryCatch({
-    # Construire la requête WFS manuellement
-    bbox <- st_bbox(st_transform(zone_analyse, 4326))
-    bbox_str <- paste(bbox["ymin"], bbox["xmin"], bbox["ymax"], bbox["xmax"], sep = ",")
+  tryCatch(
+    {
+      # Construire la requête WFS manuellement
+      bbox <- st_bbox(st_transform(zone_analyse, 4326))
+      bbox_str <- paste(bbox["ymin"], bbox["xmin"], bbox["ymax"], bbox["xmax"], sep = ",")
 
-    # Essayer différentes couches OCS GE
-    ocsge_layers_try <- c(
-      "OCSGE.COUVERTURE:couverture",
-      "OCSGE:occupation_du_sol",
-      "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale"
-    )
-
-    for (layer_name in ocsge_layers_try) {
-      wfs_request <- paste0(
-        ocsge_wfs_url,
-        "?SERVICE=WFS",
-        "&VERSION=2.0.0",
-        "&REQUEST=GetFeature",
-        "&TYPENAMES=", layer_name,
-        "&BBOX=", bbox_str, ",EPSG:4326",
-        "&OUTPUTFORMAT=application/json",
-        "&COUNT=1000"
+      # Essayer différentes couches OCS GE
+      ocsge_layers_try <- c(
+        "OCSGE.COUVERTURE:couverture",
+        "OCSGE:occupation_du_sol",
+        "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale"
       )
 
-      cat("Essai couche:", layer_name, "\n")
+      for (layer_name in ocsge_layers_try) {
+        wfs_request <- paste0(
+          ocsge_wfs_url,
+          "?SERVICE=WFS",
+          "&VERSION=2.0.0",
+          "&REQUEST=GetFeature",
+          "&TYPENAMES=", layer_name,
+          "&BBOX=", bbox_str, ",EPSG:4326",
+          "&OUTPUTFORMAT=application/json",
+          "&COUNT=1000"
+        )
 
-      response <- tryCatch({
-        st_read(wfs_request, quiet = TRUE)
-      }, error = function(e) NULL)
+        cat("Essai couche:", layer_name, "\n")
 
-      if (!is.null(response) && nrow(response) > 0) {
-        # Reprojeter et découper
-        ocs_data <- st_transform(response, st_crs(parcelles))
-        ocs_data <- st_make_valid(ocs_data)
-        ocs_data <- suppressWarnings(st_intersection(ocs_data, zone_analyse))
+        response <- tryCatch(
+          {
+            st_read(wfs_request, quiet = TRUE)
+          },
+          error = function(e) NULL
+        )
 
-        if (nrow(ocs_data) > 0) {
-          cat("Données récupérées:", nrow(ocs_data), "polygones\n")
-          cat("Colonnes:", paste(head(names(ocs_data), 8), collapse = ", "), "\n")
-          ocs_available <- TRUE
-          ocs_source <- "ocsge"
-          break
+        if (!is.null(response) && nrow(response) > 0) {
+          # Reprojeter et découper
+          ocs_data <- st_transform(response, st_crs(parcelles))
+          ocs_data <- st_make_valid(ocs_data)
+          ocs_data <- suppressWarnings(st_intersection(ocs_data, zone_analyse))
+
+          if (nrow(ocs_data) > 0) {
+            cat("Données récupérées:", nrow(ocs_data), "polygones\n")
+            cat("Colonnes:", paste(head(names(ocs_data), 8), collapse = ", "), "\n")
+            ocs_available <- TRUE
+            ocs_source <- "ocsge"
+            break
+          }
         }
       }
-    }
 
-    if (!ocs_available) {
-      cat("Aucune couche OCS GE disponible pour cette zone\n")
-      cat("(L'OCS GE ne couvre pas encore tout le territoire)\n")
+      if (!ocs_available) {
+        cat("Aucune couche OCS GE disponible pour cette zone\n")
+        cat("(L'OCS GE ne couvre pas encore tout le territoire)\n")
+      }
+    },
+    error = function(e) {
+      cat("Erreur WFS directe:", e$message, "\n")
     }
-
-  }, error = function(e) {
-    cat("Erreur WFS directe:", e$message, "\n")
-  })
+  )
 }
 
 # -------------------------------------------------------------
@@ -977,30 +1012,32 @@ if (!ocs_available && requireNamespace("geodata", quietly = TRUE)) {
 
   cat("\nTéléchargement ESA WorldCover (geodata)...\n")
 
-  tryCatch({
-    zone_wgs84 <- st_transform(zone_analyse, 4326)
-    cache_dir <- file.path(data_dir, "geodata_cache")
-    if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+  tryCatch(
+    {
+      zone_wgs84 <- st_transform(zone_analyse, 4326)
+      cache_dir <- file.path(data_dir, "geodata_cache")
+      if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
 
-    # Télécharger ESA WorldCover
-    lc <- geodata::landcover(var = "trees", path = cache_dir)
+      # Télécharger ESA WorldCover
+      lc <- geodata::landcover(var = "trees", path = cache_dir)
 
-    # Cropper sur la zone
-    zone_vect <- vect(zone_wgs84)
-    ocs_raster <- crop(lc, zone_vect)
-    ocs_raster <- mask(ocs_raster, zone_vect)
-    ocs_raster <- project(ocs_raster, crs(vect(parcelles)), method = "near")
+      # Cropper sur la zone
+      zone_vect <- vect(zone_wgs84)
+      ocs_raster <- crop(lc, zone_vect)
+      ocs_raster <- mask(ocs_raster, zone_vect)
+      ocs_raster <- project(ocs_raster, crs(vect(parcelles)), method = "near")
 
-    if (!is.null(ocs_raster)) {
-      ocs_available <- TRUE
-      ocs_source <- "geodata"
-      ocs_data <- ocs_raster
-      cat("ESA WorldCover récupéré:", ncol(ocs_raster), "x", nrow(ocs_raster), "pixels\n")
+      if (!is.null(ocs_raster)) {
+        ocs_available <- TRUE
+        ocs_source <- "geodata"
+        ocs_data <- ocs_raster
+        cat("ESA WorldCover récupéré:", ncol(ocs_raster), "x", nrow(ocs_raster), "pixels\n")
+      }
+    },
+    error = function(e) {
+      cat("Erreur geodata:", e$message, "\n")
     }
-
-  }, error = function(e) {
-    cat("Erreur geodata:", e$message, "\n")
-  })
+  )
 }
 
 # -------------------------------------------------------------
@@ -1015,41 +1052,49 @@ if (!ocs_available && requireNamespace("osmdata", quietly = TRUE)) {
 
   bbox_wgs84 <- st_bbox(st_transform(zone_analyse, 4326))
 
-  tryCatch({
-    # Zones urbaines
-    urban <- opq(bbox_wgs84) |>
-      add_osm_feature(key = "landuse", value = c("residential", "commercial",
-                                                   "industrial", "retail")) |>
-      osmdata_sf()
-    urban_poly <- urban$osm_polygons
+  tryCatch(
+    {
+      # Zones urbaines
+      urban <- opq(bbox_wgs84) |>
+        add_osm_feature(key = "landuse", value = c(
+          "residential", "commercial",
+          "industrial", "retail"
+        )) |>
+        osmdata_sf()
+      urban_poly <- urban$osm_polygons
 
-    # Prairies
-    meadow <- opq(bbox_wgs84) |>
-      add_osm_feature(key = "landuse", value = c("meadow", "grass", "farmyard",
-                                                   "orchard", "vineyard")) |>
-      osmdata_sf()
-    meadow_poly <- meadow$osm_polygons
+      # Prairies
+      meadow <- opq(bbox_wgs84) |>
+        add_osm_feature(key = "landuse", value = c(
+          "meadow", "grass", "farmyard",
+          "orchard", "vineyard"
+        )) |>
+        osmdata_sf()
+      meadow_poly <- meadow$osm_polygons
 
-    # Cultures
-    farmland <- opq(bbox_wgs84) |>
-      add_osm_feature(key = "landuse", value = c("farmland")) |>
-      osmdata_sf()
-    farmland_poly <- farmland$osm_polygons
+      # Cultures
+      farmland <- opq(bbox_wgs84) |>
+        add_osm_feature(key = "landuse", value = c("farmland")) |>
+        osmdata_sf()
+      farmland_poly <- farmland$osm_polygons
 
-    # Routes
-    roads <- opq(bbox_wgs84) |>
-      add_osm_feature(key = "highway", value = c("motorway", "trunk",
-                                                   "primary", "secondary")) |>
-      osmdata_sf()
-    roads_lines <- roads$osm_lines
+      # Routes
+      roads <- opq(bbox_wgs84) |>
+        add_osm_feature(key = "highway", value = c(
+          "motorway", "trunk",
+          "primary", "secondary"
+        )) |>
+        osmdata_sf()
+      roads_lines <- roads$osm_lines
 
-    osm_available <- TRUE
-    ocs_source <- "osm"
-    cat("Données OSM récupérées\n")
-
-  }, error = function(e) {
-    cat("Erreur osmdata:", e$message, "\n")
-  })
+      osm_available <- TRUE
+      ocs_source <- "osm"
+      cat("Données OSM récupérées\n")
+    },
+    error = function(e) {
+      cat("Erreur osmdata:", e$message, "\n")
+    }
+  )
 }
 
 cat("\n→ Source sélectionnée:", ocs_source, "\n\n")
@@ -1058,8 +1103,10 @@ cat("\n→ Source sélectionnée:", ocs_source, "\n\n")
 esa_contrast <- data.frame(
   code = c(10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100),
   contraste = c(0, 15, 20, 50, 90, 40, 50, 30, 25, 15, 25),
-  label = c("Forêt", "Arbustes", "Prairie", "Culture", "Bâti",
-            "Sol nu", "Neige", "Eau", "Zone humide", "Mangrove", "Mousse")
+  label = c(
+    "Forêt", "Arbustes", "Prairie", "Culture", "Bâti",
+    "Sol nu", "Neige", "Eau", "Zone humide", "Mangrove", "Mousse"
+  )
 )
 
 # Scores OSM
@@ -1108,20 +1155,29 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     buffer_zone <- st_buffer(parcelle_geom, 50)
     edge_zone <- st_difference(buffer_zone, parcelle_geom)
 
-    if (st_is_empty(edge_zone)) return(50)
+    if (st_is_empty(edge_zone)) {
+      return(50)
+    }
 
     # Intersection avec OCS GE
-    inter <- tryCatch({
-      suppressWarnings(st_intersection(ocs_polygons, edge_zone))
-    }, error = function(e) NULL)
+    inter <- tryCatch(
+      {
+        suppressWarnings(st_intersection(ocs_polygons, edge_zone))
+      },
+      error = function(e) NULL
+    )
 
-    if (is.null(inter) || nrow(inter) == 0) return(50)
+    if (is.null(inter) || nrow(inter) == 0) {
+      return(50)
+    }
 
     # Calculer le contraste pondéré par surface
     inter$area <- as.numeric(st_area(inter))
     total_area <- sum(inter$area)
 
-    if (total_area == 0) return(50)
+    if (total_area == 0) {
+      return(50)
+    }
 
     # Chercher les colonnes usage et couverture
     usage_col <- names(inter)[grepl("usage|us_", names(inter), ignore.case = TRUE)][1]
@@ -1129,7 +1185,7 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
 
     weighted_contrast <- 0
 
-    for (i in 1:nrow(inter)) {
+    for (i in seq_len(nrow(inter))) {
       weight <- inter$area[i] / total_area
 
       # Priorité à la couverture (plus précise)
@@ -1172,7 +1228,8 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     plan(multisession, workers = max(1, availableCores() - 1))
     cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
     parcelles$L1_contraste <- future_map_dbl(seq_len(nrow(parcelles)), calc_contrast_i,
-                                              .progress = TRUE)
+      .progress = TRUE
+    )
     plan(sequential)
   } else if (requireNamespace("purrr", quietly = TRUE)) {
     library(purrr)
@@ -1198,7 +1255,7 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     }
   }
 
-# === MÉTHODE 2 : geodata (ESA WorldCover) - Raster ===
+  # === MÉTHODE 2 : geodata (ESA WorldCover) - Raster ===
 } else if (ocs_source == "geodata" && !is.null(ocs_data)) {
   cat("Calcul du contraste via ESA WorldCover (geodata)...\n")
 
@@ -1206,31 +1263,40 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     buffer_zone <- st_buffer(parcelle_geom, 50)
     edge_zone <- st_difference(buffer_zone, parcelle_geom)
 
-    if (st_is_empty(edge_zone)) return(50)
+    if (st_is_empty(edge_zone)) {
+      return(50)
+    }
 
     edge_vect <- vect(edge_zone)
 
-    tryCatch({
-      vals <- extract(lc_raster, edge_vect, fun = NULL)[[2]]
-      if (length(vals) == 0 || all(is.na(vals))) return(50)
-
-      val_counts <- table(vals)
-      total_pixels <- sum(val_counts)
-
-      weighted_contrast <- 0
-      for (code in names(val_counts)) {
-        code_num <- as.numeric(code)
-        idx <- which(contrast_table$code == code_num)
-        weight <- val_counts[code] / total_pixels
-        if (length(idx) > 0) {
-          weighted_contrast <- weighted_contrast + weight * contrast_table$contraste[idx]
-        } else {
-          weighted_contrast <- weighted_contrast + weight * 50
+    tryCatch(
+      {
+        vals <- extract(lc_raster, edge_vect, fun = NULL)[[2]]
+        if (length(vals) == 0 || all(is.na(vals))) {
+          return(50)
         }
-      }
 
-      return(as.numeric(weighted_contrast))
-    }, error = function(e) return(50))
+        val_counts <- table(vals)
+        total_pixels <- sum(val_counts)
+
+        weighted_contrast <- 0
+        for (code in names(val_counts)) {
+          code_num <- as.numeric(code)
+          idx <- which(contrast_table$code == code_num)
+          weight <- val_counts[code] / total_pixels
+          if (length(idx) > 0) {
+            weighted_contrast <- weighted_contrast + weight * contrast_table$contraste[idx]
+          } else {
+            weighted_contrast <- weighted_contrast + weight * 50
+          }
+        }
+
+        return(as.numeric(weighted_contrast))
+      },
+      error = function(e) {
+        return(50)
+      }
+    )
   }
 
   # Parallélisation si furrr disponible
@@ -1244,7 +1310,8 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     plan(multisession, workers = max(1, availableCores() - 1))
     cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
     parcelles$L1_contraste <- future_map_dbl(seq_len(nrow(parcelles)), calc_raster_i,
-                                              .progress = TRUE)
+      .progress = TRUE
+    )
     plan(sequential)
   } else if (requireNamespace("purrr", quietly = TRUE)) {
     library(purrr)
@@ -1257,19 +1324,23 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
 
   cat("L1_contraste moyen (ESA):", round(mean(parcelles$L1_contraste, na.rm = TRUE), 1), "\n")
 
-# === MÉTHODE 3 : OSM ===
+  # === MÉTHODE 3 : OSM ===
 } else if (ocs_source == "osm" && osm_available) {
   cat("Calcul du contraste de matrice (OSM)...\n")
 
   calc_osm_contrast <- function(parcelle_geom, urban_p, meadow_p, farmland_p,
-                                 roads_l, crs_target) {
+                                roads_l, crs_target) {
     buffer_zone <- st_buffer(parcelle_geom, 50)
     edge_zone <- st_difference(buffer_zone, parcelle_geom)
 
-    if (st_is_empty(edge_zone)) return(50)
+    if (st_is_empty(edge_zone)) {
+      return(50)
+    }
 
     edge_area <- as.numeric(st_area(edge_zone))
-    if (edge_area == 0) return(50)
+    if (edge_area == 0) {
+      return(50)
+    }
 
     total_weighted <- 0
     total_area <- 0
@@ -1319,7 +1390,9 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
       }
     }
 
-    if (total_area == 0) return(contrast_scores["unknown"])
+    if (total_area == 0) {
+      return(contrast_scores["unknown"])
+    }
     return(total_weighted / total_area)
   }
 
@@ -1327,9 +1400,11 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
 
   # Parallélisation si furrr disponible
   calc_osm_i <- function(i) {
-    calc_osm_contrast(st_geometry(parcelles)[i],
-                      urban_poly, meadow_poly, farmland_poly, roads_lines,
-                      crs_target)
+    calc_osm_contrast(
+      st_geometry(parcelles)[i],
+      urban_poly, meadow_poly, farmland_poly, roads_lines,
+      crs_target
+    )
   }
 
   if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
@@ -1338,7 +1413,8 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     plan(multisession, workers = max(1, availableCores() - 1))
     cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
     parcelles$L1_contraste <- future_map_dbl(seq_len(nrow(parcelles)), calc_osm_i,
-                                              .progress = TRUE)
+      .progress = TRUE
+    )
     plan(sequential)
   } else if (requireNamespace("purrr", quietly = TRUE)) {
     library(purrr)
@@ -1351,7 +1427,7 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
 
   cat("L1_contraste moyen (OSM):", round(mean(parcelles$L1_contraste, na.rm = TRUE), 1), "\n")
 
-# === MÉTHODE 4 : Fallback basé sur distance aux routes ===
+  # === MÉTHODE 4 : Fallback basé sur distance aux routes ===
 } else {
   cat("Aucune donnée d'occupation disponible - estimation via distance routes\n")
 
@@ -1391,35 +1467,37 @@ if (requireNamespace("nasapower", quietly = TRUE)) {
   zone_wgs84 <- st_transform(st_union(parcelles), 4326)
   centroid <- st_coordinates(st_centroid(zone_wgs84))
 
-  tryCatch({
-    # Climatologie mensuelle du vent (moyenne sur 30 ans)
-    wind_data <- nasapower::get_power(
-      community = "ag",
-      pars = c("WD10M", "WS10M"),
-      lonlat = c(centroid[1], centroid[2]),
-      temporal_api = "climatology"
-    )
+  tryCatch(
+    {
+      # Climatologie mensuelle du vent (moyenne sur 30 ans)
+      wind_data <- nasapower::get_power(
+        community = "ag",
+        pars = c("WD10M", "WS10M"),
+        lonlat = c(centroid[1], centroid[2]),
+        temporal_api = "climatology"
+      )
 
-    # Direction dominante = moyenne pondérée par la vitesse du vent
-    # Exclure les valeurs annuelles (ANN) pour ne garder que les mois
-    wind_monthly <- wind_data[wind_data$PARAMETER == "WD10M" & !is.na(wind_data$ANN), ]
-    if (nrow(wind_monthly) == 0) {
-      # Utiliser les colonnes mensuelles directement
-      wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
-      ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
-      vent_dominant <- round(weighted.mean(wd_values, ws_values, na.rm = TRUE))
-    } else {
-      vent_dominant <- 225  # Fallback
+      # Direction dominante = moyenne pondérée par la vitesse du vent
+      # Exclure les valeurs annuelles (ANN) pour ne garder que les mois
+      wind_monthly <- wind_data[wind_data$PARAMETER == "WD10M" & !is.na(wind_data$ANN), ]
+      if (nrow(wind_monthly) == 0) {
+        # Utiliser les colonnes mensuelles directement
+        wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
+        ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
+        vent_dominant <- round(weighted.mean(wd_values, ws_values, na.rm = TRUE))
+      } else {
+        vent_dominant <- 225 # Fallback
+      }
+
+      cat("✓ Direction dominante du vent (NASA POWER):", vent_dominant, "°\n")
+      cat("  Source: Climatologie MERRA-2 (moyenne 30 ans)\n")
+    },
+    error = function(e) {
+      vent_dominant <- 225
+      cat("⚠ Erreur NASA POWER:", e$message, "\n")
+      cat("  Direction par défaut (France):", vent_dominant, "° (Sud-Ouest)\n")
     }
-
-    cat("✓ Direction dominante du vent (NASA POWER):", vent_dominant, "°\n")
-    cat("  Source: Climatologie MERRA-2 (moyenne 30 ans)\n")
-
-  }, error = function(e) {
-    vent_dominant <- 225
-    cat("⚠ Erreur NASA POWER:", e$message, "\n")
-    cat("  Direction par défaut (France):", vent_dominant, "° (Sud-Ouest)\n")
-  })
+  )
 } else {
   # Valeur par défaut pour la France (Sud-Ouest)
   vent_dominant <- 225
@@ -1436,7 +1514,9 @@ calc_edge_exposure <- function(parcelle_geom, vent_dir) {
   # Extraire les coordonnées du périmètre
   coords <- st_coordinates(st_boundary(parcelle_geom))
 
-  if (nrow(coords) < 3) return(c(vent = 50, soleil = 50))
+  if (nrow(coords) < 3) {
+    return(c(vent = 50, soleil = 50))
+  }
 
   # Calculer l'azimut de chaque segment
   n <- nrow(coords) - 1
@@ -1444,8 +1524,8 @@ calc_edge_exposure <- function(parcelle_geom, vent_dir) {
   lengths <- numeric(n)
 
   for (i in 1:n) {
-    dx <- coords[i+1, "X"] - coords[i, "X"]
-    dy <- coords[i+1, "Y"] - coords[i, "Y"]
+    dx <- coords[i + 1, "X"] - coords[i, "X"]
+    dy <- coords[i + 1, "Y"] - coords[i, "Y"]
     azimuths[i] <- (atan2(dx, dy) * 180 / pi + 360) %% 360
     lengths[i] <- sqrt(dx^2 + dy^2)
   }
@@ -1536,8 +1616,8 @@ weights_L1 <- c(
 )
 
 parcelles$L1 <- weights_L1["geometrie"] * parcelles$L1_geometrie +
-                weights_L1["contraste"] * parcelles$L1_contraste +
-                weights_L1["exposition"] * parcelles$L1_exposition
+  weights_L1["contraste"] * parcelles$L1_contraste +
+  weights_L1["exposition"] * parcelles$L1_exposition
 
 cat("Composantes de L1:\n")
 cat("- Géométrie (30%):", round(mean(parcelles$L1_geometrie), 1), "\n")
@@ -1552,9 +1632,10 @@ cat("L1 faible = Lisière douce (compacte, prairie, protégée)\n")
 
 # Classification qualitative
 parcelles$L1_classe <- cut(parcelles$L1,
-                            breaks = c(0, 25, 50, 75, 100),
-                            labels = c("Douce", "Modérée", "Dure", "Très dure"),
-                            include.lowest = TRUE)
+  breaks = c(0, 25, 50, 75, 100),
+  labels = c("Douce", "Modérée", "Dure", "Très dure"),
+  include.lowest = TRUE
+)
 
 cat("\nDistribution des lisières:\n")
 print(table(parcelles$L1_classe))
@@ -1637,18 +1718,24 @@ if (requireNamespace("landscapemetrics", quietly = TRUE)) {
   cat("2. Calcul des métriques paysagères (landscapemetrics)...\n")
 
   # Métriques de fragmentation
-  metrics <- tryCatch({
-    lsm_results <- calculate_lsm(r_foret,
-                                  what = c("lsm_l_np",      # Nombre de patches
-                                          "lsm_l_pd",      # Densité de patches
-                                          "lsm_l_ed",      # Densité de lisières
-                                          "lsm_l_cohesion", # Cohésion
-                                          "lsm_l_ai"))     # Agrégation
-    lsm_results
-  }, error = function(e) {
-    cat("   Erreur landscapemetrics:", e$message, "\n")
-    NULL
-  })
+  metrics <- tryCatch(
+    {
+      lsm_results <- calculate_lsm(r_foret,
+        what = c(
+          "lsm_l_np", # Nombre de patches
+          "lsm_l_pd", # Densité de patches
+          "lsm_l_ed", # Densité de lisières
+          "lsm_l_cohesion", # Cohésion
+          "lsm_l_ai"
+        )
+      ) # Agrégation
+      lsm_results
+    },
+    error = function(e) {
+      cat("   Erreur landscapemetrics:", e$message, "\n")
+      NULL
+    }
+  )
 
   if (!is.null(metrics) && nrow(metrics) > 0) {
     cat("\n=== Métriques paysagères (niveau paysage) ===\n")
@@ -1680,12 +1767,10 @@ if (requireNamespace("landscapemetrics", quietly = TRUE)) {
     parcelles$L2_np <- round(np, 0)
     parcelles$L2_cohesion <- round(cohesion, 1)
     parcelles$L2_ai <- round(ai, 1)
-
   } else {
     cat("Impossible de calculer les métriques.\n")
     parcelles$L2 <- NA
   }
-
 } else {
   cat("Package landscapemetrics non disponible.\n")
   cat("Installez-le avec: install.packages('landscapemetrics')\n")
@@ -1699,7 +1784,7 @@ if (requireNamespace("landscapemetrics", quietly = TRUE)) {
 
   # L2 simplifié : inverse de l'indice de forme (forme compacte = moins fragmenté)
   parcelles$L2 <- round(100 / shape_index, 1)
-  parcelles$L2 <- pmin(parcelles$L2, 100)  # Plafonner à 100
+  parcelles$L2 <- pmin(parcelles$L2, 100) # Plafonner à 100
 }
 
 # Sauvegarder
@@ -1756,35 +1841,43 @@ cours_eau <- NULL
 if (requireNamespace("happign", quietly = TRUE)) {
   library(happign)
 
-  tryCatch({
-    # Chercher les couches de corridors écologiques
-    wfs_layers <- get_layers_metadata("wfs")
+  tryCatch(
+    {
+      # Chercher les couches de corridors écologiques
+      wfs_layers <- get_layers_metadata("wfs")
 
-    # Couches TVB potentielles
-    tvb_patterns <- c("corridor", "trame_verte", "continuite", "srce", "reservoir")
-    tvb_layers <- wfs_layers$Name[grepl(paste(tvb_patterns, collapse = "|"),
-                                         wfs_layers$Name, ignore.case = TRUE)]
+      # Couches TVB potentielles
+      tvb_patterns <- c("corridor", "trame_verte", "continuite", "srce", "reservoir")
+      tvb_layers <- wfs_layers$Name[grepl(paste(tvb_patterns, collapse = "|"),
+        wfs_layers$Name,
+        ignore.case = TRUE
+      )]
 
-    if (length(tvb_layers) > 0) {
-      cat("Couches TVB trouvées:", length(tvb_layers), "\n")
+      if (length(tvb_layers) > 0) {
+        cat("Couches TVB trouvées:", length(tvb_layers), "\n")
 
-      # Télécharger la première couche disponible
-      zone_bbox <- st_as_sfc(st_bbox(zone_analyse))
-      st_crs(zone_bbox) <- st_crs(zone_analyse)
+        # Télécharger la première couche disponible
+        zone_bbox <- st_as_sfc(st_bbox(zone_analyse))
+        st_crs(zone_bbox) <- st_crs(zone_analyse)
 
-      for (layer in head(tvb_layers, 3)) {
-        tryCatch({
-          tvb_data <- get_wfs(x = zone_bbox, layer = layer, spatial_filter = "bbox")
-          if (!is.null(tvb_data) && nrow(tvb_data) > 0) {
-            cat("Couche utilisée:", layer, "-", nrow(tvb_data), "entités\n")
-            break
-          }
-        }, error = function(e) NULL)
+        for (layer in head(tvb_layers, 3)) {
+          tryCatch(
+            {
+              tvb_data <- get_wfs(x = zone_bbox, layer = layer, spatial_filter = "bbox")
+              if (!is.null(tvb_data) && nrow(tvb_data) > 0) {
+                cat("Couche utilisée:", layer, "-", nrow(tvb_data), "entités\n")
+                break
+              }
+            },
+            error = function(e) NULL
+          )
+        }
       }
+    },
+    error = function(e) {
+      cat("Erreur TVB:", e$message, "\n")
     }
-  }, error = function(e) {
-    cat("Erreur TVB:", e$message, "\n")
-  })
+  )
 }
 
 # Trame Bleue (cours d'eau)
@@ -1851,19 +1944,21 @@ if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quie
   plan(multisession, workers = max(1, availableCores() - 1))
   cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
   results_list <- future_map(seq_len(nrow(parcelles)), calc_l3_i,
-                              parcelles_geom = parcelles_geom,
-                              tvb_trans = tvb_trans,
-                              cours_eau = cours_eau,
-                              .progress = TRUE)
+    parcelles_geom = parcelles_geom,
+    tvb_trans = tvb_trans,
+    cours_eau = cours_eau,
+    .progress = TRUE
+  )
   plan(sequential)
   results <- do.call(rbind, results_list)
 } else if (requireNamespace("purrr", quietly = TRUE)) {
   library(purrr)
   cat("Mode séquentiel (purrr)...\n")
   results_list <- map(seq_len(nrow(parcelles)), calc_l3_i,
-                      parcelles_geom = parcelles_geom,
-                      tvb_trans = tvb_trans,
-                      cours_eau = cours_eau)
+    parcelles_geom = parcelles_geom,
+    tvb_trans = tvb_trans,
+    cours_eau = cours_eau
+  )
   results <- do.call(rbind, results_list)
 } else {
   cat("Mode séquentiel (base R)...\n")
@@ -1946,133 +2041,150 @@ ndvi_raster <- NULL
 if (requireNamespace("happign", quietly = TRUE)) {
   library(happign)
 
-  tryCatch({
-    cat("Méthode 1: happign (Ortho IRC IGN)...\n")
+  tryCatch(
+    {
+      cat("Méthode 1: happign (Ortho IRC IGN)...\n")
 
-    # Bbox pour la requête
-    zone_bbox <- st_as_sfc(st_bbox(parcelles))
-    st_crs(zone_bbox) <- st_crs(parcelles)
+      # Bbox pour la requête
+      zone_bbox <- st_as_sfc(st_bbox(parcelles))
+      st_crs(zone_bbox) <- st_crs(parcelles)
 
-    # Chercher les couches d'orthophotos IRC disponibles
-    wms_layers <- get_layers_metadata("wmts", "ortho")
-    irc_layers <- wms_layers$Identifier[grepl("irc|infrarouge|ortho.*ir",
-                                        wms_layers$Identifier, ignore.case = TRUE)]
+      # Chercher les couches d'orthophotos IRC disponibles
+      wms_layers <- get_layers_metadata("wmts", "ortho")
+      irc_layers <- wms_layers$Identifier[grepl("irc|infrarouge|ortho.*ir",
+        wms_layers$Identifier,
+        ignore.case = TRUE
+      )]
 
-    if (length(irc_layers) > 0) {
-      cat("Couches IRC trouvées:", length(irc_layers), "\n")
-      cat("Exemples:", paste(head(irc_layers, 3), collapse = ", "), "\n")
+      if (length(irc_layers) > 0) {
+        cat("Couches IRC trouvées:", length(irc_layers), "\n")
+        cat("Exemples:", paste(head(irc_layers, 3), collapse = ", "), "\n")
 
-      # Télécharger l'ortho IRC
-      for (layer in head(irc_layers, 3)) {
-        tryCatch({
-          # Télécharger via WMS
-          irc_raster <- get_wms_raster(
-            x = zone_bbox,
-            layer = layer,
-            res = 5,  # 5m de résolution (compromis taille/précision)
-            crs = st_crs(parcelles)$epsg
-          )
+        # Télécharger l'ortho IRC
+        for (layer in head(irc_layers, 3)) {
+          tryCatch(
+            {
+              # Télécharger via WMS
+              irc_raster <- get_wms_raster(
+                x = zone_bbox,
+                layer = layer,
+                res = 5, # 5m de résolution (compromis taille/précision)
+                crs = st_crs(parcelles)$epsg
+              )
 
-          if (!is.null(irc_raster)) {
-            cat("Ortho IRC téléchargée via:", layer, "\n")
+              if (!is.null(irc_raster)) {
+                cat("Ortho IRC téléchargée via:", layer, "\n")
 
-            # L'ortho IRC contient généralement: NIR, Rouge, Vert
-            # Calculer un pseudo-NDVI
-            if (nlyr(irc_raster) >= 3) {
-              nir <- irc_raster[[1]]  # Bande 1 = NIR
-              red <- irc_raster[[2]]  # Bande 2 = Rouge
-              ndvi_raster <- (nir - red) / (nir + red + 0.001)
-              ndvi_available <- TRUE
-              cat("NDVI calculé depuis Ortho IRC!\n")
-              break
+                # L'ortho IRC contient généralement: NIR, Rouge, Vert
+                # Calculer un pseudo-NDVI
+                if (nlyr(irc_raster) >= 3) {
+                  nir <- irc_raster[[1]] # Bande 1 = NIR
+                  red <- irc_raster[[2]] # Bande 2 = Rouge
+                  ndvi_raster <- (nir - red) / (nir + red + 0.001)
+                  ndvi_available <- TRUE
+                  cat("NDVI calculé depuis Ortho IRC!\n")
+                  break
+                }
+              }
+            },
+            error = function(e) {
+              cat("Erreur couche", layer, ":", e$message, "\n")
             }
-          }
-        }, error = function(e) {
-          cat("Erreur couche", layer, ":", e$message, "\n")
-        })
+          )
+        }
+      } else {
+        cat("Pas de couche IRC trouvée\n")
       }
-    } else {
-      cat("Pas de couche IRC trouvée\n")
+    },
+    error = function(e) {
+      cat("Erreur happign IRC:", e$message, "\n")
     }
-  }, error = function(e) {
-    cat("Erreur happign IRC:", e$message, "\n")
-  })
+  )
 }
 
 # Méthode 2: rstac (Sentinel-2 via STAC API) - Fallback global
 if (!ndvi_available && requireNamespace("rstac", quietly = TRUE)) {
   library(rstac)
 
-  tryCatch({
-    cat("\nMéthode 2: rstac (Sentinel-2 STAC)...\n")
+  tryCatch(
+    {
+      cat("\nMéthode 2: rstac (Sentinel-2 STAC)...\n")
 
-    # Bbox en WGS84
-    bbox <- st_bbox(st_transform(parcelles, 4326))
+      # Bbox en WGS84
+      bbox <- st_bbox(st_transform(parcelles, 4326))
 
-    # Connexion au catalogue Planetary Computer (Microsoft)
-    s2_stac <- stac("https://planetarycomputer.microsoft.com/api/stac/v1")
+      # Connexion au catalogue Planetary Computer (Microsoft)
+      s2_stac <- stac("https://planetarycomputer.microsoft.com/api/stac/v1")
 
-    # Recherche d'images Sentinel-2 des 90 derniers jours
-    items <- s2_stac |>
-      stac_search(
-        collections = "sentinel-2-l2a",
-        bbox = c(bbox["xmin"], bbox["ymin"], bbox["xmax"], bbox["ymax"]),
-        datetime = paste0(format(Sys.Date() - 90, "%Y-%m-%d"), "/", format(Sys.Date(), "%Y-%m-%d"))
-      ) |>
-      get_request() |>
-      items_filter(filter_fn = function(x) x$properties$`eo:cloud_cover` < 20)
+      # Recherche d'images Sentinel-2 des 90 derniers jours
+      items <- s2_stac |>
+        stac_search(
+          collections = "sentinel-2-l2a",
+          bbox = c(bbox["xmin"], bbox["ymin"], bbox["xmax"], bbox["ymax"]),
+          datetime = paste0(format(Sys.Date() - 90, "%Y-%m-%d"), "/", format(Sys.Date(), "%Y-%m-%d"))
+        ) |>
+        get_request() |>
+        items_filter(filter_fn = function(x) x$properties$`eo:cloud_cover` < 20)
 
-    if (length(items$features) > 0) {
-      cat("Images Sentinel-2 trouvées:", length(items$features), "\n")
+      if (length(items$features) > 0) {
+        cat("Images Sentinel-2 trouvées:", length(items$features), "\n")
 
-      # Sélectionner la meilleure image (moins nuageuse)
-      best_item <- items$features[[1]]
-      cat("Image sélectionnée:", best_item$id, "\n")
-      cat("Couverture nuageuse:", best_item$properties$`eo:cloud_cover`, "%\n")
+        # Sélectionner la meilleure image (moins nuageuse)
+        best_item <- items$features[[1]]
+        cat("Image sélectionnée:", best_item$id, "\n")
+        cat("Couverture nuageuse:", best_item$properties$`eo:cloud_cover`, "%\n")
 
-      # Télécharger les bandes B4 (Rouge) et B8 (NIR)
-      tryCatch({
-        b4_url <- best_item$assets$B04$href
-        b8_url <- best_item$assets$B08$href
+        # Télécharger les bandes B4 (Rouge) et B8 (NIR)
+        tryCatch(
+          {
+            b4_url <- best_item$assets$B04$href
+            b8_url <- best_item$assets$B08$href
 
-        if (!is.null(b4_url) && !is.null(b8_url)) {
-          # Télécharger via terra avec vsicurl
-          b4_raster <- rast(paste0("/vsicurl/", b4_url))
-          b8_raster <- rast(paste0("/vsicurl/", b8_url))
+            if (!is.null(b4_url) && !is.null(b8_url)) {
+              # Télécharger via terra avec vsicurl
+              b4_raster <- rast(paste0("/vsicurl/", b4_url))
+              b8_raster <- rast(paste0("/vsicurl/", b8_url))
 
-          # Découper sur la zone d'intérêt
-          zone_vect <- vect(st_transform(st_as_sfc(st_bbox(parcelles)), 4326))
-          b4_crop <- crop(b4_raster, zone_vect)
-          b8_crop <- crop(b8_raster, zone_vect)
+              # Découper sur la zone d'intérêt
+              zone_vect <- vect(st_transform(st_as_sfc(st_bbox(parcelles)), 4326))
+              b4_crop <- crop(b4_raster, zone_vect)
+              b8_crop <- crop(b8_raster, zone_vect)
 
-          # Calculer NDVI
-          ndvi_raster <- (b8_crop - b4_crop) / (b8_crop + b4_crop + 0.001)
-          ndvi_available <- TRUE
-          cat("NDVI calculé depuis Sentinel-2!\n")
-        }
-      }, error = function(e) {
-        cat("Erreur téléchargement bandes:", e$message, "\n")
-      })
-    } else {
-      cat("Aucune image Sentinel-2 disponible (couverture nuageuse > 20%)\n")
+              # Calculer NDVI
+              ndvi_raster <- (b8_crop - b4_crop) / (b8_crop + b4_crop + 0.001)
+              ndvi_available <- TRUE
+              cat("NDVI calculé depuis Sentinel-2!\n")
+            }
+          },
+          error = function(e) {
+            cat("Erreur téléchargement bandes:", e$message, "\n")
+          }
+        )
+      } else {
+        cat("Aucune image Sentinel-2 disponible (couverture nuageuse > 20%)\n")
+      }
+    },
+    error = function(e) {
+      cat("Erreur rstac:", e$message, "\n")
     }
-  }, error = function(e) {
-    cat("Erreur rstac:", e$message, "\n")
-  })
+  )
 }
 
 # Méthode 3: geodata (MODIS NDVI global) - Fallback basse résolution
 if (!ndvi_available && requireNamespace("geodata", quietly = TRUE)) {
-  tryCatch({
-    cat("\nMéthode 3: geodata (MODIS NDVI)...\n")
+  tryCatch(
+    {
+      cat("\nMéthode 3: geodata (MODIS NDVI)...\n")
 
-    # geodata fournit des données MODIS NDVI globales
-    # Résolution plus faible (250m) mais accessible sans authentification
-    # Note: Nécessite téléchargement préalable des données MODIS
-    cat("geodata disponible - résolution 250m\n")
-  }, error = function(e) {
-    cat("Erreur geodata:", e$message, "\n")
-  })
+      # geodata fournit des données MODIS NDVI globales
+      # Résolution plus faible (250m) mais accessible sans authentification
+      # Note: Nécessite téléchargement préalable des données MODIS
+      cat("geodata disponible - résolution 250m\n")
+    },
+    error = function(e) {
+      cat("Erreur geodata:", e$message, "\n")
+    }
+  )
 }
 
 # ============================================================
@@ -2084,7 +2196,7 @@ cat("\n=== Calcul NDVI ===\n")
 bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
 lidar_path <- file.path(data_dir, "metriques_lidar.gpkg")
 
-parcelles$C2 <- 0.5  # Valeur par défaut
+parcelles$C2 <- 0.5 # Valeur par défaut
 
 # Si raster NDVI disponible (Sentinel-2 ou Ortho IRC), extraire par parcelle
 if (ndvi_available && exists("ndvi_raster") && !is.null(ndvi_raster)) {
@@ -2116,7 +2228,8 @@ if (ndvi_available && exists("ndvi_raster") && !is.null(ndvi_raster)) {
       plan(multisession, workers = max(1, availableCores() - 1))
       cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
       parcelles$C2 <- future_map_dbl(seq_len(nrow(parcelles)), extract_ndvi_i,
-                                      .progress = TRUE)
+        .progress = TRUE
+      )
       plan(sequential)
     } else if (requireNamespace("purrr", quietly = TRUE)) {
       library(purrr)
@@ -2131,86 +2244,91 @@ if (ndvi_available && exists("ndvi_raster") && !is.null(ndvi_raster)) {
   # Méthode 4: Estimation basée sur BD Forêt + LiDAR
   cat("Pas de données satellite, estimation via BD Forêt...\n")
 
-if (file.exists(bd_foret_path)) {
-  bd_foret <- st_read(bd_foret_path, quiet = TRUE)
-  bd_foret <- st_transform(bd_foret, st_crs(parcelles))
+  if (file.exists(bd_foret_path)) {
+    bd_foret <- st_read(bd_foret_path, quiet = TRUE)
+    bd_foret <- st_transform(bd_foret, st_crs(parcelles))
 
-  # Coefficients NDVI par type de peuplement
-  ndvi_by_type <- data.frame(
-    pattern = c("feuill", "resin", "conif", "mixte", "taillis", "lande", "peupl"),
-    ndvi_base = c(0.72, 0.65, 0.65, 0.68, 0.60, 0.45, 0.70),
-    stringsAsFactors = FALSE
-  )
-
-  # Fonction de calcul NDVI par BD Forêt
-  calc_ndvi_bdforet_i <- function(i, parcelles_geom, bd_foret, ndvi_by_type) {
-    geom <- parcelles_geom[i]
-    foret_inter <- suppressWarnings(
-      tryCatch(st_intersection(bd_foret, geom), error = function(e) NULL)
+    # Coefficients NDVI par type de peuplement
+    ndvi_by_type <- data.frame(
+      pattern = c("feuill", "resin", "conif", "mixte", "taillis", "lande", "peupl"),
+      ndvi_base = c(0.72, 0.65, 0.65, 0.68, 0.60, 0.45, 0.70),
+      stringsAsFactors = FALSE
     )
 
-    if (is.null(foret_inter) || nrow(foret_inter) == 0) return(0.5)
+    # Fonction de calcul NDVI par BD Forêt
+    calc_ndvi_bdforet_i <- function(i, parcelles_geom, bd_foret, ndvi_by_type) {
+      geom <- parcelles_geom[i]
+      foret_inter <- suppressWarnings(
+        tryCatch(st_intersection(bd_foret, geom), error = function(e) NULL)
+      )
 
-    # Chercher le type de peuplement
-    type_col <- intersect(names(foret_inter), c("tfv", "essence", "libelle", "code_tfv"))
-    if (length(type_col) > 0) {
-      type_val <- tolower(as.character(foret_inter[[type_col[1]]][1]))
+      if (is.null(foret_inter) || nrow(foret_inter) == 0) {
+        return(0.5)
+      }
 
-      # Trouver le NDVI correspondant
-      for (j in seq_len(nrow(ndvi_by_type))) {
-        if (grepl(ndvi_by_type$pattern[j], type_val)) {
-          return(ndvi_by_type$ndvi_base[j] + rnorm(1, 0, 0.05))
+      # Chercher le type de peuplement
+      type_col <- intersect(names(foret_inter), c("tfv", "essence", "libelle", "code_tfv"))
+      if (length(type_col) > 0) {
+        type_val <- tolower(as.character(foret_inter[[type_col[1]]][1]))
+
+        # Trouver le NDVI correspondant
+        for (j in seq_len(nrow(ndvi_by_type))) {
+          if (grepl(ndvi_by_type$pattern[j], type_val)) {
+            return(ndvi_by_type$ndvi_base[j] + rnorm(1, 0, 0.05))
+          }
         }
       }
+      return(0.5)
     }
-    return(0.5)
-  }
 
-  # Parallélisation si furrr disponible
-  parcelles_geom <- st_geometry(parcelles)
+    # Parallélisation si furrr disponible
+    parcelles_geom <- st_geometry(parcelles)
 
-  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-    library(furrr)
-    library(future)
-    plan(multisession, workers = max(1, availableCores() - 1))
-    cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-    parcelles$C2 <- future_map_dbl(seq_len(nrow(parcelles)), calc_ndvi_bdforet_i,
-                                    parcelles_geom = parcelles_geom,
-                                    bd_foret = bd_foret,
-                                    ndvi_by_type = ndvi_by_type,
-                                    .progress = TRUE,
-                                    .options = furrr_options(seed = TRUE))
-    plan(sequential)
-  } else if (requireNamespace("purrr", quietly = TRUE)) {
-    library(purrr)
-    cat("Mode séquentiel (purrr)...\n")
-    parcelles$C2 <- map_dbl(seq_len(nrow(parcelles)), calc_ndvi_bdforet_i,
-                            parcelles_geom = parcelles_geom,
-                            bd_foret = bd_foret,
-                            ndvi_by_type = ndvi_by_type)
-  } else {
-    cat("Mode séquentiel (base R)...\n")
-    parcelles$C2 <- sapply(seq_len(nrow(parcelles)), function(i) {
-      calc_ndvi_bdforet_i(i, parcelles_geom, bd_foret, ndvi_by_type)
-    })
-  }
-}
-
-# Ajustement avec métriques LiDAR si disponibles
-if (file.exists(lidar_path)) {
-  lidar <- st_read(lidar_path, quiet = TRUE)
-  if ("pzabove2" %in% names(lidar) && "id_parcelle" %in% names(lidar)) {
-    lidar_data <- st_drop_geometry(lidar)[, c("id_parcelle", "pzabove2")]
-    if ("id_parcelle" %in% names(parcelles)) {
-      parcelles <- merge(parcelles, lidar_data, by = "id_parcelle", all.x = TRUE)
-      # Ajuster C2 avec la couverture
-      parcelles$C2 <- ifelse(!is.na(parcelles$pzabove2),
-                             parcelles$C2 * (0.7 + 0.3 * parcelles$pzabove2 / 100),
-                             parcelles$C2)
+    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+      library(furrr)
+      library(future)
+      plan(multisession, workers = max(1, availableCores() - 1))
+      cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
+      parcelles$C2 <- future_map_dbl(seq_len(nrow(parcelles)), calc_ndvi_bdforet_i,
+        parcelles_geom = parcelles_geom,
+        bd_foret = bd_foret,
+        ndvi_by_type = ndvi_by_type,
+        .progress = TRUE,
+        .options = furrr_options(seed = TRUE)
+      )
+      plan(sequential)
+    } else if (requireNamespace("purrr", quietly = TRUE)) {
+      library(purrr)
+      cat("Mode séquentiel (purrr)...\n")
+      parcelles$C2 <- map_dbl(seq_len(nrow(parcelles)), calc_ndvi_bdforet_i,
+        parcelles_geom = parcelles_geom,
+        bd_foret = bd_foret,
+        ndvi_by_type = ndvi_by_type
+      )
+    } else {
+      cat("Mode séquentiel (base R)...\n")
+      parcelles$C2 <- sapply(seq_len(nrow(parcelles)), function(i) {
+        calc_ndvi_bdforet_i(i, parcelles_geom, bd_foret, ndvi_by_type)
+      })
     }
   }
-}
-}  # Fin else (estimation BD Forêt)
+
+  # Ajustement avec métriques LiDAR si disponibles
+  if (file.exists(lidar_path)) {
+    lidar <- st_read(lidar_path, quiet = TRUE)
+    if ("pzabove2" %in% names(lidar) && "id_parcelle" %in% names(lidar)) {
+      lidar_data <- st_drop_geometry(lidar)[, c("id_parcelle", "pzabove2")]
+      if ("id_parcelle" %in% names(parcelles)) {
+        parcelles <- merge(parcelles, lidar_data, by = "id_parcelle", all.x = TRUE)
+        # Ajuster C2 avec la couverture
+        parcelles$C2 <- ifelse(!is.na(parcelles$pzabove2),
+          parcelles$C2 * (0.7 + 0.3 * parcelles$pzabove2 / 100),
+          parcelles$C2
+        )
+      }
+    }
+  }
+} # Fin else (estimation BD Forêt)
 
 # Borner entre 0 et 1
 parcelles$C2 <- pmax(0, pmin(1, parcelles$C2))
@@ -2227,7 +2345,8 @@ cat("C2 score moyen:", round(mean(parcelles$C2_score, na.rm = TRUE), 1), "/ 100\
 parcelles$C2_classe <- cut(parcelles$C2,
   breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
   labels = c("Sol nu", "Clairsemé", "Modéré", "Dense", "Très dense"),
-  include.lowest = TRUE)
+  include.lowest = TRUE
+)
 
 cat("\nDistribution:\n")
 print(table(parcelles$C2_classe))
@@ -2289,7 +2408,7 @@ cat("=== Calcul des indicateurs de Naturalité ===\n\n")
 cat("=== N1 : Distance aux infrastructures ===\n")
 
 # Distance aux routes
-dist_routes <- rep(1000, nrow(parcelles))  # Valeur par défaut
+dist_routes <- rep(1000, nrow(parcelles)) # Valeur par défaut
 
 if (file.exists(routes_path)) {
   routes <- st_read(routes_path, quiet = TRUE)
@@ -2301,46 +2420,54 @@ if (file.exists(routes_path)) {
 }
 
 # Distance aux bâtiments (via OSM si disponible)
-dist_batiments <- rep(500, nrow(parcelles))  # Valeur par défaut
+dist_batiments <- rep(500, nrow(parcelles)) # Valeur par défaut
 
 if (requireNamespace("osmdata", quietly = TRUE)) {
   library(osmdata)
 
-  tryCatch({
-    bbox_wgs84 <- st_bbox(st_transform(st_buffer(st_union(parcelles), 1000), 4326))
+  tryCatch(
+    {
+      bbox_wgs84 <- st_bbox(st_transform(st_buffer(st_union(parcelles), 1000), 4326))
 
-    # Récupérer les bâtiments
-    buildings <- opq(bbox_wgs84) |>
-      add_osm_feature(key = "building") |>
-      osmdata_sf()
+      # Récupérer les bâtiments
+      buildings <- opq(bbox_wgs84) |>
+        add_osm_feature(key = "building") |>
+        osmdata_sf()
 
-    if (!is.null(buildings$osm_polygons) && nrow(buildings$osm_polygons) > 0) {
-      batiments <- st_transform(buildings$osm_polygons, st_crs(parcelles))
-      batiments_union <- st_union(batiments)
-      dist_batiments <- as.numeric(st_distance(parcelles_centroids, batiments_union))
-      cat("Distance moyenne aux bâtiments:", round(mean(dist_batiments)), "m\n")
+      if (!is.null(buildings$osm_polygons) && nrow(buildings$osm_polygons) > 0) {
+        batiments <- st_transform(buildings$osm_polygons, st_crs(parcelles))
+        batiments_union <- st_union(batiments)
+        dist_batiments <- as.numeric(st_distance(parcelles_centroids, batiments_union))
+        cat("Distance moyenne aux bâtiments:", round(mean(dist_batiments)), "m\n")
+      }
+    },
+    error = function(e) {
+      cat("Bâtiments OSM non disponibles\n")
     }
-  }, error = function(e) {
-    cat("Bâtiments OSM non disponibles\n")
-  })
+  )
 }
 
 # Distance aux zones urbaines (urbanisation diffuse)
 dist_urbain <- rep(2000, nrow(parcelles))
 
 if (requireNamespace("osmdata", quietly = TRUE)) {
-  tryCatch({
-    urban <- opq(bbox_wgs84) |>
-      add_osm_feature(key = "landuse", value = c("residential", "commercial",
-                                                   "industrial", "retail")) |>
-      osmdata_sf()
+  tryCatch(
+    {
+      urban <- opq(bbox_wgs84) |>
+        add_osm_feature(key = "landuse", value = c(
+          "residential", "commercial",
+          "industrial", "retail"
+        )) |>
+        osmdata_sf()
 
-    if (!is.null(urban$osm_polygons) && nrow(urban$osm_polygons) > 0) {
-      zones_urbaines <- st_transform(urban$osm_polygons, st_crs(parcelles))
-      dist_urbain <- as.numeric(st_distance(parcelles_centroids, st_union(zones_urbaines)))
-      cat("Distance moyenne zones urbaines:", round(mean(dist_urbain)), "m\n")
-    }
-  }, error = function(e) NULL)
+      if (!is.null(urban$osm_polygons) && nrow(urban$osm_polygons) > 0) {
+        zones_urbaines <- st_transform(urban$osm_polygons, st_crs(parcelles))
+        dist_urbain <- as.numeric(st_distance(parcelles_centroids, st_union(zones_urbaines)))
+        cat("Distance moyenne zones urbaines:", round(mean(dist_urbain)), "m\n")
+      }
+    },
+    error = function(e) NULL
+  )
 }
 
 # N1 : Indice composite de distance (0-100, 100 = très éloigné)
@@ -2364,9 +2491,9 @@ cat("=== N2 : Continuité forestière ===\n")
 # La BD Forêt Anciennes contient les forêts présentes sur les cartes
 # d'État-Major (1818-1866), soit ~200 ans d'ancienneté minimum
 
-parcelles$N2 <- 50  # Valeur par défaut
-parcelles$N2_anciennete <- 0  # % surface en forêt ancienne
-parcelles$N2_boisement <- 0   # % surface boisée actuelle
+parcelles$N2 <- 50 # Valeur par défaut
+parcelles$N2_anciennete <- 0 # % surface en forêt ancienne
+parcelles$N2_boisement <- 0 # % surface boisée actuelle
 
 # -------------------------------------------------------------
 # Téléchargement BD Forêt Anciennes (IGN via happign)
@@ -2378,81 +2505,87 @@ if (requireNamespace("happign", quietly = TRUE)) {
 
   cat("Téléchargement BD Forêt Anciennes (IGN)...\n")
 
-  tryCatch({
-    # Chercher la couche forêt ancienne dans le WFS
-    wfs_layers <- get_layers_metadata("wfs")
+  tryCatch(
+    {
+      # Chercher la couche forêt ancienne dans le WFS
+      wfs_layers <- get_layers_metadata("wfs")
 
-    # Patterns possibles pour la BD Forêt Anciennes
-    ancienne_patterns <- c("foret.*ancien", "ancien.*foret", "etat.major",
-                           "historique", "LANDCOVER.*FORESTAREAS.*HISTORY")
-
-    foret_ancienne_layer <- NULL
-    for (pattern in ancienne_patterns) {
-      matches <- wfs_layers$Name[grepl(pattern, wfs_layers$Name, ignore.case = TRUE)]
-      if (length(matches) > 0) {
-        foret_ancienne_layer <- matches[1]
-        break
-      }
-    }
-
-    if (!is.null(foret_ancienne_layer)) {
-      cat("Couche trouvée:", foret_ancienne_layer, "\n")
-
-      # Télécharger pour la zone d'analyse
-      zone_bbox <- st_as_sfc(st_bbox(st_buffer(st_union(parcelles), 100)))
-      st_crs(zone_bbox) <- st_crs(parcelles)
-
-      foret_ancienne <- get_wfs(
-        x = zone_bbox,
-        layer = foret_ancienne_layer,
-        spatial_filter = "bbox"
+      # Patterns possibles pour la BD Forêt Anciennes
+      ancienne_patterns <- c(
+        "foret.*ancien", "ancien.*foret", "etat.major",
+        "historique", "LANDCOVER.*FORESTAREAS.*HISTORY"
       )
 
-      if (!is.null(foret_ancienne) && nrow(foret_ancienne) > 0) {
-        foret_ancienne <- st_transform(foret_ancienne, st_crs(parcelles))
-        foret_ancienne <- st_make_valid(foret_ancienne)
-        cat("BD Forêt Anciennes récupérée:", nrow(foret_ancienne), "polygones\n")
-      } else {
-        foret_ancienne <- NULL
+      foret_ancienne_layer <- NULL
+      for (pattern in ancienne_patterns) {
+        matches <- wfs_layers$Name[grepl(pattern, wfs_layers$Name, ignore.case = TRUE)]
+        if (length(matches) > 0) {
+          foret_ancienne_layer <- matches[1]
+          break
+        }
       }
-    } else {
-      cat("Couche BD Forêt Anciennes non trouvée dans le catalogue WFS\n")
-    }
 
-  }, error = function(e) {
-    cat("Erreur BD Forêt Anciennes:", e$message, "\n")
-  })
+      if (!is.null(foret_ancienne_layer)) {
+        cat("Couche trouvée:", foret_ancienne_layer, "\n")
+
+        # Télécharger pour la zone d'analyse
+        zone_bbox <- st_as_sfc(st_bbox(st_buffer(st_union(parcelles), 100)))
+        st_crs(zone_bbox) <- st_crs(parcelles)
+
+        foret_ancienne <- get_wfs(
+          x = zone_bbox,
+          layer = foret_ancienne_layer,
+          spatial_filter = "bbox"
+        )
+
+        if (!is.null(foret_ancienne) && nrow(foret_ancienne) > 0) {
+          foret_ancienne <- st_transform(foret_ancienne, st_crs(parcelles))
+          foret_ancienne <- st_make_valid(foret_ancienne)
+          cat("BD Forêt Anciennes récupérée:", nrow(foret_ancienne), "polygones\n")
+        } else {
+          foret_ancienne <- NULL
+        }
+      } else {
+        cat("Couche BD Forêt Anciennes non trouvée dans le catalogue WFS\n")
+      }
+    },
+    error = function(e) {
+      cat("Erreur BD Forêt Anciennes:", e$message, "\n")
+    }
+  )
 }
 
 # Requête WFS directe si happign échoue
 if (is.null(foret_ancienne)) {
   cat("Tentative requête WFS directe pour BD Forêt Anciennes...\n")
 
-  tryCatch({
-    bbox <- st_bbox(st_transform(st_buffer(st_union(parcelles), 100), 4326))
-    bbox_str <- paste(bbox["ymin"], bbox["xmin"], bbox["ymax"], bbox["xmax"], sep = ",")
+  tryCatch(
+    {
+      bbox <- st_bbox(st_transform(st_buffer(st_union(parcelles), 100), 4326))
+      bbox_str <- paste(bbox["ymin"], bbox["xmin"], bbox["ymax"], bbox["xmax"], sep = ",")
 
-    # URL WFS Géoplateforme - couche forêt ancienne
-    wfs_url <- paste0(
-      "https://data.geopf.fr/wfs/ows",
-      "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature",
-      "&TYPENAMES=LANDCOVER.FORESTAREAS.HISTORY:foret_ancienne",
-      "&BBOX=", bbox_str, ",EPSG:4326",
-      "&OUTPUTFORMAT=application/json",
-      "&COUNT=5000"
-    )
+      # URL WFS Géoplateforme - couche forêt ancienne
+      wfs_url <- paste0(
+        "https://data.geopf.fr/wfs/ows",
+        "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature",
+        "&TYPENAMES=LANDCOVER.FORESTAREAS.HISTORY:foret_ancienne",
+        "&BBOX=", bbox_str, ",EPSG:4326",
+        "&OUTPUTFORMAT=application/json",
+        "&COUNT=5000"
+      )
 
-    response <- tryCatch(st_read(wfs_url, quiet = TRUE), error = function(e) NULL)
+      response <- tryCatch(st_read(wfs_url, quiet = TRUE), error = function(e) NULL)
 
-    if (!is.null(response) && nrow(response) > 0) {
-      foret_ancienne <- st_transform(response, st_crs(parcelles))
-      foret_ancienne <- st_make_valid(foret_ancienne)
-      cat("BD Forêt Anciennes (WFS direct):", nrow(foret_ancienne), "polygones\n")
+      if (!is.null(response) && nrow(response) > 0) {
+        foret_ancienne <- st_transform(response, st_crs(parcelles))
+        foret_ancienne <- st_make_valid(foret_ancienne)
+        cat("BD Forêt Anciennes (WFS direct):", nrow(foret_ancienne), "polygones\n")
+      }
+    },
+    error = function(e) {
+      cat("BD Forêt Anciennes non disponible pour cette zone\n")
     }
-
-  }, error = function(e) {
-    cat("BD Forêt Anciennes non disponible pour cette zone\n")
-  })
+  )
 }
 
 # -------------------------------------------------------------
@@ -2508,9 +2641,11 @@ calc_n2_i <- function(i, parcelles_geom, bd_foret, foret_ancienne) {
     n2_score <- 15
   }
 
-  return(c(boisement = taux_boisement * 100,
-           anciennete = taux_ancienne * 100,
-           n2 = n2_score))
+  return(c(
+    boisement = taux_boisement * 100,
+    anciennete = taux_ancienne * 100,
+    n2 = n2_score
+  ))
 }
 
 # Parallélisation si furrr disponible
@@ -2522,19 +2657,21 @@ if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quie
   plan(multisession, workers = max(1, availableCores() - 1))
   cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
   results_list <- future_map(seq_len(nrow(parcelles)), calc_n2_i,
-                              parcelles_geom = parcelles_geom,
-                              bd_foret = bd_foret,
-                              foret_ancienne = foret_ancienne,
-                              .progress = TRUE)
+    parcelles_geom = parcelles_geom,
+    bd_foret = bd_foret,
+    foret_ancienne = foret_ancienne,
+    .progress = TRUE
+  )
   plan(sequential)
   results <- do.call(rbind, results_list)
 } else if (requireNamespace("purrr", quietly = TRUE)) {
   library(purrr)
   cat("Mode séquentiel (purrr)...\n")
   results_list <- map(seq_len(nrow(parcelles)), calc_n2_i,
-                      parcelles_geom = parcelles_geom,
-                      bd_foret = bd_foret,
-                      foret_ancienne = foret_ancienne)
+    parcelles_geom = parcelles_geom,
+    bd_foret = bd_foret,
+    foret_ancienne = foret_ancienne
+  )
   results <- do.call(rbind, results_list)
 } else {
   cat("Mode séquentiel (base R)...\n")
@@ -2572,7 +2709,7 @@ cat("=== N3 : Indice composite de naturalité ===\n")
 
 # Fragmentation (inverse de L1 si disponible)
 if ("L1" %in% names(parcelles)) {
-  N3_fragmentation <- 100 - parcelles$L1  # Moins fragmenté = plus naturel
+  N3_fragmentation <- 100 - parcelles$L1 # Moins fragmenté = plus naturel
 } else {
   N3_fragmentation <- 50
 }
@@ -2587,9 +2724,9 @@ if ("B3" %in% names(parcelles)) {
 # Calcul N3 composite
 # Pondération : N1 (distance) 35%, N2 (continuité) 35%, fragmentation 15%, connectivité 15%
 parcelles$N3 <- 0.35 * parcelles$N1 +
-                0.35 * parcelles$N2 +
-                0.15 * N3_fragmentation +
-                0.15 * N3_connectivite
+  0.35 * parcelles$N2 +
+  0.15 * N3_fragmentation +
+  0.15 * N3_connectivite
 
 cat("Pondération N3:\n")
 cat("  - Distance infrastructures (N1): 35%\n")
@@ -2603,9 +2740,10 @@ cat("  Min:", round(min(parcelles$N3), 1), "/ Max:", round(max(parcelles$N3), 1)
 
 # Classification
 parcelles$N3_classe <- cut(parcelles$N3,
-                            breaks = c(0, 25, 50, 75, 100),
-                            labels = c("Faible", "Modérée", "Bonne", "Excellente"),
-                            include.lowest = TRUE)
+  breaks = c(0, 25, 50, 75, 100),
+  labels = c("Faible", "Modérée", "Bonne", "Excellente"),
+  include.lowest = TRUE
+)
 
 cat("\nDistribution de la naturalité:\n")
 print(table(parcelles$N3_classe))
@@ -2674,7 +2812,7 @@ cat("=== T1 : Âge du peuplement ===\n")
 # - Peupleraie : 15-25 ans
 # - Jeune peuplement : 5-20 ans
 
-parcelles$T1 <- 50  # Valeur par défaut (âge moyen)
+parcelles$T1 <- 50 # Valeur par défaut (âge moyen)
 
 if (file.exists(bd_foret_path)) {
   bd_foret <- st_read(bd_foret_path, quiet = TRUE)
@@ -2698,10 +2836,14 @@ if (file.exists(bd_foret_path)) {
     estimate_age <- function(tfv) {
       tfv_lower <- tolower(as.character(tfv))
       age <- ifelse(grepl("ferm.*feuill|futaie.*feuill", tfv_lower), 100,
-             ifelse(grepl("ferm.*conif|futaie.*conif", tfv_lower), 80,
-             ifelse(grepl("ouvert|taillis", tfv_lower), 45,
-             ifelse(grepl("peupler", tfv_lower), 20,
-             ifelse(grepl("jeune|lande.*bois", tfv_lower), 15, 50)))))
+        ifelse(grepl("ferm.*conif|futaie.*conif", tfv_lower), 80,
+          ifelse(grepl("ouvert|taillis", tfv_lower), 45,
+            ifelse(grepl("peupler", tfv_lower), 20,
+              ifelse(grepl("jeune|lande.*bois", tfv_lower), 15, 50)
+            )
+          )
+        )
+      )
       return(age)
     }
 
@@ -2721,7 +2863,7 @@ if (file.exists(bd_foret_path)) {
           return(sum(inter$area * inter$age_est) / total_area)
         }
       }
-      return(50)  # Valeur par défaut
+      return(50) # Valeur par défaut
     }
 
     # Parallélisation si furrr disponible
@@ -2731,20 +2873,22 @@ if (file.exists(bd_foret_path)) {
       plan(multisession, workers = max(1, availableCores() - 1))
       cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
       parcelles$T1 <- future_map_dbl(seq_len(nrow(parcelles)), calc_t1_i,
-                                      parcelles_sf = parcelles,
-                                      bd_foret = bd_foret,
-                                      tfv_field = tfv_field,
-                                      estimate_age = estimate_age,
-                                      .progress = TRUE)
+        parcelles_sf = parcelles,
+        bd_foret = bd_foret,
+        tfv_field = tfv_field,
+        estimate_age = estimate_age,
+        .progress = TRUE
+      )
       plan(sequential)
     } else if (requireNamespace("purrr", quietly = TRUE)) {
       library(purrr)
       cat("Mode séquentiel (purrr)...\n")
       parcelles$T1 <- map_dbl(seq_len(nrow(parcelles)), calc_t1_i,
-                              parcelles_sf = parcelles,
-                              bd_foret = bd_foret,
-                              tfv_field = tfv_field,
-                              estimate_age = estimate_age)
+        parcelles_sf = parcelles,
+        bd_foret = bd_foret,
+        tfv_field = tfv_field,
+        estimate_age = estimate_age
+      )
     } else {
       cat("Mode séquentiel (base R)...\n")
       parcelles$T1 <- sapply(seq_len(nrow(parcelles)), function(i) {
@@ -2758,8 +2902,10 @@ if (file.exists(bd_foret_path)) {
 
 cat("\nRésultats T1 (âge estimé):\n")
 cat("  Âge moyen:", round(mean(parcelles$T1, na.rm = TRUE), 0), "ans\n")
-cat("  Min:", round(min(parcelles$T1, na.rm = TRUE), 0), "/ Max:",
-    round(max(parcelles$T1, na.rm = TRUE), 0), "ans\n")
+cat(
+  "  Min:", round(min(parcelles$T1, na.rm = TRUE), 0), "/ Max:",
+  round(max(parcelles$T1, na.rm = TRUE), 0), "ans\n"
+)
 
 # ============================================================
 # T2 : TAUX DE CHANGEMENT
@@ -2787,10 +2933,13 @@ cat("  Interprétation: 100 = très stable, 0 = changement récent\n")
 
 # Classification
 parcelles$T_classe <- cut((parcelles$T1 + parcelles$T2) / 2,
-                          breaks = c(0, 25, 50, 75, 150),
-                          labels = c("Jeune/Instable", "En développement",
-                                     "Mature", "Ancienne/Stable"),
-                          include.lowest = TRUE)
+  breaks = c(0, 25, 50, 75, 150),
+  labels = c(
+    "Jeune/Instable", "En développement",
+    "Mature", "Ancienne/Stable"
+  ),
+  include.lowest = TRUE
+)
 
 cat("\nDistribution temporelle:\n")
 print(table(parcelles$T_classe))
@@ -2830,7 +2979,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 # === INDICATEUR A2 (QUALITÉ AIR FORESTIER) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-routes_path <- file.path(data_dir, "routes.gpkg")  # Téléchargé en tutoriel 01
+routes_path <- file.path(data_dir, "routes.gpkg") # Téléchargé en tutoriel 01
 
 if (!file.exists(parcelles_path)) {
   stop("Données manquantes. Exécutez d'abord les tutoriels précédents.")
@@ -2865,9 +3014,11 @@ cat("\n2. Pondération par type de route...\n")
 # Coefficients de pollution par type de route BD TOPO v3
 # Plus le coefficient est élevé, plus la route pollue
 pollution_weights <- data.frame(
-  nature = c("Autoroute", "Quasi-autoroute", "Route à 2 chaussées",
-             "Route à 1 chaussée", "Route empierrée", "Chemin",
-             "Bretelle", "Rond-point", "Piste cyclable", "Sentier"),
+  nature = c(
+    "Autoroute", "Quasi-autoroute", "Route à 2 chaussées",
+    "Route à 1 chaussée", "Route empierrée", "Chemin",
+    "Bretelle", "Rond-point", "Piste cyclable", "Sentier"
+  ),
   poids = c(1.0, 0.9, 0.8, 0.6, 0.3, 0.1, 0.7, 0.5, 0.05, 0.02),
   stringsAsFactors = FALSE
 )
@@ -2876,7 +3027,6 @@ cat("\n   Coefficients de pollution par type:\n")
 print(pollution_weights)
 
 if (!is.null(routes) && nrow(routes) > 0) {
-
   # Identifier le champ "nature" dans BD TOPO
   nature_field <- NULL
   for (field in c("nature", "NATURE", "classe", "importance", "type")) {
@@ -2892,7 +3042,7 @@ if (!is.null(routes) && nrow(routes) > 0) {
     print(table(routes[[nature_field]]))
 
     # Assigner les poids aux routes
-    routes$pollution_weight <- 0.5  # Défaut
+    routes$pollution_weight <- 0.5 # Défaut
     for (i in seq_len(nrow(pollution_weights))) {
       mask <- grepl(pollution_weights$nature[i], routes[[nature_field]], ignore.case = TRUE)
       routes$pollution_weight[mask] <- pollution_weights$poids[i]
@@ -2919,12 +3069,14 @@ if (!is.null(routes) && nrow(routes) > 0) {
     # Ne considérer que les routes dans le rayon d'influence
     in_range <- dists < max_dist
 
-    if (sum(in_range) == 0) return(0)  # Pas de route proche = pas de pollution
+    if (sum(in_range) == 0) {
+      return(0)
+    } # Pas de route proche = pas de pollution
 
     # Score pollution = somme(poids / distance²)
     # Les routes proches et polluantes ont plus d'impact
     weights <- routes$pollution_weight[in_range]
-    distances <- pmax(dists[in_range], 10)  # Min 10m pour éviter division par 0
+    distances <- pmax(dists[in_range], 10) # Min 10m pour éviter division par 0
 
     # Modèle de dispersion simplifié (décroissance quadratique)
     pollution_contribution <- sum(weights / (distances / 100)^2)
@@ -2965,7 +3117,6 @@ if (!is.null(routes) && nrow(routes) > 0) {
 
   cat("   Distance moyenne aux routes:", round(mean(parcelles$dist_routes, na.rm = TRUE)), "m\n")
   cat("   Score pollution moyen:", round(mean(parcelles$pollution_score, na.rm = TRUE), 2), "\n")
-
 } else {
   parcelles$dist_routes <- 500
   parcelles$pollution_score <- 0.1
@@ -3004,9 +3155,10 @@ cat("Interprétation: 0 = proche routes/pollution, 100 = air pur\n")
 
 # Classification
 parcelles$A2_classe <- cut(parcelles$A2,
-                           breaks = c(0, 30, 60, 80, 100),
-                           labels = c("Dégradé", "Modéré", "Bon", "Excellent"),
-                           include.lowest = TRUE)
+  breaks = c(0, 30, 60, 80, 100),
+  labels = c("Dégradé", "Modéré", "Bon", "Excellent"),
+  include.lowest = TRUE
+)
 cat("\nDistribution:\n")
 print(table(parcelles$A2_classe))
 
@@ -3094,7 +3246,7 @@ if (file.exists(twi_path)) {
       twi_mean <- mean(parcelles$twi_mean, na.rm = TRUE)
     }
   } else {
-    parcelles$twi_mean <- 10  # Valeur neutre
+    parcelles$twi_mean <- 10 # Valeur neutre
     twi_mean <- 10
   }
 }
@@ -3113,7 +3265,7 @@ if (file.exists(mnt_path)) {
     cat("   Pente moyenne:", round(mean(parcelles$slope_mean, na.rm = TRUE), 1), "°\n")
   }
 } else {
-  parcelles$slope_mean <- 10  # Pente modérée par défaut
+  parcelles$slope_mean <- 10 # Pente modérée par défaut
 }
 
 # ============================================================
@@ -3148,9 +3300,10 @@ cat("Interprétation: 0 = sol pauvre/érodé, 100 = sol fertile\n")
 
 # Classification
 parcelles$F2_classe <- cut(parcelles$F2,
-                           breaks = c(0, 30, 50, 70, 100),
-                           labels = c("Pauvre", "Modéré", "Fertile", "Très fertile"),
-                           include.lowest = TRUE)
+  breaks = c(0, 30, 50, 70, 100),
+  labels = c("Pauvre", "Modéré", "Fertile", "Très fertile"),
+  include.lowest = TRUE
+)
 cat("\nDistribution:\n")
 print(table(parcelles$F2_classe))
 

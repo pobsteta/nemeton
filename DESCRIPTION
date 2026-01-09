@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.4.21
+Version: 0.4.22
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -53,7 +53,8 @@ Suggests:
     RSQLite,
     leaflet (>= 2.1.0),
     rappdirs,
-    rsconnect
+    rsconnect,
+    nasapower (>= 4.0.0)
 Remotes:
     rstudio/gradethis
 RoxygenNote: 7.3.3

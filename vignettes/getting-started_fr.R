@@ -206,7 +206,7 @@ plot_indicators_map(
 #   indicators = "water_norm",
 #   suffix = "_inv"
 # )
-# 
+#
 # # L'indicateur inversé
 # head(normalized_inv[, c("parcel_id", "water_norm", "water_norm_inv")])
 
@@ -231,7 +231,7 @@ nemeton_set_language("fr")  # Français
 ## ----eval = FALSE-------------------------------------------------------------
 # # Export en GeoPackage
 # sf::st_write(composite, "results/forest_quality.gpkg")
-# 
+#
 # # Export en CSV (sans géométrie)
 # results_table <- composite |>
 #   sf::st_drop_geometry()
@@ -239,4 +239,3 @@ nemeton_set_language("fr")  # Français
 
 ## -----------------------------------------------------------------------------
 sessionInfo()
-

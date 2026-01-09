@@ -27,7 +27,7 @@ test_that("indicator_landscape_fragmentation calculates patch metrics", {
   expect_type(fragmentation, "double")
   expect_length(fragmentation, 5)
   expect_true(all(!is.na(fragmentation)))
-  expect_true(all(fragmentation >= 0))  # Number of patches should be non-negative
+  expect_true(all(fragmentation >= 0)) # Number of patches should be non-negative
 })
 
 test_that("indicator_landscape_fragmentation with different buffer sizes", {
@@ -155,7 +155,7 @@ test_that("indicator_landscape_edge calculates edge density", {
   expect_type(edge, "double")
   expect_length(edge, 5)
   expect_true(all(!is.na(edge)))
-  expect_true(all(edge >= 0))  # Edge density should be non-negative
+  expect_true(all(edge >= 0)) # Edge density should be non-negative
 })
 
 test_that("indicator_landscape_edge scales with parcel geometry", {
@@ -175,7 +175,7 @@ test_that("indicator_landscape_edge scales with parcel geometry", {
   # Edge density should correlate with perimeter/area ratio
   if (sd(edge) > 0 && sd(units$expected_ratio) > 0) {
     cor_value <- cor(edge, units$expected_ratio)
-    expect_true(cor_value > 0.9)  # Strong positive correlation
+    expect_true(cor_value > 0.9) # Strong positive correlation
   }
 })
 
@@ -326,7 +326,7 @@ test_that("Landscape indicators work with full dataset", {
   expect_true(all(!is.na(l2)))
 
   # Reasonable ranges
-  expect_true(all(l1 >= 0))  # Patch count non-negative
-  expect_true(all(l2 > 0))   # Edge density positive for real parcels
-  expect_true(all(l2 < 10000))  # Reasonable upper bound for edge density (m/ha)
+  expect_true(all(l1 >= 0)) # Patch count non-negative
+  expect_true(all(l2 > 0)) # Edge density positive for real parcels
+  expect_true(all(l2 < 10000)) # Reasonable upper bound for edge density (m/ha)
 })

@@ -10,8 +10,8 @@ test_that("nemeton_temporal creates valid temporal dataset from multiple periods
   units_2015$W1 <- c(10, 15, 12, 18, 20)
 
   units_2020 <- massif_demo_units[1:5, ]
-  units_2020$C1 <- c(55, 65, 60, 70, 75)  # Increased carbon
-  units_2020$W1 <- c(12, 16, 14, 19, 21)  # Increased water
+  units_2020$C1 <- c(55, 65, 60, 70, 75) # Increased carbon
+  units_2020$W1 <- c(12, 16, 14, 19, 21) # Increased water
 
   # Create temporal dataset
   temporal <- nemeton_temporal(
@@ -87,7 +87,7 @@ test_that("nemeton_temporal errors on invalid inputs", {
   expect_error(
     nemeton_temporal(
       periods = list("2015" = units_2015, "2020" = units_2015),
-      dates = c("2015-01-01")  # Only one date for two periods
+      dates = c("2015-01-01") # Only one date for two periods
     ),
     "dates.*must match.*periods"
   )
@@ -104,8 +104,8 @@ test_that("calculate_change_rate computes absolute and relative rates", {
 
   units_2020 <- massif_demo_units[1:3, ]
   units_2020$parcel_id <- paste0("P", 1:3)
-  units_2020$C1 <- c(60, 70, 65)  # +10 over 5 years
-  units_2020$W1 <- c(12, 18, 14)  # +2/+3/+2 over 5 years
+  units_2020$C1 <- c(60, 70, 65) # +10 over 5 years
+  units_2020$W1 <- c(12, 18, 14) # +2/+3/+2 over 5 years
 
   temporal <- nemeton_temporal(
     periods = list("2015" = units_2015, "2020" = units_2020),
@@ -128,10 +128,10 @@ test_that("calculate_change_rate computes absolute and relative rates", {
   expect_true("W1_rate_rel" %in% names(rates))
 
   # Test absolute rates (per year)
-  expect_equal(rates$C1_rate_abs, c(2, 2, 2), tolerance = 0.01)  # (60-50)/5 = 2 tC/ha/year
+  expect_equal(rates$C1_rate_abs, c(2, 2, 2), tolerance = 0.01) # (60-50)/5 = 2 tC/ha/year
 
   # Test relative rates (% per year)
-  expect_equal(rates$C1_rate_rel[1], (60/50 - 1) * 100 / 5, tolerance = 0.01)  # 4% per year
+  expect_equal(rates$C1_rate_rel[1], (60 / 50 - 1) * 100 / 5, tolerance = 0.01) # 4% per year
 })
 
 test_that("calculate_change_rate handles 'all' indicators", {
@@ -232,7 +232,7 @@ test_that("summary.nemeton_temporal provides detailed statistics", {
   # Should contain summary statistics
   expect_true(any(grepl("Period", output)))
   expect_true(any(grepl("Indicators", output)))
-  expect_gt(length(output), 5)  # Multiple lines of output
+  expect_gt(length(output), 5) # Multiple lines of output
 })
 
 test_that("nemeton_temporal preserves geometry and attributes", {
@@ -252,7 +252,7 @@ test_that("nemeton_temporal preserves geometry and attributes", {
 
   # Check geometry is preserved
   expect_true(all(sf::st_is(temporal$periods[["2015"]], "POLYGON") |
-                  sf::st_is(temporal$periods[["2015"]], "MULTIPOLYGON")))
+    sf::st_is(temporal$periods[["2015"]], "MULTIPOLYGON")))
 
   # Check attributes are preserved
   expect_true("custom_attr" %in% names(temporal$periods[["2015"]]))
@@ -264,11 +264,11 @@ test_that("calculate_change_rate handles NA values appropriately", {
 
   units_2015 <- massif_demo_units[1:3, ]
   units_2015$parcel_id <- paste0("P", 1:3)
-  units_2015$C1 <- c(50, 60, NA)  # One NA value
+  units_2015$C1 <- c(50, 60, NA) # One NA value
 
   units_2020 <- massif_demo_units[1:3, ]
   units_2020$parcel_id <- paste0("P", 1:3)
-  units_2020$C1 <- c(55, NA, 65)  # Different NA position
+  units_2020$C1 <- c(55, NA, 65) # Different NA position
 
   temporal <- nemeton_temporal(
     periods = list("2015" = units_2015, "2020" = units_2020),

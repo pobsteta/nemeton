@@ -27,13 +27,13 @@ NULL
 #'
 #' @export
 indicator_energy_fuelwood <- function(units,
-                                       volume_field = "volume",
-                                       species_field = "species",
-                                       harvest_rate = 0.02,
-                                       residue_fraction = 0.3,
-                                       coppice_area_field = NULL,
-                                       column_name = "E1",
-                                       lang = "en") {
+                                      volume_field = "volume",
+                                      species_field = "species",
+                                      harvest_rate = 0.02,
+                                      residue_fraction = 0.3,
+                                      coppice_area_field = NULL,
+                                      column_name = "E1",
+                                      lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
   if (!volume_field %in% names(units)) {
     stop(paste("Required field missing:", volume_field), call. = FALSE)
@@ -54,19 +54,19 @@ indicator_energy_fuelwood <- function(units,
     # Get species-specific wood density
     species_code <- if (species_field %in% names(units)) units[[species_field]][i] else "BROADLEAF_GENUS"
     density_kg_m3 <- lookup_species_threshold(species_code, "density_kg_m3", "wood_density")
-    if (is.na(density_kg_m3)) density_kg_m3 <- 550  # Default
+    if (is.na(density_kg_m3)) density_kg_m3 <- 550 # Default
 
     # Calculate harvest residues
     annual_harvest_m3_ha <- volume_m3_ha * harvest_rate
     residues_m3_ha <- annual_harvest_m3_ha * residue_fraction
-    residues_tonnes_dm <- residues_m3_ha * density_kg_m3 / 1000 * 0.5  # DM = 50% of fresh weight
+    residues_tonnes_dm <- residues_m3_ha * density_kg_m3 / 1000 * 0.5 # DM = 50% of fresh weight
 
     # Calculate coppice biomass (if applicable)
     coppice_tonnes_dm <- 0
     if (!is.null(coppice_area_field) && coppice_area_field %in% names(units)) {
       coppice_fraction <- units[[coppice_area_field]][i]
       if (!is.na(coppice_fraction) && coppice_fraction > 0) {
-        coppice_tonnes_dm <- coppice_fraction * 2  # Assume 2 tonnes DM/ha/yr for coppice
+        coppice_tonnes_dm <- coppice_fraction * 2 # Assume 2 tonnes DM/ha/yr for coppice
       }
     }
 
@@ -102,12 +102,12 @@ indicator_energy_fuelwood <- function(units,
 #'
 #' @export
 indicator_energy_avoidance <- function(units,
-                                        fuelwood_field = "E1",
-                                        volume_field = NULL,
-                                        energy_scenario = "vs_natural_gas",
-                                        material_scenario = NULL,
-                                        column_name = "E2",
-                                        lang = "en") {
+                                       fuelwood_field = "E1",
+                                       volume_field = NULL,
+                                       energy_scenario = "vs_natural_gas",
+                                       material_scenario = NULL,
+                                       column_name = "E2",
+                                       lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
 
   result <- units
@@ -129,7 +129,7 @@ indicator_energy_avoidance <- function(units,
       # Convert to kWh: 1 tonne DM = 4500 kWh
       energy_kwh <- fuelwood_tonnes_dm * 4500
       # Calculate avoided CO2
-      e2_energy[i] <- energy_kwh * as.numeric(energy_factor$emission_factor_kgCO2eq_per_unit) / 1000  # Convert to tonnes
+      e2_energy[i] <- energy_kwh * as.numeric(energy_factor$emission_factor_kgCO2eq_per_unit) / 1000 # Convert to tonnes
     }
 
     # Material substitution (if applicable)

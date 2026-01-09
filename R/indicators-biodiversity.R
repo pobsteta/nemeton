@@ -66,10 +66,10 @@ NULL
 #' summary(result$B1)
 #' }
 indicator_biodiversity_protection <- function(units,
-                                               protected_areas = NULL,
-                                               source = c("local", "wfs"),
-                                               protection_types = c("ZNIEFF1", "ZNIEFF2", "N2000_SCI"),
-                                               preprocess = TRUE) {
+                                              protected_areas = NULL,
+                                              source = c("local", "wfs"),
+                                              protection_types = c("ZNIEFF1", "ZNIEFF2", "N2000_SCI"),
+                                              preprocess = TRUE) {
   # Validate inputs
   validate_sf(units)
   source <- match.arg(source)
@@ -182,9 +182,13 @@ indicator_biodiversity_protection <- function(units,
 #'
 #' # Add structure attributes (normally from BD Forêt)
 #' units$strata <- sample(c("Emergent", "Dominant", "Intermediate"),
-#'                        nrow(units), replace = TRUE)
+#'   nrow(units),
+#'   replace = TRUE
+#' )
 #' units$age_class <- sample(c("Young", "Mature", "Old"),
-#'                           nrow(units), replace = TRUE)
+#'   nrow(units),
+#'   replace = TRUE
+#' )
 #'
 #' result <- indicator_biodiversity_structure(
 #'   units,
@@ -196,12 +200,12 @@ indicator_biodiversity_protection <- function(units,
 #' hist(result$B2, main = "Structural Diversity Distribution")
 #' }
 indicator_biodiversity_structure <- function(units,
-                                              strata_field = "strata",
-                                              age_class_field = "age_class",
-                                              species_field = NULL,
-                                              method = "shannon",
-                                              weights = c(strata = 0.4, age = 0.3, species = 0.3),
-                                              use_height_cv = FALSE) {
+                                             strata_field = "strata",
+                                             age_class_field = "age_class",
+                                             species_field = NULL,
+                                             method = "shannon",
+                                             weights = c(strata = 0.4, age = 0.3, species = 0.3),
+                                             use_height_cv = FALSE) {
   # Validate inputs
   validate_sf(units)
 
@@ -246,7 +250,7 @@ indicator_biodiversity_structure <- function(units,
 
     # Normalize to 0-100 (H_max for 4 strata = log(4) ≈ 1.386)
     strata_h_norm <- (strata_h / 1.386) * 100
-    age_h_norm <- (age_h / 1.609) * 100  # H_max for 5 age classes = log(5)
+    age_h_norm <- (age_h / 1.609) * 100 # H_max for 5 age classes = log(5)
     species_h_norm <- if (has_species) (species_h / 1.609) * 100 else 0
 
     # Weighted combination (adjust weights if no species)
@@ -284,13 +288,13 @@ indicator_biodiversity_structure <- function(units,
     is_monoculture <- is_monoculture && n_species_categories == 1
   }
   if (is_monoculture) {
-    base_score <- min(base_score, 20)  # Cap monoculture at 20
+    base_score <- min(base_score, 20) # Cap monoculture at 20
   }
 
   # Apply score to all parcels with small variation
   for (i in seq_len(nrow(units))) {
     # Add small variation based on parcel index (max 3 points)
-    variation <- (i %% 4) * 1  # Varies 0, 1, 2, 3
+    variation <- (i %% 4) * 1 # Varies 0, 1, 2, 3
     units$B2[i] <- pmin(base_score + variation, 100)
   }
 
@@ -359,9 +363,9 @@ indicator_biodiversity_structure <- function(units,
 #' well_connected <- result[result$B3 < 500, ]
 #' }
 indicator_biodiversity_connectivity <- function(units,
-                                                 corridors = NULL,
-                                                 distance_method = c("edge", "centroid"),
-                                                 max_distance = 5000) {
+                                                corridors = NULL,
+                                                distance_method = c("edge", "centroid"),
+                                                max_distance = 5000) {
   # Validate inputs
   validate_sf(units)
 

@@ -20,12 +20,12 @@ test_that("indicator_carbon_biomass calculates biomass with BD Forêt attributes
   expect_type(biomass, "double")
   expect_length(biomass, 5)
   expect_true(all(!is.na(biomass)))
-  expect_true(all(biomass > 0))  # Biomass should be positive
+  expect_true(all(biomass > 0)) # Biomass should be positive
 
   # Order of magnitude check
   # Young/sparse stands: ~2-10 tC/ha, mature forests: 50-200 tC/ha
-  expect_true(all(biomass > 1))    # Minimum for very young/sparse stands
-  expect_true(all(biomass < 500))  # Maximum upper bound
+  expect_true(all(biomass > 1)) # Minimum for very young/sparse stands
+  expect_true(all(biomass < 500)) # Maximum upper bound
 })
 
 test_that("indicator_carbon_biomass uses Generic model for unknown species", {
@@ -85,9 +85,9 @@ test_that("indicator_carbon_biomass handles NA values appropriately", {
   biomass <- indicator_carbon_biomass(units)
 
   # NA inputs should produce NA outputs
-  expect_true(is.na(biomass[2]))  # NA species
-  expect_true(is.na(biomass[3]))  # NA age
-  expect_true(is.na(biomass[4]))  # NA density
+  expect_true(is.na(biomass[2])) # NA species
+  expect_true(is.na(biomass[3])) # NA age
+  expect_true(is.na(biomass[4])) # NA density
 
   # Valid input should produce valid output
   expect_false(is.na(biomass[1]))
@@ -117,8 +117,8 @@ test_that("indicator_carbon_biomass produces consistent results", {
 
   units <- massif_demo_units[1:2, ]
   units$species <- c("Quercus", "Quercus")
-  units$age <- c(80, 80)  # Same age
-  units$density <- c(0.7, 0.7)  # Same density
+  units$age <- c(80, 80) # Same age
+  units$density <- c(0.7, 0.7) # Same density
 
   biomass <- indicator_carbon_biomass(units)
 
@@ -132,21 +132,21 @@ test_that("indicator_carbon_biomass scales with age and density", {
   # Test age scaling
   units_age <- massif_demo_units[1:3, ]
   units_age$species <- c("Quercus", "Quercus", "Quercus")
-  units_age$age <- c(40, 80, 120)  # Increasing age
+  units_age$age <- c(40, 80, 120) # Increasing age
   units_age$density <- c(0.7, 0.7, 0.7)
 
   biomass_age <- indicator_carbon_biomass(units_age)
-  expect_true(biomass_age[1] < biomass_age[2])  # More age = more biomass
+  expect_true(biomass_age[1] < biomass_age[2]) # More age = more biomass
   expect_true(biomass_age[2] < biomass_age[3])
 
   # Test density scaling
   units_density <- massif_demo_units[1:3, ]
   units_density$species <- c("Fagus", "Fagus", "Fagus")
   units_density$age <- c(60, 60, 60)
-  units_density$density <- c(0.4, 0.7, 1.0)  # Increasing density
+  units_density$density <- c(0.4, 0.7, 1.0) # Increasing density
 
   biomass_density <- indicator_carbon_biomass(units_density)
-  expect_true(biomass_density[1] < biomass_density[2])  # More density = more biomass
+  expect_true(biomass_density[1] < biomass_density[2]) # More density = more biomass
   expect_true(biomass_density[2] < biomass_density[3])
 })
 

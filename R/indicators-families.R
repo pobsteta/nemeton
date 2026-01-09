@@ -40,10 +40,10 @@ NULL
 #' results <- indicator_carbon_biomass(units)
 #' }
 indicator_carbon_biomass <- function(units,
-                                      layers = NULL,
-                                      species_col = "species",
-                                      age_col = "age",
-                                      density_col = "density") {
+                                     layers = NULL,
+                                     species_col = "species",
+                                     age_col = "age",
+                                     density_col = "density") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -101,9 +101,9 @@ indicator_carbon_biomass <- function(units,
 #' results <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)
 #' }
 indicator_carbon_ndvi <- function(units,
-                                   layers,
-                                   ndvi_layer = "ndvi",
-                                   trend = FALSE) {
+                                  layers,
+                                  ndvi_layer = "ndvi",
+                                  trend = FALSE) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -132,7 +132,8 @@ indicator_carbon_ndvi <- function(units,
   # Handle trend calculation (future implementation)
   if (trend) {
     warning("NDVI trend calculation not yet implemented in v0.2.0 - returning single-date mean only",
-            call. = FALSE)
+      call. = FALSE
+    )
     # In future: calculate Sen's slope or linear regression if multi-date raster
   }
 
@@ -166,9 +167,9 @@ indicator_carbon_ndvi <- function(units,
 #' results <- indicator_water_network(units, layers, watercourse_layer = "streams")
 #' }
 indicator_water_network <- function(units,
-                                     layers,
-                                     watercourse_layer = "watercourses",
-                                     buffer = 0) {
+                                    layers,
+                                    watercourse_layer = "watercourses",
+                                    buffer = 0) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -251,9 +252,9 @@ indicator_water_network <- function(units,
 #' results <- indicator_water_wetlands(units, layers, wetland_values = c(50, 51, 52))
 #' }
 indicator_water_wetlands <- function(units,
-                                      layers,
-                                      wetland_layer = "landcover",
-                                      wetland_values = NULL) {
+                                     layers,
+                                     wetland_layer = "landcover",
+                                     wetland_values = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -292,7 +293,7 @@ indicator_water_wetlands <- function(units,
     lc_values <- exactextractr::exact_extract(
       wetland_raster,
       as_pure_sf(unit_geom),
-      fun = NULL,  # Return all values with coverage fractions
+      fun = NULL, # Return all values with coverage fractions
       progress = FALSE
     )[[1]]
 
@@ -341,9 +342,9 @@ indicator_water_wetlands <- function(units,
 #' results <- indicator_water_twi(units, layers, dem_layer = "dem")
 #' }
 indicator_water_twi <- function(units,
-                                 layers,
-                                 dem_layer = "dem",
-                                 method = c("auto", "dinf", "d8")) {
+                                layers,
+                                dem_layer = "dem",
+                                method = c("auto", "dinf", "d8")) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -429,7 +430,7 @@ calculate_twi_terra <- function(dem) {
 
   # Get cell resolution (m)
   cell_res <- terra::res(dem)
-  cell_area <- prod(cell_res)  # resolution in x and y (m²)
+  cell_area <- prod(cell_res) # resolution in x and y (m²)
   cell_width <- cell_res[1]
 
   # Specific catchment area (m²/m) = (flow_acc + 1) * cell_area / cell_width
@@ -450,7 +451,7 @@ calculate_twi_terra <- function(dem) {
   # Set a reasonable range for TWI (typically 0-20 in natural landscapes)
   # Extreme values indicate calculation issues
   twi[twi < 0] <- 0
-  twi[twi > 50] <- NA  # Flag suspiciously high values
+  twi[twi > 50] <- NA # Flag suspiciously high values
 
   twi
 }
@@ -488,9 +489,9 @@ calculate_twi_whitebox <- function(dem) {
 #' results <- indicator_soil_fertility(units, layers, soil_layer = "soil")
 #' }
 indicator_soil_fertility <- function(units,
-                                      layers,
-                                      soil_layer = "soil",
-                                      fertility_col = "fertility") {
+                                     layers,
+                                     soil_layer = "soil",
+                                     fertility_col = "fertility") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -550,7 +551,7 @@ extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_c
 
   if (max_val == min_val) {
     # All values identical
-    fertility <- rep(50, length(soil_values))  # Neutral value
+    fertility <- rep(50, length(soil_values)) # Neutral value
   } else {
     # Linear scaling to 0-100
     fertility <- ((soil_values - min_val) / (max_val - min_val)) * 100
@@ -633,10 +634,10 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
 #' results <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
 #' }
 indicator_soil_erosion <- function(units,
-                                    layers,
-                                    dem_layer = "dem",
-                                    landcover_layer = "landcover",
-                                    forest_values = c(1, 2, 3)) {
+                                   layers,
+                                   dem_layer = "dem",
+                                   landcover_layer = "landcover",
+                                   forest_values = c(1, 2, 3)) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -695,7 +696,7 @@ indicator_soil_erosion <- function(units,
   # Normalize to 0-100 scale
   # Slope can be 0-90 degrees, erosion_raster is 0-90
   # Scale to 0-100 for consistency
-  max_possible <- 90  # Maximum slope in degrees
+  max_possible <- 90 # Maximum slope in degrees
   erosion_risk <- (erosion_mean / max_possible) * 100
 
   # Ensure within bounds
@@ -731,14 +732,15 @@ indicator_soil_erosion <- function(units,
 #' \dontrun{
 #' layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
 #' results <- indicator_landscape_fragmentation(
-#'   units, layers, forest_values = c(1, 2, 3), buffer = 1000
+#'   units, layers,
+#'   forest_values = c(1, 2, 3), buffer = 1000
 #' )
 #' }
 indicator_landscape_fragmentation <- function(units,
-                                               layers,
-                                               landcover_layer = "landcover",
-                                               forest_values = c(1, 2, 3),
-                                               buffer = 1000) {
+                                              layers,
+                                              landcover_layer = "landcover",
+                                              forest_values = c(1, 2, 3),
+                                              buffer = 1000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
