@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,7 +136,7 @@ cartes de différence</li>
 <span>      layers <span class="op">=</span> <span class="va">layers_2025</span></span>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  unit_id <span class="op">=</span> <span class="st">"parcel_id"</span>  <span class="co"># Colonne identifiant les parcelles</span></span>
+<span>  unit_id <span class="op">=</span> <span class="st">"parcel_id"</span> <span class="co"># Colonne identifiant les parcelles</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -208,7 +208,7 @@ contenant les indicateurs calculés pour chaque période.</p>
 <span>  indicators <span class="op">=</span> <span class="st">"carbon"</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"2020"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"2025"</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"absolute"</span>  <span class="co"># Différence absolue au lieu de taux</span></span>
+<span>  method <span class="op">=</span> <span class="st">"absolute"</span> <span class="co"># Différence absolue au lieu de taux</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -325,7 +325,7 @@ de chaque indicateur par période et parcelle.</p>
 <span></span>
 <span><span class="co"># Filtrer les parcelles avec forte dynamique</span></span>
 <span><span class="va">high_change</span> <span class="op">&lt;-</span> <span class="va">rates</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">carbon_rate</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">2.0</span><span class="op">)</span>  <span class="co"># &gt; ±2% par an</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">carbon_rate</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">2.0</span><span class="op">)</span> <span class="co"># &gt; ±2% par an</span></span>
 <span></span>
 <span><span class="co"># Visualiser sur carte</span></span>
 <span><span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span></span>
@@ -368,7 +368,7 @@ de chaque indicateur par période et parcelle.</p>
 <span>  <span class="va">temporal_results</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"minmax"</span>,</span>
-<span>  by_period <span class="op">=</span> <span class="cn">TRUE</span>  <span class="co"># Normalisation intra-période</span></span>
+<span>  by_period <span class="op">=</span> <span class="cn">TRUE</span> <span class="co"># Normalisation intra-période</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Avantage</strong> : Permet de comparer les rangs relatifs
 entre périodes.</p>
@@ -382,7 +382,7 @@ entre périodes.</p>
 <span>  <span class="va">temporal_results</span>,</span>
 <span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"minmax"</span>,</span>
-<span>  by_period <span class="op">=</span> <span class="cn">FALSE</span>  <span class="co"># Normalisation sur toutes les données</span></span>
+<span>  by_period <span class="op">=</span> <span class="cn">FALSE</span> <span class="co"># Normalisation sur toutes les données</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Avantage</strong> : Échelle commune pour toutes les
 périodes.</p>
@@ -542,7 +542,7 @@ scénarios</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_4.0.1  nemeton_0.4.21</span></span>
+<span><span class="co">#&gt; [1] ggplot2_4.0.1  nemeton_0.4.22</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    </span></span>

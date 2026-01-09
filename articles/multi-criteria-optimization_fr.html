@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -171,7 +171,7 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <span><span class="va">result_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units_extended</span>,</span>
 <span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"R1"</span><span class="op">)</span>,</span>
-<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span>  <span class="co"># Minimiser R1</span></span>
+<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># Minimiser R1</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">result_mixed</span><span class="op">$</span><span class="va">is_optimal</span><span class="op">)</span></span>
@@ -246,7 +246,7 @@ nombre optimal de clusters :</p>
 <span><span class="va">result_auto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units_extended</span>,</span>
 <span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
-<span>  k <span class="op">=</span> <span class="cn">NULL</span>,  <span class="co"># Auto-détermination</span></span>
+<span>  k <span class="op">=</span> <span class="cn">NULL</span>, <span class="co"># Auto-détermination</span></span>
 <span>  method <span class="op">=</span> <span class="st">"kmeans"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -266,10 +266,11 @@ nombre optimal de clusters :</p>
 <span><span class="co"># Visualiser les scores de silhouette</span></span>
 <span><span class="va">k_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">silhouette_scores</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">k_values</span>, <span class="va">silhouette_scores</span>,</span>
-<span>     type <span class="op">=</span> <span class="st">"b"</span>, pch <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"blue"</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"Nombre de clusters (k)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Score de silhouette moyen"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Détermination du K Optimal"</span><span class="op">)</span></span>
+<span>  type <span class="op">=</span> <span class="st">"b"</span>, pch <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"blue"</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"Nombre de clusters (k)"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Score de silhouette moyen"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"Détermination du K Optimal"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">optimal_k</span>, col <span class="op">=</span> <span class="st">"red"</span>, lty <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="multi-criteria-optimization_fr_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="672"></p>
 </div>
@@ -306,7 +307,7 @@ nombre optimal de clusters :</p>
 <span><span class="va">profiles_kmeans</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">result_kmeans</span>, <span class="st">"cluster_profile"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Identifier les caractéristiques de chaque cluster</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">profiles_kmeans</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">profiles_kmeans</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n=== Cluster"</span>, <span class="va">i</span>, <span class="st">"===\n"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Carbone (C):"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">profiles_kmeans</span><span class="op">[</span><span class="va">i</span>, <span class="st">"family_C"</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Biodiversité (B):"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">profiles_kmeans</span><span class="op">[</span><span class="va">i</span>, <span class="st">"family_B"</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
@@ -433,17 +434,23 @@ représentent les meilleures combinaisons possibles de C et B.</p>
 <span></span>
 <span><span class="co"># Créer une matrice de trade-off plots</span></span>
 <span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_C"</span>, <span class="st">"family_B"</span>,</span>
-<span>                     title <span class="op">=</span> <span class="st">"C vs B"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span>  title <span class="op">=</span> <span class="st">"C vs B"</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span><span class="va">p2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_C"</span>, <span class="st">"family_P"</span>,</span>
-<span>                     title <span class="op">=</span> <span class="st">"C vs P"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span>  title <span class="op">=</span> <span class="st">"C vs P"</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span><span class="va">p3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>,</span>
-<span>                     title <span class="op">=</span> <span class="st">"B vs P"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span>  title <span class="op">=</span> <span class="st">"B vs P"</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span><span class="va">p4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_P"</span>, <span class="st">"family_E"</span>,</span>
-<span>                     title <span class="op">=</span> <span class="st">"P vs E"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span>  title <span class="op">=</span> <span class="st">"P vs E"</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span><span class="va">p5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_S"</span>, <span class="st">"family_N"</span>,</span>
-<span>                     title <span class="op">=</span> <span class="st">"S vs N"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span>  title <span class="op">=</span> <span class="st">"S vs N"</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span><span class="va">p6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_B"</span>, <span class="st">"family_N"</span>,</span>
-<span>                     title <span class="op">=</span> <span class="st">"B vs N"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span>  title <span class="op">=</span> <span class="st">"B vs N"</span></span>
+<span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="op">(</span><span class="va">p1</span> <span class="op">+</span> <span class="va">p2</span> <span class="op">+</span> <span class="va">p3</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="va">p4</span> <span class="op">+</span> <span class="va">p5</span> <span class="op">+</span> <span class="va">p6</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://patchwork.data-imaginist.com/reference/plot_annotation.html" class="external-link">plot_annotation</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Matrice de Trade-offs Entre Familles"</span><span class="op">)</span></span></code></pre></div>
@@ -460,7 +467,7 @@ représentent les meilleures combinaisons possibles de C et B.</p>
 <span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
 <span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
 <span>  pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  label <span class="op">=</span> <span class="st">"name"</span>,  <span class="co"># Afficher les noms</span></span>
+<span>  label <span class="op">=</span> <span class="st">"name"</span>, <span class="co"># Afficher les noms</span></span>
 <span>  xlab <span class="op">=</span> <span class="st">"Carbone"</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="st">"Biodiversité"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Parcelles Identifiées sur la Frontière de Pareto"</span></span>
@@ -560,9 +567,11 @@ profils multi-familles des parcelles.</p>
 <code class="sourceCode R"><span><span class="co"># Clustering sur 8 familles représentatives</span></span>
 <span><span class="va">zonage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units_extended</span>,</span>
-<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_W"</span>, <span class="st">"family_N"</span>,  <span class="co"># Conservation</span></span>
-<span>               <span class="st">"family_P"</span>, <span class="st">"family_E"</span>,                            <span class="co"># Production</span></span>
-<span>               <span class="st">"family_S"</span>, <span class="st">"family_A"</span><span class="op">)</span>,                           <span class="co"># Social</span></span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_W"</span>, <span class="st">"family_N"</span>, <span class="co"># Conservation</span></span>
+<span>    <span class="st">"family_P"</span>, <span class="st">"family_E"</span>, <span class="co"># Production</span></span>
+<span>    <span class="st">"family_S"</span>, <span class="st">"family_A"</span></span>
+<span>  <span class="op">)</span>, <span class="co"># Social</span></span>
 <span>  k <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"kmeans"</span></span>
 <span><span class="op">)</span></span>

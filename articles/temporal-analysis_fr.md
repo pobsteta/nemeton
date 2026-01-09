@@ -51,7 +51,7 @@ temporal_data <- nemeton_temporal(
       layers = layers_2025
     )
   ),
-  unit_id = "parcel_id"  # Colonne identifiant les parcelles
+  unit_id = "parcel_id" # Colonne identifiant les parcelles
 )
 ```
 
@@ -123,7 +123,7 @@ differences <- calculate_change_rate(
   indicators = "carbon",
   period_start = "2020",
   period_end = "2025",
-  method = "absolute"  # Différence absolue au lieu de taux
+  method = "absolute" # Différence absolue au lieu de taux
 )
 ```
 
@@ -235,7 +235,7 @@ rates <- calculate_change_rate(
 
 # Filtrer les parcelles avec forte dynamique
 high_change <- rates |>
-  filter(abs(carbon_rate) > 2.0)  # > ±2% par an
+  filter(abs(carbon_rate) > 2.0) # > ±2% par an
 
 # Visualiser sur carte
 plot_indicators_map(
@@ -276,7 +276,7 @@ temporal_norm <- normalize_indicators(
   temporal_results,
   indicators = c("carbon", "biodiversity", "water"),
   method = "minmax",
-  by_period = TRUE  # Normalisation intra-période
+  by_period = TRUE # Normalisation intra-période
 )
 ```
 
@@ -290,7 +290,7 @@ temporal_norm_global <- normalize_indicators(
   temporal_results,
   indicators = c("carbon", "biodiversity", "water"),
   method = "minmax",
-  by_period = FALSE  # Normalisation sur toutes les données
+  by_period = FALSE # Normalisation sur toutes les données
 )
 ```
 
@@ -425,7 +425,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1  nemeton_0.4.21
+#> [1] ggplot2_4.0.1  nemeton_0.4.22
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    

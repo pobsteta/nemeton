@@ -80,8 +80,10 @@ table(massif_demo_units$forest_type)
 ggplot(massif_demo_units) +
   geom_sf(aes(fill = forest_type)) +
   theme_minimal() +
-  labs(title = "Massif Demo - Types forestiers",
-       fill = "Type de forêt")
+  labs(
+    title = "Massif Demo - Types forestiers",
+    fill = "Type de forêt"
+  )
 ```
 
 ![Parcelles forestières par
@@ -159,8 +161,10 @@ head(carbon[, c("parcel_id", "forest_type", "carbon")])
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("carbon", "biodiversity", "water",
-                 "fragmentation", "accessibility")
+  indicators = c(
+    "carbon", "biodiversity", "water",
+    "fragmentation", "accessibility"
+  )
 )
 
 # Vue d'ensemble
@@ -345,15 +349,19 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("carbon", "biodiversity", "water",
-                 "fragmentation", "accessibility")
+  indicators = c(
+    "carbon", "biodiversity", "water",
+    "fragmentation", "accessibility"
+  )
 )
 
 # 3. Normaliser (0-100)
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "biodiversity", "water",
-                 "fragmentation", "accessibility"),
+  indicators = c(
+    "carbon", "biodiversity", "water",
+    "fragmentation", "accessibility"
+  ),
   method = "minmax"
 )
 
@@ -415,7 +423,7 @@ Le package supporte le français et l’anglais :
 
 ``` r
 # Définir la langue
-nemeton_set_language("fr")  # Français
+nemeton_set_language("fr") # Français
 # nemeton_set_language("en")  # English
 
 # Les messages d'erreur/information seront dans la langue choisie
@@ -477,7 +485,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1  nemeton_0.4.21
+#> [1] ggplot2_4.0.1  nemeton_0.4.22
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] tidyr_1.3.2          sass_0.4.10          generics_0.1.4      
