@@ -2910,11 +2910,30 @@ if (!is.null(routes) && nrow(routes) > 0) {
     return(pollution_contribution)
   }
 
-  # Calcul pour chaque parcelle
+  # Calcul pour chaque parcelle (parallélisé)
   cat("   Calcul en cours...\n")
-  pollution_scores <- sapply(seq_len(nrow(parcelles)), function(i) {
+
+  # Fonction wrapper pour le calcul
+  calc_fn <- function(i) {
     calc_pollution_score(parcelles_centroids[i, ], routes)
-  })
+  }
+
+  # Parallélisation avec furrr si disponible
+  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+    library(furrr)
+    library(future)
+    plan(multisession, workers = max(1, availableCores() - 1))
+    cat("   Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
+    pollution_scores <- future_map_dbl(seq_len(nrow(parcelles)), calc_fn, .progress = TRUE)
+    plan(sequential)
+  } else if (requireNamespace("purrr", quietly = TRUE)) {
+    library(purrr)
+    cat("   Mode séquentiel (purrr)...\n")
+    pollution_scores <- map_dbl(seq_len(nrow(parcelles)), calc_fn)
+  } else {
+    cat("   Mode séquentiel (base R)...\n")
+    pollution_scores <- sapply(seq_len(nrow(parcelles)), calc_fn)
+  }
 
   parcelles$pollution_score <- pollution_scores
 
