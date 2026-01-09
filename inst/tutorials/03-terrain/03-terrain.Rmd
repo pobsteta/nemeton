@@ -1843,18 +1843,10 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-1-setup"}
+```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-7-1-setup"}
 # === FAMILLE W (EAU) : W1, W2, W3 ===
-
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-
-# Charger parcelles (existantes ou nouvelles)
-if (file.exists(output_path)) {
-  parcelles <- st_read(output_path, quiet = TRUE)
-} else {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Fonction d'extraction
 extract_mean <- function(r, poly) {
@@ -1867,7 +1859,7 @@ extract_mean <- function(r, poly) {
 
 cat("=== Famille W (Eau) ===\n\n")
 
-# W1 : Densité réseau hydrographique
+# W1 : Densité réseau hydrographique (m/ha)
 cours_eau_path <- file.path(data_dir, "cours_eau.gpkg")
 if (file.exists(cours_eau_path)) {
   cours_eau <- st_read(cours_eau_path, quiet = TRUE)
@@ -1878,6 +1870,7 @@ if (file.exists(cours_eau_path)) {
     else 0
   })
   cat("W1 (densité hydro):", round(mean(parcelles$W1, na.rm = TRUE), 2), "m/ha\n")
+  cat("   0 = pas de cours d'eau, >50 = réseau dense\n\n")
 }
 
 # W2, W3 : TWI et zones humides
@@ -1887,8 +1880,15 @@ if (file.exists(twi_path)) {
   parcelles$W3 <- extract_mean(twi_rast, parcelles)
   parcelles$W2 <- extract_mean(twi_rast > 12, parcelles) * 100
   cat("W2 (zones humides):", round(mean(parcelles$W2, na.rm = TRUE), 2), "%\n")
-  cat("W3 (TWI):", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
+  cat("   % de surface avec TWI > 12 (potentiel zone humide)\n\n")
+  cat("W3 (TWI moyen):", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
+  cat("   <6 = très sec, 6-9 = sec, 9-12 = moyen, >12 = humide\n")
 }
+
+# Sauvegarder
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille W sauvegardée:", output_path, "\n")
 ```
 
 
@@ -1906,11 +1906,9 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-7-2-setup"}
+```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=65, exercise.setup="ex-7-2-setup"}
 # === FAMILLE R (RISQUES) : R1, R2, R3, R4 ===
-
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
 # Fonction d'extraction
@@ -1924,35 +1922,46 @@ extract_mean <- function(r, poly) {
 
 cat("=== Famille R (Risques) ===\n\n")
 
-# R1 : Risque feu
+# R1 : Risque feu (score 0-1)
 fire_path <- file.path(data_dir, "fire_exposure.tif")
 if (file.exists(fire_path)) {
   parcelles$R1 <- extract_mean(rast(fire_path), parcelles)
   cat("R1 (risque feu):", round(mean(parcelles$R1, na.rm = TRUE), 3), "\n")
+  cat("   Score 0-1 (0=faible, 1=fort) - pente + expo sud + sécheresse\n\n")
 }
 
-# R2 : Risque tempête
+# R2 : Risque tempête (score 0-1)
 storm_path <- file.path(data_dir, "storm_exposure.tif")
 if (file.exists(storm_path)) {
   parcelles$R2 <- extract_mean(rast(storm_path), parcelles)
   cat("R2 (risque tempête):", round(mean(parcelles$R2, na.rm = TRUE), 3), "\n")
+  cat("   Score 0-1 (0=abrité, 1=exposé) - altitude + exposition vents\n\n")
 }
 
-# R3 : Risque sécheresse
+# R3 : Risque sécheresse (score 0-1)
 drought_path <- file.path(data_dir, "drought_risk.tif")
 if (file.exists(drought_path)) {
   parcelles$R3 <- extract_mean(rast(drought_path), parcelles)
   cat("R3 (risque sécheresse):", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
+  cat("   Score 0-1 (0=humide, 1=sec) - TWI inverse + expo sud\n\n")
 }
 
-# R4 : Pression gibier
-if (file.exists(parcelles_path)) {
-  parc_r4 <- st_read(parcelles_path, quiet = TRUE)
-  if ("R4" %in% names(parc_r4)) {
-    parcelles$R4 <- parc_r4$R4
-    cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
-  }
+# R4 : Pression gibier (score 0-1)
+game_path <- file.path(data_dir, "game_pressure.tif")
+if (file.exists(game_path)) {
+  parcelles$R4 <- extract_mean(rast(game_path), parcelles)
+  cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
+  cat("   Score 0-1 (0=faible, 1=forte) - données chasse\n")
+} else {
+  # Valeur par défaut si pas de données
+  parcelles$R4 <- 0.5
+  cat("R4 (pression gibier): 0.5 (valeur par défaut)\n")
+  cat("   Données chasse non disponibles\n")
 }
+
+# Sauvegarder
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille R sauvegardée:", output_path, "\n")
 ```
 
 
@@ -1970,9 +1979,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-7-3-setup"}
+```{r ex-7-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-7-3-setup"}
 # === FAMILLE S (SOCIAL) : S1, S2, S3 ===
-
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
@@ -1987,32 +1995,43 @@ extract_mean <- function(r, poly) {
 
 cat("=== Famille S (Social) ===\n\n")
 
-# S1 : Distance aux routes
+# S1 : Distance aux routes (m)
 dist_routes_path <- file.path(data_dir, "distance_routes.tif")
 if (file.exists(dist_routes_path)) {
   parcelles$S1 <- extract_mean(rast(dist_routes_path), parcelles)
   cat("S1 (dist routes):", round(mean(parcelles$S1, na.rm = TRUE), 0), "m\n")
+  cat("   <100m = très accessible, 100-500m = accessible, >500m = isolé\n\n")
 }
 
-# S2 : Distance aux bâtiments
+# S2 : Distance aux bâtiments (m)
 dist_bat_path <- file.path(data_dir, "distance_batiments.tif")
 if (file.exists(dist_bat_path)) {
   parcelles$S2 <- extract_mean(rast(dist_bat_path), parcelles)
   cat("S2 (dist bâtiments):", round(mean(parcelles$S2, na.rm = TRUE), 0), "m\n")
+  cat("   <200m = proche habitat, 200-1000m = périurbain, >1000m = rural\n\n")
 }
 
-# S3 : Densité sentiers
+# S3 : Densité sentiers (m/ha)
 sentiers_path <- file.path(data_dir, "densite_sentiers.tif")
 if (file.exists(sentiers_path)) {
   parcelles$S3 <- extract_mean(rast(sentiers_path), parcelles)
   cat("S3 (densité sentiers):", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+  cat("   0 = pas de sentier, >20 = usage récréatif important\n")
+} else {
+  parcelles$S3 <- 0
+  cat("S3 (densité sentiers): 0 (données non disponibles)\n")
+  cat("   Exécutez la section 5 pour télécharger les sentiers OSM\n")
 }
+
+# Sauvegarder
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille S sauvegardée:", output_path, "\n")
 ```
 
 
 ---
 
-### Exercice 7.4 : Familles P/F + Synthèse
+### Exercice 7.4 : Familles P (Production) et F (Sol)
 
 ```{r ex-7-4-setup}
 library(sf)
@@ -2024,9 +2043,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-7-4-setup"}
-# === FAMILLES P (PRODUCTION) et F (SOL) + SYNTHÈSE ===
-
+```{r ex-7-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-7-4-setup"}
+# === FAMILLES P (PRODUCTION) et F (SOL) ===
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
@@ -2047,7 +2065,8 @@ fertilite_path <- file.path(data_dir, "fertilite_station.tif")
 if (file.exists(fertilite_path)) {
   parcelles$P2 <- extract_mean(rast(fertilite_path), parcelles)
   cat("P2 (fertilité station):", round(mean(parcelles$P2, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 (0=contraignant, 1=fertile)\n\n")
+  cat("   Score 0-1 : 0-0.2=contraignant, 0.2-0.4=faible,\n")
+  cat("              0.4-0.6=moyen, 0.6-0.8=bon, 0.8-1=excellent\n\n")
 }
 
 # F1 : Risque érosion RUSLE simplifié (Section 1)
@@ -2056,30 +2075,97 @@ erosion_path <- file.path(data_dir, "erosion_f1.tif")
 if (file.exists(erosion_path)) {
   parcelles$F1 <- extract_mean(rast(erosion_path), parcelles)
   cat("F1 (érosion RUSLE):", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 (0=faible risque, 1=fort risque)\n")
+  cat("   Score 0-1 : 0-0.1=très faible, 0.1-0.3=faible,\n")
+  cat("              0.3-0.5=modéré, 0.5-0.7=élevé, 0.7-1=très élevé\n")
 } else {
   cat("F1: Fichier erosion_f1.tif non trouvé.\n")
   cat("   Exécutez l'exercice 1.2 (RUSLE simplifié)\n")
 }
 
-# Sauvegarder avec P2 et F1
+# Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-
-# === SYNTHÈSE FINALE ===
-cat("\n=== SYNTHÈSE INDICATEURS TERRAIN ===\n")
-cat("Fichier:", output_path, "\n\n")
-
-indicateurs <- c("W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "P2", "F1")
-cat("Indicateurs calculés:\n")
-for (ind in indicateurs) {
-  if (ind %in% names(parcelles)) {
-    cat(sprintf("- %s: %.3f (moy)\n", ind, mean(parcelles[[ind]], na.rm = TRUE)))
-  }
-}
-cat("\nNombre de parcelles:", nrow(parcelles), "\n")
-cat("Colonnes:", ncol(parcelles), "\n")
+cat("\nFamilles P/F sauvegardées:", output_path, "\n")
 ```
 
+---
+
+### Exercice 7.5 : Synthèse finale
+
+```{r ex-7-5-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-7-5-setup"}
+# === SYNTHÈSE FINALE - TOUS LES INDICATEURS TERRAIN ===
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
+
+cat("╔══════════════════════════════════════════════════════════════╗\n")
+cat("║          SYNTHÈSE INDICATEURS TERRAIN (Tutorial 03)         ║\n")
+cat("╚══════════════════════════════════════════════════════════════╝\n\n")
+
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), "\n\n")
+
+# Définition des indicateurs avec leurs unités et légendes
+indicateurs_info <- list(
+  W1 = list(nom = "Densité hydro", unite = "m/ha", legende = "0=aucun, >50=dense"),
+  W2 = list(nom = "Zones humides", unite = "%", legende = "% surface TWI>12"),
+  W3 = list(nom = "TWI moyen", unite = "", legende = "<6=sec, 9-12=moyen, >12=humide"),
+  R1 = list(nom = "Risque feu", unite = "0-1", legende = "0=faible, 1=fort"),
+  R2 = list(nom = "Risque tempête", unite = "0-1", legende = "0=abrité, 1=exposé"),
+  R3 = list(nom = "Risque sécheresse", unite = "0-1", legende = "0=humide, 1=sec"),
+  R4 = list(nom = "Pression gibier", unite = "0-1", legende = "0=faible, 1=forte"),
+  S1 = list(nom = "Dist routes", unite = "m", legende = "<100=accessible, >500=isolé"),
+  S2 = list(nom = "Dist bâtiments", unite = "m", legende = "<200=proche, >1000=rural"),
+  S3 = list(nom = "Densité sentiers", unite = "m/ha", legende = "0=aucun, >20=récréatif"),
+  P2 = list(nom = "Fertilité station", unite = "0-1", legende = "0=contraignant, 1=fertile"),
+  F1 = list(nom = "Érosion RUSLE", unite = "0-1", legende = "0=faible, 1=fort risque")
+)
+
+cat("┌────────┬──────────────────┬─────────┬─────────┬─────────┬────────────────────────┐\n")
+cat("│ Indic. │ Description      │   Min   │   Moy   │   Max   │ Interprétation         │\n")
+cat("├────────┼──────────────────┼─────────┼─────────┼─────────┼────────────────────────┤\n")
+
+for (ind in names(indicateurs_info)) {
+  if (ind %in% names(parcelles)) {
+    info <- indicateurs_info[[ind]]
+    vals <- parcelles[[ind]]
+    cat(sprintf("│ %-6s │ %-16s │ %7.2f │ %7.2f │ %7.2f │ %-22s │\n",
+                ind, substr(info$nom, 1, 16),
+                min(vals, na.rm = TRUE),
+                mean(vals, na.rm = TRUE),
+                max(vals, na.rm = TRUE),
+                substr(info$legende, 1, 22)))
+  }
+}
+
+cat("└────────┴──────────────────┴─────────┴─────────┴─────────┴────────────────────────┘\n")
+
+# Résumé par famille
+cat("\n=== Résumé par famille ===\n")
+familles <- list(
+  W = c("W1", "W2", "W3"),
+  R = c("R1", "R2", "R3", "R4"),
+  S = c("S1", "S2", "S3"),
+  P = c("P2"),
+  F = c("F1")
+)
+
+for (fam in names(familles)) {
+  inds <- familles[[fam]]
+  present <- sum(inds %in% names(parcelles))
+  cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
+}
+
+cat("\nTotal:", sum(names(indicateurs_info) %in% names(parcelles)), "/12 indicateurs calculés\n")
+```
 
 ---
 
