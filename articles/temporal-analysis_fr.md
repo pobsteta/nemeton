@@ -434,7 +434,7 @@ sessionInfo()
 #> [13] R6_2.6.1           generics_0.1.4     classInt_0.4-11    sf_1.0-23         
 #> [17] knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.0       desc_1.4.3        
 #> [21] units_1.0-0        DBI_1.2.3          pillar_1.11.1      RColorBrewer_1.1-3
-#> [25] bslib_0.9.0        rlang_1.1.6        cachem_1.1.0       terra_1.8-86      
+#> [25] bslib_0.9.0        rlang_1.1.7        cachem_1.1.0       terra_1.8-86      
 #> [29] xfun_0.55          S7_0.2.1           fs_1.6.6           sass_0.4.10       
 #> [33] otel_0.2.0         cli_3.6.5          withr_3.0.2        pkgdown_2.2.0     
 #> [37] magrittr_2.0.4     class_7.3-23       digest_0.6.39      grid_4.5.2        

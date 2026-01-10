@@ -270,7 +270,7 @@ sessionInfo()
 #> [1] nemeton_0.4.23
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] terra_1.8-86       cli_3.6.5          knitr_1.51         rlang_1.1.6       
+#>  [1] terra_1.8-86       cli_3.6.5          knitr_1.51         rlang_1.1.7       
 #>  [5] xfun_0.55          KernSmooth_2.23-26 otel_0.2.0         DBI_1.2.3         
 #>  [9] textshaping_1.0.4  sf_1.0-23          jsonlite_2.0.0     glue_1.8.0        
 #> [13] e1071_1.7-17       htmltools_0.5.9    ragg_1.5.0         sass_0.4.10       
