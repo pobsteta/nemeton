@@ -113,4 +113,4 @@ Fonctions principales utilisées :
 
 ## Tutoriel Suivant
 
-→ **Tutorial 04** : Écologie — Familles B, L, T, F, N (12 indicateurs)
+→ **Tutorial 04** : Écologie — Familles B, L, T, N (11 indicateurs : B1-B3, L1-L3, T1-T2, N1-N3)

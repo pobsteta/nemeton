@@ -1414,14 +1414,9 @@ Dans ce tutoriel, vous avez appris à :
 | Cours d'eau | IGN WFS | Lignes |
 | LiDAR HD | IGN lidarHD | LAZ |
 
-### Prochaine étape
+### Tutoriel suivant
 
-Dans le **Tutorial 2**, vous apprendrez à :
-
-- Charger et visualiser les nuages de points LiDAR
-- Normaliser les hauteurs avec le MNT
-- Extraire les métriques dendrométriques par parcelle
-- Générer un Modèle Numérique de Hauteur (MNH)
+→ **Tutorial 02 : LiDAR** — Familles C, P, E, A (9 indicateurs) : Traiter les données LiDAR HD pour calculer les indicateurs Carbone (C1, C2), Production (P1, P2, P3), Énergie (E1, E2) et Air (A1, A2).
 
 ---
 

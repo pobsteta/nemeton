@@ -96,4 +96,4 @@ Fonctions principales utilisées :
 
 ## Tutoriel Suivant
 
-→ **Tutorial 05** : Assemblage — Famille E (E2) + Indice Composite I_nemeton
+→ **Tutorial 05** : Assemblage — Indice Composite I_nemeton (32 indicateurs, normalisation, pondération)

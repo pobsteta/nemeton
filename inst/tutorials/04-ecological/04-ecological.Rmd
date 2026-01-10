@@ -2930,4 +2930,4 @@ quiz(
 
 ### Tutoriel suivant
 
-→ **Tutorial 05 : Calcul Complet et Normalisation** - Assembler les 12 familles et normaliser.
+→ **Tutorial 05 : Assemblage** — Indice Composite I_nemeton : Assembler les 32 indicateurs, normaliser les valeurs et calculer l'indice composite final.

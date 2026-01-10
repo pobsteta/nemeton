@@ -74,4 +74,4 @@ dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
 ## Tutoriel Suivant
 
-→ **Tutorial 02** : LiDAR — Familles C, P, B, E, A (C1, P1, P3, B2, E1, A1)
+→ **Tutorial 02** : LiDAR — Familles C, P, E, A (9 indicateurs : C1, C2, P1, P2, P3, E1, E2, A1, A2)
