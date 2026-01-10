@@ -1397,9 +1397,6 @@ parcelles$R4_classe <- cut(parcelles$R4,
 cat("\nDistribution:\n")
 print(table(parcelles$R4_classe))
 
-# Nettoyer parallélisation
-if (use_parallel) future::plan(future::sequential)
-
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
