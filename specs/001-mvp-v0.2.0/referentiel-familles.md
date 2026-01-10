@@ -83,7 +83,7 @@ Le référentiel nemeton repose sur **12 familles d'indicateurs** correspondant 
 - L2: Ratio lisière-surface
 - L3: Intégration dans la Trame Verte et Bleue (TVB)
 
-**Statut v0.2.0**: ✅ Partiel (L1, L2 - US5 Phase 7) | ⏳ L3 en v0.3.0+
+**Statut v0.4.0**: ✅ Complet (L1, L2, L3)
 
 ---
 
@@ -107,8 +107,9 @@ Le référentiel nemeton repose sur **12 familles d'indicateurs** correspondant 
 - R1: Risque incendie
 - R2: Risque tempête
 - R3: Risque sécheresse
+- R4: Pression gibier (abroutissement)
 
-**Statut v0.2.0**: ⏳ Planifié pour v0.3.0+
+**Statut v0.4.0**: ✅ Complet (R1, R2, R3, R4)
 
 ---
 
@@ -165,36 +166,30 @@ Le référentiel nemeton repose sur **12 familles d'indicateurs** correspondant 
 
 ## Roadmap d'implémentation
 
-### v0.2.0 (Actuel) - Fondations
-- ✅ **Infrastructure temporelle** (US1)
-- ✅ **Famille C** (Carbone/Énergétique): C1, C2
-- ✅ **Famille W** (Water/Infiltrée): W1, W2, W3
-- ✅ **Famille F** (Fertilité/Riche): F1, F2
-- ✅ **Famille L** (Landscape/Esthétique): L1, L2
+### v0.4.0 (Actuel) - Référentiel Complet
 
-**Total**: 5 familles, 10 sous-indicateurs
+**12 familles - 32 indicateurs**
 
----
+| Famille | Indicateurs | Nb |
+|---------|-------------|-----|
+| C (Carbone) | C1, C2 | 2 |
+| B (Biodiversité) | B1, B2, B3 | 3 |
+| W (Water) | W1, W2, W3 | 3 |
+| A (Air) | A1, A2 | 2 |
+| F (Fertilité) | F1, F2 | 2 |
+| L (Landscape) | L1, L2, L3 | 3 |
+| T (Trame) | T1, T2 | 2 |
+| R (Résilience) | R1, R2, R3, R4 | 4 |
+| S (Santé) | S1, S2, S3 | 3 |
+| P (Patrimoine) | P1, P2, P3 | 3 |
+| E (Énergie) | E1, E2 | 2 |
+| N (Nuit) | N1, N2, N3 | 3 |
+| **Total** | | **32** |
 
-### v0.3.0 - Extension Biodiversité & Risques
-- ⏳ **Famille B** (Biodiversité/Vivant): B1, B2, B3
-- ⏳ **Famille R** (Résilience/Flexible): R1, R2, R3
-- ⏳ **Famille T** (Trame/Nervurée): T1, T2
-- ⏳ **Famille A** (Air/Vaporeuse): A1, A2
-- ⏳ **Famille N** (Nuit/Ténébreuse): N1, N2, N3
-
-**Total cumulé**: 10 familles, 25 sous-indicateurs
-
----
-
-### v0.4.0 - Extension Socio-Économique
-- ⏳ **Famille S** (Santé/Ouverte): S1, S2, S3
-- ⏳ **Famille P** (Patrimoine/Radicale): P1, P2, P3
-- ⏳ **Famille E** (Éducation/Éducative): E1, E2
-- ⏳ **Famille A** (complétion): A3, A4
-- ⏳ **Famille L** (complétion): L3 (TVB)
-
-**Total cumulé**: 12 familles, 36 sous-indicateurs
+**Répartition par tutorial** :
+- T02 (LiDAR) : C1, P1, P3, A1, E1, E2 (6)
+- T03 (Terrain) : W1, W2, W3, R1, R2, R3, R4, S1, S2, S3, P2, F1 (12)
+- T04 (Écologie) : B1, B2, B3, L1, L2, L3, C2, T1, T2, A2, F2, N1, N2, N3 (14)
 
 ---
 

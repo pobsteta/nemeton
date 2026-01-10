@@ -33,9 +33,11 @@ Bienvenue dans le **cinquième tutoriel** de la série nemeton !
 
 Dans les tutoriels précédents, vous avez calculé progressivement tous les indicateurs :
 - **T01** : Zone d'étude, parcelles et données de base
-- **T02** : Métriques LiDAR → C1, C2, C3, P1, P3, E1, A1 (7 indicateurs)
-- **T03** : Indicateurs terrain → W1-W3, R1-R4, S1-S3, P2, F1 (12 indicateurs)
-- **T04** : Indicateurs écologiques → B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3 (14 indicateurs)
+- **T02** : Métriques LiDAR → C1, C2, P1, P2, P3, A1, A2, E1, E2 (9 indicateurs)
+- **T03** : Indicateurs terrain → W1, W2, W3, R1, R2, R3, R4, S1, S2, S3, F1 (11 indicateurs)
+- **T04** : Indicateurs écologiques → B1, B2, B3, L1, L2, L3, T1, T2, F2, N1, N2, N3 (12 indicateurs)
+
+**Total : 32 indicateurs calculés.**
 
 Tous ces indicateurs sont maintenant dans votre fichier **`parcelles.gpkg`**.
 
@@ -56,13 +58,13 @@ familles <- data.frame(
     "Temporel", "Risques", "Social", "Production", "Énergie", "Naturalité"
   ),
   Indicateurs = c(
-    "C1, C2, C3", "B1, B2, B3", "W1, W2, W3", "A1, A2",
+    "C1, C2", "B1, B2, B3", "W1, W2, W3", "A1, A2",
     "F1, F2", "L1, L2, L3", "T1, T2", "R1, R2, R3, R4",
     "S1, S2, S3", "P1, P2, P3", "E1, E2", "N1, N2, N3"
   ),
-  Nb = c(3, 3, 3, 2, 2, 3, 2, 4, 3, 3, 2, 3)
+  Nb = c(2, 3, 3, 2, 2, 3, 2, 4, 3, 3, 2, 3)
 )
-knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton (33 indicateurs)")
+knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton (32 indicateurs)")
 ```
 
 ## Chargement et Vérification
@@ -78,9 +80,9 @@ library(dplyr)
 # Répertoire de cache
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
-# Liste des indicateurs attendus par famille
+# Liste des indicateurs attendus par famille (33 indicateurs au total)
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -94,6 +96,11 @@ indicateurs_par_famille <- list(
   N = c("N1", "N2", "N3")
 )
 tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
+
+# Indicateurs attendus par tutoriel (pour vérification)
+indics_tuto02 <- c("C1", "C2", "P1", "P2", "P3", "A1", "A2", "E1", "E2")  # 9 indicateurs LiDAR
+indics_tuto03 <- c("W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "F1")  # 11 indicateurs terrain
+indics_tuto04 <- c("B1", "B2", "B3", "L1", "L2", "L3", "T1", "T2", "F2", "N1", "N2", "N3")  # 12 indicateurs écologie
 ```
 
 ```{r load-parcelles, exercise=TRUE, exercise.setup="load-parcelles-setup"}
@@ -113,9 +120,44 @@ cat("Parcelles:", nrow(parcelles), "\n")
 cat("Colonnes:", ncol(parcelles), "\n")
 cat("CRS:", st_crs(parcelles)$epsg, "\n")
 
-# Aperçu des colonnes
-cat("\nColonnes disponibles:\n")
-cat(paste(names(parcelles), collapse = ", "))
+# === VÉRIFICATION DES INDICATEURS PAR TUTORIEL ===
+cat("\n=== VÉRIFICATION INDICATEURS PAR TUTORIEL ===\n")
+
+# Indicateurs attendus par tutoriel
+indics_tuto02 <- c("C1", "C2", "P1", "P2", "P3", "A1", "A2", "E1", "E2")  # LiDAR (9)
+indics_tuto03 <- c("W1", "W2", "W3", "R1", "R2", "R3", "R4", "S1", "S2", "S3", "F1")  # Terrain (11)
+indics_tuto04 <- c("B1", "B2", "B3", "L1", "L2", "L3", "T1", "T2", "F2", "N1", "N2", "N3")  # Écologie (12)
+
+# Fonction de vérification
+check_tuto <- function(nom, indics, data) {
+  presents <- indics[indics %in% names(data)]
+  manquants <- indics[!indics %in% names(data)]
+  status <- if (length(manquants) == 0) "✓ COMPLET" else "⚠ INCOMPLET"
+  cat(sprintf("\n%s (%d/%d): %s\n", nom, length(presents), length(indics), status))
+  if (length(manquants) > 0) {
+    cat(sprintf("  Manquants: %s\n", paste(manquants, collapse = ", ")))
+    cat("  → Relancez ce tutoriel pour calculer ces indicateurs\n")
+  }
+  length(manquants) == 0
+}
+
+t02_ok <- check_tuto("Tutorial 02 (LiDAR)", indics_tuto02, parcelles)
+t03_ok <- check_tuto("Tutorial 03 (Terrain)", indics_tuto03, parcelles)
+t04_ok <- check_tuto("Tutorial 04 (Écologie)", indics_tuto04, parcelles)
+
+# Bilan global
+total_attendus <- length(c(indics_tuto02, indics_tuto03, indics_tuto04))
+total_presents <- sum(c(indics_tuto02, indics_tuto03, indics_tuto04) %in% names(parcelles))
+
+cat(sprintf("\n=== BILAN GLOBAL: %d/%d indicateurs ===\n", total_presents, total_attendus))
+
+if (total_presents < total_attendus) {
+  cat("\n⚠ ATTENTION: Certains indicateurs sont manquants.\n")
+  cat("Le calcul de I_nemeton sera partiel.\n")
+  cat("Pour un résultat complet, complétez d'abord les tutoriels précédents.\n")
+} else {
+  cat("\n✓ Tous les indicateurs sont présents. Prêt pour la normalisation !\n")
+}
 ```
 
 ### Vérification des Indicateurs
@@ -162,7 +204,7 @@ library(dplyr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -273,7 +315,7 @@ library(dplyr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -359,7 +401,7 @@ library(dplyr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -441,7 +483,7 @@ library(dplyr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -557,7 +599,7 @@ library(dplyr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -742,7 +784,7 @@ library(dplyr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
-  C = c("C1", "C2", "C3"),
+  C = c("C1", "C2"),
   B = c("B1", "B2", "B3"),
   W = c("W1", "W2", "W3"),
   A = c("A1", "A2"),
@@ -869,7 +911,7 @@ quiz(
   ),
 
   question("Quels indicateurs doivent être inversés après normalisation ?",
-    answer("C1, C2, C3 (carbone)"),
+    answer("C1, C2 (carbone)"),
     answer("B1, B2, B3 (biodiversité)"),
     answer("R1, R2, R3, R4 (risques)", correct = TRUE),
     answer("P1, P2, P3 (production)"),

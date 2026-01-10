@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 04 : Écologie — Familles B, L, C, T, A, F, N (14 indicateurs)"
+title: "Tutorial 04 : Écologie — Familles B, L, T, F, N (12 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,8 +7,8 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Calcul de 14 indicateurs écologiques : B1-3 (biodiversité), L1-3 (paysage/TVB),
-  C2 (NDVI), T1-2 (temporel), A2 (qualité air), F2 (fertilité), N1-3 (naturalité).
+  Calcul de 12 indicateurs écologiques : B1-3 (biodiversité), L1-3 (paysage/TVB),
+  T1-2 (temporel), F2 (fertilité), N1-3 (naturalité).
 ---
 
 ```{r setup, include=FALSE}
@@ -48,11 +48,12 @@ Sys.setenv(
 Ce tutoriel calcule les **indicateurs écologiques** des familles :
 
 - **B** (Biodiversité) : Protection, structure, connectivité
-- **L** (Paysage) : Lisières, fragmentation
+- **L** (Paysage) : Lisières, fragmentation, TVB
 - **T** (Temporel) : Âge, changement
-- **A2** (Air) : Qualité air forestier
 - **F2** (Fertilité) : Fertilité sol
 - **N** (Naturalité) : Continuité, distance, composite
+
+> **Note** : Les indicateurs C2 (vitalité) et A2 (qualité air) sont calculés dans le Tutorial 02.
 
 ### Sources de données
 

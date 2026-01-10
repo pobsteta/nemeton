@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 02 : LiDAR — Familles C, P, B, E, A (7 indicateurs)"
+title: "Tutorial 02 : LiDAR — Familles C, P, E, A (9 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,9 +7,9 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Traitement LiDAR HD et calcul de 7 indicateurs : C1 (stock carbone),
-  P1/P3 (hauteur/volume), B2 (complexité structurale), E1/E2 (énergie),
-  A1 (interception pluies).
+  Traitement LiDAR HD et calcul de 9 indicateurs : C1 (stock carbone),
+  C2 (vitalité NDVI), P1 (volume bois), P2 (productivité), P3 (qualité structurale),
+  A1 (couverture forestière), A2 (qualité air), E1/E2 (énergie).
 ---
 
 ```{r setup, include=FALSE}
@@ -636,7 +636,312 @@ if (file.exists(parcelles_path)) {
 
 ---
 
-## Section 7 : Indicateurs Énergie (E1, E2)
+## Section 7 : Indicateurs Carbone, Production et Air (C1, P1, P2, P3, A1)
+
+### Introduction aux familles C, P, A
+
+Les métriques LiDAR permettent de calculer directement plusieurs indicateurs du référentiel nemeton :
+
+- **C1** (Carbone) : Stock de biomasse aérienne (tC/ha)
+- **P1** (Production) : Volume de bois sur pied (m³/ha)
+- **P2** (Production) : Productivité forestière (m³/ha/an)
+- **P3** (Production) : Qualité structurale du peuplement (score 0-100)
+- **A1** (Air) : Couverture forestière et interception (%)
+
+```{r indicateurs-cpa-concept, echo=FALSE}
+indics_cpa <- data.frame(
+  Indicateur = c("C1", "P1", "P2", "P3", "A1"),
+  Nom = c("Stock carbone biomasse", "Volume bois sur pied", "Productivité forestière", "Qualité structurale", "Couverture forestière"),
+  Unite = c("tC/ha", "m³/ha", "m³/ha/an", "score 0-100", "%"),
+  Source = c("zmean, zmax, pzabove2", "zmean, zmax, pzabove2", "zmean, pzabove2, zq95, zq25", "zentropy, zsd", "pzabove2")
+)
+knitr::kable(indics_cpa, caption = "Indicateurs dérivés des métriques LiDAR")
+```
+
+### Exercice 7.1 : Calculer C1 (Stock carbone)
+
+L'indicateur **C1** estime le stock de carbone aérien à partir de la biomasse forestière :
+
+$$C1 = AGB \times 0.47$$
+
+Où AGB (Above Ground Biomass) est estimée par une équation allométrique simplifiée :
+
+$$AGB = k \times (pzabove2/100) \times zmean^{1.5}$$
+
+```{r ex-7-1-c1-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-1-c1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-7-1-c1-setup"}
+# === CALCUL DE C1 : STOCK CARBONE BIOMASSE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de C1 (Stock carbone) ===\n\n")
+
+  if (all(c("pzabove2", "zmean") %in% names(parcelles))) {
+    # Paramètres du modèle allométrique simplifié
+    k_biomasse <- 2.5  # Facteur de calibration (t/ha)
+    fraction_carbone <- 0.47  # Fraction carbone dans la biomasse
+
+    # Estimation de la biomasse aérienne (AGB)
+    # Modèle simplifié basé sur couverture et hauteur
+    parcelles$AGB <- k_biomasse * (parcelles$pzabove2 / 100) * (parcelles$zmean^1.5)
+
+    # Stock carbone = AGB × fraction carbone
+    parcelles$C1 <- parcelles$AGB * fraction_carbone
+
+    cat("Formule: C1 = k × (pzabove2/100) × zmean^1.5 × 0.47\n")
+    cat("k_biomasse =", k_biomasse, "t/ha\n\n")
+
+    cat("=== Résultats C1 ===\n")
+    cat("C1 min:", round(min(parcelles$C1, na.rm = TRUE), 1), "tC/ha\n")
+    cat("C1 moy:", round(mean(parcelles$C1, na.rm = TRUE), 1), "tC/ha\n")
+    cat("C1 max:", round(max(parcelles$C1, na.rm = TRUE), 1), "tC/ha\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ C1 ajouté aux parcelles\n")
+  } else {
+    cat("Métriques pzabove2 et zmean non trouvées.\n")
+    cat("Exécutez l'exercice 6.1 d'abord.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+}
+```
+
+### Exercice 7.2 : Calculer P1 (Volume de bois)
+
+L'indicateur **P1** estime le volume de bois sur pied :
+
+$$P1 = k_{vol} \times (pzabove2/100) \times zmean \times zmax^{0.5}$$
+
+```{r ex-7-2-p1-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-2-p1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-7-2-p1-setup"}
+# === CALCUL DE P1 : VOLUME DE BOIS SUR PIED ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de P1 (Volume bois) ===\n\n")
+
+  if (all(c("pzabove2", "zmean", "zmax") %in% names(parcelles))) {
+    # Facteur de conversion volume (m³/ha)
+    k_volume <- 15
+
+    # Estimation du volume sur pied
+    parcelles$P1 <- k_volume * (parcelles$pzabove2 / 100) *
+                    parcelles$zmean * sqrt(parcelles$zmax)
+
+    cat("Formule: P1 = k × (pzabove2/100) × zmean × √zmax\n")
+    cat("k_volume =", k_volume, "\n\n")
+
+    cat("=== Résultats P1 ===\n")
+    cat("P1 min:", round(min(parcelles$P1, na.rm = TRUE), 1), "m³/ha\n")
+    cat("P1 moy:", round(mean(parcelles$P1, na.rm = TRUE), 1), "m³/ha\n")
+    cat("P1 max:", round(max(parcelles$P1, na.rm = TRUE), 1), "m³/ha\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ P1 ajouté aux parcelles\n")
+  } else {
+    cat("Métriques pzabove2, zmean et zmax non trouvées.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+}
+```
+
+### Exercice 7.3 : Calculer P2 (Productivité forestière)
+
+L'indicateur **P2** estime la productivité forestière basée sur les métriques LiDAR :
+- **zmean** : Hauteur moyenne (indicateur de qualité de station)
+- **pzabove2** : Couverture forestière (densité du peuplement)
+- **zq95, zq25** : Distribution des hauteurs (vigueur de croissance)
+
+$$P2 = k_{prod} \times zmean \times (pzabove2/100) \times (1 + \frac{zq95 - zq25}{zmean})$$
+
+```{r ex-7-3-p2-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-3-p2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-7-3-p2-setup"}
+# === CALCUL DE P2 : PRODUCTIVITÉ FORESTIÈRE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de P2 (Productivité forestière) ===\n\n")
+
+  if (all(c("zmean", "pzabove2", "zq95", "zq25") %in% names(parcelles))) {
+    # Facteur de productivité (m³/ha/an équivalent)
+    k_prod <- 0.8
+
+    # Indice de vigueur : ratio hauteur dominante / hauteur moyenne
+    vigueur <- (parcelles$zq95 - parcelles$zq25) / parcelles$zmean
+    vigueur <- pmax(0.1, pmin(2, vigueur))  # Borner entre 0.1 et 2
+
+    # P2 : Productivité = hauteur × couverture × vigueur
+    parcelles$P2 <- k_prod * parcelles$zmean *
+                    (parcelles$pzabove2 / 100) *
+                    (1 + vigueur)
+
+    cat("Formule: P2 = k × zmean × (pzabove2/100) × (1 + vigueur)\n")
+    cat("k_prod =", k_prod, "\n")
+    cat("vigueur = (zq95 - zq25) / zmean\n\n")
+
+    cat("=== Résultats P2 ===\n")
+    cat("P2 min:", round(min(parcelles$P2, na.rm = TRUE), 2), "m³/ha/an\n")
+    cat("P2 moy:", round(mean(parcelles$P2, na.rm = TRUE), 2), "m³/ha/an\n")
+    cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 2), "m³/ha/an\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ P2 ajouté aux parcelles\n")
+  } else {
+    cat("Métriques zmean, pzabove2, zq95 et zq25 non trouvées.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+}
+```
+
+### Exercice 7.4 : Calculer P3 (Qualité structurale)
+
+L'indicateur **P3** évalue la qualité structurale du peuplement basée sur :
+- **zentropy** : Entropie verticale (diversité des strates)
+- **zsd** : Écart-type des hauteurs (hétérogénéité)
+
+Un peuplement de haute qualité a une structure régulière (faible entropie, faible variabilité).
+
+```{r ex-7-4-p3-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-4-p3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-7-4-p3-setup"}
+# === CALCUL DE P3 : QUALITÉ STRUCTURALE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de P3 (Qualité structurale) ===\n\n")
+
+  if (all(c("zentropy", "zsd", "zmean") %in% names(parcelles))) {
+    # Normaliser zentropy (0-1) - valeurs typiques entre 0.5 et 1
+    entropy_norm <- (parcelles$zentropy - 0.5) / 0.5
+    entropy_norm <- pmax(0, pmin(1, entropy_norm))
+
+    # Coefficient de variation (CV = sd/mean)
+    cv <- parcelles$zsd / parcelles$zmean
+    cv_norm <- pmin(1, cv / 0.5)  # Normaliser sur CV max de 0.5
+
+    # P3 : qualité = régularité (inverse de l'hétérogénéité)
+    # Score élevé = peuplement régulier, homogène
+    parcelles$P3 <- 100 * (1 - 0.5 * entropy_norm - 0.5 * cv_norm)
+    parcelles$P3 <- pmax(0, pmin(100, parcelles$P3))
+
+    cat("Formule: P3 = 100 × (1 - 0.5×entropy_norm - 0.5×cv_norm)\n\n")
+
+    cat("=== Résultats P3 ===\n")
+    cat("P3 min:", round(min(parcelles$P3, na.rm = TRUE), 1), "\n")
+    cat("P3 moy:", round(mean(parcelles$P3, na.rm = TRUE), 1), "\n")
+    cat("P3 max:", round(max(parcelles$P3, na.rm = TRUE), 1), "\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ P3 ajouté aux parcelles\n")
+  } else {
+    cat("Métriques zentropy, zsd et zmean non trouvées.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+}
+```
+
+### Exercice 7.5 : Calculer A1 (Couverture forestière)
+
+L'indicateur **A1** mesure la couverture forestière qui influence :
+- L'interception des précipitations
+- La régulation du microclimat
+- La qualité de l'air local
+
+```{r ex-7-5-a1-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-7-5-a1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-7-5-a1-setup"}
+# === CALCUL DE A1 : COUVERTURE FORESTIÈRE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+  cat("=== Calcul de A1 (Couverture forestière) ===\n\n")
+
+  if ("pzabove2" %in% names(parcelles)) {
+    # A1 = couverture forestière > 2m (déjà en %)
+    parcelles$A1 <- parcelles$pzabove2
+
+    cat("A1 = pzabove2 (couverture > 2m en %)\n\n")
+
+    cat("=== Résultats A1 ===\n")
+    cat("A1 min:", round(min(parcelles$A1, na.rm = TRUE), 1), "%\n")
+    cat("A1 moy:", round(mean(parcelles$A1, na.rm = TRUE), 1), "%\n")
+    cat("A1 max:", round(max(parcelles$A1, na.rm = TRUE), 1), "%\n\n")
+
+    # Sauvegarder
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+    cat("✓ A1 ajouté aux parcelles\n")
+  } else {
+    cat("Métrique pzabove2 non trouvée.\n")
+  }
+} else {
+  cat("Fichier parcelles.gpkg non trouvé.\n")
+}
+```
+
+---
+
+## Section 8 : Indicateurs Énergie (E1, E2)
 
 ### Introduction à la famille Énergie
 
@@ -873,7 +1178,218 @@ question("Quel facteur n'influence PAS le calcul de E2 ?",
 
 ---
 
-## Section 8 : Quiz final
+## Section 9 : Indicateurs Vitalité et Air (C2, A2)
+
+### Introduction aux indicateurs C2 et A2
+
+Ces indicateurs complètent l'analyse LiDAR avec des données complémentaires :
+
+- **C2** (Vitalité) : Indice NDVI mesurant la vitalité de la végétation
+- **A2** (Air) : Qualité de l'air basée sur l'éloignement des sources de pollution
+
+```{r indicateurs-c2a2-concept, echo=FALSE}
+indics_c2a2 <- data.frame(
+  Indicateur = c("C2", "A2"),
+  Nom = c("Vitalité végétation (NDVI)", "Qualité de l'air forestier"),
+  Unite = c("score 0-100", "score 0-100"),
+  Source = c("Sentinel-2 / BD Forêt", "Distance routes (BD TOPO)")
+)
+knitr::kable(indics_c2a2, caption = "Indicateurs de vitalité et qualité de l'air")
+```
+
+### Exercice 9.1 : Indice de Vitalité NDVI (C2)
+
+L'indicateur **C2** mesure la **vitalité de la végétation** via l'indice NDVI (Normalized Difference Vegetation Index).
+
+**Sources de données (par ordre de priorité) :**
+
+| Priorité | Source | Description |
+|----------|--------|-------------|
+| 1 | Sentinel-2 | Bandes B4/B8 via STAC API |
+| 2 | BD Forêt | Estimation par type de peuplement |
+
+**Formule NDVI :**
+
+$$NDVI = \frac{NIR - Rouge}{NIR + Rouge}$$
+
+| NDVI | Interprétation |
+|------|----------------|
+| < 0.2 | Sol nu, urbain |
+| 0.2 - 0.4 | Végétation clairsemée |
+| 0.4 - 0.6 | Végétation modérée |
+| 0.6 - 0.8 | Végétation dense |
+| > 0.8 | Végétation très dense |
+
+```{r ex-9-1-c2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-9-1-c2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=80, exercise.setup="ex-9-1-c2-setup", exercise.timelimit=600}
+# === INDICATEUR C2 (NDVI - VITALITÉ VÉGÉTATION) ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Indicateur C2 : NDVI (Vitalité) ===\n\n")
+
+bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
+
+# Valeur par défaut
+parcelles$C2 <- 0.5
+
+# Estimation basée sur BD Forêt et métriques LiDAR
+cat("Estimation via BD Forêt et LiDAR...\n")
+
+if (file.exists(bd_foret_path)) {
+  bd_foret <- st_read(bd_foret_path, quiet = TRUE)
+  bd_foret <- st_transform(bd_foret, st_crs(parcelles))
+
+  # Coefficients NDVI par type de peuplement
+  ndvi_by_type <- data.frame(
+    pattern = c("feuill", "resin", "conif", "mixte", "taillis", "lande", "peupl"),
+    ndvi_base = c(0.72, 0.65, 0.65, 0.68, 0.60, 0.45, 0.70),
+    stringsAsFactors = FALSE
+  )
+
+  # Calcul simplifié par parcelle
+  for (i in seq_len(nrow(parcelles))) {
+    geom <- st_geometry(parcelles)[i]
+    foret_inter <- suppressWarnings(
+      tryCatch(st_intersection(bd_foret, geom), error = function(e) NULL)
+    )
+
+    if (!is.null(foret_inter) && nrow(foret_inter) > 0) {
+      type_col <- intersect(names(foret_inter), c("tfv", "essence", "libelle", "code_tfv"))
+      if (length(type_col) > 0) {
+        type_val <- tolower(as.character(foret_inter[[type_col[1]]][1]))
+        for (j in seq_len(nrow(ndvi_by_type))) {
+          if (grepl(ndvi_by_type$pattern[j], type_val)) {
+            parcelles$C2[i] <- ndvi_by_type$ndvi_base[j] + rnorm(1, 0, 0.05)
+            break
+          }
+        }
+      }
+    }
+  }
+} else {
+  cat("BD Forêt non trouvée - utilisation des métriques LiDAR\n")
+}
+
+# Ajustement avec pzabove2 (couverture LiDAR) si disponible
+if ("pzabove2" %in% names(parcelles)) {
+  parcelles$C2 <- parcelles$C2 * (0.7 + 0.3 * parcelles$pzabove2 / 100)
+  cat("Ajusté avec couverture LiDAR (pzabove2)\n")
+}
+
+# Borner entre 0 et 1
+parcelles$C2 <- pmax(0, pmin(1, parcelles$C2))
+
+# Convertir en score 0-100
+parcelles$C2_score <- parcelles$C2 * 100
+
+cat("\n=== Résultats C2 ===\n")
+cat("NDVI min:", round(min(parcelles$C2, na.rm = TRUE), 3), "\n")
+cat("NDVI max:", round(max(parcelles$C2, na.rm = TRUE), 3), "\n")
+cat("NDVI moyen:", round(mean(parcelles$C2, na.rm = TRUE), 3), "\n")
+cat("C2 score moyen:", round(mean(parcelles$C2_score, na.rm = TRUE), 1), "/ 100\n")
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ C2 ajouté aux parcelles\n")
+```
+
+### Exercice 9.2 : Qualité de l'air (A2)
+
+L'indicateur **A2** évalue la **qualité de l'air** basée sur l'éloignement des sources de pollution (routes).
+
+| Facteur | Description | Impact |
+|---------|-------------|--------|
+| **Distance routes** | Éloignement des axes routiers | Pollution atmosphérique |
+| **Type de route** | Autoroute vs chemin | Niveau d'émissions |
+
+```{r ex-9-2-a2-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-9-2-a2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-9-2-a2-setup", exercise.timelimit=300}
+# === INDICATEUR A2 (QUALITÉ AIR FORESTIER) ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+routes_path <- file.path(data_dir, "routes.gpkg")
+
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Indicateur A2 : Qualité air forestier ===\n\n")
+
+# Coefficients de pollution par type de route
+pollution_weights <- data.frame(
+  nature = c("Autoroute", "Quasi-autoroute", "Route à 2 chaussées",
+             "Route à 1 chaussée", "Route empierrée", "Chemin", "Sentier"),
+  poids = c(1.0, 0.9, 0.8, 0.6, 0.3, 0.1, 0.02),
+  stringsAsFactors = FALSE
+)
+
+if (file.exists(routes_path)) {
+  routes <- st_read(routes_path, quiet = TRUE)
+  routes <- st_transform(routes, st_crs(parcelles))
+  cat("Routes chargées:", nrow(routes), "segments\n")
+
+  # Assigner les poids aux routes
+  routes$pollution_weight <- 0.5
+  nature_field <- intersect(names(routes), c("nature", "NATURE", "classe", "type"))[1]
+  if (!is.na(nature_field)) {
+    for (i in seq_len(nrow(pollution_weights))) {
+      mask <- grepl(pollution_weights$nature[i], routes[[nature_field]], ignore.case = TRUE)
+      routes$pollution_weight[mask] <- pollution_weights$poids[i]
+    }
+  }
+
+  # Calcul distance pondérée par parcelle
+  parcelles_centroids <- st_centroid(parcelles)
+  routes_union <- st_union(routes)
+
+  parcelles$dist_routes <- as.numeric(st_distance(parcelles_centroids, routes_union))
+
+  # Score pollution basé sur la distance
+  max_dist <- 2000  # Distance max d'influence
+  pollution_score <- pmax(0, 1 - parcelles$dist_routes / max_dist)
+
+  # A2 = inverse de la pollution (0 = pollué, 100 = air pur)
+  parcelles$A2 <- round((1 - pollution_score) * 100, 1)
+} else {
+  cat("Routes non disponibles - valeurs par défaut\n")
+  parcelles$dist_routes <- 500
+  parcelles$A2 <- 75
+}
+
+# Borner [0, 100]
+parcelles$A2 <- pmax(0, pmin(100, parcelles$A2))
+
+cat("\n=== Résultats A2 ===\n")
+cat("A2 moyen:", round(mean(parcelles$A2, na.rm = TRUE), 1), "/ 100\n")
+cat("A2 min:", round(min(parcelles$A2, na.rm = TRUE), 1), "\n")
+cat("A2 max:", round(max(parcelles$A2, na.rm = TRUE), 1), "\n")
+cat("Distance moyenne aux routes:", round(mean(parcelles$dist_routes, na.rm = TRUE)), "m\n")
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ A2 ajouté aux parcelles\n")
+```
+
+---
+
+## Section 10 : Quiz final
 
 ### Testez vos connaissances
 

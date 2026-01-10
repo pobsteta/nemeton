@@ -1,8 +1,8 @@
-# Tutorial 03 : Terrain — Familles W, R, S, P, F (W1-3, R1-4, S1-3, P2, F1)
+# Tutorial 03 : Terrain — Familles W, R, S, F (W1-3, R1-4, S1-3, F1)
 
 ## Description
 
-Ce tutoriel calcule **12 indicateurs** terrain dérivés du MNT et de la BD TOPO, appartenant à **5 familles** nemeton.
+Ce tutoriel calcule **11 indicateurs** terrain dérivés du MNT et de la BD TOPO, appartenant à **4 familles** nemeton.
 
 ## Indicateurs Calculés
 
@@ -18,7 +18,6 @@ Ce tutoriel calcule **12 indicateurs** terrain dérivés du MNT et de la BD TOPO
 | **S** (Social) | S1 | Distance routes | BD TOPO | Accessibilité (m) |
 | **S** (Social) | S2 | Distance bâtiments | BD TOPO | Éloignement habitat (m) |
 | **S** (Social) | S3 | Densité sentiers | OSM | Fréquentation potentielle |
-| **P** (Production) | P2 | Fertilité station | Pente + altitude | Potentiel sylvicole |
 | **F** (Sol) | F1 | Risque érosion | Pente + ruissellement | Score RUSLE simplifié |
 
 ### Détail R4 (Pression gibier)
@@ -58,8 +57,8 @@ install.packages(c("sf", "terra", "whitebox"))
 ├── twi.tif                      # Topographic Wetness Index
 ├── distance_routes.tif          # Distance euclidienne routes
 ├── distance_batiments.tif       # Distance euclidienne bâtiments
-└── indicateurs_terrain.gpkg     # Parcelles + 12 indicateurs
-    └── Colonnes: W1, W2, W3, R1, R2, R3, R4, S1, S2, S3, P2, F1
+└── indicateurs_terrain.gpkg     # Parcelles + 11 indicateurs
+    └── Colonnes: W1, W2, W3, R1, R2, R3, R4, S1, S2, S3, F1
 ```
 
 ## Sections
@@ -70,7 +69,7 @@ install.packages(c("sf", "terra", "whitebox"))
 4. Famille W : Indicateurs Eau (W1, W2, W3)
 5. Famille R : Indicateurs Risques (R1, R2, R3, R4)
 6. Famille S : Indicateurs Sociaux (S1, S2, S3)
-7. Indicateurs P2 (Fertilité) et F1 (Érosion)
+7. Famille F : Indicateur Érosion (F1)
 8. Export GeoPackage
 9. Quiz final
 
@@ -93,9 +92,8 @@ Fonctions principales utilisées :
 - `indicator_social_roads()` → S1
 - `indicator_social_buildings()` → S2
 - `indicator_social_trails()` → S3
-- `indicator_production_fertility()` → P2
 - `indicator_soil_erosion()` → F1
 
 ## Tutoriel Suivant
 
-→ **Tutorial 04** : Écologie — Familles B, L, C, T, A, F, N (14 indicateurs)
+→ **Tutorial 04** : Écologie — Familles B, L, T, F, N (12 indicateurs)

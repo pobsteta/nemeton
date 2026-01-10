@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 03 : Terrain — Familles W, R, S, P, F (12 indicateurs)"
+title: "Tutorial 03 : Terrain — Familles W, R, S, F (11 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,8 +7,8 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Calcul de 12 indicateurs terrain : W1-3 (eau/TWI), R1-4 (risques),
-  S1-3 (accessibilité sociale), P2 (pente exploitable), F1 (érosion sol).
+  Calcul de 11 indicateurs terrain : W1-3 (eau/TWI), R1-4 (risques),
+  S1-3 (accessibilité sociale), F1 (érosion sol).
 ---
 
 ```{r setup, include=FALSE}
@@ -50,7 +50,6 @@ Ce tutoriel vous guide dans le calcul des **indicateurs terrain** pour les famil
 - **W** (Eau) : TWI, réseau hydrographique, zones humides
 - **R** (Risques) : feu, tempête, sécheresse
 - **S** (Social) : accessibilité, proximité, sentiers
-- **P2** (Station) : fertilité station
 - **F1** (Érosion) : risque érosion
 
 ### Prérequis
@@ -1631,24 +1630,9 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
 
 ---
 
-## Section 6 : Fertilité de station (P2)
+## Section 6 : Export et synthèse
 
-### Exercice 6.1 : Indice de fertilité station (P2)
-
-La **fertilité de station** est un indice raster combinant :
-
-**Composantes topographiques** (terra) :
-- **TWI** : capacité de rétention en eau
-- **TPI** : position topographique (crête, versant, fond de vallée)
-- **Pente** : accessibilité, ruissellement
-- **Aspect** : bilan radiatif
-
-**Composante climatique** (climateR + SPEI) :
-- **PET** : évapotranspiration potentielle (Thornthwaite)
-- **Bilan hydrique** : P - PET
-
-**Composante pédologique** (geodata) :
-- SoilGrids : profondeur, texture, pH, carbone organique
+### Exercice 6.1 : Famille W (Eau)
 
 ```{r ex-6-1-setup}
 library(sf)
@@ -1660,293 +1644,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=160, exercise.setup="ex-6-1-setup", exercise.timelimit=900}
-# === FERTILITÉ STATION (P2) - Rendu raster ===
-
-mnt_path <- file.path(data_dir, "mnt.tif")
-twi_path <- file.path(data_dir, "twi.tif")
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-
-# === Dossier cache pour données externes ===
-cache_dir <- file.path(data_dir, "station_cache")
-if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-
-if (file.exists(mnt_path) && file.exists(parcelles_path)) {
-  mnt <- rast(mnt_path)
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-
-  centroid_wgs84 <- st_coordinates(st_centroid(st_transform(st_union(parcelles), 4326)))
-  lon <- centroid_wgs84[1, "X"]
-  lat <- centroid_wgs84[1, "Y"]
-
-  # === 1. Composantes topographiques (terra) ===
-  cat("=== 1. Dérivés topographiques ===\n")
-
-  # Pente (optimal 5-25°)
-  pente <- terrain(mnt, v = "slope", unit = "degrees")
-  pente_score <- 1 - abs(pente - 15) / 30
-  pente_score <- clamp(pente_score, lower = 0, upper = 1)
-
-  # Aspect (Est/Ouest optimal, Sud pénalisé)
-  aspect <- terrain(mnt, v = "aspect", unit = "degrees")
-  # Score max pour E(90°) et W(270°), min pour S(180°)
-  aspect_score <- abs(cos((aspect - 90) * pi / 180))
-
-  # TPI - Topographic Position Index
-  tpi <- terrain(mnt, v = "TPI")
-  # Fond de vallée (TPI négatif) = meilleur pour fertilité
-  tpi_norm <- (tpi - global(tpi, "min", na.rm = TRUE)$min) /
-    (global(tpi, "max", na.rm = TRUE)$max - global(tpi, "min", na.rm = TRUE)$min)
-  tpi_score <- 1 - tpi_norm # Inverser: TPI négatif = bon
-
-  # TWI (humidité topographique)
-  if (file.exists(twi_path)) {
-    twi <- rast(twi_path)
-  } else {
-    cat("TWI non trouvé, calcul simplifié...\n")
-    flow_acc <- terrain(mnt, v = "flowdir")
-    twi <- log((flow_acc + 1) / tan(pente * pi / 180 + 0.01))
-  }
-  twi_norm <- (twi - global(twi, "min", na.rm = TRUE)$min) /
-    (global(twi, "max", na.rm = TRUE)$max - global(twi, "min", na.rm = TRUE)$min)
-  twi_score <- clamp(twi_norm, lower = 0, upper = 1)
-
-  cat("Pente score moyen:", round(global(pente_score, "mean", na.rm = TRUE)$mean, 3), "\n")
-  cat("TWI score moyen:", round(global(twi_score, "mean", na.rm = TRUE)$mean, 3), "\n")
-
-  # === 2. Composante climatique (climateR + SPEI) ===
-  cat("\n=== 2. Bilan hydrique climatique ===\n")
-
-  pet_score <- 0.5 # Valeur par défaut
-
-  if (requireNamespace("climateR", quietly = TRUE) && requireNamespace("SPEI", quietly = TRUE)) {
-    library(climateR)
-    library(SPEI)
-
-    # Cache pour données climatiques (format .tif pour SpatRaster)
-    tmin_cache <- file.path(cache_dir, "climate_tmin.tif")
-    tmax_cache <- file.path(cache_dir, "climate_tmax.tif")
-    ppt_cache <- file.path(cache_dir, "climate_ppt.tif")
-
-    climate_data <- NULL
-    if (file.exists(tmin_cache) && file.exists(tmax_cache) && file.exists(ppt_cache)) {
-      cat("Chargement données climatiques depuis cache...\n")
-      climate_data <- list(
-        tmin = rast(tmin_cache),
-        tmax = rast(tmax_cache),
-        ppt = rast(ppt_cache)
-      )
-    } else {
-      # Télécharger données climatiques (TerraClimate)
-      climate_data <- tryCatch(
-        {
-          data <- getTerraClim(
-            AOI = st_transform(st_union(parcelles), 4326),
-            varname = c("tmin", "tmax", "ppt"),
-            startDate = "2020-01-01",
-            endDate = "2023-12-31"
-          )
-          # Sauvegarder chaque raster en cache
-          writeRaster(data$tmin, tmin_cache, overwrite = TRUE)
-          writeRaster(data$tmax, tmax_cache, overwrite = TRUE)
-          writeRaster(data$ppt, ppt_cache, overwrite = TRUE)
-          cat("Données climatiques mises en cache (3 fichiers .tif)\n")
-          data
-        },
-        error = function(e) {
-          cat("Erreur climateR:", conditionMessage(e), "\n")
-          NULL
-        }
-      )
-    }
-
-    if (!is.null(climate_data)) {
-      # Moyennes mensuelles
-      tmin <- as.numeric(global(climate_data$tmin, "mean", na.rm = TRUE)$mean)
-      tmax <- as.numeric(global(climate_data$tmax, "mean", na.rm = TRUE)$mean)
-      ppt <- as.numeric(global(climate_data$ppt, "mean", na.rm = TRUE)$mean)
-
-      # PET Thornthwaite
-      tmean <- (tmin + tmax) / 2
-      pet <- thornthwaite(tmean, lat)
-      pet_annual <- sum(pet, na.rm = TRUE)
-      ppt_annual <- sum(ppt, na.rm = TRUE)
-
-      # Bilan hydrique
-      bilan <- ppt_annual - pet_annual
-      cat("PET annuelle:", round(pet_annual), "mm\n")
-      cat("Précipitations:", round(ppt_annual), "mm\n")
-      cat("Bilan hydrique:", round(bilan), "mm\n")
-
-      # Score: bilan positif = bon
-      pet_score <- max(0, min(1, (bilan + 500) / 1000))
-    } else {
-      cat("Données climateR non disponibles\n")
-    }
-  } else {
-    cat("climateR/SPEI non installés, score climat = 0.5\n")
-  }
-
-  # === 3. Composante pédologique (geodata::soil_world) ===
-  cat("\n=== 3. Données pédologiques (SoilGrids) ===\n")
-
-  sol_score <- 0.5 # Valeur par défaut
-
-  if (requireNamespace("geodata", quietly = TRUE)) {
-    library(geodata)
-
-    # Cache pour données SoilGrids (format .tif pour SpatRaster)
-    ph_cache <- file.path(cache_dir, "soil_ph.tif")
-    soc_cache <- file.path(cache_dir, "soil_soc.tif")
-    clay_cache <- file.path(cache_dir, "soil_clay.tif")
-    bbox_wgs84 <- st_bbox(st_transform(parcelles, 4326))
-
-    soil_data <- NULL
-    if (file.exists(ph_cache) && file.exists(soc_cache) && file.exists(clay_cache)) {
-      cat("Chargement données SoilGrids depuis cache...\n")
-      soil_data <- list(
-        ph = rast(ph_cache),
-        soc = rast(soc_cache),
-        clay = rast(clay_cache)
-      )
-    } else {
-      soil_data <- tryCatch(
-        {
-          # Variables SoilGrids: phh2o, soc, clay
-          cat("Téléchargement SoilGrids (ph, soc, clay)...\n")
-
-          # pH du sol (0-30cm)
-          ph <- soil_world(var = "phh2o", depth = 5, path = cache_dir)
-          ph_crop <- crop(ph, ext(bbox_wgs84))
-
-          # Carbone organique (fertilité)
-          soc <- soil_world(var = "soc", depth = 5, path = cache_dir)
-          soc_crop <- crop(soc, ext(bbox_wgs84))
-
-          # Texture - argile (rétention eau)
-          clay <- soil_world(var = "clay", depth = 5, path = cache_dir)
-          clay_crop <- crop(clay, ext(bbox_wgs84))
-
-          # Sauvegarder chaque raster en cache
-          writeRaster(ph_crop, ph_cache, overwrite = TRUE)
-          writeRaster(soc_crop, soc_cache, overwrite = TRUE)
-          writeRaster(clay_crop, clay_cache, overwrite = TRUE)
-          cat("Données SoilGrids mises en cache (3 fichiers .tif)\n")
-
-          list(ph = ph_crop, soc = soc_crop, clay = clay_crop)
-        },
-        error = function(e) {
-          cat("Erreur geodata:", conditionMessage(e), "\n")
-          NULL
-        }
-      )
-    }
-
-    if (!is.null(soil_data)) {
-      cat("Données SoilGrids récupérées\n")
-
-      # Reprojeter sur la grille du MNT
-      ph_proj <- project(soil_data$ph, mnt, method = "bilinear")
-      soc_proj <- project(soil_data$soc, mnt, method = "bilinear")
-      clay_proj <- project(soil_data$clay, mnt, method = "bilinear")
-
-      # Score pH (optimal 5.5-7.0 pour forêts)
-      ph_val <- ph_proj / 10 # SoilGrids: pH × 10
-      ph_score <- 1 - abs(ph_val - 6.25) / 2
-      ph_score <- clamp(ph_score, lower = 0, upper = 1)
-
-      # Score carbone organique (plus = mieux)
-      soc_norm <- soc_proj / global(soc_proj, "max", na.rm = TRUE)$max
-      soc_score <- clamp(soc_norm, lower = 0, upper = 1)
-
-      # Score argile (20-40% optimal)
-      clay_score <- 1 - abs(clay_proj - 30) / 50
-      clay_score <- clamp(clay_score, lower = 0, upper = 1)
-
-      # Score sol composite
-      sol_score <- 0.4 * ph_score + 0.35 * soc_score + 0.25 * clay_score
-
-      cat("pH score moyen:", round(global(ph_score, "mean", na.rm = TRUE)$mean, 3), "\n")
-      cat("SOC score moyen:", round(global(soc_score, "mean", na.rm = TRUE)$mean, 3), "\n")
-    } else {
-      cat("Données SoilGrids non disponibles\n")
-    }
-  } else {
-    cat("geodata non installé, score sol = 0.5\n")
-  }
-
-  # === 4. Indice composite P2 (raster) ===
-  cat("\n=== 4. Calcul indice P2 (raster) ===\n")
-
-  # Pondération des composantes
-  # 30% pente + 15% aspect + 20% TPI + 20% TWI + 15% climat
-  P2_raster <- 0.30 * pente_score +
-    0.15 * aspect_score +
-    0.20 * tpi_score +
-    0.20 * twi_score +
-    0.15 * pet_score
-
-  P2_raster <- clamp(P2_raster, lower = 0, upper = 1)
-
-  cat("P2 min:", round(global(P2_raster, "min", na.rm = TRUE)$min, 3), "\n")
-  cat("P2 max:", round(global(P2_raster, "max", na.rm = TRUE)$max, 3), "\n")
-  cat("P2 moyen:", round(global(P2_raster, "mean", na.rm = TRUE)$mean, 3), "\n")
-
-  # Sauvegarder le raster
-  writeRaster(P2_raster, file.path(data_dir, "fertilite_station.tif"), overwrite = TRUE)
-  cat("\nRaster P2 sauvegardé: fertilite_station.tif\n")
-
-  # Extraire par parcelle
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    parcelles$P2 <- exactextractr::exact_extract(P2_raster, parcelles, fun = "mean")
-  } else {
-    parcelles$P2 <- extract(P2_raster, vect(parcelles), fun = mean, na.rm = TRUE)[, 2]
-  }
-
-  cat("\n=== P2 par parcelle ===\n")
-  cat("P2 min:", round(min(parcelles$P2, na.rm = TRUE), 3), "\n")
-  cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 3), "\n")
-
-  # Sauvegarder
-  output_path <- file.path(data_dir, "metriques_fertilite_station_p2.gpkg")
-  st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-  cat("\n=== Métriques P2 Fertilité station exportées ===\n")
-  cat("Fichier:", output_path, "\n")
-  cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
-} else {
-  cat("Fichiers non trouvés.\n")
-}
-```
-
-
-### Interprétation de la fertilité de station
-
-| Score P2 | Classe | Description |
-|----------|--------|-------------|
-| 0.0 - 0.2 | Très faible | Station contraignante |
-| 0.2 - 0.4 | Faible | Productivité limitée |
-| 0.4 - 0.6 | Moyenne | Station standard |
-| 0.6 - 0.8 | Bonne | Conditions favorables |
-| 0.8 - 1.0 | Excellente | Station très fertile |
-
----
-
-## Section 7 : Export et synthèse
-
-### Exercice 7.1 : Famille W (Eau)
-
-```{r ex-7-1-setup}
-library(sf)
-library(terra)
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-```
-
-```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-7-1-setup"}
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-6-1-setup"}
 # === FAMILLE W (EAU) : W1, W2, W3 ===
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
@@ -2016,9 +1714,9 @@ cat("\nFamille W sauvegardée:", output_path, "\n")
 
 ---
 
-### Exercice 7.2 : Famille R (Risques)
+### Exercice 6.2 : Famille R (Risques)
 
-```{r ex-7-2-setup}
+```{r ex-6-2-setup}
 library(sf)
 library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -2028,7 +1726,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=65, exercise.setup="ex-7-2-setup"}
+```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=65, exercise.setup="ex-6-2-setup"}
 # === FAMILLE R (RISQUES) : R1, R2, R3, R4 ===
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
@@ -2093,9 +1791,9 @@ cat("\nFamille R sauvegardée:", output_path, "\n")
 
 ---
 
-### Exercice 7.3 : Famille S (Social)
+### Exercice 6.3 : Famille S (Social)
 
-```{r ex-7-3-setup}
+```{r ex-6-3-setup}
 library(sf)
 library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -2105,7 +1803,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-7-3-setup"}
+```{r ex-6-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-3-setup"}
 # === FAMILLE S (SOCIAL) : S1, S2, S3 ===
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
@@ -2157,9 +1855,9 @@ cat("\nFamille S sauvegardée:", output_path, "\n")
 
 ---
 
-### Exercice 7.4 : Familles P (Production) et F (Sol)
+### Exercice 6.4 : Famille F (Sol)
 
-```{r ex-7-4-setup}
+```{r ex-6-4-setup}
 library(sf)
 library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -2169,8 +1867,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-7-4-setup"}
-# === FAMILLES P (PRODUCTION) et F (SOL) ===
+```{r ex-6-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-6-4-setup"}
+# === FAMILLE F (SOL) ===
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
 
@@ -2183,17 +1881,7 @@ extract_mean <- function(r, poly) {
   }
 }
 
-cat("=== Familles P/F ===\n\n")
-
-# P2 : Fertilité station (Section 6)
-# Indice composite : pente + aspect + TPI + TWI + climat
-fertilite_path <- file.path(data_dir, "fertilite_station.tif")
-if (file.exists(fertilite_path)) {
-  parcelles$P2 <- extract_mean(rast(fertilite_path), parcelles)
-  cat("P2 (fertilité station):", round(mean(parcelles$P2, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 : 0-0.2=contraignant, 0.2-0.4=faible,\n")
-  cat("              0.4-0.6=moyen, 0.6-0.8=bon, 0.8-1=excellent\n\n")
-}
+cat("=== Famille F ===\n\n")
 
 # F1 : Risque érosion RUSLE simplifié (Section 1)
 # F1 = LS (facteur pente-longueur) × C (couverture végétale)
@@ -2210,14 +1898,14 @@ if (file.exists(erosion_path)) {
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamilles P/F sauvegardées:", output_path, "\n")
+cat("\nFamille F sauvegardée:", output_path, "\n")
 ```
 
 ---
 
-### Exercice 7.5 : Synthèse finale
+### Exercice 6.5 : Synthèse finale
 
-```{r ex-7-5-setup}
+```{r ex-6-5-setup}
 library(sf)
 library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -2227,7 +1915,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-7-5-setup"}
+```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-6-5-setup"}
 # === SYNTHÈSE FINALE - TOUS LES INDICATEURS TERRAIN ===
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
@@ -2238,7 +1926,6 @@ familles <- list(
   W = c("W1", "W2", "W3"),
   R = c("R1", "R2", "R3", "R4"),
   S = c("S1", "S2", "S3"),
-  P = c("P2"),
   F = c("F1")
 )
 
@@ -2248,7 +1935,7 @@ for (fam in names(familles)) {
   cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
 }
 
-cat("\nTotal:", sum(names(indicateurs_info) %in% names(parcelles)), "/12 indicateurs calculés\n")
+cat("\nTotal:", sum(unlist(familles) %in% names(parcelles)), "/11 indicateurs calculés\n")
 ```
 
 ---
@@ -2303,14 +1990,13 @@ quiz(
 | **S** | S1 | Distance routes | BD TOPO routes | m | <100=accessible, >500=isolé |
 | **S** | S2 | Distance bâtiments | BD TOPO bâtiments | m | <200=proche, >1000=rural |
 | **S** | S3 | Densité sentiers | osmdata (OSM) | m/ha | 0=aucun, >20=récréatif |
-| **P** | P2 | Fertilité station | MNT + climateR | 0-1 | pente+TWI+aspect+TPI+climat |
 | **F** | F1 | Érosion RUSLE | MNT + BD Forêt | 0-1 | LS × C (pente × couverture) |
 
 ### Fichiers produits
 
 | Fichier | Contenu | Indicateurs |
 |---------|---------|-------------|
-| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, A1-3, P2, F1 |
+| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, S1-3, F1 |
 | `metriques_erosion_f1.gpkg` | Érosion RUSLE | F1 |
 | `metriques_twi_w3.gpkg` | Humidité topographique | W3 |
 | `metriques_densite_hydro_w1.gpkg` | Densité réseau hydro | W1 |
@@ -2322,10 +2008,8 @@ quiz(
 | `metriques_access_route_a1.gpkg` | Accessibilité route | A1 |
 | `metriques_distance_batiment_a2.gpkg` | Distance bâtiments | A2 |
 | `metriques_densite_sentiers_a3.gpkg` | Densité sentiers | A3 |
-| `metriques_fertilite_station_p2.gpkg` | Fertilité station | P2 |
 | `twi.tif` | Raster TWI | - |
 | `erosion_f1.tif` | Raster érosion RUSLE | - |
-| `fertilite_station.tif` | Raster fertilité | - |
 
 ### Tutoriel suivant
 
