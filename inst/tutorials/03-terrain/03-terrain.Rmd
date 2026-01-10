@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 03 : Terrain — Familles W, R, S, F (11 indicateurs)"
+title: "Tutorial 03 : Terrain — Familles W, R, S, F (12 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,8 +7,8 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Calcul de 11 indicateurs terrain : W1-3 (eau/TWI), R1-4 (risques),
-  S1-3 (accessibilité sociale), F1 (érosion sol).
+  Calcul de 12 indicateurs terrain : W1-3 (eau/TWI), R1-4 (risques),
+  S1-3 (accessibilité sociale), F1-2 (sol : érosion et fertilité).
 ---
 
 ```{r setup, include=FALSE}
@@ -50,7 +50,7 @@ Ce tutoriel vous guide dans le calcul des **indicateurs terrain** pour les famil
 - **W** (Eau) : TWI, réseau hydrographique, zones humides
 - **R** (Risques) : feu, tempête, sécheresse
 - **S** (Social) : accessibilité, proximité, sentiers
-- **F1** (Érosion) : risque érosion
+- **F** (Sol) : F1 (risque érosion), F2 (fertilité)
 
 ### Prérequis
 
@@ -1855,7 +1855,11 @@ cat("\nFamille S sauvegardée:", output_path, "\n")
 
 ---
 
-### Exercice 6.4 : Famille F (Sol)
+### Exercice 6.4 : Famille F (Sol) - F1 et F2
+
+La famille F comprend deux indicateurs :
+- **F1** : Risque d'érosion (RUSLE simplifié)
+- **F2** : Fertilité du sol (TWI + pente)
 
 ```{r ex-6-4-setup}
 library(sf)
@@ -1867,10 +1871,12 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-6-4-setup"}
-# === FAMILLE F (SOL) ===
+```{r ex-6-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=90, exercise.setup="ex-6-4-setup"}
+# === FAMILLE F (SOL) - F1 et F2 ===
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
 parcelles <- st_read(output_path, quiet = TRUE)
+mnt_path <- file.path(data_dir, "mnt.tif")
+twi_path <- file.path(data_dir, "twi.tif")
 
 # Fonction d'extraction
 extract_mean <- function(r, poly) {
@@ -1881,24 +1887,75 @@ extract_mean <- function(r, poly) {
   }
 }
 
-cat("=== Famille F ===\n\n")
+cat("=== Famille F (Sol) ===\n\n")
 
-# F1 : Risque érosion RUSLE simplifié (Section 1)
-# F1 = LS (facteur pente-longueur) × C (couverture végétale)
+# === F1 : Risque érosion RUSLE simplifié ===
+cat("--- F1 : Risque érosion ---\n")
 erosion_path <- file.path(data_dir, "erosion_f1.tif")
 if (file.exists(erosion_path)) {
   parcelles$F1 <- extract_mean(rast(erosion_path), parcelles)
   cat("F1 (érosion RUSLE):", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 : 0-0.1=très faible, 0.1-0.3=faible,\n")
-  cat("              0.3-0.5=modéré, 0.5-0.7=élevé, 0.7-1=très élevé\n")
+  cat("   Score 0-1 : 0=très faible, 1=très élevé\n\n")
 } else {
-  cat("F1: Fichier erosion_f1.tif non trouvé.\n")
-  cat("   Exécutez l'exercice 1.2 (RUSLE simplifié)\n")
+  cat("F1: Fichier erosion_f1.tif non trouvé.\n\n")
 }
+
+# === F2 : Fertilité du sol ===
+cat("--- F2 : Fertilité du sol ---\n")
+
+# 1. TWI (indice d'humidité topographique)
+if (file.exists(twi_path)) {
+  twi <- rast(twi_path)
+  parcelles$twi_mean <- extract_mean(twi, parcelles)
+  cat("TWI moyen:", round(mean(parcelles$twi_mean, na.rm = TRUE), 2), "\n")
+} else if (file.exists(mnt_path)) {
+  mnt <- rast(mnt_path)
+  slope_rad <- terrain(mnt, v = "slope", unit = "radians")
+  twi_approx <- log(1 / (tan(slope_rad) + 0.001))
+  twi_approx <- clamp(twi_approx, lower = 0, upper = 20)
+  parcelles$twi_mean <- extract_mean(twi_approx, parcelles)
+  cat("TWI approximé depuis MNT\n")
+} else {
+  parcelles$twi_mean <- 10
+}
+
+# 2. Pente moyenne
+if (file.exists(mnt_path)) {
+  mnt <- rast(mnt_path)
+  slope_deg <- terrain(mnt, v = "slope", unit = "degrees")
+  parcelles$slope_mean <- extract_mean(slope_deg, parcelles)
+  cat("Pente moyenne:", round(mean(parcelles$slope_mean, na.rm = TRUE), 1), "°\n")
+} else {
+  parcelles$slope_mean <- 10
+}
+
+# 3. Calcul F2
+# Normalisation TWI (5-15 -> 0-100)
+twi_norm <- function(twi) pmax(pmin((twi - 5) / 10 * 100, 100), 0)
+
+# Normalisation pente (0-45° -> 100-0)
+slope_norm <- function(slope) pmax(pmin(100 - (slope / 45) * 100, 100), 0)
+
+parcelles$F2 <- round((twi_norm(parcelles$twi_mean) + slope_norm(parcelles$slope_mean)) / 2, 1)
+
+cat("\n=== Résultats F2 ===\n")
+cat("F2 moyen:", round(mean(parcelles$F2, na.rm = TRUE), 1), "/ 100\n")
+cat("F2 min:", round(min(parcelles$F2, na.rm = TRUE), 1), "\n")
+cat("F2 max:", round(max(parcelles$F2, na.rm = TRUE), 1), "\n")
+cat("Interprétation: 0 = sol pauvre, 100 = sol fertile\n")
+
+# Classification F2
+parcelles$F2_classe <- cut(parcelles$F2,
+  breaks = c(0, 30, 50, 70, 100),
+  labels = c("Pauvre", "Modéré", "Fertile", "Très fertile"),
+  include.lowest = TRUE
+)
+cat("\nDistribution F2:\n")
+print(table(parcelles$F2_classe))
 
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille F sauvegardée:", output_path, "\n")
+cat("\nFamille F (F1 + F2) sauvegardée:", output_path, "\n")
 ```
 
 ---
@@ -1926,7 +1983,7 @@ familles <- list(
   W = c("W1", "W2", "W3"),
   R = c("R1", "R2", "R3", "R4"),
   S = c("S1", "S2", "S3"),
-  F = c("F1")
+  F = c("F1", "F2")
 )
 
 for (fam in names(familles)) {
@@ -1935,7 +1992,7 @@ for (fam in names(familles)) {
   cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
 }
 
-cat("\nTotal:", sum(unlist(familles) %in% names(parcelles)), "/11 indicateurs calculés\n")
+cat("\nTotal:", sum(unlist(familles) %in% names(parcelles)), "/12 indicateurs calculés\n")
 ```
 
 ---
@@ -1991,12 +2048,13 @@ quiz(
 | **S** | S2 | Distance bâtiments | BD TOPO bâtiments | m | <200=proche, >1000=rural |
 | **S** | S3 | Densité sentiers | osmdata (OSM) | m/ha | 0=aucun, >20=récréatif |
 | **F** | F1 | Érosion RUSLE | MNT + BD Forêt | 0-1 | LS × C (pente × couverture) |
+| **F** | F2 | Fertilité sol | MNT (TWI + pente) | 0-100 | 0=pauvre, 100=fertile |
 
 ### Fichiers produits
 
 | Fichier | Contenu | Indicateurs |
 |---------|---------|-------------|
-| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, S1-3, F1 |
+| `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, S1-3, F1-2 |
 | `metriques_erosion_f1.gpkg` | Érosion RUSLE | F1 |
 | `metriques_twi_w3.gpkg` | Humidité topographique | W3 |
 | `metriques_densite_hydro_w1.gpkg` | Densité réseau hydro | W1 |

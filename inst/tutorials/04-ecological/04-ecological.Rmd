@@ -1,5 +1,5 @@
 ---
-title: "Tutorial 04 : Écologie — Familles B, L, T, F, N (12 indicateurs)"
+title: "Tutorial 04 : Écologie — Familles B, L, T, N (11 indicateurs)"
 output:
   learnr::tutorial:
     progressive: true
@@ -7,8 +7,8 @@ output:
     language: fr
 runtime: shiny_prerendered
 description: >
-  Calcul de 12 indicateurs écologiques : B1-3 (biodiversité), L1-3 (paysage/TVB),
-  T1-2 (temporel), F2 (fertilité), N1-3 (naturalité).
+  Calcul de 11 indicateurs écologiques : B1-3 (biodiversité), L1-3 (paysage/TVB),
+  T1-2 (temporel), N1-3 (naturalité).
 ---
 
 ```{r setup, include=FALSE}
@@ -50,10 +50,9 @@ Ce tutoriel calcule les **indicateurs écologiques** des familles :
 - **B** (Biodiversité) : Protection, structure, connectivité
 - **L** (Paysage) : Lisières, fragmentation, TVB
 - **T** (Temporel) : Âge, changement
-- **F2** (Fertilité) : Fertilité sol
 - **N** (Naturalité) : Continuité, distance, composite
 
-> **Note** : Les indicateurs C2 (vitalité) et A2 (qualité air) sont calculés dans le Tutorial 02.
+> **Note** : Les indicateurs C2, A2 sont calculés dans Tutorial 02. F2 (fertilité) est calculé dans Tutorial 03.
 
 ### Sources de données
 
@@ -2761,12 +2760,12 @@ cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\
 
 ---
 
-## Section 6 : Indicateurs Complémentaires (T1, T2, A2, F2)
+## Section 6 : Indicateurs Complémentaires (T1, T2)
 
 Cette section calcule les indicateurs complémentaires :
 - **T1, T2** : Dynamique temporelle (âge et changement du peuplement)
-- **A2** : Qualité de l'air forestier
-- **F2** : Fertilité du sol
+
+> **Note** : F2 (fertilité sol) est maintenant calculé dans Tutorial 03 (terrain).
 
 ### Exercice 6.1 : Dynamique temporelle (T1, T2)
 
@@ -3175,151 +3174,6 @@ cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\
 
 ---
 
-### Exercice 6.3 : Fertilité du sol (F2)
-
-L'indicateur **F2** évalue la **fertilité potentielle du sol** forestier à partir d'indices topographiques et de proxys disponibles.
-
-| Facteur | Description | Source |
-|---------|-------------|--------|
-| **TWI** | Indice d'humidité topographique | MNT (calculé en Tutorial 03) |
-| **Pente** | Déclivité du terrain | MNT |
-| **Exposition** | Orientation des versants | MNT |
-| **Type de sol** | Proxy via végétation | BD Forêt |
-
-```{r ex-6-3-f-setup}
-library(sf)
-library(terra)
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-```
-
-```{r ex-6-3-f, exercise=TRUE, exercise.eval=FALSE, exercise.lines=120, exercise.setup="ex-6-3-f-setup", exercise.timelimit=300}
-# === INDICATEUR F2 (FERTILITÉ SOL) ===
-
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-mnt_path <- file.path(data_dir, "mnt.tif")
-twi_path <- file.path(data_dir, "twi.tif")
-
-if (!file.exists(parcelles_path)) {
-  stop("Données manquantes. Exécutez d'abord les tutoriels précédents.")
-}
-
-parcelles <- st_read(parcelles_path, quiet = TRUE)
-
-cat("=== INDICATEUR F2 : Fertilité du sol ===\n\n")
-
-# ============================================================
-# 1. INDICE D'HUMIDITÉ TOPOGRAPHIQUE (TWI)
-# ============================================================
-cat("1. Indice d'humidité topographique (TWI)...\n")
-
-twi_mean <- NULL
-
-if (file.exists(twi_path)) {
-  twi <- rast(twi_path)
-  cat("   TWI chargé:", basename(twi_path), "\n")
-
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    parcelles$twi_mean <- exactextractr::exact_extract(twi, parcelles, "mean")
-    twi_mean <- mean(parcelles$twi_mean, na.rm = TRUE)
-    cat("   TWI moyen:", round(twi_mean, 2), "\n")
-  }
-} else {
-  cat("   TWI non disponible - calcul depuis MNT...\n")
-
-  if (file.exists(mnt_path)) {
-    mnt <- rast(mnt_path)
-
-    # Calcul simplifié du TWI
-    slope <- terrain(mnt, v = "slope", unit = "radians")
-    slope_deg <- terrain(mnt, v = "slope", unit = "degrees")
-
-    # TWI = ln(aire_drainage / tan(pente))
-    # Simplification : utiliser la pente seule
-    twi_approx <- log(1 / (tan(slope) + 0.001))
-    twi_approx <- clamp(twi_approx, lower = 0, upper = 20)
-
-    if (requireNamespace("exactextractr", quietly = TRUE)) {
-      parcelles$twi_mean <- exactextractr::exact_extract(twi_approx, parcelles, "mean")
-      twi_mean <- mean(parcelles$twi_mean, na.rm = TRUE)
-    }
-  } else {
-    parcelles$twi_mean <- 10 # Valeur neutre
-    twi_mean <- 10
-  }
-}
-
-# ============================================================
-# 2. PENTE (facteur limitant pour la fertilité)
-# ============================================================
-cat("\n2. Pente (facteur limitant)...\n")
-
-if (file.exists(mnt_path)) {
-  mnt <- rast(mnt_path)
-  slope_deg <- terrain(mnt, v = "slope", unit = "degrees")
-
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    parcelles$slope_mean <- exactextractr::exact_extract(slope_deg, parcelles, "mean")
-    cat("   Pente moyenne:", round(mean(parcelles$slope_mean, na.rm = TRUE), 1), "°\n")
-  }
-} else {
-  parcelles$slope_mean <- 10 # Pente modérée par défaut
-}
-
-# ============================================================
-# 3. CALCUL DE L'INDICE F2
-# ============================================================
-cat("\n3. Calcul de l'indice F2...\n")
-
-# Normalisation TWI (5-15 -> 0-100)
-# TWI élevé = accumulation d'eau = meilleure fertilité (jusqu'à un certain point)
-twi_norm <- function(twi) {
-  score <- (twi - 5) / 10 * 100
-  return(pmax(pmin(score, 100), 0))
-}
-
-# Normalisation pente (0-45° -> 100-0)
-# Pente faible = meilleure fertilité (moins d'érosion)
-slope_norm <- function(slope) {
-  score <- 100 - (slope / 45) * 100
-  return(pmax(pmin(score, 100), 0))
-}
-
-# Combiner les facteurs (pondération égale)
-parcelles$F2_twi <- twi_norm(parcelles$twi_mean)
-parcelles$F2_slope <- slope_norm(parcelles$slope_mean)
-parcelles$F2 <- round((parcelles$F2_twi + parcelles$F2_slope) / 2, 1)
-
-cat("\n=== Résultats F2 ===\n")
-cat("F2 moyen:", round(mean(parcelles$F2, na.rm = TRUE), 1), "/ 100\n")
-cat("F2 min:", round(min(parcelles$F2, na.rm = TRUE), 1), "\n")
-cat("F2 max:", round(max(parcelles$F2, na.rm = TRUE), 1), "\n")
-cat("Interprétation: 0 = sol pauvre/érodé, 100 = sol fertile\n")
-
-# Classification
-parcelles$F2_classe <- cut(parcelles$F2,
-  breaks = c(0, 30, 50, 70, 100),
-  labels = c("Pauvre", "Modéré", "Fertile", "Très fertile"),
-  include.lowest = TRUE
-)
-cat("\nDistribution:\n")
-print(table(parcelles$F2_classe))
-
-# Sauvegarder
-output_path <- file.path(data_dir, "metriques_fertilite_f2.gpkg")
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n=== Métriques F2 Fertilité exportées ===\n")
-cat("Fichier:", output_path, "\n")
-cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
-```
-
-
----
-
 ## Section 7 : Export et Synthèse
 
 Les indicateurs ont été calculés par parcelle dans les sections précédentes.
@@ -3461,7 +3315,7 @@ cat("\n✓ Familles L et C consolidées:", basename(output_path), "\n")
 
 ---
 
-### Exercice 7.3 : Familles T (Temporel), A (Air) et F (Fertilité)
+### Exercice 7.3 : Famille T (Temporel)
 
 ```{r ex-7-3-setup}
 library(sf)
@@ -3472,8 +3326,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-7-3-setup"}
-# === FAMILLES T, A, F ===
+```{r ex-7-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-7-3-setup"}
+# === FAMILLE T (TEMPOREL) ===
 # Consolidation des indicateurs déjà calculés
 
 output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
@@ -3497,35 +3351,11 @@ if (file.exists(t_path)) {
   }
 }
 
-cat("\n=== Famille A (Air) ===\n\n")
-
-# A2 : Qualité air (calculé en exercice 6.2)
-a2_path <- file.path(data_dir, "metriques_air_a2.gpkg")
-if (file.exists(a2_path)) {
-  a2_data <- st_read(a2_path, quiet = TRUE) |> st_drop_geometry()
-  if ("A2" %in% names(a2_data)) {
-    parcelles$A2 <- a2_data$A2
-    cat("A2 (qualité air):", round(mean(parcelles$A2, na.rm = TRUE), 1), "\n")
-    cat("   0 = proche pollution, 100 = air pur\n")
-  }
-}
-
-cat("\n=== Famille F (Fertilité) ===\n\n")
-
-# F2 : Fertilité sol (calculé en exercice 6.3)
-f2_path <- file.path(data_dir, "metriques_fertilite_f2.gpkg")
-if (file.exists(f2_path)) {
-  f2_data <- st_read(f2_path, quiet = TRUE) |> st_drop_geometry()
-  if ("F2" %in% names(f2_data)) {
-    parcelles$F2 <- f2_data$F2
-    cat("F2 (fertilité sol):", round(mean(parcelles$F2, na.rm = TRUE), 1), "\n")
-    cat("   0 = sol pauvre, 100 = sol fertile\n")
-  }
-}
-
 # Sauvegarder
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ Familles T, A et F consolidées:", basename(output_path), "\n")
+cat("\n✓ Famille T consolidée:", basename(output_path), "\n")
+
+cat("\n> Note: F2 (fertilité sol) est calculé dans Tutorial 03 (terrain)\n")
 ```
 
 
@@ -3607,10 +3437,7 @@ cat("=== SYNTHÈSE INDICATEURS ÉCOLOGIQUES ===\n\n")
 familles <- list(
   "B (Biodiversité)" = c("B1", "B2", "B3"),
   "L (Paysage)" = c("L1", "L2", "L3"),
-  "C (Vitalité)" = c("C2"),
   "T (Temporel)" = c("T1", "T2"),
-  "A (Air)" = c("A2"),
-  "F (Fertilité)" = c("F2"),
   "N (Naturalité)" = c("N1", "N2", "N3")
 )
 
@@ -3646,17 +3473,14 @@ cat("\n✓ Indicateurs écologiques consolidés\n")
 
 | Fichier | Contenu | Indicateurs |
 |---------|---------|-------------|
-| `indicateurs_ecologiques.gpkg` | Synthèse complète (14 indicateurs) | Tous |
+| `indicateurs_ecologiques.gpkg` | Synthèse complète (11 indicateurs) | Tous |
 | `metriques_zone_protection_b1.gpkg` | Zones protégées | B1 |
 | `metriques_structure_verticale_b2.gpkg` | Structure LiDAR | B2 |
 | `metriques_connectivite_b3.gpkg` | Connectivité | B3 |
 | `metriques_lisiere_l1.gpkg` | Effet lisière | L1 |
 | `metriques_fragmentation_l2.gpkg` | Fragmentation paysagère | L2 |
 | `metriques_tvb_l3.gpkg` | Trame Verte Bleue | L3 |
-| `metriques_vitalite_c2.gpkg` | NDVI | C2 |
 | `metriques_temporel_t1t2.gpkg` | Dynamique temporelle | T1, T2 |
-| `metriques_air_a2.gpkg` | Qualité air | A2 |
-| `metriques_fertilite_f2.gpkg` | Fertilité sol | F2 |
 | `metriques_naturalite_n1n2n3.gpkg` | Naturalité | N1, N2, N3 |
 
 
