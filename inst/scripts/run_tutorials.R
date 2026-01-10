@@ -1,495 +1,638 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Exécution complète des Tutoriels Nemeton (01-04)
+# Nemeton Tutorial Runner
 # =============================================================================
-# Ce script exécute tout le code R des tutoriels en mode non-interactif.
-# Les exercices avec des blancs à compléter sont ignorés.
+# Execute R code from learnr tutorials in non-interactive mode.
+# Exercises with blanks to complete are automatically skipped.
 #
 # Usage:
 #   Rscript inst/scripts/run_tutorials.R [options]
 #
 # Options:
-#   --tutorial=01    Exécuter seulement le tutoriel 01
-#   --dry-run        Afficher le code sans l'exécuter
-#   --verbose        Afficher chaque expression avant exécution
+#   --tutorial=01    Run only tutorial matching pattern (e.g., 01, 02, lidar)
+#   --dry-run        Display code without executing
+#   --verbose        Show each expression before execution
+#   --help           Show this help message
 # =============================================================================
 
-# Parsing des arguments
+# -----------------------------------------------------------------------------
+# Configuration Constants
+# -----------------------------------------------------------------------------
+NETWORK_TIMEOUT <- 300L  # 5 minutes
+TUTORIALS_DIR <- "inst/tutorials"
+MAX_RETRIES <- 3L
+RETRY_DELAY <- 10L
+
+TUTORIAL_LIST <- c(
+
+"01-acquisition",
+"02-lidar",
+"03-terrain",
+"04-ecological"
+)
+
+# -----------------------------------------------------------------------------
+# Argument Parsing
+# -----------------------------------------------------------------------------
+parse_arguments <- function() {
 args <- commandArgs(trailingOnly = TRUE)
-TUTORIAL_FILTER <- NULL
-DRY_RUN <- FALSE
-VERBOSE <- FALSE
+
+config <- list(
+  tutorial_filter = NULL,
+  dry_run = FALSE,
+  verbose = FALSE
+)
 
 for (arg in args) {
-  if (grepl("^--tutorial=", arg)) {
-    TUTORIAL_FILTER <- sub("--tutorial=", "", arg)
+  if (arg == "--help") {
+    show_help()
+    quit(status = 0)
+  } else if (grepl("^--tutorial=", arg)) {
+    config$tutorial_filter <- sub("^--tutorial=", "", arg)
   } else if (arg == "--dry-run") {
-    DRY_RUN <- TRUE
+    config$dry_run <- TRUE
   } else if (arg == "--verbose") {
-    VERBOSE <- TRUE
+    config$verbose <- TRUE
+  } else {
+    cat("Unknown option:", arg, "\n")
+    show_help()
+    quit(status = 1)
   }
 }
 
-cat("\n")
-cat("╔═══════════════════════════════════════════════════════════════╗\n")
-cat("║     EXÉCUTION DES TUTORIELS NEMETON (01-04)                   ║\n")
-cat("╚═══════════════════════════════════════════════════════════════╝\n\n")
+config
+}
 
-if (DRY_RUN) cat(">>> MODE DRY-RUN (pas d'exécution réelle) <<<\n\n")
+show_help <- function() {
+cat("
+Usage: Rscript inst/scripts/run_tutorials.R [options]
 
-# =============================================================================
-# Configuration
-# =============================================================================
-tutorials_dir <- "inst/tutorials"
-temp_dir <- tempdir()
+Options:
+--tutorial=PATTERN  Run only tutorials matching PATTERN
+--dry-run           Display extracted code without executing
+--verbose           Show each expression before execution
+--help              Show this help message
 
-# Configuration des timeouts réseau (5 minutes)
-NETWORK_TIMEOUT <- 300
+Examples:
+Rscript inst/scripts/run_tutorials.R                  # Run all tutorials
+Rscript inst/scripts/run_tutorials.R --tutorial=01   # Run tutorial 01 only
+Rscript inst/scripts/run_tutorials.R --dry-run       # Extract code only
+")
+}
 
-cat("Configuration réseau:\n")
-cat(sprintf("  Timeout: %d secondes\n", NETWORK_TIMEOUT))
+# -----------------------------------------------------------------------------
+# UI Helpers
+# -----------------------------------------------------------------------------
+print_banner <- function(text, char = "=") {
+width <- 65
+border <- paste(rep(char, width), collapse = "")
+cat("\n", border, "\n", sep = "")
+cat("  ", text, "\n", sep = "")
+cat(border, "\n\n", sep = "")
+}
 
+print_section <- function(text) {
+cat("\n--- ", text, " ", paste(rep("-", 50 - nchar(text)), collapse = ""), "\n", sep = "")
+}
+
+print_progress_bar <- function(current, total, width = 50) {
+pct <- floor(current / total * 100)
+filled <- floor(current / total * width)
+bar <- paste0(
+  "[",
+  paste(rep("=", filled), collapse = ""),
+  paste(rep(" ", width - filled), collapse = ""),
+  "]"
+)
+cat(sprintf("\r    %s %3d%% ", bar, pct))
+}
+
+# -----------------------------------------------------------------------------
+# Network Configuration
+# -----------------------------------------------------------------------------
+configure_network <- function(timeout) {
+cat("Network configuration:\n")
+cat(sprintf("  Timeout: %d seconds\n", timeout))
+
+# Base R options
 options(
-  timeout = NETWORK_TIMEOUT,
+  timeout = timeout,
   HTTPUserAgent = "nemeton-tutorial/1.0"
 )
 
-# Configuration httr si disponible
+# httr configuration
 if (requireNamespace("httr", quietly = TRUE)) {
   httr::set_config(httr::config(
-    connecttimeout = NETWORK_TIMEOUT,
-    timeout = NETWORK_TIMEOUT
+    connecttimeout = timeout,
+    timeout = timeout
   ))
-  cat("  httr: configuré (connect + timeout)\n")
+  cat("  httr: configured\n")
 }
 
-# Configuration curl si disponible
+# httr2 configuration
+if (requireNamespace("httr2", quietly = TRUE)) {
+  options(
+    httr2_timeout = timeout,
+    httr2_retry_max_wait = timeout
+  )
+  cat("  httr2: configured\n")
+}
+
+# curl environment
 if (requireNamespace("curl", quietly = TRUE)) {
-  # Créer un handle curl avec les bons timeouts
   Sys.setenv(
     CURL_SSL_BACKEND = "openssl",
     R_LIBCURL_SSL_REVOKE_BEST_EFFORT = "true"
   )
-  # Configuration globale des timeouts curl
   options(
-    curl_timeout = NETWORK_TIMEOUT,
-    curl_connecttimeout = NETWORK_TIMEOUT
+    curl_timeout = timeout,
+    curl_connecttimeout = timeout
   )
-  cat("  curl: configuré (connect + timeout)\n")
+  cat("  curl: configured\n")
 }
 
-# Configuration GDAL pour sf/terra (variables d'environnement)
+# GDAL configuration for sf/terra
 Sys.setenv(
-  GDAL_HTTP_TIMEOUT = as.character(NETWORK_TIMEOUT),
-  GDAL_HTTP_CONNECTTIMEOUT = as.character(NETWORK_TIMEOUT),
+  GDAL_HTTP_TIMEOUT = as.character(timeout),
+  GDAL_HTTP_CONNECTTIMEOUT = as.character(timeout),
   GDAL_HTTP_MAX_RETRY = "5",
   GDAL_HTTP_RETRY_DELAY = "5",
-  VSI_CURL_CACHE_SIZE = "100000000", # 100MB cache
+  VSI_CURL_CACHE_SIZE = "100000000",
   CPL_CURL_VERBOSE = "NO",
   CPL_VSIL_CURL_USE_HEAD = "NO"
 )
-cat("  GDAL: configuré (timeout + retry)\n")
+cat("  GDAL: configured\n")
 
-# Configuration httr2 si disponible (utilisé par happign)
-if (requireNamespace("httr2", quietly = TRUE)) {
-  # httr2 ne supporte pas de config globale, on configure via options
-  options(
-    httr2_timeout = NETWORK_TIMEOUT,
-    httr2_retry_max_wait = NETWORK_TIMEOUT
-  )
-  cat("  httr2: options configurées\n")
-}
-
-# Configuration curl globale via handle par défaut
-if (requireNamespace("curl", quietly = TRUE)) {
-  # Créer un handle avec les bons timeouts
-  default_handle <- curl::new_handle(
-    connecttimeout = NETWORK_TIMEOUT,
-    timeout = NETWORK_TIMEOUT,
-    low_speed_time = NETWORK_TIMEOUT,
-    low_speed_limit = 1
-  )
-  # Note: curl n'a pas de handle global, mais on peut créer une fonction wrapper
-  cat("  curl: handle créé avec timeouts\n")
-}
 cat("\n")
+}
 
-# Créer le répertoire de données si nécessaire
+configure_terra_gdal <- function(timeout) {
+if (requireNamespace("terra", quietly = TRUE)) {
+  tryCatch({
+    terra::setGDALconfig("GDAL_HTTP_TIMEOUT", as.character(timeout))
+    terra::setGDALconfig("GDAL_HTTP_CONNECTTIMEOUT", as.character(timeout))
+    terra::setGDALconfig("GDAL_HTTP_MAX_RETRY", "5")
+    terra::setGDALconfig("GDAL_HTTP_RETRY_DELAY", "5")
+  }, error = function(e) NULL)
+}
+}
+
+# -----------------------------------------------------------------------------
+# Data Directory Setup
+# -----------------------------------------------------------------------------
+setup_data_directory <- function() {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
-dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
-cat("Répertoire de données:", data_dir, "\n\n")
 
-# Liste des tutoriels
-tutorials <- c(
-  "01-acquisition",
-  "02-lidar",
-  "03-terrain",
-  "04-ecological"
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+cat("Data directory:", data_dir, "\n\n")
+
+data_dir
+}
+
+# -----------------------------------------------------------------------------
+# Code Extraction from Rmd
+# -----------------------------------------------------------------------------
+extract_executable_code <- function(rmd_file) {
+lines <- readLines(rmd_file, warn = FALSE)
+
+state <- list(
+  in_chunk = FALSE,
+  chunk_options = "",
+  chunk_content = character(0),
+  all_code = character(0),
+  chunk_count = 0L,
+  skipped_count = 0L
 )
 
-# Filtrer si demandé
-if (!is.null(TUTORIAL_FILTER)) {
-  tutorials <- tutorials[grepl(TUTORIAL_FILTER, tutorials)]
-  cat("Filtre appliqué:", TUTORIAL_FILTER, "\n")
-  cat("Tutoriels à exécuter:", paste(tutorials, collapse = ", "), "\n\n")
+for (line in lines) {
+  state <- process_line(line, state)
 }
 
-# =============================================================================
-# Fonction pour extraire le code exécutable d'un Rmd
-# =============================================================================
-extract_executable_code <- function(rmd_file) {
-  lines <- readLines(rmd_file, warn = FALSE)
+cat(sprintf("    Chunks: %d total, %d skipped\n",
+            state$chunk_count, state$skipped_count))
 
-  # Variables de parsing
-  in_chunk <- FALSE
-  chunk_options <- ""
-  chunk_content <- character(0)
-  all_code <- character(0)
-  chunk_count <- 0
-  skipped_count <- 0
-
-  for (i in seq_along(lines)) {
-    line <- lines[i]
-
-    # Début de chunk R
-    if (grepl("^```\\{r", line)) {
-      in_chunk <- TRUE
-      chunk_options <- line
-      chunk_content <- character(0)
-      next
-    }
-
-    # Fin de chunk
-    if (in_chunk && grepl("^```$", line)) {
-      in_chunk <- FALSE
-      chunk_count <- chunk_count + 1
-
-      # Analyser les options du chunk
-      is_exercise <- grepl("exercise\\s*=\\s*TRUE", chunk_options)
-      is_setup <- grepl("-setup", chunk_options)
-      is_eval_false <- grepl("eval\\s*=\\s*FALSE", chunk_options)
-      is_echo_false <- grepl("echo\\s*=\\s*FALSE", chunk_options) && !grepl("exercise", chunk_options)
-
-      # Vérifier si le code contient des blancs à compléter
-      code_text <- paste(chunk_content, collapse = "\n")
-      has_blanks <- grepl("_____|# À compléter|# TODO|# Complétez", code_text)
-
-      # Vérifier si c'est du code interactif learnr
-      is_interactive <- grepl("question\\(|answer\\(|quiz\\(", code_text)
-
-      # Décider si on inclut ce chunk
-      should_include <- TRUE
-      skip_reason <- ""
-
-      if (is_exercise && has_blanks) {
-        should_include <- FALSE
-        skip_reason <- "exercice avec blancs"
-      } else if (is_interactive) {
-        should_include <- FALSE
-        skip_reason <- "code interactif"
-      } else if (is_eval_false && !is_setup) {
-        should_include <- FALSE
-        skip_reason <- "eval=FALSE"
-      }
-
-      if (should_include && length(chunk_content) > 0) {
-        # Extraire le nom du chunk pour le commentaire
-        chunk_name <- sub(".*\\{r\\s*([^,}]+).*", "\\1", chunk_options)
-        if (chunk_name == chunk_options) chunk_name <- paste0("chunk_", chunk_count)
-
-        all_code <- c(
-          all_code,
-          paste0("\n# === ", chunk_name, " ==="),
-          chunk_content
-        )
-      } else {
-        skipped_count <- skipped_count + 1
-      }
-
-      next
-    }
-
-    # Contenu du chunk
-    if (in_chunk) {
-      chunk_content <- c(chunk_content, line)
-    }
-  }
-
-  cat(sprintf("    Chunks: %d total, %d ignorés\n", chunk_count, skipped_count))
-
-  return(all_code)
+state$all_code
 }
 
-# =============================================================================
-# Fonction pour exécuter le code avec gestion d'erreurs
-# =============================================================================
-run_tutorial_code <- function(code_lines, tutorial_name) {
-  # Créer l'environnement d'exécution
-  env <- new.env(parent = globalenv())
+process_line <- function(line, state) {
+# Start of R chunk
+if (grepl("^```\\{r", line)) {
+  state$in_chunk <- TRUE
+  state$chunk_options <- line
+  state$chunk_content <- character(0)
+  return(state)
+}
 
-  # Pré-charger les packages courants dans l'environnement
-  suppressPackageStartupMessages({
-    if (requireNamespace("sf", quietly = TRUE)) library(sf)
-    if (requireNamespace("terra", quietly = TRUE)) {
-      library(terra)
-      # Configurer GDAL après chargement de terra
-      tryCatch(
-        {
-          terra::setGDALconfig("GDAL_HTTP_TIMEOUT", as.character(NETWORK_TIMEOUT))
-          terra::setGDALconfig("GDAL_HTTP_CONNECTTIMEOUT", as.character(NETWORK_TIMEOUT))
-          terra::setGDALconfig("GDAL_HTTP_MAX_RETRY", "5")
-          terra::setGDALconfig("GDAL_HTTP_RETRY_DELAY", "5")
-        },
-        error = function(e) NULL
-      )
-    }
-  })
+# End of chunk
+if (state$in_chunk && grepl("^```$", line)) {
+  state$in_chunk <- FALSE
+  state$chunk_count <- state$chunk_count + 1L
+  state <- finalize_chunk(state)
+  return(state)
+}
 
-  # Assigner data_dir dans l'environnement
-  env$data_dir <- data_dir
+# Inside chunk - collect content
+if (state$in_chunk) {
+  state$chunk_content <- c(state$chunk_content, line)
+}
 
-  # Joindre les lignes et parser
-  code_text <- paste(code_lines, collapse = "\n")
+state
+}
 
-  # Nettoyer le code
-  # Retirer les appels library(learnr) et gradethis
-  code_text <- gsub("library\\(learnr\\)", "# library(learnr)", code_text)
-  code_text <- gsub("library\\(gradethis\\)", "# library(gradethis)", code_text)
-  code_text <- gsub("gradethis::gradethis_setup\\(\\)", "# gradethis_setup()", code_text)
-  code_text <- gsub("gradethis_setup\\(\\)", "# gradethis_setup()", code_text)
+finalize_chunk <- function(state) {
+opts <- state$chunk_options
+code_text <- paste(state$chunk_content, collapse = "\n")
 
-  # Parser le code
-  parsed <- tryCatch(
-    {
-      parse(text = code_text)
-    },
-    error = function(e) {
-      cat("    ERREUR DE PARSING:", conditionMessage(e), "\n")
-      return(NULL)
-    }
+# Determine if chunk should be included
+skip_info <- should_skip_chunk(opts, code_text)
+
+if (!skip_info$skip && length(state$chunk_content) > 0) {
+  chunk_name <- extract_chunk_name(opts, state$chunk_count)
+  state$all_code <- c(
+    state$all_code,
+    paste0("\n# === ", chunk_name, " ==="),
+    state$chunk_content
   )
-
-  if (is.null(parsed)) {
-    return(FALSE)
-  }
-
-  n_expr <- length(parsed)
-  cat(sprintf("    Expressions à exécuter: %d\n", n_expr))
-
-  errors <- character(0)
-  warnings_list <- character(0)
-  success_count <- 0
-
-  # Barre de progression
-  pb_width <- 50
-
-  for (i in seq_along(parsed)) {
-    expr <- parsed[[i]]
-    expr_text <- paste(deparse(expr), collapse = " ")
-    expr_preview <- substr(gsub("\\s+", " ", expr_text), 1, 60)
-
-    # Progression
-    pct <- floor(i / n_expr * 100)
-    filled <- floor(i / n_expr * pb_width)
-    bar <- paste0(
-      "[", paste(rep("=", filled), collapse = ""),
-      paste(rep(" ", pb_width - filled), collapse = ""), "]"
-    )
-    cat(sprintf("\r    %s %3d%% ", bar, pct))
-
-    if (VERBOSE) {
-      cat(sprintf("\n    [%d/%d] %s\n", i, n_expr, expr_preview))
-    }
-
-    if (DRY_RUN) {
-      success_count <- success_count + 1
-      next
-    }
-
-    # Exécuter l'expression avec retry pour erreurs réseau
-    max_retries <- 3
-    retry_delay <- 10 # secondes entre les retries
-
-    for (attempt in 1:max_retries) {
-      result <- tryCatch(
-        {
-          withCallingHandlers(
-            {
-              eval(expr, envir = env)
-              "OK"
-            },
-            warning = function(w) {
-              if (!grepl("package|namespace|replacing|masked", conditionMessage(w))) {
-                warnings_list <<- c(warnings_list, conditionMessage(w))
-              }
-              invokeRestart("muffleWarning")
-            },
-            message = function(m) {
-              # Ignorer les messages
-              invokeRestart("muffleMessage")
-            }
-          )
-        },
-        error = function(e) {
-          paste("ERREUR:", conditionMessage(e))
-        }
-      )
-
-      # Vérifier si c'est une erreur réseau
-      is_network_error <- is.character(result) &&
-        grepl("Timeout|timeout|curl|HTTP|Failed to connect|Connection refused", result, ignore.case = TRUE)
-
-      if (result == "OK" || !is_network_error || attempt == max_retries) {
-        break
-      }
-
-      # Retry après délai (toujours afficher les retries)
-      cat(sprintf(
-        "\n    [RETRY %d/%d] Erreur réseau, nouvel essai dans %ds...\n",
-        attempt, max_retries, retry_delay
-      ))
-      Sys.sleep(retry_delay)
-    }
-
-    if (is.character(result) && startsWith(result, "ERREUR")) {
-      errors <- c(errors, paste0("\n    [", i, "] ", expr_preview, "\n        ", result))
-    } else {
-      success_count <- success_count + 1
-    }
-  }
-
-  cat("\n")
-
-  # Rapport
-  cat(sprintf("    Résultat: %d/%d expressions OK\n", success_count, n_expr))
-
-  if (length(warnings_list) > 0) {
-    cat(sprintf("    Warnings: %d\n", length(warnings_list)))
-  }
-
-  if (length(errors) > 0) {
-    cat("    ERREURS:\n")
-    for (err in errors) {
-      cat(err, "\n")
-    }
-    return(FALSE)
-  }
-
-  return(TRUE)
+} else {
+  state$skipped_count <- state$skipped_count + 1L
 }
 
-# =============================================================================
-# Boucle principale
-# =============================================================================
-results <- list()
+state
+}
+
+should_skip_chunk <- function(opts, code_text) {
+# Check chunk options
+is_exercise <- grepl("exercise\\s*=\\s*TRUE", opts)
+is_eval_false <- grepl("eval\\s*=\\s*FALSE", opts)
+is_setup <- grepl("-setup", opts)
+
+# Check code content
+has_blanks <- grepl("_____|# [ÀA] compl[eé]ter|# TODO|# Complétez", code_text)
+is_interactive <- grepl("question\\(|answer\\(|quiz\\(", code_text)
+
+# Decision logic
+if (is_exercise && has_blanks) {
+  return(list(skip = TRUE, reason = "exercise with blanks"))
+}
+if (is_interactive) {
+  return(list(skip = TRUE, reason = "interactive code"))
+}
+if (is_eval_false && !is_setup) {
+  return(list(skip = TRUE, reason = "eval=FALSE"))
+}
+
+list(skip = FALSE, reason = "")
+}
+
+extract_chunk_name <- function(opts, fallback_num) {
+name <- sub(".*\\{r\\s*([^,}]+).*", "\\1", opts)
+if (name == opts) {
+  paste0("chunk_", fallback_num)
+} else {
+  trimws(name)
+}
+}
+
+# -----------------------------------------------------------------------------
+# Code Preprocessing
+# -----------------------------------------------------------------------------
+preprocess_code <- function(code_text) {
+# Remove learnr-specific calls
+patterns <- c(
+  "library\\(learnr\\)" = "# library(learnr)",
+  "library\\(gradethis\\)" = "# library(gradethis)",
+  "gradethis::gradethis_setup\\(\\)" = "# gradethis_setup()",
+  "gradethis_setup\\(\\)" = "# gradethis_setup()"
+)
+
+for (pattern in names(patterns)) {
+  code_text <- gsub(pattern, patterns[[pattern]], code_text)
+}
+
+code_text
+}
+
+# -----------------------------------------------------------------------------
+# Code Execution
+# -----------------------------------------------------------------------------
+run_tutorial_code <- function(code_lines, tutorial_name, config, data_dir) {
+# Create execution environment
+env <- new.env(parent = globalenv())
+env$data_dir <- data_dir
+
+# Load common packages
+load_packages()
+
+# Parse code
+code_text <- preprocess_code(paste(code_lines, collapse = "\n"))
+
+parsed <- tryCatch(
+  parse(text = code_text),
+  error = function(e) {
+    cat("    PARSE ERROR:", conditionMessage(e), "\n")
+    NULL
+  }
+)
+
+if (is.null(parsed)) return(FALSE)
+
+n_expr <- length(parsed)
+cat(sprintf("    Expressions to execute: %d\n", n_expr))
+
+# Execute expressions
+results <- execute_expressions(parsed, env, config, n_expr)
+
+# Report results
+cat("\n")
+report_execution_results(results, n_expr)
+
+length(results$errors) == 0
+}
+
+load_packages <- function() {
+suppressPackageStartupMessages({
+  if (requireNamespace("sf", quietly = TRUE)) library(sf)
+  if (requireNamespace("terra", quietly = TRUE)) {
+    library(terra)
+    configure_terra_gdal(NETWORK_TIMEOUT)
+  }
+})
+}
+
+execute_expressions <- function(parsed, env, config, n_expr) {
+errors <- character(0)
+warnings_list <- character(0)
+success_count <- 0L
+
+for (i in seq_along(parsed)) {
+  expr <- parsed[[i]]
+  expr_preview <- get_expression_preview(expr)
+
+  # Show progress
+  print_progress_bar(i, n_expr)
+
+  if (config$verbose) {
+    cat(sprintf("\n    [%d/%d] %s\n", i, n_expr, expr_preview))
+  }
+
+  if (config$dry_run) {
+    success_count <- success_count + 1L
+    next
+  }
+
+  # Execute with retry for network errors
+  result <- execute_with_retry(expr, env, i, expr_preview)
+
+  if (result$success) {
+    success_count <- success_count + 1L
+    warnings_list <- c(warnings_list, result$warnings)
+  } else {
+    errors <- c(errors, result$error)
+  }
+}
+
+list(
+  success_count = success_count,
+  errors = errors,
+  warnings = warnings_list
+)
+}
+
+get_expression_preview <- function(expr, max_len = 60) {
+expr_text <- paste(deparse(expr), collapse = " ")
+expr_text <- gsub("\\s+", " ", expr_text)
+substr(expr_text, 1, max_len)
+}
+
+execute_with_retry <- function(expr, env, index, preview) {
+for (attempt in seq_len(MAX_RETRIES)) {
+  result <- execute_single_expression(expr, env)
+
+  # Check for network error
+  is_network_error <- !result$success &&
+    grepl("Timeout|timeout|curl|HTTP|Failed to connect|Connection refused",
+          result$error, ignore.case = TRUE)
+
+  if (result$success || !is_network_error || attempt == MAX_RETRIES) {
+    if (!result$success) {
+      result$error <- paste0("\n    [", index, "] ", preview, "\n        ", result$error)
+    }
+    return(result)
+  }
+
+  # Retry after delay
+  cat(sprintf("\n    [RETRY %d/%d] Network error, retrying in %ds...\n",
+              attempt, MAX_RETRIES, RETRY_DELAY))
+  Sys.sleep(RETRY_DELAY)
+}
+}
+
+execute_single_expression <- function(expr, env) {
+warnings_collected <- character(0)
+
+result <- tryCatch(
+  withCallingHandlers(
+    {
+      eval(expr, envir = env)
+      list(success = TRUE, error = NULL)
+    },
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      if (!grepl("package|namespace|replacing|masked", msg)) {
+        warnings_collected <<- c(warnings_collected, msg)
+      }
+      invokeRestart("muffleWarning")
+    },
+    message = function(m) {
+      invokeRestart("muffleMessage")
+    }
+  ),
+  error = function(e) {
+    list(success = FALSE, error = paste("ERROR:", conditionMessage(e)))
+  }
+)
+
+result$warnings <- warnings_collected
+result
+}
+
+report_execution_results <- function(results, n_expr) {
+cat(sprintf("    Result: %d/%d expressions OK\n",
+            results$success_count, n_expr))
+
+if (length(results$warnings) > 0) {
+  cat(sprintf("    Warnings: %d\n", length(results$warnings)))
+}
+
+if (length(results$errors) > 0) {
+  cat("    ERRORS:\n")
+  for (err in results$errors) {
+    cat(err, "\n")
+  }
+}
+}
+
+# -----------------------------------------------------------------------------
+# Tutorial Execution
+# -----------------------------------------------------------------------------
+run_single_tutorial <- function(tutorial_name, config, data_dir) {
+cat("\n")
+cat("+", paste(rep("-", 63), collapse = ""), "+\n", sep = "")
+cat(sprintf("|  %-60s |\n", toupper(tutorial_name)))
+cat("+", paste(rep("-", 63), collapse = ""), "+\n", sep = "")
+
+rmd_file <- file.path(TUTORIALS_DIR, tutorial_name, paste0(tutorial_name, ".Rmd"))
+
+if (!file.exists(rmd_file)) {
+  cat("    ERROR: File not found:", rmd_file, "\n")
+  return(list(status = "NOT_FOUND", time = 0, lines = 0))
+}
+
 start_time <- Sys.time()
 
-for (tuto in tutorials) {
-  tuto_start <- Sys.time()
+# Extract code
+cat("    Extracting code...\n")
+code_lines <- extract_executable_code(rmd_file)
 
-  cat("\n")
-  cat("┌─────────────────────────────────────────────────────────────┐\n")
-  cat(sprintf("│  %-57s  │\n", toupper(tuto)))
-  cat("└─────────────────────────────────────────────────────────────┘\n")
-
-  rmd_file <- file.path(tutorials_dir, tuto, paste0(tuto, ".Rmd"))
-
-  if (!file.exists(rmd_file)) {
-    cat("    ERREUR: Fichier non trouvé:", rmd_file, "\n")
-    results[[tuto]] <- list(status = "NOT_FOUND", time = 0)
-    next
-  }
-
-  # 1. Extraire le code
-  cat("    Extraction du code...\n")
-  code_lines <- extract_executable_code(rmd_file)
-
-  if (length(code_lines) == 0) {
-    cat("    Aucun code à exécuter\n")
-    results[[tuto]] <- list(status = "NO_CODE", time = 0)
-    next
-  }
-
-  # Sauvegarder le code extrait pour debug
-  code_file <- file.path(temp_dir, paste0(tuto, "_exec.R"))
-  writeLines(code_lines, code_file)
-  cat(sprintf("    Code extrait: %s (%d lignes)\n", code_file, length(code_lines)))
-
-  # 2. Exécuter le code
-  cat("    Exécution...\n")
-  success <- run_tutorial_code(code_lines, tuto)
-
-  tuto_time <- as.numeric(difftime(Sys.time(), tuto_start, units = "secs"))
-
-  results[[tuto]] <- list(
-    status = ifelse(success, "OK", "ERRORS"),
-    time = tuto_time,
-    lines = length(code_lines)
-  )
-
-  cat(sprintf("    Temps: %.1f secondes\n", tuto_time))
+if (length(code_lines) == 0) {
+  cat("    No code to execute\n")
+  return(list(status = "NO_CODE", time = 0, lines = 0))
 }
 
-# =============================================================================
-# Résumé final
-# =============================================================================
-total_time <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+# Save extracted code for debugging
+temp_file <- file.path(tempdir(), paste0(tutorial_name, "_exec.R"))
+writeLines(code_lines, temp_file)
+cat(sprintf("    Extracted code: %s (%d lines)\n", temp_file, length(code_lines)))
 
-cat("\n")
-cat("╔═══════════════════════════════════════════════════════════════╗\n")
-cat("║                        RÉSUMÉ                                 ║\n")
-cat("╚═══════════════════════════════════════════════════════════════╝\n\n")
+# Execute code
+cat("    Executing...\n")
+success <- run_tutorial_code(code_lines, tutorial_name, config, data_dir)
 
-# Tableau résumé
-cat(sprintf("%-20s %-10s %10s %10s\n", "Tutorial", "Status", "Lignes", "Temps"))
+elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+cat(sprintf("    Time: %.1f seconds\n", elapsed))
+
+list(
+  status = if (success) "OK" else "ERRORS",
+  time = elapsed,
+  lines = length(code_lines)
+)
+}
+
+# -----------------------------------------------------------------------------
+# Summary Report
+# -----------------------------------------------------------------------------
+print_summary <- function(results, total_time, data_dir) {
+print_banner("SUMMARY")
+
+# Results table
+cat(sprintf("%-20s %-10s %10s %10s\n", "Tutorial", "Status", "Lines", "Time"))
 cat(paste(rep("-", 52), collapse = ""), "\n")
 
-for (tuto in names(results)) {
-  res <- results[[tuto]]
-  cat(sprintf(
-    "%-20s %-10s %10d %9.1fs\n",
-    tuto,
-    res$status,
-    ifelse(is.null(res$lines), 0, res$lines),
-    res$time
-  ))
+for (name in names(results)) {
+  res <- results[[name]]
+  cat(sprintf("%-20s %-10s %10d %9.1fs\n",
+              name, res$status,
+              if (is.null(res$lines)) 0 else res$lines,
+              res$time))
 }
 
 cat(paste(rep("-", 52), collapse = ""), "\n")
 cat(sprintf("%-20s %-10s %10s %9.1fs\n", "TOTAL", "", "", total_time))
 
-# Statistiques
-n_ok <- sum(sapply(results, function(x) x$status == "OK"))
+# Statistics
+n_ok <- sum(vapply(results, function(x) x$status == "OK", logical(1)))
 n_total <- length(results)
+cat(sprintf("\nGlobal result: %d/%d tutorials OK\n", n_ok, n_total))
 
-cat(sprintf("\nRésultat global: %d/%d tutoriels OK\n", n_ok, n_total))
+# List produced files
+print_produced_files(data_dir)
 
-# Vérifier les fichiers produits
-cat("\nFichiers produits:\n")
-if (dir.exists(data_dir)) {
-  files <- list.files(data_dir, recursive = TRUE)
-  if (length(files) > 0) {
-    for (f in head(files, 20)) {
-      size <- file.size(file.path(data_dir, f))
-      cat(sprintf("  %-40s %s\n", f, format(size, big.mark = " ")))
-    }
-    if (length(files) > 20) {
-      cat(sprintf("  ... et %d autres fichiers\n", length(files) - 20))
-    }
-  } else {
-    cat("  (aucun fichier)\n")
-  }
-}
-
+# Final message
 cat("\n")
 if (n_ok == n_total) {
-  cat("*** TOUS LES TUTORIELS ONT ÉTÉ EXÉCUTÉS AVEC SUCCÈS ***\n\n")
-  quit(status = 0)
+  cat("*** ALL TUTORIALS EXECUTED SUCCESSFULLY ***\n\n")
 } else {
-  cat("*** CERTAINS TUTORIELS ONT ÉCHOUÉ ***\n\n")
+  cat("*** SOME TUTORIALS FAILED ***\n\n")
+}
+
+n_ok == n_total
+}
+
+print_produced_files <- function(data_dir) {
+cat("\nProduced files:\n")
+
+if (!dir.exists(data_dir)) {
+  cat("  (no directory)\n")
+  return()
+}
+
+files <- list.files(data_dir, recursive = TRUE)
+
+if (length(files) == 0) {
+  cat("  (no files)\n")
+  return()
+}
+
+max_display <- 20
+for (f in head(files, max_display)) {
+  size <- file.size(file.path(data_dir, f))
+  cat(sprintf("  %-40s %s\n", f, format(size, big.mark = " ")))
+}
+
+if (length(files) > max_display) {
+  cat(sprintf("  ... and %d more files\n", length(files) - max_display))
+}
+}
+
+# -----------------------------------------------------------------------------
+# Main Entry Point
+# -----------------------------------------------------------------------------
+main <- function() {
+# Parse arguments
+config <- parse_arguments()
+
+# Print header
+print_banner("NEMETON TUTORIAL RUNNER")
+
+if (config$dry_run) {
+  cat(">>> DRY-RUN MODE (no actual execution) <<<\n\n")
+}
+
+# Setup
+configure_network(NETWORK_TIMEOUT)
+data_dir <- setup_data_directory()
+
+# Filter tutorials if requested
+tutorials <- TUTORIAL_LIST
+if (!is.null(config$tutorial_filter)) {
+  tutorials <- tutorials[grepl(config$tutorial_filter, tutorials)]
+  cat("Filter applied:", config$tutorial_filter, "\n")
+  cat("Tutorials to run:", paste(tutorials, collapse = ", "), "\n\n")
+}
+
+if (length(tutorials) == 0) {
+  cat("No tutorials match the filter.\n")
   quit(status = 1)
 }
+
+# Run tutorials
+results <- list()
+start_time <- Sys.time()
+
+for (tutorial in tutorials) {
+  results[[tutorial]] <- run_single_tutorial(tutorial, config, data_dir)
+}
+
+# Summary
+total_time <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+success <- print_summary(results, total_time, data_dir)
+
+quit(status = if (success) 0 else 1)
+}
+
+# Run main function
+main()
