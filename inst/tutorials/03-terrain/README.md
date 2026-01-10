@@ -53,26 +53,41 @@ install.packages(c("sf", "terra", "whitebox"))
 
 ```
 ~/nemeton_tutorial_data/
-├── pente.tif                    # Pente (degrés)
-├── exposition.tif               # Exposition (degrés)
-├── twi.tif                      # Topographic Wetness Index
-├── distance_routes.tif          # Distance euclidienne routes
-├── distance_batiments.tif       # Distance euclidienne bâtiments
-└── indicateurs_terrain.gpkg     # Parcelles + 12 indicateurs
-    └── Colonnes: W1, W2, W3, R1, R2, R3, R4, S1, S2, S3, F1, F2
+├── pente.tif                              # Pente (degrés)
+├── exposition.tif                         # Exposition (degrés)
+├── twi.tif                                # Topographic Wetness Index
+├── erosion_f1.tif                         # Raster érosion RUSLE
+├── distance_routes.tif                    # Distance euclidienne routes
+├── distance_batiments.tif                 # Distance euclidienne bâtiments
+├── metriques_erosion_f1.gpkg              # Érosion (F1)
+├── metriques_fertilite_sol_f2.gpkg        # Fertilité sol (F2)
+├── metriques_twi_w3.gpkg                  # TWI (W3)
+├── metriques_densite_hydro_w1.gpkg        # Densité hydro (W1)
+├── metriques_couverture_zone_humide_w2.gpkg # Zones humides (W2)
+├── metriques_exposition_feu_r1.gpkg       # Risque feu (R1)
+├── metriques_exposition_tempete_r2.gpkg   # Risque tempête (R2)
+├── metriques_risque_secheresse_r3.gpkg    # Risque sécheresse (R3)
+├── metriques_pression_gibier_r4.gpkg      # Pression gibier (R4)
+├── metriques_access_route_s1.gpkg         # Accessibilité route (S1)
+├── metriques_distance_batiment_s2.gpkg    # Distance bâtiments (S2)
+├── metriques_densite_sentiers_s3.gpkg     # Densité sentiers (S3)
+└── indicateurs_terrain.gpkg               # Consolidation (tous indicateurs)
 ```
 
 ## Sections
 
-1. Introduction aux indicateurs terrain
-2. Calcul de la pente et exposition
-3. Calcul du TWI (Topographic Wetness Index)
-4. Famille W : Indicateurs Eau (W1, W2, W3)
-5. Famille R : Indicateurs Risques (R1, R2, R3, R4)
-6. Famille S : Indicateurs Sociaux (S1, S2, S3)
-7. Famille F : Indicateurs Sol (F1, F2)
-8. Export GeoPackage
-9. Quiz final
+1. Dérivés topographiques et érosion (F1)
+2. TWI et Fertilité (W3, F2)
+3. Réseau hydrographique (W1, W2)
+4. Indicateurs de risque (R1, R2, R3, R4)
+5. Accessibilité (S1, S2, S3)
+6. Export et synthèse
+   - 6.1 Famille W (Eau)
+   - 6.2 Famille R (Risques)
+   - 6.3 Famille S (Social)
+   - 6.4 Famille F (Sol)
+   - 6.5 Synthèse finale
+7. Quiz final
 
 ## Lancement
 
@@ -98,4 +113,4 @@ Fonctions principales utilisées :
 
 ## Tutoriel Suivant
 
-→ **Tutorial 04** : Écologie — Familles B, L, T, N (11 indicateurs)
+→ **Tutorial 04** : Écologie — Familles B, L, T, F, N (12 indicateurs)

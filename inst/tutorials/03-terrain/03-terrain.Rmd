@@ -247,7 +247,7 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
 
 ---
 
-## Section 2 : TWI - Indice d'Humidité Topographique (W3)
+## Section 2 : TWI et Fertilité (W3, F2)
 
 ### Principe du TWI
 
@@ -356,6 +356,110 @@ if (file.exists(mnt_path)) {
 | 9-12 | Intermédiaire | Mi-pente |
 | 12-15 | Humide | Bas de pente, convergence |
 | > 15 | Très humide | Fonds de vallée, zones humides |
+
+### Exercice 2.2 : Fertilité du sol (F2)
+
+L'indicateur **F2** évalue la fertilité potentielle du sol basée sur :
+- **TWI** : Accumulation d'eau et nutriments (plus humide = plus fertile)
+- **Pente** : Érosion des nutriments (pente forte = moins fertile)
+
+```{r ex-2-2-f2-setup}
+library(sf)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-2-2-f2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-2-2-f2-setup"}
+# === FERTILITÉ DU SOL (F2) ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+mnt_path <- file.path(data_dir, "mnt.tif")
+twi_path <- file.path(data_dir, "twi.tif")
+
+if (file.exists(parcelles_path) && file.exists(mnt_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
+  mnt <- rast(mnt_path)
+
+  cat("=== Calcul de F2 (Fertilité du sol) ===\n\n")
+
+  # Fonction d'extraction
+  extract_mean <- function(r, poly) {
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      exactextractr::exact_extract(r, poly, fun = "mean")
+    } else {
+      extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+    }
+  }
+
+  # Charger pente depuis le fichier sauvegardé (Section 1)
+  pente_path <- file.path(data_dir, "pente.tif")
+
+  # 1. TWI moyen par parcelle
+  if (file.exists(twi_path)) {
+    twi <- rast(twi_path)
+    parcelles$twi_mean <- extract_mean(twi, parcelles)
+    cat("TWI moyen:", round(mean(parcelles$twi_mean, na.rm = TRUE), 2), "\n")
+  } else {
+    # Approximation TWI depuis pente
+    if (file.exists(pente_path)) {
+      pente_rad <- rast(pente_path) * pi / 180  # Convertir en radians
+    } else {
+      pente_rad <- terrain(mnt, v = "slope", unit = "radians")
+    }
+    twi_approx <- log(1 / (tan(pente_rad) + 0.001))
+    twi_approx <- clamp(twi_approx, lower = 0, upper = 20)
+    parcelles$twi_mean <- extract_mean(twi_approx, parcelles)
+    cat("TWI approximé depuis MNT\n")
+  }
+
+  # 2. Pente moyenne par parcelle
+  if (file.exists(pente_path)) {
+    slope_deg <- rast(pente_path)
+  } else {
+    slope_deg <- terrain(mnt, v = "slope", unit = "degrees")
+  }
+  parcelles$slope_mean <- extract_mean(slope_deg, parcelles)
+  cat("Pente moyenne:", round(mean(parcelles$slope_mean, na.rm = TRUE), 1), "°\n")
+
+  # 3. Calcul F2
+  # Normalisation TWI (5-15 -> 0-100)
+  twi_norm <- function(twi) pmax(pmin((twi - 5) / 10 * 100, 100), 0)
+
+  # Normalisation pente (0-45° -> 100-0)
+  slope_norm <- function(slope) pmax(pmin(100 - (slope / 45) * 100, 100), 0)
+
+  parcelles$F2 <- round((twi_norm(parcelles$twi_mean) + slope_norm(parcelles$slope_mean)) / 2, 1)
+
+  cat("\n=== Résultats F2 ===\n")
+  cat("F2 min:", round(min(parcelles$F2, na.rm = TRUE), 1), "\n")
+  cat("F2 moy:", round(mean(parcelles$F2, na.rm = TRUE), 1), "/ 100\n")
+  cat("F2 max:", round(max(parcelles$F2, na.rm = TRUE), 1), "\n")
+  cat("Interprétation: 0 = sol pauvre, 100 = sol fertile\n")
+
+  # Sauvegarder
+  output_path <- file.path(data_dir, "metriques_fertilite_sol_f2.gpkg")
+  st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+  cat("\n=== Métriques F2 fertilité exportées ===\n")
+  cat("Fichier:", output_path, "\n")
+  cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
+} else {
+  cat("Fichiers non trouvés. Exécutez le Tutorial 01.\n")
+}
+```
+
+### Interprétation de F2
+
+| Score F2 | Classe | Description |
+|----------|--------|-------------|
+| 0 - 30 | Pauvre | Crêtes, pentes fortes, sol mince |
+| 30 - 50 | Modéré | Versants, drainage moyen |
+| 50 - 70 | Fertile | Mi-pente, bon drainage |
+| 70 - 100 | Très fertile | Bas de pente, accumulation |
 
 ---
 
@@ -738,8 +842,22 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   if (is.null(R2_raster)) {
     cat("Utilisation méthode alternative (dérivés MNT)...\n")
 
-    aspect <- terrain(mnt, v = "aspect", unit = "degrees")
-    pente <- terrain(mnt, v = "slope", unit = "degrees")
+    # Charger pente et exposition depuis les fichiers sauvegardés (Section 1)
+    pente_path <- file.path(data_dir, "pente.tif")
+    expo_path <- file.path(data_dir, "exposition.tif")
+
+    if (file.exists(expo_path)) {
+      aspect <- rast(expo_path)
+    } else {
+      aspect <- terrain(mnt, v = "aspect", unit = "degrees")
+    }
+
+    if (file.exists(pente_path)) {
+      pente <- rast(pente_path)
+    } else {
+      pente <- terrain(mnt, v = "slope", unit = "degrees")
+    }
+
     tri <- terrain(mnt, v = "TRI")
 
     # Exposition face au vent
@@ -867,13 +985,25 @@ if (file.exists(parcelles_path)) {
   if (file.exists(mnt_path)) {
     mnt <- rast(mnt_path)
 
+    # Charger pente et exposition depuis les fichiers sauvegardés (Section 1)
+    pente_path <- file.path(data_dir, "pente.tif")
+    expo_path <- file.path(data_dir, "exposition.tif")
+
     # Aspect (exposition solaire)
-    aspect <- terrain(mnt, v = "aspect", unit = "degrees")
+    if (file.exists(expo_path)) {
+      aspect <- rast(expo_path)
+    } else {
+      aspect <- terrain(mnt, v = "aspect", unit = "degrees")
+    }
     # Sud (180°) = max risque, Nord (0°/360°) = min risque
     aspect_risk <- (1 + cos((aspect - 180) * pi / 180)) / 2
 
     # Pente (ruissellement)
-    pente <- terrain(mnt, v = "slope", unit = "degrees")
+    if (file.exists(pente_path)) {
+      pente <- rast(pente_path)
+    } else {
+      pente <- terrain(mnt, v = "slope", unit = "degrees")
+    }
     pente_risk <- clamp(pente / 30, lower = 0, upper = 1)
 
     # TWI inversé (faible TWI = sec = risque élevé)
@@ -1375,7 +1505,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("- > 500m : Peu accessible\n")
 
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_access_route_a1.gpkg")
+    output_path <- file.path(data_dir, "metriques_access_route_s1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques S1 Accessibilité route exportées ===\n")
@@ -1476,7 +1606,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Distance moyenne:", round(mean(parcelles$S2, na.rm = TRUE)), "m\n")
 
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_distance_batiment_a2.gpkg")
+    output_path <- file.path(data_dir, "metriques_distance_batiment_s2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques S2 Distance au batiment exportées ===\n")
@@ -1613,7 +1743,7 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     cat("Densité moyenne:", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
 
     # Sauvegarder
-    output_path <- file.path(data_dir, "metriques_densite_sentiers_a3.gpkg")
+    output_path <- file.path(data_dir, "metriques_densite_sentiers_s3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques S3 Densité sentiers exportées ===\n")
@@ -1632,11 +1762,13 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
 
 ## Section 6 : Export et synthèse
 
+Cette section consolide tous les indicateurs calculés dans les sections précédentes.
+Chaque exercice importe les indicateurs d'une famille depuis les fichiers `metriques_*.gpkg`.
+
 ### Exercice 6.1 : Famille W (Eau)
 
 ```{r ex-6-1-setup}
 library(sf)
-library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -1644,81 +1776,57 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-6-1-setup"}
-# === FAMILLE W (EAU) : W1, W2, W3 ===
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-6-1-setup"}
+# === FAMILLE W (Eau) : W1, W2, W3 ===
+
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-# Fonction d'extraction
-extract_mean <- function(r, poly) {
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    exactextractr::exact_extract(r, poly, fun = "mean")
-  } else {
-    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
-  }
-}
+cat("=== Consolidation Famille W (Eau) ===\n\n")
 
-cat("=== Famille W (Eau) ===\n\n")
-
-# W1 : Densité réseau hydrographique (m/ha)
-cours_eau_path <- file.path(data_dir, "cours_eau.gpkg")
-if (file.exists(cours_eau_path)) {
-  cours_eau <- st_read(cours_eau_path, quiet = TRUE)
-  cours_eau <- st_transform(cours_eau, st_crs(parcelles))
-
-  calc_w1_synth <- function(i) {
-    inter <- st_intersection(cours_eau, parcelles[i, ])
-    if (nrow(inter) > 0) {
-      as.numeric(sum(st_length(inter)) / (st_area(parcelles[i, ]) / 10000))
-    } else {
-      0
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
     }
   }
-
-  # Parallélisation avec furrr si disponible
-  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-    library(furrr)
-    library(future)
-    plan(multisession, workers = max(1, availableCores() - 1))
-    parcelles$W1 <- future_map_dbl(seq_len(nrow(parcelles)), calc_w1_synth, .progress = TRUE)
-    plan(sequential)
-  } else if (requireNamespace("purrr", quietly = TRUE)) {
-    library(purrr)
-    parcelles$W1 <- map_dbl(seq_len(nrow(parcelles)), calc_w1_synth)
-  } else {
-    parcelles$W1 <- sapply(seq_len(nrow(parcelles)), calc_w1_synth)
-  }
-
-  cat("W1 (densité hydro):", round(mean(parcelles$W1, na.rm = TRUE), 2), "m/ha\n")
-  cat("   0 = pas de cours d'eau, >50 = réseau dense\n\n")
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
 }
 
-# W2, W3 : TWI et zones humides
-twi_path <- file.path(data_dir, "twi.tif")
-if (file.exists(twi_path)) {
-  twi_rast <- rast(twi_path)
-  parcelles$W3 <- extract_mean(twi_rast, parcelles)
-  parcelles$W2 <- extract_mean(twi_rast > 12, parcelles) * 100
-  cat("W2 (zones humides):", round(mean(parcelles$W2, na.rm = TRUE), 2), "%\n")
-  cat("   % de surface avec TWI > 12 (potentiel zone humide)\n\n")
-  cat("W3 (TWI moyen):", round(mean(parcelles$W3, na.rm = TRUE), 2), "\n")
-  cat("   <6 = très sec, 6-9 = sec, 9-12 = moyen, >12 = humide\n")
+# Import des indicateurs W
+w1 <- import_indicator("metriques_densite_hydro_w1.gpkg", "W1")
+if (!is.null(w1)) parcelles$W1 <- w1
+
+w2 <- import_indicator("metriques_couverture_zone_humide_w2.gpkg", "W2")
+if (!is.null(w2)) parcelles$W2 <- w2
+
+w3 <- import_indicator("metriques_twi_w3.gpkg", "W3")
+if (!is.null(w3)) parcelles$W3 <- w3
+
+# Statistiques
+cat("\n=== Statistiques Famille W ===\n")
+for (ind in c("W1", "W2", "W3")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
 }
 
 # Sauvegarder
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille W sauvegardée:", output_path, "\n")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille W consolidée (3 indicateurs)\n")
 ```
-
-
----
 
 ### Exercice 6.2 : Famille R (Risques)
 
 ```{r ex-6-2-setup}
 library(sf)
-library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -1726,76 +1834,60 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=65, exercise.setup="ex-6-2-setup"}
-# === FAMILLE R (RISQUES) : R1, R2, R3, R4 ===
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
+```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-2-setup"}
+# === FAMILLE R (Risques) : R1, R2, R3, R4 ===
 
-# Fonction d'extraction
-extract_mean <- function(r, poly) {
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    exactextractr::exact_extract(r, poly, fun = "mean")
-  } else {
-    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille R (Risques) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
   }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
 }
 
-cat("=== Famille R (Risques) ===\n\n")
+# Import des indicateurs R
+r1 <- import_indicator("metriques_exposition_feu_r1.gpkg", "R1")
+if (!is.null(r1)) parcelles$R1 <- r1
 
-# R1 : Risque feu (score 0-1)
-fire_path <- file.path(data_dir, "fire_exposure.tif")
-if (file.exists(fire_path)) {
-  parcelles$R1 <- extract_mean(rast(fire_path), parcelles)
-  cat("R1 (risque feu):", round(mean(parcelles$R1, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 (0=faible, 1=fort) - pente + expo sud + sécheresse\n\n")
-}
+r2 <- import_indicator("metriques_exposition_tempete_r2.gpkg", "R2")
+if (!is.null(r2)) parcelles$R2 <- r2
 
-# R2 : Risque tempête (score 0-1)
-storm_path <- file.path(data_dir, "storm_exposure.tif")
-if (file.exists(storm_path)) {
-  parcelles$R2 <- extract_mean(rast(storm_path), parcelles)
-  cat("R2 (risque tempête):", round(mean(parcelles$R2, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 (0=abrité, 1=exposé) - altitude + exposition vents\n\n")
-}
+r3 <- import_indicator("metriques_risque_secheresse_r3.gpkg", "R3")
+if (!is.null(r3)) parcelles$R3 <- r3
 
-# R3 : Risque sécheresse (score 0-1)
-drought_path <- file.path(data_dir, "drought_risk.tif")
-if (file.exists(drought_path)) {
-  parcelles$R3 <- extract_mean(rast(drought_path), parcelles)
-  cat("R3 (risque sécheresse):", round(mean(parcelles$R3, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 (0=humide, 1=sec) - TWI inverse + expo sud\n\n")
-}
+r4 <- import_indicator("metriques_pression_gibier_r4.gpkg", "R4")
+if (!is.null(r4)) parcelles$R4 <- r4
 
-# R4 : Pression gibier (score 0-100 → normalisé 0-1)
-# Calculé en exercice 4.4 et sauvegardé dans metriques_pression_gibier_r4.gpkg
-r4_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
-if (file.exists(r4_path)) {
-  r4_data <- st_read(r4_path, quiet = TRUE)
-  if ("R4" %in% names(r4_data)) {
-    parcelles$R4 <- r4_data$R4 / 100 # Normaliser 0-100 → 0-1
-    cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 3), "\n")
-    cat("   Score 0-1 : palatabilité 35% + vulnérabilité 25%\n")
-    cat("              + effet lisière 25% + densité chasse 15%\n")
+# Statistiques
+cat("\n=== Statistiques Famille R ===\n")
+for (ind in c("R1", "R2", "R3", "R4")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
   }
-} else {
-  parcelles$R4 <- 0.5
-  cat("R4 (pression gibier): 0.5 (valeur par défaut)\n")
-  cat("   Exécutez l'exercice 4.4 pour calculer R4\n")
 }
 
 # Sauvegarder
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille R sauvegardée:", output_path, "\n")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille R consolidée (4 indicateurs)\n")
 ```
-
-
----
 
 ### Exercice 6.3 : Famille S (Social)
 
 ```{r ex-6-3-setup}
 library(sf)
-library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -1803,67 +1895,57 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-3-setup"}
-# === FAMILLE S (SOCIAL) : S1, S2, S3 ===
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
+```{r ex-6-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-6-3-setup"}
+# === FAMILLE S (Social) : S1, S2, S3 ===
 
-# Fonction d'extraction
-extract_mean <- function(r, poly) {
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    exactextractr::exact_extract(r, poly, fun = "mean")
-  } else {
-    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille S (Social) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
+  }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
+}
+
+# Import des indicateurs S
+s1 <- import_indicator("metriques_access_route_s1.gpkg", "S1")
+if (!is.null(s1)) parcelles$S1 <- s1
+
+s2 <- import_indicator("metriques_distance_batiment_s2.gpkg", "S2")
+if (!is.null(s2)) parcelles$S2 <- s2
+
+s3 <- import_indicator("metriques_densite_sentiers_s3.gpkg", "S3")
+if (!is.null(s3)) parcelles$S3 <- s3
+
+# Statistiques
+cat("\n=== Statistiques Famille S ===\n")
+for (ind in c("S1", "S2", "S3")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
   }
 }
 
-cat("=== Famille S (Social) ===\n\n")
-
-# S1 : Distance aux routes (m)
-dist_routes_path <- file.path(data_dir, "distance_routes.tif")
-if (file.exists(dist_routes_path)) {
-  parcelles$S1 <- extract_mean(rast(dist_routes_path), parcelles)
-  cat("S1 (dist routes):", round(mean(parcelles$S1, na.rm = TRUE), 0), "m\n")
-  cat("   <100m = très accessible, 100-500m = accessible, >500m = isolé\n\n")
-}
-
-# S2 : Distance aux bâtiments (m)
-dist_bat_path <- file.path(data_dir, "distance_batiments.tif")
-if (file.exists(dist_bat_path)) {
-  parcelles$S2 <- extract_mean(rast(dist_bat_path), parcelles)
-  cat("S2 (dist bâtiments):", round(mean(parcelles$S2, na.rm = TRUE), 0), "m\n")
-  cat("   <200m = proche habitat, 200-1000m = périurbain, >1000m = rural\n\n")
-}
-
-# S3 : Densité sentiers (m/ha)
-sentiers_path <- file.path(data_dir, "densite_sentiers.tif")
-if (file.exists(sentiers_path)) {
-  parcelles$S3 <- extract_mean(rast(sentiers_path), parcelles)
-  cat("S3 (densité sentiers):", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
-  cat("   0 = pas de sentier, >20 = usage récréatif important\n")
-} else {
-  parcelles$S3 <- 0
-  cat("S3 (densité sentiers): 0 (données non disponibles)\n")
-  cat("   Exécutez la section 5 pour télécharger les sentiers OSM\n")
-}
-
 # Sauvegarder
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille S sauvegardée:", output_path, "\n")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille S consolidée (3 indicateurs)\n")
 ```
 
-
----
-
-### Exercice 6.4 : Famille F (Sol) - F1 et F2
-
-La famille F comprend deux indicateurs :
-- **F1** : Risque d'érosion (RUSLE simplifié)
-- **F2** : Fertilité du sol (TWI + pente)
+### Exercice 6.4 : Famille F (Sol)
 
 ```{r ex-6-4-setup}
 library(sf)
-library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -1871,100 +1953,54 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=90, exercise.setup="ex-6-4-setup"}
-# === FAMILLE F (SOL) - F1 et F2 ===
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
-mnt_path <- file.path(data_dir, "mnt.tif")
-twi_path <- file.path(data_dir, "twi.tif")
+```{r ex-6-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-6-4-setup"}
+# === FAMILLE F (Sol) : F1, F2 ===
 
-# Fonction d'extraction
-extract_mean <- function(r, poly) {
-  if (requireNamespace("exactextractr", quietly = TRUE)) {
-    exactextractr::exact_extract(r, poly, fun = "mean")
-  } else {
-    extract(r, vect(poly), fun = mean, na.rm = TRUE)[, 2]
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille F (Sol) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
+  }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
+}
+
+# Import des indicateurs F
+f1 <- import_indicator("metriques_erosion_f1.gpkg", "F1")
+if (!is.null(f1)) parcelles$F1 <- f1
+
+f2 <- import_indicator("metriques_fertilite_sol_f2.gpkg", "F2")
+if (!is.null(f2)) parcelles$F2 <- f2
+
+# Statistiques
+cat("\n=== Statistiques Famille F ===\n")
+for (ind in c("F1", "F2")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
   }
 }
 
-cat("=== Famille F (Sol) ===\n\n")
-
-# === F1 : Risque érosion RUSLE simplifié ===
-cat("--- F1 : Risque érosion ---\n")
-erosion_path <- file.path(data_dir, "erosion_f1.tif")
-if (file.exists(erosion_path)) {
-  parcelles$F1 <- extract_mean(rast(erosion_path), parcelles)
-  cat("F1 (érosion RUSLE):", round(mean(parcelles$F1, na.rm = TRUE), 3), "\n")
-  cat("   Score 0-1 : 0=très faible, 1=très élevé\n\n")
-} else {
-  cat("F1: Fichier erosion_f1.tif non trouvé.\n\n")
-}
-
-# === F2 : Fertilité du sol ===
-cat("--- F2 : Fertilité du sol ---\n")
-
-# 1. TWI (indice d'humidité topographique)
-if (file.exists(twi_path)) {
-  twi <- rast(twi_path)
-  parcelles$twi_mean <- extract_mean(twi, parcelles)
-  cat("TWI moyen:", round(mean(parcelles$twi_mean, na.rm = TRUE), 2), "\n")
-} else if (file.exists(mnt_path)) {
-  mnt <- rast(mnt_path)
-  slope_rad <- terrain(mnt, v = "slope", unit = "radians")
-  twi_approx <- log(1 / (tan(slope_rad) + 0.001))
-  twi_approx <- clamp(twi_approx, lower = 0, upper = 20)
-  parcelles$twi_mean <- extract_mean(twi_approx, parcelles)
-  cat("TWI approximé depuis MNT\n")
-} else {
-  parcelles$twi_mean <- 10
-}
-
-# 2. Pente moyenne
-if (file.exists(mnt_path)) {
-  mnt <- rast(mnt_path)
-  slope_deg <- terrain(mnt, v = "slope", unit = "degrees")
-  parcelles$slope_mean <- extract_mean(slope_deg, parcelles)
-  cat("Pente moyenne:", round(mean(parcelles$slope_mean, na.rm = TRUE), 1), "°\n")
-} else {
-  parcelles$slope_mean <- 10
-}
-
-# 3. Calcul F2
-# Normalisation TWI (5-15 -> 0-100)
-twi_norm <- function(twi) pmax(pmin((twi - 5) / 10 * 100, 100), 0)
-
-# Normalisation pente (0-45° -> 100-0)
-slope_norm <- function(slope) pmax(pmin(100 - (slope / 45) * 100, 100), 0)
-
-parcelles$F2 <- round((twi_norm(parcelles$twi_mean) + slope_norm(parcelles$slope_mean)) / 2, 1)
-
-cat("\n=== Résultats F2 ===\n")
-cat("F2 moyen:", round(mean(parcelles$F2, na.rm = TRUE), 1), "/ 100\n")
-cat("F2 min:", round(min(parcelles$F2, na.rm = TRUE), 1), "\n")
-cat("F2 max:", round(max(parcelles$F2, na.rm = TRUE), 1), "\n")
-cat("Interprétation: 0 = sol pauvre, 100 = sol fertile\n")
-
-# Classification F2
-parcelles$F2_classe <- cut(parcelles$F2,
-  breaks = c(0, 30, 50, 70, 100),
-  labels = c("Pauvre", "Modéré", "Fertile", "Très fertile"),
-  include.lowest = TRUE
-)
-cat("\nDistribution F2:\n")
-print(table(parcelles$F2_classe))
-
 # Sauvegarder
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille F (F1 + F2) sauvegardée:", output_path, "\n")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille F consolidée (2 indicateurs)\n")
 ```
-
----
 
 ### Exercice 6.5 : Synthèse finale
 
 ```{r ex-6-5-setup}
 library(sf)
-library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -1972,13 +2008,15 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-6-5-setup"}
-# === SYNTHÈSE FINALE - TOUS LES INDICATEURS TERRAIN ===
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
+```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-6-5-setup"}
+# === SYNTHÈSE FINALE ===
 
-# Résumé par famille
-cat("\n=== Résumé par famille ===\n")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Synthèse des indicateurs terrain ===\n\n")
+
+# Définition des familles
 familles <- list(
   W = c("W1", "W2", "W3"),
   R = c("R1", "R2", "R3", "R4"),
@@ -1986,13 +2024,35 @@ familles <- list(
   F = c("F1", "F2")
 )
 
+# Résumé par famille
+cat("=== Résumé par famille ===\n")
 for (fam in names(familles)) {
   inds <- familles[[fam]]
   present <- sum(inds %in% names(parcelles))
   cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
 }
 
-cat("\nTotal:", sum(unlist(familles) %in% names(parcelles)), "/12 indicateurs calculés\n")
+total <- sum(unlist(familles) %in% names(parcelles))
+cat("\nTotal:", total, "/12 indicateurs consolidés\n")
+
+# Statistiques complètes
+cat("\n=== Statistiques des indicateurs ===\n")
+cat("Indicateur    Min      Moy      Max\n")
+cat("----------------------------------\n")
+for (ind in unlist(familles)) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%-10s %7.2f %8.2f %8.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Sauvegarde finale
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n=== Indicateurs terrain consolidés ===\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), "lignes et", ncol(parcelles), "colonnes\n")
 ```
 
 ---
@@ -2056,6 +2116,7 @@ quiz(
 |---------|---------|-------------|
 | `indicateurs_terrain.gpkg` | Synthèse complète | W1-3, R1-4, S1-3, F1-2 |
 | `metriques_erosion_f1.gpkg` | Érosion RUSLE | F1 |
+| `metriques_fertilite_sol_f2.gpkg` | Fertilité sol | F2 |
 | `metriques_twi_w3.gpkg` | Humidité topographique | W3 |
 | `metriques_densite_hydro_w1.gpkg` | Densité réseau hydro | W1 |
 | `metriques_couverture_zone_humide_w2.gpkg` | Zones humides | W2 |
@@ -2063,9 +2124,9 @@ quiz(
 | `metriques_exposition_tempete_r2.gpkg` | Exposition tempête | R2 |
 | `metriques_risque_secheresse_r3.gpkg` | Risque sécheresse | R3 |
 | `metriques_pression_gibier_r4.gpkg` | Pression gibier | R4 + composantes |
-| `metriques_access_route_a1.gpkg` | Accessibilité route | A1 |
-| `metriques_distance_batiment_a2.gpkg` | Distance bâtiments | A2 |
-| `metriques_densite_sentiers_a3.gpkg` | Densité sentiers | A3 |
+| `metriques_access_route_s1.gpkg` | Accessibilité route | S1 |
+| `metriques_distance_batiment_s2.gpkg` | Distance bâtiments | S2 |
+| `metriques_densite_sentiers_s3.gpkg` | Densité sentiers | S3 |
 | `twi.tif` | Raster TWI | - |
 | `erosion_f1.tif` | Raster érosion RUSLE | - |
 

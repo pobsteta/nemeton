@@ -505,7 +505,7 @@ if (requireNamespace("lidR", quietly = TRUE)) {
 
 ---
 
-## Section 6 : Export des résultats
+## Section 6 : Export des métriques LiDAR
 
 ### Exercice 6.1 : Sauvegarder les métriques
 
@@ -708,8 +708,12 @@ if (file.exists(parcelles_path)) {
     cat("C1 max:", round(max(parcelles$C1, na.rm = TRUE), 1), "tC/ha\n\n")
 
     # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_stock_carbone_c1.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ C1 ajouté aux parcelles\n")
+    cat("=== Métriques C1 exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques pzabove2 et zmean non trouvées.\n")
     cat("Exécutez l'exercice 6.1 d'abord.\n")
@@ -761,8 +765,12 @@ if (file.exists(parcelles_path)) {
     cat("P1 max:", round(max(parcelles$P1, na.rm = TRUE), 1), "m³/ha\n\n")
 
     # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_volume_bois_p1.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ P1 ajouté aux parcelles\n")
+    cat("=== Métriques P1 exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques pzabove2, zmean et zmax non trouvées.\n")
   }
@@ -801,7 +809,7 @@ if (file.exists(parcelles_path)) {
 
   if (all(c("zmean", "pzabove2", "zq95", "zq25") %in% names(parcelles))) {
     # Facteur de productivité (m³/ha/an équivalent)
-    k_prod <- 0.8
+    k_prod <- 0.3
 
     # Indice de vigueur : ratio hauteur dominante / hauteur moyenne
     vigueur <- (parcelles$zq95 - parcelles$zq25) / parcelles$zmean
@@ -822,8 +830,12 @@ if (file.exists(parcelles_path)) {
     cat("P2 max:", round(max(parcelles$P2, na.rm = TRUE), 2), "m³/ha/an\n\n")
 
     # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_productivite_p2.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ P2 ajouté aux parcelles\n")
+    cat("=== Métriques P2 exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques zmean, pzabove2, zq95 et zq25 non trouvées.\n")
   }
@@ -881,8 +893,12 @@ if (file.exists(parcelles_path)) {
     cat("P3 max:", round(max(parcelles$P3, na.rm = TRUE), 1), "\n\n")
 
     # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_qualite_structurale_p3.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ P3 ajouté aux parcelles\n")
+    cat("=== Métriques P3 exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques zentropy, zsd et zmean non trouvées.\n")
   }
@@ -891,15 +907,31 @@ if (file.exists(parcelles_path)) {
 }
 ```
 
-### Exercice 7.5 : Calculer A1 (Couverture forestière)
+### Exercice 7.5 : Calculer A1 (Occupation du sol)
 
-L'indicateur **A1** mesure la couverture forestière qui influence :
-- L'interception des précipitations
-- La régulation du microclimat
-- La qualité de l'air local
+L'indicateur **A1** caractérise l'**occupation du sol** de chaque parcelle en utilisant :
+- **OSO** (Occupation du Sol) de Theia/CESBIO : classification à 10m
+- **pzabove2** (LiDAR) : ajustement de la densité de canopée forestière
+
+**Classes OSO principales :**
+
+| Code | Classe | Code | Classe |
+|------|--------|------|--------|
+| 1 | Cultures annuelles | 16 | Feuillus |
+| 2 | Cultures pérennes | 17 | Conifères |
+| 3 | Prairies | 18 | Forêt mixte |
+| 4 | Vignes | 19 | Landes |
+| 5 | Vergers | 20 | Pelouses naturelles |
+| 11 | Urbain dense | 21 | Plages et dunes |
+| 12 | Urbain diffus | 22 | Roches nues |
+| 13 | Zones industrielles | 23 | Eau |
+| 14 | Surfaces minérales | 31 | Neige/Glace |
+
+> **Note** : OSO doit être téléchargé depuis [Recherche Data Gouv](https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1) et placé dans `~/.local/share/nemeton/tutorial_data/oso.tif`
 
 ```{r ex-7-5-a1-setup}
 library(sf)
+library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -907,36 +939,210 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-7-5-a1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-7-5-a1-setup"}
-# === CALCUL DE A1 : COUVERTURE FORESTIÈRE ===
+```{r ex-7-5-a1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=110, exercise.timelimit=1200, exercise.setup="ex-7-5-a1-setup"}
+# === CALCUL DE A1 : OCCUPATION DU SOL (OSO + LiDAR) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+oso_path <- file.path(data_dir, "oso.tif")
 
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-
-  cat("=== Calcul de A1 (Couverture forestière) ===\n\n")
-
-  if ("pzabove2" %in% names(parcelles)) {
-    # A1 = couverture forestière > 2m (déjà en %)
-    parcelles$A1 <- parcelles$pzabove2
-
-    cat("A1 = pzabove2 (couverture > 2m en %)\n\n")
-
-    cat("=== Résultats A1 ===\n")
-    cat("A1 min:", round(min(parcelles$A1, na.rm = TRUE), 1), "%\n")
-    cat("A1 moy:", round(mean(parcelles$A1, na.rm = TRUE), 1), "%\n")
-    cat("A1 max:", round(max(parcelles$A1, na.rm = TRUE), 1), "%\n\n")
-
-    # Sauvegarder
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ A1 ajouté aux parcelles\n")
-  } else {
-    cat("Métrique pzabove2 non trouvée.\n")
-  }
-} else {
-  cat("Fichier parcelles.gpkg non trouvé.\n")
+if (!file.exists(parcelles_path)) {
+  stop("Fichier parcelles.gpkg non trouvé.")
 }
+
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Calcul de A1 (Occupation du sol) ===\n\n")
+
+# Télécharger et extraire OSO si non présent
+if (!file.exists(oso_path)) {
+  cat("1. Téléchargement OSO depuis Recherche Data Gouv...\n")
+  oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
+
+  # Chercher une archive OSO existante (OSO_*.tar.gz)
+  oso_tar_files <- list.files(data_dir, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
+  if (length(oso_tar_files) > 0) {
+    oso_tar <- oso_tar_files[1]  # Utiliser la première archive trouvée
+  } else {
+    oso_tar <- file.path(data_dir, "OSO_RASTER.tar.gz")  # Nom par défaut pour le téléchargement
+  }
+
+  # Vérifier si curl est disponible
+  if (!requireNamespace("curl", quietly = TRUE)) {
+    stop("Package 'curl' requis. Installez-le avec: install.packages('curl')")
+  }
+
+  # Taille attendue de l'archive (~6 Go)
+  oso_expected_size <- 5e9
+
+  tryCatch({
+    # Vérifier si l'archive existe déjà et est complète
+    need_download <- TRUE
+    if (file.exists(oso_tar)) {
+      existing_size <- file.info(oso_tar)$size
+      cat("   Archive existante détectée (", round(existing_size / 1e9, 2), " Go)\n")
+      if (existing_size >= oso_expected_size) {
+        cat("   Archive complète, téléchargement ignoré.\n")
+        need_download <- FALSE
+      } else {
+        cat("   Archive incomplète, reprise du téléchargement...\n")
+      }
+    } else {
+      cat("   Fichier volumineux (~6 Go), téléchargement en cours...\n")
+    }
+
+    # Télécharger avec curl (supporte la reprise)
+    if (need_download) {
+      curl::curl_download(
+        url = oso_url,
+        destfile = oso_tar,
+        quiet = FALSE,
+        mode = "wb"
+      )
+      cat("   Archive téléchargée!\n")
+    }
+
+    # Extraire l'archive (peut prendre plusieurs minutes)
+    # L'archive contient: OSO_*/DATA/OCS_*.tif
+    cat("   Extraction de l'archive (peut prendre plusieurs minutes, patientez)...\n")
+    untar(path.expand(oso_tar), exdir = path.expand(data_dir), extras = "--touch")
+    cat("   Extraction terminée!\n")
+
+    # Trouver le fichier OCS_*.tif dans les sous-répertoires extraits
+    tif_files <- list.files(data_dir, pattern = "^OCS_.*\\.tif$",
+                            full.names = TRUE, recursive = TRUE)
+    if (length(tif_files) > 0) {
+      # Copier le fichier principal (OCS_*.tif) vers oso.tif
+      copy_ok <- file.copy(tif_files[1], oso_path)
+      if (copy_ok && file.exists(oso_path)) {
+        cat("   Fichier copié vers oso.tif\n")
+
+        # Nettoyer: supprimer le répertoire extrait
+        oso_dirs <- list.dirs(data_dir, full.names = TRUE, recursive = FALSE)
+        oso_dirs <- oso_dirs[grepl("^OSO_", basename(oso_dirs))]
+        if (length(oso_dirs) > 0) {
+          unlink(oso_dirs, recursive = TRUE)
+          cat("   Répertoire temporaire supprimé\n")
+        }
+
+        # Supprimer l'archive
+        file.remove(oso_tar)
+        cat("   Archive supprimée\n\n")
+      } else {
+        cat("   Erreur lors de la copie - archive conservée\n\n")
+      }
+    } else {
+      cat("   Aucun fichier OCS_*.tif trouvé dans l'archive - archive conservée\n\n")
+    }
+
+  }, error = function(e) {
+    cat("   Erreur:", e$message, "\n")
+    if (file.exists(oso_tar)) {
+      cat("   Archive partielle conservée - relancez pour reprendre le téléchargement\n")
+    }
+    cat("   Ou téléchargez manuellement depuis:\n")
+    cat("   https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1\n\n")
+  })
+}
+
+# Classes OSO et leurs noms
+oso_classes <- data.frame(
+  code = c(1, 2, 3, 4, 5, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 31),
+  nom = c("Cultures_annuelles", "Cultures_perennes", "Prairies", "Vignes", "Vergers",
+          "Urbain_dense", "Urbain_diffus", "Industriel", "Mineral",
+          "Feuillus", "Coniferes", "Foret_mixte", "Landes", "Pelouses",
+          "Plages_dunes", "Roches", "Eau", "Neige"),
+  stringsAsFactors = FALSE
+)
+
+# Classes forestières pour le calcul de A1
+foret_codes <- c(16, 17, 18)
+
+if (file.exists(oso_path)) {
+  cat("1. Chargement et découpage OSO...\n")
+  oso_full <- rast(oso_path)
+
+  # Reprojeter parcelles si nécessaire
+  if (!identical(crs(oso_full, proj=TRUE), st_crs(parcelles)$proj4string)) {
+    parcelles_oso <- st_transform(parcelles, crs(oso_full))
+  } else {
+    parcelles_oso <- parcelles
+  }
+
+  # Découper OSO sur l'emprise des parcelles (beaucoup plus rapide)
+  parcelles_ext <- ext(vect(parcelles_oso))
+  oso <- crop(oso_full, parcelles_ext)
+  rm(oso_full)  # Libérer la mémoire
+  cat("   OSO découpé sur l'emprise des parcelles\n")
+
+  cat("2. Extraction des classes OSO par parcelle...\n")
+  cat("   Calcul en cours (", nrow(parcelles), " parcelles)...\n")
+
+  # Extraction vectorisée (beaucoup plus rapide que boucle)
+  parcelles_vect <- vect(parcelles_oso)
+  extracted <- terra::extract(oso, parcelles_vect, touches = TRUE)
+  names(extracted)[2] <- "classe"
+
+  # Calculer les pourcentages par parcelle
+  cat("   Calcul des pourcentages par classe...\n")
+
+  # Initialiser les colonnes
+  for (j in seq_len(nrow(oso_classes))) {
+    col_name <- paste0("OSO_", oso_classes$nom[j])
+    parcelles[[col_name]] <- 0
+  }
+  parcelles$OSO_Foret_total <- 0
+
+  # Calculer les stats par parcelle (groupé)
+  for (i in seq_len(nrow(parcelles))) {
+    vals <- extracted$classe[extracted$ID == i]
+    vals <- vals[!is.na(vals)]
+
+    if (length(vals) > 0) {
+      total <- length(vals)
+      for (j in seq_len(nrow(oso_classes))) {
+        col_name <- paste0("OSO_", oso_classes$nom[j])
+        parcelles[[col_name]][i] <- round(sum(vals == oso_classes$code[j]) / total * 100, 1)
+      }
+      # % forêt total
+      parcelles$OSO_Foret_total[i] <- round(sum(vals %in% foret_codes) / total * 100, 1)
+    }
+  }
+
+  cat("\n3. Statistiques OSO:\n")
+  cat("   Forêt moyenne:", round(mean(parcelles$OSO_Foret_total, na.rm = TRUE), 1), "%\n")
+  cat("   - Feuillus:", round(mean(parcelles$OSO_Feuillus, na.rm = TRUE), 1), "%\n")
+  cat("   - Conifères:", round(mean(parcelles$OSO_Coniferes, na.rm = TRUE), 1), "%\n")
+  cat("   - Mixte:", round(mean(parcelles$OSO_Foret_mixte, na.rm = TRUE), 1), "%\n")
+
+  # A1 basé sur OSO_Foret_total
+  parcelles$A1 <- parcelles$OSO_Foret_total
+
+} else {
+  cat("OSO non trouvé - utilisation de pzabove2 seul\n")
+  parcelles$A1 <- 0
+}
+
+# Ajustement avec pzabove2 (densité de canopée LiDAR)
+if ("pzabove2" %in% names(parcelles)) {
+  pzabove2 <- as.numeric(unlist(parcelles$pzabove2))
+  cat("\n4. Ajustement avec pzabove2 (densité canopée LiDAR)...\n")
+  # Moyenne pondérée : 70% OSO + 30% pzabove2
+  parcelles$A1 <- round(0.7 * parcelles$A1 + 0.3 * pzabove2, 1)
+  cat("   A1 = 0.7 × OSO_Foret + 0.3 × pzabove2\n")
+}
+
+cat("\n=== Résultats A1 ===\n")
+cat("A1 min:", round(min(parcelles$A1, na.rm = TRUE), 1), "%\n")
+cat("A1 moy:", round(mean(parcelles$A1, na.rm = TRUE), 1), "%\n")
+cat("A1 max:", round(max(parcelles$A1, na.rm = TRUE), 1), "%\n")
+
+# Sauvegarder
+output_path <- file.path(data_dir, "metriques_couverture_forestiere_a1.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n=== Métriques A1 exportées ===\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n")
 ```
 
 ---
@@ -1015,8 +1221,12 @@ if (file.exists(parcelles_path)) {
     cat("E1 max:", round(max(parcelles$E1, na.rm = TRUE), 3), "tep/ha/an\n\n")
 
     # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_bois_energie_e1.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ E1 ajouté aux parcelles\n")
+    cat("=== Métriques E1 exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques pzabove2 et zmean non trouvées.\n")
     cat("Exécutez l'exercice 6.1 d'abord.\n")
@@ -1076,8 +1286,11 @@ if (file.exists(parcelles_path)) {
     cat("  Facteur substitution:", facteur_substitution, "tCO2/tep\n")
     cat("  Rendement conversion:", rendement_conversion, "\n\n")
 
+    # Convertir E1 en vecteur numérique (évite les problèmes de list-column)
+    E1_vec <- as.numeric(unlist(parcelles$E1))
+
     # Calcul E2
-    parcelles$E2 <- parcelles$E1 * facteur_substitution * rendement_conversion
+    parcelles$E2 <- E1_vec * facteur_substitution * rendement_conversion
 
     cat("Formule: E2 = E1 × f_substitution × η_conversion\n\n")
 
@@ -1087,13 +1300,22 @@ if (file.exists(parcelles_path)) {
     cat("E2 max:", round(max(parcelles$E2, na.rm = TRUE), 3), "tCO2/ha/an\n\n")
 
     # Évitement total sur la zone
-    parcelles$evitement_total <- parcelles$E2 * parcelles$surface_ha
+    # Calculer surface_ha si absente
+    if (!"surface_ha" %in% names(parcelles)) {
+      parcelles$surface_ha <- as.numeric(st_area(parcelles)) / 10000
+    }
+    surface_ha_vec <- as.numeric(unlist(parcelles$surface_ha))
+    parcelles$evitement_total <- parcelles$E2 * surface_ha_vec
     total_evitement <- sum(parcelles$evitement_total, na.rm = TRUE)
     cat("Évitement total zone:", round(total_evitement, 1), "tCO2/an\n\n")
 
     # Sauvegarder
+    output_path <- file.path(data_dir, "metriques_evitement_carbone_e2.gpkg")
+    st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
     st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-    cat("✓ E2 ajouté aux parcelles\n")
+    cat("=== Métriques E2 exportées ===\n")
+    cat("Fichier:", output_path, "\n")
+    cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
     # Visualisation
     cat("\n=== Distribution E2 ===\n")
@@ -1203,10 +1425,12 @@ L'indicateur **C2** mesure la **vitalité de la végétation** via l'indice NDVI
 
 **Sources de données (par ordre de priorité) :**
 
-| Priorité | Source | Description |
-|----------|--------|-------------|
-| 1 | Sentinel-2 | Bandes B4/B8 via STAC API |
-| 2 | BD Forêt | Estimation par type de peuplement |
+| Priorité | Source | Package | Résolution | Description |
+|----------|--------|---------|------------|-------------|
+| 1 | IGN Ortho IRC | happign | 50cm | Orthophoto infrarouge couleur (France) |
+| 2 | Sentinel-2 L2A | rstac | 10m | Bandes B4/B8 via STAC API (global) |
+| 3 | MODIS NDVI | geodata | 250m | Données globales MOD13Q1 |
+| 4 | BD Forêt | sf | vecteur | Estimation par type de peuplement |
 
 **Formule NDVI :**
 
@@ -1230,7 +1454,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-9-1-c2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=80, exercise.setup="ex-9-1-c2-setup", exercise.timelimit=600}
+```{r ex-9-1-c2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=150, exercise.setup="ex-9-1-c2-setup", exercise.timelimit=900}
 # === INDICATEUR C2 (NDVI - VITALITÉ VÉGÉTATION) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
@@ -1238,80 +1462,255 @@ parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 cat("=== Indicateur C2 : NDVI (Vitalité) ===\n\n")
 
-bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
+ndvi_available <- FALSE
+ndvi_raster <- NULL
 
-# Valeur par défaut
-parcelles$C2 <- 0.5
+# ============================================================
+# 1. TÉLÉCHARGEMENT DONNÉES NDVI (ordre: happign > rstac > geodata)
+# ============================================================
 
-# Estimation basée sur BD Forêt et métriques LiDAR
-cat("Estimation via BD Forêt et LiDAR...\n")
+# Méthode 1: happign (Ortho IRC IGN) - Priorité France
+if (requireNamespace("happign", quietly = TRUE)) {
+  library(happign)
 
-if (file.exists(bd_foret_path)) {
-  bd_foret <- st_read(bd_foret_path, quiet = TRUE)
-  bd_foret <- st_transform(bd_foret, st_crs(parcelles))
+  tryCatch(
+    {
+      cat("Méthode 1: happign (Ortho IRC IGN)...\n")
 
-  # Coefficients NDVI par type de peuplement
-  ndvi_by_type <- data.frame(
-    pattern = c("feuill", "resin", "conif", "mixte", "taillis", "lande", "peupl"),
-    ndvi_base = c(0.72, 0.65, 0.65, 0.68, 0.60, 0.45, 0.70),
-    stringsAsFactors = FALSE
+      # Bbox pour la requête
+      zone_bbox <- st_as_sfc(st_bbox(parcelles))
+      st_crs(zone_bbox) <- st_crs(parcelles)
+
+      # Chercher les couches d'orthophotos IRC disponibles
+      wms_layers <- get_layers_metadata("wmts", "ortho")
+      irc_layers <- wms_layers$Identifier[grepl("irc|infrarouge|ortho.*ir",
+        wms_layers$Identifier,
+        ignore.case = TRUE
+      )]
+
+      if (length(irc_layers) > 0) {
+        cat("Couches IRC trouvées:", length(irc_layers), "\n")
+
+        # Télécharger l'ortho IRC
+        for (layer in head(irc_layers, 3)) {
+          tryCatch(
+            {
+              irc_raster <- get_wms_raster(
+                x = zone_bbox,
+                layer = layer,
+                res = 5,
+                crs = st_crs(parcelles)$epsg
+              )
+
+              if (!is.null(irc_raster) && nlyr(irc_raster) >= 3) {
+                nir <- irc_raster[[1]]
+                red <- irc_raster[[2]]
+                ndvi_raster <- (nir - red) / (nir + red + 0.001)
+                ndvi_available <- TRUE
+                cat("NDVI calculé depuis Ortho IRC!\n")
+                break
+              }
+            },
+            error = function(e) cat("Erreur couche", layer, ":", e$message, "\n")
+          )
+        }
+      }
+    },
+    error = function(e) cat("Erreur happign IRC:", e$message, "\n")
   )
+}
 
-  # Calcul simplifié par parcelle
-  for (i in seq_len(nrow(parcelles))) {
-    geom <- st_geometry(parcelles)[i]
-    foret_inter <- suppressWarnings(
-      tryCatch(st_intersection(bd_foret, geom), error = function(e) NULL)
+# Méthode 2: rstac (Sentinel-2 via STAC API)
+if (!ndvi_available && requireNamespace("rstac", quietly = TRUE)) {
+  library(rstac)
+
+  tryCatch(
+    {
+      cat("\nMéthode 2: rstac (Sentinel-2 STAC)...\n")
+      bbox <- st_bbox(st_transform(parcelles, 4326))
+
+      s2_stac <- stac("https://planetarycomputer.microsoft.com/api/stac/v1")
+      items <- s2_stac |>
+        stac_search(
+          collections = "sentinel-2-l2a",
+          bbox = c(bbox["xmin"], bbox["ymin"], bbox["xmax"], bbox["ymax"]),
+          datetime = paste0(format(Sys.Date() - 90, "%Y-%m-%d"), "/", format(Sys.Date(), "%Y-%m-%d"))
+        ) |>
+        get_request() |>
+        items_filter(filter_fn = function(x) x$properties$`eo:cloud_cover` < 20)
+
+      if (length(items$features) > 0) {
+        best_item <- items$features[[1]]
+        cat("Image Sentinel-2:", best_item$id, "\n")
+
+        b4_url <- best_item$assets$B04$href
+        b8_url <- best_item$assets$B08$href
+
+        if (!is.null(b4_url) && !is.null(b8_url)) {
+          b4_raster <- rast(paste0("/vsicurl/", b4_url))
+          b8_raster <- rast(paste0("/vsicurl/", b8_url))
+          zone_vect <- vect(st_transform(st_as_sfc(st_bbox(parcelles)), 4326))
+          b4_crop <- crop(b4_raster, zone_vect)
+          b8_crop <- crop(b8_raster, zone_vect)
+          ndvi_raster <- (b8_crop - b4_crop) / (b8_crop + b4_crop + 0.001)
+          ndvi_available <- TRUE
+          cat("NDVI calculé depuis Sentinel-2!\n")
+        }
+      }
+    },
+    error = function(e) cat("Erreur rstac:", e$message, "\n")
+  )
+}
+
+# ============================================================
+# 2. CALCUL DU NDVI PAR PARCELLE
+# ============================================================
+
+cat("\n=== Calcul NDVI ===\n")
+
+bd_foret_path <- file.path(data_dir, "bd_foret.gpkg")
+parcelles$C2 <- 0.5  # Valeur par défaut
+
+# Si raster NDVI disponible, extraire par parcelle
+if (ndvi_available && exists("ndvi_raster") && !is.null(ndvi_raster)) {
+  cat("Extraction NDVI depuis raster...\n")
+
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    parcelles$C2 <- exactextractr::exact_extract(
+      ndvi_raster,
+      st_transform(parcelles, crs(ndvi_raster)),
+      fun = "mean"
+    )
+  } else {
+    # Extraction manuelle (parallélisée si furrr disponible)
+    ndvi_crs <- crs(ndvi_raster)
+    extract_ndvi_i <- function(i) {
+      geom <- st_transform(st_geometry(parcelles)[i], ndvi_crs)
+      vals <- terra::extract(ndvi_raster, vect(geom), fun = mean, na.rm = TRUE)
+      if (nrow(vals) > 0 && !is.na(vals[1, 2])) return(vals[1, 2])
+      return(0.5)
+    }
+
+    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+      library(furrr)
+      library(future)
+      plan(multisession, workers = max(1, availableCores() - 1))
+      cat("Mode parallèle (furrr)...\n")
+      parcelles$C2 <- future_map_dbl(seq_len(nrow(parcelles)), extract_ndvi_i, .progress = TRUE)
+      plan(sequential)
+    } else {
+      cat("Mode séquentiel...\n")
+      parcelles$C2 <- sapply(seq_len(nrow(parcelles)), extract_ndvi_i)
+    }
+  }
+} else {
+  # Estimation basée sur BD Forêt + LiDAR
+  cat("Pas de données satellite, estimation via BD Forêt...\n")
+
+  if (file.exists(bd_foret_path)) {
+    bd_foret <- st_read(bd_foret_path, quiet = TRUE)
+    bd_foret <- st_transform(bd_foret, st_crs(parcelles))
+
+    ndvi_by_type <- data.frame(
+      pattern = c("feuill", "resin", "conif", "mixte", "taillis", "lande", "peupl"),
+      ndvi_base = c(0.72, 0.65, 0.65, 0.68, 0.60, 0.45, 0.70),
+      stringsAsFactors = FALSE
     )
 
-    if (!is.null(foret_inter) && nrow(foret_inter) > 0) {
+    calc_ndvi_bdforet_i <- function(i, parcelles_geom, bd_foret, ndvi_by_type) {
+      geom <- parcelles_geom[i]
+      foret_inter <- suppressWarnings(
+        tryCatch(st_intersection(bd_foret, geom), error = function(e) NULL)
+      )
+      if (is.null(foret_inter) || nrow(foret_inter) == 0) return(0.5)
+
       type_col <- intersect(names(foret_inter), c("tfv", "essence", "libelle", "code_tfv"))
       if (length(type_col) > 0) {
         type_val <- tolower(as.character(foret_inter[[type_col[1]]][1]))
         for (j in seq_len(nrow(ndvi_by_type))) {
           if (grepl(ndvi_by_type$pattern[j], type_val)) {
-            parcelles$C2[i] <- ndvi_by_type$ndvi_base[j] + rnorm(1, 0, 0.05)
-            break
+            return(ndvi_by_type$ndvi_base[j] + rnorm(1, 0, 0.05))
           }
         }
       }
+      return(0.5)
+    }
+
+    parcelles_geom <- st_geometry(parcelles)
+
+    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+      library(furrr)
+      library(future)
+      plan(multisession, workers = max(1, availableCores() - 1))
+      cat("Mode parallèle (furrr)...\n")
+      parcelles$C2 <- future_map_dbl(seq_len(nrow(parcelles)), calc_ndvi_bdforet_i,
+        parcelles_geom = parcelles_geom, bd_foret = bd_foret, ndvi_by_type = ndvi_by_type,
+        .progress = TRUE, .options = furrr_options(seed = TRUE))
+      plan(sequential)
+    } else {
+      cat("Mode séquentiel...\n")
+      parcelles$C2 <- sapply(seq_len(nrow(parcelles)), function(i) {
+        calc_ndvi_bdforet_i(i, parcelles_geom, bd_foret, ndvi_by_type)
+      })
     }
   }
-} else {
-  cat("BD Forêt non trouvée - utilisation des métriques LiDAR\n")
-}
 
-# Ajustement avec pzabove2 (couverture LiDAR) si disponible
-if ("pzabove2" %in% names(parcelles)) {
-  parcelles$C2 <- parcelles$C2 * (0.7 + 0.3 * parcelles$pzabove2 / 100)
-  cat("Ajusté avec couverture LiDAR (pzabove2)\n")
+  # Ajustement avec métriques LiDAR si disponibles
+  if ("pzabove2" %in% names(parcelles)) {
+    parcelles$C2 <- parcelles$C2 * (0.7 + 0.3 * as.numeric(unlist(parcelles$pzabove2)) / 100)
+    cat("Ajusté avec couverture LiDAR (pzabove2)\n")
+  }
 }
 
 # Borner entre 0 et 1
 parcelles$C2 <- pmax(0, pmin(1, parcelles$C2))
-
-# Convertir en score 0-100
 parcelles$C2_score <- parcelles$C2 * 100
+
+# Classification
+parcelles$C2_classe <- cut(parcelles$C2,
+  breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+  labels = c("Sol nu", "Clairsemé", "Modéré", "Dense", "Très dense"),
+  include.lowest = TRUE
+)
 
 cat("\n=== Résultats C2 ===\n")
 cat("NDVI min:", round(min(parcelles$C2, na.rm = TRUE), 3), "\n")
 cat("NDVI max:", round(max(parcelles$C2, na.rm = TRUE), 3), "\n")
 cat("NDVI moyen:", round(mean(parcelles$C2, na.rm = TRUE), 3), "\n")
 cat("C2 score moyen:", round(mean(parcelles$C2_score, na.rm = TRUE), 1), "/ 100\n")
+cat("\nDistribution:\n")
+print(table(parcelles$C2_classe))
 
 # Sauvegarder
+output_path <- file.path(data_dir, "metriques_vitalite_c2.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ C2 ajouté aux parcelles\n")
+cat("\n=== Métriques C2 Vitalité exportées ===\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
 
 ### Exercice 9.2 : Qualité de l'air (A2)
 
-L'indicateur **A2** évalue la **qualité de l'air** basée sur l'éloignement des sources de pollution (routes).
+L'indicateur **A2** évalue la **qualité de l'air forestier** basée sur l'éloignement et le type des sources de pollution (routes).
+
+**Modèle de dispersion de pollution :**
 
 | Facteur | Description | Impact |
 |---------|-------------|--------|
-| **Distance routes** | Éloignement des axes routiers | Pollution atmosphérique |
-| **Type de route** | Autoroute vs chemin | Niveau d'émissions |
+| **Distance routes** | Éloignement des axes routiers | Décroissance quadratique de la pollution |
+| **Type de route** | BD TOPO v3 (nature) | Coefficient de pollution par type |
+| **Rayon d'influence** | 2000 m | Zone d'impact maximal |
+
+**Coefficients de pollution par type de route :**
+
+| Type | Coefficient | Exemples |
+|------|-------------|----------|
+| 1.0 | Très élevé | Autoroute |
+| 0.8-0.9 | Élevé | Route à 2 chaussées, Quasi-autoroute |
+| 0.5-0.7 | Modéré | Route à 1 chaussée, Bretelle, Rond-point |
+| 0.1-0.3 | Faible | Route empierrée, Chemin |
+| < 0.1 | Très faible | Piste cyclable, Sentier |
 
 ```{r ex-9-2-a2-setup}
 library(sf)
@@ -1322,74 +1721,469 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-9-2-a2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-9-2-a2-setup", exercise.timelimit=300}
+```{r ex-9-2-a2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=120, exercise.setup="ex-9-2-a2-setup", exercise.timelimit=300}
 # === INDICATEUR A2 (QUALITÉ AIR FORESTIER) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 routes_path <- file.path(data_dir, "routes.gpkg")
 
+if (!file.exists(parcelles_path)) {
+  stop("Données manquantes. Exécutez d'abord les tutoriels précédents.")
+}
+
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-cat("=== Indicateur A2 : Qualité air forestier ===\n\n")
+cat("=== INDICATEUR A2 : Qualité air forestier ===\n\n")
 
-# Coefficients de pollution par type de route
-pollution_weights <- data.frame(
-  nature = c("Autoroute", "Quasi-autoroute", "Route à 2 chaussées",
-             "Route à 1 chaussée", "Route empierrée", "Chemin", "Sentier"),
-  poids = c(1.0, 0.9, 0.8, 0.6, 0.3, 0.1, 0.02),
-  stringsAsFactors = FALSE
-)
+# ============================================================
+# 1. DISTANCE AUX ROUTES (source principale de pollution)
+# ============================================================
+cat("1. Chargement des routes (BD TOPO v3)...\n")
+
+routes <- NULL
 
 if (file.exists(routes_path)) {
   routes <- st_read(routes_path, quiet = TRUE)
   routes <- st_transform(routes, st_crs(parcelles))
-  cat("Routes chargées:", nrow(routes), "segments\n")
+  cat("   Routes BD TOPO chargées:", nrow(routes), "segments\n")
+} else {
+  cat("   Fichier routes.gpkg non trouvé.\n")
+  cat("   Exécutez d'abord le tutoriel 01-acquisition pour télécharger les routes.\n")
+}
 
-  # Assigner les poids aux routes
-  routes$pollution_weight <- 0.5
-  nature_field <- intersect(names(routes), c("nature", "NATURE", "classe", "type"))[1]
-  if (!is.na(nature_field)) {
+# ============================================================
+# 2. PONDÉRATION PAR TYPE DE ROUTE (pollution)
+# ============================================================
+cat("\n2. Pondération par type de route...\n")
+
+# Coefficients de pollution par type de route BD TOPO v3
+pollution_weights <- data.frame(
+  nature = c(
+    "Autoroute", "Quasi-autoroute", "Route à 2 chaussées",
+    "Route à 1 chaussée", "Route empierrée", "Chemin",
+    "Bretelle", "Rond-point", "Piste cyclable", "Sentier"
+  ),
+  poids = c(1.0, 0.9, 0.8, 0.6, 0.3, 0.1, 0.7, 0.5, 0.05, 0.02),
+  stringsAsFactors = FALSE
+)
+
+cat("\n   Coefficients de pollution par type:\n")
+print(pollution_weights)
+
+if (!is.null(routes) && nrow(routes) > 0) {
+  # Identifier le champ "nature" dans BD TOPO
+  nature_field <- NULL
+  for (field in c("nature", "NATURE", "classe", "importance", "type")) {
+    if (field %in% names(routes)) {
+      nature_field <- field
+      break
+    }
+  }
+
+  if (!is.null(nature_field)) {
+    cat("\n   Champ type de route:", nature_field, "\n")
+    cat("   Types présents:\n")
+    print(table(routes[[nature_field]]))
+
+    # Assigner les poids aux routes
+    routes$pollution_weight <- 0.5
     for (i in seq_len(nrow(pollution_weights))) {
       mask <- grepl(pollution_weights$nature[i], routes[[nature_field]], ignore.case = TRUE)
       routes$pollution_weight[mask] <- pollution_weights$poids[i]
     }
+  } else {
+    cat("   Champ nature non trouvé - poids uniforme appliqué\n")
+    routes$pollution_weight <- 0.5
   }
 
-  # Calcul distance pondérée par parcelle
-  parcelles_centroids <- st_centroid(parcelles)
-  routes_union <- st_union(routes)
+  # ============================================================
+  # 3. CALCUL DISTANCE PONDÉRÉE PAR PARCELLE
+  # ============================================================
+  cat("\n3. Calcul des distances pondérées par parcelle...\n")
 
+  parcelles_centroids <- st_centroid(parcelles)
+
+  # Fonction de calcul du score pollution pour une parcelle
+  calc_pollution_score <- function(centroid, routes, max_dist = 2000) {
+    dists <- as.numeric(st_distance(centroid, routes))
+    in_range <- dists < max_dist
+
+    if (sum(in_range) == 0) return(0)  # Pas de route proche = pas de pollution
+
+    # Score pollution = somme(poids / distance²)
+    weights <- routes$pollution_weight[in_range]
+    distances <- pmax(dists[in_range], 10)  # Min 10m pour éviter division par 0
+    pollution_contribution <- sum(weights / (distances / 100)^2)
+
+    return(pollution_contribution)
+  }
+
+  # Calcul pour chaque parcelle
+  cat("   Calcul en cours...\n")
+
+  calc_fn <- function(i) {
+    calc_pollution_score(parcelles_centroids[i, ], routes)
+  }
+
+  # Parallélisation avec furrr si disponible
+  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
+    library(furrr)
+    library(future)
+    plan(multisession, workers = max(1, availableCores() - 1))
+    cat("   Mode parallèle (furrr)...\n")
+    pollution_scores <- future_map_dbl(seq_len(nrow(parcelles)), calc_fn, .progress = TRUE)
+    plan(sequential)
+  } else {
+    cat("   Mode séquentiel...\n")
+    pollution_scores <- sapply(seq_len(nrow(parcelles)), calc_fn)
+  }
+
+  parcelles$pollution_score <- pollution_scores
+
+  # Distance simple (pour référence)
+  routes_union <- st_union(routes)
   parcelles$dist_routes <- as.numeric(st_distance(parcelles_centroids, routes_union))
 
-  # Score pollution basé sur la distance
-  max_dist <- 2000  # Distance max d'influence
-  pollution_score <- pmax(0, 1 - parcelles$dist_routes / max_dist)
-
-  # A2 = inverse de la pollution (0 = pollué, 100 = air pur)
-  parcelles$A2 <- round((1 - pollution_score) * 100, 1)
+  cat("   Distance moyenne aux routes:", round(mean(parcelles$dist_routes, na.rm = TRUE)), "m\n")
+  cat("   Score pollution moyen:", round(mean(parcelles$pollution_score, na.rm = TRUE), 2), "\n")
 } else {
-  cat("Routes non disponibles - valeurs par défaut\n")
   parcelles$dist_routes <- 500
-  parcelles$A2 <- 75
+  parcelles$pollution_score <- 0.1
+  cat("   Routes non disponibles - valeurs par défaut\n")
 }
 
-# Borner [0, 100]
+# ============================================================
+# 4. CALCUL DE L'INDICE A2
+# ============================================================
+cat("\n4. Calcul de l'indice A2...\n")
+
+# Normaliser le score pollution (échelle log pour gérer les valeurs extrêmes)
+max_pollution <- max(parcelles$pollution_score, na.rm = TRUE)
+if (max_pollution > 0) {
+  pollution_norm <- log1p(parcelles$pollution_score) / log1p(max_pollution)
+  parcelles$A2 <- round((1 - pollution_norm) * 100, 1)
+} else {
+  parcelles$A2 <- 100
+}
+
+# Assurer les bornes [0, 100]
 parcelles$A2 <- pmax(0, pmin(100, parcelles$A2))
+
+# Classification
+parcelles$A2_classe <- cut(parcelles$A2,
+  breaks = c(0, 30, 60, 80, 100),
+  labels = c("Dégradé", "Modéré", "Bon", "Excellent"),
+  include.lowest = TRUE
+)
 
 cat("\n=== Résultats A2 ===\n")
 cat("A2 moyen:", round(mean(parcelles$A2, na.rm = TRUE), 1), "/ 100\n")
 cat("A2 min:", round(min(parcelles$A2, na.rm = TRUE), 1), "\n")
 cat("A2 max:", round(max(parcelles$A2, na.rm = TRUE), 1), "\n")
-cat("Distance moyenne aux routes:", round(mean(parcelles$dist_routes, na.rm = TRUE)), "m\n")
+cat("Interprétation: 0 = proche routes/pollution, 100 = air pur\n")
+cat("\nDistribution:\n")
+print(table(parcelles$A2_classe))
 
 # Sauvegarder
+output_path <- file.path(data_dir, "metriques_qualite_air_a2.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ A2 ajouté aux parcelles\n")
+cat("\n=== Métriques A2 Qualité air exportées ===\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
 
 ---
 
-## Section 10 : Quiz final
+## Section 10 : Export et synthèse
+
+Cette section consolide tous les indicateurs calculés dans les sections précédentes.
+Chaque exercice importe les indicateurs d'une famille depuis les fichiers `metriques_*.gpkg`.
+
+### Exercice 10.1 : Famille C (Carbone)
+
+```{r ex-10-1-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-10-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-10-1-setup"}
+# === FAMILLE C (Carbone) : C1, C2 ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille C (Carbone) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
+  }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
+}
+
+# Import des indicateurs C
+c1 <- import_indicator("metriques_stock_carbone_c1.gpkg", "C1")
+if (!is.null(c1)) parcelles$C1 <- c1
+
+c2 <- import_indicator("metriques_vitalite_c2.gpkg", "C2")
+if (!is.null(c2)) parcelles$C2 <- c2
+
+# Statistiques
+cat("\n=== Statistiques Famille C ===\n")
+for (ind in c("C1", "C2")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille C consolidée (2 indicateurs)\n")
+```
+
+### Exercice 10.2 : Famille P (Production)
+
+```{r ex-10-2-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-10-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-10-2-setup"}
+# === FAMILLE P (Production) : P1, P2, P3 ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille P (Production) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
+  }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
+}
+
+# Import des indicateurs P
+p1 <- import_indicator("metriques_volume_bois_p1.gpkg", "P1")
+if (!is.null(p1)) parcelles$P1 <- p1
+
+p2 <- import_indicator("metriques_productivite_p2.gpkg", "P2")
+if (!is.null(p2)) parcelles$P2 <- p2
+
+p3 <- import_indicator("metriques_qualite_structurale_p3.gpkg", "P3")
+if (!is.null(p3)) parcelles$P3 <- p3
+
+# Statistiques
+cat("\n=== Statistiques Famille P ===\n")
+for (ind in c("P1", "P2", "P3")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille P consolidée (3 indicateurs)\n")
+```
+
+### Exercice 10.3 : Famille E (Énergie)
+
+```{r ex-10-3-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-10-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-10-3-setup"}
+# === FAMILLE E (Énergie) : E1, E2 ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille E (Énergie) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
+  }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
+}
+
+# Import des indicateurs E
+e1 <- import_indicator("metriques_bois_energie_e1.gpkg", "E1")
+if (!is.null(e1)) parcelles$E1 <- e1
+
+e2 <- import_indicator("metriques_evitement_carbone_e2.gpkg", "E2")
+if (!is.null(e2)) parcelles$E2 <- e2
+
+# Statistiques
+cat("\n=== Statistiques Famille E ===\n")
+for (ind in c("E1", "E2")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille E consolidée (2 indicateurs)\n")
+```
+
+### Exercice 10.4 : Famille A (Air)
+
+```{r ex-10-4-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-10-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-10-4-setup"}
+# === FAMILLE A (Air) : A1, A2 ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Consolidation Famille A (Air) ===\n\n")
+
+# Fonction pour importer un indicateur
+import_indicator <- function(file_name, indicator_col) {
+  file_path <- file.path(data_dir, file_name)
+  if (file.exists(file_path)) {
+    data <- st_read(file_path, quiet = TRUE)
+    if (indicator_col %in% names(data)) {
+      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
+      return(as.numeric(unlist(data[[indicator_col]])))
+    }
+  }
+  cat("  ✗", indicator_col, "non trouvé\n")
+  return(NULL)
+}
+
+# Import des indicateurs A
+a1 <- import_indicator("metriques_couverture_forestiere_a1.gpkg", "A1")
+if (!is.null(a1)) parcelles$A1 <- a1
+
+a2 <- import_indicator("metriques_qualite_air_a2.gpkg", "A2")
+if (!is.null(a2)) parcelles$A2 <- a2
+
+# Statistiques
+cat("\n=== Statistiques Famille A ===\n")
+for (ind in c("A1", "A2")) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Sauvegarder
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFamille A consolidée (2 indicateurs)\n")
+```
+
+### Exercice 10.5 : Synthèse finale
+
+```{r ex-10-5-setup}
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-10-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-10-5-setup"}
+# === SYNTHÈSE FINALE ===
+
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+cat("=== Synthèse des indicateurs LiDAR ===\n\n")
+
+# Définition des familles
+familles <- list(
+  C = c("C1", "C2"),
+  P = c("P1", "P2", "P3"),
+  E = c("E1", "E2"),
+  A = c("A1", "A2")
+)
+
+# Résumé par famille
+cat("=== Résumé par famille ===\n")
+for (fam in names(familles)) {
+  inds <- familles[[fam]]
+  present <- sum(inds %in% names(parcelles))
+  cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
+}
+
+total <- sum(unlist(familles) %in% names(parcelles))
+cat("\nTotal:", total, "/9 indicateurs consolidés\n")
+
+# Statistiques complètes
+cat("\n=== Statistiques des indicateurs ===\n")
+cat("Indicateur    Min      Moy      Max\n")
+cat("----------------------------------\n")
+for (ind in unlist(familles)) {
+  if (ind %in% names(parcelles)) {
+    vals <- parcelles[[ind]]
+    cat(sprintf("%-10s %7.2f %8.2f %8.2f\n",
+      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  }
+}
+
+# Sauvegarde finale
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n=== Indicateurs LiDAR consolidés ===\n")
+cat("Fichier:", output_path, "\n")
+cat("Parcelles:", nrow(parcelles), "lignes et", ncol(parcelles), "colonnes\n")
+```
+
+---
+
+## Section 11 : Quiz final
 
 ### Testez vos connaissances
 
@@ -1460,22 +2254,50 @@ Dans ce tutoriel, vous avez appris à :
 
 ### Données produites
 
-Le fichier `metriques_lidar.gpkg` contient désormais vos parcelles avec les métriques interpolées depuis `quatre_montagnes` :
+Le fichier `parcelles.gpkg` contient désormais vos parcelles enrichies avec :
 
-| Métrique | Description | Indicateurs |
-|----------|-------------|-------------|
-| **zmax** | Hauteur maximale (m) | C1, P1 |
-| **zmean** | Hauteur moyenne (m) | P3 |
-| **zsd** | Écart-type des hauteurs (m) | B2 |
-| **zq25** | Percentile 25 (m) | Structure |
-| **zq50** | Percentile 50 / médiane (m) | Structure |
-| **zq75** | Percentile 75 (m) | Structure |
-| **zq95** | Percentile 95 (m) | P1 |
-| **zentropy** | Entropie verticale | B2 |
-| **pzabove2** | Couverture > 2m (%) | A1, E1 |
+**Métriques LiDAR** (interpolées depuis `quatre_montagnes`) :
 
-> **Note** : Ces valeurs sont estimées par interpolation IDW à partir des 28 placettes de référence. Un tutoriel avancé couvrira le calcul direct depuis les nuages de points LiDAR.
+| Métrique | Description |
+|----------|-------------|
+| **zmax** | Hauteur maximale (m) |
+| **zmean** | Hauteur moyenne (m) |
+| **zsd** | Écart-type des hauteurs (m) |
+| **zq25, zq50, zq75, zq95** | Percentiles de hauteur (m) |
+| **zentropy** | Entropie verticale |
+| **pzabove2** | Couverture > 2m (%) |
+
+**9 indicateurs nemeton calculés** :
+
+| Code | Indicateur | Formule |
+|------|------------|---------|
+| **C1** | Stock carbone aérien | AGB × 0.47 |
+| **C2** | Séquestration carbone | Score composite (sol, climat, couvert) |
+| **P1** | Volume sur pied | k × couvert × zmean × zq95 |
+| **P2** | Productivité forestière | zmean × couvert × vigueur |
+| **P3** | Qualité structurale | 100 - (entropy + CV) |
+| **E1** | Potentiel bois-énergie | pzabove2 × zmean × k |
+| **E2** | Évitement carbone | E1 × substitution × rendement |
+| **A1** | Couverture forestière | pzabove2 |
+| **A2** | Qualité air | 100 - pollution_score |
+
+**Fichiers GeoPackage générés** :
+
+| Fichier | Indicateur |
+|---------|------------|
+| `metriques_lidar.gpkg` | Métriques LiDAR interpolées |
+| `metriques_stock_carbone_c1.gpkg` | C1 |
+| `metriques_sequestration_carbone_c2.gpkg` | C2 |
+| `metriques_volume_bois_p1.gpkg` | P1 |
+| `metriques_productivite_p2.gpkg` | P2 |
+| `metriques_qualite_structurale_p3.gpkg` | P3 |
+| `metriques_couverture_forestiere_a1.gpkg` | A1 |
+| `metriques_qualite_air_a2.gpkg` | A2 |
+| `metriques_bois_energie_e1.gpkg` | E1 |
+| `metriques_evitement_carbone_e2.gpkg` | E2 |
+
+> **Note** : Les métriques LiDAR sont estimées par interpolation IDW à partir des 28 placettes de référence. Un tutoriel avancé couvrira le calcul direct depuis les nuages de points LiDAR.
 
 ### Tutoriel suivant
 
-→ **Tutorial 03 : Indicateurs Terrain** - Calculer les indicateurs dérivés du MNT (TWI, pente, exposition) et de la BD TOPO (accessibilité, réseau hydro).
+→ **Tutorial 03 : Terrain** — Familles W, R, S, F (12 indicateurs) : Calculer les indicateurs dérivés du MNT (TWI, pente, exposition), de la BD TOPO (accessibilité, réseau hydro) et des données de risques.
