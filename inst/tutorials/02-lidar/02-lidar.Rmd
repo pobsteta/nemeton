@@ -1833,6 +1833,8 @@ if (!is.null(routes) && nrow(routes) > 0) {
   if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
     library(furrr)
     library(future)
+    # Désactiver la limite pour les objets volumineux (routes + furrr overhead)
+    options(future.globals.maxSize = +Inf)
     plan(multisession, workers = max(1, availableCores() - 1))
     cat("   Mode parallèle (furrr)...\n")
     pollution_scores <- future_map_dbl(seq_len(nrow(parcelles)), calc_fn, .progress = TRUE)
