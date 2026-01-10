@@ -161,22 +161,12 @@ if (file.exists(parcelles_path)) {
         )
       }
 
-      # Parallélisation avec furrr si disponible
-      if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-        library(furrr)
-        library(future)
-        plan(multisession, workers = min(4, length(patrinat_layers)))
-        cat("Mode: parallèle (furrr, ", nbrOfWorkers(), " workers)\n\n")
-
-        all_zones <- future_map(patrinat_layers, download_layer,
-          shape = parcelles,
-          .progress = TRUE, .options = furrr_options(seed = TRUE)
-        )
-        plan(sequential)
-      } else {
-        cat("Mode: séquentiel (purrr)\n\n")
-        all_zones <- map(patrinat_layers, download_layer, shape = parcelles)
-      }
+      # Utiliser smart_map avec complexité "high" (requêtes WFS ~100-500ms/couche)
+      all_zones <- nemeton::smart_map(
+        patrinat_layers,
+        function(layer) download_layer(layer, shape = parcelles),
+        complexity = "high"
+      )
 
       # Filtrer les résultats non-nuls et combiner
       all_zones <- compact(all_zones)
@@ -262,27 +252,15 @@ if (file.exists(parcelles_path) && requireNamespace("purrr", quietly = TRUE)) {
       list(pct = pct, nb = nb)
     }
 
-    # Parallélisation avec furrr si disponible
+    # Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
     cat("=== Calcul B1 ===\n")
     idx_list <- seq_len(nrow(parcelles))
 
-    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-      library(furrr)
-      library(future)
-      plan(multisession, workers = min(4, parallel::detectCores() - 1))
-      cat("Mode: parallèle (", nbrOfWorkers(), "workers)\n\n")
-
-      results <- future_map(idx_list, calc_b1,
-        parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union,
-        .progress = TRUE, .options = furrr_options(seed = TRUE)
-      )
-      plan(sequential)
-    } else {
-      cat("Mode: séquentiel (purrr)\n\n")
-      results <- map(idx_list, calc_b1,
-        parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union
-      )
-    }
+    results <- nemeton::smart_map(
+      idx_list,
+      function(i) calc_b1(i, parcelles_df = parcelles, zones_df = zones, zones_union_geom = zones_union),
+      complexity = "medium"
+    )
 
     # Extraire résultats
     parcelles$B1_pct <- map_dbl(results, "pct")
@@ -1222,23 +1200,13 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     calc_ocsge_contrast(st_geometry(parcelles)[i], ocs_data, ocsge_contrast, ocsge_couverture)
   }
 
-  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-    library(furrr)
-    library(future)
-    plan(multisession, workers = max(1, availableCores() - 1))
-    cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-    parcelles$L1_contraste <- future_map_dbl(seq_len(nrow(parcelles)), calc_contrast_i,
-      .progress = TRUE
-    )
-    plan(sequential)
-  } else if (requireNamespace("purrr", quietly = TRUE)) {
-    library(purrr)
-    cat("Mode séquentiel (purrr)...\n")
-    parcelles$L1_contraste <- map_dbl(seq_len(nrow(parcelles)), calc_contrast_i)
-  } else {
-    cat("Mode séquentiel (base R)...\n")
-    parcelles$L1_contraste <- sapply(seq_len(nrow(parcelles)), calc_contrast_i)
-  }
+  # Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
+  parcelles$L1_contraste <- nemeton::smart_map(
+    seq_len(nrow(parcelles)),
+    calc_contrast_i,
+    complexity = "medium",
+    .type = "dbl"
+  )
 
   cat("L1_contraste moyen (OCS GE):", round(mean(parcelles$L1_contraste, na.rm = TRUE), 1), "\n")
 
@@ -1304,23 +1272,13 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     calc_raster_contrast(st_geometry(parcelles)[i], ocs_data, esa_contrast)
   }
 
-  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-    library(furrr)
-    library(future)
-    plan(multisession, workers = max(1, availableCores() - 1))
-    cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-    parcelles$L1_contraste <- future_map_dbl(seq_len(nrow(parcelles)), calc_raster_i,
-      .progress = TRUE
-    )
-    plan(sequential)
-  } else if (requireNamespace("purrr", quietly = TRUE)) {
-    library(purrr)
-    cat("Mode séquentiel (purrr)...\n")
-    parcelles$L1_contraste <- map_dbl(seq_len(nrow(parcelles)), calc_raster_i)
-  } else {
-    cat("Mode séquentiel (base R)...\n")
-    parcelles$L1_contraste <- sapply(seq_len(nrow(parcelles)), calc_raster_i)
-  }
+  # Utiliser smart_map avec complexité "low" (extraction raster ~5-20ms/parcelle)
+  parcelles$L1_contraste <- nemeton::smart_map(
+    seq_len(nrow(parcelles)),
+    calc_raster_i,
+    complexity = "low",
+    .type = "dbl"
+  )
 
   cat("L1_contraste moyen (ESA):", round(mean(parcelles$L1_contraste, na.rm = TRUE), 1), "\n")
 
@@ -1407,23 +1365,13 @@ if (ocs_source == "ocsge" && !is.null(ocs_data)) {
     )
   }
 
-  if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-    library(furrr)
-    library(future)
-    plan(multisession, workers = max(1, availableCores() - 1))
-    cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-    parcelles$L1_contraste <- future_map_dbl(seq_len(nrow(parcelles)), calc_osm_i,
-      .progress = TRUE
-    )
-    plan(sequential)
-  } else if (requireNamespace("purrr", quietly = TRUE)) {
-    library(purrr)
-    cat("Mode séquentiel (purrr)...\n")
-    parcelles$L1_contraste <- map_dbl(seq_len(nrow(parcelles)), calc_osm_i)
-  } else {
-    cat("Mode séquentiel (base R)...\n")
-    parcelles$L1_contraste <- sapply(seq_len(nrow(parcelles)), calc_osm_i)
-  }
+  # Utiliser smart_map avec complexité "medium" (calcul géométrique ~20-100ms/parcelle)
+  parcelles$L1_contraste <- nemeton::smart_map(
+    seq_len(nrow(parcelles)),
+    calc_osm_i,
+    complexity = "medium",
+    .type = "dbl"
+  )
 
   cat("L1_contraste moyen (OSM):", round(mean(parcelles$L1_contraste, na.rm = TRUE), 1), "\n")
 
@@ -1571,23 +1519,13 @@ calc_exposure_i <- function(i) {
   calc_edge_exposure(st_geometry(parcelles)[i], vent_dominant)
 }
 
-if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-  library(furrr)
-  library(future)
-  plan(multisession, workers = max(1, availableCores() - 1))
-  cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-  exposures_list <- future_map(seq_len(nrow(parcelles)), calc_exposure_i, .progress = TRUE)
-  plan(sequential)
-  exposures <- do.call(rbind, exposures_list)
-} else if (requireNamespace("purrr", quietly = TRUE)) {
-  library(purrr)
-  cat("Mode séquentiel (purrr)...\n")
-  exposures_list <- map(seq_len(nrow(parcelles)), calc_exposure_i)
-  exposures <- do.call(rbind, exposures_list)
-} else {
-  cat("Mode séquentiel (base R)...\n")
-  exposures <- t(sapply(seq_len(nrow(parcelles)), calc_exposure_i))
-}
+# Utiliser smart_map avec complexité "low" (calcul géométrique simple ~5-20ms/parcelle)
+exposures_list <- nemeton::smart_map(
+  seq_len(nrow(parcelles)),
+  calc_exposure_i,
+  complexity = "low"
+)
+exposures <- do.call(rbind, exposures_list)
 
 parcelles$L1_vent <- exposures[, "vent"]
 parcelles$L1_soleil <- exposures[, "soleil"]
@@ -1935,37 +1873,15 @@ calc_l3_i <- function(i, parcelles_geom, tvb_trans, cours_eau) {
   return(c(trame_verte = trame_verte, trame_bleue = trame_bleue))
 }
 
-# Parallélisation si furrr disponible
+# Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
 parcelles_geom <- st_geometry(parcelles)
 
-if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-  library(furrr)
-  library(future)
-  plan(multisession, workers = max(1, availableCores() - 1))
-  cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-  results_list <- future_map(seq_len(nrow(parcelles)), calc_l3_i,
-    parcelles_geom = parcelles_geom,
-    tvb_trans = tvb_trans,
-    cours_eau = cours_eau,
-    .progress = TRUE
-  )
-  plan(sequential)
-  results <- do.call(rbind, results_list)
-} else if (requireNamespace("purrr", quietly = TRUE)) {
-  library(purrr)
-  cat("Mode séquentiel (purrr)...\n")
-  results_list <- map(seq_len(nrow(parcelles)), calc_l3_i,
-    parcelles_geom = parcelles_geom,
-    tvb_trans = tvb_trans,
-    cours_eau = cours_eau
-  )
-  results <- do.call(rbind, results_list)
-} else {
-  cat("Mode séquentiel (base R)...\n")
-  results <- t(sapply(seq_len(nrow(parcelles)), function(i) {
-    calc_l3_i(i, parcelles_geom, tvb_trans, cours_eau)
-  }))
-}
+results_list <- nemeton::smart_map(
+  seq_len(nrow(parcelles)),
+  function(i) calc_l3_i(i, parcelles_geom, tvb_trans, cours_eau),
+  complexity = "medium"
+)
+results <- do.call(rbind, results_list)
 
 parcelles$L3_trame_verte <- results[, "trame_verte"]
 parcelles$L3_trame_bleue <- results[, "trame_bleue"]
@@ -2274,37 +2190,15 @@ calc_n2_i <- function(i, parcelles_geom, bd_foret, foret_ancienne) {
   ))
 }
 
-# Parallélisation si furrr disponible
+# Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
 parcelles_geom <- st_geometry(parcelles)
 
-if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-  library(furrr)
-  library(future)
-  plan(multisession, workers = max(1, availableCores() - 1))
-  cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-  results_list <- future_map(seq_len(nrow(parcelles)), calc_n2_i,
-    parcelles_geom = parcelles_geom,
-    bd_foret = bd_foret,
-    foret_ancienne = foret_ancienne,
-    .progress = TRUE
-  )
-  plan(sequential)
-  results <- do.call(rbind, results_list)
-} else if (requireNamespace("purrr", quietly = TRUE)) {
-  library(purrr)
-  cat("Mode séquentiel (purrr)...\n")
-  results_list <- map(seq_len(nrow(parcelles)), calc_n2_i,
-    parcelles_geom = parcelles_geom,
-    bd_foret = bd_foret,
-    foret_ancienne = foret_ancienne
-  )
-  results <- do.call(rbind, results_list)
-} else {
-  cat("Mode séquentiel (base R)...\n")
-  results <- t(sapply(seq_len(nrow(parcelles)), function(i) {
-    calc_n2_i(i, parcelles_geom, bd_foret, foret_ancienne)
-  }))
-}
+results_list <- nemeton::smart_map(
+  seq_len(nrow(parcelles)),
+  function(i) calc_n2_i(i, parcelles_geom, bd_foret, foret_ancienne),
+  complexity = "medium"
+)
+results <- do.call(rbind, results_list)
 
 parcelles$N2_boisement <- results[, "boisement"]
 parcelles$N2_anciennete <- results[, "anciennete"]
@@ -2492,35 +2386,13 @@ if (file.exists(bd_foret_path)) {
       return(50) # Valeur par défaut
     }
 
-    # Parallélisation si furrr disponible
-    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-      library(furrr)
-      library(future)
-      plan(multisession, workers = max(1, availableCores() - 1))
-      cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-      parcelles$T1 <- future_map_dbl(seq_len(nrow(parcelles)), calc_t1_i,
-        parcelles_sf = parcelles,
-        bd_foret = bd_foret,
-        tfv_field = tfv_field,
-        estimate_age = estimate_age,
-        .progress = TRUE
-      )
-      plan(sequential)
-    } else if (requireNamespace("purrr", quietly = TRUE)) {
-      library(purrr)
-      cat("Mode séquentiel (purrr)...\n")
-      parcelles$T1 <- map_dbl(seq_len(nrow(parcelles)), calc_t1_i,
-        parcelles_sf = parcelles,
-        bd_foret = bd_foret,
-        tfv_field = tfv_field,
-        estimate_age = estimate_age
-      )
-    } else {
-      cat("Mode séquentiel (base R)...\n")
-      parcelles$T1 <- sapply(seq_len(nrow(parcelles)), function(i) {
-        calc_t1_i(i, parcelles, bd_foret, tfv_field, estimate_age)
-      })
-    }
+    # Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
+    parcelles$T1 <- nemeton::smart_map(
+      seq_len(nrow(parcelles)),
+      function(i) calc_t1_i(i, parcelles, bd_foret, tfv_field, estimate_age),
+      complexity = "medium",
+      .type = "dbl"
+    )
   } else {
     cat("Champ TFV non trouvé - utilisation de valeurs par défaut\n")
   }

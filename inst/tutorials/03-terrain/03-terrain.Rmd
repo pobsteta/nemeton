@@ -504,22 +504,13 @@ if (file.exists(parcelles_path)) {
         }
       }
 
-      # Parallélisation avec furrr si disponible
-      if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-        library(furrr)
-        library(future)
-        plan(multisession, workers = max(1, availableCores() - 1))
-        cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-        parcelles$W1 <- future_map_dbl(seq_len(nrow(parcelles)), calc_w1, .progress = TRUE)
-        plan(sequential)
-      } else if (requireNamespace("purrr", quietly = TRUE)) {
-        library(purrr)
-        cat("Mode séquentiel (purrr)...\n")
-        parcelles$W1 <- map_dbl(seq_len(nrow(parcelles)), calc_w1)
-      } else {
-        cat("Mode séquentiel (base R)...\n")
-        parcelles$W1 <- sapply(seq_len(nrow(parcelles)), calc_w1)
-      }
+      # Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
+      parcelles$W1 <- nemeton::smart_map(
+        seq_len(nrow(parcelles)),
+        calc_w1,
+        complexity = "medium",
+        .type = "dbl"
+      )
 
       cat("=== Indicateur W1 (Densité réseau hydro) ===\n")
       cat("Densité min:", round(min(parcelles$W1), 1), "m/ha\n")
@@ -1141,21 +1132,10 @@ parcelles <- st_read(parcelles_path, quiet = TRUE)
 cat("=== Indicateur R4 : Pression Gibier (parallélisé) ===\n\n")
 
 # ============================================================
-# 0. CONFIGURATION PARALLÉLISATION
+# 0. CONFIGURATION
 # ============================================================
-
-use_parallel <- FALSE
-if (requireNamespace("furrr", quietly = TRUE) &&
-  requireNamespace("future", quietly = TRUE)) {
-  future::plan(future::multisession, workers = min(4, parallel::detectCores() - 1))
-  use_parallel <- TRUE
-  cat("Mode parallèle activé (furrr)\n")
-} else {
-  cat("Mode séquentiel (installez furrr pour accélérer)\n")
-}
-
-# Fonction map selon mode
-map_func <- if (use_parallel) furrr::future_map_dbl else purrr::map_dbl
+# Utilisation de nemeton::smart_map pour le mapping adaptatif
+# La fonction choisit automatiquement séquentiel/parallèle selon le nombre d'éléments
 
 # ============================================================
 # 1. TÉLÉCHARGEMENT DES DONNÉES DE CHASSE (avec cache)
@@ -1251,7 +1231,10 @@ if (file.exists(bd_foret_path)) {
       50 # Défaut
     }
 
-    parcelles$R4_palatabilite <- map_func(seq_len(nrow(parcelles)), calc_palatabilite)
+    parcelles$R4_palatabilite <- nemeton::smart_map(
+      seq_len(nrow(parcelles)), calc_palatabilite,
+      complexity = "low", .type = "dbl"
+    )
   }
 }
 
@@ -1301,7 +1284,10 @@ calc_lisiere <- function(i) {
   }
 }
 
-parcelles$R4_lisiere <- map_func(seq_len(nrow(parcelles)), calc_lisiere)
+parcelles$R4_lisiere <- nemeton::smart_map(
+  seq_len(nrow(parcelles)), calc_lisiere,
+  complexity = "medium", .type = "dbl"
+)
 
 cat("Effet lisière moyen:", round(mean(parcelles$R4_lisiere), 1), "%\n")
 
@@ -1708,22 +1694,13 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
       }
     }
 
-    # Parallélisation avec furrr si disponible
-    if (requireNamespace("furrr", quietly = TRUE) && requireNamespace("future", quietly = TRUE)) {
-      library(furrr)
-      library(future)
-      plan(multisession, workers = max(1, availableCores() - 1))
-      cat("Mode parallèle (furrr,", nbrOfWorkers(), "workers)...\n")
-      parcelles$S3 <- future_map_dbl(seq_len(nrow(parcelles)), calc_s3, .progress = TRUE)
-      plan(sequential)
-    } else if (requireNamespace("purrr", quietly = TRUE)) {
-      library(purrr)
-      cat("Mode séquentiel (purrr)...\n")
-      parcelles$S3 <- map_dbl(seq_len(nrow(parcelles)), calc_s3)
-    } else {
-      cat("Mode séquentiel (base R)...\n")
-      parcelles$S3 <- sapply(seq_len(nrow(parcelles)), calc_s3)
-    }
+    # Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
+    parcelles$S3 <- nemeton::smart_map(
+      seq_len(nrow(parcelles)),
+      calc_s3,
+      complexity = "medium",
+      .type = "dbl"
+    )
 
     # === Créer raster de densité (kernel) ===
     reso <- res(mnt)[1]
