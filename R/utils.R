@@ -144,12 +144,23 @@ smart_map <- function(x,
 
   # Execute
   if (use_parallel) {
-    # Setup parallel plan
-    old_plan <- future::plan()
-    on.exit(future::plan(old_plan), add = TRUE)
-    future::plan(future::multisession, workers = workers)
+    # Check if a parallel plan is already active (avoid recreating workers)
+    current_plan <- future::plan()
+    already_parallel <- inherits(current_plan, "multisession") ||
+      inherits(current_plan, "multicore") ||
+      inherits(current_plan, "cluster")
 
-    cli::cli_alert_info("Parallel mode: {n} elements, {workers} workers")
+    if (already_parallel) {
+      # Reuse existing parallel plan - no overhead!
+      plan_name <- intersect(class(current_plan), c("multisession", "multicore", "cluster"))[1]
+      cli::cli_alert_info("Parallel mode: {n} elements (reusing {plan_name})")
+    } else {
+      # Create new parallel plan (will be cleaned up on exit)
+      old_plan <- current_plan
+      on.exit(future::plan(old_plan), add = TRUE)
+      future::plan(future::multisession, workers = workers)
+      cli::cli_alert_info("Parallel mode: {n} elements, {workers} workers (new plan)")
+    }
 
     result <- future_map_fn(x, fn, ..., .progress = progress)
   } else {
