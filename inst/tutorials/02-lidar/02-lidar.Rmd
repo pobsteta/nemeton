@@ -958,12 +958,17 @@ if (!file.exists(oso_path)) {
   cat("1. Téléchargement OSO depuis Recherche Data Gouv...\n")
   oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
 
+  # Créer un répertoire cache dédié pour OSO
+
+  oso_cache <- file.path(data_dir, "oso_cache")
+  dir.create(oso_cache, showWarnings = FALSE, recursive = TRUE)
+
   # Chercher une archive OSO existante (OSO_*.tar.gz)
-  oso_tar_files <- list.files(data_dir, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
+  oso_tar_files <- list.files(oso_cache, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
   if (length(oso_tar_files) > 0) {
     oso_tar <- oso_tar_files[1]  # Utiliser la première archive trouvée
   } else {
-    oso_tar <- file.path(data_dir, "OSO_RASTER.tar.gz")  # Nom par défaut pour le téléchargement
+    oso_tar <- file.path(oso_cache, "OSO_RASTER.tar.gz")  # Nom par défaut pour le téléchargement
   }
 
   # Vérifier si curl est disponible
@@ -1001,43 +1006,35 @@ if (!file.exists(oso_path)) {
       cat("   Archive téléchargée!\n")
     }
 
-    # Extraire l'archive (peut prendre plusieurs minutes)
+    # Extraire l'archive dans le répertoire cache
     # L'archive contient: OSO_*/DATA/OCS_*.tif
     cat("   Extraction de l'archive (peut prendre plusieurs minutes, patientez)...\n")
-    untar(path.expand(oso_tar), exdir = path.expand(data_dir), extras = "--touch")
+    untar(path.expand(oso_tar), exdir = path.expand(oso_cache), extras = "--touch")
     cat("   Extraction terminée!\n")
 
     # Trouver le fichier OCS_*.tif dans les sous-répertoires extraits
-    tif_files <- list.files(data_dir, pattern = "^OCS_.*\\.tif$",
+    tif_files <- list.files(oso_cache, pattern = "^OCS_.*\\.tif$",
                             full.names = TRUE, recursive = TRUE)
     if (length(tif_files) > 0) {
-      # Copier le fichier principal (OCS_*.tif) vers oso.tif
+      # Copier le fichier principal (OCS_*.tif) vers oso.tif dans data_dir
       copy_ok <- file.copy(tif_files[1], oso_path)
       if (copy_ok && file.exists(oso_path)) {
         cat("   Fichier copié vers oso.tif\n")
 
-        # Nettoyer: supprimer le répertoire extrait
-        oso_dirs <- list.dirs(data_dir, full.names = TRUE, recursive = FALSE)
-        oso_dirs <- oso_dirs[grepl("^OSO_", basename(oso_dirs))]
-        if (length(oso_dirs) > 0) {
-          unlink(oso_dirs, recursive = TRUE)
-          cat("   Répertoire temporaire supprimé\n")
-        }
-
-        # Supprimer l'archive
-        file.remove(oso_tar)
-        cat("   Archive supprimée\n\n")
+        # Nettoyer: supprimer tout le répertoire cache
+        unlink(oso_cache, recursive = TRUE)
+        cat("   Répertoire cache supprimé\n\n")
       } else {
-        cat("   Erreur lors de la copie - archive conservée\n\n")
+        cat("   Erreur lors de la copie - cache conservé\n\n")
       }
     } else {
-      cat("   Aucun fichier OCS_*.tif trouvé dans l'archive - archive conservée\n\n")
+      cat("   Aucun fichier OCS_*.tif trouvé dans l'archive - cache conservé\n\n")
     }
 
   }, error = function(e) {
     cat("   Erreur:", e$message, "\n")
     if (file.exists(oso_tar)) {
-      cat("   Archive partielle conservée - relancez pour reprendre le téléchargement\n")
+      cat("   Archive partielle conservée dans oso_cache - relancez pour reprendre\n")
     }
     cat("   Ou téléchargez manuellement depuis:\n")
     cat("   https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1\n\n")
