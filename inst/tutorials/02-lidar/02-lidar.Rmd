@@ -927,7 +927,7 @@ L'indicateur **A1** caractérise l'**occupation du sol** de chaque parcelle en u
 | 13 | Zones industrielles | 23 | Eau |
 | 14 | Surfaces minérales | 31 | Neige/Glace |
 
-> **Note** : OSO doit être téléchargé depuis [Recherche Data Gouv](https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1) et placé dans `~/.local/share/nemeton/tutorial_data/oso.tif`
+> **Note** : OSO doit être téléchargé depuis [Recherche Data Gouv](https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1) et placé dans `~/.local/share/nemeton/tutorial_data/oso_cache/oso.tif`
 
 ```{r ex-7-5-a1-setup}
 library(sf)
@@ -943,7 +943,11 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 # === CALCUL DE A1 : OCCUPATION DU SOL (OSO + LiDAR) ===
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-oso_path <- file.path(data_dir, "oso.tif")
+
+# Répertoire dédié pour OSO
+oso_cache <- file.path(data_dir, "oso_cache")
+dir.create(oso_cache, showWarnings = FALSE, recursive = TRUE)
+oso_path <- file.path(oso_cache, "oso.tif")
 
 if (!file.exists(parcelles_path)) {
   stop("Fichier parcelles.gpkg non trouvé.")
@@ -957,11 +961,6 @@ cat("=== Calcul de A1 (Occupation du sol) ===\n\n")
 if (!file.exists(oso_path)) {
   cat("1. Téléchargement OSO depuis Recherche Data Gouv...\n")
   oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
-
-  # Créer un répertoire cache dédié pour OSO
-
-  oso_cache <- file.path(data_dir, "oso_cache")
-  dir.create(oso_cache, showWarnings = FALSE, recursive = TRUE)
 
   # Chercher une archive OSO existante (OSO_*.tar.gz)
   oso_tar_files <- list.files(oso_cache, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
@@ -1016,19 +1015,27 @@ if (!file.exists(oso_path)) {
     tif_files <- list.files(oso_cache, pattern = "^OCS_.*\\.tif$",
                             full.names = TRUE, recursive = TRUE)
     if (length(tif_files) > 0) {
-      # Copier le fichier principal (OCS_*.tif) vers oso.tif dans data_dir
+      # Copier le fichier principal (OCS_*.tif) vers oso.tif
       copy_ok <- file.copy(tif_files[1], oso_path)
       if (copy_ok && file.exists(oso_path)) {
         cat("   Fichier copié vers oso.tif\n")
 
-        # Nettoyer: supprimer tout le répertoire cache
-        unlink(oso_cache, recursive = TRUE)
-        cat("   Répertoire cache supprimé\n\n")
+        # Nettoyer: supprimer les répertoires extraits (OSO_*) et l'archive
+        oso_dirs <- list.dirs(oso_cache, full.names = TRUE, recursive = FALSE)
+        oso_dirs <- oso_dirs[grepl("^OSO_", basename(oso_dirs))]
+        if (length(oso_dirs) > 0) {
+          unlink(oso_dirs, recursive = TRUE)
+          cat("   Répertoires temporaires supprimés\n")
+        }
+        if (file.exists(oso_tar)) {
+          file.remove(oso_tar)
+          cat("   Archive supprimée\n\n")
+        }
       } else {
-        cat("   Erreur lors de la copie - cache conservé\n\n")
+        cat("   Erreur lors de la copie - fichiers conservés\n\n")
       }
     } else {
-      cat("   Aucun fichier OCS_*.tif trouvé dans l'archive - cache conservé\n\n")
+      cat("   Aucun fichier OCS_*.tif trouvé dans l'archive - fichiers conservés\n\n")
     }
 
   }, error = function(e) {
