@@ -1639,6 +1639,7 @@ if (ndvi_available && exists("ndvi_raster") && !is.null(ndvi_raster)) {
     parcelles_geom <- st_geometry(parcelles)
 
     # Utiliser smart_map avec complexité "medium" (intersection spatiale ~20-100ms/parcelle)
+    options(future.globals.maxSize = +Inf)  # Pour objets volumineux si parallélisé
     parcelles$C2 <- nemeton::smart_map(
       seq_len(nrow(parcelles)),
       function(i) calc_ndvi_bdforet_i(i, parcelles_geom, bd_foret, ndvi_by_type),
