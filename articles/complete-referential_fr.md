@@ -10,20 +10,21 @@ données étendu `massif_demo_units_extended`.
 
 ### Les 12 Familles
 
-| Code  | Famille                 | Indicateurs                                          | Version |
-|-------|-------------------------|------------------------------------------------------|---------|
-| **C** | Carbone & Vitalité      | C1 (biomasse), C2 (NDVI)                             | v0.2.0  |
-| **B** | Biodiversité            | B1 (protection), B2 (structure), B3 (connectivité)   | v0.3.0  |
-| **W** | Eau                     | W1 (réseau hydro), W2 (zones humides), W3 (TWI)      | v0.2.0  |
-| **A** | Air & Microclimat       | A1 (couverture), A2 (qualité air)                    | v0.3.0  |
-| **F** | Fertilité des Sols      | F1 (fertilité), F2 (érosion)                         | v0.2.0  |
-| **L** | Paysage                 | L1 (fragmentation), L2 (lisière)                     | v0.2.0  |
-| **T** | Temps & Dynamique       | T1 (ancienneté), T2 (changements)                    | v0.3.0  |
-| **R** | Risques & Résilience    | R1 (incendie), R2 (tempête), R3 (stress)             | v0.3.0  |
-| **S** | Social & Usages         | S1 (sentiers), S2 (accessibilité), S3 (proximité)    | v0.4.0  |
-| **P** | Production & Économie   | P1 (volume), P2 (productivité), P3 (qualité)         | v0.4.0  |
-| **E** | Énergie & Climat        | E1 (bois-énergie), E2 (évitement CO2)                | v0.4.0  |
-| **N** | Naturalité & Wilderness | N1 (distance infra), N2 (continuité), N3 (composite) | v0.4.0  |
+| Code  | Famille                 | Indicateurs                                           | Nb     |
+|-------|-------------------------|-------------------------------------------------------|--------|
+| **C** | Carbone & Vitalité      | C1 (biomasse), C2 (NDVI)                              | 2      |
+| **B** | Biodiversité            | B1 (protection), B2 (structure), B3 (connectivité)    | 3      |
+| **W** | Eau                     | W1 (réseau hydro), W2 (zones humides), W3 (TWI)       | 3      |
+| **A** | Air & Microclimat       | A1 (couverture), A2 (qualité air)                     | 2      |
+| **F** | Fertilité des Sols      | F1 (fertilité), F2 (érosion)                          | 2      |
+| **L** | Paysage                 | L1 (fragmentation), L2 (lisière), L3 (TVB)            | 3      |
+| **T** | Temps & Dynamique       | T1 (ancienneté), T2 (changements)                     | 2      |
+| **R** | Risques & Résilience    | R1 (incendie), R2 (tempête), R3 (stress), R4 (gibier) | 4      |
+| **S** | Social & Usages         | S1 (sentiers), S2 (accessibilité), S3 (proximité)     | 3      |
+| **P** | Production & Économie   | P1 (volume), P2 (productivité), P3 (qualité)          | 3      |
+| **E** | Énergie & Climat        | E1 (bois-énergie), E2 (évitement CO2)                 | 2      |
+| **N** | Naturalité & Wilderness | N1 (distance infra), N2 (continuité), N3 (composite)  | 3      |
+|       | **Total**               |                                                       | **32** |
 
 ## Chargement des Données
 
