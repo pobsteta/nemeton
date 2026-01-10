@@ -1776,52 +1776,56 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-6-1-setup"}
-# === FAMILLE W (Eau) : W1, W2, W3 ===
+```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-1-setup"}
+# === FAMILLE W (EAU) : W1, W2, W3 ===
+# Consolidation des indicateurs déjà calculés
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+
 parcelles <- st_read(parcelles_path, quiet = TRUE)
+cat("=== Famille W (Eau) ===\n\n")
 
-cat("=== Consolidation Famille W (Eau) ===\n\n")
-
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# W1 : Densité réseau hydrographique (calculé en section 3)
+w1_path <- file.path(data_dir, "metriques_densite_hydro_w1.gpkg")
+if (file.exists(w1_path)) {
+  w1_data <- st_read(w1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("W1" %in% names(w1_data)) {
+    parcelles$W1 <- as.numeric(unlist(w1_data$W1))
+    cat("W1 (densité hydro):", round(mean(parcelles$W1, na.rm = TRUE), 1), "m/ha\n")
+    cat("   0 = pas de cours d'eau, valeurs élevées = dense réseau hydro\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs W
-w1 <- import_indicator("metriques_densite_hydro_w1.gpkg", "W1")
-if (!is.null(w1)) parcelles$W1 <- w1
+# W2 : Zones humides (calculé en section 3)
+w2_path <- file.path(data_dir, "metriques_couverture_zone_humide_w2.gpkg")
+if (file.exists(w2_path)) {
+  w2_data <- st_read(w2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("W2" %in% names(w2_data)) {
+    parcelles$W2 <- as.numeric(unlist(w2_data$W2))
+    cat("W2 (zones humides):", round(mean(parcelles$W2, na.rm = TRUE), 1), "%\n")
+    cat("   0% = pas de zone humide, 100% = entièrement humide\n\n")
+  }
+}
 
-w2 <- import_indicator("metriques_couverture_zone_humide_w2.gpkg", "W2")
-if (!is.null(w2)) parcelles$W2 <- w2
-
-w3 <- import_indicator("metriques_twi_w3.gpkg", "W3")
-if (!is.null(w3)) parcelles$W3 <- w3
-
-# Statistiques
-cat("\n=== Statistiques Famille W ===\n")
-for (ind in c("W1", "W2", "W3")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# W3 : TWI moyen (calculé en section 2)
+w3_path <- file.path(data_dir, "metriques_twi_w3.gpkg")
+if (file.exists(w3_path)) {
+  w3_data <- st_read(w3_path, quiet = TRUE) |> st_drop_geometry()
+  if ("W3" %in% names(w3_data)) {
+    parcelles$W3 <- as.numeric(unlist(w3_data$W3))
+    cat("W3 (TWI moyen):", round(mean(parcelles$W3, na.rm = TRUE), 1), "\n")
+    cat("   valeurs faibles = sec (crête), valeurs élevées = humide (fond de vallée)\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille W consolidée (3 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille W consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 6.2 : Famille R (Risques)
 
@@ -1834,55 +1838,66 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-2-setup"}
-# === FAMILLE R (Risques) : R1, R2, R3, R4 ===
+```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=65, exercise.setup="ex-6-2-setup"}
+# === FAMILLE R (RISQUES) : R1, R2, R3, R4 ===
+# Consolidation des indicateurs déjà calculés
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Consolidation Famille R (Risques) ===\n\n")
+cat("=== Famille R (Risques) ===\n\n")
 
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# R1 : Risque incendie (calculé en section 4)
+r1_path <- file.path(data_dir, "metriques_exposition_feu_r1.gpkg")
+if (file.exists(r1_path)) {
+  r1_data <- st_read(r1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("R1" %in% names(r1_data)) {
+    parcelles$R1 <- as.numeric(unlist(r1_data$R1))
+    cat("R1 (risque incendie):", round(mean(parcelles$R1, na.rm = TRUE), 1), "\n")
+    cat("   0 = faible risque, 100 = risque très élevé\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs R
-r1 <- import_indicator("metriques_exposition_feu_r1.gpkg", "R1")
-if (!is.null(r1)) parcelles$R1 <- r1
+# R2 : Risque tempête (calculé en section 4)
+r2_path <- file.path(data_dir, "metriques_exposition_tempete_r2.gpkg")
+if (file.exists(r2_path)) {
+  r2_data <- st_read(r2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("R2" %in% names(r2_data)) {
+    parcelles$R2 <- as.numeric(unlist(r2_data$R2))
+    cat("R2 (risque tempête):", round(mean(parcelles$R2, na.rm = TRUE), 1), "\n")
+    cat("   0 = faible exposition, 100 = très exposé au vent\n\n")
+  }
+}
 
-r2 <- import_indicator("metriques_exposition_tempete_r2.gpkg", "R2")
-if (!is.null(r2)) parcelles$R2 <- r2
+# R3 : Risque sécheresse (calculé en section 4)
+r3_path <- file.path(data_dir, "metriques_risque_secheresse_r3.gpkg")
+if (file.exists(r3_path)) {
+  r3_data <- st_read(r3_path, quiet = TRUE) |> st_drop_geometry()
+  if ("R3" %in% names(r3_data)) {
+    parcelles$R3 <- as.numeric(unlist(r3_data$R3))
+    cat("R3 (risque sécheresse):", round(mean(parcelles$R3, na.rm = TRUE), 1), "\n")
+    cat("   0 = faible risque, 100 = risque très élevé\n\n")
+  }
+}
 
-r3 <- import_indicator("metriques_risque_secheresse_r3.gpkg", "R3")
-if (!is.null(r3)) parcelles$R3 <- r3
-
-r4 <- import_indicator("metriques_pression_gibier_r4.gpkg", "R4")
-if (!is.null(r4)) parcelles$R4 <- r4
-
-# Statistiques
-cat("\n=== Statistiques Famille R ===\n")
-for (ind in c("R1", "R2", "R3", "R4")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# R4 : Pression gibier (calculé en section 4)
+r4_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
+if (file.exists(r4_path)) {
+  r4_data <- st_read(r4_path, quiet = TRUE) |> st_drop_geometry()
+  if ("R4" %in% names(r4_data)) {
+    parcelles$R4 <- as.numeric(unlist(r4_data$R4))
+    cat("R4 (pression gibier):", round(mean(parcelles$R4, na.rm = TRUE), 1), "\n")
+    cat("   0 = faible pression, 100 = forte pression d'abroutissement\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille R consolidée (4 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille R consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 6.3 : Famille S (Social)
 
@@ -1895,52 +1910,55 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-6-3-setup"}
-# === FAMILLE S (Social) : S1, S2, S3 ===
+```{r ex-6-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-3-setup"}
+# === FAMILLE S (SOCIAL) : S1, S2, S3 ===
+# Consolidation des indicateurs déjà calculés
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Consolidation Famille S (Social) ===\n\n")
+cat("=== Famille S (Social) ===\n\n")
 
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# S1 : Distance aux routes (calculé en section 5)
+s1_path <- file.path(data_dir, "metriques_access_route_s1.gpkg")
+if (file.exists(s1_path)) {
+  s1_data <- st_read(s1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("S1" %in% names(s1_data)) {
+    parcelles$S1 <- as.numeric(unlist(s1_data$S1))
+    cat("S1 (distance routes):", round(mean(parcelles$S1, na.rm = TRUE), 0), "m\n")
+    cat("   0 = sur route, valeurs élevées = éloigné des routes\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs S
-s1 <- import_indicator("metriques_access_route_s1.gpkg", "S1")
-if (!is.null(s1)) parcelles$S1 <- s1
+# S2 : Distance aux bâtiments (calculé en section 5)
+s2_path <- file.path(data_dir, "metriques_distance_batiment_s2.gpkg")
+if (file.exists(s2_path)) {
+  s2_data <- st_read(s2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("S2" %in% names(s2_data)) {
+    parcelles$S2 <- as.numeric(unlist(s2_data$S2))
+    cat("S2 (distance bâtiments):", round(mean(parcelles$S2, na.rm = TRUE), 0), "m\n")
+    cat("   0 = sur bâtiment, valeurs élevées = éloigné de l'habitat\n\n")
+  }
+}
 
-s2 <- import_indicator("metriques_distance_batiment_s2.gpkg", "S2")
-if (!is.null(s2)) parcelles$S2 <- s2
-
-s3 <- import_indicator("metriques_densite_sentiers_s3.gpkg", "S3")
-if (!is.null(s3)) parcelles$S3 <- s3
-
-# Statistiques
-cat("\n=== Statistiques Famille S ===\n")
-for (ind in c("S1", "S2", "S3")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# S3 : Densité de sentiers (calculé en section 5)
+s3_path <- file.path(data_dir, "metriques_densite_sentiers_s3.gpkg")
+if (file.exists(s3_path)) {
+  s3_data <- st_read(s3_path, quiet = TRUE) |> st_drop_geometry()
+  if ("S3" %in% names(s3_data)) {
+    parcelles$S3 <- as.numeric(unlist(s3_data$S3))
+    cat("S3 (densité sentiers):", round(mean(parcelles$S3, na.rm = TRUE), 1), "m/ha\n")
+    cat("   0 = pas de sentier, valeurs élevées = forte fréquentation potentielle\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille S consolidée (3 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille S consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 6.4 : Famille F (Sol)
 
@@ -1954,48 +1972,43 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```
 
 ```{r ex-6-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-6-4-setup"}
-# === FAMILLE F (Sol) : F1, F2 ===
+# === FAMILLE F (SOL) : F1, F2 ===
+# Consolidation des indicateurs déjà calculés
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Consolidation Famille F (Sol) ===\n\n")
+cat("=== Famille F (Sol) ===\n\n")
 
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# F1 : Risque érosion (calculé en section 1)
+f1_path <- file.path(data_dir, "metriques_erosion_f1.gpkg")
+if (file.exists(f1_path)) {
+  f1_data <- st_read(f1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("F1" %in% names(f1_data)) {
+    parcelles$F1 <- as.numeric(unlist(f1_data$F1))
+    cat("F1 (risque érosion):", round(mean(parcelles$F1, na.rm = TRUE), 1), "\n")
+    cat("   0 = faible risque, 100 = risque très élevé (RUSLE simplifié)\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs F
-f1 <- import_indicator("metriques_erosion_f1.gpkg", "F1")
-if (!is.null(f1)) parcelles$F1 <- f1
-
-f2 <- import_indicator("metriques_fertilite_sol_f2.gpkg", "F2")
-if (!is.null(f2)) parcelles$F2 <- f2
-
-# Statistiques
-cat("\n=== Statistiques Famille F ===\n")
-for (ind in c("F1", "F2")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# F2 : Fertilité sol (calculé en section 2)
+f2_path <- file.path(data_dir, "metriques_fertilite_sol_f2.gpkg")
+if (file.exists(f2_path)) {
+  f2_data <- st_read(f2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("F2" %in% names(f2_data)) {
+    parcelles$F2 <- as.numeric(unlist(f2_data$F2))
+    cat("F2 (fertilité sol):", round(mean(parcelles$F2, na.rm = TRUE), 1), "\n")
+    cat("   0 = sol pauvre, 100 = sol fertile\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille F consolidée (2 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille F consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 6.5 : Synthèse finale
 
@@ -2008,52 +2021,69 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-6-5-setup"}
+```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-5-setup"}
 # === SYNTHÈSE FINALE ===
+# Consolidation de tous les indicateurs terrain
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Synthèse des indicateurs terrain ===\n\n")
+cat("=== SYNTHÈSE INDICATEURS TERRAIN ===\n\n")
 
-# Définition des familles
+# Liste des indicateurs par famille (12 indicateurs)
 familles <- list(
-  W = c("W1", "W2", "W3"),
-  R = c("R1", "R2", "R3", "R4"),
-  S = c("S1", "S2", "S3"),
-  F = c("F1", "F2")
+  "W (Eau)" = c("W1", "W2", "W3"),
+  "R (Risques)" = c("R1", "R2", "R3", "R4"),
+  "S (Social)" = c("S1", "S2", "S3"),
+  "F (Sol)" = c("F1", "F2")
 )
 
-# Résumé par famille
-cat("=== Résumé par famille ===\n")
+# Afficher les résultats par famille
 for (fam in names(familles)) {
-  inds <- familles[[fam]]
-  present <- sum(inds %in% names(parcelles))
-  cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
-}
-
-total <- sum(unlist(familles) %in% names(parcelles))
-cat("\nTotal:", total, "/12 indicateurs consolidés\n")
-
-# Statistiques complètes
-cat("\n=== Statistiques des indicateurs ===\n")
-cat("Indicateur    Min      Moy      Max\n")
-cat("----------------------------------\n")
-for (ind in unlist(familles)) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%-10s %7.2f %8.2f %8.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  cat("FAMILLE", fam, ":\n")
+  for (ind in familles[[fam]]) {
+    if (ind %in% names(parcelles)) {
+      val <- mean(parcelles[[ind]], na.rm = TRUE)
+      cat(sprintf("  - %s: %.1f\n", ind, val))
+    } else {
+      cat(sprintf("  - %s: non calculé\n", ind))
+    }
   }
+  cat("\n")
 }
 
-# Sauvegarde finale
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n=== Indicateurs terrain consolidés ===\n")
-cat("Fichier:", output_path, "\n")
-cat("Parcelles:", nrow(parcelles), "lignes et", ncol(parcelles), "colonnes\n")
+# Statistiques globales
+indicateurs_calcules <- unlist(familles)
+n_calcules <- sum(indicateurs_calcules %in% names(parcelles))
+cat(strrep("=", 40), "\n")
+cat("Parcelles:", nrow(parcelles), "\n")
+cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
+cat("Fichier:", basename(output_path), "\n")
+cat(strrep("=", 40), "\n")
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Indicateurs terrain consolidés\n")
 ```
+
+### Fichiers produits
+
+| Fichier | Contenu | Indicateurs |
+|---------|---------|-------------|
+| `indicateurs_terrain.gpkg` | Synthèse complète (12 indicateurs) | Tous |
+| `metriques_densite_hydro_w1.gpkg` | Densité hydrographique | W1 |
+| `metriques_couverture_zone_humide_w2.gpkg` | Zones humides | W2 |
+| `metriques_twi_w3.gpkg` | TWI moyen | W3 |
+| `metriques_exposition_feu_r1.gpkg` | Risque incendie | R1 |
+| `metriques_exposition_tempete_r2.gpkg` | Risque tempête | R2 |
+| `metriques_risque_secheresse_r3.gpkg` | Risque sécheresse | R3 |
+| `metriques_pression_gibier_r4.gpkg` | Pression gibier | R4 |
+| `metriques_access_route_s1.gpkg` | Distance routes | S1 |
+| `metriques_distance_batiment_s2.gpkg` | Distance bâtiments | S2 |
+| `metriques_densite_sentiers_s3.gpkg` | Densité sentiers | S3 |
+| `metriques_erosion_f1.gpkg` | Risque érosion | F1 |
+| `metriques_fertilite_sol_f2.gpkg` | Fertilité sol | F2 |
 
 ---
 

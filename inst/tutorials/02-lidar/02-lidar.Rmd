@@ -1912,48 +1912,44 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```
 
 ```{r ex-10-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-10-1-setup"}
-# === FAMILLE C (Carbone) : C1, C2 ===
+# === FAMILLE C (CARBONE) : C1, C2 ===
+# Consolidation des indicateurs déjà calculés
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+
 parcelles <- st_read(parcelles_path, quiet = TRUE)
+cat("=== Famille C (Carbone) ===\n\n")
 
-cat("=== Consolidation Famille C (Carbone) ===\n\n")
-
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# C1 : Stock carbone (calculé en section 7)
+c1_path <- file.path(data_dir, "metriques_stock_carbone_c1.gpkg")
+if (file.exists(c1_path)) {
+  c1_data <- st_read(c1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("C1" %in% names(c1_data)) {
+    parcelles$C1 <- as.numeric(unlist(c1_data$C1))
+    cat("C1 (stock carbone):", round(mean(parcelles$C1, na.rm = TRUE), 1), "tC/ha\n")
+    cat("   0 = pas de stock, valeurs élevées = fort stockage carbone\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs C
-c1 <- import_indicator("metriques_stock_carbone_c1.gpkg", "C1")
-if (!is.null(c1)) parcelles$C1 <- c1
-
-c2 <- import_indicator("metriques_vitalite_c2.gpkg", "C2")
-if (!is.null(c2)) parcelles$C2 <- c2
-
-# Statistiques
-cat("\n=== Statistiques Famille C ===\n")
-for (ind in c("C1", "C2")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# C2 : Vitalité NDVI (calculé en section 9)
+c2_path <- file.path(data_dir, "metriques_vitalite_c2.gpkg")
+if (file.exists(c2_path)) {
+  c2_data <- st_read(c2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("C2" %in% names(c2_data)) {
+    parcelles$C2 <- as.numeric(unlist(c2_data$C2))
+    cat("C2 (vitalité NDVI):", round(mean(parcelles$C2, na.rm = TRUE), 2), "\n")
+    cat("   0 = sol nu, 1 = végétation très dense\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille C consolidée (2 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille C consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 10.2 : Famille P (Production)
 
@@ -1966,52 +1962,55 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-10-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-10-2-setup"}
-# === FAMILLE P (Production) : P1, P2, P3 ===
+```{r ex-10-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-10-2-setup"}
+# === FAMILLE P (PRODUCTION) : P1, P2, P3 ===
+# Consolidation des indicateurs déjà calculés
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Consolidation Famille P (Production) ===\n\n")
+cat("=== Famille P (Production) ===\n\n")
 
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# P1 : Volume bois sur pied (calculé en section 7)
+p1_path <- file.path(data_dir, "metriques_volume_bois_p1.gpkg")
+if (file.exists(p1_path)) {
+  p1_data <- st_read(p1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("P1" %in% names(p1_data)) {
+    parcelles$P1 <- as.numeric(unlist(p1_data$P1))
+    cat("P1 (volume bois):", round(mean(parcelles$P1, na.rm = TRUE), 1), "m³/ha\n")
+    cat("   0 = pas de bois, valeurs élevées = fort volume sur pied\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs P
-p1 <- import_indicator("metriques_volume_bois_p1.gpkg", "P1")
-if (!is.null(p1)) parcelles$P1 <- p1
+# P2 : Productivité forestière (calculé en section 7)
+p2_path <- file.path(data_dir, "metriques_productivite_p2.gpkg")
+if (file.exists(p2_path)) {
+  p2_data <- st_read(p2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("P2" %in% names(p2_data)) {
+    parcelles$P2 <- as.numeric(unlist(p2_data$P2))
+    cat("P2 (productivité):", round(mean(parcelles$P2, na.rm = TRUE), 2), "m³/ha/an\n")
+    cat("   0 = faible croissance, valeurs élevées = forte productivité\n\n")
+  }
+}
 
-p2 <- import_indicator("metriques_productivite_p2.gpkg", "P2")
-if (!is.null(p2)) parcelles$P2 <- p2
-
-p3 <- import_indicator("metriques_qualite_structurale_p3.gpkg", "P3")
-if (!is.null(p3)) parcelles$P3 <- p3
-
-# Statistiques
-cat("\n=== Statistiques Famille P ===\n")
-for (ind in c("P1", "P2", "P3")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# P3 : Qualité structurale (calculé en section 7)
+p3_path <- file.path(data_dir, "metriques_qualite_structurale_p3.gpkg")
+if (file.exists(p3_path)) {
+  p3_data <- st_read(p3_path, quiet = TRUE) |> st_drop_geometry()
+  if ("P3" %in% names(p3_data)) {
+    parcelles$P3 <- as.numeric(unlist(p3_data$P3))
+    cat("P3 (qualité structurale):", round(mean(parcelles$P3, na.rm = TRUE), 1), "\n")
+    cat("   0 = structure irrégulière, 100 = structure régulière\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille P consolidée (3 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille P consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 10.3 : Famille E (Énergie)
 
@@ -2025,48 +2024,43 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```
 
 ```{r ex-10-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-10-3-setup"}
-# === FAMILLE E (Énergie) : E1, E2 ===
+# === FAMILLE E (ÉNERGIE) : E1, E2 ===
+# Consolidation des indicateurs déjà calculés
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Consolidation Famille E (Énergie) ===\n\n")
+cat("=== Famille E (Énergie) ===\n\n")
 
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# E1 : Potentiel bois-énergie (calculé en section 8)
+e1_path <- file.path(data_dir, "metriques_bois_energie_e1.gpkg")
+if (file.exists(e1_path)) {
+  e1_data <- st_read(e1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("E1" %in% names(e1_data)) {
+    parcelles$E1 <- as.numeric(unlist(e1_data$E1))
+    cat("E1 (bois-énergie):", round(mean(parcelles$E1, na.rm = TRUE), 2), "tep/ha\n")
+    cat("   0 = faible potentiel, valeurs élevées = fort potentiel énergétique\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs E
-e1 <- import_indicator("metriques_bois_energie_e1.gpkg", "E1")
-if (!is.null(e1)) parcelles$E1 <- e1
-
-e2 <- import_indicator("metriques_evitement_carbone_e2.gpkg", "E2")
-if (!is.null(e2)) parcelles$E2 <- e2
-
-# Statistiques
-cat("\n=== Statistiques Famille E ===\n")
-for (ind in c("E1", "E2")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# E2 : Évitement carbone (calculé en section 8)
+e2_path <- file.path(data_dir, "metriques_evitement_carbone_e2.gpkg")
+if (file.exists(e2_path)) {
+  e2_data <- st_read(e2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("E2" %in% names(e2_data)) {
+    parcelles$E2 <- as.numeric(unlist(e2_data$E2))
+    cat("E2 (évitement carbone):", round(mean(parcelles$E2, na.rm = TRUE), 2), "tCO₂/ha/an\n")
+    cat("   0 = pas d'évitement, valeurs élevées = fort évitement par substitution\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille E consolidée (2 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille E consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 10.4 : Famille A (Air)
 
@@ -2080,48 +2074,43 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```
 
 ```{r ex-10-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-10-4-setup"}
-# === FAMILLE A (Air) : A1, A2 ===
+# === FAMILLE A (AIR) : A1, A2 ===
+# Consolidation des indicateurs déjà calculés
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Consolidation Famille A (Air) ===\n\n")
+cat("=== Famille A (Air) ===\n\n")
 
-# Fonction pour importer un indicateur
-import_indicator <- function(file_name, indicator_col) {
-  file_path <- file.path(data_dir, file_name)
-  if (file.exists(file_path)) {
-    data <- st_read(file_path, quiet = TRUE)
-    if (indicator_col %in% names(data)) {
-      cat("  ✓", indicator_col, "importé depuis", file_name, "\n")
-      return(as.numeric(unlist(data[[indicator_col]])))
-    }
+# A1 : Couverture forestière (calculé en section 7)
+a1_path <- file.path(data_dir, "metriques_couverture_forestiere_a1.gpkg")
+if (file.exists(a1_path)) {
+  a1_data <- st_read(a1_path, quiet = TRUE) |> st_drop_geometry()
+  if ("A1" %in% names(a1_data)) {
+    parcelles$A1 <- as.numeric(unlist(a1_data$A1))
+    cat("A1 (couverture forestière):", round(mean(parcelles$A1, na.rm = TRUE), 1), "%\n")
+    cat("   0% = pas de forêt, 100% = entièrement boisé\n\n")
   }
-  cat("  ✗", indicator_col, "non trouvé\n")
-  return(NULL)
 }
 
-# Import des indicateurs A
-a1 <- import_indicator("metriques_couverture_forestiere_a1.gpkg", "A1")
-if (!is.null(a1)) parcelles$A1 <- a1
-
-a2 <- import_indicator("metriques_qualite_air_a2.gpkg", "A2")
-if (!is.null(a2)) parcelles$A2 <- a2
-
-# Statistiques
-cat("\n=== Statistiques Famille A ===\n")
-for (ind in c("A1", "A2")) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%s: min=%.2f, moy=%.2f, max=%.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+# A2 : Qualité air (calculé en section 9)
+a2_path <- file.path(data_dir, "metriques_qualite_air_a2.gpkg")
+if (file.exists(a2_path)) {
+  a2_data <- st_read(a2_path, quiet = TRUE) |> st_drop_geometry()
+  if ("A2" %in% names(a2_data)) {
+    parcelles$A2 <- as.numeric(unlist(a2_data$A2))
+    cat("A2 (qualité air):", round(mean(parcelles$A2, na.rm = TRUE), 1), "\n")
+    cat("   0 = forte pollution, 100 = air pur\n")
   }
 }
 
 # Sauvegarder
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\nFamille A consolidée (2 indicateurs)\n")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Famille A consolidée:", basename(output_path), "\n")
 ```
+
+
+---
 
 ### Exercice 10.5 : Synthèse finale
 
@@ -2134,52 +2123,66 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-10-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-10-5-setup"}
+```{r ex-10-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-10-5-setup"}
 # === SYNTHÈSE FINALE ===
+# Consolidation de tous les indicateurs LiDAR
 
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
-parcelles <- st_read(parcelles_path, quiet = TRUE)
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+parcelles <- st_read(output_path, quiet = TRUE)
 
-cat("=== Synthèse des indicateurs LiDAR ===\n\n")
+cat("=== SYNTHÈSE INDICATEURS LIDAR ===\n\n")
 
-# Définition des familles
+# Liste des indicateurs par famille (9 indicateurs)
 familles <- list(
-  C = c("C1", "C2"),
-  P = c("P1", "P2", "P3"),
-  E = c("E1", "E2"),
-  A = c("A1", "A2")
+  "C (Carbone)" = c("C1", "C2"),
+  "P (Production)" = c("P1", "P2", "P3"),
+  "E (Énergie)" = c("E1", "E2"),
+  "A (Air)" = c("A1", "A2")
 )
 
-# Résumé par famille
-cat("=== Résumé par famille ===\n")
+# Afficher les résultats par famille
 for (fam in names(familles)) {
-  inds <- familles[[fam]]
-  present <- sum(inds %in% names(parcelles))
-  cat(sprintf("Famille %s: %d/%d indicateurs\n", fam, present, length(inds)))
-}
-
-total <- sum(unlist(familles) %in% names(parcelles))
-cat("\nTotal:", total, "/9 indicateurs consolidés\n")
-
-# Statistiques complètes
-cat("\n=== Statistiques des indicateurs ===\n")
-cat("Indicateur    Min      Moy      Max\n")
-cat("----------------------------------\n")
-for (ind in unlist(familles)) {
-  if (ind %in% names(parcelles)) {
-    vals <- parcelles[[ind]]
-    cat(sprintf("%-10s %7.2f %8.2f %8.2f\n",
-      ind, min(vals, na.rm=TRUE), mean(vals, na.rm=TRUE), max(vals, na.rm=TRUE)))
+  cat("FAMILLE", fam, ":\n")
+  for (ind in familles[[fam]]) {
+    if (ind %in% names(parcelles)) {
+      val <- mean(parcelles[[ind]], na.rm = TRUE)
+      cat(sprintf("  - %s: %.1f\n", ind, val))
+    } else {
+      cat(sprintf("  - %s: non calculé\n", ind))
+    }
   }
+  cat("\n")
 }
 
-# Sauvegarde finale
-output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n=== Indicateurs LiDAR consolidés ===\n")
-cat("Fichier:", output_path, "\n")
-cat("Parcelles:", nrow(parcelles), "lignes et", ncol(parcelles), "colonnes\n")
+# Statistiques globales
+indicateurs_calcules <- unlist(familles)
+n_calcules <- sum(indicateurs_calcules %in% names(parcelles))
+cat(strrep("=", 40), "\n")
+cat("Parcelles:", nrow(parcelles), "\n")
+cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
+cat("Fichier:", basename(output_path), "\n")
+cat(strrep("=", 40), "\n")
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ Indicateurs LiDAR consolidés\n")
 ```
+
+### Fichiers produits
+
+| Fichier | Contenu | Indicateurs |
+|---------|---------|-------------|
+| `indicateurs_lidar.gpkg` | Synthèse complète (9 indicateurs) | Tous |
+| `metriques_stock_carbone_c1.gpkg` | Stock carbone aérien | C1 |
+| `metriques_vitalite_c2.gpkg` | Vitalité NDVI | C2 |
+| `metriques_volume_bois_p1.gpkg` | Volume bois sur pied | P1 |
+| `metriques_productivite_p2.gpkg` | Productivité forestière | P2 |
+| `metriques_qualite_structurale_p3.gpkg` | Qualité structurale | P3 |
+| `metriques_bois_energie_e1.gpkg` | Potentiel bois-énergie | E1 |
+| `metriques_evitement_carbone_e2.gpkg` | Évitement carbone | E2 |
+| `metriques_couverture_forestiere_a1.gpkg` | Couverture forestière | A1 |
+| `metriques_qualite_air_a2.gpkg` | Qualité air | A2 |
 
 ---
 
