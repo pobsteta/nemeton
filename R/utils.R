@@ -2,19 +2,49 @@
 # Smart Parallel Mapping - Adaptive threshold for furrr/purrr
 # ==============================================================================
 
+#' Complexity-based thresholds for smart_map
+#'
+#' Predefined thresholds based on operation complexity.
+#' Based on benchmarks: furrr setup overhead is ~15-18 seconds.
+#'
+#' @format Named list with threshold values
+#' @keywords internal
+#' @noRd
+.smart_map_thresholds <- list(
+  # Very fast operations (1-5ms): almost never use parallel
+  very_low = 2000L,
+  # Fast operations (5-20ms): raster extraction, simple geometry
+ low = 1000L,
+ # Medium operations (20-100ms): spatial intersections, buffers
+  medium = 200L,
+  # Slow operations (100-500ms): WFS queries, complex spatial
+  high = 50L,
+  # Very slow operations (500ms-5s): API calls, downloads
+  very_high = 20L
+)
+
 #' Smart Map with Adaptive Parallelization
 #'
 #' Applies a function over elements with automatic decision between sequential
-#' and parallel execution based on input size. Avoids the overhead of parallel
-#' processing for small datasets where it would be counterproductive.
+#' and parallel execution based on input size and operation complexity.
+#' Avoids the overhead of parallel processing for small datasets where it
+#' would be counterproductive.
 #'
 #' @param x A list or vector to iterate over.
 #' @param fn Function to apply to each element.
 #' @param ... Additional arguments passed to `fn`.
-#' @param threshold Integer. Minimum number of elements to trigger parallel
-#'   execution. Default is 200. For complex operations (e.g., spatial joins,
-#'   WFS queries), use lower values (50-100). For simple operations (e.g.,
-#'   raster extraction), use higher values (500-1000).
+#' @param complexity Character. Operation complexity level that determines
+#'   the threshold automatically:
+#'   \itemize{
+#'     \item `"very_low"`: ~1-5ms/op (threshold=2000) - instant calculations
+#'     \item `"low"`: ~5-20ms/op (threshold=1000) - raster extraction
+#'     \item `"medium"`: ~20-100ms/op (threshold=200) - spatial intersections
+#'     \item `"high"`: ~100-500ms/op (threshold=50) - WFS queries
+#'     \item `"very_high"`: ~500ms-5s/op (threshold=20) - API calls, downloads
+#'   }
+#'   Default is `"medium"`. Ignored if `threshold` is explicitly set.
+#' @param threshold Integer or NULL. Explicit minimum number of elements to
+#'   trigger parallel execution. If NULL (default), uses value from `complexity`.
 #' @param workers Integer. Number of parallel workers. Default is
 #'   `min(4, parallel::detectCores() - 1)`.
 #' @param progress Logical. Show progress bar? Default TRUE for n > 50.
@@ -31,43 +61,49 @@
 #'   \item Falls back gracefully to base R if neither purrr nor furrr available
 #' }
 #'
-#' Recommended thresholds by operation type:
-#' \itemize{
-#'   \item Simple extraction (raster values): 500-1000
-#'   \item Geometric operations (buffer, intersection): 200-500
-#'   \item Complex spatial (WFS queries, route calculations): 50-100
-#'   \item Network operations (API calls): 20-50
-#' }
+#' The `complexity` parameter is based on benchmarks showing that furrr has
+#' a setup overhead of ~15-18 seconds. Parallelization is only beneficial when:
+#' `n * time_per_op * (1 - 1/workers) > overhead`
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Simple case - will use sequential processing
-#' results <- smart_map(1:50, function(x) x^2)
+#' # Using complexity parameter (recommended)
+#' results <- smart_map(parcels, extract_raster, complexity = "low")
+#' results <- smart_map(parcels, query_wfs, complexity = "high")
+#' results <- smart_map(urls, download_file, complexity = "very_high")
 #'
-#' # Larger dataset - will use parallel if furrr available
-#' results <- smart_map(1:500, complex_function, threshold = 200)
+#' # Using explicit threshold
+#' results <- smart_map(1:500, complex_function, threshold = 100)
 #'
 #' # Return numeric vector
 #' values <- smart_map(parcels_list, extract_value, .type = "dbl")
-#'
-#' # Low threshold for expensive operations
-#' results <- smart_map(units, query_wfs, threshold = 50)
 #' }
 smart_map <- function(x,
                       fn,
                       ...,
-                      threshold = 200L,
+                      complexity = "medium",
+                      threshold = NULL,
                       workers = NULL,
                       progress = NULL,
                       .type = "list") {
   n <- length(x)
 
+  # Resolve threshold from complexity if not explicitly set
+ if (is.null(threshold)) {
+    valid_complexities <- names(.smart_map_thresholds)
+    if (!complexity %in% valid_complexities) {
+      cli::cli_abort(c(
+        "Invalid {.arg complexity} value: {.val {complexity}}",
+        "i" = "Must be one of: {.val {valid_complexities}}"
+      ))
+    }
+    threshold <- .smart_map_thresholds[[complexity]]
+  }
 
   # Default workers
-
-if (is.null(workers)) {
+  if (is.null(workers)) {
     workers <- min(4L, max(1L, parallel::detectCores() - 1L))
   }
 
@@ -156,7 +192,10 @@ if (is.null(workers)) {
 #' @param sf_data An sf object.
 #' @param fn Function that takes (index, sf_data) and returns a value.
 #' @param ... Additional arguments passed to `fn`.
-#' @param threshold Integer. Minimum rows for parallel. Default 200.
+#' @param complexity Character. Operation complexity level:
+#'   `"very_low"`, `"low"`, `"medium"` (default), `"high"`, `"very_high"`.
+#'   See [smart_map()] for details.
+#' @param threshold Integer or NULL. Explicit threshold. If NULL, uses `complexity`.
 #' @param workers Integer. Number of workers. Default auto-detected.
 #' @param progress Logical. Show progress? Default TRUE for n > 50.
 #' @param .type Character. Return type: "list", "dbl", "chr", "lgl", "int".
@@ -167,17 +206,23 @@ if (is.null(workers)) {
 #'
 #' @examples
 #' \dontrun{
-#' # Calculate indicator for each parcel
+#' # Calculate indicator for each parcel (medium complexity = spatial ops)
 #' parcelles$indicator <- smart_map_sf(parcelles, function(i, data) {
 #'   geom <- sf::st_geometry(data[i, ])
-#'   # ... complex calculation ...
+#'   # ... spatial calculation ...
 #'   return(value)
-#' }, .type = "dbl")
+#' }, complexity = "medium", .type = "dbl")
+#'
+#' # WFS query per parcel (high complexity)
+#' parcelles$zones <- smart_map_sf(parcelles, function(i, data) {
+#'   query_wfs(data[i, ])
+#' }, complexity = "high")
 #' }
 smart_map_sf <- function(sf_data,
                          fn,
                          ...,
-                         threshold = 200L,
+                         complexity = "medium",
+                         threshold = NULL,
                          workers = NULL,
                          progress = NULL,
                          .type = "list") {
@@ -196,6 +241,7 @@ smart_map_sf <- function(sf_data,
   smart_map(
     x = indices,
     fn = fn_wrapper,
+    complexity = complexity,
     threshold = threshold,
     workers = workers,
     progress = progress,

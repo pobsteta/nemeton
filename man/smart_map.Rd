@@ -8,7 +8,8 @@ smart_map(
   x,
   fn,
   ...,
-  threshold = 200L,
+  complexity = "medium",
+  threshold = NULL,
   workers = NULL,
   progress = NULL,
   .type = "list"
@@ -21,10 +22,19 @@ smart_map(
 
 \item{...}{Additional arguments passed to `fn`.}
 
-\item{threshold}{Integer. Minimum number of elements to trigger parallel
-execution. Default is 200. For complex operations (e.g., spatial joins,
-WFS queries), use lower values (50-100). For simple operations (e.g.,
-raster extraction), use higher values (500-1000).}
+\item{complexity}{Character. Operation complexity level that determines
+the threshold automatically:
+\itemize{
+  \item `"very_low"`: ~1-5ms/op (threshold=2000) - instant calculations
+  \item `"low"`: ~5-20ms/op (threshold=1000) - raster extraction
+  \item `"medium"`: ~20-100ms/op (threshold=200) - spatial intersections
+  \item `"high"`: ~100-500ms/op (threshold=50) - WFS queries
+  \item `"very_high"`: ~500ms-5s/op (threshold=20) - API calls, downloads
+}
+Default is `"medium"`. Ignored if `threshold` is explicitly set.}
+
+\item{threshold}{Integer or NULL. Explicit minimum number of elements to
+trigger parallel execution. If NULL (default), uses value from `complexity`.}
 
 \item{workers}{Integer. Number of parallel workers. Default is
 `min(4, parallel::detectCores() - 1)`.}
@@ -39,8 +49,9 @@ A list or vector (depending on `.type`) of results.
 }
 \description{
 Applies a function over elements with automatic decision between sequential
-and parallel execution based on input size. Avoids the overhead of parallel
-processing for small datasets where it would be counterproductive.
+and parallel execution based on input size and operation complexity.
+Avoids the overhead of parallel processing for small datasets where it
+would be counterproductive.
 }
 \details{
 The function implements a three-tier strategy:
@@ -50,26 +61,21 @@ The function implements a three-tier strategy:
   \item Falls back gracefully to base R if neither purrr nor furrr available
 }
 
-Recommended thresholds by operation type:
-\itemize{
-  \item Simple extraction (raster values): 500-1000
-  \item Geometric operations (buffer, intersection): 200-500
-  \item Complex spatial (WFS queries, route calculations): 50-100
-  \item Network operations (API calls): 20-50
-}
+The `complexity` parameter is based on benchmarks showing that furrr has
+a setup overhead of ~15-18 seconds. Parallelization is only beneficial when:
+`n * time_per_op * (1 - 1/workers) > overhead`
 }
 \examples{
 \dontrun{
-# Simple case - will use sequential processing
-results <- smart_map(1:50, function(x) x^2)
+# Using complexity parameter (recommended)
+results <- smart_map(parcels, extract_raster, complexity = "low")
+results <- smart_map(parcels, query_wfs, complexity = "high")
+results <- smart_map(urls, download_file, complexity = "very_high")
 
-# Larger dataset - will use parallel if furrr available
-results <- smart_map(1:500, complex_function, threshold = 200)
+# Using explicit threshold
+results <- smart_map(1:500, complex_function, threshold = 100)
 
 # Return numeric vector
 values <- smart_map(parcels_list, extract_value, .type = "dbl")
-
-# Low threshold for expensive operations
-results <- smart_map(units, query_wfs, threshold = 50)
 }
 }

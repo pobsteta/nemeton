@@ -8,7 +8,8 @@ smart_map_sf(
   sf_data,
   fn,
   ...,
-  threshold = 200L,
+  complexity = "medium",
+  threshold = NULL,
   workers = NULL,
   progress = NULL,
   .type = "list"
@@ -21,7 +22,11 @@ smart_map_sf(
 
 \item{...}{Additional arguments passed to `fn`.}
 
-\item{threshold}{Integer. Minimum rows for parallel. Default 200.}
+\item{complexity}{Character. Operation complexity level:
+`"very_low"`, `"low"`, `"medium"` (default), `"high"`, `"very_high"`.
+See [smart_map()] for details.}
+
+\item{threshold}{Integer or NULL. Explicit threshold. If NULL, uses `complexity`.}
 
 \item{workers}{Integer. Number of workers. Default auto-detected.}
 
@@ -39,11 +44,16 @@ worker in parallel mode.
 }
 \examples{
 \dontrun{
-# Calculate indicator for each parcel
+# Calculate indicator for each parcel (medium complexity = spatial ops)
 parcelles$indicator <- smart_map_sf(parcelles, function(i, data) {
   geom <- sf::st_geometry(data[i, ])
-  # ... complex calculation ...
+  # ... spatial calculation ...
   return(value)
-}, .type = "dbl")
+}, complexity = "medium", .type = "dbl")
+
+# WFS query per parcel (high complexity)
+parcelles$zones <- smart_map_sf(parcelles, function(i, data) {
+  query_wfs(data[i, ])
+}, complexity = "high")
 }
 }
