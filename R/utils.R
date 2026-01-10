@@ -1,3 +1,212 @@
+# ==============================================================================
+# Smart Parallel Mapping - Adaptive threshold for furrr/purrr
+# ==============================================================================
+
+#' Smart Map with Adaptive Parallelization
+#'
+#' Applies a function over elements with automatic decision between sequential
+#' and parallel execution based on input size. Avoids the overhead of parallel
+#' processing for small datasets where it would be counterproductive.
+#'
+#' @param x A list or vector to iterate over.
+#' @param fn Function to apply to each element.
+#' @param ... Additional arguments passed to `fn`.
+#' @param threshold Integer. Minimum number of elements to trigger parallel
+#'   execution. Default is 200. For complex operations (e.g., spatial joins,
+#'   WFS queries), use lower values (50-100). For simple operations (e.g.,
+#'   raster extraction), use higher values (500-1000).
+#' @param workers Integer. Number of parallel workers. Default is
+#'   `min(4, parallel::detectCores() - 1)`.
+#' @param progress Logical. Show progress bar? Default TRUE for n > 50.
+#' @param .type Character. Return type: "list" (default), "dbl", "chr", "lgl", "int".
+#'   Determines the output format and uses appropriate map variant.
+#'
+#' @return A list or vector (depending on `.type`) of results.
+#'
+#' @details
+#' The function implements a three-tier strategy:
+#' \enumerate{
+#'   \item If n <= threshold OR furrr not available: use purrr (or base lapply)
+#'   \item If n > threshold AND furrr available: use furrr with parallel plan
+#'   \item Falls back gracefully to base R if neither purrr nor furrr available
+#' }
+#'
+#' Recommended thresholds by operation type:
+#' \itemize{
+#'   \item Simple extraction (raster values): 500-1000
+#'   \item Geometric operations (buffer, intersection): 200-500
+#'   \item Complex spatial (WFS queries, route calculations): 50-100
+#'   \item Network operations (API calls): 20-50
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Simple case - will use sequential processing
+#' results <- smart_map(1:50, function(x) x^2)
+#'
+#' # Larger dataset - will use parallel if furrr available
+#' results <- smart_map(1:500, complex_function, threshold = 200)
+#'
+#' # Return numeric vector
+#' values <- smart_map(parcels_list, extract_value, .type = "dbl")
+#'
+#' # Low threshold for expensive operations
+#' results <- smart_map(units, query_wfs, threshold = 50)
+#' }
+smart_map <- function(x,
+                      fn,
+                      ...,
+                      threshold = 200L,
+                      workers = NULL,
+                      progress = NULL,
+                      .type = "list") {
+  n <- length(x)
+
+
+  # Default workers
+
+if (is.null(workers)) {
+    workers <- min(4L, max(1L, parallel::detectCores() - 1L))
+  }
+
+  # Default progress (show for n > 50)
+  if (is.null(progress)) {
+    progress <- n > 50
+  }
+
+  # Check package availability
+  has_furrr <- requireNamespace("furrr", quietly = TRUE) &&
+    requireNamespace("future", quietly = TRUE)
+  has_purrr <- requireNamespace("purrr", quietly = TRUE)
+
+  # Decision: parallel only if above threshold AND furrr available
+  use_parallel <- n > threshold && has_furrr
+
+  # Select map function based on type
+  map_fn <- switch(.type,
+    "dbl" = if (has_purrr) purrr::map_dbl else function(x, f, ...) vapply(x, f, numeric(1), ...),
+    "chr" = if (has_purrr) purrr::map_chr else function(x, f, ...) vapply(x, f, character(1), ...),
+    "lgl" = if (has_purrr) purrr::map_lgl else function(x, f, ...) vapply(x, f, logical(1), ...),
+    "int" = if (has_purrr) purrr::map_int else function(x, f, ...) vapply(x, f, integer(1), ...),
+    if (has_purrr) purrr::map else lapply
+  )
+
+  # Select parallel map function based on type
+  future_map_fn <- if (has_furrr) {
+    switch(.type,
+      "dbl" = furrr::future_map_dbl,
+      "chr" = furrr::future_map_chr,
+      "lgl" = furrr::future_map_lgl,
+      "int" = furrr::future_map_int,
+      furrr::future_map
+    )
+  } else {
+    NULL
+  }
+
+  # Execute
+  if (use_parallel) {
+    # Setup parallel plan
+    old_plan <- future::plan()
+    on.exit(future::plan(old_plan), add = TRUE)
+    future::plan(future::multisession, workers = workers)
+
+    cli::cli_alert_info("Parallel mode: {n} elements, {workers} workers")
+
+    result <- future_map_fn(x, fn, ..., .progress = progress)
+  } else {
+    mode_msg <- if (n <= threshold) {
+      "Sequential mode: {n} elements (below threshold {threshold})"
+    } else {
+      "Sequential mode: {n} elements (furrr not available)"
+    }
+    cli::cli_alert_info(mode_msg)
+
+    # Use progress wrapper if requested and cli available
+    if (progress && has_purrr && requireNamespace("cli", quietly = TRUE)) {
+      result <- purrr::map(x, function(xi) {
+        fn(xi, ...)
+      }, .progress = TRUE)
+      # Convert if needed
+      if (.type != "list") {
+        result <- switch(.type,
+          "dbl" = as.numeric(unlist(result)),
+          "chr" = as.character(unlist(result)),
+          "lgl" = as.logical(unlist(result)),
+          "int" = as.integer(unlist(result)),
+          result
+        )
+      }
+    } else {
+      result <- map_fn(x, fn, ...)
+    }
+  }
+
+  result
+}
+
+#' Smart Map for Spatial Data with Row Indices
+#'
+#' Convenience wrapper for spatial operations where the function operates on
+#' row indices of an sf object. Automatically passes the sf object to each
+#' worker in parallel mode.
+#'
+#' @param sf_data An sf object.
+#' @param fn Function that takes (index, sf_data) and returns a value.
+#' @param ... Additional arguments passed to `fn`.
+#' @param threshold Integer. Minimum rows for parallel. Default 200.
+#' @param workers Integer. Number of workers. Default auto-detected.
+#' @param progress Logical. Show progress? Default TRUE for n > 50.
+#' @param .type Character. Return type: "list", "dbl", "chr", "lgl", "int".
+#'
+#' @return A list or vector of results.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Calculate indicator for each parcel
+#' parcelles$indicator <- smart_map_sf(parcelles, function(i, data) {
+#'   geom <- sf::st_geometry(data[i, ])
+#'   # ... complex calculation ...
+#'   return(value)
+#' }, .type = "dbl")
+#' }
+smart_map_sf <- function(sf_data,
+                         fn,
+                         ...,
+                         threshold = 200L,
+                         workers = NULL,
+                         progress = NULL,
+                         .type = "list") {
+  if (!inherits(sf_data, "sf")) {
+    cli::cli_abort("{.arg sf_data} must be an {.cls sf} object")
+  }
+
+  n <- nrow(sf_data)
+  indices <- seq_len(n)
+
+  # Wrapper to inject sf_data
+  fn_wrapper <- function(i) {
+    fn(i, sf_data, ...)
+  }
+
+  smart_map(
+    x = indices,
+    fn = fn_wrapper,
+    threshold = threshold,
+    workers = workers,
+    progress = progress,
+    .type = .type
+  )
+}
+
+# ==============================================================================
+# Original utils.R content
+# ==============================================================================
+
 #' Check CRS compatibility between spatial objects
 #'
 #' @param x First spatial object (sf or SpatRaster)
