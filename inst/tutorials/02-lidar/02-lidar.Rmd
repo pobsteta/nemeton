@@ -1340,14 +1340,6 @@ if (file.exists(parcelles_path)) {
     cat("Fichier:", output_path, "\n")
     cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
-
-    # Visualisation
-    cat("\n=== Distribution E2 ===\n")
-    hist(parcelles$E2,
-      breaks = 15, col = "darkorange",
-      main = "E2 : Évitement carbone",
-      xlab = "tCO2/ha/an", ylab = "Fréquence"
-    )
   } else {
     cat("E1 non trouvé. Exécutez l'exercice 7.1 d'abord.\n")
   }
@@ -1355,40 +1347,6 @@ if (file.exists(parcelles_path)) {
   cat("Fichier parcelles.gpkg non trouvé.\n")
 }
 ```
-
-### Interprétation de l'histogramme E2
-
-L'histogramme **E2 : Évitement carbone** montre la distribution des émissions de CO₂ évitées par parcelle, exprimées en **tCO₂/ha/an**.
-
-**Ce que représente E2** : le bénéfice climatique potentiel si le bois de la parcelle était utilisé comme source d'énergie à la place des combustibles fossiles (fioul, gaz, charbon).
-
-=== Grille d'interprétation E2 ===
-
-```{r e2-interpretation, echo=FALSE}
-interpretation <- data.frame(
-  Valeur_E2 = c("0 - 0.5", "0.5 - 1.5", "> 1.5"),
-  Interpretation = c(
-    "Faible potentiel (parcelle peu productive ou jeune)",
-    "Potentiel modéré (forêt moyenne)",
-    "Fort potentiel (forêt productive, mature)"
-  )
-)
-knitr::kable(interpretation, col.names = c("E2 (tCO2/ha/an)", "Interprétation"))
-```
-
-=== Exemple concret ===
-
-Une parcelle avec E2 = 1.0 tCO2/ha/an signifie :
-
-- 1 tonne de CO2 évitée par hectare chaque année
-- Sur 10 ha : 10 tCO2/an évitées
-- Équivalent à ~5 allers-retours Paris-New York en avion
-
-=== Forme de la distribution ===
-
-- Étalée à droite : quelques parcelles très productives
-- Pic à gauche : beaucoup de jeunes peuplements
-- Normale : forêt homogène en productivité
 
 ### Quiz : Indicateurs Énergie
 
