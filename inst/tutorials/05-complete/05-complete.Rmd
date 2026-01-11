@@ -67,6 +67,66 @@ familles <- data.frame(
 knitr::kable(familles, caption = "Les 12 familles d'indicateurs nemeton (32 indicateurs)")
 ```
 
+### Indicateurs Simples et Composites
+
+Les 32 indicateurs se répartissent en **24 indicateurs simples** (mesure directe) et **8 indicateurs composites** (combinaison de plusieurs métriques).
+
+```{r indicateurs-types, echo=FALSE}
+types_ind <- data.frame(
+  Type = c(rep("Simple", 24), rep("Composite", 8)),
+  Code = c(
+    # Simples (24)
+    "C1", "C2", "P1", "P2", "E1", "A1",
+    "W1", "W2", "W3", "F1", "F2",
+    "B1", "B2", "L2", "T1", "T2",
+    "R1", "R2", "R3", "S1", "S2", "S3", "N1", "N2",
+    # Composites (8)
+    "P3", "E2", "A2", "B3", "L1", "L3", "R4", "N3"
+  ),
+  Nom = c(
+    # Simples
+    "Stock carbone aérien", "Vitalité NDVI", "Volume bois sur pied",
+    "Productivité forestière", "Potentiel bois-énergie", "Couverture forestière",
+    "Densité réseau hydro", "Zones humides", "TWI humidité",
+    "Fertilité sol", "Risque érosion",
+    "Habitats protégés", "Structure verticale", "Ratio lisière",
+    "Ancienneté forêt", "Changement occupation",
+    "Risque incendie", "Risque tempête", "Risque sécheresse",
+    "Densité sentiers", "Accessibilité", "Proximité population",
+    "Distance infrastructures", "Continuité forestière",
+    # Composites
+    "Qualité structurale", "Évitement carbone", "Qualité air",
+    "Connectivité écologique", "Fragmentation paysage", "Intégration TVB",
+    "Pression gibier", "Naturalité composite"
+  ),
+  Source = c(
+    # Simples
+    "LiDAR", "Sentinel-2", "LiDAR", "LiDAR", "LiDAR", "BD Forêt",
+    "BD TOPO", "BD TOPO", "MNT", "BD Sol", "MNT + Couvert",
+    "INPN", "LiDAR", "BD Forêt", "BD Forêt Anciennes", "CLC",
+    "MNT + Végétation", "LiDAR + MNT", "Climat + Sol",
+    "OSM", "BD TOPO", "INSEE",
+    "BD TOPO + OSM", "BD Forêt",
+    # Composites
+    "P1 + P2 + LiDAR", "E1 × facteurs", "ATMO + couvert",
+    "B1 + B2 + paysage", "Métriques paysage", "TVB verte + bleue",
+    "Tableaux chasse", "N1 + N2 + L1 + B3"
+  )
+)
+
+# Afficher en deux tableaux côte à côte
+simples <- types_ind[types_ind$Type == "Simple", c("Code", "Nom", "Source")]
+composites <- types_ind[types_ind$Type == "Composite", c("Code", "Nom", "Source")]
+
+cat("**Indicateurs simples (24)** : mesure directe depuis une source de données\n\n")
+knitr::kable(simples, row.names = FALSE)
+```
+
+```{r indicateurs-composites, echo=FALSE}
+cat("\n**Indicateurs composites (8)** : combinaison de plusieurs métriques ou indicateurs\n\n")
+knitr::kable(composites, row.names = FALSE)
+```
+
 ## Chargement et Vérification
 
 ### Chargement des Parcelles
