@@ -158,7 +158,7 @@ library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-1-setup", fig.width=8, fig.height=8}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-1-setup", fig.width=6, fig.height=6}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -202,7 +202,7 @@ library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-2-setup", fig.width=6, fig.height=6}
 # === COMPARAISON MULTI-PARCELLES ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -251,7 +251,7 @@ if (requireNamespace("fmsb", quietly = TRUE)) {
   )
 
   legend("topright",
-    legend = paste("Parcelle", parcelles_ids),
+    legend = paste("Parcelle", parcelles_idx),
     col = colors,
     lwd = 2,
     bty = "n"
@@ -361,7 +361,7 @@ for (col in grep("^family_", names(parcelles_sim), value = TRUE)) {
 }
 ```
 
-```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-3-2-setup"}
+```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-3-2-setup", fig.width=8, fig.height=8}
 # === VISUALISATION CORRPLOT ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -380,7 +380,7 @@ if (requireNamespace("corrplot", quietly = TRUE)) {
   corrplot::corrplot(cor_matrix,
     method = "color",
     type = "upper",
-    order = "hclust",  # Clustering hiérarchique
+    order = "hclust",
     addCoef.col = "black",
     number.cex = 0.7,
     tl.col = "black",
@@ -388,10 +388,44 @@ if (requireNamespace("corrplot", quietly = TRUE)) {
     title = "Corrélations entre familles d'indicateurs",
     mar = c(0, 0, 2, 0)
   )
-} else {
-  cat("Package corrplot non installé. Voici la matrice numérique:\n")
-  print(round(cor_matrix, 2))
 }
+
+# === ANALYSE DES CORRÉLATIONS ===
+cat("\n\n========== ANALYSE DES CORRÉLATIONS ==========\n\n")
+
+# Extraire les paires de corrélations (triangle supérieur)
+cor_pairs <- which(upper.tri(cor_matrix), arr.ind = TRUE)
+cor_values <- data.frame(
+  Famille1 = rownames(cor_matrix)[cor_pairs[, 1]],
+  Famille2 = colnames(cor_matrix)[cor_pairs[, 2]],
+  Correlation = cor_matrix[cor_pairs]
+)
+cor_values <- cor_values[order(-abs(cor_values$Correlation)), ]
+
+# Top 5 synergies (corrélations positives)
+cat("TOP 5 SYNERGIES (corrélations positives) :\n")
+synergies <- head(cor_values[cor_values$Correlation > 0, ], 5)
+for (i in seq_len(nrow(synergies))) {
+  cat(sprintf("  %s - %s : r = %.2f\n",
+              synergies$Famille1[i], synergies$Famille2[i], synergies$Correlation[i]))
+}
+
+# Top 5 compromis (corrélations négatives)
+cat("\nTOP 5 COMPROMIS (corrélations négatives) :\n")
+compromis <- head(cor_values[cor_values$Correlation < 0, ], 5)
+if (nrow(compromis) > 0) {
+  for (i in seq_len(nrow(compromis))) {
+    cat(sprintf("  %s - %s : r = %.2f\n",
+                compromis$Famille1[i], compromis$Famille2[i], compromis$Correlation[i]))
+  }
+} else {
+  cat("  Aucun compromis significatif détecté\n")
+}
+
+cat("\nINTERPRÉTATION :\n")
+cat("- Synergies : améliorer une famille améliore aussi l'autre\n")
+cat("- Compromis : améliorer une famille peut dégrader l'autre\n")
+cat("- Ces relations guident les priorités de gestion forestière\n")
 ```
 
 
