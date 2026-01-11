@@ -494,7 +494,7 @@ library(ggplot2)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
+```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup", fig.width=6, fig.height=6}
 # === CARTE DES HOTSPOTS ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -511,7 +511,7 @@ carte_hotspots <- ggplot() +
   scale_fill_viridis_c(name = "Indice\nnemeton", limits = c(0, 1)) +
   # Contour des hotspots en rouge
   geom_sf(data = parcelles[parcelles$is_hotspot, ],
-          fill = NA, color = "red", linewidth = 1.5) +
+          fill = NA, color = "red", linewidth = 1.0) +
   theme_minimal() +
   labs(
     title = "Carte des Hotspots nemeton",
@@ -525,13 +525,13 @@ print(carte_hotspots)
 
 ---
 
-## Section 5 : Trade-offs et Front de Pareto
+## Section 5 : Analyse des Compromis et Front de Pareto
 
 ### Qu'est-ce qu'un front de Pareto ?
 
 Le **front de Pareto** identifie les parcelles optimales où on ne peut améliorer une dimension sans dégrader une autre.
 
-### Exercice 5.1 : Visualiser les trade-offs
+### Exercice 5.1 : Visualiser les compromis
 
 ```{r ex-5-1-setup, include=FALSE}
 library(sf)
@@ -540,7 +540,7 @@ cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-5-1-setup"}
-# === GRAPHIQUE TRADE-OFF ===
+# === GRAPHIQUE DES COMPROMIS ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
@@ -548,21 +548,21 @@ parcelles <- st_read(parcelles_path, quiet = TRUE)
 # Extraire les données pour le scatter plot
 data_plot <- st_drop_geometry(parcelles)
 
-# Trade-off Production vs Biodiversité
-tradeoff_plot <- ggplot(data_plot, aes(x = family_P, y = family_B)) +
+# Compromis Production vs Biodiversité
+compromis_plot <- ggplot(data_plot, aes(x = family_P, y = family_B)) +
   geom_point(aes(color = I_nemeton, size = surface_ha), alpha = 0.7) +
   scale_color_viridis_c(name = "Indice\nnemeton") +
   scale_size_continuous(name = "Surface (ha)", range = c(2, 8)) +
   geom_smooth(method = "lm", se = TRUE, color = "red", linetype = "dashed") +
   theme_minimal() +
   labs(
-    title = "Trade-off Production vs Biodiversité",
+    title = "Compromis Production vs Biodiversité",
     x = "Score Production (P)",
     y = "Score Biodiversité (B)",
     subtitle = "Corrélation négative = compromis"
   )
 
-print(tradeoff_plot)
+print(compromis_plot)
 
 # Calculer la corrélation
 cor_PB <- cor(data_plot$family_P, data_plot$family_B, use = "complete.obs")
@@ -882,9 +882,9 @@ quiz(
   question("Que signifie une corrélation négative entre Production et Biodiversité ?",
     answer("Ces deux familles n'ont aucun lien"),
     answer("Améliorer la production améliore la biodiversité"),
-    answer("Il existe un compromis (trade-off) entre les deux", correct = TRUE),
+    answer("Il existe un compromis entre les deux", correct = TRUE),
     answer("Les données sont incorrectes"),
-    correct = "Une corrélation négative indique un trade-off : optimiser une dimension peut dégrader l'autre.",
+    correct = "Une corrélation négative indique un compromis : optimiser une dimension peut dégrader l'autre.",
     incorrect = "Une corrélation négative révèle un compromis entre les deux dimensions.",
     allow_retry = TRUE,
     random_answer_order = TRUE
