@@ -13,13 +13,11 @@ description: >
 
 ```{r setup, include=FALSE}
 library(learnr)
-library(gradethis)
 library(sf)
 library(terra)
 library(ggplot2)
 
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-gradethis::gradethis_setup()
 
 # Répertoire cache
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
@@ -46,7 +44,7 @@ Ce tutoriel utilise les données produites par le Tutorial 05 :
 
 ```
 ~/nemeton_tutorial_data/
-└── indicateurs_complets.gpkg
+└── parcelles.gpkg
     ├── Indicateurs normalisés (*_norm)
     ├── Moyennes par famille (moy_C, moy_B, ...)
     └── Indice composite (I_nemeton)
@@ -117,10 +115,10 @@ parcelles_sim <- st_sf(
 # === CARTES THÉMATIQUES PAR FAMILLE ===
 
 # Charger les données réelles ou utiliser simulation
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
 
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
   cat("Données réelles chargées:", nrow(parcelles), "parcelles\n")
 } else {
   parcelles <- parcelles_sim
@@ -193,9 +191,9 @@ parcelles_sim <- st_sf(
 ```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-1-2-setup"}
 # === PANNEAU MULTI-CARTES ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -305,9 +303,9 @@ parcelles_sim <- st_sf(
 ```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-2-1-setup"}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -398,9 +396,9 @@ parcelles_sim <- st_sf(
 ```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-2-2-setup"}
 # === COMPARAISON MULTI-PARCELLES ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -530,9 +528,9 @@ for (col in grep("^moy_", names(parcelles_sim), value = TRUE)) {
 ```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
 # === MATRICE DE CORRÉLATION ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -617,9 +615,9 @@ for (col in grep("^moy_", names(parcelles_sim), value = TRUE)) {
 ```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-3-2-setup"}
 # === VISUALISATION CORRPLOT ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -703,9 +701,9 @@ parcelles_sim <- st_sf(
 ```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
 # === IDENTIFICATION DES HOTSPOTS ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -768,9 +766,9 @@ parcelles_sim <- st_sf(
 ```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
 # === CARTE DES HOTSPOTS ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -850,9 +848,9 @@ parcelles_sim$moy_B <- pmax(0, pmin(1, parcelles_sim$moy_B))
 ```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-5-1-setup"}
 # === GRAPHIQUE TRADE-OFF ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -921,9 +919,9 @@ parcelles_sim <- st_sf(
 ```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-5-2-setup"}
 # === FRONT DE PARETO ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -1023,9 +1021,9 @@ parcelles_sim <- st_sf(
 ```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-6-1-setup"}
 # === CLUSTERING HIÉRARCHIQUE ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -1109,9 +1107,9 @@ parcelles_sim$cluster <- as.factor(cutree(hc, k = 4))
 ```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-6-2-setup"}
 # === CARTE DES CLUSTERS ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
   # Refaire le clustering si nécessaire
   cols_familles <- grep("^moy_", names(parcelles), value = TRUE)
   data_cluster <- st_drop_geometry(parcelles)[, cols_familles]
@@ -1187,9 +1185,9 @@ parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
 ```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-7-1-setup"}
 # === EXPORT GEOPACKAGE FINAL ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 } else {
   parcelles <- parcelles_sim
 }
@@ -1248,9 +1246,9 @@ parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
 ```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-7-2-setup"}
 # === EXPORT CSV ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
   data_export <- st_drop_geometry(parcelles)
 } else {
   data_export <- parcelles_sim
@@ -1322,9 +1320,9 @@ parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
 ```{r ex-8-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-8-1-setup"}
 # === CARTE LEAFLET INTERACTIVE ===
 
-indicateurs_path <- file.path(cache_dir, "indicateurs_complets.gpkg")
-if (file.exists(indicateurs_path)) {
-  parcelles <- st_read(indicateurs_path, quiet = TRUE)
+parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
   # Reprojeter en WGS84 pour Leaflet
   parcelles <- st_transform(parcelles, 4326)
 } else {
