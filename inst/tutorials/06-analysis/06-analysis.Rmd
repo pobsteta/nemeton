@@ -154,6 +154,7 @@ Le diagramme radar permet de visualiser le profil multi-critères d'une parcelle
 
 ```{r ex-2-1-setup, include=FALSE}
 library(sf)
+library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
@@ -183,16 +184,16 @@ noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
 # Extraire les données sans géométrie
 parcelle_df <- as.data.frame(st_drop_geometry(parcelle_data))
 
-scores <- numeric(12)
-names(scores) <- familles
-for (i in seq_along(familles)) {
-  col_name <- paste0("family_", familles[i])
+# Extraire les scores avec purrr::map_dbl (garantit un vecteur numérique)
+scores <- map_dbl(familles, ~{
+  col_name <- paste0("family_", .x)
   if (col_name %in% names(parcelle_df)) {
-    scores[i] <- as.numeric(parcelle_df[1, col_name])
+    as.numeric(parcelle_df[1, col_name])
   } else {
-    scores[i] <- NA_real_
+    NA_real_
   }
-}
+})
+names(scores) <- familles
 
 # Afficher les scores
 cat("Scores extraits:\n")
@@ -229,6 +230,7 @@ if (!all(is.na(scores)) && requireNamespace("fmsb", quietly = TRUE)) {
 
 ```{r ex-2-2-setup, include=FALSE}
 library(sf)
+library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
@@ -238,22 +240,22 @@ cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-# Sélectionner 3 parcelles à comparer
-parcelles_ids <- c(1, 10, 25)
+# Sélectionner 3 parcelles à comparer (premières disponibles)
+parcelles_ids <- head(parcelles$id_parcelle, 3)
 
 # Extraire les scores pour chaque parcelle
 familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 
 extract_scores <- function(data, id) {
-  row <- data[data$id_parcelle == id, ]
-  sapply(familles, function(f) {
-    col_name <- paste0("family_", f)
-    if (col_name %in% names(row)) as.numeric(st_drop_geometry(row)[[col_name]])
-    else NA
+  row_df <- as.data.frame(st_drop_geometry(data[data$id_parcelle == id, ]))
+  map_dbl(familles, ~{
+    col_name <- paste0("family_", .x)
+    if (col_name %in% names(row_df)) as.numeric(row_df[1, col_name])
+    else NA_real_
   })
 }
 
-scores_list <- lapply(parcelles_ids, function(id) extract_scores(parcelles, id))
+scores_list <- map(parcelles_ids, ~extract_scores(parcelles, .x))
 
 # Radar multi-parcelles avec fmsb
 if (requireNamespace("fmsb", quietly = TRUE)) {
