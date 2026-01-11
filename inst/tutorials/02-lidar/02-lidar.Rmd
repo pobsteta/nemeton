@@ -609,9 +609,13 @@ if (file.exists(parcelles_path)) {
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_lidar.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+  # Sauvegarder aussi dans parcelles.gpkg pour les exercices suivants (C1, P1, etc.)
   st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
   cat("\n=== Métriques LiDAR exportées ===\n")
   cat("Fichier:", output_path, "\n")
+  cat("Fichier principal:", parcelles_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
   # Résumé des métriques interpolées
@@ -710,7 +714,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_stock_carbone_c1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("=== Métriques C1 exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -767,7 +770,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_volume_bois_p1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("=== Métriques P1 exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -832,7 +834,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_productivite_p2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("=== Métriques P2 exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -895,7 +896,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_qualite_structurale_p3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("=== Métriques P3 exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1143,7 +1143,6 @@ cat("A1 max:", round(max(parcelles$A1, na.rm = TRUE), 1), "%\n")
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_couverture_forestiere_a1.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques A1 exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n")
@@ -1227,7 +1226,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_bois_energie_e1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("=== Métriques E1 exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1316,7 +1314,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_evitement_carbone_e2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("=== Métriques E2 exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1677,7 +1674,6 @@ print(table(parcelles$C2_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_vitalite_c2.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques C2 Vitalité exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1876,7 +1872,6 @@ print(table(parcelles$A2_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_qualite_air_a2.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques A2 Qualité air exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -2114,12 +2109,26 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 
 ```{r ex-10-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-10-5-setup"}
 # === SYNTHÈSE FINALE ===
-# Consolidation de tous les indicateurs LiDAR
+# Consolidation de tous les indicateurs LiDAR dans parcelles.gpkg
 
-output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-cat("=== SYNTHÈSE INDICATEURS LIDAR ===\n\n")
+cat("=== CONSOLIDATION INDICATEURS LIDAR ===\n\n")
+
+# Fusionner les colonnes des fichiers metriques_*.gpkg
+metriques_files <- list.files(data_dir, pattern = "^metriques_.*\\.gpkg$", full.names = TRUE)
+for (f in metriques_files) {
+  tryCatch({
+    metrics <- st_read(f, quiet = TRUE)
+    # Colonnes à ajouter (exclure géométrie et colonnes déjà présentes)
+    new_cols <- setdiff(names(st_drop_geometry(metrics)), names(st_drop_geometry(parcelles)))
+    if (length(new_cols) > 0) {
+      # Joindre par correspondance spatiale (même géométrie = même parcelle)
+      parcelles <- cbind(parcelles, st_drop_geometry(metrics)[new_cols])
+    }
+  }, error = function(e) NULL)
+}
 
 # Liste des indicateurs par famille (9 indicateurs)
 familles <- list(
@@ -2149,13 +2158,16 @@ n_calcules <- sum(indicateurs_calcules %in% names(parcelles))
 cat(strrep("=", 40), "\n")
 cat("Parcelles:", nrow(parcelles), "\n")
 cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
-cat("Fichier:", basename(output_path), "\n")
+cat("Colonnes totales:", ncol(parcelles), "\n")
 cat(strrep("=", 40), "\n")
 
-# Sauvegarder parcelles.gpkg avec tous les indicateurs
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+# Sauvegarder indicateurs_lidar.gpkg (fichier spécifique)
+output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs consolidés
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ Indicateurs LiDAR consolidés\n")
+cat("\n✓ Indicateurs LiDAR consolidés dans parcelles.gpkg\n")
 ```
 
 ### Fichiers produits

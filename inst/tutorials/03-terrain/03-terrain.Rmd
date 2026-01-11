@@ -226,7 +226,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Sauvegarder les parcelles avec F1
   output_path <- file.path(data_dir, "metriques_erosion_f1.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques F1 érosion exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -336,7 +335,6 @@ if (file.exists(mnt_path)) {
     # Sauvegarder les parcelles avec W3
     output_path <- file.path(data_dir, "metriques_twi_w3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques W3 TWI exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -443,7 +441,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_fertilite_sol_f2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques F2 fertilité exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -520,7 +517,6 @@ if (file.exists(parcelles_path)) {
       # Sauvegarder
       output_path <- file.path(data_dir, "metriques_densite_hydro_w1.gpkg")
       st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-      st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
       cat("\n=== Métriques W1 Densité réseau hydro exportées ===\n")
       cat("Fichier:", output_path, "\n")
       cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -589,7 +585,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_couverture_zone_humide_w2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques W2 Couverture zones humides exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -676,7 +671,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_exposition_feu_r1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques R1 Exposition au feu exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -886,7 +880,6 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_exposition_tempete_r2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques R2 Exposition au tempête exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1051,7 +1044,6 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_risque_secheresse_r3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques R3 Risque sécheresse exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1400,7 +1392,6 @@ print(table(parcelles$R4_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques R4 Pression du gibier exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1490,7 +1481,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_access_route_s1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques S1 Accessibilité route exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1591,7 +1581,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_distance_batiment_s2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques S2 Distance au batiment exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1719,7 +1708,6 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_densite_sentiers_s3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques S3 Densité sentiers exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1997,12 +1985,24 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 
 ```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-5-setup"}
 # === SYNTHÈSE FINALE ===
-# Consolidation de tous les indicateurs terrain
+# Consolidation de tous les indicateurs terrain dans parcelles.gpkg
 
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-cat("=== SYNTHÈSE INDICATEURS TERRAIN ===\n\n")
+cat("=== CONSOLIDATION INDICATEURS TERRAIN ===\n\n")
+
+# Fusionner les colonnes des fichiers metriques_*.gpkg
+metriques_files <- list.files(data_dir, pattern = "^metriques_.*\\.gpkg$", full.names = TRUE)
+for (f in metriques_files) {
+  tryCatch({
+    metrics <- st_read(f, quiet = TRUE)
+    new_cols <- setdiff(names(st_drop_geometry(metrics)), names(st_drop_geometry(parcelles)))
+    if (length(new_cols) > 0) {
+      parcelles <- cbind(parcelles, st_drop_geometry(metrics)[new_cols])
+    }
+  }, error = function(e) NULL)
+}
 
 # Liste des indicateurs par famille (12 indicateurs)
 familles <- list(
@@ -2032,13 +2032,16 @@ n_calcules <- sum(indicateurs_calcules %in% names(parcelles))
 cat(strrep("=", 40), "\n")
 cat("Parcelles:", nrow(parcelles), "\n")
 cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
-cat("Fichier:", basename(output_path), "\n")
+cat("Colonnes totales:", ncol(parcelles), "\n")
 cat(strrep("=", 40), "\n")
 
-# Sauvegarder parcelles.gpkg avec tous les indicateurs
-parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+# Sauvegarder indicateurs_terrain.gpkg (fichier spécifique)
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs consolidés
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ Indicateurs terrain consolidés\n")
+cat("\n✓ Indicateurs terrain consolidés dans parcelles.gpkg\n")
 ```
 
 ### Fichiers produits

@@ -290,7 +290,6 @@ if (file.exists(parcelles_path) && requireNamespace("purrr", quietly = TRUE)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_zone_protection_b1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
     cat("\n=== Métriques B1 Zone de protection exportées ===\n")
     cat("Fichier:", output_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -323,10 +322,10 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 ```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-3-1-setup"}
 # === INDICATEUR B2 (STRUCTURE VERTICALE) ===
 
-metriques_path <- file.path(data_dir, "metriques_lidar.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 
-if (file.exists(metriques_path)) {
-  parcelles <- st_read(metriques_path, quiet = TRUE)
+if (file.exists(parcelles_path)) {
+  parcelles <- st_read(parcelles_path, quiet = TRUE)
 
   # B2 basé sur l'écart-type et l'entropie des hauteurs
   if ("zsd" %in% names(parcelles)) {
@@ -345,16 +344,14 @@ if (file.exists(metriques_path)) {
   cat("- B2 élevé = structure verticale diversifiée (plusieurs strates)\n")
   cat("- B2 faible = structure homogène (monoculture, jeune plantation)\n")
 
-  # Sauvegarder
-  parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+  # Sauvegarder dans le fichier spécifique uniquement
   output_path <- file.path(data_dir, "metriques_structure_verticale_b2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
   cat("\n=== Métriques B2 Structure verticale exportées ===\n")
   cat("Fichier:", output_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 } else {
-  cat("Métriques LiDAR non trouvées. Exécutez le Tutorial 02.\n")
+  cat("Fichier parcelles.gpkg non trouvé. Exécutez le Tutorial 01.\n")
 }
 ```
 
@@ -716,7 +713,6 @@ cat("B3 max:", round(max(parcelles$B3), 1), "\n")
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_connectivite_b3.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques B3 Connectivité exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1581,7 +1577,6 @@ print(table(parcelles$L1_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_lisiere_l1.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques L1 Lisière exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1728,7 +1723,6 @@ if (requireNamespace("landscapemetrics", quietly = TRUE)) {
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_fragmentation_l2.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques L2 Fragmentation exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -1896,7 +1890,6 @@ cat("- Trame Bleue:", round(mean(parcelles$L3_trame_bleue, na.rm = TRUE), 1), "\
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_tvb_l3.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques L3 TVB exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -2271,7 +2264,6 @@ print(table(parcelles$N3_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_naturalite_n1n2n3.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques N1, N2, N3 Naturalité exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -2445,7 +2437,6 @@ print(table(parcelles$T_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_temporel_t1t2.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
-st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n=== Métriques T1, T2 Temporel exportées ===\n")
 cat("Fichier:", output_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
@@ -2693,12 +2684,24 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 
 ```{r ex-7-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=80, exercise.setup="ex-7-5-setup"}
 # === SYNTHÈSE FINALE ===
-# Consolidation de tous les indicateurs écologiques
+# Consolidation de tous les indicateurs écologiques dans parcelles.gpkg
 
-output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
-parcelles <- st_read(output_path, quiet = TRUE)
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-cat("=== SYNTHÈSE INDICATEURS ÉCOLOGIQUES ===\n\n")
+cat("=== CONSOLIDATION INDICATEURS ÉCOLOGIQUES ===\n\n")
+
+# Fusionner les colonnes des fichiers metriques_*.gpkg
+metriques_files <- list.files(data_dir, pattern = "^metriques_.*\\.gpkg$", full.names = TRUE)
+for (f in metriques_files) {
+  tryCatch({
+    metrics <- st_read(f, quiet = TRUE)
+    new_cols <- setdiff(names(st_drop_geometry(metrics)), names(st_drop_geometry(parcelles)))
+    if (length(new_cols) > 0) {
+      parcelles <- cbind(parcelles, st_drop_geometry(metrics)[new_cols])
+    }
+  }, error = function(e) NULL)
+}
 
 # Liste des indicateurs par famille (11 indicateurs)
 familles <- list(
@@ -2728,11 +2731,15 @@ n_calcules <- sum(indicateurs_calcules %in% names(parcelles))
 cat(strrep("=", 40), "\n")
 cat("Parcelles:", nrow(parcelles), "\n")
 cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
-cat("Fichier:", basename(output_path), "\n")
+cat("Colonnes totales:", ncol(parcelles), "\n")
 cat(strrep("=", 40), "\n")
 
-# Sauvegarder le fichier final
+# Sauvegarder indicateurs_ecologiques.gpkg (fichier spécifique)
+output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs consolidés
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
 cat("\n✓ Indicateurs écologiques consolidés\n")
 ```
 
