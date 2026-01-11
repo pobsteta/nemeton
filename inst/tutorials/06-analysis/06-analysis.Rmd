@@ -64,12 +64,11 @@ library(ggplot2)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-1-1-setup"}
+```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-1-1-setup", fig.width=8, fig.height=6}
 # === CARTES THÉMATIQUES PAR FAMILLE ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
-cat("Parcelles chargées:", nrow(parcelles), "\n")
 
 # Carte pour la famille Carbone (family_C)
 carte_carbone <- ggplot(parcelles) +
@@ -86,6 +85,24 @@ carte_carbone <- ggplot(parcelles) +
   )
 
 print(carte_carbone)
+
+# === ANALYSE DE LA DISTRIBUTION ===
+cat("\n========== ANALYSE FAMILLE CARBONE ==========\n\n")
+
+cat(sprintf("Parcelles analysées : %d\n\n", nrow(parcelles)))
+
+# Statistiques descriptives
+cat("STATISTIQUES :\n")
+cat(sprintf("  Moyenne : %.2f\n", mean(parcelles$family_C, na.rm = TRUE)))
+cat(sprintf("  Médiane : %.2f\n", median(parcelles$family_C, na.rm = TRUE)))
+cat(sprintf("  Écart-type : %.2f\n", sd(parcelles$family_C, na.rm = TRUE)))
+cat(sprintf("  Min : %.2f | Max : %.2f\n", min(parcelles$family_C, na.rm = TRUE), max(parcelles$family_C, na.rm = TRUE)))
+
+# Classification
+cat("\nDISTRIBUTION PAR CLASSE :\n")
+parcelles$classe_C <- cut(parcelles$family_C, breaks = c(0, 0.25, 0.5, 0.75, 1),
+                          labels = c("Faible", "Moyen", "Bon", "Excellent"), include.lowest = TRUE)
+print(table(parcelles$classe_C))
 ```
 
 
@@ -101,7 +118,7 @@ library(patchwork)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-1-2-setup"}
+```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-1-2-setup", fig.width=10, fig.height=8}
 # === PANNEAU MULTI-CARTES ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -109,8 +126,8 @@ parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Définir les familles et leurs noms
 familles <- c("C" = "Carbone", "B" = "Biodiversité", "W" = "Eau", "A" = "Air",
-              "F" = "Sol", "L" = "Paysage", "T" = "Temporel", "R" = "Risques",
-              "S" = "Social", "P" = "Production", "E" = "Énergie", "N" = "Naturalité")
+              "F" = "Fertilité", "L" = "Paysage", "T" = "Trame", "R" = "Résilience",
+              "S" = "Santé", "P" = "Production", "E" = "Énergie", "N" = "Naturalité")
 
 # Fonction pour créer une mini-carte
 create_mini_map <- function(data, famille, titre) {
@@ -134,11 +151,30 @@ cartes <- lapply(names(familles), function(f) {
 if (requireNamespace("patchwork", quietly = TRUE)) {
   combined <- patchwork::wrap_plots(cartes, ncol = 4)
   print(combined)
-} else {
-  # Alternative sans patchwork
-  print(cartes[[1]])
-  cat("Installez patchwork pour voir les 12 cartes assemblées")
 }
+
+# === ANALYSE COMPARATIVE DES 12 FAMILLES ===
+cat("\n\n========== SYNTHÈSE DES 12 FAMILLES ==========\n\n")
+
+parcelles_df <- st_drop_geometry(parcelles)
+cols_family <- grep("^family_", names(parcelles_df), value = TRUE)
+
+# Calculer les moyennes par famille
+moyennes <- sapply(cols_family, function(col) mean(parcelles_df[[col]], na.rm = TRUE))
+names(moyennes) <- gsub("family_", "", names(moyennes))
+
+# Trier par score moyen
+moyennes_tri <- sort(moyennes, decreasing = TRUE)
+
+cat("CLASSEMENT DES FAMILLES (score moyen) :\n")
+for (i in seq_along(moyennes_tri)) {
+  nom_famille <- familles[names(moyennes_tri)[i]]
+  cat(sprintf("  %2d. %s (%s) : %.2f\n", i, names(moyennes_tri)[i], nom_famille, moyennes_tri[i]))
+}
+
+cat("\nINTERPRÉTATION :\n")
+cat(sprintf("  Meilleure famille : %s (%.2f)\n", familles[names(moyennes_tri)[1]], moyennes_tri[1]))
+cat(sprintf("  Famille à améliorer : %s (%.2f)\n", familles[names(moyennes_tri)[12]], moyennes_tri[12]))
 ```
 
 
@@ -158,7 +194,7 @@ library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-1-setup", fig.width=6, fig.height=6}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-1-setup", fig.width=8, fig.height=8}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -169,8 +205,8 @@ parcelle_idx <- 1
 
 # Extraire les scores par famille
 familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
-noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
-                   "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
+noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Fertilité", "Paysage",
+                   "Trame", "Résilience", "Santé", "Production", "Énergie", "Naturalité")
 
 parcelles_df <- as.data.frame(st_drop_geometry(parcelles))
 scores <- map_dbl(familles, ~as.numeric(parcelles_df[parcelle_idx, paste0("family_", .x)]))
@@ -191,6 +227,24 @@ fmsb::radarchart(radar_data,
   caxislabels = seq(0, 1, 0.25), vlcex = 0.7,
   title = paste("Profil Parcelle", parcelle_idx)
 )
+
+# === ANALYSE DU PROFIL ===
+cat("\n\n========== ANALYSE DU PROFIL ==========\n\n")
+
+cat(sprintf("Score moyen : %.2f\n", mean(scores, na.rm = TRUE)))
+cat(sprintf("Indice nemeton (I) : %.2f\n\n", parcelles_df[parcelle_idx, "I_nemeton"]))
+
+# Points forts et faibles
+scores_tri <- sort(scores, decreasing = TRUE)
+cat("POINTS FORTS (Top 3) :\n")
+for (i in 1:3) {
+  cat(sprintf("  %s (%s) : %.2f\n", names(scores_tri)[i], noms_familles[match(names(scores_tri)[i], familles)], scores_tri[i]))
+}
+
+cat("\nPOINTS À AMÉLIORER (Bottom 3) :\n")
+for (i in 10:12) {
+  cat(sprintf("  %s (%s) : %.2f\n", names(scores_tri)[i], noms_familles[match(names(scores_tri)[i], familles)], scores_tri[i]))
+}
 ```
 
 
@@ -257,6 +311,42 @@ if (requireNamespace("fmsb", quietly = TRUE)) {
     bty = "n"
   )
 }
+
+# === ANALYSE COMPARATIVE ===
+cat("\n\n========== ANALYSE COMPARATIVE DES PARCELLES ==========\n\n")
+
+noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Fertilité", "Paysage",
+                   "Trame", "Résilience", "Santé", "Production", "Énergie", "Naturalité")
+
+# Calculer les scores moyens de chaque parcelle
+scores_moyens <- sapply(scores_list, mean, na.rm = TRUE)
+cat("SCORES MOYENS PAR PARCELLE :\n")
+for (i in seq_along(parcelles_idx)) {
+  cat(sprintf("  Parcelle %d : %.2f\n", parcelles_idx[i], scores_moyens[i]))
+}
+
+# Identifier la meilleure parcelle globale
+best_idx <- which.max(scores_moyens)
+cat(sprintf("\nMeilleure parcelle globale : Parcelle %d (%.2f)\n", parcelles_idx[best_idx], scores_moyens[best_idx]))
+
+# Analyser les points forts de chaque parcelle
+cat("\nPOINTS FORTS PAR PARCELLE (famille avec le meilleur score) :\n")
+for (i in seq_along(parcelles_idx)) {
+  best_fam_idx <- which.max(scores_list[[i]])
+  cat(sprintf("  Parcelle %d : %s (%s) = %.2f\n",
+              parcelles_idx[i], familles[best_fam_idx], noms_familles[best_fam_idx], scores_list[[i]][best_fam_idx]))
+}
+
+# Calculer les écarts entre parcelles
+cat("\nÉCART MAXIMAL ENTRE PARCELLES PAR FAMILLE :\n")
+scores_matrix <- do.call(rbind, scores_list)
+ecarts <- apply(scores_matrix, 2, function(x) max(x) - min(x))
+names(ecarts) <- familles
+ecarts_tri <- sort(ecarts, decreasing = TRUE)
+for (i in 1:min(3, length(ecarts_tri))) {
+  cat(sprintf("  %s (%s) : écart de %.2f\n",
+              names(ecarts_tri)[i], noms_familles[match(names(ecarts_tri)[i], familles)], ecarts_tri[i]))
+}
 ```
 
 
@@ -298,16 +388,59 @@ cor_matrix <- cor(data_familles, use = "pairwise.complete.obs")
 cat("=== Matrice de Corrélation entre Familles ===\n\n")
 print(round(cor_matrix, 2))
 
-# Identifier les paires avec forte corrélation
-cat("\n=== Synergies (r > 0.5) ===\n")
-for (i in 1:(ncol(cor_matrix) - 1)) {
-  for (j in (i + 1):ncol(cor_matrix)) {
-    if (cor_matrix[i, j] > 0.5) {
-      cat(sprintf("%s - %s : %.2f\n",
-                  colnames(cor_matrix)[i], colnames(cor_matrix)[j], cor_matrix[i, j]))
-    }
+# === ANALYSE DE LA MATRICE DE CORRÉLATION ===
+cat("\n\n========== ANALYSE DES CORRÉLATIONS ==========\n\n")
+
+# Dictionnaire des noms de familles
+noms_familles <- c(
+  C = "Carbone", B = "Biodiversité", W = "Eau", A = "Air",
+  F = "Fertilité", L = "Paysage", T = "Trame", R = "Résilience",
+  S = "Santé", P = "Production", E = "Énergie", N = "Naturalité"
+)
+
+# Extraire les paires de corrélations
+cor_pairs <- which(upper.tri(cor_matrix), arr.ind = TRUE)
+cor_values <- data.frame(
+  Famille1 = rownames(cor_matrix)[cor_pairs[, 1]],
+  Famille2 = colnames(cor_matrix)[cor_pairs[, 2]],
+  Correlation = cor_matrix[cor_pairs]
+)
+cor_values <- cor_values[order(-cor_values$Correlation), ]
+
+# Synergies (corrélations positives > 0.5)
+cat("SYNERGIES (r > 0.5) :\n")
+synergies <- cor_values[cor_values$Correlation > 0.5, ]
+if (nrow(synergies) > 0) {
+  for (i in seq_len(nrow(synergies))) {
+    f1 <- synergies$Famille1[i]
+    f2 <- synergies$Famille2[i]
+    cat(sprintf("  %s (%s) - %s (%s) : r = %.2f\n",
+                f1, noms_familles[f1], f2, noms_familles[f2], synergies$Correlation[i]))
   }
+} else {
+  cat("  Aucune synergie forte détectée\n")
 }
+
+# Compromis (corrélations négatives < -0.3)
+cat("\nCOMPROMIS (r < -0.3) :\n")
+compromis <- cor_values[cor_values$Correlation < -0.3, ]
+if (nrow(compromis) > 0) {
+  compromis <- compromis[order(compromis$Correlation), ]
+  for (i in seq_len(nrow(compromis))) {
+    f1 <- compromis$Famille1[i]
+    f2 <- compromis$Famille2[i]
+    cat(sprintf("  %s (%s) - %s (%s) : r = %.2f\n",
+                f1, noms_familles[f1], f2, noms_familles[f2], compromis$Correlation[i]))
+  }
+} else {
+  cat("  Aucun compromis significatif détecté\n")
+}
+
+# Statistiques globales
+cat("\nSTATISTIQUES :\n")
+cat(sprintf("  Corrélation moyenne : %.2f\n", mean(cor_values$Correlation)))
+cat(sprintf("  Écart-type : %.2f\n", sd(cor_values$Correlation)))
+cat(sprintf("  Min : %.2f | Max : %.2f\n", min(cor_values$Correlation), max(cor_values$Correlation)))
 ```
 
 
@@ -483,6 +616,47 @@ hotspots <- parcelles[parcelles$is_hotspot, ]
 hotspots_sorted <- hotspots[order(-hotspots$I_nemeton), ]
 print(st_drop_geometry(hotspots_sorted)[1:min(5, nrow(hotspots_sorted)),
                                          c("id", "surface_ha", "I_nemeton")])
+
+# === ANALYSE DES HOTSPOTS ===
+cat("\n\n========== ANALYSE DES HOTSPOTS ==========\n\n")
+
+# Dictionnaire des noms de familles
+noms_familles <- c(
+  C = "Carbone", B = "Biodiversité", W = "Eau", A = "Air",
+  F = "Fertilité", L = "Paysage", T = "Trame", R = "Résilience",
+  S = "Santé", P = "Production", E = "Énergie", N = "Naturalité"
+)
+familles <- names(noms_familles)
+
+# Statistiques comparatives hotspots vs non-hotspots
+n_hotspots <- sum(parcelles$is_hotspot)
+n_total <- nrow(parcelles)
+surface_hotspots <- sum(parcelles$surface_ha[parcelles$is_hotspot], na.rm = TRUE)
+surface_totale <- sum(parcelles$surface_ha, na.rm = TRUE)
+
+cat("COUVERTURE :\n")
+cat(sprintf("  Hotspots : %d parcelles (%.1f%% du total)\n", n_hotspots, 100 * n_hotspots / n_total))
+cat(sprintf("  Surface : %.1f ha (%.1f%% de la surface totale)\n", surface_hotspots, 100 * surface_hotspots / surface_totale))
+
+# Profil moyen des hotspots vs reste
+cat("\nPROFIL MOYEN PAR FAMILLE :\n")
+cat(sprintf("  %-12s | Hotspots | Autres | Écart\n", "Famille"))
+cat("  -------------|----------|--------|-------\n")
+
+parcelles_df <- st_drop_geometry(parcelles)
+for (fam in familles) {
+  col <- paste0("family_", fam)
+  if (col %in% names(parcelles_df)) {
+    mean_hs <- mean(parcelles_df[[col]][parcelles_df$is_hotspot], na.rm = TRUE)
+    mean_other <- mean(parcelles_df[[col]][!parcelles_df$is_hotspot], na.rm = TRUE)
+    ecart <- mean_hs - mean_other
+    cat(sprintf("  %-12s |   %.2f   |  %.2f  | %+.2f\n", noms_familles[fam], mean_hs, mean_other, ecart))
+  }
+}
+
+cat("\nINTERPRÉTATION :\n")
+cat("  Les hotspots représentent les zones à haute valeur écosystémique.\n")
+cat("  Ils méritent une attention particulière pour la conservation.\n")
 ```
 
 
@@ -520,6 +694,37 @@ carte_hotspots <- ggplot() +
   )
 
 print(carte_hotspots)
+
+# === ANALYSE DE LA DISTRIBUTION SPATIALE ===
+cat("\n\n========== ANALYSE DE LA DISTRIBUTION SPATIALE ==========\n\n")
+
+# Nombre et surface des hotspots
+n_hotspots <- sum(parcelles$is_hotspot)
+n_total <- nrow(parcelles)
+surface_hotspots <- sum(parcelles$surface_ha[parcelles$is_hotspot], na.rm = TRUE)
+surface_totale <- sum(parcelles$surface_ha, na.rm = TRUE)
+
+cat("RÉSUMÉ :\n")
+cat(sprintf("  Seuil P90 : %.3f\n", seuil_hotspot))
+cat(sprintf("  Hotspots : %d / %d parcelles (%.1f%%)\n", n_hotspots, n_total, 100 * n_hotspots / n_total))
+cat(sprintf("  Surface hotspots : %.1f / %.1f ha (%.1f%%)\n", surface_hotspots, surface_totale, 100 * surface_hotspots / surface_totale))
+
+# Indice I_nemeton des hotspots
+hotspots <- parcelles[parcelles$is_hotspot, ]
+cat("\nSCORES DES HOTSPOTS :\n")
+cat(sprintf("  Indice min : %.3f\n", min(hotspots$I_nemeton)))
+cat(sprintf("  Indice max : %.3f\n", max(hotspots$I_nemeton)))
+cat(sprintf("  Indice moyen : %.3f\n", mean(hotspots$I_nemeton)))
+
+# Surface moyenne
+cat("\nSURFACE DES HOTSPOTS :\n")
+cat(sprintf("  Surface min : %.2f ha\n", min(hotspots$surface_ha, na.rm = TRUE)))
+cat(sprintf("  Surface max : %.2f ha\n", max(hotspots$surface_ha, na.rm = TRUE)))
+cat(sprintf("  Surface moyenne : %.2f ha\n", mean(hotspots$surface_ha, na.rm = TRUE)))
+
+cat("\nINTERPRÉTATION :\n")
+cat("  Les contours rouges délimitent les zones à plus haute valeur.\n")
+cat("  Ces parcelles sont prioritaires pour la conservation.\n")
 ```
 
 
@@ -748,6 +953,47 @@ for (cl in 1:k) {
 # Dendrogramme
 plot(hc, labels = FALSE, main = "Dendrogramme - Clustering Parcelles")
 rect.hclust(hc, k = k, border = 2:5)
+
+# === ANALYSE DES CLUSTERS ===
+cat("\n\n========== ANALYSE DES CLUSTERS ==========\n\n")
+
+# Dictionnaire des noms de familles
+noms_familles <- c(
+  C = "Carbone", B = "Biodiversité", W = "Eau", A = "Air",
+  F = "Fertilité", L = "Paysage", T = "Trame", R = "Résilience",
+  S = "Santé", P = "Production", E = "Énergie", N = "Naturalité"
+)
+
+parcelles_df <- st_drop_geometry(parcelles)
+
+cat("TAILLE DES CLUSTERS :\n")
+for (cl in 1:k) {
+  n_cl <- sum(parcelles_df$cluster == cl)
+  pct <- 100 * n_cl / nrow(parcelles_df)
+  cat(sprintf("  Cluster %d : %d parcelles (%.1f%%)\n", cl, n_cl, pct))
+}
+
+cat("\nPROFIL MOYEN PAR CLUSTER :\n")
+for (cl in 1:k) {
+  parcelles_cl <- parcelles_df[parcelles_df$cluster == cl, ]
+
+  # Calculer le score moyen par famille
+  scores_cl <- sapply(cols_familles, function(col) mean(parcelles_cl[[col]], na.rm = TRUE))
+  names(scores_cl) <- gsub("family_", "", names(scores_cl))
+
+  # Identifier les points forts et faibles
+  best <- names(which.max(scores_cl))
+  worst <- names(which.min(scores_cl))
+
+  cat(sprintf("\n  Cluster %d :\n", cl))
+  cat(sprintf("    Score nemeton moyen : %.2f\n", mean(parcelles_cl$I_nemeton, na.rm = TRUE)))
+  cat(sprintf("    Point fort : %s (%s) = %.2f\n", best, noms_familles[best], scores_cl[best]))
+  cat(sprintf("    Point faible : %s (%s) = %.2f\n", worst, noms_familles[worst], scores_cl[worst]))
+}
+
+cat("\nINTERPRÉTATION :\n")
+cat("  Chaque cluster regroupe des parcelles au profil similaire.\n")
+cat("  Cela permet d'identifier des typologies de gestion forestière.\n")
 ```
 
 
@@ -783,6 +1029,53 @@ carte_clusters <- ggplot(parcelles) +
   )
 
 print(carte_clusters)
+
+# === ANALYSE SPATIALE DES CLUSTERS ===
+cat("\n\n========== ANALYSE SPATIALE DES CLUSTERS ==========\n\n")
+
+# Dictionnaire des noms de familles
+noms_familles <- c(
+  C = "Carbone", B = "Biodiversité", W = "Eau", A = "Air",
+  F = "Fertilité", L = "Paysage", T = "Trame", R = "Résilience",
+  S = "Santé", P = "Production", E = "Énergie", N = "Naturalité"
+)
+
+k <- 4
+parcelles_df <- st_drop_geometry(parcelles)
+cols_familles <- grep("^family_", names(parcelles_df), value = TRUE)
+
+cat("SYNTHÈSE PAR CLUSTER :\n\n")
+cat(sprintf("  %-10s | %-6s | %-10s | %-10s | %-15s\n", "Cluster", "N", "Surface(ha)", "I_nemeton", "Point fort"))
+cat("  -----------|--------|------------|------------|----------------\n")
+
+for (cl in 1:k) {
+  parcelles_cl <- parcelles[parcelles$cluster == cl, ]
+  n_cl <- nrow(parcelles_cl)
+  surface_cl <- sum(parcelles_cl$surface_ha, na.rm = TRUE)
+  mean_I <- mean(parcelles_cl$I_nemeton, na.rm = TRUE)
+
+  # Point fort
+  scores_cl <- sapply(cols_familles, function(col) mean(st_drop_geometry(parcelles_cl)[[col]], na.rm = TRUE))
+  names(scores_cl) <- gsub("family_", "", names(scores_cl))
+  best <- names(which.max(scores_cl))
+
+  cat(sprintf("  Cluster %-2d |  %4d  |   %7.1f  |    %.2f    | %s (%s)\n",
+              cl, n_cl, surface_cl, mean_I, best, noms_familles[best]))
+}
+
+# Comparaison des indices nemeton par cluster
+cat("\nCLASSEMENT DES CLUSTERS (par I_nemeton moyen) :\n")
+cluster_means <- sapply(1:k, function(cl) mean(parcelles$I_nemeton[parcelles$cluster == cl], na.rm = TRUE))
+cluster_order <- order(-cluster_means)
+for (i in seq_along(cluster_order)) {
+  cl <- cluster_order[i]
+  cat(sprintf("  %d. Cluster %d : %.3f\n", i, cl, cluster_means[cl]))
+}
+
+cat("\nINTERPRÉTATION :\n")
+cat("  La distribution spatiale révèle des zones homogènes.\n")
+cat("  Chaque cluster peut correspondre à un type de gestion distinct.\n")
+cat("  Cette information guide les recommandations par secteur.\n")
 ```
 
 
