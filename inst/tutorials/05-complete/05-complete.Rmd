@@ -440,7 +440,7 @@ Pour ces indicateurs, on applique : `score_final = 1 - score_normalisé`
 
 ### Exercice : Inverser les Indicateurs Négatifs
 
-```{r invert-setup}
+```{r invert-setup, include=FALSE}
 library(sf)
 library(dplyr)
 
@@ -626,7 +626,7 @@ Où :
 
 ### Exercice : Calculer I_nemeton
 
-```{r composite-setup}
+```{r composite-setup, include=FALSE}
 library(sf)
 library(dplyr)
 
