@@ -150,29 +150,6 @@ if (requireNamespace("patchwork", quietly = TRUE)) {
 
 Le diagramme radar permet de visualiser le profil multi-critères d'une parcelle sur les 12 familles simultanément.
 
-```{r radar-concept, echo=FALSE}
-cat("
-       Carbone (C)
-            │
-   Énergie ─┼─ Biodiversité
-     (E)    │     (B)
-            │
-Naturalité ─┼─── Eau (W)
-    (N)     │
-            │
-Production ─┼─ Air (A)
-    (P)     │
-            │
-   Social ──┼─── Sol (F)
-    (S)     │
-            │
-  Risques ──┼─ Paysage (L)
-    (R)     │
-            │
-       Temporel (T)
-")
-```
-
 ### Exercice 2.1 : Créer un radar pour une parcelle
 
 ```{r ex-2-1-setup, include=FALSE}
@@ -195,7 +172,7 @@ familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 scores <- sapply(familles, function(f) {
   col_name <- paste0("family_", f)
   if (col_name %in% names(parcelle_data)) {
-    return(as.numeric(st_drop_geometry(parcelle_data)[, col_name]))
+    return(as.numeric(st_drop_geometry(parcelle_data)[[col_name]]))
   }
   return(NA)
 })
@@ -256,7 +233,7 @@ extract_scores <- function(data, id) {
   row <- data[data$id_parcelle == id, ]
   sapply(familles, function(f) {
     col_name <- paste0("family_", f)
-    if (col_name %in% names(row)) as.numeric(st_drop_geometry(row)[, col_name])
+    if (col_name %in% names(row)) as.numeric(st_drop_geometry(row)[[col_name]])
     else NA
   })
 }
