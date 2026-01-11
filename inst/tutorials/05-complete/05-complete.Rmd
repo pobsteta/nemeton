@@ -20,7 +20,7 @@ library(ggplot2)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 # Répertoire cache
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ## Introduction
@@ -136,7 +136,7 @@ library(sf)
 library(dplyr)
 
 # Répertoire de cache
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 # Liste des indicateurs attendus par famille (33 indicateurs au total)
 indicateurs_par_famille <- list(
@@ -163,7 +163,7 @@ indics_tuto04 <- c("B1", "B2", "B3", "L1", "L2", "L3", "T1", "T2", "N1", "N2", "
 
 ```{r load-parcelles, exercise=TRUE, exercise.setup="load-parcelles-setup"}
 # Chemin vers les parcelles
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 
 # Vérifier que le fichier existe
 if (!file.exists(parcelles_path)) {
@@ -222,7 +222,7 @@ if (total_presents < total_attendus) {
 
 ```{r verif-indicateurs, exercise=TRUE, exercise.setup="load-parcelles-setup"}
 # Charger les parcelles
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # Vérifier chaque famille
 cat("=== VÉRIFICATION DES INDICATEURS ===\n\n")
@@ -253,7 +253,7 @@ cat(sprintf("\n=== BILAN: %d/%d indicateurs présents ===\n",
 library(sf)
 library(dplyr)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
   C = c("C1", "C2"),
@@ -274,7 +274,7 @@ tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
 
 ```{r stats-indicateurs, exercise=TRUE, exercise.setup="stats-indicateurs-setup"}
 # Charger les données
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # Indicateurs présents
 indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
@@ -329,7 +329,7 @@ $$x_{norm} = \frac{x - x_{min}}{x_{max} - x_{min}}$$
 ```{r normalize-function-setup}
 library(sf)
 library(dplyr)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r normalize-function, exercise=TRUE, exercise.setup="normalize-function-setup"}
@@ -364,7 +364,7 @@ Appliquez la normalisation Min-Max à tous les indicateurs présents :
 library(sf)
 library(dplyr)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
   C = c("C1", "C2"),
@@ -392,7 +392,7 @@ normalize_minmax <- function(x, na.rm = TRUE) {
 
 ```{r normalize-all, exercise=TRUE, exercise.lines=35, exercise.setup="normalize-all-setup"}
 # Charger les données
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # Indicateurs présents
 indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
@@ -444,7 +444,7 @@ Pour ces indicateurs, on applique : `score_final = 1 - score_normalisé`
 library(sf)
 library(dplyr)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
   C = c("C1", "C2"),
@@ -475,7 +475,7 @@ indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
 
 ```{r invert-indicators, exercise=TRUE, exercise.lines=40, exercise.setup="invert-setup"}
 # Charger et normaliser
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # D'abord normaliser tous les indicateurs présents
 indics_presents <- tous_indicateurs[tous_indicateurs %in% names(parcelles)]
@@ -520,7 +520,7 @@ Chaque famille est représentée par la **moyenne** de ses indicateurs normalis�
 library(sf)
 library(dplyr)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
   C = c("C1", "C2"),
@@ -549,7 +549,7 @@ indicateurs_negatifs <- c("R1", "R2", "R3", "R4", "F1", "L1")
 
 ```{r family-means, exercise=TRUE, exercise.lines=50, exercise.setup="family-means-setup"}
 # Charger les données
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # Normaliser tous les indicateurs présents
 tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
@@ -630,7 +630,7 @@ Où :
 library(sf)
 library(dplyr)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
   C = c("C1", "C2"),
@@ -665,7 +665,7 @@ poids_familles <- c(
 
 ```{r composite-index, exercise=TRUE, exercise.lines=60, exercise.setup="composite-setup"}
 # Charger les données
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # === ÉTAPE 1: Normaliser tous les indicateurs ===
 tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
@@ -729,7 +729,7 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r classification, exercise=TRUE, exercise.setup="classification-setup"}
@@ -809,7 +809,7 @@ ggplot(resultats, aes(x = I_nemeton, fill = classe)) +
 library(sf)
 library(dplyr)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 indicateurs_par_famille <- list(
   C = c("C1", "C2"),
@@ -847,7 +847,7 @@ poids_familles <- c(
 # ============================================================
 
 # Charger les données
-parcelles <- st_read(file.path(cache_dir, "parcelles.gpkg"), quiet = TRUE)
+parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
 
 # 1. Normaliser tous les indicateurs
 tous_indicateurs <- unlist(indicateurs_par_famille, use.names = FALSE)
@@ -898,7 +898,7 @@ parcelles$classe_nemeton <- cut(
 )
 
 # 6. Exporter
-output_path <- file.path(cache_dir, "parcelles.gpkg")
+output_path <- file.path(data_dir, "parcelles.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
 
 cat("=== EXPORT TERMINÉ ===\n\n")

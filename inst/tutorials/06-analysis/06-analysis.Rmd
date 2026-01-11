@@ -20,7 +20,7 @@ library(ggplot2)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 # Répertoire cache
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ## Introduction
@@ -61,13 +61,13 @@ Créez des cartes thématiques montrant la distribution spatiale de chaque famil
 ```{r ex-1-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-1-1-setup", fig.width=8, fig.height=6}
 # === CARTES THÉMATIQUES PAR FAMILLE ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Carte pour la famille Carbone (family_C)
@@ -115,13 +115,13 @@ Créez un panneau de 12 cartes montrant toutes les familles :
 library(sf)
 library(ggplot2)
 library(patchwork)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-1-2-setup", fig.width=10, fig.height=8}
 # === PANNEAU MULTI-CARTES ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Définir les familles et leurs noms
@@ -191,13 +191,13 @@ Le diagramme radar permet de visualiser le profil multi-critères d'une parcelle
 ```{r ex-2-1-setup, include=FALSE}
 library(sf)
 library(purrr)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-1-setup", fig.width=8, fig.height=8}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Sélectionner une parcelle (première ligne)
@@ -253,13 +253,13 @@ for (i in 10:12) {
 ```{r ex-2-2-setup, include=FALSE}
 library(sf)
 library(purrr)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-2-setup", fig.width=6, fig.height=6}
 # === COMPARAISON MULTI-PARCELLES ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Sélectionner 3 parcelles à comparer (lignes 1, 2, 3)
@@ -365,13 +365,13 @@ L'analyse des corrélations entre familles révèle :
 
 ```{r ex-3-1-setup, include=FALSE}
 library(sf)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-3-1-setup"}
 # === MATRICE DE CORRÉLATION ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire les colonnes de scores par famille
@@ -449,7 +449,7 @@ cat(sprintf("  Min : %.2f | Max : %.2f\n", min(cor_values$Correlation), max(cor_
 ```{r ex-3-2-setup}
 library(sf)
 
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 
 set.seed(42)
 n <- 50
@@ -497,7 +497,7 @@ for (col in grep("^family_", names(parcelles_sim), value = TRUE)) {
 ```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-3-2-setup", fig.width=8, fig.height=8}
 # === VISUALISATION CORRPLOT ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire et préparer les données
@@ -588,13 +588,13 @@ Ces parcelles représentent des zones à **haute valeur** pour les services éco
 ```{r ex-4-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
 # === IDENTIFICATION DES HOTSPOTS ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Définir le seuil de hotspot (percentile 90)
@@ -665,13 +665,13 @@ cat("  Ils méritent une attention particulière pour la conservation.\n")
 ```{r ex-4-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup", fig.width=6, fig.height=6}
 # === CARTE DES HOTSPOTS ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Identifier les hotspots
@@ -741,13 +741,13 @@ Le **front de Pareto** identifie les parcelles optimales où on ne peut amélior
 ```{r ex-5-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-5-1-setup", fig.width=8, fig.height=6}
 # === GRAPHIQUE DES COMPROMIS ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire les données pour le scatter plot
@@ -810,13 +810,13 @@ for (i in 1:3) {
 ```{r ex-5-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=75, exercise.setup="ex-5-2-setup", fig.width=8, fig.height=6}
 # === FRONT DE PARETO ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 data_plot <- st_drop_geometry(parcelles)
@@ -917,13 +917,13 @@ Le clustering permet de regrouper les parcelles ayant des profils multi-critère
 ```{r ex-6-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-6-1-setup"}
 # === CLUSTERING HIÉRARCHIQUE ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire les colonnes de scores
@@ -1002,13 +1002,13 @@ cat("  Cela permet d'identifier des typologies de gestion forestière.\n")
 ```{r ex-6-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-6-2-setup"}
 # === CARTE DES CLUSTERS ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Clustering hiérarchique
@@ -1087,13 +1087,13 @@ cat("  Cette information guide les recommandations par secteur.\n")
 
 ```{r ex-7-1-setup, include=FALSE}
 library(sf)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-7-1-setup"}
 # === EXPORT GEOPACKAGE FINAL ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Ajouter les colonnes d'analyse si absentes
@@ -1118,11 +1118,11 @@ cat("Distribution par classe:\n")
 print(table(parcelles$classe))
 
 # Code d'export (commenté pour le tutoriel)
-# output_path <- file.path(cache_dir, "analyse_finale.gpkg")
+# output_path <- file.path(data_dir, "analyse_finale.gpkg")
 # st_write(parcelles, output_path, delete_dsn = TRUE)
 # cat("\nExport réussi:", output_path)
 
-cat("\n\nFichier serait exporté vers:", file.path(cache_dir, "analyse_finale.gpkg"))
+cat("\n\nFichier serait exporté vers:", file.path(data_dir, "analyse_finale.gpkg"))
 ```
 
 
@@ -1130,13 +1130,13 @@ cat("\n\nFichier serait exporté vers:", file.path(cache_dir, "analyse_finale.gp
 
 ```{r ex-7-2-setup, include=FALSE}
 library(sf)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-7-2-setup"}
 # === EXPORT CSV ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 data_export <- st_drop_geometry(parcelles)
 
@@ -1153,11 +1153,11 @@ cat("=== Aperçu des données CSV ===\n")
 print(head(data_csv, 10))
 
 # Code d'export
-# csv_path <- file.path(cache_dir, "indicateurs_nemeton.csv")
+# csv_path <- file.path(data_dir, "indicateurs_nemeton.csv")
 # write.csv(data_csv, csv_path, row.names = FALSE)
 # cat("\nExport CSV réussi:", csv_path)
 
-cat("\n\nFichier CSV serait exporté vers:", file.path(cache_dir, "indicateurs_nemeton.csv"))
+cat("\n\nFichier CSV serait exporté vers:", file.path(data_dir, "indicateurs_nemeton.csv"))
 ```
 
 
@@ -1169,13 +1169,13 @@ cat("\n\nFichier CSV serait exporté vers:", file.path(cache_dir, "indicateurs_n
 
 ```{r ex-8-1-setup, include=FALSE}
 library(sf)
-cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
 ```{r ex-8-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-8-1-setup", fig.width=8, fig.height=6}
 # === CARTE LEAFLET INTERACTIVE ===
 
-parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Reprojeter en WGS84 pour Leaflet
