@@ -14,7 +14,7 @@ test_that("Tutorial 06 has valid YAML header", {
 
   # Check YAML delimiters
   yaml_starts <- which(content == "---")
-  expect_gte(length(yaml_starts), 2, info = "Should have YAML header delimiters")
+  expect_gte(length(yaml_starts), 2)
 
   # Check for learnr output
   yaml_content <- paste(content[yaml_starts[1]:yaml_starts[2]], collapse = "\n")
@@ -56,7 +56,7 @@ test_that("Tutorial 06 contains exercise chunks", {
   exercises <- gregexpr(exercise_pattern, content)[[1]]
   n_exercises <- sum(exercises > 0)
 
-  expect_gte(n_exercises, 10, info = "Should have at least 10 exercise chunks")
+  expect_gte(n_exercises, 10)
 })
 
 test_that("Tutorial 06 contains quiz sections", {
