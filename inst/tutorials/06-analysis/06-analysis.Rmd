@@ -158,76 +158,39 @@ library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-1-setup"}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-cat("Fichier:", parcelles_path, "\n")
-cat("Existe:", file.exists(parcelles_path), "\n\n")
-
 parcelles <- st_read(parcelles_path, quiet = TRUE)
-cat("Parcelles chargées:", nrow(parcelles), "\n")
-cat("Toutes les colonnes:\n")
-print(names(parcelles))
 
-# Vérifier les colonnes family_* disponibles
-cols_family <- grep("^family_", names(parcelles), value = TRUE)
-cat("\nColonnes family_* disponibles:", length(cols_family), "\n")
-if (length(cols_family) > 0) {
-  cat("  ", paste(cols_family, collapse = ", "), "\n\n")
-}
-
-# Sélectionner une parcelle (utiliser la première ligne)
-parcelle_id <- 1  # Index de la première parcelle
-cat("Parcelle sélectionnée (ligne):", parcelle_id, "\n\n")
+# Sélectionner une parcelle (première ligne)
+parcelle_idx <- 1
 
 # Extraire les scores par famille
 familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
                    "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
 
-# Extraire les données sans géométrie
 parcelles_df <- as.data.frame(st_drop_geometry(parcelles))
-
-# Extraire les scores avec purrr::map_dbl
-scores <- map_dbl(familles, ~{
-  col_name <- paste0("family_", .x)
-  if (col_name %in% names(parcelles_df)) {
-    as.numeric(parcelles_df[parcelle_id, col_name])
-  } else {
-    NA_real_
-  }
-})
+scores <- map_dbl(familles, ~as.numeric(parcelles_df[parcelle_idx, paste0("family_", .x)]))
 names(scores) <- familles
 
-# Afficher les scores
-cat("Scores extraits:\n")
-print(scores)
+# Créer le radar avec fmsb
+radar_data <- as.data.frame(rbind(
+  rep(1, 12),   # Max
+  rep(0, 12),   # Min
+  scores
+))
+colnames(radar_data) <- noms_familles
 
-# Créer le radar avec fmsb (si au moins quelques scores disponibles)
-if (!all(is.na(scores)) && requireNamespace("fmsb", quietly = TRUE)) {
-  # Remplacer NA par 0 pour le tracé
-  scores_plot <- ifelse(is.na(scores), 0, scores)
-
-  radar_data <- as.data.frame(rbind(
-    rep(1, 12),
-    rep(0, 12),
-    scores_plot
-  ))
-  colnames(radar_data) <- noms_familles
-
-  fmsb::radarchart(radar_data,
-    axistype = 1, pcol = "forestgreen",
-    pfcol = rgb(0.2, 0.5, 0.3, 0.5), plwd = 2,
-    cglcol = "grey", cglty = 1, axislabcol = "grey",
-    caxislabels = seq(0, 1, 0.25), vlcex = 0.7,
-    title = paste("Profil Parcelle", parcelle_id)
-  )
-} else if (all(is.na(scores))) {
-  cat("\nAucune colonne family_* trouvée. Avez-vous exécuté le T05 ?\n")
-} else {
-  cat("\nPackage fmsb non installé. install.packages('fmsb')\n")
-}
+fmsb::radarchart(radar_data,
+  axistype = 1, pcol = "forestgreen",
+  pfcol = rgb(0.2, 0.5, 0.3, 0.5), plwd = 2,
+  cglcol = "grey", cglty = 1, axislabcol = "grey",
+  caxislabels = seq(0, 1, 0.25), vlcex = 0.7,
+  title = paste("Profil Parcelle", parcelle_idx)
+)
 ```
 
 
