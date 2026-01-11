@@ -180,18 +180,23 @@ familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
                    "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
 
-scores <- sapply(familles, function(f) {
-  col_name <- paste0("family_", f)
-  if (col_name %in% names(parcelle_data)) {
-    val <- st_drop_geometry(parcelle_data)[[col_name]]
-    return(as.numeric(val))
+# Extraire les données sans géométrie
+parcelle_df <- as.data.frame(st_drop_geometry(parcelle_data))
+
+scores <- numeric(12)
+names(scores) <- familles
+for (i in seq_along(familles)) {
+  col_name <- paste0("family_", familles[i])
+  if (col_name %in% names(parcelle_df)) {
+    scores[i] <- as.numeric(parcelle_df[1, col_name])
+  } else {
+    scores[i] <- NA_real_
   }
-  return(NA)
-})
+}
 
 # Afficher les scores
 cat("Scores extraits:\n")
-print(round(scores, 3))
+print(scores)
 
 # Créer le radar avec fmsb (si au moins quelques scores disponibles)
 if (!all(is.na(scores)) && requireNamespace("fmsb", quietly = TRUE)) {
