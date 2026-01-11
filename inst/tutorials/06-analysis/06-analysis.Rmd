@@ -158,7 +158,7 @@ library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-2-1-setup", fig.width=8, fig.height=8}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
