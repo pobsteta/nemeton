@@ -158,15 +158,21 @@ library(purrr)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-2-1-setup"}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+cat("Fichier:", parcelles_path, "\n")
+cat("Existe:", file.exists(parcelles_path), "\n\n")
+
 parcelles <- st_read(parcelles_path, quiet = TRUE)
+cat("Parcelles chargées:", nrow(parcelles), "\n")
+cat("Toutes les colonnes:\n")
+print(names(parcelles))
 
 # Vérifier les colonnes family_* disponibles
 cols_family <- grep("^family_", names(parcelles), value = TRUE)
-cat("Colonnes family_* disponibles:", length(cols_family), "\n")
+cat("\nColonnes family_* disponibles:", length(cols_family), "\n")
 if (length(cols_family) > 0) {
   cat("  ", paste(cols_family, collapse = ", "), "\n\n")
 }
