@@ -32,7 +32,7 @@ install.packages(c("leaflet", "corrplot", "patchwork"))
 
 ```r
 # Depuis GitHub
-remotes::install_github("pascalobstetar/nemeton")
+remotes::install_github("pobsteta/nemeton")
 ```
 
 ---
@@ -134,7 +134,7 @@ check_tutorial_ready()
 packageVersion("nemeton")
 
 # Réinstaller si nécessaire
-remotes::install_github("pascalobstetar/nemeton", force = TRUE)
+remotes::install_github("pobsteta/nemeton", force = TRUE)
 ```
 
 ### "Cannot download data"
@@ -159,7 +159,7 @@ Les exercices LiDAR ont un timeout de 10 minutes. Si le téléchargement est plu
 
 ## Ressources
 
-- Documentation nemeton: https://pascalobstetar.github.io/nemeton/
-- Issues GitHub: https://github.com/pascalobstetar/nemeton/issues
+- Documentation nemeton: https://pobsteta.github.io/nemeton/
+- Issues GitHub: https://github.com/pobsteta/nemeton/issues
 - API IGN (happign): https://happign.fr/
 - lidR documentation: https://r-lidar.github.io/lidRbook/

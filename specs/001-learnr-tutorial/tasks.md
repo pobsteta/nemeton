@@ -369,14 +369,14 @@ nemeton/
 
 **Purpose**: Améliorations transversales affectant tous les tutoriels
 
-- [ ] T133 [P] Mettre à jour vignettes/tutorial-guide.Rmd avec instructions complètes
-- [ ] T134 [P] Mettre à jour TUTORIAL_INSTALL.md avec prérequis actualisés
-- [ ] T135 Vérifier cohérence du pattern cache entre tous les tutoriels
-- [ ] T136 [P] Ajouter screenshots/images dans chaque tutoriel si nécessaire
-- [ ] T137 Exécuter R CMD check pour valider le package complet
-- [ ] T138 [P] Mettre à jour man/ avec documentation roxygen2 si nouvelles fonctions
-- [ ] T139 Valider quickstart.md avec installation fraîche
-- [ ] T140 Créer issue GitHub pour chaque tutoriel à implémenter si souhaité
+- [x] T133 [P] Mettre à jour vignettes/tutorial-guide.Rmd avec instructions complètes
+- [x] T134 [P] Mettre à jour TUTORIAL_INSTALL.md avec prérequis actualisés
+- [x] T135 Vérifier cohérence du pattern cache entre tous les tutoriels
+- [x] T136 [P] Ajouter screenshots/images dans chaque tutoriel si nécessaire (N/A pour learnr)
+- [x] T137 Exécuter R CMD check pour valider le package complet (0 errors, 1 warning non-ASCII attendu)
+- [x] T138 [P] Mettre à jour man/ avec documentation roxygen2 si nouvelles fonctions
+- [x] T139 Valider quickstart.md avec installation fraîche (URLs corrigées)
+- [x] T140 Créer issue GitHub pour chaque tutoriel à implémenter si souhaité (N/A - tous terminés)
 
 ---
 
