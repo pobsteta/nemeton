@@ -537,6 +537,213 @@ pareto <- identify_pareto_optimal(parcelles, objectives = c("idx_P", "idx_B"))
 
 ---
 
+## Tutorial 07 : Traitement LiDAR Avancé avec lidR, lasR et LAScatalog
+
+**Fichier** : `inst/tutorials/07-lidar-advanced/07-lidar-advanced.Rmd`
+**Statut** : 🔲 À créer
+**Durée estimée** : 90-120 minutes
+**Prérequis** : Tutorial 01 complété (données LiDAR téléchargées)
+
+### Objectifs d'Apprentissage
+
+À la fin de ce tutoriel, l'apprenant saura :
+1. Utiliser LAScatalog pour traiter de gros jeux de données LiDAR par tuiles
+2. Créer des pipelines lasR optimisés pour le traitement haute performance
+3. Segmenter des arbres individuels avec lidaRtRee
+4. Détecter les trouées et lisières forestières
+5. Extraire des métriques de structure forestière avancées
+6. Appliquer l'approche surfacique (Area-Based Approach) avec calibration
+7. Générer tous les produits dérivés nécessaires aux indicateurs nemeton
+
+### Architecture basée sur lidaRtRee
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 1: Introduction LAScatalog                                  │
+│  ─────────────────────────────────────                              │
+│  Concept catalogue → Options traitement → Traitement par tuiles     │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 2: Pipelines lasR                                          │
+│  ─────────────────────────                                          │
+│  Pipeline basique → Pipeline complexe → Performance vs lidR         │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 3: Segmentation Arbres Individuels                         │
+│  ──────────────────────────────────────────                         │
+│  Détection cimes → Segmentation couronnes → Extraction attributs    │
+│                                                                     │
+│  SORTIE: arbres_segmentes.gpkg (position, hauteur, couronne)        │
+│  INDICATEURS: P1, P3, C1 (niveau arbre)                             │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 4: Trouées et Lisières                                     │
+│  ──────────────────────────────                                     │
+│  Détection trouées (gaps) → Caractérisation lisières (edges)        │
+│                                                                     │
+│  SORTIE: gaps.gpkg, edges.gpkg                                      │
+│  INDICATEURS: L1 (lisière), B2 (structure)                          │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 5: Métriques de Structure Forestière                       │
+│  ────────────────────────────────────────────                       │
+│  Métriques hauteur → Métriques densité → Métriques strates          │
+│                                                                     │
+│  SORTIE: metriques_structure.tif (rasters), metriques.gpkg          │
+│  INDICATEURS: C1, P1, P3, A1, E1, B2                                │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 6: BABA (Buffered Area-Based Approach)                     │
+│  ──────────────────────────────────────────────                     │
+│  Métriques haute résolution (10m) + fenêtre 20m → Calibration       │
+│  → Prédiction spatiale fine avec moving window                      │
+│                                                                     │
+│  SORTIE: metriques_baba.tif, modeles_calibres.rds, predictions_*.tif│
+│  INDICATEURS: Volume (P1), Biomasse (C1) calibrés à 10m résolution  │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 7: Coregistration Placettes Terrain                        │
+│  ───────────────────────────────────────────                        │
+│  Alignement MNH/placettes → Optimisation translation → Validation   │
+│                                                                     │
+│  SORTIE: placettes_coregistrees.gpkg                                │
+│  INDICATEURS: Améliore précision tous indicateurs LiDAR             │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Section 8: Produits Dérivés pour Indicateurs nemeton               │
+│  ────────────────────────────────────────────────────               │
+│  MNT haute résolution → Pente/Exposition → TWI → Export unifié      │
+│                                                                     │
+│  SORTIE: derivees_lidar.gpkg (toutes métriques pour T03-T06)        │
+│  INDICATEURS: W1, R1, R2, F1 (terrain) + C1, P1, P3, A1, E1, B2    │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Sections Détaillées
+
+| # | Section | Contenu | Fonctions principales |
+|---|---------|---------|----------------------|
+| 1 | Introduction LAScatalog | Création catalogue, options, traitement tuiles | `lidR::readLAScatalog()`, `lidR::opt_*()` |
+| 2 | Pipelines lasR | Pipelines optimisés, chaînage opérations | `lasR::reader_las()`, `lasR::exec_*()` |
+| 3 | Segmentation arbres | Détection cimes, segmentation couronnes | `lidaRtRee::tree_segmentation()`, `lidR::segment_trees()` |
+| 4 | Trouées et lisières | Détection gaps, caractérisation edges | `lidaRtRee::gap_detection()`, `lidaRtRee::edge_detection()` |
+| 5 | Métriques structure | Hauteurs, densité, strates verticales | `lidaRtRee::forest_metrics()`, `lidR::pixel_metrics()` |
+| 6 | BABA (Buffered Area-Based) | Préparation, calibration, prédiction haute résolution | `lasR::rasterize(c(res, window))` |
+| 7 | Coregistration | Alignement placettes terrain | `lidaRtRee::coregistration()` |
+| 8 | Produits dérivés | Export pour workflow nemeton | `terra::terrain()`, export functions |
+| 9 | Quiz validation | Test connaissances avancées LiDAR | - |
+
+### Packages Requis
+
+```r
+# Packages principaux
+install.packages("lidR")                          # >= 4.1.1
+install.packages("lasR", repos = "https://r-lidar.r-universe.dev")  # Pipelines
+remotes::install_gitlab("lidar/lidaRtRee")        # INRAE GitLab
+
+# Packages complémentaires
+install.packages(c("terra", "sf", "future"))      # Rasters, vecteurs, parallélisation
+```
+
+### Métriques Extraites pour Indicateurs nemeton
+
+| Métrique | Source | Usage Indicateurs |
+|----------|--------|-------------------|
+| `P95`, `Pmean`, `Psd` | pixel_metrics | C1, P1, P3 |
+| `tree_count`, `tree_height` | tree_segmentation | P1, P3, E1 |
+| `gap_area`, `gap_fraction` | gap_detection | B2, L1 |
+| `edge_length`, `edge_contrast` | edge_detection | L1 |
+| `canopy_cover`, `LAI_proxy` | forest_metrics | A1, C1 |
+| `strata_*` | stratification | B2 |
+| `slope`, `aspect`, `twi` | terrain (MNT LiDAR) | W1, R1, R2, F1 |
+
+### Données d'Entrée (depuis Tutorial 01)
+
+```r
+# Chargement depuis le cache
+data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE)
+
+# Création du catalogue
+ctg <- readLAScatalog(fichiers_laz)
+opt_output_files(ctg) <- file.path(data_dir, "processed/{XLEFT}_{YBOTTOM}")
+```
+
+### Données de Sortie
+
+```
+~/nemeton_tutorial_data/
+├── ... (données Tutorials 01-06)
+├── processed/                     # Tuiles traitées
+│   └── *.laz
+├── mnt_lidar.tif                 # MNT haute résolution (1m)
+├── mnh_lidar.tif                 # MNH haute résolution (1m)
+├── pente.tif                     # Pente en degrés
+├── exposition.tif                # Exposition 0-360°
+├── twi_lidar.tif                 # TWI depuis MNT LiDAR
+├── arbres_segmentes.gpkg         # Arbres individuels
+├── gaps.gpkg                     # Trouées forestières
+├── edges.gpkg                    # Lisières
+├── metriques_structure.tif       # Raster multi-bandes métriques
+├── modeles_aba.rds               # Modèles calibrés ABA
+├── predictions_volume.tif        # Carte volume prédite
+├── predictions_biomasse.tif      # Carte biomasse prédite
+└── derivees_lidar_nemeton.gpkg   # Métriques finales pour T05-T06
+    └── Colonnes: id_parcelle, P95, Pmean, tree_count, gap_fraction,
+                  canopy_cover, strata_1-4, slope, aspect, twi, ...
+```
+
+### Indicateurs nemeton Préparés
+
+Ce tutoriel prépare les données pour :
+
+| Indicateur | Métriques LiDAR utilisées | Section source |
+|------------|--------------------------|----------------|
+| **C1** (Carbone-Biomasse) | P95, canopy_cover, predictions_biomasse | §5, §6 |
+| **P1** (Production-Volume) | tree_height, tree_count, predictions_volume | §3, §6 |
+| **P3** (Production-Qualité) | Pmean, Psd, tree_height | §3, §5 |
+| **A1** (Air-Couverture) | canopy_cover, LAI_proxy | §5 |
+| **E1** (Énergie-Bois) | volume_residus (via P1) | §6 |
+| **E2** (Énergie-Évitement) | via E1, P1 | §6 |
+| **B2** (Biodiversité-Structure) | strata_*, zentropy, gap_fraction | §4, §5 |
+| **L1** (Paysage-Lisière) | edge_length, edge_contrast | §4 |
+| **W1** (Eau-TWI) | twi_lidar | §8 |
+| **R1** (Risque-Feu) | slope, aspect | §8 |
+| **R2** (Risque-Tempête) | aspect, elevation | §8 |
+| **F1** (Sol-Érosion) | slope (facteur LS) | §8 |
+
+### Chaîne de Dépendances avec T02
+
+```
+Tutorial 01 (Acquisition)
+    │
+    ├──► Tutorial 02 (LiDAR basique) ──► T03, T04, T05, T06
+    │    [lidR simple, métriques de base]
+    │
+    └──► Tutorial 07 (LiDAR avancé) ──► T05, T06 (remplace/complète T02)
+         [LAScatalog, lasR, lidaRtRee]
+         [métriques avancées, calibration terrain]
+```
+
+**Note** : Tutorial 07 peut être utilisé comme alternative avancée à Tutorial 02, ou en complément pour des analyses plus poussées.
+
+---
+
 ## Exigences Fonctionnelles
 
 ### FR-001 à FR-010 : Tutorial 01 - Acquisition
@@ -613,6 +820,24 @@ pareto <- identify_pareto_optimal(parcelles, objectives = c("idx_P", "idx_B"))
 - **FR-061** : Le système DOIT générer un rapport HTML de synthèse
 - **FR-062** : Le système DOIT fournir un quiz final de validation
 
+### FR-063 à FR-078 : Tutorial 07 - LiDAR Avancé
+- **FR-063** : Le système DOIT créer un LAScatalog depuis plusieurs fichiers LiDAR
+- **FR-064** : Le système DOIT configurer les options de traitement par tuiles (chunk)
+- **FR-065** : Le système DOIT créer des pipelines lasR pour traitement optimisé
+- **FR-066** : Le système DOIT détecter les cimes d'arbres individuels
+- **FR-067** : Le système DOIT segmenter les couronnes d'arbres via lidaRtRee
+- **FR-068** : Le système DOIT extraire les attributs par arbre (hauteur, position, surface couronne)
+- **FR-069** : Le système DOIT détecter les trouées forestières (gaps)
+- **FR-070** : Le système DOIT caractériser les lisières (edges)
+- **FR-071** : Le système DOIT calculer les métriques de structure par strates verticales
+- **FR-072** : Le système DOIT implémenter l'approche surfacique (ABA) avec calibration
+- **FR-073** : Le système DOIT coregistrer les placettes terrain avec le MNH
+- **FR-074** : Le système DOIT générer un MNT haute résolution depuis LiDAR sol
+- **FR-075** : Le système DOIT calculer pente, exposition et TWI depuis MNT LiDAR
+- **FR-076** : Le système DOIT prédire volume et biomasse spatialement
+- **FR-077** : Le système DOIT exporter les métriques au format compatible T05-T06
+- **FR-078** : Le système DOIT fournir un quiz sur les concepts LiDAR avancés
+
 ---
 
 ## Critères de Succès
@@ -626,12 +851,18 @@ pareto <- identify_pareto_optimal(parcelles, objectives = c("idx_P", "idx_B"))
 - **SC-005** : Les 40+ indicateurs sont calculés pour toutes les parcelles
 - **SC-006** : Les exports GeoPackage sont compatibles QGIS/ArcGIS
 - **SC-007** : Le rapport HTML se génère en moins de 30 secondes
+- **SC-011** : Un apprenant peut compléter le Tutorial 07 en moins de 2 heures
+- **SC-012** : Le traitement LAScatalog supporte > 10 tuiles LiDAR simultanément
+- **SC-013** : La segmentation détecte > 80% des arbres dominants (validé terrain)
+- **SC-014** : Les modèles ABA atteignent R² > 0.7 pour volume/biomasse
 
 ### Qualitatifs
 
 - **SC-008** : Les apprenants comprennent le concept des 12 familles d'indicateurs
 - **SC-009** : Les apprenants peuvent appliquer le workflow à leur propre zone d'étude
 - **SC-010** : Les explications sont accessibles aux non-spécialistes
+- **SC-015** : Les apprenants maîtrisent la différence entre lidR, lasR et lidaRtRee
+- **SC-016** : Les apprenants comprennent l'approche surfacique (ABA) et ses limites
 
 ---
 
@@ -640,18 +871,29 @@ pareto <- identify_pareto_optimal(parcelles, objectives = c("idx_P", "idx_B"))
 ### Techniques
 - R >= 4.1.0 installé avec environnement de développement
 - Connexion internet pour téléchargement initial des données
-- 4 GB RAM minimum pour traitement LiDAR
-- 2 GB espace disque pour cache données
+- 4 GB RAM minimum pour traitement LiDAR basique (T02)
+- **8 GB RAM minimum pour traitement LiDAR avancé (T07)**
+- 2 GB espace disque pour cache données (T01-T06)
+- **5 GB espace disque supplémentaire pour T07** (tuiles, produits dérivés)
+
+### Packages spécifiques Tutorial 07
+- lidR >= 4.1.1 (CRAN)
+- lasR (r-universe uniquement, pas sur CRAN)
+- lidaRtRee >= 4.0.9 (INRAE GitLab forge)
+- future (pour parallélisation LAScatalog)
 
 ### Données
 - Zone d'étude (Vercors - Quatre Montagnes) représentative
-- LiDAR HD disponible pour la zone
+- LiDAR HD disponible pour la zone (10+ points/m²)
 - APIs IGN (happign) et INPN fonctionnelles
+- **Placettes terrain avec mesures dendrométriques** (pour calibration ABA dans T07)
 
 ### Utilisateurs
 - Connaissances de base en R et SIG
 - Compréhension des concepts forestiers de base
-- Motivation pour 4 heures d'apprentissage
+- Motivation pour 4 heures d'apprentissage (T01-T06)
+- **Motivation pour 2 heures supplémentaires (T07)**
+- **Connaissances intermédiaires en R** pour T07 (fonctions, boucles)
 
 ---
 
@@ -663,3 +905,4 @@ pareto <- identify_pareto_optimal(parcelles, objectives = c("idx_P", "idx_B"))
 - Support multi-langue
 - Optimisation > 1000 parcelles
 - Plugins QGIS/ArcGIS
+- **Deep learning pour segmentation arbres** (T07 utilise méthodes classiques)

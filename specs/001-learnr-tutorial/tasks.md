@@ -380,6 +380,108 @@ nemeton/
 
 ---
 
+## Phase 9: Tutorial 07 - LiDAR Avancé avec lidR, lasR et LAScatalog (Priority: P2)
+
+**Goal**: Maîtriser le traitement LiDAR avancé avec LAScatalog, pipelines lasR, et lidaRtRee pour produire toutes les métriques nécessaires aux indicateurs nemeton
+
+**Independent Test**: L'apprenant peut traiter un jeu de données LiDAR multi-tuiles, segmenter les arbres, détecter les trouées, et exporter les métriques pour T05-T06
+
+### Structure Tutorial 07
+
+- [ ] T141 [P] [T07] Créer répertoire inst/tutorials/07-lidar-advanced/ avec structure standard
+- [ ] T142 [T07] Créer en-tête YAML et setup chunk dans inst/tutorials/07-lidar-advanced/07-lidar-advanced.Rmd
+
+### Section 1: Introduction LAScatalog
+
+- [ ] T143 [T07] Écrire section Introduction LAScatalog (concept, avantages, structure) dans 07-lidar-advanced.Rmd
+- [ ] T144 [T07] Ajouter exercice création LAScatalog avec lidR::readLAScatalog() dans 07-lidar-advanced.Rmd
+- [ ] T145 [T07] Ajouter exercice configuration options (chunk_size, buffer, parallel) dans 07-lidar-advanced.Rmd
+- [ ] T146 [T07] Ajouter validation gradethis pour exercices section 1 dans 07-lidar-advanced.Rmd
+
+### Section 2: Pipelines lasR
+
+- [ ] T147 [T07] Écrire section Introduction lasR (vs lidR, performance, cas d'usage) dans 07-lidar-advanced.Rmd
+- [ ] T148 [T07] Ajouter exercice pipeline basique lasR (lecture → rasterisation) dans 07-lidar-advanced.Rmd
+- [ ] T149 [T07] Ajouter exercice pipeline complexe lasR (MNT + MNH + métriques) dans 07-lidar-advanced.Rmd
+- [ ] T150 [T07] Ajouter validation gradethis pour exercices section 2 dans 07-lidar-advanced.Rmd
+
+### Section 3: Segmentation Arbres Individuels
+
+- [ ] T151 [T07] Écrire section Introduction segmentation arbres (méthodes, algorithmes) dans 07-lidar-advanced.Rmd
+- [ ] T152 [T07] Ajouter exercice détection cimes avec lidR::locate_trees() dans 07-lidar-advanced.Rmd
+- [ ] T153 [T07] Ajouter exercice segmentation couronnes avec lidR::segment_trees() dans 07-lidar-advanced.Rmd
+- [ ] T154 [T07] Ajouter exercice segmentation lidaRtRee::tree_segmentation() dans 07-lidar-advanced.Rmd
+- [ ] T155 [T07] Ajouter exercice extraction attributs arbres avec crown_metrics() dans 07-lidar-advanced.Rmd
+- [ ] T156 [T07] Ajouter validation gradethis pour exercices section 3 dans 07-lidar-advanced.Rmd
+
+### Section 4: Trouées et Lisières
+
+- [ ] T157 [T07] Écrire section Introduction trouées/lisières (écologie, indicateurs) dans 07-lidar-advanced.Rmd
+- [ ] T158 [T07] Ajouter exercice détection trouées avec lidaRtRee::gap_detection() dans 07-lidar-advanced.Rmd
+- [ ] T159 [T07] Ajouter exercice caractérisation lisières avec lidaRtRee::edge_detection() dans 07-lidar-advanced.Rmd
+- [ ] T160 [T07] Ajouter exercice calcul métriques gaps/edges par parcelle dans 07-lidar-advanced.Rmd
+- [ ] T161 [T07] Ajouter validation gradethis pour exercices section 4 dans 07-lidar-advanced.Rmd
+
+### Section 5: Métriques de Structure Forestière
+
+- [ ] T162 [T07] Écrire section Introduction métriques structure (hauteurs, strates, densité) dans 07-lidar-advanced.Rmd
+- [ ] T163 [T07] Ajouter exercice calcul métriques avancées avec pixel_metrics() dans 07-lidar-advanced.Rmd
+- [ ] T164 [T07] Ajouter exercice métriques par strates verticales dans 07-lidar-advanced.Rmd
+- [ ] T165 [T07] Ajouter exercice génération raster multi-bandes métriques dans 07-lidar-advanced.Rmd
+- [ ] T166 [T07] Ajouter validation gradethis pour exercices section 5 dans 07-lidar-advanced.Rmd
+
+### Section 6: BABA (Buffered Area-Based Approach)
+
+- [ ] T167 [T07] Écrire section Introduction BABA vs ABA (concept, avantages, moving window) dans 07-lidar-advanced.Rmd
+- [ ] T168 [T07] Ajouter exercice génération métriques BABA avec lasR::rasterize(c(10,20)) dans 07-lidar-advanced.Rmd
+- [ ] T169 [T07] Ajouter exercice extraction métriques sur placettes et calibration modèles dans 07-lidar-advanced.Rmd
+- [ ] T170 [T07] Ajouter exercice validation croisée modèles BABA (R², RMSE) dans 07-lidar-advanced.Rmd
+- [ ] T171 [T07] Ajouter exercice prédiction spatiale haute résolution (10m) dans 07-lidar-advanced.Rmd
+- [ ] T172 [T07] Ajouter validation gradethis pour exercices section 6 dans 07-lidar-advanced.Rmd
+
+### Section 7: Coregistration Placettes Terrain
+
+- [ ] T173 [T07] Écrire section Introduction coregistration (problème, méthodes) dans 07-lidar-advanced.Rmd
+- [ ] T174 [T07] Ajouter exercice coregistration avec lidaRtRee::coregistration() dans 07-lidar-advanced.Rmd
+- [ ] T175 [T07] Ajouter exercice validation alignement (corrélation avant/après) dans 07-lidar-advanced.Rmd
+- [ ] T176 [T07] Ajouter validation gradethis pour exercices section 7 dans 07-lidar-advanced.Rmd
+
+### Section 8: Produits Dérivés pour Indicateurs nemeton
+
+- [ ] T177 [T07] Écrire section Génération MNT/dérivés depuis LiDAR sol dans 07-lidar-advanced.Rmd
+- [ ] T178 [T07] Ajouter exercice calcul pente/exposition/TWI depuis MNT LiDAR dans 07-lidar-advanced.Rmd
+- [ ] T179 [T07] Ajouter exercice extraction métriques par parcelle format nemeton dans 07-lidar-advanced.Rmd
+- [ ] T180 [T07] Ajouter exercice export unifié derivees_lidar_nemeton.gpkg dans 07-lidar-advanced.Rmd
+- [ ] T181 [T07] Ajouter validation gradethis pour exercices section 8 dans 07-lidar-advanced.Rmd
+
+### Section 9: Quiz et Synthèse
+
+- [ ] T182 [T07] Ajouter quiz final LiDAR avancé avec 8 questions dans 07-lidar-advanced.Rmd
+- [ ] T183 [T07] Écrire section Synthèse (récapitulatif produits, mapping indicateurs) dans 07-lidar-advanced.Rmd
+
+### Tests Tutorial 07
+
+- [ ] T184 [T07] Créer tests/testthat/test-tutorial-07.R pour validation structure
+- [ ] T185 [T07] Tester tutorial 07 end-to-end avec learnr::run_tutorial()
+
+**Checkpoint**: ✅ Tutorial 07 complet - métriques LiDAR avancées disponibles pour T05-T06
+
+---
+
+## Phase 10: Polish Tutorial 07
+
+**Purpose**: Finalisation et intégration du Tutorial 07
+
+- [ ] T186 [P] Mettre à jour vignettes/tutorial-guide.Rmd avec Tutorial 07
+- [ ] T187 [P] Mettre à jour TUTORIAL_INSTALL.md avec packages lasR et lidaRtRee
+- [ ] T188 Vérifier cohérence pattern data_dir dans Tutorial 07
+- [ ] T189 [P] Mettre à jour quickstart.md avec instructions Tutorial 07
+- [ ] T190 Exécuter R CMD check après ajout Tutorial 07
+- [ ] T191 [P] Mettre à jour DESCRIPTION Suggests avec lasR, lidaRtRee
+- [ ] T192 Valider intégration T07 → T05 → T06 workflow complet
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -392,14 +494,24 @@ nemeton/
   - Tutorial 04 dépend de BD Forêt (Tutorial 01)
   - Tutorial 05 dépend de tous indicateurs (Tutorials 02-04)
   - Tutorial 06 dépend d'indicateurs complets (Tutorial 05)
-- **Polish (Phase 8)**: Dépend de tous les tutoriels terminés
+- **Polish (Phase 8)**: Dépend de Tutorials 01-06 terminés
+- **Tutorial 07 (Phase 9)**: Dépend de Tutorial 01 (données LiDAR téléchargées)
+  - Alternative avancée à Tutorial 02
+  - Peut être fait en parallèle ou après Tutorial 02
+  - Produit des métriques compatibles avec T05-T06
+- **Polish T07 (Phase 10)**: Dépend de Tutorial 07 terminé
 
 ### Tutorial Dependencies (Données)
 
 ```
 Tutorial 01 (Acquisition)
     │
-    ├──► Tutorial 02 (LiDAR) ──────────────────────┐
+    ├──► Tutorial 02 (LiDAR basique) ─────────────┐
+    │    [lidR simple, métriques de base]          │
+    │                                               │
+    ├──► Tutorial 07 (LiDAR avancé) ──────────────┤  ALTERNATIVE
+    │    [LAScatalog, lasR, lidaRtRee]             │  ou COMPLÉMENT
+    │    [ABA, segmentation, trouées]              │
     │                                               │
     ├──► Tutorial 03 (Terrain) ───────────────────┤
     │                                               │
@@ -483,14 +595,16 @@ Avec plusieurs développeurs:
 |-------|----------|-------|----------|
 | 1 | Setup | T001-T003 (3) | - |
 | 2 | Foundational (T01) | T004-T008 (5) | P1 |
-| 3 | Tutorial 02 (LiDAR) | T009-T028 (20) | P1 |
+| 3 | Tutorial 02 (LiDAR basique) | T009-T028 (20) | P1 |
 | 4 | Tutorial 03 (Terrain) | T029-T052 (24) | P1 |
 | 5 | Tutorial 04 (Écologique) | T053-T079 (27) | P1 |
 | 6 | Tutorial 05 (Complet) | T080-T103 (24) | P2 |
 | 7 | Tutorial 06 (Analyse) | T104-T132 (29) | P2 |
-| 8 | Polish | T133-T140 (8) | P3 |
+| 8 | Polish T01-T06 | T133-T140 (8) | P3 |
+| 9 | Tutorial 07 (LiDAR avancé) | T141-T185 (45) | P2 |
+| 10 | Polish T07 | T186-T192 (7) | P3 |
 
-**Total**: 140 tâches
+**Total**: 192 tâches (140 existantes + 52 nouvelles pour T07)
 
 ---
 
