@@ -58,76 +58,20 @@ Ce tutoriel utilise les données produites par le Tutorial 05 :
 
 Créez des cartes thématiques montrant la distribution spatiale de chaque famille d'indicateurs.
 
-```{r ex-1-1-setup}
+```{r ex-1-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-library(terra)
-
-# Répertoire cache
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-# Simuler des données si le fichier n'existe pas
-set.seed(42)
-n <- 50
-
-# Créer des polygones fictifs
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  nrow <- ceiling(n / ncol)
-
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    x2 <- x1 + size
-    y2 <- y1 + size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x2, y1, x2, y2, x1, y2, x1, y1),
-                                          ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-# Données simulées
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  # Indicateurs normalisés par famille
-  family_C = runif(n, 0.3, 0.9),
-  family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8),
-  family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85),
-  family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9),
-  family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75),
-  family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8),
-  family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
-```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-1-1-setup"}
+```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-1-1-setup"}
 # === CARTES THÉMATIQUES PAR FAMILLE ===
 
-# Charger les données réelles ou utiliser simulation
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+cat("Parcelles chargées:", nrow(parcelles), "\n")
 
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-  cat("Données réelles chargées:", nrow(parcelles), "parcelles\n")
-} else {
-  parcelles <- parcelles_sim
-  cat("Données simulées utilisées:", nrow(parcelles), "parcelles\n")
-}
-
-# À compléter : créer une carte pour la famille Carbone (family_C)
-# Utilisez ggplot2 avec geom_sf() et scale_fill_viridis_c()
-
+# Carte pour la famille Carbone (family_C)
 carte_carbone <- ggplot(parcelles) +
   geom_sf(aes(fill = family_C), color = "white", linewidth = 0.2) +
   scale_fill_viridis_c(
@@ -150,53 +94,18 @@ print(carte_carbone)
 
 Créez un panneau de 12 cartes montrant toutes les familles :
 
-```{r ex-1-2-setup}
+```{r ex-1-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
 library(patchwork)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-# Réutiliser les données simulées
-set.seed(42)
-n <- 50
-
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
-```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-1-2-setup"}
+```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-1-2-setup"}
 # === PANNEAU MULTI-CARTES ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Définir les familles et leurs noms
 familles <- c("C" = "Carbone", "B" = "Biodiversité", "W" = "Eau", "A" = "Air",
@@ -266,49 +175,16 @@ Production ─┼─ Air (A)
 
 ### Exercice 2.1 : Créer un radar pour une parcelle
 
-```{r ex-2-1-setup}
+```{r ex-2-1-setup, include=FALSE}
 library(sf)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
-```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-2-1-setup"}
+```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-2-1-setup"}
 # === DIAGRAMME RADAR AVEC fmsb ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Sélectionner une parcelle (ex: parcelle 1)
 parcelle_id <- 1
@@ -359,49 +235,16 @@ if (requireNamespace("fmsb", quietly = TRUE)) {
 
 ### Exercice 2.2 : Comparer plusieurs parcelles
 
-```{r ex-2-2-setup}
+```{r ex-2-2-setup, include=FALSE}
 library(sf)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-2-2-setup"}
 # === COMPARAISON MULTI-PARCELLES ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Sélectionner 3 parcelles à comparer
 parcelles_ids <- c(1, 10, 25)
@@ -468,72 +311,16 @@ L'analyse des corrélations entre familles révèle :
 
 ### Exercice 3.1 : Calculer la matrice de corrélation
 
-```{r ex-3-1-setup}
+```{r ex-3-1-setup, include=FALSE}
 library(sf)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-# Simuler des corrélations réalistes
-set.seed(42)
-n <- 50
-
-# Base aléatoire
-base_eco <- runif(n, 0.3, 0.8)
-base_prod <- runif(n, 0.3, 0.8)
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  # Corrélées positivement (écologiques)
-  family_C = base_eco + rnorm(n, 0, 0.1),
-  family_B = base_eco + rnorm(n, 0, 0.15),
-  family_N = base_eco + rnorm(n, 0, 0.12),
-  # Corrélées positivement (production)
-  family_P = base_prod + rnorm(n, 0, 0.1),
-  family_E = base_prod + rnorm(n, 0, 0.12),
-  # Indépendantes
-  family_W = runif(n, 0.25, 0.8),
-  family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85),
-  family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9),
-  family_R = 1 - base_eco + rnorm(n, 0, 0.1),  # Corrélé négativement
-  family_S = runif(n, 0.3, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
-
-# Normaliser entre 0 et 1
-for (col in grep("^family_", names(parcelles_sim), value = TRUE)) {
-  vals <- parcelles_sim[[col]]
-  parcelles_sim[[col]] <- (vals - min(vals)) / (max(vals) - min(vals))
-}
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
+```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-3-1-setup"}
 # === MATRICE DE CORRÉLATION ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire les colonnes de scores par famille
 cols_familles <- grep("^family_", names(parcelles), value = TRUE)
@@ -616,11 +403,7 @@ for (col in grep("^family_", names(parcelles_sim), value = TRUE)) {
 # === VISUALISATION CORRPLOT ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire et préparer les données
 cols_familles <- grep("^family_", names(parcelles), value = TRUE)
@@ -662,51 +445,17 @@ Ces parcelles représentent des zones à **haute valeur** pour les services éco
 
 ### Exercice 4.1 : Identifier les hotspots
 
-```{r ex-4-1-setup}
+```{r ex-4-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
 ```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
 # === IDENTIFICATION DES HOTSPOTS ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Définir le seuil de hotspot (percentile 90)
 seuil_hotspot <- quantile(parcelles$I_nemeton, probs = 0.90, na.rm = TRUE)
@@ -732,46 +481,17 @@ print(st_drop_geometry(hotspots_sorted)[1:min(5, nrow(hotspots_sorted)),
 
 ### Exercice 4.2 : Cartographier les hotspots
 
-```{r ex-4-2-setup}
+```{r ex-4-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
 ```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
 # === CARTE DES HOTSPOTS ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Identifier les hotspots
 seuil_hotspot <- quantile(parcelles$I_nemeton, probs = 0.90, na.rm = TRUE)
@@ -806,54 +526,17 @@ Le **front de Pareto** identifie les parcelles optimales où on ne peut amélior
 
 ### Exercice 5.1 : Visualiser les trade-offs
 
-```{r ex-5-1-setup}
+```{r ex-5-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-# Simuler un trade-off Production vs Biodiversité
-base <- runif(n, 0, 1)
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_P = base + rnorm(n, 0, 0.15),  # Production
-  family_B = (1 - base) + rnorm(n, 0, 0.15),  # Biodiversité (trade-off)
-  family_C = runif(n, 0.3, 0.9),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
-
-# Normaliser
-parcelles_sim$family_P <- pmax(0, pmin(1, parcelles_sim$family_P))
-parcelles_sim$family_B <- pmax(0, pmin(1, parcelles_sim$family_B))
 ```
 
 ```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-5-1-setup"}
 # === GRAPHIQUE TRADE-OFF ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire les données pour le scatter plot
 data_plot <- st_drop_geometry(parcelles)
@@ -882,49 +565,17 @@ cat("\nCorrélation P-B:", round(cor_PB, 2))
 
 ### Exercice 5.2 : Identifier le front de Pareto
 
-```{r ex-5-2-setup}
+```{r ex-5-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-base <- runif(n, 0, 1)
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_P = pmax(0, pmin(1, base + rnorm(n, 0, 0.15))),
-  family_B = pmax(0, pmin(1, (1 - base) + rnorm(n, 0, 0.15))),
-  family_C = runif(n, 0.3, 0.9),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
 ```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-5-2-setup"}
 # === FRONT DE PARETO ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 data_plot <- st_drop_geometry(parcelles)
 
@@ -982,51 +633,17 @@ Le clustering permet de regrouper les parcelles ayant des profils multi-critère
 
 ### Exercice 6.1 : Clustering hiérarchique
 
-```{r ex-6-1-setup}
+```{r ex-6-1-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-6-1-setup"}
 # === CLUSTERING HIÉRARCHIQUE ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Extraire les colonnes de scores
 cols_familles <- grep("^family_", names(parcelles), value = TRUE)
@@ -1060,65 +677,24 @@ rect.hclust(hc, k = k, border = 2:5)
 
 ### Exercice 6.2 : Cartographier les clusters
 
-```{r ex-6-2-setup}
+```{r ex-6-2-setup, include=FALSE}
 library(sf)
 library(ggplot2)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
-
-# Ajouter clusters
-cols_familles <- grep("^family_", names(parcelles_sim), value = TRUE)
-data_cluster <- st_drop_geometry(parcelles_sim)[, cols_familles]
-data_scaled <- scale(data_cluster)
-dist_matrix <- dist(data_scaled)
-hc <- hclust(dist_matrix, method = "ward.D2")
-parcelles_sim$cluster <- as.factor(cutree(hc, k = 4))
 ```
 
 ```{r ex-6-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-6-2-setup"}
 # === CARTE DES CLUSTERS ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-  # Refaire le clustering si nécessaire
-  cols_familles <- grep("^family_", names(parcelles), value = TRUE)
-  data_cluster <- st_drop_geometry(parcelles)[, cols_familles]
-  data_scaled <- scale(data_cluster)
-  hc <- hclust(dist(data_scaled), method = "ward.D2")
-  parcelles$cluster <- as.factor(cutree(hc, k = 4))
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+# Clustering hiérarchique
+cols_familles <- grep("^family_", names(parcelles), value = TRUE)
+data_cluster <- st_drop_geometry(parcelles)[, cols_familles]
+data_scaled <- scale(data_cluster)
+hc <- hclust(dist(data_scaled), method = "ward.D2")
+parcelles$cluster <- as.factor(cutree(hc, k = 4))
 
 # Carte des clusters
 carte_clusters <- ggplot(parcelles) +
@@ -1140,57 +716,16 @@ print(carte_clusters)
 
 ### Exercice 7.1 : Export GeoPackage final
 
-```{r ex-7-1-setup}
+```{r ex-7-1-setup, include=FALSE}
 library(sf)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-create_grid_polygons <- function(n, xmin = 0, ymin = 0, size = 100) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- xmin + col * size
-    y1 <- ymin + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 2154)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_A = runif(n, 0.4, 0.75),
-  family_F = runif(n, 0.35, 0.85), family_L = runif(n, 0.3, 0.8),
-  family_T = runif(n, 0.4, 0.9), family_R = runif(n, 0.2, 0.7),
-  family_S = runif(n, 0.3, 0.75), family_P = runif(n, 0.35, 0.85),
-  family_E = runif(n, 0.4, 0.8), family_N = runif(n, 0.25, 0.75),
-  I_nemeton = runif(n, 0.35, 0.75),
-  geometry = create_grid_polygons(n)
-)
-
-# Ajouter colonnes
-seuil <- quantile(parcelles_sim$I_nemeton, 0.9)
-parcelles_sim$is_hotspot <- parcelles_sim$I_nemeton >= seuil
-parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
-  breaks = c(0, 0.4, 0.55, 0.7, 1),
-  labels = c("Faible", "Moyen", "Bon", "Excellent"))
 ```
 
 ```{r ex-7-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-7-1-setup"}
 # === EXPORT GEOPACKAGE FINAL ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
 
 # Ajouter les colonnes d'analyse si absentes
 if (!"is_hotspot" %in% names(parcelles)) {
@@ -1224,35 +759,17 @@ cat("\n\nFichier serait exporté vers:", file.path(cache_dir, "analyse_finale.gp
 
 ### Exercice 7.2 : Export CSV des attributs
 
-```{r ex-7-2-setup}
+```{r ex-7-2-setup, include=FALSE}
 library(sf)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 50
-parcelles_sim <- data.frame(
-  id_parcelle = 1:n,
-  surface_ha = runif(n, 0.5, 10),
-  family_C = runif(n, 0.3, 0.9), family_B = runif(n, 0.2, 0.85),
-  family_W = runif(n, 0.25, 0.8), family_P = runif(n, 0.35, 0.85),
-  I_nemeton = runif(n, 0.35, 0.75)
-)
-parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
-  breaks = c(0, 0.4, 0.55, 0.7, 1),
-  labels = c("Faible", "Moyen", "Bon", "Excellent"))
 ```
 
 ```{r ex-7-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-7-2-setup"}
 # === EXPORT CSV ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-  data_export <- st_drop_geometry(parcelles)
-} else {
-  data_export <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+data_export <- st_drop_geometry(parcelles)
 
 # Sélectionner les colonnes pertinentes
 cols_export <- c("id_parcelle", "surface_ha",
@@ -1281,53 +798,19 @@ cat("\n\nFichier CSV serait exporté vers:", file.path(cache_dir, "indicateurs_n
 
 ### Exercice 8.1 : Créer une carte Leaflet
 
-```{r ex-8-1-setup}
+```{r ex-8-1-setup, include=FALSE}
 library(sf)
-
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-
-set.seed(42)
-n <- 30
-
-# Créer des polygones en WGS84 pour Leaflet
-create_wgs84_polygons <- function(n, lon_min = -0.6, lat_min = 44.5, size = 0.01) {
-  ncol <- ceiling(sqrt(n))
-  polys <- vector("list", n)
-  for (i in seq_len(n)) {
-    row <- (i - 1) %/% ncol
-    col <- (i - 1) %% ncol
-    x1 <- lon_min + col * size
-    y1 <- lat_min + row * size
-    polys[[i]] <- st_polygon(list(matrix(c(x1, y1, x1+size, y1, x1+size, y1+size,
-                                            x1, y1+size, x1, y1), ncol = 2, byrow = TRUE)))
-  }
-  st_sfc(polys, crs = 4326)
-}
-
-parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
-  surface_ha = round(runif(n, 0.5, 10), 2),
-  family_C = round(runif(n, 0.3, 0.9), 2),
-  family_B = round(runif(n, 0.2, 0.85), 2),
-  I_nemeton = round(runif(n, 0.35, 0.75), 2),
-  geometry = create_wgs84_polygons(n)
-)
-parcelles_sim$classe <- cut(parcelles_sim$I_nemeton,
-  breaks = c(0, 0.4, 0.55, 0.7, 1),
-  labels = c("Faible", "Moyen", "Bon", "Excellent"))
 ```
 
 ```{r ex-8-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-8-1-setup"}
 # === CARTE LEAFLET INTERACTIVE ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
-if (file.exists(parcelles_path)) {
-  parcelles <- st_read(parcelles_path, quiet = TRUE)
-  # Reprojeter en WGS84 pour Leaflet
-  parcelles <- st_transform(parcelles, 4326)
-} else {
-  parcelles <- parcelles_sim
-}
+parcelles <- st_read(parcelles_path, quiet = TRUE)
+
+# Reprojeter en WGS84 pour Leaflet
+parcelles <- st_transform(parcelles, 4326)
 
 # Créer la carte avec Leaflet
 if (requireNamespace("leaflet", quietly = TRUE)) {
