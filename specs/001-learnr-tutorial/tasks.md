@@ -104,7 +104,7 @@ nemeton/
 
 ### Tests Tutorial 02
 
-- [ ] T027 [T02] Créer tests/testthat/test-tutorial-02.R pour validation structure
+- [x] T027 [T02] Créer tests/testthat/test-tutorial-02.R pour validation structure
 - [x] T028 [T02] Tester tutorial 02 end-to-end avec learnr::run_tutorial()
 
 **Checkpoint**: ✅ Tutorial 02 complet - métriques LiDAR disponibles pour tutoriels suivants
@@ -166,7 +166,7 @@ nemeton/
 
 ### Tests Tutorial 03
 
-- [ ] T051 [T03] Créer tests/testthat/test-tutorial-03.R pour validation structure
+- [x] T051 [T03] Créer tests/testthat/test-tutorial-03.R pour validation structure
 - [x] T052 [T03] Tester tutorial 03 end-to-end avec learnr::run_tutorial()
 
 **Checkpoint**: ✅ Tutorial 03 complet - 12 indicateurs terrain (W1-3, R1-4, S1-3, P2, F1) calculés
@@ -235,7 +235,7 @@ nemeton/
 
 ### Tests Tutorial 04
 
-- [ ] T078 [T04] Créer tests/testthat/test-tutorial-04.R pour validation structure
+- [x] T078 [T04] Créer tests/testthat/test-tutorial-04.R pour validation structure
 - [x] T079 [T04] Tester tutorial 04 end-to-end avec learnr::run_tutorial()
 
 **Checkpoint**: ✅ Tutorial 04 complet - 14 indicateurs écologiques (B1-3, L1-3, C2, T1-2, A2, F2, N1-3) calculés
@@ -286,7 +286,7 @@ nemeton/
 
 ### Tests Tutorial 05
 
-- [ ] T102 [T05] Créer tests/testthat/test-tutorial-05.R pour validation structure
+- [x] T102 [T05] Créer tests/testthat/test-tutorial-05.R pour validation structure
 - [x] T103 [T05] Tester tutorial 05 end-to-end avec learnr::run_tutorial()
 
 **Checkpoint**: ✅ Tutorial 05 complet - 32 indicateurs assemblés + E2 + I_nemeton
@@ -358,7 +358,7 @@ nemeton/
 
 ### Tests Tutorial 06
 
-- [ ] T131 [T06] Créer tests/testthat/test-tutorial-06.R pour validation structure
+- [x] T131 [T06] Créer tests/testthat/test-tutorial-06.R pour validation structure
 - [x] T132 [T06] Tester tutorial 06 end-to-end avec learnr::run_tutorial()
 
 **Checkpoint**: ✅ Tutorial 06 complet - série tutoriels terminée (1591 lignes, 9 sections)
