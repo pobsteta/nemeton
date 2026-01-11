@@ -49,7 +49,7 @@ ggplot(result_pareto) +
 result_mixed <- identify_pareto_optimal(
   massif_demo_units_extended,
   objectives = c("family_C", "family_B", "R1"),
-  maximize = c(TRUE, TRUE, FALSE)  # Minimiser R1
+  maximize = c(TRUE, TRUE, FALSE) # Minimiser R1
 )
 
 table(result_mixed$is_optimal)
@@ -89,7 +89,7 @@ ggplot(result_kmeans) +
 result_auto <- cluster_parcels(
   massif_demo_units_extended,
   families = c("family_C", "family_B", "family_P", "family_S"),
-  k = NULL,  # Auto-détermination
+  k = NULL, # Auto-détermination
   method = "kmeans"
 )
 
@@ -104,10 +104,11 @@ print(silhouette_scores)
 # Visualiser les scores de silhouette
 k_values <- as.integer(names(silhouette_scores))
 plot(k_values, silhouette_scores,
-     type = "b", pch = 19, col = "blue",
-     xlab = "Nombre de clusters (k)",
-     ylab = "Score de silhouette moyen",
-     main = "Détermination du K Optimal")
+  type = "b", pch = 19, col = "blue",
+  xlab = "Nombre de clusters (k)",
+  ylab = "Score de silhouette moyen",
+  main = "Détermination du K Optimal"
+)
 abline(v = optimal_k, col = "red", lty = 2)
 
 ## -----------------------------------------------------------------------------
@@ -197,17 +198,23 @@ library(patchwork)
 
 # Créer une matrice de trade-off plots
 p1 <- plot_tradeoff(massif_demo_units_extended, "family_C", "family_B",
-                     title = "C vs B") + theme(legend.position = "none")
+  title = "C vs B"
+) + theme(legend.position = "none")
 p2 <- plot_tradeoff(massif_demo_units_extended, "family_C", "family_P",
-                     title = "C vs P") + theme(legend.position = "none")
+  title = "C vs P"
+) + theme(legend.position = "none")
 p3 <- plot_tradeoff(massif_demo_units_extended, "family_B", "family_P",
-                     title = "B vs P") + theme(legend.position = "none")
+  title = "B vs P"
+) + theme(legend.position = "none")
 p4 <- plot_tradeoff(massif_demo_units_extended, "family_P", "family_E",
-                     title = "P vs E") + theme(legend.position = "none")
+  title = "P vs E"
+) + theme(legend.position = "none")
 p5 <- plot_tradeoff(massif_demo_units_extended, "family_S", "family_N",
-                     title = "S vs N") + theme(legend.position = "none")
+  title = "S vs N"
+) + theme(legend.position = "none")
 p6 <- plot_tradeoff(massif_demo_units_extended, "family_B", "family_N",
-                     title = "B vs N") + theme(legend.position = "none")
+  title = "B vs N"
+) + theme(legend.position = "none")
 
 (p1 + p2 + p3) / (p4 + p5 + p6) +
   plot_annotation(title = "Matrice de Trade-offs Entre Familles")
@@ -219,7 +226,7 @@ plot_tradeoff(
   x = "family_C",
   y = "family_B",
   pareto_frontier = TRUE,
-  label = "name",  # Afficher les noms
+  label = "name", # Afficher les noms
   xlab = "Carbone",
   ylab = "Biodiversité",
   title = "Parcelles Identifiées sur la Frontière de Pareto"
@@ -284,9 +291,11 @@ plot_tradeoff(
 # Clustering sur 8 familles représentatives
 zonage <- cluster_parcels(
   massif_demo_units_extended,
-  families = c("family_C", "family_B", "family_W", "family_N",  # Conservation
-               "family_P", "family_E",                            # Production
-               "family_S", "family_A"),                           # Social
+  families = c(
+    "family_C", "family_B", "family_W", "family_N", # Conservation
+    "family_P", "family_E", # Production
+    "family_S", "family_A"
+  ), # Social
   k = 4,
   method = "kmeans"
 )
@@ -331,3 +340,4 @@ zonage |>
     N_mean = mean(family_N, na.rm = TRUE)
   ) |>
   mutate(across(where(is.numeric), ~ round(., 2)))
+

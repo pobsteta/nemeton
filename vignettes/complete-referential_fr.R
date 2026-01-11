@@ -39,9 +39,11 @@ nemeton_radar(
 
 ## ----fig.width=10, fig.height=9-----------------------------------------------
 # Calculer les corrélations entre toutes les familles
-families_all <- c("family_C", "family_B", "family_W", "family_A",
-                  "family_F", "family_L", "family_T", "family_R",
-                  "family_S", "family_P", "family_E", "family_N")
+families_all <- c(
+  "family_C", "family_B", "family_W", "family_A",
+  "family_F", "family_L", "family_T", "family_R",
+  "family_S", "family_P", "family_E", "family_N"
+)
 
 correlations <- compute_family_correlations(result, families = families_all)
 
@@ -141,7 +143,7 @@ family_labels <- c(
 
 ggplot(result_long) +
   geom_sf(aes(fill = valeur)) +
-  facet_wrap(~ famille, ncol = 4, labeller = labeller(famille = family_labels)) +
+  facet_wrap(~famille, ncol = 4, labeller = labeller(famille = family_labels)) +
   scale_fill_viridis_c(name = "Score") +
   labs(title = "Référentiel Complet 12 Familles - nemeton v0.4.0") +
   theme_minimal() +
@@ -155,10 +157,12 @@ ggplot(result_long) +
 # Normaliser tous les indicateurs
 result_norm <- normalize_indicators(
   result,
-  indicators = c(paste0("C", 1:2), paste0("B", 1:3), paste0("W", 1:3),
-                 paste0("A", 1:2), paste0("F", 1:2), paste0("L", 1:2),
-                 paste0("T", 1:2), paste0("R", 1:3), paste0("S", 1:3),
-                 paste0("P", 1:3), paste0("E", 1:2), paste0("N", 1:3)),
+  indicators = c(
+    paste0("C", 1:2), paste0("B", 1:3), paste0("W", 1:3),
+    paste0("A", 1:2), paste0("F", 1:2), paste0("L", 1:2),
+    paste0("T", 1:2), paste0("R", 1:3), paste0("S", 1:3),
+    paste0("P", 1:3), paste0("E", 1:2), paste0("N", 1:3)
+  ),
   method = "minmax"
 )
 
@@ -166,7 +170,7 @@ result_norm <- normalize_indicators(
 result_composite <- create_composite_index(
   result_norm,
   indicators = families_all,
-  weights = rep(1, 12),  # Poids égaux pour toutes les familles
+  weights = rep(1, 12), # Poids égaux pour toutes les familles
   name = "nemeton_index_12"
 )
 
@@ -227,3 +231,4 @@ ggplot(comparison, aes(x = reorder(name, score), y = score, fill = scenario)) +
     fill = "Scénario"
   ) +
   theme_minimal()
+

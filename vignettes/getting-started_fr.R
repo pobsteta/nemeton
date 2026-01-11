@@ -31,8 +31,10 @@ table(massif_demo_units$forest_type)
 ggplot(massif_demo_units) +
   geom_sf(aes(fill = forest_type)) +
   theme_minimal() +
-  labs(title = "Massif Demo - Types forestiers",
-       fill = "Type de forêt")
+  labs(
+    title = "Massif Demo - Types forestiers",
+    fill = "Type de forêt"
+  )
 
 ## -----------------------------------------------------------------------------
 layers <- massif_demo_layers()
@@ -61,8 +63,10 @@ head(carbon[, c("parcel_id", "forest_type", "carbon")])
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("carbon", "biodiversity", "water",
-                 "fragmentation", "accessibility")
+  indicators = c(
+    "carbon", "biodiversity", "water",
+    "fragmentation", "accessibility"
+  )
 )
 
 # Vue d'ensemble
@@ -170,15 +174,19 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("carbon", "biodiversity", "water",
-                 "fragmentation", "accessibility")
+  indicators = c(
+    "carbon", "biodiversity", "water",
+    "fragmentation", "accessibility"
+  )
 )
 
 # 3. Normaliser (0-100)
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "biodiversity", "water",
-                 "fragmentation", "accessibility"),
+  indicators = c(
+    "carbon", "biodiversity", "water",
+    "fragmentation", "accessibility"
+  ),
   method = "minmax"
 )
 
@@ -206,7 +214,7 @@ plot_indicators_map(
 #   indicators = "water_norm",
 #   suffix = "_inv"
 # )
-#
+# 
 # # L'indicateur inversé
 # head(normalized_inv[, c("parcel_id", "water_norm", "water_norm_inv")])
 
@@ -223,7 +231,7 @@ broadleaf_index <- create_composite_index(
 
 ## -----------------------------------------------------------------------------
 # Définir la langue
-nemeton_set_language("fr")  # Français
+nemeton_set_language("fr") # Français
 # nemeton_set_language("en")  # English
 
 # Les messages d'erreur/information seront dans la langue choisie
@@ -231,7 +239,7 @@ nemeton_set_language("fr")  # Français
 ## ----eval = FALSE-------------------------------------------------------------
 # # Export en GeoPackage
 # sf::st_write(composite, "results/forest_quality.gpkg")
-#
+# 
 # # Export en CSV (sans géométrie)
 # results_table <- composite |>
 #   sf::st_drop_geometry()
@@ -239,3 +247,4 @@ nemeton_set_language("fr")  # Français
 
 ## -----------------------------------------------------------------------------
 sessionInfo()
+

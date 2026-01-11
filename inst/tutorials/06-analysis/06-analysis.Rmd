@@ -1192,7 +1192,7 @@ if (requireNamespace("leaflet", quietly = TRUE)) {
 
   # Créer les popups
   parcelles$popup <- paste0(
-    "<b>Parcelle ", parcelles$id, "</b><br>",
+    "<b>", parcelles$id, "</b><br>",
     "Surface: ", round(parcelles$surface_ha, 2), " ha<br>",
     "Indice nemeton: ", round(parcelles$I_nemeton, 2), "<br>",
     "Classe: ", parcelles$classe
@@ -1358,8 +1358,8 @@ Vous avez terminé la série complète des tutoriels nemeton !
 
 ### Ressources
 
-- [Documentation nemeton](https://forestsoils.github.io/nemeton/)
-- [GitHub nemeton](https://github.com/forestsoils/nemeton)
+- [Documentation nemeton](https://pobsteta.github.io/nemeton/)
+- [GitHub nemeton](https://github.com/pobsteta/nemeton/)
 - [Référentiel des 12 familles](https://forestsoils.github.io/nemeton/articles/complete-referential_fr.html)
 
 ```{r conclusion, echo=FALSE}
@@ -1369,7 +1369,7 @@ cat("
 ║   Merci d'avoir suivi la série de tutoriels nemeton !        ║
 ║                                                               ║
 ║   Pour toute question ou contribution, visitez :              ║
-║   https://github.com/forestsoils/nemeton                      ║
+║   https://github.com/pobsteta/nemeton/                      ║
 ║                                                               ║
 ╚═══════════════════════════════════════════════════════════════╝
 ")

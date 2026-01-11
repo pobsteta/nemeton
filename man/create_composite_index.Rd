@@ -64,7 +64,7 @@ results <- create_composite_index(
   indicators = c("carbon_norm", "biodiversity_norm", "water_norm")
 )
 
-# Custom weights (carbon 50\\\%, biodiversity 30\\\%, water 20\\\%)
+# Custom weights (carbon 50\\%, biodiversity 30\\\%, water 20\\\%)
 results <- create_composite_index(
   normalized_data,
   indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),

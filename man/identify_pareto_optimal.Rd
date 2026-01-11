@@ -79,8 +79,10 @@ library(ggplot2)
 ggplot(result, aes(x = family_C, y = family_B, color = is_optimal)) +
   geom_point(size = 3) +
   scale_color_manual(values = c("gray", "red")) +
-  labs(title = "Pareto Optimal Parcels",
-       x = "Carbon Storage", y = "Biodiversity")
+  labs(
+    title = "Pareto Optimal Parcels",
+    x = "Carbon Storage", y = "Biodiversity"
+  )
 }
 
 }

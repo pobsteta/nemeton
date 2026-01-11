@@ -22,9 +22,13 @@ units <- massif_demo_units[1:10, ]
 # Ajouter des attributs synthétiques pour les exemples
 set.seed(42)
 units$strata <- sample(c("Emergent", "Dominant", "Intermediate", "Suppressed"),
-                       10, replace = TRUE)
+  10,
+  replace = TRUE
+)
 units$age_class <- sample(c("Young", "Intermediate", "Mature", "Old", "Ancient"),
-                          10, replace = TRUE)
+  10,
+  replace = TRUE
+)
 units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), 10, replace = TRUE)
 units$age <- sample(c(45, 80, 120, 150, 200), 10, replace = TRUE)
 units$height <- runif(10, 15, 30)
@@ -88,9 +92,9 @@ summary(result$B3)
 # Simulation des indicateurs de risque
 # (Dans un cas réel, utiliser les fonctions avec DEM et données climatiques)
 set.seed(43)
-result$R1 <- pmin(100, pmax(0, 40 + runif(10, -20, 30)))  # Risque incendie
-result$R2 <- pmin(100, pmax(0, 45 + runif(10, -25, 35)))  # Vulnérabilité tempête
-result$R3 <- pmin(100, pmax(0, 35 + runif(10, -15, 40)))  # Stress hydrique
+result$R1 <- pmin(100, pmax(0, 40 + runif(10, -20, 30))) # Risque incendie
+result$R2 <- pmin(100, pmax(0, 45 + runif(10, -25, 35))) # Vulnérabilité tempête
+result$R3 <- pmin(100, pmax(0, 35 + runif(10, -15, 40))) # Stress hydrique
 
 # Les pins en pente ont plus de risque incendie
 result$R1[result$species == "Pinus"] <- result$R1[result$species == "Pinus"] * 1.3
@@ -104,7 +108,7 @@ summary(result[, c("R1", "R2", "R3")])
 
 ## -----------------------------------------------------------------------------
 # Utiliser les âges déjà définis
-result$T1 <- result$age  # Directement l'âge en années
+result$T1 <- result$age # Directement l'âge en années
 summary(result$T1)
 
 ## -----------------------------------------------------------------------------
@@ -153,7 +157,7 @@ result_norm |>
 result_risk_min <- create_family_index(
   result_norm,
   family_codes = "R",
-  method = "min"  # Score = pire indicateur
+  method = "min" # Score = pire indicateur
 )
 
 # Comparer méthodes "mean" vs "min"
@@ -178,10 +182,10 @@ nemeton_radar(
 
 ## -----------------------------------------------------------------------------
 # Ajouter quelques indicateurs des familles existantes pour démonstration
-result_norm$C1 <- runif(10, 40, 90)  # Carbon biomass
-result_norm$W1 <- runif(10, 30, 80)  # Water network
-result_norm$F1 <- runif(10, 35, 85)  # Soil fertility
-result_norm$L1 <- runif(10, 25, 75)  # Landscape fragmentation
+result_norm$C1 <- runif(10, 40, 90) # Carbon biomass
+result_norm$W1 <- runif(10, 30, 80) # Water network
+result_norm$F1 <- runif(10, 35, 85) # Soil fertility
+result_norm$L1 <- runif(10, 25, 75) # Landscape fragmentation
 
 # Normaliser
 result_norm <- normalize_indicators(
@@ -265,14 +269,22 @@ if (nrow(services_climat) > 0) {
 ## ----fig.height=8-------------------------------------------------------------
 library(patchwork)
 
-p_bio <- plot_indicators_map(result_complete, indicator = "family_B",
-                              palette = "Greens", title = "Biodiversité (B)")
-p_risk <- plot_indicators_map(result_complete, indicator = "family_R",
-                               palette = "YlOrRd", title = "Risques (R)")
-p_temp <- plot_indicators_map(result_complete, indicator = "T1",
-                               palette = "Blues", title = "Ancienneté (T1)")
-p_air <- plot_indicators_map(result_complete, indicator = "family_A",
-                              palette = "viridis", title = "Air & Climat (A)")
+p_bio <- plot_indicators_map(result_complete,
+  indicator = "family_B",
+  palette = "Greens", title = "Biodiversité (B)"
+)
+p_risk <- plot_indicators_map(result_complete,
+  indicator = "family_R",
+  palette = "YlOrRd", title = "Risques (R)"
+)
+p_temp <- plot_indicators_map(result_complete,
+  indicator = "T1",
+  palette = "Blues", title = "Ancienneté (T1)"
+)
+p_air <- plot_indicators_map(result_complete,
+  indicator = "family_A",
+  palette = "viridis", title = "Air & Climat (A)"
+)
 
 (p_bio + p_risk) / (p_temp + p_air)
 
@@ -280,15 +292,17 @@ p_air <- plot_indicators_map(result_complete, indicator = "family_A",
 # Résumé des 10 nouveaux indicateurs v0.3.0
 summary_table <- result_complete |>
   st_drop_geometry() |>
-  select(parcel_id,
-         # Biodiversité
-         B1, B2, B3, family_B,
-         # Risques
-         R1, R2, R3, family_R,
-         # Temporel
-         T1, T2, family_T,
-         # Air
-         A1, A2, family_A) |>
+  select(
+    parcel_id,
+    # Biodiversité
+    B1, B2, B3, family_B,
+    # Risques
+    R1, R2, R3, family_R,
+    # Temporel
+    T1, T2, family_T,
+    # Air
+    A1, A2, family_A
+  ) |>
   head(5)
 
 summary_table

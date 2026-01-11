@@ -34,7 +34,8 @@ Higher fragmentation = more patches with smaller mean size.
 \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
 results <- indicator_landscape_fragmentation(
-  units, layers, forest_values = c(1, 2, 3), buffer = 1000
+  units, layers,
+  forest_values = c(1, 2, 3), buffer = 1000
 )
 }
 }

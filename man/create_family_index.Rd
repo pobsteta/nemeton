@@ -59,9 +59,9 @@ score_water). Automatically detects indicator families from column name prefixes
 # Setup multi-family indicators
 data(massif_demo_units)
 units <- massif_demo_units[1:5, ]
-units$C1 <- rnorm(5, 50, 10)  # Carbon biomass
-units$C2 <- rnorm(5, 70, 10)  # Carbon NDVI
-units$W1 <- rnorm(5, 15, 5)   # Water network
+units$C1 <- rnorm(5, 50, 10) # Carbon biomass
+units$C2 <- rnorm(5, 70, 10) # Carbon NDVI
+units$W1 <- rnorm(5, 15, 5) # Water network
 
 # Create family indices
 units_fam <- create_family_index(units)
