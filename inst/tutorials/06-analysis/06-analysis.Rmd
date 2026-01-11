@@ -177,30 +177,23 @@ if (length(cols_family) > 0) {
   cat("  ", paste(cols_family, collapse = ", "), "\n\n")
 }
 
-# Sélectionner une parcelle
-parcelle_id <- parcelles$id_parcelle[1]  # Prendre la première parcelle
-parcelle_data <- parcelles[parcelles$id_parcelle == parcelle_id, ]
-cat("Parcelle sélectionnée:", parcelle_id, "\n")
-cat("Nombre de lignes dans parcelle_data:", nrow(parcelle_data), "\n\n")
+# Sélectionner une parcelle (utiliser la première ligne)
+parcelle_id <- 1  # Index de la première parcelle
+cat("Parcelle sélectionnée (ligne):", parcelle_id, "\n\n")
 
-# Extraire les scores par famille (uniquement celles disponibles)
+# Extraire les scores par famille
 familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
                    "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
 
-# Extraire les données sans géométrie - utiliser directement parcelles (pas le subset)
+# Extraire les données sans géométrie
 parcelles_df <- as.data.frame(st_drop_geometry(parcelles))
-cat("Colonnes family_* dans parcelles_df:\n")
-print(grep("^family_", names(parcelles_df), value = TRUE))
 
-# Extraire les scores avec purrr::map_dbl (garantit un vecteur numérique)
-row_idx <- which(parcelles_df$id_parcelle == parcelle_id)[1]
-cat("\nIndex de la ligne:", row_idx, "\n")
-
+# Extraire les scores avec purrr::map_dbl
 scores <- map_dbl(familles, ~{
   col_name <- paste0("family_", .x)
-  if (col_name %in% names(parcelles_df) && !is.na(row_idx)) {
-    as.numeric(parcelles_df[row_idx, col_name])
+  if (col_name %in% names(parcelles_df)) {
+    as.numeric(parcelles_df[parcelle_id, col_name])
   } else {
     NA_real_
   }
@@ -252,22 +245,22 @@ cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-# Sélectionner 3 parcelles à comparer (premières disponibles)
-parcelles_ids <- head(parcelles$id_parcelle, 3)
+# Sélectionner 3 parcelles à comparer (lignes 1, 2, 3)
+parcelles_idx <- c(1, 2, 3)
 
 # Extraire les scores pour chaque parcelle
 familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
+parcelles_df <- as.data.frame(st_drop_geometry(parcelles))
 
-extract_scores <- function(data, id) {
-  row_df <- as.data.frame(st_drop_geometry(data[data$id_parcelle == id, ]))
+extract_scores <- function(df, idx) {
   map_dbl(familles, ~{
     col_name <- paste0("family_", .x)
-    if (col_name %in% names(row_df)) as.numeric(row_df[1, col_name])
+    if (col_name %in% names(df)) as.numeric(df[idx, col_name])
     else NA_real_
   })
 }
 
-scores_list <- map(parcelles_ids, ~extract_scores(parcelles, .x))
+scores_list <- map(parcelles_idx, ~extract_scores(parcelles_df, .x))
 
 # Radar multi-parcelles avec fmsb
 if (requireNamespace("fmsb", quietly = TRUE)) {
@@ -382,7 +375,7 @@ base_eco <- runif(n, 0.3, 0.8)
 base_prod <- runif(n, 0.3, 0.8)
 
 parcelles_sim <- st_sf(
-  id_parcelle = 1:n,
+  id = 1:n,
   family_C = base_eco + rnorm(n, 0, 0.1),
   family_B = base_eco + rnorm(n, 0, 0.15),
   family_N = base_eco + rnorm(n, 0, 0.12),
@@ -481,7 +474,7 @@ cat("\n=== Top 5 Hotspots ===\n")
 hotspots <- parcelles[parcelles$is_hotspot, ]
 hotspots_sorted <- hotspots[order(-hotspots$I_nemeton), ]
 print(st_drop_geometry(hotspots_sorted)[1:min(5, nrow(hotspots_sorted)),
-                                         c("id_parcelle", "surface_ha", "I_nemeton")])
+                                         c("id", "surface_ha", "I_nemeton")])
 ```
 
 
@@ -778,7 +771,7 @@ parcelles <- st_read(parcelles_path, quiet = TRUE)
 data_export <- st_drop_geometry(parcelles)
 
 # Sélectionner les colonnes pertinentes
-cols_export <- c("id_parcelle", "surface_ha",
+cols_export <- c("id", "surface_ha",
                  grep("^family_", names(data_export), value = TRUE),
                  "I_nemeton", "classe")
 cols_present <- intersect(cols_export, names(data_export))
@@ -829,7 +822,7 @@ if (requireNamespace("leaflet", quietly = TRUE)) {
 
   # Créer les popups
   parcelles$popup <- paste0(
-    "<b>Parcelle ", parcelles$id_parcelle, "</b><br>",
+    "<b>Parcelle ", parcelles$id, "</b><br>",
     "Surface: ", round(parcelles$surface_ha, 2), " ha<br>",
     "Indice nemeton: ", round(parcelles$I_nemeton, 2), "<br>",
     "Classe: ", parcelles$classe
