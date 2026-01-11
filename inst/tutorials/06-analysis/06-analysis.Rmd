@@ -393,6 +393,13 @@ if (requireNamespace("corrplot", quietly = TRUE)) {
 # === ANALYSE DES CORRÉLATIONS ===
 cat("\n\n========== ANALYSE DES CORRÉLATIONS ==========\n\n")
 
+# Dictionnaire des noms de familles
+noms_familles <- c(
+  C = "Carbone", B = "Biodiversité", W = "Eau", A = "Air",
+  F = "Fertilité", L = "Paysage", T = "Trame", R = "Résilience",
+  S = "Santé", P = "Production", E = "Énergie", N = "Naturalité"
+)
+
 # Extraire les paires de corrélations (triangle supérieur)
 cor_pairs <- which(upper.tri(cor_matrix), arr.ind = TRUE)
 cor_values <- data.frame(
@@ -406,8 +413,10 @@ cor_values <- cor_values[order(-abs(cor_values$Correlation)), ]
 cat("TOP 5 SYNERGIES (corrélations positives) :\n")
 synergies <- head(cor_values[cor_values$Correlation > 0, ], 5)
 for (i in seq_len(nrow(synergies))) {
-  cat(sprintf("  %s - %s : r = %.2f\n",
-              synergies$Famille1[i], synergies$Famille2[i], synergies$Correlation[i]))
+  f1 <- synergies$Famille1[i]
+  f2 <- synergies$Famille2[i]
+  cat(sprintf("  %s (%s) - %s (%s) : r = %.2f\n",
+              f1, noms_familles[f1], f2, noms_familles[f2], synergies$Correlation[i]))
 }
 
 # Top 5 compromis (corrélations négatives)
@@ -415,8 +424,10 @@ cat("\nTOP 5 COMPROMIS (corrélations négatives) :\n")
 compromis <- head(cor_values[cor_values$Correlation < 0, ], 5)
 if (nrow(compromis) > 0) {
   for (i in seq_len(nrow(compromis))) {
-    cat(sprintf("  %s - %s : r = %.2f\n",
-                compromis$Famille1[i], compromis$Famille2[i], compromis$Correlation[i]))
+    f1 <- compromis$Famille1[i]
+    f2 <- compromis$Famille2[i]
+    cat(sprintf("  %s (%s) - %s (%s) : r = %.2f\n",
+                f1, noms_familles[f1], f2, noms_familles[f2], compromis$Correlation[i]))
   }
 } else {
   cat("  Aucun compromis significatif détecté\n")
