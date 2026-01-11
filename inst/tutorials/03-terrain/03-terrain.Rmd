@@ -2021,32 +2021,21 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 
 ```{r ex-6-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-6-5-setup"}
 # === SYNTHÈSE FINALE ===
-# Consolidation de tous les indicateurs terrain dans parcelles.gpkg
+# Consolidation des indicateurs terrain (T03 uniquement)
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-cat("=== CONSOLIDATION INDICATEURS TERRAIN ===\n\n")
+cat("=== CONSOLIDATION INDICATEURS TERRAIN (T03) ===\n\n")
 
-# Fusionner les colonnes des fichiers metriques_*.gpkg
-metriques_files <- list.files(data_dir, pattern = "^metriques_.*\\.gpkg$", full.names = TRUE)
-for (f in metriques_files) {
-  tryCatch({
-    metrics <- st_read(f, quiet = TRUE)
-    new_cols <- setdiff(names(st_drop_geometry(metrics)), names(st_drop_geometry(parcelles)))
-    if (length(new_cols) > 0) {
-      parcelles <- cbind(parcelles, st_drop_geometry(metrics)[new_cols])
-    }
-  }, error = function(e) NULL)
-}
-
-# Liste des indicateurs par famille (12 indicateurs)
+# Liste des indicateurs terrain par famille (12 indicateurs T03)
 familles <- list(
   "W (Eau)" = c("W1", "W2", "W3"),
   "R (Risques)" = c("R1", "R2", "R3", "R4"),
   "S (Social)" = c("S1", "S2", "S3"),
   "F (Sol)" = c("F1", "F2")
 )
+indicateurs_t03 <- unlist(familles)
 
 # Afficher les résultats par famille
 for (fam in names(familles)) {
@@ -2083,13 +2072,19 @@ if (length(manquants) > 0) {
   }
 }
 
-# Sauvegarder indicateurs_terrain.gpkg (fichier spécifique)
-output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+# Sauvegarder indicateurs_terrain.gpkg (uniquement indicateurs T03)
+cols_base <- c("id", "code_parcelle", "surface_ha")  # colonnes de base si présentes
+cols_base <- cols_base[cols_base %in% names(parcelles)]
+cols_t03 <- indicateurs_t03[indicateurs_t03 %in% names(parcelles)]
+parcelles_t03 <- parcelles[, c(cols_base, cols_t03)]
 
-# Sauvegarder parcelles.gpkg avec tous les indicateurs consolidés
+output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")
+st_write(parcelles_t03, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ indicateurs_terrain.gpkg:", length(cols_t03), "indicateurs T03\n")
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs (cumulatif)
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ Indicateurs terrain consolidés dans parcelles.gpkg\n")
+cat("✓ parcelles.gpkg: tous les indicateurs consolidés\n")
 ```
 
 ### Fichiers produits

@@ -2708,32 +2708,21 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 
 ```{r ex-7-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=80, exercise.setup="ex-7-5-setup"}
 # === SYNTHÈSE FINALE ===
-# Consolidation de tous les indicateurs écologiques dans parcelles.gpkg
+# Consolidation des indicateurs écologiques (T04 uniquement)
 
 parcelles_path <- file.path(data_dir, "parcelles.gpkg")
 parcelles <- st_read(parcelles_path, quiet = TRUE)
 
-cat("=== CONSOLIDATION INDICATEURS ÉCOLOGIQUES ===\n\n")
+cat("=== CONSOLIDATION INDICATEURS ÉCOLOGIQUES (T04) ===\n\n")
 
-# Fusionner les colonnes des fichiers metriques_*.gpkg
-metriques_files <- list.files(data_dir, pattern = "^metriques_.*\\.gpkg$", full.names = TRUE)
-for (f in metriques_files) {
-  tryCatch({
-    metrics <- st_read(f, quiet = TRUE)
-    new_cols <- setdiff(names(st_drop_geometry(metrics)), names(st_drop_geometry(parcelles)))
-    if (length(new_cols) > 0) {
-      parcelles <- cbind(parcelles, st_drop_geometry(metrics)[new_cols])
-    }
-  }, error = function(e) NULL)
-}
-
-# Liste des indicateurs par famille (11 indicateurs)
+# Liste des indicateurs écologiques par famille (11 indicateurs T04)
 familles <- list(
   "B (Biodiversité)" = c("B1", "B2", "B3"),
   "L (Paysage)" = c("L1", "L2", "L3"),
   "T (Temporel)" = c("T1", "T2"),
   "N (Naturalité)" = c("N1", "N2", "N3")
 )
+indicateurs_t04 <- unlist(familles)
 
 # Afficher les résultats par famille
 for (fam in names(familles)) {
@@ -2771,13 +2760,19 @@ if (length(manquants) > 0) {
   }
 }
 
-# Sauvegarder indicateurs_ecologiques.gpkg (fichier spécifique)
-output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
-st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+# Sauvegarder indicateurs_ecologiques.gpkg (uniquement indicateurs T04)
+cols_base <- c("id", "code_parcelle", "surface_ha")  # colonnes de base si présentes
+cols_base <- cols_base[cols_base %in% names(parcelles)]
+cols_t04 <- indicateurs_t04[indicateurs_t04 %in% names(parcelles)]
+parcelles_t04 <- parcelles[, c(cols_base, cols_t04)]
 
-# Sauvegarder parcelles.gpkg avec tous les indicateurs consolidés
+output_path <- file.path(data_dir, "indicateurs_ecologiques.gpkg")
+st_write(parcelles_t04, output_path, delete_dsn = TRUE, quiet = TRUE)
+cat("\n✓ indicateurs_ecologiques.gpkg:", length(cols_t04), "indicateurs T04\n")
+
+# Sauvegarder parcelles.gpkg avec tous les indicateurs (cumulatif)
 st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
-cat("\n✓ Indicateurs écologiques consolidés\n")
+cat("✓ parcelles.gpkg: tous les indicateurs consolidés (32 au total)\n")
 ```
 
 ### Fichiers produits
