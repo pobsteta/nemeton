@@ -1172,7 +1172,7 @@ library(sf)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-8-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-8-1-setup"}
+```{r ex-8-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-8-1-setup", fig.width=8, fig.height=6}
 # === CARTE LEAFLET INTERACTIVE ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -1221,6 +1221,42 @@ if (requireNamespace("leaflet", quietly = TRUE)) {
   cat("Le package leaflet n'est pas installé.\n")
   cat("Installez-le avec: install.packages('leaflet')")
 }
+
+# === ANALYSE DE LA CARTE INTERACTIVE ===
+cat("\n\n========== ANALYSE DE LA CARTE INTERACTIVE ==========\n\n")
+
+# Statistiques générales
+cat("DONNÉES CARTOGRAPHIÉES :\n")
+cat(sprintf("  Nombre de parcelles : %d\n", nrow(parcelles)))
+cat(sprintf("  Surface totale : %.1f ha\n", sum(parcelles$surface_ha, na.rm = TRUE)))
+
+# Distribution de l'indice nemeton
+cat("\nDISTRIBUTION DE L'INDICE NEMETON :\n")
+cat(sprintf("  Min : %.3f\n", min(parcelles$I_nemeton, na.rm = TRUE)))
+cat(sprintf("  Max : %.3f\n", max(parcelles$I_nemeton, na.rm = TRUE)))
+cat(sprintf("  Moyenne : %.3f\n", mean(parcelles$I_nemeton, na.rm = TRUE)))
+cat(sprintf("  Médiane : %.3f\n", median(parcelles$I_nemeton, na.rm = TRUE)))
+
+# Distribution par classe si disponible
+if ("classe" %in% names(parcelles)) {
+  cat("\nRÉPARTITION PAR CLASSE :\n")
+  tab_classe <- table(parcelles$classe)
+  for (cl in names(tab_classe)) {
+    pct <- 100 * tab_classe[cl] / sum(tab_classe)
+    cat(sprintf("  %s : %d parcelles (%.1f%%)\n", cl, tab_classe[cl], pct))
+  }
+}
+
+# Emprise géographique
+bbox <- st_bbox(parcelles)
+cat("\nEMPRISE GÉOGRAPHIQUE (WGS84) :\n")
+cat(sprintf("  Longitude : %.4f° à %.4f°\n", bbox["xmin"], bbox["xmax"]))
+cat(sprintf("  Latitude : %.4f° à %.4f°\n", bbox["ymin"], bbox["ymax"]))
+
+cat("\nFONCTIONNALITÉS DE LA CARTE :\n")
+cat("  - Cliquez sur une parcelle pour voir ses détails\n")
+cat("  - Utilisez la molette pour zoomer\n")
+cat("  - La légende indique l'échelle de couleurs (vert = meilleur score)\n")
 ```
 
 
