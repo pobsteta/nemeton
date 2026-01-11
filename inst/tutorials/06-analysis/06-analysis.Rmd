@@ -180,21 +180,27 @@ if (length(cols_family) > 0) {
 # Sélectionner une parcelle
 parcelle_id <- parcelles$id_parcelle[1]  # Prendre la première parcelle
 parcelle_data <- parcelles[parcelles$id_parcelle == parcelle_id, ]
-cat("Parcelle sélectionnée:", parcelle_id, "\n\n")
+cat("Parcelle sélectionnée:", parcelle_id, "\n")
+cat("Nombre de lignes dans parcelle_data:", nrow(parcelle_data), "\n\n")
 
 # Extraire les scores par famille (uniquement celles disponibles)
 familles <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 noms_familles <- c("Carbone", "Biodiv", "Eau", "Air", "Sol", "Paysage",
                    "Temporel", "Risques", "Social", "Prod", "Énergie", "Natural")
 
-# Extraire les données sans géométrie
-parcelle_df <- as.data.frame(st_drop_geometry(parcelle_data))
+# Extraire les données sans géométrie - utiliser directement parcelles (pas le subset)
+parcelles_df <- as.data.frame(st_drop_geometry(parcelles))
+cat("Colonnes family_* dans parcelles_df:\n")
+print(grep("^family_", names(parcelles_df), value = TRUE))
 
 # Extraire les scores avec purrr::map_dbl (garantit un vecteur numérique)
+row_idx <- which(parcelles_df$id_parcelle == parcelle_id)[1]
+cat("\nIndex de la ligne:", row_idx, "\n")
+
 scores <- map_dbl(familles, ~{
   col_name <- paste0("family_", .x)
-  if (col_name %in% names(parcelle_df)) {
-    as.numeric(parcelle_df[1, col_name])
+  if (col_name %in% names(parcelles_df) && !is.na(row_idx)) {
+    as.numeric(parcelles_df[row_idx, col_name])
   } else {
     NA_real_
   }
