@@ -13,13 +13,11 @@ description: >
 
 ```{r setup, include=FALSE}
 library(learnr)
-library(gradethis)
 library(sf)
 library(dplyr)
 library(ggplot2)
 
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-gradethis::gradethis_setup()
 
 # Répertoire cache
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
@@ -249,12 +247,6 @@ cat(sprintf("\n=== BILAN: %d/%d indicateurs présents ===\n",
             presents, length(tous_indicateurs)))
 ```
 
-```{r verif-indicateurs-check}
-grade_this({
-  pass("Vérification effectuée !")
-})
-```
-
 ### Statistiques Descriptives
 
 ```{r stats-indicateurs-setup}
@@ -429,12 +421,6 @@ cat("\n=== BILAN ===\n")
 cat(length(cols_norm), "indicateurs normalisés créés\n")
 ```
 
-```{r normalize-all-check}
-grade_this({
-  pass("Normalisation réussie !")
-})
-```
-
 ## Inversion des Indicateurs Négatifs
 
 ### Indicateurs à Logique Inverse
@@ -524,12 +510,6 @@ cat("- Risque élevé (ex: R1=0.9) → score faible (0.1)\n")
 cat("- Risque faible (ex: R1=0.1) → score élevé (0.9)\n")
 ```
 
-```{r invert-indicators-check}
-grade_this({
-  pass("Inversion des indicateurs négatifs effectuée !")
-})
-```
-
 ## Calcul des Moyennes par Famille
 
 ### Agrégation par Famille
@@ -615,12 +595,6 @@ for (famille in names(indicateurs_par_famille)) {
 # Vérifier les colonnes famille créées
 cols_famille <- grep("^family_", names(parcelles), value = TRUE)
 cat("\n", length(cols_famille), "familles calculées\n")
-```
-
-```{r family-means-check}
-grade_this({
-  pass("Moyennes par famille calculées !")
-})
 ```
 
 ## Indice Composite I_nemeton
@@ -746,12 +720,6 @@ cat(sprintf("  Min: %.3f\n", min(parcelles$I_nemeton, na.rm = TRUE)))
 cat(sprintf("  Max: %.3f\n", max(parcelles$I_nemeton, na.rm = TRUE)))
 cat(sprintf("  Moyenne: %.3f\n", mean(parcelles$I_nemeton, na.rm = TRUE)))
 cat(sprintf("  Écart-type: %.3f\n", sd(parcelles$I_nemeton, na.rm = TRUE)))
-```
-
-```{r composite-index-check}
-grade_this({
-  pass("Indice composite I_nemeton calculé avec succès !")
-})
 ```
 
 ### Classification des Parcelles
@@ -947,12 +915,6 @@ cat(sprintf("Min: %.3f | Max: %.3f | Moyenne: %.3f\n",
 
 cat("\nDistribution par classe:\n")
 print(table(parcelles$classe_nemeton))
-```
-
-```{r export-final-check}
-grade_this({
-  pass("Export réussi ! Vos données sont prêtes pour l'analyse multicritères.")
-})
 ```
 
 ## Quiz Final
