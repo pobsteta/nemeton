@@ -608,7 +608,7 @@ library(ggplot2)
 cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.setup="ex-5-2-setup"}
+```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=75, exercise.setup="ex-5-2-setup", fig.width=8, fig.height=6}
 # === FRONT DE PARETO ===
 
 parcelles_path <- file.path(cache_dir, "parcelles.gpkg")
@@ -640,8 +640,6 @@ identify_pareto <- function(x, y) {
 # Identifier le front de Pareto pour P vs B
 data_plot$is_pareto <- identify_pareto(data_plot$family_P, data_plot$family_B)
 
-cat("Points sur le front de Pareto:", sum(data_plot$is_pareto), "/", nrow(data_plot), "\n")
-
 # Visualiser
 pareto_plot <- ggplot(data_plot, aes(x = family_P, y = family_B)) +
   geom_point(aes(color = is_pareto), size = 3, alpha = 0.7) +
@@ -650,13 +648,54 @@ pareto_plot <- ggplot(data_plot, aes(x = family_P, y = family_B)) +
                      name = "Statut") +
   theme_minimal() +
   labs(
-    title = "Front de Pareto: Production vs Biodiversité",
-    x = "Score Production",
-    y = "Score Biodiversité",
+    title = "Front de Pareto : Production vs Biodiversité",
+    x = "Score Production (P)",
+    y = "Score Biodiversité (B)",
     subtitle = "Points rouges = optimaux (non dominés)"
   )
 
 print(pareto_plot)
+
+# === ANALYSE DU FRONT DE PARETO ===
+cat("\n\n========== ANALYSE DU FRONT DE PARETO ==========\n\n")
+
+n_pareto <- sum(data_plot$is_pareto)
+n_total <- nrow(data_plot)
+pct_pareto <- round(100 * n_pareto / n_total, 1)
+
+cat(sprintf("Parcelles Pareto-optimales : %d / %d (%.1f%%)\n\n", n_pareto, n_total, pct_pareto))
+
+# Extraire les parcelles Pareto
+pareto_parcelles <- data_plot[data_plot$is_pareto, ]
+
+# Caractériser le front
+cat("CARACTÉRISTIQUES DU FRONT :\n")
+cat(sprintf("  Production (P) : min=%.2f, max=%.2f\n",
+            min(pareto_parcelles$family_P), max(pareto_parcelles$family_P)))
+cat(sprintf("  Biodiversité (B) : min=%.2f, max=%.2f\n",
+            min(pareto_parcelles$family_B), max(pareto_parcelles$family_B)))
+
+# Identifier les profils extrêmes sur le front
+cat("\nPROFILS EXTRÊMES SUR LE FRONT :\n")
+
+# Meilleur en Production
+best_P <- pareto_parcelles[which.max(pareto_parcelles$family_P), ]
+cat(sprintf("  Spécialiste Production : P=%.2f, B=%.2f\n", best_P$family_P, best_P$family_B))
+
+# Meilleur en Biodiversité
+best_B <- pareto_parcelles[which.max(pareto_parcelles$family_B), ]
+cat(sprintf("  Spécialiste Biodiversité : P=%.2f, B=%.2f\n", best_B$family_P, best_B$family_B))
+
+# Meilleur compromis (somme P+B)
+pareto_parcelles$somme_PB <- pareto_parcelles$family_P + pareto_parcelles$family_B
+best_compromis <- pareto_parcelles[which.max(pareto_parcelles$somme_PB), ]
+cat(sprintf("  Meilleur compromis (P+B max) : P=%.2f, B=%.2f\n",
+            best_compromis$family_P, best_compromis$family_B))
+
+cat("\nINTERPRÉTATION :\n")
+cat("  Les parcelles Pareto-optimales représentent les meilleurs compromis possibles.\n")
+cat("  Aucune autre parcelle n'est meilleure sur les deux critères simultanément.\n")
+cat("  Le choix final dépend des priorités de gestion (production vs conservation).\n")
 ```
 
 
