@@ -226,8 +226,11 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Sauvegarder les parcelles avec F1
   output_path <- file.path(data_dir, "metriques_erosion_f1.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
   cat("\n=== Métriques F1 érosion exportées ===\n")
   cat("Fichier:", output_path, "\n")
+  cat("Fichier principal:", parcelles_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 } else {
   cat("Fichiers non trouvés. Exécutez le Tutorial 01.\n")
@@ -335,8 +338,11 @@ if (file.exists(mnt_path)) {
     # Sauvegarder les parcelles avec W3
     output_path <- file.path(data_dir, "metriques_twi_w3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques W3 TWI exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   }
 } else {
@@ -441,8 +447,11 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_fertilite_sol_f2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
   cat("\n=== Métriques F2 fertilité exportées ===\n")
   cat("Fichier:", output_path, "\n")
+  cat("Fichier principal:", parcelles_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 } else {
   cat("Fichiers non trouvés. Exécutez le Tutorial 01.\n")
@@ -517,8 +526,11 @@ if (file.exists(parcelles_path)) {
       # Sauvegarder
       output_path <- file.path(data_dir, "metriques_densite_hydro_w1.gpkg")
       st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+      st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
       cat("\n=== Métriques W1 Densité réseau hydro exportées ===\n")
       cat("Fichier:", output_path, "\n")
+      cat("Fichier principal:", parcelles_path, "\n")
       cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
     } else {
       cat("Aucun cours d'eau dans la zone.\n")
@@ -585,8 +597,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_couverture_zone_humide_w2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques W2 Couverture zones humides exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("TWI non trouvé. Exécutez d'abord l'exercice 2.1.\n")
@@ -671,8 +686,11 @@ if (file.exists(mnt_path) && file.exists(parcelles_path) && file.exists(bdforet_
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_exposition_feu_r1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques R1 Exposition au feu exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Package fireexposuR non installé.\n")
@@ -880,8 +898,11 @@ if (file.exists(mnt_path) && file.exists(parcelles_path)) {
   # Sauvegarder
   output_path <- file.path(data_dir, "metriques_exposition_tempete_r2.gpkg")
   st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+  st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
   cat("\n=== Métriques R2 Exposition au tempête exportées ===\n")
   cat("Fichier:", output_path, "\n")
+  cat("Fichier principal:", parcelles_path, "\n")
   cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 } else {
   cat("Fichiers non trouvés.\n")
@@ -1044,8 +1065,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_risque_secheresse_r3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques R3 Risque sécheresse exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("MNT non trouvé, pas de modulation topographique\n")
@@ -1392,8 +1416,11 @@ print(table(parcelles$R4_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_pression_gibier_r4.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
 cat("\n=== Métriques R4 Pression du gibier exportées ===\n")
 cat("Fichier:", output_path, "\n")
+cat("Fichier principal:", parcelles_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
 
@@ -1481,8 +1508,11 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_access_route_s1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques S1 Accessibilité route exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Fichier routes.gpkg non trouvé.\n")
@@ -1581,8 +1611,11 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_distance_batiment_s2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques S2 Distance au batiment exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Bâtiments non disponibles. Vérifiez l'accès au WFS IGN.\n")
@@ -1708,8 +1741,11 @@ if (file.exists(parcelles_path) && file.exists(mnt_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_densite_sentiers_s3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("\n=== Métriques S3 Densité sentiers exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Sentiers non disponibles.\n")
@@ -2034,6 +2070,18 @@ cat("Parcelles:", nrow(parcelles), "\n")
 cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
 cat("Colonnes totales:", ncol(parcelles), "\n")
 cat(strrep("=", 40), "\n")
+
+# Référence exercices pour indicateurs manquants
+manquants <- indicateurs_calcules[!indicateurs_calcules %in% names(parcelles)]
+if (length(manquants) > 0) {
+  cat("\n⚠ INDICATEURS MANQUANTS - Exercices à exécuter :\n")
+  refs <- c(F1 = "1.1", W3 = "2.1", F2 = "3.1", W1 = "4.1", W2 = "4.2",
+            R1 = "5.1", R2 = "5.2", R3 = "5.3", R4 = "5.4",
+            S1 = "6.1", S2 = "6.2", S3 = "6.3")
+  for (m in manquants) {
+    cat(sprintf("  - %s → Exercice %s\n", m, refs[m]))
+  }
+}
 
 # Sauvegarder indicateurs_terrain.gpkg (fichier spécifique)
 output_path <- file.path(data_dir, "indicateurs_terrain.gpkg")

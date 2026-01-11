@@ -714,8 +714,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_stock_carbone_c1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("=== Métriques C1 exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques pzabove2 et zmean non trouvées.\n")
@@ -770,8 +773,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_volume_bois_p1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("=== Métriques P1 exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques pzabove2, zmean et zmax non trouvées.\n")
@@ -834,8 +840,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_productivite_p2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("=== Métriques P2 exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques zmean, pzabove2, zq95 et zq25 non trouvées.\n")
@@ -896,8 +905,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_qualite_structurale_p3.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("=== Métriques P3 exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques zentropy, zsd et zmean non trouvées.\n")
@@ -1143,8 +1155,11 @@ cat("A1 max:", round(max(parcelles$A1, na.rm = TRUE), 1), "%\n")
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_couverture_forestiere_a1.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
 cat("\n=== Métriques A1 exportées ===\n")
 cat("Fichier:", output_path, "\n")
+cat("Fichier principal:", parcelles_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n")
 ```
 
@@ -1319,8 +1334,11 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_evitement_carbone_e2.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("=== Métriques E2 exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 
     # Visualisation
@@ -1679,8 +1697,11 @@ print(table(parcelles$C2_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_vitalite_c2.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
 cat("\n=== Métriques C2 Vitalité exportées ===\n")
 cat("Fichier:", output_path, "\n")
+cat("Fichier principal:", parcelles_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
 
@@ -1877,8 +1898,11 @@ print(table(parcelles$A2_classe))
 # Sauvegarder
 output_path <- file.path(data_dir, "metriques_qualite_air_a2.gpkg")
 st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
 cat("\n=== Métriques A2 Qualité air exportées ===\n")
 cat("Fichier:", output_path, "\n")
+cat("Fichier principal:", parcelles_path, "\n")
 cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
 ```
 
@@ -2165,6 +2189,17 @@ cat("Parcelles:", nrow(parcelles), "\n")
 cat("Indicateurs:", n_calcules, "/", length(indicateurs_calcules), "\n")
 cat("Colonnes totales:", ncol(parcelles), "\n")
 cat(strrep("=", 40), "\n")
+
+# Référence exercices pour indicateurs manquants
+manquants <- indicateurs_calcules[!indicateurs_calcules %in% names(parcelles)]
+if (length(manquants) > 0) {
+  cat("\n⚠ INDICATEURS MANQUANTS - Exercices à exécuter :\n")
+  refs <- c(C1 = "7.1", C2 = "10.2", P1 = "8.1", P2 = "8.1", P3 = "8.1",
+            E1 = "9.1", E2 = "9.1", A1 = "10.1", A2 = "10.2")
+  for (m in manquants) {
+    cat(sprintf("  - %s → Exercice %s\n", m, refs[m]))
+  }
+}
 
 # Sauvegarder indicateurs_lidar.gpkg (fichier spécifique)
 output_path <- file.path(data_dir, "indicateurs_lidar.gpkg")
