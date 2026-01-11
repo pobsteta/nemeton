@@ -1226,8 +1226,13 @@ if (file.exists(parcelles_path)) {
     # Sauvegarder
     output_path <- file.path(data_dir, "metriques_bois_energie_e1.gpkg")
     st_write(parcelles, output_path, delete_dsn = TRUE, quiet = TRUE)
+
+    # Sauvegarder aussi dans parcelles.gpkg pour E2
+    st_write(parcelles, parcelles_path, delete_dsn = TRUE, quiet = TRUE)
+
     cat("=== Métriques E1 exportées ===\n")
     cat("Fichier:", output_path, "\n")
+    cat("Fichier principal:", parcelles_path, "\n")
     cat("Parcelles:", nrow(parcelles), " lignes et ", ncol(parcelles), " colonnes\n\n")
   } else {
     cat("Métriques pzabove2 et zmean non trouvées.\n")
