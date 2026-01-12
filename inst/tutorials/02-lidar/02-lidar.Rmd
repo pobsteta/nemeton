@@ -452,7 +452,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=60, exercise.setup="ex-5-1-setup", exercise.timelimit=300}
+```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=70, exercise.setup="ex-5-1-setup", exercise.timelimit=300}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
@@ -464,48 +464,57 @@ if (requireNamespace("lidR", quietly = TRUE)) {
   mnt_path <- file.path(data_dir, "mnt.tif")
 
   if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
+    # Charger le MNT pour définir la zone valide
+    mnt <- rast(mnt_path)
+    mnt_bbox <- ext(mnt)
+
     # Charger LiDAR
     las_full <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
 
-    # === RÉDUCTION À UN CARRÉ DE 20x20m ===
-    bbox <- st_bbox(las_full)
-    center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
-    center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+    # === RÉDUCTION À UN CARRÉ DE 50x50m DANS LA ZONE DU MNT ===
+    las_bbox <- st_bbox(las_full)
+    clip_xmin <- max(las_bbox["xmin"], mnt_bbox$xmin)
+    clip_xmax <- min(las_bbox["xmax"], mnt_bbox$xmax)
+    clip_ymin <- max(las_bbox["ymin"], mnt_bbox$ymin)
+    clip_ymax <- min(las_bbox["ymax"], mnt_bbox$ymax)
+
+    center_x <- (clip_xmin + clip_xmax) / 2
+    center_y <- (clip_ymin + clip_ymax) / 2
 
     las <- clip_rectangle(las_full,
-      xleft = center_x - 10,
-      ybottom = center_y - 10,
-      xright = center_x + 10,
-      ytop = center_y + 10
+      xleft = center_x - 25, ybottom = center_y - 25,
+      xright = center_x + 25, ytop = center_y + 25
     )
 
-    cat("Zone 20x20m:", nrow(las@data), "points\n")
+    cat("Zone 50x50m:", nrow(las@data), "points\n")
 
-    # Normaliser
-    mnt <- rast(mnt_path)
-    las_norm <- normalize_height(las, mnt)
-    las_clean <- filter_poi(las_norm, Z >= 0 & Z < 60)
+    if (nrow(las@data) > 0) {
+      # Normaliser
+      las_norm <- normalize_height(las, mnt)
+      las_clean <- filter_poi(las_norm, Z >= 0 & Z < 60)
 
-    # Calculer par pixel (raster 2m pour zone 20x20m)
-    # Utiliser une fonction anonyme inline pour éviter les problèmes de scope
-    cat("\n=== Calcul des métriques raster ===\n")
-    metrics_raster <- pixel_metrics(las_clean, ~ list(
-      zmax = max(Z, na.rm = TRUE),
-      zmean = mean(Z, na.rm = TRUE),
-      zsd = sd(Z, na.rm = TRUE),
-      zq95 = quantile(Z, 0.95, na.rm = TRUE),
-      pzabove2 = sum(Z > 2, na.rm = TRUE) / length(Z) * 100
-    ), res = 2)
+      # Calculer par pixel (raster 2m)
+      cat("\n=== Calcul des métriques raster ===\n")
+      metrics_raster <- pixel_metrics(las_clean, ~ list(
+        zmax = max(Z, na.rm = TRUE),
+        zmean = mean(Z, na.rm = TRUE),
+        zsd = sd(Z, na.rm = TRUE),
+        zq95 = quantile(Z, 0.95, na.rm = TRUE),
+        pzabove2 = sum(Z > 2, na.rm = TRUE) / length(Z) * 100
+      ), res = 2)
 
-    cat("Couches générées:", names(metrics_raster), "\n")
-    cat("Dimensions:", nrow(metrics_raster), "x", ncol(metrics_raster), "pixels\n")
+      cat("Couches générées:", names(metrics_raster), "\n")
+      cat("Dimensions:", nrow(metrics_raster), "x", ncol(metrics_raster), "pixels\n")
 
-    # Statistiques globales sur la zone
-    cat("\n=== Statistiques sur la zone 20x20m ===\n")
-    cat("Hauteur max (zmax):", round(max(values(metrics_raster$zmax), na.rm = TRUE), 1), "m\n")
-    cat("Hauteur moyenne (zmean):", round(mean(values(metrics_raster$zmean), na.rm = TRUE), 1), "m\n")
-    cat("Percentile 95 (zq95):", round(mean(values(metrics_raster$zq95), na.rm = TRUE), 1), "m\n")
-    cat("Couverture > 2m:", round(mean(values(metrics_raster$pzabove2), na.rm = TRUE), 1), "%\n")
+      # Statistiques globales sur la zone
+      cat("\n=== Statistiques sur la zone 50x50m ===\n")
+      cat("Hauteur max (zmax):", round(max(values(metrics_raster$zmax), na.rm = TRUE), 1), "m\n")
+      cat("Hauteur moyenne (zmean):", round(mean(values(metrics_raster$zmean), na.rm = TRUE), 1), "m\n")
+      cat("Percentile 95 (zq95):", round(mean(values(metrics_raster$zq95), na.rm = TRUE), 1), "m\n")
+      cat("Couverture > 2m:", round(mean(values(metrics_raster$pzabove2), na.rm = TRUE), 1), "%\n")
+    } else {
+      cat("Aucun point dans l'intersection LiDAR/MNT.\n")
+    }
   } else {
     cat("Fichiers non trouvés.\n")
   }
