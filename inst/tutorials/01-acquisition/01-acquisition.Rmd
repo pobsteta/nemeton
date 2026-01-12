@@ -154,7 +154,7 @@ if (dir.exists(data_dir)) {
 
 ### Introduction
 
-La première étape consiste à charger notre **zone d'étude**. Le package nemeton fournit une zone prête à l'emploi dans `inst/extdata/zone_etude.gpkg`. Cette zone correspond au cluster **Verc-02** des données Quatre Montagnes avec un buffer de 500m, couvrant environ **450 hectares**.
+La première étape consiste à charger notre **zone d'étude**. Le package nemeton fournit une zone prête à l'emploi dans `inst/extdata/zone_etude.gpkg`. Cette zone correspond à 7 clusters des données Quatre Montagnes avec un buffer de 100m, couvrant environ **450 hectares**.
 
 ### Exercice 1.1 : Charger la zone d'étude
 
