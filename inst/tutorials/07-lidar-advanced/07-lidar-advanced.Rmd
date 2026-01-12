@@ -516,7 +516,7 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.timelimit=1200, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.timelimit=1800, exercise.setup="ex-2-2-setup"}
 # =============================================================================
 # GESTION MÉMOIRE - Important pour les gros jeux de données
 # =============================================================================
@@ -705,7 +705,7 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-3-1-setup"}
+```{r ex-3-1, exercise=TRUE, exercise.timelimit=1800, exercise.setup="ex-3-1-setup"}
 # =============================================================================
 # GESTION MÉMOIRE - Important pour les gros jeux de données
 # =============================================================================
@@ -751,11 +751,13 @@ if (!dir.exists(result_itd)) {
 if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("lasR n'est pas installé. Installez-le avec:\n")
   cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
-} else if (length(fichiers_laz) == 0) {
+}
+
+if (length(fichiers_laz) == 0) {
   cat("Données LiDAR non trouvées. Exécutez d'abord le Tutorial 01.\n")
 } else {
   library(lasR)
-
+  
   # ==========================================================================
   # PIPELINE ITD lasR COMPLET
   # ==========================================================================
@@ -768,7 +770,8 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
                    ofile = file.path(result_itd, "chm_*.tif"))
 
   # 3. Créer l'étape de remplissage des puits (référencée par local_maximum et region_growing)
-  chm_filled <- pit_fill(chm)
+  chm_filled <- pit_fill(chm,
+                         ofile = file.path(result_itd, "c_filled_*.tif"))
 
   # 4. Créer l'étape de détection des maxima locaux (référencée par region_growing)
   # Fenêtre de 3m - ajuster selon la densité du peuplement
@@ -808,21 +811,30 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # FUSION DES TUILES EN RASTER VIRTUEL (VRT)
   # ==========================================================================
   cat("\n\n=== Création des rasters virtuels (VRT) ===\n")
+  
+  library(terra)
 
-  chm_tiles <- list.files(result_itd, pattern = "^chm_.*\\.tif$", full.names = TRUE)
-  crown_tiles <- list.files(result_itd, pattern = "^crowns_.*\\.tif$", full.names = TRUE)
-  seed_files <- list.files(result_itd, pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
+  chm_tiles <- list.files(file.path(data_dir, "result_itd"), pattern = "^chm_.*\\.tif$", full.names = TRUE)
+  c_filled_tiles <- list.files(file.path(data_dir, "result_itd"), pattern = "^c_filled_.*\\.tif$", full.names = TRUE)
+  crown_tiles <- list.files(file.path(data_dir, "result_itd"), pattern = "^crowns_.*\\.tif$", full.names = TRUE)
+  seed_files <- list.files(file.path(data_dir, "result_itd"), pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
 
   cat("Tuiles CHM:", length(chm_tiles), "\n")
+  cat("Tuiles CHM filled:", length(c_filled_tiles), "\n")
   cat("Tuiles Crowns:", length(crown_tiles), "\n")
   cat("Fichiers Seeds:", length(seed_files), "\n")
 
   # Créer les VRT avec terra::vrt()
   if (length(chm_tiles) > 0) {
-    chm_vrt <- vrt(data_dir, file.path(data_dir, "chm_complet.vrt"), overwrite = TRUE)
+    chm_vrt <- vrt(chm_tiles, file.path(data_dir, "chm_complet.vrt"), overwrite = TRUE)
     cat("VRT CHM créé:", file.path(data_dir, "chm_complet.vrt"), "\n")
     cat("  Dimensions:", nrow(chm_vrt), "x", ncol(chm_vrt), "pixels\n")
     cat("  Résolution:", res(chm_vrt)[1], "m\n")
+  }
+  
+  if (length(c_filled_tiles) > 0) {
+    c_filled_vrt <- vrt(c_filled_tiles, file.path(data_dir, "c_filled_complet.vrt"), overwrite = TRUE)
+    cat("VRT CHM filled créé:", file.path(data_dir, "c_filled_complet.vrt"), "\n")
   }
 
   if (length(crown_tiles) > 0) {
@@ -853,20 +865,62 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
     cat("Hauteur moyenne:", round(mean(seeds_all$Z, na.rm = TRUE), 1), "m\n")
     cat("Hauteur max:", round(max(seeds_all$Z, na.rm = TRUE), 1), "m\n")
   }
+  
+  # Création des tif complet
+  cat("\n=== Fusion physique du CHM (optionnel) ===\n")
+  chm_merge <- terra::merge(sprc(chm_tiles))
+  writeRaster(chm_merge, file.path(data_dir, "chm_complet.tif"), overwrite = TRUE)
+  cat("CHM complet écrit:", file.path(data_dir, "chm_complet.tif"), "\n")
+  
+  cat("\n=== Fusion physique des CROWNS (optionnel) ===\n")
+  crown_merge <- terra::merge(sprc(crown_tiles))
+  writeRaster(crown_merge, file.path(data_dir, "crown_complet.tif"), overwrite = TRUE)
+  cat("CROWNS complet écrit:", file.path(data_dir, "crown_complet.tif"), "\n")
 
-  # Visualisation du CHM avec segments
-  col = grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))(25)
-  col2 = grDevices::colorRampPalette(c("purple", "blue", "cyan2", "yellow", "red", "green"))(50)
-  terra::plot(ans$rasterize, col = col, mar = c(1, 1, 1, 3))
-  terra::plot(ans$pit_fill, col = col, mar = c(1, 1, 1, 3))
-  terra::plot(ans$region_growing, col = col2[sample.int(50, 277, TRUE)], mar = c(1, 1, 1, 3))
-  plot(ans$local_maximum$geom, add = T, pch = 19, cex = 0.5)
-  
-  
-  if (exists("chm_vrt") && exists("crowns_vrt")) {
-    par(mfrow = c(1, 2))
-    plot(chm_vrt, main = "CHM (0.5m)", col = viridis::viridis(50))
-    plot(crowns_vrt %% 8, main = "Segments houppiers", col = rainbow(8), legend = FALSE)
+  # Visualisation du CHM avec segments (zoom 100m x 100m centré)
+  col <- grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))(25)
+  col2 <- grDevices::colorRampPalette(c("purple", "blue", "cyan2", "yellow", "red", "green"))(50)
+
+  if (exists("chm_vrt") && exists("crowns_vrt") && exists("c_filled_vrt")) {
+    # Calculer le centre de l'emprise
+    ext <- terra::ext(chm_vrt)
+    center_x <- (ext$xmin + ext$xmax) / 2
+    center_y <- (ext$ymin + ext$ymax) / 2
+
+    # Créer une emprise de 100m x 100m centrée
+    zoom_ext <- terra::ext(
+      center_x - 50, center_x + 50,
+      center_y - 50, center_y + 50
+    )
+
+    # Cropper les rasters sur la zone de zoom
+    chm_zoom <- terra::crop(chm_vrt, zoom_ext)
+    chm_filled_zoom <- terra::crop(c_filled_vrt, zoom_ext)
+    crowns_zoom <- terra::crop(crowns_vrt, zoom_ext)
+
+    # Filtrer les cimes dans l'emprise de zoom
+    if (exists("seeds_all")) {
+      seeds_zoom <- sf::st_crop(seeds_all, sf::st_bbox(c(
+        xmin = center_x - 50, xmax = center_x + 50,
+        ymin = center_y - 50, ymax = center_y + 50
+      ), crs = sf::st_crs(seeds_all)))
+    }
+
+    cat("\n=== Visualisation : zoom 100m x 100m centré ===\n")
+    cat("Centre:", round(center_x), ",", round(center_y), "\n")
+    if (exists("seeds_zoom")) {
+      cat("Arbres dans la zone:", nrow(seeds_zoom), "\n")
+    }
+
+    par(mfrow = c(1, 3))
+    plot(chm_zoom, main = "CHM (0.5m)", col = col, mar = c(1, 1, 1, 3))
+    plot(chm_filled_zoom, main = "CHM filled (0.5m)", col = col, mar = c(1, 1, 1, 3))
+    plot(crowns_zoom %% 8, main = "Segments + cimes",
+         col = col2[sample.int(50, 1000, TRUE)], mar = c(1, 1, 1, 3), legend = FALSE)
+    # Ajouter les cimes des houppiers
+    if (exists("seeds_zoom") && nrow(seeds_zoom) > 0) {
+      plot(sf::st_geometry(seeds_zoom), add = TRUE, pch = 3, col = "white", cex = 0.8)
+    }
   }
 
   # ==========================================================================
@@ -880,54 +934,7 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 }
 ```
 
-### Exercice 3.2 : Extraction des attributs d'arbres
-
-Extrayez les attributs de chaque arbre avec `tree_extraction()`.
-
-```{r ex-3-2-setup}
-library(lidaRtRee)
-library(terra)
-library(sf)
-data(chm_chablais3)
-chm <- terra::rast(chm_chablais3)
-segments <- tree_segmentation(chm, nl_filter = "Median", nl_size = 3,
-                               sigma = cbind(c(0.2, 0.8), c(0, 15)),
-                               hmin = 5, crown_prop = 0.5, crown_hmin = 5)
-```
-
-```{r ex-3-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-3-2-setup"}
-library(lidaRtRee)
-library(terra)
-library(sf)
-
-# Extraction des arbres avec géométrie des couronnes
-trees <- tree_extraction(segments, crown = TRUE)
-
-cat("Attributs extraits par arbre:\n")
-cat("- id : identifiant unique\n")
-cat("- height : hauteur de la cime (m)\n")
-cat("- dom_radius : rayon de dominance (m)\n")
-cat("- surface : surface du houppier (m²)\n")
-cat("- volume : volume du houppier (m³)\n")
-cat("- x, y : coordonnées de la cime\n")
-cat("- crown_geom : géométrie 2D du houppier (WKT)\n\n")
-
-# Statistiques
-cat("=== Statistiques du peuplement ===\n")
-cat("Nombre d'arbres:", nrow(trees), "\n")
-cat("Hauteur moyenne:", round(mean(trees$height), 1), "m\n")
-cat("Hauteur max:", round(max(trees$height), 1), "m\n")
-cat("Surface moyenne houppier:", round(mean(trees$surface), 1), "m²\n")
-
-# Afficher les premiers arbres
-print(head(trees[, c("id", "height", "surface", "volume")]))
-
-# Visualisation
-plot(chm, main = "Arbres détectés")
-plot(st_geometry(trees), add = TRUE, col = "red", pch = 3, cex = 0.5)
-```
-
-### Exercice 3.3 : Alternative avec lasR (haute performance)
+### Exercice 3.3 : Extraction des attributs d'arbres avec lasR (haute performance)
 
 Pour les gros jeux de données, lasR offre un pipeline optimisé qui peut également
 calculer toutes les métriques d'arbres équivalentes à `tree_extraction()` de lidaRtRee
@@ -945,7 +952,7 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-3-3, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-3-3-setup"}
+```{r ex-3-3, exercise=TRUE, exercise.timelimit=1800, exercise.setup="ex-3-3-setup"}
 # Segmentation d'arbres ET extraction des métriques avec lasR
 
 if (!requireNamespace("lasR", quietly = TRUE)) {
@@ -961,7 +968,6 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # ==========================================================================
   # Ce callback réplique exactement les métriques de lidaRtRee::tree_extraction()
   # - id : identifiant unique de l'arbre
-
   # - x, y : coordonnées de la cime
   # - height : hauteur de la cime (m)
   # - dom_radius : rayon de dominance (m)
