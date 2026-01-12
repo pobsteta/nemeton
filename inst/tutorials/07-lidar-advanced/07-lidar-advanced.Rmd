@@ -517,6 +517,13 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
 ```
 
 ```{r ex-2-2, exercise=TRUE, exercise.timelimit=1200, exercise.setup="ex-2-2-setup"}
+# =============================================================================
+# GESTION MÉMOIRE - Important pour les gros jeux de données
+# =============================================================================
+gc()  # Forcer le garbage collection avant traitement
+cat("=== Gestion mémoire ===\n")
+cat("Mémoire utilisée avant:", round(sum(gc()[, 2]), 1), "MB\n\n")
+
 N_CORES <- 6L
 
 cat("=== Stratégies de parallélisation lasR ===\n\n")
@@ -699,7 +706,19 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
 ```
 
 ```{r ex-3-1, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-3-1-setup"}
-N_CORES <- 4L
+# =============================================================================
+# GESTION MÉMOIRE - Important pour les gros jeux de données
+# =============================================================================
+gc()  # Forcer le garbage collection avant traitement
+cat("=== Gestion mémoire ===\n")
+cat("Mémoire utilisée avant:", round(sum(gc()[, 2]), 1), "MB\n\n")
+
+# Limiter l'utilisation mémoire de terra (50% de la RAM disponible)
+terra::terraOptions(memfrac = 0.5)
+
+# Nombre de cores - RÉDUIRE si problèmes de mémoire
+# Chaque core charge des données en mémoire
+N_CORES <- 4L  # Réduit de 6 à 4 pour économiser la mémoire
 
 cat("=== Segmentation d'arbres avec lasR ===\n\n")
 
@@ -711,8 +730,8 @@ cat("4. pit_fill()            - Remplissage des trous\n")
 cat("5. local_maximum_raster()- Détection des cimes\n")
 cat("6. region_growing()      - Segmentation des houppiers\n\n")
 
-cat("Cores utilisés:", N_CORES, "\n")
-cat("Stratégie: concurrent_files() - la plus rapide avec SSD\n\n")
+cat("Cores utilisés:", N_CORES, "(réduit pour économiser la mémoire)\n")
+cat("Stratégie: concurrent_files()\n\n")
 
 library(lidR)
 # On crée le catalogue
@@ -741,11 +760,11 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # PIPELINE ITD lasR COMPLET
   # ==========================================================================
 
-  # 1. Créer l'étape de triangulation (référencée par rasterize et pit_fill)
-  tri <- triangulate(filter = keep_first())
+  # 1. Créer l'étape de triangulation (référencée par rasterize)
+  del <- triangulate(filter = keep_first())
 
   # 2. Créer l'étape CHM (référencée par pit_fill)
-  chm <- rasterize(0.5, tri,
+  chm <- lasR::rasterize(0.5, del,
                    ofile = file.path(result_itd, "chm_*.tif"))
 
   # 3. Créer l'étape de remplissage des puits (référencée par local_maximum et region_growing)
@@ -756,24 +775,17 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   seeds <- local_maximum_raster(chm_filled, ws = 3,
                                 ofile = file.path(result_itd, "seeds_*.gpkg"))
 
+  # 5. Créer l'étape de segmentation par croissance de région
+  tree <- region_growing(chm_filled, seeds,
+                         ofile = file.path(result_itd, "crowns_*.tif"))
+
   # Pipeline ITD complet pour nemeton
   pipeline_itd <- reader_las() +
-
-    # Triangulation TIN des premiers retours (base pour le CHM)
-    tri +
-
-    # CHM à 0.5m de résolution (haute précision pour ITD)
+    del +
     chm +
-
-    # Remplissage des puits et NA (améliore la qualité du CHM)
     chm_filled +
-
-    # Détection des maxima locaux (cimes des arbres)
     seeds +
-
-    # Segmentation par croissance de région (délimitation des houppiers)
-    region_growing(chm_filled, seeds,
-                   ofile = file.path(result_itd, "crowns_*.tif"))
+    tree
 
   # Afficher le pipeline
   print(pipeline_itd)
@@ -847,6 +859,16 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
     plot(chm_vrt, main = "CHM (0.5m)", col = viridis::viridis(50))
     plot(crowns_vrt %% 8, main = "Segments houppiers", col = rainbow(8), legend = FALSE)
   }
+
+  # ==========================================================================
+  # NETTOYAGE MÉMOIRE
+  # ==========================================================================
+  # Supprimer les objets volumineux intermédiaires
+  rm(del, chm, chm_filled, seeds, tree, pipeline_itd, ans)
+  rm(chm_tiles, crown_tiles, seed_files, seeds_list)
+  invisible(gc())  # Forcer la libération mémoire
+  cat("\n=== Mémoire libérée ===\n")
+  cat("Mémoire utilisée après nettoyage:", round(sum(gc()[, 2]), 1), "MB\n")
 }
 ```
 
