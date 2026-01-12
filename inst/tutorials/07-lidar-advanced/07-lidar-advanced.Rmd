@@ -527,6 +527,7 @@ cat("4. nested()            - Combine les deux (experts)\n\n")
 cat("Cores utilisés:", N_CORES, "/ 8 disponibles\n")
 cat("Stratégie: concurrent_files() - la plus rapide avec SSD\n\n")
 
+library(lidR)
 # On crée le catalogue
 if (length(fichiers_laz) > 0) {
   ctg <- readLAScatalog(fichiers_laz)
@@ -583,6 +584,50 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 
   cat("\nAvantage: Une seule lecture des fichiers pour tous les produits !")
   cat("\nStratégie concurrent_files:", N_CORES, "fichiers traités en parallèle\n")
+
+  # =============================================================================
+  # FUSION DES TUILES EN RASTER VIRTUEL (VRT)
+  # =============================================================================
+  cat("\n\n=== Création des rasters virtuels (VRT) ===\n")
+
+  # Lister les tuiles produites pour chaque produit
+  mnt_tiles <- list.files(result, pattern = "lasr_mnt_lidar_.*\\.tif$", full.names = TRUE)
+  mnh_tiles <- list.files(result, pattern = "lasr_mnh_lidar_.*\\.tif$", full.names = TRUE)
+  met_tiles <- list.files(result, pattern = "lasr_metriques_30m_.*\\.tif$", full.names = TRUE)
+
+  cat("Tuiles MNT:", length(mnt_tiles), "\n")
+  cat("Tuiles MNH:", length(mnh_tiles), "\n")
+  cat("Tuiles Métriques:", length(met_tiles), "\n\n")
+
+  # Créer les VRT avec terra::vrt()
+  # Avantage: pas de duplication de données, lecture à la demande
+  if (length(mnt_tiles) > 0) {
+    mnt_vrt <- vrt(mnt_tiles, file.path(result, "mnt_complet.vrt"))
+    cat("VRT MNT créé:", file.path(result, "mnt_complet.vrt"), "\n")
+    cat("  Dimensions:", nrow(mnt_vrt), "x", ncol(mnt_vrt), "pixels\n")
+    cat("  Résolution:", res(mnt_vrt)[1], "m\n")
+  }
+
+  if (length(mnh_tiles) > 0) {
+    mnh_vrt <- vrt(mnh_tiles, file.path(result, "mnh_complet.vrt"))
+    cat("VRT MNH créé:", file.path(result, "mnh_complet.vrt"), "\n")
+  }
+
+  if (length(met_tiles) > 0) {
+    met_vrt <- vrt(met_tiles, file.path(result, "metriques_complet.vrt"))
+    cat("VRT Métriques créé:", file.path(result, "metriques_complet.vrt"), "\n")
+  }
+
+  cat("\n=== Avantages du VRT ===\n")
+  cat("- Pas de duplication de données (fichier XML léger)\n")
+  cat("- Lecture à la demande (seules les tuiles nécessaires sont chargées)\n")
+  cat("- Compatible GDAL, QGIS, R (terra, stars)\n")
+  cat("- Alternative: terra::merge() pour fusion physique (plus lent, plus lourd)\n")
+
+  # Visualisation du MNT complet
+  if (exists("mnt_vrt")) {
+    plot(mnt_vrt, main = "MNT complet (VRT)", col = terrain.colors(50))
+  }
 }
 ```
 
