@@ -458,6 +458,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
@@ -474,19 +476,25 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # 1. Lire les fichiers
   # 2. Trianguler les points sol
   # 3. Rasteriser à 1m de résolution
+  
+  ofile  <- file.path(data_dir, "mnt_lasr.tif")
 
   pipeline <- reader_las(filter = "-drop_class 7") +
     triangulate(filter = keep_ground()) +
-    rasterize(res = 1, operators = "max")
+    rasterize(res = 1, operators = "max", ofile = ofile)
 
   # Afficher le pipeline
   print(pipeline)
 
   # Note: L'exécution nécessite des données LiDAR
-  # lasR::exec(pipeline, on = fichiers_laz[1])
-
+  ans <- lasR::exec(pipeline, on = fichiers_laz[1])
+  
+  # On affiche le résultat
+  print(ans)
+  
   cat("\nPipeline créé avec succès !\n")
-  cat("Pour exécuter: lasR::exec(pipeline, on = fichiers_laz)\n")
+  
+  terra::plot(ans, col = gray.colors(25,0,1), main = "MNT lasR")
 }
 ```
 
@@ -502,6 +510,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
@@ -707,6 +717,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
@@ -1406,6 +1418,8 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
