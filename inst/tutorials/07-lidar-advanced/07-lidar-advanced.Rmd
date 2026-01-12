@@ -218,7 +218,7 @@ Un **LAScatalog** est une structure qui référence plusieurs fichiers LiDAR san
 
 ### Exercice 1.1 : Création d'un LAScatalog
 
-Créez un LAScatalog à partir des 40 dalles LiDAR HD téléchargées dans le Tutorial 01.
+Créez un LAScatalog à partir des 18 dalles LiDAR HD téléchargées dans le Tutorial 01.
 
 ```{r ex-1-1, exercise=TRUE, exercise.timelimit=120}
 library(lidR)
@@ -323,17 +323,17 @@ if (length(fichiers_laz) > 0) {
 }
 
 # Charger les placettes Quatre Montagnes de lidaRtRee
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+if (requireNamespace("lidaRtRee", quietly = TRUE) && !is.null(ctg)) {
   data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 
-  # Emprise des 40 dalles LiDAR (Tutorial 01)
-  bbox_lidar <- c(xmin = 895000, xmax = 902000, ymin = 6447000, ymax = 6453000)
+  # Utiliser l'emprise réelle du LAScatalog (dynamique)
+  ctg_extent <- ext(ctg)
 
   # Filtrer les placettes couvertes par le LiDAR
-  covered <- quatre_montagnes$X >= bbox_lidar["xmin"] &
-             quatre_montagnes$X <= bbox_lidar["xmax"] &
-             quatre_montagnes$Y >= bbox_lidar["ymin"] &
-             quatre_montagnes$Y <= bbox_lidar["ymax"]
+  covered <- quatre_montagnes$X >= ctg_extent$xmin &
+             quatre_montagnes$X <= ctg_extent$xmax &
+             quatre_montagnes$Y >= ctg_extent$ymin &
+             quatre_montagnes$Y <= ctg_extent$ymax
 
   placettes_data <- quatre_montagnes[covered, ]
   placettes_calibration <- sf::st_as_sf(placettes_data, coords = c("X", "Y"), crs = 2154)
