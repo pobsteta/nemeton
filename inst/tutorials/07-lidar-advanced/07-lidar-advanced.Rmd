@@ -48,9 +48,16 @@ Sys.setenv(
   CURL_SSL_BACKEND = "openssl"
 )
 
-# Configuration parallélisation
+# Configuration parallélisation (6 cores sur 8 disponibles)
+N_CORES <- 6L
 if (requireNamespace("future", quietly = TRUE)) {
-  future::plan(future::multisession, workers = 2)
+  future::plan(future::multisession, workers = N_CORES)
+}
+# Configuration lidR pour LAScatalog
+options(lidR.progress = TRUE)
+# Configuration lasR (si disponible)
+if (requireNamespace("lasR", quietly = TRUE)) {
+  options(lasR.threads = N_CORES)
 }
 
 # =============================================================================
@@ -128,11 +135,11 @@ Ce tutoriel **avancé** vous guide dans le traitement de **gros jeux de données
 
 Ce tutoriel combine les données du **Tutorial 01** et du package **lidaRtRee** :
 
-- **Données LiDAR** : Les 40 dalles LiDAR HD IGN téléchargées dans le Tutorial 01 (42 km²)
-- **Placettes terrain** : 32 placettes de 15m de rayon couvertes par le LiDAR (8 clusters du projet Newfor)
+- **Données LiDAR** : Les 18 dalles LiDAR HD IGN téléchargées dans le Tutorial 01 (42 km²)
+- **Placettes terrain** : 28 placettes de 15m de rayon couvertes par le LiDAR (7 clusters)
 - **Zone d'étude** : Partie centrale du massif des Quatre Montagnes (Vercors)
 
-> **Note** : Le jeu de données lidaRtRee contient 96 placettes sur une zone plus large. Nous utilisons les 32 placettes couvertes par nos dalles LiDAR.
+> **Note** : Le jeu de données lidaRtRee contient 96 placettes sur une zone plus large. Nous utilisons les 28 placettes couvertes par nos dalles LiDAR.
 
 ### Packages utilisés
 
@@ -224,7 +231,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 
-# Lister les 40 dalles LiDAR HD des Quatre Montagnes (recherche récursive)
+# Lister les 18 dalles LiDAR HD des Quatre Montagnes (recherche récursive)
 fichiers_laz <- list.files(
   file.path(data_dir, "lidar_hd"),
   pattern = "\\.laz$",
@@ -232,7 +239,7 @@ fichiers_laz <- list.files(
   recursive = TRUE
 )
 
-cat("Dalles LiDAR trouvées:", length(fichiers_laz), "/ 40 attendues\n")
+cat("Dalles LiDAR trouvées:", length(fichiers_laz), "/ 18 attendues\n")
 
 # Créer le LAScatalog
 ctg <- readLAScatalog(fichiers_laz)
@@ -264,7 +271,16 @@ if (length(fichiers_laz) > 0) {
 ```
 
 ```{r ex-1-2, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-1-2-setup"}
-# Options de traitement par tuiles
+# === CONFIGURATION PARALLÉLISATION (6 cores sur 8) ===
+library(future)
+N_CORES <- 6L
+plan(multisession, workers = N_CORES)
+set_lidr_threads(N_CORES)
+
+cat("=== Configuration parallèle ===\n")
+cat("Cores utilisés:", N_CORES, "/ 8 disponibles\n\n")
+
+# === OPTIONS DE TRAITEMENT PAR TUILES ===
 opt_chunk_size(ctg) <- 500      # Taille des tuiles en mètres
 opt_chunk_buffer(ctg) <- 30     # Buffer en mètres (évite effets de bord)
 
@@ -272,12 +288,14 @@ opt_chunk_buffer(ctg) <- 30     # Buffer en mètres (évite effets de bord)
 opt_output_files(ctg) <- ""     # "" = retour en mémoire (petit jeu de données)
                                  # ou template comme "{XLEFT}_{YBOTTOM}"
 
-# Options de parallélisation
+# Options de parallélisation LAScatalog
 opt_progress(ctg) <- TRUE       # Afficher la progression
 
 # Vérifier la configuration
+cat("=== Configuration LAScatalog ===\n")
 cat("Taille tuiles:", opt_chunk_size(ctg), "m\n")
 cat("Buffer:", opt_chunk_buffer(ctg), "m\n")
+cat("Threads lidR:", get_lidr_threads(), "\n")
 
 # Afficher le découpage prévu
 plot(ctg, chunk = TRUE)
