@@ -589,7 +589,8 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # FUSION DES TUILES EN RASTER VIRTUEL (VRT)
   # =============================================================================
   cat("\n\n=== Création des rasters virtuels (VRT) ===\n")
-
+  
+  library(terra)
   # Lister les tuiles produites pour chaque produit
   mnt_tiles <- list.files(result, pattern = "lasr_mnt_lidar_.*\\.tif$", full.names = TRUE)
   mnh_tiles <- list.files(result, pattern = "lasr_mnh_lidar_.*\\.tif$", full.names = TRUE)
@@ -602,20 +603,20 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # Créer les VRT avec terra::vrt()
   # Avantage: pas de duplication de données, lecture à la demande
   if (length(mnt_tiles) > 0) {
-    mnt_vrt <- vrt(mnt_tiles, file.path(result, "mnt_complet.vrt"))
-    cat("VRT MNT créé:", file.path(result, "mnt_complet.vrt"), "\n")
+    mnt_vrt <- vrt(mnt_tiles, file.path(data_dir, "mnt_complet.vrt"))
+    cat("VRT MNT créé:", file.path(data_dir, "mnt_complet.vrt"), "\n")
     cat("  Dimensions:", nrow(mnt_vrt), "x", ncol(mnt_vrt), "pixels\n")
     cat("  Résolution:", res(mnt_vrt)[1], "m\n")
   }
 
   if (length(mnh_tiles) > 0) {
-    mnh_vrt <- vrt(mnh_tiles, file.path(result, "mnh_complet.vrt"))
-    cat("VRT MNH créé:", file.path(result, "mnh_complet.vrt"), "\n")
+    mnh_vrt <- vrt(mnh_tiles, file.path(data_dir, "mnh_complet.vrt"))
+    cat("VRT MNH créé:", file.path(data_dir, "mnh_complet.vrt"), "\n")
   }
 
   if (length(met_tiles) > 0) {
-    met_vrt <- vrt(met_tiles, file.path(result, "metriques_complet.vrt"))
-    cat("VRT Métriques créé:", file.path(result, "metriques_complet.vrt"), "\n")
+    met_vrt <- vrt(met_tiles, file.path(data_dir, "metriques_complet.vrt"))
+    cat("VRT Métriques créé:", file.path(data_dir, "metriques_complet.vrt"), "\n")
   }
 
   cat("\n=== Avantages du VRT ===\n")
@@ -623,7 +624,24 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("- Lecture à la demande (seules les tuiles nécessaires sont chargées)\n")
   cat("- Compatible GDAL, QGIS, R (terra, stars)\n")
   cat("- Alternative: terra::merge() pour fusion physique (plus lent, plus lourd)\n")
-
+  
+  # Création des tif complet
+  cat("\n=== Fusion physique du MNT (optionnel) ===\n")
+  mnt_merge <- terra::merge(sprc(mnt_tiles))
+  writeRaster(mnt_merge, file.path(data_dir, "mnt_complet.tif"))
+  cat("MNT complet écrit:", file.path(data_dir, "mnt_complet.tif"), "\n")
+  
+  cat("\n=== Fusion physique du MNH (optionnel) ===\n")
+  mnh_merge <- terra::merge(sprc(mnh_tiles))
+  writeRaster(mnh_merge, file.path(data_dir, "mnh_complet.tif"))
+  cat("MNH complet écrit:", file.path(data_dir, "mnh_complet.tif"), "\n")
+  
+  cat("\n=== Fusion physique des métriques (optionnel) ===\n")
+  met_merge <- terra::merge(sprc(met_tiles))
+  writeRaster(met_merge, file.path(data_dir, "met_complet.tif"))
+  cat("MET complet écrit:", file.path(data_dir, "met_complet.tif"), "\n")
+  
+  
   # Visualisation du MNT complet
   if (exists("mnt_vrt")) {
     plot(mnt_vrt, main = "MNT complet (VRT)", col = terrain.colors(50))
@@ -675,63 +693,131 @@ La **segmentation d'arbres individuels** (ITD - Individual Tree Detection) perme
   [bruit]    [débruité]      [lissé]           [cimes]      [houppiers]
 ```
 
-### Exercice 3.1 : Segmentation avec lidaRtRee
+### Exercice 3.1 : Segmentation d'arbres avec lasR
 
-Utilisez la fonction `tree_segmentation()` pour détecter les arbres.
+Utilisez lasR pour détecter et segmenter les arbres individuels sur les données LiDAR.
 
 ```{r ex-3-1-setup}
-library(lidaRtRee)
 library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-3-1-setup"}
-library(lidaRtRee)
-library(terra)
+```{r ex-3-1, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-3-1-setup"}
+N_CORES <- 6L
 
-# Charger le MNH exemple de lidaRtRee (Chablais, France)
-data(chm_chablais3)
-chm <- terra::rast(chm_chablais3)
+cat("=== Segmentation d'arbres avec lasR ===\n\n")
 
-cat("Zone d'étude: Chablais (Haute-Savoie)\n")
-cat("Résolution:", res(chm)[1], "m\n")
-cat("Dimensions:", nrow(chm), "x", ncol(chm), "pixels\n\n")
+cat("Pipeline ITD (Individual Tree Detection):\n")
+cat("1. triangulate()         - Maillage des premiers retours\n")
+cat("2. rasterize()           - CHM à 0.5m de résolution\n")
+cat("3. pit_fill()            - Remplissage des trous\n")
+cat("4. local_maximum_raster()- Détection des cimes\n")
+cat("5. region_growing()      - Segmentation des houppiers\n\n")
 
-# Segmentation avec paramètres par défaut
-# - nl_filter = "Median" : filtre médian 3x3
-# - sigma : lissage gaussien variable selon la hauteur
-# - hmin = 5 : hauteur minimale des arbres détectés (m)
-segments <- tree_segmentation(
-  chm,
-  nl_filter = "Median",
-  nl_size = 3,
-  sigma = cbind(c(0.2, 0.8), c(0, 15)),  # sigma varie de 0.2 (h=0) à 0.8 (h=15m)
-  hmin = 5,
-  crown_prop = 0.5,
-  crown_hmin = 5
-)
+if (!requireNamespace("lasR", quietly = TRUE)) {
+  cat("lasR n'est pas installé. Installez-le avec:\n")
+  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
+} else if (length(fichiers_laz) == 0) {
+  cat("Données LiDAR non trouvées. Exécutez d'abord le Tutorial 01.\n")
+} else {
+  library(lasR)
 
-# Résultats : SpatRaster avec 4 couches
-cat("Couches produites:\n")
-cat("- maxima : position des cimes détectées\n")
-cat("- segments_id : identifiant de chaque houppier\n")
-cat("- dem_nl : MNH après filtre non-linéaire\n
-")
-cat("- dem_w : MNH lissé\n\n")
+  # Répertoire de sortie
+  result_itd <- file.path(data_dir, "result_itd")
+  if (!dir.exists(result_itd)) dir.create(result_itd, recursive = TRUE)
 
-# Compter les arbres
-n_arbres <- length(unique(values(segments$segments_id))) - 1
-cat("Nombre d'arbres détectés:", n_arbres, "\n")
+  # ==========================================================================
+  # PIPELINE ITD lasR (basé sur le tutoriel officiel)
+  # ==========================================================================
 
-# Visualisation
-par(mfrow = c(1, 2))
-terra::plot(chm, main = "MNH original")
-terra::plot(segments$segments_id %% 8, main = "Segments (colorés)",
-            col = rainbow(8), legend = FALSE)
+  # 1. Triangulation des premiers retours (base pour le CHM)
+  del <- triangulate(filter = keep_first())
+
+  # 2. CHM à 0.5m de résolution (haute précision pour ITD)
+  chm <- rasterize(0.5, del,
+                   ofile = file.path(result_itd, "chm_*.tif"))
+
+  # 3. Remplissage des puits et NA (améliore la qualité du CHM)
+  chm_filled <- pit_fill(chm)
+
+  # 4. Détection des maxima locaux (cimes des arbres)
+  # Fenêtre de 3m - ajuster selon la densité du peuplement
+  seeds <- local_maximum_raster(chm_filled, ws = 3,
+                                 ofile = file.path(result_itd, "seeds_*.gpkg"))
+
+  # 5. Segmentation par croissance de région
+  # Utilise le CHM rempli et les seeds comme points de départ
+  crowns <- region_growing(chm_filled, seeds,
+                           ofile = file.path(result_itd, "crowns_*.tif"))
+
+  # Pipeline complet
+  pipeline_itd <- del + chm + chm_filled + seeds + crowns
+
+  cat("=== Pipeline ITD ===\n")
+  print(pipeline_itd)
+
+  cat("\n=== Exécution sur", length(fichiers_laz), "dalles LiDAR ===\n")
+  cat("Stratégie: concurrent_files(", N_CORES, ")\n\n")
+
+  # Exécution parallèle
+  ans <- exec(pipeline_itd, on = fichiers_laz,
+              ncores = concurrent_files(N_CORES))
+
+  print(ans)
+
+  # ==========================================================================
+  # FUSION DES RÉSULTATS EN VRT
+  # ==========================================================================
+  cat("\n=== Création des rasters virtuels ===\n")
+
+  chm_tiles <- list.files(result_itd, pattern = "^chm_.*\\.tif$", full.names = TRUE)
+  crown_tiles <- list.files(result_itd, pattern = "^crowns_.*\\.tif$", full.names = TRUE)
+  seed_files <- list.files(result_itd, pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
+
+  if (length(chm_tiles) > 0) {
+    chm_vrt <- vrt(chm_tiles, file.path(result_itd, "chm_complet.vrt"))
+    cat("CHM VRT créé:", nrow(chm_vrt), "x", ncol(chm_vrt), "pixels\n")
+  }
+
+  if (length(crown_tiles) > 0) {
+    crowns_vrt <- vrt(crown_tiles, file.path(result_itd, "crowns_complet.vrt"))
+    cat("Crowns VRT créé:", nrow(crowns_vrt), "x", ncol(crowns_vrt), "pixels\n")
+  }
+
+  # Fusionner les seeds (points) en un seul fichier
+  if (length(seed_files) > 0) {
+    seeds_list <- lapply(seed_files, sf::st_read, quiet = TRUE)
+    seeds_all <- do.call(rbind, seeds_list)
+    sf::st_write(seeds_all, file.path(result_itd, "seeds_complet.gpkg"),
+                 delete_dsn = TRUE, quiet = TRUE)
+    cat("Seeds fusionnés:", nrow(seeds_all), "arbres détectés\n")
+  }
+
+  # ==========================================================================
+  # VISUALISATION
+  # ==========================================================================
+  cat("\n=== Statistiques ===\n")
+  if (exists("seeds_all")) {
+    cat("Nombre d'arbres:", nrow(seeds_all), "\n")
+    cat("Hauteur moyenne:", round(mean(seeds_all$Z, na.rm = TRUE), 1), "m\n")
+    cat("Hauteur max:", round(max(seeds_all$Z, na.rm = TRUE), 1), "m\n")
+  }
+
+  # Visualisation du CHM avec cimes
+  if (exists("chm_vrt") && exists("seeds_all")) {
+    par(mfrow = c(1, 2))
+    plot(chm_vrt, main = "CHM (0.5m)", col = viridis::viridis(50))
+    plot(crowns_vrt %% 8, main = "Segments", col = rainbow(8), legend = FALSE)
+  }
+}
 ```
 
 ### Exercice 3.2 : Extraction des attributs d'arbres
