@@ -516,7 +516,30 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-2-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-2-2-setup"}
+```{r ex-2-2, exercise=TRUE, exercise.timelimit=1200, exercise.setup="ex-2-2-setup"}
+N_CORES <- 6L
+
+cat("=== Stratégies de parallélisation lasR ===\n\n")
+cat("1. sequential()        - Pas de parallélisation (debug)\n")
+cat("2. concurrent_points() - Parallélise les étapes dans un fichier (défaut)\n")
+cat("3. concurrent_files()  - Traite plusieurs fichiers en parallèle (RAPIDE)\n")
+cat("4. nested()            - Combine les deux (experts)\n\n")
+cat("Cores utilisés:", N_CORES, "/ 8 disponibles\n")
+cat("Stratégie: concurrent_files() - la plus rapide avec SSD\n\n")
+
+# On crée le catalogue
+if (length(fichiers_laz) > 0) {
+  ctg <- readLAScatalog(fichiers_laz)
+} else {
+  ctg <- NULL
+}
+
+# On crée un répertoire résultat des calculs
+result <- file.path(data_dir, "result_lasr")
+if (!dir.exists(result)) {
+  dir.create(result, recursive = TRUE)
+}
+
 # Vérifier que lasR est disponible
 if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("lasR n'est pas installé. Installez-le avec:\n")
@@ -533,27 +556,33 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
     # 2. MNT depuis points sol
     tri +
     rasterize(res = 1, operators = "max",
-              ofile = file.path(data_dir, "mnt_lidar.tif")) +
+              ofile = file.path(result, "lasr_mnt_lidar_*.tif")) +
 
     # 3. Normalisation des hauteurs (référence l'étape tri)
     transform_with(tri) +
 
     # 4. MNH (hauteur max normalisée)
     rasterize(res = 1, operators = "max",
-              ofile = file.path(data_dir, "mnh_lidar.tif")) +
+              ofile = file.path(result, "lasr_mnh_lidar_*.tif")) +
 
     # 5. Métriques forestières à 30m
     rasterize(res = 30,
               operators = c("max", "mean", "sd", "p95", "above2"),
-              ofile = file.path(data_dir, "metriques_30m.tif"))
+              ofile = file.path(result, "lasr_metriques_30m_*.tif"))
 
   # Afficher le pipeline
   print(pipeline_complet)
 
-  # Exécution (commentée car longue)
-  # lasR::exec(pipeline_complet, on = fichiers_laz, ncores = 4)
+  # Exécution avec stratégie concurrent_files (la plus rapide)
+  # Note: Ne pas utiliser tous les cores pour éviter les problèmes de mémoire
+  ans <- lasR::exec(pipeline_complet, on = ctg,
+                    ncores = concurrent_files(N_CORES))
+
+  # Affiche le resultat
+  print(ans)
 
   cat("\nAvantage: Une seule lecture des fichiers pour tous les produits !")
+  cat("\nStratégie concurrent_files:", N_CORES, "fichiers traités en parallèle\n")
 }
 ```
 
@@ -1451,8 +1480,10 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("- Compatible avec placettes de rayon 15m (~706 m²)\n")
   cat("- 9 pixels de sortie par fenêtre de calcul\n")
 
-  # Exécution (décommenter avec vos données)
-  # result <- exec(pipeline_baba, on = fichiers_laz, ncores = 4)
+  # Exécution avec parallélisation (décommenter avec vos données)
+  # N_CORES <- 6L
+  # result <- exec(pipeline_baba, on = fichiers_laz,
+  #                ncores = concurrent_files(N_CORES))
 }
 ```
 
