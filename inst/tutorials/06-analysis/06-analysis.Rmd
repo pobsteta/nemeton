@@ -1184,9 +1184,9 @@ parcelles <- st_transform(parcelles, 4326)
 # Créer la carte avec Leaflet
 if (requireNamespace("leaflet", quietly = TRUE)) {
 
-  # Palette de couleurs
+  # Palette de couleurs (rouge)
   pal <- leaflet::colorNumeric(
-    palette = "YlGn",
+    palette = "YlOrRd",
     domain = parcelles$I_nemeton
   )
 
