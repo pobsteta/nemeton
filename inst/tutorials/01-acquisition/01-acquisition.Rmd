@@ -804,13 +804,13 @@ cat("Écart-type:", round(stats$sd), "m\n")
 
 
 
-### Exercice 3.2 : Calculer pente et exposition
+### Exercice 3.2 : Calculer pente, exposition et ombrage
 
 ```{r ex-3-2-setup}
 library(sf)
 library(terra)
+library(ggplot2)
 # Charger le MNT depuis le cache
-# Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -821,7 +821,7 @@ mnt_filepath <- file.path(data_dir, "mnt.tif")
 mnt <- rast(mnt_filepath)
 ```
 
-```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=22, exercise.setup="ex-3-2-setup"}
+```{r ex-3-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=40, exercise.setup="ex-3-2-setup"}
 # Le MNT est chargé depuis le cache (setup)
 cat("MNT chargé depuis le cache\n\n")
 
@@ -831,9 +831,11 @@ pente <- terrain(mnt, v = "slope", unit = "degrees")
 # Calculer l'exposition (en degrés, 0 = Nord)
 exposition <- terrain(mnt, v = "aspect", unit = "degrees")
 
-# Combiner dans un stack
-topo <- c(mnt, pente, exposition)
-names(topo) <- c("altitude", "pente", "exposition")
+# Calculer le hillshade (ombrage)
+# Paramètres : angle = élévation du soleil, direction = azimut
+pente_rad <- terrain(mnt, v = "slope", unit = "radians")
+aspect_rad <- terrain(mnt, v = "aspect", unit = "radians")
+hillshade <- shade(pente_rad, aspect_rad, angle = 45, direction = 315)
 
 # Statistiques
 cat("=== Statistiques topographiques ===\n")
@@ -842,7 +844,20 @@ cat(" Min:", round(global(pente, "min", na.rm = TRUE)$min, 1), "°\n")
 cat(" Max:", round(global(pente, "max", na.rm = TRUE)$max, 1), "°\n")
 cat(" Moyenne:", round(global(pente, "mean", na.rm = TRUE)$mean, 1), "°\n")
 
-print(topo)
+# Visualiser le hillshade
+hillshade_df <- as.data.frame(hillshade, xy = TRUE)
+names(hillshade_df)[3] <- "shade"
+
+ggplot(hillshade_df, aes(x = x, y = y, fill = shade)) +
+  geom_raster() +
+  scale_fill_gradient(low = "black", high = "white", guide = "none") +
+  coord_sf(datum = NA) +
+  labs(
+    title = "Hillshade (ombrage)",
+    subtitle = "Soleil : élévation 45°, azimut 315° (NO)",
+    x = "X (m)", y = "Y (m)"
+  ) +
+  theme_minimal()
 ```
 
 
