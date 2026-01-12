@@ -363,7 +363,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=50, exercise.setup="ex-4-1-setup", exercise.timelimit=300}
+```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=55, exercise.setup="ex-4-1-setup", exercise.timelimit=300}
 if (requireNamespace("lidR", quietly = TRUE)) {
   library(lidR)
 
@@ -375,46 +375,58 @@ if (requireNamespace("lidR", quietly = TRUE)) {
   mnt_path <- file.path(data_dir, "mnt.tif")
 
   if (length(fichiers_laz) > 0 && file.exists(mnt_path)) {
-    # Charger LiDAR
+    # Charger le MNT pour définir la zone valide
+    mnt <- rast(mnt_path)
+    mnt_bbox <- ext(mnt)
+
+    # Charger LiDAR (premier fichier)
     las_full <- readLAS(fichiers_laz[1], filter = "-drop_z_below 0")
 
-    # === RÉDUCTION À UN CARRÉ DE 20x20m ===
-    bbox <- st_bbox(las_full)
-    center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
-    center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+    # === RÉDUCTION À UN CARRÉ DE 50x50m DANS LA ZONE DU MNT ===
+    # Trouver l'intersection entre le LiDAR et le MNT
+    las_bbox <- st_bbox(las_full)
+    clip_xmin <- max(las_bbox["xmin"], mnt_bbox$xmin)
+    clip_xmax <- min(las_bbox["xmax"], mnt_bbox$xmax)
+    clip_ymin <- max(las_bbox["ymin"], mnt_bbox$ymin)
+    clip_ymax <- min(las_bbox["ymax"], mnt_bbox$ymax)
+
+    # Prendre un carré de 50x50m au centre de l'intersection
+    center_x <- (clip_xmin + clip_xmax) / 2
+    center_y <- (clip_ymin + clip_ymax) / 2
 
     las <- clip_rectangle(las_full,
-      xleft = center_x - 10,
-      ybottom = center_y - 10,
-      xright = center_x + 10,
-      ytop = center_y + 10
+      xleft = center_x - 25, ybottom = center_y - 25,
+      xright = center_x + 25, ytop = center_y + 25
     )
 
-    cat("Zone 20x20m:", nrow(las@data), "points\n")
+    cat("Zone 50x50m:", nrow(las@data), "points\n")
 
-    # Normaliser
-    mnt <- rast(mnt_path)
-    las_norm <- normalize_height(las, mnt)
-    las_clean <- filter_poi(las_norm, Z >= 0 & Z < 60)
+    if (nrow(las@data) > 0) {
+      # Normaliser les hauteurs
+      las_norm <- normalize_height(las, mnt)
+      las_clean <- filter_poi(las_norm, Z >= 0 & Z < 60)
 
-    # Générer le MNH (résolution 1m)
-    cat("\n=== Génération du MNH ===\n")
-    mnh <- rasterize_canopy(las_clean, res = 1, algorithm = p2r())
+      # Générer le MNH (résolution 1m)
+      cat("\n=== Génération du MNH ===\n")
+      mnh <- rasterize_canopy(las_clean, res = 1, algorithm = p2r())
 
-    cat("Dimensions:", nrow(mnh), "x", ncol(mnh), "pixels\n")
-    cat("Résolution:", res(mnh)[1], "m\n")
+      cat("Dimensions:", nrow(mnh), "x", ncol(mnh), "pixels\n")
+      cat("Résolution:", res(mnh)[1], "m\n")
 
-    # Statistiques
-    stats <- global(mnh, c("min", "max", "mean", "sd"), na.rm = TRUE)
-    cat("\n=== Statistiques MNH ===\n")
-    cat("Hauteur min:", round(stats$min, 1), "m\n")
-    cat("Hauteur max:", round(stats$max, 1), "m\n")
-    cat("Hauteur moyenne:", round(stats$mean, 1), "m\n")
+      # Statistiques
+      stats <- global(mnh, c("min", "max", "mean", "sd"), na.rm = TRUE)
+      cat("\n=== Statistiques MNH ===\n")
+      cat("Hauteur min:", round(stats$min, 1), "m\n")
+      cat("Hauteur max:", round(stats$max, 1), "m\n")
+      cat("Hauteur moyenne:", round(stats$mean, 1), "m\n")
 
-    # Sauvegarder (exemple sur zone réduite)
-    mnh_path <- file.path(data_dir, "mnh_sample.tif")
-    writeRaster(mnh, mnh_path, overwrite = TRUE)
-    cat("\nMNH échantillon sauvegardé:", mnh_path, "\n")
+      # Sauvegarder
+      mnh_path <- file.path(data_dir, "mnh_sample.tif")
+      writeRaster(mnh, mnh_path, overwrite = TRUE)
+      cat("\nMNH échantillon sauvegardé:", mnh_path, "\n")
+    } else {
+      cat("Aucun point dans l'intersection LiDAR/MNT.\n")
+    }
   } else {
     cat("Fichiers non trouvés.\n")
   }
