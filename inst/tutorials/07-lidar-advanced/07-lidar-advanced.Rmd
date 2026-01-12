@@ -1,0 +1,2336 @@
+---
+title: "Tutorial 07 : LiDAR Avancé — LAScatalog, lasR et BABA"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+runtime: shiny_prerendered
+description: >
+  Traitement LiDAR avancé avec LAScatalog pour gros jeux de données,
+  pipelines lasR haute performance, segmentation d'arbres avec lidaRtRee,
+  détection des trouées/lisières, et approche BABA (Buffered Area-Based)
+  pour cartographie haute résolution des indicateurs nemeton.
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+
+# Options
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+# Timeout pour les exercices LiDAR avancés (15 min)
+options(tutorial.exercise.timelimit = 900)
+
+# Configuration des timeouts réseau (5 minutes)
+NETWORK_TIMEOUT <- 300
+options(
+  timeout = NETWORK_TIMEOUT,
+  HTTPUserAgent = "nemeton-tutorial/1.0"
+)
+
+# Configuration httr (connect + request timeout)
+if (requireNamespace("httr", quietly = TRUE)) {
+  httr::set_config(httr::config(
+    connecttimeout = NETWORK_TIMEOUT,
+    timeout = NETWORK_TIMEOUT
+  ))
+}
+
+# Configuration GDAL/curl
+Sys.setenv(
+  GDAL_HTTP_TIMEOUT = as.character(NETWORK_TIMEOUT),
+  GDAL_HTTP_CONNECTTIMEOUT = as.character(NETWORK_TIMEOUT),
+  CURL_SSL_BACKEND = "openssl"
+)
+
+# Configuration parallélisation
+if (requireNamespace("future", quietly = TRUE)) {
+  future::plan(future::multisession, workers = 2)
+}
+
+# =============================================================================
+# DONNÉES DU TUTORIEL
+# =============================================================================
+
+# Répertoire des données LiDAR (Tutorial 01)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Charger les placettes lidaRtRee (96 placettes de 15m, projet Newfor)
+# Les données sont dans le dossier vignettes/data du package lidaRtRee
+lidartree_data_dir <- system.file("extdata", package = "lidaRtRee")
+if (lidartree_data_dir == "") {
+
+  # Fallback: chercher dans vignettes/data si extdata n'existe pas
+
+  lidartree_data_dir <- system.file("vignettes", "data", package = "lidaRtRee")
+}
+
+# Fonction helper pour charger les placettes Newfor
+load_newfor_plots <- function() {
+  # Chercher les fichiers de centres de placettes
+  plot_centers_file <- file.path(lidartree_data_dir, "aba.model", "field", "plot_centers.csv")
+
+
+  if (file.exists(plot_centers_file)) {
+    centers <- read.csv(plot_centers_file)
+    # Créer des géométries circulaires de 15m de rayon
+    if (requireNamespace("sf", quietly = TRUE)) {
+      plots_sf <- sf::st_as_sf(centers, coords = c("X", "Y"), crs = 2154)
+      plots_sf <- sf::st_buffer(plots_sf, dist = 15)
+      return(plots_sf)
+    }
+  }
+  return(NULL)
+}
+```
+
+## Bienvenue
+
+### Objectifs du tutoriel
+
+Ce tutoriel **avancé** vous guide dans le traitement de **gros jeux de données LiDAR** en utilisant des outils professionnels. Il complète le Tutorial 02 avec des techniques plus sophistiquées.
+
+À la fin de ce tutoriel, vous saurez :
+
+1. **Utiliser LAScatalog** pour traiter des données LiDAR multi-tuiles
+2. **Créer des pipelines lasR** optimisés pour la performance
+3. **Segmenter des arbres individuels** avec lidaRtRee
+4. **Détecter trouées et lisières** forestières
+5. **Extraire des métriques de structure** avancées
+6. **Appliquer l'approche BABA** pour cartographie haute résolution
+7. **Coregistrer des placettes terrain** avec le MNH
+8. **Exporter les métriques** pour les indicateurs nemeton
+
+### Comparaison avec Tutorial 02
+
+| Aspect | Tutorial 02 | Tutorial 07 (avancé) |
+|--------|-------------|----------------------|
+| Package principal | lidR | lidR + lasR + lidaRtRee |
+| Traitement | Fichier par fichier | LAScatalog (multi-tuiles) |
+| Performance | Standard | Haute performance |
+| Résolution sortie | 20-30m | 10m (BABA) |
+| Segmentation | Non | Arbres individuels |
+| Trouées/lisières | Non | Oui |
+| Calibration | Non | Oui (ABA/BABA) |
+| RAM requise | 4 GB | 8 GB |
+| Durée | 60 min | 90-120 min |
+
+### Prérequis
+
+Ce tutoriel combine les données du **Tutorial 01** et du package **lidaRtRee** :
+
+- **Données LiDAR** : Les 40 dalles LiDAR HD IGN téléchargées dans le Tutorial 01 (42 km²)
+- **Placettes terrain** : 32 placettes de 15m de rayon couvertes par le LiDAR (8 clusters du projet Newfor)
+- **Zone d'étude** : Partie centrale du massif des Quatre Montagnes (Vercors)
+
+> **Note** : Le jeu de données lidaRtRee contient 96 placettes sur une zone plus large. Nous utilisons les 32 placettes couvertes par nos dalles LiDAR.
+
+### Packages utilisés
+
+**CORE :**
+
+- `lidR` >= 4.1.1 : Traitement LiDAR standard
+- `lasR` : Pipelines haute performance (r-universe)
+- `lidaRtRee` >= 4.0.9 : Fonctions forestières (INRAE GitLab)
+
+**SUPPORT :**
+
+- `terra` : Manipulation rasters
+- `sf` : Données vectorielles
+- `future` : Parallélisation
+- `exactextractr` : Extraction par polygone
+
+### Installation des packages spéciaux
+
+```r
+# Installation (à exécuter UNE FOIS avant le tutoriel)
+
+# lidR (CRAN)
+install.packages('lidR')
+
+# lasR (r-universe uniquement)
+install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')
+
+# lidaRtRee (INRAE GitLab)
+remotes::install_gitlab('lidar/lidaRtRee', host = 'forge.inrae.fr')
+```
+
+### Quiz d'introduction
+
+```{r quiz-intro, echo=FALSE}
+question("Quelle est la principale différence entre lidR et lasR ?",
+  answer("lasR est une version payante de lidR"),
+  answer("lidR charge les données en R, lasR traite en C++ sans exposer les données à R", correct = TRUE),
+  answer("lasR ne peut pas lire les fichiers .laz"),
+  answer("lidR est plus rapide que lasR"),
+  allow_retry = TRUE,
+  random_answer_order = TRUE
+)
+```
+
+## Section 1 : LAScatalog
+
+### Concept du LAScatalog
+
+Un **LAScatalog** est une structure qui référence plusieurs fichiers LiDAR sans les charger en mémoire. Cela permet de :
+
+- **Traiter de gros jeux de données** qui ne tiennent pas en RAM
+- **Paralléliser** le traitement sur plusieurs cœurs
+- **Gérer automatiquement les buffers** pour éviter les effets de bord
+
+```
+                         LAScatalog
+
+   ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐     Fichiers LiDAR
+   │tile1│ │tile2│ │tile3│ │tile4│     (sur disque)
+   └──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘
+      │       │       │       │
+      └───────┴───────┴───────┘
+                  │
+                  ▼
+         ┌───────────────┐
+         │  LAScatalog   │  Métadonnées uniquement
+         │  (en mémoire) │  (emprises, CRS, stats)
+         └───────────────┘
+                  │
+                  ▼
+   ┌─────────────────────────────┐
+   │ Traitement par tuiles       │  Charge une tuile à la fois
+   │ avec buffer automatique     │  + buffer pour éviter artefacts
+   └─────────────────────────────┘
+```
+
+### Exercice 1.1 : Création d'un LAScatalog
+
+Créez un LAScatalog à partir des 40 dalles LiDAR HD téléchargées dans le Tutorial 01.
+
+```{r ex-1-1, exercise=TRUE, exercise.timelimit=120}
+library(lidR)
+library(sf)
+
+# Répertoire des données (Tutorial 01)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Lister les 40 dalles LiDAR HD des Quatre Montagnes (recherche récursive)
+fichiers_laz <- list.files(
+  file.path(data_dir, "lidar_hd"),
+  pattern = "\\.laz$",
+  full.names = TRUE,
+  recursive = TRUE
+)
+
+cat("Dalles LiDAR trouvées:", length(fichiers_laz), "/ 40 attendues\n")
+
+# Créer le LAScatalog
+ctg <- readLAScatalog(fichiers_laz)
+
+# Afficher les informations
+print(ctg)
+plot(ctg)
+```
+
+
+### Exercice 1.2 : Configuration des options
+
+Configurez les options du LAScatalog pour un traitement optimisé.
+
+```{r ex-1-2-setup}
+library(lidR)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+if (length(fichiers_laz) > 0) {
+  ctg <- readLAScatalog(fichiers_laz)
+} else {
+  ctg <- NULL
+}
+```
+
+```{r ex-1-2, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-1-2-setup"}
+# Options de traitement par tuiles
+opt_chunk_size(ctg) <- 500      # Taille des tuiles en mètres
+opt_chunk_buffer(ctg) <- 30     # Buffer en mètres (évite effets de bord)
+
+# Options de sortie
+opt_output_files(ctg) <- ""     # "" = retour en mémoire (petit jeu de données)
+                                 # ou template comme "{XLEFT}_{YBOTTOM}"
+
+# Options de parallélisation
+opt_progress(ctg) <- TRUE       # Afficher la progression
+
+# Vérifier la configuration
+cat("Taille tuiles:", opt_chunk_size(ctg), "m\n")
+cat("Buffer:", opt_chunk_buffer(ctg), "m\n")
+
+# Afficher le découpage prévu
+plot(ctg, chunk = TRUE)
+```
+
+
+### Exercice 1.3 : Visualisation avec placettes de calibration
+
+Affichez le LAScatalog avec les placettes de calibration superposées pour visualiser la couverture.
+
+```{r ex-1-3-setup}
+library(lidR)
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+if (length(fichiers_laz) > 0) {
+  ctg <- readLAScatalog(fichiers_laz)
+} else {
+  ctg <- NULL
+}
+
+# Charger les placettes Quatre Montagnes de lidaRtRee
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+
+  # Emprise des 40 dalles LiDAR (Tutorial 01)
+  bbox_lidar <- c(xmin = 895000, xmax = 902000, ymin = 6447000, ymax = 6453000)
+
+  # Filtrer les placettes couvertes par le LiDAR
+  covered <- quatre_montagnes$X >= bbox_lidar["xmin"] &
+             quatre_montagnes$X <= bbox_lidar["xmax"] &
+             quatre_montagnes$Y >= bbox_lidar["ymin"] &
+             quatre_montagnes$Y <= bbox_lidar["ymax"]
+
+  placettes_data <- quatre_montagnes[covered, ]
+  placettes_calibration <- sf::st_as_sf(placettes_data, coords = c("X", "Y"), crs = 2154)
+  placettes_calibration <- sf::st_buffer(placettes_calibration, dist = 15)  # Rayon 15m
+} else {
+  placettes_calibration <- NULL
+}
+```
+
+```{r ex-1-3, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-1-3-setup"}
+library(lidR)
+library(sf)
+
+# Vérifier que le catalogue et les placettes sont disponibles
+if (is.null(ctg)) {
+  cat("Catalogue non disponible. Exécutez d'abord le Tutorial 01.\n")
+} else if (is.null(placettes_calibration)) {
+  cat("Placettes non disponibles. Installez lidaRtRee:\n")
+  cat("remotes::install_gitlab('lidar/lidaRtRee', host = 'forge.inrae.fr')\n")
+} else {
+  # Afficher le catalogue
+  cat("=== LAScatalog ===\n")
+  print(ctg)
+
+  cat("\n=== Placettes de calibration ===\n")
+  cat("Nombre de placettes:", nrow(placettes_calibration), "\n")
+  cat("Rayon des placettes: 15 m (surface ≈ 707 m²)\n")
+
+  # Visualisation : catalogue + placettes
+  plot(ctg, main = "LAScatalog avec placettes de calibration")
+  plot(st_geometry(placettes_calibration), add = TRUE,
+       col = "red", border = "darkred", lwd = 2)
+
+  # Ajouter une légende
+  legend("topright",
+         legend = c("Dalles LiDAR HD", "Placettes terrain (15m)"),
+         fill = c("lightblue", "red"),
+         border = c("blue", "darkred"),
+         bty = "n")
+
+  cat("\nLes placettes rouges seront utilisées pour:\n")
+  cat("- Calibrer les modèles BABA (Section 6)\n")
+  cat("- Valider les métriques LiDAR (Section 8)\n")
+}
+```
+
+
+### Quiz LAScatalog
+
+```{r quiz-catalog, echo=FALSE}
+quiz(
+  question("Pourquoi utiliser un buffer dans LAScatalog ?",
+    answer("Pour augmenter la taille des fichiers"),
+    answer("Pour éviter les artefacts aux bords des tuiles", correct = TRUE),
+    answer("Pour accélérer le traitement"),
+    answer("Pour réduire la mémoire utilisée"),
+    allow_retry = TRUE
+  ),
+  question("Que signifie opt_chunk_size(ctg) <- 500 ?",
+    answer("Limiter à 500 fichiers"),
+    answer("Traiter par tuiles de 500 x 500 mètres", correct = TRUE),
+    answer("Utiliser 500 MB de RAM"),
+    answer("Garder 500 points par m²"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 2 : Pipelines lasR
+
+### Introduction à lasR
+
+**lasR** est un package haute performance pour le traitement LiDAR. Contrairement à lidR qui charge les données en R, lasR traite directement en C++ sans exposer les données à l'utilisateur.
+
+**Avantages** :
+- Traitement 5-10x plus rapide
+- Consommation mémoire réduite
+- Pipelines chaînables
+
+**Inconvénient** :
+- Moins flexible (pas d'accès direct aux points)
+
+```
+                    lidR vs lasR
+
+  lidR:                           lasR:
+  ┌──────────┐                    ┌──────────┐
+  │ Fichier  │                    │ Fichier  │
+  │   .laz   │                    │   .laz   │
+  └────┬─────┘                    └────┬─────┘
+       │                               │
+       ▼                               ▼
+  ┌──────────┐                    ┌──────────┐
+  │ Charger  │                    │ Pipeline │ (défini en R)
+  │ en R     │                    │   C++    │
+  └────┬─────┘                    └────┬─────┘
+       │                               │
+       ▼                               ▼
+  ┌──────────┐                    ┌──────────┐
+  │data.frame│ (en mémoire)       │ Résultat │ (direct)
+  └────┬─────┘                    └──────────┘
+       │
+       ▼
+  ┌──────────┐
+  │ Traiter  │
+  │ en R     │
+  └────┬─────┘
+       │
+       ▼
+  ┌──────────┐
+  │ Résultat │
+  └──────────┘
+```
+
+### Exercice 2.1 : Pipeline basique
+
+Créez un pipeline lasR simple pour générer un MNT.
+
+```{r ex-2-1-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+```
+
+```{r ex-2-1, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-2-1-setup"}
+# Vérifier que lasR est disponible
+if (!requireNamespace("lasR", quietly = TRUE)) {
+  cat("lasR n'est pas installé. Installez-le avec:\n")
+  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
+} else {
+  library(lasR)
+
+  # Définir le pipeline
+  # 1. Lire les fichiers
+  # 2. Trianguler les points sol
+  # 3. Rasteriser à 1m de résolution
+
+  pipeline <- reader_las(filter = "-drop_class 7") +
+    triangulate(filter = keep_ground()) +
+    rasterize(res = 1, operators = "max")
+
+  # Afficher le pipeline
+  print(pipeline)
+
+  # Note: L'exécution nécessite des données LiDAR
+  # lasR::exec(pipeline, on = fichiers_laz[1])
+
+  cat("\nPipeline créé avec succès !\n")
+  cat("Pour exécuter: lasR::exec(pipeline, on = fichiers_laz)\n")
+}
+```
+
+
+
+### Exercice 2.2 : Pipeline complexe MNT + MNH + Métriques
+
+Créez un pipeline complet qui génère plusieurs produits en une seule passe.
+
+```{r ex-2-2-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+```
+
+```{r ex-2-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-2-2-setup"}
+# Vérifier que lasR est disponible
+if (!requireNamespace("lasR", quietly = TRUE)) {
+  cat("lasR n'est pas installé. Installez-le avec:\n")
+  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
+} else {
+  library(lasR)
+
+  # 1. Créer l'étape de triangulation (référencée plus tard)
+  tri <- triangulate(filter = keep_ground())
+
+  # Pipeline lasR complet pour nemeton
+  pipeline_complet <- reader_las() +
+
+    # 2. MNT depuis points sol
+    tri +
+    rasterize(res = 1, operators = "max",
+              ofile = file.path(data_dir, "mnt_lidar.tif")) +
+
+    # 3. Normalisation des hauteurs (référence l'étape tri)
+    transform_with(tri) +
+
+    # 4. MNH (hauteur max normalisée)
+    rasterize(res = 1, operators = "max",
+              ofile = file.path(data_dir, "mnh_lidar.tif")) +
+
+    # 5. Métriques forestières à 30m
+    rasterize(res = 30,
+              operators = c("max", "mean", "sd", "p95", "above2"),
+              ofile = file.path(data_dir, "metriques_30m.tif"))
+
+  # Afficher le pipeline
+  print(pipeline_complet)
+
+  # Exécution (commentée car longue)
+  # lasR::exec(pipeline_complet, on = fichiers_laz, ncores = 4)
+
+  cat("\nAvantage: Une seule lecture des fichiers pour tous les produits !")
+}
+```
+
+
+### Quiz lasR
+
+```{r quiz-lasr, echo=FALSE}
+quiz(
+  question("Quel est l'avantage principal de lasR par rapport à lidR ?",
+    answer("Plus de fonctionnalités"),
+    answer("Traitement plus rapide et moins de mémoire utilisée", correct = TRUE),
+    answer("Interface graphique"),
+    answer("Support de plus de formats"),
+    allow_retry = TRUE
+  ),
+  question("Comment chaîne-t-on les opérations dans lasR ?",
+    answer("Avec des pipes %>%"),
+    answer("Avec l'opérateur +", correct = TRUE),
+    answer("Avec des listes"),
+    answer("Avec des fonctions imbriquées"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 3 : Segmentation d'Arbres Individuels
+
+*Basé sur l'article [Tree segmentation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/tree.detection.html) de lidaRtRee*
+
+### Principe
+
+La **segmentation d'arbres individuels** (ITD - Individual Tree Detection) permet d'identifier et caractériser chaque arbre à partir du MNH (Modèle Numérique de Hauteur). La fonction `tree_segmentation()` de lidaRtRee combine :
+
+1. **Pré-traitement** : filtrage non-linéaire (médian) pour réduire le bruit
+2. **Lissage gaussien** : avec sigma variable selon la hauteur
+3. **Détection des maxima locaux** : identification des cimes
+4. **Segmentation par croissance de région** : délimitation des houppiers
+
+```
+            Flux de traitement tree_segmentation()
+
+  MNH brut → Filtre médian → Lissage gaussien → Maxima locaux → Segments
+     │            │               │                  │             │
+     ▼            ▼               ▼                  ▼             ▼
+  [bruit]    [débruité]      [lissé]           [cimes]      [houppiers]
+```
+
+### Exercice 3.1 : Segmentation avec lidaRtRee
+
+Utilisez la fonction `tree_segmentation()` pour détecter les arbres.
+
+```{r ex-3-1-setup}
+library(lidaRtRee)
+library(terra)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-3-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-3-1-setup"}
+library(lidaRtRee)
+library(terra)
+
+# Charger le MNH exemple de lidaRtRee (Chablais, France)
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+
+cat("Zone d'étude: Chablais (Haute-Savoie)\n")
+cat("Résolution:", res(chm)[1], "m\n")
+cat("Dimensions:", nrow(chm), "x", ncol(chm), "pixels\n\n")
+
+# Segmentation avec paramètres par défaut
+# - nl_filter = "Median" : filtre médian 3x3
+# - sigma : lissage gaussien variable selon la hauteur
+# - hmin = 5 : hauteur minimale des arbres détectés (m)
+segments <- tree_segmentation(
+  chm,
+  nl_filter = "Median",
+  nl_size = 3,
+  sigma = cbind(c(0.2, 0.8), c(0, 15)),  # sigma varie de 0.2 (h=0) à 0.8 (h=15m)
+  hmin = 5,
+  crown_prop = 0.5,
+  crown_hmin = 5
+)
+
+# Résultats : SpatRaster avec 4 couches
+cat("Couches produites:\n")
+cat("- maxima : position des cimes détectées\n")
+cat("- segments_id : identifiant de chaque houppier\n")
+cat("- dem_nl : MNH après filtre non-linéaire\n
+")
+cat("- dem_w : MNH lissé\n\n")
+
+# Compter les arbres
+n_arbres <- length(unique(values(segments$segments_id))) - 1
+cat("Nombre d'arbres détectés:", n_arbres, "\n")
+
+# Visualisation
+par(mfrow = c(1, 2))
+terra::plot(chm, main = "MNH original")
+terra::plot(segments$segments_id %% 8, main = "Segments (colorés)",
+            col = rainbow(8), legend = FALSE)
+```
+
+### Exercice 3.2 : Extraction des attributs d'arbres
+
+Extrayez les attributs de chaque arbre avec `tree_extraction()`.
+
+```{r ex-3-2-setup}
+library(lidaRtRee)
+library(terra)
+library(sf)
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+segments <- tree_segmentation(chm, nl_filter = "Median", nl_size = 3,
+                               sigma = cbind(c(0.2, 0.8), c(0, 15)),
+                               hmin = 5, crown_prop = 0.5, crown_hmin = 5)
+```
+
+```{r ex-3-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-3-2-setup"}
+library(lidaRtRee)
+library(terra)
+library(sf)
+
+# Extraction des arbres avec géométrie des couronnes
+trees <- tree_extraction(segments, crown = TRUE)
+
+cat("Attributs extraits par arbre:\n")
+cat("- id : identifiant unique\n")
+cat("- height : hauteur de la cime (m)\n")
+cat("- dom_radius : rayon de dominance (m)\n")
+cat("- surface : surface du houppier (m²)\n")
+cat("- volume : volume du houppier (m³)\n")
+cat("- x, y : coordonnées de la cime\n")
+cat("- crown_geom : géométrie 2D du houppier (WKT)\n\n")
+
+# Statistiques
+cat("=== Statistiques du peuplement ===\n")
+cat("Nombre d'arbres:", nrow(trees), "\n")
+cat("Hauteur moyenne:", round(mean(trees$height), 1), "m\n")
+cat("Hauteur max:", round(max(trees$height), 1), "m\n")
+cat("Surface moyenne houppier:", round(mean(trees$surface), 1), "m²\n")
+
+# Afficher les premiers arbres
+print(head(trees[, c("id", "height", "surface", "volume")]))
+
+# Visualisation
+plot(chm, main = "Arbres détectés")
+plot(st_geometry(trees), add = TRUE, col = "red", pch = 3, cex = 0.5)
+```
+
+### Exercice 3.3 : Alternative avec lasR (haute performance)
+
+Pour les gros jeux de données, lasR offre un pipeline optimisé.
+
+```{r ex-3-3-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+```
+
+```{r ex-3-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-3-3-setup"}
+# Segmentation d'arbres avec lasR (alternative haute performance)
+
+if (!requireNamespace("lasR", quietly = TRUE)) {
+  cat("lasR n'est pas installé. Installez-le avec:\n")
+  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
+} else {
+  library(lasR)
+
+  # Pipeline lasR équivalent à tree_segmentation()
+  # 1. Triangulation des premiers retours
+  del <- triangulate(filter = keep_first())
+
+  # 2. CHM à 0.5m de résolution
+  chm <- rasterize(0.5, del)
+
+  # 3. Remplissage des puits (équivalent au filtre médian)
+  chm2 <- pit_fill(chm)
+
+  # 4. Détection des cimes (fenêtre de 3m)
+  seed <- local_maximum_raster(chm2, 3)
+
+  # 5. Segmentation par croissance de région
+  tree <- region_growing(chm2, seed)
+
+  # Pipeline complet
+  pipeline_itd <- del + chm + chm2 + seed + tree
+
+  print(pipeline_itd)
+
+  cat("\n=== Avantage lasR ===\n")
+  cat("- Traitement 5-10x plus rapide\n")
+  cat("- Consommation mémoire réduite\n")
+  cat("- Idéal pour gros jeux de données (>100 dalles)\n")
+
+  # Exécution (décommenter avec vos données)
+  # ans <- exec(pipeline_itd, on = fichiers_laz[1])
+}
+```
+
+### Quiz Segmentation
+
+```{r quiz-segmentation, echo=FALSE}
+quiz(
+  question("Quel paramètre contrôle la hauteur minimale des arbres détectés ?",
+    answer("sigma"),
+    answer("nl_size"),
+    answer("hmin", correct = TRUE),
+    answer("crown_prop"),
+    allow_retry = TRUE
+  ),
+  question("À quoi sert le filtre médian (nl_filter) ?",
+    answer("Accélérer le traitement"),
+    answer("Réduire le bruit du MNH avant détection", correct = TRUE),
+    answer("Augmenter la résolution"),
+    answer("Convertir les coordonnées"),
+    allow_retry = TRUE
+  ),
+  question("Que contient la sortie de tree_extraction() ?",
+    answer("Un raster de hauteurs"),
+    answer("Un nuage de points"),
+    answer("Un objet sf avec les attributs de chaque arbre", correct = TRUE),
+    answer("Une liste de fichiers"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 4 : Trouées et Lisières
+
+*Basé sur l'article [Gaps and edges detection](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/gaps.edges.detection.html) de lidaRtRee*
+
+### Principe
+
+Les **trouées** (gaps) et **lisières** (edges) sont des éléments clés de la structure forestière horizontale :
+
+- **Trouées** : Zones ouvertes dans la canopée où la végétation est basse
+- **Lisières** : Interfaces entre zones forestières et non-forestières
+
+La fonction `gap_detection()` de lidaRtRee utilise deux critères :
+
+1. **Critère de hauteur** : hauteur de végétation < seuil (ex: 1 m)
+2. **Critère de distance** : distance à la végétation environnante > ratio × hauteur végétation
+
+```
+            Critères de détection des trouées
+
+  Coupe transversale:
+                    ▲ hauteur végétation
+      ████          │          ████
+      ████          │          ████
+      ████    ◄─────┼─────►    ████
+      ████    distance à la    ████
+      ████    végétation       ████
+  ────────────────────────────────────
+             TROUÉE
+
+  Si distance > ratio × hauteur → TROUÉE
+  Sinon → Juste une zone basse (pas une vraie trouée)
+```
+
+### Exercice 4.1 : Détection des trouées avec lidaRtRee
+
+Utilisez `gap_detection()` avec différents paramètres.
+
+```{r ex-4-1-setup}
+library(lidaRtRee)
+library(terra)
+```
+
+```{r ex-4-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-4-1-setup"}
+library(lidaRtRee)
+library(terra)
+
+# Charger le MNH exemple
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+
+# Nettoyer les valeurs
+chm[is.na(chm)] <- 0
+chm[chm < 0] <- 0
+
+cat("=== Détection des trouées ===\n\n")
+
+# Critère 1 : Strict (ratio de distance + surface minimum)
+# - Hauteur max végétation : 1 m
+# - Ratio distance/hauteur : 2 (distance > 2× hauteur voisine)
+# - Surface minimum : 100 m²
+gaps_strict <- gap_detection(
+  chm,
+  ratio = 2,
+  gap_max_height = 1,
+  min_gap_surface = 100
+)
+
+# Critère 2 : Permissif (pas de restriction de distance)
+gaps_permissif <- gap_detection(
+  chm,
+  ratio = NULL,  # Pas de critère de distance
+  gap_max_height = 1,
+  min_gap_surface = 0
+)
+
+# Compter les trouées
+n_strict <- length(unique(values(gaps_strict$gap_id))) - 1
+n_permissif <- length(unique(values(gaps_permissif$gap_id))) - 1
+
+cat("Critère strict (ratio=2, min=100m²):", n_strict, "trouées\n")
+cat("Critère permissif (ratio=NULL):", n_permissif, "trouées\n\n")
+
+# Visualisation comparative
+par(mfrow = c(1, 2))
+terra::plot(log(gaps_strict$gap_surface + 1),
+            main = "Trouées (critère strict)",
+            col = rainbow(255, end = 5/6))
+terra::plot(log(gaps_permissif$gap_surface + 1),
+            main = "Trouées (critère permissif)",
+            col = rainbow(255, end = 5/6))
+```
+
+### Exercice 4.2 : Détection des lisières
+
+Identifiez les lisières forestières par érosion/dilatation morphologique.
+
+```{r ex-4-2-setup}
+library(lidaRtRee)
+library(terra)
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+chm[is.na(chm)] <- 0
+chm[chm < 0] <- 0
+# Détection avec reconstruction pour les lisières
+gaps <- gap_detection(chm, ratio = 2, gap_max_height = 1,
+                       min_gap_surface = 50, gap_reconstruct = TRUE,
+                       nl_filter = "None")
+```
+
+```{r ex-4-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-4-2-setup"}
+library(lidaRtRee)
+library(terra)
+
+cat("=== Détection des lisières ===\n\n")
+
+# Créer un masque binaire des trouées
+gap_mask <- gaps$gap_id > 0
+
+# Méthode 1 : Érosion (lisières internes à la forêt)
+edge_inside <- edge_detection(gap_mask, inside = TRUE)
+
+# Méthode 2 : Dilatation (lisières externes aux trouées)
+edge_outside <- edge_detection(gap_mask, inside = FALSE)
+
+# Calculer le pourcentage de lisières
+total_pixels <- sum(!is.na(values(chm)))
+edge_inside_pct <- sum(values(edge_inside), na.rm = TRUE) / total_pixels * 100
+edge_outside_pct <- sum(values(edge_outside), na.rm = TRUE) / total_pixels * 100
+
+cat("Lisières par érosion (internes):", round(edge_inside_pct, 2), "%\n")
+cat("Lisières par dilatation (externes):", round(edge_outside_pct, 2), "%\n")
+
+# Visualisation
+par(mfrow = c(1, 3))
+terra::plot(chm, main = "MNH")
+terra::plot(edge_inside, main = "Lisières (érosion)",
+            col = c("white", "red"), legend = FALSE)
+terra::plot(edge_outside, main = "Lisières (dilatation)",
+            col = c("white", "blue"), legend = FALSE)
+```
+
+### Exercice 4.3 : Statistiques des trouées
+
+Analysez la distribution des tailles de trouées.
+
+```{r ex-4-3-setup}
+library(lidaRtRee)
+library(terra)
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+chm[is.na(chm)] <- 0
+chm[chm < 0] <- 0
+gaps <- gap_detection(chm, ratio = NULL, gap_max_height = 1, min_gap_surface = 0)
+```
+
+```{r ex-4-3, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-4-3-setup"}
+library(terra)
+
+# Extraire les surfaces de trouées
+gap_ids <- unique(values(gaps$gap_id))
+gap_ids <- gap_ids[!is.na(gap_ids) & gap_ids > 0]
+
+# Calculer la surface de chaque trouée
+res_pixel <- res(gaps$gap_surface)[1]
+gaps_df <- data.frame(
+  id = gap_ids,
+  surface_m2 = sapply(gap_ids, function(id) {
+    sum(values(gaps$gap_id) == id, na.rm = TRUE) * res_pixel^2
+  })
+)
+
+cat("=== Distribution des tailles de trouées ===\n\n")
+cat("Nombre total de trouées:", nrow(gaps_df), "\n")
+cat("Surface min:", round(min(gaps_df$surface_m2), 1), "m²\n")
+cat("Surface max:", round(max(gaps_df$surface_m2), 1), "m²\n")
+cat("Surface médiane:", round(median(gaps_df$surface_m2), 1), "m²\n")
+cat("Surface moyenne:", round(mean(gaps_df$surface_m2), 1), "m²\n")
+
+# Classes de surface (pour indicateurs nemeton)
+classes <- c(0, 25, 100, 500, 2000, Inf)
+gaps_df$classe <- cut(gaps_df$surface_m2, breaks = classes,
+                       labels = c("<25", "25-100", "100-500", "500-2000", ">2000"))
+
+cat("\nDistribution par classe:\n")
+print(table(gaps_df$classe))
+
+# Histogramme
+hist(log10(gaps_df$surface_m2), breaks = 20,
+     main = "Distribution des surfaces de trouées",
+     xlab = "log10(Surface en m²)", col = "forestgreen")
+```
+
+### Quiz Trouées et Lisières
+
+```{r quiz-gaps, echo=FALSE}
+quiz(
+  question("Que signifie le paramètre ratio=2 dans gap_detection() ?",
+    answer("Surface minimum de 2 m²"),
+    answer("Distance à la végétation > 2× hauteur de cette végétation", correct = TRUE),
+    answer("Hauteur maximum de 2 m"),
+    answer("2 trouées minimum"),
+    allow_retry = TRUE
+  ),
+  question("Quelle méthode détecte les lisières à l'intérieur de la forêt ?",
+    answer("Dilatation morphologique"),
+    answer("Érosion morphologique", correct = TRUE),
+    answer("Filtrage médian"),
+    answer("Segmentation watershed"),
+    allow_retry = TRUE
+  ),
+  question("Quel indicateur nemeton utilise les trouées forestières ?",
+    answer("C1 - Carbone"),
+    answer("B2 - Structure biodiversité", correct = TRUE),
+    answer("P1 - Volume"),
+    answer("W1 - TWI"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 5 : Métriques de Structure Forestière
+
+*Basé sur l'article [Forest structure metrics extraction](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/forest.structure.metrics.html) de lidaRtRee*
+
+### Principe
+
+L'extraction de **métriques de structure forestière** à partir des données LiDAR permet de caractériser la complexité verticale et horizontale des peuplements. lidaRtRee propose plusieurs familles de métriques :
+
+1. **Métriques 2D (CHM)** : statistiques sur le MNH lissé à différentes échelles
+2. **Métriques de trouées** : proportion de surface par classe de taille
+3. **Métriques d'arbres** : densité, hauteur moyenne, indice de Gini
+4. **Métriques 1D (nuage de points)** : percentiles, densité par strate
+
+```
+            Familles de métriques lidaRtRee
+
+  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+  │   Métriques 2D  │  │ Métriques arbres│  │  Métriques 1D   │
+  │     (CHM)       │  │  (segmentation) │  │ (nuage points)  │
+  ├─────────────────┤  ├─────────────────┤  ├─────────────────┤
+  │ - CHM lissé σ   │  │ - Densité /ha   │  │ - Percentiles   │
+  │ - % couverture  │  │ - H moyenne     │  │ - Densité/strate│
+  │ - Écart-type    │  │ - Gini          │  │ - Intensité     │
+  └─────────────────┘  └─────────────────┘  └─────────────────┘
+```
+
+### Exercice 5.1 : Métriques du nuage de points avec aba_metrics()
+
+Utilisez la fonction `aba_metrics()` de lidaRtRee pour calculer les métriques standard.
+
+```{r ex-5-1-setup}
+library(lidaRtRee)
+library(lidR)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-5-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-5-1-setup"}
+library(lidaRtRee)
+
+cat("=== Métriques aba_metrics() de lidaRtRee ===\n\n")
+
+# Simuler un nuage de points (hauteurs normalisées)
+set.seed(42)
+n_points <- 5000
+Z <- c(
+  runif(500, 0, 2),      # Sous-bois
+  runif(1500, 2, 10),    # Strate intermédiaire
+  runif(2500, 10, 25),   # Canopée principale
+  runif(500, 25, 35)     # Arbres dominants
+)
+Intensity <- runif(n_points, 100, 500)
+ReturnNumber <- sample(1:4, n_points, replace = TRUE, prob = c(0.6, 0.25, 0.1, 0.05))
+Classification <- sample(c(1, 2, 3, 4, 5), n_points, replace = TRUE,
+                          prob = c(0.05, 0.15, 0.3, 0.4, 0.1))
+
+# Calculer les métriques ABA
+# Paramètre: classe_sol = 2 (points sol pour calculer la couverture)
+metrics <- aba_metrics(Z, Intensity, ReturnNumber, Classification,
+                        class_ground = 2)
+
+cat("Métriques de hauteur:\n")
+cat("  zmax:", round(metrics$zmax, 2), "m\n")
+cat("  zmean:", round(metrics$zmean, 2), "m\n")
+cat("  zsd:", round(metrics$zsd, 2), "m\n")
+cat("  zskew:", round(metrics$zskew, 3), "(asymétrie)\n")
+cat("  zkurt:", round(metrics$zkurt, 3), "(aplatissement)\n\n")
+
+cat("Percentiles de hauteur:\n")
+cat("  zq25:", round(metrics$zq25, 2), "m\n")
+cat("  zq50:", round(metrics$zq50, 2), "m\n")
+cat("  zq75:", round(metrics$zq75, 2), "m\n")
+cat("  zq95:", round(metrics$zq95, 2), "m\n\n")
+
+cat("Métriques de couverture:\n")
+cat("  pzabove2:", round(metrics$pzabove2 * 100, 1), "%\n")
+cat("  pzabove5:", round(metrics$pzabove5 * 100, 1), "%\n\n")
+
+cat("Nombre total de métriques:", length(metrics), "\n")
+```
+
+### Exercice 5.2 : Métriques d'arbres avec std_tree_metrics()
+
+Calculez les métriques dérivées de la segmentation d'arbres.
+
+```{r ex-5-2-setup}
+library(lidaRtRee)
+library(terra)
+library(sf)
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+segments <- tree_segmentation(chm, nl_filter = "Median", nl_size = 3,
+                               hmin = 5, crown_prop = 0.5, crown_hmin = 5)
+trees <- tree_extraction(segments, crown = TRUE)
+```
+
+```{r ex-5-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-5-2-setup"}
+library(lidaRtRee)
+library(sf)
+
+cat("=== Métriques d'arbres std_tree_metrics() ===\n\n")
+
+# Surface de la zone d'étude (en ha)
+area_ha <- (nrow(chm) * ncol(chm) * res(chm)[1]^2) / 10000
+
+# Calculer les métriques standard d'arbres
+tree_metrics <- std_tree_metrics(trees, area_ha = area_ha)
+
+cat("Métriques de densité:\n")
+cat("  N_ha:", round(tree_metrics$N_ha, 0), "arbres/ha\n")
+cat("  N_sup10:", round(tree_metrics$N_sup10, 0), "arbres >10m /ha\n")
+cat("  N_sup20:", round(tree_metrics$N_sup20, 0), "arbres >20m /ha\n")
+cat("  N_sup30:", round(tree_metrics$N_sup30, 0), "arbres >30m /ha\n\n")
+
+cat("Métriques de hauteur:\n")
+cat("  H_mean:", round(tree_metrics$H_mean, 2), "m\n")
+cat("  H_max:", round(tree_metrics$H_max, 2), "m\n")
+cat("  H_sd:", round(tree_metrics$H_sd, 2), "m\n")
+cat("  H_dom:", round(tree_metrics$H_dom, 2), "m (100 plus grands/ha)\n\n")
+
+cat("Métriques de structure:\n")
+cat("  Gini:", round(tree_metrics$Gini, 3), "(inégalité des hauteurs)\n")
+cat("  Cover:", round(tree_metrics$Cover * 100, 1), "% (couverture houppiers)\n")
+cat("  Vol_mean:", round(tree_metrics$Vol_mean, 1), "m³ (volume houppier moyen)\n")
+
+# Histogramme des hauteurs
+hist(trees$height, breaks = seq(0, max(trees$height) + 5, by = 5),
+     main = "Distribution des hauteurs d'arbres",
+     xlab = "Hauteur (m)", col = "forestgreen")
+```
+
+### Exercice 5.3 : Métriques multi-échelles du CHM
+
+Calculez les métriques du CHM à différentes échelles de lissage.
+
+```{r ex-5-3-setup}
+library(lidaRtRee)
+library(terra)
+data(chm_chablais3)
+chm <- terra::rast(chm_chablais3)
+chm[is.na(chm)] <- 0
+chm[chm < 0] <- 0
+```
+
+```{r ex-5-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-5-3-setup"}
+library(terra)
+
+cat("=== Métriques multi-échelles du CHM ===\n\n")
+
+# Valeurs sigma pour le lissage gaussien
+sigmas <- c(0, 0.5, 1, 2, 4, 8)
+
+# Calculer les écarts-types du CHM lissé à chaque échelle
+chm_stats <- list()
+for (sigma in sigmas) {
+  if (sigma == 0) {
+    chm_smooth <- chm
+  } else {
+    # Lissage gaussien (approximation avec focal)
+    w_size <- ceiling(sigma * 3) * 2 + 1
+    weights <- matrix(1, w_size, w_size)
+    chm_smooth <- focal(chm, w = weights, fun = "mean", na.rm = TRUE)
+  }
+
+  chm_stats[[paste0("sigma_", sigma)]] <- list(
+    mean = mean(values(chm_smooth), na.rm = TRUE),
+    sd = sd(values(chm_smooth), na.rm = TRUE),
+    max = max(values(chm_smooth), na.rm = TRUE)
+  )
+}
+
+cat("Statistiques par échelle de lissage:\n\n")
+cat(sprintf("%-10s %8s %8s %8s\n", "Sigma", "Moyenne", "Écart-T", "Max"))
+cat(sprintf("%-10s %8s %8s %8s\n", "-----", "-------", "-------", "---"))
+for (name in names(chm_stats)) {
+  s <- chm_stats[[name]]
+  sigma_val <- gsub("sigma_", "", name)
+  cat(sprintf("%-10s %8.2f %8.2f %8.2f\n", sigma_val, s$mean, s$sd, s$max))
+}
+
+# Métriques de couverture par classe de hauteur
+cat("\n\nCouverture par classe de hauteur:\n")
+seuils <- c(0.5, 1, 5, 10, 20)
+for (s in seuils) {
+  pct <- sum(values(chm) > s, na.rm = TRUE) / sum(!is.na(values(chm))) * 100
+  cat(sprintf("  > %2.0f m : %5.1f %%\n", s, pct))
+}
+```
+
+### Tableau récapitulatif des métriques
+
+| Métrique | Fonction lidaRtRee | Description | Indicateur nemeton |
+|----------|-------------------|-------------|-------------------|
+| zmax, zmean, zsd | `aba_metrics()` | Statistiques de hauteur | P1, C1, B2 |
+| zq25, zq50, zq75, zq95 | `aba_metrics()` | Percentiles | P1 |
+| pzabove2, pzabove5 | `aba_metrics()` | Couverture canopée | A1, C1 |
+| N_ha, N_sup10 | `std_tree_metrics()` | Densité d'arbres | P1, E1 |
+| H_mean, H_dom | `std_tree_metrics()` | Hauteur moyenne/dominante | P1, P3 |
+| Gini | `std_tree_metrics()` | Hétérogénéité | B2 |
+| gap_surface | `gap_detection()` | Surface en trouées | B2 |
+| edge_pct | `edge_detection()` | % de lisières | L1 |
+
+### Quiz Métriques
+
+```{r quiz-metrics, echo=FALSE}
+quiz(
+  question("Que mesure l'indice de Gini sur les hauteurs d'arbres ?",
+    answer("La hauteur moyenne"),
+    answer("L'inégalité/hétérogénéité des hauteurs", correct = TRUE),
+    answer("La densité d'arbres"),
+    answer("La couverture du sol"),
+    allow_retry = TRUE
+  ),
+  question("Quelle métrique est la plus utile pour estimer la biomasse ?",
+    answer("Gini"),
+    answer("pzabove2"),
+    answer("zq95 (percentile 95)", correct = TRUE),
+    answer("N_ha"),
+    allow_retry = TRUE
+  ),
+  question("À quoi sert le lissage multi-échelles du CHM ?",
+    answer("Accélérer le traitement"),
+    answer("Capturer la structure à différentes résolutions spatiales", correct = TRUE),
+    answer("Corriger les erreurs GPS"),
+    answer("Convertir les unités"),
+    allow_retry = TRUE
+  )
+)
+```
+
+
+## Section 6 : Approche ABA - Préparation des Données
+
+*Basé sur l'article [Area-based 1: Data preparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html) de lidaRtRee*
+
+### Principe de l'approche ABA
+
+L'**approche basée sur les surfaces** (Area-Based Approach - ABA) est la méthode standard pour prédire des paramètres forestiers à partir de données LiDAR. Elle comprend trois étapes :
+
+1. **Préparation des données** : extraction des métriques LiDAR sur les placettes terrain
+2. **Calibration du modèle** : régression entre métriques LiDAR et mesures terrain
+3. **Cartographie** : application du modèle sur l'ensemble de la zone
+
+```
+            Flux de travail ABA
+
+  PLACETTES TERRAIN          DONNÉES LIDAR
+        │                          │
+        ▼                          ▼
+  ┌───────────┐            ┌───────────────┐
+  │ G, V, N   │            │ Nuage points  │
+  │ (mesurés) │            │ (normalisé)   │
+  └─────┬─────┘            └───────┬───────┘
+        │                          │
+        │    ┌─────────────────┐   │
+        └───►│ EXTRACTION      │◄──┘
+             │ métriques/plot  │
+             └────────┬────────┘
+                      │
+                      ▼
+             ┌─────────────────┐
+             │ CALIBRATION     │
+             │ G = f(zq95,...)│
+             └────────┬────────┘
+                      │
+                      ▼
+             ┌─────────────────┐
+             │ CARTOGRAPHIE    │
+             │ Prédiction wall │
+             │ to wall         │
+             └─────────────────┘
+```
+
+### Exercice 6.1 : Chargement des placettes terrain
+
+Chargez et préparez les données des placettes terrain du projet Quatre Montagnes.
+
+```{r ex-6-1-setup}
+library(lidaRtRee)
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
+library(lidaRtRee)
+library(sf)
+
+cat("=== Chargement des placettes Quatre Montagnes ===\n\n")
+
+# Paramètres d'inventaire
+p_radius <- 15      # Rayon des placettes (m)
+dbh_min <- 7.5      # Diamètre minimum inventorié (cm)
+
+cat("Paramètres:\n")
+cat("  Rayon placettes:", p_radius, "m\n")
+cat("  Surface:", round(pi * p_radius^2, 0), "m² (", round(pi * p_radius^2 / 10000, 4), "ha)\n")
+cat("  DHP minimum:", dbh_min, "cm\n\n")
+
+# Charger les données lidaRtRee (si disponibles)
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  # Données du projet Quatre Montagnes (Vercors)
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+
+  cat("Données chargées: quatre_montagnes\n")
+  cat("Nombre de placettes:", nrow(quatre_montagnes), "\n")
+  cat("Variables disponibles:\n")
+  print(names(quatre_montagnes))
+
+  # Créer un objet sf
+  plots_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
+
+  # Afficher les premières lignes
+  cat("\n\nAperçu des données:\n")
+  print(head(st_drop_geometry(plots_sf)[, c("plot_id", "G_m2_ha", "N_ha", "D_mean_cm")]))
+
+} else {
+  cat("lidaRtRee non installé. Installez avec:\n")
+  cat("remotes::install_gitlab('lidar/lidaRtRee', host = 'forge.inrae.fr')\n")
+}
+```
+
+### Exercice 6.2 : Extraction des métriques LiDAR par placette
+
+Extrayez les métriques LiDAR sur chaque placette avec `clouds_metrics()`.
+
+```{r ex-6-2-setup}
+library(lidaRtRee)
+library(lidR)
+library(sf)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+# Charger les placettes
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
+}
+```
+
+```{r ex-6-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-6-2-setup"}
+library(lidaRtRee)
+library(lidR)
+
+cat("=== Extraction des métriques LiDAR ===\n\n")
+
+# Définir la fonction de métriques ABA
+aba_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                            Classification, class_ground = 2)
+
+cat("Fonction de métriques: aba_metrics()\n")
+cat("- Statistiques de hauteur (zmax, zmean, zsd, zskew, zkurt)\n")
+cat("- Percentiles (zq10, zq25, zq50, zq75, zq90, zq95)\n")
+cat("- Couverture (pzabove2, pzabove5)\n")
+cat("- Intensité (imean, isd, imax)\n")
+cat("- Ratios de retours\n\n")
+
+# Exemple avec données simulées (les vraies données nécessitent les fichiers LAS)
+cat("=== Simulation pour démonstration ===\n\n")
+
+# Simuler des métriques pour les placettes
+set.seed(42)
+n_plots <- min(32, nrow(plots_sf))
+
+metrics_sim <- data.frame(
+  plot_id = plots_sf$plot_id[1:n_plots],
+  zmax = runif(n_plots, 20, 40),
+  zmean = runif(n_plots, 12, 25),
+  zsd = runif(n_plots, 4, 10),
+  zq95 = runif(n_plots, 18, 38),
+  pzabove2 = runif(n_plots, 0.5, 0.95),
+  imean = runif(n_plots, 200, 400)
+)
+
+# Joindre aux données terrain
+plots_aba <- merge(
+  st_drop_geometry(plots_sf[1:n_plots, c("plot_id", "G_m2_ha", "N_ha", "D_mean_cm")]),
+  metrics_sim,
+  by = "plot_id"
+)
+
+cat("Données combinées (terrain + LiDAR):\n")
+print(head(plots_aba))
+
+cat("\n\nCorrélations G_m2_ha vs métriques LiDAR:\n")
+cors <- cor(plots_aba$G_m2_ha, plots_aba[, c("zmax", "zmean", "zq95", "pzabove2")])
+print(round(cors, 3))
+```
+
+### Exercice 6.3 : Métriques BABA avec lasR (haute performance)
+
+Pour les gros jeux de données, lasR permet le calcul BABA (Buffered Area-Based Approach).
+
+```{r ex-6-3-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
+                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+```
+
+```{r ex-6-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-3-setup"}
+cat("=== BABA avec lasR ===\n\n")
+
+cat("BABA = Buffered Area-Based Approach\n")
+cat("Avantage: résolution de sortie ≠ taille de fenêtre de calcul\n\n")
+
+if (!requireNamespace("lasR", quietly = TRUE)) {
+  cat("lasR n'est pas installé. Installez-le avec:\n")
+  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
+} else {
+  library(lasR)
+
+  # Pipeline BABA: résolution 10m, fenêtre 30m (rayon 15m comme placettes)
+  pipeline_baba <- reader_las() +
+    rasterize(
+      res = c(10, 30),  # 10m sortie, 30m fenêtre (~706 m² comme placettes)
+      operators = c("max", "mean", "sd", "p95", "above2")
+    )
+
+  print(pipeline_baba)
+
+  cat("\n\nParamètre res = c(10, 30) signifie:\n")
+  cat("- Pixels de sortie: 10m × 10m\n")
+  cat("- Fenêtre de calcul: 30m × 30m (~900 m²)\n")
+  cat("- Compatible avec placettes de rayon 15m (~706 m²)\n")
+  cat("- 9 pixels de sortie par fenêtre de calcul\n")
+
+  # Exécution (décommenter avec vos données)
+  # result <- exec(pipeline_baba, on = fichiers_laz, ncores = 4)
+}
+```
+
+### Quiz Préparation ABA
+
+```{r quiz-aba-prep, echo=FALSE}
+quiz(
+  question("Quelle est la surface d'une placette de rayon 15m ?",
+    answer("225 m²"),
+    answer("450 m²"),
+    answer("~707 m²", correct = TRUE),
+    answer("900 m²"),
+    allow_retry = TRUE
+  ),
+  question("Que contient la fonction aba_metrics() ?",
+    answer("Uniquement les hauteurs"),
+    answer("Hauteurs, percentiles, couverture, intensité, ratios", correct = TRUE),
+    answer("Uniquement les coordonnées"),
+    answer("Les espèces d'arbres"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 7 : Approche ABA - Calibration des Modèles
+
+*Basé sur l'article [Area-based 2: Model calibration](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.2.model.calibration.html) de lidaRtRee*
+
+### Principe de la calibration
+
+La fonction `aba_build_model()` de lidaRtRee automatise la calibration des modèles ABA :
+
+1. **Transformation Box-Cox** : normalisation de la variable cible
+2. **Sélection de variables** : algorithme stepwise avec critère BIC
+3. **Validation croisée spatiale** : leave-one-out avec prise en compte de l'autocorrélation
+4. **Diagnostics** : R², RMSE, biais, graphiques
+
+```
+            Flux de calibration aba_build_model()
+
+  Données d'entrée:
+  ┌─────────────────────────────────────────────┐
+  │ y = variable terrain (G, V, N, ...)         │
+  │ X = matrice de métriques LiDAR              │
+  │ xy = coordonnées (pour validation spatiale) │
+  └─────────────────────────────────────────────┘
+                      │
+                      ▼
+  ┌─────────────────────────────────────────────┐
+  │ 1. Transformation Box-Cox de y              │
+  │ 2. Sélection variables (stepwise BIC)       │
+  │ 3. Ajustement modèle linéaire               │
+  │ 4. Validation croisée leave-one-out         │
+  └─────────────────────────────────────────────┘
+                      │
+                      ▼
+  Sorties:
+  ┌─────────────────────────────────────────────┐
+  │ - Modèle calibré                            │
+  │ - Statistiques (R², R²cv, RMSE, biais)      │
+  │ - Valeurs prédites et résidus               │
+  └─────────────────────────────────────────────┘
+```
+
+### Exercice 7.1 : Calibration avec aba_build_model()
+
+Calibrez un modèle de prédiction de la surface terrière.
+
+```{r ex-7-1-setup}
+library(lidaRtRee)
+library(sf)
+# Charger et préparer les données
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+  # Simuler des métriques LiDAR (pour démonstration)
+  set.seed(42)
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zsd = runif(n, 3, 10),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
+    imean = runif(n, 200, 400)
+  )
+  rownames(metrics) <- plots$plot_id
+}
+```
+
+```{r ex-7-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-1-setup"}
+library(lidaRtRee)
+
+cat("=== Calibration du modèle ABA ===\n\n")
+
+# Variable cible : Surface terrière (G en m²/ha)
+variable <- "G_m2_ha"
+
+cat("Variable cible:", variable, "\n")
+cat("Nombre de placettes:", nrow(plots), "\n")
+cat("Métriques disponibles:", paste(names(metrics), collapse = ", "), "\n\n")
+
+# Calibration avec aba_build_model()
+model_aba <- aba_build_model(
+  y = plots[, variable],           # Variable terrain
+  x = metrics,                      # Métriques LiDAR
+  transform = "boxcox",             # Transformation Box-Cox
+  nmax = 4,                         # Maximum 4 variables
+  xy = plots[, c("X", "Y")]         # Coordonnées pour validation spatiale
+)
+
+# Afficher les statistiques
+cat("=== Résultats de la calibration ===\n\n")
+cat("Variables sélectionnées:", paste(model_aba$stats$variables, collapse = " + "), "\n\n")
+
+cat("Statistiques:\n")
+cat("  R² ajusté:", round(model_aba$stats$r2_adj, 3), "\n")
+cat("  R² validation croisée:", round(model_aba$stats$r2_cv, 3), "\n")
+cat("  RMSE:", round(model_aba$stats$rmse, 2), "m²/ha\n")
+cat("  RMSE relatif:", round(model_aba$stats$rmse_rel * 100, 1), "%\n")
+cat("  Biais:", round(model_aba$stats$bias, 2), "m²/ha\n")
+
+# Graphique observé vs prédit
+aba_plot(model_aba, main = paste("Modèle", variable))
+```
+
+### Exercice 7.2 : Calibration de plusieurs variables
+
+Calibrez des modèles pour G, N et D_mean simultanément.
+
+```{r ex-7-2-setup}
+library(lidaRtRee)
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+  set.seed(42)
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zsd = runif(n, 3, 10),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
+    imean = runif(n, 200, 400)
+  )
+  rownames(metrics) <- plots$plot_id
+}
+```
+
+```{r ex-7-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-2-setup"}
+library(lidaRtRee)
+
+cat("=== Calibration multi-variables ===\n\n")
+
+# Variables à modéliser
+variables <- c("G_m2_ha", "N_ha", "D_mean_cm")
+
+# Calibrer un modèle pour chaque variable
+models_aba <- list()
+for (var in variables) {
+  cat("Calibration de", var, "...\n")
+  models_aba[[var]] <- aba_build_model(
+    y = plots[, var],
+    x = metrics,
+    transform = "boxcox",
+    nmax = 4,
+    xy = plots[, c("X", "Y")]
+  )
+}
+
+# Résumé des modèles
+cat("\n=== Résumé des modèles ===\n\n")
+cat(sprintf("%-12s %8s %8s %10s %8s\n",
+            "Variable", "R²_adj", "R²_cv", "RMSE", "RMSE_%"))
+cat(sprintf("%-12s %8s %8s %10s %8s\n",
+            "--------", "------", "-----", "----", "------"))
+
+for (var in variables) {
+  s <- models_aba[[var]]$stats
+  cat(sprintf("%-12s %8.3f %8.3f %10.2f %8.1f\n",
+              var, s$r2_adj, s$r2_cv, s$rmse, s$rmse_rel * 100))
+}
+
+# Variables sélectionnées par modèle
+cat("\n\nVariables sélectionnées:\n")
+for (var in variables) {
+  cat(var, ":", models_aba[[var]]$stats$variables, "\n")
+}
+```
+
+### Exercice 7.3 : Diagnostics du modèle
+
+Analysez les résidus et la qualité du modèle.
+
+```{r ex-7-3-setup}
+library(lidaRtRee)
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+  set.seed(42)
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zsd = runif(n, 3, 10),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
+    imean = runif(n, 200, 400)
+  )
+  rownames(metrics) <- plots$plot_id
+  model_aba <- aba_build_model(plots$G_m2_ha, metrics, transform = "boxcox",
+                                nmax = 4, xy = plots[, c("X", "Y")])
+}
+```
+```{r ex-7-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-7-3-setup"}
+library(lidaRtRee)
+
+cat("=== Diagnostics du modèle ===\n\n")
+
+# Extraire les valeurs du modèle
+observed <- model_aba$values$observed
+predicted <- model_aba$values$predicted
+residuals <- model_aba$values$residual
+
+# Statistiques des résidus
+cat("Statistiques des résidus:\n")
+cat("  Moyenne:", round(mean(residuals), 3), "(devrait être ~0)\n")
+cat("  Écart-type:", round(sd(residuals), 2), "\n")
+cat("  Min:", round(min(residuals), 2), "\n")
+cat("  Max:", round(max(residuals), 2), "\n\n")
+
+# Test de corrélation résidus vs observé
+cor_test <- cor.test(residuals, observed)
+cat("Corrélation résidus/observé:\n")
+cat("  r =", round(cor_test$estimate, 3), "\n")
+cat("  p-value =", format(cor_test$p.value, digits = 3), "\n")
+cat("  (p > 0.05 = pas de biais systématique)\n\n")
+
+# Graphiques de diagnostic
+par(mfrow = c(2, 2))
+
+# 1. Observé vs Prédit
+plot(observed, predicted, pch = 19, col = "blue",
+     xlab = "Observé", ylab = "Prédit",
+     main = "Observé vs Prédit")
+abline(0, 1, col = "red", lwd = 2)
+
+# 2. Résidus vs Prédit
+plot(predicted, residuals, pch = 19, col = "blue",
+     xlab = "Prédit", ylab = "Résidus",
+     main = "Résidus vs Prédit")
+abline(h = 0, col = "red", lwd = 2)
+
+# 3. Distribution des résidus
+hist(residuals, breaks = 15, col = "lightblue",
+     main = "Distribution des résidus", xlab = "Résidus")
+
+# 4. QQ-plot
+qqnorm(residuals, pch = 19, col = "blue", main = "QQ-plot des résidus")
+qqline(residuals, col = "red", lwd = 2)
+```
+
+### Quiz Calibration ABA
+
+```{r quiz-calibration, echo=FALSE}
+quiz(
+  question("Que fait la transformation Box-Cox ?",
+    answer("Accélère le calcul"),
+    answer("Normalise la distribution de la variable cible", correct = TRUE),
+    answer("Sélectionne les variables"),
+    answer("Calcule les coordonnées"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi utiliser la validation croisée spatiale ?",
+    answer("Pour accélérer le calcul"),
+    answer("Pour tenir compte de l'autocorrélation spatiale des données", correct = TRUE),
+    answer("Pour augmenter le R²"),
+    answer("Pour réduire le nombre de variables"),
+    allow_retry = TRUE
+  ),
+  question("Que signifie un R²cv inférieur au R²adj ?",
+    answer("Le modèle est parfait"),
+    answer("Il y a probablement du sur-ajustement", correct = TRUE),
+    answer("Les données sont incorrectes"),
+    answer("La transformation a échoué"),
+    allow_retry = TRUE
+  )
+)
+```
+
+
+## Section 8 : Cartographie et Prédiction
+
+*Basé sur l'article [Area-based 3: Mapping and inference](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.3.mapping.and.inference.html) de lidaRtRee*
+
+### Principe de la cartographie ABA
+
+Une fois les modèles calibrés, la fonction `aba_predict()` permet de les appliquer à une carte de métriques LiDAR pour produire des prédictions "wall-to-wall" (mur à mur) sur l'ensemble de la zone d'étude.
+
+```
+            Flux de cartographie aba_predict()
+
+  Entrées:
+  ┌─────────────────────────────────────────────┐
+  │ model = modèle calibré (aba_build_model)    │
+  │ metrics_map = raster multi-couches (lasR)   │
+  │ stratum = couche de stratification (optim.) │
+  └─────────────────────────────────────────────┘
+                      │
+                      ▼
+  ┌─────────────────────────────────────────────┐
+  │ 1. Application du modèle pixel par pixel    │
+  │ 2. Transformation inverse (Box-Cox)         │
+  │ 3. Stratification si plusieurs modèles      │
+  └─────────────────────────────────────────────┘
+                      │
+                      ▼
+  Sorties:
+  ┌─────────────────────────────────────────────┐
+  │ - Carte des prédictions (SpatRaster)        │
+  │ - Valeurs en unités terrain (G, V, N, ...)  │
+  └─────────────────────────────────────────────┘
+```
+
+### Exercice 8.1 : Prédiction avec aba_predict()
+
+Appliquez le modèle calibré pour produire une carte de surface terrière.
+
+```{r ex-8-1-setup}
+library(lidaRtRee)
+library(terra)
+library(sf)
+
+# Charger les données de calibration
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+
+  # Simuler des métriques LiDAR corrélées aux données terrain
+  set.seed(42)
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zsd = runif(n, 3, 10),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
+    imean = runif(n, 200, 400)
+  )
+  rownames(metrics) <- plots$plot_id
+
+  # Calibrer le modèle
+  model_G <- aba_build_model(
+    y = plots$G_m2_ha,
+    x = metrics,
+    transform = "boxcox",
+    nmax = 4,
+    xy = plots[, c("X", "Y")]
+  )
+}
+
+# Créer une carte de métriques de démonstration
+bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
+metrics_map <- rast(nrows = 400, ncols = 600,
+                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
+                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
+                    nlyrs = 6)
+names(metrics_map) <- c("zmax", "zmean", "zsd", "zq95", "pzabove2", "imean")
+n_cells <- ncell(metrics_map)
+
+# Simuler des valeurs réalistes
+set.seed(123)
+values(metrics_map[["zmax"]]) <- runif(n_cells, 15, 40)
+values(metrics_map[["zmean"]]) <- runif(n_cells, 8, 25)
+values(metrics_map[["zsd"]]) <- runif(n_cells, 2, 12)
+values(metrics_map[["zq95"]]) <- runif(n_cells, 12, 38)
+values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.3, 0.95)
+values(metrics_map[["imean"]]) <- runif(n_cells, 150, 450)
+crs(metrics_map) <- "EPSG:2154"
+```
+
+```{r ex-8-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-1-setup"}
+library(lidaRtRee)
+library(terra)
+
+cat("=== Cartographie avec aba_predict() ===\n\n")
+
+# Vérifier que le modèle est calibré
+cat("Modèle utilisé:\n")
+cat("  Variable:", "G_m2_ha (Surface terrière)\n")
+cat("  Variables sélectionnées:", paste(model_G$stats$variables, collapse = " + "), "\n")
+cat("  R²cv:", round(model_G$stats$r2_cv, 3), "\n\n")
+
+# Vérifier les couches de la carte de métriques
+cat("Carte de métriques:\n")
+cat("  Dimensions:", nrow(metrics_map), "x", ncol(metrics_map), "pixels\n")
+cat("  Résolution:", res(metrics_map)[1], "m\n")
+cat("  Couches:", paste(names(metrics_map), collapse = ", "), "\n\n")
+
+# Appliquer le modèle pour produire la carte de prédiction
+prediction_G <- aba_predict(model_G, metrics_map)
+
+cat("=== Carte de prédiction générée ===\n\n")
+cat("Statistiques de la prédiction:\n")
+pred_values <- values(prediction_G)
+cat("  Min:", round(min(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Max:", round(max(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Moyenne:", round(mean(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Écart-type:", round(sd(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+
+# Visualisation
+terra::plot(prediction_G,
+            main = "Surface terrière prédite (G m²/ha)",
+            col = hcl.colors(50, "YlGn"))
+```
+
+### Exercice 8.2 : Prédiction stratifiée
+
+Lorsque des modèles sont calibrés séparément par type de peuplement, la prédiction doit être stratifiée.
+
+```{r ex-8-2-setup}
+library(lidaRtRee)
+library(terra)
+library(sf)
+
+# Charger les données et créer deux modèles par strate
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+
+  # Simuler une strate (public/privé ou résineux/feuillus)
+  set.seed(42)
+  plots$strate <- ifelse(plots$X > median(plots$X), "resineux", "feuillus")
+
+  # Métriques LiDAR simulées
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zsd = runif(n, 3, 10),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
+    imean = runif(n, 200, 400)
+  )
+  rownames(metrics) <- plots$plot_id
+
+  # Calibrer un modèle par strate
+  idx_res <- plots$strate == "resineux"
+  idx_feu <- plots$strate == "feuillus"
+
+  model_resineux <- aba_build_model(
+    y = plots$G_m2_ha[idx_res],
+    x = metrics[idx_res, ],
+    transform = "boxcox", nmax = 3
+  )
+
+  model_feuillus <- aba_build_model(
+    y = plots$G_m2_ha[idx_feu],
+    x = metrics[idx_feu, ],
+    transform = "boxcox", nmax = 3
+  )
+}
+
+# Créer carte de métriques avec couche de strate
+bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
+metrics_map <- rast(nrows = 200, ncols = 300,
+                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
+                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
+                    nlyrs = 7)
+names(metrics_map) <- c("zmax", "zmean", "zsd", "zq95", "pzabove2", "imean", "strate")
+n_cells <- ncell(metrics_map)
+
+set.seed(123)
+values(metrics_map[["zmax"]]) <- runif(n_cells, 15, 40)
+values(metrics_map[["zmean"]]) <- runif(n_cells, 8, 25)
+values(metrics_map[["zsd"]]) <- runif(n_cells, 2, 12)
+values(metrics_map[["zq95"]]) <- runif(n_cells, 12, 38)
+values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.3, 0.95)
+values(metrics_map[["imean"]]) <- runif(n_cells, 150, 450)
+# Strate: 1 = résineux (est), 2 = feuillus (ouest)
+coords <- crds(metrics_map)
+values(metrics_map[["strate"]]) <- ifelse(coords[, 1] > 899000, 1, 2)
+crs(metrics_map) <- "EPSG:2154"
+```
+
+```{r ex-8-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-2-setup"}
+library(lidaRtRee)
+library(terra)
+
+cat("=== Prédiction stratifiée ===\n\n")
+
+cat("Modèles par strate:\n")
+cat("  Résineux: R²cv =", round(model_resineux$stats$r2_cv, 3), "\n")
+cat("  Feuillus: R²cv =", round(model_feuillus$stats$r2_cv, 3), "\n\n")
+
+# Créer les masques de strate
+mask_resineux <- metrics_map[["strate"]] == 1
+mask_feuillus <- metrics_map[["strate"]] == 2
+
+# Prédire pour chaque strate
+pred_resineux <- aba_predict(model_resineux, metrics_map)
+pred_feuillus <- aba_predict(model_feuillus, metrics_map)
+
+# Combiner les prédictions selon la strate
+prediction_stratifiee <- pred_resineux
+values(prediction_stratifiee)[values(mask_feuillus)] <- values(pred_feuillus)[values(mask_feuillus)]
+
+cat("Statistiques par strate:\n")
+cat("  Résineux - moyenne:", round(mean(values(pred_resineux)[values(mask_resineux)], na.rm = TRUE), 1), "m²/ha\n")
+cat("  Feuillus - moyenne:", round(mean(values(pred_feuillus)[values(mask_feuillus)], na.rm = TRUE), 1), "m²/ha\n\n")
+
+# Visualisation comparative
+par(mfrow = c(1, 2))
+terra::plot(metrics_map[["strate"]], main = "Carte des strates",
+            col = c("darkgreen", "orange"), legend = FALSE)
+legend("topright", legend = c("Résineux", "Feuillus"),
+       fill = c("darkgreen", "orange"), bty = "n")
+
+terra::plot(prediction_stratifiee, main = "G stratifiée (m²/ha)",
+            col = hcl.colors(50, "YlGn"))
+```
+
+### Exercice 8.3 : Nettoyage et masquage des cartes
+
+Utilisez `clean_raster()` pour appliquer des seuils et un masque forestier.
+
+```{r ex-8-3-setup}
+library(lidaRtRee)
+library(terra)
+library(sf)
+
+# Créer un modèle et une carte de prédiction
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+
+  set.seed(42)
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1))
+  )
+  rownames(metrics) <- plots$plot_id
+
+  model_G <- aba_build_model(plots$G_m2_ha, metrics, transform = "boxcox", nmax = 4)
+}
+
+# Carte de métriques et prédiction
+bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
+metrics_map <- rast(nrows = 200, ncols = 300,
+                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
+                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
+                    nlyrs = 4)
+names(metrics_map) <- c("zmax", "zmean", "zq95", "pzabove2")
+n_cells <- ncell(metrics_map)
+
+set.seed(123)
+values(metrics_map[["zmax"]]) <- runif(n_cells, 10, 45)
+values(metrics_map[["zmean"]]) <- runif(n_cells, 5, 30)
+values(metrics_map[["zq95"]]) <- runif(n_cells, 8, 42)
+values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.2, 0.98)
+crs(metrics_map) <- "EPSG:2154"
+
+prediction_G <- aba_predict(model_G, metrics_map)
+
+# Créer un masque forêt simulé (60% de la surface)
+forest_mask <- rast(prediction_G)
+set.seed(456)
+forest_values <- runif(n_cells) > 0.4  # 60% forêt
+values(forest_mask) <- ifelse(forest_values, 1, NA)
+```
+
+```{r ex-8-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-3-setup"}
+library(lidaRtRee)
+library(terra)
+
+cat("=== Nettoyage et masquage des cartes ===\n\n")
+
+# Statistiques avant nettoyage
+pred_values <- values(prediction_G)
+cat("Avant nettoyage:\n")
+cat("  Min:", round(min(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Max:", round(max(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Valeurs aberrantes (<0):", sum(pred_values < 0, na.rm = TRUE), "\n")
+cat("  Valeurs aberrantes (>80):", sum(pred_values > 80, na.rm = TRUE), "\n\n")
+
+# Nettoyage avec clean_raster()
+# Paramètres: seuils [min, max] et masque forestier
+prediction_clean <- clean_raster(
+  prediction_G,
+  thresholds = c(0, 80),     # Surface terrière entre 0 et 80 m²/ha
+  mask = forest_mask          # Appliquer le masque forêt
+)
+
+# Statistiques après nettoyage
+clean_values <- values(prediction_clean)
+cat("Après nettoyage:\n")
+cat("  Min:", round(min(clean_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Max:", round(max(clean_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("  Pixels NA (hors forêt):", sum(is.na(clean_values)), "\n")
+cat("  Pixels valides:", sum(!is.na(clean_values)), "\n\n")
+
+# Visualisation comparative
+par(mfrow = c(1, 3))
+
+terra::plot(prediction_G, main = "Prédiction brute",
+            col = hcl.colors(50, "YlGn"))
+
+terra::plot(forest_mask, main = "Masque forêt",
+            col = c("white", "darkgreen"), legend = FALSE)
+
+terra::plot(prediction_clean, main = "Prédiction nettoyée",
+            col = hcl.colors(50, "YlGn"))
+```
+
+### Exercice 8.4 : Export des produits nemeton
+
+Exportez les cartes de prédiction pour les indicateurs nemeton.
+
+```{r ex-8-4-setup}
+library(lidaRtRee)
+library(terra)
+
+# Modèles pour plusieurs variables
+if (requireNamespace("lidaRtRee", quietly = TRUE)) {
+  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+  plots <- quatre_montagnes
+
+  set.seed(42)
+  n <- nrow(plots)
+  metrics <- data.frame(
+    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
+    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
+    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
+    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1))
+  )
+  rownames(metrics) <- plots$plot_id
+
+  model_G <- aba_build_model(plots$G_m2_ha, metrics, transform = "boxcox", nmax = 4)
+  model_N <- aba_build_model(plots$N_ha, metrics, transform = "boxcox", nmax = 4)
+  model_D <- aba_build_model(plots$D_mean_cm, metrics, transform = "boxcox", nmax = 4)
+}
+
+# Carte de métriques
+bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
+metrics_map <- rast(nrows = 100, ncols = 150,
+                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
+                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
+                    nlyrs = 4)
+names(metrics_map) <- c("zmax", "zmean", "zq95", "pzabove2")
+n_cells <- ncell(metrics_map)
+
+set.seed(123)
+values(metrics_map[["zmax"]]) <- runif(n_cells, 15, 40)
+values(metrics_map[["zmean"]]) <- runif(n_cells, 10, 25)
+values(metrics_map[["zq95"]]) <- runif(n_cells, 12, 38)
+values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.4, 0.95)
+crs(metrics_map) <- "EPSG:2154"
+
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+```
+
+```{r ex-8-4, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-4-setup"}
+library(lidaRtRee)
+library(terra)
+
+cat("=== Export des produits ABA pour nemeton ===\n\n")
+
+# Générer les prédictions pour chaque variable
+prediction_G <- aba_predict(model_G, metrics_map)
+prediction_N <- aba_predict(model_N, metrics_map)
+prediction_D <- aba_predict(model_D, metrics_map)
+
+# Créer un stack multi-couches
+predictions_stack <- c(prediction_G, prediction_N, prediction_D)
+names(predictions_stack) <- c("G_m2_ha", "N_ha", "D_mean_cm")
+
+cat("Stack de prédictions créé:\n")
+for (i in 1:nlyr(predictions_stack)) {
+  layer <- predictions_stack[[i]]
+  vals <- values(layer)
+  cat(sprintf("  %s: %.1f - %.1f (moy: %.1f)\n",
+              names(layer),
+              min(vals, na.rm = TRUE),
+              max(vals, na.rm = TRUE),
+              mean(vals, na.rm = TRUE)))
+}
+
+cat("\n=== Correspondance indicateurs nemeton ===\n\n")
+cat("G_m2_ha (Surface terrière) → P1 (Production bois)\n")
+cat("N_ha (Densité tiges) → E1 (Structure peuplement)\n")
+cat("D_mean_cm (Diamètre moyen) → P3 (Qualité bois)\n\n")
+
+# Export (décommenter avec vos données)
+# output_dir <- file.path(data_dir, "predictions_aba")
+# dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+#
+# writeRaster(predictions_stack,
+#             file.path(output_dir, "predictions_aba.tif"),
+#             overwrite = TRUE)
+#
+# cat("Fichier exporté:", file.path(output_dir, "predictions_aba.tif"), "\n")
+
+# Visualisation multi-variable
+par(mfrow = c(1, 3))
+terra::plot(prediction_G, main = "G (m²/ha)", col = hcl.colors(50, "YlGn"))
+terra::plot(prediction_N, main = "N (tiges/ha)", col = hcl.colors(50, "Blues"))
+terra::plot(prediction_D, main = "D (cm)", col = hcl.colors(50, "Oranges"))
+```
+
+### Quiz Cartographie
+
+```{r quiz-mapping, echo=FALSE}
+quiz(
+  question("Que fait la fonction aba_predict() ?",
+    answer("Calibre un modèle"),
+    answer("Applique un modèle calibré à une carte de métriques", correct = TRUE),
+    answer("Valide les prédictions"),
+    answer("Exporte les résultats"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi utiliser la stratification ?",
+    answer("Pour accélérer le calcul"),
+    answer("Pour appliquer des modèles spécifiques par type de peuplement", correct = TRUE),
+    answer("Pour réduire la taille des fichiers"),
+    answer("Pour changer la résolution"),
+    allow_retry = TRUE
+  ),
+  question("Que fait clean_raster() ?",
+    answer("Supprime les fichiers temporaires"),
+    answer("Applique des seuils et un masque aux cartes", correct = TRUE),
+    answer("Compresse les rasters"),
+    answer("Convertit les formats"),
+    allow_retry = TRUE
+  ),
+  question("Quel indicateur nemeton utilise la surface terrière (G) ?",
+    answer("B2 - Biodiversité"),
+    answer("W1 - Hydrologie"),
+    answer("P1 - Production bois", correct = TRUE),
+    answer("F1 - Feu"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 9 : Quiz Final
+
+### Quiz de validation
+
+```{r quiz-final, echo=FALSE}
+quiz(
+  caption = "Quiz Final - LiDAR Avancé",
+
+  question("Quelle est la fonction principale d'un LAScatalog ?",
+    answer("Compresser les fichiers LiDAR"),
+    answer("Référencer plusieurs fichiers sans les charger en mémoire", correct = TRUE),
+    answer("Convertir les fichiers en format .las"),
+    answer("Visualiser les nuages de points en 3D"),
+    allow_retry = TRUE
+  ),
+
+  question("Dans BABA, que signifie res = c(10, 20) ?",
+    answer("10 bandes, 20 bits"),
+    answer("Résolution 10m en sortie, fenêtre 20m pour le calcul", correct = TRUE),
+    answer("10% de décimation, 20m de buffer"),
+    answer("10 fichiers, 20 tuiles"),
+    allow_retry = TRUE
+  ),
+
+  question("Quel algorithme est utilisé pour détecter les cimes d'arbres ?",
+    answer("Random Forest"),
+    answer("K-means"),
+    answer("Local Maximum Filter (lmf)", correct = TRUE),
+    answer("Principal Component Analysis"),
+    allow_retry = TRUE
+  ),
+
+  question("Pourquoi la coregistration est-elle importante ?",
+    answer("Pour compresser les données"),
+    answer("Pour aligner les placettes terrain avec les données LiDAR", correct = TRUE),
+    answer("Pour accélérer le traitement"),
+    answer("Pour convertir les coordonnées"),
+    allow_retry = TRUE
+  ),
+
+  question("Quelle métrique LiDAR est la plus utile pour estimer le volume de bois ?",
+    answer("zentropy"),
+    answer("pzabove2"),
+    answer("zq95 (percentile 95 des hauteurs)", correct = TRUE),
+    answer("strata_0_2"),
+    allow_retry = TRUE
+  ),
+
+  question("Quel indicateur nemeton utilise les trouées forestières ?",
+    answer("C1 - Carbone"),
+    answer("B2 - Structure biodiversité", correct = TRUE),
+    answer("P1 - Volume"),
+    answer("W1 - TWI"),
+    allow_retry = TRUE
+  ),
+
+  question("Quel est l'avantage principal de lasR par rapport à lidR ?",
+    answer("Plus de fonctionnalités"),
+    answer("Interface graphique"),
+    answer("Traitement plus rapide et moins de mémoire", correct = TRUE),
+    answer("Support de plus de formats"),
+    allow_retry = TRUE
+  ),
+
+  question("Quelle résolution BABA est recommandée pour nemeton ?",
+    answer("1m sortie, 5m fenêtre"),
+    answer("10m sortie, 20m fenêtre", correct = TRUE),
+    answer("50m sortie, 100m fenêtre"),
+    answer("100m sortie, 200m fenêtre"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Synthèse
+
+### Récapitulatif des méthodes lidaRtRee
+
+Ce tutorial a couvert les principales méthodes d'analyse LiDAR forestière de lidaRtRee :
+
+```
+            Workflow LiDAR Avancé - lidaRtRee
+
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 3 : Segmentation d'Arbres Individuels           │
+  │   - tree_segmentation() : détection + segmentation      │
+  │   - tree_extraction() : extraction des attributs        │
+  │   → Produits : arbres.gpkg (P1, P3, E1)                 │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 4 : Trouées et Lisières                         │
+  │   - gap_detection() : identification des trouées        │
+  │   - edge_detection() : lisières par morphologie         │
+  │   → Produits : gaps.gpkg, edges.gpkg (B2, L1)           │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 5 : Métriques de Structure                      │
+  │   - aba_metrics() : métriques du nuage de points        │
+  │   - std_tree_metrics() : métriques d'arbres             │
+  │   → Produits : métriques par placette/pixel             │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 6-7 : Approche ABA (Calibration)                │
+  │   - clouds_metrics() : extraction sur placettes         │
+  │   - aba_build_model() : calibration Box-Cox + stepwise  │
+  │   → Produits : modèles calibrés (G, N, D, V)            │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 8 : Cartographie                                │
+  │   - aba_predict() : prédiction wall-to-wall             │
+  │   - clean_raster() : seuils + masquage forêt            │
+  │   → Produits : predictions_aba.tif (C1, P1, P3)         │
+  └─────────────────────────────────────────────────────────┘
+```
+
+### Produits pour indicateurs nemeton
+
+| Produit               | Fonction lidaRtRee     | Indicateurs       |
+|-----------------------|------------------------|-------------------|
+| arbres.gpkg           | tree_extraction()      | P1, P3, E1        |
+| gaps.gpkg             | gap_detection()        | B2, L1            |
+| edges.gpkg            | edge_detection()       | L1                |
+| metriques_baba.tif    | lasR BABA              | C1, P1, A1, B2    |
+| predictions_G.tif     | aba_predict()          | P1                |
+| predictions_V.tif     | aba_predict()          | P1, C1            |
+| predictions_N.tif     | aba_predict()          | E1                |
+
+### Optimisation avec lasR
+
+Pour les gros volumes de données, lasR offre des alternatives performantes :
+
+- **Normalisation** : `transform_with(triangulate())`
+- **BABA** : `rasterize(res = c(10, 30), ...)`
+- **Segmentation** : `local_maximum_raster()` + `region_growing()`
+
+### Ressources
+
+**Documentation lidaRtRee :**
+
+- [Segmentation d'arbres](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/tree.segmentation.html)
+- [Trouées et lisières](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/gaps.and.edges.detection.html)
+- [Métriques de structure](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/forest.structure.metrics.html)
+- [ABA 1: Préparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html)
+- [ABA 2: Calibration](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.2.model.calibration.html)
+- [ABA 3: Cartographie](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.3.mapping.and.inference.html)
+
+**Autres ressources :**
+
+- [lasR documentation](https://r-lidar.github.io/lasR/)
+- [lidR book](https://r-lidar.github.io/lidRbook/)
+- [BABA article](https://r-lidar.github.io/lasR/articles/baba.html)
+
+### Prochaines étapes
+
+1. **Tutorial 05** : Assembler tous les indicateurs et normaliser
+2. **Tutorial 06** : Analyse multi-critères, radar, Pareto, export
+
+**Félicitations !** Vous avez terminé le Tutorial 07 sur le traitement LiDAR avancé avec lidaRtRee.
