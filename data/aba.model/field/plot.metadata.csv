@@ -1,0 +1,25 @@
+Id;Proj_EPSG;Ref_Hauteur;Date_carto;Zone;ProtocoleH;ProtocoleD;Convergence_gr;Declinaison_gr;Forme;Taille;Azimuth;GPS0;GPS1;GPS2;GPS3;GPS4
+Verc-01;2154;IGN69;01/06/2011;4montagnes;;;-1.49862;0.83;rond;15;;;;;;
+Verc-02;2154;IGN69;01/06/2011;4montagnes;;;-1.48914;0.83;rond;15;;;;;;
+Verc-03;2154;IGN69;01/06/2011;4montagnes;;;-1.50882;0.83;rond;15;;;;;;
+Verc-04;2154;IGN69;01/06/2011;4montagnes;;;-1.52438;0.83;rond;15;;;;;;
+Verc-05;2154;IGN69;01/06/2011;4montagnes;;;-1.4919;0.83;rond;15;;;;;;
+Verc-06;2154;IGN69;01/06/2011;4montagnes;;;-1.48966;0.83;rond;15;;;;;;
+Verc-07;2154;IGN69;01/06/2011;4montagnes;;;-1.52033;0.83;rond;15;;;;;;
+Verc-08;2154;IGN69;01/06/2011;4montagnes;;;-1.52729;0.83;rond;15;;;;;;
+Verc-S1;2154;IGN69;15-16/05/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-S2;2154;IGN69;15/05/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-S3;2154;IGN69;5/6/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-S4;2154;IGN69;31/05/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-S6;2154;IGN69;7/6/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-S7;2154;IGN69;3/5/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-S8;2154;IGN69;16-31/5/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C1;2154;IGN69;06/09/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C2;2154;IGN69;25/7/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C3;2154;IGN69;25/7/2012+ 13/9/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C4;2154;IGN69;19/7/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C5;2154;IGN69;24/7/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C6;2154;IGN69;05/09/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C7;2154;IGN69;16/08/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C8;2154;IGN69;18/7/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
+Verc-C9;2154;IGN69;12/09/2012;4montagnes;;;-1.5;0.98;rond;15;;;;;;
