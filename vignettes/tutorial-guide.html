@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Guide des Tutoriels Interactifs nemeton</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Guide des Tutoriels Interactifs
+nemeton</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Le package <strong>nemeton</strong> propose une série de 6 tutoriels
+interactifs basés sur <a href="https://rstudio.github.io/learnr/">learnr</a> pour apprendre à
+calculer les 32 indicateurs forestiers des 12 familles nemeton.</p>
+</div>
+<div id="prérequis" class="section level2">
+<h2>Prérequis</h2>
+<div id="installation-des-packages" class="section level3">
+<h3>Installation des packages</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Packages de base</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;sf&quot;</span>, <span class="st">&quot;terra&quot;</span>, <span class="st">&quot;ggplot2&quot;</span>, <span class="st">&quot;dplyr&quot;</span>))</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># Packages tutoriels</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;learnr&quot;</span>, <span class="st">&quot;gradethis&quot;</span>, <span class="st">&quot;rappdirs&quot;</span>))</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># Packages acquisition IGN</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;happign&quot;</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Packages LiDAR (Tutorial 02)</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;lidR&quot;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># Packages visualisation (Tutorial 06)</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;leaflet&quot;</span>, <span class="st">&quot;corrplot&quot;</span>, <span class="st">&quot;patchwork&quot;</span>, <span class="st">&quot;fmsb&quot;</span>))</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co"># Package nemeton</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;pobsteta/nemeton&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="les-6-tutoriels" class="section level2">
+<h2>Les 6 Tutoriels</h2>
+<div id="vue-densemble" class="section level3">
+<h3>Vue d’ensemble</h3>
+<table>
+<colgroup>
+<col width="6%" />
+<col width="21%" />
+<col width="15%" />
+<col width="28%" />
+<col width="28%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Tutoriel</th>
+<th>Durée</th>
+<th>Indicateurs</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><code>01-acquisition</code></td>
+<td>45 min</td>
+<td>-</td>
+<td>Acquisition des données géographiques (IGN, LiDAR)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><code>02-lidar</code></td>
+<td>60 min</td>
+<td>C1, P1, P3, A1, E1, E2</td>
+<td>Traitement LiDAR et métriques forestières</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><code>03-terrain</code></td>
+<td>40 min</td>
+<td>W1-W3, R1-R4, S1-S3, P2, F1</td>
+<td>Indicateurs terrain (12)</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><code>04-ecological</code></td>
+<td>40 min</td>
+<td>B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3</td>
+<td>Indicateurs écologiques (14)</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><code>05-complete</code></td>
+<td>40 min</td>
+<td>-</td>
+<td>Assemblage, normalisation, I_nemeton</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><code>06-analysis</code></td>
+<td>50 min</td>
+<td>-</td>
+<td>Analyse multi-critères et export</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Durée totale estimée</strong> : 4-5 heures</p>
+</div>
+<div id="lancer-un-tutoriel" class="section level3">
+<h3>Lancer un tutoriel</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Lister les tutoriels disponibles</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>learnr<span class="sc">::</span><span class="fu">available_tutorials</span>(<span class="st">&quot;nemeton&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Lancer un tutoriel spécifique</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>learnr<span class="sc">::</span><span class="fu">run_tutorial</span>(<span class="st">&quot;01-acquisition&quot;</span>, <span class="at">package =</span> <span class="st">&quot;nemeton&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="détail-des-tutoriels" class="section level2">
+<h2>Détail des Tutoriels</h2>
+<div id="tutorial-01-acquisition-des-données" class="section level3">
+<h3>Tutorial 01 : Acquisition des Données</h3>
+<p><strong>Objectif</strong> : Télécharger et préparer les données
+nécessaires pour les tutoriels suivants.</p>
+<p><strong>Données acquises</strong> : - Zone d’étude (emprise
+géographique) - Parcelles cadastrales (GeoPackage) - MNT (Modèle
+Numérique de Terrain) - Dalles LiDAR HD - BD TOPO (routes, bâtiments,
+cours d’eau) - BD Forêt V2</p>
+<p><strong>Sortie</strong> : <code>~/nemeton_tutorial_data/</code>
+contenant toutes les données brutes.</p>
+</div>
+<div id="tutorial-02-traitement-lidar" class="section level3">
+<h3>Tutorial 02 : Traitement LiDAR</h3>
+<p><strong>Objectif</strong> : Extraire des métriques forestières à
+partir des nuages de points LiDAR.</p>
+<p><strong>Indicateurs calculés</strong> (6) : - <strong>C1</strong> :
+Stock de biomasse aérienne - <strong>P1</strong> : Volume de bois sur
+pied - <strong>P3</strong> : Proportion bois d’oeuvre -
+<strong>A1</strong> : Couverture forestière - <strong>E1</strong> :
+Potentiel bois-énergie - <strong>E2</strong> : Évitement d’émissions
+carbone</p>
+<p><strong>Sortie</strong> : <code>indicateurs_lidar.gpkg</code></p>
+</div>
+<div id="tutorial-03-indicateurs-terrain" class="section level3">
+<h3>Tutorial 03 : Indicateurs Terrain</h3>
+<p><strong>Objectif</strong> : Calculer les indicateurs dérivés du MNT
+et de la BD TOPO.</p>
+<p><strong>Indicateurs calculés</strong> (12) : - <strong>W1-W3</strong>
+: Famille Eau (TWI, réseau hydro, zones humides) -
+<strong>R1-R4</strong> : Famille Résilience (risques feu, tempête,
+sécheresse, gibier) - <strong>S1-S3</strong> : Famille Santé (sentiers,
+accessibilité, proximité) - <strong>P2</strong> : Productivité
+forestière - <strong>F1</strong> : Fertilité du sol</p>
+<p><strong>Sortie</strong> : <code>indicateurs_terrain.gpkg</code></p>
+</div>
+<div id="tutorial-04-indicateurs-écologiques" class="section level3">
+<h3>Tutorial 04 : Indicateurs Écologiques</h3>
+<p><strong>Objectif</strong> : Calculer les indicateurs de biodiversité,
+paysage et naturalité.</p>
+<p><strong>Indicateurs calculés</strong> (14) : - <strong>B1-B3</strong>
+: Famille Biodiversité (protection, structure, connectivité) -
+<strong>L1-L3</strong> : Famille Paysage (lisière, fragmentation, TVB) -
+<strong>C2</strong> : Vitalité NDVI - <strong>T1-T2</strong> : Famille
+Trame (ancienneté, changement) - <strong>A2</strong> : Qualité de l’air
+- <strong>F2</strong> : Risque d’érosion - <strong>N1-N3</strong> :
+Famille Naturalité (distance, continuité, composite)</p>
+<p><strong>Sortie</strong> :
+<code>indicateurs_ecologiques.gpkg</code></p>
+</div>
+<div id="tutorial-05-calcul-complet" class="section level3">
+<h3>Tutorial 05 : Calcul Complet</h3>
+<p><strong>Objectif</strong> : Assembler tous les indicateurs,
+normaliser et créer l’indice composite.</p>
+<p><strong>Étapes</strong> : 1. Jointure des 32 indicateurs 2.
+Normalisation Min-Max [0-1] 3. Inversion des indicateurs négatifs 4.
+Calcul des scores par famille (12 familles) 5. Calcul de l’indice
+composite I_nemeton</p>
+<p><strong>Sortie</strong> : <code>parcelles.gpkg</code> avec 32
+indicateurs + 12 scores famille + I_nemeton</p>
+</div>
+<div id="tutorial-06-analyse-multi-critères" class="section level3">
+<h3>Tutorial 06 : Analyse Multi-Critères</h3>
+<p><strong>Objectif</strong> : Visualiser, analyser et exporter les
+résultats.</p>
+<p><strong>Analyses</strong> : - Cartes thématiques par famille -
+Diagrammes radar (profils parcelles) - Matrice de corrélation
+(synergies/compromis) - Identification des hotspots - Front de Pareto -
+Clustering des parcelles - Export GeoPackage, CSV, carte Leaflet</p>
+<p><strong>Sortie</strong> : Fichiers d’analyse et carte interactive</p>
+</div>
+</div>
+<div id="structure-du-cache" class="section level2">
+<h2>Structure du Cache</h2>
+<p>Les données sont stockées dans un répertoire persistant :</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Localisation du cache</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>rappdirs<span class="sc">::</span><span class="fu">user_data_dir</span>(<span class="st">&quot;nemeton&quot;</span>)</span></code></pre></div>
+<ul>
+<li><strong>Linux</strong> :
+<code>~/.local/share/nemeton/tutorial_data/</code></li>
+<li><strong>macOS</strong> :
+<code>~/Library/Application Support/nemeton/tutorial_data/</code></li>
+<li><strong>Windows</strong> :
+<code>%LOCALAPPDATA%/nemeton/nemeton/tutorial_data/</code></li>
+</ul>
+<div id="nettoyer-le-cache" class="section level3">
+<h3>Nettoyer le cache</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>cache_dir <span class="ot">&lt;-</span> rappdirs<span class="sc">::</span><span class="fu">user_data_dir</span>(<span class="st">&quot;nemeton&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">unlink</span>(<span class="fu">file.path</span>(cache_dir, <span class="st">&quot;tutorial_data&quot;</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="les-12-familles-dindicateurs" class="section level2">
+<h2>Les 12 Familles d’Indicateurs</h2>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="32%" />
+<col width="46%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Code</th>
+<th>Famille</th>
+<th>Indicateurs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>C</td>
+<td>Carbone</td>
+<td>C1 (biomasse), C2 (NDVI)</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td>Biodiversité</td>
+<td>B1 (protection), B2 (structure), B3 (connectivité)</td>
+</tr>
+<tr class="odd">
+<td>W</td>
+<td>Water (Eau)</td>
+<td>W1 (TWI), W2 (réseau hydro), W3 (zones humides)</td>
+</tr>
+<tr class="even">
+<td>A</td>
+<td>Air</td>
+<td>A1 (couverture), A2 (qualité)</td>
+</tr>
+<tr class="odd">
+<td>F</td>
+<td>Fertilité</td>
+<td>F1 (sol), F2 (érosion)</td>
+</tr>
+<tr class="even">
+<td>L</td>
+<td>Landscape</td>
+<td>L1 (lisière), L2 (fragmentation), L3 (TVB)</td>
+</tr>
+<tr class="odd">
+<td>T</td>
+<td>Trame</td>
+<td>T1 (ancienneté), T2 (changement)</td>
+</tr>
+<tr class="even">
+<td>R</td>
+<td>Résilience</td>
+<td>R1 (feu), R2 (tempête), R3 (sécheresse), R4 (gibier)</td>
+</tr>
+<tr class="odd">
+<td>S</td>
+<td>Santé</td>
+<td>S1 (sentiers), S2 (accessibilité), S3 (proximité)</td>
+</tr>
+<tr class="even">
+<td>P</td>
+<td>Production</td>
+<td>P1 (volume), P2 (productivité), P3 (qualité)</td>
+</tr>
+<tr class="odd">
+<td>E</td>
+<td>Énergie</td>
+<td>E1 (bois-énergie), E2 (évitement)</td>
+</tr>
+<tr class="even">
+<td>N</td>
+<td>Naturalité</td>
+<td>N1 (distance), N2 (continuité), N3 (composite)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="dépannage" class="section level2">
+<h2>Dépannage</h2>
+<div id="tutorial-not-found" class="section level3">
+<h3>“Tutorial not found”</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Vérifier l&#39;installation</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">packageVersion</span>(<span class="st">&quot;nemeton&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># Réinstaller</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;pobsteta/nemeton&quot;</span>, <span class="at">force =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+<div id="cannot-download-data" class="section level3">
+<h3>“Cannot download data”</h3>
+<p>Les APIs IGN peuvent être temporairement indisponibles. Le tutoriel
+utilisera les données de démonstration si disponibles.</p>
+</div>
+<div id="out-of-memory-lidar" class="section level3">
+<h3>“Out of memory” (LiDAR)</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Augmenter la mémoire</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">options</span>(<span class="at">future.globals.maxSize =</span> <span class="sc">+</span><span class="cn">Inf</span>)</span></code></pre></div>
+</div>
+<div id="exercise-timeout" class="section level3">
+<h3>“Exercise timeout”</h3>
+<p>Les exercices LiDAR ont un timeout de 10 minutes. Relancez l’exercice
+si nécessaire (les données sont en cache).</p>
+</div>
+</div>
+<div id="ressources" class="section level2">
+<h2>Ressources</h2>
+<ul>
+<li><a href="https://pobsteta.github.io/nemeton/">Documentation
+nemeton</a></li>
+<li><a href="https://github.com/pobsteta/nemeton">GitHub
+nemeton</a></li>
+<li><a href="https://pobsteta.github.io/nemeton/articles/complete-referential_fr.html">Référentiel
+des 12 familles</a></li>
+<li><a href="https://rstudio.github.io/learnr/">learnr
+documentation</a></li>
+<li><a href="https://r-lidar.github.io/lidRbook/">lidR
+documentation</a></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
