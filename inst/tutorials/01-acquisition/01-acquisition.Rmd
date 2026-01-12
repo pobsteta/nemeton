@@ -263,7 +263,7 @@ ggplot() +
   theme_minimal()
 ```
 
-**Après avoir exécuté ces exercices, passez directement à la Section 2 (Cadastre).**
+**Après avoir exécuté ces exercices, passez directement à la Section 2 : Téléchargement du cadastre.**
 
 ---
 
@@ -680,7 +680,6 @@ cat("> 2 ha:", sum(parcelles$surface_ha >= 2), "parcelles\n")
 library(sf)
 library(ggplot2)
 # Charger les données depuis le cache
-# Définir le répertoire de cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -688,7 +687,14 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
-placettes_centre <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "placettes", quiet = TRUE)
+# Charger la zone d'étude (toujours disponible)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r viz-parcelles, exercise=TRUE, exercise.eval=FALSE, exercise.lines=16, exercise.setup="viz-parcelles-setup"}
@@ -697,7 +703,7 @@ parcelles$surface_ha <- as.numeric(st_area(parcelles)) / 10000
 
 ggplot() +
   geom_sf(data = parcelles, aes(fill = surface_ha), color = "white", linewidth = 0.2) +
-  geom_sf(data = placettes_centre, color = "red", size = 2) +
+  geom_sf(data = zone_etude_sf, fill = NA, color = "red", linewidth = 1) +
   coord_sf(datum = NA) +
   scale_fill_viridis_c(name = "Surface (ha)", trans = "log10") +
   labs(
@@ -846,8 +852,7 @@ print(topo)
 library(sf)
 library(terra)
 library(ggplot2)
-# Charger les données depuis le cache
-# Définir le répertoire de cache
+# Charger les données depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -855,10 +860,13 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
-placettes_centre <- tryCatch(
-  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "placettes", quiet = TRUE),
-  error = function(e) NULL
-)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r viz-mnt, exercise=TRUE, exercise.eval=FALSE, exercise.lines=15, exercise.setup="viz-mnt-setup"}
@@ -870,10 +878,10 @@ if (!is.null(mnt)) {
   ggplot(mnt_df, aes(x = x, y = y, fill = altitude)) +
     geom_raster() +
     scale_fill_viridis_c(name = "Altitude (m)", option = "terrain") +
-    geom_sf(data = placettes_centre, color = "red", size = 1, inherit.aes = FALSE) +
+    geom_sf(data = zone_etude_sf, fill = NA, color = "red", linewidth = 1, inherit.aes = FALSE) +
     coord_sf(datum = NA) +
     labs(
-      title = "MNT RGE Alti 5m", subtitle = "Zone d'étude Quatre Montagnes",
+      title = "MNT RGE Alti 5m", subtitle = "Zone d'étude Vercors",
       x = "X (m)", y = "Y (m)"
     ) +
     theme_minimal()
@@ -1086,16 +1094,20 @@ if (nrow(cours_eau) > 0) {
 ```{r viz-bdforet-setup}
 library(sf)
 library(ggplot2)
-# Charger les données depuis le cache
-# Définir le répertoire de cache
+# Charger les données depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
-placettes_centre <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "placettes", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
 ```
 
@@ -1103,8 +1115,7 @@ bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE)
 if (!is.null(bd_foret) && nrow(bd_foret) > 0) {
   ggplot() +
     geom_sf(data = bd_foret, aes(fill = tfv), color = NA) +
-    geom_sf(data = zone_etude_sf, fill = NA, color = "black", linewidth = 1) +
-    geom_sf(data = placettes_centre, color = "red", size = 2) +
+    geom_sf(data = zone_etude_sf, fill = NA, color = "red", linewidth = 1) +
     coord_sf(datum = NA) +
     scale_fill_viridis_d(name = "Formation", option = "viridis") +
     labs(
