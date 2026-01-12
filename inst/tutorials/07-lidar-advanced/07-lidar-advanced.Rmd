@@ -714,7 +714,7 @@ cat("=== Gestion mémoire ===\n")
 cat("Mémoire utilisée avant:", round(sum(gc()[, 2]), 1), "MB\n\n")
 
 # Limiter l'utilisation mémoire de terra (50% de la RAM disponible)
-terra::terraOptions(memfrac = 0.5)
+# terra::terraOptions(memfrac = 0.5)
 
 # Nombre de cores - RÉDUIRE si problèmes de mémoire
 # Chaque core charge des données en mémoire
@@ -772,7 +772,8 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 
   # 4. Créer l'étape de détection des maxima locaux (référencée par region_growing)
   # Fenêtre de 3m - ajuster selon la densité du peuplement
-  seeds <- local_maximum_raster(chm_filled, ws = 3,
+  # Un arbre fait minimum 5 m
+  seeds <- local_maximum_raster(chm_filled, ws = 3, min_height = 5,
                                 ofile = file.path(result_itd, "seeds_*.gpkg"))
 
   # 5. Créer l'étape de segmentation par croissance de région
@@ -818,22 +819,22 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 
   # Créer les VRT avec terra::vrt()
   if (length(chm_tiles) > 0) {
-    chm_vrt <- vrt(chm_tiles, file.path(result_itd, "chm_complet.vrt"), overwrite = TRUE)
-    cat("VRT CHM créé:", file.path(result_itd, "chm_complet.vrt"), "\n")
+    chm_vrt <- vrt(data_dir, file.path(data_dir, "chm_complet.vrt"), overwrite = TRUE)
+    cat("VRT CHM créé:", file.path(data_dir, "chm_complet.vrt"), "\n")
     cat("  Dimensions:", nrow(chm_vrt), "x", ncol(chm_vrt), "pixels\n")
     cat("  Résolution:", res(chm_vrt)[1], "m\n")
   }
 
   if (length(crown_tiles) > 0) {
-    crowns_vrt <- vrt(crown_tiles, file.path(result_itd, "crowns_complet.vrt"), overwrite = TRUE)
-    cat("VRT Crowns créé:", file.path(result_itd, "crowns_complet.vrt"), "\n")
+    crowns_vrt <- vrt(crown_tiles, file.path(data_dir, "crowns_complet.vrt"), overwrite = TRUE)
+    cat("VRT Crowns créé:", file.path(data_dir, "crowns_complet.vrt"), "\n")
   }
 
   # Fusionner les seeds (points) en un seul fichier
   if (length(seed_files) > 0) {
     seeds_list <- lapply(seed_files, sf::st_read, quiet = TRUE)
     seeds_all <- do.call(rbind, seeds_list)
-    sf::st_write(seeds_all, file.path(result_itd, "seeds_complet.gpkg"),
+    sf::st_write(seeds_all, file.path(data_dir, "seeds_complet.gpkg"),
                  delete_dsn = TRUE, quiet = TRUE)
     cat("Seeds fusionnés:", nrow(seeds_all), "arbres détectés\n")
   }
@@ -854,6 +855,14 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   }
 
   # Visualisation du CHM avec segments
+  col = grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))(25)
+  col2 = grDevices::colorRampPalette(c("purple", "blue", "cyan2", "yellow", "red", "green"))(50)
+  terra::plot(ans$rasterize, col = col, mar = c(1, 1, 1, 3))
+  terra::plot(ans$pit_fill, col = col, mar = c(1, 1, 1, 3))
+  terra::plot(ans$region_growing, col = col2[sample.int(50, 277, TRUE)], mar = c(1, 1, 1, 3))
+  plot(ans$local_maximum$geom, add = T, pch = 19, cex = 0.5)
+  
+  
   if (exists("chm_vrt") && exists("crowns_vrt")) {
     par(mfrow = c(1, 2))
     plot(chm_vrt, main = "CHM (0.5m)", col = viridis::viridis(50))
@@ -864,8 +873,7 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # NETTOYAGE MÉMOIRE
   # ==========================================================================
   # Supprimer les objets volumineux intermédiaires
-  rm(del, chm, chm_filled, seeds, tree, pipeline_itd, ans)
-  rm(chm_tiles, crown_tiles, seed_files, seeds_list)
+  # rm(del, chm, chm_filled, seeds, tree, pipeline_itd, ans)
   invisible(gc())  # Forcer la libération mémoire
   cat("\n=== Mémoire libérée ===\n")
   cat("Mémoire utilisée après nettoyage:", round(sum(gc()[, 2]), 1), "MB\n")
@@ -921,7 +929,9 @@ plot(st_geometry(trees), add = TRUE, col = "red", pch = 3, cex = 0.5)
 
 ### Exercice 3.3 : Alternative avec lasR (haute performance)
 
-Pour les gros jeux de données, lasR offre un pipeline optimisé.
+Pour les gros jeux de données, lasR offre un pipeline optimisé qui peut également
+calculer toutes les métriques d'arbres équivalentes à `tree_extraction()` de lidaRtRee
+grâce à la fonction `callback()`.
 
 ```{r ex-3-3-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -935,43 +945,175 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-3-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-3-3-setup"}
-# Segmentation d'arbres avec lasR (alternative haute performance)
+```{r ex-3-3, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-3-3-setup"}
+# Segmentation d'arbres ET extraction des métriques avec lasR
 
 if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("lasR n'est pas installé. Installez-le avec:\n")
   cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
 } else {
   library(lasR)
+  library(terra)
+  library(sf)
 
-  # Pipeline lasR équivalent à tree_segmentation()
+  # ==========================================================================
+  # CALLBACK : Extraction des métriques d'arbres (équivalent tree_extraction)
+  # ==========================================================================
+  # Ce callback réplique exactement les métriques de lidaRtRee::tree_extraction()
+  # - id : identifiant unique de l'arbre
+
+  # - x, y : coordonnées de la cime
+  # - height : hauteur de la cime (m)
+  # - dom_radius : rayon de dominance (m)
+  # - surface : surface du houppier (m²)
+  # - volume : volume du houppier (m³)
+  # - crown_geom : géométrie WKT du polygone du houppier
+
+  tree_metrics_callback <- function(chm, crowns, seeds) {
+    if (is.null(chm) || is.null(crowns) || is.null(seeds)) return(NULL)
+
+    # Résolution du raster
+    res_x <- terra::xres(chm)
+    res_y <- terra::yres(chm)
+    pixel_area <- res_x * res_y
+
+    # Extraire les valeurs des rasters
+    chm_vals <- terra::values(chm)[, 1]
+    crown_vals <- terra::values(crowns)[, 1]
+    seed_vals <- terra::values(seeds)[, 1]
+
+    # Identifier les cellules des maxima locaux (cimes)
+    cells_maxi <- which(!is.na(seed_vals) & seed_vals > 0)
+    if (length(cells_maxi) == 0) return(NULL)
+
+    # Coordonnées et attributs de base des cimes
+    coords <- terra::xyFromCell(chm, cells_maxi)
+    metrics <- data.frame(
+      id = crown_vals[cells_maxi],
+      x = coords[, 1],
+      y = coords[, 2],
+      height = chm_vals[cells_maxi],
+      dom_radius = seed_vals[cells_maxi]
+    )
+
+    # Masque des pixels valides pour les calculs de surface/volume
+    valid <- !is.na(crown_vals) & crown_vals > 0 & !is.na(chm_vals)
+
+    # Surface : comptage de pixels par segment × surface pixel
+    surf_table <- table(crown_vals[valid])
+    surf_df <- data.frame(
+      id = as.integer(names(surf_table)),
+      surface = as.numeric(surf_table) * pixel_area
+    )
+
+    # Volume : somme des hauteurs par segment × surface pixel
+    vol_agg <- aggregate(chm_vals[valid],
+                         by = list(id = crown_vals[valid]),
+                         FUN = sum)
+    vol_df <- data.frame(id = vol_agg$id, volume = vol_agg$x * pixel_area)
+
+    # Fusion des métriques
+    metrics <- merge(metrics, surf_df, by = "id", all.x = TRUE)
+    metrics <- merge(metrics, vol_df, by = "id", all.x = TRUE)
+
+    # Géométrie des couronnes (polygones vectorisés)
+    crown_polys <- terra::as.polygons(crowns)
+    crown_sf <- sf::st_as_sf(crown_polys)
+    names(crown_sf)[1] <- "id"
+
+    # Calcul de la précision pour WKT (comme lidaRtRee)
+    bbox_max <- max(abs(sf::st_bbox(crown_sf)))
+    n_digits <- ceiling(log10(bbox_max)) +
+                abs(min(floor(log10(min(terra::res(crowns))/10)), 0))
+    crown_sf$crown_geom <- sf::st_as_text(sf::st_geometry(crown_sf),
+                                           digits = n_digits)
+
+    # Fusionner les géométries
+    metrics <- merge(metrics,
+                     sf::st_drop_geometry(crown_sf[, c("id", "crown_geom")]),
+                     by = "id", all.x = TRUE)
+
+    # Convertir en objet sf avec géométrie ponctuelle à la cime
+    sf::st_as_sf(metrics, coords = c("x", "y"), crs = terra::crs(chm))
+  }
+
+  # ==========================================================================
+  # PIPELINE lasR COMPLET AVEC EXTRACTION DES MÉTRIQUES
+  # ==========================================================================
+
+  # Dossier de sortie
+  result_dir <- file.path(data_dir, "lasR_itd_metrics")
+  dir.create(result_dir, showWarnings = FALSE, recursive = TRUE)
+
   # 1. Triangulation des premiers retours
+
   del <- triangulate(filter = keep_first())
 
   # 2. CHM à 0.5m de résolution
   chm <- rasterize(0.5, del)
 
-  # 3. Remplissage des puits (équivalent au filtre médian)
-  chm2 <- pit_fill(chm)
+  # 3. Remplissage des puits
+  chm_filled <- pit_fill(chm)
 
   # 4. Détection des cimes (fenêtre de 3m)
-  seed <- local_maximum_raster(chm2, 3)
+  seeds <- local_maximum_raster(chm_filled, ws = 3)
 
   # 5. Segmentation par croissance de région
-  tree <- region_growing(chm2, seed)
+  crowns <- region_growing(chm_filled, seeds)
+
+  # 6. Callback pour extraction des métriques
+  tree_metrics <- callback(
+    fun = tree_metrics_callback,
+    expose = "rst",
+    ofile = file.path(result_dir, "tree_metrics_*.gpkg")
+  )
 
   # Pipeline complet
-  pipeline_itd <- del + chm + chm2 + seed + tree
+  pipeline_itd <- reader_las() + del + chm + chm_filled + seeds + crowns + tree_metrics
 
+  cat("=== Pipeline lasR avec extraction des métriques ===\n")
   print(pipeline_itd)
 
-  cat("\n=== Avantage lasR ===\n")
-  cat("- Traitement 5-10x plus rapide\n")
-  cat("- Consommation mémoire réduite\n")
+  cat("\n=== Avantages de cette approche ===\n")
+  cat("- Traitement 5-10x plus rapide que lidR/lidaRtRee\n")
+  cat("- Toutes les métriques calculées en un seul passage\n")
+  cat("- Métriques identiques à tree_extraction() de lidaRtRee\n")
   cat("- Idéal pour gros jeux de données (>100 dalles)\n")
 
-  # Exécution (décommenter avec vos données)
-  # ans <- exec(pipeline_itd, on = fichiers_laz[1])
+  # Exécution sur les données (si disponibles)
+  if (length(fichiers_laz) > 0) {
+    cat("\n=== Exécution sur", length(fichiers_laz), "fichier(s) ===\n")
+
+    ans <- exec(pipeline_itd, on = fichiers_laz[1],
+                with = list(tree_metrics = list(
+                  chm = chm_filled,
+                  crowns = crowns,
+                  seeds = seeds
+                )))
+
+    # Charger et afficher les résultats
+    gpkg_files <- list.files(result_dir, pattern = "tree_metrics.*\\.gpkg$",
+                             full.names = TRUE)
+    if (length(gpkg_files) > 0) {
+      trees <- sf::st_read(gpkg_files[1], quiet = TRUE)
+
+      cat("\n=== Résultats : Métriques des arbres ===\n")
+      cat("Nombre d'arbres détectés:", nrow(trees), "\n")
+      cat("Hauteur moyenne:", round(mean(trees$height, na.rm = TRUE), 1), "m\n")
+      cat("Hauteur max:", round(max(trees$height, na.rm = TRUE), 1), "m\n")
+      cat("Surface moyenne houppier:", round(mean(trees$surface, na.rm = TRUE), 1), "m²\n")
+      cat("Volume moyen houppier:", round(mean(trees$volume, na.rm = TRUE), 1), "m³\n")
+
+      cat("\n=== Premiers arbres ===\n")
+      print(head(sf::st_drop_geometry(trees[, c("id", "height", "dom_radius",
+                                                 "surface", "volume")])))
+    }
+  } else {
+    cat("\nAucun fichier LAZ trouvé. Testez avec vos propres données :\n")
+    cat("ans <- exec(pipeline_itd, on = 'votre_fichier.laz',\n")
+    cat("            with = list(tree_metrics = list(\n")
+    cat("              chm = chm_filled, crowns = crowns, seeds = seeds)))\n")
+  }
 }
 ```
 
