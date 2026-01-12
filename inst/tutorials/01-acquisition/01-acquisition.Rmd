@@ -123,6 +123,7 @@ cat("Packages chargés avec succès !")
 Pour éviter de retélécharger les données à chaque session, nous allons créer un **répertoire de cache local**. Ce répertoire persistera entre les sessions R.
 
 Le package `rappdirs` permet de trouver le bon emplacement selon votre système d'exploitation :
+
 - **Linux** : `~/.local/share/nemeton/tutorial_data/`
 - **Windows** : `C:\Users\<user>\AppData\Local\nemeton\tutorial_data\`
 - **macOS** : `~/Library/Application Support/nemeton/tutorial_data/`
@@ -211,7 +212,58 @@ if (file.exists(zone_pkg)) {
 }
 ```
 
-**Après avoir exécuté cet exercice, passez directement à la Section 2 (Cadastre).**
+### Visualisation de la zone d'étude (Option A)
+
+```{r viz-option-a-setup}
+library(sf)
+library(ggplot2)
+# Charger la zone depuis le cache ou le package
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
+```
+
+```{r viz-option-a, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="viz-option-a-setup"}
+# Visualiser la zone d'étude
+ggplot() +
+  # Zone d'étude
+  geom_sf(
+    data = zone_etude_sf,
+    fill = "lightgreen",
+    alpha = 0.3,
+    color = "darkgreen",
+    linewidth = 1
+  ) +
+  # Centroïde avec label
+
+  geom_sf(
+    data = st_centroid(zone_etude_sf),
+    color = "darkgreen",
+    size = 3
+  ) +
+  # Forcer l'affichage en Lambert-93 (mètres)
+  coord_sf(datum = NA) +
+  labs(
+    title = "Zone d'étude : Vercors (Verc-02)",
+    subtitle = paste(
+      "Cluster", zone_etude_sf$cluster_id, "-",
+      round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha"
+    ),
+    x = "X (m)", y = "Y (m)"
+  ) +
+  theme_minimal()
+```
+
+**Après avoir exécuté ces exercices, passez directement à la Section 2 (Cadastre).**
 
 ---
 
