@@ -76,13 +76,7 @@ Ce tutoriel vous guide dans l'acquisition des données géographiques nécessair
 
 ### Zone d'étude
 
-Deux options s'offrent à vous :
-
-1. **Option A (recommandée pour débuter)** : Utiliser la **zone d'étude prédéfinie** fournie avec le package nemeton (~450 ha, cluster Verc-02)
-
-2. **Option B** : Créer votre propre zone à partir des données **Quatre Montagnes** de `lidaRtRee` (~1600 ha, groupe Centre)
-
-Les données Quatre Montagnes sont situées dans le **Vercors** (Isère, France) et comprennent 96 placettes forestières avec des métriques LiDAR pré-calculées.
+Nous utiliserons la **zone d'étude prédéfinie** fournie avec le package nemeton. Cette zone correspond au cluster **Verc-02** des données Quatre Montagnes, située dans le **Vercors** (Isère, France), couvrant environ **450 hectares**.
 
 ### Prérequis
 
@@ -160,61 +154,48 @@ if (dir.exists(data_dir)) {
 
 ### Introduction
 
-La première étape consiste à définir notre **zone d'étude**. Vous pouvez :
+La première étape consiste à charger notre **zone d'étude**. Le package nemeton fournit une zone prête à l'emploi dans `inst/extdata/zone_etude.gpkg`. Cette zone correspond au cluster **Verc-02** des données Quatre Montagnes avec un buffer de 500m, couvrant environ **450 hectares**.
 
-- **Option A** : Charger la zone prédéfinie du package nemeton (plus rapide)
-- **Option B** : Créer votre propre zone à partir des données `quatre_montagnes`
+### Exercice 1.1 : Charger la zone d'étude
 
----
-
-### Option A : Zone d'étude prédéfinie (recommandé)
-
-Le package nemeton fournit une zone d'étude prête à l'emploi dans `inst/extdata/zone_etude.gpkg`. Cette zone correspond au cluster **Verc-02** avec un buffer de 500m, couvrant environ **450 hectares**.
-
-```{r ex-option-a-setup}
+```{r ex-1-1-setup}
 library(sf)
 library(ggplot2)
 ```
 
-```{r ex-option-a, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-option-a-setup"}
-# === OPTION A : CHARGER LA ZONE PRÉDÉFINIE ===
-
+```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-1-1-setup"}
 # Chemin vers la zone d'étude fournie avec le package
 zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
 
-if (file.exists(zone_pkg)) {
-  # Charger la zone d'étude
-  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+# Charger la zone d'étude
+zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
 
-  cat("=== Zone d'étude chargée ===\n")
-  cat("Source: nemeton::inst/extdata/zone_etude.gpkg\n")
-  cat("Cluster:", zone_etude_sf$cluster_id, "\n")
-  cat("Surface:", round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha\n")
-  cat("CRS:", st_crs(zone_etude_sf)$epsg, "(Lambert-93)\n\n")
+cat("=== Zone d'étude chargée ===\n")
+cat("Source: nemeton::inst/extdata/zone_etude.gpkg\n")
+cat("Cluster:", zone_etude_sf$cluster_id, "\n")
+cat("Surface:", round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha\n")
+cat("CRS:", st_crs(zone_etude_sf)$epsg, "(Lambert-93)\n\n")
 
-  # Sauvegarder dans le répertoire de cache
-  if (requireNamespace("rappdirs", quietly = TRUE)) {
-    data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-  } else {
-    data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-  }
-  dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-
-  filepath <- file.path(data_dir, "zone_etude.gpkg")
-  st_write(zone_etude_sf, filepath, layer = "zone_etude",
-           delete_layer = TRUE, quiet = TRUE)
-  cat("Zone sauvegardée dans:", filepath, "\n")
-
-  # Afficher
-  print(zone_etude_sf)
+# Sauvegarder dans le répertoire de cache pour les exercices suivants
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  cat("Fichier non trouvé. Utilisez l'Option B ci-dessous.\n")
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+
+filepath <- file.path(data_dir, "zone_etude.gpkg")
+st_write(zone_etude_sf, filepath, layer = "zone_etude",
+         delete_layer = TRUE, quiet = TRUE)
+cat("Zone sauvegardée dans:", filepath, "\n")
+
+# Afficher les attributs
+print(zone_etude_sf)
 ```
 
-### Visualisation de la zone d'étude (Option A)
+### Exercice 1.2 : Visualiser la zone d'étude
 
-```{r viz-option-a-setup}
+```{r ex-1-2-setup}
 library(sf)
 library(ggplot2)
 # Charger la zone depuis le cache ou le package
@@ -232,10 +213,9 @@ if (file.exists(zone_filepath)) {
 }
 ```
 
-```{r viz-option-a, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="viz-option-a-setup"}
+```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=22, exercise.setup="ex-1-2-setup"}
 # Visualiser la zone d'étude
 ggplot() +
-  # Zone d'étude
   geom_sf(
     data = zone_etude_sf,
     fill = "lightgreen",
@@ -243,272 +223,16 @@ ggplot() +
     color = "darkgreen",
     linewidth = 1
   ) +
-  # Centroïde avec label
-
   geom_sf(
     data = st_centroid(zone_etude_sf),
     color = "darkgreen",
     size = 3
   ) +
-  # Forcer l'affichage en Lambert-93 (mètres)
   coord_sf(datum = NA) +
   labs(
     title = "Zone d'étude : Vercors (Verc-02)",
     subtitle = paste(
       "Cluster", zone_etude_sf$cluster_id, "-",
-      round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha"
-    ),
-    x = "X (m)", y = "Y (m)"
-  ) +
-  theme_minimal()
-```
-
-**Après avoir exécuté ces exercices, passez directement à la Section 2 : Téléchargement du cadastre.**
-
----
-
-### Option B : Créer sa propre zone d'étude
-
-Si vous préférez créer votre propre zone ou si le package nemeton n'est pas installé, suivez les exercices ci-dessous.
-
-### Les données quatre_montagnes
-
-Le jeu de données `quatre_montagnes` contient **96 placettes forestières** inventoriées dans le massif du Vercors, avec plus de 70 variables incluant :
-
-- **Coordonnées** : X, Y (Lambert-93)
-- **Métriques dendrométriques** : G_m2_ha (surface terrière), N_ha (densité)
-- **Métriques LiDAR** : zmax, zmean, zsd, percentiles (zq5 à zq95)
-- **Topographie** : altitude, pente, exposition
-
-### Exercice 1.1 : Explorer les données
-
-Chargez et explorez les données `quatre_montagnes` :
-
-```{r ex-1-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=15}
-# Charger les données
-data("quatre_montagnes", package = "lidaRtRee")
-
-# Structure des données
-cat(
-  "Dimensions:", nrow(quatre_montagnes), "placettes x",
-  ncol(quatre_montagnes), "variables\n\n"
-)
-
-# Aperçu des premières colonnes
-cat("Variables principales:\n")
-cat(paste(names(quatre_montagnes)[1:10], collapse = ", "), "\n\n")
-
-# Clusters disponibles
-cat("Clusters:", length(unique(quatre_montagnes$cluster_id)), "\n")
-cat(paste(unique(quatre_montagnes$cluster_id), collapse = ", "))
-```
-
-
-### Exercice 1.2 : Créer un objet sf
-
-Convertissez les placettes en objet spatial `sf` :
-
-```{r ex-1-2-setup}
-library(sf)
-library(lidaRtRee)
-data("quatre_montagnes", package = "lidaRtRee")
-```
-
-```{r ex-1-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=12, exercise.setup="ex-1-2-setup"}
-# Convertir en sf avec les colonnes X et Y
-placettes_sf <- st_as_sf(
-  quatre_montagnes,
-  coords = c("X", "Y"),
-  crs = 2154 # Lambert-93
-)
-
-# Vérifier
-cat("Classe:", class(placettes_sf)[1], "\n")
-cat("CRS:", st_crs(placettes_sf)$input, "\n")
-cat("Nombre de points:", nrow(placettes_sf), "\n")
-```
-
-
-
-### Exercice 1.3 : Sélectionner le groupe Centre
-
-Sélectionnez les clusters du **groupe Centre** pour créer une zone d'étude de taille raisonnable :
-
-```{r ex-1-3-setup}
-library(sf)
-library(lidaRtRee)
-data("quatre_montagnes", package = "lidaRtRee")
-placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
-```
-
-```{r ex-1-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=18, exercise.setup="ex-1-3-setup"}
-# Clusters du groupe Centre (altitude intermédiaire)
-clusters_centre <- c(
-  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-  "Verc-C4", "Verc-C2", "Verc-05"
-)
-
-# Filtrer les placettes
-placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
-
-cat("Placettes sélectionnées:", nrow(placettes_centre), "\n")
-
-# Calculer l'emprise
-bbox <- st_bbox(placettes_centre)
-cat("\nEmprise (Lambert-93):\n")
-cat(" xmin:", round(bbox["xmin"]), "\n")
-cat(" ymin:", round(bbox["ymin"]), "\n")
-cat(" xmax:", round(bbox["xmax"]), "\n")
-cat(" ymax:", round(bbox["ymax"]), "\n")
-cat(
-  "\nÉtendue:", round(bbox["xmax"] - bbox["xmin"]), "m x",
-  round(bbox["ymax"] - bbox["ymin"]), "m\n"
-)
-```
-
-
-
-### Exercice 1.4 : Créer le contour de la zone d'étude
-
-Créez un polygone englobant les placettes avec un **buffer de 500m** :
-
-```{r ex-1-4-setup}
-library(sf)
-library(lidaRtRee)
-data("quatre_montagnes", package = "lidaRtRee")
-placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
-clusters_centre <- c(
-  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-  "Verc-C4", "Verc-C2", "Verc-05"
-)
-placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
-```
-
-```{r ex-1-4, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20, exercise.setup="ex-1-4-setup"}
-# Créer l'enveloppe convexe des placettes
-enveloppe <- st_convex_hull(st_union(placettes_centre))
-
-# Ajouter un buffer de 500m
-zone_etude <- st_buffer(enveloppe, dist = 500)
-
-# Calculer la surface
-surface_ha <- as.numeric(st_area(zone_etude)) / 10000
-
-cat("Zone d'étude créée !\n")
-cat("Surface:", round(surface_ha), "hectares\n")
-
-# Convertir en sf pour manipulation ultérieure
-zone_etude_sf <- st_sf(
-  id = 1,
-  nom = "Quatre Montagnes - Centre",
-  geometry = zone_etude
-)
-
-# Afficher
-print(zone_etude_sf)
-```
-
-
-
-### Exercice 1.5 : Sauvegarder la zone d'étude
-
-**Pattern de cache** : Pour éviter de recréer la zone à chaque exercice, nous allons la sauvegarder dans un répertoire local persistant. Ce pattern sera utilisé tout au long du tutoriel.
-
-```{r ex-1-5-setup}
-library(sf)
-library(lidaRtRee)
-data("quatre_montagnes", package = "lidaRtRee")
-placettes_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
-clusters_centre <- c(
-  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-  "Verc-C4", "Verc-C2", "Verc-05"
-)
-placettes_centre <- placettes_sf[placettes_sf$cluster_id %in% clusters_centre, ]
-enveloppe <- st_convex_hull(st_union(placettes_centre))
-zone_etude <- st_buffer(enveloppe, dist = 500)
-zone_etude_sf <- st_sf(id = 1, nom = "Quatre Montagnes - Centre", geometry = zone_etude)
-```
-
-```{r ex-1-5, exercise=TRUE, exercise.eval=FALSE, exercise.lines=25, exercise.setup="ex-1-5-setup"}
-# Définir le chemin de sauvegarde
-# Définir le répertoire de cache
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-filepath <- file.path(data_dir, "zone_etude.gpkg")
-
-cat("=== Sauvegarde de la zone d'étude ===\n")
-cat("Répertoire:", data_dir, "\n")
-cat("Fichier:", filepath, "\n\n")
-
-# Sauvegarder la zone d'étude (couche 1)
-st_write(zone_etude_sf, filepath,
-  layer = "zone_etude",
-  delete_layer = TRUE, quiet = TRUE
-)
-cat("Zone d'étude sauvegardée (couche: zone_etude)\n")
-
-# Sauvegarder les placettes (couche 2 dans le même fichier)
-st_write(placettes_centre, filepath,
-  layer = "placettes",
-  append = TRUE, quiet = TRUE
-)
-cat("Placettes sauvegardées (couche: placettes)\n")
-
-# Vérifier le contenu du GeoPackage
-cat("\n=== Contenu du fichier ===\n")
-couches <- st_layers(filepath)
-for (i in seq_len(nrow(couches))) {
-  cat("-", couches$name[i], ":", couches$features[i], "entités\n")
-}
-```
-
-### Visualisation de la zone d'étude
-
-Chargeons les données depuis le cache pour visualiser :
-
-```{r viz-zone-setup}
-library(sf)
-library(ggplot2)
-# Définir le répertoire de cache (même code que dans l'exercice précédent)
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-# Charger depuis le cache
-filepath <- file.path(data_dir, "zone_etude.gpkg")
-zone_etude_sf <- st_read(filepath, layer = "zone_etude", quiet = TRUE)
-placettes_centre <- st_read(filepath, layer = "placettes", quiet = TRUE)
-enveloppe <- st_convex_hull(st_union(placettes_centre))
-```
-
-```{r viz-zone, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20, exercise.setup="viz-zone-setup"}
-# Visualiser la zone d'étude avec les placettes
-ggplot() +
-  # Zone d'étude (buffer)
-  geom_sf(
-    data = zone_etude_sf, fill = "lightgreen", alpha = 0.3,
-    color = "darkgreen", linewidth = 1
-  ) +
-  # Enveloppe convexe
-  geom_sf(
-    data = st_sf(geometry = enveloppe), fill = NA,
-    color = "darkgreen", linetype = "dashed"
-  ) +
-  # Placettes
-  geom_sf(data = placettes_centre, aes(color = cluster_id), size = 3) +
-  # Forcer l'affichage en Lambert-93 (mètres)
-  coord_sf(datum = NA) +
-  # Mise en forme
-  scale_color_viridis_d(name = "Cluster") +
-  labs(
-    title = "Zone d'étude : Quatre Montagnes (Centre)",
-    subtitle = paste(
-      nrow(placettes_centre), "placettes -",
       round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha"
     ),
     x = "X (m)", y = "Y (m)"
@@ -527,18 +251,11 @@ quiz(
     answer("Web Mercator (EPSG:3857)"),
     allow_retry = TRUE
   ),
-  question("Pourquoi ajoute-t-on un buffer autour des placettes ?",
-    answer("Pour réduire la taille de la zone"),
-    answer("Pour inclure le contexte spatial autour des points d'intérêt", correct = TRUE),
-    answer("Pour changer le système de coordonnées"),
-    answer("Pour fusionner les placettes"),
-    allow_retry = TRUE
-  ),
-  question("Quelle fonction sf permet de créer une enveloppe convexe ?",
-    answer("st_buffer()"),
-    answer("st_union()"),
-    answer("st_convex_hull()", correct = TRUE),
-    answer("st_intersection()"),
+  question("Quel format de fichier est utilisé pour stocker la zone d'étude ?",
+    answer("Shapefile (.shp)"),
+    answer("GeoJSON (.geojson)"),
+    answer("GeoPackage (.gpkg)", correct = TRUE),
+    answer("CSV (.csv)"),
     allow_retry = TRUE
   )
 )
@@ -1303,40 +1020,6 @@ if (requireNamespace("lidarHD", quietly = TRUE)) {
 }
 ```
 
-### Alternative : Utiliser les métriques pré-calculées
-
-Si le téléchargement LiDAR est trop long, vous pouvez utiliser les **métriques pré-calculées** dans `quatre_montagnes` :
-
-```{r ex-5-alt, exercise=TRUE, exercise.eval=FALSE, exercise.lines=20}
-library(lidaRtRee)
-data("quatre_montagnes", package = "lidaRtRee")
-
-# Les métriques LiDAR sont déjà dans le jeu de données
-metriques_lidar <- c(
-  "zmax", "zmean", "zsd", "zq50", "zq95",
-  "zentropy", "pzabove2", "Tree_density"
-)
-
-cat("=== Métriques LiDAR pré-calculées ===\n\n")
-
-# Afficher les statistiques pour les clusters Centre
-clusters_centre <- c(
-  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-  "Verc-C4", "Verc-C2", "Verc-05"
-)
-data_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
-
-for (m in metriques_lidar) {
-  if (m %in% names(data_centre)) {
-    vals <- data_centre[[m]]
-    cat(sprintf(
-      "%s: min=%.1f, moy=%.1f, max=%.1f\n",
-      m, min(vals), mean(vals), max(vals)
-    ))
-  }
-}
-```
-
 ---
 
 ## Section 6 : Récapitulatif et Export
@@ -1398,8 +1081,8 @@ data("quatre_montagnes", package = "lidaRtRee")
 
 # Filtrer sur les clusters Centre utilisés dans le tutoriel
 clusters_centre <- c(
-  "Verc-C1", "Verc-S4", "Verc-02", "Verc-S7",
-  "Verc-C4", "Verc-C2", "Verc-05"
+  "Verc-02", "Verc-05", "Verc-06", "Verc-C1",
+  "Verc-C2", "Verc-s4","Vec-S7"
 )
 qm_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
 
