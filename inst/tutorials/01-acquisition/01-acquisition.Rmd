@@ -76,9 +76,13 @@ Ce tutoriel vous guide dans l'acquisition des données géographiques nécessair
 
 ### Zone d'étude
 
-Nous utiliserons les données **Quatre Montagnes** du package `lidaRtRee`, situées dans le **Vercors** (Isère, France). Cette zone comprend 96 placettes forestières avec des métriques LiDAR pré-calculées.
+Deux options s'offrent à vous :
 
-Pour ce tutoriel, nous travaillerons sur un sous-ensemble de **28 placettes** (groupe Centre) couvrant environ **1600 hectares**.
+1. **Option A (recommandée pour débuter)** : Utiliser la **zone d'étude prédéfinie** fournie avec le package nemeton (~450 ha, cluster Verc-02)
+
+2. **Option B** : Créer votre propre zone à partir des données **Quatre Montagnes** de `lidaRtRee` (~1600 ha, groupe Centre)
+
+Les données Quatre Montagnes sont situées dans le **Vercors** (Isère, France) et comprennent 96 placettes forestières avec des métriques LiDAR pré-calculées.
 
 ### Prérequis
 
@@ -155,11 +159,65 @@ if (dir.exists(data_dir)) {
 
 ### Introduction
 
-La première étape consiste à définir notre **zone d'étude**. Nous allons :
+La première étape consiste à définir notre **zone d'étude**. Vous pouvez :
 
-1. Charger les placettes `quatre_montagnes` de lidaRtRee
-2. Sélectionner un groupe de clusters (groupe Centre)
-3. Créer un polygone englobant avec un buffer
+- **Option A** : Charger la zone prédéfinie du package nemeton (plus rapide)
+- **Option B** : Créer votre propre zone à partir des données `quatre_montagnes`
+
+---
+
+### Option A : Zone d'étude prédéfinie (recommandé)
+
+Le package nemeton fournit une zone d'étude prête à l'emploi dans `inst/extdata/zone_etude.gpkg`. Cette zone correspond au cluster **Verc-02** avec un buffer de 500m, couvrant environ **450 hectares**.
+
+```{r ex-option-a-setup}
+library(sf)
+library(ggplot2)
+```
+
+```{r ex-option-a, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-option-a-setup"}
+# === OPTION A : CHARGER LA ZONE PRÉDÉFINIE ===
+
+# Chemin vers la zone d'étude fournie avec le package
+zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+
+if (file.exists(zone_pkg)) {
+  # Charger la zone d'étude
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+
+  cat("=== Zone d'étude chargée ===\n")
+  cat("Source: nemeton::inst/extdata/zone_etude.gpkg\n")
+  cat("Cluster:", zone_etude_sf$cluster_id, "\n")
+  cat("Surface:", round(as.numeric(st_area(zone_etude_sf)) / 10000), "ha\n")
+  cat("CRS:", st_crs(zone_etude_sf)$epsg, "(Lambert-93)\n\n")
+
+  # Sauvegarder dans le répertoire de cache
+  if (requireNamespace("rappdirs", quietly = TRUE)) {
+    data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  } else {
+    data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  }
+  dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+
+  filepath <- file.path(data_dir, "zone_etude.gpkg")
+  st_write(zone_etude_sf, filepath, layer = "zone_etude",
+           delete_layer = TRUE, quiet = TRUE)
+  cat("Zone sauvegardée dans:", filepath, "\n")
+
+  # Afficher
+  print(zone_etude_sf)
+} else {
+  cat("Fichier non trouvé. Utilisez l'Option B ci-dessous.\n")
+}
+```
+
+**Après avoir exécuté cet exercice, passez directement à la Section 2 (Cadastre).**
+
+---
+
+### Option B : Créer sa propre zone d'étude
+
+Si vous préférez créer votre propre zone ou si le package nemeton n'est pas installé, suivez les exercices ci-dessous.
 
 ### Les données quatre_montagnes
 
@@ -460,8 +518,7 @@ Appliquons le pattern de cache pour télécharger les parcelles :
 ```{r ex-2-1-setup}
 library(sf)
 library(happign)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -469,7 +526,13 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
-zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+# Essayer le cache, sinon le package
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-2-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-2-1-setup"}
@@ -615,15 +678,20 @@ Appliquons le même pattern de cache pour le MNT (format GeoTIFF) :
 library(sf)
 library(terra)
 library(happign)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-3-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-3-1-setup"}
@@ -783,15 +851,20 @@ La **BD TOPO** fournit les éléments topographiques :
 ```{r ex-4-1-setup}
 library(sf)
 library(happign)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-4-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=35, exercise.setup="ex-4-1-setup"}
@@ -841,15 +914,20 @@ cat("\nSurface forestière:", round(as.numeric(surface_foret) / 10000, 1), "ha\n
 ```{r ex-4-2-setup}
 library(sf)
 library(happign)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-4-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-2-setup"}
@@ -897,15 +975,20 @@ if ("nature" %in% names(routes)) {
 ```{r ex-4-3-setup}
 library(sf)
 library(happign)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-4-3, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.setup="ex-4-3-setup"}
@@ -1000,15 +1083,20 @@ Le package `lidarHD` permet de télécharger les dalles LiDAR qui intersectent n
 
 ```{r ex-5-1-setup}
 library(sf)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-5-1, exercise=TRUE, exercise.eval=FALSE, exercise.lines=30, exercise.timelimit=600, exercise.setup="ex-5-1-setup"}
@@ -1057,15 +1145,20 @@ Les données LiDAR seront sauvegardées dans le répertoire de cache pour réuti
 
 ```{r ex-5-2-setup}
 library(sf)
-# Charger la zone d'étude depuis le cache
-# Définir le répertoire de cache
+# Charger la zone d'étude depuis le cache ou le package
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-zone_etude_sf <- st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE)
+zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_filepath)) {
+  zone_etude_sf <- st_read(zone_filepath, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude_sf <- st_read(zone_pkg, quiet = TRUE)
+}
 ```
 
 ```{r ex-5-2, exercise=TRUE, exercise.eval=FALSE, exercise.lines=45, exercise.timelimit=600, exercise.setup="ex-5-2-setup"}
