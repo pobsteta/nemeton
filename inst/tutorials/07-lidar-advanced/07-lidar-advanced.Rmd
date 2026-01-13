@@ -807,49 +807,71 @@ if (length(fichiers_laz) == 0) {
   cat("\nAvantage: Une seule lecture des fichiers pour tous les produits ITD !")
   cat("\nStratégie concurrent_files:", N_CORES, "fichiers traités en parallèle\n")
 
-  # ==========================================================================
-  # FUSION DES TUILES EN RASTER VIRTUEL (VRT)
-  # ==========================================================================
-  cat("\n\n=== Création des rasters virtuels (VRT) ===\n")
-  
-  library(terra)
+  cat("\n=== Fichiers générés dans result_itd/ ===\n")
+  cat("- chm_*.tif : tuiles CHM\n")
+  cat("- c_filled_*.tif : tuiles CHM rempli\n")
+  cat("- crowns_*.tif : tuiles de segmentation\n")
+  cat("- seeds_*.gpkg : cimes détectées par tuile\n")
+}
+```
 
-  chm_tiles <- list.files(file.path(data_dir, "result_itd"), pattern = "^chm_.*\\.tif$", full.names = TRUE)
-  c_filled_tiles <- list.files(file.path(data_dir, "result_itd"), pattern = "^c_filled_.*\\.tif$", full.names = TRUE)
-  crown_tiles <- list.files(file.path(data_dir, "result_itd"), pattern = "^crowns_.*\\.tif$", full.names = TRUE)
-  seed_files <- list.files(file.path(data_dir, "result_itd"), pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
+### Exercice 3.2 : Fusion VRT et visualisation des résultats
 
-  cat("Tuiles CHM:", length(chm_tiles), "\n")
-  cat("Tuiles CHM filled:", length(c_filled_tiles), "\n")
-  cat("Tuiles Crowns:", length(crown_tiles), "\n")
-  cat("Fichiers Seeds:", length(seed_files), "\n")
+Après l'exécution du pipeline ITD, fusionnez les tuiles en rasters virtuels (VRT)
+et visualisez les résultats sur une zone de 100m × 100m.
 
+```{r ex-3-2-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+```
+
+```{r ex-3-2, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-3-2-setup"}
+library(terra)
+library(sf)
+
+# ==========================================================================
+# FUSION DES TUILES EN RASTER VIRTUEL (VRT)
+# ==========================================================================
+cat("=== Création des rasters virtuels (VRT) ===\n\n")
+
+result_itd <- file.path(data_dir, "result_itd")
+
+chm_tiles <- list.files(result_itd, pattern = "^chm_.*\\.tif$", full.names = TRUE)
+c_filled_tiles <- list.files(result_itd, pattern = "^c_filled_.*\\.tif$", full.names = TRUE)
+crown_tiles <- list.files(result_itd, pattern = "^crowns_.*\\.tif$", full.names = TRUE)
+seed_files <- list.files(result_itd, pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
+
+cat("Tuiles trouvées:\n")
+cat("- CHM:", length(chm_tiles), "\n")
+cat("- CHM filled:", length(c_filled_tiles), "\n")
+cat("- Crowns:", length(crown_tiles), "\n")
+cat("- Seeds:", length(seed_files), "\n\n")
+
+if (length(chm_tiles) == 0) {
+  cat("Aucune tuile trouvée. Exécutez d'abord l'exercice 3.1.\n")
+} else {
   # Créer les VRT avec terra::vrt()
-  if (length(chm_tiles) > 0) {
-    chm_vrt <- vrt(chm_tiles, file.path(data_dir, "chm_complet.vrt"), overwrite = TRUE)
-    cat("VRT CHM créé:", file.path(data_dir, "chm_complet.vrt"), "\n")
-    cat("  Dimensions:", nrow(chm_vrt), "x", ncol(chm_vrt), "pixels\n")
-    cat("  Résolution:", res(chm_vrt)[1], "m\n")
-  }
-  
-  if (length(c_filled_tiles) > 0) {
-    c_filled_vrt <- vrt(c_filled_tiles, file.path(data_dir, "c_filled_complet.vrt"), overwrite = TRUE)
-    cat("VRT CHM filled créé:", file.path(data_dir, "c_filled_complet.vrt"), "\n")
-  }
+  chm_vrt <- vrt(chm_tiles, file.path(data_dir, "chm_complet.vrt"), overwrite = TRUE)
+  cat("VRT CHM créé:", file.path(data_dir, "chm_complet.vrt"), "\n")
+  cat("  Dimensions:", nrow(chm_vrt), "x", ncol(chm_vrt), "pixels\n")
+  cat("  Résolution:", res(chm_vrt)[1], "m\n")
 
-  if (length(crown_tiles) > 0) {
-    crowns_vrt <- vrt(crown_tiles, file.path(data_dir, "crowns_complet.vrt"), overwrite = TRUE)
-    cat("VRT Crowns créé:", file.path(data_dir, "crowns_complet.vrt"), "\n")
-  }
+  c_filled_vrt <- vrt(c_filled_tiles, file.path(data_dir, "c_filled_complet.vrt"), overwrite = TRUE)
+  cat("VRT CHM filled créé:", file.path(data_dir, "c_filled_complet.vrt"), "\n")
+
+  crowns_vrt <- vrt(crown_tiles, file.path(data_dir, "crowns_complet.vrt"), overwrite = TRUE)
+  cat("VRT Crowns créé:", file.path(data_dir, "crowns_complet.vrt"), "\n")
 
   # Fusionner les seeds (points) en un seul fichier
-  if (length(seed_files) > 0) {
-    seeds_list <- lapply(seed_files, sf::st_read, quiet = TRUE)
-    seeds_all <- do.call(rbind, seeds_list)
-    sf::st_write(seeds_all, file.path(data_dir, "seeds_complet.gpkg"),
-                 delete_dsn = TRUE, quiet = TRUE)
-    cat("Seeds fusionnés:", nrow(seeds_all), "arbres détectés\n")
-  }
+  seeds_list <- lapply(seed_files, sf::st_read, quiet = TRUE)
+  seeds_all <- do.call(rbind, seeds_list)
+  sf::st_write(seeds_all, file.path(data_dir, "seeds_complet.gpkg"),
+               delete_dsn = TRUE, quiet = TRUE)
+  cat("Seeds fusionnés:", nrow(seeds_all), "arbres détectés\n")
 
   cat("\n=== Avantages du VRT ===\n")
   cat("- Pas de duplication de données (fichier XML léger)\n")
@@ -857,80 +879,68 @@ if (length(fichiers_laz) == 0) {
   cat("- Compatible GDAL, QGIS, R (terra, stars)\n")
 
   # ==========================================================================
-  # STATISTIQUES ET VISUALISATION
+  # STATISTIQUES DU PEUPLEMENT
   # ==========================================================================
   cat("\n=== Statistiques du peuplement ===\n")
-  if (exists("seeds_all")) {
-    cat("Nombre d'arbres:", nrow(seeds_all), "\n")
-    cat("Hauteur moyenne:", round(mean(seeds_all$Z, na.rm = TRUE), 1), "m\n")
-    cat("Hauteur max:", round(max(seeds_all$Z, na.rm = TRUE), 1), "m\n")
-  }
-  
-  # Création des tif complet
-  cat("\n=== Fusion physique du CHM (optionnel) ===\n")
+  cat("Nombre d'arbres:", nrow(seeds_all), "\n")
+  cat("Hauteur moyenne:", round(mean(seeds_all$Z, na.rm = TRUE), 1), "m\n")
+  cat("Hauteur max:", round(max(seeds_all$Z, na.rm = TRUE), 1), "m\n")
+  cat("Hauteur min:", round(min(seeds_all$Z, na.rm = TRUE), 1), "m\n")
+
+  # ==========================================================================
+  # FUSION PHYSIQUE (optionnel - pour export)
+  # ==========================================================================
+  cat("\n=== Fusion physique des rasters ===\n")
   chm_merge <- terra::merge(sprc(chm_tiles))
   writeRaster(chm_merge, file.path(data_dir, "chm_complet.tif"), overwrite = TRUE)
-  cat("CHM complet écrit:", file.path(data_dir, "chm_complet.tif"), "\n")
-  
-  cat("\n=== Fusion physique des CROWNS (optionnel) ===\n")
+  cat("CHM complet:", file.path(data_dir, "chm_complet.tif"), "\n")
+
   crown_merge <- terra::merge(sprc(crown_tiles))
   writeRaster(crown_merge, file.path(data_dir, "crown_complet.tif"), overwrite = TRUE)
-  cat("CROWNS complet écrit:", file.path(data_dir, "crown_complet.tif"), "\n")
+  cat("Crowns complet:", file.path(data_dir, "crown_complet.tif"), "\n")
 
-  # Visualisation du CHM avec segments (zoom 100m x 100m centré)
+  # ==========================================================================
+  # VISUALISATION : ZOOM 100m x 100m CENTRÉ
+  # ==========================================================================
   col <- grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))(25)
   col2 <- grDevices::colorRampPalette(c("purple", "blue", "cyan2", "yellow", "red", "green"))(50)
 
-  if (exists("chm_vrt") && exists("crowns_vrt") && exists("c_filled_vrt")) {
-    # Calculer le centre de l'emprise
-    ext <- terra::ext(chm_vrt)
-    center_x <- (ext$xmin + ext$xmax) / 2
-    center_y <- (ext$ymin + ext$ymax) / 2
+  # Calculer le centre de l'emprise
+  ext <- terra::ext(chm_vrt)
+  center_x <- (ext$xmin + ext$xmax) / 2
+  center_y <- (ext$ymin + ext$ymax) / 2
 
-    # Créer une emprise de 100m x 100m centrée
-    zoom_ext <- terra::ext(
-      center_x - 50, center_x + 50,
-      center_y - 50, center_y + 50
-    )
+  # Créer une emprise de 100m x 100m centrée
+  zoom_ext <- terra::ext(
+    center_x - 50, center_x + 50,
+    center_y - 50, center_y + 50
+  )
 
-    # Cropper les rasters sur la zone de zoom
-    chm_zoom <- terra::crop(chm_vrt, zoom_ext)
-    chm_filled_zoom <- terra::crop(c_filled_vrt, zoom_ext)
-    crowns_zoom <- terra::crop(crowns_vrt, zoom_ext)
+  # Cropper les rasters sur la zone de zoom
+  chm_zoom <- terra::crop(chm_vrt, zoom_ext)
+  chm_filled_zoom <- terra::crop(c_filled_vrt, zoom_ext)
+  crowns_zoom <- terra::crop(crowns_vrt, zoom_ext)
 
-    # Filtrer les cimes dans l'emprise de zoom
-    if (exists("seeds_all")) {
-      seeds_zoom <- sf::st_crop(seeds_all, sf::st_bbox(c(
-        xmin = center_x - 50, xmax = center_x + 50,
-        ymin = center_y - 50, ymax = center_y + 50
-      ), crs = sf::st_crs(seeds_all)))
-    }
+  # Filtrer les cimes dans l'emprise de zoom (utiliser bbox du raster croppé)
+  seeds_zoom <- sf::st_crop(seeds_all, sf::st_bbox(chm_zoom))
 
-    cat("\n=== Visualisation : zoom 100m x 100m centré ===\n")
-    cat("Centre:", round(center_x), ",", round(center_y), "\n")
-    if (exists("seeds_zoom")) {
-      cat("Arbres dans la zone:", nrow(seeds_zoom), "\n")
-    }
+  cat("\n=== Visualisation : zoom 100m x 100m centré ===\n")
+  cat("Centre:", round(center_x), ",", round(center_y), "\n")
+  cat("Arbres dans la zone:", nrow(seeds_zoom), "\n")
 
-    par(mfrow = c(1, 3))
-    plot(chm_zoom, main = "CHM (0.5m)", col = col, mar = c(1, 1, 1, 3))
-    plot(chm_filled_zoom, main = "CHM filled (0.5m)", col = col, mar = c(1, 1, 1, 3))
-    plot(crowns_zoom %% 8, main = "Segments + cimes",
-         col = col2[sample.int(50, 1000, TRUE)], mar = c(1, 1, 1, 3), legend = FALSE)
-    # Ajouter les cimes des houppiers
-    if (exists("seeds_zoom") && nrow(seeds_zoom) > 0) {
-      plot(sf::st_geometry(seeds_zoom), add = TRUE, pch = 3, col = "white", cex = 0.8)
-    }
+  par(mfrow = c(1, 3))
+  plot(chm_zoom, main = "CHM (0.5m)", col = col, mar = c(1, 1, 1, 3))
+  plot(chm_filled_zoom, main = "CHM filled (0.5m)", col = col, mar = c(1, 1, 1, 3))
+  plot(crowns_zoom %% 8, main = "Houppiers + cimes",
+       col = col2[sample.int(50, 1000, TRUE)], mar = c(1, 1, 1, 3), legend = FALSE)
+  # Ajouter les cimes des houppiers
+  if (nrow(seeds_zoom) > 0) {
+    plot(sf::st_geometry(seeds_zoom), add = TRUE, pch = 3, col = "white", cex = 0.8)
   }
 
-  # ==========================================================================
-  # NETTOYAGE MÉMOIRE
-  # ==========================================================================
-  # Supprimer les objets volumineux intermédiaires
-  # rm(del, chm, chm_filled, seeds, tree, pipeline_itd, ans)
-  invisible(gc())  # Forcer la libération mémoire
+  # Nettoyage mémoire
+  invisible(gc())
   cat("\n=== Mémoire libérée ===\n")
-  cat("Mémoire utilisée après nettoyage:", round(sum(gc()[, 2]), 1), "MB\n")
 }
 ```
 
