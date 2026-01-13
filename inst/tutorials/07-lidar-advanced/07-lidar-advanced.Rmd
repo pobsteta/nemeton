@@ -1054,38 +1054,50 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   }
 
   # ==========================================================================
-  # PIPELINE lasR COMPLET AVEC EXTRACTION DES MÉTRIQUES
+  # CONFIGURATION
   # ==========================================================================
+  N_CORES <- 4L
+
+  # Créer le catalogue
+  library(lidR)
+  if (length(fichiers_laz) > 0) {
+    ctg <- readLAScatalog(fichiers_laz)
+  } else {
+    ctg <- NULL
+  }
 
   # Dossier de sortie
   result_dir <- file.path(data_dir, "lasR_itd_metrics")
   dir.create(result_dir, showWarnings = FALSE, recursive = TRUE)
 
+  # ==========================================================================
+  # PIPELINE lasR COMPLET AVEC EXTRACTION DES MÉTRIQUES
+  # ==========================================================================
+
   # 1. Triangulation des premiers retours
+  del <- lasR::triangulate(filter = lasR::keep_first())
 
-  del <- triangulate(filter = keep_first())
-
-  # 2. CHM à 0.5m de résolution
-  chm <- rasterize(0.5, del)
+  # 2. CHM à 0.5m de résolution (lasR:: pour éviter conflit avec terra)
+  chm <- lasR::rasterize(0.5, del)
 
   # 3. Remplissage des puits
-  chm_filled <- pit_fill(chm)
+  chm_filled <- lasR::pit_fill(chm)
 
-  # 4. Détection des cimes (fenêtre de 3m)
-  seeds <- local_maximum_raster(chm_filled, ws = 3)
+  # 4. Détection des cimes (fenêtre de 3m, hauteur min 5m)
+  seeds <- lasR::local_maximum_raster(chm_filled, ws = 3, min_height = 5)
 
   # 5. Segmentation par croissance de région
-  crowns <- region_growing(chm_filled, seeds)
+  crowns <- lasR::region_growing(chm_filled, seeds)
 
   # 6. Callback pour extraction des métriques
-  tree_metrics <- callback(
+  tree_metrics <- lasR::callback(
     fun = tree_metrics_callback,
     expose = "rst",
     ofile = file.path(result_dir, "tree_metrics_*.gpkg")
   )
 
   # Pipeline complet
-  pipeline_itd <- reader_las() + del + chm + chm_filled + seeds + crowns + tree_metrics
+  pipeline_itd <- lasR::reader_las() + del + chm + chm_filled + seeds + crowns + tree_metrics
 
   cat("=== Pipeline lasR avec extraction des métriques ===\n")
   print(pipeline_itd)
@@ -1097,38 +1109,54 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("- Idéal pour gros jeux de données (>100 dalles)\n")
 
   # Exécution sur les données (si disponibles)
-  if (length(fichiers_laz) > 0) {
-    cat("\n=== Exécution sur", length(fichiers_laz), "fichier(s) ===\n")
+  if (!is.null(ctg) && length(fichiers_laz) > 0) {
+    cat("\n=== Exécution sur", length(fichiers_laz), "dalles LiDAR ===\n")
+    cat("Stratégie: concurrent_files(", N_CORES, ")\n\n")
 
-    ans <- exec(pipeline_itd, on = fichiers_laz[1],
-                with = list(tree_metrics = list(
-                  chm = chm_filled,
-                  crowns = crowns,
-                  seeds = seeds
-                )))
+    ans <- lasR::exec(pipeline_itd, on = ctg,
+                      with = list(tree_metrics = list(
+                        chm = chm_filled,
+                        crowns = crowns,
+                        seeds = seeds
+                      )),
+                      ncores = lasR::concurrent_files(N_CORES))
 
-    # Charger et afficher les résultats
+    print(ans)
+
+    # ==========================================================================
+    # FUSION DES RÉSULTATS
+    # ==========================================================================
+    cat("\n=== Fusion des métriques d'arbres ===\n")
     gpkg_files <- list.files(result_dir, pattern = "tree_metrics.*\\.gpkg$",
                              full.names = TRUE)
+    cat("Fichiers générés:", length(gpkg_files), "\n")
+
     if (length(gpkg_files) > 0) {
-      trees <- sf::st_read(gpkg_files[1], quiet = TRUE)
+      # Fusionner tous les gpkg en un seul
+      trees_list <- lapply(gpkg_files, sf::st_read, quiet = TRUE)
+      trees_all <- do.call(rbind, trees_list)
+      sf::st_write(trees_all, file.path(data_dir, "tree_metrics_complet.gpkg"),
+                   delete_dsn = TRUE, quiet = TRUE)
+      cat("Métriques fusionnées:", file.path(data_dir, "tree_metrics_complet.gpkg"), "\n")
 
       cat("\n=== Résultats : Métriques des arbres ===\n")
-      cat("Nombre d'arbres détectés:", nrow(trees), "\n")
-      cat("Hauteur moyenne:", round(mean(trees$height, na.rm = TRUE), 1), "m\n")
-      cat("Hauteur max:", round(max(trees$height, na.rm = TRUE), 1), "m\n")
-      cat("Surface moyenne houppier:", round(mean(trees$surface, na.rm = TRUE), 1), "m²\n")
-      cat("Volume moyen houppier:", round(mean(trees$volume, na.rm = TRUE), 1), "m³\n")
+      cat("Nombre d'arbres détectés:", nrow(trees_all), "\n")
+      cat("Hauteur moyenne:", round(mean(trees_all$height, na.rm = TRUE), 1), "m\n")
+      cat("Hauteur max:", round(max(trees_all$height, na.rm = TRUE), 1), "m\n")
+      cat("Surface moyenne houppier:", round(mean(trees_all$surface, na.rm = TRUE), 1), "m²\n")
+      cat("Volume moyen houppier:", round(mean(trees_all$volume, na.rm = TRUE), 1), "m³\n")
 
       cat("\n=== Premiers arbres ===\n")
-      print(head(sf::st_drop_geometry(trees[, c("id", "height", "dom_radius",
-                                                 "surface", "volume")])))
+      print(head(sf::st_drop_geometry(trees_all[, c("id", "height", "dom_radius",
+                                                     "surface", "volume")])))
     }
   } else {
     cat("\nAucun fichier LAZ trouvé. Testez avec vos propres données :\n")
-    cat("ans <- exec(pipeline_itd, on = 'votre_fichier.laz',\n")
-    cat("            with = list(tree_metrics = list(\n")
-    cat("              chm = chm_filled, crowns = crowns, seeds = seeds)))\n")
+    cat("ctg <- readLAScatalog('chemin/vers/fichiers/*.laz')\n")
+    cat("ans <- lasR::exec(pipeline_itd, on = ctg,\n")
+    cat("                  with = list(tree_metrics = list(\n")
+    cat("                    chm = chm_filled, crowns = crowns, seeds = seeds)),\n")
+    cat("                  ncores = lasR::concurrent_files(4))\n")
   }
 }
 ```
