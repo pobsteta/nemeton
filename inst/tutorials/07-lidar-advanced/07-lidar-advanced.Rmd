@@ -754,11 +754,14 @@ cat("=== Segmentation d'arbres avec lasR ===\n\n")
 
 cat("Pipeline ITD (Individual Tree Detection):\n")
 cat("1. reader_las()          - Lecture des fichiers LAS/LAZ\n")
-cat("2. triangulate()         - Maillage TIN des premiers retours\n")
-cat("3. rasterize()           - CHM à 0.5m de résolution\n")
-cat("4. pit_fill()            - Remplissage des trous\n")
-cat("5. local_maximum_raster()- Détection des cimes\n")
-cat("6. region_growing()      - Segmentation des houppiers\n\n")
+cat("2. triangulate(ground)   - Maillage TIN du sol (DTM)\n")
+cat("3. rasterize(DTM)        - DTM à 1m de résolution\n")
+cat("4. transform_with(DTM)   - Normalisation des hauteurs (Z = hauteur)\n")
+cat("5. triangulate(first)    - Maillage TIN des premiers retours\n")
+cat("6. rasterize(CHM)        - CHM à 0.5m de résolution\n")
+cat("7. pit_fill()            - Remplissage des trous\n")
+cat("8. local_maximum_raster()- Détection des cimes\n")
+cat("9. region_growing()      - Segmentation des houppiers\n\n")
 
 cat("Cores utilisés:", N_CORES, "(réduit pour économiser la mémoire)\n")
 cat("Stratégie: concurrent_files()\n\n")
@@ -789,37 +792,55 @@ if (length(fichiers_laz) == 0) {
   library(lasR)
 
   # ==========================================================================
-  # PIPELINE ITD lasR COMPLET
+  # PIPELINE ITD lasR COMPLET AVEC NORMALISATION
   # ==========================================================================
+  # IMPORTANT: Les données LiDAR brutes ont Z = altitude (ex: 1200m)
 
-  # 1. Créer l'étape de triangulation (référencée par rasterize)
-  del <- triangulate(filter = keep_first())
+  # Pour la détection d'arbres, on a besoin de Z = hauteur (ex: 25m)
+  # Solution: créer un DTM puis normaliser avec transform_with()
 
-  # 2. Créer l'étape CHM (référencée par pit_fill)
-  chm <- lasR::rasterize(0.5, del,
-                   ofile = file.path(result_itd, "chm_*.tif"))
+  # 1. Triangulation du sol pour créer le DTM
+  dtm_tri <- triangulate(filter = keep_ground())
 
-  # 3. Créer l'étape de remplissage des puits (référencée par local_maximum et region_growing)
+  # 2. Rasteriser le DTM à 1m de résolution
+  dtm <- lasR::rasterize(1, dtm_tri,
+                         ofile = file.path(result_itd, "dtm_*.tif"))
+
+  # 3. Normaliser les hauteurs : Z_nouveau = Z_original - DTM
+  # Après cette étape, Z représente la hauteur par rapport au sol
+  normalize <- transform_with(dtm)
+
+  # 4. Triangulation des premiers retours (sur données normalisées)
+  chm_tri <- triangulate(filter = keep_first())
+
+  # 5. Créer le CHM à 0.5m de résolution
+  chm <- lasR::rasterize(0.5, chm_tri,
+                         ofile = file.path(result_itd, "chm_*.tif"))
+
+  # 6. Remplissage des puits dans le CHM
   chm_filled <- pit_fill(chm,
                          ofile = file.path(result_itd, "c_filled_*.tif"))
 
-  # 4. Créer l'étape de détection des maxima locaux (référencée par region_growing)
+  # 7. Détection des maxima locaux (cimes des arbres)
   # Fenêtre de 3m - ajuster selon la densité du peuplement
-  # Un arbre fait minimum 5 m
+  # Hauteur minimum 5m (filtre les arbustes)
   seeds <- local_maximum_raster(chm_filled, ws = 3, min_height = 5,
                                 ofile = file.path(result_itd, "seeds_*.gpkg"))
 
-  # 5. Créer l'étape de segmentation par croissance de région
+  # 8. Segmentation par croissance de région
   tree <- region_growing(chm_filled, seeds,
                          ofile = file.path(result_itd, "crowns_*.tif"))
 
-  # Pipeline ITD complet pour nemeton
+  # Pipeline ITD complet avec normalisation
   pipeline_itd <- reader_las() +
-    del +
-    chm +
-    chm_filled +
-    seeds +
-    tree
+    dtm_tri +      # Triangulation sol
+    dtm +          # Raster DTM
+    normalize +    # Normalisation Z = hauteur
+    chm_tri +      # Triangulation premiers retours
+    chm +          # Raster CHM
+    chm_filled +   # CHM sans trous
+    seeds +        # Cimes détectées
+    tree           # Houppiers segmentés
 
   # Afficher le pipeline
   print(pipeline_itd)
@@ -850,8 +871,9 @@ if (length(fichiers_laz) == 0) {
   cat("\nStratégie concurrent_files:", N_CORES, "fichiers traités en parallèle\n")
 
   cat("\n=== Fichiers générés dans result_itd/ ===\n")
-  cat("- chm_*.tif : tuiles CHM\n")
-  cat("- c_filled_*.tif : tuiles CHM rempli\n")
+  cat("- dtm_*.tif : tuiles DTM (altitude du sol)\n")
+  cat("- chm_*.tif : tuiles CHM (hauteur de canopée)\n")
+  cat("- c_filled_*.tif : tuiles CHM sans trous\n")
   cat("- crowns_*.tif : tuiles de segmentation\n")
   cat("- seeds_*.gpkg : cimes détectées par tuile\n")
 }
