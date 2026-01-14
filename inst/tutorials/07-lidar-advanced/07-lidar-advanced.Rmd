@@ -1287,112 +1287,282 @@ La fonction `gap_detection()` de lidaRtRee utilise deux critères :
   Sinon → Juste une zone basse (pas une vraie trouée)
 ```
 
-### Exercice 4.1 : Détection des trouées avec lidaRtRee
+### Exercice 4.1 : Détection des trouées sur le catalogue (parallélisé)
 
-Utilisez `gap_detection()` avec différents paramètres.
+Détectez les trouées sur l'ensemble du catalogue LiDAR en utilisant le CHM généré
+à la section 3, avec traitement parallélisé par tuile.
 
 ```{r ex-4-1-setup}
 library(lidaRtRee)
 library(terra)
+library(sf)
+library(future)
+library(future.apply)
+
+# Répertoire des données
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Lister les tuiles CHM filled (générées en section 3)
+chm_tiles <- list.files(file.path(data_dir, "result_itd"),
+                        pattern = "^c_filled_.*\\.tif$",
+                        full.names = TRUE)
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-4-1-setup"}
+```{r ex-4-1, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-4-1-setup"}
 library(lidaRtRee)
 library(terra)
+library(sf)
+library(future)
+library(future.apply)
 
-# Charger le MNH exemple
-data(chm_chablais3)
-chm <- terra::rast(chm_chablais3)
+cat("=== Détection des trouées sur le catalogue ===\n\n")
+cat("Tuiles CHM à traiter:", length(chm_tiles), "\n\n")
 
-# Nettoyer les valeurs
-chm[is.na(chm)] <- 0
-chm[chm < 0] <- 0
+# Configuration parallélisation
+plan(multisession, workers = 4)
 
-cat("=== Détection des trouées ===\n\n")
+# Paramètres de détection
+GAP_MAX_HEIGHT <- 1      # Hauteur max pour être une trouée (m)
+GAP_RATIO <- 2           # Distance > ratio × hauteur voisine
+MIN_GAP_SURFACE <- 50    # Surface minimum (m²)
 
-# Critère 1 : Strict (ratio de distance + surface minimum)
-# - Hauteur max végétation : 1 m
-# - Ratio distance/hauteur : 2 (distance > 2× hauteur voisine)
-# - Surface minimum : 100 m²
-gaps_strict <- gap_detection(
-  chm,
-  ratio = 2,
-  gap_max_height = 1,
-  min_gap_surface = 100
-)
+# Répertoire pour les masques de trouées (pour réutilisation en 4.2)
+gap_mask_dir <- file.path(data_dir, "result_gaps")
+dir.create(gap_mask_dir, showWarnings = FALSE, recursive = TRUE)
 
-# Critère 2 : Permissif (pas de restriction de distance)
-gaps_permissif <- gap_detection(
-  chm,
-  ratio = NULL,  # Pas de critère de distance
-  gap_max_height = 1,
-  min_gap_surface = 0
-)
+# Fonction de traitement par tuile
+process_gaps_tile <- function(chm_path, tile_id, output_dir) {
+  # Charger le CHM
+  chm <- terra::rast(chm_path)
 
-# Compter les trouées
-n_strict <- length(unique(values(gaps_strict$gap_id))) - 1
-n_permissif <- length(unique(values(gaps_permissif$gap_id))) - 1
+  # Nettoyer les valeurs
+  chm[is.na(chm)] <- 0
+  chm[chm < 0] <- 0
 
-cat("Critère strict (ratio=2, min=100m²):", n_strict, "trouées\n")
-cat("Critère permissif (ratio=NULL):", n_permissif, "trouées\n\n")
+  # Détection des trouées
+  gaps <- gap_detection(
+    chm,
+    ratio = GAP_RATIO,
+    gap_max_height = GAP_MAX_HEIGHT,
+    min_gap_surface = MIN_GAP_SURFACE,
+    gap_reconstruct = TRUE
+  )
 
-# Visualisation comparative
-par(mfrow = c(1, 2))
-terra::plot(log(gaps_strict$gap_surface + 1),
-            main = "Trouées (critère strict)",
-            col = rainbow(255, end = 5/6))
-terra::plot(log(gaps_permissif$gap_surface + 1),
-            main = "Trouées (critère permissif)",
-            col = rainbow(255, end = 5/6))
+  # Sauvegarder le masque binaire des trouées (pour 4.2)
+  gap_binary <- gaps$gap_id > 0
+  tile_name <- tools::file_path_sans_ext(basename(chm_path))
+  mask_file <- file.path(output_dir, paste0("gap_mask_", tile_name, ".tif"))
+  terra::writeRaster(gap_binary, mask_file, overwrite = TRUE)
+
+  # Vectoriser les trouées (gap_id > 0)
+  gap_mask <- gaps$gap_id
+  gap_mask[gap_mask == 0] <- NA
+
+  if (all(is.na(values(gap_mask)))) {
+    return(list(sf = NULL, mask_file = mask_file))
+  }
+
+  # Convertir en polygones
+  gap_polys <- terra::as.polygons(gap_mask, dissolve = TRUE)
+  gap_sf <- sf::st_as_sf(gap_polys)
+  names(gap_sf)[1] <- "gap_id"
+
+  # Ajouter les attributs
+  gap_sf$tile_id <- tile_id
+  gap_sf$area_m2 <- as.numeric(sf::st_area(gap_sf))
+
+  # Décaler les IDs pour éviter les doublons entre tuiles
+  gap_sf$gap_id <- gap_sf$gap_id + (tile_id - 1) * 10000
+
+  list(sf = gap_sf, mask_file = mask_file)
+}
+
+# Traitement parallèle
+cat("Traitement parallèle en cours...\n")
+start_time <- Sys.time()
+
+results <- future_lapply(seq_along(chm_tiles), function(i) {
+  process_gaps_tile(chm_tiles[i], i, gap_mask_dir)
+}, future.seed = TRUE)
+
+elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+
+# Extraire les SF et les fichiers de masque
+sf_list <- lapply(results, `[[`, "sf")
+sf_list <- sf_list[!sapply(sf_list, is.null)]
+mask_files <- sapply(results, `[[`, "mask_file")
+
+# Créer le VRT des masques (pour réutilisation en 4.2)
+gap_mask_vrt <- file.path(data_dir, "gap_mask_complet.vrt")
+terra::vrt(mask_files, gap_mask_vrt, overwrite = TRUE)
+
+cat("\n=== Résultats ===\n")
+cat("Temps de traitement:", round(elapsed, 1), "s\n")
+cat("Tuiles de masques créées:", length(mask_files), "\n")
+cat("VRT créé:", gap_mask_vrt, "\n\n")
+
+# Fusionner les polygones de trouées
+if (length(sf_list) > 0) {
+  gaps_all <- do.call(rbind, sf_list)
+
+  cat("--- TROUÉES ---\n")
+  cat("Trouées détectées:", nrow(gaps_all), "\n")
+  cat("Surface totale:", round(sum(gaps_all$area_m2) / 10000, 2), "ha\n")
+  cat("Surface moyenne:", round(mean(gaps_all$area_m2), 1), "m²\n")
+  cat("Surface médiane:", round(median(gaps_all$area_m2), 1), "m²\n")
+  cat("Surface max:", round(max(gaps_all$area_m2), 1), "m²\n")
+
+  # Sauvegarder en gpkg
+  output_file <- file.path(data_dir, "gaps_complet.gpkg")
+  sf::st_write(gaps_all, output_file, delete_dsn = TRUE, quiet = TRUE)
+  cat("\nSauvegardé:", output_file, "\n")
+
+  # Distribution par classe de surface
+  classes <- c(0, 50, 100, 500, 2000, Inf)
+  gaps_all$classe <- cut(gaps_all$area_m2, breaks = classes,
+                          labels = c("<50", "50-100", "100-500", "500-2000", ">2000"))
+  cat("\nDistribution par classe de surface:\n")
+  print(table(gaps_all$classe))
+
+  # Visualisation
+  par(mfrow = c(1, 1))
+  plot(sf::st_geometry(gaps_all), col = "forestgreen",
+       main = paste("Trouées détectées (n =", nrow(gaps_all), ")"), border = NA)
+} else {
+  cat("Aucune trouée détectée.\n")
+}
+
+plan(sequential)
 ```
 
-### Exercice 4.2 : Détection des lisières
+### Exercice 4.2 : Détection des lisières sur le catalogue (parallélisé)
 
-Identifiez les lisières forestières par érosion/dilatation morphologique.
+Détectez les lisières forestières sur l'ensemble du catalogue en réutilisant
+les masques de trouées générés en 4.1, avec traitement parallélisé par tuile.
 
 ```{r ex-4-2-setup}
 library(lidaRtRee)
 library(terra)
-data(chm_chablais3)
-chm <- terra::rast(chm_chablais3)
-chm[is.na(chm)] <- 0
-chm[chm < 0] <- 0
-# Détection avec reconstruction pour les lisières
-gaps <- gap_detection(chm, ratio = 2, gap_max_height = 1,
-                       min_gap_surface = 50, gap_reconstruct = TRUE,
-                       nl_filter = "None")
+library(sf)
+library(future)
+library(future.apply)
+
+# Répertoire des données
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Lister les tuiles de masques de trouées (générées en 4.1)
+gap_mask_tiles <- list.files(file.path(data_dir, "result_gaps"),
+                              pattern = "^gap_mask_.*\\.tif$",
+                              full.names = TRUE)
 ```
 
-```{r ex-4-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-4-2-setup"}
+```{r ex-4-2, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-4-2-setup"}
 library(lidaRtRee)
 library(terra)
+library(sf)
+library(future)
+library(future.apply)
 
-cat("=== Détection des lisières ===\n\n")
+cat("=== Détection des lisières sur le catalogue ===\n\n")
+cat("Réutilisation des masques de trouées de l'exercice 4.1\n")
+cat("Tuiles de masques à traiter:", length(gap_mask_tiles), "\n\n")
 
-# Créer un masque binaire des trouées
-gap_mask <- gaps$gap_id > 0
+# Configuration parallélisation
+plan(multisession, workers = 4)
 
-# Méthode 1 : Érosion (lisières internes à la forêt)
-edge_inside <- edge_detection(gap_mask, inside = TRUE)
+# Fonction de traitement par tuile
+process_edges_tile <- function(mask_path, tile_id) {
+  # Charger le masque de trouées (généré en 4.1)
+  gap_mask <- terra::rast(mask_path)
 
-# Méthode 2 : Dilatation (lisières externes aux trouées)
-edge_outside <- edge_detection(gap_mask, inside = FALSE)
+  # Détection des lisières (internes = côté forêt)
+  edges <- edge_detection(gap_mask, inside = TRUE)
 
-# Calculer le pourcentage de lisières
-total_pixels <- sum(!is.na(values(chm)))
-edge_inside_pct <- sum(values(edge_inside), na.rm = TRUE) / total_pixels * 100
-edge_outside_pct <- sum(values(edge_outside), na.rm = TRUE) / total_pixels * 100
+  # Statistiques pour cette tuile
+  total_pixels <- sum(!is.na(values(gap_mask)))
+  edge_pixels <- sum(values(edges), na.rm = TRUE)
 
-cat("Lisières par érosion (internes):", round(edge_inside_pct, 2), "%\n")
-cat("Lisières par dilatation (externes):", round(edge_outside_pct, 2), "%\n")
+  if (edge_pixels == 0) {
+    return(NULL)
+  }
 
-# Visualisation
-par(mfrow = c(1, 3))
-terra::plot(chm, main = "MNH")
-terra::plot(edge_inside, main = "Lisières (érosion)",
-            col = c("white", "red"), legend = FALSE)
-terra::plot(edge_outside, main = "Lisières (dilatation)",
-            col = c("white", "blue"), legend = FALSE)
+  # Vectoriser les lisières
+  edges[edges == 0] <- NA
+  edge_polys <- terra::as.polygons(edges)
+
+  if (nrow(edge_polys) == 0) {
+    return(NULL)
+  }
+
+  edge_sf <- sf::st_as_sf(edge_polys)
+  names(edge_sf)[1] <- "edge_id"
+
+  # Ajouter les attributs
+  edge_sf$tile_id <- tile_id
+  edge_sf$length_m <- as.numeric(sf::st_length(sf::st_cast(edge_sf, "MULTILINESTRING")))
+  edge_sf$edge_id <- edge_sf$edge_id + (tile_id - 1) * 10000
+
+  # Statistiques de la tuile
+  attr(edge_sf, "tile_stats") <- list(
+    total_pixels = total_pixels,
+    edge_pixels = edge_pixels,
+    edge_pct = edge_pixels / total_pixels * 100
+  )
+
+  edge_sf
+}
+
+# Traitement parallèle
+cat("Traitement parallèle en cours...\n")
+start_time <- Sys.time()
+
+results <- future_lapply(seq_along(gap_mask_tiles), function(i) {
+  process_edges_tile(gap_mask_tiles[i], i)
+}, future.seed = TRUE)
+
+# Filtrer les résultats NULL
+results <- results[!sapply(results, is.null)]
+
+# Fusionner tous les résultats
+if (length(results) > 0) {
+  # Collecter les stats avant fusion
+  all_stats <- lapply(results, function(r) attr(r, "tile_stats"))
+  total_pixels_all <- sum(sapply(all_stats, `[[`, "total_pixels"))
+  edge_pixels_all <- sum(sapply(all_stats, `[[`, "edge_pixels"))
+
+  edges_all <- do.call(rbind, results)
+
+  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+
+  cat("\n=== Résultats ===\n")
+  cat("Temps de traitement:", round(elapsed, 1), "s\n")
+  cat("Tuiles traitées:", length(gap_mask_tiles), "\n")
+  cat("Polygones de lisières:", nrow(edges_all), "\n")
+  cat("Pourcentage de lisières:", round(edge_pixels_all / total_pixels_all * 100, 2), "%\n")
+
+  # Sauvegarder en gpkg
+  output_file <- file.path(data_dir, "edges_complet.gpkg")
+  sf::st_write(edges_all, output_file, delete_dsn = TRUE, quiet = TRUE)
+  cat("\nFichier sauvegardé:", output_file, "\n")
+
+  # Visualisation
+  par(mfrow = c(1, 1))
+  plot(sf::st_geometry(edges_all), col = "red",
+       main = paste("Lisières détectées (", round(edge_pixels_all / total_pixels_all * 100, 2), "%)"),
+       border = NA)
+} else {
+  cat("Aucune lisière détectée.\n")
+}
+
+plan(sequential)
 ```
 
 ### Exercice 4.3 : Statistiques des trouées
