@@ -243,6 +243,18 @@ crown_merge <- terra::merge(sprc(crown_tiles))
 writeRaster(crown_merge, file.path(data_dir, "crown_complet.tif"), overwrite = TRUE)
 files_created$tif_crowns <- 1
 
+# Vectorisation des couronnes
+cat("Vectorisation des couronnes...\n")
+crowns_poly <- as.polygons(crown_merge)
+crowns_sf <- st_as_sf(crowns_poly)
+names(crowns_sf)[1] <- "treeID"
+crowns_sf$area_m2 <- as.numeric(st_area(crowns_sf))
+st_write(crowns_sf, file.path(data_dir, "crowns_complet.gpkg"),
+         delete_dsn = TRUE, quiet = TRUE)
+files_created$crowns_gpkg <- 1
+cat("  Houppiers vectorisés:", nrow(crowns_sf), "\n")
+cat("  Surface moyenne:", round(mean(crowns_sf$area_m2, na.rm = TRUE), 1), "m²\n\n")
+
 # Visualisation 2x2
 cat("Génération de la visualisation 2x2...\n")
 col_elev <- colorRampPalette(c("darkgreen", "yellow", "brown", "white"))(25)
@@ -345,9 +357,9 @@ if (length(results) > 0) {
   # Supprimer doublons éventuels
   trees_all <- trees_all[!duplicated(st_coordinates(trees_all)), ]
 
-  st_write(trees_all, file.path(data_dir, "arbres_metrics.gpkg"),
+  st_write(trees_all, file.path(data_dir, "tree_metrics_complet.gpkg"),
            delete_dsn = TRUE, quiet = TRUE)
-  files_created$arbres_metrics <- 1
+  files_created$tree_metrics <- 1
 
   cat("\nStatistiques des arbres:\n")
   cat("  Nombre total:", nrow(trees_all), "\n")
@@ -432,8 +444,9 @@ final_products <- c(
   "chm_complet.vrt",
   "crown_complet.tif",
   "crowns_complet.vrt",
+  "crowns_complet.gpkg",
   "seeds_complet.gpkg",
-  "arbres_metrics.gpkg"
+  "tree_metrics_complet.gpkg"
 )
 
 for (f in final_products) {
