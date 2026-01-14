@@ -807,8 +807,9 @@ if (length(fichiers_laz) == 0) {
                          ofile = file.path(result_itd, "dtm_*.tif"))
 
   # 3. Normaliser les hauteurs : Z_nouveau = Z_original - DTM
+  # On utilise la triangulation (pas le raster) pour une interpolation exacte
   # Après cette étape, Z représente la hauteur par rapport au sol
-  normalize <- transform_with(dtm)
+  normalize <- transform_with(dtm_tri)
 
   # 4. Triangulation des premiers retours (sur données normalisées)
   chm_tri <- triangulate(filter = keep_first())
