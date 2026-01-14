@@ -692,6 +692,36 @@ La **segmentation d'arbres individuels** (ITD - Individual Tree Detection) perme
 
 Utilisez lasR pour détecter et segmenter les arbres individuels sur les données LiDAR.
 
+
+```
+==========================================================================
+ PROBLÈME DES EFFETS DE BORD
+==========================================================================
+Sans buffer, les arbres à la frontière entre 2 tuiles sont mal segmentés :
+
+     Tuile A          │         Tuile B
+                      │
+        ████          │          ████
+      ████████   ◄────┼────►   ████████
+        ████          │          ████
+          │           │           │
+       Arbre 1    COUPÉ !     Arbre 2
+                  en deux
+
+ Solution : traiter avec un BUFFER qui déborde sur les tuiles voisines
+
+     Tuile A + buffer         Tuile B + buffer
+     ┌─────────────────┐     ┌─────────────────┐
+     │     ████        │     │        ████     │
+     │   ████████      │     │      ████████   │
+     │     ████        │     │        ████     │
+     │       │    zone │     │ zone    │       │
+     │    Arbre 1  buffer    buffer  Arbre 2   │
+     └─────────────────┘     └─────────────────┘
+
+ lasR ne garde que les résultats dans la zone SANS buffer (déduplication auto)
+```
+
 ```{r ex-3-1-setup}
 library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -757,33 +787,6 @@ if (length(fichiers_laz) == 0) {
   cat("Données LiDAR non trouvées. Exécutez d'abord le Tutorial 01.\n")
 } else {
   library(lasR)
-
-  # ==========================================================================
-  # PROBLÈME DES EFFETS DE BORD
-  # ==========================================================================
-  # Sans buffer, les arbres à la frontière entre 2 tuiles sont mal segmentés :
-  #
-  #     Tuile A          │         Tuile B
-  #                      │
-  #        ████          │          ████
-  #      ████████   ◄────┼────►   ████████
-  #        ████          │          ████
-  #          │           │           │
-  #       Arbre 1    COUPÉ !     Arbre 2
-  #                  en deux
-  #
-  # Solution : traiter avec un BUFFER qui déborde sur les tuiles voisines
-  #
-  #     Tuile A + buffer         Tuile B + buffer
-  #     ┌─────────────────┐     ┌─────────────────┐
-  #     │     ████        │     │        ████     │
-  #     │   ████████      │     │      ████████   │
-  #     │     ████        │     │        ████     │
-  #     │       │    zone │     │ zone    │       │
-  #     │    Arbre 1  buffer    buffer  Arbre 2   │
-  #     └─────────────────┘     └─────────────────┘
-  #
-  # lasR ne garde que les résultats dans la zone SANS buffer (déduplication auto)
 
   # ==========================================================================
   # PIPELINE ITD lasR COMPLET
@@ -1070,15 +1073,16 @@ if (length(crown_tiles) == 0) {
     }
 
     # 3. Associer les seeds aux segments
+    # Note: les seeds sont des POINT Z, la hauteur est dans la géométrie
     coords <- sf::st_coordinates(seeds)
     seeds_vect <- terra::vect(seeds)
     ids_extracted <- terra::extract(crowns, seeds_vect)
 
     metrics <- data.frame(
       id = ids_extracted[, 2],
-      x = coords[, 1],
-      y = coords[, 2],
-      height = seeds$Z
+      x = coords[, "X"],
+      y = coords[, "Y"],
+      height = coords[, "Z"]
     )
 
     # 4. Fusionner avec surface et volume
