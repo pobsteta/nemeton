@@ -136,44 +136,103 @@ lasR::exec(pipeline, on = fichiers_laz, ncores = 4)
 - Segmenter les couronnes
 - Extraire les attributs individuels
 
+### Principe
+
+La **segmentation d'arbres individuels** (ITD - Individual Tree Detection) permet d'identifier et caractériser chaque arbre à partir du nuage de points LiDAR. Avec **lasR**, le traitement se fait via un pipeline optimisé qui inclut une étape critique de **normalisation** :
+
+1. **Triangulation sol** : maillage TIN des points sol (`triangulate(keep_ground())`)
+2. **Rasterisation DTM** : génération du MNT (`rasterize()`)
+3. **Normalisation** : conversion altitude → hauteur (`transform_with(dtm_tri)`)
+4. **Triangulation premiers retours** : maillage TIN normalisé (`triangulate(keep_first())`)
+5. **Rasterisation CHM** : génération du MNH haute résolution (`rasterize()`)
+6. **Remplissage des puits** : correction des artefacts (`pit_fill()`)
+7. **Détection des maxima locaux** : identification des cimes (`local_maximum_raster()`)
+8. **Croissance de région** : délimitation des houppiers (`region_growing()`)
+
+```
+                    Pipeline ITD lasR avec Normalisation
+
+  Nuage LiDAR ──► triangulate(ground) ──► rasterize() ──► DTM (altitude sol)
+  (Z=altitude)          (TIN sol)            (1m)              │
+                                                               │
+                        transform_with(dtm_tri) ◄──────────────┘
+                         (Z = Z - DTM = hauteur)
+                                  │
+                                  ▼
+                    triangulate(first) ──► rasterize() ──► pit_fill()
+                      (TIN normalisé)        (0.5m)        (CHM lissé)
+                                                               │
+                                                               ▼
+                   region_growing() ◄── local_maximum_raster()
+                     (houppiers)              (cimes)
+                          │                      │
+                          ▼                      ▼
+                    crowns_*.tif           seeds_*.gpkg
+```
+
+**Point clé - Normalisation TIN vs Raster** :
+- La normalisation utilise la **triangulation TIN** (`transform_with(dtm_tri)`) et non le raster DTM
+- Avantage : interpolation exacte pour chaque point, pas d'artefacts de discrétisation
+- Après normalisation : Z représente la **hauteur** (ex: 25m) et non l'**altitude** (ex: 1200m)
+
+**Gestion des effets de bord** :
+- Les arbres à la frontière entre tuiles sont mal segmentés sans buffer
+- Solution : `buffer = 20` mètres (diamètre max des houppiers)
+- lasR déduplique automatiquement les résultats dans les zones de recouvrement
+
 ### Fonctions principales
 
 ```r
-# Détection cimes (lidR)
+# Pipeline lasR avec normalisation (recommandé pour gros volumes)
+library(lasR)
+dtm_tri <- triangulate(filter = keep_ground())
+dtm <- rasterize(1, dtm_tri, ofile = "dtm_*.tif")
+normalize <- transform_with(dtm_tri)  # Utilise TIN, pas raster
+chm_tri <- triangulate(filter = keep_first())
+chm <- rasterize(0.5, chm_tri, ofile = "chm_*.tif")
+chm_filled <- pit_fill(chm, ofile = "chm_filled_*.tif")
+seeds <- local_maximum_raster(chm_filled, ws = 3, min_height = 5)
+tree <- region_growing(chm_filled, seeds, ofile = "crowns_*.tif")
+
+pipeline <- reader_las() + dtm_tri + dtm + normalize +
+            chm_tri + chm + chm_filled + seeds + tree
+exec(pipeline, on = ctg, buffer = 20, ncores = concurrent_files(4))
+
+# Alternative lidR (pour petits jeux de données)
 ttops <- lidR::locate_trees(las, algorithm = lidR::lmf(ws = 5))
-
-# Segmentation couronnes (lidR)
 las_seg <- lidR::segment_trees(las, algorithm = lidR::dalponte2016(chm, ttops))
-
-# Segmentation complète (lidaRtRee)
-trees <- lidaRtRee::tree_segmentation(
-  las,
-  algorithm = "dalponte",
-  ws = 5,
-  hmin = 2
-)
 ```
 
 ### Exercice type
 
 ```r
-# Charger un nuage normalisé
-las <- readLAS(file.path(data_dir, "normalized_sample.laz"))
+# Pipeline lasR complet avec normalisation
+library(lasR)
 
-# Créer CHM pour segmentation
-chm <- rasterize_canopy(las, res = 0.5, algorithm = pitfree())
+# 1. DTM via triangulation sol
+dtm_tri <- triangulate(filter = keep_ground())
+dtm <- rasterize(1, dtm_tri, ofile = file.path(result_itd, "dtm_*.tif"))
 
-# Détecter les cimes
-ttops <- locate_trees(las, algorithm = lmf(ws = 5))
+# 2. Normalisation (Z altitude → Z hauteur) via TIN
+normalize <- transform_with(dtm_tri)
 
-# Segmenter les couronnes
-las_seg <- segment_trees(las, algorithm = dalponte2016(chm, ttops))
+# 3. CHM via triangulation premiers retours normalisés
+chm_tri <- triangulate(filter = keep_first())
+chm <- rasterize(0.5, chm_tri, ofile = file.path(result_itd, "chm_*.tif"))
+chm_filled <- pit_fill(chm, ofile = file.path(result_itd, "chm_filled_*.tif"))
 
-# Extraire métriques par arbre
-tree_metrics <- crown_metrics(las_seg, func = .stdtreemetrics)
+# 4. Détection et segmentation
+seeds <- local_maximum_raster(chm_filled, ws = 3, min_height = 5,
+                              ofile = file.path(result_itd, "seeds_*.gpkg"))
+tree <- region_growing(chm_filled, seeds,
+                       ofile = file.path(result_itd, "crowns_*.tif"))
 
-# Exporter
-st_write(tree_metrics, file.path(data_dir, "arbres_segmentes.gpkg"))
+# Pipeline complet
+pipeline <- reader_las() + dtm_tri + dtm + normalize +
+            chm_tri + chm + chm_filled + seeds + tree
+
+# Exécution avec buffer pour effets de bord
+exec(pipeline, on = ctg, buffer = 20, ncores = concurrent_files(4))
 ```
 
 ### Métriques extraites

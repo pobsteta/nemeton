@@ -735,7 +735,7 @@ fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 ```
 
-```{r ex-3-1, exercise=TRUE, exercise.timelimit=1800, exercise.setup="ex-3-1-setup"}
+```{r ex-3-1, exercise=TRUE, exercise.timelimit=2400, exercise.setup="ex-3-1-setup"}
 # =============================================================================
 # GESTION MÉMOIRE - Important pour les gros jeux de données
 # =============================================================================
@@ -905,12 +905,14 @@ cat("=== Création des rasters virtuels (VRT) ===\n\n")
 
 result_itd <- file.path(data_dir, "result_itd")
 
+dtm_tiles <- list.files(result_itd, pattern = "^dtm_.*\\.tif$", full.names = TRUE)
 chm_tiles <- list.files(result_itd, pattern = "^chm_.*\\.tif$", full.names = TRUE)
 c_filled_tiles <- list.files(result_itd, pattern = "^c_filled_.*\\.tif$", full.names = TRUE)
 crown_tiles <- list.files(result_itd, pattern = "^crowns_.*\\.tif$", full.names = TRUE)
 seed_files <- list.files(result_itd, pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
 
 cat("Tuiles trouvées:\n")
+cat("- DTM:", length(dtm_tiles), "\n")
 cat("- CHM:", length(chm_tiles), "\n")
 cat("- CHM filled:", length(c_filled_tiles), "\n")
 cat("- Crowns:", length(crown_tiles), "\n")
@@ -920,6 +922,11 @@ if (length(chm_tiles) == 0) {
   cat("Aucune tuile trouvée. Exécutez d'abord l'exercice 3.1.\n")
 } else {
   # Créer les VRT avec terra::vrt()
+  dtm_vrt <- vrt(dtm_tiles, file.path(data_dir, "dtm_complet.vrt"), overwrite = TRUE)
+  cat("VRT DTM créé:", file.path(data_dir, "dtm_complet.vrt"), "\n")
+  cat("  Dimensions:", nrow(dtm_vrt), "x", ncol(dtm_vrt), "pixels\n")
+  cat("  Résolution:", res(dtm_vrt)[1], "m\n")
+
   chm_vrt <- vrt(chm_tiles, file.path(data_dir, "chm_complet.vrt"), overwrite = TRUE)
   cat("VRT CHM créé:", file.path(data_dir, "chm_complet.vrt"), "\n")
   cat("  Dimensions:", nrow(chm_vrt), "x", ncol(chm_vrt), "pixels\n")
@@ -956,6 +963,10 @@ if (length(chm_tiles) == 0) {
   # FUSION PHYSIQUE (optionnel - pour export)
   # ==========================================================================
   cat("\n=== Fusion physique des rasters ===\n")
+  dtm_merge <- terra::merge(sprc(dtm_tiles))
+  writeRaster(dtm_merge, file.path(data_dir, "dtm_complet.tif"), overwrite = TRUE)
+  cat("DTM complet:", file.path(data_dir, "dtm_complet.tif"), "\n")
+
   chm_merge <- terra::merge(sprc(chm_tiles))
   writeRaster(chm_merge, file.path(data_dir, "chm_complet.tif"), overwrite = TRUE)
   cat("CHM complet:", file.path(data_dir, "chm_complet.tif"), "\n")
@@ -965,15 +976,16 @@ if (length(chm_tiles) == 0) {
   cat("Crowns complet:", file.path(data_dir, "crown_complet.tif"), "\n")
 
   # ==========================================================================
-  # VISUALISATION : ZOOM 100m x 100m CENTRÉ
+  # VISUALISATION : ZOOM 100m x 100m CENTRÉ (2x2 graphiques)
   # ==========================================================================
-  col <- grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))(25)
-  col2 <- grDevices::colorRampPalette(c("purple", "blue", "cyan2", "yellow", "red", "green"))(50)
+  col_elev <- grDevices::colorRampPalette(c("darkgreen", "yellow", "brown", "white"))(25)
+  col_height <- grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))(25)
+  col_crowns <- grDevices::colorRampPalette(c("purple", "blue", "cyan2", "yellow", "red", "green"))(50)
 
   # Calculer le centre de l'emprise
-  ext <- terra::ext(chm_vrt)
-  center_x <- (ext$xmin + ext$xmax) / 2
-  center_y <- (ext$ymin + ext$ymax) / 2
+  e <- terra::ext(chm_vrt)
+  center_x <- (e$xmin + e$xmax) / 2
+  center_y <- (e$ymin + e$ymax) / 2
 
   # Créer une emprise de 100m x 100m centrée
   zoom_ext <- terra::ext(
@@ -982,6 +994,7 @@ if (length(chm_tiles) == 0) {
   )
 
   # Cropper les rasters sur la zone de zoom
+  dtm_zoom <- terra::crop(dtm_vrt, zoom_ext)
   chm_zoom <- terra::crop(chm_vrt, zoom_ext)
   chm_filled_zoom <- terra::crop(c_filled_vrt, zoom_ext)
   crowns_zoom <- terra::crop(crowns_vrt, zoom_ext)
@@ -991,21 +1004,27 @@ if (length(chm_tiles) == 0) {
 
   cat("\n=== Visualisation : zoom 100m x 100m centré ===\n")
   cat("Centre:", round(center_x), ",", round(center_y), "\n")
-  cat("Arbres dans la zone:", nrow(seeds_zoom), "\n")
+  cat("Arbres dans la zone:", nrow(seeds_zoom), "\n\n")
 
-  par(mfrow = c(1, 3))
-  plot(chm_zoom, main = "CHM (0.5m)", col = col, mar = c(1, 1, 1, 3))
-  plot(chm_filled_zoom, main = "CHM filled (0.5m)", col = col, mar = c(1, 1, 1, 3))
+  # Affichage 2x2 : DTM + CHM en haut, CHM filled + Crowns en bas
+  par(mfrow = c(2, 2), mar = c(2, 2, 3, 4))
+
+  # Ligne 1 : DTM et CHM
+  plot(dtm_zoom, main = "DTM - Altitude sol (1m)", col = col_elev)
+  plot(chm_zoom, main = "CHM - Hauteur canopée (0.5m)", col = col_height)
+
+  # Ligne 2 : CHM filled et Houppiers
+  plot(chm_filled_zoom, main = "CHM filled (0.5m)", col = col_height)
   plot(crowns_zoom %% 8, main = "Houppiers + cimes",
-       col = col2[sample.int(50, 1000, TRUE)], mar = c(1, 1, 1, 3), legend = FALSE)
-  # Ajouter les cimes des houppiers
+       col = col_crowns[sample.int(50, 1000, TRUE)], legend = FALSE)
+  # Ajouter les cimes des arbres
   if (nrow(seeds_zoom) > 0) {
     plot(sf::st_geometry(seeds_zoom), add = TRUE, pch = 3, col = "white", cex = 0.8)
   }
 
   # Nettoyage mémoire
   invisible(gc())
-  cat("\n=== Mémoire libérée ===\n")
+  cat("=== Mémoire libérée ===\n")
 }
 ```
 
