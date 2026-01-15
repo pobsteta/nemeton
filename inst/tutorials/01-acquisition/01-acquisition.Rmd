@@ -1082,7 +1082,7 @@ data("quatre_montagnes", package = "lidaRtRee")
 # Filtrer sur les clusters Centre utilisés dans le tutoriel
 clusters_centre <- c(
   "Verc-02", "Verc-05", "Verc-06", "Verc-C1",
-  "Verc-C2", "Verc-s4","Vec-S7"
+  "Verc-C2", "Verc-S4","Verc-S7"
 )
 qm_centre <- quatre_montagnes[quatre_montagnes$cluster_id %in% clusters_centre, ]
 
@@ -1095,7 +1095,6 @@ metriques <- c(
 )
 
 cat("Métrique         Min      Moy      Max    Unité\n")
-cat("------------------------------------------------\n")
 for (m in metriques) {
   if (m %in% names(qm_centre)) {
     vals <- qm_centre[[m]]
@@ -1111,6 +1110,24 @@ for (m in metriques) {
     ))
   }
 }
+
+# === EXPORT EN GEOPACKAGE ===
+cat("\n=== Export en GeoPackage ===\n")
+
+# Convertir en objet sf avec coordonnées
+qm_sf <- st_as_sf(qm_centre, coords = c("X", "Y"), crs = 2154)
+
+# Fichier de sortie
+output_gpkg <- file.path(data_dir, "placettes_lidar.gpkg")
+
+# Sauvegarder
+st_write(qm_sf, output_gpkg, layer = "placettes_metrics",
+         delete_dsn = TRUE, quiet = TRUE)
+
+cat("Fichier créé:", output_gpkg, "\n")
+cat("Couche: placettes_metrics\n")
+cat("Entités:", nrow(qm_sf), "\n")
+cat("CRS: EPSG:2154 (Lambert-93)\n")
 ```
 
 ### Exercice 6.2 : Créer un GeoPackage consolidé

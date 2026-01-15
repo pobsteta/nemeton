@@ -1733,62 +1733,361 @@ L'extraction de **métriques de structure forestière** à partir des données L
   └─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
-### Exercice 5.1 : Métriques du nuage de points avec aba_metrics()
+### Exercice 5.1a : Normalisation des fichiers LAZ avec lasR (parallélisé)
 
-Utilisez la fonction `aba_metrics()` de lidaRtRee pour calculer les métriques standard.
+Normalisez les fichiers LAZ bruts en utilisant le package `lasR` qui offre
+un traitement parallélisé natif et performant.
 
-```{r ex-5-1-setup}
-library(lidaRtRee)
-library(lidR)
+```{r ex-5-1a-setup}
+library(lasR)
+library(sf)
+
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+
+# Répertoire des fichiers LAZ bruts (téléchargés)
+laz_raw_dir <- file.path(data_dir, "laz")
+laz_raw_files <- list.files(laz_raw_dir, pattern = "\\.la[sz]$", full.names = TRUE)
+
+# Répertoire de sortie pour les fichiers normalisés
+laz_norm_dir <- file.path(data_dir, "laz_normalized_lasr")
+dir.create(laz_norm_dir, showWarnings = FALSE, recursive = TRUE)
 ```
 
-```{r ex-5-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-5-1-setup"}
+```{r ex-5-1a, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-5-1a-setup"}
+library(lasR)
+
+cat("=== Normalisation des fichiers LAZ avec lasR ===\n\n")
+
+# ==========================================================================
+# 1. VÉRIFICATION DES FICHIERS D'ENTRÉE
+# ==========================================================================
+cat("--- 1. Fichiers LAZ bruts ---\n")
+
+if (length(laz_raw_files) == 0) {
+  stop("Aucun fichier LAZ brut trouvé. Exécutez d'abord le téléchargement (section 2).")
+}
+
+cat("Fichiers trouvés:", length(laz_raw_files), "\n")
+for (f in laz_raw_files) {
+  cat("  -", basename(f), "\n")
+}
+cat("\n")
+
+# ==========================================================================
+# 2. CONSTRUCTION DU PIPELINE LASR
+# ==========================================================================
+cat("--- 2. Construction du pipeline lasR ---\n\n")
+
+# Nombre de cœurs disponibles
+n_cores <- parallel::detectCores() - 1
+n_cores <- max(1, min(n_cores, 4))  # Entre 1 et 4 cœurs
+cat("Cœurs utilisés:", n_cores, "\n\n")
+
+cat("Pipeline de normalisation:\n")
+cat("  1. reader_las()      - Lecture des fichiers LAZ\n")
+cat("  2. triangulate()     - Triangulation TIN des points sol\n")
+cat("  3. transform_with()  - Soustraction du DTM (normalisation)\n")
+cat("  4. write_las()       - Écriture des fichiers normalisés\n\n")
+
+# ==========================================================================
+# 3. EXÉCUTION DU PIPELINE (PARALLÉLISÉ)
+# ==========================================================================
+cat("--- 3. Normalisation (parallélisée) ---\n")
+
+# Vérifier si déjà traité
+existing_norm <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
+if (length(existing_norm) >= length(laz_raw_files)) {
+  cat("Fichiers déjà normalisés:", length(existing_norm), "\n")
+  cat("Utilisation du cache existant.\n\n")
+} else {
+  cat("Traitement en cours...\n")
+  start_time <- Sys.time()
+
+  # Construction du pipeline lasR
+  pipeline <- reader_las() +
+    triangulate(filter = keep_ground()) +
+    transform_with(stage(triangulate), operator = "-") +
+    write_las(ofile = paste0(laz_norm_dir, "/*_norm.laz"))
+
+  # Exécution parallélisée
+  ans <- exec(pipeline, on = laz_raw_files, ncores = n_cores, progress = TRUE)
+
+  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+  cat("\nTemps de traitement:", round(elapsed, 1), "s\n")
+  cat("Vitesse:", round(length(laz_raw_files) / elapsed * 60, 1), "fichiers/min\n\n")
+}
+
+# ==========================================================================
+# 4. VÉRIFICATION DES RÉSULTATS
+# ==========================================================================
+cat("--- 4. Résultats ---\n\n")
+
+norm_files <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
+cat("Fichiers normalisés créés:", length(norm_files), "\n")
+
+total_size_norm <- sum(file.size(norm_files)) / (1024 * 1024)
+cat("Taille totale (normalisés):", round(total_size_norm, 1), "Mo\n\n")
+
+for (f in norm_files) {
+  cat("  -", basename(f), "-", round(file.size(f) / (1024 * 1024), 1), "Mo\n")
+}
+
+# ==========================================================================
+# 5. COMPRESSION LAZ ET STATISTIQUES
+# ==========================================================================
+cat("\n--- 5. Compression LAZ ---\n\n")
+
+# Comparer avec les fichiers bruts
+total_size_raw <- sum(file.size(laz_raw_files)) / (1024 * 1024)
+
+cat("Taille fichiers bruts:", round(total_size_raw, 1), "Mo\n")
+cat("Taille fichiers normalisés:", round(total_size_norm, 1), "Mo\n")
+
+if (total_size_raw > 0) {
+  ratio <- total_size_norm / total_size_raw * 100
+  cat("Ratio:", round(ratio, 1), "%\n\n")
+}
+
+cat("Format de sortie: LAZ (compression LASzip)\n")
+cat("Avantages du LAZ:\n")
+cat("  - Compression sans perte (lossless)\n")
+cat("  - Réduction typique: 7-20% de la taille LAS\n")
+cat("  - Compatible avec tous les outils LiDAR\n")
+cat("  - Décompression à la volée lors de la lecture\n")
+
+cat("\nRépertoire de sortie:", laz_norm_dir, "\n")
+```
+
+### Exercice 5.1b : Extraction des métriques ABA sur les placettes (parallélisé)
+
+Extrayez les métriques `aba_metrics()` de lidaRtRee sur les placettes terrain
+sauvegardées dans le tutoriel T01, en utilisant les fichiers normalisés.
+
+*Basé sur le tutoriel [Area-based 1: Data preparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html)*
+
+```{r ex-5-1b-setup}
 library(lidaRtRee)
+library(lidR)
+library(sf)
+library(future)
+library(future.apply)
 
-cat("=== Métriques aba_metrics() de lidaRtRee ===\n\n")
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
 
-# Simuler un nuage de points (hauteurs normalisées)
-set.seed(42)
-n_points <- 5000
-Z <- c(
-  runif(500, 0, 2),      # Sous-bois
-  runif(1500, 2, 10),    # Strate intermédiaire
-  runif(2500, 10, 25),   # Canopée principale
-  runif(500, 25, 35)     # Arbres dominants
-)
-Intensity <- runif(n_points, 100, 500)
-ReturnNumber <- sample(1:4, n_points, replace = TRUE, prob = c(0.6, 0.25, 0.1, 0.05))
-Classification <- sample(c(1, 2, 3, 4, 5), n_points, replace = TRUE,
-                          prob = c(0.05, 0.15, 0.3, 0.4, 0.1))
+# Priorité aux fichiers normalisés par lasR, sinon ceux de la section 3
+laz_norm_lasr <- file.path(data_dir, "laz_normalized_lasr")
+laz_norm_lidr <- file.path(data_dir, "laz_normalized")
 
-# Calculer les métriques ABA
-# Paramètre: classe_sol = 2 (points sol pour calculer la couverture)
-metrics <- aba_metrics(Z, Intensity, ReturnNumber, Classification,
-                        class_ground = 2)
+if (length(list.files(laz_norm_lasr, pattern = "\\.laz$")) > 0) {
+  laz_dir <- laz_norm_lasr
+} else {
+  laz_dir <- laz_norm_lidr
+}
+laz_files <- list.files(laz_dir, pattern = "\\.laz$", full.names = TRUE)
+
+# Fichier des placettes terrain (créé dans T01)
+placettes_gpkg <- file.path(data_dir, "placettes_lidar.gpkg")
+```
+
+```{r ex-5-1b, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-5-1b-setup"}
+library(lidaRtRee)
+library(lidR)
+library(sf)
+library(future)
+library(future.apply)
+
+cat("=== Extraction des métriques ABA sur les placettes terrain ===\n\n")
+
+# ==========================================================================
+# 1. CHARGEMENT DU CATALOGUE LIDAR
+# ==========================================================================
+cat("--- 1. Chargement du catalogue LiDAR ---\n")
+
+if (length(laz_files) == 0) {
+  stop("Aucun fichier LAZ normalisé trouvé. Exécutez d'abord l'exercice 5.1a ou la section 3.")
+}
+
+cat("Source:", laz_dir, "\n")
+ctg <- readLAScatalog(laz_files)
+opt_progress(ctg) <- FALSE
+
+cat("Fichiers LAZ:", length(laz_files), "\n")
+cat("Emprise:", round(st_bbox(ctg)[c("xmin", "ymin", "xmax", "ymax")]), "\n")
+cat("Surface totale:", round(st_area(st_as_sfc(st_bbox(ctg))) / 10000, 2), "ha\n\n")
+
+# ==========================================================================
+# 2. CHARGEMENT DES PLACETTES TERRAIN
+# ==========================================================================
+cat("--- 2. Chargement des placettes terrain ---\n")
+
+if (!file.exists(placettes_gpkg)) {
+  stop("Fichier placettes_lidar.gpkg non trouvé. Exécutez d'abord l'exercice 6.1 du tutoriel T01.")
+}
+
+# Charger les placettes
+plots_sf <- st_read(placettes_gpkg, layer = "placettes_metrics", quiet = TRUE)
+cat("Placettes chargées:", nrow(plots_sf), "\n")
+
+# Filtrer les placettes dans l'emprise du catalogue
+ctg_bbox <- st_as_sfc(st_bbox(ctg))
+plots_in_extent <- plots_sf[st_intersects(plots_sf, ctg_bbox, sparse = FALSE), ]
+cat("Placettes dans l'emprise du catalogue:", nrow(plots_in_extent), "\n")
+
+if (nrow(plots_in_extent) == 0) {
+  stop("Aucune placette dans l'emprise du catalogue LiDAR.")
+}
+
+# Paramètres des placettes
+PLOT_RADIUS <- 15  # Rayon standard (m)
+
+cat("Rayon placettes:", PLOT_RADIUS, "m\n")
+cat("Surface placette:", round(pi * PLOT_RADIUS^2, 0), "m² (",
+    round(pi * PLOT_RADIUS^2 / 10000, 4), "ha)\n\n")
+
+# ==========================================================================
+# 3. EXTRACTION DES MÉTRIQUES EN PARALLÈLE
+# ==========================================================================
+cat("--- 3. Extraction des métriques (parallélisé) ---\n")
+
+# Configuration parallélisation
+plan(multisession, workers = 4)
+
+# Fichier de cache pour reprise
+cache_file <- file.path(data_dir, "aba_metrics_placettes.rds")
+
+if (file.exists(cache_file)) {
+  cat("Chargement depuis le cache...\n")
+  metrics_df <- readRDS(cache_file)
+  cat("Métriques chargées:", nrow(metrics_df), "placettes\n\n")
+} else {
+  cat("Traitement en cours...\n")
+  start_time <- Sys.time()
+
+  # Fonction d'extraction par placette
+  extract_plot_metrics <- function(plot_id, x, y, radius, ctg) {
+    tryCatch({
+      # Extraire le nuage de points circulaire
+      las <- clip_circle(ctg, x, y, radius)
+
+      if (is.null(las) || npoints(las) < 10) {
+        return(NULL)
+      }
+
+      # Calculer les métriques ABA avec lidaRtRee
+      metrics <- aba_metrics(
+        Z = las$Z,
+        Intensity = las$Intensity,
+        ReturnNumber = las$ReturnNumber,
+        Classification = las$Classification,
+        class_ground = 2
+      )
+
+      # Ajouter les métadonnées
+      metrics$plot_id <- plot_id
+      metrics$X <- x
+      metrics$Y <- y
+      metrics$n_points <- npoints(las)
+
+      as.data.frame(metrics)
+    }, error = function(e) NULL)
+  }
+
+  # Extraction parallèle
+  coords <- st_coordinates(plots_in_extent)
+  results <- future_lapply(seq_len(nrow(plots_in_extent)), function(i) {
+    extract_plot_metrics(
+      plot_id = plots_in_extent$plot_id[i],
+      x = coords[i, 1],
+      y = coords[i, 2],
+      radius = PLOT_RADIUS,
+      ctg = ctg
+    )
+  }, future.seed = TRUE)
+
+  # Combiner les résultats
+  results <- results[!sapply(results, is.null)]
+  metrics_df <- do.call(rbind, results)
+
+  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+  cat("Temps de traitement:", round(elapsed, 1), "s\n")
+  cat("Placettes traitées:", nrow(metrics_df), "/", nrow(plots_in_extent), "\n\n")
+
+  # Sauvegarder en cache
+  saveRDS(metrics_df, cache_file)
+  cat("Cache sauvegardé:", cache_file, "\n\n")
+}
+
+plan(sequential)
+
+# ==========================================================================
+# 4. STATISTIQUES ET VISUALISATION
+# ==========================================================================
+cat("--- 4. Statistiques des métriques extraites ---\n\n")
 
 cat("Métriques de hauteur:\n")
-cat("  zmax:", round(metrics$zmax, 2), "m\n")
-cat("  zmean:", round(metrics$zmean, 2), "m\n")
-cat("  zsd:", round(metrics$zsd, 2), "m\n")
-cat("  zskew:", round(metrics$zskew, 3), "(asymétrie)\n")
-cat("  zkurt:", round(metrics$zkurt, 3), "(aplatissement)\n\n")
+cat("  zmax  - moy:", round(mean(metrics_df$zmax, na.rm = TRUE), 2), "m,",
+    "sd:", round(sd(metrics_df$zmax, na.rm = TRUE), 2), "m\n")
+cat("  zmean - moy:", round(mean(metrics_df$zmean, na.rm = TRUE), 2), "m,",
+    "sd:", round(sd(metrics_df$zmean, na.rm = TRUE), 2), "m\n")
+cat("  zq95  - moy:", round(mean(metrics_df$zq95, na.rm = TRUE), 2), "m,",
+    "sd:", round(sd(metrics_df$zq95, na.rm = TRUE), 2), "m\n\n")
 
-cat("Percentiles de hauteur:\n")
-cat("  zq25:", round(metrics$zq25, 2), "m\n")
-cat("  zq50:", round(metrics$zq50, 2), "m\n")
-cat("  zq75:", round(metrics$zq75, 2), "m\n")
-cat("  zq95:", round(metrics$zq95, 2), "m\n\n")
+cat("Percentiles (moyennes):\n")
+cat("  zq25:", round(mean(metrics_df$zq25, na.rm = TRUE), 2), "m\n")
+cat("  zq50:", round(mean(metrics_df$zq50, na.rm = TRUE), 2), "m\n")
+cat("  zq75:", round(mean(metrics_df$zq75, na.rm = TRUE), 2), "m\n")
+cat("  zq95:", round(mean(metrics_df$zq95, na.rm = TRUE), 2), "m\n\n")
 
-cat("Métriques de couverture:\n")
-cat("  pzabove2:", round(metrics$pzabove2 * 100, 1), "%\n")
-cat("  pzabove5:", round(metrics$pzabove5 * 100, 1), "%\n\n")
+cat("Couverture canopée (moyennes):\n")
+cat("  > 2m:", round(mean(metrics_df$pzabove2, na.rm = TRUE) * 100, 1), "%\n")
+cat("  > 5m:", round(mean(metrics_df$pzabove5, na.rm = TRUE) * 100, 1), "%\n\n")
 
-cat("Nombre total de métriques:", length(metrics), "\n")
+cat("Nombre de métriques par placette:", ncol(metrics_df) - 4, "\n")
+
+# ==========================================================================
+# 5. COMPARAISON AVEC LES MÉTRIQUES TERRAIN
+# ==========================================================================
+cat("\n--- 5. Comparaison avec les métriques existantes ---\n\n")
+
+# Joindre les métriques extraites aux placettes terrain
+plots_with_metrics <- merge(
+  st_drop_geometry(plots_in_extent),
+  metrics_df,
+  by = "plot_id",
+  suffixes = c("_terrain", "_extrait")
+)
+
+if ("zq95" %in% names(plots_in_extent) && "zq95" %in% names(metrics_df)) {
+  cat("Corrélation zq95 (terrain vs extrait):",
+      round(cor(plots_with_metrics$zq95_terrain, plots_with_metrics$zq95_extrait,
+                use = "complete.obs"), 3), "\n")
+}
+
+# Visualisation
+par(mfrow = c(2, 2))
+
+hist(metrics_df$zq95, breaks = 15, col = "forestgreen",
+     main = "Distribution zq95 (extrait)", xlab = "Hauteur (m)")
+
+hist(metrics_df$pzabove2 * 100, breaks = 15, col = "darkgreen",
+     main = "Couverture > 2m", xlab = "Couverture (%)")
+
+plot(metrics_df$zq95, metrics_df$pzabove2 * 100, pch = 16, cex = 1.2,
+     col = rgb(0, 0.5, 0, 0.7),
+     main = "zq95 vs Couverture", xlab = "zq95 (m)", ylab = "Couverture > 2m (%)")
+
+# Carte des placettes
+plot(metrics_df$X, metrics_df$Y, pch = 19, cex = 2,
+     col = hcl.colors(100, "Greens")[cut(metrics_df$zq95, 100)],
+     main = "Carte zq95 par placette", xlab = "X", ylab = "Y", asp = 1)
 ```
 
 ### Exercice 5.2 : Métriques d'arbres avec std_tree_metrics()
@@ -1833,7 +2132,23 @@ cat("  H_dom:", round(tree_metrics$H_dom, 2), "m (100 plus grands/ha)\n\n")
 cat("Métriques de structure:\n")
 cat("  Gini:", round(tree_metrics$Gini, 3), "(inégalité des hauteurs)\n")
 cat("  Cover:", round(tree_metrics$Cover * 100, 1), "% (couverture houppiers)\n")
-cat("  Vol_mean:", round(tree_metrics$Vol_mean, 1), "m³ (volume houppier moyen)\n")
+cat("  Vol_mean:", round(tree_metrics$Vol_mean, 1), "m³ (volume houppier moyen)\n\n")
+
+# Indice de Simpson sur les classes de hauteur
+# Simpson = 1 - Σ(pi²) où pi = proportion dans chaque classe
+# Mesure la diversité : 0 = une seule classe, 1 = distribution uniforme
+classes_hauteur <- cut(trees$height,
+                        breaks = c(0, 5, 10, 15, 20, 25, 30, Inf),
+                        labels = c("0-5", "5-10", "10-15", "15-20", "20-25", "25-30", ">30"))
+freq_classes <- table(classes_hauteur) / length(trees$height)
+simpson <- 1 - sum(freq_classes^2)
+
+cat("Indice de diversité:\n")
+cat("  Simpson:", round(simpson, 3), "(diversité des classes de hauteur)\n")
+cat("  Interprétation: 0 = homogène, 1 = très diversifié\n\n")
+
+cat("Distribution par classe de hauteur:\n")
+print(table(classes_hauteur))
 
 # Histogramme des hauteurs
 hist(trees$height, breaks = seq(0, max(trees$height) + 5, by = 5),
@@ -1908,7 +2223,8 @@ for (s in seuils) {
 | pzabove2, pzabove5 | `aba_metrics()` | Couverture canopée | A1, C1 |
 | N_ha, N_sup10 | `std_tree_metrics()` | Densité d'arbres | P1, E1 |
 | H_mean, H_dom | `std_tree_metrics()` | Hauteur moyenne/dominante | P1, P3 |
-| Gini | `std_tree_metrics()` | Hétérogénéité | B2 |
+| Gini | `std_tree_metrics()` | Hétérogénéité (inégalité) | B2 |
+| Simpson | calcul manuel | Diversité des classes de hauteur | B2 |
 | gap_surface | `gap_detection()` | Surface en trouées | B2 |
 | edge_pct | `edge_detection()` | % de lisières | L1 |
 
