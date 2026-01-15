@@ -2471,13 +2471,16 @@ cat("--- 1. Chargement des coordonnées ---\n")
 
 plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
-  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
-            select(Id, X, Y) |>
-            mutate(cluster_id = sub("_PiquetsTerrain\\.csv$", "", basename(.x)))) |>
-  filter(Id %in% c("p1", "p2", "p3", "p4")) |>
-  mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
+  map_dfr(~ {
+    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+    df <- df[, c("Id", "X", "Y")]
+    df$cluster_id <- sub("_PiquetsTerrain\\.csv$", "", basename(.x))
+    df
+  }) |>
+  dplyr::filter(Id %in% c("p1", "p2", "p3", "p4")) |>
+  dplyr::mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
 
-cat("Clusters chargés:", n_distinct(plots$cluster_id), "\n")
+cat("Clusters chargés:", dplyr::n_distinct(plots$cluster_id), "\n")
 cat("Placettes:", nrow(plots), "\n\n")
 
 # ==========================================================================
@@ -2487,24 +2490,27 @@ cat("--- 2. Calcul des paramètres de peuplement ---\n")
 
 trees <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots$plot_id))) |>
-  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
-            select(Diam, Aspect) |>
-            mutate(plot_id = sub("_ArbresTerrain\\.csv$", "", basename(.x)))) |>
-  filter(!is.na(Diam), Diam >= dbh_min, Aspect %in% c(1, 2))
+  map_dfr(~ {
+    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+    df <- df[, c("Diam", "Aspect")]
+    df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
+    df
+  }) |>
+  dplyr::filter(!is.na(Diam), Diam >= dbh_min, Aspect %in% c(1, 2))
 
 # Calcul des paramètres de peuplement avec dplyr
 stand_params <- trees |>
-  group_by(plot_id) |>
-  summarise(
+  dplyr::group_by(plot_id) |>
+  dplyr::summarise(
     G_m2_ha = sum(pi * (Diam / 200)^2) / plot_area_ha,
-    N_ha = n() / plot_area_ha,
+    N_ha = dplyr::n() / plot_area_ha,
     D_mean_cm = mean(Diam),
     .groups = "drop"
   )
 
 # Fusionner et créer objet sf
 plots_sf <- plots |>
-  left_join(stand_params, by = "plot_id") |>
+  dplyr::left_join(stand_params, by = "plot_id") |>
   st_as_sf(coords = c("X", "Y"), crs = 2154)
 
 cat("Placettes avec données terrain:", sum(!is.na(plots_sf$G_m2_ha)), "\n\n")
@@ -2630,27 +2636,33 @@ cat("\n--- 3. Fusion avec données terrain ---\n")
 # Charger placettes
 plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
-  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
-            select(Id, X, Y) |>
-            mutate(cluster_id = sub("_PiquetsTerrain\\.csv$", "", basename(.x)))) |>
-  filter(Id %in% c("p1", "p2", "p3", "p4")) |>
-  mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
+  map_dfr(~ {
+    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+    df <- df[, c("Id", "X", "Y")]
+    df$cluster_id <- sub("_PiquetsTerrain\\.csv$", "", basename(.x))
+    df
+  }) |>
+  dplyr::filter(Id %in% c("p1", "p2", "p3", "p4")) |>
+  dplyr::mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
 
 # Charger arbres et calculer G
 stand_params <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots$plot_id))) |>
-  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
-            select(Diam, Aspect) |>
-            mutate(plot_id = sub("_ArbresTerrain\\.csv$", "", basename(.x)))) |>
-  filter(!is.na(Diam), Diam >= 7.5, Aspect %in% c(1, 2)) |>
-  group_by(plot_id) |>
-  summarise(G_m2_ha = sum(pi * (Diam / 200)^2) / plot_area_ha, .groups = "drop")
+  map_dfr(~ {
+    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+    df <- df[, c("Diam", "Aspect")]
+    df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
+    df
+  }) |>
+  dplyr::filter(!is.na(Diam), Diam >= 7.5, Aspect %in% c(1, 2)) |>
+  dplyr::group_by(plot_id) |>
+  dplyr::summarise(G_m2_ha = sum(pi * (Diam / 200)^2) / plot_area_ha, .groups = "drop")
 
 # Fusionner terrain + LiDAR
 plots_aba <- plots |>
-  select(plot_id) |>
-  left_join(stand_params, by = "plot_id") |>
-  inner_join(metrics, by = "plot_id")
+  dplyr::select(plot_id) |>
+  dplyr::left_join(stand_params, by = "plot_id") |>
+  dplyr::inner_join(metrics, by = "plot_id")
 
 cat("Données fusionnées:", nrow(plots_aba), "placettes\n\n")
 
