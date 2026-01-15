@@ -2474,14 +2474,17 @@ cat("Fichiers trouvés:", length(files_t), "\n")
 trees <- files_t |>
   map_dfr(~ {
     df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+    # Convertir Rem en character (types mixtes entre fichiers)
+    if ("Rem" %in% names(df)) df$Rem <- as.character(df$Rem)
     # Extraire plot_id du nom de fichier (ex: Verc-02-1)
     df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
-    df[, c("Dia_cm", "plot_id")]
+    df
   }) |>
   dplyr::filter(!is.na(Dia_cm), Dia_cm >= dbh_min)
 
 cat("Arbres chargés:", nrow(trees), "\n")
-cat("Placettes:", dplyr::n_distinct(trees$plot_id), "\n\n")
+cat("Placettes:", dplyr::n_distinct(trees$plot_id), "\n")
+cat("Colonnes:", paste(names(trees), collapse = ", "), "\n\n")
 
 # ==========================================================================
 # 2. CALCULER G, N, D PAR PLACETTE (dplyr)
