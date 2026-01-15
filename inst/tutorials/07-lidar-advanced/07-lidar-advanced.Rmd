@@ -2430,19 +2430,13 @@ library(lidaRtRee)
 library(sf)
 library(purrr)
 library(dplyr)
-library(stringr)
 
 # Répertoire des données du package
 pkg_data_dir <- system.file("", package = "nemeton")
 if (pkg_data_dir == "") {
-
   pkg_data_dir <- "/home/pascal/Téléchargements/nemeton"
 }
 field_dir <- file.path(pkg_data_dir, "data", "aba.model", "field")
-
-# Liste des 7 clusters dans notre zone d'étude (28 placettes)
-plots_in_extent <- c("Verc-02", "Verc-05", "Verc-06", "Verc-C1",
-                     "Verc-C2", "Verc-S4", "Verc-S7")
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
@@ -2450,11 +2444,10 @@ library(lidaRtRee)
 library(sf)
 library(purrr)
 library(dplyr)
-library(stringr)
 
 cat("=== Chargement des placettes terrain (zone d'étude) ===\n\n")
 
-# Paramètres d'inventaire
+# Paramètres d'inventaire (comme dans le tutoriel lidaRtRee)
 p_radius <- 15
 dbh_min <- 7.5
 plot_area_ha <- pi * p_radius^2 / 10000
@@ -2465,18 +2458,25 @@ cat("  Surface:", round(pi * p_radius^2, 0), "m² (", round(plot_area_ha, 4), "h
 cat("  DHP minimum:", dbh_min, "cm\n\n")
 
 # ==========================================================================
-# 1. CHARGER LES ARBRES DEPUIS *_ArbresTerrain.csv (purrr)
+# 1. LISTER LES FICHIERS ARBRES PAR PATTERN MATCHING (comme tutoriel)
 # ==========================================================================
 cat("--- 1. Chargement des arbres ---\n")
 
-# Le nom du fichier contient directement le plot_id (ex: Verc-02-1_ArbresTerrain.csv)
-trees <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
-  keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
+# Pattern: Verc-XX-Y_ArbresTerrain.csv où XX = cluster, Y = placette
+# Filtrer sur nos 7 clusters: 02, 05, 06, C1, C2, S4, S7
+files_t <- dir(field_dir,
+               pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]_ArbresTerrain\\.csv$",
+               full.names = TRUE)
+
+cat("Fichiers trouvés:", length(files_t), "\n")
+
+# Charger avec purrr::map_dfr (équivalent lapply + do.call(rbind))
+trees <- files_t |>
   map_dfr(~ {
     df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
-    df <- df[, "Dia_cm", drop = FALSE]
+    # Extraire plot_id du nom de fichier (ex: Verc-02-1)
     df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
-    df
+    df[, c("Dia_cm", "plot_id")]
   }) |>
   dplyr::filter(!is.na(Dia_cm), Dia_cm >= dbh_min)
 
@@ -2504,9 +2504,13 @@ cat("Placettes avec mesures:", nrow(stand_params), "\n\n")
 # ==========================================================================
 cat("--- 3. Ajout des coordonnées ---\n")
 
-# Charger les coordonnées des centres de placettes
-coords <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
-  keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
+# Pattern pour les fichiers piquets (centres de placettes)
+files_p <- dir(field_dir,
+               pattern = "Verc-(02|05|06|C1|C2|S4|S7)_PiquetsTerrain\\.csv$",
+               full.names = TRUE)
+
+# Charger les coordonnées avec purrr::map_dfr
+coords <- files_p |>
   map_dfr(~ {
     df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
     df <- df[df$Id %in% c("p1", "p2", "p3", "p4"), c("Id", "X", "Y")]
@@ -2556,7 +2560,6 @@ library(sf)
 library(purrr)
 library(furrr)
 library(dplyr)
-library(stringr)
 
 # Répertoire des données
 pkg_data_dir <- system.file("", package = "nemeton")
@@ -2566,9 +2569,6 @@ if (pkg_data_dir == "") {
 field_dir <- file.path(pkg_data_dir, "data", "aba.model", "field")
 laz_dir <- file.path(pkg_data_dir, "data", "aba.model", "ALS", "plots.norm.laz")
 
-# Placettes de notre zone d'étude
-plots_in_extent <- c("Verc-02", "Verc-05", "Verc-06", "Verc-C1",
-                     "Verc-C2", "Verc-S4", "Verc-S7")
 p_radius <- 15
 plot_area_ha <- pi * p_radius^2 / 10000
 ```
@@ -2580,7 +2580,6 @@ library(sf)
 library(purrr)
 library(furrr)
 library(dplyr)
-library(stringr)
 
 cat("=== Extraction des métriques LiDAR (28 placettes) ===\n\n")
 
@@ -2594,9 +2593,10 @@ n_workers <- min(4L, parallel::detectCores() - 1L)
 plan(multisession, workers = n_workers)
 cat("Workers:", n_workers, "\n")
 
-# Lister et filtrer les fichiers LAZ (purrr)
-laz_files <- dir(laz_dir, pattern = "\\.laz$", full.names = TRUE) |>
-  keep(~ any(str_detect(basename(.x), plots_in_extent)))
+# Lister les fichiers LAZ par pattern matching (7 clusters × 4 placettes)
+laz_files <- dir(laz_dir,
+                 pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
+                 full.names = TRUE)
 
 cat("Fichiers LAZ:", length(laz_files), "\n")
 
@@ -2626,13 +2626,13 @@ cat("Placettes:", nrow(metrics), "\n\n")
 
 # Résumé des métriques principales
 metrics |>
-  summarise(
+  dplyr::summarise(
     zmax_moy = mean(zmax),
     zmean_moy = mean(zmean),
     zq95_moy = mean(zq95),
     couv_2m = mean(pzabove2) * 100
   ) |>
-  mutate(across(everything(), ~ round(.x, 2))) |>
+  dplyr::mutate(across(everything(), ~ round(.x, 2))) |>
   print()
 
 # ==========================================================================
@@ -2640,14 +2640,16 @@ metrics |>
 # ==========================================================================
 cat("\n--- 3. Fusion avec données terrain ---\n")
 
-# Charger arbres depuis *_ArbresTerrain.csv (le nom contient le plot_id)
-stand_params <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
-  keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
+# Charger arbres depuis *_ArbresTerrain.csv par pattern matching
+files_t <- dir(field_dir,
+               pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]_ArbresTerrain\\.csv$",
+               full.names = TRUE)
+
+stand_params <- files_t |>
   map_dfr(~ {
     df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
-    df <- df[, "Dia_cm", drop = FALSE]
     df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
-    df
+    df[, c("Dia_cm", "plot_id")]
   }) |>
   dplyr::filter(!is.na(Dia_cm), Dia_cm >= 7.5) |>
   dplyr::group_by(plot_id) |>
