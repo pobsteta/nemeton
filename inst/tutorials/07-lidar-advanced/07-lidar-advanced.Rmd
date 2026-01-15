@@ -2430,6 +2430,7 @@ library(lidaRtRee)
 library(sf)
 library(purrr)
 library(dplyr)
+library(tidyr)
 
 # Répertoire des données du package (inst/extdata après installation)
 field_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
@@ -2444,6 +2445,7 @@ library(lidaRtRee)
 library(sf)
 library(purrr)
 library(dplyr)
+library(tidyr)
 
 cat("=== Chargement des placettes terrain (zone d'étude) ===\n\n")
 
