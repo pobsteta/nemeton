@@ -2708,8 +2708,13 @@ abline(lm(G_m2_ha ~ pzabove2, data = plots_aba), col = "red", lwd = 2)
 
 ### Exercice 6.3 : Métriques BABA avec lasR (haute performance)
 
-Pour les gros jeux de données, lasR permet le calcul BABA (Buffered Area-Based Approach)
-sur les tuiles LAZ normalisées de notre zone d'étude.
+Le **BABA (Buffered Area-Based Approach)** est une amélioration de l'ABA classique avec plusieurs avantages :
+
+1. **Décorrélation résolution / fenêtre de calcul** : pixels fins (10m) mais métriques calculées sur grandes fenêtres (30m)
+2. **Compatibilité placettes terrain** : fenêtre 30×30m (900 m²) proche des placettes de rayon 15m (707 m²)
+3. **Lissage spatial + haute résolution** : métriques stables sur grandes fenêtres, cartes à résolution fine
+4. **Réduction des effets de bord** : fenêtres chevauchantes → transitions douces entre pixels
+5. **Performance lasR** : calcul C++ ultra-rapide, gestion automatique des buffers, parallélisation native
 
 ```{r ex-6-3-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -2724,10 +2729,15 @@ laz_norm_dir <- file.path(data_dir, "result_laz_normalized")
 ```
 
 ```{r ex-6-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-6-3-setup"}
-cat("=== BABA avec lasR ===\n\n")
+cat("=== BABA (Buffered Area-Based Approach) avec lasR ===\n\n")
 
-cat("BABA = Buffered Area-Based Approach\n")
-cat("Avantage: résolution de sortie ≠ taille de fenêtre de calcul\n\n")
+cat("AVANTAGES DU BABA vs ABA classique:\n")
+cat("─────────────────────────────────────────────────────\n")
+cat("1. Résolution ≠ fenêtre : pixels 10m, calcul sur 30m\n")
+cat("2. Compatible placettes : fenêtre ~900m² ≈ placettes ~707m²\n")
+cat("3. Lissage + précision : métriques stables, cartes fines\n")
+cat("4. Pas d'effets de bord : fenêtres chevauchantes\n")
+cat("5. Ultra-rapide : lasR en C++ avec parallélisation\n\n")
 
 if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("lasR n'est pas installé. Installez-le avec:\n")
