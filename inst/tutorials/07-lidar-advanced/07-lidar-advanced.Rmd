@@ -70,6 +70,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
 # Charger les placettes lidaRtRee (96 placettes de 15m, projet Newfor)
 # Les données sont dans le dossier vignettes/data du package lidaRtRee
@@ -230,6 +231,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
 # Lister les 18 dalles LiDAR HD des Quatre Montagnes (recherche récursive)
 fichiers_laz <- list.files(
@@ -261,6 +263,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 if (length(fichiers_laz) > 0) {
@@ -314,6 +317,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
                            pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
 if (length(fichiers_laz) > 0) {
@@ -1305,6 +1309,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
 # Lister les tuiles CHM filled (générées en section 3)
 chm_tiles <- list.files(file.path(data_dir, "result_itd"),
@@ -1458,6 +1463,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
 # Charger les polygones par tuile (générés en 4.1)
 gaps_by_tile <- file.path(data_dir, "result_gaps", "gaps_by_tile.rds")
@@ -1520,6 +1526,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
 # Lister les tuiles de masques de trouées (générées en 4.1)
 gap_mask_tiles <- list.files(file.path(data_dir, "result_gaps"),
@@ -1747,13 +1754,15 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Résoudre le chemin complet (évite les problèmes avec ~)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
 # Répertoire des fichiers LAZ bruts (téléchargés)
-laz_raw_dir <- file.path(data_dir, "laz")
-laz_raw_files <- list.files(laz_raw_dir, pattern = "\\.la[sz]$", full.names = TRUE)
+laz_raw_dir <- file.path(data_dir, "lidar_hd")
+laz_raw_files <- list.files(laz_raw_dir, pattern = "\\.la[sz]$", full.names = TRUE, recursive = TRUE)
 
 # Répertoire de sortie pour les fichiers normalisés
-laz_norm_dir <- file.path(data_dir, "laz_normalized_lasr")
+laz_norm_dir <- file.path(data_dir, "result_laz_normalized")
 dir.create(laz_norm_dir, showWarnings = FALSE, recursive = TRUE)
 ```
 
@@ -1881,17 +1890,12 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+# Résoudre le chemin complet (évite les problèmes avec ~)
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
-# Priorité aux fichiers normalisés par lasR, sinon ceux de la section 3
-laz_norm_lasr <- file.path(data_dir, "laz_normalized_lasr")
-laz_norm_lidr <- file.path(data_dir, "laz_normalized")
-
-if (length(list.files(laz_norm_lasr, pattern = "\\.laz$")) > 0) {
-  laz_dir <- laz_norm_lasr
-} else {
-  laz_dir <- laz_norm_lidr
-}
-laz_files <- list.files(laz_dir, pattern = "\\.laz$", full.names = TRUE)
+# Fichiers normalisés par lasR (exercice 5.1a)
+laz_norm_dir <- file.path(data_dir, "result_laz_normalized")
+laz_files <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
 
 # Fichier des placettes terrain (créé dans T01)
 placettes_gpkg <- file.path(data_dir, "placettes_lidar.gpkg")
@@ -1912,10 +1916,10 @@ cat("=== Extraction des métriques ABA sur les placettes terrain ===\n\n")
 cat("--- 1. Chargement du catalogue LiDAR ---\n")
 
 if (length(laz_files) == 0) {
-  stop("Aucun fichier LAZ normalisé trouvé. Exécutez d'abord l'exercice 5.1a ou la section 3.")
+  stop("Aucun fichier LAZ normalisé trouvé. Exécutez d'abord l'exercice 5.1a.")
 }
 
-cat("Source:", laz_dir, "\n")
+cat("Source:", laz_norm_dir, "\n")
 ctg <- readLAScatalog(laz_files)
 opt_progress(ctg) <- FALSE
 
@@ -2311,6 +2315,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
@@ -2364,6 +2369,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 # Charger les placettes
 if (requireNamespace("lidaRtRee", quietly = TRUE)) {
   data("quatre_montagnes", package = "lidaRtRee", envir = environment())
@@ -3133,6 +3139,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
 ```
 
 ```{r ex-8-4, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-4-setup"}
