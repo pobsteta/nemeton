@@ -2725,9 +2725,9 @@ if (laz_dir == "") {
 
 # Répertoire de sortie
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  output_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  output_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 } else {
-  output_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  output_dir <- normalizePath(file.path(path.expand("~"), "nemeton_tutorial_data"), mustWork = FALSE)
 }
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 ```
@@ -2769,6 +2769,8 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("  - res = c(10, 30) : pixel 10m, fenêtre 30m\n\n")
 
   # Pipeline BABA
+  # Créer le répertoire de sortie (nécessaire dans l'exercice)
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   output_file <- file.path(output_dir, "metriques_baba_28plots.tif")
 
   pipeline_baba <- reader_las() +
