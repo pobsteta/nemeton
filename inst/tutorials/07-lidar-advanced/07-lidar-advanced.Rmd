@@ -1312,7 +1312,7 @@ chm_tiles <- list.files(file.path(data_dir, "result_itd"),
                         full.names = TRUE)
 ```
 
-```{r ex-4-1, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-4-1-setup"}
+```{r ex-4-1, exercise=TRUE, exercise.timelimit=10000, exercise.setup="ex-4-1-setup"}
 library(lidaRtRee)
 library(terra)
 library(sf)
@@ -1336,6 +1336,22 @@ dir.create(gap_mask_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Fonction de traitement par tuile
 process_gaps_tile <- function(chm_path, tile_id, output_dir) {
+  tile_name <- tools::file_path_sans_ext(basename(chm_path))
+  mask_file <- file.path(output_dir, paste0("gap_mask_", tile_name, ".tif"))
+  gpkg_file <- file.path(output_dir, paste0("gaps_", tile_name, ".gpkg"))
+
+  # Si le masque existe déjà, recharger les données existantes
+  if (file.exists(mask_file)) {
+    gap_sf <- NULL
+    if (file.exists(gpkg_file)) {
+      gap_sf <- tryCatch(
+        sf::st_read(gpkg_file, quiet = TRUE),
+        error = function(e) NULL
+      )
+    }
+    return(list(sf = gap_sf, mask_file = mask_file, skipped = TRUE))
+  }
+
   # Charger le CHM
   chm <- terra::rast(chm_path)
 
@@ -1354,8 +1370,6 @@ process_gaps_tile <- function(chm_path, tile_id, output_dir) {
 
   # Sauvegarder le masque binaire des trouées (pour 4.2)
   gap_binary <- gaps$gap_id > 0
-  tile_name <- tools::file_path_sans_ext(basename(chm_path))
-  mask_file <- file.path(output_dir, paste0("gap_mask_", tile_name, ".tif"))
   terra::writeRaster(gap_binary, mask_file, overwrite = TRUE)
 
   # Vectoriser les trouées (gap_id > 0)
@@ -1363,7 +1377,7 @@ process_gaps_tile <- function(chm_path, tile_id, output_dir) {
   gap_mask[gap_mask == 0] <- NA
 
   if (all(is.na(values(gap_mask)))) {
-    return(list(sf = NULL, mask_file = mask_file))
+    return(list(sf = NULL, mask_file = mask_file, skipped = FALSE))
   }
 
   # Convertir en polygones
@@ -1378,7 +1392,10 @@ process_gaps_tile <- function(chm_path, tile_id, output_dir) {
   # Décaler les IDs pour éviter les doublons entre tuiles
   gap_sf$gap_id <- gap_sf$gap_id + (tile_id - 1) * 10000
 
-  list(sf = gap_sf, mask_file = mask_file)
+  # Sauvegarder les polygones pour reprise ultérieure
+  sf::st_write(gap_sf, gpkg_file, delete_dsn = TRUE, quiet = TRUE)
+
+  list(sf = gap_sf, mask_file = mask_file, skipped = FALSE)
 }
 
 # Traitement parallèle
@@ -1395,21 +1412,69 @@ elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
 sf_list <- lapply(results, `[[`, "sf")
 sf_list <- sf_list[!sapply(sf_list, is.null)]
 mask_files <- sapply(results, `[[`, "mask_file")
+skipped <- sapply(results, `[[`, "skipped")
+
+# Filtrer les fichiers de masque existants
+mask_files_exist <- mask_files[file.exists(mask_files)]
 
 # Créer le VRT des masques (pour réutilisation en 4.2)
-gap_mask_vrt <- file.path(data_dir, "gap_mask_complet.vrt")
-terra::vrt(mask_files, gap_mask_vrt, overwrite = TRUE)
+# Utiliser normalizePath pour résoudre les chemins (évite problèmes avec ~)
+gap_mask_vrt <- normalizePath(file.path(data_dir, "gap_mask_complet.vrt"), mustWork = FALSE)
+if (length(mask_files_exist) > 0) {
+  mask_files_normalized <- normalizePath(mask_files_exist)
+  terra::vrt(mask_files_normalized, gap_mask_vrt, overwrite = TRUE)
+  cat("VRT créé:", gap_mask_vrt, "\n")
+} else {
+  cat("Aucun fichier de masque trouvé, VRT non créé\n")
+}
 
 cat("\n=== Résultats ===\n")
 cat("Temps de traitement:", round(elapsed, 1), "s\n")
-cat("Tuiles de masques créées:", length(mask_files), "\n")
-cat("VRT créé:", gap_mask_vrt, "\n\n")
+cat("Tuiles totales:", length(chm_tiles), "\n")
+cat("Tuiles sautées (déjà traitées):", sum(skipped), "\n")
+cat("Tuiles nouvellement traitées:", sum(!skipped), "\n")
+cat("Fichiers de masque existants:", length(mask_files_exist), "\n")
+cat("Tuiles avec trouées:", length(sf_list), "\n")
+
+# Sauvegarder les polygones par tuile pour l'exercice 4.2
+gaps_by_tile <- file.path(data_dir, "result_gaps", "gaps_by_tile.rds")
+saveRDS(sf_list, gaps_by_tile)
+cat("Polygones par tuile sauvegardés:", gaps_by_tile, "\n")
+
+plan(sequential)
+```
+
+### Exercice 4.2 : Fusion des polygones de trouées
+
+Fusionnez les polygones de trouées détectés par tuile en un seul fichier
+et analysez la distribution des surfaces.
+
+```{r ex-4-2-setup}
+library(sf)
+
+# Répertoire des données
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+
+# Charger les polygones par tuile (générés en 4.1)
+gaps_by_tile <- file.path(data_dir, "result_gaps", "gaps_by_tile.rds")
+sf_list <- readRDS(gaps_by_tile)
+```
+
+```{r ex-4-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-4-2-setup"}
+library(sf)
+
+cat("=== Fusion des polygones de trouées ===\n\n")
+cat("Tuiles à fusionner:", length(sf_list), "\n\n")
 
 # Fusionner les polygones de trouées
 if (length(sf_list) > 0) {
   gaps_all <- do.call(rbind, sf_list)
 
-  cat("--- TROUÉES ---\n")
+  cat("--- STATISTIQUES ---\n")
   cat("Trouées détectées:", nrow(gaps_all), "\n")
   cat("Surface totale:", round(sum(gaps_all$area_m2) / 10000, 2), "ha\n")
   cat("Surface moyenne:", round(mean(gaps_all$area_m2), 1), "m²\n")
@@ -1425,7 +1490,7 @@ if (length(sf_list) > 0) {
   classes <- c(0, 50, 100, 500, 2000, Inf)
   gaps_all$classe <- cut(gaps_all$area_m2, breaks = classes,
                           labels = c("<50", "50-100", "100-500", "500-2000", ">2000"))
-  cat("\nDistribution par classe de surface:\n")
+  cat("\n--- DISTRIBUTION PAR CLASSE DE SURFACE ---\n")
   print(table(gaps_all$classe))
 
   # Visualisation
@@ -1435,16 +1500,14 @@ if (length(sf_list) > 0) {
 } else {
   cat("Aucune trouée détectée.\n")
 }
-
-plan(sequential)
 ```
 
-### Exercice 4.2 : Détection des lisières sur le catalogue (parallélisé)
+### Exercice 4.3 : Détection des lisières sur le catalogue (parallélisé)
 
 Détectez les lisières forestières sur l'ensemble du catalogue en réutilisant
 les masques de trouées générés en 4.1, avec traitement parallélisé par tuile.
 
-```{r ex-4-2-setup}
+```{r ex-4-3-setup}
 library(lidaRtRee)
 library(terra)
 library(sf)
@@ -1464,7 +1527,7 @@ gap_mask_tiles <- list.files(file.path(data_dir, "result_gaps"),
                               full.names = TRUE)
 ```
 
-```{r ex-4-2, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-4-2-setup"}
+```{r ex-4-3, exercise=TRUE, exercise.timelimit=3000, exercise.setup="ex-4-3-setup"}
 library(lidaRtRee)
 library(terra)
 library(sf)
@@ -1565,11 +1628,11 @@ if (length(results) > 0) {
 plan(sequential)
 ```
 
-### Exercice 4.3 : Statistiques des trouées
+### Exercice 4.4 : Statistiques des trouées
 
 Analysez la distribution des tailles de trouées.
 
-```{r ex-4-3-setup}
+```{r ex-4-4-setup}
 library(lidaRtRee)
 library(terra)
 data(chm_chablais3)
@@ -1579,7 +1642,7 @@ chm[chm < 0] <- 0
 gaps <- gap_detection(chm, ratio = NULL, gap_max_height = 1, min_gap_surface = 0)
 ```
 
-```{r ex-4-3, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-4-3-setup"}
+```{r ex-4-4, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-4-4-setup"}
 library(terra)
 
 # Extraire les surfaces de trouées
