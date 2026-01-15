@@ -1766,7 +1766,7 @@ laz_norm_dir <- file.path(data_dir, "result_laz_normalized")
 dir.create(laz_norm_dir, showWarnings = FALSE, recursive = TRUE)
 ```
 
-```{r ex-5-1a, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-5-1a-setup"}
+```{r ex-5-1a, exercise=TRUE, exercise.timelimit=2400, exercise.setup="ex-5-1a-setup"}
 library(lasR)
 
 cat("=== Normalisation des fichiers LAZ avec lasR ===\n\n")
@@ -1807,27 +1807,53 @@ cat("  4. write_las()       - Écriture des fichiers normalisés\n\n")
 # ==========================================================================
 cat("--- 3. Normalisation (parallélisée) ---\n")
 
-# Vérifier si déjà traité
-existing_norm <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
-if (length(existing_norm) >= length(laz_raw_files)) {
-  cat("Fichiers déjà normalisés:", length(existing_norm), "\n")
-  cat("Utilisation du cache existant.\n\n")
-} else {
+# Identifier les fichiers déjà normalisés
+files_to_process <- character(0)
+files_skipped <- character(0)
+
+for (f in laz_raw_files) {
+  # Nom du fichier normalisé attendu
+  base_name <- tools::file_path_sans_ext(basename(f))
+  norm_file <- file.path(laz_norm_dir, paste0(base_name, "_norm.laz"))
+
+  if (file.exists(norm_file)) {
+    files_skipped <- c(files_skipped, f)
+  } else {
+    files_to_process <- c(files_to_process, f)
+  }
+}
+
+cat("Fichiers à traiter:", length(files_to_process), "\n")
+cat("Fichiers ignorés (déjà normalisés):", length(files_skipped), "\n\n")
+
+if (length(files_skipped) > 0) {
+  cat("Fichiers ignorés:\n")
+  for (f in files_skipped) {
+    cat("  - [SKIP]", basename(f), "\n")
+  }
+  cat("\n")
+}
+
+if (length(files_to_process) > 0) {
   cat("Traitement en cours...\n")
   start_time <- Sys.time()
 
   # Construction du pipeline lasR
+  tri <- triangulate(filter = keep_ground())
   pipeline <- reader_las() +
-    triangulate(filter = keep_ground()) +
-    transform_with(stage(triangulate), operator = "-") +
+    tri +
+    transform_with(tri, operator = "-") +
     write_las(ofile = paste0(laz_norm_dir, "/*_norm.laz"))
 
-  # Exécution parallélisée
-  ans <- exec(pipeline, on = laz_raw_files, ncores = n_cores, progress = TRUE)
+  # Exécution parallélisée sur les fichiers restants
+
+  ans <- exec(pipeline, on = files_to_process, ncores = n_cores, progress = TRUE)
 
   elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
   cat("\nTemps de traitement:", round(elapsed, 1), "s\n")
-  cat("Vitesse:", round(length(laz_raw_files) / elapsed * 60, 1), "fichiers/min\n\n")
+  cat("Vitesse:", round(length(files_to_process) / elapsed * 60, 1), "fichiers/min\n\n")
+} else {
+  cat("Tous les fichiers sont déjà normalisés.\n\n")
 }
 
 # ==========================================================================
@@ -1901,7 +1927,7 @@ laz_files <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
 placettes_gpkg <- file.path(data_dir, "placettes_lidar.gpkg")
 ```
 
-```{r ex-5-1b, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-5-1b-setup"}
+```{r ex-5-1b, exercise=TRUE, exercise.timelimit=2400, exercise.setup="ex-5-1b-setup"}
 library(lidaRtRee)
 library(lidR)
 library(sf)
@@ -1938,6 +1964,11 @@ if (!file.exists(placettes_gpkg)) {
 
 # Charger les placettes
 plots_sf <- st_read(placettes_gpkg, layer = "placettes_metrics", quiet = TRUE)
+
+# Créer un identifiant unique si non présent
+if (!"plot_id" %in% names(plots_sf)) {
+  plots_sf$plot_id <- seq_len(nrow(plots_sf))
+}
 cat("Placettes chargées:", nrow(plots_sf), "\n")
 
 # Filtrer les placettes dans l'emprise du catalogue
@@ -1987,11 +2018,11 @@ if (file.exists(cache_file)) {
 
       # Calculer les métriques ABA avec lidaRtRee
       metrics <- aba_metrics(
-        Z = las$Z,
-        Intensity = las$Intensity,
-        ReturnNumber = las$ReturnNumber,
-        Classification = las$Classification,
-        class_ground = 2
+        z = las$Z,
+        i = las$Intensity,
+        rn = las$ReturnNumber,
+        c = las$Classification,
+        hmin = 2
       )
 
       # Ajouter les métadonnées
@@ -2094,70 +2125,127 @@ plot(metrics_df$X, metrics_df$Y, pch = 19, cex = 2,
      main = "Carte zq95 par placette", xlab = "X", ylab = "Y", asp = 1)
 ```
 
-### Exercice 5.2 : Métriques d'arbres avec std_tree_metrics()
+### Exercice 5.2 : Cartographie des métriques d'arbres avec raster_metrics()
 
-Calculez les métriques dérivées de la segmentation d'arbres.
+Utilisez `raster_metrics()` avec `std_tree_metrics()` pour créer une carte
+de métriques d'arbres agrégées par pixel (résolution 25m), comme dans le
+workflow ABA de lidaRtRee.
+
+*Basé sur le tutoriel [Area-based 3: Mapping and inference](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.3.mapping.and.inference.html)*
 
 ```{r ex-5-2-setup}
 library(lidaRtRee)
 library(terra)
 library(sf)
-data(chm_chablais3)
-chm <- terra::rast(chm_chablais3)
-segments <- tree_segmentation(chm, nl_filter = "Median", nl_size = 3,
-                               hmin = 5, crown_prop = 0.5, crown_hmin = 5)
-trees <- tree_extraction(segments, crown = TRUE)
+
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+
+# Charger les arbres extraits en section 3.3 (avec height, area_m2)
+trees_gpkg <- file.path(data_dir, "tree_metrics_complet.gpkg")
+
+if (file.exists(trees_gpkg)) {
+  trees <- sf::st_read(trees_gpkg, quiet = TRUE)
+  # Adapter les noms pour std_tree_metrics (h, s, v)
+  trees$h <- trees$height
+  trees$s <- trees$area_m2
+  trees$v <- trees$s * trees$h * 0.5  # volume conique approximatif
+} else {
+  # Fallback sur données exemple
+  data(chm_chablais3)
+  chm <- terra::rast(chm_chablais3)
+  segments <- tree_segmentation(chm, nl_filter = "Median", nl_size = 3,
+                                 hmin = 5, crown_prop = 0.5, crown_hmin = 5)
+  trees <- tree_extraction(segments, crown = TRUE)
+}
 ```
 
-```{r ex-5-2, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-5-2-setup"}
+```{r ex-5-2, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-5-2-setup"}
 library(lidaRtRee)
+library(terra)
 library(sf)
 
-cat("=== Métriques d'arbres std_tree_metrics() ===\n\n")
+cat("=== Cartographie des métriques d'arbres (workflow ABA) ===\n\n")
 
-# Surface de la zone d'étude (en ha)
-area_ha <- (nrow(chm) * ncol(chm) * res(chm)[1]^2) / 10000
+# Résolution de la grille de sortie (25m = taille typique placette ABA)
+resolution <- 25
+area_ha <- resolution^2 / 10000  # Surface d'un pixel en ha
 
-# Calculer les métriques standard d'arbres
-tree_metrics <- std_tree_metrics(trees, area_ha = area_ha)
+cat("Paramètres:\n")
+cat("  Résolution:", resolution, "m\n")
+cat("  Surface pixel:", round(area_ha, 4), "ha\n")
+cat("  Arbres détectés:", nrow(trees), "\n\n")
 
-cat("Métriques de densité:\n")
-cat("  N_ha:", round(tree_metrics$N_ha, 0), "arbres/ha\n")
-cat("  N_sup10:", round(tree_metrics$N_sup10, 0), "arbres >10m /ha\n")
-cat("  N_sup20:", round(tree_metrics$N_sup20, 0), "arbres >20m /ha\n")
-cat("  N_sup30:", round(tree_metrics$N_sup30, 0), "arbres >30m /ha\n\n")
+# ==========================================================================
+# AGRÉGATION DES MÉTRIQUES PAR PIXEL AVEC raster_metrics()
+# ==========================================================================
+cat("--- Calcul des métriques par pixel (raster_metrics) ---\n")
 
-cat("Métriques de hauteur:\n")
-cat("  H_mean:", round(tree_metrics$H_mean, 2), "m\n")
-cat("  H_max:", round(tree_metrics$H_max, 2), "m\n")
-cat("  H_sd:", round(tree_metrics$H_sd, 2), "m\n")
-cat("  H_dom:", round(tree_metrics$H_dom, 2), "m (100 plus grands/ha)\n\n")
+# Fonction d'agrégation utilisant std_tree_metrics
+metrics_map <- raster_metrics(
 
-cat("Métriques de structure:\n")
-cat("  Gini:", round(tree_metrics$Gini, 3), "(inégalité des hauteurs)\n")
-cat("  Cover:", round(tree_metrics$Cover * 100, 1), "% (couverture houppiers)\n")
-cat("  Vol_mean:", round(tree_metrics$Vol_mean, 1), "m³ (volume houppier moyen)\n\n")
+  trees,
+  res = resolution,
+  fun = function(x) {
+    if (nrow(x) == 0) return(NULL)
+    std_tree_metrics(x, area_ha = area_ha)
+  },
+  output = "raster"
+)
 
-# Indice de Simpson sur les classes de hauteur
-# Simpson = 1 - Σ(pi²) où pi = proportion dans chaque classe
-# Mesure la diversité : 0 = une seule classe, 1 = distribution uniforme
-classes_hauteur <- cut(trees$height,
-                        breaks = c(0, 5, 10, 15, 20, 25, 30, Inf),
-                        labels = c("0-5", "5-10", "10-15", "15-20", "20-25", "25-30", ">30"))
-freq_classes <- table(classes_hauteur) / length(trees$height)
-simpson <- 1 - sum(freq_classes^2)
+cat("Carte de métriques créée:\n")
+cat("  Dimensions:", nrow(metrics_map), "x", ncol(metrics_map), "pixels\n")
+cat("  Métriques:", nlyr(metrics_map), "\n")
+cat("  Noms:", paste(names(metrics_map)[1:5], collapse = ", "), "...\n\n")
 
-cat("Indice de diversité:\n")
-cat("  Simpson:", round(simpson, 3), "(diversité des classes de hauteur)\n")
-cat("  Interprétation: 0 = homogène, 1 = très diversifié\n\n")
+# ==========================================================================
+# STATISTIQUES DES MÉTRIQUES CARTOGRAPHIÉES
+# ==========================================================================
+cat("--- Statistiques des métriques cartographiées ---\n\n")
 
-cat("Distribution par classe de hauteur:\n")
-print(table(classes_hauteur))
+cat("Densité d'arbres (Tree_density):\n")
+cat("  Moyenne:", round(mean(values(metrics_map$Tree_density), na.rm = TRUE), 0), "/ha\n")
+cat("  Écart-type:", round(sd(values(metrics_map$Tree_density), na.rm = TRUE), 0), "/ha\n\n")
 
-# Histogramme des hauteurs
-hist(trees$height, breaks = seq(0, max(trees$height) + 5, by = 5),
-     main = "Distribution des hauteurs d'arbres",
-     xlab = "Hauteur (m)", col = "forestgreen")
+cat("Hauteur moyenne (Tree_meanH):\n")
+cat("  Moyenne:", round(mean(values(metrics_map$Tree_meanH), na.rm = TRUE), 2), "m\n")
+cat("  Écart-type:", round(sd(values(metrics_map$Tree_meanH), na.rm = TRUE), 2), "m\n\n")
+
+cat("Indice de Gini (Tree_giniH):\n")
+cat("  Moyenne:", round(mean(values(metrics_map$Tree_giniH), na.rm = TRUE), 3), "\n")
+cat("  Interprétation: 0 = homogène, 1 = très hétérogène\n\n")
+
+# ==========================================================================
+# VISUALISATION
+# ==========================================================================
+cat("--- Visualisation ---\n")
+
+par(mfrow = c(2, 2))
+
+# Densité d'arbres
+plot(metrics_map$Tree_density, main = "Densité d'arbres (/ha)",
+     col = hcl.colors(50, "YlGn"))
+
+# Hauteur moyenne
+plot(metrics_map$Tree_meanH, main = "Hauteur moyenne (m)",
+     col = hcl.colors(50, "Greens"))
+
+# Gini (hétérogénéité)
+plot(metrics_map$Tree_giniH, main = "Indice de Gini",
+     col = hcl.colors(50, "RdYlGn"))
+
+# Arbres > 20m
+plot(metrics_map$TreeSup20_density, main = "Arbres > 20m (/ha)",
+     col = hcl.colors(50, "Blues"))
+
+cat("\nCette carte de métriques peut être utilisée pour:\n")
+cat("- Prédire des paramètres forestiers (G, V, biomasse) avec aba_predict()\n")
+cat("- Stratifier la forêt par types de peuplements\n")
+cat("- Identifier les zones à fort potentiel ou dégradées\n")
 ```
 
 ### Exercice 5.3 : Métriques multi-échelles du CHM
@@ -2167,16 +2255,37 @@ Calculez les métriques du CHM à différentes échelles de lissage.
 ```{r ex-5-3-setup}
 library(lidaRtRee)
 library(terra)
-data(chm_chablais3)
-chm <- terra::rast(chm_chablais3)
+
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+
+# Utiliser le VRT créé en section 3.2
+chm_vrt <- file.path(data_dir, "c_filled_complet.vrt")
+if (file.exists(chm_vrt)) {
+  chm <- terra::rast(chm_vrt)
+} else {
+  # Fallback sur données exemple
+  data(chm_chablais3)
+  chm <- terra::rast(chm_chablais3)
+}
 chm[is.na(chm)] <- 0
 chm[chm < 0] <- 0
 ```
 
-```{r ex-5-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-5-3-setup"}
+```{r ex-5-3, exercise=TRUE, exercise.timelimit=1800, exercise.setup="ex-5-3-setup"}
 library(terra)
 
 cat("=== Métriques multi-échelles du CHM ===\n\n")
+
+# Activer le multithreading terra
+n_threads <- max(1, parallel::detectCores() - 1)
+terraOptions(threads = n_threads)
+cat("Threads terra:", n_threads, "\n")
+cat("Dimensions CHM:", nrow(chm), "x", ncol(chm), "pixels\n\n")
 
 # Valeurs sigma pour le lissage gaussien
 sigmas <- c(0, 0.5, 1, 2, 4, 8)
