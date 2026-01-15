@@ -2717,15 +2717,19 @@ Le **BABA (Buffered Area-Based Approach)** est une amélioration de l'ABA classi
 5. **Performance lasR** : calcul C++ ultra-rapide, gestion automatique des buffers, parallélisation native
 
 ```{r ex-6-3-setup}
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+# Mêmes données LAZ normalisées que l'exercice 6.2
+laz_dir <- system.file("extdata", "aba.model", "ALS", "plots.norm.laz", package = "nemeton")
+if (laz_dir == "") {
+  laz_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/ALS/plots.norm.laz"
 }
-data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
-# Fichiers LAZ normalisés (créés en section 5.1a)
-laz_norm_dir <- file.path(data_dir, "result_laz_normalized")
+# Répertoire de sortie
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  output_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  output_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 ```
 
 ```{r ex-6-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-6-3-setup"}
@@ -2745,58 +2749,69 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 } else {
   library(lasR)
 
-  # Lister les fichiers LAZ normalisés
-  laz_files <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
-  cat("Fichiers LAZ normalisés:", length(laz_files), "\n\n")
+  # Mêmes 28 placettes que l'exercice 6.2 (7 clusters × 4 placettes)
+  laz_files <- dir(laz_dir,
+                   pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
+                   full.names = TRUE)
+  cat("Fichiers LAZ (mêmes que 6.2):", length(laz_files), "\n\n")
 
-  # Pipeline BABA: résolution 10m, fenêtre 30m (rayon 15m comme placettes)
+  # ==========================================================================
+  # COMPARAISON ABA vs BABA
+  # ==========================================================================
+  cat("--- Comparaison ABA classique vs BABA ---\n\n")
+
+  cat("ABA classique (exercice 6.2):\n")
+  cat("  - Métriques calculées par nuage (1 placette = 1 valeur)\n")
+  cat("  - clouds_metrics() avec aba_metrics()\n\n")
+
+  cat("BABA (cet exercice):\n")
+  cat("  - Métriques rasterisées avec fenêtre glissante\n")
+  cat("  - res = c(10, 30) : pixel 10m, fenêtre 30m\n\n")
+
+  # Pipeline BABA
+  output_file <- file.path(output_dir, "metriques_baba_28plots.tif")
+
   pipeline_baba <- reader_las() +
     rasterize(
       res = c(10, 30),  # 10m sortie, 30m fenêtre (~900 m²)
-      operators = c("max", "mean", "sd", "p95", "above2")
+      operators = c("max", "mean", "sd", "p95", "above2"),
+      ofile = output_file
     )
 
+  cat("Pipeline lasR:\n")
   print(pipeline_baba)
 
-  cat("\n\nParamètre res = c(10, 30) signifie:\n")
-  cat("- Pixels de sortie: 10m × 10m\n")
-  cat("- Fenêtre de calcul: 30m × 30m (~900 m²)\n")
-  cat("- Compatible avec placettes de rayon 15m (~707 m²)\n")
-  cat("- 9 pixels de sortie par fenêtre de calcul\n\n")
+  # Exécution
+  cat("\n--- Exécution BABA sur 28 placettes ---\n")
+  N_CORES <- min(4L, parallel::detectCores() - 1L)
+  cat("Cores:", N_CORES, "\n")
 
-  if (length(laz_files) > 0) {
-    cat("--- Exécution sur la zone d'étude ---\n")
-    N_CORES <- min(4L, parallel::detectCores() - 1L)
+  t0 <- Sys.time()
+  ans <- exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
+  t1 <- Sys.time()
 
-    output_file <- file.path(data_dir, "metriques_baba.tif")
+  cat("\nTemps d'exécution:", round(difftime(t1, t0, units = "secs"), 1), "secondes\n")
+  cat("Fichier créé:", output_file, "\n")
 
-    # Ajouter l'écriture du raster
-    pipeline_baba <- reader_las() +
-      rasterize(
-        res = c(10, 30),
-        operators = c("max", "mean", "sd", "p95", "above2"),
-        ofile = output_file
-      )
+  # Charger et afficher le résultat
+  if (file.exists(output_file)) {
+    baba <- terra::rast(output_file)
+    cat("\nRésultat BABA:\n")
+    cat("  Dimensions:", ncol(baba), "×", nrow(baba), "pixels\n")
+    cat("  Résolution:", terra::res(baba)[1], "m\n")
+    cat("  Couches:", paste(names(baba), collapse = ", "), "\n")
 
-    ans <- exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
+    # Visualisation comparative
+    par(mfrow = c(2, 2))
+    plot(baba[[1]], main = "Zmax (m)", col = hcl.colors(50, "Greens", rev = TRUE))
+    plot(baba[[2]], main = "Zmean (m)", col = hcl.colors(50, "Greens", rev = TRUE))
+    plot(baba[[4]], main = "Zp95 (m)", col = hcl.colors(50, "Greens", rev = TRUE))
+    plot(baba[[5]], main = "Couverture > 2m", col = hcl.colors(50, "YlGn", rev = TRUE))
 
-    cat("\nFichier créé:", output_file, "\n")
-
-    # Charger et afficher le résultat
-    if (file.exists(output_file)) {
-      baba <- terra::rast(output_file)
-      cat("Dimensions:", nrow(baba), "x", ncol(baba), "pixels\n")
-      cat("Couches:", nlyr(baba), "\n")
-
-      # Visualisation
-      par(mfrow = c(2, 2))
-      plot(baba[[1]], main = "Hmax (m)", col = hcl.colors(50, "Greens", rev = TRUE))
-      plot(baba[[2]], main = "Hmean (m)", col = hcl.colors(50, "Greens", rev = TRUE))
-      plot(baba[[4]], main = "H p95 (m)", col = hcl.colors(50, "Greens", rev = TRUE))
-      plot(baba[[5]], main = "Couverture > 2m", col = hcl.colors(50, "YlGn", rev = TRUE))
-    }
-  } else {
-    cat("Exécutez d'abord l'exercice 5.1a pour créer les fichiers normalisés.\n")
+    cat("\nConclusion:\n")
+    cat("- BABA produit une carte raster (pixels 10m)\n")
+    cat("- ABA produit des valeurs ponctuelles par placette\n")
+    cat("- BABA permet la cartographie continue du massif\n")
   }
 }
 ```
