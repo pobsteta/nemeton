@@ -2430,6 +2430,7 @@ library(lidaRtRee)
 library(sf)
 library(purrr)
 library(dplyr)
+library(stringr)
 
 # Répertoire des données du package
 pkg_data_dir <- system.file("", package = "nemeton")
@@ -2449,6 +2450,7 @@ library(lidaRtRee)
 library(sf)
 library(purrr)
 library(dplyr)
+library(stringr)
 
 cat("=== Chargement des placettes terrain (zone d'étude) ===\n\n")
 
@@ -2539,6 +2541,7 @@ library(sf)
 library(purrr)
 library(furrr)
 library(dplyr)
+library(stringr)
 
 # Répertoire des données
 pkg_data_dir <- system.file("", package = "nemeton")
@@ -2562,6 +2565,7 @@ library(sf)
 library(purrr)
 library(furrr)
 library(dplyr)
+library(stringr)
 
 cat("=== Extraction des métriques LiDAR (28 placettes) ===\n\n")
 
