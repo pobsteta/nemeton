@@ -2706,132 +2706,6 @@ plot(plots_aba$pzabove2, plots_aba$G_m2_ha, pch = 16, col = "forestgreen",
 abline(lm(G_m2_ha ~ pzabove2, data = plots_aba), col = "red", lwd = 2)
 ```
 
-### Exercice 6.3 : Métriques BABA avec lasR (haute performance)
-
-Le **BABA (Buffered Area-Based Approach)** est une amélioration de l'ABA classique avec plusieurs avantages :
-
-1. **Décorrélation résolution / fenêtre de calcul** : pixels fins (10m) mais métriques calculées sur grandes fenêtres (30m)
-2. **Compatibilité placettes terrain** : fenêtre 30×30m (900 m²) proche des placettes de rayon 15m (707 m²)
-3. **Lissage spatial + haute résolution** : métriques stables sur grandes fenêtres, cartes à résolution fine
-4. **Réduction des effets de bord** : fenêtres chevauchantes → transitions douces entre pixels
-5. **Performance lasR** : calcul C++ ultra-rapide, gestion automatique des buffers, parallélisation native
-
-```{r ex-6-3-setup}
-# Mêmes données LAZ normalisées que l'exercice 6.2
-laz_dir <- system.file("extdata", "aba.model", "ALS", "plots.norm.laz", package = "nemeton")
-if (laz_dir == "") {
-  laz_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/ALS/plots.norm.laz"
-}
-
-# Répertoire de sortie
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  output_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
-} else {
-  output_dir <- normalizePath(file.path(path.expand("~"), "nemeton_tutorial_data"), mustWork = FALSE)
-}
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-```
-
-```{r ex-6-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-6-3-setup"}
-cat("=== BABA (Buffered Area-Based Approach) avec lasR ===\n\n")
-
-cat("AVANTAGES DU BABA vs ABA classique:\n")
-cat("─────────────────────────────────────────────────────\n")
-cat("1. Résolution ≠ fenêtre : pixels 10m, calcul sur 30m\n")
-cat("2. Compatible placettes : fenêtre ~900m² ≈ placettes ~707m²\n")
-cat("3. Lissage + précision : métriques stables, cartes fines\n")
-cat("4. Pas d'effets de bord : fenêtres chevauchantes\n")
-cat("5. Ultra-rapide : lasR en C++ avec parallélisation\n\n")
-
-if (!requireNamespace("lasR", quietly = TRUE)) {
-  cat("lasR n'est pas installé. Installez-le avec:\n")
-  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
-} else {
-  library(lasR)
-
-  # Mêmes 28 placettes que l'exercice 6.2 (7 clusters × 4 placettes)
-  laz_files <- dir(laz_dir,
-                   pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
-                   full.names = TRUE)
-  cat("Fichiers LAZ (mêmes que 6.2):", length(laz_files), "\n")
-  if (length(laz_files) == 0) {
-    cat("ERREUR: Aucun fichier LAZ trouvé dans:", laz_dir, "\n")
-    cat("Vérifiez que les données sont installées.\n")
-    stop("Fichiers LAZ manquants")
-  }
-  cat("Premier fichier:", basename(laz_files[1]), "\n\n")
-
-  # ==========================================================================
-  # COMPARAISON ABA vs BABA
-  # ==========================================================================
-  cat("--- Comparaison ABA classique vs BABA ---\n\n")
-
-  cat("ABA classique (exercice 6.2):\n")
-  cat("  - Métriques calculées par nuage (1 placette = 1 valeur)\n")
-  cat("  - clouds_metrics() avec aba_metrics()\n\n")
-
-  cat("BABA (cet exercice):\n")
-  cat("  - Métriques rasterisées avec fenêtre glissante\n")
-  cat("  - res = c(10, 30) : pixel 10m, fenêtre 30m\n\n")
-
-  # Pipeline BABA
-  # Créer le répertoire de sortie (nécessaire dans l'exercice)
-  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  output_file <- file.path(output_dir, "metriques_baba_28plots.tif")
-
-  pipeline_baba <- reader_las() +
-    rasterize(
-      res = c(10, 30),  # 10m sortie, 30m fenêtre (~900 m²)
-      operators = c("max", "mean", "sd", "p95", "above2"),
-      ofile = output_file
-    )
-
-  cat("Pipeline lasR:\n")
-  print(pipeline_baba)
-
-  # Exécution
-  cat("\n--- Exécution BABA sur 28 placettes ---\n")
-  N_CORES <- min(4L, parallel::detectCores() - 1L)
-  cat("Cores:", N_CORES, "\n")
-
-  t0 <- Sys.time()
-  ans <- exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
-  t1 <- Sys.time()
-
-  cat("\nTemps d'exécution:", round(difftime(t1, t0, units = "secs"), 1), "secondes\n")
-  cat("Fichier créé:", output_file, "\n")
-
-  # Charger et afficher le résultat
-  if (file.exists(output_file)) {
-    baba <- terra::rast(output_file)
-    cat("\nRésultat BABA:\n")
-    cat("  Dimensions:", terra::ncol(baba), "×", terra::nrow(baba), "pixels\n")
-    cat("  Résolution:", terra::res(baba)[1], "m\n")
-    cat("  Nombre de couches:", terra::nlyr(baba), "\n")
-    cat("  Couches:", paste(names(baba), collapse = ", "), "\n")
-
-    # Visualisation comparative (si couches valides)
-    if (terra::nlyr(baba) >= 5) {
-      par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
-      terra::plot(baba[[1]], main = "Zmax (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-      terra::plot(baba[[2]], main = "Zmean (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-      terra::plot(baba[[4]], main = "Zp95 (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-      terra::plot(baba[[5]], main = "Couverture > 2m", col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
-    } else {
-      cat("Attention: moins de 5 couches produites\n")
-    }
-
-    cat("\nConclusion:\n")
-    cat("- BABA produit une carte raster (pixels 10m)\n")
-    cat("- ABA produit des valeurs ponctuelles par placette\n")
-    cat("- BABA permet la cartographie continue du massif\n")
-  } else {
-    cat("\nERREUR: fichier non créé:", output_file, "\n")
-    cat("Vérifiez les messages d'erreur ci-dessus.\n")
-  }
-}
-```
-
 ### Quiz Préparation ABA
 
 ```{r quiz-aba-prep, echo=FALSE}
@@ -3581,7 +3455,178 @@ quiz(
 )
 ```
 
-## Section 9 : Quiz Final
+## Section 9 : Approche BABA - Alternative sans Placettes
+
+*Approche alternative quand les données terrain sont limitées ou inexistantes*
+
+### Principe du BABA (Buffered Area-Based Approach)
+
+Le **BABA** est une approche complémentaire à l'ABA classique, particulièrement utile quand :
+
+- Les placettes terrain sont **insuffisantes** pour calibrer des modèles robustes
+- On souhaite une **cartographie exploratoire** rapide des métriques LiDAR
+- On veut produire des cartes à **haute résolution** avec des fenêtres de calcul plus grandes
+
+**Différences clés avec l'ABA classique :**
+
+| Aspect | ABA classique (sections 6-8) | BABA |
+|--------|------------------------------|------|
+| Calibration | Modèles statistiques sur placettes | Pas de calibration |
+| Sortie | Variables forestières (G, V, N) | Métriques LiDAR brutes |
+| Résolution | Dépend de la densité de placettes | Libre (pixels fins possibles) |
+| Fenêtre | Surface de la placette | Paramétrable indépendamment |
+
+### Exercice 9.1 : Métriques BABA avec lasR
+
+Le paramètre `res = c(pixel, fenêtre)` de lasR permet de **décorréler** la résolution de sortie et la fenêtre de calcul :
+
+- `res = c(10, 30)` : pixels de 10m, métriques calculées sur fenêtres de 30×30m (900 m²)
+- Fenêtre 900 m² ≈ placette de rayon 17m (comparable aux ~707 m² des placettes de 15m)
+
+```{r ex-9-1-setup}
+# Données LAZ normalisées
+laz_dir <- system.file("extdata", "aba.model", "ALS", "plots.norm.laz", package = "nemeton")
+if (laz_dir == "") {
+  laz_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/ALS/plots.norm.laz"
+}
+
+# Répertoire de sortie
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  output_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+} else {
+  output_dir <- normalizePath(file.path(path.expand("~"), "nemeton_tutorial_data"), mustWork = FALSE)
+}
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+```
+
+```{r ex-9-1, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-9-1-setup"}
+cat("=== BABA (Buffered Area-Based Approach) avec lasR ===\n\n")
+
+cat("AVANTAGES DU BABA:\n")
+cat("─────────────────────────────────────────────────────\n")
+cat("1. Résolution ≠ fenêtre : pixels 10m, calcul sur 30m\n")
+cat("2. Compatible placettes : fenêtre ~900m² ≈ placettes ~707m²\n")
+cat("3. Lissage + précision : métriques stables, cartes fines\n")
+cat("4. Pas d'effets de bord : fenêtres chevauchantes\n")
+cat("5. Ultra-rapide : lasR en C++ avec parallélisation\n")
+cat("6. Pas besoin de placettes terrain pour l'exploration\n\n")
+
+if (!requireNamespace("lasR", quietly = TRUE)) {
+  cat("lasR n'est pas installé. Installez-le avec:\n")
+  cat("install.packages('lasR', repos = 'https://r-lidar.r-universe.dev')\n")
+} else {
+  library(lasR)
+
+  # Quelques fichiers LAZ pour la démonstration
+  laz_files <- dir(laz_dir,
+                   pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
+                   full.names = TRUE)
+  cat("Fichiers LAZ:", length(laz_files), "\n")
+  if (length(laz_files) == 0) {
+    cat("ERREUR: Aucun fichier LAZ trouvé dans:", laz_dir, "\n")
+    stop("Fichiers LAZ manquants")
+  }
+  cat("Premier fichier:", basename(laz_files[1]), "\n\n")
+
+  # ==========================================================================
+  # COMPARAISON ABA vs BABA
+  # ==========================================================================
+  cat("--- Comparaison ABA classique vs BABA ---\n\n")
+
+  cat("ABA classique (sections 6-8):\n")
+  cat("  - Métriques extraites aux placettes → modèles → prédiction\n")
+  cat("  - Sortie: variables forestières (G, V, N en m²/ha, m³/ha, N/ha)\n\n")
+
+  cat("BABA (cet exercice):\n")
+  cat("  - Métriques rasterisées directement avec fenêtre glissante\n")
+  cat("  - Sortie: métriques LiDAR brutes (zmax, zmean, p95, etc.)\n")
+  cat("  - res = c(10, 30) : pixel 10m, fenêtre 30m\n\n")
+
+  # Pipeline BABA
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  output_file <- file.path(output_dir, "metriques_baba.tif")
+
+  pipeline_baba <- reader_las() +
+    rasterize(
+      res = c(10, 30),  # 10m sortie, 30m fenêtre (~900 m²)
+      operators = c("max", "mean", "sd", "p95", "above2"),
+      ofile = output_file
+    )
+
+  cat("Pipeline lasR:\n")
+  print(pipeline_baba)
+
+  # Exécution
+  cat("\n--- Exécution BABA ---\n")
+  N_CORES <- min(4L, parallel::detectCores() - 1L)
+  cat("Cores:", N_CORES, "\n")
+
+  t0 <- Sys.time()
+  ans <- exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
+  t1 <- Sys.time()
+
+  cat("\nTemps d'exécution:", round(difftime(t1, t0, units = "secs"), 1), "secondes\n")
+  cat("Fichier créé:", output_file, "\n")
+
+  # Charger et afficher le résultat
+  if (file.exists(output_file)) {
+    baba <- terra::rast(output_file)
+    cat("\nRésultat BABA:\n")
+    cat("  Dimensions:", terra::ncol(baba), "×", terra::nrow(baba), "pixels\n")
+    cat("  Résolution:", terra::res(baba)[1], "m\n")
+    cat("  Nombre de couches:", terra::nlyr(baba), "\n")
+    cat("  Couches:", paste(names(baba), collapse = ", "), "\n")
+
+    # Visualisation (si couches valides)
+    if (terra::nlyr(baba) >= 5) {
+      par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
+      terra::plot(baba[[1]], main = "Zmax (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+      terra::plot(baba[[2]], main = "Zmean (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+      terra::plot(baba[[4]], main = "Zp95 (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+      terra::plot(baba[[5]], main = "Couverture > 2m", col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
+    } else {
+      cat("Attention: moins de 5 couches produites\n")
+    }
+
+    cat("\nConclusion:\n")
+    cat("- BABA produit directement des cartes raster de métriques LiDAR\n")
+    cat("- Utile pour l'exploration ou quand les placettes sont limitées\n")
+    cat("- Pour des variables forestières (G, V), préférez l'ABA avec calibration\n")
+  } else {
+    cat("\nERREUR: fichier non créé:", output_file, "\n")
+  }
+}
+```
+
+### Quiz BABA
+
+```{r quiz-baba, echo=FALSE}
+quiz(
+  question("Quand utiliser BABA plutôt qu'ABA classique ?",
+    answer("Toujours, c'est plus précis"),
+    answer("Quand on a peu de placettes terrain ou pour l'exploration", correct = TRUE),
+    answer("Uniquement pour les forêts tropicales"),
+    answer("Jamais, l'ABA est toujours meilleur"),
+    allow_retry = TRUE
+  ),
+  question("Que signifie res = c(10, 30) dans lasR ?",
+    answer("10 fichiers, 30 tuiles"),
+    answer("Résolution 10m en sortie, fenêtre 30m pour le calcul", correct = TRUE),
+    answer("10% de décimation, 30m de buffer"),
+    answer("10 bandes, 30 bits"),
+    allow_retry = TRUE
+  ),
+  question("Quelle est la principale limite du BABA ?",
+    answer("Il est trop lent"),
+    answer("Il produit des métriques LiDAR brutes, pas des variables forestières calibrées", correct = TRUE),
+    answer("Il ne fonctionne qu'avec lidR"),
+    answer("Il nécessite plus de placettes terrain"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 10 : Quiz Final
 
 ### Quiz de validation
 
