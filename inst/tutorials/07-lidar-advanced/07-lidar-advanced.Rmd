@@ -2228,19 +2228,19 @@ par(mfrow = c(2, 2))
 
 # Densité d'arbres
 plot(metrics_map$Tree_density, main = "Densité d'arbres (/ha)",
-     col = hcl.colors(50, "YlGn"))
+     col = hcl.colors(50, "YlGn", rev = TRUE))
 
 # Hauteur moyenne
 plot(metrics_map$Tree_meanH, main = "Hauteur moyenne (m)",
-     col = hcl.colors(50, "Greens"))
+     col = hcl.colors(50, "Greens", rev = TRUE))
 
 # Gini (hétérogénéité)
 plot(metrics_map$Tree_giniH, main = "Indice de Gini",
-     col = hcl.colors(50, "RdYlGn"))
+     col = hcl.colors(50, "RdYlGn", rev = TRUE))
 
 # Arbres > 20m
 plot(metrics_map$TreeSup20_density, main = "Arbres > 20m (/ha)",
-     col = hcl.colors(50, "Blues"))
+     col = hcl.colors(50, "Blues", rev = TRUE))
 
 cat("\nCette carte de métriques peut être utilisée pour:\n")
 cat("- Prédire des paramètres forestiers (G, V, biomasse) avec aba_predict()\n")
@@ -2266,7 +2266,14 @@ data_dir <- normalizePath(data_dir, mustWork = FALSE)
 # Utiliser le VRT créé en section 3.2
 chm_vrt <- file.path(data_dir, "c_filled_complet.vrt")
 if (file.exists(chm_vrt)) {
-  chm <- terra::rast(chm_vrt)
+  chm_full <- terra::rast(chm_vrt)
+  # Cropper sur une zone de 500m x 500m au centre
+  e <- terra::ext(chm_full)
+  center_x <- (e$xmin + e$xmax) / 2
+  center_y <- (e$ymin + e$ymax) / 2
+  crop_ext <- terra::ext(center_x - 250, center_x + 250,
+                         center_y - 250, center_y + 250)
+  chm <- terra::crop(chm_full, crop_ext)
 } else {
   # Fallback sur données exemple
   data(chm_chablais3)
@@ -2276,7 +2283,7 @@ chm[is.na(chm)] <- 0
 chm[chm < 0] <- 0
 ```
 
-```{r ex-5-3, exercise=TRUE, exercise.timelimit=1800, exercise.setup="ex-5-3-setup"}
+```{r ex-5-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-5-3-setup"}
 library(terra)
 
 cat("=== Métriques multi-échelles du CHM ===\n\n")
@@ -2311,7 +2318,6 @@ for (sigma in sigmas) {
 
 cat("Statistiques par échelle de lissage:\n\n")
 cat(sprintf("%-10s %8s %8s %8s\n", "Sigma", "Moyenne", "Écart-T", "Max"))
-cat(sprintf("%-10s %8s %8s %8s\n", "-----", "-------", "-------", "---"))
 for (name in names(chm_stats)) {
   s <- chm_stats[[name]]
   sigma_val <- gsub("sigma_", "", name)
@@ -2401,7 +2407,7 @@ L'**approche basée sur les surfaces** (Area-Based Approach - ABA) est la métho
                       ▼
              ┌─────────────────┐
              │ CALIBRATION     │
-             │ G = f(zq95,...)│
+             │ G = f(zq95,...) │
              └────────┬────────┘
                       │
                       ▼
@@ -2414,130 +2420,263 @@ L'**approche basée sur les surfaces** (Area-Based Approach - ABA) est la métho
 
 ### Exercice 6.1 : Chargement des placettes terrain
 
-Chargez et préparez les données des placettes terrain du projet Quatre Montagnes.
+Chargez les données terrain des 28 placettes de notre zone d'étude depuis les
+fichiers CSV du projet Quatre Montagnes.
+
+*Basé sur le tutoriel [Area-based 1: Data preparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html)*
 
 ```{r ex-6-1-setup}
 library(lidaRtRee)
 library(sf)
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+library(purrr)
+library(dplyr)
+
+# Répertoire des données du package
+pkg_data_dir <- system.file("", package = "nemeton")
+if (pkg_data_dir == "") {
+
+  pkg_data_dir <- "/home/pascal/Téléchargements/nemeton"
 }
-data_dir <- normalizePath(data_dir, mustWork = FALSE)
+field_dir <- file.path(pkg_data_dir, "data", "aba.model", "field")
+
+# Liste des 7 clusters dans notre zone d'étude (28 placettes)
+plots_in_extent <- c("Verc-02", "Verc-05", "Verc-06", "Verc-C1",
+                     "Verc-C2", "Verc-S4", "Verc-S7")
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
 library(lidaRtRee)
 library(sf)
+library(purrr)
+library(dplyr)
 
-cat("=== Chargement des placettes Quatre Montagnes ===\n\n")
+cat("=== Chargement des placettes terrain (zone d'étude) ===\n\n")
 
 # Paramètres d'inventaire
-p_radius <- 15      # Rayon des placettes (m)
-dbh_min <- 7.5      # Diamètre minimum inventorié (cm)
+p_radius <- 15
+dbh_min <- 7.5
+plot_area_ha <- pi * p_radius^2 / 10000
 
 cat("Paramètres:\n")
 cat("  Rayon placettes:", p_radius, "m\n")
-cat("  Surface:", round(pi * p_radius^2, 0), "m² (", round(pi * p_radius^2 / 10000, 4), "ha)\n")
+cat("  Surface:", round(pi * p_radius^2, 0), "m² (", round(plot_area_ha, 4), "ha)\n")
 cat("  DHP minimum:", dbh_min, "cm\n\n")
 
-# Charger les données lidaRtRee (si disponibles)
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  # Données du projet Quatre Montagnes (Vercors)
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+# ==========================================================================
+# 1. CHARGER LES COORDONNÉES DES PLACETTES (purrr)
+# ==========================================================================
+cat("--- 1. Chargement des coordonnées ---\n")
 
-  cat("Données chargées: quatre_montagnes\n")
-  cat("Nombre de placettes:", nrow(quatre_montagnes), "\n")
-  cat("Variables disponibles:\n")
-  print(names(quatre_montagnes))
+plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
+  keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
+  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            mutate(cluster_id = sub("_PiquetsTerrain\\.csv$", "", basename(.x)))) |>
+  filter(Id %in% c("p1", "p2", "p3", "p4")) |>
+  mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
 
-  # Créer un objet sf
-  plots_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
+cat("Clusters chargés:", n_distinct(plots$cluster_id), "\n")
+cat("Placettes:", nrow(plots), "\n\n")
 
-  # Afficher les premières lignes
-  cat("\n\nAperçu des données:\n")
-  print(head(st_drop_geometry(plots_sf)[, c("plot_id", "G_m2_ha", "N_ha", "D_mean_cm")]))
+# ==========================================================================
+# 2. CHARGER LES ARBRES ET CALCULER G, N, D (purrr + dplyr)
+# ==========================================================================
+cat("--- 2. Calcul des paramètres de peuplement ---\n")
 
-} else {
-  cat("lidaRtRee non installé. Installez avec:\n")
-  cat("remotes::install_gitlab('lidar/lidaRtRee', host = 'forge.inrae.fr')\n")
-}
+trees <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
+  keep(~ any(str_detect(basename(.x), plots$plot_id))) |>
+  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            mutate(plot_id = sub("_ArbresTerrain\\.csv$", "", basename(.x)))) |>
+  filter(!is.na(Diam), Diam >= dbh_min, Aspect %in% c(1, 2))
+
+# Calcul des paramètres de peuplement avec dplyr
+stand_params <- trees |>
+  group_by(plot_id) |>
+  summarise(
+    G_m2_ha = sum(pi * (Diam / 200)^2) / plot_area_ha,
+    N_ha = n() / plot_area_ha,
+    D_mean_cm = mean(Diam),
+    .groups = "drop"
+  )
+
+# Fusionner et créer objet sf
+plots_sf <- plots |>
+  left_join(stand_params, by = "plot_id") |>
+  st_as_sf(coords = c("X", "Y"), crs = 2154)
+
+cat("Placettes avec données terrain:", sum(!is.na(plots_sf$G_m2_ha)), "\n\n")
+
+# ==========================================================================
+# 3. RÉSUMÉ
+# ==========================================================================
+cat("--- 3. Résumé des données terrain ---\n\n")
+
+plots_sf |>
+  st_drop_geometry() |>
+  summarise(
+    across(c(G_m2_ha, N_ha, D_mean_cm),
+           list(min = ~ min(.x, na.rm = TRUE),
+                max = ~ max(.x, na.rm = TRUE),
+                moy = ~ mean(.x, na.rm = TRUE)))
+  ) |>
+  pivot_longer(everything(), names_to = c("var", "stat"), names_sep = "_") |>
+  pivot_wider(names_from = stat, values_from = value) |>
+  mutate(across(where(is.numeric), ~ round(.x, 1))) |>
+  print()
+
+cat("\nAperçu:\n")
+print(head(st_drop_geometry(plots_sf)[, c("plot_id", "G_m2_ha", "N_ha", "D_mean_cm")]))
 ```
 
 ### Exercice 6.2 : Extraction des métriques LiDAR par placette
 
-Extrayez les métriques LiDAR sur chaque placette avec `clouds_metrics()`.
+Extrayez les métriques LiDAR sur les 28 placettes avec `clouds_metrics()` et `aba_metrics()`,
+en utilisant furrr pour la parallélisation.
 
 ```{r ex-6-2-setup}
 library(lidaRtRee)
 library(lidR)
 library(sf)
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+library(purrr)
+library(furrr)
+library(dplyr)
+
+# Répertoire des données
+pkg_data_dir <- system.file("", package = "nemeton")
+if (pkg_data_dir == "") {
+  pkg_data_dir <- "/home/pascal/Téléchargements/nemeton"
 }
-data_dir <- normalizePath(data_dir, mustWork = FALSE)
-# Charger les placettes
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots_sf <- st_as_sf(quatre_montagnes, coords = c("X", "Y"), crs = 2154)
-}
+field_dir <- file.path(pkg_data_dir, "data", "aba.model", "field")
+laz_dir <- file.path(pkg_data_dir, "data", "aba.model", "ALS", "plots.norm.laz")
+
+# Placettes de notre zone d'étude
+plots_in_extent <- c("Verc-02", "Verc-05", "Verc-06", "Verc-C1",
+                     "Verc-C2", "Verc-S4", "Verc-S7")
+p_radius <- 15
+plot_area_ha <- pi * p_radius^2 / 10000
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-6-2-setup"}
+```{r ex-6-2, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-6-2-setup"}
 library(lidaRtRee)
 library(lidR)
+library(sf)
+library(purrr)
+library(furrr)
+library(dplyr)
 
-cat("=== Extraction des métriques LiDAR ===\n\n")
+cat("=== Extraction des métriques LiDAR (28 placettes) ===\n\n")
 
-# Définir la fonction de métriques ABA
-aba_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                            Classification, class_ground = 2)
+# ==========================================================================
+# 1. CHARGER LES NUAGES DE POINTS (furrr parallélisé)
+# ==========================================================================
+cat("--- 1. Chargement des nuages de points ---\n")
 
-cat("Fonction de métriques: aba_metrics()\n")
-cat("- Statistiques de hauteur (zmax, zmean, zsd, zskew, zkurt)\n")
-cat("- Percentiles (zq10, zq25, zq50, zq75, zq90, zq95)\n")
-cat("- Couverture (pzabove2, pzabove5)\n")
-cat("- Intensité (imean, isd, imax)\n")
-cat("- Ratios de retours\n\n")
+# Configuration parallélisation
+n_workers <- min(4L, parallel::detectCores() - 1L)
+plan(multisession, workers = n_workers)
+cat("Workers:", n_workers, "\n")
 
-# Exemple avec données simulées (les vraies données nécessitent les fichiers LAS)
-cat("=== Simulation pour démonstration ===\n\n")
+# Lister et filtrer les fichiers LAZ (purrr)
+laz_files <- dir(laz_dir, pattern = "\\.laz$", full.names = TRUE) |>
+  keep(~ any(str_detect(basename(.x), plots_in_extent)))
 
-# Simuler des métriques pour les placettes
-set.seed(42)
-n_plots <- min(32, nrow(plots_sf))
+cat("Fichiers LAZ:", length(laz_files), "\n")
 
-metrics_sim <- data.frame(
-  plot_id = plots_sf$plot_id[1:n_plots],
-  zmax = runif(n_plots, 20, 40),
-  zmean = runif(n_plots, 12, 25),
-  zsd = runif(n_plots, 4, 10),
-  zq95 = runif(n_plots, 18, 38),
-  pzabove2 = runif(n_plots, 0.5, 0.95),
-  imean = runif(n_plots, 200, 400)
-)
+# Charger les nuages en parallèle (furrr)
+llas <- laz_files |>
+  set_names(~ sub("\\.laz$", "", basename(.x))) |>
+  future_map(~ {
+    las <- readLAS(.x, select = "xyzirnc")
+    las$Z[las$Z < 0] <- 0
+    las
+  }, .options = furrr_options(seed = TRUE))
 
-# Joindre aux données terrain
-plots_aba <- merge(
-  st_drop_geometry(plots_sf[1:n_plots, c("plot_id", "G_m2_ha", "N_ha", "D_mean_cm")]),
-  metrics_sim,
-  by = "plot_id"
-)
+cat("Nuages chargés:", length(llas), "\n\n")
 
-cat("Données combinées (terrain + LiDAR):\n")
-print(head(plots_aba))
+# ==========================================================================
+# 2. CALCULER LES MÉTRIQUES ABA
+# ==========================================================================
+cat("--- 2. Calcul des métriques avec clouds_metrics() ---\n")
 
-cat("\n\nCorrélations G_m2_ha vs métriques LiDAR:\n")
-cors <- cor(plots_aba$G_m2_ha, plots_aba[, c("zmax", "zmean", "zq95", "pzabove2")])
-print(round(cors, 3))
+# Fonction de métriques ABA (signature correcte)
+metrics <- clouds_metrics(llas, ~ aba_metrics(Z, Intensity, ReturnNumber,
+                                               Classification, hmin = 2)) |>
+  as_tibble(rownames = "plot_id")
+
+cat("Métriques calculées:", ncol(metrics) - 1, "variables\n")
+cat("Placettes:", nrow(metrics), "\n\n")
+
+# Résumé des métriques principales
+metrics |>
+  summarise(
+    zmax_moy = mean(zmax),
+    zmean_moy = mean(zmean),
+    zq95_moy = mean(zq95),
+    couv_2m = mean(pzabove2) * 100
+  ) |>
+  mutate(across(everything(), ~ round(.x, 2))) |>
+  print()
+
+# ==========================================================================
+# 3. CHARGER LES DONNÉES TERRAIN ET FUSIONNER (purrr + dplyr)
+# ==========================================================================
+cat("\n--- 3. Fusion avec données terrain ---\n")
+
+# Charger placettes
+plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
+  keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
+  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            mutate(cluster_id = sub("_PiquetsTerrain\\.csv$", "", basename(.x)))) |>
+  filter(Id %in% c("p1", "p2", "p3", "p4")) |>
+  mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
+
+# Charger arbres et calculer G
+stand_params <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
+  keep(~ any(str_detect(basename(.x), plots$plot_id))) |>
+  map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            mutate(plot_id = sub("_ArbresTerrain\\.csv$", "", basename(.x)))) |>
+  filter(!is.na(Diam), Diam >= 7.5, Aspect %in% c(1, 2)) |>
+  group_by(plot_id) |>
+  summarise(G_m2_ha = sum(pi * (Diam / 200)^2) / plot_area_ha, .groups = "drop")
+
+# Fusionner terrain + LiDAR
+plots_aba <- plots |>
+  select(plot_id) |>
+  left_join(stand_params, by = "plot_id") |>
+  inner_join(metrics, by = "plot_id")
+
+cat("Données fusionnées:", nrow(plots_aba), "placettes\n\n")
+
+# Revenir en mode séquentiel
+plan(sequential)
+
+# ==========================================================================
+# 4. CORRÉLATIONS TERRAIN vs LIDAR
+# ==========================================================================
+cat("--- 4. Corrélations G vs métriques LiDAR ---\n\n")
+
+vars_cor <- c("zmax", "zmean", "zq95", "pzabove2", "mCH")
+cors <- vars_cor |>
+  set_names() |>
+  map_dbl(~ cor(plots_aba$G_m2_ha, plots_aba[[.x]], use = "complete.obs"))
+
+cat("Corrélations avec G (m²/ha):\n")
+iwalk(cors, ~ cat(sprintf("  %-10s: %+.3f\n", .y, .x)))
+
+# Graphique
+par(mfrow = c(1, 2))
+plot(plots_aba$zq95, plots_aba$G_m2_ha, pch = 16, col = "forestgreen",
+     xlab = "zq95 (m)", ylab = "G (m²/ha)", main = "G vs zq95")
+abline(lm(G_m2_ha ~ zq95, data = plots_aba), col = "red", lwd = 2)
+
+plot(plots_aba$pzabove2, plots_aba$G_m2_ha, pch = 16, col = "forestgreen",
+     xlab = "Couverture > 2m", ylab = "G (m²/ha)", main = "G vs couverture")
+abline(lm(G_m2_ha ~ pzabove2, data = plots_aba), col = "red", lwd = 2)
 ```
 
 ### Exercice 6.3 : Métriques BABA avec lasR (haute performance)
 
-Pour les gros jeux de données, lasR permet le calcul BABA (Buffered Area-Based Approach).
+Pour les gros jeux de données, lasR permet le calcul BABA (Buffered Area-Based Approach)
+sur les tuiles LAZ normalisées de notre zone d'étude.
 
 ```{r ex-6-3-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -2545,13 +2684,13 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
-# Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
-fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
-                           pattern = "\\.laz$", full.names = TRUE, recursive = TRUE)
+
+# Fichiers LAZ normalisés (créés en section 5.1a)
+laz_norm_dir <- file.path(data_dir, "result_laz_normalized")
 ```
 
-```{r ex-6-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-3-setup"}
+```{r ex-6-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-6-3-setup"}
 cat("=== BABA avec lasR ===\n\n")
 
 cat("BABA = Buffered Area-Based Approach\n")
@@ -2563,10 +2702,14 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 } else {
   library(lasR)
 
+  # Lister les fichiers LAZ normalisés
+  laz_files <- list.files(laz_norm_dir, pattern = "\\.laz$", full.names = TRUE)
+  cat("Fichiers LAZ normalisés:", length(laz_files), "\n\n")
+
   # Pipeline BABA: résolution 10m, fenêtre 30m (rayon 15m comme placettes)
   pipeline_baba <- reader_las() +
     rasterize(
-      res = c(10, 30),  # 10m sortie, 30m fenêtre (~706 m² comme placettes)
+      res = c(10, 30),  # 10m sortie, 30m fenêtre (~900 m²)
       operators = c("max", "mean", "sd", "p95", "above2")
     )
 
@@ -2575,13 +2718,43 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("\n\nParamètre res = c(10, 30) signifie:\n")
   cat("- Pixels de sortie: 10m × 10m\n")
   cat("- Fenêtre de calcul: 30m × 30m (~900 m²)\n")
-  cat("- Compatible avec placettes de rayon 15m (~706 m²)\n")
-  cat("- 9 pixels de sortie par fenêtre de calcul\n")
+  cat("- Compatible avec placettes de rayon 15m (~707 m²)\n")
+  cat("- 9 pixels de sortie par fenêtre de calcul\n\n")
 
-  # Exécution avec parallélisation (décommenter avec vos données)
-  # N_CORES <- 6L
-  # result <- exec(pipeline_baba, on = fichiers_laz,
-  #                ncores = concurrent_files(N_CORES))
+  if (length(laz_files) > 0) {
+    cat("--- Exécution sur la zone d'étude ---\n")
+    N_CORES <- min(4L, parallel::detectCores() - 1L)
+
+    output_file <- file.path(data_dir, "metriques_baba.tif")
+
+    # Ajouter l'écriture du raster
+    pipeline_baba <- reader_las() +
+      rasterize(
+        res = c(10, 30),
+        operators = c("max", "mean", "sd", "p95", "above2"),
+        ofile = output_file
+      )
+
+    ans <- exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
+
+    cat("\nFichier créé:", output_file, "\n")
+
+    # Charger et afficher le résultat
+    if (file.exists(output_file)) {
+      baba <- terra::rast(output_file)
+      cat("Dimensions:", nrow(baba), "x", ncol(baba), "pixels\n")
+      cat("Couches:", nlyr(baba), "\n")
+
+      # Visualisation
+      par(mfrow = c(2, 2))
+      plot(baba[[1]], main = "Hmax (m)", col = hcl.colors(50, "Greens", rev = TRUE))
+      plot(baba[[2]], main = "Hmean (m)", col = hcl.colors(50, "Greens", rev = TRUE))
+      plot(baba[[4]], main = "H p95 (m)", col = hcl.colors(50, "Greens", rev = TRUE))
+      plot(baba[[5]], main = "Couverture > 2m", col = hcl.colors(50, "YlGn", rev = TRUE))
+    }
+  } else {
+    cat("Exécutez d'abord l'exercice 5.1a pour créer les fichiers normalisés.\n")
+  }
 }
 ```
 
