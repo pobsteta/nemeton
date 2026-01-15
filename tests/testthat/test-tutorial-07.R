@@ -101,8 +101,8 @@ test_that("Tutorial 07 covers tree segmentation", {
 
   content <- paste(readLines(tutorial_path, warn = FALSE), collapse = "\n")
 
-  # Tree segmentation
-  expect_match(content, "locate_trees|segment_trees", ignore.case = TRUE,
+  # Tree segmentation (lidaRtRee uses tree_segmentation, not lidR's segment_trees)
+  expect_match(content, "tree_segmentation|segment_crowns|segment_trees", ignore.case = TRUE,
                info = "Should cover tree detection and segmentation")
   expect_match(content, "lmf|dalponte", ignore.case = TRUE,
                info = "Should mention segmentation algorithms")
@@ -210,13 +210,13 @@ test_that("Tutorial 07 has appropriate length", {
   expect_gte(n_lines, 800)
 })
 
-test_that("Tutorial 07 contains gradethis validation", {
+test_that("Tutorial 07 contains learnr quiz validation", {
   tutorial_path <- system.file("tutorials/07-lidar-advanced/07-lidar-advanced.Rmd", package = "nemeton")
   skip_if(tutorial_path == "", message = "Tutorial file not found")
 
   content <- paste(readLines(tutorial_path, warn = FALSE), collapse = "\n")
 
-  # gradethis validation
-  expect_match(content, "grade_this|gradethis", ignore.case = TRUE,
-               info = "Should contain gradethis validation")
+  # learnr quiz validation (uses quiz() and question(), not gradethis)
+  expect_match(content, "quiz\\(|question\\(", ignore.case = TRUE,
+               info = "Should contain learnr quiz validation")
 })
