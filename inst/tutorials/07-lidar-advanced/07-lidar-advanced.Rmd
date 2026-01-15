@@ -2431,12 +2431,12 @@ library(sf)
 library(purrr)
 library(dplyr)
 
-# Répertoire des données du package
-pkg_data_dir <- system.file("", package = "nemeton")
-if (pkg_data_dir == "") {
-  pkg_data_dir <- "/home/pascal/Téléchargements/nemeton"
+# Répertoire des données du package (inst/extdata après installation)
+field_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
+if (field_dir == "") {
+  # Fallback pour développement local
+  field_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/field"
 }
-field_dir <- file.path(pkg_data_dir, "data", "aba.model", "field")
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
@@ -2564,13 +2564,14 @@ library(purrr)
 library(furrr)
 library(dplyr)
 
-# Répertoire des données
-pkg_data_dir <- system.file("", package = "nemeton")
-if (pkg_data_dir == "") {
-  pkg_data_dir <- "/home/pascal/Téléchargements/nemeton"
+# Répertoire des données du package (inst/extdata après installation)
+field_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
+laz_dir <- system.file("extdata", "aba.model", "ALS", "plots.norm.laz", package = "nemeton")
+if (field_dir == "") {
+  # Fallback pour développement local
+  field_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/field"
+  laz_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/ALS/plots.norm.laz"
 }
-field_dir <- file.path(pkg_data_dir, "data", "aba.model", "field")
-laz_dir <- file.path(pkg_data_dir, "data", "aba.model", "ALS", "plots.norm.laz")
 
 p_radius <- 15
 plot_area_ha <- pi * p_radius^2 / 10000
