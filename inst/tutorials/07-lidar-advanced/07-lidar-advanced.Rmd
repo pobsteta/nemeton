@@ -2472,6 +2472,7 @@ cat("--- 1. Chargement des coordonnées ---\n")
 plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
   map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            select(Id, X, Y) |>
             mutate(cluster_id = sub("_PiquetsTerrain\\.csv$", "", basename(.x)))) |>
   filter(Id %in% c("p1", "p2", "p3", "p4")) |>
   mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
@@ -2487,6 +2488,7 @@ cat("--- 2. Calcul des paramètres de peuplement ---\n")
 trees <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots$plot_id))) |>
   map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            select(Diam, Aspect) |>
             mutate(plot_id = sub("_ArbresTerrain\\.csv$", "", basename(.x)))) |>
   filter(!is.na(Diam), Diam >= dbh_min, Aspect %in% c(1, 2))
 
@@ -2629,6 +2631,7 @@ cat("\n--- 3. Fusion avec données terrain ---\n")
 plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots_in_extent))) |>
   map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            select(Id, X, Y) |>
             mutate(cluster_id = sub("_PiquetsTerrain\\.csv$", "", basename(.x)))) |>
   filter(Id %in% c("p1", "p2", "p3", "p4")) |>
   mutate(plot_id = paste0(cluster_id, "-", substr(Id, 2, 2)))
@@ -2637,6 +2640,7 @@ plots <- dir(field_dir, pattern = "_PiquetsTerrain\\.csv$", full.names = TRUE) |
 stand_params <- dir(field_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE) |>
   keep(~ any(str_detect(basename(.x), plots$plot_id))) |>
   map_dfr(~ read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE) |>
+            select(Diam, Aspect) |>
             mutate(plot_id = sub("_ArbresTerrain\\.csv$", "", basename(.x)))) |>
   filter(!is.na(Diam), Diam >= 7.5, Aspect %in% c(1, 2)) |>
   group_by(plot_id) |>
