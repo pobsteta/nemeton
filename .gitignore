@@ -35,3 +35,4 @@ renv/
 .env*
 *.log
 *.las
+Rplots.pdf
