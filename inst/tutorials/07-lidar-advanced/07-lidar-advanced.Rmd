@@ -2539,14 +2539,26 @@ cat("--- 4. Résumé des données terrain ---\n\n")
 plots_sf |>
   st_drop_geometry() |>
   summarise(
-    across(c(G_m2_ha, N_ha, D_mean_cm),
-           list(min = ~ min(.x, na.rm = TRUE),
-                max = ~ max(.x, na.rm = TRUE),
-                moy = ~ mean(.x, na.rm = TRUE)))
+    G_min = min(G_m2_ha, na.rm = TRUE),
+    G_max = max(G_m2_ha, na.rm = TRUE),
+    G_moy = mean(G_m2_ha, na.rm = TRUE),
+    N_min = min(N_ha, na.rm = TRUE),
+    N_max = max(N_ha, na.rm = TRUE),
+    N_moy = mean(N_ha, na.rm = TRUE),
+    D_min = min(D_mean_cm, na.rm = TRUE),
+    D_max = max(D_mean_cm, na.rm = TRUE),
+    D_moy = mean(D_mean_cm, na.rm = TRUE)
   ) |>
-  pivot_longer(everything(), names_to = c("var", "stat"), names_sep = "_") |>
-  pivot_wider(names_from = stat, values_from = value) |>
-  mutate(across(where(is.numeric), ~ round(.x, 1))) |>
+  pivot_longer(everything(), names_to = c("Variable", "Stat"), names_sep = "_") |>
+  pivot_wider(names_from = Stat, values_from = value) |>
+  mutate(
+    Variable = case_when(
+      Variable == "G" ~ "G (m²/ha)",
+      Variable == "N" ~ "N (tiges/ha)",
+      Variable == "D" ~ "D moyen (cm)"
+    ),
+    across(where(is.numeric), ~ round(.x, 1))
+  ) |>
   print()
 
 cat("\nAperçu:\n")
