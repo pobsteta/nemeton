@@ -2753,7 +2753,13 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   laz_files <- dir(laz_dir,
                    pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
                    full.names = TRUE)
-  cat("Fichiers LAZ (mêmes que 6.2):", length(laz_files), "\n\n")
+  cat("Fichiers LAZ (mêmes que 6.2):", length(laz_files), "\n")
+  if (length(laz_files) == 0) {
+    cat("ERREUR: Aucun fichier LAZ trouvé dans:", laz_dir, "\n")
+    cat("Vérifiez que les données sont installées.\n")
+    stop("Fichiers LAZ manquants")
+  }
+  cat("Premier fichier:", basename(laz_files[1]), "\n\n")
 
   # ==========================================================================
   # COMPARAISON ABA vs BABA
@@ -2799,21 +2805,29 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   if (file.exists(output_file)) {
     baba <- terra::rast(output_file)
     cat("\nRésultat BABA:\n")
-    cat("  Dimensions:", ncol(baba), "×", nrow(baba), "pixels\n")
+    cat("  Dimensions:", terra::ncol(baba), "×", terra::nrow(baba), "pixels\n")
     cat("  Résolution:", terra::res(baba)[1], "m\n")
+    cat("  Nombre de couches:", terra::nlyr(baba), "\n")
     cat("  Couches:", paste(names(baba), collapse = ", "), "\n")
 
-    # Visualisation comparative
-    par(mfrow = c(2, 2))
-    plot(baba[[1]], main = "Zmax (m)", col = hcl.colors(50, "Greens", rev = TRUE))
-    plot(baba[[2]], main = "Zmean (m)", col = hcl.colors(50, "Greens", rev = TRUE))
-    plot(baba[[4]], main = "Zp95 (m)", col = hcl.colors(50, "Greens", rev = TRUE))
-    plot(baba[[5]], main = "Couverture > 2m", col = hcl.colors(50, "YlGn", rev = TRUE))
+    # Visualisation comparative (si couches valides)
+    if (terra::nlyr(baba) >= 5) {
+      par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
+      terra::plot(baba[[1]], main = "Zmax (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+      terra::plot(baba[[2]], main = "Zmean (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+      terra::plot(baba[[4]], main = "Zp95 (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+      terra::plot(baba[[5]], main = "Couverture > 2m", col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
+    } else {
+      cat("Attention: moins de 5 couches produites\n")
+    }
 
     cat("\nConclusion:\n")
     cat("- BABA produit une carte raster (pixels 10m)\n")
     cat("- ABA produit des valeurs ponctuelles par placette\n")
     cat("- BABA permet la cartographie continue du massif\n")
+  } else {
+    cat("\nERREUR: fichier non créé:", output_file, "\n")
+    cat("Vérifiez les messages d'erreur ci-dessus.\n")
   }
 }
 ```
