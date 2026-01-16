@@ -2083,7 +2083,7 @@ cat("  zq95:", round(mean(metrics_df$zq95, na.rm = TRUE), 2), "m\n\n")
 
 cat("Couverture canopée (moyennes):\n")
 cat("  > 2m:", round(mean(metrics_df$pzabove2, na.rm = TRUE) * 100, 1), "%\n")
-cat("  > 5m:", round(mean(metrics_df$pzabove5, na.rm = TRUE) * 100, 1), "%\n\n")
+cat("  > zmean:", round(mean(metrics_df$pzabovezmean, na.rm = TRUE) * 100, 1), "%\n\n")
 
 cat("Nombre de métriques par placette:", ncol(metrics_df) - 4, "\n")
 
@@ -2339,7 +2339,7 @@ for (s in seuils) {
 |----------|-------------------|-------------|-------------------|
 | zmax, zmean, zsd | `aba_metrics()` | Statistiques de hauteur | P1, C1, B2 |
 | zq25, zq50, zq75, zq95 | `aba_metrics()` | Percentiles | P1 |
-| pzabove2, pzabove5 | `aba_metrics()` | Couverture canopée | A1, C1 |
+| pzabove2, pzabovezmean | `aba_metrics()` | Couverture canopée | A1, C1 |
 | N_ha, N_sup10 | `std_tree_metrics()` | Densité d'arbres | P1, E1 |
 | H_mean, H_dom | `std_tree_metrics()` | Hauteur moyenne/dominante | P1, P3 |
 | Gini | `std_tree_metrics()` | Hétérogénéité (inégalité) | B2 |
@@ -2376,1084 +2376,2712 @@ quiz(
 ```
 
 
-## Section 6 : Approche ABA - Préparation des Données
+## Section 6 : Approche ABA — Préparation des Données
 
-*Basé sur l'article [Area-based 1: Data preparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html) de lidaRtRee*
+*Basé sur l'article [Area-based approach 1: data preparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html) de lidaRtRee*
 
-### Principe de l'approche ABA
+Cette section reprend le workflow du tutoriel officiel lidaRtRee, appliqué aux **28 placettes de notre zone d'étude** (clusters Verc-02, 05, 06, C1, C2, S4, S7).
 
-L'**approche basée sur les surfaces** (Area-Based Approach - ABA) est la méthode standard pour prédire des paramètres forestiers à partir de données LiDAR. Elle comprend trois étapes :
+### 6.1 Import field inventory data
 
-1. **Préparation des données** : extraction des métriques LiDAR sur les placettes terrain
-2. **Calibration du modèle** : régression entre métriques LiDAR et mesures terrain
-3. **Cartographie** : application du modèle sur l'ensemble de la zone
+#### 6.1.1 Tree-level inventory
 
-```
-            Flux de travail ABA
+96 placettes de rayon 15 m ont été inventoriées dans la zone des Quatre Montagnes (Vercors, France). Les placettes sont regroupées en clusters de 4. Nous travaillons sur 28 d'entre elles (7 clusters).
 
-  PLACETTES TERRAIN          DONNÉES LIDAR
-        │                          │
-        ▼                          ▼
-  ┌───────────┐            ┌───────────────┐
-  │ G, V, N   │            │ Nuage points  │
-  │ (mesurés) │            │ (normalisé)   │
-  └─────┬─────┘            └───────┬───────┘
-        │                          │
-        │    ┌─────────────────┐   │
-        └───►│ EXTRACTION      │◄──┘
-             │ métriques/plot  │
-             └────────┬────────┘
-                      │
-                      ▼
-             ┌─────────────────┐
-             │ CALIBRATION     │
-             │ G = f(zq95,...) │
-             └────────┬────────┘
-                      │
-                      ▼
-             ┌─────────────────┐
-             │ CARTOGRAPHIE    │
-             │ Prédiction wall │
-             │ to wall         │
-             └─────────────────┘
-```
-
-### Exercice 6.1 : Chargement des placettes terrain
-
-Chargez les données terrain des 28 placettes de notre zone d'étude depuis les
-fichiers CSV du projet Quatre Montagnes.
-
-*Basé sur le tutoriel [Area-based 1: Data preparation](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.1.data.preparation.html)*
+### Exercice 6.1 : Paramètres d'inventaire et import des données
 
 ```{r ex-6-1-setup}
 library(lidaRtRee)
+library(lidR)
 library(sf)
-library(purrr)
-library(dplyr)
-library(tidyr)
 
-# Répertoire des données du package (inst/extdata après installation)
-field_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
-if (field_dir == "") {
-  # Fallback pour développement local
-  field_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/field"
-}
+# Paramètres d'inventaire
+p_radius <- 15      # rayon de la placette (m)
+dbh_min <- 7.5      # seuil DBH (cm), arbres plus petits non inventoriés
+
+# Chemin vers les données (package nemeton, puis lidaRtRee en fallback)
+data_dir <- system.file("extdata", "aba.model", package = "nemeton")
+if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+if (data_dir == "") stop("Données aba.model non trouvées dans nemeton ni lidaRtRee")
 ```
 
 ```{r ex-6-1, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-1-setup"}
-library(lidaRtRee)
-library(sf)
-library(purrr)
-library(dplyr)
-library(tidyr)
+# === 6.1.1 : Import des données d'inventaire arbres ===
+cat("=== Paramètres d'inventaire ===\n")
+cat("Rayon placette:", p_radius, "m\n")
+cat("Seuil DBH:", dbh_min, "cm\n\n")
 
-cat("=== Chargement des placettes terrain (zone d'étude) ===\n\n")
+# Lister les fichiers d'arbres par pattern matching
+files_t <- dir(
+  path = file.path(data_dir, "field"),
+  pattern = "Verc-[[:alnum:]]{2}-[[:digit:]]{1}_ArbresTerrain.csv",
+  full.names = TRUE
+)
+cat("Fichiers d'arbres trouvés:", length(files_t), "\n")
 
-# Paramètres d'inventaire (comme dans le tutoriel lidaRtRee)
-p_radius <- 15
-dbh_min <- 7.5
-plot_area_ha <- pi * p_radius^2 / 10000
+# Filtrer aux 7 clusters de notre zone d'étude
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)-"
+files_t <- files_t[grepl(pattern_zone, basename(files_t))]
+cat("Fichiers pour nos 28 placettes:", length(files_t), "\n\n")
 
-cat("Paramètres:\n")
-cat("  Rayon placettes:", p_radius, "m\n")
-cat("  Surface:", round(pi * p_radius^2, 0), "m² (", round(plot_area_ha, 4), "ha)\n")
-cat("  DHP minimum:", dbh_min, "cm\n\n")
+# Charger le contenu de tous les fichiers avec lapply
+trees <- lapply(files_t, function(x) {
+  # Lire le tableau
+  dummy <- read.table(x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+  # Ajouter une colonne plot_id depuis le nom du fichier
+  cbind(dummy, data.frame(plot_id = rep(substr(basename(x), 6, 9), nrow(dummy))))
+})
 
-# ==========================================================================
-# 1. LISTER LES FICHIERS ARBRES PAR PATTERN MATCHING (comme tutoriel)
-# ==========================================================================
-cat("--- 1. Chargement des arbres ---\n")
+# Fusionner les éléments de la liste en un seul data.frame
+trees <- do.call(rbind, trees)
 
-# Pattern: Verc-XX-Y_ArbresTerrain.csv où XX = cluster, Y = placette
-# Filtrer sur nos 7 clusters: 02, 05, 06, C1, C2, S4, S7
-files_t <- dir(field_dir,
-               pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]_ArbresTerrain\\.csv$",
-               full.names = TRUE)
+# Ajouter l'info de la zone d'étude dans plot_id
+trees$plot_id <- paste0("Verc-", trees$plot_id)
 
-cat("Fichiers trouvés:", length(files_t), "\n")
-
-# Charger avec purrr::map_dfr (équivalent lapply + do.call(rbind))
-trees <- files_t |>
-  map_dfr(~ {
-    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
-    # Convertir Rem en character (types mixtes entre fichiers)
-    if ("Rem" %in% names(df)) df$Rem <- as.character(df$Rem)
-    # Extraire plot_id du nom de fichier (ex: Verc-02-1)
-    df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
-    df
-  }) |>
-  dplyr::filter(!is.na(Dia_cm), Dia_cm >= dbh_min)
-
-cat("Arbres chargés:", nrow(trees), "\n")
-cat("Placettes:", dplyr::n_distinct(trees$plot_id), "\n")
-cat("Colonnes:", paste(names(trees), collapse = ", "), "\n\n")
-
-# ==========================================================================
-# 2. CALCULER G, N, D PAR PLACETTE (dplyr)
-# ==========================================================================
-cat("--- 2. Calcul des paramètres de peuplement ---\n")
-
-stand_params <- trees |>
-  dplyr::group_by(plot_id) |>
-  dplyr::summarise(
-    G_m2_ha = sum(pi * (Dia_cm / 200)^2) / plot_area_ha,
-    N_ha = dplyr::n() / plot_area_ha,
-    D_mean_cm = mean(Dia_cm),
-    .groups = "drop"
-  )
-
-cat("Placettes avec mesures:", nrow(stand_params), "\n\n")
-
-# ==========================================================================
-# 3. AJOUTER LES COORDONNÉES DEPUIS *_PiquetsTerrain.csv
-# ==========================================================================
-cat("--- 3. Ajout des coordonnées ---\n")
-
-# Pattern pour les fichiers piquets (centres de placettes)
-files_p <- dir(field_dir,
-               pattern = "Verc-(02|05|06|C1|C2|S4|S7)_PiquetsTerrain\\.csv$",
-               full.names = TRUE)
-
-# Charger les coordonnées avec purrr::map_dfr
-coords <- files_p |>
-  map_dfr(~ {
-    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
-    df <- df[df$Id %in% c("p1", "p2", "p3", "p4"), c("Id", "X", "Y")]
-    cluster_id <- sub("_PiquetsTerrain\\.csv$", "", basename(.x))
-    df$plot_id <- paste0(cluster_id, "-", substr(df$Id, 2, 2))
-    df[, c("plot_id", "X", "Y")]
-  })
-
-# Fusionner et créer objet sf
-plots_sf <- stand_params |>
-  dplyr::left_join(coords, by = "plot_id") |>
-  sf::st_as_sf(coords = c("X", "Y"), crs = 2154)
-
-cat("Placettes géolocalisées:", nrow(plots_sf), "\n\n")
-
-# ==========================================================================
-# 4. RÉSUMÉ
-# ==========================================================================
-cat("--- 4. Résumé des données terrain ---\n\n")
-
-plots_sf |>
-  st_drop_geometry() |>
-  summarise(
-    G_min = min(G_m2_ha, na.rm = TRUE),
-    G_max = max(G_m2_ha, na.rm = TRUE),
-    G_moy = mean(G_m2_ha, na.rm = TRUE),
-    N_min = min(N_ha, na.rm = TRUE),
-    N_max = max(N_ha, na.rm = TRUE),
-    N_moy = mean(N_ha, na.rm = TRUE),
-    D_min = min(D_mean_cm, na.rm = TRUE),
-    D_max = max(D_mean_cm, na.rm = TRUE),
-    D_moy = mean(D_mean_cm, na.rm = TRUE)
-  ) |>
-  pivot_longer(everything(), names_to = c("Variable", "Stat"), names_sep = "_") |>
-  pivot_wider(names_from = Stat, values_from = value) |>
-  mutate(
-    Variable = case_when(
-      Variable == "G" ~ "G (m²/ha)",
-      Variable == "N" ~ "N (tiges/ha)",
-      Variable == "D" ~ "D moyen (cm)"
-    ),
-    across(where(is.numeric), ~ round(.x, 1))
-  ) |>
-  print()
-
-cat("\nAperçu:\n")
-print(head(st_drop_geometry(plots_sf)[, c("plot_id", "G_m2_ha", "N_ha", "D_mean_cm")]))
+cat("=== Données arbres importées ===\n")
+cat("Nombre d'arbres:", nrow(trees), "\n")
+cat("Colonnes:", paste(names(trees), collapse = ", "), "\n")
 ```
 
-### Exercice 6.2 : Extraction des métriques LiDAR par placette
-
-Extrayez les métriques LiDAR sur les 28 placettes avec `clouds_metrics()` et `aba_metrics()`,
-en utilisant furrr pour la parallélisation.
+### Exercice 6.2 : Standardisation des noms de colonnes
 
 ```{r ex-6-2-setup}
 library(lidaRtRee)
+data_dir <- system.file("extdata", "aba.model", package = "nemeton")
+if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+p_radius <- 15
+dbh_min <- 7.5
+
+# Import des arbres (28 placettes)
+files_t <- dir(file.path(data_dir, "field"),
+               pattern = "Verc-[[:alnum:]]{2}-[[:digit:]]{1}_ArbresTerrain.csv",
+               full.names = TRUE)
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)-"
+files_t <- files_t[grepl(pattern_zone, basename(files_t))]
+trees <- lapply(files_t, function(x) {
+  dummy <- read.table(x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+  cbind(dummy, data.frame(plot_id = rep(substr(basename(x), 6, 9), nrow(dummy))))
+})
+trees <- do.call(rbind, trees)
+trees$plot_id <- paste0("Verc-", trees$plot_id)
+```
+
+```{r ex-6-2, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-2-setup"}
+# === 6.1.1 suite : Standardisation des colonnes ===
+
+# Renommer les colonnes en anglais
+names(trees) <- c(
+  "tree_id", "pole_id", "species", "azimuth_gr", "slope_gr", "diameter_cm",
+  "ground_distance_m", "height_m", "appearance", "tilted", "remark", "plot_id"
+)
+
+# Supprimer les arbres sans diamètre
+trees <- trees[!is.na(trees$diameter_cm), ]
+
+# Ajouter les niveaux de facteur pour appearance
+trees$appearance <- factor(trees$appearance, levels = 0:4)
+levels(trees$appearance) <- c("missing or lying",
+                              "live",
+                              "live with broken treetop",
+                              "dead with branches",
+                              "dead without branches (snag)")
+
+# Convertir species en facteur
+trees$species <- factor(trees$species)
+
+cat("=== Données arbres standardisées ===\n")
+cat("Nombre d'arbres après nettoyage:", nrow(trees), "\n")
+cat("Espèces présentes:", paste(levels(trees$species), collapse = ", "), "\n\n")
+head(trees[, c("plot_id", "tree_id", "species", "diameter_cm", "height_m")], n = 5)
+```
+
+#### 6.1.2 Plot-level information
+
+Cette section importe les coordonnées des centres de placettes.
+
+### Exercice 6.3 : Import des coordonnées des placettes
+
+```{r ex-6-3-setup}
+library(lidaRtRee)
+library(sf)
+data_dir <- system.file("extdata", "aba.model", package = "nemeton")
+if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+p_radius <- 15
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+```
+
+```{r ex-6-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-3-setup"}
+# === 6.1.2 : Import des coordonnées des placettes ===
+
+# Lister les fichiers de localisation par pattern matching
+files_p <- dir(
+  path = file.path(data_dir, "field"),
+  pattern = "Verc-[[:alnum:]]{2}_PiquetsTerrain.csv",
+  full.names = TRUE
+)
+
+# Filtrer aux clusters de notre zone
+files_p <- files_p[grepl(pattern_zone, basename(files_p))]
+cat("Fichiers de localisation:", length(files_p), "\n\n")
+
+# Initialiser le data.frame
+plots <- NULL
+
+# Charger tous les fichiers avec une boucle
+for (i in files_p) {
+  # Lire le fichier
+  dummy <- read.table(i, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+  # Ajouter au data.frame avec l'info plot_id
+  plots <- rbind(plots,
+                 cbind(dummy,
+                       data.frame(plot_id = rep(substr(basename(i), 6, 7),
+                                                nrow(dummy)))))
+}
+
+# Garder uniquement les données nécessaires (supprimer doublons de mesure)
+plots <- plots[is.element(plots$Id, c("p1", "p2", "p3", "p4")), ]
+
+# Ajouter plot_id au cluster_id
+plots$cluster_id <- paste0("Verc-", substr(plots$plot_id, 1, 2))
+plots$plot_id <- paste(plots$cluster_id, substr(plots$Id, 2, 2), sep = "-")
+
+# Garder uniquement les coordonnées et Id
+plots <- plots[, c("X", "Y", "plot_id", "cluster_id")]
+
+cat("=== Placettes importées ===\n")
+cat("Nombre de placettes:", nrow(plots), "\n\n")
+
+# Convertir en objet spatial sf
+plots_sf <- sf::st_as_sf(plots, coords = c("X", "Y"))
+sf::st_crs(plots_sf) <- 2154
+
+# Ajouter les coordonnées dans le data.frame de l'objet sf
+plots_sf <- cbind(plots_sf, data.frame(sf::st_coordinates(plots_sf)))
+
+cat("Aperçu des placettes:\n")
+print(head(plots_sf[, c("plot_id", "cluster_id", "X", "Y")], n = 6))
+```
+
+#### 6.1.3 Compute tree coordinates
+
+Les coordonnées des arbres sont calculées à partir des coordonnées du centre de la placette et des mesures d'azimut, de pente et de distance au sol.
+
+### Exercice 6.4 : Calcul des coordonnées des arbres
+
+```{r ex-6-4-setup}
+library(lidaRtRee)
+library(sf)
+data_dir <- system.file("extdata", "aba.model", package = "nemeton")
+if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+p_radius <- 15
+dbh_min <- 7.5
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+# Import arbres
+files_t <- dir(file.path(data_dir, "field"),
+               pattern = "Verc-[[:alnum:]]{2}-[[:digit:]]{1}_ArbresTerrain.csv",
+               full.names = TRUE)
+files_t <- files_t[grepl(paste0(pattern_zone, "-"), basename(files_t))]
+trees <- lapply(files_t, function(x) {
+  dummy <- read.table(x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+  cbind(dummy, data.frame(plot_id = rep(substr(basename(x), 6, 9), nrow(dummy))))
+})
+trees <- do.call(rbind, trees)
+trees$plot_id <- paste0("Verc-", trees$plot_id)
+names(trees) <- c("tree_id", "pole_id", "species", "azimuth_gr", "slope_gr",
+                  "diameter_cm", "ground_distance_m", "height_m", "appearance",
+                  "tilted", "remark", "plot_id")
+trees <- trees[!is.na(trees$diameter_cm), ]
+trees$appearance <- factor(trees$appearance, levels = 0:4)
+levels(trees$appearance) <- c("missing or lying", "live", "live with broken treetop",
+                              "dead with branches", "dead without branches (snag)")
+trees$species <- factor(trees$species)
+
+# Import placettes
+files_p <- dir(file.path(data_dir, "field"),
+               pattern = "Verc-[[:alnum:]]{2}_PiquetsTerrain.csv",
+               full.names = TRUE)
+files_p <- files_p[grepl(pattern_zone, basename(files_p))]
+plots <- NULL
+for (i in files_p) {
+  dummy <- read.table(i, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+  plots <- rbind(plots, cbind(dummy, data.frame(plot_id = rep(substr(basename(i), 6, 7), nrow(dummy)))))
+}
+plots <- plots[is.element(plots$Id, c("p1", "p2", "p3", "p4")), ]
+plots$cluster_id <- paste0("Verc-", substr(plots$plot_id, 1, 2))
+plots$plot_id <- paste(plots$cluster_id, substr(plots$Id, 2, 2), sep = "-")
+plots <- plots[, c("X", "Y", "plot_id", "cluster_id")]
+plots_sf <- sf::st_as_sf(plots, coords = c("X", "Y"))
+sf::st_crs(plots_sf) <- 2154
+plots_sf <- cbind(plots_sf, data.frame(sf::st_coordinates(plots_sf)))
+
+# Import métadonnées (convergence, déclinaison)
+meta_file <- file.path(data_dir, "field", "plot.metadata.csv")
+if (file.exists(meta_file)) {
+  meta <- read.table(meta_file, sep = ";", header = TRUE)
+  meta <- meta[, c("Id", "Convergence_gr", "Declinaison_gr")]
+  names(meta) <- c("cluster_id", "convergence_gr", "declination_gr")
+  plots_sf <- merge(plots_sf, meta)
+} else {
+  plots_sf$convergence_gr <- 0
+  plots_sf$declination_gr <- 0
+}
+```
+
+```{r ex-6-4, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-4-setup"}
+# === 6.1.3 : Calcul des coordonnées projetées des arbres ===
+
+# Fusionner trees et plots pour importer le centre de la placette
+trees <- merge(trees, plots_sf[, c("X", "Y", "convergence_gr",
+                                    "declination_gr", "plot_id")],
+               by = "plot_id")
+
+cat("Arbres après fusion avec coordonnées placettes:", nrow(trees), "\n\n")
+
+# Calculer les coordonnées projetées avec polar2Projected
+dummy <- lidaRtRee::polar2Projected(
+  trees$X, trees$Y, 0,
+  trees$azimuth_gr / 200 * pi,
+  trees$ground_distance_m,
+  trees$slope_gr / 200 * pi,
+  trees$declination_gr / 200 * pi,
+  trees$convergence_gr / 200 * pi,
+  trees$diameter_cm / 100
+)
+
+# Ajouter les coordonnées au data.frame trees
+trees[, c("X", "Y", "horiz_dist_m")] <- dummy[, c("x", "y", "d")]
+
+cat("=== Coordonnées arbres calculées ===\n")
+head(trees[, c("plot_id", "tree_id", "X", "Y", "horiz_dist_m", "height_m")], n = 5)
+```
+
+### 6.2 Import ALS data
+
+#### 6.2.1 Point cloud extraction
+
+Les fichiers LAZ doivent être normalisés, avec l'attribut Z contenant la hauteur au-dessus du sol.
+
+### Exercice 6.5 : Extraction des nuages de points
+
+```{r ex-6-5-setup}
+library(lidaRtRee)
 library(lidR)
 library(sf)
-library(purrr)
-library(furrr)
-library(dplyr)
-
-# Répertoire des données du package (inst/extdata après installation)
-field_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
-laz_dir <- system.file("extdata", "aba.model", "ALS", "plots.norm.laz", package = "nemeton")
-if (field_dir == "") {
-  # Fallback pour développement local
-  field_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/field"
-  laz_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/ALS/plots.norm.laz"
-}
 
 p_radius <- 15
-plot_area_ha <- pi * p_radius^2 / 10000
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+# Charger les données quatre_montagnes pour avoir les coordonnées
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots_sf <- sf::st_as_sf(plots, coords = c("X", "Y"), crs = 2154)
+plots_sf <- cbind(plots_sf, X = plots$X, Y = plots$Y)
+
+# Répertoire des LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+
+# Créer un LAScatalog pour extraire les placettes
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+# Extraire les nuages circulaires aux coordonnées des placettes
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0  # Correction hauteurs négatives
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
 ```
 
-```{r ex-6-2, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-6-2-setup"}
+```{r ex-6-5, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-6-5-setup"}
+# === 6.2.1 : Extraction des nuages de points normalisés ===
+
+cat("=== Extraction des nuages depuis les tuiles LiDAR HD ===\n\n")
+cat("Répertoire LAZ normalisés:", laz_dir_normalized, "\n\n")
+
+# Informations sur le catalogue
+cat("Catalogue LAZ:\n")
+cat("  - Nombre de tuiles:", length(ctg_normalized$filename), "\n")
+cat("  - CRS: Lambert-93 (EPSG:2154)\n\n")
+
+# Résultat de l'extraction
+cat("=== Nuages de points extraits ===\n")
+cat("Nombre de placettes:", nrow(plots), "\n")
+cat("Nuages extraits:", length(llas_height), "\n\n")
+
+if (length(llas_height) > 0) {
+  cat("Premier nuage:", names(llas_height)[1], "\n")
+  print(llas_height[[1]])
+} else {
+  cat("ERREUR: Aucun nuage extrait.\n")
+  cat("Vérifiez que les fichiers LAZ existent dans:", laz_dir_normalized, "\n")
+}
+```
+
+#### 6.2.2 Computation of terrain statistics
+
+La fonction `terrain_points_metrics()` calcule l'aspect, l'altitude et la pente en ajustant un plan.
+
+### Exercice 6.6 : Statistiques de terrain
+
+```{r ex-6-6-setup}
 library(lidaRtRee)
 library(lidR)
-library(sf)
-library(purrr)
-library(furrr)
-library(dplyr)
 
-cat("=== Extraction des métriques LiDAR (28 placettes) ===\n\n")
+p_radius <- 15
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
-# ==========================================================================
-# 1. CHARGER LES NUAGES DE POINTS (furrr parallélisé)
-# ==========================================================================
-cat("--- 1. Chargement des nuages de points ---\n")
+# Charger quatre_montagnes pour les coordonnées
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
 
-# Configuration parallélisation
-n_workers <- min(4L, parallel::detectCores() - 1L)
-plan(multisession, workers = n_workers)
-cat("Workers:", n_workers, "\n")
+# Répertoire des LAZ ORIGINAUX (non-normalisés) pour métriques terrain
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
 
-# Lister les fichiers LAZ par pattern matching (7 clusters × 4 placettes)
-laz_files <- dir(laz_dir,
-                 pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
-                 full.names = TRUE)
+# Créer un LAScatalog pour extraire les placettes
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
 
-cat("Fichiers LAZ:", length(laz_files), "\n")
-
-# Charger les nuages en parallèle (furrr)
-llas <- laz_files |>
-  set_names(~ sub("\\.laz$", "", basename(.x))) |>
-  future_map(~ {
-    las <- readLAS(.x, select = "xyzirnc")
-    las$Z[las$Z < 0] <- 0
-    las
-  }, .options = furrr_options(seed = TRUE))
-
-cat("Nuages chargés:", length(llas), "\n\n")
-
-# ==========================================================================
-# 2. CALCULER LES MÉTRIQUES ABA
-# ==========================================================================
-cat("--- 2. Calcul des métriques avec clouds_metrics() ---\n")
-
-# Fonction de métriques ABA (signature correcte)
-metrics <- clouds_metrics(llas, ~ aba_metrics(Z, Intensity, ReturnNumber,
-                                               Classification, hmin = 2)) |>
-  as_tibble(rownames = "plot_id")
-
-cat("Métriques calculées:", ncol(metrics) - 1, "variables\n")
-cat("Placettes:", nrow(metrics), "\n\n")
-
-# Résumé des métriques principales
-metrics |>
-  dplyr::summarise(
-    zmax_moy = mean(zmax),
-    zmean_moy = mean(zmean),
-    zq95_moy = mean(zq95),
-    couv_2m = mean(pzabove2) * 100
-  ) |>
-  dplyr::mutate(across(everything(), ~ round(.x, 2))) |>
-  print()
-
-# ==========================================================================
-# 3. CHARGER LES DONNÉES TERRAIN ET FUSIONNER (purrr + dplyr)
-# ==========================================================================
-cat("\n--- 3. Fusion avec données terrain ---\n")
-
-# Charger arbres depuis *_ArbresTerrain.csv par pattern matching
-files_t <- dir(field_dir,
-               pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]_ArbresTerrain\\.csv$",
-               full.names = TRUE)
-
-stand_params <- files_t |>
-  map_dfr(~ {
-    df <- read.table(.x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
-    df$plot_id <- sub("_ArbresTerrain\\.csv$", "", basename(.x))
-    df[, c("Dia_cm", "plot_id")]
-  }) |>
-  dplyr::filter(!is.na(Dia_cm), Dia_cm >= 7.5) |>
-  dplyr::group_by(plot_id) |>
-  dplyr::summarise(G_m2_ha = sum(pi * (Dia_cm / 200)^2) / plot_area_ha, .groups = "drop")
-
-# Fusionner terrain + LiDAR
-plots_aba <- stand_params |>
-  dplyr::inner_join(metrics, by = "plot_id")
-
-cat("Données fusionnées:", nrow(plots_aba), "placettes\n\n")
-
-# Revenir en mode séquentiel
-plan(sequential)
-
-# ==========================================================================
-# 4. CORRÉLATIONS TERRAIN vs LIDAR
-# ==========================================================================
-cat("--- 4. Corrélations G vs métriques LiDAR ---\n\n")
-
-vars_cor <- c("zmax", "zmean", "zq95", "pzabove2", "mCH")
-cors <- vars_cor |>
-  set_names() |>
-  map_dbl(~ cor(plots_aba$G_m2_ha, plots_aba[[.x]], use = "complete.obs"))
-
-cat("Corrélations avec G (m²/ha):\n")
-iwalk(cors, ~ cat(sprintf("  %-10s: %+.3f\n", .y, .x)))
-
-# Graphique
-par(mfrow = c(1, 2))
-plot(plots_aba$zq95, plots_aba$G_m2_ha, pch = 16, col = "forestgreen",
-     xlab = "zq95 (m)", ylab = "G (m²/ha)", main = "G vs zq95")
-abline(lm(G_m2_ha ~ zq95, data = plots_aba), col = "red", lwd = 2)
-
-plot(plots_aba$pzabove2, plots_aba$G_m2_ha, pch = 16, col = "forestgreen",
-     xlab = "Couverture > 2m", ylab = "G (m²/ha)", main = "G vs couverture")
-abline(lm(G_m2_ha ~ pzabove2, data = plots_aba), col = "red", lwd = 2)
+# Extraire les nuages circulaires aux coordonnées des placettes
+llas_original <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      llas_original[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
 ```
 
-### Quiz Préparation ABA
+```{r ex-6-6, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-6-6-setup"}
+# === 6.2.2 : Calcul des statistiques de terrain ===
+# NOTE: On utilise les LAZ non-normalisés pour avoir l'altitude vraie
 
-```{r quiz-aba-prep, echo=FALSE}
+cat("=== Calcul des métriques de terrain ===\n")
+cat("Nuages originaux (non-normalisés):", length(llas_original), "\n")
+cat("Placettes:", nrow(plots), "\n\n")
+
+# Calculer les métriques terrain pour chaque placette
+metrics_list <- list()
+
+for (i in seq_along(llas_original)) {
+  plot_name <- names(llas_original)[i]
+  las <- llas_original[[i]]
+
+  # Trouver les coordonnées du centre
+  plot_row <- which(plots$plotId == plot_name)
+
+  if (length(plot_row) == 0) {
+    cat("Placette", plot_name, "non trouvée dans plots\n")
+    next
+  }
+
+  center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
+
+  # Calculer les métriques terrain (altitude, pente, aspect)
+  tryCatch({
+    result <- lidaRtRee::terrain_points_metrics(las, center_xy, p_radius)
+    metrics_list[[plot_name]] <- result
+  }, error = function(e) {
+    cat("Erreur pour", plot_name, ":", e$message, "\n")
+  })
+}
+
+cat("Métriques calculées pour", length(metrics_list), "placettes\n\n")
+
+# Fusionner les résultats en data.frame
+if (length(metrics_list) > 0) {
+  metrics_terrain <- as.data.frame(do.call(rbind, metrics_list))
+
+  cat("=== Métriques de terrain ===\n")
+  cat("Dimensions:", nrow(metrics_terrain), "x", ncol(metrics_terrain), "\n")
+  cat("Colonnes:", paste(names(metrics_terrain), collapse = ", "), "\n\n")
+  print(round(head(metrics_terrain), 2))
+} else {
+  cat("ERREUR: Aucune métrique calculée\n")
+  cat("Vérifiez que les nuages contiennent des points sol (Classification == 2)\n")
+}
+```
+
+### 6.3 Check field inventory data
+
+#### 6.3.1 Consistency with the inventory protocol
+
+### Exercice 6.7 : Vérification des données d'inventaire
+
+```{r ex-6-7-setup}
+library(lidaRtRee)
+library(lidR)
+data_dir <- system.file("extdata", "aba.model", package = "nemeton")
+if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+p_radius <- 15
+dbh_min <- 7.5
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+# Charger quatre_montagnes
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+
+# Import arbres (simplifié - utiliser les données déjà préparées)
+# Dans le tutoriel complet on chargerait depuis les CSV
+# Ici on simule avec les données disponibles
+```
+
+```{r ex-6-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-7-setup"}
+# === 6.3.1 : Vérification de la cohérence avec le protocole ===
+cat("=== Vérification des données d'inventaire ===\n\n")
+
+# Le jeu de données quatre_montagnes contient déjà les données nettoyées
+# Afficher les statistiques des variables de peuplement
+cat("Variables de peuplement pour nos 28 placettes:\n\n")
+summary(plots[, c("G_m2_ha", "N_ha", "D_mean_cm")])
+```
+
+#### 6.3.2 Height / diameter allometry
+
+### Exercice 6.8 : Relation hauteur-diamètre
+
+```{r ex-6-8-setup}
+library(lidaRtRee)
+library(ggplot2)
+data_dir <- system.file("extdata", "aba.model", package = "nemeton")
+if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "lidaRtRee")
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+```
+
+```{r ex-6-8, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-8-setup"}
+# === 6.3.4 : Relation hauteur-diamètre (allométrie) ===
+cat("=== Relation hauteur-diamètre au niveau peuplement ===\n\n")
+
+# Au niveau peuplement : relation entre D moyen et hauteur dominante
+# (zmax comme proxy de la hauteur dominante)
+
+plot(plots$D_mean_cm, plots$zmax,
+     pch = 19, col = "darkgreen",
+     xlab = "Diamètre moyen (cm)",
+     ylab = "Hauteur max LiDAR (m)",
+     main = "Relation D moyen - Hauteur dominante (28 placettes)")
+
+# Ajouter une régression
+model <- lm(zmax ~ D_mean_cm, data = plots)
+abline(model, col = "red", lwd = 2)
+
+# Afficher le R²
+r2 <- summary(model)$r.squared
+legend("topleft", legend = paste("R² =", round(r2, 3)), bty = "n")
+```
+
+#### 6.3.3 Trees positions and remote sensing data
+
+### Exercice 6.9 : Superposition CHM et données terrain
+
+```{r ex-6-9-setup}
+library(lidaRtRee)
+library(lidR)
+library(terra)
+
+p_radius <- 15
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+
+# Répertoire des LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+# Extraire les nuages circulaires
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+# Placette test
+plot_test <- names(llas_height)[1]
+```
+
+```{r ex-6-9, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-9-setup"}
+# === 6.3.6 : Superposition CHM et positions arbres ===
+cat("=== Visualisation CHM placette", plot_test, "===\n\n")
+
+# Calculer le CHM (Canopy Height Model)
+chm <- lidR::rasterize_canopy(llas_height[[plot_test]],
+                               res = 0.5,
+                               algorithm = lidR::p2r(),
+                               pkg = "terra")
+
+# Afficher le CHM
+terra::plot(chm,
+            col = gray(seq(0, 1, 1/255)),
+            main = paste("CHM placette", plot_test))
+
+# Ajouter le cercle de la placette
+plot_coords <- plots[plots$plotId == plot_test, c("X", "Y")]
+theta <- seq(0, 2*pi, length.out = 100)
+circle_x <- plot_coords$X + p_radius * cos(theta)
+circle_y <- plot_coords$Y + p_radius * sin(theta)
+lines(circle_x, circle_y, col = "red", lwd = 2)
+
+# Ajouter le centre
+points(plot_coords$X, plot_coords$Y, pch = 3, col = "red", cex = 2)
+
+cat("CHM calculé - résolution:", terra::res(chm)[1], "m\n")
+cat("Hauteur max:", round(terra::global(chm, "max", na.rm = TRUE)$max, 1), "m\n")
+```
+
+### 6.4 Stand level parameters
+
+#### 6.4.1 Compute stand level forest parameters
+
+Trois paramètres de peuplement sont calculés en agrégeant les informations au niveau de l'arbre : surface terrière, diamètre moyen, densité de tiges.
+
+### Exercice 6.10 : Paramètres de peuplement
+
+```{r ex-6-10-setup}
+library(lidaRtRee)
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+```
+
+```{r ex-6-10, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-10-setup"}
+# === 6.4.1 : Paramètres de peuplement ===
+cat("=== Statistiques de peuplement (28 placettes) ===\n\n")
+
+# Le jeu quatre_montagnes contient déjà G, N, D calculés
+# Afficher les statistiques
+cat("Surface terrière (G_m2_ha):\n")
+summary(plots$G_m2_ha)
+
+cat("\nDensité de tiges (N_ha):\n")
+summary(plots$N_ha)
+
+cat("\nDiamètre moyen (D_mean_cm):\n")
+summary(plots$D_mean_cm)
+
+# Histogrammes
+par(mfrow = c(1, 3))
+hist(plots$G_m2_ha, main = "Surface terrière",
+     xlab = "(m²/ha)", ylab = "Nombre de placettes", col = "lightgreen")
+hist(plots$N_ha, main = "Densité de tiges",
+     xlab = "(N/ha)", ylab = "Nombre de placettes", col = "lightblue")
+hist(plots$D_mean_cm, main = "Diamètre moyen",
+     xlab = "(cm)", ylab = "Nombre de placettes", col = "lightyellow")
+```
+
+### 6.5 Summary of prepared data
+
+### Exercice 6.11 : Résumé des données préparées
+
+```{r ex-6-11-setup}
+library(lidaRtRee)
+library(lidR)
+
+p_radius <- 15
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+
+# LAZ normalisés pour llas_height
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+# LAZ originaux pour métriques terrain
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::projection(ctg_original) <- 2154
+lidR::opt_progress(ctg_original) <- FALSE
+
+# Synchroniser
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+# Calculer métriques terrain depuis LAZ originaux
+metrics_terrain <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las_orig)) {
+      center_xy <- as.numeric(plots[i, c("X", "Y")])
+      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+    }
+  }, error = function(e) NULL)
+}
+metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
+```
+
+```{r ex-6-11, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-11-setup"}
+# === 6.5 : Résumé des données préparées ===
+cat("=== RÉSUMÉ - Données prêtes pour la calibration ABA ===\n\n")
+
+cat("DONNÉES TERRAIN (plots):\n")
+cat("  - Nombre de placettes:", nrow(plots), "\n")
+cat("  - Variables forestières: G_m2_ha, N_ha, D_mean_cm\n")
+cat("  - Coordonnées: X, Y (Lambert-93)\n\n")
+
+cat("NUAGES DE POINTS (llas_height):\n")
+cat("  - Nombre de nuages:", length(llas_height), "\n")
+cat("  - Type: LAS normalisés (Z = hauteur au-dessus du sol)\n")
+total_points <- sum(sapply(llas_height, function(x) nrow(x@data)))
+cat("  - Total points:", format(total_points, big.mark = " "), "\n\n")
+
+cat("MÉTRIQUES TERRAIN (metrics_terrain):\n")
+cat("  - Dimensions:", nrow(metrics_terrain), "x", ncol(metrics_terrain), "\n")
+cat("  - Variables:", paste(names(metrics_terrain), collapse = ", "), "\n\n")
+
+cat(">>> Ces données sont prêtes pour l'étape suivante:\n")
+cat("    Section 7 - Calibration des modèles ABA\n")
+```
+
+### Quiz Section 6
+
+```{r quiz-section6, echo=FALSE}
 quiz(
-  question("Quelle est la surface d'une placette de rayon 15m ?",
-    answer("225 m²"),
-    answer("450 m²"),
-    answer("~707 m²", correct = TRUE),
-    answer("900 m²"),
+ question("Quel est le rayon standard des placettes d'inventaire dans le tutoriel lidaRtRee ?",
+    answer("10 m"),
+    answer("15 m", correct = TRUE),
+    answer("20 m"),
+    answer("25 m"),
     allow_retry = TRUE
   ),
-  question("Que contient la fonction aba_metrics() ?",
-    answer("Uniquement les hauteurs"),
-    answer("Hauteurs, percentiles, couverture, intensité, ratios", correct = TRUE),
-    answer("Uniquement les coordonnées"),
-    answer("Les espèces d'arbres"),
+  question("Que calcule la fonction polar2Projected() ?",
+    answer("Les coordonnées polaires depuis des coordonnées cartésiennes"),
+    answer("Les coordonnées cartésiennes des arbres depuis azimut, pente et distance", correct = TRUE),
+    answer("La projection du nuage de points"),
+    answer("Les métriques de terrain"),
+    allow_retry = TRUE
+  ),
+  question("Que contient l'attribut Z dans les fichiers LAZ normalisés ?",
+    answer("L'altitude absolue"),
+    answer("La hauteur au-dessus du sol", correct = TRUE),
+    answer("La coordonnée Z brute"),
+    answer("L'intensité du retour"),
+    allow_retry = TRUE
+  ),
+  question("Quels sont les trois paramètres de peuplement calculés ?",
+    answer("Hauteur, volume, biomasse"),
+    answer("Surface terrière (G), densité (N), diamètre moyen (D)", correct = TRUE),
+    answer("Couvert, LAI, hauteur dominante"),
+    answer("Age, fertilité, production"),
+    allow_retry = TRUE
+  ),
+  question("À quoi sert la fonction terrain_points_metrics() ?",
+    answer("À calculer les métriques LiDAR de hauteur"),
+    answer("À calculer altitude, pente et aspect depuis les points sol", correct = TRUE),
+    answer("À filtrer les points de terrain"),
+    answer("À normaliser les hauteurs"),
     allow_retry = TRUE
   )
 )
 ```
 
-## Section 7 : Approche ABA - Calibration des Modèles
 
-*Basé sur l'article [Area-based 2: Model calibration](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.2.model.calibration.html) de lidaRtRee*
+## Section 7 : Calibration des Modèles de Prédiction
 
-### Principe de la calibration
+*Approche surfacique (ABA) - Calibration de modèles de régression pour l'estimation des paramètres forestiers*
 
-La fonction `aba_build_model()` de lidaRtRee automatise la calibration des modèles ABA :
+Ce code présente un workflow pour calibrer des modèles de prédiction pour l'estimation des paramètres forestiers à partir de métriques dérivées de l'ALS, en utilisant l'approche surfacique (ABA). Le workflow est basé sur les fonctions des packages R `lidaRtRee` (testé avec la version 4.0.9) et `lidR` (testé avec la version 4.1.2).
 
-1. **Transformation Box-Cox** : normalisation de la variable cible
-2. **Sélection de variables** : algorithme stepwise avec critère BIC
-3. **Validation croisée spatiale** : leave-one-out avec prise en compte de l'autocorrélation
-4. **Diagnostics** : R², RMSE, biais, graphiques
+### 7.1 Chargement des données préparées
 
+Les données préparées dans la section précédente sont chargées : le data.frame `plots` contenant les paramètres de peuplement mesurés sur le terrain, la liste `llas_height` contenant les nuages de points normalisés extraits aux emplacements des placettes, et le data.frame `metrics_terrain` contenant les statistiques de terrain.
+
+```{r ex-7-1-setup, message=FALSE, warning=FALSE}
+# Paramètres
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+
+# Chargement des données quatre_montagnes
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+
+# Filtrage sur les 28 placettes de la zone d'étude
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+# Extraire les nuages circulaires
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+# Synchronisation plots / nuages
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+# LAZ originaux pour métriques terrain
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::projection(ctg_original) <- 2154
+lidR::opt_progress(ctg_original) <- FALSE
+
+metrics_terrain <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las_orig)) {
+      center_xy <- as.numeric(plots[i, c("X", "Y")])
+      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+    }
+  }, error = function(e) NULL)
+}
+metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 ```
-            Flux de calibration aba_build_model()
 
-  Données d'entrée:
-  ┌─────────────────────────────────────────────┐
-  │ y = variable terrain (G, V, N, ...)         │
-  │ X = matrice de métriques LiDAR              │
-  │ xy = coordonnées (pour validation spatiale) │
-  └─────────────────────────────────────────────┘
-                      │
-                      ▼
-  ┌─────────────────────────────────────────────┐
-  │ 1. Transformation Box-Cox de y              │
-  │ 2. Sélection variables (stepwise BIC)       │
-  │ 3. Ajustement modèle linéaire               │
-  │ 4. Validation croisée leave-one-out         │
-  └─────────────────────────────────────────────┘
-                      │
-                      ▼
-  Sorties:
-  ┌─────────────────────────────────────────────┐
-  │ - Modèle calibré                            │
-  │ - Statistiques (R², R²cv, RMSE, biais)      │
-  │ - Valeurs prédites et résidus               │
-  └─────────────────────────────────────────────┘
+```{r ex-7-1, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-1-setup"}
+# === 7.1 : Chargement et vérification des données ===
+cat("=== Données préparées pour la calibration ABA ===\n\n")
+
+# Résumé des données terrain
+cat("DONNÉES TERRAIN (plots):\n")
+print(summary(plots[, c("G_m2_ha", "N_ha", "D_mean_cm")]))
+
+# Visualisation des relations entre variables
+cat("\nVISUALISATION DES VARIABLES FORESTIÈRES:\n")
+plot(plots[, c("G_m2_ha", "N_ha", "D_mean_cm")],
+     col = "forestgreen", pch = 19,
+     main = "Relations entre paramètres forestiers")
+
+# Vérification des nuages de points
+cat("\nNUAGES DE POINTS (llas_height):\n")
+cat("  Nombre de nuages:", length(llas_height), "\n")
+cat("  Premier nuage:\n")
+print(llas_height[[1]])
+
+# Synchronisation
+llas_height <- llas_height[plots$plot_id]
+metrics_terrain <- metrics_terrain[plots$plot_id, ]
+
+cat("\nDonnées synchronisées:", nrow(plots), "placettes\n")
 ```
 
-### Exercice 7.1 : Calibration avec aba_build_model()
+### 7.2 Filtrage des nuages de points
 
-Calibrez un modèle de prédiction de la surface terrière.
+Avant le calcul des métriques, les points indésirables sont retirés. Les points avec un code de classification 7 (bruit) et les hauteurs au-dessus d'un seuil (points erronés) ou en dessous de 0 (erreurs de normalisation) sont exclus.
 
-```{r ex-7-1-setup}
-library(lidaRtRee)
-library(sf)
-# Charger et préparer les données
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
-  # Simuler des métriques LiDAR (pour démonstration)
-  set.seed(42)
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zsd = runif(n, 3, 10),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
-    imean = runif(n, 200, 400)
-  )
-  rownames(metrics) <- plots$plot_id
+```{r ex-7-2-setup, message=FALSE, warning=FALSE}
+# Paramètres
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+```
+
+```{r ex-7-2, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-2-setup"}
+# === 7.2 : Filtrage des points ===
+
+# Définition des paramètres de filtrage
+class_points <- c(0, 1, 2, 3, 4, 5, 12)  # Classes à conserver
+h_points <- 60  # Hauteur maximale (m)
+
+cat("=== Filtrage des nuages de points ===\n\n")
+cat("Classes conservées:", paste(class_points, collapse = ", "), "\n")
+cat("Hauteur maximale:", h_points, "m\n\n")
+
+# Filtrage par classification et hauteur
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification,
+                                                    class_points) &
+                                           Z <= h_points))
+
+# Correction des hauteurs négatives
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+# Vérification
+cat("Après filtrage:\n")
+for (i in 1:min(3, length(llas_height))) {
+  cat("  ", names(llas_height)[i], ":",
+      nrow(llas_height[[i]]@data), "points,",
+      "Zmax =", round(max(llas_height[[i]]$Z), 1), "m\n")
 }
 ```
 
-```{r ex-7-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-1-setup"}
-library(lidaRtRee)
+### 7.3 Calcul des métriques du nuage de points
 
-cat("=== Calibration du modèle ABA ===\n\n")
+La fonction `clouds_metrics()` est utilisée pour calculer des métriques sur les nuages de points à l'aide de la fonction `aba_metrics()`.
 
-# Variable cible : Surface terrière (G en m²/ha)
+```{r ex-7-3-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+```
+
+```{r ex-7-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-7-3-setup"}
+# === 7.3 : Métriques du nuage de points ===
+
+# Définition de la fonction de calcul des métriques
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+
+# Extraction des points dans l'emprise de la placette (sans buffer)
+llas_height_plot_extent <- lapply(llas_height, function(x) {
+  # Si attribut buffer existe, filtrer
+  if ("buffer" %in% names(x@data)) {
+    lidR::filter_poi(x, buffer == FALSE)
+  } else {
+    x
+  }
+})
+
+# Calcul des métriques
+cat("=== Calcul des métriques du nuage de points ===\n\n")
+metrics_points <- lidaRtRee::clouds_metrics(llas_height_plot_extent,
+                                            aba_point_metrics_fun)
+
+cat("Dimensions:", nrow(metrics_points), "placettes x",
+    ncol(metrics_points), "métriques\n\n")
+
+cat("Premières métriques (8 premières colonnes):\n")
+print(round(head(metrics_points[, 1:8], n = 5), 2))
+
+cat("\nMétriques disponibles:\n")
+cat(paste(names(metrics_points)[1:15], collapse = ", "), "...\n")
+```
+
+### 7.4 Calcul des métriques basées sur les arbres
+
+La détection des arbres individuels est effectuée sur les nuages de points. Un modèle numérique de canopée (MNC) avec une résolution de 0.5 m est d'abord calculé. Les arbres sont détectés en utilisant la fonction `tree_segmentation()`, leurs caractéristiques sont extraites et agrégées à l'échelle de la placette avec `std_tree_metrics()`.
+
+```{r ex-7-4-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+```
+
+```{r ex-7-4, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-4-setup"}
+# === 7.4 : Métriques basées sur les arbres ===
+
+# Paramètres
+aba_res_chm <- 0.5  # Résolution du MNC
+plot_radius <- 15   # Rayon de la placette
+
+cat("=== Calcul des métriques arbres ===\n\n")
+cat("Résolution MNC:", aba_res_chm, "m\n")
+cat("Rayon placette:", plot_radius, "m\n")
+cat("Surface placette:", round(pi * plot_radius^2, 1), "m² =",
+    round(pi * plot_radius^2 / 10000, 4), "ha\n\n")
+
+# Calcul des métriques arbres avec clouds_tree_metrics
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height,
+  plots[, c("X", "Y")],
+  plot_radius,
+  res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+cat("Dimensions:", nrow(metrics_trees), "placettes x",
+    ncol(metrics_trees), "métriques\n\n")
+
+cat("Premières métriques arbres:\n")
+print(round(head(metrics_trees[, 1:5], n = 5), 2))
+
+cat("\nMétriques arbres disponibles:\n")
+print(names(metrics_trees))
+```
+
+### 7.5 Combinaison des métriques
+
+Les métriques de points, d'arbres et de terrain sont combinées dans un seul data.frame.
+
+```{r ex-7-5-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+llas_height_plot_extent <- lapply(llas_height, function(x) x)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height_plot_extent,
+                                            aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+# LAZ originaux pour métriques terrain
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::projection(ctg_original) <- 2154
+lidR::opt_progress(ctg_original) <- FALSE
+
+metrics_terrain <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las_orig)) {
+      center_xy <- as.numeric(plots[i, c("X", "Y")])
+      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+    }
+  }, error = function(e) NULL)
+}
+metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
+```
+
+```{r ex-7-5, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-5-setup"}
+# === 7.5 : Combinaison des métriques ===
+
+cat("=== Fusion des métriques ===\n\n")
+
+# Combinaison des trois types de métriques
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]  # altitude, pente, aspect
+)
+
+cat("MÉTRIQUES COMBINÉES:\n")
+cat("  Dimensions:", nrow(metrics), "placettes x", ncol(metrics), "prédicteurs\n\n")
+
+cat("Types de métriques:\n")
+cat("  - Points (aba_metrics):", ncol(metrics_points), "variables\n")
+cat("  - Arbres (std_tree_metrics):", ncol(metrics_trees), "variables\n")
+cat("  - Terrain:", 3, "variables (altitude, pente, aspect)\n\n")
+
+cat("Aperçu des données combinées:\n")
+print(round(metrics[1:5, c("zmax", "zmean", "zq95", "Tree_meanH", "altitude_mean")], 2))
+```
+
+### 7.6 Calibration d'un modèle mono-variable
+
+La fonction `aba_build_model()` sélectionne le modèle de régression linéaire optimal maximisant le R² ajusté (maximum 4 prédicteurs). Une transformation Box-Cox ou log peut être appliquée pour normaliser la variable cible. Une validation croisée leave-one-out est réalisée.
+
+```{r ex-7-6-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+metrics_terrain <- mapply(function(x, y) {
+  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
+}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
+
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
+```
+
+```{r ex-7-6, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-7-6-setup"}
+# === 7.6 : Calibration modèle surface terrière (G) ===
+
+variable <- "G_m2_ha"
+subsample <- 1:nrow(plots)
+
+cat("=== Calibration du modèle pour", variable, "===\n\n")
+
+# Construction du modèle
+model_aba <- lidaRtRee::aba_build_model(
+  plots[subsample, variable],
+  metrics[subsample, ],
+  transform = "boxcox",
+  nmax = 4,
+  xy = plots[subsample, c("X", "Y")]
+)
+
+# Résultats
+row.names(model_aba$stats) <- variable
+
+cat("MODÈLE SÉLECTIONNÉ:\n")
+print(model_aba$model)
+
+cat("\nSTATISTIQUES:\n")
+print(model_aba$stats)
+
+# Analyse des résidus
+cat("\nCORRÉLATION DES RÉSIDUS avec les variables:\n")
+cor_residuals <- round(cor(cbind(
+  model_aba$values$residual,
+  plots[subsample, c("G_m2_ha", "N_ha", "D_mean_cm")],
+  metrics_terrain[subsample, 1:3]
+)), 2)[1, ]
+print(cor_residuals)
+
+# Test de corrélation résidus vs variable observée
+cat("\nTest corrélation résidus ~", variable, ":\n")
+print(cor.test(model_aba$values$residual, plots[subsample, variable]))
+```
+
+### 7.7 Diagnostics du modèle
+
+La fonction `aba_plot()` permet de visualiser les valeurs prédites vs observées.
+
+```{r ex-7-7-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+metrics_terrain <- mapply(function(x, y) {
+  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
+}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
+
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
+
+variable <- "G_m2_ha"
+model_aba <- lidaRtRee::aba_build_model(
+  plots[, variable], metrics, transform = "boxcox", nmax = 4,
+  xy = plots[, c("X", "Y")]
+)
+```
+
+```{r ex-7-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-7-setup"}
+# === 7.7 : Diagnostics du modèle ===
+
 variable <- "G_m2_ha"
 
-cat("Variable cible:", variable, "\n")
-cat("Nombre de placettes:", nrow(plots), "\n")
-cat("Métriques disponibles:", paste(names(metrics), collapse = ", "), "\n\n")
+cat("=== Diagnostics graphiques ===\n\n")
 
-# Calibration avec aba_build_model()
-model_aba <- aba_build_model(
-  y = plots[, variable],           # Variable terrain
-  x = metrics,                      # Métriques LiDAR
-  transform = "boxcox",             # Transformation Box-Cox
-  nmax = 4,                         # Maximum 4 variables
-  xy = plots[, c("X", "Y")]         # Coordonnées pour validation spatiale
+par(mfrow = c(1, 2))
+
+# Graphique prédit vs observé
+lidaRtRee::aba_plot(model_aba,
+                    main = paste("Modèle", variable),
+                    col = "forestgreen")
+
+# Graphique résidus vs prédit
+plot(model_aba$values$predicted,
+     model_aba$values$residual,
+     ylab = "Erreur de prédiction",
+     xlab = "Valeur prédite (LOOCV)",
+     main = paste("Résidus", variable),
+     col = "forestgreen",
+     pch = 19)
+abline(h = 0, lty = 2, col = "red")
+
+par(mfrow = c(1, 1))
+
+cat("INTERPRÉTATION:\n")
+cat("- Gauche: valeurs prédites vs observées (idéal = ligne 1:1)\n")
+cat("- Droite: résidus vs prédictions (idéal = dispersion uniforme autour de 0)\n")
+cat("- Une tendance dans les résidus indique un biais systématique\n")
+```
+
+### 7.8 Calibration de modèles multiples
+
+Les modèles sont calibrés séquentiellement pour différents paramètres forestiers.
+
+```{r ex-7-8-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
 )
 
-# Afficher les statistiques
-cat("=== Résultats de la calibration ===\n\n")
-cat("Variables sélectionnées:", paste(model_aba$stats$variables, collapse = " + "), "\n\n")
+metrics_terrain <- mapply(function(x, y) {
+  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
+}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
 
-cat("Statistiques:\n")
-cat("  R² ajusté:", round(model_aba$stats$r2_adj, 3), "\n")
-cat("  R² validation croisée:", round(model_aba$stats$r2_cv, 3), "\n")
-cat("  RMSE:", round(model_aba$stats$rmse, 2), "m²/ha\n")
-cat("  RMSE relatif:", round(model_aba$stats$rmse_rel * 100, 1), "%\n")
-cat("  Biais:", round(model_aba$stats$bias, 2), "m²/ha\n")
-
-# Graphique observé vs prédit
-aba_plot(model_aba, main = paste("Modèle", variable))
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
 ```
 
-### Exercice 7.2 : Calibration de plusieurs variables
+```{r ex-7-8, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-8-setup"}
+# === 7.8 : Modèles multiples (G, D, N) ===
 
-Calibrez des modèles pour G, N et D_mean simultanément.
+cat("=== Calibration de modèles pour G, D et N ===\n\n")
 
-```{r ex-7-2-setup}
-library(lidaRtRee)
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
-  set.seed(42)
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zsd = runif(n, 3, 10),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
-    imean = runif(n, 200, 400)
-  )
-  rownames(metrics) <- plots$plot_id
-}
-```
-
-```{r ex-7-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-2-setup"}
-library(lidaRtRee)
-
-cat("=== Calibration multi-variables ===\n\n")
-
-# Variables à modéliser
-variables <- c("G_m2_ha", "N_ha", "D_mean_cm")
-
-# Calibrer un modèle pour chaque variable
 models_aba <- list()
-for (var in variables) {
-  cat("Calibration de", var, "...\n")
-  models_aba[[var]] <- aba_build_model(
-    y = plots[, var],
-    x = metrics,
+
+for (i in c("G_m2_ha", "D_mean_cm", "N_ha")) {
+  cat("Calibration de", i, "...\n")
+  models_aba[[i]] <- lidaRtRee::aba_build_model(
+    plots[, i],
+    metrics,
     transform = "boxcox",
     nmax = 4,
     xy = plots[, c("X", "Y")]
   )
 }
 
-# Résumé des modèles
-cat("\n=== Résumé des modèles ===\n\n")
-cat(sprintf("%-12s %8s %8s %10s %8s\n",
-            "Variable", "R²_adj", "R²_cv", "RMSE", "RMSE_%"))
-cat(sprintf("%-12s %8s %8s %10s %8s\n",
-            "--------", "------", "-----", "----", "------"))
+# Tableau récapitulatif des statistiques
+model_stats <- do.call(rbind, lapply(models_aba, function(x) {
+  x[["stats"]]
+}))
 
-for (var in variables) {
-  s <- models_aba[[var]]$stats
-  cat(sprintf("%-12s %8.3f %8.3f %10.2f %8.1f\n",
-              var, s$r2_adj, s$r2_cv, s$rmse, s$rmse_rel * 100))
-}
+cat("\n=== RÉSUMÉ DES MODÈLES ===\n\n")
+print(round(model_stats, 3))
 
-# Variables sélectionnées par modèle
-cat("\n\nVariables sélectionnées:\n")
-for (var in variables) {
-  cat(var, ":", models_aba[[var]]$stats$variables, "\n")
-}
-```
-
-### Exercice 7.3 : Diagnostics du modèle
-
-Analysez les résidus et la qualité du modèle.
-
-```{r ex-7-3-setup}
-library(lidaRtRee)
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
-  set.seed(42)
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zsd = runif(n, 3, 10),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
-    imean = runif(n, 200, 400)
-  )
-  rownames(metrics) <- plots$plot_id
-  model_aba <- aba_build_model(plots$G_m2_ha, metrics, transform = "boxcox",
-                                nmax = 4, xy = plots[, c("X", "Y")])
-}
-```
-```{r ex-7-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-7-3-setup"}
-library(lidaRtRee)
-
-cat("=== Diagnostics du modèle ===\n\n")
-
-# Extraire les valeurs du modèle
-observed <- model_aba$values$observed
-predicted <- model_aba$values$predicted
-residuals <- model_aba$values$residual
-
-# Statistiques des résidus
-cat("Statistiques des résidus:\n")
-cat("  Moyenne:", round(mean(residuals), 3), "(devrait être ~0)\n")
-cat("  Écart-type:", round(sd(residuals), 2), "\n")
-cat("  Min:", round(min(residuals), 2), "\n")
-cat("  Max:", round(max(residuals), 2), "\n\n")
-
-# Test de corrélation résidus vs observé
-cor_test <- cor.test(residuals, observed)
-cat("Corrélation résidus/observé:\n")
-cat("  r =", round(cor_test$estimate, 3), "\n")
-cat("  p-value =", format(cor_test$p.value, digits = 3), "\n")
-cat("  (p > 0.05 = pas de biais systématique)\n\n")
-
-# Graphiques de diagnostic
-par(mfrow = c(2, 2))
-
-# 1. Observé vs Prédit
-plot(observed, predicted, pch = 19, col = "blue",
-     xlab = "Observé", ylab = "Prédit",
-     main = "Observé vs Prédit")
-abline(0, 1, col = "red", lwd = 2)
-
-# 2. Résidus vs Prédit
-plot(predicted, residuals, pch = 19, col = "blue",
-     xlab = "Prédit", ylab = "Résidus",
-     main = "Résidus vs Prédit")
-abline(h = 0, col = "red", lwd = 2)
-
-# 3. Distribution des résidus
-hist(residuals, breaks = 15, col = "lightblue",
-     main = "Distribution des résidus", xlab = "Résidus")
-
-# 4. QQ-plot
-qqnorm(residuals, pch = 19, col = "blue", main = "QQ-plot des résidus")
-qqline(residuals, col = "red", lwd = 2)
-```
-
-### Quiz Calibration ABA
-
-```{r quiz-calibration, echo=FALSE}
-quiz(
-  question("Que fait la transformation Box-Cox ?",
-    answer("Accélère le calcul"),
-    answer("Normalise la distribution de la variable cible", correct = TRUE),
-    answer("Sélectionne les variables"),
-    answer("Calcule les coordonnées"),
-    allow_retry = TRUE
-  ),
-  question("Pourquoi utiliser la validation croisée spatiale ?",
-    answer("Pour accélérer le calcul"),
-    answer("Pour tenir compte de l'autocorrélation spatiale des données", correct = TRUE),
-    answer("Pour augmenter le R²"),
-    answer("Pour réduire le nombre de variables"),
-    allow_retry = TRUE
-  ),
-  question("Que signifie un R²cv inférieur au R²adj ?",
-    answer("Le modèle est parfait"),
-    answer("Il y a probablement du sur-ajustement", correct = TRUE),
-    answer("Les données sont incorrectes"),
-    answer("La transformation a échoué"),
-    allow_retry = TRUE
-  )
-)
-```
-
-
-## Section 8 : Cartographie et Prédiction
-
-*Basé sur l'article [Area-based 3: Mapping and inference](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/area-based.3.mapping.and.inference.html) de lidaRtRee*
-
-### Principe de la cartographie ABA
-
-Une fois les modèles calibrés, la fonction `aba_predict()` permet de les appliquer à une carte de métriques LiDAR pour produire des prédictions "wall-to-wall" (mur à mur) sur l'ensemble de la zone d'étude.
-
-```
-            Flux de cartographie aba_predict()
-
-  Entrées:
-  ┌─────────────────────────────────────────────┐
-  │ model = modèle calibré (aba_build_model)    │
-  │ metrics_map = raster multi-couches (lasR)   │
-  │ stratum = couche de stratification (optim.) │
-  └─────────────────────────────────────────────┘
-                      │
-                      ▼
-  ┌─────────────────────────────────────────────┐
-  │ 1. Application du modèle pixel par pixel    │
-  │ 2. Transformation inverse (Box-Cox)         │
-  │ 3. Stratification si plusieurs modèles      │
-  └─────────────────────────────────────────────┘
-                      │
-                      ▼
-  Sorties:
-  ┌─────────────────────────────────────────────┐
-  │ - Carte des prédictions (SpatRaster)        │
-  │ - Valeurs en unités terrain (G, V, N, ...)  │
-  └─────────────────────────────────────────────┘
-```
-
-### Exercice 8.1 : Prédiction avec aba_predict()
-
-Appliquez le modèle calibré pour produire une carte de surface terrière.
-
-```{r ex-8-1-setup}
-library(lidaRtRee)
-library(terra)
-library(sf)
-
-# Charger les données de calibration
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
-
-  # Simuler des métriques LiDAR corrélées aux données terrain
-  set.seed(42)
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zsd = runif(n, 3, 10),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
-    imean = runif(n, 200, 400)
-  )
-  rownames(metrics) <- plots$plot_id
-
-  # Calibrer le modèle
-  model_G <- aba_build_model(
-    y = plots$G_m2_ha,
-    x = metrics,
-    transform = "boxcox",
-    nmax = 4,
-    xy = plots[, c("X", "Y")]
-  )
-}
-
-# Créer une carte de métriques de démonstration
-bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
-metrics_map <- rast(nrows = 400, ncols = 600,
-                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
-                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
-                    nlyrs = 6)
-names(metrics_map) <- c("zmax", "zmean", "zsd", "zq95", "pzabove2", "imean")
-n_cells <- ncell(metrics_map)
-
-# Simuler des valeurs réalistes
-set.seed(123)
-values(metrics_map[["zmax"]]) <- runif(n_cells, 15, 40)
-values(metrics_map[["zmean"]]) <- runif(n_cells, 8, 25)
-values(metrics_map[["zsd"]]) <- runif(n_cells, 2, 12)
-values(metrics_map[["zq95"]]) <- runif(n_cells, 12, 38)
-values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.3, 0.95)
-values(metrics_map[["imean"]]) <- runif(n_cells, 150, 450)
-crs(metrics_map) <- "EPSG:2154"
-```
-
-```{r ex-8-1, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-1-setup"}
-library(lidaRtRee)
-library(terra)
-
-cat("=== Cartographie avec aba_predict() ===\n\n")
-
-# Vérifier que le modèle est calibré
-cat("Modèle utilisé:\n")
-cat("  Variable:", "G_m2_ha (Surface terrière)\n")
-cat("  Variables sélectionnées:", paste(model_G$stats$variables, collapse = " + "), "\n")
-cat("  R²cv:", round(model_G$stats$r2_cv, 3), "\n\n")
-
-# Vérifier les couches de la carte de métriques
-cat("Carte de métriques:\n")
-cat("  Dimensions:", nrow(metrics_map), "x", ncol(metrics_map), "pixels\n")
-cat("  Résolution:", res(metrics_map)[1], "m\n")
-cat("  Couches:", paste(names(metrics_map), collapse = ", "), "\n\n")
-
-# Appliquer le modèle pour produire la carte de prédiction
-prediction_G <- aba_predict(model_G, metrics_map)
-
-cat("=== Carte de prédiction générée ===\n\n")
-cat("Statistiques de la prédiction:\n")
-pred_values <- values(prediction_G)
-cat("  Min:", round(min(pred_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Max:", round(max(pred_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Moyenne:", round(mean(pred_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Écart-type:", round(sd(pred_values, na.rm = TRUE), 1), "m²/ha\n")
+cat("\n\nINTERPRÉTATION:\n")
+cat("- adjR2: R² ajusté du modèle calibré\n")
+cat("- CV-R2: R² en validation croisée leave-one-out\n")
+cat("- CV-RMSE: erreur quadratique moyenne en CV\n")
+cat("- RMSE%: coefficient de variation des erreurs\n")
 
 # Visualisation
-terra::plot(prediction_G,
-            main = "Surface terrière prédite (G m²/ha)",
-            col = hcl.colors(50, "YlGn"))
+par(mfrow = c(1, 3))
+for (var in names(models_aba)) {
+  lidaRtRee::aba_plot(models_aba[[var]], main = var, col = "forestgreen")
+}
+par(mfrow = c(1, 1))
 ```
 
-### Exercice 8.2 : Prédiction stratifiée
+### 7.9 Modèles stratifiés
 
-Lorsque des modèles sont calibrés séparément par type de peuplement, la prédiction doit être stratifiée.
+La calibration de modèles séparés par strate (type de propriété forestière dans cet exemple) permet de tenir compte des variations dans les conditions d'acquisition, la structure forestière et les conditions topographiques. Un minimum de 50 placettes par strate est recommandé ; 100 est préférable.
 
-```{r ex-8-2-setup}
-library(lidaRtRee)
-library(terra)
-library(sf)
+**Note:** Avec seulement 28 placettes dans notre zone d'étude, la stratification n'est pas recommandée statistiquement. Cet exercice est présenté à titre pédagogique.
 
-# Charger les données et créer deux modèles par strate
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
+```{r ex-7-9-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
 
-  # Simuler une strate (public/privé ou résineux/feuillus)
-  set.seed(42)
-  plots$strate <- ifelse(plots$X > median(plots$X), "resineux", "feuillus")
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
 
-  # Métriques LiDAR simulées
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zsd = runif(n, 3, 10),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1)),
-    imean = runif(n, 200, 400)
-  )
-  rownames(metrics) <- plots$plot_id
-
-  # Calibrer un modèle par strate
-  idx_res <- plots$strate == "resineux"
-  idx_feu <- plots$strate == "feuillus"
-
-  model_resineux <- aba_build_model(
-    y = plots$G_m2_ha[idx_res],
-    x = metrics[idx_res, ],
-    transform = "boxcox", nmax = 3
-  )
-
-  model_feuillus <- aba_build_model(
-    y = plots$G_m2_ha[idx_feu],
-    x = metrics[idx_feu, ],
-    transform = "boxcox", nmax = 3
-  )
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
 }
 
-# Créer carte de métriques avec couche de strate
-bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
-metrics_map <- rast(nrows = 200, ncols = 300,
-                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
-                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
-                    nlyrs = 7)
-names(metrics_map) <- c("zmax", "zmean", "zsd", "zq95", "pzabove2", "imean", "strate")
-n_cells <- ncell(metrics_map)
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
 
-set.seed(123)
-values(metrics_map[["zmax"]]) <- runif(n_cells, 15, 40)
-values(metrics_map[["zmean"]]) <- runif(n_cells, 8, 25)
-values(metrics_map[["zsd"]]) <- runif(n_cells, 2, 12)
-values(metrics_map[["zq95"]]) <- runif(n_cells, 12, 38)
-values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.3, 0.95)
-values(metrics_map[["imean"]]) <- runif(n_cells, 150, 450)
-# Strate: 1 = résineux (est), 2 = feuillus (ouest)
-coords <- crds(metrics_map)
-values(metrics_map[["strate"]]) <- ifelse(coords[, 1] > 899000, 1, 2)
-crs(metrics_map) <- "EPSG:2154"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+metrics_terrain <- mapply(function(x, y) {
+  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
+}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
+
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
+
+variable <- "G_m2_ha"
+model_aba <- lidaRtRee::aba_build_model(
+  plots[, variable], metrics, transform = "boxcox", nmax = 4,
+  xy = plots[, c("X", "Y")]
+)
+```
+
+```{r ex-7-9, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-7-9-setup"}
+# === 7.9 : Modèles stratifiés (exemple pédagogique) ===
+
+variable <- "G_m2_ha"
+strat <- "stratum"
+
+cat("=== Modèles stratifiés par type de propriété ===\n\n")
+
+# Vérification de la variable de stratification
+if (!strat %in% names(plots)) {
+  cat("Variable 'stratum' non disponible, création basée sur le cluster...\n")
+  # Création d'une variable de stratification basée sur le cluster
+  plots$stratum <- factor(ifelse(grepl("^Verc-(02|05|06)", plots$plotId),
+                                  "cluster_A", "cluster_B"))
+}
+
+cat("Distribution des placettes par strate:\n")
+print(table(plots[, strat]))
+
+# Calibration par strate
+model_aba_stratified <- list()
+
+for (i in levels(plots[, strat])) {
+  subsample <- which(plots[, strat] == i)
+  cat("\nStrate", i, ":", length(subsample), "placettes\n")
+
+  if (length(subsample) >= 10) {  # Minimum pour la démonstration
+    model_aba_stratified[[i]] <- lidaRtRee::aba_build_model(
+      plots[subsample, variable],
+      metrics[subsample, ],
+      transform = "boxcox",
+      nmax = 4,
+      xy = plots[subsample, c("X", "Y")]
+    )
+    cat("  CV-R²:", round(model_aba_stratified[[i]]$stats$`CV-R2`, 3), "\n")
+  } else {
+    cat("  Trop peu de placettes pour la calibration\n")
+  }
+}
+
+# Combinaison des modèles stratifiés
+if (length(model_aba_stratified) > 1) {
+  model_aba_stratified_combined <- lidaRtRee::aba_combine_strata(
+    model_aba_stratified, plots$plot_id
+  )
+
+  cat("\n=== COMPARAISON ===\n")
+  cat("Modèle global CV-R²:", round(model_aba$stats$`CV-R2`, 3), "\n")
+  cat("Modèle stratifié CV-R²:",
+      round(model_aba_stratified_combined$stats$`CV-R2`, 3), "\n")
+}
+
+cat("\nNOTE: Avec 28 placettes, la stratification n'est pas statistiquement robuste.\n")
+cat("En pratique, utilisez au moins 50 placettes par strate.\n")
+```
+
+### 7.10 Sauvegarde des modèles
+
+Les modèles calibrés et les paramètres de configuration sont sauvegardés pour la cartographie.
+
+```{r ex-7-10-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+p_radius <- 15
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+metrics_terrain <- mapply(function(x, y) {
+  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
+}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
+
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
+
+model_aba <- lidaRtRee::aba_build_model(
+  plots[, "G_m2_ha"], metrics, transform = "boxcox", nmax = 4,
+  xy = plots[, c("X", "Y")]
+)
+
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  output_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  output_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+```
+
+```{r ex-7-10, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-10-setup"}
+# === 7.10 : Sauvegarde des modèles ===
+
+cat("=== Sauvegarde pour la cartographie (Section 8) ===\n\n")
+
+# Paramètres à sauvegarder
+cat("PARAMÈTRES DE CONFIGURATION:\n")
+cat("  - class_points:", paste(class_points, collapse = ", "), "\n")
+cat("  - h_points:", h_points, "m\n")
+cat("  - aba_res_chm:", aba_res_chm, "m\n")
+cat("  - plot_radius:", plot_radius, "m\n\n")
+
+# Sauvegarde
+output_file <- file.path(output_dir, "models_aba.rda")
+
+save(model_aba,
+     aba_point_metrics_fun,
+     aba_res_chm,
+     class_points,
+     h_points,
+     plot_radius,
+     file = output_file)
+
+cat("Fichier sauvegardé:", output_file, "\n\n")
+
+cat("CONTENU DU FICHIER:\n")
+cat("  - model_aba: modèle calibré pour G_m2_ha\n")
+cat("  - aba_point_metrics_fun: fonction de calcul des métriques\n")
+cat("  - aba_res_chm: résolution du MNC\n")
+cat("  - class_points: classes de points à conserver\n")
+cat("  - h_points: hauteur maximale\n")
+cat("  - plot_radius: rayon des placettes\n\n")
+
+cat(">>> Ces données seront utilisées dans la Section 8\n")
+cat("    pour la cartographie wall-to-wall avec aba_predict()\n")
+```
+
+### Quiz Section 7
+
+```{r quiz-section7, echo=FALSE}
+quiz(
+  question("Quelle fonction calcule les métriques standard du nuage de points ?",
+    answer("stdmetrics()"),
+    answer("aba_metrics()", correct = TRUE),
+    answer("point_metrics()"),
+    answer("cloud_stats()"),
+    allow_retry = TRUE
+  ),
+  question("Que fait la transformation Box-Cox dans aba_build_model() ?",
+    answer("Compresse les données"),
+    answer("Normalise la variable cible pour la régression", correct = TRUE),
+    answer("Filtre les outliers"),
+    answer("Réduit le nombre de prédicteurs"),
+    allow_retry = TRUE
+  ),
+  question("Que signifie CV-R² dans les statistiques du modèle ?",
+    answer("Coefficient de variation du R²"),
+    answer("R² calculé en validation croisée leave-one-out", correct = TRUE),
+    answer("R² corrigé pour le nombre de variables"),
+    answer("R² calculé sur les données d'entraînement"),
+    allow_retry = TRUE
+  ),
+  question("Combien de placettes minimum sont recommandées par strate ?",
+    answer("10"),
+    answer("25"),
+    answer("50 minimum, 100 préférable", correct = TRUE),
+    answer("200"),
+    allow_retry = TRUE
+  ),
+  question("Quelle fonction combine les modèles calibrés par strate ?",
+    answer("merge_models()"),
+    answer("aba_combine_strata()", correct = TRUE),
+    answer("stratify_models()"),
+    answer("bind_aba()"),
+    allow_retry = TRUE
+  )
+)
+```
+
+
+## Section 8 : Cartographie et Inférence
+
+*Approche surfacique (ABA) - Application des modèles pour la cartographie wall-to-wall*
+
+Ce code présente un workflow pour appliquer les modèles de prédiction calibrés dans la section précédente à l'ensemble de la zone couverte par les données ALS, en utilisant l'approche surfacique (ABA).
+
+### 8.1 Chargement des modèles et configuration du LAScatalog
+
+Les modèles calibrés et les paramètres de configuration sont chargés. Le LAScatalog est configuré avec les filtres appropriés pour le traitement par tuiles.
+
+```{r ex-8-1-setup, message=FALSE, warning=FALSE}
+# Paramètres de la section 7
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+plot_radius <- 15
+resolution <- 25  # Résolution de la carte de sortie
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+
+# Reconstruction du modèle (normalement chargé depuis le fichier)
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], plot_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
+  }
+)
+
+# LAZ originaux pour métriques terrain
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::projection(ctg_original) <- 2154
+lidR::opt_progress(ctg_original) <- FALSE
+
+metrics_terrain <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], plot_radius)
+    if (!lidR::is.empty(las_orig)) {
+      center_xy <- as.numeric(plots[i, c("X", "Y")])
+      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, plot_radius)
+    }
+  }, error = function(e) NULL)
+}
+metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
+
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
+
+model_aba <- lidaRtRee::aba_build_model(
+  plots[, "G_m2_ha"], metrics, transform = "boxcox", nmax = 4,
+  xy = plots[, c("X", "Y")]
+)
+```
+
+```{r ex-8-1, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-1-setup"}
+# === 8.1 : Configuration du LAScatalog ===
+
+cat("=== Configuration pour la cartographie wall-to-wall ===\n\n")
+
+# Répertoire des tuiles normalisées
+tiles_dir <- laz_dir_normalized
+
+cat("Répertoire des tuiles:", tiles_dir, "\n")
+
+# Filtre pour le LAScatalog
+filter_cata_height <- paste(c("-keep_class", class_points,
+                              "-drop_z_above", h_points), collapse = " ")
+
+cat("\nFiltre LAScatalog:\n")
+cat(" ", filter_cata_height, "\n")
+
+# Création du LAScatalog
+cata_height <- lidR::readALSLAScatalog(tiles_dir,
+                                        progress = FALSE,
+                                        select = "xyzirnc",
+                                        filter = filter_cata_height)
+
+# Configuration de la projection
+lidR::projection(cata_height) <- 2154  # Lambert-93
+
+cat("\nLAScatalog créé:\n")
+cat("  - Nombre de fichiers:", length(cata_height$filename), "\n")
+cat("  - CRS: EPSG:2154 (Lambert-93)\n")
+cat("  - Résolution de sortie:", resolution, "m\n\n")
+
+# Afficher l'emprise
+cat("Emprise spatiale:\n")
+print(sf::st_bbox(cata_height))
+```
+
+### 8.2 Calcul des métriques raster - Points
+
+Les métriques du nuage de points sont calculées sur une grille régulière à la résolution spécifiée (25 m).
+
+```{r ex-8-2-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+resolution <- 25
+p_radius <- 15
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+
+# Charger les placettes pour extraire des nuages de points
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
 ```
 
 ```{r ex-8-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-2-setup"}
-library(lidaRtRee)
-library(terra)
+# === 8.2 : Métriques raster du nuage de points ===
 
-cat("=== Prédiction stratifiée ===\n\n")
+cat("=== Calcul des métriques points sur grille ===\n\n")
+cat("Résolution:", resolution, "m\n")
+cat("Surface pixel:", resolution^2, "m²\n\n")
 
-cat("Modèles par strate:\n")
-cat("  Résineux: R²cv =", round(model_resineux$stats$r2_cv, 3), "\n")
-cat("  Feuillus: R²cv =", round(model_feuillus$stats$r2_cv, 3), "\n\n")
-
-# Créer les masques de strate
-mask_resineux <- metrics_map[["strate"]] == 1
-mask_feuillus <- metrics_map[["strate"]] == 2
-
-# Prédire pour chaque strate
-pred_resineux <- aba_predict(model_resineux, metrics_map)
-pred_feuillus <- aba_predict(model_feuillus, metrics_map)
-
-# Combiner les prédictions selon la strate
-prediction_stratifiee <- pred_resineux
-values(prediction_stratifiee)[values(mask_feuillus)] <- values(pred_feuillus)[values(mask_feuillus)]
-
-cat("Statistiques par strate:\n")
-cat("  Résineux - moyenne:", round(mean(values(pred_resineux)[values(mask_resineux)], na.rm = TRUE), 1), "m²/ha\n")
-cat("  Feuillus - moyenne:", round(mean(values(pred_feuillus)[values(mask_feuillus)], na.rm = TRUE), 1), "m²/ha\n\n")
-
-# Visualisation comparative
-par(mfrow = c(1, 2))
-terra::plot(metrics_map[["strate"]], main = "Carte des strates",
-            col = c("darkgreen", "orange"), legend = FALSE)
-legend("topright", legend = c("Résineux", "Feuillus"),
-       fill = c("darkgreen", "orange"), bty = "n")
-
-terra::plot(prediction_stratifiee, main = "G stratifiée (m²/ha)",
-            col = hcl.colors(50, "YlGn"))
-```
-
-### Exercice 8.3 : Nettoyage et masquage des cartes
-
-Utilisez `clean_raster()` pour appliquer des seuils et un masque forestier.
-
-```{r ex-8-3-setup}
-library(lidaRtRee)
-library(terra)
-library(sf)
-
-# Créer un modèle et une carte de prédiction
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
-
-  set.seed(42)
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1))
-  )
-  rownames(metrics) <- plots$plot_id
-
-  model_G <- aba_build_model(plots$G_m2_ha, metrics, transform = "boxcox", nmax = 4)
+# Extraire des nuages de points depuis le LAScatalog
+point_clouds <- list()
+for (i in 1:min(4, nrow(plots))) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      point_clouds[[i]] <- las
+    }
+  }, error = function(e) NULL)
 }
 
-# Carte de métriques et prédiction
-bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
-metrics_map <- rast(nrows = 200, ncols = 300,
-                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
-                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
-                    nlyrs = 4)
-names(metrics_map) <- c("zmax", "zmean", "zq95", "pzabove2")
-n_cells <- ncell(metrics_map)
+if (length(point_clouds) > 0) {
+  # Fusionner les nuages
+  point_cloud <- do.call(rbind, point_clouds)
 
-set.seed(123)
-values(metrics_map[["zmax"]]) <- runif(n_cells, 10, 45)
-values(metrics_map[["zmean"]]) <- runif(n_cells, 5, 30)
-values(metrics_map[["zq95"]]) <- runif(n_cells, 8, 42)
-values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.2, 0.98)
-crs(metrics_map) <- "EPSG:2154"
+  # Filtrage
+  point_cloud <- lidR::filter_poi(point_cloud,
+                                   is.element(Classification, class_points) &
+                                     Z <= h_points)
+  point_cloud$Z[point_cloud$Z < 0] <- 0
 
-prediction_G <- aba_predict(model_G, metrics_map)
+  cat("Nuage de points chargé:\n")
+  cat("  - Points:", nrow(point_cloud@data), "\n")
+  cat("  - Emprise:", round(diff(range(point_cloud$X))), "x",
+      round(diff(range(point_cloud$Y))), "m\n\n")
 
-# Créer un masque forêt simulé (60% de la surface)
-forest_mask <- rast(prediction_G)
-set.seed(456)
-forest_values <- runif(n_cells) > 0.4  # 60% forêt
-values(forest_mask) <- ifelse(forest_values, 1, NA)
+  # Calcul des métriques pixel_metrics
+  cat("Calcul pixel_metrics avec aba_metrics()...\n")
+  metrics_points_raster <- lidR::pixel_metrics(point_cloud,
+                                                aba_point_metrics_fun,
+                                                res = resolution)
+
+  cat("\nRésultat:\n")
+  cat("  - Dimensions:", terra::ncol(metrics_points_raster), "x",
+      terra::nrow(metrics_points_raster), "pixels\n")
+  cat("  - Couches:", terra::nlyr(metrics_points_raster), "\n")
+  cat("  - Premières couches:", paste(names(metrics_points_raster)[1:5],
+                                      collapse = ", "), "...\n")
+
+  # Visualisation
+  par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
+  terra::plot(metrics_points_raster[["zmax"]], main = "Zmax (m)",
+              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+  terra::plot(metrics_points_raster[["zmean"]], main = "Zmean (m)",
+              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+  terra::plot(metrics_points_raster[["zq95"]], main = "Zq95 (m)",
+              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+  terra::plot(metrics_points_raster[["pzabove2"]], main = "Couverture > 2m",
+              col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
+  par(mfrow = c(1, 1))
+} else {
+  cat("Aucun nuage de points extrait depuis:", laz_dir_normalized, "\n")
+}
 ```
 
-```{r ex-8-3, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-3-setup"}
-library(lidaRtRee)
-library(terra)
+### 8.3 Calcul des métriques raster - Arbres
 
-cat("=== Nettoyage et masquage des cartes ===\n\n")
+Les métriques basées sur la détection d'arbres sont calculées via segmentation du MNC et agrégation par pixel.
 
-# Statistiques avant nettoyage
-pred_values <- values(prediction_G)
-cat("Avant nettoyage:\n")
-cat("  Min:", round(min(pred_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Max:", round(max(pred_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Valeurs aberrantes (<0):", sum(pred_values < 0, na.rm = TRUE), "\n")
-cat("  Valeurs aberrantes (>80):", sum(pred_values > 80, na.rm = TRUE), "\n\n")
+```{r ex-8-3-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+resolution <- 25
+p_radius <- 15
 
-# Nettoyage avec clean_raster()
-# Paramètres: seuils [min, max] et masque forestier
-prediction_clean <- clean_raster(
-  prediction_G,
-  thresholds = c(0, 80),     # Surface terrière entre 0 et 80 m²/ha
-  mask = forest_mask          # Appliquer le masque forêt
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+# Extraire plusieurs nuages de points
+point_clouds <- list()
+for (i in 1:min(4, nrow(plots))) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      point_clouds[[i]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+if (length(point_clouds) > 0) {
+  point_cloud <- do.call(rbind, point_clouds)
+  point_cloud <- lidR::filter_poi(point_cloud,
+                                   is.element(Classification, class_points) &
+                                     Z <= h_points)
+  point_cloud$Z[point_cloud$Z < 0] <- 0
+}
+```
+
+```{r ex-8-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-8-3-setup"}
+# === 8.3 : Métriques raster basées sur les arbres ===
+
+cat("=== Segmentation et métriques arbres ===\n\n")
+
+if (exists("point_cloud") && !is.null(point_cloud)) {
+
+  # 1. Créer le MNC
+  cat("1. Création du MNC (résolution:", aba_res_chm, "m)...\n")
+  chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm,
+                                 algorithm = lidR::p2r())
+  chm[is.na(chm) | chm < 0] <- 0
+
+  cat("   Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "\n\n")
+
+  # 2. Segmentation des arbres
+  cat("2. Segmentation des arbres (tree_segmentation)...\n")
+  segms <- lidaRtRee::tree_segmentation(chm)
+  trees <- lidaRtRee::tree_extraction(segms)
+
+  cat("   Arbres détectés:", nrow(trees), "\n\n")
+
+  # 3. Calcul des métriques arbres par pixel
+  cat("3. Calcul métriques arbres par pixel (", resolution, "m)...\n")
+  metrics_trees_raster <- lidaRtRee::raster_metrics(
+    trees,
+    res = resolution,
+    fun = function(x) {
+      lidaRtRee::std_tree_metrics(x, resolution^2 / 10000)
+    },
+    output = "raster"
+  )
+  metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
+
+  cat("   Couches:", paste(names(metrics_trees_raster), collapse = ", "), "\n\n")
+
+  # 4. Métriques supplémentaires (couverture canopée)
+  r_treechm <- segms$filled_dem
+  r_treechm[segms$segments_id == 0] <- NA
+
+  metrics_canopy <- lidaRtRee::raster_metrics(
+    r_treechm,
+    res = resolution,
+    fun = function(x) {
+      c(
+        sum(!is.na(x$filled_dem)) / (resolution / aba_res_chm)^2,
+        mean(x$filled_dem, na.rm = TRUE)
+      )
+    },
+    output = "raster"
+  )
+  names(metrics_canopy) <- c("TreeCanopy_cover_in_plot", "TreeCanopy_meanH_in_plot")
+
+  metrics_trees_raster <- c(metrics_trees_raster, metrics_canopy)
+
+  cat("Métriques arbres calculées:\n")
+  print(names(metrics_trees_raster))
+
+  # Visualisation
+  par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
+  terra::plot(metrics_trees_raster[["Tree_meanH"]], main = "Hauteur moyenne arbres",
+              col = grDevices::hcl.colors(50, "Viridis"))
+  terra::plot(metrics_trees_raster[["Tree_density"]], main = "Densité arbres/ha",
+              col = grDevices::hcl.colors(50, "Plasma"))
+  par(mfrow = c(1, 1))
+
+} else {
+  cat("Nuage de points non disponible\n")
+}
+```
+
+### 8.4 Calcul des métriques raster - Terrain
+
+Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol.
+
+```{r ex-8-4-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+resolution <- 25
+p_radius <- 15
+
+# LAZ originaux (non-normalisés) pour les métriques de terrain
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::projection(ctg_original) <- 2154
+lidR::opt_progress(ctg_original) <- FALSE
+
+# Extraire plusieurs nuages de points originaux
+point_clouds <- list()
+for (i in 1:min(4, nrow(plots))) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      point_clouds[[i]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+if (length(point_clouds) > 0) {
+  point_cloud <- do.call(rbind, point_clouds)
+}
+```
+
+```{r ex-8-4, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-4-setup"}
+# === 8.4 : Métriques terrain ===
+
+cat("=== Calcul des métriques de terrain ===\n\n")
+
+if (exists("point_cloud") && !is.null(point_cloud)) {
+
+  # Fonction pour terrain_points_metrics
+  f_terrain <- function(x, y, z) {
+    as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
+  }
+
+  # Extraction des points sol (classes 2 et 9)
+  point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
+
+  cat("Points sol:", nrow(point_cloud_ground@data), "\n\n")
+
+  if (nrow(point_cloud_ground@data) > 100) {
+    # Calcul des métriques terrain
+    cat("Calcul pixel_metrics terrain...\n")
+    metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground,
+                                                   ~ f_terrain(X, Y, Z),
+                                                   res = resolution)
+
+    # Retirer adjR2_plane si présent
+    if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
+      metrics_terrain_raster <- terra::subset(
+        metrics_terrain_raster,
+        which(names(metrics_terrain_raster) != "adjR2_plane")
+      )
+    }
+
+    cat("\nMétriques terrain:\n")
+    print(names(metrics_terrain_raster))
+
+    # Visualisation
+    par(mfrow = c(1, 3), mar = c(2, 2, 3, 1))
+    terra::plot(metrics_terrain_raster[["altitude_mean"]], main = "Altitude (m)",
+                col = grDevices::terrain.colors(50))
+    terra::plot(metrics_terrain_raster[["slope_deg"]], main = "Pente (°)",
+                col = grDevices::heat.colors(50, rev = TRUE))
+    terra::plot(metrics_terrain_raster[["aspect_deg"]], main = "Aspect (°)",
+                col = grDevices::rainbow(50))
+    par(mfrow = c(1, 1))
+
+  } else {
+    cat("Trop peu de points sol pour le calcul\n")
+  }
+} else {
+  cat("Nuage de points non disponible\n")
+}
+```
+
+### 8.5 Prédiction avec aba_predict()
+
+La fonction `aba_predict()` applique le modèle calibré aux métriques raster pour produire une carte de prédiction.
+
+```{r ex-8-5-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+resolution <- 25
+p_radius <- 15
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+
+# Données quatre_montagnes pour le modèle
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+llas_height <- lapply(llas_height,
+                      function(x)
+                        lidR::filter_poi(x,
+                                         is.element(Classification, class_points) &
+                                           Z <= h_points))
+llas_height <- lapply(llas_height, function(x) {
+  x$Z[x$Z < 0] <- 0
+  x
+})
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+
+metrics_trees <- lidaRtRee::clouds_tree_metrics(
+  llas_height, plots[, c("X", "Y")], p_radius, res = aba_res_chm,
+  func = function(x) {
+    lidaRtRee::std_tree_metrics(x, area_ha = pi * p_radius^2 / 10000)
+  }
 )
 
-# Statistiques après nettoyage
-clean_values <- values(prediction_clean)
-cat("Après nettoyage:\n")
-cat("  Min:", round(min(clean_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Max:", round(max(clean_values, na.rm = TRUE), 1), "m²/ha\n")
-cat("  Pixels NA (hors forêt):", sum(is.na(clean_values)), "\n")
-cat("  Pixels valides:", sum(!is.na(clean_values)), "\n\n")
+# LAZ originaux pour métriques terrain
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::projection(ctg_original) <- 2154
+lidR::opt_progress(ctg_original) <- FALSE
 
-# Visualisation comparative
-par(mfrow = c(1, 3))
+metrics_terrain <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las_orig)) {
+      center_xy <- as.numeric(plots[i, c("X", "Y")])
+      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+    }
+  }, error = function(e) NULL)
+}
+metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 
-terra::plot(prediction_G, main = "Prédiction brute",
-            col = hcl.colors(50, "YlGn"))
+metrics <- cbind(
+  metrics_points[plots$plot_id, ],
+  metrics_trees[plots$plot_id, ],
+  metrics_terrain[plots$plot_id, 1:3]
+)
 
-terra::plot(forest_mask, main = "Masque forêt",
-            col = c("white", "darkgreen"), legend = FALSE)
+model_aba <- lidaRtRee::aba_build_model(
+  plots[, "G_m2_ha"], metrics, transform = "boxcox", nmax = 4,
+  xy = plots[, c("X", "Y")]
+)
 
-terra::plot(prediction_clean, main = "Prédiction nettoyée",
-            col = hcl.colors(50, "YlGn"))
-```
-
-### Exercice 8.4 : Export des produits nemeton
-
-Exportez les cartes de prédiction pour les indicateurs nemeton.
-
-```{r ex-8-4-setup}
-library(lidaRtRee)
-library(terra)
-
-# Modèles pour plusieurs variables
-if (requireNamespace("lidaRtRee", quietly = TRUE)) {
-  data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-  plots <- quatre_montagnes
-
-  set.seed(42)
-  n <- nrow(plots)
-  metrics <- data.frame(
-    zmax = plots$G_m2_ha * 0.8 + rnorm(n, 5, 3),
-    zmean = plots$G_m2_ha * 0.4 + rnorm(n, 3, 2),
-    zq95 = plots$G_m2_ha * 0.7 + rnorm(n, 5, 4),
-    pzabove2 = pmin(0.95, plots$G_m2_ha / 60 + rnorm(n, 0.1, 0.1))
-  )
-  rownames(metrics) <- plots$plot_id
-
-  model_G <- aba_build_model(plots$G_m2_ha, metrics, transform = "boxcox", nmax = 4)
-  model_N <- aba_build_model(plots$N_ha, metrics, transform = "boxcox", nmax = 4)
-  model_D <- aba_build_model(plots$D_mean_cm, metrics, transform = "boxcox", nmax = 4)
+# Créer métriques raster pour la prédiction
+point_clouds <- list()
+for (i in 1:min(4, nrow(plots))) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      point_clouds[[i]] <- las
+    }
+  }, error = function(e) NULL)
 }
 
-# Carte de métriques
-bbox_demo <- c(xmin = 896000, xmax = 902000, ymin = 6448000, ymax = 6452000)
-metrics_map <- rast(nrows = 100, ncols = 150,
-                    xmin = bbox_demo["xmin"], xmax = bbox_demo["xmax"],
-                    ymin = bbox_demo["ymin"], ymax = bbox_demo["ymax"],
-                    nlyrs = 4)
-names(metrics_map) <- c("zmax", "zmean", "zq95", "pzabove2")
-n_cells <- ncell(metrics_map)
+point_cloud <- do.call(rbind, point_clouds)
+point_cloud <- lidR::filter_poi(point_cloud,
+                                 is.element(Classification, class_points) &
+                                   Z <= h_points)
+point_cloud$Z[point_cloud$Z < 0] <- 0
 
-set.seed(123)
-values(metrics_map[["zmax"]]) <- runif(n_cells, 15, 40)
-values(metrics_map[["zmean"]]) <- runif(n_cells, 10, 25)
-values(metrics_map[["zq95"]]) <- runif(n_cells, 12, 38)
-values(metrics_map[["pzabove2"]]) <- runif(n_cells, 0.4, 0.95)
-crs(metrics_map) <- "EPSG:2154"
+metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun,
+                                              res = resolution)
+
+chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
+chm[is.na(chm) | chm < 0] <- 0
+segms <- lidaRtRee::tree_segmentation(chm)
+trees <- lidaRtRee::tree_extraction(segms)
+
+metrics_trees_raster <- lidaRtRee::raster_metrics(
+  trees, res = resolution,
+  fun = function(x) { lidaRtRee::std_tree_metrics(x, resolution^2 / 10000) },
+  output = "raster"
+)
+metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
+
+f_terrain <- function(x, y, z) {
+  as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
+}
+point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
+metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z),
+                                               res = resolution)
+if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
+  metrics_terrain_raster <- terra::subset(metrics_terrain_raster,
+    which(names(metrics_terrain_raster) != "adjR2_plane"))
+}
+
+# Harmoniser les emprises et combiner
+metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
+metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
+metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
+metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
+
+metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
+```
+
+```{r ex-8-5, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-5-setup"}
+# === 8.5 : Prédiction avec aba_predict() ===
+
+cat("=== Application du modèle ABA ===\n\n")
+
+cat("Modèle utilisé:\n")
+print(model_aba$model)
+cat("\n")
+
+cat("Métriques disponibles:", terra::nlyr(metrics_map), "couches\n")
+cat("Dimensions:", terra::ncol(metrics_map), "x", terra::nrow(metrics_map), "pixels\n\n")
+
+# Vérifier que les prédicteurs du modèle sont présents
+predictors <- all.vars(model_aba$model$terms)[-1]  # Exclure la variable réponse
+cat("Prédicteurs requis:", paste(predictors, collapse = ", "), "\n")
+cat("Présents:", sum(predictors %in% names(metrics_map)), "/", length(predictors), "\n\n")
+
+# Prédiction
+cat("Prédiction en cours...\n")
+prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
+
+cat("\nRésultat:\n")
+cat("  - Variable prédite: G_m2_ha (surface terrière)\n")
+cat("  - Min:", round(terra::minmax(prediction_map)[1], 1), "m²/ha\n")
+cat("  - Max:", round(terra::minmax(prediction_map)[2], 1), "m²/ha\n")
+cat("  - Mean:", round(terra::global(prediction_map, "mean", na.rm = TRUE)[[1]], 1), "m²/ha\n\n")
+
+# Visualisation
+par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
+
+# Carte de prédiction
+terra::plot(prediction_map, main = "Surface terrière prédite (m²/ha)",
+            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+
+# Histogramme
+hist(terra::values(prediction_map), breaks = 30, main = "Distribution G",
+     xlab = "G (m²/ha)", col = "forestgreen", border = "white")
+
+par(mfrow = c(1, 1))
+```
+
+### 8.6 Nettoyage et masquage forêt
+
+La fonction `clean_raster()` permet d'appliquer des seuils de validité et un masque forêt pour filtrer les valeurs aberrantes et les zones non forestières.
+
+```{r ex-8-6-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+resolution <- 25
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+llas_height <- lapply(llas_height, function(x)
+  lidR::filter_poi(x, is.element(Classification, class_points) & Z <= h_points))
+llas_height <- lapply(llas_height, function(x) { x$Z[x$Z < 0] <- 0; x })
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
+                                                  Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+metrics_trees <- lidaRtRee::clouds_tree_metrics(llas_height, plots[, c("X", "Y")], 15,
+  res = aba_res_chm, func = function(x) lidaRtRee::std_tree_metrics(x, pi * 15^2 / 10000))
+metrics_terrain <- mapply(function(x, y)
+  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], 15),
+  x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
+
+metrics <- cbind(metrics_points[plots$plot_id, ], metrics_trees[plots$plot_id, ],
+                 metrics_terrain[plots$plot_id, 1:3])
+model_aba <- lidaRtRee::aba_build_model(plots[, "G_m2_ha"], metrics,
+  transform = "boxcox", nmax = 4, xy = plots[, c("X", "Y")])
+
+point_cloud <- do.call(rbind, lapply(laz_files[1:min(4, length(laz_files))], lidR::readLAS))
+point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
+point_cloud$Z[point_cloud$Z < 0] <- 0
+
+metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
+chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
+chm[is.na(chm) | chm < 0] <- 0
+segms <- lidaRtRee::tree_segmentation(chm)
+trees <- lidaRtRee::tree_extraction(segms)
+metrics_trees_raster <- lidaRtRee::raster_metrics(trees, res = resolution,
+  fun = function(x) lidaRtRee::std_tree_metrics(x, resolution^2 / 10000), output = "raster")
+metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
+
+f_terrain <- function(x, y, z) as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
+point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
+metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z), res = resolution)
+if ("adjR2_plane" %in% names(metrics_terrain_raster))
+  metrics_terrain_raster <- terra::subset(metrics_terrain_raster, which(names(metrics_terrain_raster) != "adjR2_plane"))
+
+metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
+metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
+metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
+metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
+metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
+
+prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
+```
+
+```{r ex-8-6, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-6-setup"}
+# === 8.6 : Nettoyage avec clean_raster() ===
+
+cat("=== Nettoyage de la carte de prédiction ===\n\n")
+
+# Seuils de validité basés sur les données d'entraînement
+g_min <- 0
+g_max <- 80  # m²/ha - valeur maximale réaliste
+
+cat("Seuils de validité:\n")
+cat("  - G minimum:", g_min, "m²/ha\n")
+cat("  - G maximum:", g_max, "m²/ha\n\n")
+
+# Créer un masque forêt simple basé sur la couverture > 2m
+# (en pratique, utiliser un masque BD Forêt ou autre)
+if ("pzabove2" %in% names(metrics_map)) {
+  forest_mask <- metrics_map[["pzabove2"]] > 0.2  # >20% couverture
+  cat("Masque forêt créé (couverture > 20%)\n")
+  cat("  - Pixels forêt:", sum(terra::values(forest_mask), na.rm = TRUE), "\n")
+  cat("  - Pixels total:", terra::ncell(forest_mask), "\n\n")
+} else {
+  forest_mask <- NULL
+  cat("Pas de masque forêt appliqué\n\n")
+}
+
+# Appliquer clean_raster
+prediction_clean <- lidaRtRee::clean_raster(prediction_map,
+                                             c(g_min, g_max),
+                                             forest_mask)
+
+cat("Après nettoyage:\n")
+cat("  - Pixels valides:", sum(!is.na(terra::values(prediction_clean))), "\n")
+cat("  - Min:", round(terra::minmax(prediction_clean)[1], 1), "m²/ha\n")
+cat("  - Max:", round(terra::minmax(prediction_clean)[2], 1), "m²/ha\n\n")
+
+# Visualisation comparaison
+par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
+terra::plot(prediction_map, main = "Avant nettoyage",
+            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+terra::plot(prediction_clean, main = "Après nettoyage",
+            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+par(mfrow = c(1, 1))
+```
+
+### 8.7 Export et résumé
+
+Les cartes de prédiction sont exportées au format GeoTIFF et les statistiques de synthèse sont calculées.
+
+```{r ex-8-7-setup, message=FALSE, warning=FALSE}
+pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
+class_points <- c(0, 1, 2, 3, 4, 5, 12)
+h_points <- 60
+aba_res_chm <- 0.5
+resolution <- 25
+
+data("quatre_montagnes", package = "lidaRtRee", envir = environment())
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots$plot_id <- plots$plotId
+
+# LAZ normalisés (données utilisateur)
+laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
+lidR::projection(ctg_normalized) <- 2154
+lidR::opt_progress(ctg_normalized) <- FALSE
+
+llas_height <- list()
+for (i in 1:nrow(plots)) {
+  tryCatch({
+    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
+    if (!lidR::is.empty(las)) {
+      las$Z[las$Z < 0] <- 0
+      llas_height[[plots$plotId[i]]] <- las
+    }
+  }, error = function(e) NULL)
+}
+
+common_ids <- intersect(plots$plotId, names(llas_height))
+plots <- plots[plots$plotId %in% common_ids, ]
+llas_height <- llas_height[plots$plotId]
+
+llas_height <- lapply(llas_height, function(x)
+  lidR::filter_poi(x, is.element(Classification, class_points) & Z <= h_points))
+llas_height <- lapply(llas_height, function(x) { x$Z[x$Z < 0] <- 0; x })
+
+aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber, Classification, 2)
+metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+metrics_trees <- lidaRtRee::clouds_tree_metrics(llas_height, plots[, c("X", "Y")], 15,
+  res = aba_res_chm, func = function(x) lidaRtRee::std_tree_metrics(x, pi * 15^2 / 10000))
+metrics_terrain <- mapply(function(x, y) lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], 15),
+  x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
+metrics_terrain <- do.call(rbind, metrics_terrain)
+rownames(metrics_terrain) <- names(llas_height)
+metrics <- cbind(metrics_points[plots$plot_id, ], metrics_trees[plots$plot_id, ],
+                 metrics_terrain[plots$plot_id, 1:3])
+model_aba <- lidaRtRee::aba_build_model(plots[, "G_m2_ha"], metrics,
+  transform = "boxcox", nmax = 4, xy = plots[, c("X", "Y")])
+
+point_cloud <- do.call(rbind, lapply(laz_files[1:min(4, length(laz_files))], lidR::readLAS))
+point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
+point_cloud$Z[point_cloud$Z < 0] <- 0
+metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
+chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
+chm[is.na(chm) | chm < 0] <- 0
+segms <- lidaRtRee::tree_segmentation(chm)
+trees <- lidaRtRee::tree_extraction(segms)
+metrics_trees_raster <- lidaRtRee::raster_metrics(trees, res = resolution,
+  fun = function(x) lidaRtRee::std_tree_metrics(x, resolution^2 / 10000), output = "raster")
+metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
+
+f_terrain <- function(x, y, z) as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
+point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
+metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z), res = resolution)
+if ("adjR2_plane" %in% names(metrics_terrain_raster))
+  metrics_terrain_raster <- terra::subset(metrics_terrain_raster, which(names(metrics_terrain_raster) != "adjR2_plane"))
+metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
+metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
+metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
+metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
+metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
+prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
+
+if ("pzabove2" %in% names(metrics_map)) {
+  forest_mask <- metrics_map[["pzabove2"]] > 0.2
+} else {
+  forest_mask <- NULL
+}
+prediction_clean <- lidaRtRee::clean_raster(prediction_map, c(0, 80), forest_mask)
 
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  output_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  output_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
-data_dir <- normalizePath(data_dir, mustWork = FALSE)
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 ```
 
-```{r ex-8-4, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-4-setup"}
-library(lidaRtRee)
-library(terra)
+```{r ex-8-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-7-setup"}
+# === 8.7 : Export et synthèse ===
 
-cat("=== Export des produits ABA pour nemeton ===\n\n")
+cat("=== Export des résultats ===\n\n")
 
-# Générer les prédictions pour chaque variable
-prediction_G <- aba_predict(model_G, metrics_map)
-prediction_N <- aba_predict(model_N, metrics_map)
-prediction_D <- aba_predict(model_D, metrics_map)
+# Export GeoTIFF
+output_file <- file.path(output_dir, "prediction_G_m2_ha.tif")
+terra::writeRaster(prediction_clean, filename = output_file, overwrite = TRUE)
 
-# Créer un stack multi-couches
-predictions_stack <- c(prediction_G, prediction_N, prediction_D)
-names(predictions_stack) <- c("G_m2_ha", "N_ha", "D_mean_cm")
+cat("Fichier exporté:", output_file, "\n\n")
 
-cat("Stack de prédictions créé:\n")
-for (i in 1:nlyr(predictions_stack)) {
-  layer <- predictions_stack[[i]]
-  vals <- values(layer)
-  cat(sprintf("  %s: %.1f - %.1f (moy: %.1f)\n",
-              names(layer),
-              min(vals, na.rm = TRUE),
-              max(vals, na.rm = TRUE),
-              mean(vals, na.rm = TRUE)))
-}
+# Statistiques de synthèse
+cat("=== STATISTIQUES DE SYNTHÈSE ===\n\n")
 
-cat("\n=== Correspondance indicateurs nemeton ===\n\n")
-cat("G_m2_ha (Surface terrière) → P1 (Production bois)\n")
-cat("N_ha (Densité tiges) → E1 (Structure peuplement)\n")
-cat("D_mean_cm (Diamètre moyen) → P3 (Qualité bois)\n\n")
+# Surface totale
+n_pixels <- sum(!is.na(terra::values(prediction_clean)))
+surface_ha <- n_pixels * (resolution^2) / 10000
 
-# Export (décommenter avec vos données)
-# output_dir <- file.path(data_dir, "predictions_aba")
-# dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-#
-# writeRaster(predictions_stack,
-#             file.path(output_dir, "predictions_aba.tif"),
-#             overwrite = TRUE)
-#
-# cat("Fichier exporté:", file.path(output_dir, "predictions_aba.tif"), "\n")
+cat("ZONE CARTOGRAPHIÉE:\n")
+cat("  - Pixels valides:", n_pixels, "\n")
+cat("  - Résolution:", resolution, "m\n")
+cat("  - Surface totale:", round(surface_ha, 1), "ha\n\n")
 
-# Visualisation multi-variable
-par(mfrow = c(1, 3))
-terra::plot(prediction_G, main = "G (m²/ha)", col = hcl.colors(50, "YlGn"))
-terra::plot(prediction_N, main = "N (tiges/ha)", col = hcl.colors(50, "Blues"))
-terra::plot(prediction_D, main = "D (cm)", col = hcl.colors(50, "Oranges"))
+# Statistiques G
+g_values <- terra::values(prediction_clean)
+g_values <- g_values[!is.na(g_values)]
+
+cat("SURFACE TERRIÈRE (G):\n")
+cat("  - Moyenne:", round(mean(g_values), 1), "m²/ha\n")
+cat("  - Médiane:", round(median(g_values), 1), "m²/ha\n")
+cat("  - Écart-type:", round(sd(g_values), 1), "m²/ha\n")
+cat("  - Min:", round(min(g_values), 1), "m²/ha\n")
+cat("  - Max:", round(max(g_values), 1), "m²/ha\n\n")
+
+# Estimation du stock total
+g_total <- sum(g_values) * (resolution^2) / 10000  # Somme pondérée par surface pixel
+
+cat("STOCK ESTIMÉ:\n")
+cat("  - Surface terrière totale:", round(g_total, 0), "m²\n")
+cat("  - G moyenne pondérée:", round(g_total / surface_ha, 1), "m²/ha\n\n")
+
+# Qualité du modèle
+cat("QUALITÉ DU MODÈLE:\n")
+cat("  - CV-R²:", round(model_aba$stats$`CV-R2`, 3), "\n")
+cat("  - CV-RMSE:", round(model_aba$stats$`CV-RMSE`, 2), "m²/ha\n")
+cat("  - RMSE%:", round(model_aba$stats$`RMSE%`, 1), "%\n\n")
+
+cat(">>> Workflow ABA terminé !\n")
+cat("    Les prédictions peuvent maintenant alimenter les indicateurs nemeton.\n")
 ```
 
-### Quiz Cartographie
+### Quiz Section 8
 
-```{r quiz-mapping, echo=FALSE}
+```{r quiz-section8, echo=FALSE}
 quiz(
-  question("Que fait la fonction aba_predict() ?",
-    answer("Calibre un modèle"),
-    answer("Applique un modèle calibré à une carte de métriques", correct = TRUE),
-    answer("Valide les prédictions"),
-    answer("Exporte les résultats"),
+  question("Quelle fonction applique le modèle calibré aux métriques raster ?",
+    answer("predict()"),
+    answer("aba_predict()", correct = TRUE),
+    answer("model_predict()"),
+    answer("apply_model()"),
     allow_retry = TRUE
   ),
-  question("Pourquoi utiliser la stratification ?",
-    answer("Pour accélérer le calcul"),
-    answer("Pour appliquer des modèles spécifiques par type de peuplement", correct = TRUE),
+  question("Que fait la fonction clean_raster() ?",
+    answer("Compresse le fichier raster"),
+    answer("Applique des seuils de validité et un masque", correct = TRUE),
+    answer("Convertit le format du raster"),
+    answer("Lisse les valeurs du raster"),
+    allow_retry = TRUE
+  ),
+  question("Quelle résolution est utilisée pour la cartographie wall-to-wall ?",
+    answer("0.5 m"),
+    answer("5 m"),
+    answer("25 m", correct = TRUE),
+    answer("100 m"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi combiner métriques points, arbres et terrain ?",
     answer("Pour réduire la taille des fichiers"),
-    answer("Pour changer la résolution"),
+    answer("Pour améliorer la prédiction en capturant différents aspects de la structure", correct = TRUE),
+    answer("Pour accélérer le calcul"),
+    answer("Ce n'est pas nécessaire"),
     allow_retry = TRUE
   ),
-  question("Que fait clean_raster() ?",
-    answer("Supprime les fichiers temporaires"),
-    answer("Applique des seuils et un masque aux cartes", correct = TRUE),
-    answer("Compresse les rasters"),
-    answer("Convertit les formats"),
-    allow_retry = TRUE
-  ),
-  question("Quel indicateur nemeton utilise la surface terrière (G) ?",
-    answer("B2 - Biodiversité"),
-    answer("W1 - Hydrologie"),
-    answer("P1 - Production bois", correct = TRUE),
-    answer("F1 - Feu"),
+  question("Quel format d'export est recommandé pour les cartes de prédiction ?",
+    answer("PNG"),
+    answer("CSV"),
+    answer("GeoTIFF", correct = TRUE),
+    answer("PDF"),
     allow_retry = TRUE
   )
 )
 ```
+
 
 ## Section 9 : Approche BABA - Alternative sans Placettes
 
@@ -3484,11 +5112,8 @@ Le paramètre `res = c(pixel, fenêtre)` de lasR permet de **décorréler** la r
 - Fenêtre 900 m² ≈ placette de rayon 17m (comparable aux ~707 m² des placettes de 15m)
 
 ```{r ex-9-1-setup}
-# Données LAZ normalisées
-laz_dir <- system.file("extdata", "aba.model", "ALS", "plots.norm.laz", package = "nemeton")
-if (laz_dir == "") {
-  laz_dir <- "/home/pascal/Téléchargements/nemeton/inst/extdata/aba.model/ALS/plots.norm.laz"
-}
+# LAZ normalisés (données utilisateur)
+laz_dir <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
 
 # Répertoire de sortie
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -3517,9 +5142,9 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 } else {
   library(lasR)
 
-  # Quelques fichiers LAZ pour la démonstration
+  # Lister tous les fichiers LAZ normalisés
   laz_files <- dir(laz_dir,
-                   pattern = "Verc-(02|05|06|C1|C2|S4|S7)-[1-4]\\.laz$",
+                   pattern = "\\.laz$",
                    full.names = TRUE)
   cat("Fichiers LAZ:", length(laz_files), "\n")
   if (length(laz_files) == 0) {
@@ -3731,17 +5356,32 @@ Ce tutorial a couvert les principales méthodes d'analyse LiDAR forestière de l
   └─────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────┐
-  │ Section 6-7 : Approche ABA (Calibration)                │
-  │   - clouds_metrics() : extraction sur placettes         │
-  │   - aba_build_model() : calibration Box-Cox + stepwise  │
-  │   → Produits : modèles calibrés (G, N, D, V)            │
+  │ Section 6 : Préparation des Données ABA                 │
+  │   - terrain_points_metrics() : métriques terrain        │
+  │   - polar2Projected() : coordonnées arbres              │
+  │   → Produits : plots, llas_height, metrics_terrain      │
   └─────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────┐
-  │ Section 8 : Cartographie                                │
+  │ Section 7 : Calibration des Modèles ABA                 │
+  │   - clouds_metrics() : extraction sur placettes         │
+  │   - aba_build_model() : calibration Box-Cox + stepwise  │
+  │   - aba_combine_strata() : modèles stratifiés           │
+  │   → Produits : modèles calibrés (G, N, D)               │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 8 : Cartographie et Inférence                   │
+  │   - pixel_metrics() : métriques raster                  │
   │   - aba_predict() : prédiction wall-to-wall             │
   │   - clean_raster() : seuils + masquage forêt            │
   │   → Produits : predictions_aba.tif (C1, P1, P3)         │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ Section 9 : Approche BABA (Alternative)                 │
+  │   - lasR : rasterize avec res = c(pixel, fenêtre)       │
+  │   → Produits : métriques LiDAR brutes sans calibration  │
   └─────────────────────────────────────────────────────────┘
 ```
 
