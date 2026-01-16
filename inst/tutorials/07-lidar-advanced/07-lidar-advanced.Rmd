@@ -2382,9 +2382,9 @@ quiz(
 
 Cette section reprend le workflow du tutoriel officiel lidaRtRee, appliqué aux **28 placettes de notre zone d'étude** (clusters Verc-02, 05, 06, C1, C2, S4, S7).
 
-### 6.1 Import field inventory data
+### 6.1 Import des données d'inventaire terrain
 
-#### 6.1.1 Tree-level inventory
+#### 6.1.1 Inventaire à l'échelle de l'arbre
 
 96 placettes de rayon 15 m ont été inventoriées dans la zone des Quatre Montagnes (Vercors, France). Les placettes sont regroupées en clusters de 4. Nous travaillons sur 28 d'entre elles (7 clusters).
 
@@ -2495,7 +2495,7 @@ cat("Espèces présentes:", paste(levels(trees$species), collapse = ", "), "\n\n
 head(trees[, c("plot_id", "tree_id", "species", "diameter_cm", "height_m")], n = 5)
 ```
 
-#### 6.1.2 Plot-level information
+#### 6.1.2 Informations à l'échelle de la placette
 
 Cette section importe les coordonnées des centres de placettes.
 
@@ -2562,7 +2562,7 @@ cat("Aperçu des placettes:\n")
 print(head(plots_sf[, c("plot_id", "cluster_id", "X", "Y")], n = 6))
 ```
 
-#### 6.1.3 Compute tree coordinates
+#### 6.1.3 Calcul des coordonnées des arbres
 
 Les coordonnées des arbres sont calculées à partir des coordonnées du centre de la placette et des mesures d'azimut, de pente et de distance au sol.
 
@@ -2656,9 +2656,9 @@ cat("=== Coordonnées arbres calculées ===\n")
 head(trees[, c("plot_id", "tree_id", "X", "Y", "horiz_dist_m", "height_m")], n = 5)
 ```
 
-### 6.2 Import ALS data
+### 6.2 Import des données LiDAR
 
-#### 6.2.1 Point cloud extraction
+#### 6.2.1 Extraction des nuages de points
 
 Les fichiers LAZ doivent être normalisés, avec l'attribut Z contenant la hauteur au-dessus du sol.
 
@@ -2678,13 +2678,16 @@ plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes
 plots_sf <- sf::st_as_sf(plots, coords = c("X", "Y"), crs = 2154)
 plots_sf <- cbind(plots_sf, X = plots$X, Y = plots$Y)
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Répertoires source
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
+laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
+laz_dir_original <- file.path(data_dir, "lidar_hd", "NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25")
 
 # Répertoires destination (fichiers pré-extraits)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 dir.create(plots_extracted_norm, recursive = TRUE, showWarnings = FALSE)
 dir.create(plots_extracted_orig, recursive = TRUE, showWarnings = FALSE)
 
@@ -2786,7 +2789,7 @@ if (length(laz_norm_files) > 0) {
 cat("\n>>> Ces fichiers seront réutilisés automatiquement dans les exercices suivants.\n")
 ```
 
-#### 6.2.2 Computation of terrain statistics
+#### 6.2.2 Calcul des statistiques de terrain
 
 La fonction `terrain_points_metrics()` calcule l'aspect, l'altitude et la pente en ajustant un plan.
 
@@ -2803,8 +2806,11 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger les LAZ ORIGINAUX pré-extraits (exercice 6.5)
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -2860,11 +2866,11 @@ if (length(metrics_list) > 0) {
 }
 ```
 
-### 6.3 Check field inventory data
+### 6.3 Vérification des données d'inventaire
 
-#### 6.3.1 Consistency with the inventory protocol
+#### 6.3.1 Cohérence avec le protocole d'inventaire
 
-### Exercice 6.7 : Vérification des données d'inventaire
+### Exercice 6.7 : Cohérence avec le protocole
 
 ```{r ex-6-7-setup}
 library(lidaRtRee)
@@ -2894,7 +2900,7 @@ cat("Variables de peuplement pour nos 28 placettes:\n\n")
 summary(plots[, c("G_m2_ha", "N_ha", "D_mean_cm")])
 ```
 
-#### 6.3.2 Height / diameter allometry
+#### 6.3.2 Allométrie hauteur-diamètre
 
 ### Exercice 6.8 : Relation hauteur-diamètre
 
@@ -2931,9 +2937,9 @@ r2 <- summary(model)$r.squared
 legend("topleft", legend = paste("R² =", round(r2, 3)), bty = "n")
 ```
 
-#### 6.3.3 Trees positions and remote sensing data
+#### 6.3.3 Positions des arbres et données LiDAR
 
-### Exercice 6.9 : Superposition CHM et données terrain
+### Exercice 6.9 : Superposition CHM et arbres terrain
 
 ```{r ex-6-9-setup}
 library(lidaRtRee)
@@ -2946,18 +2952,64 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger les LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
+# Répertoire des données terrain (arbres et piquets)
+field_dir <- system.file("extdata/aba.model/field", package = "nemeton")
+
+# Fonction pour charger les arbres d'une placette avec coordonnées X,Y
+load_trees_xy <- function(plot_id, field_dir) {
+  # Extraire cluster_id (ex: "Verc-02" depuis "Verc-02-1")
+  cluster_id <- sub("-[0-9]+$", "", plot_id)
+
+  # Charger les piquets
+  piquets_file <- file.path(field_dir, paste0(cluster_id, "_PiquetsTerrain.csv"))
+  if (!file.exists(piquets_file)) return(NULL)
+  piquets <- read.csv2(piquets_file)
+  piquets$X <- as.numeric(piquets$X)
+  piquets$Y <- as.numeric(piquets$Y)
+  piquets <- piquets[!is.na(piquets$X), c("Id", "X", "Y")]
+
+  # Charger les arbres
+  arbres_file <- file.path(field_dir, paste0(plot_id, "_ArbresTerrain.csv"))
+  if (!file.exists(arbres_file)) return(NULL)
+  arbres <- read.csv2(arbres_file)
+
+  # Convertir coordonnées polaires en X,Y
+  arbres$X <- NA_real_
+  arbres$Y <- NA_real_
+  for (i in seq_len(nrow(arbres))) {
+    pi_ref <- arbres$Pi[i]
+    piquet <- piquets[piquets$Id == pi_ref, ]
+    if (nrow(piquet) == 1) {
+      azim_rad <- as.numeric(arbres$Azim_gr[i]) * pi / 200  # grades -> radians
+      dist_m <- as.numeric(arbres$DistS_m[i])
+      arbres$X[i] <- piquet$X + dist_m * sin(azim_rad)
+      arbres$Y[i] <- piquet$Y + dist_m * cos(azim_rad)
+    }
+  }
+  arbres <- arbres[!is.na(arbres$X), ]
+  arbres$Dia_cm <- as.numeric(arbres$Dia_cm)
+  arbres$Haut_m <- as.numeric(arbres$Haut_m)
+  return(arbres)
+}
+
 # Placette test
 plot_test <- names(llas_height)[1]
+
+# Charger les arbres terrain de la placette test
+arbres_terrain <- load_trees_xy(plot_test, field_dir)
 ```
 
 ```{r ex-6-9, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-9-setup"}
-# === 6.3.6 : Superposition CHM et positions arbres ===
+# === 6.3.6 : Superposition CHM et positions arbres terrain ===
 cat("=== Visualisation CHM placette", plot_test, "===\n\n")
 
 # Calculer le CHM (Canopy Height Model)
@@ -2969,7 +3021,7 @@ chm <- lidR::rasterize_canopy(llas_height[[plot_test]],
 # Afficher le CHM
 terra::plot(chm,
             col = gray(seq(0, 1, 1/255)),
-            main = paste("CHM placette", plot_test))
+            main = paste("CHM + arbres terrain -", plot_test))
 
 # Ajouter le cercle de la placette
 plot_coords <- plots[plots$plot_id == plot_test, c("X", "Y")]
@@ -2978,16 +3030,39 @@ circle_x <- plot_coords$X + p_radius * cos(theta)
 circle_y <- plot_coords$Y + p_radius * sin(theta)
 lines(circle_x, circle_y, col = "red", lwd = 2)
 
-# Ajouter le centre
+# Ajouter les arbres terrain avec leurs diamètres (DBH)
+if (!is.null(arbres_terrain) && nrow(arbres_terrain) > 0) {
+  # Dessiner un cercle pour chaque arbre (rayon = DBH/2 en mètres)
+  for (i in seq_len(nrow(arbres_terrain))) {
+    arbre <- arbres_terrain[i, ]
+    rayon_m <- arbre$Dia_cm / 200  # diamètre cm -> rayon m
+    # Cercle proportionnel au DBH (amplifié x5 pour visibilité)
+    circle_arbre_x <- arbre$X + rayon_m * 5 * cos(theta)
+    circle_arbre_y <- arbre$Y + rayon_m * 5 * sin(theta)
+    lines(circle_arbre_x, circle_arbre_y, col = "cyan", lwd = 1.5)
+  }
+  # Ajouter les centres des arbres
+  points(arbres_terrain$X, arbres_terrain$Y, pch = 16, col = "blue", cex = 0.4)
+
+  cat("Arbres terrain:", nrow(arbres_terrain), "\n")
+  cat("DBH moyen:", round(mean(arbres_terrain$Dia_cm, na.rm = TRUE), 1), "cm\n")
+  cat("Hauteur moyenne:", round(mean(arbres_terrain$Haut_m, na.rm = TRUE), 1), "m\n")
+}
+
+# Ajouter le centre de placette
 points(plot_coords$X, plot_coords$Y, pch = 3, col = "red", cex = 2)
 
-cat("CHM calculé - résolution:", terra::res(chm)[1], "m\n")
-cat("Hauteur max:", round(terra::global(chm, "max", na.rm = TRUE)$max, 1), "m\n")
+# Légende
+legend("topright", legend = c("Placette 15m", "Arbres terrain (DBH x5)"),
+       col = c("red", "cyan"), lwd = c(2, 1.5), bg = "white", cex = 0.8)
+
+cat("\nCHM résolution:", terra::res(chm)[1], "m\n")
+cat("Hauteur max CHM:", round(terra::global(chm, "max", na.rm = TRUE)$max, 1), "m\n")
 ```
 
-### 6.4 Stand level parameters
+### 6.4 Paramètres de peuplement
 
-#### 6.4.1 Compute stand level forest parameters
+#### 6.4.1 Calcul des paramètres forestiers
 
 Trois paramètres de peuplement sont calculés en agrégeant les informations au niveau de l'arbre : surface terrière, diamètre moyen, densité de tiges.
 
@@ -3026,9 +3101,9 @@ hist(plots$D_mean_cm, main = "Diamètre moyen",
      xlab = "(cm)", ylab = "Nombre de placettes", col = "lightyellow")
 ```
 
-### 6.5 Summary of prepared data
+### 6.5 Résumé des données préparées
 
-### Exercice 6.11 : Résumé des données préparées
+### Exercice 6.11 : Bilan des données
 
 ```{r ex-6-11-setup}
 library(lidaRtRee)
@@ -3040,14 +3115,20 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ ORIGINAUX pré-extraits (exercice 6.5)
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -3159,8 +3240,11 @@ data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 # Filtrage sur les 28 placettes de la zone d'étude
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3170,8 +3254,11 @@ common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
 llas_height <- llas_height[plots$plot_id]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -3229,8 +3316,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3285,8 +3375,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3352,8 +3445,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3421,8 +3517,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3459,8 +3558,11 @@ metrics_trees <- lidaRtRee::clouds_tree_metrics(
   }
 )
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -3513,8 +3615,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3612,8 +3717,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3709,8 +3817,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3810,8 +3921,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -3931,8 +4045,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4095,8 +4212,11 @@ resolution <- 25  # Résolution de la carte de sortie
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4126,8 +4246,11 @@ metrics_trees <- lidaRtRee::clouds_tree_metrics(
   }
 )
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -4212,8 +4335,11 @@ aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4288,8 +4414,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4391,8 +4520,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ ORIGINAUX pré-extraits (exercice 6.5)
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -4474,8 +4606,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4505,8 +4640,11 @@ metrics_trees <- lidaRtRee::clouds_tree_metrics(
   }
 )
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
 laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
 llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
 names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
@@ -4643,8 +4781,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4760,8 +4901,11 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
@@ -4949,8 +5093,11 @@ Le paramètre `res = c(pixel, fenêtre)` de lasR permet de **décorréler** la r
 - Fenêtre 900 m² ≈ placette de rayon 17m (comparable aux ~707 m² des placettes de 15m)
 
 ```{r ex-9-1-setup}
+# Répertoire des données
+data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
 # LAZ normalisés (données utilisateur)
-laz_dir <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+laz_dir <- file.path(data_dir, "result_laz_normalized")
 
 # Répertoire de sortie
 if (requireNamespace("rappdirs", quietly = TRUE)) {
