@@ -2674,7 +2674,7 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 # Charger les données quatre_montagnes pour avoir les coordonnées
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 plots_sf <- sf::st_as_sf(plots, coords = c("X", "Y"), crs = 2154)
 plots_sf <- cbind(plots_sf, X = plots$X, Y = plots$Y)
 
@@ -2693,7 +2693,7 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0  # Correction hauteurs négatives
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
@@ -2739,7 +2739,7 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 # Charger quatre_montagnes pour les coordonnées
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 # Répertoire des LAZ ORIGINAUX (non-normalisés) pour métriques terrain
 laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
@@ -2753,7 +2753,7 @@ for (i in 1:nrow(plots)) {
   tryCatch({
     las <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
-      llas_original[[plots$plotId[i]]] <- las
+      llas_original[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
@@ -2775,7 +2775,7 @@ for (i in seq_along(llas_original)) {
   las <- llas_original[[i]]
 
   # Trouver les coordonnées du centre
-  plot_row <- which(plots$plotId == plot_name)
+  plot_row <- which(plots$plot_id == plot_name)
 
   if (length(plot_row) == 0) {
     cat("Placette", plot_name, "non trouvée dans plots\n")
@@ -2826,7 +2826,7 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 # Charger quatre_montagnes
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 # Import arbres (simplifié - utiliser les données déjà préparées)
 # Dans le tutoriel complet on chargerait depuis les CSV
@@ -2855,7 +2855,7 @@ if (data_dir == "") data_dir <- system.file("extdata", "aba.model", package = "l
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 ```
 
 ```{r ex-6-8, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-8-setup"}
@@ -2893,7 +2893,7 @@ p_radius <- 15
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 # Répertoire des LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -2908,7 +2908,7 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
@@ -2933,7 +2933,7 @@ terra::plot(chm,
             main = paste("CHM placette", plot_test))
 
 # Ajouter le cercle de la placette
-plot_coords <- plots[plots$plotId == plot_test, c("X", "Y")]
+plot_coords <- plots[plots$plot_id == plot_test, c("X", "Y")]
 theta <- seq(0, 2*pi, length.out = 100)
 circle_x <- plot_coords$X + p_radius * cos(theta)
 circle_y <- plot_coords$Y + p_radius * sin(theta)
@@ -2959,7 +2959,7 @@ library(lidaRtRee)
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 ```
 
 ```{r ex-6-10, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-10-setup"}
@@ -2999,7 +2999,7 @@ p_radius <- 15
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 # LAZ normalisés pour llas_height
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3013,7 +3013,7 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
@@ -3025,9 +3025,9 @@ lidR::projection(ctg_original) <- 2154
 lidR::opt_progress(ctg_original) <- FALSE
 
 # Synchroniser
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 # Calculer métriques terrain depuis LAZ originaux
 metrics_terrain <- list()
@@ -3036,7 +3036,7 @@ for (i in 1:nrow(plots)) {
     las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las_orig)) {
       center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
     }
   }, error = function(e) NULL)
 }
@@ -3128,8 +3128,8 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 
 # Filtrage sur les 28 placettes de la zone d'étude
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3144,15 +3144,15 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
 # Synchronisation plots / nuages
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 # LAZ originaux pour métriques terrain
 laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
@@ -3166,7 +3166,7 @@ for (i in 1:nrow(plots)) {
     las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las_orig)) {
       center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
     }
   }, error = function(e) NULL)
 }
@@ -3210,8 +3210,8 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3225,14 +3225,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 ```
 
 ```{r ex-7-2, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-2-setup"}
@@ -3278,8 +3278,8 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3293,14 +3293,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3357,8 +3357,8 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3372,14 +3372,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3438,8 +3438,8 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3453,14 +3453,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3502,7 +3502,7 @@ for (i in 1:nrow(plots)) {
     las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las_orig)) {
       center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
     }
   }, error = function(e) NULL)
 }
@@ -3541,8 +3541,8 @@ La fonction `aba_build_model()` sélectionne le modèle de régression linéaire
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3556,14 +3556,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3652,8 +3652,8 @@ La fonction `aba_plot()` permet de visualiser les valeurs prédites vs observée
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3667,14 +3667,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3761,8 +3761,8 @@ Les modèles sont calibrés séquentiellement pour différents paramètres fores
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3776,14 +3776,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3874,8 +3874,8 @@ La calibration de modèles séparés par strate (type de propriété forestière
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -3889,14 +3889,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -3955,7 +3955,7 @@ cat("=== Modèles stratifiés par type de propriété ===\n\n")
 if (!strat %in% names(plots)) {
   cat("Variable 'stratum' non disponible, création basée sur le cluster...\n")
   # Création d'une variable de stratification basée sur le cluster
-  plots$stratum <- factor(ifelse(grepl("^Verc-(02|05|06)", plots$plotId),
+  plots$stratum <- factor(ifelse(grepl("^Verc-(02|05|06)", plots$plot_id),
                                   "cluster_A", "cluster_B"))
 }
 
@@ -4007,8 +4007,8 @@ Les modèles calibrés et les paramètres de configuration sont sauvegardés pou
 pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -4022,14 +4022,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
@@ -4186,8 +4186,8 @@ laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_la
 
 # Reconstruction du modèle (normalement chargé depuis le fichier)
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
 lidR::projection(ctg_normalized) <- 2154
@@ -4199,14 +4199,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], plot_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 llas_height <- lapply(llas_height,
                       function(x)
@@ -4241,7 +4241,7 @@ for (i in 1:nrow(plots)) {
     las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], plot_radius)
     if (!lidR::is.empty(las_orig)) {
       center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, plot_radius)
+      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, plot_radius)
     }
   }, error = function(e) NULL)
 }
@@ -4315,7 +4315,7 @@ aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
 
 # Charger les placettes pour extraire des nuages de points
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
 lidR::projection(ctg_normalized) <- 2154
@@ -4400,7 +4400,7 @@ p_radius <- 15
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
 lidR::projection(ctg_normalized) <- 2154
@@ -4512,7 +4512,7 @@ p_radius <- 15
 laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
 ctg_original <- lidR::readLAScatalog(laz_dir_original)
 lidR::projection(ctg_original) <- 2154
@@ -4605,8 +4605,8 @@ laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NU
 
 # Données quatre_montagnes pour le modèle
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
 lidR::projection(ctg_normalized) <- 2154
@@ -4618,14 +4618,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 llas_height <- lapply(llas_height,
                       function(x)
@@ -4659,7 +4659,7 @@ for (i in 1:nrow(plots)) {
     las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las_orig)) {
       center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plotId[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
+      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
     }
   }, error = function(e) NULL)
 }
@@ -4781,8 +4781,8 @@ aba_res_chm <- 0.5
 resolution <- 25
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -4796,14 +4796,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 llas_height <- lapply(llas_height, function(x)
   lidR::filter_poi(x, is.element(Classification, class_points) & Z <= h_points))
@@ -4909,8 +4909,8 @@ aba_res_chm <- 0.5
 resolution <- 25
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plotId), ]
-plots$plot_id <- plots$plotId
+plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
+# plots$plot_id already exists in quatre_montagnes
 
 # LAZ normalisés (données utilisateur)
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
@@ -4924,14 +4924,14 @@ for (i in 1:nrow(plots)) {
     las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
     if (!lidR::is.empty(las)) {
       las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plotId[i]]] <- las
+      llas_height[[plots$plot_id[i]]] <- las
     }
   }, error = function(e) NULL)
 }
 
-common_ids <- intersect(plots$plotId, names(llas_height))
-plots <- plots[plots$plotId %in% common_ids, ]
-llas_height <- llas_height[plots$plotId]
+common_ids <- intersect(plots$plot_id, names(llas_height))
+plots <- plots[plots$plot_id %in% common_ids, ]
+llas_height <- llas_height[plots$plot_id]
 
 llas_height <- lapply(llas_height, function(x)
   lidR::filter_poi(x, is.element(Classification, class_points) & Z <= h_points))
