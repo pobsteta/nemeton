@@ -2678,50 +2678,112 @@ plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes
 plots_sf <- sf::st_as_sf(plots, coords = c("X", "Y"), crs = 2154)
 plots_sf <- cbind(plots_sf, X = plots$X, Y = plots$Y)
 
-# Répertoire des LAZ normalisés (données utilisateur)
+# Répertoires source
 laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
+laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
 
-# Créer un LAScatalog pour extraire les placettes
+# Répertoires destination (fichiers pré-extraits)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+dir.create(plots_extracted_norm, recursive = TRUE, showWarnings = FALSE)
+dir.create(plots_extracted_orig, recursive = TRUE, showWarnings = FALSE)
+
+# Créer les LAScatalog pour l'extraction
 ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
 lidR::projection(ctg_normalized) <- 2154
 lidR::opt_progress(ctg_normalized) <- FALSE
 
-# Extraire les nuages circulaires aux coordonnées des placettes
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0  # Correction hauteurs négatives
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+ctg_original <- lidR::readLAScatalog(laz_dir_original)
+lidR::opt_progress(ctg_original) <- FALSE
 ```
 
-```{r ex-6-5, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-6-5-setup"}
-# === 6.2.1 : Extraction des nuages de points normalisés ===
+```{r ex-6-5, exercise=TRUE, exercise.timelimit=900, exercise.setup="ex-6-5-setup"}
+# === 6.2.1 : Extraction et sauvegarde des nuages de points ===
+# Cette étape extrait les placettes une seule fois et les sauvegarde
+# pour réutilisation dans les exercices suivants
 
-cat("=== Extraction des nuages depuis les tuiles LiDAR HD ===\n\n")
-cat("Répertoire LAZ normalisés:", laz_dir_normalized, "\n\n")
+cat("=== Extraction des placettes depuis les tuiles LiDAR HD ===\n\n")
+cat("Placettes à traiter:", nrow(plots), "\n\n")
 
-# Informations sur le catalogue
-cat("Catalogue LAZ:\n")
-cat("  - Nombre de tuiles:", length(ctg_normalized$filename), "\n")
-cat("  - CRS: Lambert-93 (EPSG:2154)\n\n")
+# --- 1. LAZ NORMALISÉS (Z = hauteur) ---
+cat("--- 1. LAZ Normalisés (pour métriques de hauteur) ---\n")
+cat("Source:", laz_dir_normalized, "\n")
+cat("Destination:", plots_extracted_norm, "\n\n")
 
-# Résultat de l'extraction
-cat("=== Nuages de points extraits ===\n")
-cat("Nombre de placettes:", nrow(plots), "\n")
-cat("Nuages extraits:", length(llas_height), "\n\n")
+existing_norm <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+existing_norm_ids <- gsub("\\.laz$", "", basename(existing_norm))
+plots_to_extract_norm <- plots[!plots$plot_id %in% existing_norm_ids, ]
 
-if (length(llas_height) > 0) {
-  cat("Premier nuage:", names(llas_height)[1], "\n")
-  print(llas_height[[1]])
+if (nrow(plots_to_extract_norm) == 0) {
+  cat(">>> Tous les fichiers normalisés existent déjà !\n\n")
 } else {
-  cat("ERREUR: Aucun nuage extrait.\n")
-  cat("Vérifiez que les fichiers LAZ existent dans:", laz_dir_normalized, "\n")
+  cat("À extraire:", nrow(plots_to_extract_norm), "\n")
+  for (i in seq_len(nrow(plots_to_extract_norm))) {
+    plot_id <- plots_to_extract_norm$plot_id[i]
+    output_file <- file.path(plots_extracted_norm, paste0(plot_id, ".laz"))
+    tryCatch({
+      las <- lidR::clip_circle(ctg_normalized,
+                                plots_to_extract_norm$X[i],
+                                plots_to_extract_norm$Y[i],
+                                p_radius)
+      if (!lidR::is.empty(las)) {
+        las$Z[las$Z < 0] <- 0
+        lidR::writeLAS(las, output_file)
+        cat("  [", i, "/", nrow(plots_to_extract_norm), "]", plot_id, "OK\n")
+      }
+    }, error = function(e) {
+      cat("  [", i, "/", nrow(plots_to_extract_norm), "]", plot_id, "ERREUR\n")
+    })
+  }
 }
+
+# --- 2. LAZ ORIGINAUX (Z = altitude) ---
+cat("\n--- 2. LAZ Originaux (pour métriques terrain) ---\n")
+cat("Source:", laz_dir_original, "\n")
+cat("Destination:", plots_extracted_orig, "\n\n")
+
+existing_orig <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+existing_orig_ids <- gsub("\\.laz$", "", basename(existing_orig))
+plots_to_extract_orig <- plots[!plots$plot_id %in% existing_orig_ids, ]
+
+if (nrow(plots_to_extract_orig) == 0) {
+  cat(">>> Tous les fichiers originaux existent déjà !\n\n")
+} else {
+  cat("À extraire:", nrow(plots_to_extract_orig), "\n")
+  for (i in seq_len(nrow(plots_to_extract_orig))) {
+    plot_id <- plots_to_extract_orig$plot_id[i]
+    output_file <- file.path(plots_extracted_orig, paste0(plot_id, ".laz"))
+    tryCatch({
+      las <- lidR::clip_circle(ctg_original,
+                                plots_to_extract_orig$X[i],
+                                plots_to_extract_orig$Y[i],
+                                p_radius)
+      if (!lidR::is.empty(las)) {
+        lidR::writeLAS(las, output_file)
+        cat("  [", i, "/", nrow(plots_to_extract_orig), "]", plot_id, "OK\n")
+      }
+    }, error = function(e) {
+      cat("  [", i, "/", nrow(plots_to_extract_orig), "]", plot_id, "ERREUR\n")
+    })
+  }
+}
+
+# --- 3. Charger et afficher le résumé ---
+cat("\n=== Résumé ===\n")
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+cat("LAZ normalisés:", length(laz_norm_files), "fichiers\n")
+cat("LAZ originaux:", length(laz_orig_files), "fichiers\n\n")
+
+# Charger un exemple
+if (length(laz_norm_files) > 0) {
+  llas_height <- purrr::map(laz_norm_files[1], lidR::readLAS)
+  names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files[1]))
+  cat("Exemple -", names(llas_height)[1], ":\n")
+  print(llas_height[[1]])
+}
+
+cat("\n>>> Ces fichiers seront réutilisés automatiquement dans les exercices suivants.\n")
 ```
 
 #### 6.2.2 Computation of terrain statistics
@@ -2741,22 +2803,11 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-# Répertoire des LAZ ORIGINAUX (non-normalisés) pour métriques terrain
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-
-# Créer un LAScatalog pour extraire les placettes
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-
-# Extraire les nuages circulaires aux coordonnées des placettes
-llas_original <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      llas_original[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger les LAZ ORIGINAUX pré-extraits (exercice 6.5)
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 ```
 
 ```{r ex-6-6, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-6-6-setup"}
@@ -2895,23 +2946,11 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-# Répertoire des LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-# Extraire les nuages circulaires
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger les LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 # Placette test
 plot_test <- names(llas_height)[1]
@@ -3001,44 +3040,34 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-# LAZ normalisés pour llas_height
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
-
-# LAZ originaux pour métriques terrain
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-lidR::projection(ctg_original) <- 2154
-lidR::opt_progress(ctg_original) <- FALSE
+# Charger LAZ ORIGINAUX pré-extraits (exercice 6.5)
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 
 # Synchroniser
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
 llas_height <- llas_height[plots$plot_id]
 
-# Calculer métriques terrain depuis LAZ originaux
+# Calculer métriques terrain depuis LAZ originaux pré-extraits
 metrics_terrain <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las_orig)) {
-      center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
-    }
-  }, error = function(e) NULL)
+for (i in seq_along(llas_original)) {
+  plot_name <- names(llas_original)[i]
+  plot_row <- which(plots$plot_id == plot_name)
+  if (length(plot_row) > 0) {
+    tryCatch({
+      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
+      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, p_radius)
+    }, error = function(e) NULL)
+  }
 }
 metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 ```
@@ -3129,46 +3158,34 @@ data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 
 # Filtrage sur les 28 placettes de la zone d'étude
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-# Extraire les nuages circulaires
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 # Synchronisation plots / nuages
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
 llas_height <- llas_height[plots$plot_id]
 
-# LAZ originaux pour métriques terrain
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-lidR::projection(ctg_original) <- 2154
-lidR::opt_progress(ctg_original) <- FALSE
+# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 
 metrics_terrain <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las_orig)) {
-      center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
-    }
-  }, error = function(e) NULL)
+for (i in seq_along(llas_original)) {
+  plot_name <- names(llas_original)[i]
+  plot_row <- which(plots$plot_id == plot_name)
+  if (length(plot_row) > 0) {
+    tryCatch({
+      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
+      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, p_radius)
+    }, error = function(e) NULL)
+  }
 }
 metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 ```
@@ -3211,24 +3228,12 @@ p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3279,24 +3284,12 @@ p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3358,24 +3351,12 @@ p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3439,24 +3420,12 @@ p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3490,21 +3459,22 @@ metrics_trees <- lidaRtRee::clouds_tree_metrics(
   }
 )
 
-# LAZ originaux pour métriques terrain
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-lidR::projection(ctg_original) <- 2154
-lidR::opt_progress(ctg_original) <- FALSE
+# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 
 metrics_terrain <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las_orig)) {
-      center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
-    }
-  }, error = function(e) NULL)
+for (i in seq_along(llas_original)) {
+  plot_name <- names(llas_original)[i]
+  plot_row <- which(plots$plot_id == plot_name)
+  if (length(plot_row) > 0) {
+    tryCatch({
+      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
+      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, p_radius)
+    }, error = function(e) NULL)
+  }
 }
 metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 ```
@@ -3542,24 +3512,12 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3653,24 +3611,12 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3762,24 +3708,12 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -3875,24 +3809,12 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -4008,24 +3930,12 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -4181,28 +4091,15 @@ aba_res_chm <- 0.5
 plot_radius <- 15
 resolution <- 25  # Résolution de la carte de sortie
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-
 # Reconstruction du modèle (normalement chargé depuis le fichier)
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], plot_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -4229,21 +4126,22 @@ metrics_trees <- lidaRtRee::clouds_tree_metrics(
   }
 )
 
-# LAZ originaux pour métriques terrain
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-lidR::projection(ctg_original) <- 2154
-lidR::opt_progress(ctg_original) <- FALSE
+# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 
 metrics_terrain <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], plot_radius)
-    if (!lidR::is.empty(las_orig)) {
-      center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, plot_radius)
-    }
-  }, error = function(e) NULL)
+for (i in seq_along(llas_original)) {
+  plot_name <- names(llas_original)[i]
+  plot_row <- which(plots$plot_id == plot_name)
+  if (length(plot_row) > 0) {
+    tryCatch({
+      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
+      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, plot_radius)
+    }, error = function(e) NULL)
+  }
 }
 metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 
@@ -4307,19 +4205,18 @@ aba_res_chm <- 0.5
 resolution <- 25
 p_radius <- 15
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-
 aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
                                                   Classification, 2)
 
-# Charger les placettes pour extraire des nuages de points
+# Charger les placettes
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 ```
 
 ```{r ex-8-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-2-setup"}
@@ -4329,16 +4226,8 @@ cat("=== Calcul des métriques points sur grille ===\n\n")
 cat("Résolution:", resolution, "m\n")
 cat("Surface pixel:", resolution^2, "m²\n\n")
 
-# Extraire des nuages de points depuis le LAScatalog
-point_clouds <- list()
-for (i in 1:min(4, nrow(plots))) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      point_clouds[[i]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Utiliser les 4 premiers nuages pré-extraits
+point_clouds <- llas_height[1:min(4, length(llas_height))]
 
 if (length(point_clouds) > 0) {
   # Fusionner les nuages
@@ -4396,26 +4285,17 @@ aba_res_chm <- 0.5
 resolution <- 25
 p_radius <- 15
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
-# Extraire plusieurs nuages de points
-point_clouds <- list()
-for (i in 1:min(4, nrow(plots))) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      point_clouds[[i]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Utiliser les 4 premiers nuages
+point_clouds <- llas_height[1:min(4, length(llas_height))]
 
 if (length(point_clouds) > 0) {
   point_cloud <- do.call(rbind, point_clouds)
@@ -4508,26 +4388,17 @@ h_points <- 60
 resolution <- 25
 p_radius <- 15
 
-# LAZ originaux (non-normalisés) pour les métriques de terrain
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-lidR::projection(ctg_original) <- 2154
-lidR::opt_progress(ctg_original) <- FALSE
+# Charger LAZ ORIGINAUX pré-extraits (exercice 6.5)
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 
-# Extraire plusieurs nuages de points originaux
-point_clouds <- list()
-for (i in 1:min(4, nrow(plots))) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      point_clouds[[i]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Utiliser les 4 premiers nuages
+point_clouds <- llas_original[1:min(4, length(llas_original))]
 
 if (length(point_clouds) > 0) {
   point_cloud <- do.call(rbind, point_clouds)
@@ -4599,29 +4470,15 @@ aba_res_chm <- 0.5
 resolution <- 25
 p_radius <- 15
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-laz_dir_original <- "/home/pascal/.local/share/nemeton/tutorial_data/lidar_hd/NUALHD_1-0__LAZ_LAMB93_PM_2025-03-25"
-
 # Données quatre_montagnes pour le modèle
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -4648,20 +4505,22 @@ metrics_trees <- lidaRtRee::clouds_tree_metrics(
   }
 )
 
-# LAZ originaux pour métriques terrain
-ctg_original <- lidR::readLAScatalog(laz_dir_original)
-lidR::projection(ctg_original) <- 2154
-lidR::opt_progress(ctg_original) <- FALSE
+# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
+plots_extracted_orig <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_orig"
+laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
+llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
+names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
 
 metrics_terrain <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las_orig <- lidR::clip_circle(ctg_original, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las_orig)) {
-      center_xy <- as.numeric(plots[i, c("X", "Y")])
-      metrics_terrain[[plots$plot_id[i]]] <- lidaRtRee::terrain_points_metrics(las_orig, center_xy, p_radius)
-    }
-  }, error = function(e) NULL)
+for (i in seq_along(llas_original)) {
+  plot_name <- names(llas_original)[i]
+  plot_row <- which(plots$plot_id == plot_name)
+  if (length(plot_row) > 0) {
+    tryCatch({
+      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
+      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, p_radius)
+    }, error = function(e) NULL)
+  }
 }
 metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 
@@ -4779,27 +4638,16 @@ class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
 aba_res_chm <- 0.5
 resolution <- 25
+p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -4825,7 +4673,7 @@ metrics <- cbind(metrics_points[plots$plot_id, ], metrics_trees[plots$plot_id, ]
 model_aba <- lidaRtRee::aba_build_model(plots[, "G_m2_ha"], metrics,
   transform = "boxcox", nmax = 4, xy = plots[, c("X", "Y")])
 
-point_cloud <- do.call(rbind, lapply(laz_files[1:min(4, length(laz_files))], lidR::readLAS))
+point_cloud <- do.call(rbind, llas_height[1:min(4, length(llas_height))])
 point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
 point_cloud$Z[point_cloud$Z < 0] <- 0
 
@@ -4907,27 +4755,16 @@ class_points <- c(0, 1, 2, 3, 4, 5, 12)
 h_points <- 60
 aba_res_chm <- 0.5
 resolution <- 25
+p_radius <- 15
 
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-# plots$plot_id already exists in quatre_montagnes
 
-# LAZ normalisés (données utilisateur)
-laz_dir_normalized <- "/home/pascal/.local/share/nemeton/tutorial_data/result_laz_normalized"
-ctg_normalized <- lidR::readLAScatalog(laz_dir_normalized)
-lidR::projection(ctg_normalized) <- 2154
-lidR::opt_progress(ctg_normalized) <- FALSE
-
-llas_height <- list()
-for (i in 1:nrow(plots)) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      las$Z[las$Z < 0] <- 0
-      llas_height[[plots$plot_id[i]]] <- las
-    }
-  }, error = function(e) NULL)
-}
+# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+plots_extracted_norm <- "/home/pascal/.local/share/nemeton/tutorial_data/plots_extracted_norm"
+laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
+llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
+names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
 common_ids <- intersect(plots$plot_id, names(llas_height))
 plots <- plots[plots$plot_id %in% common_ids, ]
@@ -4950,7 +4787,7 @@ metrics <- cbind(metrics_points[plots$plot_id, ], metrics_trees[plots$plot_id, ]
 model_aba <- lidaRtRee::aba_build_model(plots[, "G_m2_ha"], metrics,
   transform = "boxcox", nmax = 4, xy = plots[, c("X", "Y")])
 
-point_cloud <- do.call(rbind, lapply(laz_files[1:min(4, length(laz_files))], lidR::readLAS))
+point_cloud <- do.call(rbind, llas_height[1:min(4, length(llas_height))])
 point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
 point_cloud$Z[point_cloud$Z < 0] <- 0
 metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
