@@ -3745,7 +3745,7 @@ model_aba <- lidaRtRee::aba_build_model(
   plots[subsample, variable],
   metrics_rf[subsample, ],
   transform = "boxcox",
-  nmax = 2,
+  nmax = 4,
   xy = plots[subsample, c("X", "Y")]
 )
 
@@ -3969,17 +3969,19 @@ for (var in variables) {
 
   # Sélectionner les variables
   top_vars <- head(importance_df$variable, 10)
-  metrics_rf <- metrics[, top_vars]
+  metrics_rf <- metrics[, top_vars, drop = FALSE]
 
   # Calibration du modèle
   cat("\nCalibration avec boxcox...\n")
-  models_aba[[var]] <- lidaRtRee::aba_build_model(
-    plots[[var]],
-    metrics_rf,
-    transform = "boxcox",
-    nmax = 2,
-    xy = plots[, c("X", "Y")]
-  )
+  suppressWarnings({
+    models_aba[[var]] <- lidaRtRee::aba_build_model(
+      plots[[var]],
+      metrics_rf,
+      transform = "boxcox",
+      nmax = 4,
+      xy = plots[, c("X", "Y")]
+    )
+  })
   cat("\n")
 }
 
