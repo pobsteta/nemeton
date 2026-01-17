@@ -3617,7 +3617,10 @@ metrics_trees <- readRDS(file.path(cache_dir, "metrics_trees.rds"))
 
 # Synchroniser plots avec les métriques disponibles
 common_ids <- intersect(plots$plot_id, rownames(metrics_points))
+common_ids <- intersect(common_ids, rownames(metrics_trees))
+common_ids <- intersect(common_ids, rownames(metrics_terrain))
 plots <- plots[plots$plot_id %in% common_ids, ]
+rownames(plots) <- plots$plot_id
 ```
 
 ```{r ex-7-5, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-5-setup"}
@@ -3625,12 +3628,17 @@ plots <- plots[plots$plot_id %in% common_ids, ]
 
 cat("=== Fusion des métriques ===\n\n")
 
-# Combinaison des trois types de métriques
+# Combinaison des trois types de métriques avec indexation explicite
+idx <- plots$plot_id
 metrics <- cbind(
-  metrics_points[plots$plot_id, ],
-  metrics_trees[plots$plot_id, ],
-  metrics_terrain[plots$plot_id, 1:3]  # altitude, pente, aspect
+  metrics_points[idx, , drop = FALSE],
+  metrics_trees[idx, , drop = FALSE],
+  metrics_terrain[idx, 1:3, drop = FALSE]
 )
+metrics <- as.data.frame(metrics)
+
+# Supprimer colonnes dupliquées
+metrics <- metrics[, !duplicated(colnames(metrics))]
 
 cat("MÉTRIQUES COMBINÉES:\n")
 cat("  Dimensions:", nrow(metrics), "placettes x", ncol(metrics), "prédicteurs\n\n")
@@ -3669,21 +3677,31 @@ metrics_trees <- readRDS(file.path(cache_dir, "metrics_trees.rds"))
 
 # Synchroniser plots avec les métriques disponibles
 common_ids <- intersect(plots$plot_id, rownames(metrics_points))
+common_ids <- intersect(common_ids, rownames(metrics_trees))
+common_ids <- intersect(common_ids, rownames(metrics_terrain))
 plots <- plots[plots$plot_id %in% common_ids, ]
+rownames(plots) <- plots$plot_id
 
-# Combiner les métriques
+# Combiner les métriques avec indexation explicite
+idx <- plots$plot_id
 metrics <- cbind(
-  metrics_points[plots$plot_id, ],
-  metrics_trees[plots$plot_id, ],
-  metrics_terrain[plots$plot_id, 1:3]
+  metrics_points[idx, , drop = FALSE],
+  metrics_trees[idx, , drop = FALSE],
+  metrics_terrain[idx, 1:3, drop = FALSE]
 )
+metrics <- as.data.frame(metrics)
+
+# Supprimer colonnes dupliquées
+metrics <- metrics[, !duplicated(colnames(metrics))]
 
 # Nettoyer les données : supprimer colonnes avec NA ou variance nulle
-metrics <- metrics[, colSums(is.na(metrics)) == 0]
-metrics <- metrics[, apply(metrics, 2, var, na.rm = TRUE) > 0]
+metrics <- metrics[, colSums(is.na(metrics)) == 0, drop = FALSE]
+var_cols <- sapply(metrics, function(x) var(x, na.rm = TRUE) > 0)
+metrics <- metrics[, var_cols, drop = FALSE]
 
 # Garder uniquement les variables positives (pour boxcox/log)
-metrics <- metrics[, apply(metrics, 2, min) > 0]
+pos_cols <- sapply(metrics, function(x) min(x, na.rm = TRUE) > 0)
+metrics <- metrics[, pos_cols, drop = FALSE]
 
 # Sélection des variables par Random Forest
 library(randomForest)
@@ -3727,7 +3745,7 @@ model_aba <- lidaRtRee::aba_build_model(
   plots[subsample, variable],
   metrics_rf[subsample, ],
   transform = "boxcox",
-  nmax = 4,
+  nmax = 2,
   xy = plots[subsample, c("X", "Y")]
 )
 
@@ -3742,10 +3760,11 @@ print(model_aba$stats)
 
 # Analyse des résidus
 cat("\nCORRÉLATION DES RÉSIDUS avec les variables:\n")
+idx_sub <- plots$plot_id[subsample]
 cor_residuals <- round(cor(cbind(
   model_aba$values$residual,
   plots[subsample, c("G_m2_ha", "N_ha", "D_mean_cm")],
-  metrics_terrain[subsample, 1:3]
+  metrics_terrain[idx_sub, 1:3]
 )), 2)[1, ]
 print(cor_residuals)
 
@@ -3787,7 +3806,35 @@ if (cor_test$p.value > 0.05) {
 } else {
   cat("     → Significatif (p < 0.05) : corrélation réelle, biais à investiguer.\n")
 }
+
+# Pistes d'amélioration si problèmes détectés
+if (abs(cor_test$estimate) >= 0.3 || cor_test$p.value <= 0.05) {
+  cat("\n")
+  cat("4. PISTES D'AMÉLIORATION\n")
+  cat("   Le modèle présente un biais. Voici des pistes à explorer :\n\n")
+  cat("   a) DONNÉES D'ENTRÉE\n")
+  cat("      - Vérifier la qualité des données terrain (erreurs de mesure)\n")
+  cat("      - Contrôler le géoréférencement placettes/LiDAR\n")
+  cat("      - Augmenter le nombre de placettes d'entraînement\n\n")
+  cat("   b) SÉLECTION DE VARIABLES\n")
+  cat("      - Tester d'autres métriques LiDAR (percentiles, densité)\n")
+  cat("      - Ajouter des variables environnementales (pente, exposition)\n")
+  cat("      - Réduire/augmenter le nombre de variables sélectionnées\n\n")
+  cat("   c) MODÉLISATION\n")
+  cat("      - Essayer transform='log' au lieu de 'boxcox'\n")
+  cat("      - Réduire nmax (moins de prédicteurs)\n")
+  cat("      - Stratifier par type de peuplement ou classe d'âge\n")
+  cat("      - Tester des modèles non-linéaires (GAM, Random Forest)\n\n")
+  cat("   d) VALIDATION\n")
+  cat("      - Identifier les placettes avec forts résidus (outliers)\n")
+  cat("      - Analyser si le biais dépend d'une variable (ex: pente)\n")
+  cat("      - Utiliser une validation croisée k-fold au lieu de LOO\n")
+}
 cat("\n")
+
+# Sauvegarder le modèle pour réutilisation
+saveRDS(model_aba, file.path(cache_dir, "model_aba_G.rds"))
+cat(">>> Modèle sauvegardé pour réutilisation.\n")
 ```
 
 ### 7.7 Diagnostics du modèle
@@ -3795,67 +3842,14 @@ cat("\n")
 La fonction `aba_plot()` permet de visualiser les valeurs prédites vs observées.
 
 ```{r ex-7-7-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-p_radius <- 15
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
-# Répertoire des données
+# Répertoire des données et cache
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+cache_dir <- file.path(data_dir, "metrics_cache")
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
-
-common_ids <- intersect(plots$plot_id, names(llas_height))
-plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
-
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-plot_radius <- 15
-
-llas_height <- lapply(llas_height,
-                      function(x)
-                        lidR::filter_poi(x,
-                                         is.element(Classification, class_points) &
-                                           Z <= h_points))
-llas_height <- lapply(llas_height, function(x) {
-  x$Z[x$Z < 0] <- 0
-  x
-})
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
-
-metrics_trees <- lidaRtRee::clouds_tree_metrics(
-  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
-  func = function(x) {
-    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
-  }
-)
-
-metrics_terrain <- mapply(function(x, y) {
-  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
-}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
-metrics_terrain <- do.call(rbind, metrics_terrain)
-rownames(metrics_terrain) <- names(llas_height)
-
-metrics <- cbind(
-  metrics_points[plots$plot_id, ],
-  metrics_trees[plots$plot_id, ],
-  metrics_terrain[plots$plot_id, 1:3]
-)
+# Charger le modèle sauvegardé (exercice 7.6)
+model_aba <- readRDS(file.path(cache_dir, "model_aba_G.rds"))
 
 variable <- "G_m2_ha"
-model_aba <- lidaRtRee::aba_build_model(
-  plots[, variable], metrics, transform = "boxcox", nmax = 4,
-  xy = plots[, c("X", "Y")]
-)
 ```
 
 ```{r ex-7-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-7-setup"}
@@ -3900,89 +3894,107 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-# Répertoire des données
+# Répertoire des données et cache
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+cache_dir <- file.path(data_dir, "metrics_cache")
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Charger les métriques pré-calculées
+metrics_terrain <- readRDS(file.path(cache_dir, "metrics_terrain.rds"))
+metrics_points <- readRDS(file.path(cache_dir, "metrics_points.rds"))
+metrics_trees <- readRDS(file.path(cache_dir, "metrics_trees.rds"))
 
-common_ids <- intersect(plots$plot_id, names(llas_height))
+# Synchroniser plots avec les métriques disponibles
+common_ids <- intersect(plots$plot_id, rownames(metrics_points))
+common_ids <- intersect(common_ids, rownames(metrics_trees))
+common_ids <- intersect(common_ids, rownames(metrics_terrain))
 plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
+rownames(plots) <- plots$plot_id
 
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-plot_radius <- 15
-
-llas_height <- lapply(llas_height,
-                      function(x)
-                        lidR::filter_poi(x,
-                                         is.element(Classification, class_points) &
-                                           Z <= h_points))
-llas_height <- lapply(llas_height, function(x) {
-  x$Z[x$Z < 0] <- 0
-  x
-})
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
-
-metrics_trees <- lidaRtRee::clouds_tree_metrics(
-  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
-  func = function(x) {
-    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
-  }
-)
-
-metrics_terrain <- mapply(function(x, y) {
-  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], p_radius)
-}, x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
-metrics_terrain <- do.call(rbind, metrics_terrain)
-rownames(metrics_terrain) <- names(llas_height)
-
+# Combiner les métriques avec indexation explicite
+idx <- plots$plot_id
 metrics <- cbind(
-  metrics_points[plots$plot_id, ],
-  metrics_trees[plots$plot_id, ],
-  metrics_terrain[plots$plot_id, 1:3]
+  metrics_points[idx, , drop = FALSE],
+  metrics_trees[idx, , drop = FALSE],
+  metrics_terrain[idx, 1:3, drop = FALSE]
 )
+metrics <- as.data.frame(metrics)
+
+# Supprimer colonnes dupliquées
+metrics <- metrics[, !duplicated(colnames(metrics))]
+
+# Nettoyer les données : supprimer colonnes avec NA ou variance nulle
+metrics <- metrics[, colSums(is.na(metrics)) == 0, drop = FALSE]
+var_cols <- sapply(metrics, function(x) var(x, na.rm = TRUE) > 0)
+metrics <- metrics[, var_cols, drop = FALSE]
+
+# Garder uniquement les variables positives (pour boxcox/log)
+pos_cols <- sapply(metrics, function(x) min(x, na.rm = TRUE) > 0)
+metrics <- metrics[, pos_cols, drop = FALSE]
+
+library(randomForest)
 ```
 
-```{r ex-7-8, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-7-8-setup"}
-# === 7.8 : Modèles multiples (G, D, N) ===
+```{r ex-7-8, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-7-8-setup"}
+# === 7.8 : Modèles multiples (G, D, N) avec sélection Random Forest ===
 
 cat("=== Calibration de modèles pour G, D et N ===\n\n")
 
+variables <- c("G_m2_ha", "D_mean_cm", "N_ha")
 models_aba <- list()
+importance_list <- list()
 
-for (i in c("G_m2_ha", "D_mean_cm", "N_ha")) {
-  cat("Calibration de", i, "...\n")
-  models_aba[[i]] <- lidaRtRee::aba_build_model(
-    plots[, i],
-    metrics,
+for (var in variables) {
+  cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+  cat("Variable:", var, "\n\n")
+
+  # Sélection des variables par Random Forest
+  set.seed(42)
+  rf_model <- randomForest(
+    x = metrics,
+    y = plots[[var]],
+    ntree = 500,
+    importance = TRUE
+  )
+
+  # Top 10 variables par importance
+  importance_df <- data.frame(
+    variable = rownames(rf_model$importance),
+    importance = rf_model$importance[, "%IncMSE"]
+  )
+  importance_df <- importance_df[order(-importance_df$importance), ]
+  importance_list[[var]] <- head(importance_df, 10)
+
+  cat("Top 5 variables (Random Forest):\n")
+  print(head(importance_df, 5))
+
+  # Sélectionner les variables
+  top_vars <- head(importance_df$variable, 10)
+  metrics_rf <- metrics[, top_vars]
+
+  # Calibration du modèle
+  cat("\nCalibration avec boxcox...\n")
+  models_aba[[var]] <- lidaRtRee::aba_build_model(
+    plots[[var]],
+    metrics_rf,
     transform = "boxcox",
-    nmax = 4,
+    nmax = 2,
     xy = plots[, c("X", "Y")]
   )
+  cat("\n")
 }
 
 # Tableau récapitulatif des statistiques
-model_stats <- do.call(rbind, lapply(models_aba, function(x) {
-  x[["stats"]]
-}))
+model_stats <- do.call(rbind, lapply(models_aba, function(x) x[["stats"]]))
 
-cat("\n=== RÉSUMÉ DES MODÈLES ===\n\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("           RÉSUMÉ DES MODÈLES\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
 print(round(model_stats, 3))
 
-cat("\n\nINTERPRÉTATION:\n")
-cat("- adjR2: R² ajusté du modèle calibré\n")
-cat("- CV-R2: R² en validation croisée leave-one-out\n")
-cat("- CV-RMSE: erreur quadratique moyenne en CV\n")
-cat("- RMSE%: coefficient de variation des erreurs\n")
+cat("\nINTERPRÉTATION:\n")
+cat("- adjR2 > 0.7 : bon modèle | > 0.8 : très bon\n")
+cat("- CV-R2 : performance en validation croisée\n")
+cat("- RMSE% < 20% : acceptable | < 15% : bon\n")
 
 # Visualisation
 par(mfrow = c(1, 3))
@@ -3990,6 +4002,10 @@ for (var in names(models_aba)) {
   lidaRtRee::aba_plot(models_aba[[var]], main = var, col = "forestgreen")
 }
 par(mfrow = c(1, 1))
+
+# Sauvegarder les modèles
+saveRDS(models_aba, file.path(cache_dir, "models_aba_all.rds"))
+cat("\n>>> Modèles sauvegardés pour réutilisation.\n")
 ```
 
 ### 7.9 Modèles stratifiés
