@@ -4464,19 +4464,32 @@ vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
 N_CORES <- 4L
 ```
 
-```{r ex-8-2, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-8-2-setup"}
+```{r ex-8-2, exercise=TRUE, exercise.timelimit=2400, exercise.setup="ex-8-2-setup"}
 # === 8.2 : Métriques raster du nuage de points (LAScatalog) ===
 
 cat("=== Calcul des métriques points sur l'ensemble de la zone ===\n\n")
 cat("Résolution:", resolution, "m\n")
 cat("Surface pixel:", resolution^2, "m²\n\n")
 
-# Vérifier si le VRT existe déjà
-if (file.exists(vrt_points)) {
-  cat(">>> VRT trouvé, chargement depuis:", basename(vrt_points), "\n\n")
+# Compter les fichiers LAZ source et tuiles TIF existantes
+n_laz <- length(list.files(laz_dir_normalized, pattern = "\\.laz$"))
+existing_tiles <- list.files(tiles_dir_points, pattern = "\\.tif$", full.names = TRUE)
+n_existing <- length(existing_tiles)
+
+cat("Fichiers source:", n_laz, "LAZ\n")
+cat("Tuiles existantes:", n_existing, "TIF\n\n")
+
+# Vérifier si le traitement est complet
+if (file.exists(vrt_points) && n_existing >= n_laz) {
+  cat(">>> Traitement complet, chargement du VRT existant\n\n")
   metrics_points_raster <- terra::rast(vrt_points)
 } else {
-  cat("Calcul des métriques points tuile par tuile...\n\n")
+  # Déterminer si c'est une reprise ou un nouveau calcul
+  if (n_existing > 0 && n_existing < n_laz) {
+    cat(">>> Reprise du traitement (", n_existing, "/", n_laz, " tuiles déjà calculées)\n\n")
+  } else if (n_existing == 0) {
+    cat(">>> Nouveau calcul de toutes les tuiles\n\n")
+  }
 
   # Configuration parallélisation avec future
   library(future)
@@ -4500,11 +4513,12 @@ if (file.exists(vrt_points)) {
                                                     "metrics_{XLEFT}_{YBOTTOM}")
 
   cat("Configuration LAScatalog:\n")
-  cat("  - Tuiles:", nrow(cata_height), "\n")
+  cat("  - Tuiles à traiter:", nrow(cata_height), "\n")
   cat("  - Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
-  cat("  - Sortie:", basename(tiles_dir_points), "/\n\n")
+  cat("  - Sortie:", basename(tiles_dir_points), "/\n")
+  cat("  - Note: lidR saute automatiquement les tuiles existantes\n\n")
 
-  # Calcul des métriques (lidR utilise future automatiquement)
+  # Calcul des métriques (lidR saute les fichiers existants)
   cat("Calcul pixel_metrics par tuile...\n")
   start_time <- Sys.time()
 
@@ -4516,11 +4530,11 @@ if (file.exists(vrt_points)) {
   # Réinitialiser future
   plan(sequential)
 
-  # Lister les tuiles générées
+  # Lister toutes les tuiles (anciennes + nouvelles)
   metric_tiles <- list.files(tiles_dir_points, pattern = "\\.tif$", full.names = TRUE)
-  cat("Tuiles générées:", length(metric_tiles), "\n")
+  cat("Tuiles totales:", length(metric_tiles), "\n")
 
-  # Créer le VRT (assemblage virtuel sans copie)
+  # Créer/recréer le VRT (assemblage virtuel sans copie)
   metrics_points_raster <- terra::vrt(metric_tiles, vrt_points, overwrite = TRUE)
   cat("VRT créé:", basename(vrt_points), "\n")
 }
@@ -4603,7 +4617,23 @@ if (file.exists(cache_trees)) {
   # 1. Créer le MNC tuile par tuile via LAScatalog
   cat("1. Création du MNC tuile par tuile (résolution:", aba_res_chm, "m)...\n")
 
-  if (!file.exists(vrt_chm)) {
+  # Compter les fichiers LAZ source et tuiles CHM existantes
+  n_laz <- length(list.files(laz_dir_normalized, pattern = "\\.laz$"))
+  existing_chm_tiles <- list.files(tiles_dir_chm, pattern = "\\.tif$", full.names = TRUE)
+  n_existing_chm <- length(existing_chm_tiles)
+
+  cat("   Fichiers source:", n_laz, "LAZ\n")
+  cat("   Tuiles CHM existantes:", n_existing_chm, "TIF\n")
+
+  if (file.exists(vrt_chm) && n_existing_chm >= n_laz) {
+    cat("   >>> CHM complet, chargement du VRT existant\n")
+    chm <- terra::rast(vrt_chm)
+  } else {
+    # Déterminer si c'est une reprise
+    if (n_existing_chm > 0 && n_existing_chm < n_laz) {
+      cat("   >>> Reprise (", n_existing_chm, "/", n_laz, " tuiles existantes)\n")
+    }
+
     # Configuration parallélisation avec future
     library(future)
     plan(multisession, workers = N_CORES)
@@ -4624,27 +4654,24 @@ if (file.exists(cache_trees)) {
     lidR::opt_output_files(cata_height) <- file.path(tiles_dir_chm,
                                                       "chm_{XLEFT}_{YBOTTOM}")
 
-    cat("   LAScatalog:", nrow(cata_height), "tuiles\n")
+    cat("   Tuiles à traiter:", nrow(cata_height), "\n")
     cat("   Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
-    cat("   Workers:", N_CORES, "\n")
+    cat("   Note: lidR saute les tuiles existantes\n")
 
-    # Créer le MNC par tuile
+    # Créer le MNC par tuile (lidR saute les existantes)
     lidR::rasterize_canopy(cata_height, res = aba_res_chm,
                            algorithm = lidR::p2r())
 
     # Réinitialiser future
     plan(sequential)
 
-    # Lister les tuiles générées
+    # Lister toutes les tuiles (anciennes + nouvelles)
     chm_tiles <- list.files(tiles_dir_chm, pattern = "\\.tif$", full.names = TRUE)
-    cat("   Tuiles générées:", length(chm_tiles), "\n")
+    cat("   Tuiles totales:", length(chm_tiles), "\n")
 
-    # Créer le VRT
+    # Créer/recréer le VRT
     chm <- terra::vrt(chm_tiles, vrt_chm, overwrite = TRUE)
     cat("   VRT créé:", basename(vrt_chm), "\n")
-  } else {
-    cat("   MNC chargé depuis VRT\n")
-    chm <- terra::rast(vrt_chm)
   }
 
   # Remplacer les valeurs négatives/NA par 0
@@ -4757,12 +4784,25 @@ N_CORES <- 4L
 
 cat("=== Calcul des métriques de terrain sur l'ensemble de la zone ===\n\n")
 
-# Vérifier si le VRT existe déjà
-if (file.exists(vrt_terrain)) {
-  cat(">>> VRT trouvé, chargement depuis:", basename(vrt_terrain), "\n\n")
+# Compter les fichiers LAZ source et tuiles TIF existantes
+n_laz <- length(list.files(laz_dir_original, pattern = "\\.laz$"))
+existing_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
+n_existing <- length(existing_tiles)
+
+cat("Fichiers source:", n_laz, "LAZ\n")
+cat("Tuiles existantes:", n_existing, "TIF\n\n")
+
+# Vérifier si le traitement est complet
+if (file.exists(vrt_terrain) && n_existing >= n_laz) {
+  cat(">>> Traitement complet, chargement du VRT existant\n\n")
   metrics_terrain_raster <- terra::rast(vrt_terrain)
 } else {
-  cat("Calcul des métriques terrain tuile par tuile...\n\n")
+  # Déterminer si c'est une reprise ou un nouveau calcul
+  if (n_existing > 0 && n_existing < n_laz) {
+    cat(">>> Reprise du traitement (", n_existing, "/", n_laz, " tuiles déjà calculées)\n\n")
+  } else if (n_existing == 0) {
+    cat(">>> Nouveau calcul de toutes les tuiles\n\n")
+  }
 
   # Configuration parallélisation avec future
   library(future)
@@ -4791,12 +4831,13 @@ if (file.exists(vrt_terrain)) {
                                                     "terrain_{XLEFT}_{YBOTTOM}")
 
   cat("Configuration LAScatalog:\n")
-  cat("  - Tuiles:", nrow(cata_ground), "\n")
+  cat("  - Tuiles à traiter:", nrow(cata_ground), "\n")
   cat("  - Filtre:", filter_ground, "(points sol uniquement)\n")
   cat("  - Buffer:", lidR::opt_chunk_buffer(cata_ground), "m\n")
-  cat("  - Sortie:", basename(tiles_dir_terrain), "/\n\n")
+  cat("  - Sortie:", basename(tiles_dir_terrain), "/\n")
+  cat("  - Note: lidR saute automatiquement les tuiles existantes\n\n")
 
-  # Calcul des métriques terrain (lidR utilise future automatiquement)
+  # Calcul des métriques terrain (lidR saute les fichiers existants)
   cat("Calcul pixel_metrics terrain par tuile...\n")
   start_time <- Sys.time()
 
@@ -4808,11 +4849,11 @@ if (file.exists(vrt_terrain)) {
   # Réinitialiser future
   plan(sequential)
 
-  # Lister les tuiles générées
+  # Lister toutes les tuiles (anciennes + nouvelles)
   terrain_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
-  cat("Tuiles générées:", length(terrain_tiles), "\n")
+  cat("Tuiles totales:", length(terrain_tiles), "\n")
 
-  # Créer le VRT (assemblage virtuel sans copie)
+  # Créer/recréer le VRT (assemblage virtuel sans copie)
   metrics_terrain_raster <- terra::vrt(terrain_tiles, vrt_terrain, overwrite = TRUE)
   cat("VRT créé:", basename(vrt_terrain), "\n")
 
