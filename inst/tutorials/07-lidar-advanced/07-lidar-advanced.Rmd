@@ -4337,8 +4337,8 @@ load(file.path(data_dir, "models_aba.rda"))
 # Résolution de la carte de sortie
 resolution <- 25
 
-# Répertoire des tuiles normalisées
-laz_dir_normalized <- file.path(data_dir, "laz_normalized")
+# Répertoire des tuiles normalisées (calculé dans les tutos précédents)
+laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 ```
 
 ```{r ex-8-1, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-1-setup"}
