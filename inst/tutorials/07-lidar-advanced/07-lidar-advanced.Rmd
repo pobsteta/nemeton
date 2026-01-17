@@ -4484,10 +4484,14 @@ if (file.exists(vrt_points) && n_existing >= n_laz) {
   cat(">>> Traitement complet, chargement du VRT existant\n\n")
   metrics_points_raster <- terra::rast(vrt_points)
 } else {
-  # Déterminer si c'est une reprise ou un nouveau calcul
-  if (n_existing > 0 && n_existing < n_laz) {
-    cat(">>> Reprise du traitement (", n_existing, "/", n_laz, " tuiles déjà calculées)\n\n")
-  } else if (n_existing == 0) {
+  # Nettoyer les tuiles existantes pour éviter les conflits
+  # (lidR ne supporte pas overwrite=TRUE nativement)
+  if (n_existing > 0) {
+    cat(">>> Nettoyage des", n_existing, "tuiles existantes (traitement incomplet)\n")
+    file.remove(existing_tiles)
+    if (file.exists(vrt_points)) file.remove(vrt_points)
+    cat(">>> Recalcul complet de toutes les tuiles\n\n")
+  } else {
     cat(">>> Nouveau calcul de toutes les tuiles\n\n")
   }
 
@@ -4517,8 +4521,7 @@ if (file.exists(vrt_points) && n_existing >= n_laz) {
   cat("  - lidR threads:", lidR::get_lidr_threads(), "\n")
   cat("  - Tuiles à traiter:", nrow(cata_height), "\n")
   cat("  - Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
-  cat("  - Sortie:", basename(tiles_dir_points), "/\n")
-  cat("  - Note: lidR saute automatiquement les tuiles existantes\n\n")
+  cat("  - Sortie:", basename(tiles_dir_points), "/\n\n")
 
   # Calcul des métriques (lidR saute les fichiers existants)
   cat("Calcul pixel_metrics par tuile...\n")
@@ -4631,10 +4634,13 @@ if (file.exists(cache_trees)) {
     cat("   >>> CHM complet, chargement du VRT existant\n")
     chm <- terra::rast(vrt_chm)
   } else {
-    # Déterminer si c'est une reprise
-    if (n_existing_chm > 0 && n_existing_chm < n_laz) {
-      cat("   >>> Reprise (", n_existing_chm, "/", n_laz, " tuiles existantes)\n")
+    # Nettoyer les tuiles existantes pour éviter les conflits
+    if (n_existing_chm > 0) {
+      cat("   >>> Nettoyage des", n_existing_chm, "tuiles existantes\n")
+      file.remove(existing_chm_tiles)
+      if (file.exists(vrt_chm)) file.remove(vrt_chm)
     }
+    cat("   >>> Calcul de toutes les tuiles CHM\n")
 
     # Configuration parallélisation
     library(future)
@@ -4661,7 +4667,6 @@ if (file.exists(cache_trees)) {
     cat("   lidR threads:", lidR::get_lidr_threads(), "\n")
     cat("   Tuiles à traiter:", nrow(cata_height), "\n")
     cat("   Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
-    cat("   Note: lidR saute les tuiles existantes\n")
 
     # Créer le MNC par tuile (lidR saute les existantes)
     lidR::rasterize_canopy(cata_height, res = aba_res_chm,
@@ -4802,10 +4807,13 @@ if (file.exists(vrt_terrain) && n_existing >= n_laz) {
   cat(">>> Traitement complet, chargement du VRT existant\n\n")
   metrics_terrain_raster <- terra::rast(vrt_terrain)
 } else {
-  # Déterminer si c'est une reprise ou un nouveau calcul
-  if (n_existing > 0 && n_existing < n_laz) {
-    cat(">>> Reprise du traitement (", n_existing, "/", n_laz, " tuiles déjà calculées)\n\n")
-  } else if (n_existing == 0) {
+  # Nettoyer les tuiles existantes pour éviter les conflits
+  if (n_existing > 0) {
+    cat(">>> Nettoyage des", n_existing, "tuiles existantes (traitement incomplet)\n")
+    file.remove(existing_tiles)
+    if (file.exists(vrt_terrain)) file.remove(vrt_terrain)
+    cat(">>> Recalcul complet de toutes les tuiles\n\n")
+  } else {
     cat(">>> Nouveau calcul de toutes les tuiles\n\n")
   }
 
@@ -4841,8 +4849,7 @@ if (file.exists(vrt_terrain) && n_existing >= n_laz) {
   cat("  - Tuiles à traiter:", nrow(cata_ground), "\n")
   cat("  - Filtre:", filter_ground, "(points sol uniquement)\n")
   cat("  - Buffer:", lidR::opt_chunk_buffer(cata_ground), "m\n")
-  cat("  - Sortie:", basename(tiles_dir_terrain), "/\n")
-  cat("  - Note: lidR saute automatiquement les tuiles existantes\n\n")
+  cat("  - Sortie:", basename(tiles_dir_terrain), "/\n\n")
 
   # Calcul des métriques terrain (lidR saute les fichiers existants)
   cat("Calcul pixel_metrics terrain par tuile...\n")
