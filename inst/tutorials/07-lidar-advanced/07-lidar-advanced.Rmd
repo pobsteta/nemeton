@@ -2915,51 +2915,6 @@ plot(trees_plot$azimuth_gr, trees_plot$slope_gr,
      main = paste("Azimut vs Pente - Verc-02-1 (n =", nrow(trees_plot), "arbres)"))
 abline(h = 0, col = "red", lty = 2)
 grid()
-
-# === Calcul de G, N, D par essence ===
-cat("\n=== Statistiques par essence ===\n")
-
-# Surface de la placette (m²) et facteur de conversion vers hectare
-plot_area_m2 <- pi * p_radius^2
-ha_factor <- 10000 / plot_area_m2
-
-# Calculer G, N, D par essence (toutes placettes confondues)
-stats_by_species <- aggregate(
-  diameter_cm ~ species,
-  data = trees,
-  FUN = function(d) {
-    c(
-      G_m2_ha = sum(pi * (d/200)^2) * ha_factor,  # surface terrière
-      N_ha = length(d) * ha_factor,                # densité
-      D_mean_cm = mean(d)                          # diamètre moyen
-    )
-  }
-)
-
-# Convertir en data.frame propre
-stats_sp <- data.frame(
-  species = stats_by_species$species,
-  G_m2_ha = stats_by_species$diameter_cm[, "G_m2_ha"],
-  N_ha = stats_by_species$diameter_cm[, "N_ha"],
-  D_mean_cm = stats_by_species$diameter_cm[, "D_mean_cm"]
-)
-
-print(stats_sp)
-
-# Scatterplot matriciel G, N, D coloré par essence
-cat("\n=== Scatterplot G, N, D par essence ===\n")
-sp_colors <- rainbow(nrow(stats_sp))
-pairs(stats_sp[, c("G_m2_ha", "N_ha", "D_mean_cm")],
-      pch = 19, cex = 1.5,
-      col = sp_colors,
-      main = "Relations G, N, D par essence",
-      labels = c("G (m²/ha)", "N (tiges/ha)", "D moyen (cm)"))
-
-# Légende séparée
-plot.new()
-legend("center", legend = stats_sp$species,
-       col = sp_colors, pch = 19, cex = 0.9,
-       title = "Essences", ncol = 3)
 ```
 
 ### Exercice 6.8 : Relation hauteur-diamètre
@@ -3068,6 +3023,21 @@ plot_test <- names(llas_height)[1]
 
 # Charger les arbres terrain de la placette test
 arbres_terrain <- load_trees_xy(plot_test, field_dir)
+
+# Créer l'objet sf du centre de placette
+plot_coords <- plots[plots$plot_id == plot_test, c("X", "Y")]
+plots_sf.t <- sf::st_as_sf(plot_coords, coords = c("X", "Y"), crs = 2154)
+
+# Créer l'emprise circulaire de la placette (buffer de 15m)
+plots_extent_t <- sf::st_buffer(plots_sf.t, p_radius)
+
+# Préparer trees_t avec les noms de colonnes attendus par plot_tree_inventory
+if (!is.null(arbres_terrain) && nrow(arbres_terrain) > 0) {
+  trees_t <- arbres_terrain
+  trees_t$height_m <- trees_t$Haut_m
+  trees_t$species <- trees_t$Ess
+  trees_t$tree_id <- trees_t$Id
+}
 ```
 
 ```{r ex-6-9, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-6-9-setup"}
@@ -3120,6 +3090,30 @@ legend("topright", legend = c("Placette 15m", "Arbres terrain (DBH x5)"),
 
 cat("\nCHM résolution:", terra::res(chm)[1], "m\n")
 cat("Hauteur max CHM:", round(terra::global(chm, "max", na.rm = TRUE)$max, 1), "m\n")
+
+# === Visualisation avec plot_tree_inventory ===
+cat("\n=== Inventaire des arbres avec plot_tree_inventory ===\n")
+
+# Afficher l'emprise de la placette
+plot(sf::st_geometry(plots_extent_t), border = "red", axes = TRUE,
+     main = paste("Inventaire arbres -", plot_test))
+
+# Afficher le centre de la placette
+plot(sf::st_geometry(plots_sf.t), col = "red", pch = 3, cex = 2, add = TRUE)
+
+# Ajouter les arbres inventoriés avec leurs hauteurs et essences
+lidaRtRee::plot_tree_inventory(
+  trees_t[, c("X", "Y")],
+  trees_t$height_m,
+  species = as.character(trees_t$species),
+  add = TRUE
+)
+
+# Tracer les lignes entre arbres (ordre d'inventaire)
+lines(trees_t[order(trees_t$tree_id), c("X", "Y")], col = "gray", lty = 2)
+
+cat("Arbres visualisés:", nrow(trees_t), "\n")
+cat("Essences:", paste(unique(trees_t$species), collapse = ", "), "\n")
 ```
 
 ### Exercice 6.10 : Paramètres de peuplement
