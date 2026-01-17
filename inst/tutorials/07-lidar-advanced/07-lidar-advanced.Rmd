@@ -4431,15 +4431,25 @@ if (dir.exists(laz_dir_normalized)) {
 
 ### 8.2 Calcul des métriques raster - Points
 
-Les métriques du nuage de points sont calculées sur l'ensemble de la zone d'étude via le LAScatalog. Le résultat est sauvegardé en cache pour réutilisation dans les exercices suivants.
+Les métriques du nuage de points sont calculées sur l'ensemble de la zone d'étude via le LAScatalog. Le traitement s'effectue **tuile par tuile** avec les options `opt_*` de lidR :
+
+- `opt_chunk_buffer()` : buffer pour éviter les effets de bord
+- `opt_output_files()` : template pour sauvegarder chaque tuile en TIF
+- `opt_progress()` : afficher la progression
+
+Les tuiles sont ensuite assemblées en **VRT** (Virtual Raster) pour une lecture paresseuse sans duplication de données.
 
 ```{r ex-8-2-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
-# Créer le répertoire de cache si nécessaire
+# Créer les répertoires si nécessaire
 if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
+
+# Répertoire pour les tuiles de métriques points
+tiles_dir_points <- file.path(output_dir_rasters, "tiles_metrics_points")
+if (!dir.exists(tiles_dir_points)) dir.create(tiles_dir_points, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
@@ -4447,8 +4457,11 @@ load(file.path(data_dir, "models_aba.rda"))
 resolution <- 25
 laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
-# Fichier cache pour les métriques points
-cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+# Fichier VRT pour les métriques points
+vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
+
+# Configuration parallélisation
+N_CORES <- 4L
 ```
 
 ```{r ex-8-2, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-8-2-setup"}
@@ -4458,12 +4471,17 @@ cat("=== Calcul des métriques points sur l'ensemble de la zone ===\n\n")
 cat("Résolution:", resolution, "m\n")
 cat("Surface pixel:", resolution^2, "m²\n\n")
 
-# Vérifier si le cache existe déjà
-if (file.exists(cache_points)) {
-  cat(">>> Cache trouvé, chargement depuis:", basename(cache_points), "\n\n")
-  metrics_points_raster <- terra::rast(cache_points)
+# Vérifier si le VRT existe déjà
+if (file.exists(vrt_points)) {
+  cat(">>> VRT trouvé, chargement depuis:", basename(vrt_points), "\n\n")
+  metrics_points_raster <- terra::rast(vrt_points)
 } else {
-  cat("Calcul des métriques points (ceci peut prendre plusieurs minutes)...\n\n")
+  cat("Calcul des métriques points tuile par tuile...\n\n")
+
+  # Configuration parallélisation avec future
+  library(future)
+  plan(multisession, workers = N_CORES)
+  cat("Parallélisation: future avec", N_CORES, "workers\n\n")
 
   # Créer le LAScatalog
   filter_cata_height <- paste(c("-keep_class", class_points,
@@ -4472,26 +4490,39 @@ if (file.exists(cache_points)) {
   cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
                                           progress = FALSE,
                                           select = "xyzirnc",
-                                          filter = filter_cata_height,
-                                          chunk_buffer = 30)
+                                          filter = filter_cata_height)
   sf::st_crs(cata_height) <- 2154
 
-  cat("LAScatalog:", nrow(cata_height), "tuiles\n")
+  # === OPTIONS LAScatalog ===
+  lidR::opt_chunk_buffer(cata_height) <- 30
+  lidR::opt_progress(cata_height) <- TRUE
+  lidR::opt_output_files(cata_height) <- file.path(tiles_dir_points,
+                                                    "metrics_{XLEFT}_{YBOTTOM}")
 
-  # Calcul des métriques via pixel_metrics sur le catalog
-  cat("Calcul pixel_metrics avec aba_metrics()...\n")
-  metrics_points_raster <- lidR::pixel_metrics(cata_height,
-                                                aba_point_metrics_fun,
-                                                res = resolution)
+  cat("Configuration LAScatalog:\n")
+  cat("  - Tuiles:", nrow(cata_height), "\n")
+  cat("  - Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
+  cat("  - Sortie:", basename(tiles_dir_points), "/\n\n")
 
-  # Remplacer les hauteurs négatives par 0
-  zmax <- metrics_points_raster[["zmax"]]
-  zmax[zmax < 0] <- 0
-  metrics_points_raster[["zmax"]] <- zmax
+  # Calcul des métriques (lidR utilise future automatiquement)
+  cat("Calcul pixel_metrics par tuile...\n")
+  start_time <- Sys.time()
 
-  # Sauvegarder en cache
-  terra::writeRaster(metrics_points_raster, cache_points, overwrite = TRUE)
-  cat("\n>>> Métriques sauvegardées:", basename(cache_points), "\n")
+  lidR::pixel_metrics(cata_height, aba_point_metrics_fun, res = resolution)
+
+  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+  cat("\nTemps de calcul:", round(elapsed, 1), "s\n\n")
+
+  # Réinitialiser future
+  plan(sequential)
+
+  # Lister les tuiles générées
+  metric_tiles <- list.files(tiles_dir_points, pattern = "\\.tif$", full.names = TRUE)
+  cat("Tuiles générées:", length(metric_tiles), "\n")
+
+  # Créer le VRT (assemblage virtuel sans copie)
+  metrics_points_raster <- terra::vrt(metric_tiles, vrt_points, overwrite = TRUE)
+  cat("VRT créé:", basename(vrt_points), "\n")
 }
 
 # Statistiques
@@ -4525,15 +4556,23 @@ cat("\n>>> Métriques points calculées pour", round(surface_ha, 1), "ha\n")
 
 ### 8.3 Calcul des métriques raster - Arbres
 
-Les métriques basées sur la détection d'arbres sont calculées sur l'ensemble de la zone via création du MNC (Modèle Numérique de Canopée), segmentation et agrégation par pixel.
+Les métriques basées sur la détection d'arbres sont calculées sur l'ensemble de la zone via :
+
+1. **Création du MNC** tuile par tuile avec `opt_output_files()`, puis assemblage en VRT
+2. **Segmentation** sur le VRT complet avec `lidaRtRee::tree_segmentation()`
+3. **Agrégation** des métriques arbres par pixel
 
 ```{r ex-8-3-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
-# Créer le répertoire si nécessaire
+# Créer les répertoires si nécessaire
 if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
+
+# Répertoire pour les tuiles CHM
+tiles_dir_chm <- file.path(output_dir_rasters, "tiles_chm")
+if (!dir.exists(tiles_dir_chm)) dir.create(tiles_dir_chm, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
@@ -4542,8 +4581,11 @@ resolution <- 25
 laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
 # Fichiers cache
-cache_chm <- file.path(output_dir_rasters, "chm.tif")
+vrt_chm <- file.path(output_dir_rasters, "chm.vrt")
 cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
+
+# Configuration parallélisation
+N_CORES <- 4L
 ```
 
 ```{r ex-8-3, exercise=TRUE, exercise.timelimit=900, exercise.setup="ex-8-3-setup"}
@@ -4558,10 +4600,14 @@ if (file.exists(cache_trees)) {
 } else {
   cat("Calcul des métriques arbres (ceci peut prendre plusieurs minutes)...\n\n")
 
-  # 1. Créer le MNC via LAScatalog
-  cat("1. Création du MNC (résolution:", aba_res_chm, "m)...\n")
+  # 1. Créer le MNC tuile par tuile via LAScatalog
+  cat("1. Création du MNC tuile par tuile (résolution:", aba_res_chm, "m)...\n")
 
-  if (!file.exists(cache_chm)) {
+  if (!file.exists(vrt_chm)) {
+    # Configuration parallélisation avec future
+    library(future)
+    plan(multisession, workers = N_CORES)
+
     # Créer le LAScatalog
     filter_cata_height <- paste(c("-keep_class", class_points,
                                   "-drop_z_above", h_points), collapse = " ")
@@ -4569,24 +4615,40 @@ if (file.exists(cache_trees)) {
     cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
                                             progress = FALSE,
                                             select = "xyzirnc",
-                                            filter = filter_cata_height,
-                                            chunk_buffer = 30)
+                                            filter = filter_cata_height)
     sf::st_crs(cata_height) <- 2154
 
+    # === OPTIONS LAScatalog ===
+    lidR::opt_chunk_buffer(cata_height) <- 30
+    lidR::opt_progress(cata_height) <- TRUE
+    lidR::opt_output_files(cata_height) <- file.path(tiles_dir_chm,
+                                                      "chm_{XLEFT}_{YBOTTOM}")
+
     cat("   LAScatalog:", nrow(cata_height), "tuiles\n")
+    cat("   Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
+    cat("   Workers:", N_CORES, "\n")
 
-    # Créer le MNC
-    chm <- lidR::rasterize_canopy(cata_height, res = aba_res_chm,
-                                   algorithm = lidR::p2r())
-    chm[is.na(chm) | chm < 0] <- 0
+    # Créer le MNC par tuile
+    lidR::rasterize_canopy(cata_height, res = aba_res_chm,
+                           algorithm = lidR::p2r())
 
-    # Sauvegarder le CHM
-    terra::writeRaster(chm, cache_chm, overwrite = TRUE)
-    cat("   MNC sauvegardé:", basename(cache_chm), "\n")
+    # Réinitialiser future
+    plan(sequential)
+
+    # Lister les tuiles générées
+    chm_tiles <- list.files(tiles_dir_chm, pattern = "\\.tif$", full.names = TRUE)
+    cat("   Tuiles générées:", length(chm_tiles), "\n")
+
+    # Créer le VRT
+    chm <- terra::vrt(chm_tiles, vrt_chm, overwrite = TRUE)
+    cat("   VRT créé:", basename(vrt_chm), "\n")
   } else {
-    cat("   MNC chargé depuis cache\n")
-    chm <- terra::rast(cache_chm)
+    cat("   MNC chargé depuis VRT\n")
+    chm <- terra::rast(vrt_chm)
   }
+
+  # Remplacer les valeurs négatives/NA par 0
+  chm[is.na(chm) | chm < 0] <- 0
 
   cat("   Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "pixels\n\n")
 
@@ -4661,15 +4723,19 @@ cat("\n>>> Métriques arbres calculées pour", round(surface_ha, 1), "ha\n")
 
 ### 8.4 Calcul des métriques raster - Terrain
 
-Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol sur l'ensemble de la zone, en utilisant les fichiers LAZ **originaux** (non normalisés).
+Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol sur l'ensemble de la zone, en utilisant les fichiers LAZ **originaux** (non normalisés). Le traitement s'effectue tuile par tuile avec les options `opt_*` de lidR.
 
 ```{r ex-8-4-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
-# Créer le répertoire si nécessaire
+# Créer les répertoires si nécessaire
 if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
+
+# Répertoire pour les tuiles de métriques terrain
+tiles_dir_terrain <- file.path(output_dir_rasters, "tiles_metrics_terrain")
+if (!dir.exists(tiles_dir_terrain)) dir.create(tiles_dir_terrain, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
@@ -4679,8 +4745,11 @@ resolution <- 25
 # Répertoire des tuiles ORIGINALES (pour métriques terrain)
 laz_dir_original <- file.path(data_dir, "laz")
 
-# Fichier cache
-cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
+# Fichier VRT pour les métriques terrain
+vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
+
+# Configuration parallélisation
+N_CORES <- 4L
 ```
 
 ```{r ex-8-4, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-8-4-setup"}
@@ -4688,12 +4757,17 @@ cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
 
 cat("=== Calcul des métriques de terrain sur l'ensemble de la zone ===\n\n")
 
-# Vérifier si le cache existe déjà
-if (file.exists(cache_terrain)) {
-  cat(">>> Cache trouvé, chargement depuis:", basename(cache_terrain), "\n\n")
-  metrics_terrain_raster <- terra::rast(cache_terrain)
+# Vérifier si le VRT existe déjà
+if (file.exists(vrt_terrain)) {
+  cat(">>> VRT trouvé, chargement depuis:", basename(vrt_terrain), "\n\n")
+  metrics_terrain_raster <- terra::rast(vrt_terrain)
 } else {
-  cat("Calcul des métriques terrain (ceci peut prendre plusieurs minutes)...\n\n")
+  cat("Calcul des métriques terrain tuile par tuile...\n\n")
+
+  # Configuration parallélisation avec future
+  library(future)
+  plan(multisession, workers = N_CORES)
+  cat("Parallélisation: future avec", N_CORES, "workers\n\n")
 
   # Fonction pour terrain_points_metrics
   f_terrain <- function(x, y, z) {
@@ -4707,18 +4781,40 @@ if (file.exists(cache_terrain)) {
   cata_ground <- lidR::readALSLAScatalog(laz_dir_original,
                                           progress = FALSE,
                                           select = "xyzc",
-                                          filter = filter_ground,
-                                          chunk_buffer = 30)
+                                          filter = filter_ground)
   sf::st_crs(cata_ground) <- 2154
 
-  cat("LAScatalog (tuiles originales):", nrow(cata_ground), "tuiles\n")
-  cat("Filtre appliqué:", filter_ground, "(points sol uniquement)\n\n")
+  # === OPTIONS LAScatalog ===
+  lidR::opt_chunk_buffer(cata_ground) <- 30
+  lidR::opt_progress(cata_ground) <- TRUE
+  lidR::opt_output_files(cata_ground) <- file.path(tiles_dir_terrain,
+                                                    "terrain_{XLEFT}_{YBOTTOM}")
 
-  # Calcul des métriques terrain via pixel_metrics
-  cat("Calcul pixel_metrics terrain...\n")
-  metrics_terrain_raster <- lidR::pixel_metrics(cata_ground,
-                                                 ~ f_terrain(X, Y, Z),
-                                                 res = resolution)
+  cat("Configuration LAScatalog:\n")
+  cat("  - Tuiles:", nrow(cata_ground), "\n")
+  cat("  - Filtre:", filter_ground, "(points sol uniquement)\n")
+  cat("  - Buffer:", lidR::opt_chunk_buffer(cata_ground), "m\n")
+  cat("  - Sortie:", basename(tiles_dir_terrain), "/\n\n")
+
+  # Calcul des métriques terrain (lidR utilise future automatiquement)
+  cat("Calcul pixel_metrics terrain par tuile...\n")
+  start_time <- Sys.time()
+
+  lidR::pixel_metrics(cata_ground, ~ f_terrain(X, Y, Z), res = resolution)
+
+  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+  cat("\nTemps de calcul:", round(elapsed, 1), "s\n\n")
+
+  # Réinitialiser future
+  plan(sequential)
+
+  # Lister les tuiles générées
+  terrain_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
+  cat("Tuiles générées:", length(terrain_tiles), "\n")
+
+  # Créer le VRT (assemblage virtuel sans copie)
+  metrics_terrain_raster <- terra::vrt(terrain_tiles, vrt_terrain, overwrite = TRUE)
+  cat("VRT créé:", basename(vrt_terrain), "\n")
 
   # Retirer adjR2_plane si présent (statistique de qualité du plan ajusté)
   if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
@@ -4727,10 +4823,6 @@ if (file.exists(cache_terrain)) {
       which(names(metrics_terrain_raster) != "adjR2_plane")
     )
   }
-
-  # Sauvegarder en cache
-  terra::writeRaster(metrics_terrain_raster, cache_terrain, overwrite = TRUE)
-  cat("\n>>> Métriques terrain sauvegardées:", basename(cache_terrain), "\n")
 }
 
 # Statistiques
@@ -4777,14 +4869,14 @@ load(file.path(data_dir, "models_aba.rda"))
 resolution <- 25
 
 # Fichiers cache des métriques (exercices 8.2-8.4)
-cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
 cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
-cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
+vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
 
-# Charger les métriques depuis le cache
-metrics_points_raster <- terra::rast(cache_points)
+# Charger les métriques depuis le cache (VRT pour points et terrain)
+metrics_points_raster <- terra::rast(vrt_points)
 metrics_trees_raster <- terra::rast(cache_trees)
-metrics_terrain_raster <- terra::rast(cache_terrain)
+metrics_terrain_raster <- terra::rast(vrt_terrain)
 
 # Harmoniser les emprises et combiner
 metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
@@ -4866,14 +4958,14 @@ load(file.path(data_dir, "models_aba.rda"))
 resolution <- 25
 
 # Fichiers cache des métriques (exercices 8.2-8.4)
-cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
 cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
-cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
+vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
 
-# Charger les métriques depuis le cache
-metrics_points_raster <- terra::rast(cache_points)
+# Charger les métriques depuis le cache (VRT pour points et terrain)
+metrics_points_raster <- terra::rast(vrt_points)
 metrics_trees_raster <- terra::rast(cache_trees)
-metrics_terrain_raster <- terra::rast(cache_terrain)
+metrics_terrain_raster <- terra::rast(vrt_terrain)
 
 # Harmoniser et combiner
 metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
@@ -4953,14 +5045,14 @@ load(file.path(data_dir, "models_aba.rda"))
 resolution <- 25
 
 # Fichiers cache des métriques (exercices 8.2-8.4)
-cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
 cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
-cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
+vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
 
-# Charger les métriques depuis le cache
-metrics_points_raster <- terra::rast(cache_points)
+# Charger les métriques depuis le cache (VRT pour points et terrain)
+metrics_points_raster <- terra::rast(vrt_points)
 metrics_trees_raster <- terra::rast(cache_trees)
-metrics_terrain_raster <- terra::rast(cache_terrain)
+metrics_terrain_raster <- terra::rast(vrt_terrain)
 
 # Harmoniser et combiner
 metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
