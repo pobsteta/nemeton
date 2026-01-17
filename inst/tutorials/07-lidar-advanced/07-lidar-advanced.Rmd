@@ -2854,6 +2854,12 @@ if (length(metrics_list) > 0) {
   cat("Dimensions:", nrow(metrics_terrain), "x", ncol(metrics_terrain), "\n")
   cat("Colonnes:", paste(names(metrics_terrain), collapse = ", "), "\n\n")
   print(round(head(metrics_terrain), 2))
+
+  # Sauvegarder pour réutilisation dans les exercices suivants
+  cache_dir <- file.path(data_dir, "metrics_cache")
+  dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+  saveRDS(metrics_terrain, file.path(cache_dir, "metrics_terrain.rds"))
+  cat("\n>>> Métriques terrain sauvegardées pour réutilisation.\n")
 } else {
   cat("ERREUR: Aucune métrique calculée\n")
   cat("Vérifiez que les nuages contiennent des points sol (Classification == 2)\n")
@@ -3035,8 +3041,8 @@ plots_extent_t <- sf::st_buffer(plots_sf.t, p_radius)
 if (!is.null(arbres_terrain) && nrow(arbres_terrain) > 0) {
   trees_t <- arbres_terrain
   trees_t$height_m <- trees_t$Haut_m
-  trees_t$species <- trees_t$Ess
-  trees_t$tree_id <- trees_t$Id
+  trees_t$species <- trees_t$Es
+  trees_t$tree_id <- trees_t$Num
 }
 ```
 
@@ -3110,7 +3116,26 @@ lidaRtRee::plot_tree_inventory(
 )
 
 # Tracer les lignes entre arbres (ordre d'inventaire)
-lines(trees_t[order(trees_t$tree_id), c("X", "Y")], col = "gray", lty = 2)
+trees_ordered <- trees_t[order(trees_t$tree_id), ]
+lines(trees_ordered[, c("X", "Y")], col = "gray", lty = 2)
+
+# Marquer le premier arbre (triangle vide)
+first_tree <- trees_ordered[1, ]
+points(first_tree$X, first_tree$Y, pch = 2, col = "darkred", cex = 2, lwd = 2)
+
+# Marquer le dernier arbre (double cercle concentrique)
+last_tree <- trees_ordered[nrow(trees_ordered), ]
+points(last_tree$X, last_tree$Y, pch = 1, col = "darkred", cex = 2.5, lwd = 2)
+points(last_tree$X, last_tree$Y, pch = 1, col = "darkred", cex = 1.5, lwd = 2)
+
+# Légende
+legend("bottomleft",
+       legend = c("Centre placette", "Arbre départ", "Arbre arrivée", "Parcours inventaire"),
+       pch = c(3, 2, 1, NA),
+       lty = c(NA, NA, NA, 2),
+       col = c("red", "darkred", "darkred", "gray"),
+       pt.cex = c(1.5, 1.5, 1.5, NA),
+       lwd = 2, bg = "white", cex = 0.8)
 
 cat("Arbres visualisés:", nrow(trees_t), "\n")
 cat("Essences:", paste(unique(trees_t$species), collapse = ", "), "\n")
@@ -3271,7 +3296,7 @@ quiz(
 ```
 
 
-## Section 7 : Calibration des Modèles de Prédiction
+## Section 7 : Approche ABA - Calibration des Modèles de Prédiction
 
 *Approche surfacique (ABA) - Calibration de modèles de régression pour l'estimation des paramètres forestiers*
 
@@ -3483,7 +3508,13 @@ cat("Premières métriques (8 premières colonnes):\n")
 print(round(head(metrics_points[, 1:8], n = 5), 2))
 
 cat("\nMétriques disponibles:\n")
-cat(paste(names(metrics_points)[1:15], collapse = ", "), "...\n")
+cat(paste(names(metrics_points), collapse = ", "))
+
+# Sauvegarder pour réutilisation dans les exercices suivants
+cache_dir <- file.path(data_dir, "metrics_cache")
+dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+saveRDS(metrics_points, file.path(cache_dir, "metrics_points.rds"))
+cat("\n\n>>> Métriques points sauvegardées pour réutilisation.\n")
 ```
 
 ### 7.4 Calcul des métriques basées sur les arbres
@@ -3556,6 +3587,12 @@ print(round(head(metrics_trees[, 1:5], n = 5), 2))
 
 cat("\nMétriques arbres disponibles:\n")
 print(names(metrics_trees))
+
+# Sauvegarder pour réutilisation dans les exercices suivants
+cache_dir <- file.path(data_dir, "metrics_cache")
+dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+saveRDS(metrics_trees, file.path(cache_dir, "metrics_trees.rds"))
+cat("\n>>> Métriques arbres sauvegardées pour réutilisation.\n")
 ```
 
 ### 7.5 Combinaison des métriques
@@ -3569,68 +3606,18 @@ p_radius <- 15
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-# Répertoire des données
+# Répertoire des données et cache
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+cache_dir <- file.path(data_dir, "metrics_cache")
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Charger les métriques pré-calculées (exercices 6.6, 7.3, 7.4)
+metrics_terrain <- readRDS(file.path(cache_dir, "metrics_terrain.rds"))
+metrics_points <- readRDS(file.path(cache_dir, "metrics_points.rds"))
+metrics_trees <- readRDS(file.path(cache_dir, "metrics_trees.rds"))
 
-common_ids <- intersect(plots$plot_id, names(llas_height))
+# Synchroniser plots avec les métriques disponibles
+common_ids <- intersect(plots$plot_id, rownames(metrics_points))
 plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
-
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-plot_radius <- 15
-
-llas_height <- lapply(llas_height,
-                      function(x)
-                        lidR::filter_poi(x,
-                                         is.element(Classification, class_points) &
-                                           Z <= h_points))
-llas_height <- lapply(llas_height, function(x) {
-  x$Z[x$Z < 0] <- 0
-  x
-})
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-llas_height_plot_extent <- lapply(llas_height, function(x) x)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height_plot_extent,
-                                            aba_point_metrics_fun)
-
-metrics_trees <- lidaRtRee::clouds_tree_metrics(
-  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
-  func = function(x) {
-    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
-  }
-)
-
-# Répertoire des données
-data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
-
-# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
-laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
-llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
-names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
-
-metrics_terrain <- list()
-for (i in seq_along(llas_original)) {
-  plot_name <- names(llas_original)[i]
-  plot_row <- which(plots$plot_id == plot_name)
-  if (length(plot_row) > 0) {
-    tryCatch({
-      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
-      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, p_radius)
-    }, error = function(e) NULL)
-  }
-}
-metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
 ```
 
 ```{r ex-7-5, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-7-5-setup"}
@@ -4241,7 +4228,7 @@ quiz(
 ```
 
 
-## Section 8 : Cartographie et Inférence
+## Section 8 : Approche ABA - Cartographie et Inférence
 
 *Approche surfacique (ABA) - Application des modèles pour la cartographie wall-to-wall*
 
