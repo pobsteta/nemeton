@@ -4549,8 +4549,10 @@ cat("\nRésultat:\n")
 cat("  - Dimensions:", terra::ncol(metrics_points_raster), "x",
     terra::nrow(metrics_points_raster), "pixels\n")
 cat("  - Couches:", terra::nlyr(metrics_points_raster), "\n")
-cat("  - Premières couches:", paste(head(names(metrics_points_raster), 5),
-                                    collapse = ", "), "...\n")
+
+# Afficher les noms des couches disponibles
+layer_names <- names(metrics_points_raster)
+cat("  - Couches disponibles:", paste(layer_names, collapse = ", "), "\n")
 
 # Surface couverte
 n_valid <- sum(!is.na(terra::values(metrics_points_raster[[1]])))
@@ -4558,16 +4560,13 @@ surface_ha <- n_valid * (resolution^2) / 10000
 cat("  - Pixels valides:", n_valid, "\n")
 cat("  - Surface couverte:", round(surface_ha, 1), "ha\n")
 
-# Visualisation
+# Visualisation (utiliser les 4 premières couches disponibles)
 par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
-terra::plot(metrics_points_raster[["zmax"]], main = "Zmax (m)",
-            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-terra::plot(metrics_points_raster[["zmean"]], main = "Zmean (m)",
-            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-terra::plot(metrics_points_raster[["zq95"]], main = "Zq95 (m)",
-            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-terra::plot(metrics_points_raster[["pzabove2"]], main = "Couverture > 2m",
-            col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
+n_layers <- min(4, terra::nlyr(metrics_points_raster))
+for (i in seq_len(n_layers)) {
+  terra::plot(metrics_points_raster[[i]], main = layer_names[i],
+              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+}
 par(mfrow = c(1, 1))
 
 cat("\n>>> Métriques points calculées pour", round(surface_ha, 1), "ha\n")
