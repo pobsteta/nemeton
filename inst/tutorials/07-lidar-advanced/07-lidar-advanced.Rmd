@@ -4966,9 +4966,10 @@ cat("  - G moyenne pondérée:", round(g_total / surface_ha, 1), "m²/ha\n\n")
 
 # Qualité du modèle
 cat("QUALITÉ DU MODÈLE:\n")
-cat("  - CV-R²:", round(model_aba$stats$`CV-R2`, 3), "\n")
-cat("  - CV-RMSE:", round(model_aba$stats$`CV-RMSE`, 2), "m²/ha\n")
-cat("  - RMSE%:", round(model_aba$stats$`RMSE%`, 1), "%\n\n")
+cat("  - adjR²:", round(model_aba$stats$adjR2, 3), "\n")
+cat("  - looR²:", round(model_aba$stats$looR2, 3), "\n")
+cat("  - RMSE:", round(model_aba$stats$rmse, 2), "m²/ha\n")
+cat("  - RMSE%:", round(model_aba$stats$cvrmse * 100, 1), "%\n\n")
 
 cat(">>> Workflow ABA terminé !\n")
 cat("    Les prédictions peuvent maintenant alimenter les indicateurs nemeton.\n")
