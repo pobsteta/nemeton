@@ -4393,31 +4393,31 @@ if (dir.exists(laz_dir_normalized)) {
                                   "-drop_z_above", h_points), collapse = " ")
     cat("Filtre appliqué:", filter_cata_height, "\n\n")
 
-    # Création du LAScatalog
+    # Création du LAScatalog avec options
     cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
                                             progress = FALSE,
                                             select = "xyzirnc",
-                                            filter = filter_cata_height)
-    lidR::projection(cata_height) <- 2154
-
-    # Configuration du traitement par tuiles
-    lidR::opt_chunk_buffer(cata_height) <- 30  # Buffer de 30m pour éviter effets de bord
-    lidR::opt_progress(cata_height) <- TRUE
+                                            filter = filter_cata_height,
+                                            chunk_buffer = 30)
+    sf::st_crs(cata_height) <- 2154
 
     # Statistiques du LAScatalog
-    bbox <- sf::st_bbox(cata_height)
+    n_tiles <- nrow(cata_height)
+    bbox <- as.numeric(sf::st_bbox(cata_height))
+    names(bbox) <- c("xmin", "ymin", "xmax", "ymax")
     area_km2 <- (bbox["xmax"] - bbox["xmin"]) * (bbox["ymax"] - bbox["ymin"]) / 1e6
 
     cat("LAScatalog créé:\n")
-    cat("  - Nombre de tuiles:", nrow(cata_height), "\n")
+    cat("  - Nombre de tuiles:", n_tiles, "\n")
     cat("  - Emprise (Lambert 93):\n")
     cat("    xmin:", round(bbox["xmin"]), "| xmax:", round(bbox["xmax"]), "\n")
     cat("    ymin:", round(bbox["ymin"]), "| ymax:", round(bbox["ymax"]), "\n")
     cat("  - Surface:", round(area_km2, 2), "km²\n")
-    cat("  - Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n\n")
+    cat("  - Buffer: 30 m\n\n")
 
-    # Visualisation de l'emprise
-    plot(cata_height, main = "LAScatalog - 18 tuiles normalisées")
+    # Visualisation de l'emprise (utiliser la méthode sf pour éviter problèmes S4)
+    plot(sf::st_geometry(cata_height), main = "LAScatalog - tuiles normalisées",
+         col = "lightblue", border = "darkblue")
 
     cat("\n>>> LAScatalog prêt pour le traitement wall-to-wall\n")
     cat("    Les exercices suivants calculeront les métriques sur\n")
@@ -4473,10 +4473,9 @@ if (file.exists(cache_points)) {
   cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
                                           progress = FALSE,
                                           select = "xyzirnc",
-                                          filter = filter_cata_height)
-  lidR::projection(cata_height) <- 2154
-  lidR::opt_chunk_buffer(cata_height) <- 30
-  lidR::opt_progress(cata_height) <- TRUE
+                                          filter = filter_cata_height,
+                                          chunk_buffer = 30)
+  sf::st_crs(cata_height) <- 2154
 
   cat("LAScatalog:", nrow(cata_height), "tuiles\n")
 
@@ -4571,10 +4570,9 @@ if (file.exists(cache_trees)) {
     cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
                                             progress = FALSE,
                                             select = "xyzirnc",
-                                            filter = filter_cata_height)
-    lidR::projection(cata_height) <- 2154
-    lidR::opt_chunk_buffer(cata_height) <- 30
-    lidR::opt_progress(cata_height) <- TRUE
+                                            filter = filter_cata_height,
+                                            chunk_buffer = 30)
+    sf::st_crs(cata_height) <- 2154
 
     cat("   LAScatalog:", nrow(cata_height), "tuiles\n")
 
@@ -4710,10 +4708,9 @@ if (file.exists(cache_terrain)) {
   cata_ground <- lidR::readALSLAScatalog(laz_dir_original,
                                           progress = FALSE,
                                           select = "xyzc",
-                                          filter = filter_ground)
-  lidR::projection(cata_ground) <- 2154
-  lidR::opt_chunk_buffer(cata_ground) <- 30
-  lidR::opt_progress(cata_ground) <- TRUE
+                                          filter = filter_ground,
+                                          chunk_buffer = 30)
+  sf::st_crs(cata_ground) <- 2154
 
   cat("LAScatalog (tuiles originales):", nrow(cata_ground), "tuiles\n")
   cat("Filtre appliqué:", filter_ground, "(points sol uniquement)\n\n")
