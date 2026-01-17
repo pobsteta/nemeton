@@ -4316,20 +4316,24 @@ quiz(
 ```
 
 
-## Section 8 : Approche ABA - Cartographie et Inférence
+## Section 8 : Approche ABA - Cartographie Wall-to-Wall
 
-*Approche surfacique (ABA) - Application des modèles pour la cartographie wall-to-wall*
+*Approche surfacique (ABA) - Application des modèles pour la cartographie wall-to-wall sur l'ensemble de la zone d'étude*
 
-Ce code présente un workflow pour appliquer les modèles de prédiction calibrés dans la section précédente à l'ensemble de la zone couverte par les données ALS, en utilisant l'approche surfacique (ABA).
+Cette section utilise l'approche **LAScatalog** pour traiter l'ensemble des 18 tuiles LAZ normalisées (~3.8 GB) de façon efficace, tuile par tuile, avec gestion automatique des buffers pour éviter les effets de bord.
 
-### 8.1 Chargement des modèles et configuration du LAScatalog
+### 8.1 Configuration du LAScatalog
 
-Les modèles calibrés et les paramètres de configuration sont chargés. Le LAScatalog est configuré avec les filtres appropriés pour le traitement par tuiles.
+Les modèles calibrés sont chargés et le LAScatalog est configuré pour le traitement par tuiles avec les filtres appropriés.
 
 ```{r ex-8-1-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 cache_dir <- file.path(data_dir, "metrics_cache")
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
+
+# Créer le répertoire de cache rasters si nécessaire
+if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
 
 # Charger les modèles et paramètres sauvegardés (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
@@ -4339,12 +4343,15 @@ resolution <- 25
 
 # Répertoire des tuiles normalisées (calculé dans les tutos précédents)
 laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
+
+# Répertoire des tuiles originales (pour métriques terrain)
+laz_dir_original <- file.path(data_dir, "laz")
 ```
 
 ```{r ex-8-1, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-1-setup"}
-# === 8.1 : Chargement des modèles et configuration ===
+# === 8.1 : Configuration du LAScatalog pour traitement wall-to-wall ===
 
-cat("=== Configuration pour la cartographie wall-to-wall ===\n\n")
+cat("=== Configuration LAScatalog pour la zone d'étude complète ===\n\n")
 
 # Afficher les modèles chargés (depuis exercice 7.10)
 cat("MODÈLES CHARGÉS:\n")
@@ -4367,20 +4374,24 @@ cat("  - aba_res_chm:", aba_res_chm, "m\n")
 cat("  - plot_radius:", plot_radius, "m\n")
 cat("  - Résolution sortie:", resolution, "m\n")
 
-# Vérifier le répertoire des tuiles
+# Créer le LAScatalog des tuiles normalisées
 cat("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-cat("RÉPERTOIRE DES TUILES:\n")
-cat(laz_dir_normalized, "\n")
+cat("CRÉATION DU LAScatalog:\n")
+cat("Répertoire:", laz_dir_normalized, "\n\n")
 
 if (dir.exists(laz_dir_normalized)) {
   laz_files <- list.files(laz_dir_normalized, pattern = "\\.laz$", full.names = TRUE)
-  cat("  Fichiers LAZ trouvés:", length(laz_files), "\n")
+  cat("Fichiers LAZ trouvés:", length(laz_files), "\n")
 
   if (length(laz_files) > 0) {
-    # Filtre pour le LAScatalog
+    # Taille totale des données
+    total_size_gb <- sum(file.size(laz_files)) / 1e9
+    cat("Taille totale:", round(total_size_gb, 2), "GB\n\n")
+
+    # Filtre pour le LAScatalog (hauteurs normalisées)
     filter_cata_height <- paste(c("-keep_class", class_points,
                                   "-drop_z_above", h_points), collapse = " ")
-    cat("\nFiltre LAScatalog:", filter_cata_height, "\n")
+    cat("Filtre appliqué:", filter_cata_height, "\n\n")
 
     # Création du LAScatalog
     cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
@@ -4389,135 +4400,198 @@ if (dir.exists(laz_dir_normalized)) {
                                             filter = filter_cata_height)
     lidR::projection(cata_height) <- 2154
 
-    cat("\nLAScatalog créé avec", length(cata_height$filename), "fichiers\n")
-    cat("Emprise:", paste(round(sf::st_bbox(cata_height)), collapse = ", "), "\n")
+    # Configuration du traitement par tuiles
+    lidR::opt_chunk_buffer(cata_height) <- 30  # Buffer de 30m pour éviter effets de bord
+    lidR::opt_progress(cata_height) <- TRUE
+
+    # Statistiques du LAScatalog
+    bbox <- sf::st_bbox(cata_height)
+    area_km2 <- (bbox["xmax"] - bbox["xmin"]) * (bbox["ymax"] - bbox["ymin"]) / 1e6
+
+    cat("LAScatalog créé:\n")
+    cat("  - Nombre de tuiles:", length(cata_height$filename), "\n")
+    cat("  - Emprise (Lambert 93):\n")
+    cat("    xmin:", round(bbox["xmin"]), "| xmax:", round(bbox["xmax"]), "\n")
+    cat("    ymin:", round(bbox["ymin"]), "| ymax:", round(bbox["ymax"]), "\n")
+    cat("  - Surface:", round(area_km2, 2), "km²\n")
+    cat("  - Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n\n")
+
+    # Visualisation de l'emprise
+    plot(cata_height, main = "LAScatalog - 18 tuiles normalisées")
+
+    cat("\n>>> LAScatalog prêt pour le traitement wall-to-wall\n")
+    cat("    Les exercices suivants calculeront les métriques sur\n")
+    cat("    l'ensemble de la zone d'étude.\n")
   }
 } else {
-  cat("  Répertoire non trouvé.\n")
-  cat("  NOTE: Pour la cartographie wall-to-wall, vous devez avoir\n")
-  cat("        des tuiles LAZ normalisées couvrant la zone d'étude.\n")
+  cat("Répertoire non trouvé.\n")
+  cat("NOTE: Exécutez d'abord les tutoriels précédents pour\n")
+  cat("      télécharger et normaliser les données LiDAR.\n")
 }
 ```
 
 ### 8.2 Calcul des métriques raster - Points
 
-Les métriques du nuage de points sont calculées sur une grille régulière à la résolution spécifiée (25 m).
+Les métriques du nuage de points sont calculées sur l'ensemble de la zone d'étude via le LAScatalog. Le résultat est sauvegardé en cache pour réutilisation dans les exercices suivants.
 
 ```{r ex-8-2-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
+
+# Créer le répertoire de cache si nécessaire
+if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
+laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Fichier cache pour les métriques points
+cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
 ```
 
-```{r ex-8-2, exercise=TRUE, exercise.timelimit=180, exercise.setup="ex-8-2-setup"}
-# === 8.2 : Métriques raster du nuage de points ===
+```{r ex-8-2, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-8-2-setup"}
+# === 8.2 : Métriques raster du nuage de points (LAScatalog) ===
 
-cat("=== Calcul des métriques points sur grille ===\n\n")
+cat("=== Calcul des métriques points sur l'ensemble de la zone ===\n\n")
 cat("Résolution:", resolution, "m\n")
 cat("Surface pixel:", resolution^2, "m²\n\n")
 
-# Utiliser les 4 premiers nuages pré-extraits
-point_clouds <- llas_height[1:min(4, length(llas_height))]
+# Vérifier si le cache existe déjà
+if (file.exists(cache_points)) {
+  cat(">>> Cache trouvé, chargement depuis:", basename(cache_points), "\n\n")
+  metrics_points_raster <- terra::rast(cache_points)
+} else {
+  cat("Calcul des métriques points (ceci peut prendre plusieurs minutes)...\n\n")
 
-if (length(point_clouds) > 0) {
-  # Fusionner les nuages
-  point_cloud <- do.call(rbind, point_clouds)
+  # Créer le LAScatalog
+  filter_cata_height <- paste(c("-keep_class", class_points,
+                                "-drop_z_above", h_points), collapse = " ")
 
-  # Filtrage
-  point_cloud <- lidR::filter_poi(point_cloud,
-                                   is.element(Classification, class_points) &
-                                     Z <= h_points)
-  point_cloud$Z[point_cloud$Z < 0] <- 0
+  cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
+                                          progress = FALSE,
+                                          select = "xyzirnc",
+                                          filter = filter_cata_height)
+  lidR::projection(cata_height) <- 2154
+  lidR::opt_chunk_buffer(cata_height) <- 30
+  lidR::opt_progress(cata_height) <- TRUE
 
-  cat("Nuage de points chargé:\n")
-  cat("  - Points:", nrow(point_cloud@data), "\n")
-  cat("  - Emprise:", round(diff(range(point_cloud$X))), "x",
-      round(diff(range(point_cloud$Y))), "m\n\n")
+  cat("LAScatalog:", length(cata_height$filename), "tuiles\n")
 
-  # Calcul des métriques pixel_metrics
+  # Calcul des métriques via pixel_metrics sur le catalog
   cat("Calcul pixel_metrics avec aba_metrics()...\n")
-  metrics_points_raster <- lidR::pixel_metrics(point_cloud,
+  metrics_points_raster <- lidR::pixel_metrics(cata_height,
                                                 aba_point_metrics_fun,
                                                 res = resolution)
 
-  cat("\nRésultat:\n")
-  cat("  - Dimensions:", terra::ncol(metrics_points_raster), "x",
-      terra::nrow(metrics_points_raster), "pixels\n")
-  cat("  - Couches:", terra::nlyr(metrics_points_raster), "\n")
-  cat("  - Premières couches:", paste(names(metrics_points_raster)[1:5],
-                                      collapse = ", "), "...\n")
+  # Remplacer les hauteurs négatives par 0
+  zmax <- metrics_points_raster[["zmax"]]
+  zmax[zmax < 0] <- 0
+  metrics_points_raster[["zmax"]] <- zmax
 
-  # Visualisation
-  par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
-  terra::plot(metrics_points_raster[["zmax"]], main = "Zmax (m)",
-              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-  terra::plot(metrics_points_raster[["zmean"]], main = "Zmean (m)",
-              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-  terra::plot(metrics_points_raster[["zq95"]], main = "Zq95 (m)",
-              col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-  terra::plot(metrics_points_raster[["pzabove2"]], main = "Couverture > 2m",
-              col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
-  par(mfrow = c(1, 1))
-} else {
-  cat("Aucun nuage de points extrait depuis:", laz_dir_normalized, "\n")
+  # Sauvegarder en cache
+  terra::writeRaster(metrics_points_raster, cache_points, overwrite = TRUE)
+  cat("\n>>> Métriques sauvegardées:", basename(cache_points), "\n")
 }
+
+# Statistiques
+cat("\nRésultat:\n")
+cat("  - Dimensions:", terra::ncol(metrics_points_raster), "x",
+    terra::nrow(metrics_points_raster), "pixels\n")
+cat("  - Couches:", terra::nlyr(metrics_points_raster), "\n")
+cat("  - Premières couches:", paste(head(names(metrics_points_raster), 5),
+                                    collapse = ", "), "...\n")
+
+# Surface couverte
+n_valid <- sum(!is.na(terra::values(metrics_points_raster[[1]])))
+surface_ha <- n_valid * (resolution^2) / 10000
+cat("  - Pixels valides:", n_valid, "\n")
+cat("  - Surface couverte:", round(surface_ha, 1), "ha\n")
+
+# Visualisation
+par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
+terra::plot(metrics_points_raster[["zmax"]], main = "Zmax (m)",
+            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+terra::plot(metrics_points_raster[["zmean"]], main = "Zmean (m)",
+            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+terra::plot(metrics_points_raster[["zq95"]], main = "Zq95 (m)",
+            col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+terra::plot(metrics_points_raster[["pzabove2"]], main = "Couverture > 2m",
+            col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
+par(mfrow = c(1, 1))
+
+cat("\n>>> Métriques points calculées pour", round(surface_ha, 1), "ha\n")
 ```
 
 ### 8.3 Calcul des métriques raster - Arbres
 
-Les métriques basées sur la détection d'arbres sont calculées via segmentation du MNC et agrégation par pixel.
+Les métriques basées sur la détection d'arbres sont calculées sur l'ensemble de la zone via création du MNC (Modèle Numérique de Canopée), segmentation et agrégation par pixel.
 
 ```{r ex-8-3-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
+
+# Créer le répertoire si nécessaire
+if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
+laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
-
-# Utiliser les 4 premiers nuages
-point_clouds <- llas_height[1:min(4, length(llas_height))]
-
-if (length(point_clouds) > 0) {
-  point_cloud <- do.call(rbind, point_clouds)
-  point_cloud <- lidR::filter_poi(point_cloud,
-                                   is.element(Classification, class_points) &
-                                     Z <= h_points)
-  point_cloud$Z[point_cloud$Z < 0] <- 0
-}
+# Fichiers cache
+cache_chm <- file.path(output_dir_rasters, "chm.tif")
+cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
 ```
 
-```{r ex-8-3, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-8-3-setup"}
-# === 8.3 : Métriques raster basées sur les arbres ===
+```{r ex-8-3, exercise=TRUE, exercise.timelimit=900, exercise.setup="ex-8-3-setup"}
+# === 8.3 : Métriques raster basées sur les arbres (LAScatalog) ===
 
-cat("=== Segmentation et métriques arbres ===\n\n")
+cat("=== Segmentation et métriques arbres sur l'ensemble de la zone ===\n\n")
 
-if (exists("point_cloud") && !is.null(point_cloud)) {
+# Vérifier si le cache existe déjà
+if (file.exists(cache_trees)) {
+  cat(">>> Cache trouvé, chargement depuis:", basename(cache_trees), "\n\n")
+  metrics_trees_raster <- terra::rast(cache_trees)
+} else {
+  cat("Calcul des métriques arbres (ceci peut prendre plusieurs minutes)...\n\n")
 
-  # 1. Créer le MNC
+  # 1. Créer le MNC via LAScatalog
   cat("1. Création du MNC (résolution:", aba_res_chm, "m)...\n")
-  chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm,
-                                 algorithm = lidR::p2r())
-  chm[is.na(chm) | chm < 0] <- 0
 
-  cat("   Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "\n\n")
+  if (!file.exists(cache_chm)) {
+    # Créer le LAScatalog
+    filter_cata_height <- paste(c("-keep_class", class_points,
+                                  "-drop_z_above", h_points), collapse = " ")
+
+    cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
+                                            progress = FALSE,
+                                            select = "xyzirnc",
+                                            filter = filter_cata_height)
+    lidR::projection(cata_height) <- 2154
+    lidR::opt_chunk_buffer(cata_height) <- 30
+    lidR::opt_progress(cata_height) <- TRUE
+
+    cat("   LAScatalog:", length(cata_height$filename), "tuiles\n")
+
+    # Créer le MNC
+    chm <- lidR::rasterize_canopy(cata_height, res = aba_res_chm,
+                                   algorithm = lidR::p2r())
+    chm[is.na(chm) | chm < 0] <- 0
+
+    # Sauvegarder le CHM
+    terra::writeRaster(chm, cache_chm, overwrite = TRUE)
+    cat("   MNC sauvegardé:", basename(cache_chm), "\n")
+  } else {
+    cat("   MNC chargé depuis cache\n")
+    chm <- terra::rast(cache_chm)
+  }
+
+  cat("   Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "pixels\n\n")
 
   # 2. Segmentation des arbres
   cat("2. Segmentation des arbres (tree_segmentation)...\n")
@@ -4541,6 +4615,7 @@ if (exists("point_cloud") && !is.null(point_cloud)) {
   cat("   Couches:", paste(names(metrics_trees_raster), collapse = ", "), "\n\n")
 
   # 4. Métriques supplémentaires (couverture canopée)
+  cat("4. Calcul couverture canopée...\n")
   r_treechm <- segms$filled_dem
   r_treechm[segms$segments_id == 0] <- NA
 
@@ -4562,183 +4637,191 @@ if (exists("point_cloud") && !is.null(point_cloud)) {
   metrics_canopy <- terra::crop(metrics_canopy, metrics_trees_raster)
   metrics_trees_raster <- c(metrics_trees_raster, metrics_canopy)
 
-  cat("Métriques arbres calculées:\n")
-  print(names(metrics_trees_raster))
-
-  # Visualisation
-  par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
-  terra::plot(metrics_trees_raster[["Tree_meanH"]], main = "Hauteur moyenne arbres",
-              col = grDevices::hcl.colors(50, "Viridis"))
-  terra::plot(metrics_trees_raster[["Tree_density"]], main = "Densité arbres/ha",
-              col = grDevices::hcl.colors(50, "Plasma"))
-  par(mfrow = c(1, 1))
-
-} else {
-  cat("Nuage de points non disponible\n")
+  # Sauvegarder en cache
+  terra::writeRaster(metrics_trees_raster, cache_trees, overwrite = TRUE)
+  cat("\n>>> Métriques arbres sauvegardées:", basename(cache_trees), "\n")
 }
+
+# Statistiques
+cat("\nMétriques arbres calculées:\n")
+print(names(metrics_trees_raster))
+
+n_valid <- sum(!is.na(terra::values(metrics_trees_raster[[1]])))
+surface_ha <- n_valid * (resolution^2) / 10000
+cat("\n  - Pixels valides:", n_valid, "\n")
+cat("  - Surface couverte:", round(surface_ha, 1), "ha\n")
+
+# Visualisation
+par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
+terra::plot(metrics_trees_raster[["Tree_meanH"]], main = "Hauteur moyenne arbres",
+            col = grDevices::hcl.colors(50, "Viridis"))
+terra::plot(metrics_trees_raster[["Tree_density"]], main = "Densité arbres/ha",
+            col = grDevices::hcl.colors(50, "Plasma"))
+par(mfrow = c(1, 1))
+
+cat("\n>>> Métriques arbres calculées pour", round(surface_ha, 1), "ha\n")
 ```
 
 ### 8.4 Calcul des métriques raster - Terrain
 
-Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol.
+Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol sur l'ensemble de la zone, en utilisant les fichiers LAZ **originaux** (non normalisés).
 
 ```{r ex-8-4-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
+
+# Créer le répertoire si nécessaire
+if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
 
-# Charger LAZ ORIGINAUX pré-extraits (exercice 6.5)
-plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
-laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
-llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
-names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
+# Répertoire des tuiles ORIGINALES (pour métriques terrain)
+laz_dir_original <- file.path(data_dir, "laz")
 
-# Utiliser les 4 premiers nuages
-point_clouds <- llas_original[1:min(4, length(llas_original))]
-
-if (length(point_clouds) > 0) {
-  point_cloud <- do.call(rbind, point_clouds)
-}
+# Fichier cache
+cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
 ```
 
-```{r ex-8-4, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-4-setup"}
-# === 8.4 : Métriques terrain ===
+```{r ex-8-4, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-8-4-setup"}
+# === 8.4 : Métriques terrain (LAScatalog) ===
 
-cat("=== Calcul des métriques de terrain ===\n\n")
+cat("=== Calcul des métriques de terrain sur l'ensemble de la zone ===\n\n")
 
-if (exists("point_cloud") && !is.null(point_cloud)) {
+# Vérifier si le cache existe déjà
+if (file.exists(cache_terrain)) {
+  cat(">>> Cache trouvé, chargement depuis:", basename(cache_terrain), "\n\n")
+  metrics_terrain_raster <- terra::rast(cache_terrain)
+} else {
+  cat("Calcul des métriques terrain (ceci peut prendre plusieurs minutes)...\n\n")
 
   # Fonction pour terrain_points_metrics
   f_terrain <- function(x, y, z) {
     as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
   }
 
-  # Extraction des points sol (classes 2 et 9)
-  point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
+  # Créer le LAScatalog des tuiles ORIGINALES (non normalisées)
+  # Filtrer uniquement les points sol (classes 2 et 9)
+  filter_ground <- "-keep_class 2 9"
 
-  cat("Points sol:", nrow(point_cloud_ground@data), "\n\n")
+  cata_ground <- lidR::readALSLAScatalog(laz_dir_original,
+                                          progress = FALSE,
+                                          select = "xyzc",
+                                          filter = filter_ground)
+  lidR::projection(cata_ground) <- 2154
+  lidR::opt_chunk_buffer(cata_ground) <- 30
+  lidR::opt_progress(cata_ground) <- TRUE
 
-  if (nrow(point_cloud_ground@data) > 100) {
-    # Calcul des métriques terrain
-    cat("Calcul pixel_metrics terrain...\n")
-    metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground,
-                                                   ~ f_terrain(X, Y, Z),
-                                                   res = resolution)
+  cat("LAScatalog (tuiles originales):", length(cata_ground$filename), "tuiles\n")
+  cat("Filtre appliqué:", filter_ground, "(points sol uniquement)\n\n")
 
-    # Retirer adjR2_plane si présent
-    if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
-      metrics_terrain_raster <- terra::subset(
-        metrics_terrain_raster,
-        which(names(metrics_terrain_raster) != "adjR2_plane")
-      )
-    }
+  # Calcul des métriques terrain via pixel_metrics
+  cat("Calcul pixel_metrics terrain...\n")
+  metrics_terrain_raster <- lidR::pixel_metrics(cata_ground,
+                                                 ~ f_terrain(X, Y, Z),
+                                                 res = resolution)
 
-    cat("\nMétriques terrain:\n")
-    print(names(metrics_terrain_raster))
-
-    # Visualisation
-    par(mfrow = c(1, 3), mar = c(2, 2, 3, 1))
-    terra::plot(metrics_terrain_raster[["altitude_mean"]], main = "Altitude (m)",
-                col = grDevices::terrain.colors(50))
-    terra::plot(metrics_terrain_raster[["slope_deg"]], main = "Pente (°)",
-                col = grDevices::heat.colors(50, rev = TRUE))
-    terra::plot(metrics_terrain_raster[["aspect_deg"]], main = "Aspect (°)",
-                col = grDevices::rainbow(50))
-    par(mfrow = c(1, 1))
-
-  } else {
-    cat("Trop peu de points sol pour le calcul\n")
+  # Retirer adjR2_plane si présent (statistique de qualité du plan ajusté)
+  if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
+    metrics_terrain_raster <- terra::subset(
+      metrics_terrain_raster,
+      which(names(metrics_terrain_raster) != "adjR2_plane")
+    )
   }
-} else {
-  cat("Nuage de points non disponible\n")
+
+  # Sauvegarder en cache
+  terra::writeRaster(metrics_terrain_raster, cache_terrain, overwrite = TRUE)
+  cat("\n>>> Métriques terrain sauvegardées:", basename(cache_terrain), "\n")
 }
+
+# Statistiques
+cat("\nMétriques terrain calculées:\n")
+print(names(metrics_terrain_raster))
+
+n_valid <- sum(!is.na(terra::values(metrics_terrain_raster[[1]])))
+surface_ha <- n_valid * (resolution^2) / 10000
+cat("\n  - Pixels valides:", n_valid, "\n")
+cat("  - Surface couverte:", round(surface_ha, 1), "ha\n")
+
+# Statistiques d'altitude
+alt <- terra::values(metrics_terrain_raster[["altitude_mean"]])
+alt <- alt[!is.na(alt)]
+cat("\nAltitude:\n")
+cat("  - Min:", round(min(alt)), "m | Max:", round(max(alt)), "m\n")
+cat("  - Dénivelé:", round(max(alt) - min(alt)), "m\n")
+
+# Visualisation
+par(mfrow = c(1, 3), mar = c(2, 2, 3, 1))
+terra::plot(metrics_terrain_raster[["altitude_mean"]], main = "Altitude (m)",
+            col = grDevices::terrain.colors(50))
+terra::plot(metrics_terrain_raster[["slope_deg"]], main = "Pente (°)",
+            col = grDevices::heat.colors(50, rev = TRUE))
+terra::plot(metrics_terrain_raster[["aspect_deg"]], main = "Aspect (°)",
+            col = grDevices::rainbow(50))
+par(mfrow = c(1, 1))
+
+cat("\n>>> Métriques terrain calculées pour", round(surface_ha, 1), "ha\n")
 ```
 
 ### 8.5 Prédiction avec aba_predict()
 
-La fonction `aba_predict()` applique le modèle calibré aux métriques raster pour produire une carte de prédiction.
+La fonction `aba_predict()` applique le modèle calibré aux métriques raster pour produire une carte de prédiction sur l'ensemble de la zone d'étude. Les métriques sont chargées depuis les fichiers cache créés dans les exercices précédents.
 
 ```{r ex-8-5-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
 # Charger les modèles et paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Fichiers cache des métriques (exercices 8.2-8.4)
+cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
+cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
 
-# Utiliser les 4 premiers nuages
-point_clouds <- llas_height[1:min(4, length(llas_height))]
+# Charger les métriques depuis le cache
+metrics_points_raster <- terra::rast(cache_points)
+metrics_trees_raster <- terra::rast(cache_trees)
+metrics_terrain_raster <- terra::rast(cache_terrain)
 
-if (length(point_clouds) > 0) {
-  point_cloud <- do.call(rbind, point_clouds)
-  point_cloud <- lidR::filter_poi(point_cloud,
-                                   is.element(Classification, class_points) &
-                                     Z <= h_points)
-  point_cloud$Z[point_cloud$Z < 0] <- 0
+# Harmoniser les emprises et combiner
+metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
+metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
+metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
+metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
 
-  # Métriques points raster
-  metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun,
-                                                res = resolution)
-
-  # Métriques arbres raster
-  chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
-  chm[is.na(chm) | chm < 0] <- 0
-  segms <- lidaRtRee::tree_segmentation(chm)
-  trees <- lidaRtRee::tree_extraction(segms)
-
-  metrics_trees_raster <- lidaRtRee::raster_metrics(
-    trees, res = resolution,
-    fun = function(x) { lidaRtRee::std_tree_metrics(x, resolution^2 / 10000) },
-    output = "raster"
-  )
-  metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
-
-  # Métriques terrain raster
-  f_terrain <- function(x, y, z) {
-    as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
-  }
-  point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
-  if (nrow(point_cloud_ground@data) > 100) {
-    metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z),
-                                                   res = resolution)
-    if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
-      metrics_terrain_raster <- terra::subset(metrics_terrain_raster,
-        which(names(metrics_terrain_raster) != "adjR2_plane"))
-    }
-
-    # Harmoniser les emprises et combiner
-    metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
-    metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
-    metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
-    metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
-
-    metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
-  }
-}
+metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
 ```
 
 ```{r ex-8-5, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-5-setup"}
-# === 8.5 : Prédiction avec aba_predict() ===
+# === 8.5 : Prédiction wall-to-wall avec aba_predict() ===
 
-cat("=== Application du modèle ABA ===\n\n")
+cat("=== Application du modèle ABA sur l'ensemble de la zone ===\n\n")
 
-cat("Modèle utilisé:\n")
+cat("MÉTRIQUES CHARGÉES DEPUIS CACHE:\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("  - Points:", terra::nlyr(metrics_points_raster), "couches\n")
+cat("  - Arbres:", terra::nlyr(metrics_trees_raster), "couches\n")
+cat("  - Terrain:", terra::nlyr(metrics_terrain_raster), "couches\n")
+cat("  - Total:", terra::nlyr(metrics_map), "couches\n\n")
+
+cat("Dimensions:", terra::ncol(metrics_map), "x", terra::nrow(metrics_map), "pixels\n")
+
+n_valid <- sum(!is.na(terra::values(metrics_map[[1]])))
+surface_ha <- n_valid * (resolution^2) / 10000
+cat("Surface:", round(surface_ha, 1), "ha\n\n")
+
+# Modèle utilisé
+cat("MODÈLE UTILISÉ:\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 print(model_aba$model)
 cat("\n")
-
-cat("Métriques disponibles:", terra::nlyr(metrics_map), "couches\n")
-cat("Dimensions:", terra::ncol(metrics_map), "x", terra::nrow(metrics_map), "pixels\n\n")
 
 # Vérifier que les prédicteurs du modèle sont présents
 predictors <- all.vars(model_aba$model$terms)[-1]  # Exclure la variable réponse
@@ -4746,14 +4829,15 @@ cat("Prédicteurs requis:", paste(predictors, collapse = ", "), "\n")
 cat("Présents:", sum(predictors %in% names(metrics_map)), "/", length(predictors), "\n\n")
 
 # Prédiction
-cat("Prédiction en cours...\n")
+cat("Prédiction wall-to-wall en cours...\n")
 prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
 
-cat("\nRésultat:\n")
+cat("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("RÉSULTAT:\n")
 cat("  - Variable prédite: G_m2_ha (surface terrière)\n")
 cat("  - Min:", round(terra::minmax(prediction_map)[1], 1), "m²/ha\n")
 cat("  - Max:", round(terra::minmax(prediction_map)[2], 1), "m²/ha\n")
-cat("  - Mean:", round(terra::global(prediction_map, "mean", na.rm = TRUE)[[1]], 1), "m²/ha\n\n")
+cat("  - Moyenne:", round(terra::global(prediction_map, "mean", na.rm = TRUE)[[1]], 1), "m²/ha\n\n")
 
 # Visualisation
 par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
@@ -4767,6 +4851,8 @@ hist(terra::values(prediction_map), breaks = 30, main = "Distribution G",
      xlab = "G (m²/ha)", col = "forestgreen", border = "white")
 
 par(mfrow = c(1, 1))
+
+cat(">>> Prédiction réalisée sur", round(surface_ha, 1), "ha\n")
 ```
 
 ### 8.6 Nettoyage et masquage forêt
@@ -4776,40 +4862,24 @@ La fonction `clean_raster()` permet d'appliquer des seuils de validité et un ma
 ```{r ex-8-6-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
 # Charger les modèles et paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
 
-# Charger LAZ NORMALISÉS pré-extraits
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Fichiers cache des métriques (exercices 8.2-8.4)
+cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
+cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
 
-# Fusionner et filtrer
-point_cloud <- do.call(rbind, llas_height[1:min(4, length(llas_height))])
-point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
-point_cloud$Z[point_cloud$Z < 0] <- 0
+# Charger les métriques depuis le cache
+metrics_points_raster <- terra::rast(cache_points)
+metrics_trees_raster <- terra::rast(cache_trees)
+metrics_terrain_raster <- terra::rast(cache_terrain)
 
-# Calculer métriques raster
-metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
-
-chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
-chm[is.na(chm) | chm < 0] <- 0
-segms <- lidaRtRee::tree_segmentation(chm)
-trees <- lidaRtRee::tree_extraction(segms)
-metrics_trees_raster <- lidaRtRee::raster_metrics(trees, res = resolution,
-  fun = function(x) lidaRtRee::std_tree_metrics(x, resolution^2 / 10000), output = "raster")
-metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
-
-f_terrain <- function(x, y, z) as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
-point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
-metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z), res = resolution)
-if ("adjR2_plane" %in% names(metrics_terrain_raster))
-  metrics_terrain_raster <- terra::subset(metrics_terrain_raster, which(names(metrics_terrain_raster) != "adjR2_plane"))
-
+# Harmoniser et combiner
 metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
 metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
 metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
@@ -4838,8 +4908,10 @@ cat("  - G maximum:", g_max, "m²/ha\n\n")
 if ("pzabove2" %in% names(metrics_map)) {
   forest_mask <- metrics_map[["pzabove2"]] > 0.2  # >20% couverture
   cat("Masque forêt créé (couverture > 20%)\n")
-  cat("  - Pixels forêt:", sum(terra::values(forest_mask), na.rm = TRUE), "\n")
-  cat("  - Pixels total:", terra::ncell(forest_mask), "\n\n")
+  n_forest <- sum(terra::values(forest_mask), na.rm = TRUE)
+  n_total <- terra::ncell(forest_mask)
+  cat("  - Pixels forêt:", n_forest, "(", round(100 * n_forest / n_total, 1), "%)\n")
+  cat("  - Pixels total:", n_total, "\n\n")
 } else {
   forest_mask <- NULL
   cat("Pas de masque forêt appliqué\n\n")
@@ -4851,7 +4923,10 @@ prediction_clean <- lidaRtRee::clean_raster(prediction_map,
                                              forest_mask)
 
 cat("Après nettoyage:\n")
-cat("  - Pixels valides:", sum(!is.na(terra::values(prediction_clean))), "\n")
+n_valid <- sum(!is.na(terra::values(prediction_clean)))
+surface_ha <- n_valid * (resolution^2) / 10000
+cat("  - Pixels valides:", n_valid, "\n")
+cat("  - Surface forestière:", round(surface_ha, 1), "ha\n")
 cat("  - Min:", round(terra::minmax(prediction_clean)[1], 1), "m²/ha\n")
 cat("  - Max:", round(terra::minmax(prediction_clean)[2], 1), "m²/ha\n\n")
 
@@ -4859,53 +4934,39 @@ cat("  - Max:", round(terra::minmax(prediction_clean)[2], 1), "m²/ha\n\n")
 par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
 terra::plot(prediction_map, main = "Avant nettoyage",
             col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-terra::plot(prediction_clean, main = "Après nettoyage",
+terra::plot(prediction_clean, main = "Après nettoyage (masque forêt)",
             col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
 par(mfrow = c(1, 1))
+
+cat(">>> Carte nettoyée et masquée sur", round(surface_ha, 1), "ha de forêt\n")
 ```
 
 ### 8.7 Export et résumé
 
-Les cartes de prédiction sont exportées au format GeoTIFF et les statistiques de synthèse sont calculées.
+Les cartes de prédiction sont exportées au format GeoTIFF et les statistiques de synthèse sont calculées pour l'ensemble de la zone d'étude.
 
 ```{r ex-8-7-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 output_dir <- data_dir
+output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
 # Charger les modèles et paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
 
-# Charger LAZ NORMALISÉS pré-extraits
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Fichiers cache des métriques (exercices 8.2-8.4)
+cache_points <- file.path(output_dir_rasters, "metrics_points_raster.tif")
+cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
+cache_terrain <- file.path(output_dir_rasters, "metrics_terrain_raster.tif")
 
-# Fusionner et filtrer
-point_cloud <- do.call(rbind, llas_height[1:min(4, length(llas_height))])
-point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
-point_cloud$Z[point_cloud$Z < 0] <- 0
+# Charger les métriques depuis le cache
+metrics_points_raster <- terra::rast(cache_points)
+metrics_trees_raster <- terra::rast(cache_trees)
+metrics_terrain_raster <- terra::rast(cache_terrain)
 
-# Calculer métriques raster
-metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
-
-chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
-chm[is.na(chm) | chm < 0] <- 0
-segms <- lidaRtRee::tree_segmentation(chm)
-trees <- lidaRtRee::tree_extraction(segms)
-metrics_trees_raster <- lidaRtRee::raster_metrics(trees, res = resolution,
-  fun = function(x) lidaRtRee::std_tree_metrics(x, resolution^2 / 10000), output = "raster")
-metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
-
-f_terrain <- function(x, y, z) as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
-point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
-metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z), res = resolution)
-if ("adjR2_plane" %in% names(metrics_terrain_raster))
-  metrics_terrain_raster <- terra::subset(metrics_terrain_raster, which(names(metrics_terrain_raster) != "adjR2_plane"))
-
+# Harmoniser et combiner
 metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
 metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
 metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
