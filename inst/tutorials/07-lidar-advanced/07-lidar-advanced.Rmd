@@ -2384,8 +2384,6 @@ Cette section reprend le workflow du tutoriel officiel lidaRtRee, appliqué aux 
 
 ### 6.1 Import des données d'inventaire terrain
 
-#### 6.1.1 Inventaire à l'échelle de l'arbre
-
 96 placettes de rayon 15 m ont été inventoriées dans la zone des Quatre Montagnes (Vercors, France). Les placettes sont regroupées en clusters de 4. Nous travaillons sur 28 d'entre elles (7 clusters).
 
 ### Exercice 6.1 : Paramètres d'inventaire et import des données
@@ -2656,8 +2654,6 @@ cat("=== Coordonnées arbres calculées ===\n")
 head(trees[, c("plot_id", "tree_id", "X", "Y", "horiz_dist_m", "height_m")], n = 5)
 ```
 
-### 6.2 Import des données LiDAR
-
 ### Exercice 6.5 : Extraction des nuages de points
 
 On extrait les nuages de points LiDAR aux emplacements des 28 placettes depuis les fichiers LAZ (normalisés et originaux). Cette extraction est effectuée une seule fois et les fichiers sont sauvegardés pour réutilisation.
@@ -2881,19 +2877,89 @@ pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
 data("quatre_montagnes", package = "lidaRtRee", envir = environment())
 plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
 
-# Import arbres (simplifié - utiliser les données déjà préparées)
-# Dans le tutoriel complet on chargerait depuis les CSV
-# Ici on simule avec les données disponibles
+# Import des arbres bruts pour avoir azimut et pente
+files_t <- dir(file.path(data_dir, "field"),
+               pattern = "Verc-[[:alnum:]]{2}-[[:digit:]]{1}_ArbresTerrain.csv",
+               full.names = TRUE)
+files_t <- files_t[grepl(paste0(pattern_zone, "-"), basename(files_t))]
+trees <- lapply(files_t, function(x) {
+  dummy <- read.table(x, sep = ";", header = TRUE, stringsAsFactors = FALSE)
+  cbind(dummy, data.frame(plot_id = rep(substr(basename(x), 6, 9), nrow(dummy))))
+})
+trees <- do.call(rbind, trees)
+trees$plot_id <- paste0("Verc-", trees$plot_id)
+names(trees) <- c("tree_id", "pole_id", "species", "azimuth_gr", "slope_gr",
+                  "diameter_cm", "ground_distance_m", "height_m", "appearance",
+                  "tilted", "remark", "plot_id")
+trees <- trees[!is.na(trees$diameter_cm), ]
 ```
 
 ```{r ex-6-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-6-7-setup"}
-# === 6.3.1 : Vérification de la cohérence avec le protocole ===
+# === Vérification de la cohérence avec le protocole ===
 cat("=== Vérification des données d'inventaire ===\n\n")
 
 # Le jeu de données quatre_montagnes contient déjà les données nettoyées
 # Afficher les statistiques des variables de peuplement
 cat("Variables de peuplement pour nos 28 placettes:\n\n")
 summary(plots[, c("G_m2_ha", "N_ha", "D_mean_cm")])
+
+# Graphique azimut vs pente pour une placette
+cat("\n=== Azimut vs Pente des arbres (placette Verc-02-1) ===\n")
+trees_plot <- trees[trees$plot_id == "Verc-02-1", ]
+
+plot(trees_plot$azimuth_gr, trees_plot$slope_gr,
+     pch = 19, col = "darkgreen",
+     xlab = "Azimut (grades)",
+     ylab = "Pente (grades)",
+     cex = trees_plot$ground_distance_m / trees_plot$diameter_cm,
+     main = paste("Azimut vs Pente - Verc-02-1 (n =", nrow(trees_plot), "arbres)"))
+abline(h = 0, col = "red", lty = 2)
+grid()
+
+# === Calcul de G, N, D par essence ===
+cat("\n=== Statistiques par essence ===\n")
+
+# Surface de la placette (m²) et facteur de conversion vers hectare
+plot_area_m2 <- pi * p_radius^2
+ha_factor <- 10000 / plot_area_m2
+
+# Calculer G, N, D par essence (toutes placettes confondues)
+stats_by_species <- aggregate(
+  diameter_cm ~ species,
+  data = trees,
+  FUN = function(d) {
+    c(
+      G_m2_ha = sum(pi * (d/200)^2) * ha_factor,  # surface terrière
+      N_ha = length(d) * ha_factor,                # densité
+      D_mean_cm = mean(d)                          # diamètre moyen
+    )
+  }
+)
+
+# Convertir en data.frame propre
+stats_sp <- data.frame(
+  species = stats_by_species$species,
+  G_m2_ha = stats_by_species$diameter_cm[, "G_m2_ha"],
+  N_ha = stats_by_species$diameter_cm[, "N_ha"],
+  D_mean_cm = stats_by_species$diameter_cm[, "D_mean_cm"]
+)
+
+print(stats_sp)
+
+# Scatterplot matriciel G, N, D coloré par essence
+cat("\n=== Scatterplot G, N, D par essence ===\n")
+sp_colors <- rainbow(nrow(stats_sp))
+pairs(stats_sp[, c("G_m2_ha", "N_ha", "D_mean_cm")],
+      pch = 19, cex = 1.5,
+      col = sp_colors,
+      main = "Relations G, N, D par essence",
+      labels = c("G (m²/ha)", "N (tiges/ha)", "D moyen (cm)"))
+
+# Légende séparée
+plot.new()
+legend("center", legend = stats_sp$species,
+       col = sp_colors, pch = 19, cex = 0.9,
+       title = "Essences", ncol = 3)
 ```
 
 ### Exercice 6.8 : Relation hauteur-diamètre
