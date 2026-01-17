@@ -4415,9 +4415,8 @@ if (dir.exists(laz_dir_normalized)) {
     cat("  - Surface:", round(area_km2, 2), "km²\n")
     cat("  - Buffer: 30 m\n\n")
 
-    # Visualisation de l'emprise (utiliser la méthode sf pour éviter problèmes S4)
-    plot(sf::st_geometry(cata_height), main = "LAScatalog - tuiles normalisées",
-         col = "lightblue", border = "darkblue")
+    # Visualisation de l'emprise
+    lidR::plot(cata_height, main = "LAScatalog - tuiles normalisées")
 
     cat("\n>>> LAScatalog prêt pour le traitement wall-to-wall\n")
     cat("    Les exercices suivants calculeront les métriques sur\n")
