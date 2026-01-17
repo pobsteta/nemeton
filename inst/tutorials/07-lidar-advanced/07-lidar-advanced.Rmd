@@ -4483,6 +4483,9 @@ cat("Tuiles existantes:", n_existing, "TIF\n\n")
 if (file.exists(vrt_points) && n_existing >= n_laz) {
   cat(">>> Traitement complet, chargement du VRT existant\n\n")
   metrics_points_raster <- terra::rast(vrt_points)
+  # Restaurer les noms de couches depuis une tuile TIF
+  tile_names <- names(terra::rast(existing_tiles[1]))
+  names(metrics_points_raster) <- tile_names
 } else {
   # Nettoyer les tuiles existantes pour éviter les conflits
   # (lidR ne supporte pas overwrite=TRUE nativement)
@@ -4811,6 +4814,9 @@ cat("Tuiles existantes:", n_existing, "TIF\n\n")
 if (file.exists(vrt_terrain) && n_existing >= n_laz) {
   cat(">>> Traitement complet, chargement du VRT existant\n\n")
   metrics_terrain_raster <- terra::rast(vrt_terrain)
+  # Restaurer les noms de couches depuis une tuile TIF
+  tile_names <- names(terra::rast(existing_tiles[1]))
+  names(metrics_terrain_raster) <- tile_names
 } else {
   # Nettoyer les tuiles existantes pour éviter les conflits
   if (n_existing > 0) {
