@@ -4557,6 +4557,9 @@ if (exists("point_cloud") && !is.null(point_cloud)) {
   )
   names(metrics_canopy) <- c("TreeCanopy_cover_in_plot", "TreeCanopy_meanH_in_plot")
 
+  # Harmoniser les emprises avant combinaison
+  metrics_canopy <- terra::extend(metrics_canopy, metrics_trees_raster)
+  metrics_canopy <- terra::crop(metrics_canopy, metrics_trees_raster)
   metrics_trees_raster <- c(metrics_trees_raster, metrics_canopy)
 
   cat("Métriques arbres calculées:\n")
