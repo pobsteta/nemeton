@@ -4609,13 +4609,15 @@ laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
 # Fichiers cache
 vrt_chm <- file.path(output_dir_rasters, "chm.vrt")
+cache_segments <- file.path(output_dir_rasters, "segmentation.rds")
+cache_trees_gpkg <- file.path(output_dir_rasters, "trees_detected.gpkg")
 cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
 
 # Configuration parallélisation
 N_CORES <- 4L
 ```
 
-```{r ex-8-3, exercise=TRUE, exercise.timelimit=900, exercise.setup="ex-8-3-setup"}
+```{r ex-8-3, exercise=TRUE, exercise.timelimit=2800, exercise.setup="ex-8-3-setup"}
 # === 8.3 : Métriques raster basées sur les arbres (LAScatalog) ===
 
 cat("=== Segmentation et métriques arbres sur l'ensemble de la zone ===\n\n")
@@ -4697,12 +4699,27 @@ if (file.exists(cache_trees)) {
 
   cat("   Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "pixels\n\n")
 
-  # 2. Segmentation des arbres
-  cat("2. Segmentation des arbres (tree_segmentation)...\n")
-  segms <- lidaRtRee::tree_segmentation(chm)
-  trees <- lidaRtRee::tree_extraction(segms)
+  # 2. Segmentation des arbres (avec cache)
+  cat("2. Segmentation des arbres...\n")
 
-  cat("   Arbres détectés:", nrow(trees), "\n\n")
+  if (file.exists(cache_segments) && file.exists(cache_trees_gpkg)) {
+    cat("   >>> Cache trouvé, chargement segmentation et arbres\n")
+    segms <- readRDS(cache_segments)
+    trees <- sf::st_read(cache_trees_gpkg, quiet = TRUE)
+    cat("   Arbres chargés:", nrow(trees), "\n\n")
+  } else {
+    cat("   >>> Calcul de la segmentation (tree_segmentation)...\n")
+    segms <- lidaRtRee::tree_segmentation(chm)
+
+    cat("   >>> Extraction des arbres (tree_extraction)...\n")
+    trees <- lidaRtRee::tree_extraction(segms)
+
+    # Sauvegarder en cache
+    saveRDS(segms, cache_segments)
+    sf::st_write(trees, cache_trees_gpkg, delete_dsn = TRUE, quiet = TRUE)
+    cat("   Arbres détectés:", nrow(trees), "\n")
+    cat("   Cache sauvegardé:", basename(cache_segments), ",", basename(cache_trees_gpkg), "\n\n")
+  }
 
   # 3. Calcul des métriques arbres par pixel
   cat("3. Calcul métriques arbres par pixel (", resolution, "m)...\n")
