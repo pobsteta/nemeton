@@ -3967,20 +3967,46 @@ for (var in variables) {
   cat("Top 5 variables (Random Forest):\n")
   print(head(importance_df, 5))
 
-  # Sélectionner les variables
-  top_vars <- head(importance_df$variable, 10)
+  # Sélectionner les variables et filtrer les corrélations
+  top_vars <- head(importance_df$variable, 15)
   metrics_rf <- metrics[, top_vars, drop = FALSE]
 
-  # Calibration du modèle
+  # Supprimer les variables trop corrélées (> 0.9)
+  cor_mat <- cor(metrics_rf)
+  to_remove <- c()
+  for (i in 1:(ncol(cor_mat) - 1)) {
+    for (j in (i + 1):ncol(cor_mat)) {
+      if (abs(cor_mat[i, j]) > 0.9 && !(colnames(cor_mat)[j] %in% to_remove)) {
+        to_remove <- c(to_remove, colnames(cor_mat)[j])
+      }
+    }
+  }
+  if (length(to_remove) > 0) {
+    metrics_rf <- metrics_rf[, !(colnames(metrics_rf) %in% to_remove), drop = FALSE]
+  }
+  cat("Variables après filtrage corrélation:", ncol(metrics_rf), "\n")
+
+  # Calibration du modèle avec gestion d'erreur
   cat("\nCalibration avec boxcox...\n")
   suppressWarnings({
-    models_aba[[var]] <- lidaRtRee::aba_build_model(
-      plots[[var]],
-      metrics_rf,
-      transform = "boxcox",
-      nmax = 4,
-      xy = plots[, c("X", "Y")]
-    )
+    models_aba[[var]] <- tryCatch({
+      lidaRtRee::aba_build_model(
+        plots[[var]],
+        metrics_rf,
+        transform = "boxcox",
+        nmax = 4,
+        xy = plots[, c("X", "Y")]
+      )
+    }, error = function(e) {
+      cat("  Erreur boxcox, tentative avec log...\n")
+      lidaRtRee::aba_build_model(
+        plots[[var]],
+        metrics_rf,
+        transform = "log",
+        nmax = 3,
+        xy = plots[, c("X", "Y")]
+      )
+    })
   })
   cat("\n")
 }
@@ -3991,7 +4017,11 @@ model_stats <- do.call(rbind, lapply(models_aba, function(x) x[["stats"]]))
 cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 cat("           RÉSUMÉ DES MODÈLES\n")
 cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
-print(round(model_stats, 3))
+
+# Arrondir uniquement les colonnes numériques
+num_cols <- sapply(model_stats, is.numeric)
+model_stats[, num_cols] <- round(model_stats[, num_cols], 3)
+print(model_stats[, c("n", "adjR2", "looR2", "rmse", "cvrmse")])
 
 cat("\nINTERPRÉTATION:\n")
 cat("- adjR2 > 0.7 : bon modèle | > 0.8 : très bon\n")
