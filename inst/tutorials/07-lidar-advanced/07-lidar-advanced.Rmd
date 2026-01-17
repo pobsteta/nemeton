@@ -4409,7 +4409,7 @@ if (dir.exists(laz_dir_normalized)) {
     area_km2 <- (bbox["xmax"] - bbox["xmin"]) * (bbox["ymax"] - bbox["ymin"]) / 1e6
 
     cat("LAScatalog créé:\n")
-    cat("  - Nombre de tuiles:", length(cata_height$filename), "\n")
+    cat("  - Nombre de tuiles:", nrow(cata_height), "\n")
     cat("  - Emprise (Lambert 93):\n")
     cat("    xmin:", round(bbox["xmin"]), "| xmax:", round(bbox["xmax"]), "\n")
     cat("    ymin:", round(bbox["ymin"]), "| ymax:", round(bbox["ymax"]), "\n")
@@ -4478,7 +4478,7 @@ if (file.exists(cache_points)) {
   lidR::opt_chunk_buffer(cata_height) <- 30
   lidR::opt_progress(cata_height) <- TRUE
 
-  cat("LAScatalog:", length(cata_height$filename), "tuiles\n")
+  cat("LAScatalog:", nrow(cata_height), "tuiles\n")
 
   # Calcul des métriques via pixel_metrics sur le catalog
   cat("Calcul pixel_metrics avec aba_metrics()...\n")
@@ -4576,7 +4576,7 @@ if (file.exists(cache_trees)) {
     lidR::opt_chunk_buffer(cata_height) <- 30
     lidR::opt_progress(cata_height) <- TRUE
 
-    cat("   LAScatalog:", length(cata_height$filename), "tuiles\n")
+    cat("   LAScatalog:", nrow(cata_height), "tuiles\n")
 
     # Créer le MNC
     chm <- lidR::rasterize_canopy(cata_height, res = aba_res_chm,
@@ -4715,7 +4715,7 @@ if (file.exists(cache_terrain)) {
   lidR::opt_chunk_buffer(cata_ground) <- 30
   lidR::opt_progress(cata_ground) <- TRUE
 
-  cat("LAScatalog (tuiles originales):", length(cata_ground$filename), "tuiles\n")
+  cat("LAScatalog (tuiles originales):", nrow(cata_ground), "tuiles\n")
   cat("Filtre appliqué:", filter_ground, "(points sol uniquement)\n\n")
 
   # Calcul des métriques terrain via pixel_metrics
