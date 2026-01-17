@@ -4327,120 +4327,76 @@ Ce code présente un workflow pour appliquer les modèles de prédiction calibr�
 Les modèles calibrés et les paramètres de configuration sont chargés. Le LAScatalog est configuré avec les filtres appropriés pour le traitement par tuiles.
 
 ```{r ex-8-1-setup, message=FALSE, warning=FALSE}
-# Paramètres de la section 7
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-plot_radius <- 15
-resolution <- 25  # Résolution de la carte de sortie
-
-# Reconstruction du modèle (normalement chargé depuis le fichier)
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+cache_dir <- file.path(data_dir, "metrics_cache")
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
-plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
-laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
-llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
-names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
+# Charger les modèles et paramètres sauvegardés (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
 
-common_ids <- intersect(plots$plot_id, names(llas_height))
-plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
+# Résolution de la carte de sortie
+resolution <- 25
 
-llas_height <- lapply(llas_height,
-                      function(x)
-                        lidR::filter_poi(x,
-                                         is.element(Classification, class_points) &
-                                           Z <= h_points))
-llas_height <- lapply(llas_height, function(x) {
-  x$Z[x$Z < 0] <- 0
-  x
-})
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
-
-metrics_trees <- lidaRtRee::clouds_tree_metrics(
-  llas_height, plots[, c("X", "Y")], plot_radius, res = aba_res_chm,
-  func = function(x) {
-    lidaRtRee::std_tree_metrics(x, area_ha = pi * plot_radius^2 / 10000)
-  }
-)
-
-# Répertoire des données
-data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
-
-# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
-laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
-llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
-names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
-
-metrics_terrain <- list()
-for (i in seq_along(llas_original)) {
-  plot_name <- names(llas_original)[i]
-  plot_row <- which(plots$plot_id == plot_name)
-  if (length(plot_row) > 0) {
-    tryCatch({
-      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
-      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, plot_radius)
-    }, error = function(e) NULL)
-  }
-}
-metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
-
-metrics <- cbind(
-  metrics_points[plots$plot_id, ],
-  metrics_trees[plots$plot_id, ],
-  metrics_terrain[plots$plot_id, 1:3]
-)
-
-model_aba <- lidaRtRee::aba_build_model(
-  plots[, "G_m2_ha"], metrics, transform = "boxcox", nmax = 4,
-  xy = plots[, c("X", "Y")]
-)
+# Répertoire des tuiles normalisées
+laz_dir_normalized <- file.path(data_dir, "laz_normalized")
 ```
 
 ```{r ex-8-1, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-1-setup"}
-# === 8.1 : Configuration du LAScatalog ===
+# === 8.1 : Chargement des modèles et configuration ===
 
 cat("=== Configuration pour la cartographie wall-to-wall ===\n\n")
 
-# Répertoire des tuiles normalisées
-tiles_dir <- laz_dir_normalized
+# Afficher les modèles chargés (depuis exercice 7.10)
+cat("MODÈLES CHARGÉS:\n")
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("Modèle G_m2_ha:\n")
+cat("  adjR2:", round(model_aba$stats$adjR2, 3),
+    "| looR2:", round(model_aba$stats$looR2, 3), "\n")
+cat("  Formule:", as.character(model_aba$stats$formula), "\n")
 
-cat("Répertoire des tuiles:", tiles_dir, "\n")
+if (exists("models_aba_all")) {
+  cat("\nModèles multiples disponibles:", paste(names(models_aba_all), collapse = ", "), "\n")
+}
 
-# Filtre pour le LAScatalog
-filter_cata_height <- paste(c("-keep_class", class_points,
-                              "-drop_z_above", h_points), collapse = " ")
+# Paramètres de configuration
+cat("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("PARAMÈTRES DE CONFIGURATION:\n")
+cat("  - class_points:", paste(class_points, collapse = ", "), "\n")
+cat("  - h_points:", h_points, "m\n")
+cat("  - aba_res_chm:", aba_res_chm, "m\n")
+cat("  - plot_radius:", plot_radius, "m\n")
+cat("  - Résolution sortie:", resolution, "m\n")
 
-cat("\nFiltre LAScatalog:\n")
-cat(" ", filter_cata_height, "\n")
+# Vérifier le répertoire des tuiles
+cat("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+cat("RÉPERTOIRE DES TUILES:\n")
+cat(laz_dir_normalized, "\n")
 
-# Création du LAScatalog
-cata_height <- lidR::readALSLAScatalog(tiles_dir,
-                                        progress = FALSE,
-                                        select = "xyzirnc",
-                                        filter = filter_cata_height)
+if (dir.exists(laz_dir_normalized)) {
+  laz_files <- list.files(laz_dir_normalized, pattern = "\\.laz$", full.names = TRUE)
+  cat("  Fichiers LAZ trouvés:", length(laz_files), "\n")
 
-# Configuration de la projection
-lidR::projection(cata_height) <- 2154  # Lambert-93
+  if (length(laz_files) > 0) {
+    # Filtre pour le LAScatalog
+    filter_cata_height <- paste(c("-keep_class", class_points,
+                                  "-drop_z_above", h_points), collapse = " ")
+    cat("\nFiltre LAScatalog:", filter_cata_height, "\n")
 
-cat("\nLAScatalog créé:\n")
-cat("  - Nombre de fichiers:", length(cata_height$filename), "\n")
-cat("  - CRS: EPSG:2154 (Lambert-93)\n")
-cat("  - Résolution de sortie:", resolution, "m\n\n")
+    # Création du LAScatalog
+    cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
+                                            progress = FALSE,
+                                            select = "xyzirnc",
+                                            filter = filter_cata_height)
+    lidR::projection(cata_height) <- 2154
 
-# Afficher l'emprise
-cat("Emprise spatiale:\n")
-print(sf::st_bbox(cata_height))
+    cat("\nLAScatalog créé avec", length(cata_height$filename), "fichiers\n")
+    cat("Emprise:", paste(round(sf::st_bbox(cata_height)), collapse = ", "), "\n")
+  }
+} else {
+  cat("  Répertoire non trouvé.\n")
+  cat("  NOTE: Pour la cartographie wall-to-wall, vous devez avoir\n")
+  cat("        des tuiles LAZ normalisées couvrant la zone d'étude.\n")
+}
 ```
 
 ### 8.2 Calcul des métriques raster - Points
@@ -4448,22 +4404,13 @@ print(sf::st_bbox(cata_height))
 Les métriques du nuage de points sont calculées sur une grille régulière à la résolution spécifiée (25 m).
 
 ```{r ex-8-2-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-resolution <- 25
-p_radius <- 15
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-
-# Charger les placettes
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
+# Charger les paramètres (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
+
+resolution <- 25
 
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
 plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
@@ -4531,18 +4478,13 @@ if (length(point_clouds) > 0) {
 Les métriques basées sur la détection d'arbres sont calculées via segmentation du MNC et agrégation par pixel.
 
 ```{r ex-8-3-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-resolution <- 25
-p_radius <- 15
-
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
+# Charger les paramètres (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
+
+resolution <- 25
 
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
 plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
@@ -4638,17 +4580,13 @@ if (exists("point_cloud") && !is.null(point_cloud)) {
 Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol.
 
 ```{r ex-8-4-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-resolution <- 25
-p_radius <- 15
-
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
+# Charger les paramètres (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
+
+resolution <- 25
 
 # Charger LAZ ORIGINAUX pré-extraits (exercice 6.5)
 plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
@@ -4722,19 +4660,13 @@ if (exists("point_cloud") && !is.null(point_cloud)) {
 La fonction `aba_predict()` applique le modèle calibré aux métriques raster pour produire une carte de prédiction.
 
 ```{r ex-8-5-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-resolution <- 25
-p_radius <- 15
-
-# Données quatre_montagnes pour le modèle
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+
+# Charger les modèles et paramètres (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
+
+resolution <- 25
 
 # Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
 plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
@@ -4742,114 +4674,55 @@ laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.nam
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
-common_ids <- intersect(plots$plot_id, names(llas_height))
-plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
+# Utiliser les 4 premiers nuages
+point_clouds <- llas_height[1:min(4, length(llas_height))]
 
-llas_height <- lapply(llas_height,
-                      function(x)
-                        lidR::filter_poi(x,
-                                         is.element(Classification, class_points) &
-                                           Z <= h_points))
-llas_height <- lapply(llas_height, function(x) {
-  x$Z[x$Z < 0] <- 0
-  x
-})
+if (length(point_clouds) > 0) {
+  point_cloud <- do.call(rbind, point_clouds)
+  point_cloud <- lidR::filter_poi(point_cloud,
+                                   is.element(Classification, class_points) &
+                                     Z <= h_points)
+  point_cloud$Z[point_cloud$Z < 0] <- 0
 
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
+  # Métriques points raster
+  metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun,
+                                                res = resolution)
 
-metrics_trees <- lidaRtRee::clouds_tree_metrics(
-  llas_height, plots[, c("X", "Y")], p_radius, res = aba_res_chm,
-  func = function(x) {
-    lidaRtRee::std_tree_metrics(x, area_ha = pi * p_radius^2 / 10000)
+  # Métriques arbres raster
+  chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
+  chm[is.na(chm) | chm < 0] <- 0
+  segms <- lidaRtRee::tree_segmentation(chm)
+  trees <- lidaRtRee::tree_extraction(segms)
+
+  metrics_trees_raster <- lidaRtRee::raster_metrics(
+    trees, res = resolution,
+    fun = function(x) { lidaRtRee::std_tree_metrics(x, resolution^2 / 10000) },
+    output = "raster"
+  )
+  metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
+
+  # Métriques terrain raster
+  f_terrain <- function(x, y, z) {
+    as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
   }
-)
-
-# Répertoire des données
-data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
-
-# Charger LAZ ORIGINAUX pré-extraits et calculer métriques terrain
-plots_extracted_orig <- file.path(data_dir, "plots_extracted_orig")
-laz_orig_files <- list.files(plots_extracted_orig, pattern = "\\.laz$", full.names = TRUE)
-llas_original <- purrr::map(laz_orig_files, lidR::readLAS)
-names(llas_original) <- gsub("\\.laz$", "", basename(laz_orig_files))
-
-metrics_terrain <- list()
-for (i in seq_along(llas_original)) {
-  plot_name <- names(llas_original)[i]
-  plot_row <- which(plots$plot_id == plot_name)
-  if (length(plot_row) > 0) {
-    tryCatch({
-      center_xy <- as.numeric(plots[plot_row, c("X", "Y")])
-      metrics_terrain[[plot_name]] <- lidaRtRee::terrain_points_metrics(llas_original[[i]], center_xy, p_radius)
-    }, error = function(e) NULL)
-  }
-}
-metrics_terrain <- as.data.frame(do.call(rbind, metrics_terrain))
-
-metrics <- cbind(
-  metrics_points[plots$plot_id, ],
-  metrics_trees[plots$plot_id, ],
-  metrics_terrain[plots$plot_id, 1:3]
-)
-
-model_aba <- lidaRtRee::aba_build_model(
-  plots[, "G_m2_ha"], metrics, transform = "boxcox", nmax = 4,
-  xy = plots[, c("X", "Y")]
-)
-
-# Créer métriques raster pour la prédiction
-point_clouds <- list()
-for (i in 1:min(4, nrow(plots))) {
-  tryCatch({
-    las <- lidR::clip_circle(ctg_normalized, plots$X[i], plots$Y[i], p_radius)
-    if (!lidR::is.empty(las)) {
-      point_clouds[[i]] <- las
+  point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
+  if (nrow(point_cloud_ground@data) > 100) {
+    metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z),
+                                                   res = resolution)
+    if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
+      metrics_terrain_raster <- terra::subset(metrics_terrain_raster,
+        which(names(metrics_terrain_raster) != "adjR2_plane"))
     }
-  }, error = function(e) NULL)
+
+    # Harmoniser les emprises et combiner
+    metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
+    metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
+    metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
+    metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
+
+    metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
+  }
 }
-
-point_cloud <- do.call(rbind, point_clouds)
-point_cloud <- lidR::filter_poi(point_cloud,
-                                 is.element(Classification, class_points) &
-                                   Z <= h_points)
-point_cloud$Z[point_cloud$Z < 0] <- 0
-
-metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun,
-                                              res = resolution)
-
-chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
-chm[is.na(chm) | chm < 0] <- 0
-segms <- lidaRtRee::tree_segmentation(chm)
-trees <- lidaRtRee::tree_extraction(segms)
-
-metrics_trees_raster <- lidaRtRee::raster_metrics(
-  trees, res = resolution,
-  fun = function(x) { lidaRtRee::std_tree_metrics(x, resolution^2 / 10000) },
-  output = "raster"
-)
-metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
-
-f_terrain <- function(x, y, z) {
-  as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
-}
-point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
-metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z),
-                                               res = resolution)
-if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
-  metrics_terrain_raster <- terra::subset(metrics_terrain_raster,
-    which(names(metrics_terrain_raster) != "adjR2_plane"))
-}
-
-# Harmoniser les emprises et combiner
-metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
-metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
-metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
-metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
-
-metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
 ```
 
 ```{r ex-8-5, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-5-setup"}
@@ -4898,54 +4771,28 @@ par(mfrow = c(1, 1))
 La fonction `clean_raster()` permet d'appliquer des seuils de validité et un masque forêt pour filtrer les valeurs aberrantes et les zones non forestières.
 
 ```{r ex-8-6-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-resolution <- 25
-p_radius <- 15
-
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+# Charger les modèles et paramètres (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
+
+resolution <- 25
+
+# Charger LAZ NORMALISÉS pré-extraits
 plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
-common_ids <- intersect(plots$plot_id, names(llas_height))
-plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
-
-llas_height <- lapply(llas_height, function(x)
-  lidR::filter_poi(x, is.element(Classification, class_points) & Z <= h_points))
-llas_height <- lapply(llas_height, function(x) { x$Z[x$Z < 0] <- 0; x })
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber,
-                                                  Classification, 2)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
-metrics_trees <- lidaRtRee::clouds_tree_metrics(llas_height, plots[, c("X", "Y")], 15,
-  res = aba_res_chm, func = function(x) lidaRtRee::std_tree_metrics(x, pi * 15^2 / 10000))
-metrics_terrain <- mapply(function(x, y)
-  lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], 15),
-  x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
-metrics_terrain <- do.call(rbind, metrics_terrain)
-rownames(metrics_terrain) <- names(llas_height)
-
-metrics <- cbind(metrics_points[plots$plot_id, ], metrics_trees[plots$plot_id, ],
-                 metrics_terrain[plots$plot_id, 1:3])
-model_aba <- lidaRtRee::aba_build_model(plots[, "G_m2_ha"], metrics,
-  transform = "boxcox", nmax = 4, xy = plots[, c("X", "Y")])
-
+# Fusionner et filtrer
 point_cloud <- do.call(rbind, llas_height[1:min(4, length(llas_height))])
 point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
 point_cloud$Z[point_cloud$Z < 0] <- 0
 
+# Calculer métriques raster
 metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
+
 chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
 chm[is.na(chm) | chm < 0] <- 0
 segms <- lidaRtRee::tree_segmentation(chm)
@@ -4966,6 +4813,7 @@ metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raste
 metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
 metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
 
+# Prédiction
 prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
 ```
 
@@ -5018,50 +4866,29 @@ par(mfrow = c(1, 1))
 Les cartes de prédiction sont exportées au format GeoTIFF et les statistiques de synthèse sont calculées.
 
 ```{r ex-8-7-setup, message=FALSE, warning=FALSE}
-pattern_zone <- "Verc-(02|05|06|C1|C2|S4|S7)"
-class_points <- c(0, 1, 2, 3, 4, 5, 12)
-h_points <- 60
-aba_res_chm <- 0.5
-resolution <- 25
-p_radius <- 15
-
-data("quatre_montagnes", package = "lidaRtRee", envir = environment())
-plots <- quatre_montagnes[grepl(paste0("^", pattern_zone, "-"), quatre_montagnes$plot_id), ]
-
 # Répertoire des données
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
+output_dir <- data_dir
 
-# Charger LAZ NORMALISÉS pré-extraits (exercice 6.5)
+# Charger les modèles et paramètres (exercice 7.10)
+load(file.path(data_dir, "models_aba.rda"))
+
+resolution <- 25
+
+# Charger LAZ NORMALISÉS pré-extraits
 plots_extracted_norm <- file.path(data_dir, "plots_extracted_norm")
 laz_norm_files <- list.files(plots_extracted_norm, pattern = "\\.laz$", full.names = TRUE)
 llas_height <- purrr::map(laz_norm_files, lidR::readLAS)
 names(llas_height) <- gsub("\\.laz$", "", basename(laz_norm_files))
 
-common_ids <- intersect(plots$plot_id, names(llas_height))
-plots <- plots[plots$plot_id %in% common_ids, ]
-llas_height <- llas_height[plots$plot_id]
-
-llas_height <- lapply(llas_height, function(x)
-  lidR::filter_poi(x, is.element(Classification, class_points) & Z <= h_points))
-llas_height <- lapply(llas_height, function(x) { x$Z[x$Z < 0] <- 0; x })
-
-aba_point_metrics_fun <- ~ lidaRtRee::aba_metrics(Z, Intensity, ReturnNumber, Classification, 2)
-metrics_points <- lidaRtRee::clouds_metrics(llas_height, aba_point_metrics_fun)
-metrics_trees <- lidaRtRee::clouds_tree_metrics(llas_height, plots[, c("X", "Y")], 15,
-  res = aba_res_chm, func = function(x) lidaRtRee::std_tree_metrics(x, pi * 15^2 / 10000))
-metrics_terrain <- mapply(function(x, y) lidaRtRee::terrain_points_metrics(x, plots[y, c("X", "Y")], 15),
-  x = llas_height, y = as.list(1:length(llas_height)), SIMPLIFY = FALSE)
-metrics_terrain <- do.call(rbind, metrics_terrain)
-rownames(metrics_terrain) <- names(llas_height)
-metrics <- cbind(metrics_points[plots$plot_id, ], metrics_trees[plots$plot_id, ],
-                 metrics_terrain[plots$plot_id, 1:3])
-model_aba <- lidaRtRee::aba_build_model(plots[, "G_m2_ha"], metrics,
-  transform = "boxcox", nmax = 4, xy = plots[, c("X", "Y")])
-
+# Fusionner et filtrer
 point_cloud <- do.call(rbind, llas_height[1:min(4, length(llas_height))])
 point_cloud <- lidR::filter_poi(point_cloud, is.element(Classification, class_points) & Z <= h_points)
 point_cloud$Z[point_cloud$Z < 0] <- 0
+
+# Calculer métriques raster
 metrics_points_raster <- lidR::pixel_metrics(point_cloud, aba_point_metrics_fun, res = resolution)
+
 chm <- lidR::rasterize_canopy(point_cloud, res = aba_res_chm, algorithm = lidR::p2r())
 chm[is.na(chm) | chm < 0] <- 0
 segms <- lidaRtRee::tree_segmentation(chm)
@@ -5075,11 +4902,14 @@ point_cloud_ground <- lidR::filter_poi(point_cloud, Classification %in% c(2, 9))
 metrics_terrain_raster <- lidR::pixel_metrics(point_cloud_ground, ~ f_terrain(X, Y, Z), res = resolution)
 if ("adjR2_plane" %in% names(metrics_terrain_raster))
   metrics_terrain_raster <- terra::subset(metrics_terrain_raster, which(names(metrics_terrain_raster) != "adjR2_plane"))
+
 metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
 metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
 metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
 metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
 metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
+
+# Prédiction et nettoyage
 prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
 
 if ("pzabove2" %in% names(metrics_map)) {
@@ -5088,13 +4918,6 @@ if ("pzabove2" %in% names(metrics_map)) {
   forest_mask <- NULL
 }
 prediction_clean <- lidaRtRee::clean_raster(prediction_map, c(0, 80), forest_mask)
-
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  output_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  output_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
-}
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 ```
 
 ```{r ex-8-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-7-setup"}
