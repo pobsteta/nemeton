@@ -4539,8 +4539,14 @@ if (file.exists(vrt_points) && n_existing >= n_laz) {
   metric_tiles <- list.files(tiles_dir_points, pattern = "\\.tif$", full.names = TRUE)
   cat("Tuiles totales:", length(metric_tiles), "\n")
 
+  # Récupérer les noms de couches depuis une tuile (le VRT peut les perdre)
+  tile_names <- names(terra::rast(metric_tiles[1]))
+
   # Créer/recréer le VRT (assemblage virtuel sans copie)
   metrics_points_raster <- terra::vrt(metric_tiles, vrt_points, overwrite = TRUE)
+
+  # Restaurer les noms de couches
+  names(metrics_points_raster) <- tile_names
   cat("VRT créé:", basename(vrt_points), "\n")
 }
 
@@ -4866,8 +4872,14 @@ if (file.exists(vrt_terrain) && n_existing >= n_laz) {
   terrain_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
   cat("Tuiles totales:", length(terrain_tiles), "\n")
 
+  # Récupérer les noms de couches depuis une tuile (le VRT peut les perdre)
+  tile_names <- names(terra::rast(terrain_tiles[1]))
+
   # Créer/recréer le VRT (assemblage virtuel sans copie)
   metrics_terrain_raster <- terra::vrt(terrain_tiles, vrt_terrain, overwrite = TRUE)
+
+  # Restaurer les noms de couches
+  names(metrics_terrain_raster) <- tile_names
   cat("VRT créé:", basename(vrt_terrain), "\n")
 
   # Retirer adjR2_plane si présent (statistique de qualité du plan ajusté)
