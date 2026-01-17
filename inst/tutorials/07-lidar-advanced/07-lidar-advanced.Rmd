@@ -4491,10 +4491,10 @@ if (file.exists(vrt_points) && n_existing >= n_laz) {
     cat(">>> Nouveau calcul de toutes les tuiles\n\n")
   }
 
-  # Configuration parallélisation avec future
+  # Configuration parallélisation
   library(future)
   plan(multisession, workers = N_CORES)
-  cat("Parallélisation: future avec", N_CORES, "workers\n\n")
+  lidR::set_lidr_threads(N_CORES)
 
   # Créer le LAScatalog
   filter_cata_height <- paste(c("-keep_class", class_points,
@@ -4512,7 +4512,9 @@ if (file.exists(vrt_points) && n_existing >= n_laz) {
   lidR::opt_output_files(cata_height) <- file.path(tiles_dir_points,
                                                     "metrics_{XLEFT}_{YBOTTOM}")
 
-  cat("Configuration LAScatalog:\n")
+  cat("Configuration:\n")
+  cat("  - future workers:", N_CORES, "\n")
+  cat("  - lidR threads:", lidR::get_lidr_threads(), "\n")
   cat("  - Tuiles à traiter:", nrow(cata_height), "\n")
   cat("  - Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
   cat("  - Sortie:", basename(tiles_dir_points), "/\n")
@@ -4634,9 +4636,10 @@ if (file.exists(cache_trees)) {
       cat("   >>> Reprise (", n_existing_chm, "/", n_laz, " tuiles existantes)\n")
     }
 
-    # Configuration parallélisation avec future
+    # Configuration parallélisation
     library(future)
     plan(multisession, workers = N_CORES)
+    lidR::set_lidr_threads(N_CORES)
 
     # Créer le LAScatalog
     filter_cata_height <- paste(c("-keep_class", class_points,
@@ -4654,6 +4657,8 @@ if (file.exists(cache_trees)) {
     lidR::opt_output_files(cata_height) <- file.path(tiles_dir_chm,
                                                       "chm_{XLEFT}_{YBOTTOM}")
 
+    cat("   future workers:", N_CORES, "\n")
+    cat("   lidR threads:", lidR::get_lidr_threads(), "\n")
     cat("   Tuiles à traiter:", nrow(cata_height), "\n")
     cat("   Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
     cat("   Note: lidR saute les tuiles existantes\n")
@@ -4804,10 +4809,10 @@ if (file.exists(vrt_terrain) && n_existing >= n_laz) {
     cat(">>> Nouveau calcul de toutes les tuiles\n\n")
   }
 
-  # Configuration parallélisation avec future
+  # Configuration parallélisation
   library(future)
   plan(multisession, workers = N_CORES)
-  cat("Parallélisation: future avec", N_CORES, "workers\n\n")
+  lidR::set_lidr_threads(N_CORES)
 
   # Fonction pour terrain_points_metrics
   f_terrain <- function(x, y, z) {
@@ -4830,7 +4835,9 @@ if (file.exists(vrt_terrain) && n_existing >= n_laz) {
   lidR::opt_output_files(cata_ground) <- file.path(tiles_dir_terrain,
                                                     "terrain_{XLEFT}_{YBOTTOM}")
 
-  cat("Configuration LAScatalog:\n")
+  cat("Configuration:\n")
+  cat("  - future workers:", N_CORES, "\n")
+  cat("  - lidR threads:", lidR::get_lidr_threads(), "\n")
   cat("  - Tuiles à traiter:", nrow(cata_ground), "\n")
   cat("  - Filtre:", filter_ground, "(points sol uniquement)\n")
   cat("  - Buffer:", lidR::opt_chunk_buffer(cata_ground), "m\n")
