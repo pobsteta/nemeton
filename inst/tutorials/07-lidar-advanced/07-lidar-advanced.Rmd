@@ -4021,11 +4021,16 @@ cat("━━━━━━━━━━━━━━━━━━━━━━━━━
 # Arrondir uniquement les colonnes numériques
 num_cols <- sapply(model_stats, is.numeric)
 model_stats[, num_cols] <- round(model_stats[, num_cols], 3)
-print(model_stats[, c("n", "adjR2", "looR2", "rmse", "cvrmse")])
+
+# Renommer pour clarté et convertir cvrmse en %
+stats_display <- model_stats[, c("n", "adjR2", "looR2", "rmse", "cvrmse")]
+stats_display$cvrmse <- stats_display$cvrmse * 100
+colnames(stats_display) <- c("n", "adjR2", "looR2", "RMSE", "RMSE%")
+print(stats_display)
 
 cat("\nINTERPRÉTATION:\n")
 cat("- adjR2 > 0.7 : bon modèle | > 0.8 : très bon\n")
-cat("- CV-R2 : performance en validation croisée\n")
+cat("- looR2 : R² en validation croisée leave-one-out\n")
 cat("- RMSE% < 20% : acceptable | < 15% : bon\n")
 
 # Visualisation
