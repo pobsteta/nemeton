@@ -5545,12 +5545,22 @@ resolution <- 25
 
 # Fichiers cache (exercices 8.2-8.5)
 vrt_prediction <- file.path(output_dir_rasters, "prediction.vrt")
+vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
 
 # Carte d'occupation des sols OSO (CESBIO)
 oso_file <- file.path(data_dir, "oso_cache", "oso.tif")
 
 # Charger la prédiction depuis le cache (exercice 8.5)
 prediction_map <- terra::rast(vrt_prediction)
+
+# Charger les métriques points pour zmean (hauteur de Lorey)
+metrics_points <- terra::rast(vrt_points)
+# Restaurer les noms depuis un fichier TIF
+tiles_points <- list.files(file.path(output_dir_rasters, "tiles_metrics_points"),
+                           pattern = "\\.tif$", full.names = TRUE)
+if (length(tiles_points) > 0) {
+  names(metrics_points) <- names(terra::rast(tiles_points[1]))
+}
 ```
 
 ```{r ex-8-6, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-6-setup"}
@@ -5636,12 +5646,26 @@ cat("  - Écart-type:", round(sd(g_values), 1), "m²/ha\n")
 cat("  - Min:", round(min(g_values), 1), "m²/ha\n")
 cat("  - Max:", round(max(g_values), 1), "m²/ha\n\n")
 
-# Estimation du stock total
-g_total <- sum(g_values) * (resolution^2) / 10000  # Somme pondérée par surface pixel
+# Hauteur de Lorey (hauteur pondérée par la surface terrière)
+# H_Lorey = Σ(H × G) / Σ(G)
+zmean_layer <- metrics_points[["zmean"]]
+zmean_masked <- terra::mask(zmean_layer, prediction_clean)
+zmean_values <- terra::values(zmean_masked)
+zmean_values <- zmean_values[!is.na(zmean_values) & !is.na(g_values)]
+g_for_lorey <- g_values[!is.na(terra::values(zmean_masked))]
 
-cat("STOCK ESTIMÉ:\n")
-cat("  - Surface terrière totale:", round(g_total, 0), "m²\n")
-cat("  - G moyenne pondérée:", round(g_total / surface_ha, 1), "m²/ha\n\n")
+# Filtrer les valeurs valides (G > 0 pour éviter division par 0)
+valid_idx <- g_for_lorey > 0 & zmean_values > 0
+zmean_valid <- zmean_values[valid_idx]
+g_valid <- g_for_lorey[valid_idx]
+
+h_lorey <- sum(zmean_valid * g_valid) / sum(g_valid)
+
+cat("HAUTEUR DE LOREY:\n")
+cat("  - H_Lorey:", round(h_lorey, 1), "m\n")
+cat("  - H_min:", round(min(zmean_valid), 1), "m\n")
+cat("  - H_max:", round(max(zmean_valid), 1), "m\n")
+cat("  - H_mean:", round(mean(zmean_valid), 1), "m\n\n")
 
 # Qualité du modèle
 cat("QUALITÉ DU MODÈLE:\n")
@@ -5697,26 +5721,62 @@ quiz(
 ```
 
 
-## Section 9 : Approche BABA - Alternative sans Placettes
+## Section 9 : Approche BABA - Cartographie Exploratoire
 
-*Approche alternative quand les données terrain sont limitées ou inexistantes*
+*Cartographie rapide des métriques LiDAR brutes, sans calibration terrain*
 
 ### Principe du BABA (Buffered Area-Based Approach)
 
-Le **BABA** est une approche complémentaire à l'ABA classique, particulièrement utile quand :
+Le **BABA** est une approche de cartographie **exploratoire** qui produit des cartes de métriques LiDAR brutes (hauteurs, couverture, etc.) sans nécessiter de placettes terrain.
 
-- Les placettes terrain sont **insuffisantes** pour calibrer des modèles robustes
-- On souhaite une **cartographie exploratoire** rapide des métriques LiDAR
-- On veut produire des cartes à **haute résolution** avec des fenêtres de calcul plus grandes
+**ATTENTION : BABA ne calcule PAS les variables forestières (G, V, N)**
 
-**Différences clés avec l'ABA classique :**
+Contrairement à l'ABA classique (sections 6-8), le BABA :
+
+- **Ne prédit PAS** la surface terrière (G), le volume (V), ou la densité (N)
+- **Produit uniquement** des métriques dérivées du nuage de points LiDAR
+- **Ne nécessite pas** de calibration car il n'y a pas de modèle prédictif
+
+**Pourquoi utiliser BABA ?**
+
+- **Exploration rapide** : visualiser la structure forestière sans données terrain
+- **Données limitées** : quand on n'a pas assez de placettes pour calibrer un modèle ABA
+- **Haute résolution** : possibilité de pixels fins avec fenêtres de calcul plus grandes
+- **Analyse qualitative** : identifier des zones d'intérêt avant un inventaire terrain
+
+**Comparaison ABA vs BABA :**
 
 | Aspect | ABA classique (sections 6-8) | BABA |
 |--------|------------------------------|------|
-| Calibration | Modèles statistiques sur placettes | Pas de calibration |
-| Sortie | Variables forestières (G, V, N) | Métriques LiDAR brutes |
+| Données terrain | **Requises** (placettes) | Non requises |
+| Calibration | Modèles statistiques | Aucune |
+| Sortie | **Variables forestières** (G, V, N) | **Métriques LiDAR** (zmax, zmean, p95...) |
+| Interprétation | Quantitative (m²/ha, m³/ha) | Qualitative (hauteurs en m, % couverture) |
 | Résolution | Dépend de la densité de placettes | Libre (pixels fins possibles) |
-| Fenêtre | Surface de la placette | Paramétrable indépendamment |
+
+### BABA vs Focal : quelle différence ?
+
+On pourrait penser que BABA est équivalent à appliquer `focal()` sur un raster (CHM). En réalité, il y a une différence fondamentale :
+
+| Aspect | BABA (lasR rasterize) | Focal sur raster (CHM) |
+|--------|----------------------|------------------------|
+| Données source | Nuage de points 3D | Raster 2D déjà agrégé |
+| Calcul | Sur TOUS les points dans la fenêtre | Sur les valeurs de pixels voisins |
+| Information | Accès aux points bruts | Perte d'info par agrégation préalable |
+
+**Exemple :**
+
+- **BABA `p95`** : percentile 95 calculé sur ~50 000 points LiDAR dans la fenêtre 30×30m
+- **Focal `p95` sur CHM 1m** : percentile 95 calculé sur 900 valeurs de pixels (déjà des max)
+
+**En pratique :**
+
+- `zmax` : quasi identique (le max reste le max)
+- `zmean` : différent (BABA = moyenne de tous les points, Focal = moyenne des max par cellule)
+- `p95` : très différent (BABA = vrai percentile sur points, Focal = percentile de valeurs déjà agrégées)
+- `above2` (couverture) : impossible avec Focal sur CHM (information perdue lors de la rastérisation)
+
+**Conclusion :** Si vous avez déjà un CHM et voulez juste le lisser, `focal()` suffit. BABA est utile pour les métriques de distribution (percentiles, couverture, strates) calculées directement sur les points bruts.
 
 ### Exercice 9.1 : Métriques BABA avec lasR
 
@@ -5732,26 +5792,22 @@ data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutoria
 # LAZ normalisés (données utilisateur)
 laz_dir <- file.path(data_dir, "result_laz_normalized")
 
-# Répertoire de sortie
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  output_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
-} else {
-  output_dir <- normalizePath(file.path(path.expand("~"), "nemeton_tutorial_data"), mustWork = FALSE)
-}
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+# CHM filled existant (créé dans section 3)
+chm_filled_vrt <- file.path(data_dir, "c_filled_complet.vrt")
+
+# Répertoire de sortie BABA
+output_dir_baba <- file.path(data_dir, "result_baba")
+dir.create(output_dir_baba, recursive = TRUE, showWarnings = FALSE)
+
+# Configuration parallélisation
+N_CORES <- 4L
 ```
 
 ```{r ex-9-1, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-9-1-setup"}
-cat("=== BABA (Buffered Area-Based Approach) avec lasR ===\n\n")
+cat("=== BABA vs Focal : Démonstration sur 4 dalles ===\n\n")
 
-cat("AVANTAGES DU BABA:\n")
-cat("─────────────────────────────────────────────────────\n")
-cat("1. Résolution ≠ fenêtre : pixels 10m, calcul sur 30m\n")
-cat("2. Compatible placettes : fenêtre ~900m² ≈ placettes ~707m²\n")
-cat("3. Lissage + précision : métriques stables, cartes fines\n")
-cat("4. Pas d'effets de bord : fenêtres chevauchantes\n")
-cat("5. Ultra-rapide : lasR en C++ avec parallélisation\n")
-cat("6. Pas besoin de placettes terrain pour l'exploration\n\n")
+cat("OBJECTIF: Montrer la différence entre BABA et Focal sans buffer\n")
+cat("─────────────────────────────────────────────────────────────\n\n")
 
 if (!requireNamespace("lasR", quietly = TRUE)) {
   cat("lasR n'est pas installé. Installez-le avec:\n")
@@ -5759,83 +5815,125 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
 } else {
   library(lasR)
 
-  # Lister tous les fichiers LAZ normalisés
-  laz_files <- dir(laz_dir,
-                   pattern = "\\.laz$",
-                   full.names = TRUE)
-  cat("Fichiers LAZ:", length(laz_files), "\n")
-  if (length(laz_files) == 0) {
-    cat("ERREUR: Aucun fichier LAZ trouvé dans:", laz_dir, "\n")
-    stop("Fichiers LAZ manquants")
+  # Sélectionner 4 dalles LAZ pour la démonstration
+  all_laz <- dir(laz_dir, pattern = "\\.laz$", full.names = TRUE)
+  if (length(all_laz) == 0) {
+    stop("Aucun fichier LAZ trouvé dans: ", laz_dir)
   }
-  cat("Premier fichier:", basename(laz_files[1]), "\n\n")
+  laz_files <- head(all_laz, 4)
+  cat("Dalles sélectionnées:", length(laz_files), "\n")
+  cat(paste("  -", basename(laz_files), collapse = "\n"), "\n\n")
+
+  # Calculer l'emprise des 4 dalles pour le crop
+  headers <- lapply(laz_files, function(f) {
+    lidR::readLASheader(f)
+  })
+  xmin <- min(sapply(headers, function(h) h@PHB$`Min X`))
+  xmax <- max(sapply(headers, function(h) h@PHB$`Max X`))
+  ymin <- min(sapply(headers, function(h) h@PHB$`Min Y`))
+  ymax <- max(sapply(headers, function(h) h@PHB$`Max Y`))
+  demo_extent <- terra::ext(xmin, xmax, ymin, ymax)
+  cat("Emprise de démonstration:", round(xmax - xmin), "x", round(ymax - ymin), "m\n\n")
 
   # ==========================================================================
-  # COMPARAISON ABA vs BABA
+  # 1. MÉTHODE BABA : calcul direct sur points avec fenêtre glissante
   # ==========================================================================
-  cat("--- Comparaison ABA classique vs BABA ---\n\n")
+  cat("=== 1. BABA (fenêtre 30m sur points bruts) ===\n\n")
 
-  cat("ABA classique (sections 6-8):\n")
-  cat("  - Métriques extraites aux placettes → modèles → prédiction\n")
-  cat("  - Sortie: variables forestières (G, V, N en m²/ha, m³/ha, N/ha)\n\n")
-
-  cat("BABA (cet exercice):\n")
-  cat("  - Métriques rasterisées directement avec fenêtre glissante\n")
-  cat("  - Sortie: métriques LiDAR brutes (zmax, zmean, p95, etc.)\n")
-  cat("  - res = c(10, 30) : pixel 10m, fenêtre 30m\n\n")
-
-  # Pipeline BABA
-  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  output_file <- file.path(output_dir, "metriques_baba.tif")
+  output_baba <- file.path(output_dir_baba, "zmean_baba.tif")
 
   pipeline_baba <- reader_las() +
     rasterize(
-      res = c(10, 30),  # 10m sortie, 30m fenêtre (~900 m²)
-      operators = c("max", "mean", "sd", "p95", "above2"),
-      ofile = output_file
+      res = c(10, 30),  # 10m sortie, 30m fenêtre
+      operators = "mean",
+      ofile = output_baba
     )
 
-  cat("Pipeline lasR:\n")
-  print(pipeline_baba)
-
-  # Exécution
-  cat("\n--- Exécution BABA ---\n")
-  N_CORES <- min(4L, parallel::detectCores() - 1L)
-  cat("Cores:", N_CORES, "\n")
-
   t0 <- Sys.time()
-  ans <- exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
-  t1 <- Sys.time()
+  exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
+  t_baba <- round(difftime(Sys.time(), t0, units = "secs"), 1)
 
-  cat("\nTemps d'exécution:", round(difftime(t1, t0, units = "secs"), 1), "secondes\n")
-  cat("Fichier créé:", output_file, "\n")
+  baba_result <- terra::rast(output_baba)
+  names(baba_result) <- "zmean_baba"
+  cat("BABA terminé en", t_baba, "sec\n")
+  cat("  Résolution:", terra::res(baba_result)[1], "m\n\n")
 
-  # Charger et afficher le résultat
-  if (file.exists(output_file)) {
-    baba <- terra::rast(output_file)
-    cat("\nRésultat BABA:\n")
-    cat("  Dimensions:", terra::ncol(baba), "×", terra::nrow(baba), "pixels\n")
-    cat("  Résolution:", terra::res(baba)[1], "m\n")
-    cat("  Nombre de couches:", terra::nlyr(baba), "\n")
-    cat("  Couches:", paste(names(baba), collapse = ", "), "\n")
+  # ==========================================================================
+  # 2. MÉTHODE FOCAL : CHM existant puis focal mean (SANS buffer = artefacts)
+  # ==========================================================================
+  cat("=== 2. Focal sur CHM existant (section 3) ===\n\n")
 
-    # Visualisation (si couches valides)
-    if (terra::nlyr(baba) >= 5) {
-      par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
-      terra::plot(baba[[1]], main = "Zmax (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-      terra::plot(baba[[2]], main = "Zmean (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-      terra::plot(baba[[4]], main = "Zp95 (m)", col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-      terra::plot(baba[[5]], main = "Couverture > 2m", col = grDevices::hcl.colors(50, "YlGn", rev = TRUE))
-    } else {
-      cat("Attention: moins de 5 couches produites\n")
-    }
-
-    cat("\nConclusion:\n")
-    cat("- BABA produit directement des cartes raster de métriques LiDAR\n")
-    cat("- Utile pour l'exploration ou quand les placettes sont limitées\n")
-    cat("- Pour des variables forestières (G, V), préférez l'ABA avec calibration\n")
+  if (!file.exists(chm_filled_vrt)) {
+    cat("ERREUR: CHM non trouvé:", chm_filled_vrt, "\n")
+    cat("Exécutez d'abord la section 3.\n")
   } else {
-    cat("\nERREUR: fichier non créé:", output_file, "\n")
+    # Charger le CHM filled et cropper sur l'emprise des 4 dalles
+    chm_full <- terra::rast(chm_filled_vrt)
+    chm_crop <- terra::crop(chm_full, demo_extent)
+    cat("CHM chargé depuis section 3 (résolution:", terra::res(chm_crop)[1], "m)\n")
+
+    # Appliquer focal mean avec fenêtre 30×30 pixels (= 30m sur CHM 1m)
+    t0 <- Sys.time()
+    focal_window <- matrix(1, nrow = 31, ncol = 31)  # 31x31 pour centrer sur pixel
+    focal_result <- terra::focal(chm_crop, w = focal_window, fun = "mean", na.rm = TRUE)
+    names(focal_result) <- "zmean_focal"
+
+    # Rééchantillonner à 10m pour comparaison
+    focal_10m <- terra::aggregate(focal_result, fact = 10, fun = "mean", na.rm = TRUE)
+    t_focal <- round(difftime(Sys.time(), t0, units = "secs"), 1)
+    cat("Focal mean calculé en", t_focal, "sec\n\n")
+
+    # ========================================================================
+    # 3. COMPARAISON VISUELLE
+    # ========================================================================
+    cat("=== 3. Comparaison des résultats ===\n\n")
+
+    # Aligner les deux rasters
+    focal_aligned <- terra::resample(focal_10m, baba_result, method = "bilinear")
+
+    # Calculer la différence
+    diff_raster <- baba_result - focal_aligned
+    names(diff_raster) <- "difference"
+
+    cat("Statistiques BABA (zmean sur points):\n")
+    cat("  Min:", round(terra::minmax(baba_result)[1], 2), "m\n")
+    cat("  Max:", round(terra::minmax(baba_result)[2], 2), "m\n")
+    cat("  Mean:", round(mean(terra::values(baba_result), na.rm = TRUE), 2), "m\n\n")
+
+    cat("Statistiques Focal (mean sur CHM max):\n")
+    cat("  Min:", round(terra::minmax(focal_aligned)[1], 2), "m\n")
+    cat("  Max:", round(terra::minmax(focal_aligned)[2], 2), "m\n")
+    cat("  Mean:", round(mean(terra::values(focal_aligned), na.rm = TRUE), 2), "m\n\n")
+
+    cat("Différence (BABA - Focal):\n")
+    diff_vals <- terra::values(diff_raster)
+    diff_vals <- diff_vals[!is.na(diff_vals)]
+    cat("  Min:", round(min(diff_vals), 2), "m\n")
+    cat("  Max:", round(max(diff_vals), 2), "m\n")
+    cat("  Mean:", round(mean(diff_vals), 2), "m\n")
+    cat("  RMSE:", round(sqrt(mean(diff_vals^2)), 2), "m\n\n")
+
+    # Visualisation
+    par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
+    terra::plot(baba_result, main = "BABA: zmean sur points",
+                col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+    terra::plot(focal_aligned, main = "Focal: mean sur CHM",
+                col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
+    terra::plot(diff_raster, main = "Différence (BABA - Focal)",
+                col = grDevices::hcl.colors(50, "RdBu"))
+    hist(diff_vals, breaks = 50, main = "Distribution des différences",
+         xlab = "Différence (m)", col = "steelblue")
+    par(mfrow = c(1, 1))
+
+    # Sauvegarder les résultats
+    terra::writeRaster(diff_raster, file.path(output_dir_baba, "diff_baba_focal.tif"),
+                       overwrite = TRUE)
+
+    cat("\n=== CONCLUSION ===\n")
+    cat("BABA calcule zmean sur TOUS les points dans la fenêtre.\n")
+    cat("Focal calcule la moyenne des HAUTEURS MAX (CHM) des pixels.\n")
+    cat("→ zmean BABA < zmean Focal car Focal utilise les max (CHM).\n")
+    cat("→ La différence reflète l'écart entre moyenne des points et moyenne des max.\n")
   }
 }
 ```
@@ -5856,6 +5954,13 @@ quiz(
     answer("Résolution 10m en sortie, fenêtre 30m pour le calcul", correct = TRUE),
     answer("10% de décimation, 30m de buffer"),
     answer("10 bandes, 30 bits"),
+    allow_retry = TRUE
+  ),
+  question("Quelle différence entre BABA et focal() sur un CHM ?",
+    answer("Aucune, c'est équivalent"),
+    answer("BABA calcule sur les points bruts, focal sur un raster déjà agrégé", correct = TRUE),
+    answer("Focal est plus précis car il utilise plus de données"),
+    answer("BABA ne fonctionne qu'avec des fenêtres carrées"),
     allow_retry = TRUE
   ),
   question("Quelle est la principale limite du BABA ?",
