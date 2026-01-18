@@ -6,6 +6,10 @@
 .Rprofile
 *.Rproj
 
+# Spec-kit (development artifacts)
+specs/
+.specify/
+
 # Compiled files
 *.o
 *.so
