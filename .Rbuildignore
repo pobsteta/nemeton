@@ -21,3 +21,10 @@
 ^data-raw$
 ^doc$
 ^Meta$
+^\.lintr$
+^sticker_nemeton\.R$
+^TUTORIAL_INSTALL\.md$
+^\.RData$
+^\.Rhistory$
+^\.Rprofile$
+^Rplots\.pdf$

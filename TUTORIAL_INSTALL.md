@@ -1,6 +1,6 @@
 # Installation des Tutoriels nemeton
 
-Ce guide détaille l'installation complète pour exécuter les 6 tutoriels interactifs nemeton.
+Ce guide détaille l'installation complète pour exécuter les 7 tutoriels interactifs nemeton.
 
 ## Prérequis Système
 
@@ -67,7 +67,20 @@ install.packages(c(
 ))
 ```
 
-### 5. Packages Analyse (Tutorial 06)
+### 5. Packages LiDAR Avancé (Tutorial 07)
+
+```r
+# lasR depuis r-universe (pipelines C++ ultra-rapides)
+install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
+
+# lidaRtRee pour segmentation arbres et ABA
+install.packages("lidaRtRee")
+
+# Parallélisation
+install.packages(c("future", "future.apply"))
+```
+
+### 6. Packages Analyse (Tutorial 06)
 
 ```r
 install.packages(c(
@@ -78,7 +91,7 @@ install.packages(c(
 ))
 ```
 
-### 6. Package nemeton
+### 7. Package nemeton
 
 ```r
 # Depuis GitHub (dernière version)
@@ -100,6 +113,7 @@ check_nemeton_tutorials <- function() {
     tutorials = c("learnr", "gradethis", "rappdirs"),
     ign = c("happign"),
     lidar = c("lidR"),
+    lidar_avance = c("lasR", "lidaRtRee", "future", "future.apply"),
     analysis = c("leaflet", "corrplot", "patchwork", "fmsb")
   )
 
@@ -168,12 +182,13 @@ learnr::run_tutorial("01-acquisition", package = "nemeton")
 
 ```r
 # Suivre l'ordre pour une progression logique
-learnr::run_tutorial("01-acquisition", package = "nemeton")  # 45 min
-learnr::run_tutorial("02-lidar", package = "nemeton")        # 60 min
-learnr::run_tutorial("03-terrain", package = "nemeton")      # 40 min
-learnr::run_tutorial("04-ecological", package = "nemeton")   # 40 min
-learnr::run_tutorial("05-complete", package = "nemeton")     # 40 min
-learnr::run_tutorial("06-analysis", package = "nemeton")     # 50 min
+learnr::run_tutorial("01-acquisition", package = "nemeton")    # 45 min
+learnr::run_tutorial("02-lidar", package = "nemeton")          # 60 min
+learnr::run_tutorial("03-terrain", package = "nemeton")        # 40 min
+learnr::run_tutorial("04-ecological", package = "nemeton")     # 40 min
+learnr::run_tutorial("05-complete", package = "nemeton")       # 40 min
+learnr::run_tutorial("06-analysis", package = "nemeton")       # 50 min
+learnr::run_tutorial("07-lidar-advanced", package = "nemeton") # 90 min (optionnel)
 ```
 
 ## Structure du Cache
@@ -240,3 +255,5 @@ install.packages("xxx")
 - **Issues** : https://github.com/pobsteta/nemeton/issues
 - **API IGN** : https://geoservices.ign.fr/
 - **lidR** : https://r-lidar.github.io/lidRbook/
+- **lasR** : https://r-lidar.github.io/lasR/
+- **lidaRtRee** : https://lidar.pages-forge.inrae.fr/lidaRtRee/

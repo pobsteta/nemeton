@@ -5891,16 +5891,16 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
     cat("CHM chargé depuis section 3 (résolution:", terra::res(chm_crop)[1], "m)\n")
     cat("Filtrage appliqué: 0m <= z <= 60m\n")
 
-    # Appliquer focal mean avec fenêtre 30×30 pixels (= 30m sur CHM 1m)
+    # Appliquer focal mean avec fenêtre ~30m (CHM à 0.5m → 61×61 pixels = 30.5m)
     t0 <- Sys.time()
-    focal_window <- matrix(1, nrow = 31, ncol = 31)  # 31x31 pour centrer sur pixel
+    focal_window <- matrix(1, nrow = 61, ncol = 61)  # 61 × 0.5m = 30.5m
     focal_result <- terra::focal(chm_crop, w = focal_window, fun = "mean", na.rm = TRUE)
     names(focal_result) <- "zmean_focal"
 
-    # Rééchantillonner à 10m pour comparaison
-    focal_10m <- terra::aggregate(focal_result, fact = 10, fun = "mean", na.rm = TRUE)
+    # Rééchantillonner à 10m pour comparaison (0.5m × 20 = 10m)
+    focal_10m <- terra::aggregate(focal_result, fact = 20, fun = "mean", na.rm = TRUE)
     t_focal <- round(difftime(Sys.time(), t0, units = "secs"), 1)
-    cat("Focal mean calculé en", t_focal, "sec\n\n")
+    cat("Focal mean calculé en", t_focal, "sec (fenêtre 30m, sortie 10m)\n\n")
 
     # ========================================================================
     # 3. COMPARAISON VISUELLE

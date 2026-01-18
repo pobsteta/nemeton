@@ -26,6 +26,8 @@
 # pkgdown
 # docs/ - Removed to allow pkgdown site deployment
 nemeton.Rcheck/
+..Rcheck/
+*.Rcheck/
 
 # Package management
 packrat/

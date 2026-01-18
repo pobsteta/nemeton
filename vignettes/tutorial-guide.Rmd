@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Le package **nemeton** propose une série de 6 tutoriels interactifs basés sur [learnr](https://rstudio.github.io/learnr/) pour apprendre à calculer les 32 indicateurs forestiers des 12 familles nemeton.
+Le package **nemeton** propose une série de 7 tutoriels interactifs basés sur [learnr](https://rstudio.github.io/learnr/) pour apprendre à calculer les 32 indicateurs forestiers des 12 familles nemeton.
 
 ## Prérequis
 
@@ -35,6 +35,11 @@ install.packages("happign")
 # Packages LiDAR (Tutorial 02)
 install.packages("lidR")
 
+# Packages LiDAR avancé (Tutorial 07)
+install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
+install.packages("lidaRtRee")
+install.packages(c("future", "future.apply"))
+
 # Packages visualisation (Tutorial 06)
 install.packages(c("leaflet", "corrplot", "patchwork", "fmsb"))
 
@@ -42,7 +47,7 @@ install.packages(c("leaflet", "corrplot", "patchwork", "fmsb"))
 remotes::install_github("pobsteta/nemeton")
 ```
 
-## Les 6 Tutoriels
+## Les 7 Tutoriels
 
 ### Vue d'ensemble
 
@@ -54,8 +59,9 @@ remotes::install_github("pobsteta/nemeton")
 | 4 | `04-ecological` | 40 min | B1-B3, L1-L3, C2, T1-T2, A2, F2, N1-N3 | Indicateurs écologiques (14) |
 | 5 | `05-complete` | 40 min | - | Assemblage, normalisation, I_nemeton |
 | 6 | `06-analysis` | 50 min | - | Analyse multi-critères et export |
+| 7 | `07-lidar-advanced` | 90 min | - | LiDAR avancé (LAScatalog, lasR, lidaRtRee, ABA) |
 
-**Durée totale estimée** : 4-5 heures
+**Durée totale estimée** : 6-7 heures
 
 ### Lancer un tutoriel
 
@@ -153,6 +159,26 @@ learnr::run_tutorial("01-acquisition", package = "nemeton")
 
 **Sortie** : Fichiers d'analyse et carte interactive
 
+### Tutorial 07 : LiDAR Avancé
+
+**Objectif** : Maîtriser le traitement LiDAR avancé avec LAScatalog, lasR et lidaRtRee.
+
+**Méthodes** :
+- **LAScatalog** : Gestion de gros volumes LiDAR multi-tuiles
+- **lasR** : Pipelines C++ ultra-performants (normalisation, DTM, CHM)
+- **Segmentation ITD** : Détection et segmentation d'arbres individuels
+- **Trouées et lisières** : Analyse de la structure forestière
+- **ABA** : Calibration et prédiction wall-to-wall avec placettes terrain
+- **BABA** : Exploration rapide sans calibration
+
+**Produits** :
+- `result_itd/` : Segmentation arbres (CHM, crowns, seeds, arbres.gpkg)
+- `rasters_aba/` : Métriques points, arbres, terrain (VRT)
+- `prediction_G_m2_ha.tif` : Carte surface terrière avec masque OSO
+- `result_baba/` : Métriques LiDAR brutes (exploration)
+
+**Note** : Ce tutoriel est complémentaire au Tutorial 02. Il utilise les données LiDAR téléchargées dans le Tutorial 01.
+
 ## Structure du Cache
 
 Les données sont stockées dans un répertoire persistant :
@@ -224,3 +250,5 @@ Les exercices LiDAR ont un timeout de 10 minutes. Relancez l'exercice si nécess
 - [Référentiel des 12 familles](https://pobsteta.github.io/nemeton/articles/complete-referential_fr.html)
 - [learnr documentation](https://rstudio.github.io/learnr/)
 - [lidR documentation](https://r-lidar.github.io/lidRbook/)
+- [lasR documentation](https://r-lidar.github.io/lasR/)
+- [lidaRtRee documentation](https://lidar.pages-forge.inrae.fr/lidaRtRee/)

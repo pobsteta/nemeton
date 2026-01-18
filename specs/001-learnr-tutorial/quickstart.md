@@ -22,7 +22,11 @@ remotes::install_github("Jean-Roc/lidarHD")
 
 # Packages LiDAR (pour Tutorial 02)
 install.packages("lidR")
+
+# Packages LiDAR avancé (pour Tutorial 07)
+install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
 install.packages("lidaRtRee")
+install.packages(c("future", "future.apply"))
 
 # Packages visualisation (pour Tutorial 06)
 install.packages(c("leaflet", "corrplot", "patchwork"))
@@ -68,8 +72,9 @@ nemeton::run_tutorial("01-acquisition")
 | 4 | `04-ecological` | 40 min | Indicateurs écologiques (B, L, T, N) |
 | 5 | `05-complete` | 40 min | Calcul complet et normalisation |
 | 6 | `06-analysis` | 50 min | Analyse multi-critères et export |
+| 7 | `07-lidar-advanced` | 90 min | LiDAR avancé (lasR, ITD, ABA, BABA) |
 
-**Durée totale estimée**: 4-5 heures
+**Durée totale estimée**: 6-7 heures (5-6h sans Tutorial 07)
 
 ---
 
@@ -104,19 +109,30 @@ unlink(file.path(cache_dir, "tutorial_data"), recursive = TRUE)
 ```r
 # Script de vérification
 check_tutorial_ready <- function() {
-  packages <- c("sf", "terra", "learnr", "gradethis", "happign", "rappdirs")
-  missing <- packages[!sapply(packages, requireNamespace, quietly = TRUE)]
-  
-  if (length(missing) > 0) {
-    cat("Packages manquants:\n")
-    cat(paste(" -", missing, collapse = "\n"), "\n")
-    cat("\nInstallez-les avec:\n")
-    cat(sprintf('install.packages(c("%s"))\n', paste(missing, collapse = '", "')))
+  # Packages de base (Tutorials 01-06)
+  packages_base <- c("sf", "terra", "learnr", "gradethis", "happign", "rappdirs", "lidR")
+  # Packages avancés (Tutorial 07)
+  packages_t07 <- c("lasR", "lidaRtRee", "future", "future.apply")
+
+  missing_base <- packages_base[!sapply(packages_base, requireNamespace, quietly = TRUE)]
+  missing_t07 <- packages_t07[!sapply(packages_t07, requireNamespace, quietly = TRUE)]
+
+  if (length(missing_base) > 0) {
+    cat("Packages manquants (Tutorials 01-06):\n")
+    cat(paste(" -", missing_base, collapse = "\n"), "\n")
     return(FALSE)
   }
-  
-  cat("✅ Tous les packages sont installés!\n")
-  cat("Lancez: learnr::run_tutorial('01-acquisition', 'nemeton')\n")
+
+  cat("✅ Packages de base installés (Tutorials 01-06)\n")
+
+  if (length(missing_t07) > 0) {
+    cat("⚠️  Packages Tutorial 07 manquants (optionnel):\n")
+    cat(paste(" -", missing_t07, collapse = "\n"), "\n")
+  } else {
+    cat("✅ Packages Tutorial 07 installés\n")
+  }
+
+  cat("\nLancez: learnr::run_tutorial('01-acquisition', 'nemeton')\n")
   return(TRUE)
 }
 
@@ -163,3 +179,5 @@ Les exercices LiDAR ont un timeout de 10 minutes. Si le téléchargement est plu
 - Issues GitHub: https://github.com/pobsteta/nemeton/issues
 - API IGN (happign): https://happign.fr/
 - lidR documentation: https://r-lidar.github.io/lidRbook/
+- lasR documentation: https://r-lidar.github.io/lasR/
+- lidaRtRee documentation: https://lidar.pages-forge.inrae.fr/lidaRtRee/
