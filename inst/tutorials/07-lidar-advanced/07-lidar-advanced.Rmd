@@ -5804,7 +5804,7 @@ N_CORES <- 4L
 ```
 
 ```{r ex-9-1, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-9-1-setup"}
-cat("=== BABA vs Focal : Démonstration sur 4 dalles ===\n\n")
+cat("=== BABA vs Focal : Démonstration sur 2 dalles ===\n\n")
 
 cat("OBJECTIF: Montrer la différence entre BABA et Focal sans buffer\n")
 cat("─────────────────────────────────────────────────────────────\n\n")
@@ -5820,11 +5820,11 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   if (length(all_laz) == 0) {
     stop("Aucun fichier LAZ trouvé dans: ", laz_dir)
   }
-  laz_files <- head(all_laz, 4)
+  laz_files <- head(all_laz, 2)
   cat("Dalles sélectionnées:", length(laz_files), "\n")
   cat(paste("  -", basename(laz_files), collapse = "\n"), "\n\n")
 
-  # Calculer l'emprise des 4 dalles pour le crop
+  # Calculer l'emprise des 2 dalles pour le crop
   headers <- lapply(laz_files, function(f) {
     lidR::readLASheader(f)
   })
@@ -5840,22 +5840,37 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
   # ==========================================================================
   cat("=== 1. BABA (fenêtre 30m sur points bruts) ===\n\n")
 
-  output_baba <- file.path(output_dir_baba, "zmean_baba.tif")
+  # Filtrage des points aberrants (z < 0 ou z > 60m)
+  cat("Filtrage des points: 0m <= z <= 60m\n\n")
 
-  pipeline_baba <- reader_las() +
+  # Répertoire pour les tuiles BABA
+  tiles_dir_baba <- file.path(output_dir_baba, "tiles_zmean")
+  dir.create(tiles_dir_baba, recursive = TRUE, showWarnings = FALSE)
+
+  # Joker '*' pour créer une tuile par fichier LAZ
+  output_baba_pattern <- file.path(tiles_dir_baba, "zmean_*.tif")
+
+  # Pipeline avec filtre sur Z (exclut points aberrants)
+  pipeline_baba <- reader_las(filter = "-drop_z_below 0 -drop_z_above 60") +
     rasterize(
       res = c(10, 30),  # 10m sortie, 30m fenêtre
       operators = "mean",
-      ofile = output_baba
+      ofile = output_baba_pattern
     )
 
   t0 <- Sys.time()
   exec(pipeline_baba, on = laz_files, ncores = N_CORES, progress = TRUE)
   t_baba <- round(difftime(Sys.time(), t0, units = "secs"), 1)
 
-  baba_result <- terra::rast(output_baba)
+  # Assembler les tuiles en VRT
+  baba_tiles <- list.files(tiles_dir_baba, pattern = "\\.tif$", full.names = TRUE)
+  baba_vrt <- file.path(output_dir_baba, "zmean_baba.vrt")
+  baba_result <- terra::vrt(baba_tiles, baba_vrt, overwrite = TRUE)
   names(baba_result) <- "zmean_baba"
+
   cat("BABA terminé en", t_baba, "sec\n")
+  cat("  Tuiles créées:", length(baba_tiles), "\n")
+  cat("  VRT:", basename(baba_vrt), "\n")
   cat("  Résolution:", terra::res(baba_result)[1], "m\n\n")
 
   # ==========================================================================
@@ -5867,10 +5882,14 @@ if (!requireNamespace("lasR", quietly = TRUE)) {
     cat("ERREUR: CHM non trouvé:", chm_filled_vrt, "\n")
     cat("Exécutez d'abord la section 3.\n")
   } else {
-    # Charger le CHM filled et cropper sur l'emprise des 4 dalles
+    # Charger le CHM filled et cropper sur l'emprise des 2 dalles
     chm_full <- terra::rast(chm_filled_vrt)
     chm_crop <- terra::crop(chm_full, demo_extent)
+
+    # Filtrer les valeurs aberrantes (z < 0 ou z > 60m)
+    chm_crop <- terra::clamp(chm_crop, lower = 0, upper = 60, values = TRUE)
     cat("CHM chargé depuis section 3 (résolution:", terra::res(chm_crop)[1], "m)\n")
+    cat("Filtrage appliqué: 0m <= z <= 60m\n")
 
     # Appliquer focal mean avec fenêtre 30×30 pixels (= 30m sur CHM 1m)
     t0 <- Sys.time()
@@ -6060,7 +6079,8 @@ Ce tutorial a couvert les principales méthodes d'analyse LiDAR forestière de l
   │ Section 3 : Segmentation d'Arbres Individuels           │
   │   - tree_segmentation() : détection + segmentation      │
   │   - tree_extraction() : extraction des attributs        │
-  │   → Produits : arbres.gpkg (P1, P3, E1)                 │
+  │   - Parallélisation par tuiles avec cache incrémental   │
+  │   → Produits : result_itd/ (CHM, crowns, seeds, arbres) │
   └─────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────┐
@@ -6089,43 +6109,51 @@ Ce tutorial a couvert les principales méthodes d'analyse LiDAR forestière de l
   │   - clouds_metrics() : extraction sur placettes         │
   │   - aba_build_model() : calibration Box-Cox + stepwise  │
   │   - aba_combine_strata() : modèles stratifiés           │
-  │   → Produits : modèles calibrés (G, N, D)               │
+  │   → Produits : models_aba.rda (modèles calibrés G)      │
   └─────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────┐
   │ Section 8 : Cartographie et Inférence                   │
-  │   - pixel_metrics() : métriques raster                  │
+  │   - raster_metrics() : métriques points/arbres/terrain  │
   │   - aba_predict() : prédiction wall-to-wall             │
-  │   - clean_raster() : seuils + masquage forêt            │
-  │   → Produits : predictions_aba.tif (C1, P1, P3)         │
+  │   - clean_raster() : seuils + masque OSO forêt          │
+  │   - Parallélisation par tuiles (future_lapply)          │
+  │   - Réutilisation du DTM section 3                      │
+  │   - Hauteur de Lorey (H pondérée par G)                 │
+  │   → Produits : prediction_G_m2_ha.tif, rasters_aba/     │
   └─────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────┐
-  │ Section 9 : Approche BABA (Alternative)                 │
+  │ Section 9 : Approche BABA (Cartographie Exploratoire)   │
   │   - lasR : rasterize avec res = c(pixel, fenêtre)       │
-  │   → Produits : métriques LiDAR brutes sans calibration  │
+  │   - ATTENTION : ne calcule PAS G, V, N                  │
+  │   - Comparaison BABA vs focal() sur CHM                 │
+  │   → Produits : métriques LiDAR brutes (zmax, zmean...)  │
   └─────────────────────────────────────────────────────────┘
 ```
 
 ### Produits pour indicateurs nemeton
 
-| Produit               | Fonction lidaRtRee     | Indicateurs       |
-|-----------------------|------------------------|-------------------|
-| arbres.gpkg           | tree_extraction()      | P1, P3, E1        |
-| gaps.gpkg             | gap_detection()        | B2, L1            |
-| edges.gpkg            | edge_detection()       | L1                |
-| metriques_baba.tif    | lasR BABA              | C1, P1, A1, B2    |
-| predictions_G.tif     | aba_predict()          | P1                |
-| predictions_V.tif     | aba_predict()          | P1, C1            |
-| predictions_N.tif     | aba_predict()          | E1                |
+| Produit                  | Fonction / Source        | Indicateurs       |
+|--------------------------|--------------------------|-------------------|
+| result_itd/arbres_*.gpkg | tree_extraction()        | P1, P3, E1        |
+| gaps.gpkg                | gap_detection()          | B2, L1            |
+| edges.gpkg               | edge_detection()         | L1                |
+| prediction_G_m2_ha.tif   | aba_predict() + OSO mask | P1, C1            |
+| rasters_aba/*.vrt        | métriques intermédiaires | (cache)           |
+| result_baba/zmean_*.tif  | lasR BABA (exploration)  | —                 |
 
-### Optimisation avec lasR
+**Note importante :** Les produits BABA (zmean, zmax, p95...) sont des métriques LiDAR brutes, pas des variables forestières. Pour obtenir G, V, N, il faut des placettes terrain et une calibration ABA (sections 6-8).
 
-Pour les gros volumes de données, lasR offre des alternatives performantes :
+### Optimisation avec lasR et parallélisation
 
-- **Normalisation** : `transform_with(triangulate())`
-- **BABA** : `rasterize(res = c(10, 30), ...)`
-- **Segmentation** : `local_maximum_raster()` + `region_growing()`
+Pour les gros volumes de données, ce tutorial utilise :
+
+- **Parallélisation** : `future_lapply()` pour traiter les tuiles en parallèle
+- **Cache incrémental** : sauvegarde par tuile, reprise en cas d'interruption
+- **VRT** : assemblage virtuel sans copie de données
+- **lasR** : traitement C++ ultra-rapide avec `ncores`
+- **Réutilisation** : DTM section 3 → section 8, CHM section 3 → section 9
 
 ### Ressources
 
@@ -6143,10 +6171,5 @@ Pour les gros volumes de données, lasR offre des alternatives performantes :
 - [lasR documentation](https://r-lidar.github.io/lasR/)
 - [lidR book](https://r-lidar.github.io/lidRbook/)
 - [BABA article](https://r-lidar.github.io/lasR/articles/baba.html)
-
-### Prochaines étapes
-
-1. **Tutorial 05** : Assembler tous les indicateurs et normaliser
-2. **Tutorial 06** : Analyse multi-critères, radar, Pareto, export
 
 **Félicitations !** Vous avez terminé le Tutorial 07 sur le traitement LiDAR avancé avec lidaRtRee.
