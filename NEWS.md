@@ -1,3 +1,46 @@
+# nemeton 0.5.0
+
+## v0.5.0 - Tutorial 07 & CRAN Compliance
+
+**Date**: 2025-01-18
+
+### Overview
+
+Release featuring the complete Tutorial 07 (Advanced LiDAR) and CRAN compliance improvements. All 7 interactive tutorials are now complete (195/195 tasks).
+
+### New Features
+
+#### Tutorial 07: LiDAR Avancé (90 min)
+
+* **LAScatalog Management** - Multi-tile LiDAR processing with lidR
+* **lasR Pipelines** - Ultra-fast C++ processing for DTM/CHM generation
+* **Individual Tree Detection (ITD)** - Tree segmentation with lidaRtRee
+* **Gap & Edge Detection** - Forest structure analysis
+* **Area-Based Approach (ABA)** - Model calibration and wall-to-wall prediction
+* **BABA Exploration** - Rapid LiDAR metrics without field calibration
+* **Parallelization** - `future_lapply()` for tile-based processing
+* **Incremental Caching** - Resume interrupted processing
+* **OSO Forest Mask** - Land cover filtering for predictions
+
+### Dependencies
+
+* Added `lasR` to Suggests (from r-lidar.r-universe.dev)
+* Added `lidaRtRee` to Suggests
+
+### Documentation
+
+* Updated `vignettes/tutorial-guide.Rmd` with Tutorial 07
+* Updated `TUTORIAL_INSTALL.md` with lasR/lidaRtRee installation
+* Updated quickstart guide with Tutorial 07 instructions
+
+### CRAN Compliance
+
+* Removed development artifacts (RELEASE_*.md, .RData, .Rhistory, etc.)
+* Updated `.Rbuildignore` and `.gitignore`
+* Excluded spec-kit directories from version control
+
+---
+
 # nemeton 0.3.0 (Development)
 
 ## v0.3.0 MVP - Multi-Family Extension (B, R, T, A)
