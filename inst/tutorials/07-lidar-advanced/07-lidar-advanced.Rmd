@@ -1037,11 +1037,11 @@ if (length(chm_tiles) == 0) {
 Cet exercice traite chaque tuile en parallèle pour calculer les métriques
 d'arbres équivalentes à `tree_extraction()` de lidaRtRee.
 
-**Avantage** : Traiter les tuiles individuellement est beaucoup plus rapide
-que charger le VRT complet, car :
+**Avantages** :
 - Chaque tuile est plus petite → vectorisation rapide
 - Parallélisation sur plusieurs tuiles simultanément
-- Moins de mémoire utilisée
+- **Sauvegarde incrémentale** : chaque tuile est sauvegardée au fur et à mesure
+- **Reprise possible** : les tuiles existantes sont conservées en cas d'interruption
 
 ```{r ex-3-3-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -1051,6 +1051,13 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 result_itd <- file.path(data_dir, "result_itd")
+
+# Répertoire pour les tuiles de métriques arbres
+tiles_dir_tree_metrics <- file.path(result_itd, "tiles_tree_metrics")
+if (!dir.exists(tiles_dir_tree_metrics)) dir.create(tiles_dir_tree_metrics, recursive = TRUE)
+
+# Configuration parallélisation
+N_CORES <- 4L
 ```
 
 ```{r ex-3-3, exercise=TRUE, exercise.timelimit=2400, exercise.setup="ex-3-3-setup"}
@@ -1066,20 +1073,34 @@ chm_tiles <- list.files(result_itd, pattern = "^c_filled_.*\\.tif$", full.names 
 crown_tiles <- list.files(result_itd, pattern = "^crowns_.*\\.tif$", full.names = TRUE)
 seed_files <- list.files(result_itd, pattern = "^seeds_.*\\.gpkg$", full.names = TRUE)
 
-cat("Tuiles CHM filled:", length(chm_tiles), "\n")
-cat("Tuiles Crowns:", length(crown_tiles), "\n")
-cat("Fichiers Seeds:", length(seed_files), "\n\n")
+cat("Tuiles source:\n")
+cat("  - CHM filled:", length(chm_tiles), "\n")
+cat("  - Crowns:", length(crown_tiles), "\n")
+cat("  - Seeds:", length(seed_files), "\n\n")
 
 if (length(crown_tiles) == 0) {
   cat("Aucune tuile trouvée. Exécutez d'abord l'exercice 3.1.\n")
 } else {
 
-  # ==========================================================================
-  # FONCTION DE TRAITEMENT D'UNE TUILE
-  # ==========================================================================
-  # Cette fonction traite une tuile et retourne les métriques des arbres
+  # Vérifier les tuiles de métriques déjà calculées
+  existing_metrics <- list.files(tiles_dir_tree_metrics, pattern = "\\.gpkg$", full.names = TRUE)
+  cat("Tuiles métriques existantes:", length(existing_metrics), "\n\n")
 
-  process_tile <- function(i, chm_tiles, crown_tiles, seed_files) {
+  # ==========================================================================
+  # FONCTION DE TRAITEMENT D'UNE TUILE (avec sauvegarde)
+  # ==========================================================================
+
+  process_tile <- function(i, chm_tiles, crown_tiles, seed_files, tiles_dir_tree_metrics) {
+    # Nom du fichier de sortie basé sur le nom de la tuile crown
+    crown_basename <- tools::file_path_sans_ext(basename(crown_tiles[i]))
+    output_file <- file.path(tiles_dir_tree_metrics,
+                              paste0("metrics_", crown_basename, ".gpkg"))
+
+    # Si le fichier existe déjà, le charger et retourner
+    if (file.exists(output_file)) {
+      return(output_file)
+    }
+
     # Charger les données de la tuile
     chm <- terra::rast(chm_tiles[i])
     crowns <- terra::rast(crown_tiles[i])
@@ -1119,7 +1140,6 @@ if (length(crown_tiles) == 0) {
     }
 
     # 3. Associer les seeds aux segments
-    # Note: les seeds sont des POINT Z, la hauteur est dans la géométrie
     coords <- sf::st_coordinates(seeds)
     seeds_vect <- terra::vect(seeds)
     ids_extracted <- terra::extract(crowns, seeds_vect)
@@ -1131,11 +1151,16 @@ if (length(crown_tiles) == 0) {
       height = coords[, "Z"]
     )
 
+    # Filtrer les seeds sans correspondance valide (id NA ou 0)
+    metrics <- metrics[!is.na(metrics$id) & metrics$id > 0, ]
+
+    if (nrow(metrics) == 0) return(NULL)
+
     # 4. Fusionner avec surface et volume
     crown_data <- sf::st_drop_geometry(crown_sf[, c("id", "surface", "volume")])
-    metrics <- merge(metrics, crown_data, by = "id", all.x = TRUE)
+    metrics <- merge(metrics, crown_data, by = "id", all.x = FALSE)
 
-    # 5. Ajouter géométrie WKT
+    # 5. Ajouter géométrie WKT des houppiers
     bbox_max <- max(abs(sf::st_bbox(crown_sf)))
     n_digits <- ceiling(log10(bbox_max)) + 2
     crown_sf$crown_geom <- sf::st_as_text(sf::st_geometry(crown_sf), digits = n_digits)
@@ -1144,29 +1169,32 @@ if (length(crown_tiles) == 0) {
                      sf::st_drop_geometry(crown_sf[, c("id", "crown_geom")]),
                      by = "id", all.x = TRUE)
 
-    # Convertir en sf
-    sf::st_as_sf(metrics, coords = c("x", "y"), crs = terra::crs(chm))
+    # Convertir en sf et sauvegarder
+    metrics_sf <- sf::st_as_sf(metrics, coords = c("x", "y"), crs = terra::crs(chm))
+    sf::st_write(metrics_sf, output_file, delete_dsn = TRUE, quiet = TRUE)
+
+    return(output_file)
   }
 
   # ==========================================================================
   # TRAITEMENT PARALLÈLE DES TUILES
   # ==========================================================================
   cat("=== Traitement des tuiles ===\n")
-  t0 <- Sys.time()
-
   n_tiles <- length(crown_tiles)
 
   if (requireNamespace("future.apply", quietly = TRUE) && n_tiles > 1) {
     # Traitement parallèle
-    N_WORKERS <- min(4, n_tiles)
-    future::plan(future::multisession, workers = N_WORKERS)
+    future::plan(future::multisession, workers = N_CORES)
 
-    cat("Méthode: future.apply (", N_WORKERS, " workers)\n", sep = "")
-    cat("Traitement de", n_tiles, "tuiles en parallèle...\n\n")
+    cat("Méthode: future.apply (", N_CORES, " workers)\n", sep = "")
+    cat("Tuiles à traiter:", n_tiles, "\n")
+    cat("Sortie:", basename(tiles_dir_tree_metrics), "/\n\n")
+
+    t0 <- Sys.time()
 
     results <- future.apply::future_lapply(
       seq_len(n_tiles),
-      function(i) process_tile(i, chm_tiles, crown_tiles, seed_files),
+      function(i) process_tile(i, chm_tiles, crown_tiles, seed_files, tiles_dir_tree_metrics),
       future.seed = TRUE
     )
 
@@ -1175,43 +1203,52 @@ if (length(crown_tiles) == 0) {
   } else {
     # Traitement séquentiel
     cat("Méthode: séquentielle\n")
-    cat("Traitement de", n_tiles, "tuiles...\n\n")
+    cat("Tuiles à traiter:", n_tiles, "\n")
+    cat("Sortie:", basename(tiles_dir_tree_metrics), "/\n\n")
+
+    t0 <- Sys.time()
 
     results <- lapply(
       seq_len(n_tiles),
       function(i) {
         cat("  Tuile", i, "/", n_tiles, "\r")
-        process_tile(i, chm_tiles, crown_tiles, seed_files)
+        process_tile(i, chm_tiles, crown_tiles, seed_files, tiles_dir_tree_metrics)
       }
     )
   }
 
   t1 <- Sys.time()
+  elapsed <- as.numeric(difftime(t1, t0, units = "secs"))
+  cat("\nTemps de calcul:", round(elapsed, 1), "s\n\n")
 
   # ==========================================================================
-  # FUSION DES RÉSULTATS
+  # FUSION DES RÉSULTATS (depuis les fichiers GPKG sauvegardés)
   # ==========================================================================
-  cat("\n=== Fusion des résultats ===\n")
+  cat("=== Fusion des résultats ===\n")
 
-  # Supprimer les résultats NULL
-  results <- results[!sapply(results, is.null)]
+  # Lister tous les fichiers GPKG générés
+  metric_files <- list.files(tiles_dir_tree_metrics, pattern = "\\.gpkg$", full.names = TRUE)
+  cat("Tuiles générées:", length(metric_files), "\n")
 
-  if (length(results) > 0) {
-    trees_all <- do.call(rbind, results)
+  if (length(metric_files) > 0) {
+    # Charger et fusionner tous les fichiers
+    cat("Chargement et fusion des tuiles...\n")
+    trees_list <- lapply(metric_files, function(f) sf::st_read(f, quiet = TRUE))
+    trees_all <- do.call(rbind, trees_list)
 
-    cat("Temps total:", round(difftime(t1, t0, units = "secs"), 1), "secondes\n")
-    cat("Tuiles traitées:", length(results), "/", n_tiles, "\n\n")
+    cat("Tuiles fusionnées:", length(metric_files), "/", n_tiles, "\n\n")
 
-    # Sauvegarder
+    # Sauvegarder le fichier complet
     output_file <- file.path(data_dir, "tree_metrics_complet.gpkg")
     sf::st_write(trees_all, output_file, delete_dsn = TRUE, quiet = TRUE)
-    cat("Fichier:", output_file, "\n\n")
+    cat("Fichier complet:", basename(output_file), "\n\n")
 
     # ==========================================================================
     # RÉSULTATS
     # ==========================================================================
     cat("=== Résultats : Métriques des arbres ===\n")
     cat("Nombre d'arbres:", nrow(trees_all), "\n")
+    cat("Colonnes:", paste(names(trees_all), collapse = ", "), "\n")
     cat("Hauteur moyenne:", round(mean(trees_all$height, na.rm = TRUE), 1), "m\n")
     cat("Hauteur max:", round(max(trees_all$height, na.rm = TRUE), 1), "m\n")
     cat("Surface moyenne houppier:", round(mean(trees_all$surface, na.rm = TRUE), 1), "m²\n")
@@ -1220,12 +1257,12 @@ if (length(crown_tiles) == 0) {
     cat("\n=== Premiers arbres ===\n")
     print(head(sf::st_drop_geometry(trees_all[, c("id", "height", "surface", "volume")])))
 
-    cat("\n=== Avantages du traitement par tuiles ===\n")
-    cat("- Parallélisation efficace (", N_WORKERS, " tuiles simultanées)\n", sep = "")
-    cat("- Mémoire réduite (une tuile à la fois par worker)\n")
-    cat("- Scalable : fonctionne avec des centaines de tuiles\n")
+    cat("\n=== Avantages de la sauvegarde incrémentale ===\n")
+    cat("- Chaque tuile sauvegardée immédiatement\n")
+    cat("- Reprise possible en cas d'interruption\n")
+    cat("- Parallélisation efficace (", N_CORES, " workers)\n", sep = "")
   } else {
-    cat("Aucun arbre détecté.\n")
+    cat("Aucune tuile générée. Vérifiez les données d'entrée.\n")
   }
 }
 ```
@@ -4517,7 +4554,7 @@ if (file.exists(vrt_points) && n_existing >= n_laz) {
   lidR::opt_chunk_buffer(cata_height) <- 30
   lidR::opt_progress(cata_height) <- TRUE
   lidR::opt_output_files(cata_height) <- file.path(tiles_dir_points,
-                                                    "metrics_{XLEFT}_{YBOTTOM}")
+                                                    "metrics_*.tif")
 
   cat("Configuration:\n")
   cat("  - future workers:", N_CORES, "\n")
@@ -4583,11 +4620,16 @@ cat("\n>>> Métriques points calculées pour", round(surface_ha, 1), "ha\n")
 
 ### 8.3 Calcul des métriques raster - Arbres
 
-Les métriques basées sur la détection d'arbres sont calculées sur l'ensemble de la zone via :
+Les métriques basées sur la détection d'arbres **réutilisent les résultats de l'exercice 3.1** (segmentation lasR) :
 
-1. **Création du MNC** tuile par tuile avec `opt_output_files()`, puis assemblage en VRT
-2. **Segmentation** sur le VRT complet avec `lidaRtRee::tree_segmentation()`
-3. **Agrégation** des métriques arbres par pixel
+1. **Chargement des arbres** depuis `tree_metrics_complet.gpkg` (exercice 3.3)
+2. **Découpage par emprise de tuile** (mêmes emprises que les fichiers LAZ)
+3. **Traitement parallèle** tuile par tuile avec `future.apply`
+4. **Assemblage en VRT** comme dans l'exercice 8.2
+
+> **Note** : Cette approche évite de recalculer la segmentation et réutilise le travail
+> effectué dans la section 3 avec lasR, qui est plus performant pour le traitement
+> parallèle des grandes zones.
 
 ```{r ex-8-3-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
@@ -4597,9 +4639,16 @@ output_dir_rasters <- file.path(data_dir, "rasters_aba")
 # Créer les répertoires si nécessaire
 if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
 
-# Répertoire pour les tuiles CHM
-tiles_dir_chm <- file.path(output_dir_rasters, "tiles_chm")
-if (!dir.exists(tiles_dir_chm)) dir.create(tiles_dir_chm, recursive = TRUE)
+# Répertoire pour les tuiles de métriques arbres
+tiles_dir_trees <- file.path(output_dir_rasters, "tiles_metrics_trees")
+if (!dir.exists(tiles_dir_trees)) dir.create(tiles_dir_trees, recursive = TRUE)
+
+# Répertoire pour les tuiles de métriques canopée
+tiles_dir_canopy <- file.path(output_dir_rasters, "tiles_metrics_canopy")
+if (!dir.exists(tiles_dir_canopy)) dir.create(tiles_dir_canopy, recursive = TRUE)
+
+# Fichier VRT pour les métriques canopée
+vrt_canopy <- file.path(output_dir_rasters, "metrics_canopy.vrt")
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
@@ -4607,161 +4656,335 @@ load(file.path(data_dir, "models_aba.rda"))
 resolution <- 25
 laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
-# Fichiers cache
-vrt_chm <- file.path(output_dir_rasters, "chm.vrt")
-cache_segments <- file.path(output_dir_rasters, "segmentation.rds")
-cache_trees_gpkg <- file.path(output_dir_rasters, "trees_detected.gpkg")
-cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
+# Fichiers produits par les exercices 3.1/3.2/3.3
+trees_itd_gpkg <- file.path(data_dir, "tree_metrics_complet.gpkg")
+chm_filled_vrt <- file.path(data_dir, "c_filled_complet.vrt")
+crowns_vrt <- file.path(data_dir, "crowns_complet.vrt")
+
+# Fichier VRT pour les métriques arbres
+vrt_trees <- file.path(output_dir_rasters, "metrics_trees.vrt")
 
 # Configuration parallélisation
 N_CORES <- 4L
+BUFFER <- 30  # Buffer en mètres pour éviter les effets de bord (comme dans 8.2)
 ```
 
-```{r ex-8-3, exercise=TRUE, exercise.timelimit=2800, exercise.setup="ex-8-3-setup"}
-# === 8.3 : Métriques raster basées sur les arbres (LAScatalog) ===
+```{r ex-8-3, exercise=TRUE, exercise.timelimit=1200, exercise.setup="ex-8-3-setup"}
+# === 8.3 : Métriques raster basées sur les arbres (parallélisé par tuiles) ===
 
-cat("=== Segmentation et métriques arbres sur l'ensemble de la zone ===\n\n")
+cat("=== Métriques arbres - Réutilisation des résultats ITD (Section 3) ===\n\n")
+cat("Résolution:", resolution, "m\n")
+cat("Surface pixel:", resolution^2, "m²\n\n")
 
-# Vérifier si le cache existe déjà
-if (file.exists(cache_trees)) {
-  cat(">>> Cache trouvé, chargement depuis:", basename(cache_trees), "\n\n")
-  metrics_trees_raster <- terra::rast(cache_trees)
+# Vérifier que les fichiers de l'exercice 3 existent
+if (!file.exists(trees_itd_gpkg)) {
+  stop("Fichier tree_metrics_complet.gpkg non trouvé.\n",
+       "Exécutez d'abord les exercices 3.1, 3.2 et 3.3.")
+}
+
+# Compter les fichiers LAZ source (pour définir les emprises) et tuiles TIF existantes
+laz_files <- list.files(laz_dir_normalized, pattern = "\\.laz$", full.names = TRUE)
+n_laz <- length(laz_files)
+existing_tiles <- list.files(tiles_dir_trees, pattern = "\\.tif$", full.names = TRUE)
+n_existing <- length(existing_tiles)
+
+cat("Tuiles de référence (LAZ):", n_laz, "\n")
+cat("Tuiles existantes:", n_existing, "TIF\n\n")
+
+# Vérifier si le traitement est complet
+if (file.exists(vrt_trees) && n_existing >= n_laz) {
+  cat(">>> Traitement complet, chargement du VRT existant\n\n")
+  metrics_trees_raster <- terra::rast(vrt_trees)
+  # Restaurer les noms de couches depuis une tuile TIF
+  tile_names <- names(terra::rast(existing_tiles[1]))
+  names(metrics_trees_raster) <- tile_names
 } else {
-  cat("Calcul des métriques arbres (ceci peut prendre plusieurs minutes)...\n\n")
-
-  # 1. Créer le MNC tuile par tuile via LAScatalog
-  cat("1. Création du MNC tuile par tuile (résolution:", aba_res_chm, "m)...\n")
-
-  # Compter les fichiers LAZ source et tuiles CHM existantes
-  n_laz <- length(list.files(laz_dir_normalized, pattern = "\\.laz$"))
-  existing_chm_tiles <- list.files(tiles_dir_chm, pattern = "\\.tif$", full.names = TRUE)
-  n_existing_chm <- length(existing_chm_tiles)
-
-  cat("   Fichiers source:", n_laz, "LAZ\n")
-  cat("   Tuiles CHM existantes:", n_existing_chm, "TIF\n")
-
-  if (file.exists(vrt_chm) && n_existing_chm >= n_laz) {
-    cat("   >>> CHM complet, chargement du VRT existant\n")
-    chm <- terra::rast(vrt_chm)
+  # Nettoyer les tuiles existantes pour éviter les conflits
+  if (n_existing > 0) {
+    cat(">>> Nettoyage des", n_existing, "tuiles existantes (traitement incomplet)\n")
+    file.remove(existing_tiles)
+    if (file.exists(vrt_trees)) file.remove(vrt_trees)
+    cat(">>> Recalcul complet de toutes les tuiles\n\n")
   } else {
-    # Nettoyer les tuiles existantes pour éviter les conflits
-    if (n_existing_chm > 0) {
-      cat("   >>> Nettoyage des", n_existing_chm, "tuiles existantes\n")
-      file.remove(existing_chm_tiles)
-      if (file.exists(vrt_chm)) file.remove(vrt_chm)
+    cat(">>> Nouveau calcul de toutes les tuiles\n\n")
+  }
+
+  # 1. Charger les arbres détectés (exercice 3.3)
+  cat("1. Chargement des arbres depuis tree_metrics_complet.gpkg...\n")
+  trees_all <- sf::st_read(trees_itd_gpkg, quiet = TRUE)
+  
+  cat("   Arbres chargés:", nrow(trees_all), "\n")
+
+  # Adapter les noms de colonnes pour std_tree_metrics()
+  # std_tree_metrics attend : h (hauteur), s (surface), v (volume)
+  if (!"h" %in% names(trees_all) && "height" %in% names(trees_all)) {
+    trees_all$h <- trees_all$height
+  }
+  if (!"s" %in% names(trees_all) && "surface" %in% names(trees_all)) {
+    trees_all$s <- trees_all$surface
+  }
+  if (!"v" %in% names(trees_all) && "volume" %in% names(trees_all)) {
+    trees_all$v <- trees_all$volume
+  }
+
+  # Filtrer les arbres avec des NA (std_tree_metrics n'accepte pas les NA)
+  n_before <- nrow(trees_all)
+  trees_all <- trees_all[!is.na(trees_all$h) & !is.na(trees_all$s) & !is.na(trees_all$v), ]
+  n_removed <- n_before - nrow(trees_all)
+
+  cat("   Colonnes adaptées: h, s, v\n")
+  if (n_removed > 0) {
+    cat("   Arbres avec NA retirés:", n_removed, "\n")
+  }
+  cat("   Arbres valides:", nrow(trees_all), "\n")
+  cat("   Hauteur moyenne:", round(mean(trees_all$h, na.rm = TRUE), 1), "m\n\n")
+
+  # 2. Obtenir les emprises des tuiles LAZ (vecteurs simples pour sérialisation future)
+  cat("2. Extraction des emprises des tuiles LAZ...\n")
+  tile_extents <- lapply(laz_files, function(f) {
+    hdr <- lidR::readLASheader(f)
+    # Vecteur nommé (sérialisable, contrairement à terra::ext)
+    c(xmin = hdr@PHB$`Min X`, xmax = hdr@PHB$`Max X`,
+      ymin = hdr@PHB$`Min Y`, ymax = hdr@PHB$`Max Y`)
+  })
+  cat("   Emprises extraites:", length(tile_extents), "\n\n")
+
+  # Récupérer le CRS comme EPSG (sérialisable)
+  crs_epsg <- sf::st_crs(trees_all)$epsg
+  if (is.na(crs_epsg)) crs_epsg <- 2154  # Lambert 93 par défaut
+
+  # 3. Fonction de traitement d'une tuile (avec buffer)
+  process_tree_tile <- function(i, trees_all, tile_extents, laz_files,
+                                 tiles_dir_trees, resolution, buffer, crs_epsg) {
+    ext_i <- tile_extents[[i]]
+
+    # Emprise avec buffer pour inclure les arbres de bordure
+    bbox_buffered <- sf::st_as_sfc(sf::st_bbox(c(
+      xmin = ext_i[["xmin"]] - buffer, xmax = ext_i[["xmax"]] + buffer,
+      ymin = ext_i[["ymin"]] - buffer, ymax = ext_i[["ymax"]] + buffer
+    ), crs = sf::st_crs(crs_epsg)))
+
+    # Filtrer les arbres dans l'emprise avec buffer
+    trees_tile <- sf::st_filter(trees_all, bbox_buffered)
+
+    if (nrow(trees_tile) == 0) {
+      return(NULL)
     }
-    cat("   >>> Calcul de toutes les tuiles CHM\n")
 
-    # Configuration parallélisation
-    library(future)
-    plan(multisession, workers = N_CORES)
-    lidR::set_lidr_threads(N_CORES)
+    # Filtrer les arbres avec NA dans h, s, v (std_tree_metrics n'accepte pas les NA)
+    trees_tile <- trees_tile[!is.na(trees_tile$h) & !is.na(trees_tile$s) & !is.na(trees_tile$v), ]
 
-    # Créer le LAScatalog
-    filter_cata_height <- paste(c("-keep_class", class_points,
-                                  "-drop_z_above", h_points), collapse = " ")
+    if (nrow(trees_tile) == 0) {
+      return(NULL)
+    }
 
-    cata_height <- lidR::readALSLAScatalog(laz_dir_normalized,
-                                            progress = FALSE,
-                                            select = "xyzirnc",
-                                            filter = filter_cata_height)
-    sf::st_crs(cata_height) <- 2154
+    # Calculer les métriques sur l'emprise avec buffer
+    metrics_tile <- lidaRtRee::raster_metrics(
+      trees_tile,
+      res = resolution,
+      fun = function(x) {
+        lidaRtRee::std_tree_metrics(x, resolution^2 / 10000)
+      },
+      output = "raster"
+    )
+    metrics_tile[!is.finite(metrics_tile)] <- 0
 
-    # === OPTIONS LAScatalog ===
-    lidR::opt_chunk_buffer(cata_height) <- 30
-    lidR::opt_progress(cata_height) <- TRUE
-    lidR::opt_output_files(cata_height) <- file.path(tiles_dir_chm,
-                                                      "chm_{XLEFT}_{YBOTTOM}")
+    # Cropper à l'emprise sans buffer (évite les doublons entre tuiles)
+    ext_crop <- terra::ext(ext_i["xmin"], ext_i["xmax"], ext_i["ymin"], ext_i["ymax"])
+    metrics_tile <- terra::crop(metrics_tile, ext_crop)
 
-    cat("   future workers:", N_CORES, "\n")
-    cat("   lidR threads:", lidR::get_lidr_threads(), "\n")
-    cat("   Tuiles à traiter:", nrow(cata_height), "\n")
-    cat("   Buffer:", lidR::opt_chunk_buffer(cata_height), "m\n")
+    # Nom de fichier basé sur le nom de la dalle LAZ source
+    laz_basename <- tools::file_path_sans_ext(basename(laz_files[i]))
+    output_file <- file.path(tiles_dir_trees, paste0("trees_", laz_basename, ".tif"))
 
-    # Créer le MNC par tuile (lidR saute les existantes)
-    lidR::rasterize_canopy(cata_height, res = aba_res_chm,
-                           algorithm = lidR::p2r())
+    # Sauvegarder la tuile
+    terra::writeRaster(metrics_tile, output_file, overwrite = TRUE)
 
-    # Réinitialiser future
-    plan(sequential)
-
-    # Lister toutes les tuiles (anciennes + nouvelles)
-    chm_tiles <- list.files(tiles_dir_chm, pattern = "\\.tif$", full.names = TRUE)
-    cat("   Tuiles totales:", length(chm_tiles), "\n")
-
-    # Créer/recréer le VRT
-    chm <- terra::vrt(chm_tiles, vrt_chm, overwrite = TRUE)
-    cat("   VRT créé:", basename(vrt_chm), "\n")
+    return(output_file)
   }
 
-  # Remplacer les valeurs négatives/NA par 0
-  chm[is.na(chm) | chm < 0] <- 0
+  # 4. Traitement parallèle des tuiles
+  cat("3. Traitement parallèle des tuiles...\n")
 
-  cat("   Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "pixels\n\n")
+  library(future)
+  library(future.apply)
+  plan(multisession, workers = N_CORES)
 
-  # 2. Segmentation des arbres (avec cache)
-  cat("2. Segmentation des arbres...\n")
+  cat("   Workers:", N_CORES, "\n")
+  cat("   Buffer:", BUFFER, "m\n")
+  cat("   Tuiles à traiter:", n_laz, "\n\n")
 
-  if (file.exists(cache_segments) && file.exists(cache_trees_gpkg)) {
-    cat("   >>> Cache trouvé, chargement segmentation et arbres\n")
-    segms <- readRDS(cache_segments)
-    trees <- sf::st_read(cache_trees_gpkg, quiet = TRUE)
-    cat("   Arbres chargés:", nrow(trees), "\n\n")
+  start_time <- Sys.time()
+
+  results <- future_lapply(
+    seq_len(n_laz),
+    function(i) {
+      process_tree_tile(i, trees_all, tile_extents, laz_files,
+                        tiles_dir_trees, resolution, BUFFER, crs_epsg)
+    },
+    future.seed = TRUE
+  )
+
+  plan(sequential)
+
+  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+  cat("Temps de calcul:", round(elapsed, 1), "s\n\n")
+
+  # 5. Assembler les tuiles en VRT
+  cat("4. Assemblage des tuiles en VRT...\n")
+  metric_tiles <- list.files(tiles_dir_trees, pattern = "\\.tif$", full.names = TRUE)
+  cat("   Tuiles générées:", length(metric_tiles), "\n")
+
+  if (length(metric_tiles) == 0) {
+    stop("Aucune tuile générée. Vérifiez les données d'entrée.")
+  }
+
+  # Récupérer les noms de couches depuis une tuile
+  tile_names <- names(terra::rast(metric_tiles[1]))
+
+  # Créer le VRT
+  metrics_trees_raster <- terra::vrt(metric_tiles, vrt_trees, overwrite = TRUE)
+  names(metrics_trees_raster) <- tile_names
+  cat("   VRT créé:", basename(vrt_trees), "\n\n")
+
+  cat(">>> Métriques arbres calculées et assemblées en VRT\n")
+}
+
+# 6. Métriques supplémentaires (couverture canopée) - traitement par tuiles
+cat("5. Calcul couverture canopée (parallélisé par tuiles)...\n")
+
+# S'assurer que tile_extents existe (nécessaire si cache arbres était complet)
+if (!exists("tile_extents")) {
+  tile_extents <- lapply(laz_files, function(f) {
+    hdr <- lidR::readLASheader(f)
+    c(xmin = hdr@PHB$`Min X`, xmax = hdr@PHB$`Max X`,
+      ymin = hdr@PHB$`Min Y`, ymax = hdr@PHB$`Max Y`)
+  })
+}
+
+if (file.exists(chm_filled_vrt) && file.exists(crowns_vrt)) {
+  # Identifier les tuiles canopée existantes et manquantes
+  expected_canopy_tiles <- sapply(laz_files, function(f) {
+    laz_basename <- tools::file_path_sans_ext(basename(f))
+    file.path(tiles_dir_canopy, paste0("canopy_", laz_basename, ".tif"))
+  })
+  existing_canopy_tiles <- list.files(tiles_dir_canopy, pattern = "\\.tif$", full.names = TRUE)
+  n_existing_canopy <- length(existing_canopy_tiles)
+  missing_canopy_mask <- !file.exists(expected_canopy_tiles)
+  n_missing_canopy <- sum(missing_canopy_mask)
+
+  cat("   Tuiles canopée existantes:", n_existing_canopy, "\n")
+  cat("   Tuiles canopée manquantes:", n_missing_canopy, "\n")
+
+  # Vérifier si le traitement canopée est complet
+  if (file.exists(vrt_canopy) && n_missing_canopy == 0) {
+    cat("   >>> Cache complet, chargement du VRT canopée existant\n")
+    metrics_canopy <- terra::rast(vrt_canopy)
+    canopy_names <- names(terra::rast(existing_canopy_tiles[1]))
+    names(metrics_canopy) <- canopy_names
   } else {
-    cat("   >>> Calcul de la segmentation (tree_segmentation)...\n")
-    segms <- lidaRtRee::tree_segmentation(chm)
+    # Supprimer le VRT obsolète si présent
+    if (file.exists(vrt_canopy)) file.remove(vrt_canopy)
 
-    cat("   >>> Extraction des arbres (tree_extraction)...\n")
-    trees <- lidaRtRee::tree_extraction(segms)
+    # Charger les VRT sources
+    chm_filled <- terra::rast(chm_filled_vrt)
+    crowns <- terra::rast(crowns_vrt)
+    chm_res <- terra::res(chm_filled)[1]
+    cat("   CHM filled chargé, résolution:", chm_res, "m\n")
 
-    # Sauvegarder en cache
-    saveRDS(segms, cache_segments)
-    sf::st_write(trees, cache_trees_gpkg, delete_dsn = TRUE, quiet = TRUE)
-    cat("   Arbres détectés:", nrow(trees), "\n")
-    cat("   Cache sauvegardé:", basename(cache_segments), ",", basename(cache_trees_gpkg), "\n\n")
+    # Récupérer le CRS
+    crs_epsg <- terra::crs(chm_filled, describe = TRUE)$code
+    if (is.na(crs_epsg)) crs_epsg <- 2154
+
+    # Fonction de traitement d'une tuile canopée
+    process_canopy_tile <- function(i, tile_extents, laz_files, tiles_dir_canopy,
+                                     chm_filled_vrt, crowns_vrt, resolution, chm_res, crs_epsg) {
+      ext_i <- tile_extents[[i]]
+
+      # Emprise de la tuile
+      ext_terra <- terra::ext(ext_i["xmin"], ext_i["xmax"], ext_i["ymin"], ext_i["ymax"])
+
+      # Charger les rasters (dans le worker)
+      chm_tile <- terra::crop(terra::rast(chm_filled_vrt), ext_terra)
+      crowns_tile <- terra::crop(terra::rast(crowns_vrt), ext_terra)
+
+      # Créer le raster canopée (pixels avec arbre uniquement)
+      r_treechm <- chm_tile
+      r_treechm[crowns_tile == 0 | is.na(crowns_tile)] <- NA
+
+      # Calculer les métriques
+      metrics_tile <- lidaRtRee::raster_metrics(
+        r_treechm,
+        res = resolution,
+        fun = function(x) {
+          vals <- x[[1]]
+          c(
+            sum(!is.na(vals)) / (resolution / chm_res)^2,
+            mean(vals, na.rm = TRUE)
+          )
+        },
+        output = "raster"
+      )
+      names(metrics_tile) <- c("TreeCanopy_cover_in_plot", "TreeCanopy_meanH_in_plot")
+
+      # Nom de fichier basé sur le nom de la dalle LAZ source
+      laz_basename <- tools::file_path_sans_ext(basename(laz_files[i]))
+      output_file <- file.path(tiles_dir_canopy, paste0("canopy_", laz_basename, ".tif"))
+
+      # Sauvegarder la tuile
+      terra::writeRaster(metrics_tile, output_file, overwrite = TRUE)
+
+      return(output_file)
+    }
+
+    # Traitement parallèle des tuiles MANQUANTES
+    indices_canopy <- which(missing_canopy_mask)
+
+    if (length(indices_canopy) > 0) {
+      cat("   Traitement parallèle de", length(indices_canopy), "tuiles...\n")
+
+      library(future)
+      library(future.apply)
+      plan(multisession, workers = N_CORES)
+      start_time_canopy <- Sys.time()
+
+      results_canopy <- future_lapply(
+        indices_canopy,
+        function(i) {
+          process_canopy_tile(i, tile_extents, laz_files, tiles_dir_canopy,
+                               chm_filled_vrt, crowns_vrt, resolution, chm_res, crs_epsg)
+        },
+        future.seed = TRUE
+      )
+
+      plan(sequential)
+
+      elapsed_canopy <- as.numeric(difftime(Sys.time(), start_time_canopy, units = "secs"))
+      cat("   Temps de calcul canopée:", round(elapsed_canopy, 1), "s\n")
+    }
+
+    # Assembler les tuiles canopée en VRT
+    canopy_tiles <- list.files(tiles_dir_canopy, pattern = "\\.tif$", full.names = TRUE)
+    cat("   Tuiles canopée totales:", length(canopy_tiles), "\n")
+
+    canopy_names <- names(terra::rast(canopy_tiles[1]))
+    metrics_canopy <- terra::vrt(canopy_tiles, vrt_canopy, overwrite = TRUE)
+    names(metrics_canopy) <- canopy_names
+    cat("   VRT canopée créé:", basename(vrt_canopy), "\n")
   }
 
-  # 3. Calcul des métriques arbres par pixel
-  cat("3. Calcul métriques arbres par pixel (", resolution, "m)...\n")
-  metrics_trees_raster <- lidaRtRee::raster_metrics(
-    trees,
-    res = resolution,
-    fun = function(x) {
-      lidaRtRee::std_tree_metrics(x, resolution^2 / 10000)
-    },
-    output = "raster"
-  )
-  metrics_trees_raster[!is.finite(metrics_trees_raster)] <- 0
-
-  cat("   Couches:", paste(names(metrics_trees_raster), collapse = ", "), "\n\n")
-
-  # 4. Métriques supplémentaires (couverture canopée)
-  cat("4. Calcul couverture canopée...\n")
-  r_treechm <- segms$filled_dem
-  r_treechm[segms$segments_id == 0] <- NA
-
-  metrics_canopy <- lidaRtRee::raster_metrics(
-    r_treechm,
-    res = resolution,
-    fun = function(x) {
-      c(
-        sum(!is.na(x$filled_dem)) / (resolution / aba_res_chm)^2,
-        mean(x$filled_dem, na.rm = TRUE)
-      )
-    },
-    output = "raster"
-  )
-  names(metrics_canopy) <- c("TreeCanopy_cover_in_plot", "TreeCanopy_meanH_in_plot")
-
-  # Harmoniser les emprises avant combinaison
+  # Harmoniser les emprises et combiner avec metrics_trees_raster
   metrics_canopy <- terra::extend(metrics_canopy, metrics_trees_raster)
   metrics_canopy <- terra::crop(metrics_canopy, metrics_trees_raster)
   metrics_trees_raster <- c(metrics_trees_raster, metrics_canopy)
 
-  # Sauvegarder en cache
-  terra::writeRaster(metrics_trees_raster, cache_trees, overwrite = TRUE)
-  cat("\n>>> Métriques arbres sauvegardées:", basename(cache_trees), "\n")
+  cat("   Couverture canopée ajoutée\n\n")
+} else {
+  cat("   VRT non trouvés, couverture canopée ignorée\n")
+  cat("   (Exécutez l'exercice 3.2 pour les créer)\n\n")
 }
+
+cat(">>> Métriques arbres et canopée calculées\n")
 
 # Statistiques
 cat("\nMétriques arbres calculées:\n")
@@ -4785,7 +5008,12 @@ cat("\n>>> Métriques arbres calculées pour", round(surface_ha, 1), "ha\n")
 
 ### 8.4 Calcul des métriques raster - Terrain
 
-Les métriques de terrain (altitude, pente, aspect) sont calculées à partir des points classifiés sol sur l'ensemble de la zone, en utilisant les fichiers LAZ **originaux** (non normalisés). Le traitement s'effectue tuile par tuile avec les options `opt_*` de lidR.
+Les métriques de terrain (altitude, pente, aspect) sont calculées à partir du **DTM créé dans l'exercice 3.1** (lasR). Cette approche est plus efficace que de recalculer depuis les points LAZ :
+
+1. **Étape 1** : Calcul de la pente et de l'aspect à 1m depuis le DTM (`terra::terrain`)
+2. **Étape 2** : Agrégation à 25m pour les métriques finales (`terra::aggregate`)
+
+Les tuiles intermédiaires (pente/aspect à 1m) sont sauvegardées pour réutilisation future.
 
 ```{r ex-8-4-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
@@ -4795,123 +5023,269 @@ output_dir_rasters <- file.path(data_dir, "rasters_aba")
 # Créer les répertoires si nécessaire
 if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
 
-# Répertoire pour les tuiles de métriques terrain
+# Répertoire pour les tuiles de métriques terrain à 25m
 tiles_dir_terrain <- file.path(output_dir_rasters, "tiles_metrics_terrain")
 if (!dir.exists(tiles_dir_terrain)) dir.create(tiles_dir_terrain, recursive = TRUE)
+
+# Répertoires pour les tuiles pente et aspect à 1m (dérivés du DTM)
+tiles_dir_slope <- file.path(data_dir, "tiles_slope_1m")
+tiles_dir_aspect <- file.path(data_dir, "tiles_aspect_1m")
+if (!dir.exists(tiles_dir_slope)) dir.create(tiles_dir_slope, recursive = TRUE)
+if (!dir.exists(tiles_dir_aspect)) dir.create(tiles_dir_aspect, recursive = TRUE)
 
 # Charger les paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
 
-# Répertoire des tuiles ORIGINALES (pour métriques terrain)
-laz_dir_original <- file.path(data_dir, "laz")
+# DTM créé dans l'exercice 3.1 (lasR)
+dtm_vrt <- file.path(data_dir, "dtm_complet.vrt")
 
-# Fichier VRT pour les métriques terrain
+# VRT pour altitude, pente et aspect à 1m
+vrt_altitude_1m <- file.path(data_dir, "altitude_1m.vrt")
+vrt_slope_1m <- file.path(data_dir, "slope_1m.vrt")
+vrt_aspect_1m <- file.path(data_dir, "aspect_1m.vrt")
+
+# Fichier VRT pour les métriques terrain à 25m
 vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
+
+# Répertoire des tuiles LAZ (pour les emprises)
+laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
 # Configuration parallélisation
 N_CORES <- 4L
 ```
 
 ```{r ex-8-4, exercise=TRUE, exercise.timelimit=600, exercise.setup="ex-8-4-setup"}
-# === 8.4 : Métriques terrain (LAScatalog) ===
+# === 8.4 : Métriques terrain depuis DTM (Section 3) ===
 
-cat("=== Calcul des métriques de terrain sur l'ensemble de la zone ===\n\n")
+cat("=== Calcul des métriques terrain depuis le DTM existant ===\n\n")
 
-# Compter les fichiers LAZ source et tuiles TIF existantes
-n_laz <- length(list.files(laz_dir_original, pattern = "\\.laz$"))
-existing_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
-n_existing <- length(existing_tiles)
+# Vérifier que le DTM existe
+if (!file.exists(dtm_vrt)) {
+  stop("DTM non trouvé: ", dtm_vrt, "\n",
+       "Exécutez d'abord l'exercice 3.1 pour créer le DTM.")
+}
 
-cat("Fichiers source:", n_laz, "LAZ\n")
-cat("Tuiles existantes:", n_existing, "TIF\n\n")
+# Lister les fichiers LAZ pour obtenir les emprises
+laz_files <- list.files(laz_dir_normalized, pattern = "\\.laz$", full.names = TRUE)
+n_laz <- length(laz_files)
 
-# Vérifier si le traitement est complet
-if (file.exists(vrt_terrain) && n_existing >= n_laz) {
-  cat(">>> Traitement complet, chargement du VRT existant\n\n")
+# Compter les tuiles existantes
+existing_terrain_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
+existing_slope_tiles <- list.files(tiles_dir_slope, pattern = "\\.tif$", full.names = TRUE)
+existing_aspect_tiles <- list.files(tiles_dir_aspect, pattern = "\\.tif$", full.names = TRUE)
+
+cat("DTM source:", basename(dtm_vrt), "\n")
+cat("Tuiles de référence (LAZ):", n_laz, "\n")
+cat("Tuiles existantes - Pente 1m:", length(existing_slope_tiles), "\n")
+cat("Tuiles existantes - Aspect 1m:", length(existing_aspect_tiles), "\n")
+cat("Tuiles existantes - Terrain 25m:", length(existing_terrain_tiles), "\n\n")
+
+# Vérifier si le traitement terrain 25m est complet
+if (file.exists(vrt_terrain) && length(existing_terrain_tiles) >= n_laz) {
+  cat(">>> Métriques terrain 25m complètes, chargement du VRT existant\n\n")
   metrics_terrain_raster <- terra::rast(vrt_terrain)
-  # Restaurer les noms de couches depuis une tuile TIF
-  tile_names <- names(terra::rast(existing_tiles[1]))
+  tile_names <- names(terra::rast(existing_terrain_tiles[1]))
   names(metrics_terrain_raster) <- tile_names
 } else {
-  # Nettoyer les tuiles existantes pour éviter les conflits
-  if (n_existing > 0) {
-    cat(">>> Nettoyage des", n_existing, "tuiles existantes (traitement incomplet)\n")
-    file.remove(existing_tiles)
-    if (file.exists(vrt_terrain)) file.remove(vrt_terrain)
-    cat(">>> Recalcul complet de toutes les tuiles\n\n")
-  } else {
-    cat(">>> Nouveau calcul de toutes les tuiles\n\n")
-  }
+  # ============================================================
+  # ÉTAPE 1 : Calcul pente et aspect à 1m par tuiles (parallèle)
+  # ============================================================
 
-  # Configuration parallélisation
-  library(future)
-  plan(multisession, workers = N_CORES)
-  lidR::set_lidr_threads(N_CORES)
+  cat("--- Étape 1 : Calcul pente/aspect à 1m par tuiles ---\n\n")
 
-  # Fonction pour terrain_points_metrics
-  f_terrain <- function(x, y, z) {
-    as.list(lidaRtRee::terrain_points_metrics(data.frame(x, y, z)))
-  }
+  # Obtenir les emprises des tuiles LAZ
+  tile_extents <- lapply(laz_files, function(f) {
+    hdr <- lidR::readLASheader(f)
+    c(xmin = hdr@PHB$`Min X`, xmax = hdr@PHB$`Max X`,
+      ymin = hdr@PHB$`Min Y`, ymax = hdr@PHB$`Max Y`)
+  })
 
-  # Créer le LAScatalog des tuiles ORIGINALES (non normalisées)
-  # Filtrer uniquement les points sol (classes 2 et 9)
-  filter_ground <- "-keep_class 2 9"
+  # Identifier les tuiles pente/aspect manquantes
+  expected_slope <- sapply(laz_files, function(f) {
+    file.path(tiles_dir_slope, paste0("slope_", tools::file_path_sans_ext(basename(f)), ".tif"))
+  })
+  expected_aspect <- sapply(laz_files, function(f) {
+    file.path(tiles_dir_aspect, paste0("aspect_", tools::file_path_sans_ext(basename(f)), ".tif"))
+  })
 
-  cata_ground <- lidR::readALSLAScatalog(laz_dir_original,
-                                          progress = FALSE,
-                                          select = "xyzc",
-                                          filter = filter_ground)
-  sf::st_crs(cata_ground) <- 2154
+  missing_slope <- !file.exists(expected_slope)
+  missing_aspect <- !file.exists(expected_aspect)
+  missing_deriv <- missing_slope | missing_aspect
+  indices_deriv <- which(missing_deriv)
 
-  # === OPTIONS LAScatalog ===
-  lidR::opt_chunk_buffer(cata_ground) <- 30
-  lidR::opt_progress(cata_ground) <- TRUE
-  lidR::opt_output_files(cata_ground) <- file.path(tiles_dir_terrain,
-                                                    "terrain_{XLEFT}_{YBOTTOM}")
+  cat("Tuiles pente/aspect à calculer:", length(indices_deriv), "/", n_laz, "\n")
 
-  cat("Configuration:\n")
-  cat("  - future workers:", N_CORES, "\n")
-  cat("  - lidR threads:", lidR::get_lidr_threads(), "\n")
-  cat("  - Tuiles à traiter:", nrow(cata_ground), "\n")
-  cat("  - Filtre:", filter_ground, "(points sol uniquement)\n")
-  cat("  - Buffer:", lidR::opt_chunk_buffer(cata_ground), "m\n")
-  cat("  - Sortie:", basename(tiles_dir_terrain), "/\n\n")
+  if (length(indices_deriv) > 0) {
+    # Fonction pour calculer pente et aspect d'une tuile
+    process_terrain_derivatives <- function(i, tile_extents, laz_files,
+                                             tiles_dir_slope, tiles_dir_aspect, dtm_vrt) {
+      ext_i <- tile_extents[[i]]
+      laz_basename <- tools::file_path_sans_ext(basename(laz_files[i]))
 
-  # Calcul des métriques terrain (lidR saute les fichiers existants)
-  cat("Calcul pixel_metrics terrain par tuile...\n")
-  start_time <- Sys.time()
+      # Fichiers de sortie
+      slope_file <- file.path(tiles_dir_slope, paste0("slope_", laz_basename, ".tif"))
+      aspect_file <- file.path(tiles_dir_aspect, paste0("aspect_", laz_basename, ".tif"))
 
-  lidR::pixel_metrics(cata_ground, ~ f_terrain(X, Y, Z), res = resolution)
+      # Emprise avec buffer pour éviter les artefacts de bord
+      buffer <- 10  # 10m de buffer pour terra::terrain
+      ext_buffered <- terra::ext(
+        ext_i["xmin"] - buffer, ext_i["xmax"] + buffer,
+        ext_i["ymin"] - buffer, ext_i["ymax"] + buffer
+      )
+      ext_crop <- terra::ext(ext_i["xmin"], ext_i["xmax"], ext_i["ymin"], ext_i["ymax"])
 
-  elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
-  cat("\nTemps de calcul:", round(elapsed, 1), "s\n\n")
+      # Charger le DTM pour cette tuile
+      dtm_tile <- terra::crop(terra::rast(dtm_vrt), ext_buffered)
 
-  # Réinitialiser future
-  plan(sequential)
+      # Calculer pente et aspect
+      slope_tile <- terra::terrain(dtm_tile, v = "slope", unit = "degrees")
+      aspect_tile <- terra::terrain(dtm_tile, v = "aspect", unit = "degrees")
 
-  # Lister toutes les tuiles (anciennes + nouvelles)
-  terrain_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
-  cat("Tuiles totales:", length(terrain_tiles), "\n")
+      # Cropper à l'emprise sans buffer
+      slope_tile <- terra::crop(slope_tile, ext_crop)
+      aspect_tile <- terra::crop(aspect_tile, ext_crop)
 
-  # Récupérer les noms de couches depuis une tuile (le VRT peut les perdre)
-  tile_names <- names(terra::rast(terrain_tiles[1]))
+      # Sauvegarder
+      terra::writeRaster(slope_tile, slope_file, overwrite = TRUE)
+      terra::writeRaster(aspect_tile, aspect_file, overwrite = TRUE)
 
-  # Créer/recréer le VRT (assemblage virtuel sans copie)
-  metrics_terrain_raster <- terra::vrt(terrain_tiles, vrt_terrain, overwrite = TRUE)
+      return(c(slope_file, aspect_file))
+    }
 
-  # Restaurer les noms de couches
-  names(metrics_terrain_raster) <- tile_names
-  cat("VRT créé:", basename(vrt_terrain), "\n")
+    # Traitement parallèle
+    library(future)
+    library(future.apply)
+    plan(multisession, workers = N_CORES)
 
-  # Retirer adjR2_plane si présent (statistique de qualité du plan ajusté)
-  if ("adjR2_plane" %in% names(metrics_terrain_raster)) {
-    metrics_terrain_raster <- terra::subset(
-      metrics_terrain_raster,
-      which(names(metrics_terrain_raster) != "adjR2_plane")
+    cat("Traitement parallèle avec", N_CORES, "workers...\n")
+    start_time <- Sys.time()
+
+    results_deriv <- future_lapply(
+      indices_deriv,
+      function(i) {
+        process_terrain_derivatives(i, tile_extents, laz_files,
+                                     tiles_dir_slope, tiles_dir_aspect, dtm_vrt)
+      },
+      future.seed = TRUE
     )
+
+    plan(sequential)
+
+    elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    cat("Temps de calcul pente/aspect:", round(elapsed, 1), "s\n\n")
+  } else {
+    cat(">>> Tuiles pente/aspect déjà complètes\n\n")
   }
+
+  # Créer/mettre à jour les VRT altitude, pente et aspect à 1m
+  slope_tiles <- list.files(tiles_dir_slope, pattern = "\\.tif$", full.names = TRUE)
+  aspect_tiles <- list.files(tiles_dir_aspect, pattern = "\\.tif$", full.names = TRUE)
+
+  # Copier le DTM vers altitude_1m.vrt pour cohérence de nomenclature
+  if (!file.exists(vrt_altitude_1m) || file.mtime(dtm_vrt) > file.mtime(vrt_altitude_1m)) {
+    file.copy(dtm_vrt, vrt_altitude_1m, overwrite = TRUE)
+    cat("VRT altitude 1m créé:", basename(vrt_altitude_1m), "\n")
+  }
+
+  if (length(slope_tiles) > 0) {
+    slope_1m <- terra::vrt(slope_tiles, vrt_slope_1m, overwrite = TRUE)
+    cat("VRT pente 1m créé:", basename(vrt_slope_1m), "\n")
+  }
+  if (length(aspect_tiles) > 0) {
+    aspect_1m <- terra::vrt(aspect_tiles, vrt_aspect_1m, overwrite = TRUE)
+    cat("VRT aspect 1m créé:", basename(vrt_aspect_1m), "\n")
+  }
+
+  # ============================================================
+  # ÉTAPE 2 : Agrégation à 25m par tuiles (parallèle)
+  # ============================================================
+
+  cat("\n--- Étape 2 : Agrégation à 25m par tuiles ---\n\n")
+
+  # Identifier les tuiles terrain 25m manquantes
+  expected_terrain <- sapply(laz_files, function(f) {
+    file.path(tiles_dir_terrain, paste0("terrain_", tools::file_path_sans_ext(basename(f)), ".tif"))
+  })
+  missing_terrain <- !file.exists(expected_terrain)
+  indices_terrain <- which(missing_terrain)
+
+  cat("Tuiles terrain 25m à calculer:", length(indices_terrain), "/", n_laz, "\n")
+
+  # Supprimer le VRT obsolète
+  if (file.exists(vrt_terrain)) file.remove(vrt_terrain)
+
+  if (length(indices_terrain) > 0) {
+    # Fonction pour agréger une tuile à 25m
+    process_terrain_aggregate <- function(i, tile_extents, laz_files, tiles_dir_terrain,
+                                           vrt_altitude_1m, vrt_slope_1m, vrt_aspect_1m, resolution) {
+      ext_i <- tile_extents[[i]]
+      laz_basename <- tools::file_path_sans_ext(basename(laz_files[i]))
+
+      # Fichier de sortie
+      terrain_file <- file.path(tiles_dir_terrain, paste0("terrain_", laz_basename, ".tif"))
+
+      # Emprise de la tuile
+      ext_terra <- terra::ext(ext_i["xmin"], ext_i["xmax"], ext_i["ymin"], ext_i["ymax"])
+
+      # Charger les rasters 1m pour cette tuile
+      altitude_tile <- terra::crop(terra::rast(vrt_altitude_1m), ext_terra)
+      slope_tile <- terra::crop(terra::rast(vrt_slope_1m), ext_terra)
+      aspect_tile <- terra::crop(terra::rast(vrt_aspect_1m), ext_terra)
+
+      # Facteur d'agrégation
+      fact <- as.integer(resolution / terra::res(altitude_tile)[1])
+
+      # Agréger à 25m
+      altitude_mean <- terra::aggregate(altitude_tile, fact = fact, fun = "mean", na.rm = TRUE)
+      slope_deg <- terra::aggregate(slope_tile, fact = fact, fun = "mean", na.rm = TRUE)
+      # Pour l'aspect, utiliser la moyenne (simplifié - idéalement moyenne circulaire)
+      aspect_deg <- terra::aggregate(aspect_tile, fact = fact, fun = "mean", na.rm = TRUE)
+
+      # Combiner en stack
+      terrain_stack <- c(altitude_mean, slope_deg, aspect_deg)
+      names(terrain_stack) <- c("altitude_mean", "slope_deg", "aspect_deg")
+
+      # Sauvegarder
+      terra::writeRaster(terrain_stack, terrain_file, overwrite = TRUE)
+
+      return(terrain_file)
+    }
+
+    # Traitement parallèle
+    library(future)
+    library(future.apply)
+    plan(multisession, workers = N_CORES)
+
+    cat("Traitement parallèle avec", N_CORES, "workers...\n")
+    start_time <- Sys.time()
+
+    results_terrain <- future_lapply(
+      indices_terrain,
+      function(i) {
+        process_terrain_aggregate(i, tile_extents, laz_files, tiles_dir_terrain,
+                                   vrt_altitude_1m, vrt_slope_1m, vrt_aspect_1m, resolution)
+      },
+      future.seed = TRUE
+    )
+
+    plan(sequential)
+
+    elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    cat("Temps de calcul agrégation:", round(elapsed, 1), "s\n\n")
+  } else {
+    cat(">>> Tuiles terrain 25m déjà complètes\n\n")
+  }
+
+  # Assembler les tuiles terrain en VRT
+  terrain_tiles <- list.files(tiles_dir_terrain, pattern = "\\.tif$", full.names = TRUE)
+  cat("Tuiles terrain totales:", length(terrain_tiles), "\n")
+
+  tile_names <- names(terra::rast(terrain_tiles[1]))
+  metrics_terrain_raster <- terra::vrt(terrain_tiles, vrt_terrain, overwrite = TRUE)
+  names(metrics_terrain_raster) <- tile_names
+  cat("VRT terrain 25m créé:", basename(vrt_terrain), "\n")
 }
 
 # Statistiques
@@ -4952,6 +5326,13 @@ La fonction `aba_predict()` applique le modèle calibré aux métriques raster p
 data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
 output_dir_rasters <- file.path(data_dir, "rasters_aba")
 
+# Créer les répertoires si nécessaire
+if (!dir.exists(output_dir_rasters)) dir.create(output_dir_rasters, recursive = TRUE)
+
+# Répertoire pour les tuiles de prédiction
+tiles_dir_prediction <- file.path(output_dir_rasters, "tiles_prediction")
+if (!dir.exists(tiles_dir_prediction)) dir.create(tiles_dir_prediction, recursive = TRUE)
+
 # Charger les modèles et paramètres (exercice 7.10)
 load(file.path(data_dir, "models_aba.rda"))
 
@@ -4959,40 +5340,34 @@ resolution <- 25
 
 # Fichiers cache des métriques (exercices 8.2-8.4)
 vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
-cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
+vrt_trees <- file.path(output_dir_rasters, "metrics_trees.vrt")
 vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
 
-# Charger les métriques depuis le cache (VRT pour points et terrain)
-metrics_points_raster <- terra::rast(vrt_points)
-metrics_trees_raster <- terra::rast(cache_trees)
-metrics_terrain_raster <- terra::rast(vrt_terrain)
+# VRT pour la prédiction
+vrt_prediction <- file.path(output_dir_rasters, "prediction.vrt")
 
-# Harmoniser les emprises et combiner
-metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
-metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
-metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
-metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
+# Répertoire des tuiles LAZ (pour les emprises)
+laz_dir_normalized <- file.path(data_dir, "result_laz_normalized")
 
-metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
+# Configuration parallélisation
+N_CORES <- 4L
 ```
 
-```{r ex-8-5, exercise=TRUE, exercise.timelimit=120, exercise.setup="ex-8-5-setup"}
-# === 8.5 : Prédiction wall-to-wall avec aba_predict() ===
+```{r ex-8-5, exercise=TRUE, exercise.timelimit=300, exercise.setup="ex-8-5-setup"}
+# === 8.5 : Prédiction wall-to-wall avec aba_predict() (parallélisé) ===
 
 cat("=== Application du modèle ABA sur l'ensemble de la zone ===\n\n")
 
-cat("MÉTRIQUES CHARGÉES DEPUIS CACHE:\n")
-cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-cat("  - Points:", terra::nlyr(metrics_points_raster), "couches\n")
-cat("  - Arbres:", terra::nlyr(metrics_trees_raster), "couches\n")
-cat("  - Terrain:", terra::nlyr(metrics_terrain_raster), "couches\n")
-cat("  - Total:", terra::nlyr(metrics_map), "couches\n\n")
+# Lister les fichiers LAZ pour obtenir les emprises
+laz_files <- list.files(laz_dir_normalized, pattern = "\\.laz$", full.names = TRUE)
+n_laz <- length(laz_files)
 
-cat("Dimensions:", terra::ncol(metrics_map), "x", terra::nrow(metrics_map), "pixels\n")
+# Compter les tuiles de prédiction existantes
+existing_pred_tiles <- list.files(tiles_dir_prediction, pattern = "\\.tif$", full.names = TRUE)
+n_existing <- length(existing_pred_tiles)
 
-n_valid <- sum(!is.na(terra::values(metrics_map[[1]])))
-surface_ha <- n_valid * (resolution^2) / 10000
-cat("Surface:", round(surface_ha, 1), "ha\n\n")
+cat("Tuiles de référence (LAZ):", n_laz, "\n")
+cat("Tuiles prédiction existantes:", n_existing, "\n\n")
 
 # Modèle utilisé
 cat("MODÈLE UTILISÉ:\n")
@@ -5001,20 +5376,142 @@ print(model_aba$model)
 cat("\n")
 
 # Vérifier que les prédicteurs du modèle sont présents
-predictors <- all.vars(model_aba$model$terms)[-1]  # Exclure la variable réponse
-cat("Prédicteurs requis:", paste(predictors, collapse = ", "), "\n")
-cat("Présents:", sum(predictors %in% names(metrics_map)), "/", length(predictors), "\n\n")
+predictors <- all.vars(model_aba$model$terms)[-1]
+cat("Prédicteurs requis:", paste(predictors, collapse = ", "), "\n\n")
 
-# Prédiction
-cat("Prédiction wall-to-wall en cours...\n")
-prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
+# Vérifier si le traitement est complet
+if (file.exists(vrt_prediction) && n_existing >= n_laz) {
+  cat(">>> Prédiction complète, chargement du VRT existant\n\n")
+  prediction_map <- terra::rast(vrt_prediction)
+} else {
+  # Identifier les tuiles manquantes
+  expected_pred_tiles <- sapply(laz_files, function(f) {
+    laz_basename <- tools::file_path_sans_ext(basename(f))
+    file.path(tiles_dir_prediction, paste0("pred_", laz_basename, ".tif"))
+  })
+  missing_mask <- !file.exists(expected_pred_tiles)
+  n_missing <- sum(missing_mask)
+  indices_to_process <- which(missing_mask)
 
-cat("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+  cat("Tuiles à calculer:", n_missing, "/", n_laz, "\n")
+
+  # Supprimer le VRT obsolète
+  if (file.exists(vrt_prediction)) file.remove(vrt_prediction)
+
+  if (n_missing > 0) {
+    # Obtenir les emprises des tuiles LAZ
+    tile_extents <- lapply(laz_files, function(f) {
+      hdr <- lidR::readLASheader(f)
+      c(xmin = hdr@PHB$`Min X`, xmax = hdr@PHB$`Max X`,
+        ymin = hdr@PHB$`Min Y`, ymax = hdr@PHB$`Max Y`)
+    })
+
+    # Récupérer les noms des couches depuis les tuiles TIF existantes
+    # (les VRT perdent parfois les noms)
+    tiles_points <- list.files(file.path(output_dir_rasters, "tiles_metrics_points"),
+                                pattern = "\\.tif$", full.names = TRUE)
+    tiles_trees <- list.files(file.path(output_dir_rasters, "tiles_metrics_trees"),
+                               pattern = "\\.tif$", full.names = TRUE)
+    tiles_terrain <- list.files(file.path(output_dir_rasters, "tiles_metrics_terrain"),
+                                 pattern = "\\.tif$", full.names = TRUE)
+
+    names_points <- names(terra::rast(tiles_points[1]))
+    names_trees <- names(terra::rast(tiles_trees[1]))
+    names_terrain <- names(terra::rast(tiles_terrain[1]))
+
+    cat("Couches - Points:", length(names_points),
+        "| Arbres:", length(names_trees),
+        "| Terrain:", length(names_terrain), "\n")
+
+    # Fonction de prédiction pour une tuile
+    process_prediction_tile <- function(i, tile_extents, laz_files, tiles_dir_prediction,
+                                         vrt_points, vrt_trees, vrt_terrain,
+                                         names_points, names_trees, names_terrain,
+                                         model_aba) {
+      ext_i <- tile_extents[[i]]
+      laz_basename <- tools::file_path_sans_ext(basename(laz_files[i]))
+
+      # Fichier de sortie
+      pred_file <- file.path(tiles_dir_prediction, paste0("pred_", laz_basename, ".tif"))
+
+      # Emprise de la tuile
+      ext_terra <- terra::ext(ext_i["xmin"], ext_i["xmax"], ext_i["ymin"], ext_i["ymax"])
+
+      # Charger les métriques pour cette tuile
+      metrics_points <- terra::crop(terra::rast(vrt_points), ext_terra)
+      metrics_trees <- terra::crop(terra::rast(vrt_trees), ext_terra)
+      metrics_terrain <- terra::crop(terra::rast(vrt_terrain), ext_terra)
+
+      # Restaurer les noms des couches (perdus par les VRT)
+      names(metrics_points) <- names_points
+      names(metrics_trees) <- names_trees
+      names(metrics_terrain) <- names_terrain
+
+      # Harmoniser les emprises
+      metrics_terrain <- terra::extend(metrics_terrain, metrics_points)
+      metrics_terrain <- terra::crop(metrics_terrain, metrics_points)
+      metrics_trees <- terra::extend(metrics_trees, metrics_points)
+      metrics_trees <- terra::crop(metrics_trees, metrics_points)
+
+      # Combiner
+      metrics_tile <- c(metrics_points, metrics_trees, metrics_terrain)
+
+      # Prédiction
+      pred_tile <- lidaRtRee::aba_predict(model_aba, metrics_tile)
+
+      # Filtrer les valeurs hors plage plausible (G entre 0 et 80 m²/ha)
+      pred_tile[pred_tile < 0] <- NA
+      pred_tile[pred_tile > 80] <- NA
+
+      # Sauvegarder
+      terra::writeRaster(pred_tile, pred_file, overwrite = TRUE)
+
+      return(pred_file)
+    }
+
+    # Traitement parallèle
+    library(future)
+    library(future.apply)
+    plan(multisession, workers = N_CORES)
+
+    cat("\nTraitement parallèle avec", N_CORES, "workers...\n")
+    start_time <- Sys.time()
+
+    results <- future_lapply(
+      indices_to_process,
+      function(i) {
+        process_prediction_tile(i, tile_extents, laz_files, tiles_dir_prediction,
+                                 vrt_points, vrt_trees, vrt_terrain,
+                                 names_points, names_trees, names_terrain,
+                                 model_aba)
+      },
+      future.seed = TRUE
+    )
+
+    plan(sequential)
+
+    elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    cat("Temps de calcul:", round(elapsed, 1), "s\n\n")
+  }
+
+  # Assembler les tuiles en VRT
+  pred_tiles <- list.files(tiles_dir_prediction, pattern = "\\.tif$", full.names = TRUE)
+  cat("Tuiles prédiction totales:", length(pred_tiles), "\n")
+
+  prediction_map <- terra::vrt(pred_tiles, vrt_prediction, overwrite = TRUE)
+  cat("VRT prédiction créé:", basename(vrt_prediction), "\n\n")
+}
+
+# Statistiques
+cat("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 cat("RÉSULTAT:\n")
 cat("  - Variable prédite: G_m2_ha (surface terrière)\n")
 cat("  - Min:", round(terra::minmax(prediction_map)[1], 1), "m²/ha\n")
 cat("  - Max:", round(terra::minmax(prediction_map)[2], 1), "m²/ha\n")
 cat("  - Moyenne:", round(terra::global(prediction_map, "mean", na.rm = TRUE)[[1]], 1), "m²/ha\n\n")
+
+n_valid <- sum(!is.na(terra::values(prediction_map)))
+surface_ha <- n_valid * (resolution^2) / 10000
 
 # Visualisation
 par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
@@ -5032,9 +5529,9 @@ par(mfrow = c(1, 1))
 cat(">>> Prédiction réalisée sur", round(surface_ha, 1), "ha\n")
 ```
 
-### 8.6 Nettoyage et masquage forêt
+### 8.6 Nettoyage, export et synthèse
 
-La fonction `clean_raster()` permet d'appliquer des seuils de validité et un masque forêt pour filtrer les valeurs aberrantes et les zones non forestières.
+La fonction `clean_raster()` permet d'appliquer des seuils de validité et un masque forêt pour filtrer les valeurs aberrantes et les zones non forestières. Le masque forêt est créé à partir de la carte d'occupation des sols **OSO** (CESBIO) en sélectionnant les classes forestières (17=Feuillus, 18=Conifères, 19=Mixte). La carte nettoyée est ensuite exportée au format GeoTIFF avec les statistiques de synthèse.
 
 ```{r ex-8-6-setup, message=FALSE, warning=FALSE}
 # Répertoire des données
@@ -5046,29 +5543,18 @@ load(file.path(data_dir, "models_aba.rda"))
 
 resolution <- 25
 
-# Fichiers cache des métriques (exercices 8.2-8.4)
-vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
-cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
-vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
+# Fichiers cache (exercices 8.2-8.5)
+vrt_prediction <- file.path(output_dir_rasters, "prediction.vrt")
 
-# Charger les métriques depuis le cache (VRT pour points et terrain)
-metrics_points_raster <- terra::rast(vrt_points)
-metrics_trees_raster <- terra::rast(cache_trees)
-metrics_terrain_raster <- terra::rast(vrt_terrain)
+# Carte d'occupation des sols OSO (CESBIO)
+oso_file <- file.path(data_dir, "oso_cache", "oso.tif")
 
-# Harmoniser et combiner
-metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
-metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
-metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
-metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
-metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
-
-# Prédiction
-prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
+# Charger la prédiction depuis le cache (exercice 8.5)
+prediction_map <- terra::rast(vrt_prediction)
 ```
 
 ```{r ex-8-6, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-6-setup"}
-# === 8.6 : Nettoyage avec clean_raster() ===
+# === 8.6 : Nettoyage avec clean_raster() et masque OSO ===
 
 cat("=== Nettoyage de la carte de prédiction ===\n\n")
 
@@ -5080,17 +5566,32 @@ cat("Seuils de validité:\n")
 cat("  - G minimum:", g_min, "m²/ha\n")
 cat("  - G maximum:", g_max, "m²/ha\n\n")
 
-# Créer un masque forêt simple basé sur la couverture > 2m
-# (en pratique, utiliser un masque BD Forêt ou autre)
-if ("pzabove2" %in% names(metrics_map)) {
-  forest_mask <- metrics_map[["pzabove2"]] > 0.2  # >20% couverture
-  cat("Masque forêt créé (couverture > 20%)\n")
+# Créer un masque forêt depuis OSO (CESBIO)
+# Classes forestières OSO : 17=Feuillus, 18=Conifères, 19=Forêt mixte
+if (file.exists(oso_file)) {
+  cat("Chargement du masque OSO...\n")
+  oso <- terra::rast(oso_file)
+
+  # Reprojeter et rééchantillonner à la résolution de la prédiction
+  if (!terra::same.crs(oso, prediction_map)) {
+    cat("  - Reprojection vers CRS de la prédiction\n")
+  }
+  oso_aligned <- terra::project(oso, prediction_map, method = "near")
+
+  # Créer le masque forêt (classes 17, 18, 19)
+  forest_mask <- (oso_aligned == 17) | (oso_aligned == 18) | (oso_aligned == 19)
+
+  # Statistiques du masque
   n_forest <- sum(terra::values(forest_mask), na.rm = TRUE)
-  n_total <- terra::ncell(forest_mask)
+  n_total <- sum(!is.na(terra::values(forest_mask)))
+
+  cat("Masque forêt OSO créé:\n")
+  cat("  - Classes: 17 (Feuillus), 18 (Conifères), 19 (Mixte)\n")
   cat("  - Pixels forêt:", n_forest, "(", round(100 * n_forest / n_total, 1), "%)\n")
   cat("  - Pixels total:", n_total, "\n\n")
 } else {
   forest_mask <- NULL
+  cat("Fichier OSO non trouvé:", oso_file, "\n")
   cat("Pas de masque forêt appliqué\n\n")
 }
 
@@ -5099,81 +5600,21 @@ prediction_clean <- lidaRtRee::clean_raster(prediction_map,
                                              c(g_min, g_max),
                                              forest_mask)
 
-cat("Après nettoyage:\n")
-n_valid <- sum(!is.na(terra::values(prediction_clean)))
-surface_ha <- n_valid * (resolution^2) / 10000
-cat("  - Pixels valides:", n_valid, "\n")
-cat("  - Surface forestière:", round(surface_ha, 1), "ha\n")
-cat("  - Min:", round(terra::minmax(prediction_clean)[1], 1), "m²/ha\n")
-cat("  - Max:", round(terra::minmax(prediction_clean)[2], 1), "m²/ha\n\n")
+# Sauvegarder la carte nettoyée avec nom explicite
+output_file <- file.path(data_dir, "prediction_G_m2_ha.tif")
+terra::writeRaster(prediction_clean, filename = output_file, overwrite = TRUE)
+cat("Carte exportée:", basename(output_file), "\n\n")
 
 # Visualisation comparaison
 par(mfrow = c(1, 2), mar = c(2, 2, 3, 1))
 terra::plot(prediction_map, main = "Avant nettoyage",
             col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
-terra::plot(prediction_clean, main = "Après nettoyage (masque forêt)",
+terra::plot(prediction_clean, main = "Après nettoyage (masque OSO)",
             col = grDevices::hcl.colors(50, "Greens", rev = TRUE))
 par(mfrow = c(1, 1))
 
-cat(">>> Carte nettoyée et masquée sur", round(surface_ha, 1), "ha de forêt\n")
-```
-
-### 8.7 Export et résumé
-
-Les cartes de prédiction sont exportées au format GeoTIFF et les statistiques de synthèse sont calculées pour l'ensemble de la zone d'étude.
-
-```{r ex-8-7-setup, message=FALSE, warning=FALSE}
-# Répertoire des données
-data_dir <- normalizePath(file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data"), mustWork = FALSE)
-output_dir <- data_dir
-output_dir_rasters <- file.path(data_dir, "rasters_aba")
-
-# Charger les modèles et paramètres (exercice 7.10)
-load(file.path(data_dir, "models_aba.rda"))
-
-resolution <- 25
-
-# Fichiers cache des métriques (exercices 8.2-8.4)
-vrt_points <- file.path(output_dir_rasters, "metrics_points.vrt")
-cache_trees <- file.path(output_dir_rasters, "metrics_trees_raster.tif")
-vrt_terrain <- file.path(output_dir_rasters, "metrics_terrain.vrt")
-
-# Charger les métriques depuis le cache (VRT pour points et terrain)
-metrics_points_raster <- terra::rast(vrt_points)
-metrics_trees_raster <- terra::rast(cache_trees)
-metrics_terrain_raster <- terra::rast(vrt_terrain)
-
-# Harmoniser et combiner
-metrics_terrain_raster <- terra::extend(metrics_terrain_raster, metrics_points_raster)
-metrics_terrain_raster <- terra::crop(metrics_terrain_raster, metrics_points_raster)
-metrics_trees_raster <- terra::extend(metrics_trees_raster, metrics_points_raster)
-metrics_trees_raster <- terra::crop(metrics_trees_raster, metrics_points_raster)
-metrics_map <- c(metrics_points_raster, metrics_trees_raster, metrics_terrain_raster)
-
-# Prédiction et nettoyage
-prediction_map <- lidaRtRee::aba_predict(model_aba, metrics_map)
-
-if ("pzabove2" %in% names(metrics_map)) {
-  forest_mask <- metrics_map[["pzabove2"]] > 0.2
-} else {
-  forest_mask <- NULL
-}
-prediction_clean <- lidaRtRee::clean_raster(prediction_map, c(0, 80), forest_mask)
-```
-
-```{r ex-8-7, exercise=TRUE, exercise.timelimit=60, exercise.setup="ex-8-7-setup"}
-# === 8.7 : Export et synthèse ===
-
-cat("=== Export des résultats ===\n\n")
-
-# Export GeoTIFF
-output_file <- file.path(output_dir, "prediction_G_m2_ha.tif")
-terra::writeRaster(prediction_clean, filename = output_file, overwrite = TRUE)
-
-cat("Fichier exporté:", output_file, "\n\n")
-
-# Statistiques de synthèse
-cat("=== STATISTIQUES DE SYNTHÈSE ===\n\n")
+# === STATISTIQUES DE SYNTHÈSE ===
+cat("\n=== STATISTIQUES DE SYNTHÈSE ===\n\n")
 
 # Surface totale
 n_pixels <- sum(!is.na(terra::values(prediction_clean)))
