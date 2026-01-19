@@ -184,7 +184,7 @@ Avant de commencer, définissons les paramètres du recalage. Ces valeurs sont s
 | Paramètre | Valeur | Description |
 |-----------|--------|-------------|
 | `h_max` | 50 m | Hauteur max végétation (seuillage) |
-| `radius` | 14.105 m | Rayon placette IFN standard |
+| `radius` | 15 m | Rayon placette standard |
 | `res` | 0.5 m | Résolution du CHM |
 | `buffer` | 5 m | Zone de recherche autour du GPS |
 | `step` | 0.5 m | Pas de la grille de recherche |
@@ -198,11 +198,11 @@ Complétez les paramètres de configuration :
 # Indice : utilisez les valeurs du tableau ci-dessus
 
 params <- list(
-  h_max = ___,       # Hauteur végétation maximale (m)
-  radius = ___,      # Rayon placette IFN (m)
-  res = ___,         # Résolution raster (m)
-  buffer = ___,      # Buffer de recherche (m)
-  step = ___         # Pas de recherche (m)
+  h_max = 50,       # Hauteur végétation maximale (m)
+  radius = 15,      # Rayon placette IFN (m)
+  res = 0.5,         # Résolution raster (m)
+  buffer = 5,      # Buffer de recherche (m)
+  step = 0.5         # Pas de recherche (m)
 )
 
 # Vérifier les paramètres
@@ -218,7 +218,7 @@ cat("- Pas:", params$step, "m\n")
 # Setup pour les chunks suivants
 params <- list(
   h_max = 50,
-  radius = 14.105,
+  radius = 15,
   res = 0.5,
   buffer = 5,
   step = 0.5
@@ -233,7 +233,7 @@ Les données proviennent du package **nemeton** (répertoire `inst/extdata/coreg
 - `trees` : 54 arbres avec positions (x, y) et diamètres (d)
 - `las_list` : 10 nuages LiDAR (un par placette)
 
-```{r load-field-data}
+```{r load-field-data, exercise=TRUE}
 library(lidaRtRee)
 library(terra)
 library(lidR)
@@ -251,7 +251,7 @@ print(head(plots[, c("placette", "Xtheo", "Ytheo", "XGPS", "YGPS", "dist")]))
 
 ### 2.3 Chargement des données arbres
 
-```{r load-tree-data}
+```{r load-tree-data, exercise=TRUE}
 # Les arbres sont déjà chargés dans le setup (trees <- ap)
 
 cat("=== ARBRES CHARGÉS ===\n")
@@ -293,7 +293,7 @@ cat("Première placette: X =", x_first, ", Y =", y_first, "\n")
 
 Pour ce tutoriel, nous disposons de 10 nuages LiDAR (un par placette), chargés dans `las_list`.
 
-```{r load-las}
+```{r load-las, exercise=TRUE}
 library(lidR)
 library(terra)
 
@@ -320,7 +320,7 @@ cat("Étendue Y:", round(las_example@header@PHB$`Min Y`, 0), "-", round(las_exam
 
 ### 3.2 Génération CHM avec lidR
 
-```{r chm-lidr}
+```{r chm-lidr, exercise=TRUE}
 # Fonction de génération CHM avec lidR
 create_chm_lidr <- function(las, res = 0.5, h_max = 50) {
   # CHM brut avec algorithme point-to-raster
@@ -424,7 +424,7 @@ quiz(
 
 ### 4.1 Extraction des arbres d'une placette
 
-```{r extract-trees}
+```{r extract-trees, exercise=TRUE}
 # Fonction d'extraction des arbres d'une placette
 extract_plot_trees <- function(trees, plot_id) {
   # Filtrer par ID de placette (colonne "plac")
@@ -453,7 +453,7 @@ print(plot_trees[, c("plac", "ess", "dia", "x", "y", "d")])
 
 Les arbres sont souvent mesurés en coordonnées polaires (azimut, distance) depuis le centre de la placette. Il faut les convertir en coordonnées cartésiennes.
 
-```{r polar-to-cart}
+```{r polar-to-cart, exercise=TRUE}
 # Conversion polaire → cartésien
 polar_to_cartesian <- function(center_x, center_y, azimut_deg, distance_m, slope_deg = 0) {
   # Correction de la distance pour la pente
@@ -479,7 +479,7 @@ cat("Résultat: X =", round(result$x, 2), ", Y =", round(result$y, 2), "\n")
 
 ### 4.3 Création du masque raster
 
-```{r create-mask}
+```{r create-mask, exercise=TRUE}
 # Fonction de création du masque placette
 create_plot_mask <- function(plot_trees, chm_template, weight_col = NULL) {
   # Créer raster vide aligné sur le CHM
@@ -554,7 +554,7 @@ terra::plot(selected_mask, main = paste("Masque placette", selected_plot_id))
 
 Le package **lidaRtRee** fournit la fonction `coregistration()` qui calcule la corrélation entre le CHM et le masque pour différentes translations.
 
-```{r coreg-function}
+```{r coreg-function, exercise=TRUE}
 # La fonction coregistration de lidaRtRee
 # Syntaxe : coregistration(chm, mask, buffer, step)
 
@@ -571,47 +571,46 @@ Le package **lidaRtRee** fournit la fonction `coregistration()` qui calcule la c
 # - cor2 : corrélation au second maximum
 # - ratio : cor1/cor2 (qualité du recalage)
 # - correlation_raster : carte de corrélation
+
+cat("Documentation de la fonction coregistration() affichée ci-dessus.\n")
+cat("Lancez le code pour confirmer la lecture.")
 ```
 
 ### 5.2 Application sur une placette
 
-```{r coreg-single, eval=FALSE}
+```{r coreg-single, exercise=TRUE}
 # Coregistration d'une placette
-if (exists("chm") && exists("mask")) {
-  result <- lidaRtRee::coregistration(
-    chm = chm,
-    mask = mask,
-    buffer = params$buffer,
-    step = params$step
-  )
+result <- lidaRtRee::coregistration(
+  chm = chm,
+  mask = mask,
+  buffer = params$buffer,
+  step = params$step
+)
 
-  cat("=== RÉSULTATS COREGISTRATION ===\n")
-  cat("Translation optimale: dx =", round(result$dx1, 2), "m, dy =", round(result$dy1, 2), "m\n")
-  cat("Corrélation max     :", round(result$cor1, 3), "\n")
-  cat("Second maximum      : dx =", round(result$dx2, 2), "m, dy =", round(result$dy2, 2), "m\n")
-  cat("Corrélation 2nd     :", round(result$cor2, 3), "\n")
-  cat("Ratio cor1/cor2     :", round(result$ratio, 2), "\n")
-}
+cat("=== RÉSULTATS COREGISTRATION ===\n")
+cat("Translation optimale: dx =", round(result$dx1, 2), "m, dy =", round(result$dy1, 2), "m\n")
+cat("Corrélation max     :", round(result$cor1, 3), "\n")
+cat("Second maximum      : dx =", round(result$dx2, 2), "m, dy =", round(result$dy2, 2), "m\n")
+cat("Corrélation 2nd     :", round(result$cor2, 3), "\n")
+cat("Ratio cor1/cor2     :", round(result$ratio, 2), "\n")
 ```
 
 ### 5.3 Visualisation de la corrélation
 
-```{r coreg-viz, eval=FALSE}
+```{r coreg-viz, exercise=TRUE}
 # Visualisation de la surface de corrélation
-if (exists("result")) {
-  # Carte de corrélation
-  terra::plot(result$correlation_raster,
-       main = "Surface de corrélation",
-       col = grDevices::hcl.colors(50, "plasma"))
+# Carte de corrélation
+terra::plot(result$correlation_raster,
+     main = "Surface de corrélation",
+     col = grDevices::hcl.colors(50, "plasma"))
 
-  # Marquer le maximum
-  points(result$dx1, result$dy1, pch = 4, col = "white", cex = 2, lwd = 2)
+# Marquer le maximum
+points(result$dx1, result$dy1, pch = 4, col = "white", cex = 2, lwd = 2)
 
-  # Ajouter légende
-  legend("topright",
-         legend = paste("Max: (", round(result$dx1, 1), ",", round(result$dy1, 1), ")"),
-         pch = 4, col = "white", bg = "gray30", text.col = "white")
-}
+# Ajouter légende
+legend("topright",
+       legend = paste("Max: (", round(result$dx1, 1), ",", round(result$dy1, 1), ")"),
+       pch = 4, col = "white", bg = "gray30", text.col = "white")
 ```
 
 ### 5.4 Interprétation des résultats
@@ -686,7 +685,7 @@ quiz(
 
 ### 6.1 Configuration parallèle
 
-```{r parallel-setup}
+```{r parallel-setup, exercise=TRUE}
 library(future)
 library(future.apply)
 
@@ -704,7 +703,7 @@ plan(multisession, workers = n_workers)
 
 ### 6.2 Fonction de traitement d'une placette
 
-```{r process-plot-function}
+```{r process-plot-function, exercise=TRUE}
 # Fonction complète de traitement d'une placette
 # Utilise les données pré-chargées (plots, trees, las_list)
 process_plot <- function(idx, plots, trees, las_list, params) {
@@ -772,7 +771,7 @@ process_plot <- function(idx, plots, trees, las_list, params) {
 
 ### 6.3 Exécution parallèle
 
-```{r parallel-exec, eval=FALSE}
+```{r parallel-exec, exercise=TRUE}
 # Indices des placettes à traiter
 n_plots <- nrow(plots)
 
@@ -800,7 +799,7 @@ cat("Erreurs            :", sum(results_df$status != "success"), "\n")
 
 ### 6.4 Cache incrémental
 
-```{r cache-results, eval=FALSE}
+```{r cache-results, exercise=TRUE}
 # Sauvegarder les résultats pour éviter de recalculer
 cache_file <- file.path(data_dir, "coregistration_results.rds")
 
@@ -847,7 +846,7 @@ cat("\nNombre de placettes traitées:", nrow(results_subset_df))
 
 ### 7.1 Statistiques de recalage
 
-```{r stats-coreg, eval=FALSE}
+```{r stats-coreg, exercise=TRUE}
 # Filtrer les résultats valides
 results_valid <- results_df[results_df$status == "success", ]
 
@@ -876,7 +875,7 @@ cat("  Moyenne ratio:", round(mean(results_valid$ratio), 2), "\n")
 
 ### 7.2 Tests statistiques
 
-```{r tests-coreg, eval=FALSE}
+```{r tests-coreg, exercise=TRUE}
 # Tests de significativité du décalage
 cat("=== TESTS STATISTIQUES ===\n\n")
 
@@ -897,7 +896,7 @@ cat("  Significatif (p < 0.05):", t_test_y$p.value < 0.05, "\n")
 
 ### 7.3 Visualisation
 
-```{r viz-coreg, eval=FALSE}
+```{r viz-coreg, exercise=TRUE}
 library(ggplot2)
 
 # Graphique des vecteurs de correction
@@ -931,7 +930,7 @@ print(p)
 
 ### 7.4 Export des résultats
 
-```{r export-coreg, eval=FALSE}
+```{r export-coreg, exercise=TRUE}
 library(sf)
 
 # Export CSV
