@@ -202,7 +202,7 @@ learnr::run_tutorial("01-acquisition", package = "nemeton")
 - `placettes_coregistrees.csv` : Coordonnées corrigées
 - `placettes_coregistrees.gpkg` : GeoPackage pour SIG
 
-**Note** : Ce tutoriel utilise les données de lidaRtRee (`quatre_montagnes`, `tree_inventory_chablais3`, `chm_chablais3`).
+**Note** : Ce tutoriel utilise les données incluses dans le package nemeton (`inst/extdata/coregistration/`) : 10 placettes d'inventaire avec arbres et nuages LiDAR.
 
 ## Structure du Cache
 
