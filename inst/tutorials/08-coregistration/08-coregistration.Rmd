@@ -184,7 +184,7 @@ Avant de commencer, définissons les paramètres du recalage. Ces valeurs sont s
 | Paramètre | Valeur | Description |
 |-----------|--------|-------------|
 | `h_max` | 50 m | Hauteur max végétation (seuillage) |
-| `radius` | 15 m | Rayon placette standard |
+| `radius` | 14.105 m | Rayon placette standard IFN |
 | `res` | 0.5 m | Résolution du CHM |
 | `buffer` | 5 m | Zone de recherche autour du GPS |
 | `step` | 0.5 m | Pas de la grille de recherche |
@@ -199,7 +199,7 @@ Complétez les paramètres de configuration :
 
 params <- list(
   h_max = 50,       # Hauteur végétation maximale (m)
-  radius = 15,      # Rayon placette IFN (m)
+  radius = 14.105,      # Rayon placette IFN (m)
   res = 0.5,         # Résolution raster (m)
   buffer = 5,      # Buffer de recherche (m)
   step = 0.5         # Pas de recherche (m)
@@ -218,7 +218,7 @@ cat("- Pas:", params$step, "m\n")
 # Setup pour les chunks suivants
 params <- list(
   h_max = 50,
-  radius = 15,
+  radius = 14.105,
   res = 0.5,
   buffer = 5,
   step = 0.5
@@ -308,7 +308,7 @@ library(lidR)
 library(terra)
 
 # Paramètres
-params <- list(h_max = 50, radius = 15, res = 0.5, buffer = 5, step = 0.5)
+params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
 # Charger les données
 coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
@@ -400,13 +400,13 @@ quiz(
     incorrect = "Non. L'avantage principal de lasR est sa vitesse grâce à l'implémentation en C++."
   ),
 
-  question("Pourquoi appliquer un filtre médian 3x3 ?",
-    answer("Pour lisser le bruit tout en préservant les contours", correct = TRUE),
-    answer("Pour augmenter la résolution"),
-    answer("Pour compresser les données"),
-    answer("Pour convertir en entiers"),
-    correct = "Exact ! Le filtre médian réduit le bruit impulsionnel tout en préservant les contours des couronnes d'arbres, contrairement à un filtre moyen.",
-    incorrect = "Non. Le filtre médian est utilisé pour réduire le bruit tout en conservant les transitions nettes (contours des arbres)."
+  question("Quel est le rôle de pit_fill() dans le pipeline CHM ?",
+    answer("Boucher les trous et puits du CHM", correct = TRUE),
+    answer("Augmenter la résolution"),
+    answer("Filtrer les points sol"),
+    answer("Normaliser les hauteurs"),
+    correct = "Exact ! pit_fill() comble les trous (pixels sans données) et les puits (artefacts de la triangulation) pour obtenir un CHM continu et lisse.",
+    incorrect = "Non. pit_fill() sert à boucher les trous et puits du CHM causés par l'absence de retours LiDAR ou les artefacts de triangulation."
   )
 )
 ```
