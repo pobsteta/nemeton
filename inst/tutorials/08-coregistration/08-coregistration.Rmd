@@ -12,7 +12,6 @@ description: "Apprendre à recaler les positions des placettes d'inventaire fore
 
 ```{r setup, include=FALSE}
 library(learnr)
-library(gradethis)
 
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -20,8 +19,6 @@ knitr::opts_chunk$set(
   message = FALSE,
   exercise.timelimit = 600
 )
-
-gradethis::gradethis_setup()
 
 # Configuration du cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
@@ -207,36 +204,6 @@ cat("- Buffer:", params$buffer, "m\n")
 cat("- Pas:", params$step, "m\n")
 ```
 
-```{r ex-params-solution}
-# Solution
-params <- list(
-  h_max = 50,        # Hauteur végétation maximale (m)
-  radius = 14.105,   # Rayon placette IFN (m)
-  res = 0.5,         # Résolution raster (m)
-  buffer = 5,        # Buffer de recherche (m)
-  step = 0.5         # Pas de recherche (m)
-)
-
-cat("Paramètres configurés:\n")
-cat("- Hauteur max:", params$h_max, "m\n")
-cat("- Rayon placette:", params$radius, "m\n")
-cat("- Résolution:", params$res, "m\n")
-cat("- Buffer:", params$buffer, "m\n")
-cat("- Pas:", params$step, "m\n")
-```
-
-```{r ex-params-check}
-grade_this({
-  pass_if(identical(.result$h_max, 50) &&
-          identical(.result$radius, 14.105) &&
-          identical(.result$res, 0.5) &&
-          identical(.result$buffer, 5) &&
-          identical(.result$step, 0.5),
-          "Paramètres correctement configurés !")
-  fail("Vérifiez les valeurs des paramètres.")
-})
-```
-
 ```{r params-setup, include=FALSE}
 # Setup pour les chunks suivants
 params <- list(
@@ -306,24 +273,6 @@ y_first <- ___
 cat("Nombre de placettes:", n_plots, "\n")
 cat("Arbres moyens/placette:", round(n_trees_mean, 1), "\n")
 cat("Première placette: X =", x_first, ", Y =", y_first, "\n")
-```
-
-```{r ex-explore-solution}
-# Solution
-n_plots <- nrow(plots)
-n_trees_mean <- nrow(trees) / n_plots
-x_first <- plots$Xtheo[1]
-y_first <- plots$Ytheo[1]
-
-cat("Nombre de placettes:", n_plots, "\n")
-cat("Arbres moyens/placette:", round(n_trees_mean, 1), "\n")
-cat("Première placette: X =", x_first, ", Y =", y_first, "\n")
-```
-
-```{r ex-explore-check}
-grade_this({
-  pass_if(TRUE, "Exploration terminée !")
-})
 ```
 
 ---
@@ -592,25 +541,6 @@ cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TR
 
 # 5. Visualiser
 terra::plot(selected_mask, main = paste("Masque placette", selected_plot_id))
-```
-
-```{r ex-mask-solution}
-# Solution
-selected_plot_id <- plot_ids[2]
-selected_trees <- extract_plot_trees(trees, selected_plot_id)
-selected_mask <- create_plot_mask(selected_trees, chm, weight_col = "d")
-
-cat("Placette sélectionnée:", selected_plot_id, "\n")
-cat("Nombre d'arbres:", nrow(selected_trees), "\n")
-cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TRUE), "\n")
-
-terra::plot(selected_mask, main = paste("Masque placette", selected_plot_id))
-```
-
-```{r ex-mask-check}
-grade_this({
-  pass_if(TRUE, "Masque créé avec succès !")
-})
 ```
 
 ---
@@ -912,30 +842,6 @@ results_subset_df <- do.call(rbind, results_subset)
 # 4. Afficher
 print(results_subset_df)
 cat("\nNombre de placettes traitées:", nrow(results_subset_df))
-```
-
-```{r ex-parallel-solution}
-# Solution
-plot_ids_subset <- plot_ids[1:3]
-
-results_subset <- lapply(plot_ids_subset, function(id) {
-  data.frame(
-    plot_id = id,
-    dx = runif(1, -3, 3),
-    dy = runif(1, -3, 3),
-    cor1 = runif(1, 0.5, 0.9)
-  )
-})
-
-results_subset_df <- do.call(rbind, results_subset)
-print(results_subset_df)
-cat("\nNombre de placettes traitées:", nrow(results_subset_df))
-```
-
-```{r ex-parallel-check}
-grade_this({
-  pass_if(TRUE, "Traitement parallèle configuré !")
-})
 ```
 
 ---
