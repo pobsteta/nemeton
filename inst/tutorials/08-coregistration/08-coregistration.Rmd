@@ -108,7 +108,7 @@ cat("
 cat("
 ┌───────────────────┐     ┌───────────────────┐
 │   MNH LiDAR       │     │  Masque placette  │
-│   (hauteurs)      │     │  (positions arbres)│
+│   (hauteurs)      │     │ (positions arbres)│
 └─────────┬─────────┘     └─────────┬─────────┘
           │                         │
           └──────────┬──────────────┘
@@ -172,25 +172,80 @@ quiz(
 
 ### 2.1 Paramètres de configuration
 
-Avant de commencer, définissons les paramètres du recalage :
+Avant de commencer, définissons les paramètres du recalage. Ces valeurs sont standards pour le recalage de placettes IFN :
 
-```{r params}
-# Paramètres du recalage
+| Paramètre | Valeur | Description |
+|-----------|--------|-------------|
+| `h_max` | 50 m | Hauteur max végétation (seuillage) |
+| `radius` | 14.105 m | Rayon placette IFN standard |
+| `res` | 0.5 m | Résolution du CHM |
+| `buffer` | 5 m | Zone de recherche autour du GPS |
+| `step` | 0.5 m | Pas de la grille de recherche |
+
+#### Exercice : Configurer les paramètres
+
+Complétez les paramètres de configuration :
+
+```{r ex-params, exercise=TRUE, exercise.lines=15}
+# Exercice : Complétez les paramètres du recalage
+# Indice : utilisez les valeurs du tableau ci-dessus
+
+params <- list(
+  h_max = ___,       # Hauteur végétation maximale (m)
+  radius = ___,      # Rayon placette IFN (m)
+  res = ___,         # Résolution raster (m)
+  buffer = ___,      # Buffer de recherche (m)
+  step = ___         # Pas de recherche (m)
+)
+
+# Vérifier les paramètres
+cat("Paramètres configurés:\n")
+cat("- Hauteur max:", params$h_max, "m\n")
+cat("- Rayon placette:", params$radius, "m\n")
+cat("- Résolution:", params$res, "m\n")
+cat("- Buffer:", params$buffer, "m\n")
+cat("- Pas:", params$step, "m\n")
+```
+
+```{r ex-params-solution}
+# Solution
 params <- list(
   h_max = 50,        # Hauteur végétation maximale (m)
-  radius = 14.105,   # Rayon placette (m) - standard IFN
+  radius = 14.105,   # Rayon placette IFN (m)
   res = 0.5,         # Résolution raster (m)
-  buffer = 5,        # Buffer de recherche autour position GPS (m)
+  buffer = 5,        # Buffer de recherche (m)
   step = 0.5         # Pas de recherche (m)
 )
 
-# Afficher les paramètres
-cat("=== PARAMÈTRES DE COREGISTRATION ===\n")
-cat("Hauteur max végétation :", params$h_max, "m\n")
-cat("Rayon placette        :", params$radius, "m\n")
-cat("Résolution raster     :", params$res, "m\n")
-cat("Buffer de recherche   :", params$buffer, "m\n")
-cat("Pas de recherche      :", params$step, "m\n")
+cat("Paramètres configurés:\n")
+cat("- Hauteur max:", params$h_max, "m\n")
+cat("- Rayon placette:", params$radius, "m\n")
+cat("- Résolution:", params$res, "m\n")
+cat("- Buffer:", params$buffer, "m\n")
+cat("- Pas:", params$step, "m\n")
+```
+
+```{r ex-params-check}
+grade_this({
+  pass_if(identical(.result$h_max, 50) &&
+          identical(.result$radius, 14.105) &&
+          identical(.result$res, 0.5) &&
+          identical(.result$buffer, 5) &&
+          identical(.result$step, 0.5),
+          "Paramètres correctement configurés !")
+  fail("Vérifiez les valeurs des paramètres.")
+})
+```
+
+```{r params-setup, include=FALSE}
+# Setup pour les chunks suivants
+params <- list(
+  h_max = 50,
+  radius = 14.105,
+  res = 0.5,
+  buffer = 5,
+  step = 0.5
+)
 ```
 
 ### 2.2 Chargement des données terrain
