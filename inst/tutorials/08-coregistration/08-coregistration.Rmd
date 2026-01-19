@@ -563,6 +563,13 @@ cat("- Chaque pixel contient la somme des diamètres des arbres à cette positio
 cat("- Les pixels sans arbre valent 0\n")
 cat("- Ce masque sera corrélé avec le CHM pour trouver le décalage optimal\n")
 
+# Récupérer le centre de la placette (position GPS)
+plot_info <- plots[plots$placette == first_plot_id, ]
+center_x <- plot_info$XGPS
+center_y <- plot_info$YGPS
+
+cat("\nCentre placette (GPS): X =", round(center_x, 1), ", Y =", round(center_y, 1), "\n")
+
 # Visualiser côte à côte
 par(mfrow = c(1, 2))
 
@@ -570,12 +577,14 @@ par(mfrow = c(1, 2))
 terra::plot(chm, main = paste("CHM + arbres (Placette", first_plot_id, ")"),
             col = grDevices::hcl.colors(50, "viridis"))
 points(plot_trees$x, plot_trees$y, pch = 1, col = "red", cex = plot_trees$d / 20, lwd = 2)
-legend("topright", legend = "Arbres (taille = diamètre)", pch = 1, col = "red", cex = 0.7)
+points(center_x, center_y, pch = 4, col = "blue", cex = 2, lwd = 3)  # Centre placette
+legend("topright", legend = c("Arbres", "Centre GPS"), pch = c(1, 4), col = c("red", "blue"), cex = 0.7)
 
 # Graphique 2 : Masque seul (valeurs = diamètres)
 terra::plot(mask, main = "Masque (valeur = diamètre)",
             col = c("gray90", grDevices::hcl.colors(20, "YlOrRd")))
 points(plot_trees$x, plot_trees$y, pch = 3, col = "black", cex = 0.8)
+points(center_x, center_y, pch = 4, col = "blue", cex = 2, lwd = 3)  # Centre placette
 
 par(mfrow = c(1, 1))
 ```
