@@ -295,47 +295,59 @@ cat("Étendue X:", round(las_example@header@PHB$`Min X`, 0), "-", round(las_exam
 cat("Étendue Y:", round(las_example@header@PHB$`Min Y`, 0), "-", round(las_example@header@PHB$`Max Y`, 0), "\n")
 ```
 
-### 3.2 Génération CHM avec lasR
+### 3.2 Génération CHM optimisé avec lasR
+
+Le CHM est généré avec l'approche optimisée de T07 :
+1. **Triangulation TIN** des premiers retours (`triangulate()`)
+2. **Rasterisation** du TIN (`rasterize()`)
+3. **Bouchage des trous** (`pit_fill()`)
 
 ```{r chm-lasr, exercise=TRUE}
 library(lasR)
 
-# Fonction de génération CHM avec lasR
-# lasR travaille avec des fichiers, on sauvegarde le LAS en temp
+# Fonction de génération CHM optimisé avec lasR
+# Méthode : triangulation TIN + pit_fill (comme T07)
 create_chm_lasr <- function(las_obj, res = 0.5, h_max = 50) {
   # Sauvegarder le LAS en fichier temporaire
   las_file <- tempfile(fileext = ".las")
   chm_file <- tempfile(fileext = ".tif")
+  chm_filled_file <- tempfile(fileext = ".tif")
   lidR::writeLAS(las_obj, las_file)
 
-  # Pipeline lasR : lecture + rasterisation max (CHM)
-  pipeline <- reader_las() +
-    rasterize(res = res, operators = "max", ofile = chm_file)
+  # Pipeline lasR optimisé (comme T07) :
+  # 1. Triangulation TIN des premiers retours
+  chm_tri <- triangulate(filter = keep_first())
+
+  # 2. Rasterisation du TIN à la résolution souhaitée
+  chm_rast <- rasterize(res, chm_tri, ofile = chm_file)
+
+  # 3. Remplissage des puits/trous (pit_fill)
+  chm_filled <- pit_fill(chm_rast, ofile = chm_filled_file)
+
+  # Assembler le pipeline
+  pipeline <- reader_las() + chm_tri + chm_rast + chm_filled
 
   # Exécuter le pipeline
   exec(pipeline, on = las_file)
 
-  # Charger le CHM généré
-  chm <- terra::rast(chm_file)
+  # Charger le CHM avec trous bouchés
+  chm <- terra::rast(chm_filled_file)
 
-  # Post-traitement
+  # Post-traitement : seuillage des valeurs extrêmes
   chm[chm > h_max] <- h_max
   chm[chm < 0] <- 0
-  chm[is.na(chm)] <- 0
-
-  # Filtre médian 3x3 pour réduire le bruit
-  chm_filtered <- terra::focal(chm, w = matrix(1, 3, 3), fun = median, na.rm = TRUE)
 
   # Nettoyer les fichiers temporaires
-  unlink(c(las_file, chm_file))
+  unlink(c(las_file, chm_file, chm_filled_file))
 
-  return(chm_filtered)
+  return(chm)
 }
 
 # Générer le CHM pour la première placette avec lasR
 chm <- create_chm_lasr(las_example, res = params$res, h_max = params$h_max)
 
 cat("=== CHM GÉNÉRÉ AVEC lasR (Placette", plots$placette[1], ") ===\n")
+cat("Méthode: triangulate() + rasterize() + pit_fill()\n")
 cat("Résolution:", terra::res(chm)[1], "m\n")
 cat("Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "pixels\n")
 mm <- terra::minmax(chm)
@@ -343,10 +355,11 @@ cat("Hauteur min:", round(mm[1], 2), "m\n")
 cat("Hauteur max:", round(mm[2], 2), "m\n")
 
 # Visualiser
-terra::plot(chm, main = paste("MNH lasR - Placette", plots$placette[1]), col = grDevices::hcl.colors(50, "viridis"))
+terra::plot(chm, main = paste("MNH lasR (TIN + pit_fill) - Placette", plots$placette[1]),
+            col = grDevices::hcl.colors(50, "viridis"))
 ```
 
-### 3.4 Quiz : Génération MNH
+### 3.3 Quiz : Génération MNH
 
 ```{r quiz-chm, echo=FALSE}
 quiz(
