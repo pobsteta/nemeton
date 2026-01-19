@@ -556,12 +556,27 @@ mask <- create_plot_mask(plot_trees, chm, weight_col = "d")
 
 cat("=== MASQUE CRÉÉ (Placette", first_plot_id, ") ===\n")
 cat("Pixels non-nuls:", sum(terra::values(mask) > 0, na.rm = TRUE), "\n")
+cat("(= nombre d'arbres avec positions distinctes)\n\n")
 
-# Visualiser
+cat("Le masque est un raster où :\n")
+cat("- Chaque pixel contient la somme des diamètres des arbres à cette position\n")
+cat("- Les pixels sans arbre valent 0\n")
+cat("- Ce masque sera corrélé avec le CHM pour trouver le décalage optimal\n")
+
+# Visualiser côte à côte
 par(mfrow = c(1, 2))
-terra::plot(chm, main = paste("CHM Placette", first_plot_id), col = grDevices::hcl.colors(50, "viridis"))
-points(plot_trees$x, plot_trees$y, pch = 19, col = "red", cex = plot_trees$d / 5)
-terra::plot(mask, main = "Masque placette (poids = diamètre)", col = c("white", grDevices::hcl.colors(10, "Reds")))
+
+# Graphique 1 : CHM avec positions des arbres
+terra::plot(chm, main = paste("CHM + arbres (Placette", first_plot_id, ")"),
+            col = grDevices::hcl.colors(50, "viridis"))
+points(plot_trees$x, plot_trees$y, pch = 1, col = "red", cex = plot_trees$d / 20, lwd = 2)
+legend("topright", legend = "Arbres (taille = diamètre)", pch = 1, col = "red", cex = 0.7)
+
+# Graphique 2 : Masque seul (valeurs = diamètres)
+terra::plot(mask, main = "Masque (valeur = diamètre)",
+            col = c("gray90", grDevices::hcl.colors(20, "YlOrRd")))
+points(plot_trees$x, plot_trees$y, pch = 3, col = "black", cex = 0.8)
+
 par(mfrow = c(1, 1))
 ```
 
