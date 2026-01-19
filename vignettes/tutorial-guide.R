@@ -17,6 +17,11 @@ knitr::opts_chunk$set(
 # # Packages LiDAR (Tutorial 02)
 # install.packages("lidR")
 # 
+# # Packages LiDAR avancé (Tutorial 07)
+# install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
+# install.packages("lidaRtRee")
+# install.packages(c("future", "future.apply"))
+# 
 # # Packages visualisation (Tutorial 06)
 # install.packages(c("leaflet", "corrplot", "patchwork", "fmsb"))
 # 

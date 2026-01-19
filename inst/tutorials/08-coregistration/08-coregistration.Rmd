@@ -285,19 +285,27 @@ library(terra)
 
 # Charger le CHM pré-calculé (Chablais 3)
 data("chm_chablais3", package = "lidaRtRee")
-chm_raw <- terra::unwrap(chm_chablais3)
+
+# Unwrap le PackedSpatRaster
+if (inherits(chm_chablais3, "PackedSpatRaster")) {
+  chm_raw <- terra::unwrap(chm_chablais3)
+} else {
+  chm_raw <- chm_chablais3
+}
 
 cat("=== CHM CHARGÉ ===\n")
 cat("Source: chm_chablais3 (lidaRtRee)\n")
-cat("Résolution:", round(res(chm_raw)[1], 2), "m\n")
-cat("Dimensions:", ncol(chm_raw), "x", nrow(chm_raw), "pixels\n")
-cat("Étendue X:", round(ext(chm_raw)[1], 0), "-", round(ext(chm_raw)[2], 0), "\n")
-cat("Étendue Y:", round(ext(chm_raw)[3], 0), "-", round(ext(chm_raw)[4], 0), "\n")
-cat("Hauteur min:", round(minmax(chm_raw)[1], 2), "m\n")
-cat("Hauteur max:", round(minmax(chm_raw)[2], 2), "m\n")
+cat("Classe:", class(chm_raw)[1], "\n")
+cat("Résolution:", round(terra::res(chm_raw)[1], 2), "m\n")
+cat("Dimensions:", terra::ncol(chm_raw), "x", terra::nrow(chm_raw), "pixels\n")
+cat("Étendue X:", round(terra::ext(chm_raw)[1], 0), "-", round(terra::ext(chm_raw)[2], 0), "\n")
+cat("Étendue Y:", round(terra::ext(chm_raw)[3], 0), "-", round(terra::ext(chm_raw)[4], 0), "\n")
+mm <- terra::minmax(chm_raw)
+cat("Hauteur min:", round(mm[1], 2), "m\n")
+cat("Hauteur max:", round(mm[2], 2), "m\n")
 
-# Visualiser
-plot(chm_raw, main = "CHM Chablais 3 (brut)", col = viridis::viridis(50))
+# Visualiser avec terra::plot
+terra::plot(chm_raw, main = "CHM Chablais 3 (brut)", col = grDevices::hcl.colors(50, "viridis"))
 ```
 
 ### 3.2 Génération CHM avec lidR
@@ -333,7 +341,7 @@ if (exists("las")) {
   cat("Hauteur max:", round(minmax(chm)[2], 2), "m\n")
 
   # Visualiser
-  plot(chm, main = "Modèle Numérique de Hauteur (MNH)", col = viridis::viridis(50))
+  terra::plot(chm, main = "Modèle Numérique de Hauteur (MNH)", col = grDevices::hcl.colors(50, "viridis"))
 }
 ```
 
@@ -501,9 +509,9 @@ if (exists("plot_trees") && exists("chm")) {
 
   # Visualiser
   par(mfrow = c(1, 2))
-  plot(chm, main = "CHM", col = viridis::viridis(50))
+  terra::plot(chm, main = "CHM", col = grDevices::hcl.colors(50, "viridis"))
   points(plot_trees$x, plot_trees$y, pch = 19, col = "red")
-  plot(mask, main = "Masque placette", col = c("white", "red"))
+  terra::plot(mask, main = "Masque placette", col = c("white", "red"))
   par(mfrow = c(1, 1))
 }
 ```
@@ -528,7 +536,7 @@ cat("Nombre d'arbres:", nrow(selected_trees), "\n")
 cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TRUE), "\n")
 
 # 5. Visualiser
-plot(selected_mask, main = paste("Masque placette", selected_plot_id))
+terra::plot(selected_mask, main = paste("Masque placette", selected_plot_id))
 ```
 
 ```{r ex-mask-solution}
@@ -541,7 +549,7 @@ cat("Placette sélectionnée:", selected_plot_id, "\n")
 cat("Nombre d'arbres:", nrow(selected_trees), "\n")
 cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TRUE), "\n")
 
-plot(selected_mask, main = paste("Masque placette", selected_plot_id))
+terra::plot(selected_mask, main = paste("Masque placette", selected_plot_id))
 ```
 
 ```{r ex-mask-check}
@@ -604,9 +612,9 @@ if (exists("chm") && exists("mask")) {
 # Visualisation de la surface de corrélation
 if (exists("result")) {
   # Carte de corrélation
-  plot(result$correlation_raster,
+  terra::plot(result$correlation_raster,
        main = "Surface de corrélation",
-       col = viridis::plasma(50))
+       col = grDevices::hcl.colors(50, "plasma"))
 
   # Marquer le maximum
   points(result$dx1, result$dy1, pch = 4, col = "white", cex = 2, lwd = 2)

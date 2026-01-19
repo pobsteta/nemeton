@@ -344,7 +344,7 @@ nemeton</h1>
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>Le package <strong>nemeton</strong> propose une série de 6 tutoriels
+<p>Le package <strong>nemeton</strong> propose une série de 7 tutoriels
 interactifs basés sur <a href="https://rstudio.github.io/learnr/">learnr</a> pour apprendre à
 calculer les 32 indicateurs forestiers des 12 familles nemeton.</p>
 </div>
@@ -364,15 +364,20 @@ calculer les 32 indicateurs forestiers des 12 familles nemeton.</p>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># Packages LiDAR (Tutorial 02)</span></span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;lidR&quot;</span>)</span>
 <span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># Packages visualisation (Tutorial 06)</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;leaflet&quot;</span>, <span class="st">&quot;corrplot&quot;</span>, <span class="st">&quot;patchwork&quot;</span>, <span class="st">&quot;fmsb&quot;</span>))</span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co"># Package nemeton</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;pobsteta/nemeton&quot;</span>)</span></code></pre></div>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># Packages LiDAR avancé (Tutorial 07)</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;lasR&quot;</span>, <span class="at">repos =</span> <span class="st">&quot;https://r-lidar.r-universe.dev&quot;</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;lidaRtRee&quot;</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;future&quot;</span>, <span class="st">&quot;future.apply&quot;</span>))</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co"># Packages visualisation (Tutorial 06)</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;leaflet&quot;</span>, <span class="st">&quot;corrplot&quot;</span>, <span class="st">&quot;patchwork&quot;</span>, <span class="st">&quot;fmsb&quot;</span>))</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co"># Package nemeton</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;pobsteta/nemeton&quot;</span>)</span></code></pre></div>
 </div>
 </div>
-<div id="les-6-tutoriels" class="section level2">
-<h2>Les 6 Tutoriels</h2>
+<div id="les-8-tutoriels" class="section level2">
+<h2>Les 8 Tutoriels</h2>
 <div id="vue-densemble" class="section level3">
 <h3>Vue d’ensemble</h3>
 <table>
@@ -435,9 +440,23 @@ calculer les 32 indicateurs forestiers des 12 familles nemeton.</p>
 <td>-</td>
 <td>Analyse multi-critères et export</td>
 </tr>
+<tr class="odd">
+<td>7</td>
+<td><code>07-lidar-advanced</code></td>
+<td>90 min</td>
+<td>-</td>
+<td>LiDAR avancé (LAScatalog, lasR, lidaRtRee, ABA)</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td><code>08-coregistration</code></td>
+<td>130 min</td>
+<td>-</td>
+<td>Recalage placettes terrain/LiDAR</td>
+</tr>
 </tbody>
 </table>
-<p><strong>Durée totale estimée</strong> : 4-5 heures</p>
+<p><strong>Durée totale estimée</strong> : 8-9 heures</p>
 </div>
 <div id="lancer-un-tutoriel" class="section level3">
 <h3>Lancer un tutoriel</h3>
@@ -519,6 +538,48 @@ Diagrammes radar (profils parcelles) - Matrice de corrélation
 (synergies/compromis) - Identification des hotspots - Front de Pareto -
 Clustering des parcelles - Export GeoPackage, CSV, carte Leaflet</p>
 <p><strong>Sortie</strong> : Fichiers d’analyse et carte interactive</p>
+</div>
+<div id="tutorial-07-lidar-avancé" class="section level3">
+<h3>Tutorial 07 : LiDAR Avancé</h3>
+<p><strong>Objectif</strong> : Maîtriser le traitement LiDAR avancé avec
+LAScatalog, lasR et lidaRtRee.</p>
+<p><strong>Méthodes</strong> : - <strong>LAScatalog</strong> : Gestion
+de gros volumes LiDAR multi-tuiles - <strong>lasR</strong> : Pipelines
+C++ ultra-performants (normalisation, DTM, CHM) - <strong>Segmentation
+ITD</strong> : Détection et segmentation d’arbres individuels -
+<strong>Trouées et lisières</strong> : Analyse de la structure
+forestière - <strong>ABA</strong> : Calibration et prédiction
+wall-to-wall avec placettes terrain - <strong>BABA</strong> :
+Exploration rapide sans calibration</p>
+<p><strong>Produits</strong> : - <code>result_itd/</code> : Segmentation
+arbres (CHM, crowns, seeds, arbres.gpkg) - <code>rasters_aba/</code> :
+Métriques points, arbres, terrain (VRT) -
+<code>prediction_G_m2_ha.tif</code> : Carte surface terrière avec masque
+OSO - <code>result_baba/</code> : Métriques LiDAR brutes
+(exploration)</p>
+<p><strong>Note</strong> : Ce tutoriel est complémentaire au Tutorial
+02. Il utilise les données LiDAR téléchargées dans le Tutorial 01.</p>
+</div>
+<div id="tutorial-08-coregistration-lidarterrain" class="section level3">
+<h3>Tutorial 08 : Coregistration LiDAR/Terrain</h3>
+<p><strong>Objectif</strong> : Recaler les positions des placettes
+d’inventaire forestier sur les données LiDAR.</p>
+<p><strong>Problématique</strong> : Le GPS sous couvert forestier a une
+précision de 2-10 m, ce qui biaise la calibration ABA.</p>
+<p><strong>Méthode</strong> : - Corrélation croisée entre MNH LiDAR et
+positions des arbres mesurés - Recherche de la translation (dx, dy) qui
+maximise la corrélation - Référence : Monnet &amp; Mermin (2014)</p>
+<p><strong>Workflow</strong> : 1. Génération MNH (CHM) avec lasR ou lidR
+2. Création masque placette (positions arbres pondérées par diamètre) 3.
+Calcul corrélation avec <code>coregistration()</code> de lidaRtRee 4.
+Traitement parallèle avec <code>future_lapply()</code> 5. Analyse
+statistique et export</p>
+<p><strong>Produits</strong> : - <code>placettes_coregistrees.csv</code>
+: Coordonnées corrigées - <code>placettes_coregistrees.gpkg</code> :
+GeoPackage pour SIG</p>
+<p><strong>Note</strong> : Ce tutoriel utilise les données de lidaRtRee
+(<code>quatre_montagnes</code>, <code>tree_inventory_chablais3</code>,
+<code>chm_chablais3</code>).</p>
 </div>
 </div>
 <div id="structure-du-cache" class="section level2">
@@ -657,6 +718,10 @@ des 12 familles</a></li>
 <li><a href="https://rstudio.github.io/learnr/">learnr
 documentation</a></li>
 <li><a href="https://r-lidar.github.io/lidRbook/">lidR
+documentation</a></li>
+<li><a href="https://r-lidar.github.io/lasR/">lasR
+documentation</a></li>
+<li><a href="https://lidar.pages-forge.inrae.fr/lidaRtRee/">lidaRtRee
 documentation</a></li>
 </ul>
 </div>
