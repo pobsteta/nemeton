@@ -472,6 +472,55 @@ cat("Résultat: X =", round(result$x, 2), ", Y =", round(result$y, 2), "\n")
 
 ### 4.3 Création du masque raster
 
+```{r create-mask-setup, include=FALSE}
+# Setup : charger les données et créer le CHM
+library(lidR)
+library(terra)
+library(lasR)
+
+# Paramètres
+params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
+
+# Charger les données
+coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
+load(file.path(coreg_data_dir, "treesCoregistration.rda"))
+load(file.path(coreg_data_dir, "lasCoregistration.rda"))
+plots <- p
+trees <- ap
+las_list <- las
+las_example <- las_list[[1]]
+
+# Fonction extract_plot_trees
+extract_plot_trees <- function(trees, plot_id) {
+  plot_trees <- trees[trees$plac == plot_id, ]
+  plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y), ]
+  return(plot_trees)
+}
+
+# Extraire arbres première placette
+plot_ids <- unique(trees$plac)
+first_plot_id <- plot_ids[1]
+plot_trees <- extract_plot_trees(trees, first_plot_id)
+
+# Créer le CHM avec lasR
+las_file <- tempfile(fileext = ".las")
+chm_file <- tempfile(fileext = ".tif")
+chm_filled_file <- tempfile(fileext = ".tif")
+lidR::writeLAS(las_example, las_file)
+
+chm_tri <- triangulate(filter = keep_first())
+chm_rast <- rasterize(params$res, chm_tri, ofile = chm_file)
+chm_filled <- pit_fill(chm_rast, ofile = chm_filled_file)
+pipeline <- reader_las() + chm_tri + chm_rast + chm_filled
+exec(pipeline, on = las_file)
+
+chm <- terra::rast(chm_filled_file)
+chm[chm > params$h_max] <- params$h_max
+chm[chm < 0] <- 0
+unlink(c(las_file, chm_file, chm_filled_file))
+```
+
 ```{r create-mask, exercise=TRUE}
 # Fonction de création du masque placette
 create_plot_mask <- function(plot_trees, chm_template, weight_col = NULL) {
