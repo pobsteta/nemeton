@@ -29,8 +29,18 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
 
-# Répertoire lidaRtRee
-lidartree_data_dir <- system.file("extdata", package = "lidaRtRee")
+# Répertoire des données de coregistration (package nemeton)
+coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+
+# Charger les données de coregistration
+load(file.path(coreg_data_dir, "plotsCoregistration.rda"))  # -> p (placettes)
+load(file.path(coreg_data_dir, "treesCoregistration.rda"))  # -> ap (arbres)
+load(file.path(coreg_data_dir, "lasCoregistration.rda"))    # -> las (liste LAS)
+
+# Renommer pour cohérence
+plots <- p
+trees <- ap
+las_list <- las
 ```
 
 ## Bienvenue ! {data-progressive=TRUE}
@@ -217,39 +227,39 @@ params <- list(
 
 ### 2.2 Chargement des données terrain
 
-Les données proviennent du package **lidaRtRee** :
+Les données proviennent du package **nemeton** (répertoire `inst/extdata/coregistration/`) :
 
-- `quatre_montagnes` : 96 placettes d'inventaire (Vercors, France)
-- `tree_inventory_chablais3` : 110 arbres avec positions et diamètres
-- `chm_chablais3` : CHM pré-calculé
+- `plots` : 10 placettes d'inventaire (Vercors, France)
+- `trees` : 54 arbres avec positions (x, y) et diamètres (d)
+- `las_list` : 10 nuages LiDAR (un par placette)
 
 ```{r load-field-data}
 library(lidaRtRee)
 library(terra)
+library(lidR)
 
-# Charger les données de placettes (Quatre Montagnes)
-data("quatre_montagnes", package = "lidaRtRee")
-plots <- quatre_montagnes
+# Les données sont déjà chargées dans le setup
+# plots <- p (placettes)
+# trees <- ap (arbres)
+# las_list <- las (nuages LiDAR)
 
 cat("=== PLACETTES CHARGÉES ===\n")
 cat("Nombre de placettes :", nrow(plots), "\n")
-cat("Colonnes disponibles:", paste(head(names(plots), 10), collapse = ", "), "...\n\n")
-print(head(plots[, c("plot_id", "X", "Y", "G_m2_ha", "N_ha")]))
+cat("Colonnes disponibles:", paste(names(plots), collapse = ", "), "\n\n")
+print(head(plots[, c("placette", "Xtheo", "Ytheo", "XGPS", "YGPS", "dist")]))
 ```
 
 ### 2.3 Chargement des données arbres
 
 ```{r load-tree-data}
-# Charger l'inventaire d'arbres (Chablais 3)
-data("tree_inventory_chablais3", package = "lidaRtRee")
-trees <- tree_inventory_chablais3
+# Les arbres sont déjà chargés dans le setup (trees <- ap)
 
 cat("=== ARBRES CHARGÉS ===\n")
 cat("Nombre total d'arbres :", nrow(trees), "\n")
 cat("Colonnes disponibles  :", paste(names(trees), collapse = ", "), "\n\n")
-cat("Colonnes: x, y (position), d (diamètre), h (hauteur)\n")
-cat("          n, s, e, t (autres attributs)\n\n")
-print(head(trees))
+cat("Colonnes: plac (placette), x, y (position), d (diamètre), dia (diamètre cm)\n")
+cat("          ess (essence), distR (distance), azimutG (azimut)\n\n")
+print(head(trees[, c("plac", "ess", "dia", "x", "y", "d")]))
 ```
 
 ### 2.4 Exercice : Explorer les données
@@ -279,37 +289,33 @@ cat("Première placette: X =", x_first, ", Y =", y_first, "\n")
 
 ## 3. Génération du MNH
 
-### 3.1 Chargement du CHM pré-calculé
+### 3.1 Données LiDAR disponibles
 
-Pour ce tutoriel, nous utilisons le CHM (Canopy Height Model) inclus dans lidaRtRee.
+Pour ce tutoriel, nous disposons de 10 nuages LiDAR (un par placette), chargés dans `las_list`.
 
-```{r load-chm}
+```{r load-las}
 library(lidR)
 library(terra)
 
-# Charger le CHM pré-calculé (Chablais 3)
-data("chm_chablais3", package = "lidaRtRee")
+# Les nuages LiDAR sont déjà chargés dans le setup (las_list)
 
-# Unwrap le PackedSpatRaster
-if (inherits(chm_chablais3, "PackedSpatRaster")) {
-  chm_raw <- terra::unwrap(chm_chablais3)
-} else {
-  chm_raw <- chm_chablais3
+cat("=== DONNÉES LIDAR ===\n")
+cat("Nombre de nuages LiDAR:", length(las_list), "\n\n")
+
+# Afficher les infos de chaque nuage
+for (i in seq_along(las_list)) {
+  las_i <- las_list[[i]]
+  cat("Nuage", i, "- Placette", plots$placette[i], ":\n")
+  cat("  Points:", nrow(las_i@data), "\n")
 }
 
-cat("=== CHM CHARGÉ ===\n")
-cat("Source: chm_chablais3 (lidaRtRee)\n")
-cat("Classe:", class(chm_raw)[1], "\n")
-cat("Résolution:", round(terra::res(chm_raw)[1], 2), "m\n")
-cat("Dimensions:", terra::ncol(chm_raw), "x", terra::nrow(chm_raw), "pixels\n")
-cat("Étendue X:", round(terra::ext(chm_raw)[1], 0), "-", round(terra::ext(chm_raw)[2], 0), "\n")
-cat("Étendue Y:", round(terra::ext(chm_raw)[3], 0), "-", round(terra::ext(chm_raw)[4], 0), "\n")
-mm <- terra::minmax(chm_raw)
-cat("Hauteur min:", round(mm[1], 2), "m\n")
-cat("Hauteur max:", round(mm[2], 2), "m\n")
-
-# Visualiser avec terra::plot
-terra::plot(chm_raw, main = "CHM Chablais 3 (brut)", col = grDevices::hcl.colors(50, "viridis"))
+# Exemple avec le premier nuage
+las_example <- las_list[[1]]
+cat("\n=== EXEMPLE : PREMIER NUAGE ===\n")
+cat("Placette:", plots$placette[1], "\n")
+cat("Points:", nrow(las_example@data), "\n")
+cat("Étendue X:", round(las_example@header@PHB$`Min X`, 0), "-", round(las_example@header@PHB$`Max X`, 0), "\n")
+cat("Étendue Y:", round(las_example@header@PHB$`Min Y`, 0), "-", round(las_example@header@PHB$`Max Y`, 0), "\n")
 ```
 
 ### 3.2 Génération CHM avec lidR
@@ -334,19 +340,18 @@ create_chm_lidr <- function(las, res = 0.5, h_max = 50) {
   return(chm_filtered)
 }
 
-# Générer le CHM
-if (exists("las")) {
-  chm <- create_chm_lidr(las, res = params$res, h_max = params$h_max)
+# Générer le CHM pour la première placette
+chm <- create_chm_lidr(las_example, res = params$res, h_max = params$h_max)
 
-  cat("=== CHM GÉNÉRÉ ===\n")
-  cat("Résolution:", res(chm)[1], "m\n")
-  cat("Dimensions:", ncol(chm), "x", nrow(chm), "pixels\n")
-  cat("Hauteur min:", round(minmax(chm)[1], 2), "m\n")
-  cat("Hauteur max:", round(minmax(chm)[2], 2), "m\n")
+cat("=== CHM GÉNÉRÉ (Placette", plots$placette[1], ") ===\n")
+cat("Résolution:", terra::res(chm)[1], "m\n")
+cat("Dimensions:", terra::ncol(chm), "x", terra::nrow(chm), "pixels\n")
+mm <- terra::minmax(chm)
+cat("Hauteur min:", round(mm[1], 2), "m\n")
+cat("Hauteur max:", round(mm[2], 2), "m\n")
 
-  # Visualiser
-  terra::plot(chm, main = "Modèle Numérique de Hauteur (MNH)", col = grDevices::hcl.colors(50, "viridis"))
-}
+# Visualiser
+terra::plot(chm, main = paste("MNH Placette", plots$placette[1]), col = grDevices::hcl.colors(50, "viridis"))
 ```
 
 ### 3.3 Optimisation avec lasR (optionnel)
@@ -422,8 +427,8 @@ quiz(
 ```{r extract-trees}
 # Fonction d'extraction des arbres d'une placette
 extract_plot_trees <- function(trees, plot_id) {
-  # Filtrer par ID de placette
-  plot_trees <- trees[trees$plot_id == plot_id, ]
+  # Filtrer par ID de placette (colonne "plac")
+  plot_trees <- trees[trees$plac == plot_id, ]
 
   # Filtrer arbres avec coordonnées valides
   plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y), ]
@@ -431,17 +436,17 @@ extract_plot_trees <- function(trees, plot_id) {
   return(plot_trees)
 }
 
+# Liste des IDs de placettes
+plot_ids <- unique(trees$plac)
+cat("IDs des placettes:", paste(plot_ids, collapse = ", "), "\n\n")
+
 # Exemple avec la première placette
-if (exists("trees") && nrow(trees) > 0) {
-  plot_ids <- unique(trees$plot_id)
-  first_plot_id <- plot_ids[1]
+first_plot_id <- plot_ids[1]
+plot_trees <- extract_plot_trees(trees, first_plot_id)
 
-  plot_trees <- extract_plot_trees(trees, first_plot_id)
-
-  cat("=== ARBRES PLACETTE", first_plot_id, "===\n")
-  cat("Nombre d'arbres:", nrow(plot_trees), "\n")
-  print(head(plot_trees))
-}
+cat("=== ARBRES PLACETTE", first_plot_id, "===\n")
+cat("Nombre d'arbres:", nrow(plot_trees), "\n\n")
+print(plot_trees[, c("plac", "ess", "dia", "x", "y", "d")])
 ```
 
 ### 4.2 Conversion coordonnées polaires → cartésiennes
@@ -505,19 +510,17 @@ create_plot_mask <- function(plot_trees, chm_template, weight_col = NULL) {
 }
 
 # Créer le masque pour la première placette
-if (exists("plot_trees") && exists("chm")) {
-  mask <- create_plot_mask(plot_trees, chm, weight_col = "d")
+mask <- create_plot_mask(plot_trees, chm, weight_col = "d")
 
-  cat("=== MASQUE CRÉÉ ===\n")
-  cat("Pixels non-nuls:", sum(values(mask) > 0, na.rm = TRUE), "\n")
+cat("=== MASQUE CRÉÉ (Placette", first_plot_id, ") ===\n")
+cat("Pixels non-nuls:", sum(terra::values(mask) > 0, na.rm = TRUE), "\n")
 
-  # Visualiser
-  par(mfrow = c(1, 2))
-  terra::plot(chm, main = "CHM", col = grDevices::hcl.colors(50, "viridis"))
-  points(plot_trees$x, plot_trees$y, pch = 19, col = "red")
-  terra::plot(mask, main = "Masque placette", col = c("white", "red"))
-  par(mfrow = c(1, 1))
-}
+# Visualiser
+par(mfrow = c(1, 2))
+terra::plot(chm, main = paste("CHM Placette", first_plot_id), col = grDevices::hcl.colors(50, "viridis"))
+points(plot_trees$x, plot_trees$y, pch = 19, col = "red", cex = plot_trees$d / 5)
+terra::plot(mask, main = "Masque placette (poids = diamètre)", col = c("white", grDevices::hcl.colors(10, "Reds")))
+par(mfrow = c(1, 1))
 ```
 
 ### 4.4 Exercice : Créer un masque
@@ -703,31 +706,25 @@ plan(multisession, workers = n_workers)
 
 ```{r process-plot-function}
 # Fonction complète de traitement d'une placette
-process_plot <- function(plot_id, plots, trees, las_dir, params) {
+# Utilise les données pré-chargées (plots, trees, las_list)
+process_plot <- function(idx, plots, trees, las_list, params) {
 
   tryCatch({
     # 1. Récupérer les infos de la placette
-    plot_info <- plots[plots$plot_id == plot_id, ]
-    if (nrow(plot_info) == 0) {
-      return(data.frame(plot_id = plot_id, status = "not_found"))
-    }
+    plot_info <- plots[idx, ]
+    plot_id <- plot_info$placette
 
     # 2. Extraire les arbres
-    plot_trees <- trees[trees$plot_id == plot_id, ]
+    plot_trees <- trees[trees$plac == plot_id, ]
     if (nrow(plot_trees) < 3) {
-      return(data.frame(plot_id = plot_id, status = "insufficient_trees"))
+      return(data.frame(placette = plot_id, status = "insufficient_trees"))
     }
 
-    # 3. Charger le LAS correspondant
-    las_file <- file.path(las_dir, paste0("plot_", plot_id, ".las"))
-    if (!file.exists(las_file)) {
-      las_file <- file.path(las_dir, paste0(plot_id, ".las"))
+    # 3. Récupérer le LAS correspondant
+    las <- las_list[[idx]]
+    if (is.null(las)) {
+      return(data.frame(placette = plot_id, status = "las_not_found"))
     }
-    if (!file.exists(las_file)) {
-      return(data.frame(plot_id = plot_id, status = "las_not_found"))
-    }
-
-    las <- lidR::readLAS(las_file)
 
     # 4. Générer le CHM
     chm <- lidR::rasterize_canopy(las, res = params$res, algorithm = lidR::p2r())
@@ -754,13 +751,13 @@ process_plot <- function(plot_id, plots, trees, las_dir, params) {
 
     # 7. Retourner les résultats
     data.frame(
-      plot_id = plot_id,
-      x_ini = plot_info$Xtheo[1],
-      y_ini = plot_info$Ytheo[1],
+      placette = plot_id,
+      x_ini = plot_info$Xtheo,
+      y_ini = plot_info$Ytheo,
       dx = result$dx1,
       dy = result$dy1,
-      x_cor = plot_info$Xtheo[1] + result$dx1,
-      y_cor = plot_info$Ytheo[1] + result$dy1,
+      x_cor = plot_info$Xtheo + result$dx1,
+      y_cor = plot_info$Ytheo + result$dy1,
       cor1 = result$cor1,
       cor2 = result$cor2,
       ratio = result$cor1 / max(result$cor2, 0.001),
@@ -768,7 +765,7 @@ process_plot <- function(plot_id, plots, trees, las_dir, params) {
     )
 
   }, error = function(e) {
-    data.frame(plot_id = plot_id, status = paste("error:", e$message))
+    data.frame(placette = plots$placette[idx], status = paste("error:", e$message))
   })
 }
 ```
@@ -776,18 +773,18 @@ process_plot <- function(plot_id, plots, trees, las_dir, params) {
 ### 6.3 Exécution parallèle
 
 ```{r parallel-exec, eval=FALSE}
-# Liste des placettes à traiter
-plot_ids <- unique(plots$plot_id)
+# Indices des placettes à traiter
+n_plots <- nrow(plots)
 
 cat("=== TRAITEMENT PARALLÈLE ===\n")
-cat("Nombre de placettes:", length(plot_ids), "\n")
+cat("Nombre de placettes:", n_plots, "\n")
 cat("Workers actifs     :", n_workers, "\n\n")
 
-# Traitement parallèle
+# Traitement parallèle (par index)
 t_start <- Sys.time()
 
-results_list <- future_lapply(plot_ids, function(id) {
-  process_plot(id, plots, trees, las_dir, params)
+results_list <- future_lapply(seq_len(n_plots), function(idx) {
+  process_plot(idx, plots, trees, las_list, params)
 }, future.seed = TRUE)
 
 t_end <- Sys.time()
@@ -822,14 +819,14 @@ if (file.exists(cache_file)) {
 ```{r ex-parallel, exercise=TRUE, exercise.lines=15}
 # Exercice : Traiter un sous-ensemble de placettes
 
-# 1. Sélectionner les 3 premières placettes
-plot_ids_subset <- plot_ids[1:___]
+# 1. Sélectionner les indices des 3 premières placettes
+indices_subset <- 1:___
 
-# 2. Traiter en parallèle (ou séquentiellement si peu de placettes)
-results_subset <- lapply(___, function(id) {
+# 2. Traiter séquentiellement (pour l'exercice)
+results_subset <- lapply(___, function(idx) {
   # Simuler un résultat pour l'exercice
   data.frame(
-    plot_id = id,
+    placette = plots$placette[idx],
     dx = runif(1, -3, 3),
     dy = runif(1, -3, 3),
     cor1 = runif(1, 0.5, 0.9)
