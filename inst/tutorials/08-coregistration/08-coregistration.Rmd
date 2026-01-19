@@ -333,19 +333,19 @@ create_chm_lasr <- function(las_obj, res = 0.5, h_max = 50) {
 
   # Pipeline lasR optimisé (comme T07) :
   # 1. Triangulation TIN des premiers retours
-  chm_tri <- triangulate(filter = keep_first())
+  chm_tri <- lasR::triangulate(filter = lasR::keep_first())
 
   # 2. Rasterisation du TIN à la résolution souhaitée
-  chm_rast <- rasterize(res, chm_tri, ofile = chm_file)
+  chm_rast <- lasR::rasterize(res, chm_tri, ofile = chm_file)
 
   # 3. Remplissage des puits/trous (pit_fill)
-  chm_filled <- pit_fill(chm_rast, ofile = chm_filled_file)
+  chm_filled <- lasR::pit_fill(chm_rast, ofile = chm_filled_file)
 
   # Assembler le pipeline
-  pipeline <- reader_las() + chm_tri + chm_rast + chm_filled
+  pipeline <- lasR::reader_las() + chm_tri + chm_rast + chm_filled
 
   # Exécuter le pipeline
-  exec(pipeline, on = las_file)
+  lasR::exec(pipeline, on = las_file)
 
   # Charger le CHM avec trous bouchés
   chm <- terra::rast(chm_filled_file)
@@ -503,17 +503,17 @@ plot_ids <- unique(trees$plac)
 first_plot_id <- plot_ids[1]
 plot_trees <- extract_plot_trees(trees, first_plot_id)
 
-# Créer le CHM avec lasR
+# Créer le CHM avec lasR (namespace explicite)
 las_file <- tempfile(fileext = ".las")
 chm_file <- tempfile(fileext = ".tif")
 chm_filled_file <- tempfile(fileext = ".tif")
 lidR::writeLAS(las_example, las_file)
 
-chm_tri <- triangulate(filter = keep_first())
-chm_rast <- rasterize(params$res, chm_tri, ofile = chm_file)
-chm_filled <- pit_fill(chm_rast, ofile = chm_filled_file)
-pipeline <- reader_las() + chm_tri + chm_rast + chm_filled
-exec(pipeline, on = las_file)
+chm_tri <- lasR::triangulate(filter = lasR::keep_first())
+chm_rast <- lasR::rasterize(params$res, chm_tri, ofile = chm_file)
+chm_filled <- lasR::pit_fill(chm_rast, ofile = chm_filled_file)
+pipeline <- lasR::reader_las() + chm_tri + chm_rast + chm_filled
+lasR::exec(pipeline, on = las_file)
 
 chm <- terra::rast(chm_filled_file)
 chm[chm > params$h_max] <- params$h_max
@@ -589,29 +589,6 @@ points(center_x, center_y, pch = 4, col = "blue", cex = 2, lwd = 3)  # Centre pl
 par(mfrow = c(1, 1))
 ```
 
-### 4.4 Exercice : Créer un masque
-
-```{r ex-mask, exercise=TRUE, exercise.lines=20}
-# Exercice : Créer le masque pour une autre placette
-
-# 1. Choisir une placette (utiliser plot_ids[2] par exemple)
-selected_plot_id <- ___
-
-# 2. Extraire les arbres
-selected_trees <- extract_plot_trees(___, ___)
-
-# 3. Créer le masque
-selected_mask <- create_plot_mask(___, ___, weight_col = "d")
-
-# 4. Afficher les résultats
-cat("Placette sélectionnée:", selected_plot_id, "\n")
-cat("Nombre d'arbres:", nrow(selected_trees), "\n")
-cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TRUE), "\n")
-
-# 5. Visualiser
-terra::plot(selected_mask, main = paste("Masque placette", selected_plot_id))
-```
-
 ---
 
 ## 5. Calcul de corrélation
@@ -622,13 +599,16 @@ Le package **lidaRtRee** fournit la fonction `coregistration()` qui calcule la c
 
 ```{r coreg-function, exercise=TRUE}
 # La fonction coregistration de lidaRtRee
-# Syntaxe : coregistration(chm, mask, buffer, step)
+# Syntaxe : coregistration(chm, trees, mask, buffer, step, dm, plot)
 
 # Paramètres :
 # - chm : raster du Modèle Numérique de Hauteur
+# - trees : data.frame avec colonnes x, y, et valeur (ex: diamètre)
 # - mask : raster du masque de la placette (arbres pondérés)
 # - buffer : rayon de recherche autour de la position initiale (m)
 # - step : pas de la grille de recherche (m)
+# - dm : distance minimum entre deux maxima locaux (m)
+# - plot : afficher les résultats (TRUE/FALSE)
 
 # Sorties :
 # - dx1, dy1 : translation optimale (corrélation maximale)
@@ -644,39 +624,153 @@ cat("Lancez le code pour confirmer la lecture.")
 
 ### 5.2 Application sur une placette
 
+```{r coreg-single-setup, include=FALSE}
+# Setup : charger les données, créer CHM et masque
+library(lidR)
+library(terra)
+library(lidaRtRee)
+
+# Paramètres
+params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
+
+# Charger les données
+coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
+load(file.path(coreg_data_dir, "treesCoregistration.rda"))
+load(file.path(coreg_data_dir, "lasCoregistration.rda"))
+plots <- p
+trees <- ap
+las_list <- las
+las_example <- las_list[[1]]
+
+# Créer le CHM avec lidR (plus simple)
+chm <- lidR::rasterize_canopy(las_example, res = params$res, algorithm = lidR::p2r())
+chm[chm > params$h_max] <- params$h_max
+chm[chm < 0] <- 0
+chm[is.na(chm)] <- 0
+
+# Extraire les arbres de la première placette
+first_plot_id <- plots$placette[1]
+plot_trees <- trees[trees$plac == first_plot_id, ]
+plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y) & !is.na(plot_trees$dia), ]
+
+# Coordonnées du centre de la placette (GPS)
+centre_x <- plots$XGPS[1]
+centre_y <- plots$YGPS[1]
+
+# Créer le masque circulaire avec lidaRtRee
+# 1. Créer un raster vide centré sur la placette
+r_template <- lidaRtRee::circle2Raster(centre_x, centre_y, params$radius, resolution = params$res)
+
+# 2. Créer le masque binaire circulaire
+mask <- lidaRtRee::raster_xy_mask(c(centre_x, centre_y), params$radius, r_template, binary = TRUE)
+mask[mask == 0] <- NA
+terra::crs(mask) <- terra::crs(chm)
+```
+
 ```{r coreg-single, exercise=TRUE}
 # Coregistration d'une placette
+# Paramètres : chm, trees (x, y, valeur), mask, buffer, step
 result <- lidaRtRee::coregistration(
   chm = chm,
+  trees = plot_trees[, c("x", "y", "dia")],  # x, y, diamètre (cm)
   mask = mask,
   buffer = params$buffer,
-  step = params$step
+  step = params$step,
+  plot = FALSE
 )
 
 cat("=== RÉSULTATS COREGISTRATION ===\n")
-cat("Translation optimale: dx =", round(result$dx1, 2), "m, dy =", round(result$dy1, 2), "m\n")
-cat("Corrélation max     :", round(result$cor1, 3), "\n")
-cat("Second maximum      : dx =", round(result$dx2, 2), "m, dy =", round(result$dy2, 2), "m\n")
-cat("Corrélation 2nd     :", round(result$cor2, 3), "\n")
-cat("Ratio cor1/cor2     :", round(result$ratio, 2), "\n")
+cat("Translation optimale: dx =", round(result$local_max$dx1, 2), "m, dy =", round(result$local_max$dy1, 2), "m\n")
+cat("Corrélation max     :", round(result$local_max$correlation, 3), "\n")
+cat("Second maximum      : dx =", round(result$local_max$dx2, 2), "m, dy =", round(result$local_max$dy2, 2), "m\n")
+cat("Ratio cor1/cor2     :", round(result$local_max$ratiomax1max2, 2), "\n")
 ```
 
 ### 5.3 Visualisation de la corrélation
 
-```{r coreg-viz, exercise=TRUE}
-# Visualisation de la surface de corrélation
-# Carte de corrélation
+```{r coreg-viz-setup, include=FALSE}
+# Setup : tout le pipeline jusqu'à la coregistration
+library(lidR)
+library(terra)
+library(lidaRtRee)
+
+params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
+
+coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
+load(file.path(coreg_data_dir, "treesCoregistration.rda"))
+load(file.path(coreg_data_dir, "lasCoregistration.rda"))
+plots <- p; trees <- ap; las_list <- las; las_example <- las_list[[1]]
+
+# CHM avec lidR
+chm <- lidR::rasterize_canopy(las_example, res = params$res, algorithm = lidR::p2r())
+chm[chm > params$h_max] <- params$h_max
+chm[chm < 0] <- 0
+chm[is.na(chm)] <- 0
+
+# Arbres et masque
+first_plot_id <- plots$placette[1]
+plot_trees <- trees[trees$plac == first_plot_id, ]
+plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y) & !is.na(plot_trees$dia), ]
+
+centre_x <- plots$XGPS[1]
+centre_y <- plots$YGPS[1]
+r_template <- lidaRtRee::circle2Raster(centre_x, centre_y, params$radius, resolution = params$res)
+mask <- lidaRtRee::raster_xy_mask(c(centre_x, centre_y), params$radius, r_template, binary = TRUE)
+mask[mask == 0] <- NA
+terra::crs(mask) <- terra::crs(chm)
+
+# Coregistration
+result <- lidaRtRee::coregistration(chm = chm, trees = plot_trees[, c("x", "y", "dia")], mask = mask, buffer = params$buffer, step = params$step, plot = FALSE)
+```
+
+```{r coreg-viz, exercise=TRUE, fig.width=9, fig.height=3}
+# Visualisation côte à côte : AVANT / CORRÉLATION / APRÈS
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 1))
+
+# --- 1. CHM + arbres AVANT coregistration ---
+terra::plot(chm, main = "AVANT recalage",
+            col = grDevices::hcl.colors(50, "viridis"),
+            legend = FALSE)
+points(plot_trees$x, plot_trees$y,
+       pch = 21, bg = "red", col = "white",
+       cex = plot_trees$dia / 20)  # Taille proportionnelle au diamètre
+legend("topright", legend = "Arbres (position GPS)",
+       pch = 21, pt.bg = "red", col = "white", bg = "white", cex = 0.8)
+
+# --- 2. Surface de corrélation ---
 terra::plot(result$correlation_raster,
-     main = "Surface de corrélation",
-     col = grDevices::hcl.colors(50, "plasma"))
+            main = "Surface de corrélation",
+            col = grDevices::hcl.colors(50, "plasma"))
+abline(v = 0, lty = 2) 
+abline(h = 0,  lty = 2) 
+points(result$local_max$dx1, result$local_max$dy1,
+       pch = 4, col = "black", cex = 1.5, lwd = 2)
+text(result$local_max$dx1, result$local_max$dy1,
+     labels = paste0("(", round(result$local_max$dx1, 1), ", ", round(result$local_max$dy1, 1), ")"),
+     pos = 1, col = "black", cex = 0.9)
 
-# Marquer le maximum
-points(result$dx1, result$dy1, pch = 4, col = "white", cex = 2, lwd = 2)
+# --- 3. CHM + arbres APRÈS coregistration ---
+terra::plot(chm, main = "APRÈS recalage",
+            col = grDevices::hcl.colors(50, "viridis"),
+            legend = FALSE)
+# Positions corrigées : ajouter dx1 et dy1
+x_cor <- plot_trees$x + result$local_max$dx1
+y_cor <- plot_trees$y + result$local_max$dy1
+points(x_cor, y_cor,
+       pch = 21, bg = "green", col = "white",
+       cex = plot_trees$dia / 20)
+legend("topright", legend = "Arbres (position recalée)",
+       pch = 21, pt.bg = "green", col = "white", bg = "white", cex = 0.8)
 
-# Ajouter légende
-legend("topright",
-       legend = paste("Max: (", round(result$dx1, 1), ",", round(result$dy1, 1), ")"),
-       pch = 4, col = "white", bg = "gray30", text.col = "white")
+par(mfrow = c(1, 1))  # Reset
+
+cat("\n=== RÉSULTATS COREGISTRATION ===\n")
+cat("dx1             :", round(result$local_max$dx1, 2), "m\n")
+cat("dy1             :", round(result$local_max$dy1, 2), "m\n")
+cat("cor1            :", round(result$local_max$correlation, 3), "\n")
+cat("ratio cor1/cor2 :", round(result$local_max$ratiomax1max2, 2), "\n")
 ```
 
 ### 5.4 Interprétation des résultats
@@ -769,7 +863,7 @@ plan(multisession, workers = n_workers)
 
 ### 6.2 Fonction de traitement d'une placette
 
-```{r process-plot-function, exercise=TRUE}
+```{r process-plot-function, exercise=FALSE}
 # Fonction complète de traitement d'une placette
 # Utilise les données pré-chargées (plots, trees, las_list)
 process_plot <- function(idx, plots, trees, las_list, params) {
@@ -779,8 +873,9 @@ process_plot <- function(idx, plots, trees, las_list, params) {
     plot_info <- plots[idx, ]
     plot_id <- plot_info$placette
 
-    # 2. Extraire les arbres
+    # 2. Extraire les arbres (avec diamètre valide)
     plot_trees <- trees[trees$plac == plot_id, ]
+    plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y) & !is.na(plot_trees$dia), ]
     if (nrow(plot_trees) < 3) {
       return(data.frame(placette = plot_id, status = "insufficient_trees"))
     }
@@ -796,36 +891,34 @@ process_plot <- function(idx, plots, trees, las_list, params) {
     chm[chm > params$h_max] <- params$h_max
     chm[chm < 0] <- 0
     chm[is.na(chm)] <- 0
-    chm <- terra::focal(chm, w = matrix(1, 3, 3), fun = median, na.rm = TRUE)
 
-    # 5. Créer le masque
-    mask <- terra::rast(chm)
-    terra::values(mask) <- 0
-    for (i in seq_len(nrow(plot_trees))) {
-      cell <- terra::cellFromXY(mask, cbind(plot_trees$x[i], plot_trees$y[i]))
-      if (!is.na(cell)) {
-        weight <- ifelse(!is.na(plot_trees$d[i]), plot_trees$d[i], 1)
-        mask[cell] <- mask[cell] + weight
-      }
-    }
+    # 5. Créer le masque circulaire avec lidaRtRee
+    centre_x <- plot_info$XGPS
+    centre_y <- plot_info$YGPS
+    r_template <- lidaRtRee::circle2Raster(centre_x, centre_y, params$radius, resolution = params$res)
+    mask <- lidaRtRee::raster_xy_mask(c(centre_x, centre_y), params$radius, r_template, binary = TRUE)
+    mask[mask == 0] <- NA
+    terra::crs(mask) <- terra::crs(chm)
 
     # 6. Coregistration
-    result <- lidaRtRee::coregistration(chm, mask,
+    result <- lidaRtRee::coregistration(chm,
+                                         trees = plot_trees[, c("x", "y", "dia")],
+                                         mask = mask,
                                          buffer = params$buffer,
-                                         step = params$step)
+                                         step = params$step,
+                                         plot = FALSE)
 
     # 7. Retourner les résultats
     data.frame(
       placette = plot_id,
       x_ini = plot_info$Xtheo,
       y_ini = plot_info$Ytheo,
-      dx = result$dx1,
-      dy = result$dy1,
-      x_cor = plot_info$Xtheo + result$dx1,
-      y_cor = plot_info$Ytheo + result$dy1,
-      cor1 = result$cor1,
-      cor2 = result$cor2,
-      ratio = result$cor1 / max(result$cor2, 0.001),
+      dx = result$local_max$dx1,
+      dy = result$local_max$dy1,
+      x_cor = plot_info$Xtheo + result$local_max$dx1,
+      y_cor = plot_info$Ytheo + result$local_max$dy1,
+      cor1 = result$local_max$correlation,
+      ratio = result$local_max$ratiomax1max2,
       status = "success"
     )
 
@@ -837,73 +930,89 @@ process_plot <- function(idx, plots, trees, las_list, params) {
 
 ### 6.3 Exécution parallèle
 
-```{r parallel-exec, exercise=TRUE}
-# Indices des placettes à traiter
-n_plots <- nrow(plots)
+```{r parallel-exec-setup, include=FALSE}
+# Setup : charger données, définir fonction et configurer cache
+library(lidR)
+library(terra)
+library(lidaRtRee)
+library(future)
+library(future.apply)
 
-cat("=== TRAITEMENT PARALLÈLE ===\n")
-cat("Nombre de placettes:", n_plots, "\n")
-cat("Workers actifs     :", n_workers, "\n\n")
-
-# Traitement parallèle (par index)
-t_start <- Sys.time()
-
-results_list <- future_lapply(seq_len(n_plots), function(idx) {
-  process_plot(idx, plots, trees, las_list, params)
-}, future.seed = TRUE)
-
-t_end <- Sys.time()
-
-# Consolider les résultats
-results_df <- do.call(rbind, results_list)
-
-cat("Temps de traitement:", round(difftime(t_end, t_start, units = "secs"), 1), "secondes\n")
-cat("Placettes traitées :", nrow(results_df), "\n")
-cat("Succès             :", sum(results_df$status == "success"), "\n")
-cat("Erreurs            :", sum(results_df$status != "success"), "\n")
-```
-
-### 6.4 Cache incrémental
-
-```{r cache-results, exercise=TRUE}
-# Sauvegarder les résultats pour éviter de recalculer
-cache_file <- file.path(data_dir, "coregistration_results.rds")
-
-if (file.exists(cache_file)) {
-  results_df <- readRDS(cache_file)
-  cat("Résultats chargés depuis le cache:", cache_file, "\n")
+# Configuration du cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  # ... traitement parallèle ...
-  saveRDS(results_df, cache_file)
-  cat("Résultats sauvegardés:", cache_file, "\n")
+  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+}
+if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+cache_file <- file.path(cache_dir, "coregistration_results.rds")
+
+params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
+
+coreg_data_dir <- system.file("extdata", "coregistration", package = "nemeton")
+load(file.path(coreg_data_dir, "plotsCoregistration.rda"))
+load(file.path(coreg_data_dir, "treesCoregistration.rda"))
+load(file.path(coreg_data_dir, "lasCoregistration.rda"))
+plots <- p; trees <- ap; las_list <- las
+
+n_cores <- parallel::detectCores()
+n_workers <- max(1, n_cores - 1)
+plan(multisession, workers = n_workers)
+
+process_plot <- function(idx, plots, trees, las_list, params) {
+  tryCatch({
+    plot_info <- plots[idx, ]
+    plot_id <- plot_info$placette
+    plot_trees <- trees[trees$plac == plot_id, ]
+    plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y) & !is.na(plot_trees$dia), ]
+    if (nrow(plot_trees) < 3) return(data.frame(placette = plot_id, status = "insufficient_trees"))
+    las <- las_list[[idx]]
+    if (is.null(las)) return(data.frame(placette = plot_id, status = "las_not_found"))
+    chm <- lidR::rasterize_canopy(las, res = params$res, algorithm = lidR::p2r())
+    chm[chm > params$h_max] <- params$h_max; chm[chm < 0] <- 0; chm[is.na(chm)] <- 0
+    r_template <- lidaRtRee::circle2Raster(plot_info$XGPS, plot_info$YGPS, params$radius, resolution = params$res)
+    mask <- lidaRtRee::raster_xy_mask(c(plot_info$XGPS, plot_info$YGPS), params$radius, r_template, binary = TRUE)
+    mask[mask == 0] <- NA; terra::crs(mask) <- terra::crs(chm)
+    result <- lidaRtRee::coregistration(chm, trees = plot_trees[, c("x", "y", "dia")], mask = mask, buffer = params$buffer, step = params$step, plot = FALSE)
+    data.frame(placette = plot_id, x_ini = plot_info$Xtheo, y_ini = plot_info$Ytheo,
+               dx = result$local_max$dx1, dy = result$local_max$dy1,
+               x_cor = plot_info$Xtheo + result$local_max$dx1, y_cor = plot_info$Ytheo + result$local_max$dy1,
+               cor1 = result$local_max$correlation, ratio = result$local_max$ratiomax1max2,
+               status = "success")
+  }, error = function(e) data.frame(placette = plots$placette[idx], status = paste("error:", e$message)))
 }
 ```
 
-### 6.5 Exercice : Traitement parallèle
+```{r parallel-exec, exercise=TRUE}
+# Vérifier si les résultats sont en cache
+if (file.exists(cache_file)) {
+  results_df <- readRDS(cache_file)
+  cat("=== RÉSULTATS CHARGÉS DEPUIS LE CACHE ===\n")
+  cat("Fichier:", cache_file, "\n\n")
+} else {
+  # Traitement parallèle
+  n_plots <- nrow(plots)
+  cat("=== TRAITEMENT PARALLÈLE ===\n")
+  cat("Nombre de placettes:", n_plots, "\n")
+  cat("Workers actifs     :", n_workers, "\n\n")
 
-```{r ex-parallel, exercise=TRUE, exercise.lines=15}
-# Exercice : Traiter un sous-ensemble de placettes
+  t_start <- Sys.time()
+  results_list <- future_lapply(seq_len(n_plots), function(idx) {
+    process_plot(idx, plots, trees, las_list, params)
+  }, future.seed = TRUE)
+  t_end <- Sys.time()
 
-# 1. Sélectionner les indices des 3 premières placettes
-indices_subset <- 1:___
+  # Consolider et sauvegarder
+  results_df <- do.call(rbind, results_list)
+  saveRDS(results_df, cache_file)
 
-# 2. Traiter séquentiellement (pour l'exercice)
-results_subset <- lapply(___, function(idx) {
-  # Simuler un résultat pour l'exercice
-  data.frame(
-    placette = plots$placette[idx],
-    dx = runif(1, -3, 3),
-    dy = runif(1, -3, 3),
-    cor1 = runif(1, 0.5, 0.9)
-  )
-})
+  cat("Temps de traitement:", round(difftime(t_end, t_start, units = "secs"), 1), "secondes\n")
+  cat("Résultats sauvegardés:", cache_file, "\n\n")
+}
 
-# 3. Consolider
-results_subset_df <- do.call(rbind, results_subset)
-
-# 4. Afficher
-print(results_subset_df)
-cat("\nNombre de placettes traitées:", nrow(results_subset_df))
+cat("Placettes traitées :", nrow(results_df), "\n")
+cat("Succès             :", sum(results_df$status == "success"), "\n")
+cat("Erreurs            :", sum(results_df$status != "success"), "\n")
 ```
 
 ---
@@ -911,6 +1020,23 @@ cat("\nNombre de placettes traitées:", nrow(results_subset_df))
 ## 7. Analyse des résultats
 
 ### 7.1 Statistiques de recalage
+
+```{r stats-coreg-setup, include=FALSE}
+# Setup : charger les résultats depuis le cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+}
+cache_file <- file.path(cache_dir, "coregistration_results.rds")
+
+# Charger depuis le cache (créé dans section 6.3)
+if (file.exists(cache_file)) {
+  results_df <- readRDS(cache_file)
+} else {
+  stop("Cache non trouvé. Exécutez d'abord la section 6.3 pour générer les résultats.")
+}
+```
 
 ```{r stats-coreg, exercise=TRUE}
 # Filtrer les résultats valides
@@ -941,6 +1067,23 @@ cat("  Moyenne ratio:", round(mean(results_valid$ratio), 2), "\n")
 
 ### 7.2 Tests statistiques
 
+```{r tests-coreg-setup, include=FALSE}
+# Setup : charger les résultats depuis le cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+}
+cache_file <- file.path(cache_dir, "coregistration_results.rds")
+
+if (file.exists(cache_file)) {
+  results_df <- readRDS(cache_file)
+} else {
+  stop("Cache non trouvé. Exécutez d'abord la section 6.3.")
+}
+results_valid <- results_df[results_df$status == "success", ]
+```
+
 ```{r tests-coreg, exercise=TRUE}
 # Tests de significativité du décalage
 cat("=== TESTS STATISTIQUES ===\n\n")
@@ -960,7 +1103,58 @@ cat("  p-value =", round(t_test_y$p.value, 4), "\n")
 cat("  Significatif (p < 0.05):", t_test_y$p.value < 0.05, "\n")
 ```
 
+```{r ttest-interpretation, echo=FALSE}
+cat("
+┌─────────────────────────────────────────────────────────────┐
+│           INTERPRÉTATION DU TEST T DE STUDENT               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Hypothèse nulle (H0) : Le décalage moyen est nul           │
+│  → Les positions GPS sont correctes en moyenne              │
+│                                                             │
+│  Interprétation de la p-value :                             │
+│  ─────────────────────────────                              │
+│  • p < 0.05 : Décalage SIGNIFICATIF                         │
+│    → Biais systématique détecté (ex: dérive GPS)            │
+│    → Le recalage corrige une erreur réelle                  │
+│                                                             │
+│  • p >= 0.05 : Décalage NON significatif                    │
+│    → Pas de biais systématique détecté                      │
+│    → Erreurs aléatoires uniquement                          │
+│                                                             │
+│  Cas typiques :                                             │
+│  ──────────────                                             │
+│  • dx significatif, dy non : Biais Est-Ouest                │
+│  • dy significatif, dx non : Biais Nord-Sud                 │
+│  • Les deux significatifs : Biais directionnel global       │
+│  • Aucun significatif : Erreurs GPS aléatoires              │
+│                                                             │
+│  Note : Avec peu de placettes (n < 10), le test manque      │
+│  de puissance statistique. Un résultat non significatif     │
+│  ne prouve pas l'absence de biais.                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+")
+```
+
 ### 7.3 Visualisation
+
+```{r viz-coreg-setup, include=FALSE}
+# Setup : charger les résultats depuis le cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+}
+cache_file <- file.path(cache_dir, "coregistration_results.rds")
+
+if (file.exists(cache_file)) {
+  results_df <- readRDS(cache_file)
+} else {
+  stop("Cache non trouvé. Exécutez d'abord la section 6.3.")
+}
+results_valid <- results_df[results_df$status == "success", ]
+```
 
 ```{r viz-coreg, exercise=TRUE}
 library(ggplot2)
@@ -976,14 +1170,19 @@ p <- ggplot(results_valid, aes(x = dx, y = dy)) +
   # Lignes de référence
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
-  # Point moyen
+  # Point moyen (croix rouge)
   geom_point(aes(x = mean(dx), y = mean(dy)),
              color = "red", size = 5, shape = 4, stroke = 2) +
+  # Annotation pour la croix rouge
+  annotate("text", x = mean(results_valid$dx), y = mean(results_valid$dy),
+           label = paste0("Moyenne\n(", round(mean(results_valid$dx), 1), ", ",
+                          round(mean(results_valid$dy), 1), ")"),
+           vjust = -1, color = "red", size = 3) +
   # Échelle de couleur
   scale_color_viridis_c(name = "Corrélation", option = "plasma") +
   # Labels
   labs(title = "Vecteurs de correction par placette",
-       subtitle = paste("n =", nrow(results_valid), "placettes"),
+       subtitle = paste("n =", nrow(results_valid), "placettes | ✕ rouge = décalage moyen"),
        x = "dx (m) - Ouest ← → Est",
        y = "dy (m) - Sud ← → Nord") +
   # Aspect ratio 1:1
@@ -992,9 +1191,56 @@ p <- ggplot(results_valid, aes(x = dx, y = dy)) +
   theme(legend.position = "right")
 
 print(p)
+
+# Histogramme des distances absolues de correction
+results_valid$dist <- sqrt(results_valid$dx^2 + results_valid$dy^2)
+
+p_hist <- ggplot(results_valid, aes(x = dist)) +
+  geom_histogram(aes(fill = after_stat(count)), bins = 10, color = "white") +
+  geom_vline(xintercept = mean(results_valid$dist),
+             color = "red", linetype = "dashed", linewidth = 1) +
+  annotate("text", x = mean(results_valid$dist), y = Inf,
+           label = paste0("Moyenne = ", round(mean(results_valid$dist), 2), " m"),
+           vjust = 2, hjust = -0.1, color = "red", size = 3.5) +
+  scale_fill_viridis_c(option = "plasma", guide = "none") +
+  labs(title = "Distribution des distances de correction",
+       subtitle = paste("n =", nrow(results_valid), "placettes"),
+       x = "Distance absolue (m)",
+       y = "Nombre de placettes") +
+  theme_minimal()
+
+print(p_hist)
+
+cat("\n=== STATISTIQUES DES DISTANCES ===\n")
+cat("Distance moyenne   :", round(mean(results_valid$dist), 2), "m\n")
+cat("Distance médiane   :", round(median(results_valid$dist), 2), "m\n")
+cat("Distance min       :", round(min(results_valid$dist), 2), "m\n")
+cat("Distance max       :", round(max(results_valid$dist), 2), "m\n")
+cat("Écart-type         :", round(sd(results_valid$dist), 2), "m\n")
 ```
 
 ### 7.4 Export des résultats
+
+```{r export-coreg-setup, include=FALSE}
+# Setup : charger les résultats depuis le cache
+library(sf)
+
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+}
+if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+cache_file <- file.path(cache_dir, "coregistration_results.rds")
+data_dir <- cache_dir  # Pour l'export
+
+if (file.exists(cache_file)) {
+  results_df <- readRDS(cache_file)
+} else {
+  stop("Cache non trouvé. Exécutez d'abord la section 6.3.")
+}
+results_valid <- results_df[results_df$status == "success", ]
+```
 
 ```{r export-coreg, exercise=TRUE}
 library(sf)

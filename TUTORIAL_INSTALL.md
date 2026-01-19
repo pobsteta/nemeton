@@ -1,6 +1,6 @@
 # Installation des Tutoriels nemeton
 
-Ce guide détaille l'installation complète pour exécuter les 7 tutoriels interactifs nemeton.
+Ce guide détaille l'installation complète pour exécuter les 8 tutoriels interactifs nemeton.
 
 ## Prérequis Système
 
