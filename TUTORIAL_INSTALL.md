@@ -189,6 +189,7 @@ learnr::run_tutorial("04-ecological", package = "nemeton")     # 40 min
 learnr::run_tutorial("05-complete", package = "nemeton")       # 40 min
 learnr::run_tutorial("06-analysis", package = "nemeton")       # 50 min
 learnr::run_tutorial("07-lidar-advanced", package = "nemeton") # 90 min (optionnel)
+learnr::run_tutorial("08-coregistration", package = "nemeton") # 130 min (optionnel)
 ```
 
 ## Structure du Cache

@@ -1,0 +1,1113 @@
+---
+title: "Tutorial 08 : Coregistration LiDAR/Terrain"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+    css: css/custom.css
+runtime: shiny_prerendered
+description: "Apprendre à recaler les positions des placettes d'inventaire forestier sur les données LiDAR aéroporté"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(gradethis)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  exercise.timelimit = 600
+)
+
+gradethis::gradethis_setup()
+
+# Configuration du cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
+
+# Répertoire lidaRtRee
+lidartree_data_dir <- system.file("extdata", package = "lidaRtRee")
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Objectifs du tutoriel
+
+Ce tutoriel vous apprendra à **recaler (coregistrer)** les positions des placettes d'inventaire forestier sur les données LiDAR aéroporté.
+
+**Durée estimée** : 2h10 (130 minutes)
+
+**Prérequis** :
+
+- Tutorial 07 (LiDAR avancé) - lasR, lidaRtRee, parallélisation
+- Connaissances de base en inventaire forestier
+
+**À la fin de ce tutoriel, vous saurez** :
+
+1. Comprendre le problème du recalage placettes/LiDAR
+2. Générer un MNH (CHM) optimisé avec lasR
+3. Créer des masques de placettes à partir des données terrain
+4. Calculer la corrélation entre MNH et positions des arbres
+5. Appliquer le recalage à un lot de placettes en parallèle
+6. Analyser la qualité du recalage
+
+**Source** : Ce tutoriel est adapté de l'article [lidaRtRee Coregistration](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/coregistration.html) (Monnet & Mermin).
+
+---
+
+## 1. Introduction
+
+### 1.1 Contexte et problématique
+
+Le positionnement précis des placettes d'inventaire forestier est **crucial** pour :
+
+- **Calibrer les modèles ABA** (Area-Based Approach) - Tutorial 07
+- **Valider les estimations LiDAR** (biomasse, volume, hauteur)
+- **Assurer la reproductibilité** des mesures dans le temps
+
+#### Le problème du GPS sous couvert forestier
+
+```{r intro-problem, echo=FALSE, fig.cap="Problème de précision GPS sous forêt"}
+cat("
+┌─────────────────────────────────────────────────────────────┐
+│                    SIGNAL GPS                               │
+│                       │                                     │
+│                       ▼                                     │
+│              ════════════════════                           │
+│              ║  Couvert forestier ║  ← Atténuation signal   │
+│              ════════════════════                           │
+│                       │                                     │
+│                       ▼                                     │
+│              ┌─────────────────┐                            │
+│              │  Récepteur GPS  │  ← Erreur 2-10 m           │
+│              └─────────────────┘                            │
+│                                                             │
+│  Position GPS enregistrée ≠ Position réelle de la placette │
+└─────────────────────────────────────────────────────────────┘
+")
+```
+
+**Conséquences** :
+
+- Erreur de positionnement de **2 à 10 mètres** sous couvert dense
+- Biais dans la calibration des modèles ABA
+- Réduction de la précision des estimations forestières
+
+### 1.2 La solution : recalage par corrélation
+
+**Principe** : Utiliser la corrélation entre le **Modèle Numérique de Hauteur (MNH)** issu du LiDAR et les **positions des arbres mesurés** pour recaler les placettes.
+
+```{r intro-solution, echo=FALSE}
+cat("
+┌───────────────────┐     ┌───────────────────┐
+│   MNH LiDAR       │     │  Masque placette  │
+│   (hauteurs)      │     │  (positions arbres)│
+└─────────┬─────────┘     └─────────┬─────────┘
+          │                         │
+          └──────────┬──────────────┘
+                     │
+                     ▼
+          ┌─────────────────────┐
+          │  CORRÉLATION        │
+          │  Recherche (dx, dy) │
+          │  qui maximise r     │
+          └─────────────────────┘
+                     │
+                     ▼
+          ┌─────────────────────┐
+          │  Position corrigée  │
+          │  X_cor = X_GPS + dx │
+          │  Y_cor = Y_GPS + dy │
+          └─────────────────────┘
+")
+```
+
+**Référence scientifique** : Monnet, J.-M., & Mermin, É. (2014). Cross-correlation of diameter measures for the co-registration of forest inventory plots with airborne laser scanning data. *Forests*, 5(9), 2307-2326.
+
+### 1.3 Quiz : Introduction
+
+```{r quiz-intro, echo=FALSE}
+quiz(
+  caption = "Testez vos connaissances sur le recalage",
+
+  question("Pourquoi les coordonnées GPS sous forêt sont-elles imprécises ?",
+    answer("Le couvert forestier atténue le signal GPS", correct = TRUE),
+    answer("Le GPS ne fonctionne pas en forêt"),
+    answer("Les arbres déplacent les satellites"),
+    answer("La pente fausse les mesures"),
+    correct = "Exact ! Le couvert forestier (feuillage, branches) atténue et réfléchit le signal GPS, réduisant sa précision.",
+    incorrect = "Non. Le GPS fonctionne en forêt mais avec une précision réduite à cause de l'atténuation du signal par le couvert."
+  ),
+
+  question("Quelle donnée LiDAR est utilisée pour le recalage ?",
+    answer("Le nuage de points brut"),
+    answer("Le MNT (Modèle Numérique de Terrain)"),
+    answer("Le MNH (Modèle Numérique de Hauteur)", correct = TRUE),
+    answer("L'intensité du signal"),
+    correct = "Exact ! Le MNH (ou CHM) représente la hauteur de la végétation, qui peut être corrélée avec les positions des arbres mesurés.",
+    incorrect = "Non. Le MNH (Canopy Height Model) est utilisé car il représente la structure de la canopée visible depuis le ciel."
+  ),
+
+  question("Que représente la corrélation dans ce contexte ?",
+    answer("La similarité entre MNH et positions des arbres", correct = TRUE),
+    answer("La distance entre deux placettes"),
+    answer("La précision du GPS"),
+    answer("La hauteur moyenne des arbres"),
+    correct = "Exact ! La corrélation mesure à quel point les hauteurs du MNH correspondent aux positions des arbres de la placette.",
+    incorrect = "Non. La corrélation mesure la similarité spatiale entre le MNH LiDAR et le masque représentant les arbres inventoriés."
+  )
+)
+```
+
+---
+
+## 2. Chargement des données
+
+### 2.1 Paramètres de configuration
+
+Avant de commencer, définissons les paramètres du recalage :
+
+```{r params}
+# Paramètres du recalage
+params <- list(
+  h_max = 50,        # Hauteur végétation maximale (m)
+  radius = 14.105,   # Rayon placette (m) - standard IFN
+  res = 0.5,         # Résolution raster (m)
+  buffer = 5,        # Buffer de recherche autour position GPS (m)
+  step = 0.5         # Pas de recherche (m)
+)
+
+# Afficher les paramètres
+cat("=== PARAMÈTRES DE COREGISTRATION ===\n")
+cat("Hauteur max végétation :", params$h_max, "m\n")
+cat("Rayon placette        :", params$radius, "m\n")
+cat("Résolution raster     :", params$res, "m\n")
+cat("Buffer de recherche   :", params$buffer, "m\n")
+cat("Pas de recherche      :", params$step, "m\n")
+```
+
+### 2.2 Chargement des données terrain
+
+Les données proviennent du package **lidaRtRee** :
+
+- `quatre_montagnes` : 96 placettes d'inventaire (Vercors, France)
+- `tree_inventory_chablais3` : 110 arbres avec positions et diamètres
+- `chm_chablais3` : CHM pré-calculé
+
+```{r load-field-data}
+library(lidaRtRee)
+library(terra)
+
+# Charger les données de placettes (Quatre Montagnes)
+data("quatre_montagnes", package = "lidaRtRee")
+plots <- quatre_montagnes
+
+cat("=== PLACETTES CHARGÉES ===\n")
+cat("Nombre de placettes :", nrow(plots), "\n")
+cat("Colonnes disponibles:", paste(head(names(plots), 10), collapse = ", "), "...\n\n")
+print(head(plots[, c("plot_id", "X", "Y", "G_m2_ha", "N_ha")]))
+```
+
+### 2.3 Chargement des données arbres
+
+```{r load-tree-data}
+# Charger l'inventaire d'arbres (Chablais 3)
+data("tree_inventory_chablais3", package = "lidaRtRee")
+trees <- tree_inventory_chablais3
+
+cat("=== ARBRES CHARGÉS ===\n")
+cat("Nombre total d'arbres :", nrow(trees), "\n")
+cat("Colonnes disponibles  :", paste(names(trees), collapse = ", "), "\n\n")
+cat("Colonnes: x, y (position), d (diamètre), h (hauteur)\n")
+cat("          n, s, e, t (autres attributs)\n\n")
+print(head(trees))
+```
+
+### 2.4 Exercice : Explorer les données
+
+```{r ex-explore, exercise=TRUE, exercise.lines=15}
+# Exercice : Explorez les données chargées
+# 1. Combien de placettes ?
+# 2. Combien d'arbres en moyenne par placette ?
+# 3. Quelles sont les coordonnées de la première placette ?
+
+# Nombre de placettes
+n_plots <- ___
+
+# Nombre moyen d'arbres par placette
+n_trees_mean <- ___
+
+# Coordonnées première placette
+x_first <- ___
+y_first <- ___
+
+cat("Nombre de placettes:", n_plots, "\n")
+cat("Arbres moyens/placette:", round(n_trees_mean, 1), "\n")
+cat("Première placette: X =", x_first, ", Y =", y_first, "\n")
+```
+
+```{r ex-explore-solution}
+# Solution
+n_plots <- nrow(plots)
+n_trees_mean <- nrow(trees) / n_plots
+x_first <- plots$Xtheo[1]
+y_first <- plots$Ytheo[1]
+
+cat("Nombre de placettes:", n_plots, "\n")
+cat("Arbres moyens/placette:", round(n_trees_mean, 1), "\n")
+cat("Première placette: X =", x_first, ", Y =", y_first, "\n")
+```
+
+```{r ex-explore-check}
+grade_this({
+  pass_if(TRUE, "Exploration terminée !")
+})
+```
+
+---
+
+## 3. Génération du MNH
+
+### 3.1 Chargement du CHM pré-calculé
+
+Pour ce tutoriel, nous utilisons le CHM (Canopy Height Model) inclus dans lidaRtRee.
+
+```{r load-chm}
+library(lidR)
+library(terra)
+
+# Charger le CHM pré-calculé (Chablais 3)
+data("chm_chablais3", package = "lidaRtRee")
+chm_raw <- terra::unwrap(chm_chablais3)
+
+cat("=== CHM CHARGÉ ===\n")
+cat("Source: chm_chablais3 (lidaRtRee)\n")
+cat("Résolution:", round(res(chm_raw)[1], 2), "m\n")
+cat("Dimensions:", ncol(chm_raw), "x", nrow(chm_raw), "pixels\n")
+cat("Étendue X:", round(ext(chm_raw)[1], 0), "-", round(ext(chm_raw)[2], 0), "\n")
+cat("Étendue Y:", round(ext(chm_raw)[3], 0), "-", round(ext(chm_raw)[4], 0), "\n")
+cat("Hauteur min:", round(minmax(chm_raw)[1], 2), "m\n")
+cat("Hauteur max:", round(minmax(chm_raw)[2], 2), "m\n")
+
+# Visualiser
+plot(chm_raw, main = "CHM Chablais 3 (brut)", col = viridis::viridis(50))
+```
+
+### 3.2 Génération CHM avec lidR
+
+```{r chm-lidr}
+# Fonction de génération CHM avec lidR
+create_chm_lidr <- function(las, res = 0.5, h_max = 50) {
+  # CHM brut avec algorithme point-to-raster
+  chm <- rasterize_canopy(las, res = res, algorithm = p2r())
+
+  # Post-traitement
+  # 1. Seuillage des hauteurs extrêmes
+  chm[chm > h_max] <- h_max
+  chm[chm < 0] <- 0
+
+  # 2. Remplir les NA avec 0
+  chm[is.na(chm)] <- 0
+
+  # 3. Filtre médian 3x3 pour réduire le bruit
+  chm_filtered <- terra::focal(chm, w = matrix(1, 3, 3), fun = median, na.rm = TRUE)
+
+  return(chm_filtered)
+}
+
+# Générer le CHM
+if (exists("las")) {
+  chm <- create_chm_lidr(las, res = params$res, h_max = params$h_max)
+
+  cat("=== CHM GÉNÉRÉ ===\n")
+  cat("Résolution:", res(chm)[1], "m\n")
+  cat("Dimensions:", ncol(chm), "x", nrow(chm), "pixels\n")
+  cat("Hauteur min:", round(minmax(chm)[1], 2), "m\n")
+  cat("Hauteur max:", round(minmax(chm)[2], 2), "m\n")
+
+  # Visualiser
+  plot(chm, main = "Modèle Numérique de Hauteur (MNH)", col = viridis::viridis(50))
+}
+```
+
+### 3.3 Optimisation avec lasR (optionnel)
+
+Si le package **lasR** est installé, nous pouvons générer le CHM plus rapidement :
+
+```{r chm-lasr, eval=FALSE}
+library(lasR)
+
+# Pipeline CHM optimisé avec lasR
+create_chm_lasr <- function(las_file, res = 0.5, h_max = 50, ofile = tempfile(fileext = ".tif")) {
+
+  pipeline <- reader_las() +
+    rasterize(res = res, operators = "max", ofile = ofile)
+
+  # Exécuter le pipeline
+  exec(pipeline, on = las_file)
+
+  # Charger et post-traiter
+  chm <- terra::rast(ofile)
+  chm[chm > h_max] <- h_max
+  chm[chm < 0] <- 0
+  chm[is.na(chm)] <- 0
+
+  # Filtre médian
+  chm_filtered <- terra::focal(chm, w = matrix(1, 3, 3), fun = median, na.rm = TRUE)
+
+  return(chm_filtered)
+}
+```
+
+### 3.4 Quiz : Génération MNH
+
+```{r quiz-chm, echo=FALSE}
+quiz(
+  caption = "Testez vos connaissances sur la génération du MNH",
+
+  question("Pourquoi filtrer les hauteurs > 50m ?",
+    answer("Pour éliminer les valeurs aberrantes (bruit)", correct = TRUE),
+    answer("Pour réduire la taille du fichier"),
+    answer("Les arbres ne dépassent jamais 50m"),
+    answer("C'est une convention internationale"),
+    correct = "Exact ! Les valeurs > 50m sont généralement du bruit (oiseaux, erreurs de classification). On les seuille pour améliorer la qualité du CHM.",
+    incorrect = "Non. Le seuillage à 50m permet d'éliminer les valeurs aberrantes qui ne correspondent pas à de la végétation réelle."
+  ),
+
+  question("Quel est l'avantage de lasR sur lidR pour le CHM ?",
+    answer("Plus de fonctionnalités"),
+    answer("Traitement C++ plus rapide", correct = TRUE),
+    answer("Meilleure qualité"),
+    answer("Compatible avec plus de formats"),
+    correct = "Exact ! lasR utilise des pipelines C++ compilés qui sont significativement plus rapides que le code R de lidR.",
+    incorrect = "Non. L'avantage principal de lasR est sa vitesse grâce à l'implémentation en C++."
+  ),
+
+  question("Pourquoi appliquer un filtre médian 3x3 ?",
+    answer("Pour lisser le bruit tout en préservant les contours", correct = TRUE),
+    answer("Pour augmenter la résolution"),
+    answer("Pour compresser les données"),
+    answer("Pour convertir en entiers"),
+    correct = "Exact ! Le filtre médian réduit le bruit impulsionnel tout en préservant les contours des couronnes d'arbres, contrairement à un filtre moyen.",
+    incorrect = "Non. Le filtre médian est utilisé pour réduire le bruit tout en conservant les transitions nettes (contours des arbres)."
+  )
+)
+```
+
+---
+
+## 4. Création du masque placette
+
+### 4.1 Extraction des arbres d'une placette
+
+```{r extract-trees}
+# Fonction d'extraction des arbres d'une placette
+extract_plot_trees <- function(trees, plot_id) {
+  # Filtrer par ID de placette
+  plot_trees <- trees[trees$plot_id == plot_id, ]
+
+  # Filtrer arbres avec coordonnées valides
+  plot_trees <- plot_trees[!is.na(plot_trees$x) & !is.na(plot_trees$y), ]
+
+  return(plot_trees)
+}
+
+# Exemple avec la première placette
+if (exists("trees") && nrow(trees) > 0) {
+  plot_ids <- unique(trees$plot_id)
+  first_plot_id <- plot_ids[1]
+
+  plot_trees <- extract_plot_trees(trees, first_plot_id)
+
+  cat("=== ARBRES PLACETTE", first_plot_id, "===\n")
+  cat("Nombre d'arbres:", nrow(plot_trees), "\n")
+  print(head(plot_trees))
+}
+```
+
+### 4.2 Conversion coordonnées polaires → cartésiennes
+
+Les arbres sont souvent mesurés en coordonnées polaires (azimut, distance) depuis le centre de la placette. Il faut les convertir en coordonnées cartésiennes.
+
+```{r polar-to-cart}
+# Conversion polaire → cartésien
+polar_to_cartesian <- function(center_x, center_y, azimut_deg, distance_m, slope_deg = 0) {
+  # Correction de la distance pour la pente
+  distance_horiz <- distance_m * cos(slope_deg * pi / 180)
+
+  # Conversion azimut en radians (0° = Nord, sens horaire)
+  azimut_rad <- azimut_deg * pi / 180
+
+  # Calcul coordonnées cartésiennes
+  x <- center_x + distance_horiz * sin(azimut_rad)
+  y <- center_y + distance_horiz * cos(azimut_rad)
+
+  return(data.frame(x = x, y = y))
+}
+
+# Exemple
+cat("Exemple de conversion polaire → cartésien:\n")
+cat("Centre: (1000, 2000)\n")
+cat("Azimut: 45°, Distance: 10m\n")
+result <- polar_to_cartesian(1000, 2000, 45, 10)
+cat("Résultat: X =", round(result$x, 2), ", Y =", round(result$y, 2), "\n")
+```
+
+### 4.3 Création du masque raster
+
+```{r create-mask}
+# Fonction de création du masque placette
+create_plot_mask <- function(plot_trees, chm_template, weight_col = NULL) {
+  # Créer raster vide aligné sur le CHM
+ mask <- terra::rast(chm_template)
+  terra::values(mask) <- 0
+
+  # Pour chaque arbre, marquer les pixels
+  for (i in seq_len(nrow(plot_trees))) {
+    x <- plot_trees$x[i]
+    y <- plot_trees$y[i]
+
+    # Poids (diamètre si disponible, sinon 1)
+    if (!is.null(weight_col) && weight_col %in% names(plot_trees)) {
+      weight <- plot_trees[[weight_col]][i]
+      if (is.na(weight)) weight <- 1
+    } else {
+      weight <- 1
+    }
+
+    # Trouver la cellule correspondante
+    cell <- terra::cellFromXY(mask, cbind(x, y))
+    if (!is.na(cell)) {
+      mask[cell] <- mask[cell] + weight
+    }
+  }
+
+  return(mask)
+}
+
+# Créer le masque pour la première placette
+if (exists("plot_trees") && exists("chm")) {
+  mask <- create_plot_mask(plot_trees, chm, weight_col = "d")
+
+  cat("=== MASQUE CRÉÉ ===\n")
+  cat("Pixels non-nuls:", sum(values(mask) > 0, na.rm = TRUE), "\n")
+
+  # Visualiser
+  par(mfrow = c(1, 2))
+  plot(chm, main = "CHM", col = viridis::viridis(50))
+  points(plot_trees$x, plot_trees$y, pch = 19, col = "red")
+  plot(mask, main = "Masque placette", col = c("white", "red"))
+  par(mfrow = c(1, 1))
+}
+```
+
+### 4.4 Exercice : Créer un masque
+
+```{r ex-mask, exercise=TRUE, exercise.lines=20}
+# Exercice : Créer le masque pour une autre placette
+
+# 1. Choisir une placette (utiliser plot_ids[2] par exemple)
+selected_plot_id <- ___
+
+# 2. Extraire les arbres
+selected_trees <- extract_plot_trees(___, ___)
+
+# 3. Créer le masque
+selected_mask <- create_plot_mask(___, ___, weight_col = "d")
+
+# 4. Afficher les résultats
+cat("Placette sélectionnée:", selected_plot_id, "\n")
+cat("Nombre d'arbres:", nrow(selected_trees), "\n")
+cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TRUE), "\n")
+
+# 5. Visualiser
+plot(selected_mask, main = paste("Masque placette", selected_plot_id))
+```
+
+```{r ex-mask-solution}
+# Solution
+selected_plot_id <- plot_ids[2]
+selected_trees <- extract_plot_trees(trees, selected_plot_id)
+selected_mask <- create_plot_mask(selected_trees, chm, weight_col = "d")
+
+cat("Placette sélectionnée:", selected_plot_id, "\n")
+cat("Nombre d'arbres:", nrow(selected_trees), "\n")
+cat("Pixels non-nuls dans le masque:", sum(values(selected_mask) > 0, na.rm = TRUE), "\n")
+
+plot(selected_mask, main = paste("Masque placette", selected_plot_id))
+```
+
+```{r ex-mask-check}
+grade_this({
+  pass_if(TRUE, "Masque créé avec succès !")
+})
+```
+
+---
+
+## 5. Calcul de corrélation
+
+### 5.1 Fonction de coregistration
+
+Le package **lidaRtRee** fournit la fonction `coregistration()` qui calcule la corrélation entre le CHM et le masque pour différentes translations.
+
+```{r coreg-function}
+# La fonction coregistration de lidaRtRee
+# Syntaxe : coregistration(chm, mask, buffer, step)
+
+# Paramètres :
+# - chm : raster du Modèle Numérique de Hauteur
+# - mask : raster du masque de la placette (arbres pondérés)
+# - buffer : rayon de recherche autour de la position initiale (m)
+# - step : pas de la grille de recherche (m)
+
+# Sorties :
+# - dx1, dy1 : translation optimale (corrélation maximale)
+# - cor1 : valeur de corrélation au maximum
+# - dx2, dy2 : second maximum local
+# - cor2 : corrélation au second maximum
+# - ratio : cor1/cor2 (qualité du recalage)
+# - correlation_raster : carte de corrélation
+```
+
+### 5.2 Application sur une placette
+
+```{r coreg-single, eval=FALSE}
+# Coregistration d'une placette
+if (exists("chm") && exists("mask")) {
+  result <- lidaRtRee::coregistration(
+    chm = chm,
+    mask = mask,
+    buffer = params$buffer,
+    step = params$step
+  )
+
+  cat("=== RÉSULTATS COREGISTRATION ===\n")
+  cat("Translation optimale: dx =", round(result$dx1, 2), "m, dy =", round(result$dy1, 2), "m\n")
+  cat("Corrélation max     :", round(result$cor1, 3), "\n")
+  cat("Second maximum      : dx =", round(result$dx2, 2), "m, dy =", round(result$dy2, 2), "m\n")
+  cat("Corrélation 2nd     :", round(result$cor2, 3), "\n")
+  cat("Ratio cor1/cor2     :", round(result$ratio, 2), "\n")
+}
+```
+
+### 5.3 Visualisation de la corrélation
+
+```{r coreg-viz, eval=FALSE}
+# Visualisation de la surface de corrélation
+if (exists("result")) {
+  # Carte de corrélation
+  plot(result$correlation_raster,
+       main = "Surface de corrélation",
+       col = viridis::plasma(50))
+
+  # Marquer le maximum
+  points(result$dx1, result$dy1, pch = 4, col = "white", cex = 2, lwd = 2)
+
+  # Ajouter légende
+  legend("topright",
+         legend = paste("Max: (", round(result$dx1, 1), ",", round(result$dy1, 1), ")"),
+         pch = 4, col = "white", bg = "gray30", text.col = "white")
+}
+```
+
+### 5.4 Interprétation des résultats
+
+```{r coreg-interpret, echo=FALSE}
+cat("
+┌─────────────────────────────────────────────────────────────┐
+│              INTERPRÉTATION DES RÉSULTATS                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  dx1, dy1 : Translation optimale                            │
+│  ─────────                                                  │
+│  • dx1 > 0 : placette décalée vers l'Est                    │
+│  • dx1 < 0 : placette décalée vers l'Ouest                  │
+│  • dy1 > 0 : placette décalée vers le Nord                  │
+│  • dy1 < 0 : placette décalée vers le Sud                   │
+│                                                             │
+│  cor1 : Corrélation maximale                                │
+│  ─────                                                      │
+│  • > 0.7 : Excellent recalage                               │
+│  • 0.5 - 0.7 : Bon recalage                                 │
+│  • < 0.5 : Recalage incertain                               │
+│                                                             │
+│  ratio = cor1/cor2 : Qualité du maximum                     │
+│  ─────────────────                                          │
+│  • > 1.5 : Maximum bien défini, recalage fiable             │
+│  • 1.2 - 1.5 : Maximum acceptable                           │
+│  • < 1.2 : Plusieurs positions possibles, prudence          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+")
+```
+
+### 5.5 Quiz : Corrélation
+
+```{r quiz-coreg, echo=FALSE}
+quiz(
+  caption = "Testez vos connaissances sur la corrélation",
+
+  question("Que représente dx1, dy1 ?",
+    answer("La translation pour atteindre la corrélation maximale", correct = TRUE),
+    answer("Les coordonnées GPS corrigées"),
+    answer("L'erreur du GPS"),
+    answer("La position du plus grand arbre"),
+    correct = "Exact ! dx1 et dy1 représentent le décalage en X et Y qui maximise la corrélation entre le CHM et le masque.",
+    incorrect = "Non. dx1 et dy1 sont les composantes de la translation optimale, pas les coordonnées finales."
+  ),
+
+  question("Un ratio cor1/cor2 élevé (> 1.5) indique :",
+    answer("Un recalage fiable avec un maximum bien défini", correct = TRUE),
+    answer("Une mauvaise corrélation"),
+    answer("Plusieurs positions possibles"),
+    answer("Des données de mauvaise qualité"),
+    correct = "Exact ! Un ratio élevé signifie que le maximum de corrélation est bien distinct du second maximum, donc le recalage est fiable.",
+    incorrect = "Non. Un ratio élevé est positif : il indique que la position optimale est clairement identifiée."
+  ),
+
+  question("Pourquoi utiliser un buffer de 5m ?",
+    answer("Pour limiter la zone de recherche à l'erreur GPS probable", correct = TRUE),
+    answer("C'est la taille standard des placettes"),
+    answer("Pour accélérer le calcul"),
+    answer("Pour éviter les effets de bord"),
+    correct = "Exact ! Un buffer de 5m correspond à l'erreur GPS typique sous couvert forestier. Chercher plus loin augmenterait le risque de faux positifs.",
+    incorrect = "Non. Le buffer de 5m correspond à la zone où la vraie position de la placette est probablement située compte tenu de l'erreur GPS."
+  )
+)
+```
+
+---
+
+## 6. Traitement par lot parallélisé
+
+### 6.1 Configuration parallèle
+
+```{r parallel-setup}
+library(future)
+library(future.apply)
+
+# Détecter le nombre de coeurs disponibles
+n_cores <- parallel::detectCores()
+n_workers <- max(1, n_cores - 1)
+
+cat("=== CONFIGURATION PARALLÈLE ===\n")
+cat("Coeurs disponibles  :", n_cores, "\n")
+cat("Workers à utiliser  :", n_workers, "\n")
+
+# Activer le traitement parallèle
+plan(multisession, workers = n_workers)
+```
+
+### 6.2 Fonction de traitement d'une placette
+
+```{r process-plot-function}
+# Fonction complète de traitement d'une placette
+process_plot <- function(plot_id, plots, trees, las_dir, params) {
+
+  tryCatch({
+    # 1. Récupérer les infos de la placette
+    plot_info <- plots[plots$plot_id == plot_id, ]
+    if (nrow(plot_info) == 0) {
+      return(data.frame(plot_id = plot_id, status = "not_found"))
+    }
+
+    # 2. Extraire les arbres
+    plot_trees <- trees[trees$plot_id == plot_id, ]
+    if (nrow(plot_trees) < 3) {
+      return(data.frame(plot_id = plot_id, status = "insufficient_trees"))
+    }
+
+    # 3. Charger le LAS correspondant
+    las_file <- file.path(las_dir, paste0("plot_", plot_id, ".las"))
+    if (!file.exists(las_file)) {
+      las_file <- file.path(las_dir, paste0(plot_id, ".las"))
+    }
+    if (!file.exists(las_file)) {
+      return(data.frame(plot_id = plot_id, status = "las_not_found"))
+    }
+
+    las <- lidR::readLAS(las_file)
+
+    # 4. Générer le CHM
+    chm <- lidR::rasterize_canopy(las, res = params$res, algorithm = lidR::p2r())
+    chm[chm > params$h_max] <- params$h_max
+    chm[chm < 0] <- 0
+    chm[is.na(chm)] <- 0
+    chm <- terra::focal(chm, w = matrix(1, 3, 3), fun = median, na.rm = TRUE)
+
+    # 5. Créer le masque
+    mask <- terra::rast(chm)
+    terra::values(mask) <- 0
+    for (i in seq_len(nrow(plot_trees))) {
+      cell <- terra::cellFromXY(mask, cbind(plot_trees$x[i], plot_trees$y[i]))
+      if (!is.na(cell)) {
+        weight <- ifelse(!is.na(plot_trees$d[i]), plot_trees$d[i], 1)
+        mask[cell] <- mask[cell] + weight
+      }
+    }
+
+    # 6. Coregistration
+    result <- lidaRtRee::coregistration(chm, mask,
+                                         buffer = params$buffer,
+                                         step = params$step)
+
+    # 7. Retourner les résultats
+    data.frame(
+      plot_id = plot_id,
+      x_ini = plot_info$Xtheo[1],
+      y_ini = plot_info$Ytheo[1],
+      dx = result$dx1,
+      dy = result$dy1,
+      x_cor = plot_info$Xtheo[1] + result$dx1,
+      y_cor = plot_info$Ytheo[1] + result$dy1,
+      cor1 = result$cor1,
+      cor2 = result$cor2,
+      ratio = result$cor1 / max(result$cor2, 0.001),
+      status = "success"
+    )
+
+  }, error = function(e) {
+    data.frame(plot_id = plot_id, status = paste("error:", e$message))
+  })
+}
+```
+
+### 6.3 Exécution parallèle
+
+```{r parallel-exec, eval=FALSE}
+# Liste des placettes à traiter
+plot_ids <- unique(plots$plot_id)
+
+cat("=== TRAITEMENT PARALLÈLE ===\n")
+cat("Nombre de placettes:", length(plot_ids), "\n")
+cat("Workers actifs     :", n_workers, "\n\n")
+
+# Traitement parallèle
+t_start <- Sys.time()
+
+results_list <- future_lapply(plot_ids, function(id) {
+  process_plot(id, plots, trees, las_dir, params)
+}, future.seed = TRUE)
+
+t_end <- Sys.time()
+
+# Consolider les résultats
+results_df <- do.call(rbind, results_list)
+
+cat("Temps de traitement:", round(difftime(t_end, t_start, units = "secs"), 1), "secondes\n")
+cat("Placettes traitées :", nrow(results_df), "\n")
+cat("Succès             :", sum(results_df$status == "success"), "\n")
+cat("Erreurs            :", sum(results_df$status != "success"), "\n")
+```
+
+### 6.4 Cache incrémental
+
+```{r cache-results, eval=FALSE}
+# Sauvegarder les résultats pour éviter de recalculer
+cache_file <- file.path(data_dir, "coregistration_results.rds")
+
+if (file.exists(cache_file)) {
+  results_df <- readRDS(cache_file)
+  cat("Résultats chargés depuis le cache:", cache_file, "\n")
+} else {
+  # ... traitement parallèle ...
+  saveRDS(results_df, cache_file)
+  cat("Résultats sauvegardés:", cache_file, "\n")
+}
+```
+
+### 6.5 Exercice : Traitement parallèle
+
+```{r ex-parallel, exercise=TRUE, exercise.lines=15}
+# Exercice : Traiter un sous-ensemble de placettes
+
+# 1. Sélectionner les 3 premières placettes
+plot_ids_subset <- plot_ids[1:___]
+
+# 2. Traiter en parallèle (ou séquentiellement si peu de placettes)
+results_subset <- lapply(___, function(id) {
+  # Simuler un résultat pour l'exercice
+  data.frame(
+    plot_id = id,
+    dx = runif(1, -3, 3),
+    dy = runif(1, -3, 3),
+    cor1 = runif(1, 0.5, 0.9)
+  )
+})
+
+# 3. Consolider
+results_subset_df <- do.call(rbind, results_subset)
+
+# 4. Afficher
+print(results_subset_df)
+cat("\nNombre de placettes traitées:", nrow(results_subset_df))
+```
+
+```{r ex-parallel-solution}
+# Solution
+plot_ids_subset <- plot_ids[1:3]
+
+results_subset <- lapply(plot_ids_subset, function(id) {
+  data.frame(
+    plot_id = id,
+    dx = runif(1, -3, 3),
+    dy = runif(1, -3, 3),
+    cor1 = runif(1, 0.5, 0.9)
+  )
+})
+
+results_subset_df <- do.call(rbind, results_subset)
+print(results_subset_df)
+cat("\nNombre de placettes traitées:", nrow(results_subset_df))
+```
+
+```{r ex-parallel-check}
+grade_this({
+  pass_if(TRUE, "Traitement parallèle configuré !")
+})
+```
+
+---
+
+## 7. Analyse des résultats
+
+### 7.1 Statistiques de recalage
+
+```{r stats-coreg, eval=FALSE}
+# Filtrer les résultats valides
+results_valid <- results_df[results_df$status == "success", ]
+
+cat("=== STATISTIQUES DE RECALAGE ===\n\n")
+
+# Décalage moyen
+mean_dx <- mean(results_valid$dx, na.rm = TRUE)
+mean_dy <- mean(results_valid$dy, na.rm = TRUE)
+cat("Décalage moyen:\n")
+cat("  dx =", round(mean_dx, 2), "m (", ifelse(mean_dx > 0, "Est", "Ouest"), ")\n")
+cat("  dy =", round(mean_dy, 2), "m (", ifelse(mean_dy > 0, "Nord", "Sud"), ")\n\n")
+
+# Distance de correction
+results_valid$dist_cor <- sqrt(results_valid$dx^2 + results_valid$dy^2)
+cat("Distance de correction:\n")
+cat("  Moyenne    :", round(mean(results_valid$dist_cor), 2), "m\n")
+cat("  Écart-type :", round(sd(results_valid$dist_cor), 2), "m\n")
+cat("  Min        :", round(min(results_valid$dist_cor), 2), "m\n")
+cat("  Max        :", round(max(results_valid$dist_cor), 2), "m\n\n")
+
+# Corrélation moyenne
+cat("Corrélation:\n")
+cat("  Moyenne cor1:", round(mean(results_valid$cor1), 3), "\n")
+cat("  Moyenne ratio:", round(mean(results_valid$ratio), 2), "\n")
+```
+
+### 7.2 Tests statistiques
+
+```{r tests-coreg, eval=FALSE}
+# Tests de significativité du décalage
+cat("=== TESTS STATISTIQUES ===\n\n")
+
+# Test t pour dx
+t_test_x <- t.test(results_valid$dx, mu = 0)
+cat("Test H0: dx = 0\n")
+cat("  t =", round(t_test_x$statistic, 3), "\n")
+cat("  p-value =", round(t_test_x$p.value, 4), "\n")
+cat("  Significatif (p < 0.05):", t_test_x$p.value < 0.05, "\n\n")
+
+# Test t pour dy
+t_test_y <- t.test(results_valid$dy, mu = 0)
+cat("Test H0: dy = 0\n")
+cat("  t =", round(t_test_y$statistic, 3), "\n")
+cat("  p-value =", round(t_test_y$p.value, 4), "\n")
+cat("  Significatif (p < 0.05):", t_test_y$p.value < 0.05, "\n")
+```
+
+### 7.3 Visualisation
+
+```{r viz-coreg, eval=FALSE}
+library(ggplot2)
+
+# Graphique des vecteurs de correction
+p <- ggplot(results_valid, aes(x = dx, y = dy)) +
+  # Points colorés par corrélation
+  geom_point(aes(color = cor1), size = 3, alpha = 0.8) +
+  # Vecteurs depuis l'origine
+  geom_segment(aes(xend = 0, yend = 0),
+               arrow = arrow(length = unit(0.15, "cm")),
+               alpha = 0.5) +
+  # Lignes de référence
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  # Point moyen
+  geom_point(aes(x = mean(dx), y = mean(dy)),
+             color = "red", size = 5, shape = 4, stroke = 2) +
+  # Échelle de couleur
+  scale_color_viridis_c(name = "Corrélation", option = "plasma") +
+  # Labels
+  labs(title = "Vecteurs de correction par placette",
+       subtitle = paste("n =", nrow(results_valid), "placettes"),
+       x = "dx (m) - Ouest ← → Est",
+       y = "dy (m) - Sud ← → Nord") +
+  # Aspect ratio 1:1
+  coord_fixed() +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+print(p)
+```
+
+### 7.4 Export des résultats
+
+```{r export-coreg, eval=FALSE}
+library(sf)
+
+# Export CSV
+csv_file <- file.path(data_dir, "placettes_coregistrees.csv")
+write.csv(results_valid, csv_file, row.names = FALSE)
+cat("Export CSV:", csv_file, "\n")
+
+# Export GeoPackage
+gpkg_file <- file.path(data_dir, "placettes_coregistrees.gpkg")
+results_sf <- st_as_sf(results_valid,
+                        coords = c("x_cor", "y_cor"),
+                        crs = 2154)  # Lambert 93
+st_write(results_sf, gpkg_file, delete_dsn = TRUE, quiet = TRUE)
+cat("Export GeoPackage:", gpkg_file, "\n")
+```
+
+### 7.5 Quiz : Analyse
+
+```{r quiz-analysis, echo=FALSE}
+quiz(
+  caption = "Testez vos connaissances sur l'analyse des résultats",
+
+  question("Une distance de correction moyenne de 2.1 m est-elle normale ?",
+    answer("Oui, c'est cohérent avec la précision GPS sous couvert", correct = TRUE),
+    answer("Non, c'est beaucoup trop élevé"),
+    answer("Non, c'est trop faible"),
+    answer("Impossible à dire sans plus d'informations"),
+    correct = "Exact ! Une correction de 2-3 m est typique pour des mesures GPS sous couvert forestier dense.",
+    incorrect = "Non. Une correction de 2.1 m est tout à fait normale et cohérente avec l'erreur GPS attendue sous forêt (2-10 m)."
+  ),
+
+  question("Un p-value de 0.03 pour dx signifie :",
+    answer("Le décalage en X est statistiquement significatif", correct = TRUE),
+    answer("Le recalage a échoué"),
+    answer("La corrélation est faible"),
+    answer("Il n'y a pas de biais systématique"),
+    correct = "Exact ! p < 0.05 signifie qu'on rejette H0 (dx = 0), donc il existe un biais systématique significatif en X.",
+    incorrect = "Non. Un p-value de 0.03 < 0.05 indique que le décalage moyen en X est significativement différent de zéro."
+  ),
+
+  question("Pourquoi exporter en GeoPackage ?",
+    answer("Pour visualiser et utiliser les résultats dans un SIG", correct = TRUE),
+    answer("Pour réduire la taille du fichier"),
+    answer("C'est obligatoire pour le recalage"),
+    answer("Pour compatibilité avec Excel"),
+    correct = "Exact ! Le GeoPackage permet d'ouvrir les placettes corrigées dans QGIS ou ArcGIS pour visualisation et analyses spatiales.",
+    incorrect = "Non. Le GeoPackage est un format géospatial standard qui permet d'utiliser les résultats dans des logiciels SIG."
+  )
+)
+```
+
+---
+
+## 8. Synthèse
+
+### 8.1 Workflow complet
+
+```{r workflow-final, echo=FALSE}
+cat("
+┌─────────────────────────────────────────────────────────────┐
+│              WORKFLOW COREGISTRATION                        │
+└─────────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ 1. DONNÉES D'ENTRÉE                                     │
+  │   • Coordonnées GPS placettes (imprécises)              │
+  │   • Inventaire arbres (diamètre, azimut, distance)      │
+  │   • Nuages LiDAR normalisés                             │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ 2. GÉNÉRATION MNH                                       │
+  │   • lasR ou lidR : rasterize_canopy()                   │
+  │   • Seuillage 0-50m, filtre médian 3×3                  │
+  │   • Résolution 0.5m                                     │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ 3. MASQUE PLACETTE                                      │
+  │   • Positions arbres (polaire → cartésien)              │
+  │   • Pondération par diamètre                            │
+  │   • Raster aligné sur MNH                               │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ 4. CORRÉLATION                                          │
+  │   • coregistration() : recherche translation optimale   │
+  │   • Buffer 5m, pas 0.5m                                 │
+  │   • Sortie : dx, dy, corrélation, ratio                 │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ 5. VALIDATION                                           │
+  │   • Statistiques (moyenne, écart-type)                  │
+  │   • Tests de significativité (t-test)                   │
+  │   • Visualisation vecteurs de correction                │
+  └─────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────┐
+  │ 6. EXPORT                                               │
+  │   • placettes_coregistrees.csv                          │
+  │   • placettes_coregistrees.gpkg                         │
+  └─────────────────────────────────────────────────────────┘
+")
+```
+
+### 8.2 Produits générés
+
+| Produit | Description | Usage |
+|---------|-------------|-------|
+| `coregistration_results.rds` | Cache des résultats R | Reprise traitement |
+| `placettes_coregistrees.csv` | Coordonnées corrigées | Tableau, analyse |
+| `placettes_coregistrees.gpkg` | Placettes géoréférencées | SIG (QGIS, ArcGIS) |
+
+### 8.3 Lien avec les indicateurs nemeton
+
+Le recalage des placettes améliore la qualité des indicateurs nemeton calculés par ABA :
+
+| Indicateur | Impact du recalage |
+|------------|-------------------|
+| **P1** (Volume bois) | Calibration ABA plus précise |
+| **C1** (Biomasse carbone) | Estimation stock carbone fiable |
+| **B2** (Structure) | Diversité strates correctement attribuée |
+| **E1, E2** (Énergie) | Volume bois-énergie précis |
+
+### 8.4 Bonnes pratiques
+
+1. **Toujours vérifier** le ratio cor1/cor2 (> 1.5 recommandé)
+2. **Exclure** les placettes avec faible corrélation (< 0.5)
+3. **Visualiser** les vecteurs de correction (détecter outliers)
+4. **Documenter** les paramètres utilisés (buffer, step, h_max)
+5. **Conserver** les coordonnées originales (traçabilité)
+
+### 8.5 Ressources
+
+**Documentation** :
+
+- [Article lidaRtRee Coregistration](https://lidar.pages-forge.inrae.fr/lidaRtRee/articles/coregistration.html)
+- [Monnet & Mermin (2014)](https://doi.org/10.3390/rs6087628) - Publication scientifique
+- [lasR documentation](https://r-lidar.github.io/lasR/)
+- [lidR book](https://r-lidar.github.io/lidRbook/)
+
+**Félicitations !** Vous avez terminé le Tutorial 08 sur le recalage des placettes d'inventaire forestier.
+
+Vous pouvez maintenant utiliser vos placettes recalées pour calibrer des modèles ABA plus précis (voir Tutorial 07, sections 6-8).

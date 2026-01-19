@@ -47,7 +47,7 @@ install.packages(c("leaflet", "corrplot", "patchwork", "fmsb"))
 remotes::install_github("pobsteta/nemeton")
 ```
 
-## Les 7 Tutoriels
+## Les 8 Tutoriels
 
 ### Vue d'ensemble
 
@@ -60,8 +60,9 @@ remotes::install_github("pobsteta/nemeton")
 | 5 | `05-complete` | 40 min | - | Assemblage, normalisation, I_nemeton |
 | 6 | `06-analysis` | 50 min | - | Analyse multi-critères et export |
 | 7 | `07-lidar-advanced` | 90 min | - | LiDAR avancé (LAScatalog, lasR, lidaRtRee, ABA) |
+| 8 | `08-coregistration` | 130 min | - | Recalage placettes terrain/LiDAR |
 
-**Durée totale estimée** : 6-7 heures
+**Durée totale estimée** : 8-9 heures
 
 ### Lancer un tutoriel
 
@@ -178,6 +179,30 @@ learnr::run_tutorial("01-acquisition", package = "nemeton")
 - `result_baba/` : Métriques LiDAR brutes (exploration)
 
 **Note** : Ce tutoriel est complémentaire au Tutorial 02. Il utilise les données LiDAR téléchargées dans le Tutorial 01.
+
+### Tutorial 08 : Coregistration LiDAR/Terrain
+
+**Objectif** : Recaler les positions des placettes d'inventaire forestier sur les données LiDAR.
+
+**Problématique** : Le GPS sous couvert forestier a une précision de 2-10 m, ce qui biaise la calibration ABA.
+
+**Méthode** :
+- Corrélation croisée entre MNH LiDAR et positions des arbres mesurés
+- Recherche de la translation (dx, dy) qui maximise la corrélation
+- Référence : Monnet & Mermin (2014)
+
+**Workflow** :
+1. Génération MNH (CHM) avec lasR ou lidR
+2. Création masque placette (positions arbres pondérées par diamètre)
+3. Calcul corrélation avec `coregistration()` de lidaRtRee
+4. Traitement parallèle avec `future_lapply()`
+5. Analyse statistique et export
+
+**Produits** :
+- `placettes_coregistrees.csv` : Coordonnées corrigées
+- `placettes_coregistrees.gpkg` : GeoPackage pour SIG
+
+**Note** : Ce tutoriel utilise les données de lidaRtRee (`quatre_montagnes`, `tree_inventory_chablais3`, `chm_chablais3`).
 
 ## Structure du Cache
 

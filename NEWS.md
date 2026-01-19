@@ -1,3 +1,29 @@
+# nemeton 0.5.1
+
+## v0.5.1 - Tutorial 08 Coregistration
+
+**Date**: 2025-01-18
+
+### New Features
+
+#### Tutorial 08: Coregistration LiDAR/Terrain (130 min)
+
+* **Problématique GPS** - Précision GPS sous couvert forestier (2-10 m)
+* **Corrélation MNH/Terrain** - Recalage par corrélation croisée
+* **lidaRtRee::coregistration()** - Recherche translation optimale (dx, dy)
+* **Traitement parallèle** - `future_lapply()` pour lots de placettes
+* **Analyse statistique** - Tests de significativité, visualisation vecteurs
+* **Export** - CSV et GeoPackage pour utilisation SIG
+
+### Documentation
+
+* Updated `vignettes/tutorial-guide.Rmd` with Tutorial 08
+* Updated `TUTORIAL_INSTALL.md` with Tutorial 08
+
+**Reference**: Monnet, J.-M., & Mermin, É. (2014). Cross-correlation of diameter measures for the co-registration of forest inventory plots with airborne laser scanning data. *Forests*, 5(9), 2307-2326.
+
+---
+
 # nemeton 0.5.0
 
 ## v0.5.0 - Tutorial 07 & CRAN Compliance
