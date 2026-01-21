@@ -150,11 +150,6 @@ msg_error <- function(key, ...) {
     indicator_failed = "Indicator '%s' calculation failed",
     indicator_set_na = "Setting '%s' to NA",
     indicator_no_valid = "No valid indicators to compute",
-    indicator_carbon = "Carbon stock (biomass -> carbon)",
-    indicator_biodiversity = "Biodiversity (species richness)",
-    indicator_water = "Water regulation (TWI + proximity)",
-    indicator_fragmentation = "Fragmentation (forest coverage)",
-    indicator_accessibility = "Accessibility (distance to roads)",
 
     # Normalization
     normalize_auto_detected = "Auto-detected %d indicators: %s",
@@ -376,11 +371,6 @@ msg_error <- function(key, ...) {
     indicator_failed = "Échec du calcul de l'indicateur '%s'",
     indicator_set_na = "Définition de '%s' à NA",
     indicator_no_valid = "Aucun indicateur valide à calculer",
-    indicator_carbon = "Stock de carbone (biomasse -> carbone)",
-    indicator_biodiversity = "Biodiversité (richesse spécifique)",
-    indicator_water = "Régulation hydrique (TWI + proximité)",
-    indicator_fragmentation = "Fragmentation (couverture forestière)",
-    indicator_accessibility = "Accessibilité (distance aux routes)",
 
     # Normalisation
     normalize_auto_detected = "%d indicateurs auto-détectés : %s",

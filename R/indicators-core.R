@@ -6,7 +6,7 @@
 #' @param units A \code{nemeton_units} or \code{sf} object representing analysis units
 #' @param layers A \code{nemeton_layers} object containing spatial data layers
 #' @param indicators Character vector of indicator names to calculate, or "all" for all available.
-#'   Available indicators: "carbon", "biodiversity", "water", "fragmentation", "accessibility"
+#'   See \code{\link{list_indicators}} for available indicators from the 12-family framework.
 #' @param preprocess Logical. Automatically harmonize CRS and crop layers? Default TRUE.
 #' @param parallel Logical. Use parallel computation? (Not implemented in MVP, will error if TRUE)
 #' @param progress Logical. Show progress bar? Default TRUE.
@@ -64,9 +64,7 @@
 #' }
 #'
 #' @seealso
-#' \code{\link{indicator_carbon}}, \code{\link{indicator_biodiversity}},
-#' \code{\link{indicator_water}}, \code{\link{indicator_fragmentation}},
-#' \code{\link{indicator_accessibility}}
+#' \code{\link{list_indicators}} for available indicators in the 12-family framework
 #'
 #' @export
 nemeton_compute <- function(units,
@@ -94,14 +92,8 @@ nemeton_compute <- function(units,
     ))
   }
 
-  # Get list of available indicators
-  available_indicators <- c(
-    "carbon",
-    "biodiversity",
-    "water",
-    "fragmentation",
-    "accessibility"
-  )
+  # Get list of available indicators from the 12-family framework
+  available_indicators <- list_indicators()
 
   # Handle "all"
   if (length(indicators) == 1 && indicators[1] == "all") {
@@ -205,14 +197,19 @@ nemeton_compute <- function(units,
 #' @keywords internal
 #' @noRd
 compute_indicator <- function(indicator, units, layers, ...) {
-  switch(indicator,
-    carbon = indicator_carbon(units, layers, ...),
-    biodiversity = indicator_biodiversity(units, layers, ...),
-    water = indicator_water(units, layers, ...),
-    fragmentation = indicator_fragmentation(units, layers, ...),
-    accessibility = indicator_accessibility(units, layers, ...),
-    stop("Unknown indicator: ", indicator)
-  )
+  # Convert indicator name to function name (e.g., "carbon_biomass" -> "indicator_carbon_biomass")
+  func_name <- paste0("indicator_", indicator)
+
+  # Check if function exists
+  if (!exists(func_name, mode = "function")) {
+    stop("Unknown indicator: ", indicator,
+         "\nAvailable indicators: ", paste(list_indicators(), collapse = ", "),
+         call. = FALSE)
+  }
+
+  # Call the indicator function dynamically
+  func <- get(func_name, mode = "function")
+  do.call(func, list(units = units, layers = layers, ...))
 }
 
 #' List available indicators
@@ -238,15 +235,94 @@ compute_indicator <- function(indicator, units, layers, ...) {
 list_indicators <- function(category = "all", return_type = c("names", "details")) {
   return_type <- match.arg(return_type)
 
+  # 12-family indicator framework (v0.4.0+)
   indicators <- data.frame(
-    name = c("carbon", "biodiversity", "water", "fragmentation", "accessibility"),
-    category = c("biophysical", "biophysical", "biophysical", "landscape", "social"),
+    name = c(
+      # C - Carbon/Energy (2)
+      "carbon_biomass", "carbon_ndvi",
+      # W - Water (3)
+      "water_network", "water_wetlands", "water_twi",
+      # F - Soil Fertility (2)
+      "soil_fertility", "soil_erosion",
+      # L - Landscape (2)
+      "landscape_fragmentation", "landscape_edge",
+      # B - Biodiversity (3)
+      "biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity",
+      # R - Risk/Resilience (4)
+      "risk_fire", "risk_storm", "risk_drought", "risk_browsing",
+      # T - Temporal (2)
+      "temporal_age", "temporal_change",
+      # A - Air/Microclimate (2)
+      "air_coverage", "air_quality",
+      # S - Social (3)
+      "social_trails", "social_accessibility", "social_proximity",
+      # P - Productive (3)
+      "productive_volume", "productive_quality", "productive_station",
+      # E - Energy (2)
+      "energy_fuelwood", "energy_avoidance",
+      # N - Naturalness (3)
+      "naturalness_distance", "naturalness_continuity", "naturalness_composite"
+    ),
+    family = c(
+      "C", "C",
+      "W", "W", "W",
+      "F", "F",
+      "L", "L",
+      "B", "B", "B",
+      "R", "R", "R", "R",
+      "T", "T",
+      "A", "A",
+      "S", "S", "S",
+      "P", "P", "P",
+      "E", "E",
+      "N", "N", "N"
+    ),
+    category = c(
+      "biophysical", "biophysical",
+      "biophysical", "biophysical", "biophysical",
+      "biophysical", "biophysical",
+      "landscape", "landscape",
+      "biophysical", "biophysical", "biophysical",
+      "risk", "risk", "risk", "risk",
+      "temporal", "temporal",
+      "biophysical", "biophysical",
+      "social", "social", "social",
+      "productive", "productive", "productive",
+      "energy", "energy",
+      "naturalness", "naturalness", "naturalness"
+    ),
     description = c(
-      "Carbon stock (above-ground biomass)",
-      "Biodiversity indices (Shannon, richness, Simpson)",
-      "Water regulation (TWI, proximity to waterbodies)",
-      "Forest fragmentation (patch count, connectivity)",
-      "Accessibility (distance to roads/trails)"
+      "Carbon stock via biomass allometric models (C1)",
+      "Vegetation vitality via NDVI (C2)",
+      "Water regulation via stream network (W1)",
+      "Water regulation via wetlands (W2)",
+      "Water regulation via Topographic Wetness Index (W3)",
+      "Soil fertility assessment (F1)",
+      "Soil erosion risk (F2)",
+      "Forest fragmentation metrics (L1)",
+      "Edge density and quality (L2)",
+      "Biodiversity protection status (B1)",
+      "Structural diversity (B2)",
+      "Habitat connectivity (B3)",
+      "Fire risk assessment (R1)",
+      "Storm vulnerability (R2)",
+      "Drought risk (R3)",
+      "Browsing pressure (R4)",
+      "Stand age and maturity (T1)",
+      "Temporal change detection (T2)",
+      "Air quality regulation via canopy coverage (A1)",
+      "Air quality improvement potential (A2)",
+      "Trail network accessibility (S1)",
+      "General accessibility (S2)",
+      "Proximity to population centers (S3)",
+      "Timber volume production (P1)",
+      "Wood quality (P2)",
+      "Site productivity (P3)",
+      "Fuelwood energy potential (E1)",
+      "Fossil fuel avoidance via carbon sequestration (E2)",
+      "Distance to natural reference (N1)",
+      "Ecological continuity (N2)",
+      "Composite naturalness index (N3)"
     ),
     stringsAsFactors = FALSE
   )
