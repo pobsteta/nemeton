@@ -702,6 +702,24 @@ if (!is.null(mnt)) {
   cat(sprintf("Altitude: %.0f - %.0f m\n", minmax(mnt)[1], minmax(mnt)[2]))
   cat(sprintf("Pente: %.0f - %.0f %%\n", minmax(slope)[1], minmax(slope)[2]))
 }
+
+# Charger le CHM (Canopy Height Model) depuis T07 si disponible
+chm_cache <- file.path(data_dir, "chm_complet.tif")
+mnh_cache <- file.path(data_dir, "mnh_complet.tif")
+
+if (file.exists(chm_cache)) {
+  cat("\nChargement CHM depuis le cache (T07)...\n")
+  chm <- rast(chm_cache)
+  cat(sprintf("CHM: %.1f - %.1f m\n", minmax(chm)[1], minmax(chm)[2]))
+} else if (file.exists(mnh_cache)) {
+  cat("\nChargement MNH depuis le cache (T07)...\n")
+  chm <- rast(mnh_cache)
+  cat(sprintf("MNH: %.1f - %.1f m\n", minmax(chm)[1], minmax(chm)[2]))
+} else {
+  cat("\nCHM non disponible - utilisation de l'altitude comme proxy.\n")
+  cat("Pour utiliser le vrai CHM, exécutez d'abord le Tutorial 07.\n")
+  chm <- NULL
+}
 ```
 
 ### Exercice 1.4 : Charger les chemins (BD TOPO)
@@ -1016,11 +1034,11 @@ quiz(
 
 La **stratification** permet d'assurer que l'échantillon couvre tous les gradients forestiers. Nous utiliserons :
 
-- **Hauteur de canopée** (MNH p95) : 4 classes
-- **Couvert forestier** : 2 classes
-- **Pente** : 2 classes
+- **Hauteur de canopée** (CHM LiDAR si disponible depuis T07, sinon altitude comme proxy) : 4 classes
+- **Couvert forestier** (BD Forêt) : 2 classes
+- **Pente** (MNT dérivé) : 2 classes
 
-Soit **16 strates** au total.
+Soit **16 strates** au total (4 × 2 × 2).
 
 ### Exercice 3.1 : Créer les strates
 
@@ -1037,6 +1055,11 @@ zone_etude <- tryCatch(
 bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
 slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
 mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
+
+# Charger le CHM depuis T07 si disponible
+chm <- tryCatch(rast(file.path(data_dir, "chm_complet.tif")), error = function(e) {
+  tryCatch(rast(file.path(data_dir, "mnh_complet.tif")), error = function(e) NULL)
+})
 # config est hérité du setup principal
 
 # Recréer la frame de candidats valides
@@ -1056,18 +1079,24 @@ if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
   mean_slope <- rep(20, nrow(grid_buffers))
 }
 
-# Calcul altitude (vectorisé avec exactextractr)
-if (!is.null(mnt) && requireNamespace("exactextractr", quietly = TRUE)) {
-  mean_altitude <- exactextractr::exact_extract(mnt, grid_buffers, "mean")
+# Calcul hauteur moyenne CHM (métrique LiDAR)
+if (!is.null(chm) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_height <- exactextractr::exact_extract(chm, grid_buffers, "mean")
+  height_source <- "CHM LiDAR"
+} else if (!is.null(mnt) && requireNamespace("exactextractr", quietly = TRUE)) {
+  # Fallback: utiliser l'altitude comme proxy
+  mean_height <- exactextractr::exact_extract(mnt, grid_buffers, "mean")
+  height_source <- "Altitude (proxy)"
 } else {
-  mean_altitude <- rep(1000, nrow(grid_buffers))
+  mean_height <- rep(15, nrow(grid_buffers))
+  height_source <- "Valeur par défaut"
 }
 
 candidates <- grid_sf |>
   mutate(
     forest_cover = forest_cover,
     mean_slope = mean_slope,
-    mean_altitude = mean_altitude,
+    mean_height = mean_height,
     valid = forest_cover >= config$min_forest_cover &
             !is.na(mean_slope) & mean_slope <= config$max_slope
   )
@@ -1077,14 +1106,21 @@ frame <- candidates |> filter(valid)
 ```{r strata, exercise=TRUE, exercise.setup="strata-setup", exercice.timelimit=2400}
 # Créer les strates basées sur les variables disponibles
 cat("=== Création des strates ===\n\n")
+cat("Source hauteur:", height_source, "\n\n")
 
-# Strate altitude (proxy hauteur) : 4 classes (quartiles)
-altitude_breaks <- quantile(frame$mean_altitude, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+# Strate hauteur (CHM ou altitude proxy) : 4 classes (quartiles)
+height_breaks <- quantile(frame$mean_height, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
 frame <- frame |>
   mutate(
-    strat_altitude = cut(mean_altitude, breaks = altitude_breaks,
-                         labels = c("A1", "A2", "A3", "A4"), include.lowest = TRUE)
+    strat_height = cut(mean_height, breaks = height_breaks,
+                       labels = c("H1", "H2", "H3", "H4"), include.lowest = TRUE)
   )
+
+cat("Classes de hauteur:\n")
+cat(sprintf("  H1: %.1f - %.1f m\n", height_breaks[1], height_breaks[2]))
+cat(sprintf("  H2: %.1f - %.1f m\n", height_breaks[2], height_breaks[3]))
+cat(sprintf("  H3: %.1f - %.1f m\n", height_breaks[3], height_breaks[4]))
+cat(sprintf("  H4: %.1f - %.1f m\n", height_breaks[4], height_breaks[5]))
 
 # Strate couvert : 2 classes (médiane)
 cover_median <- median(frame$forest_cover, na.rm = TRUE)
@@ -1103,7 +1139,7 @@ frame <- frame |>
 # Combiner en strate finale
 frame <- frame |>
   mutate(
-    stratum = paste(strat_altitude, strat_cover, strat_slope, sep = "_")
+    stratum = paste(strat_height, strat_cover, strat_slope, sep = "_")
   )
 
 # Statistiques par strate
@@ -1112,13 +1148,13 @@ strata_summary <- frame |>
   group_by(stratum) |>
   summarise(
     n = n(),
-    altitude_mean = round(mean(mean_altitude, na.rm = TRUE)),
+    height_mean = round(mean(mean_height, na.rm = TRUE), 1),
     slope_mean = round(mean(mean_slope, na.rm = TRUE), 1),
     .groups = "drop"
   ) |>
   arrange(desc(n))
 
-cat("Nombre de strates:", length(unique(frame$stratum)), "\n")
+cat("\nNombre de strates:", length(unique(frame$stratum)), "\n")
 cat("Candidats par strate:\n")
 print(strata_summary, n = 16)
 
@@ -1132,7 +1168,8 @@ ggplot() +
   geom_sf(data = zone_etude, fill = "white", color = "black") +
   geom_sf(data = frame, aes(color = stratum), size = 1.5) +
   scale_color_viridis_d(name = "Strate") +
-  labs(title = "Distribution spatiale des strates") +
+  labs(title = "Distribution spatiale des strates",
+       subtitle = sprintf("Stratification par hauteur (%s), couvert et pente", height_source)) +
   theme_minimal() +
   theme(legend.position = "right")
 ```
@@ -1165,34 +1202,96 @@ set.seed(config$seed)
 if (requireNamespace("spsurvey", quietly = TRUE)) {
   cat("=== Tirage GRTS ===\n\n")
 
+  # Debug: vérifier la structure de frame
+  cat("Structure de frame:\n")
+  cat("  Lignes:", nrow(frame), "\n")
+  cat("  Géométrie:", unique(sf::st_geometry_type(frame)), "\n")
+  cat("  NA dans stratum:", sum(is.na(frame$stratum)), "\n\n")
+
   # Calculer l'allocation par strate (proportionnelle avec minimum)
   strata_counts <- table(frame$stratum)
   n_strata <- length(strata_counts)
 
+  cat("Candidats par strate:\n")
+  print(strata_counts)
+  cat("\n")
+
   # Allocation proportionnelle
   allocation <- round(strata_counts / sum(strata_counts) * config$n_main)
 
-  # Assurer le minimum par strate
+  # Assurer le minimum par strate (mais pas plus que disponible)
   allocation <- pmax(allocation, config$min_per_stratum)
+  allocation <- pmin(allocation, strata_counts)  # Ne pas dépasser le disponible
 
   # Ajuster si le total dépasse n_main
   while (sum(allocation) > config$n_main) {
-    # Réduire les strates les plus grandes
     max_idx <- which.max(allocation)
     allocation[max_idx] <- allocation[max_idx] - 1
   }
 
+  # Convertir en vecteur nommé pour spsurvey
+  allocation <- setNames(as.integer(allocation), names(allocation))
+
   cat("Allocation par strate:\n")
   print(allocation)
-  cat("\nTotal:", sum(allocation), "placettes\n")
+  cat("\nTotal:", sum(allocation), "placettes\n\n")
 
-  # Tirage GRTS
-  sample_result <- spsurvey::grts(
-    sframe = frame,
-    n_base = allocation,
-    stratum_var = "stratum",
-    n_over = config$n_replacement
-  )
+  # Tirage GRTS avec fallback sur BalancedSampling
+  method <- "GRTS"  # Méthode utilisée (pour le titre)
+
+  sample_result <- tryCatch({
+    result <- spsurvey::grts(
+      sframe = frame,
+      n_base = allocation,
+      stratum_var = "stratum",
+      n_over = config$n_replacement
+    )
+    method <<- "GRTS stratifié"
+    result
+  }, error = function(e) {
+    cat("Erreur spsurvey::grts:", conditionMessage(e), "\n\n")
+
+    # Fallback: BalancedSampling::lpm2 (équilibre spatial uniquement)
+    if (requireNamespace("BalancedSampling", quietly = TRUE)) {
+      cat("Utilisation de BalancedSampling::lpm2...\n")
+      method <<- "LPM2 (équilibré spatial)"
+
+      # Coordonnées pour équilibre spatial
+      coords <- sf::st_coordinates(frame)
+
+      # Probabilités d'inclusion égales
+      n_total <- min(config$n_main + config$n_replacement, nrow(frame))
+      prob <- rep(n_total / nrow(frame), nrow(frame))
+
+      # Tirage LPM2 (Local Pivotal Method 2) - équilibre spatial
+      # lpm2 retourne les INDICES des unités sélectionnées
+      selected_idx <- BalancedSampling::lpm2(prob, coords)
+
+      # Mélanger aléatoirement les indices sélectionnés
+      # pour que Base et Over soient spatialement distribués
+      selected_idx <- sample(selected_idx)
+
+      # Extraire les points sélectionnés par leurs indices
+      sample_all <- frame[selected_idx, ]
+      n_selected <- nrow(sample_all)
+      n_base <- min(config$n_main, n_selected)
+
+      cat("Échantillon sélectionné:", n_selected, "points\n")
+
+      list(
+        sites_base = sample_all[1:n_base, ],
+        sites_over = if (n_selected > n_base) sample_all[(n_base + 1):n_selected, ] else sample_all[0, ]
+      )
+    } else {
+      cat("Fallback: tirage aléatoire simple...\n")
+      method <<- "Aléatoire simple"
+      idx <- sample(nrow(frame), config$n_main + config$n_replacement)
+      list(
+        sites_base = frame[idx[1:config$n_main], ],
+        sites_over = frame[idx[(config$n_main + 1):length(idx)], ]
+      )
+    }
+  })
 
   # Extraire l'échantillon
   sample_main <- sample_result$sites_base
@@ -1209,12 +1308,20 @@ if (requireNamespace("spsurvey", quietly = TRUE)) {
     geom_sf(data = sample_over, color = "orange", size = 2, shape = 1) +
     geom_sf(data = sample_main, color = "darkgreen", size = 3) +
     labs(
-      title = "Échantillon GRTS",
+      title = sprintf("Échantillon %s", method),
       subtitle = sprintf("%d principales + %d remplacement",
                         nrow(sample_main), nrow(sample_over))
     ) +
     theme_minimal()
   print(p)
+
+  # Sauvegarder les placettes pour les exercices TSP
+  sample_main$type <- "Base"
+  sample_over$type <- "Over"
+  sample_all <- rbind(sample_main, sample_over)
+  sample_all$plot_id <- paste0("P", sprintf("%02d", seq_len(nrow(sample_all))))
+  st_write(sample_all, file.path(data_dir, "sample_plots.gpkg"), delete_dsn = TRUE, quiet = TRUE)
+  cat("\nPlacettes sauvegardées pour TSP:", nrow(sample_all), "\n")
 
 } else {
   cat("Package spsurvey non disponible.\n")
@@ -1270,6 +1377,9 @@ zone_etude <- tryCatch(
   error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
 )
 routes <- tryCatch(st_read(file.path(data_dir, "routes.gpkg"), quiet = TRUE), error = function(e) NULL)
+# Charger les placettes échantillonnées (exercice 3.2)
+sample_plots <- tryCatch(st_read(file.path(data_dir, "sample_plots.gpkg"), quiet = TRUE), error = function(e) NULL)
+# config est hérité du setup principal
 ```
 
 ```{r network, exercise=TRUE, exercise.setup="network-setup"}
@@ -1292,7 +1402,7 @@ if (!is.null(routes) && requireNamespace("sfnetworks", quietly = TRUE)) {
   # Ajouter les poids (longueur en mètres)
   network <- network |>
     activate("edges") |>
-    mutate(weight = as.numeric(st_length(geometry)))
+    mutate(weight = edge_length())
 
   # Statistiques
   cat("Noeuds:", igraph::vcount(network), "\n")
@@ -1329,12 +1439,23 @@ zone_etude <- tryCatch(
 )
 # config est hérité du setup principal
 
-# Créer des points d'échantillon simulés pour la démo
-set.seed(config$seed)
-sample_points <- st_sample(zone_etude, 20, type = "random") |>
-  st_as_sf() |>
-  mutate(plot_id = paste0("P", sprintf("%02d", row_number())))
+# Charger les placettes échantillonnées (exercice 3.2)
+sample_plots <- tryCatch(
+  st_read(file.path(data_dir, "sample_plots.gpkg"), quiet = TRUE),
+  error = function(e) {
+    # Fallback: créer des points simulés si le cache n'existe pas
+    set.seed(config$seed)
+    pts <- st_sample(zone_etude, config$n_main + config$n_replacement, type = "random") |>
+      st_as_sf() |>
+      mutate(
+        plot_id = paste0("P", sprintf("%02d", row_number())),
+        type = c(rep("Base", config$n_main), rep("Over", config$n_replacement))
+      )
+    pts
+  }
+)
 ```
+
 ```{r tsp, exercise=TRUE, exercise.setup="tsp-setup"}
 if (requireNamespace("TSP", quietly = TRUE)) {
   library(TSP)
@@ -1342,7 +1463,7 @@ if (requireNamespace("TSP", quietly = TRUE)) {
   cat("=== Optimisation TSP ===\n\n")
 
   # Calculer la matrice de distances euclidiennes
-  coords <- st_coordinates(sample_points)
+  coords <- st_coordinates(sample_plots)
   dist_matrix <- as.matrix(dist(coords))
 
   # Convertir en temps (minutes) - distance directe comme approximation
@@ -1350,7 +1471,9 @@ if (requireNamespace("TSP", quietly = TRUE)) {
   avg_speed <- (config$walk_speed_kmh + config$offpath_speed_kmh) / 2
   time_matrix <- dist_matrix / 1000 / avg_speed * 60  # en minutes
 
-  cat("Placettes:", nrow(sample_points), "\n")
+  cat("Placettes:", nrow(sample_plots), "\n")
+  cat("  - Base:", sum(sample_plots$type == "Base"), "\n")
+  cat("  - Remplacement:", sum(sample_plots$type == "Over"), "\n")
   cat("Distance moyenne inter-placettes:", round(mean(dist_matrix[dist_matrix > 0])), "m\n")
 
   # Créer l'objet TSP
@@ -1366,30 +1489,34 @@ if (requireNamespace("TSP", quietly = TRUE)) {
 
   cat("\nParcours optimal:\n")
   cat("  Durée estimée:", round(tour_length), "minutes\n")
-  cat("  Ordre de visite:", paste(sample_points$plot_id[tour_order], collapse = " → "), "\n")
+  cat("  Ordre de visite:", paste(sample_plots$plot_id[tour_order], collapse = " → "), "\n")
 
   # Créer la ligne du parcours
   tour_coords <- coords[c(tour_order, tour_order[1]), ]
   tour_line <- st_linestring(tour_coords) |>
-    st_sfc(crs = st_crs(sample_points)) |>
+    st_sfc(crs = st_crs(sample_plots)) |>
     st_sf(geometry = _)
 
   # Ajouter l'ordre aux points
-  sample_ordered <- sample_points |>
+  sample_ordered <- sample_plots |>
     mutate(visit_order = match(row_number(), tour_order))
 
   # Visualiser
   p <- ggplot() +
     geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.2) +
     geom_sf(data = tour_line, color = "blue", linewidth = 1, linetype = "dashed") +
-    geom_sf(data = sample_ordered, aes(color = visit_order), size = 4) +
+    geom_sf(data = sample_ordered, aes(color = visit_order, shape = type), size = 4) +
     geom_sf_text(data = sample_ordered, aes(label = visit_order),
                  color = "white", size = 3, fontface = "bold") +
     scale_color_viridis_c(name = "Ordre") +
+    scale_shape_manual(values = c("Base" = 16, "Over" = 17),
+                       labels = c("Base" = "Base", "Over" = "Remplacement"),
+                       name = "Type") +
     labs(
       title = "Parcours TSP optimisé",
-      subtitle = sprintf("Durée: ~%d min pour %d placettes",
-                        round(tour_length), nrow(sample_points))
+      subtitle = sprintf("Durée: ~%d min pour %d placettes (%d base + %d remplacement)",
+                        round(tour_length), nrow(sample_plots),
+                        sum(sample_plots$type == "Base"), sum(sample_plots$type == "Over"))
     ) +
     theme_minimal()
   print(p)
@@ -1439,15 +1566,25 @@ zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
   error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
 )
+# config est hérité du setup principal
 
-# Points simulés avec ordre de visite
-set.seed(2024)
-sample_points <- st_sample(zone_etude, 20, type = "random") |>
-  st_as_sf() |>
-  mutate(
-    plot_id = paste0("P", sprintf("%02d", row_number())),
-    visit_order = row_number()
-  )
+# Charger les placettes échantillonnées (exercice 3.2)
+sample_plots <- tryCatch(
+  st_read(file.path(data_dir, "sample_plots.gpkg"), quiet = TRUE),
+  error = function(e) {
+    # Fallback: créer des points simulés si le cache n'existe pas
+    set.seed(config$seed)
+    pts <- st_sample(zone_etude, config$n_main + config$n_replacement, type = "random") |>
+      st_as_sf() |>
+      mutate(
+        plot_id = paste0("P", sprintf("%02d", row_number())),
+        type = c(rep("Base", config$n_main), rep("Over", config$n_replacement))
+      )
+    pts
+  }
+)
+# Ajouter un ordre de visite (simulé si pas de TSP exécuté)
+sample_plots$visit_order <- seq_len(nrow(sample_plots))
 ```
 
 ```{r export, exercise=TRUE, exercise.setup="export-setup"}
@@ -1456,7 +1593,10 @@ export_dir <- file.path(data_dir, "result_sampling")
 dir.create(export_dir, showWarnings = FALSE, recursive = TRUE)
 
 cat("=== Export des résultats ===\n\n")
-cat("Répertoire:", export_dir, "\n\n")
+cat("Placettes à exporter:", nrow(sample_plots), "\n")
+cat("  - Base:", sum(sample_plots$type == "Base"), "\n")
+cat("  - Remplacement:", sum(sample_plots$type == "Over"), "\n")
+cat("\nRépertoire:", export_dir, "\n\n")
 
 # 1. Export GeoPackage (pour SIG)
 gpkg_path <- file.path(export_dir, "echantillon.gpkg")
@@ -1464,40 +1604,40 @@ gpkg_path <- file.path(export_dir, "echantillon.gpkg")
 # Zone d'étude
 st_write(zone_etude, gpkg_path, layer = "zone_etude",
          delete_layer = TRUE, quiet = TRUE)
-cat("✓ Zone d'étude exportée\n")
+cat("Zone d'étude exportée\n")
 
 # Placettes
-st_write(sample_points, gpkg_path, layer = "placettes",
+st_write(sample_plots, gpkg_path, layer = "placettes",
          append = TRUE, quiet = TRUE)
-cat("✓ Placettes exportées\n")
+cat("Placettes exportées\n")
 
 # 2. Export GPX (pour GPS terrain)
 # Convertir en WGS84 (obligatoire pour GPX)
-sample_wgs84 <- st_transform(sample_points, 4326)
+sample_wgs84 <- st_transform(sample_plots, 4326)
 
 gpx_path <- file.path(export_dir, "placettes.gpx")
 tryCatch({
   st_write(sample_wgs84, gpx_path, driver = "GPX",
            dataset_options = c("GPX_USE_EXTENSIONS=YES"),
            delete_dsn = TRUE, quiet = TRUE)
-  cat("✓ Fichier GPX exporté\n")
+  cat("Fichier GPX exporté\n")
 }, error = function(e) {
-  cat("⚠ Export GPX échoué:", e$message, "\n")
+  cat("Export GPX echoué:", e$message, "\n")
 })
 
 # 3. Export CSV (tableau récapitulatif)
 csv_path <- file.path(export_dir, "placettes.csv")
-sample_df <- sample_points |>
-  st_transform(4326) |>
-  mutate(
-    longitude = st_coordinates(geometry)[, 1],
-    latitude = st_coordinates(geometry)[, 2]
-  ) |>
+sample_wgs84_coords <- st_coordinates(sample_wgs84)
+sample_df <- sample_wgs84 |>
   st_drop_geometry() |>
-  select(plot_id, visit_order, longitude, latitude)
+  mutate(
+    longitude = sample_wgs84_coords[, 1],
+    latitude = sample_wgs84_coords[, 2]
+  ) |>
+  select(plot_id, type, visit_order, longitude, latitude)
 
 write.csv(sample_df, csv_path, row.names = FALSE)
-cat("✓ Tableau CSV exporté\n")
+cat("Tableau CSV exporté\n")
 
 # Afficher le contenu
 cat("\n=== Fichiers créés ===\n")
@@ -1515,26 +1655,48 @@ print(sample_df)
 
 Félicitations ! Vous avez appris à :
 
-1. **Construire une sampling frame** avec contraintes terrain
-2. **Stratifier** selon les gradients forestiers
-3. **Réaliser un tirage GRTS** spatialement équilibré
-4. **Optimiser le parcours terrain** avec TSP
-5. **Exporter** pour le terrain (GeoPackage, GPX)
+1. **Configurer les paramètres** d'échantillonnage (taille, CV cible, contraintes)
+2. **Calculer la taille d'échantillon optimale** avec la formule $n = \frac{t^2 \times CV^2}{E^2}$
+3. **Charger les données géographiques** (zone d'étude, BD Forêt, MNT/pente, CHM LiDAR, routes BD TOPO)
+4. **Construire une sampling frame** avec contraintes terrain (pente max, distance aux chemins)
+5. **Stratifier** selon les gradients forestiers (classes de hauteur CHM LiDAR)
+6. **Réaliser un tirage GRTS** spatialement équilibré (avec fallback LPM2 si nécessaire)
+7. **Construire un réseau de chemins** avec `sfnetworks`
+8. **Optimiser le parcours terrain** avec le problème du voyageur de commerce (TSP)
+9. **Exporter** les résultats pour le terrain (GeoPackage, GPX, CSV)
 
 ### Points clés à retenir
 
-- Le **tirage GRTS** garantit un échantillon spatialement équilibré
-- La **stratification** assure la représentativité des gradients
-- L'**oversample** fournit des placettes de remplacement ordonnées
-- Le **TSP** minimise le temps de déplacement terrain
-- Les exports **GPX** permettent la navigation GPS sur le terrain
+- La **taille d'échantillon** dépend du CV attendu et de la précision souhaitée
+- La **correction pour population finie** réduit n quand N est petit
+- Les **contraintes terrain** (pente, accessibilité) sont essentielles pour un échantillon réalisable
+- Le **tirage GRTS** (spsurvey) garantit un échantillon spatialement équilibré
+- Le **LPM2** (BalancedSampling) est une alternative robuste au GRTS
+- La **stratification** par hauteur CHM assure la représentativité des gradients forestiers
+- L'**oversample** fournit des placettes de remplacement spatialement distribuées
+- Le **TSP** minimise le temps de déplacement entre placettes
+- Les exports **GPX** permettent la navigation GPS directe sur le terrain
+
+### Packages utilisés
+
+| Package | Fonction |
+|---------|----------|
+| `sf`, `terra` | Données géographiques |
+| `exactextractr` | Extraction statistiques zonales (CHM, pente) |
+| `happign` | Téléchargement IGN (BD Forêt, BD TOPO, MNT) |
+| `spsurvey` | Tirage GRTS stratifié |
+| `BalancedSampling` | Tirage LPM2 (fallback) |
+| `sfnetworks` | Réseau de chemins |
+| `TSP` | Optimisation du parcours |
 
 ### Pour aller plus loin
 
-- Ajuster les contraintes selon le terrain local
-- Utiliser les vraies métriques LiDAR pour la stratification
-- Intégrer les données d'accessibilité (barrières, propriétés)
-- Tester différentes tailles d'échantillon
+- Ajuster les contraintes selon le terrain local (pente max, buffer chemins)
+- Utiliser d'autres métriques LiDAR pour la stratification (densité, rugosité, gaps)
+- Intégrer les données d'accessibilité (barrières, propriétés privées)
+- Tester différentes tailles d'échantillon selon le CV observé
+- Comparer les méthodes GRTS vs LPM2 vs aléatoire simple
+- Optimiser le parcours avec le réseau de chemins réel (pas seulement distances euclidiennes)
 
 ```{r final-quiz, echo=FALSE}
 quiz(
