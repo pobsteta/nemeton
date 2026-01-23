@@ -23,9 +23,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-## Introduction
+## Bienvenue
 
-### Objectifs du Tutorial
+### Objectifs du tutoriel
 
 Bienvenue dans le **cinquième tutoriel** de la série nemeton !
 
@@ -125,7 +125,7 @@ cat("\n**Indicateurs composites (8)** : combinaison de plusieurs métriques ou i
 knitr::kable(composites, row.names = FALSE)
 ```
 
-## Chargement et Vérification
+## Section 1 : Chargement et Vérification
 
 ### Chargement des Parcelles
 
@@ -300,7 +300,7 @@ if (length(indics_presents) > 0) {
 }
 ```
 
-## Normalisation Min-Max
+## Section 2 : Normalisation Min-Max
 
 ### Pourquoi Normaliser ?
 
@@ -421,7 +421,7 @@ cat("\n=== BILAN ===\n")
 cat(length(cols_norm), "indicateurs normalisés créés\n")
 ```
 
-## Inversion des Indicateurs Négatifs
+## Section 3 : Inversion des Indicateurs Négatifs
 
 ### Indicateurs à Logique Inverse
 
@@ -510,7 +510,7 @@ cat("- Risque élevé (ex: R1=0.9) → score faible (0.1)\n")
 cat("- Risque faible (ex: R1=0.1) → score élevé (0.9)\n")
 ```
 
-## Calcul des Moyennes par Famille
+## Section 4 : Calcul des Moyennes par Famille
 
 ### Agrégation par Famille
 
@@ -597,7 +597,7 @@ cols_famille <- grep("^family_", names(parcelles), value = TRUE)
 cat("\n", length(cols_famille), "familles calculées\n")
 ```
 
-## Indice Composite I_nemeton
+## Section 5 : Indice Composite I_nemeton
 
 ### Pondération des Familles
 
@@ -801,7 +801,7 @@ ggplot(resultats, aes(x = I_nemeton, fill = classe)) +
   theme(legend.position = "bottom")
 ```
 
-## Export des Résultats
+## Section 6 : Export des Résultats
 
 ### Sauvegarde Finale
 
@@ -970,7 +970,7 @@ quiz(
 )
 ```
 
-## Conclusion
+## Synthèse
 
 ### Récapitulatif
 

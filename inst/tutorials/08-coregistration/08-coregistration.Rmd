@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
@@ -69,7 +69,7 @@ Ce tutoriel vous apprendra à **recaler (coregistrer)** les positions des placet
 
 ---
 
-## 1. Introduction
+## Section 1 : Introduction
 
 ### 1.1 Contexte et problématique
 
@@ -175,7 +175,7 @@ quiz(
 
 ---
 
-## 2. Chargement des données
+## Section 2 : Chargement des données
 
 ### 2.1 Paramètres de configuration
 
@@ -264,7 +264,7 @@ print(head(trees[, c("plac", "ess", "dia", "x", "y", "d")]))
 
 ---
 
-## 3. Génération du MNH
+## Section 3 : Génération du MNH
 
 ### 3.1 Données LiDAR disponibles
 
@@ -413,7 +413,7 @@ quiz(
 
 ---
 
-## 4. Création du masque placette
+## Section 4 : Création du masque placette
 
 ### 4.1 Extraction des arbres d'une placette
 
@@ -591,7 +591,7 @@ par(mfrow = c(1, 1))
 
 ---
 
-## 5. Calcul de corrélation
+## Section 5 : Calcul de corrélation
 
 ### 5.1 Fonction de coregistration
 
@@ -841,7 +841,7 @@ quiz(
 
 ---
 
-## 6. Traitement par lot parallélisé
+## Section 6 : Traitement par lot parallélisé
 
 ### 6.1 Configuration parallèle
 
@@ -940,12 +940,12 @@ library(future.apply)
 
 # Configuration du cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
-if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-cache_file <- file.path(cache_dir, "coregistration_results.rds")
+if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
+cache_file <- file.path(data_dir, "coregistration_results.rds")
 
 params <- list(h_max = 50, radius = 14.105, res = 0.5, buffer = 5, step = 0.5)
 
@@ -1017,18 +1017,18 @@ cat("Erreurs            :", sum(results_df$status != "success"), "\n")
 
 ---
 
-## 7. Analyse des résultats
+## Section 7 : Analyse des résultats
 
 ### 7.1 Statistiques de recalage
 
 ```{r stats-coreg-setup, include=FALSE}
 # Setup : charger les résultats depuis le cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
-cache_file <- file.path(cache_dir, "coregistration_results.rds")
+cache_file <- file.path(data_dir, "coregistration_results.rds")
 
 # Charger depuis le cache (créé dans section 6.3)
 if (file.exists(cache_file)) {
@@ -1070,11 +1070,11 @@ cat("  Moyenne ratio:", round(mean(results_valid$ratio), 2), "\n")
 ```{r tests-coreg-setup, include=FALSE}
 # Setup : charger les résultats depuis le cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
-cache_file <- file.path(cache_dir, "coregistration_results.rds")
+cache_file <- file.path(data_dir, "coregistration_results.rds")
 
 if (file.exists(cache_file)) {
   results_df <- readRDS(cache_file)
@@ -1142,11 +1142,11 @@ cat("
 ```{r viz-coreg-setup, include=FALSE}
 # Setup : charger les résultats depuis le cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
-cache_file <- file.path(cache_dir, "coregistration_results.rds")
+cache_file <- file.path(data_dir, "coregistration_results.rds")
 
 if (file.exists(cache_file)) {
   results_df <- readRDS(cache_file)
@@ -1226,13 +1226,12 @@ cat("Écart-type         :", round(sd(results_valid$dist), 2), "m\n")
 library(sf)
 
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  cache_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  cache_dir <- file.path(tempdir(), "nemeton_tutorial")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
-if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-cache_file <- file.path(cache_dir, "coregistration_results.rds")
-data_dir <- cache_dir  # Pour l'export
+if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
+cache_file <- file.path(data_dir, "coregistration_results.rds")
 
 if (file.exists(cache_file)) {
   results_df <- readRDS(cache_file)
@@ -1296,7 +1295,7 @@ quiz(
 
 ---
 
-## 8. Synthèse
+## Synthèse
 
 ### 8.1 Workflow complet
 

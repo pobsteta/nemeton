@@ -41,7 +41,7 @@ options(
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
@@ -547,9 +547,9 @@ Nous allons utiliser la **zone d'étude du Tutorial 01** (Verc-02, Vercors) et c
 ```{r load-zone-setup}
 # Configuration du cache
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 ```
@@ -585,9 +585,9 @@ La BD Forêt V2 nous fournira les types de peuplements forestiers pour la strati
 
 ```{r load-bdforet-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_cache <- file.path(data_dir, "zone_etude.gpkg")
@@ -643,9 +643,9 @@ if (!is.null(bd_foret) && nrow(bd_foret) > 0) {
 
 ```{r load-mnt-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_cache <- file.path(data_dir, "zone_etude.gpkg")
@@ -728,9 +728,9 @@ Les chemins seront utilisés pour le réseau de déplacement et l'optimisation T
 
 ```{r load-routes-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_cache <- file.path(data_dir, "zone_etude.gpkg")
@@ -784,9 +784,9 @@ if (!is.null(routes) && nrow(routes) > 0) {
 
 ```{r viz-data-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Charger les données
 zone_etude <- tryCatch(
@@ -867,9 +867,9 @@ La **sampling frame** est l'ensemble des centres de placettes candidats. Nous al
 
 ```{r generate-grid-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
@@ -911,9 +911,9 @@ ggplot() +
 
 ```{r constraints-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
@@ -1034,19 +1034,19 @@ quiz(
 
 La **stratification** permet d'assurer que l'échantillon couvre tous les gradients forestiers. Nous utiliserons :
 
-- **Hauteur de canopée** (CHM LiDAR si disponible depuis T07, sinon altitude comme proxy) : 4 classes
-- **Couvert forestier** (BD Forêt) : 2 classes
-- **Pente** (MNT dérivé) : 2 classes
+- **Hauteur de canopée** (CHM LiDAR depuis T07) : 4 classes (H1-H4)
+- **Type de peuplement** (BD Forêt v2 - tfv) : selon les types présents
+- **Position topographique** (TPI - Topographic Position Index) : 3 classes (Bas, Milieu, Haut de pente)
 
-Soit **16 strates** au total (4 × 2 × 2).
+Le nombre de strates dépend des combinaisons présentes sur la zone.
 
 ### Exercice 3.1 : Créer les strates
 
 ```{r strata-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
@@ -1060,6 +1060,19 @@ mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
 chm <- tryCatch(rast(file.path(data_dir, "chm_complet.tif")), error = function(e) {
   tryCatch(rast(file.path(data_dir, "mnh_complet.tif")), error = function(e) NULL)
 })
+
+# Calculer le TPI (Topographic Position Index) depuis le MNT
+# TPI = altitude locale - altitude moyenne du voisinage
+# Positif = crête/haut de pente, ~0 = mi-pente, Négatif = fond/bas de pente
+tpi <- NULL
+if (!is.null(mnt)) {
+  # Fenêtre circulaire de 100m de rayon pour le calcul focal
+  w <- focalMat(mnt, d = 100, type = "circle")
+  mnt_focal <- focal(mnt, w = w, fun = "mean", na.rm = TRUE)
+  tpi <- mnt - mnt_focal
+  names(tpi) <- "tpi"
+}
+
 # config est hérité du setup principal
 
 # Recréer la frame de candidats valides
@@ -1069,8 +1082,8 @@ grid_sf <- st_sf(geometry = grid_points) |>
   mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
 grid_buffers <- st_buffer(grid_sf, config$plot_radius)
 
-# Calcul couverture forestière (parallélisé)
-forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret)
+# Calcul couverture forestière
+forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret, use_parallel = TRUE)
 
 # Calcul pente (vectorisé avec exactextractr)
 if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
@@ -1083,13 +1096,26 @@ if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
 if (!is.null(chm) && requireNamespace("exactextractr", quietly = TRUE)) {
   mean_height <- exactextractr::exact_extract(chm, grid_buffers, "mean")
   height_source <- "CHM LiDAR"
-} else if (!is.null(mnt) && requireNamespace("exactextractr", quietly = TRUE)) {
-  # Fallback: utiliser l'altitude comme proxy
-  mean_height <- exactextractr::exact_extract(mnt, grid_buffers, "mean")
-  height_source <- "Altitude (proxy)"
 } else {
   mean_height <- rep(15, nrow(grid_buffers))
-  height_source <- "Valeur par défaut"
+  height_source <- "Non disponible"
+}
+
+# Calcul TPI moyen par placette
+if (!is.null(tpi) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_tpi <- exactextractr::exact_extract(tpi, grid_buffers, "mean")
+} else {
+  mean_tpi <- rep(0, nrow(grid_buffers))
+}
+
+# Extraction du type de peuplement dominant (BD Forêt v2 - tfv)
+if (!is.null(bd_foret) && "tfv" %in% names(bd_foret)) {
+  # Pour chaque point, trouver le polygone BD Forêt qui le contient
+  forest_type <- st_join(grid_sf, bd_foret[, "tfv"], left = TRUE)$tfv
+  # Simplifier les types (garder les principales catégories)
+  forest_type <- ifelse(is.na(forest_type), "Hors forêt", forest_type)
+} else {
+  forest_type <- rep("Inconnu", nrow(grid_sf))
 }
 
 candidates <- grid_sf |>
@@ -1097,6 +1123,8 @@ candidates <- grid_sf |>
     forest_cover = forest_cover,
     mean_slope = mean_slope,
     mean_height = mean_height,
+    mean_tpi = mean_tpi,
+    forest_type = forest_type,
     valid = forest_cover >= config$min_forest_cover &
             !is.na(mean_slope) & mean_slope <= config$max_slope
   )
@@ -1104,11 +1132,11 @@ frame <- candidates |> filter(valid)
 ```
 
 ```{r strata, exercise=TRUE, exercise.setup="strata-setup", exercice.timelimit=2400}
-# Créer les strates basées sur les variables disponibles
+# Créer les strates basées sur CHM, BD Forêt et TPI
 cat("=== Création des strates ===\n\n")
-cat("Source hauteur:", height_source, "\n\n")
 
-# Strate hauteur (CHM ou altitude proxy) : 4 classes (quartiles)
+# 1. STRATE HAUTEUR (CHM LiDAR) : 4 classes (quartiles)
+cat("1. HAUTEUR DE PEUPLEMENT (", height_source, ")\n", sep = "")
 height_breaks <- quantile(frame$mean_height, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
 frame <- frame |>
   mutate(
@@ -1116,30 +1144,49 @@ frame <- frame |>
                        labels = c("H1", "H2", "H3", "H4"), include.lowest = TRUE)
   )
 
-cat("Classes de hauteur:\n")
-cat(sprintf("  H1: %.1f - %.1f m\n", height_breaks[1], height_breaks[2]))
-cat(sprintf("  H2: %.1f - %.1f m\n", height_breaks[2], height_breaks[3]))
-cat(sprintf("  H3: %.1f - %.1f m\n", height_breaks[3], height_breaks[4]))
-cat(sprintf("  H4: %.1f - %.1f m\n", height_breaks[4], height_breaks[5]))
+cat(sprintf("   H1 (bas):    %.1f - %.1f m\n", height_breaks[1], height_breaks[2]))
+cat(sprintf("   H2 (moyen-): %.1f - %.1f m\n", height_breaks[2], height_breaks[3]))
+cat(sprintf("   H3 (moyen+): %.1f - %.1f m\n", height_breaks[3], height_breaks[4]))
+cat(sprintf("   H4 (haut):   %.1f - %.1f m\n\n", height_breaks[4], height_breaks[5]))
 
-# Strate couvert : 2 classes (médiane)
-cover_median <- median(frame$forest_cover, na.rm = TRUE)
+# 2. STRATE TYPE DE PEUPLEMENT (BD Forêt v2 - tfv)
+cat("2. TYPE DE PEUPLEMENT (BD Foret v2)\n")
+# Simplifier les types forestiers en grandes catégories
 frame <- frame |>
   mutate(
-    strat_cover = ifelse(forest_cover >= cover_median, "C_high", "C_low")
+    strat_type = case_when(
+      grepl("Feuillus", forest_type, ignore.case = TRUE) ~ "FEU",
+      grepl("Conifères|Coniferes", forest_type, ignore.case = TRUE) ~ "CON",
+      grepl("Mixte", forest_type, ignore.case = TRUE) ~ "MIX",
+      grepl("Peupleraie", forest_type, ignore.case = TRUE) ~ "POP",
+      TRUE ~ "AUT"  # Autres (landes, etc.)
+    )
   )
 
-# Strate pente : 2 classes (médiane)
-slope_median <- median(frame$mean_slope, na.rm = TRUE)
+type_counts <- table(frame$strat_type)
+for (t in names(sort(type_counts, decreasing = TRUE))) {
+  cat(sprintf("   %s: %d placettes\n", t, type_counts[t]))
+}
+cat("\n")
+
+# 3. STRATE POSITION TOPOGRAPHIQUE (TPI)
+cat("3. POSITION TOPOGRAPHIQUE (TPI)\n")
+# TPI : valeurs négatives = bas de pente, ~0 = mi-pente, positives = haut de pente
+tpi_terciles <- quantile(frame$mean_tpi, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE)
 frame <- frame |>
   mutate(
-    strat_slope = ifelse(mean_slope >= slope_median, "S_steep", "S_gentle")
+    strat_topo = cut(mean_tpi, breaks = tpi_terciles,
+                     labels = c("BAS", "MIL", "HAU"), include.lowest = TRUE)
   )
 
-# Combiner en strate finale
+cat(sprintf("   BAS (fond):   TPI < %.1f\n", tpi_terciles[2]))
+cat(sprintf("   MIL (versant): %.1f - %.1f\n", tpi_terciles[2], tpi_terciles[3]))
+cat(sprintf("   HAU (crete):  TPI > %.1f\n\n", tpi_terciles[3]))
+
+# Combiner en strate finale (Hauteur_Type_Position)
 frame <- frame |>
   mutate(
-    stratum = paste(strat_height, strat_cover, strat_slope, sep = "_")
+    stratum = paste(strat_height, strat_type, strat_topo, sep = "_")
   )
 
 # Statistiques par strate
@@ -1149,38 +1196,60 @@ strata_summary <- frame |>
   summarise(
     n = n(),
     height_mean = round(mean(mean_height, na.rm = TRUE), 1),
-    slope_mean = round(mean(mean_slope, na.rm = TRUE), 1),
+    tpi_mean = round(mean(mean_tpi, na.rm = TRUE), 2),
     .groups = "drop"
   ) |>
   arrange(desc(n))
 
-cat("\nNombre de strates:", length(unique(frame$stratum)), "\n")
-cat("Candidats par strate:\n")
-print(strata_summary, n = 16)
+cat("=== RÉSUMÉ ===\n")
+cat("Nombre de strates:", length(unique(frame$stratum)), "\n")
+cat("Candidats total:", nrow(frame), "\n\n")
+cat("Top 15 strates:\n")
+print(strata_summary, n = 15)
 
 # Sauvegarder la frame avec strates dans le cache pour les exercices suivants
 frame_cache <- file.path(data_dir, "frame_stratified.gpkg")
 st_write(frame, frame_cache, delete_dsn = TRUE, quiet = TRUE)
 cat("\nFrame sauvegardée dans le cache pour l'exercice suivant.\n")
 
-# Visualiser les strates
-ggplot() +
+# Visualiser les strates par composante
+library(patchwork)
+
+p1 <- ggplot() +
   geom_sf(data = zone_etude, fill = "white", color = "black") +
-  geom_sf(data = frame, aes(color = stratum), size = 1.5) +
-  scale_color_viridis_d(name = "Strate") +
-  labs(title = "Distribution spatiale des strates",
-       subtitle = sprintf("Stratification par hauteur (%s), couvert et pente", height_source)) +
+  geom_sf(data = frame, aes(color = strat_height), size = 1.5) +
+  scale_color_viridis_d(name = "Hauteur", option = "D") +
+  labs(title = "Hauteur (CHM)") +
   theme_minimal() +
-  theme(legend.position = "right")
+  theme(legend.position = "bottom")
+
+p2 <- ggplot() +
+  geom_sf(data = zone_etude, fill = "white", color = "black") +
+  geom_sf(data = frame, aes(color = strat_type), size = 1.5) +
+  scale_color_brewer(name = "Type", palette = "Set2") +
+  labs(title = "Type peuplement") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p3 <- ggplot() +
+  geom_sf(data = zone_etude, fill = "white", color = "black") +
+  geom_sf(data = frame, aes(color = strat_topo), size = 1.5) +
+  scale_color_manual(name = "Position",
+                     values = c("BAS" = "#1a9850", "MIL" = "#fee08b", "HAU" = "#d73027")) +
+  labs(title = "Position topo (TPI)") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p1 + p2 + p3
 ```
 
 ### Exercice 3.2 : Tirage GRTS
 
 ```{r grts-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 
 # Charger la zone d'étude
@@ -1345,6 +1414,12 @@ quiz(
     answer("Pour faciliter l'accès terrain"),
     answer("Pour éviter les zones pentues")
   ),
+  question("Que mesure le TPI (Topographic Position Index) ?",
+    answer("La pente en degrés"),
+    answer("La position relative sur le versant (crête, versant, fond)", correct = TRUE),
+    answer("L'altitude absolue"),
+    answer("L'exposition au soleil")
+  ),
   question("À quoi sert l'oversample dans GRTS ?",
     answer("À augmenter la précision statistique"),
     answer("À fournir des placettes de remplacement ordonnées", correct = TRUE),
@@ -1368,9 +1443,9 @@ L'optimisation du **parcours terrain** utilise :
 
 ```{r network-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
@@ -1429,9 +1504,9 @@ if (!is.null(routes) && requireNamespace("sfnetworks", quietly = TRUE)) {
 
 ```{r tsp-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
@@ -1558,9 +1633,9 @@ quiz(
 
 ```{r export-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
@@ -1657,9 +1732,12 @@ Félicitations ! Vous avez appris à :
 
 1. **Configurer les paramètres** d'échantillonnage (taille, CV cible, contraintes)
 2. **Calculer la taille d'échantillon optimale** avec la formule $n = \frac{t^2 \times CV^2}{E^2}$
-3. **Charger les données géographiques** (zone d'étude, BD Forêt, MNT/pente, CHM LiDAR, routes BD TOPO)
-4. **Construire une sampling frame** avec contraintes terrain (pente max, distance aux chemins)
-5. **Stratifier** selon les gradients forestiers (classes de hauteur CHM LiDAR)
+3. **Charger les données géographiques** (zone d'étude, BD Forêt v2, MNT, CHM LiDAR, routes BD TOPO)
+4. **Construire une sampling frame** avec contraintes terrain (pente max, couvert forestier min)
+5. **Stratifier** selon 3 critères :
+   - **Hauteur de peuplement** (CHM LiDAR) : 4 classes (H1-H4)
+   - **Type de peuplement** (BD Forêt v2) : Feuillus, Conifères, Mixte, etc.
+   - **Position topographique** (TPI) : Bas, Milieu, Haut de pente
 6. **Réaliser un tirage GRTS** spatialement équilibré (avec fallback LPM2 si nécessaire)
 7. **Construire un réseau de chemins** avec `sfnetworks`
 8. **Optimiser le parcours terrain** avec le problème du voyageur de commerce (TSP)
@@ -1670,9 +1748,10 @@ Félicitations ! Vous avez appris à :
 - La **taille d'échantillon** dépend du CV attendu et de la précision souhaitée
 - La **correction pour population finie** réduit n quand N est petit
 - Les **contraintes terrain** (pente, accessibilité) sont essentielles pour un échantillon réalisable
+- La **stratification triple** (hauteur × type × position) assure la représentativité de tous les gradients
+- Le **TPI** (Topographic Position Index) caractérise la position sur le versant
 - Le **tirage GRTS** (spsurvey) garantit un échantillon spatialement équilibré
 - Le **LPM2** (BalancedSampling) est une alternative robuste au GRTS
-- La **stratification** par hauteur CHM assure la représentativité des gradients forestiers
 - L'**oversample** fournit des placettes de remplacement spatialement distribuées
 - Le **TSP** minimise le temps de déplacement entre placettes
 - Les exports **GPX** permettent la navigation GPS directe sur le terrain
@@ -1681,18 +1760,19 @@ Félicitations ! Vous avez appris à :
 
 | Package | Fonction |
 |---------|----------|
-| `sf`, `terra` | Données géographiques |
-| `exactextractr` | Extraction statistiques zonales (CHM, pente) |
+| `sf`, `terra` | Données géographiques et rasters |
+| `exactextractr` | Extraction statistiques zonales (CHM, TPI, pente) |
 | `happign` | Téléchargement IGN (BD Forêt, BD TOPO, MNT) |
 | `spsurvey` | Tirage GRTS stratifié |
 | `BalancedSampling` | Tirage LPM2 (fallback) |
 | `sfnetworks` | Réseau de chemins |
 | `TSP` | Optimisation du parcours |
+| `patchwork` | Composition de graphiques |
 
 ### Pour aller plus loin
 
 - Ajuster les contraintes selon le terrain local (pente max, buffer chemins)
-- Utiliser d'autres métriques LiDAR pour la stratification (densité, rugosité, gaps)
+- Ajouter d'autres variables de stratification (densité LiDAR, gaps, rugosité)
 - Intégrer les données d'accessibilité (barrières, propriétés privées)
 - Tester différentes tailles d'échantillon selon le CV observé
 - Comparer les méthodes GRTS vs LPM2 vs aléatoire simple

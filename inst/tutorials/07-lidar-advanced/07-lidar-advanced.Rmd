@@ -68,7 +68,7 @@ if (requireNamespace("lasR", quietly = TRUE)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
@@ -229,7 +229,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
@@ -261,7 +261,7 @@ library(lidR)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
@@ -315,7 +315,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 fichiers_laz <- list.files(file.path(data_dir, "lidar_hd"),
@@ -460,7 +460,7 @@ Créez un pipeline lasR simple pour générer un MNT.
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
@@ -512,7 +512,7 @@ Créez un pipeline complet qui génère plusieurs produits en une seule passe.
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
@@ -731,7 +731,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Normaliser le chemin pour lasR (C++ ne gère pas le tilde)
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
@@ -893,7 +893,7 @@ et visualisez les résultats sur une zone de 100m × 100m.
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 ```
@@ -1047,7 +1047,7 @@ d'arbres équivalentes à `tree_extraction()` de lidaRtRee.
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 result_itd <- file.path(data_dir, "result_itd")
@@ -1344,7 +1344,7 @@ library(future.apply)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
@@ -1498,7 +1498,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
@@ -1561,7 +1561,7 @@ library(future.apply)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
@@ -1789,7 +1789,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Résoudre le chemin complet (évite les problèmes avec ~)
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
@@ -1951,7 +1951,7 @@ library(future.apply)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Résoudre le chemin complet (évite les problèmes avec ~)
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
@@ -2178,7 +2178,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 
@@ -2296,7 +2296,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 data_dir <- normalizePath(data_dir, mustWork = FALSE)
 

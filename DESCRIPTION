@@ -60,6 +60,7 @@ Suggests:
     rsconnect,
     nasapower (>= 4.0.0),
     spsurvey (>= 5.0.0),
+    BalancedSampling (>= 1.6.0),
     sfnetworks (>= 0.6.0),
     TSP (>= 1.2.0),
     tidygraph (>= 1.2.0),
