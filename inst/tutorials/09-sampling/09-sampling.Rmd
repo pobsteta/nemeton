@@ -301,13 +301,16 @@ Ce tutoriel vous apprendra à **concevoir un plan d'échantillonnage optimal** d
 
 ### Configuration
 
-Voici les paramètres par défaut utilisés dans ce tutoriel. **Vous pouvez modifier ces valeurs** selon votre contexte :
+Voici les paramètres par défaut utilisés dans ce tutoriel. Vous pouvez **tester différentes valeurs** dans cet exercice pour comprendre leur impact :
+
+> **Note** : Dans un projet réel, ces paramètres seraient définis dans un script de configuration. Les valeurs ci-dessous sont utilisées dans tous les exercices du tutoriel.
 
 ```{r config-edit, exercise=TRUE}
 # =============================================================================
-# CONFIGURATION MODIFIABLE
+# CONFIGURATION DU TUTORIEL
 # =============================================================================
-# Modifiez les valeurs ci-dessous selon vos besoins, puis exécutez le code
+# Testez différentes valeurs pour comprendre leur impact
+# Ces valeurs sont utilisées dans tous les exercices suivants
 
 config <- list(
 
@@ -868,13 +871,7 @@ zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
   error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
 )
-config <- list(
-  plot_radius = 15,
-  grid_step = 30,
-  min_forest_cover = 0.70,
-  max_slope = 45,
-  crs = 2154
-)
+# config est hérité du setup principal
 ```
 
 ```{r generate-grid, exercise=TRUE, exercise.setup="generate-grid-setup"}
@@ -920,14 +917,7 @@ zone_etude <- tryCatch(
 )
 bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
 slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
-
-config <- list(
-  plot_radius = 15,
-  grid_step = 30,
-  min_forest_cover = 0.70,
-  max_slope = 45,
-  crs = 2154
-)
+# config est hérité du setup principal
 
 # Générer la grille
 grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
@@ -1082,11 +1072,7 @@ zone_etude <- tryCatch(
 bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
 slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
 mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
-
-config <- list(
-  plot_radius = 15, grid_step = 30, min_forest_cover = 0.70, max_slope = 45,
-  n_main = 40, n_replacement = 12, min_per_stratum = 2, seed = 2024
-)
+# config est hérité du setup principal
 
 # Recréer la frame de candidats valides
 grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
@@ -1123,7 +1109,7 @@ candidates <- grid_sf |>
 frame <- candidates |> filter(valid)
 ```
 
-```{r strata, exercise=TRUE, exercise.setup="strata-setup"}
+```{r strata, exercise=TRUE, exercise.setup="strata-setup", exercice.timelimit=2400}
 # Créer les strates basées sur les variables disponibles
 cat("=== Création des strates ===\n\n")
 
@@ -1196,11 +1182,7 @@ zone_etude <- tryCatch(
 bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
 slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
 mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
-
-config <- list(
-  plot_radius = 15, grid_step = 30, min_forest_cover = 0.70, max_slope = 45,
-  n_main = 40, n_replacement = 12, min_per_stratum = 2, seed = 2024
-)
+# config est hérité du setup principal
 
 # Recréer la frame complète avec strates
 grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
@@ -1251,7 +1233,7 @@ frame <- frame |>
   )
 ```
 
-```{r grts, exercise=TRUE, exercise.setup="grts-setup"}
+```{r grts, exercise=TRUE, exercise.setup="grts-setup", exercise.timelimit=2400}
 # Tirage GRTS avec spsurvey
 set.seed(config$seed)
 
@@ -1296,7 +1278,7 @@ if (requireNamespace("spsurvey", quietly = TRUE)) {
   cat("  Placettes remplacement:", nrow(sample_over), "\n")
 
   # Visualiser
-  ggplot() +
+  p <- ggplot() +
     geom_sf(data = zone_etude, fill = "lightgray", alpha = 0.3) +
     geom_sf(data = frame, color = "gray70", size = 0.3, alpha = 0.5) +
     geom_sf(data = sample_over, color = "orange", size = 2, shape = 1) +
@@ -1307,6 +1289,7 @@ if (requireNamespace("spsurvey", quietly = TRUE)) {
                         nrow(sample_main), nrow(sample_over))
     ) +
     theme_minimal()
+  print(p)
 
 } else {
   cat("Package spsurvey non disponible.\n")
@@ -1392,7 +1375,7 @@ if (!is.null(routes) && requireNamespace("sfnetworks", quietly = TRUE)) {
   cat("Longueur totale:", round(sum(igraph::E(network)$weight) / 1000, 1), "km\n")
 
   # Visualiser
-  ggplot() +
+  p <- ggplot() +
     geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.2) +
     geom_sf(data = st_as_sf(network, "edges"), color = "brown", linewidth = 0.8) +
     geom_sf(data = st_as_sf(network, "nodes"), color = "darkred", size = 0.5) +
@@ -1400,6 +1383,7 @@ if (!is.null(routes) && requireNamespace("sfnetworks", quietly = TRUE)) {
          subtitle = sprintf("%d noeuds, %d arêtes",
                            igraph::vcount(network), igraph::ecount(network))) +
     theme_minimal()
+  print(p)
 
 } else {
   cat("Données routes ou package sfnetworks non disponible.\n")
@@ -1418,13 +1402,7 @@ zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
   error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
 )
-
-config <- list(
-  walk_speed_kmh = 4,
-  offpath_speed_kmh = 2,
-  offpath_penalty = 2,
-  seed = 2024
-)
+# config est hérité du setup principal
 
 # Créer des points d'échantillon simulés pour la démo
 set.seed(config$seed)
@@ -1476,7 +1454,7 @@ if (requireNamespace("TSP", quietly = TRUE)) {
     mutate(visit_order = match(row_number(), tour_order))
 
   # Visualiser
-  ggplot() +
+  p <- ggplot() +
     geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.2) +
     geom_sf(data = tour_line, color = "blue", linewidth = 1, linetype = "dashed") +
     geom_sf(data = sample_ordered, aes(color = visit_order), size = 4) +
@@ -1489,6 +1467,7 @@ if (requireNamespace("TSP", quietly = TRUE)) {
                         round(tour_length), nrow(sample_points))
     ) +
     theme_minimal()
+  print(p)
 
 } else {
   cat("Package TSP non disponible.\n")
