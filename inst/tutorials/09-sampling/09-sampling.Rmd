@@ -1215,32 +1215,46 @@ cat("\nFrame sauvegardée dans le cache pour l'exercice suivant.\n")
 # Visualiser les strates par composante
 library(patchwork)
 
+# Thème commun pour les cartes
+theme_map <- theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    legend.position = "bottom",
+    legend.title = element_text(size = 9, face = "bold"),
+    legend.text = element_text(size = 8),
+    plot.title = element_text(size = 10, face = "bold", hjust = 0.5)
+  )
+
 p1 <- ggplot() +
   geom_sf(data = zone_etude, fill = "white", color = "black") +
   geom_sf(data = frame, aes(color = strat_height), size = 1.5) +
   scale_color_viridis_d(name = "Hauteur", option = "D") +
   labs(title = "Hauteur (CHM)") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  theme_map +
+  guides(color = guide_legend(nrow = 1))
 
 p2 <- ggplot() +
   geom_sf(data = zone_etude, fill = "white", color = "black") +
   geom_sf(data = frame, aes(color = strat_type), size = 1.5) +
   scale_color_brewer(name = "Type", palette = "Set2") +
   labs(title = "Type peuplement") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  theme_map +
+  guides(color = guide_legend(nrow = 1))
 
 p3 <- ggplot() +
   geom_sf(data = zone_etude, fill = "white", color = "black") +
   geom_sf(data = frame, aes(color = strat_topo), size = 1.5) +
-  scale_color_manual(name = "Position",
-                     values = c("BAS" = "#1a9850", "MIL" = "#fee08b", "HAU" = "#d73027")) +
+  scale_color_manual(name = "Position TPI",
+                     values = c("BAS" = "#1a9850", "MIL" = "#fee08b", "HAU" = "#d73027"),
+                     labels = c("BAS" = "Bas", "MIL" = "Milieu", "HAU" = "Haut")) +
   labs(title = "Position topo (TPI)") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  theme_map +
+  guides(color = guide_legend(nrow = 1))
 
-p1 + p2 + p3
+(p1 | p2 | p3) +
+  plot_layout(widths = c(1, 1, 1)) &
+  theme(plot.margin = margin(5, 10, 5, 10))
 ```
 
 ### Exercice 3.2 : Tirage GRTS
