@@ -1,0 +1,1644 @@
+---
+title: "Tutorial 09 : Échantillonnage de calibration LiDAR HD + TSP"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+    css: css/custom.css
+runtime: shiny_prerendered
+description: "Concevoir un plan d'échantillonnage optimal de placettes de calibration et calculer le parcours terrain le plus efficace"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(sf)
+library(terra)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(purrr)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  exercise.timelimit = 300
+)
+
+# Configuration des timeouts réseau
+NETWORK_TIMEOUT <- 300
+options(
+  timeout = NETWORK_TIMEOUT,
+  HTTPUserAgent = "nemeton-tutorial/1.0"
+)
+
+# =============================================================================
+# SYSTÈME DE CACHE (cohérent avec Tutorials 02-08)
+# =============================================================================
+
+# Répertoire de données (partagé avec les autres tutoriels)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+
+# Sous-répertoire pour les résultats d'échantillonnage
+sampling_dir <- file.path(data_dir, "result_sampling")
+dir.create(sampling_dir, showWarnings = FALSE, recursive = TRUE)
+
+# =============================================================================
+# CONFIGURATION PAR DÉFAUT
+# =============================================================================
+
+config <- list(
+  # Placettes
+  plot_radius = 15,           # m
+  grid_step = 30,             # m (espacement grille candidats)
+
+  # Contraintes
+  min_forest_cover = 0.70,    # 70% couvert forestier minimum
+  max_slope = 45,             # % pente maximale
+
+  # Échantillonnage
+  n_main = 40,                # placettes principales
+  n_replacement = 12,         # remplacements (30%)
+  min_per_stratum = 2,        # minimum par strate
+
+  # TSP
+  walk_speed_kmh = 4,         # km/h sur chemin
+  offpath_speed_kmh = 2,      # km/h hors chemin
+  offpath_penalty = 2,        # multiplicateur temps hors-chemin
+
+  # CRS
+  crs = 2154,                 # Lambert 93
+
+  # Seed
+  seed = 2024
+)
+
+# =============================================================================
+# FONCTIONS DE CALCUL DE TAILLE D'ÉCHANTILLON
+# =============================================================================
+
+#' Calcul du nombre optimal de placettes
+#'
+#' Formule : n = t² × CV² / E²
+#' Avec correction pour population finie si N fourni
+#'
+#' @param cv Coefficient de variation (en %, défaut 20)
+#' @param error Erreur admissible (en %, défaut 10)
+#' @param confidence Niveau de confiance (défaut 0.95)
+#' @param N Taille de la population (NULL = infinie)
+#' @return Nombre de placettes nécessaires (arrondi supérieur)
+calculate_sample_size <- function(cv = 20, error = 10, confidence = 0.95, N = NULL) {
+  # Valeur t de Student (approximation normale pour grands échantillons)
+  alpha <- 1 - confidence
+  t_value <- qnorm(1 - alpha / 2)
+
+  # Formule de base : n = t² × CV² / E²
+  n_infinite <- (t_value * cv / error)^2
+
+
+  # Correction pour population finie
+  if (!is.null(N) && N > 0) {
+    n_finite <- n_infinite / (1 + (n_infinite - 1) / N)
+    return(ceiling(n_finite))
+  }
+
+  return(ceiling(n_infinite))
+}
+
+#' Calcul pour plusieurs variables simultanément
+#'
+#' @param cv_list Vecteur des CV par variable (en %)
+#' @param error Erreur admissible (en %)
+#' @param confidence Niveau de confiance
+#' @param N Taille de la population
+#' @return Liste avec n par variable et n recommandé (max)
+calculate_sample_size_multi <- function(cv_list, error = 10, confidence = 0.95, N = NULL) {
+  n_list <- sapply(cv_list, function(cv) {
+    calculate_sample_size(cv = cv, error = error, confidence = confidence, N = N)
+  })
+
+  list(
+    n_by_variable = n_list,
+    n_recommended = max(n_list),
+    cv_max = cv_list[which.max(n_list)]
+  )
+}
+
+#' Tableau de dimensionnement d'échantillon
+#'
+#' @param cv_range Plage de CV à tester (défaut 10 à 40%)
+#' @param error_range Plage d'erreurs à tester (défaut 5 à 20%)
+#' @param confidence Niveau de confiance
+#' @return Data frame avec n pour chaque combinaison CV/erreur
+sample_size_table <- function(cv_range = seq(10, 40, by = 5),
+                               error_range = c(5, 10, 15, 20),
+                               confidence = 0.95) {
+  expand.grid(CV = cv_range, Error = error_range) |>
+    mutate(n = mapply(calculate_sample_size, CV, Error, confidence))
+}
+
+# =============================================================================
+# FONCTIONS UTILITAIRES POUR LE CACHE
+# =============================================================================
+
+#' Charger ou télécharger des données vectorielles
+#' @param cache_path Chemin dans le cache
+#' @param download_fn Fonction de téléchargement (prend zone en argument)
+#' @param zone Zone d'étude (sf)
+#' @param layer Nom de la couche (optionnel)
+load_or_download_vector <- function(cache_path, download_fn, zone, layer = NULL) {
+  if (file.exists(cache_path)) {
+    cat("Chargement depuis le cache:", basename(cache_path), "\n")
+    if (!is.null(layer)) {
+      return(st_read(cache_path, layer = layer, quiet = TRUE))
+    } else {
+      return(st_read(cache_path, quiet = TRUE))
+    }
+  } else {
+    cat("Téléchargement des données...\n")
+    data <- download_fn(zone)
+    if (!is.null(data) && nrow(data) > 0) {
+      st_write(data, cache_path, quiet = TRUE, delete_dsn = TRUE)
+      cat("Sauvegardé dans le cache:", basename(cache_path), "\n")
+    }
+    return(data)
+  }
+}
+
+#' Charger ou télécharger des données raster
+#' @param cache_path Chemin dans le cache
+#' @param download_fn Fonction de téléchargement (prend zone en argument)
+#' @param zone Zone d'étude (sf)
+load_or_download_raster <- function(cache_path, download_fn, zone) {
+  if (file.exists(cache_path)) {
+    cat("Chargement depuis le cache:", basename(cache_path), "\n")
+    return(rast(cache_path))
+  } else {
+    cat("Téléchargement des données...\n")
+    data <- download_fn(zone)
+    if (!is.null(data)) {
+      writeRaster(data, cache_path, overwrite = TRUE)
+      cat("Sauvegardé dans le cache:", basename(cache_path), "\n")
+    }
+    return(data)
+  }
+}
+
+# =============================================================================
+# FONCTION DE CALCUL PARALLÈLE DE LA COUVERTURE FORESTIÈRE
+# =============================================================================
+
+#' Calcul de la couverture forestière (parallélisé si possible)
+#' @param grid_buffers sf object avec les buffers de placettes
+#' @param bd_foret sf object avec les polygones forestiers
+#' @param use_parallel Utiliser le calcul parallèle (défaut: TRUE si furrr disponible
+#' @return Vecteur des proportions de couverture forestière
+calc_forest_cover_all <- function(grid_buffers, bd_foret, use_parallel = NULL) {
+  if (is.null(bd_foret)) {
+    return(rep(1, nrow(grid_buffers)))
+  }
+
+  # Fonction unitaire
+  calc_one <- function(i, buffers, foret) {
+    buffer <- buffers[i, ]
+    intersection <- tryCatch(
+      st_intersection(buffer, foret),
+      error = function(e) NULL
+    )
+    if (is.null(intersection) || nrow(intersection) == 0) return(0)
+    sum(as.numeric(st_area(intersection))) / as.numeric(st_area(buffer))
+  }
+
+  # Déterminer si on utilise le parallèle
+  if (is.null(use_parallel)) {
+    use_parallel <- requireNamespace("furrr", quietly = TRUE) &&
+                    requireNamespace("future", quietly = TRUE)
+  }
+
+  n <- nrow(grid_buffers)
+
+  if (use_parallel && requireNamespace("furrr", quietly = TRUE)) {
+    # Configuration future si pas déjà fait
+    if (!inherits(future::plan(), "multisession")) {
+      future::plan(future::multisession, workers = max(1, parallel::detectCores() - 1))
+    }
+    furrr::future_map_dbl(
+      1:n, calc_one,
+      buffers = grid_buffers,
+      foret = bd_foret,
+      .progress = FALSE
+    )
+  } else if (requireNamespace("purrr", quietly = TRUE)) {
+    purrr::map_dbl(1:n, calc_one, buffers = grid_buffers, foret = bd_foret)
+  } else {
+    sapply(1:n, calc_one, buffers = grid_buffers, foret = bd_foret)
+  }
+}
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Objectifs du tutoriel
+
+Ce tutoriel vous apprendra à **concevoir un plan d'échantillonnage optimal** de placettes de calibration LiDAR et à **calculer le parcours terrain** le plus efficace pour les visiter.
+
+**Durée estimée** : 3h00 (180 minutes)
+
+**Prérequis** :
+
+- Tutorial 01 (Acquisition) - zone d'étude et données IGN
+- Tutorial 02 (LiDAR) - manipulation nuages de points
+- Tutorial 03 (Terrain) - MNT, pente, TWI
+
+**À la fin de ce tutoriel, vous saurez** :
+
+1. Construire une "sampling frame" de centres de placettes candidats
+2. Appliquer des contraintes terrain (pente, couverture forestière)
+3. Extraire des variables auxiliaires LiDAR et topographiques
+4. Stratifier la zone d'étude selon des gradients structurels
+5. Réaliser un tirage GRTS spatialement équilibré
+6. Diagnostiquer la représentativité de l'échantillon
+7. Construire un réseau de chemins
+8. Résoudre le problème TSP pour optimiser le parcours terrain
+9. Exporter les résultats pour le terrain (GeoPackage, GPX)
+
+---
+
+### Workflow général
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WORKFLOW ÉCHANTILLONNAGE + TSP                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. DONNÉES               2. FRAME                 3. STRATIFICATION        │
+│  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐         │
+│  │ Zone étude   │         │ Grille       │         │ Strates      │         │
+│  │ BD Forêt     │───────▶ │ candidats    │───────▶ │ hauteur      │         │
+│  │ MNT/Pente    │         │ (contraintes)│         │ couvert/pente│         │
+│  │ Métriques    │         └──────────────┘         └──────────────┘         │
+│  │ LiDAR        │                                          │                │
+│  └──────────────┘                                          ▼                │
+│                                                    ┌──────────────┐         │
+│  6. EXPORT                5. TSP                   │ 4. GRTS      │         │
+│  ┌──────────────┐         ┌──────────────┐         │ Tirage       │         │
+│  │ GeoPackage   │◀────────│ Parcours     │◀────────│ spatialement │         │
+│  │ GPX terrain  │         │ optimal      │         │ équilibré    │         │
+│  │ Rapport      │         │ (réseau)     │         └──────────────┘         │
+│  └──────────────┘         └──────────────┘                                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Configuration
+
+Voici les paramètres par défaut utilisés dans ce tutoriel. **Vous pouvez modifier ces valeurs** selon votre contexte :
+
+```{r config-edit, exercise=TRUE}
+# =============================================================================
+# CONFIGURATION MODIFIABLE
+# =============================================================================
+# Modifiez les valeurs ci-dessous selon vos besoins, puis exécutez le code
+
+config <- list(
+
+  # --- Placettes ---
+  plot_radius = 15,           # Rayon de placette (m) - typique: 10-20 m
+  grid_step = 30,             # Espacement grille candidats (m) - typique: 2x rayon
+
+  # --- Contraintes terrain ---
+  min_forest_cover = 0.70,    # Couvert forestier minimum (0-1) - typique: 0.60-0.80
+
+  max_slope = 45,             # Pente maximale (%) - typique: 30-60%
+
+  # --- Échantillonnage ---
+  n_main = 40,                # Placettes principales - à calculer selon CV/erreur
+
+  n_replacement = 12,         # Placettes remplacement (30% de n_main)
+  min_per_stratum = 2,        # Minimum par strate - typique: 2-3
+
+  # --- Déplacement terrain (TSP) ---
+  walk_speed_kmh = 4,         # Vitesse sur chemin (km/h)
+  offpath_speed_kmh = 2,      # Vitesse hors chemin (km/h)
+  offpath_penalty = 2,        # Multiplicateur temps hors-chemin
+
+  # --- Paramètres techniques ---
+  crs = 2154,                 # Système de coordonnées (2154 = Lambert-93)
+  seed = 2024                 # Graine aléatoire (reproductibilité)
+)
+
+# =============================================================================
+# AFFICHAGE DE LA CONFIGURATION
+# =============================================================================
+cat("=== Configuration actuelle ===\n\n")
+
+cat("Placettes:\n")
+cat(sprintf("  Rayon: %d m (surface: %.0f m²)\n",
+            config$plot_radius, pi * config$plot_radius^2))
+cat(sprintf("  Espacement grille: %d m\n", config$grid_step))
+
+cat("\nContraintes:\n")
+cat(sprintf("  Couvert forestier minimum: %.0f%%\n", config$min_forest_cover * 100))
+cat(sprintf("  Pente maximale: %.0f%%\n", config$max_slope))
+
+cat("\nÉchantillonnage:\n")
+cat(sprintf("  Placettes principales: %d\n", config$n_main))
+cat(sprintf("  Placettes remplacement: %d (%.0f%%)\n",
+            config$n_replacement, config$n_replacement / config$n_main * 100))
+cat(sprintf("  Minimum par strate: %d\n", config$min_per_stratum))
+
+cat("\nDéplacement terrain:\n")
+cat(sprintf("  Vitesse sur chemin: %.1f km/h\n", config$walk_speed_kmh))
+cat(sprintf("  Vitesse hors chemin: %.1f km/h\n", config$offpath_speed_kmh))
+cat(sprintf("  Pénalité hors-chemin: x%.1f\n", config$offpath_penalty))
+```
+
+```{r config-edit-hint}
+# Valeurs recommandées selon le contexte :
+#
+# Terrain facile (plaine, forêt ouverte):
+#   max_slope = 30, walk_speed_kmh = 5, offpath_speed_kmh = 3
+#
+# Terrain difficile (montagne, sous-bois dense):
+#   max_slope = 60, walk_speed_kmh = 3, offpath_speed_kmh = 1.5
+#
+# Placettes petites (régénération):
+#   plot_radius = 10, grid_step = 20
+#
+# Placettes grandes (futaie):
+#   plot_radius = 20, grid_step = 40
+```
+
+---
+
+### Quiz 1 : Concepts de base
+
+```{r quiz-1, echo=FALSE}
+quiz(
+  question("Pourquoi faut-il calibrer les modèles LiDAR avec des placettes terrain ?",
+    answer("Le LiDAR mesure directement le volume de bois"),
+    answer("Les relations LiDAR-terrain varient selon le contexte forestier", correct = TRUE),
+    answer("Le LiDAR ne fonctionne qu'avec des données terrain"),
+    answer("C'est une obligation réglementaire"),
+    allow_retry = TRUE
+  ),
+  question("Qu'est-ce qu'un tirage GRTS ?",
+    answer("Un tirage purement aléatoire"),
+    answer("Un tirage systématique sur grille régulière"),
+    answer("Un tirage aléatoire spatialement équilibré", correct = TRUE),
+    answer("Un tirage stratifié non-spatial"),
+    allow_retry = TRUE
+  ),
+  question("À quoi servent les placettes de remplacement (oversample) ?",
+    answer("À augmenter la taille de l'échantillon"),
+    answer("À remplacer les placettes inaccessibles sur le terrain", correct = TRUE),
+    answer("À valider les modèles"),
+    answer("À réduire le temps de terrain"),
+    allow_retry = TRUE
+  )
+)
+```
+
+---
+
+### Dimensionnement de l'échantillon
+
+Avant de lancer le tirage, il faut déterminer le **nombre optimal de placettes** en fonction de :
+
+- Le **coefficient de variation (CV)** attendu des variables d'intérêt
+- L'**erreur relative** acceptable sur l'estimation
+- Le **niveau de confiance** souhaité
+
+La formule utilisée est celle de l'échantillonnage aléatoire simple :
+
+$$n = \frac{t^2 \times CV^2}{E^2}$$
+
+Avec :
+
+- $n$ : taille d'échantillon
+- $t$ : valeur de Student (1.96 pour 95% de confiance)
+- $CV$ : coefficient de variation (%)
+- $E$ : erreur relative admissible (%)
+
+Pour les inventaires forestiers, le CV varie typiquement entre :
+
+- **15-25%** pour la surface terrière
+- **20-30%** pour le volume
+- **25-40%** pour la biomasse
+
+### Exercice : Calculer la taille d'échantillon
+
+```{r sample-size-exercise, exercise=TRUE}
+# Fonction de calcul de taille d'échantillon
+calculate_sample_size <- function(cv = 20, error = 10, confidence = 0.95, N = NULL) {
+  alpha <- 1 - confidence
+  t_value <- qnorm(1 - alpha / 2)
+  n_infinite <- (t_value * cv / error)^2
+
+  # Correction pour population finie
+  if (!is.null(N) && N > 0) {
+    n_finite <- n_infinite / (1 + (n_infinite - 1) / N)
+    return(ceiling(n_finite))
+  }
+  return(ceiling(n_infinite))
+}
+
+# === Exercice ===
+# Calculez le nombre de placettes nécessaires pour :
+# - CV estimé de 20% (valeur par défaut en foresterie)
+# - Erreur admissible de 10%
+# - Confiance de 95%
+
+n_placettes <- calculate_sample_size(cv = 20, error = 10, confidence = 0.95)
+cat("Nombre de placettes nécessaires:", n_placettes, "\n")
+
+# Essayez avec différentes valeurs de CV et d'erreur
+# Par exemple, que se passe-t-il si le CV est de 30% ?
+n_cv30 <- calculate_sample_size(cv = 30, error = 10)
+cat("Avec CV = 30%:", n_cv30, "placettes\n")
+
+# Et si on accepte une erreur de 15% ?
+n_err15 <- calculate_sample_size(cv = 20, error = 15)
+cat("Avec erreur = 15%:", n_err15, "placettes\n")
+```
+
+```{r sample-size-exercise-hint}
+# Pour le volume forestier, le CV peut atteindre 30-40%
+# Pour une précision de 10%, il faut plus de placettes avec un CV élevé
+# La relation est quadratique : doubler le CV quadruple n !
+```
+
+### Tableau de dimensionnement
+
+```{r sample-size-table, exercise=TRUE}
+# Générer un tableau de référence pour le dimensionnement
+sample_size_table <- function(cv_range = seq(10, 40, by = 5),
+                               error_range = c(5, 10, 15, 20),
+                               confidence = 0.95) {
+  alpha <- 1 - confidence
+  t_value <- qnorm(1 - alpha / 2)
+
+  expand.grid(CV = cv_range, Erreur = error_range) |>
+    mutate(n = ceiling((t_value * CV / Erreur)^2))
+}
+
+# Créer le tableau
+ref_table <- sample_size_table()
+
+# Afficher sous forme de matrice
+cat("=== Taille d'échantillon requise (confiance 95%) ===\n\n")
+ref_matrix <- tidyr::pivot_wider(
+  ref_table,
+  names_from = Erreur,
+  values_from = n,
+  names_prefix = "E="
+)
+print(ref_matrix)
+
+# Visualisation graphique
+ggplot(ref_table, aes(x = CV, y = n, color = factor(Erreur))) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  scale_color_viridis_d(name = "Erreur (%)") +
+  labs(
+    title = "Taille d'échantillon en fonction du CV et de l'erreur",
+    x = "Coefficient de variation (%)",
+    y = "Nombre de placettes (n)",
+    subtitle = "Confiance 95%"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+### Quiz 2 : Dimensionnement
+
+```{r quiz-2, echo=FALSE}
+quiz(
+  question("Avec un CV de 20% et une erreur admissible de 10%, combien de placettes faut-il ?",
+    answer("8"),
+    answer("16", correct = TRUE),
+    answer("32"),
+    answer("64"),
+    allow_retry = TRUE
+  ),
+  question("Que se passe-t-il si on double le CV (de 20% à 40%) ?",
+    answer("n double"),
+    answer("n quadruple", correct = TRUE),
+    answer("n est divisé par 2"),
+    answer("n reste identique"),
+    allow_retry = TRUE
+  ),
+  question("Comment réduire le nombre de placettes nécessaires ?",
+    answer("Augmenter le CV"),
+    answer("Réduire le niveau de confiance"),
+    answer("Accepter une erreur plus grande", correct = TRUE),
+    answer("Augmenter la taille des placettes"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 1 : Chargement des données {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons utiliser la **zone d'étude du Tutorial 01** (Verc-02, Vercors) et charger les données nécessaires depuis le cache ou les APIs IGN.
+
+### Exercice 1.1 : Charger la zone d'étude
+
+```{r load-zone-setup}
+# Configuration du cache
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+```
+
+```{r load-zone, exercise=TRUE, exercise.setup="load-zone-setup"}
+# Charger la zone d'étude depuis le package ou le cache
+zone_cache <- file.path(data_dir, "zone_etude.gpkg")
+
+if (file.exists(zone_cache)) {
+  cat("Chargement depuis le cache...\n")
+  zone_etude <- st_read(zone_cache, layer = "zone_etude", quiet = TRUE)
+} else {
+  cat("Chargement depuis le package nemeton...\n")
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude <- st_read(zone_pkg, quiet = TRUE)
+
+  # Sauvegarder dans le cache
+  st_write(zone_etude, zone_cache, layer = "zone_etude",
+           delete_layer = TRUE, quiet = TRUE)
+}
+
+# Afficher les informations
+cat("\n=== Zone d'étude ===\n")
+cat("Cluster:", zone_etude$cluster_id, "\n")
+cat("Surface:", round(as.numeric(st_area(zone_etude)) / 10000), "ha\n")
+cat("CRS:", st_crs(zone_etude)$epsg, "(Lambert-93)\n")
+print(st_bbox(zone_etude))
+```
+
+### Exercice 1.2 : Charger la BD Forêt
+
+La BD Forêt V2 nous fournira les types de peuplements forestiers pour la stratification.
+
+```{r load-bdforet-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+zone_cache <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_cache)) {
+  zone_etude <- st_read(zone_cache, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude <- st_read(zone_pkg, quiet = TRUE)
+}
+```
+
+```{r load-bdforet, exercise=TRUE, exercise.setup="load-bdforet-setup"}
+bd_foret_cache <- file.path(data_dir, "bd_foret.gpkg")
+
+if (file.exists(bd_foret_cache)) {
+  cat("Chargement BD Forêt depuis le cache...\n")
+  bd_foret <- st_read(bd_foret_cache, quiet = TRUE)
+} else {
+  cat("Téléchargement BD Forêt depuis l'API IGN...\n")
+  cat("(Cela peut prendre quelques secondes...)\n")
+
+  if (requireNamespace("happign", quietly = TRUE)) {
+    bd_foret <- happign::get_wfs(
+      x = zone_etude,
+      layer = "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale"
+    )
+    bd_foret <- st_transform(bd_foret, 2154)
+
+    # Sauvegarder dans le cache
+    st_write(bd_foret, bd_foret_cache, quiet = TRUE)
+    cat("Sauvegardé dans le cache.\n")
+  } else {
+    cat("Package happign non disponible.\n")
+    bd_foret <- NULL
+  }
+}
+
+if (!is.null(bd_foret) && nrow(bd_foret) > 0) {
+  cat("\n=== BD Forêt V2 ===\n")
+  cat("Polygones:", nrow(bd_foret), "\n")
+  cat("Types forestiers:", length(unique(bd_foret$tfv)), "\n")
+
+  # Distribution des types
+  cat("\nDistribution:\n")
+  type_counts <- table(bd_foret$tfv)
+  for (type in names(sort(type_counts, decreasing = TRUE))[1:5]) {
+    cat(sprintf("  %s: %d\n", type, type_counts[type]))
+  }
+}
+```
+
+### Exercice 1.3 : Charger le MNT et calculer la pente
+
+```{r load-mnt-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+zone_cache <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_cache)) {
+  zone_etude <- st_read(zone_cache, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude <- st_read(zone_pkg, quiet = TRUE)
+}
+```
+
+```{r load-mnt, exercise=TRUE, exercise.setup="load-mnt-setup"}
+mnt_cache <- file.path(data_dir, "mnt.tif")
+slope_cache <- file.path(data_dir, "slope.tif")
+
+# Charger ou télécharger le MNT
+if (file.exists(mnt_cache)) {
+  cat("Chargement MNT depuis le cache...\n")
+  mnt <- rast(mnt_cache)
+} else {
+  cat("Téléchargement MNT depuis l'API IGN...\n")
+
+  if (requireNamespace("happign", quietly = TRUE)) {
+    mnt <- happign::get_wms_raster(
+      x = zone_etude,
+      layer = "ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES",
+      res = 5,
+      crs = 2154,
+      rgb = FALSE
+    )
+    writeRaster(mnt, mnt_cache, overwrite = TRUE)
+    cat("MNT sauvegardé.\n")
+  } else {
+    cat("Package happign non disponible.\n")
+    mnt <- NULL
+  }
+}
+
+# Calculer ou charger la pente
+if (file.exists(slope_cache)) {
+  cat("Chargement pente depuis le cache...\n")
+  slope <- rast(slope_cache)
+} else if (!is.null(mnt)) {
+  cat("Calcul de la pente...\n")
+  slope_deg <- terrain(mnt, v = "slope", unit = "degrees")
+  slope <- tan(slope_deg * pi / 180) * 100  # Conversion en %
+  names(slope) <- "slope_pct"
+  writeRaster(slope, slope_cache, overwrite = TRUE)
+  cat("Pente sauvegardée.\n")
+}
+
+if (!is.null(mnt)) {
+  cat("\n=== Terrain ===\n")
+  cat(sprintf("Altitude: %.0f - %.0f m\n", minmax(mnt)[1], minmax(mnt)[2]))
+  cat(sprintf("Pente: %.0f - %.0f %%\n", minmax(slope)[1], minmax(slope)[2]))
+}
+```
+
+### Exercice 1.4 : Charger les chemins (BD TOPO)
+
+Les chemins seront utilisés pour le réseau de déplacement et l'optimisation TSP.
+
+```{r load-routes-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+zone_cache <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_cache)) {
+  zone_etude <- st_read(zone_cache, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude <- st_read(zone_pkg, quiet = TRUE)
+}
+```
+
+```{r load-routes, exercise=TRUE, exercise.setup="load-routes-setup"}
+routes_cache <- file.path(data_dir, "routes.gpkg")
+
+if (file.exists(routes_cache)) {
+  cat("Chargement routes depuis le cache...\n")
+  routes <- st_read(routes_cache, quiet = TRUE)
+} else {
+  cat("Téléchargement routes depuis l'API IGN...\n")
+
+  if (requireNamespace("happign", quietly = TRUE)) {
+    routes <- happign::get_wfs(
+      x = st_buffer(zone_etude, 500),  # Buffer pour inclure chemins proches
+      layer = "BDTOPO_V3:troncon_de_route"
+    )
+    routes <- st_transform(routes, 2154)
+    st_write(routes, routes_cache, quiet = TRUE)
+    cat("Routes sauvegardées.\n")
+  } else {
+    routes <- NULL
+  }
+}
+
+if (!is.null(routes) && nrow(routes) > 0) {
+  cat("\n=== Réseau routier ===\n")
+  cat("Tronçons:", nrow(routes), "\n")
+  cat("Longueur totale:", round(sum(as.numeric(st_length(routes))) / 1000, 1), "km\n")
+
+  # Types de voies
+  if ("nature" %in% names(routes)) {
+    cat("\nTypes de voies:\n")
+    nature_counts <- table(routes$nature)
+    for (n in names(sort(nature_counts, decreasing = TRUE))[1:5]) {
+      cat(sprintf("  %s: %d\n", n, nature_counts[n]))
+    }
+  }
+}
+```
+
+### Visualisation des données
+
+```{r viz-data-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+# Charger les données
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
+mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
+slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
+routes <- tryCatch(st_read(file.path(data_dir, "routes.gpkg"), quiet = TRUE), error = function(e) NULL)
+```
+
+```{r viz-data, exercise=TRUE, exercise.setup="viz-data-setup", fig.width=10, fig.height=8}
+# Thème commun sans axes
+theme_map <- theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank()
+  )
+
+# Carte de synthèse des données
+p1 <- ggplot() +
+  geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.3, color = "darkgreen") +
+  labs(title = "Zone d'étude", subtitle = zone_etude$cluster_id) +
+  theme_map
+
+if (!is.null(bd_foret)) {
+  p2 <- ggplot() +
+    geom_sf(data = bd_foret, aes(fill = tfv), color = NA, alpha = 0.7) +
+    geom_sf(data = zone_etude, fill = NA, color = "black", linewidth = 1) +
+    scale_fill_viridis_d(name = "Type") +
+    labs(title = "BD Forêt V2") +
+    theme_map +
+    theme(legend.position = "none")
+} else {
+  p2 <- ggplot() + labs(title = "BD Forêt non disponible") + theme_void()
+}
+
+if (!is.null(slope)) {
+  slope_df <- as.data.frame(slope, xy = TRUE, na.rm = TRUE)
+  names(slope_df)[3] <- "pente"
+  p3 <- ggplot(slope_df, aes(x = x, y = y, fill = pente)) +
+    geom_raster() +
+    scale_fill_viridis_c(name = "Pente (%)") +
+    geom_sf(data = zone_etude, fill = NA, color = "red", linewidth = 1, inherit.aes = FALSE) +
+    labs(title = "Pente") +
+    theme_map +
+    theme(legend.position = "right")
+} else {
+  p3 <- ggplot() + labs(title = "Pente non disponible") + theme_void()
+}
+
+if (!is.null(routes)) {
+  p4 <- ggplot() +
+    geom_sf(data = routes, color = "brown", linewidth = 0.5) +
+    geom_sf(data = zone_etude, fill = NA, color = "darkgreen", linewidth = 1) +
+    labs(title = "Réseau routier") +
+    theme_map
+} else {
+  p4 <- ggplot() + labs(title = "Routes non disponibles") + theme_void()
+}
+
+(p1 | p2) / (p3 | p4)
+```
+
+## Section 2 : Sampling Frame {data-progressive=TRUE}
+
+### Introduction
+
+La **sampling frame** est l'ensemble des centres de placettes candidats. Nous allons :
+
+1. Générer une grille régulière de points
+2. Filtrer selon les contraintes terrain
+3. Extraire les variables auxiliaires
+
+### Exercice 2.1 : Générer la grille de candidats
+
+```{r generate-grid-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+config <- list(
+  plot_radius = 15,
+  grid_step = 30,
+  min_forest_cover = 0.70,
+  max_slope = 45,
+  crs = 2154
+)
+```
+
+```{r generate-grid, exercise=TRUE, exercise.setup="generate-grid-setup"}
+# Générer une grille régulière de points candidats
+grid_points <- st_make_grid(
+  zone_etude,
+  cellsize = config$grid_step,
+  what = "centers"
+)
+
+# Filtrer les points dans la zone d'étude
+grid_sf <- st_sf(geometry = grid_points) |>
+  st_intersection(zone_etude) |>
+  mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
+
+cat("=== Grille de candidats ===\n")
+cat("Espacement:", config$grid_step, "m\n")
+cat("Points générés:", nrow(grid_sf), "\n")
+cat("Densité:", round(nrow(grid_sf) / (as.numeric(st_area(zone_etude)) / 10000)), "candidats/ha\n")
+
+# Visualiser
+ggplot() +
+  geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.3) +
+  geom_sf(data = grid_sf, color = "darkgreen", size = 0.5, alpha = 0.5) +
+  labs(
+    title = "Grille de candidats",
+    subtitle = sprintf("%d points (pas = %d m)", nrow(grid_sf), config$grid_step)
+  ) +
+  theme_minimal()
+```
+
+### Exercice 2.2 : Appliquer les contraintes terrain
+
+```{r constraints-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
+slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
+
+config <- list(
+  plot_radius = 15,
+  grid_step = 30,
+  min_forest_cover = 0.70,
+  max_slope = 45,
+  crs = 2154
+)
+
+# Générer la grille
+grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
+grid_sf <- st_sf(geometry = grid_points) |>
+  st_intersection(zone_etude) |>
+  mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
+
+# Configuration parallèle avec future/furrr
+if (requireNamespace("future", quietly = TRUE) &&
+    requireNamespace("furrr", quietly = TRUE)) {
+  n_cores <- max(1, parallel::detectCores() - 1)
+  future::plan(future::multisession, workers = n_cores)
+  use_parallel <- TRUE
+} else {
+  use_parallel <- FALSE
+}
+```
+
+```{r constraints, exercise=TRUE, exercise.setup="constraints-setup", exercise.timelimit=2400}
+# Créer les buffers (rayon de placette)
+cat("Création des buffers de placette...\n")
+grid_buffers <- st_buffer(grid_sf, config$plot_radius)
+
+# Contrainte 1: Couverture forestière (parallélisé avec furrr)
+cat("Calcul de la couverture forestière...\n")
+if (!is.null(bd_foret)) {
+  # Fonction pour calculer le % de couvert forestier d'un buffer
+
+  calc_forest_cover <- function(i, buffers, foret) {
+    buffer <- buffers[i, ]
+    intersection <- st_intersection(buffer, foret)
+    if (nrow(intersection) == 0) return(0)
+    sum(as.numeric(st_area(intersection))) / as.numeric(st_area(buffer))
+  }
+
+  # Calcul parallèle avec furrr si disponible
+  if (use_parallel && requireNamespace("furrr", quietly = TRUE)) {
+    cat(sprintf("  Mode parallèle (%d workers)...\n",
+                future::nbrOfWorkers()))
+    forest_cover <- furrr::future_map_dbl(
+      1:nrow(grid_buffers),
+      calc_forest_cover,
+      buffers = grid_buffers,
+      foret = bd_foret,
+      .progress = FALSE
+    )
+  } else {
+    cat("  Mode séquentiel...\n")
+    forest_cover <- purrr::map_dbl(
+      1:nrow(grid_buffers),
+      calc_forest_cover,
+      buffers = grid_buffers,
+      foret = bd_foret
+    )
+  }
+} else {
+  # Si pas de BD Forêt, considérer tout comme forêt
+  forest_cover <- rep(1, nrow(grid_buffers))
+}
+
+# Contrainte 2: Pente moyenne (déjà vectorisé avec exactextractr)
+cat("Calcul de la pente moyenne...\n")
+if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_slope <- exactextractr::exact_extract(slope, grid_buffers, "mean")
+} else if (!is.null(slope)) {
+  mean_slope <- terra::extract(slope, vect(grid_buffers), fun = mean, na.rm = TRUE)[, 2]
+} else {
+  mean_slope <- rep(0, nrow(grid_buffers))
+}
+
+# Appliquer les contraintes
+candidates <- grid_sf |>
+  mutate(
+    forest_cover = forest_cover,
+    mean_slope = mean_slope,
+    valid_forest = forest_cover >= config$min_forest_cover,
+    valid_slope = !is.na(mean_slope) & mean_slope <= config$max_slope,
+    valid = valid_forest & valid_slope
+  )
+
+# Statistiques
+cat("\n=== Résultat des contraintes ===\n")
+cat(sprintf("Candidats initiaux: %d\n", nrow(candidates)))
+cat(sprintf("Exclus (forêt < %.0f%%): %d\n",
+            config$min_forest_cover * 100, sum(!candidates$valid_forest)))
+cat(sprintf("Exclus (pente > %.0f%%): %d\n",
+            config$max_slope, sum(candidates$valid_forest & !candidates$valid_slope)))
+cat(sprintf("Candidats valides: %d (%.1f%%)\n",
+            sum(candidates$valid), 100 * sum(candidates$valid) / nrow(candidates)))
+
+# Visualiser
+ggplot() +
+  geom_sf(data = zone_etude, fill = "lightgray", alpha = 0.3) +
+  geom_sf(data = candidates |> filter(!valid), color = "red", size = 0.5, alpha = 0.3) +
+  geom_sf(data = candidates |> filter(valid), color = "darkgreen", size = 1) +
+  labs(
+    title = "Candidats après filtrage",
+    subtitle = sprintf("%d valides / %d total", sum(candidates$valid), nrow(candidates))
+  ) +
+  theme_minimal()
+```
+
+### Quiz 3 : Sampling frame
+
+```{r quiz-3, echo=FALSE}
+quiz(
+  question("Pourquoi exclure les candidats avec un couvert forestier insuffisant ?",
+    answer("Pour éviter les effets de bord avec les zones non-forestières", correct = TRUE),
+    answer("Pour réduire le nombre de candidats"),
+    answer("Pour augmenter la pente moyenne"),
+    answer("Pour simplifier le tirage GRTS")
+  ),
+  question("Pourquoi limiter la pente maximale ?",
+    answer("Pour des raisons de sécurité et d'accessibilité terrain", correct = TRUE),
+    answer("Pour éviter les erreurs LiDAR"),
+    answer("Pour homogénéiser l'échantillon"),
+    answer("Pour réduire le temps de calcul")
+  ),
+  question("Quelle est la forme optimale d'une placette de calibration ?",
+    answer("Carrée - plus facile à délimiter"),
+    answer("Circulaire - minimise les effets de bord", correct = TRUE),
+    answer("Rectangulaire - suit les courbes de niveau"),
+    answer("Hexagonale - pavage optimal")
+  )
+)
+```
+
+## Section 3 : Stratification et GRTS {data-progressive=TRUE}
+
+### Introduction
+
+La **stratification** permet d'assurer que l'échantillon couvre tous les gradients forestiers. Nous utiliserons :
+
+- **Hauteur de canopée** (MNH p95) : 4 classes
+- **Couvert forestier** : 2 classes
+- **Pente** : 2 classes
+
+Soit **16 strates** au total.
+
+### Exercice 3.1 : Créer les strates
+
+```{r strata-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
+slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
+mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
+
+config <- list(
+  plot_radius = 15, grid_step = 30, min_forest_cover = 0.70, max_slope = 45,
+  n_main = 40, n_replacement = 12, min_per_stratum = 2, seed = 2024
+)
+
+# Recréer la frame de candidats valides
+grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
+grid_sf <- st_sf(geometry = grid_points) |>
+  st_intersection(zone_etude) |>
+  mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
+grid_buffers <- st_buffer(grid_sf, config$plot_radius)
+
+# Calcul couverture forestière (parallélisé)
+forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret)
+
+# Calcul pente (vectorisé avec exactextractr)
+if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_slope <- exactextractr::exact_extract(slope, grid_buffers, "mean")
+} else {
+  mean_slope <- rep(20, nrow(grid_buffers))
+}
+
+# Calcul altitude (vectorisé avec exactextractr)
+if (!is.null(mnt) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_altitude <- exactextractr::exact_extract(mnt, grid_buffers, "mean")
+} else {
+  mean_altitude <- rep(1000, nrow(grid_buffers))
+}
+
+candidates <- grid_sf |>
+  mutate(
+    forest_cover = forest_cover,
+    mean_slope = mean_slope,
+    mean_altitude = mean_altitude,
+    valid = forest_cover >= config$min_forest_cover &
+            !is.na(mean_slope) & mean_slope <= config$max_slope
+  )
+frame <- candidates |> filter(valid)
+```
+
+```{r strata, exercise=TRUE, exercise.setup="strata-setup"}
+# Créer les strates basées sur les variables disponibles
+cat("=== Création des strates ===\n\n")
+
+# Strate altitude (proxy hauteur) : 4 classes (quartiles)
+altitude_breaks <- quantile(frame$mean_altitude, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+frame <- frame |>
+  mutate(
+    strat_altitude = cut(mean_altitude, breaks = altitude_breaks,
+                         labels = c("A1", "A2", "A3", "A4"), include.lowest = TRUE)
+  )
+
+# Strate couvert : 2 classes (médiane)
+cover_median <- median(frame$forest_cover, na.rm = TRUE)
+frame <- frame |>
+  mutate(
+    strat_cover = ifelse(forest_cover >= cover_median, "C_high", "C_low")
+  )
+
+# Strate pente : 2 classes (médiane)
+slope_median <- median(frame$mean_slope, na.rm = TRUE)
+frame <- frame |>
+  mutate(
+    strat_slope = ifelse(mean_slope >= slope_median, "S_steep", "S_gentle")
+  )
+
+# Combiner en strate finale
+frame <- frame |>
+  mutate(
+    stratum = paste(strat_altitude, strat_cover, strat_slope, sep = "_")
+  )
+
+# Statistiques par strate
+strata_summary <- frame |>
+  st_drop_geometry() |>
+  group_by(stratum) |>
+  summarise(
+    n = n(),
+    altitude_mean = round(mean(mean_altitude, na.rm = TRUE)),
+    slope_mean = round(mean(mean_slope, na.rm = TRUE), 1),
+    .groups = "drop"
+  ) |>
+  arrange(desc(n))
+
+cat("Nombre de strates:", length(unique(frame$stratum)), "\n")
+cat("Candidats par strate:\n")
+print(strata_summary, n = 16)
+
+# Visualiser les strates
+ggplot() +
+  geom_sf(data = zone_etude, fill = "white", color = "black") +
+  geom_sf(data = frame, aes(color = stratum), size = 1.5) +
+  scale_color_viridis_d(name = "Strate") +
+  labs(title = "Distribution spatiale des strates") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+### Exercice 3.2 : Tirage GRTS
+
+```{r grts-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
+slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
+mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
+
+config <- list(
+  plot_radius = 15, grid_step = 30, min_forest_cover = 0.70, max_slope = 45,
+  n_main = 40, n_replacement = 12, min_per_stratum = 2, seed = 2024
+)
+
+# Recréer la frame complète avec strates
+grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
+grid_sf <- st_sf(geometry = grid_points) |>
+  st_intersection(zone_etude) |>
+  mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
+grid_buffers <- st_buffer(grid_sf, config$plot_radius)
+
+# Calcul parallélisé de la couverture forestière
+forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret)
+
+# Calcul pente (vectorisé)
+if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_slope <- exactextractr::exact_extract(slope, grid_buffers, "mean")
+} else {
+  mean_slope <- rep(20, nrow(grid_buffers))
+}
+
+# Calcul altitude (vectorisé)
+if (!is.null(mnt) && requireNamespace("exactextractr", quietly = TRUE)) {
+  mean_altitude <- exactextractr::exact_extract(mnt, grid_buffers, "mean")
+} else {
+  mean_altitude <- rep(1000, nrow(grid_buffers))
+}
+
+candidates <- grid_sf |>
+  mutate(
+    forest_cover = forest_cover,
+    mean_slope = mean_slope,
+    mean_altitude = mean_altitude,
+    valid = forest_cover >= config$min_forest_cover &
+            !is.na(mean_slope) & mean_slope <= config$max_slope
+  )
+frame <- candidates |> filter(valid)
+
+# Strates
+altitude_breaks <- quantile(frame$mean_altitude, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+cover_median <- median(frame$forest_cover, na.rm = TRUE)
+slope_median <- median(frame$mean_slope, na.rm = TRUE)
+
+frame <- frame |>
+  mutate(
+    strat_altitude = cut(mean_altitude, breaks = altitude_breaks,
+                         labels = c("A1", "A2", "A3", "A4"), include.lowest = TRUE),
+    strat_cover = ifelse(forest_cover >= cover_median, "C_high", "C_low"),
+    strat_slope = ifelse(mean_slope >= slope_median, "S_steep", "S_gentle"),
+    stratum = paste(strat_altitude, strat_cover, strat_slope, sep = "_")
+  )
+```
+
+```{r grts, exercise=TRUE, exercise.setup="grts-setup"}
+# Tirage GRTS avec spsurvey
+set.seed(config$seed)
+
+if (requireNamespace("spsurvey", quietly = TRUE)) {
+  cat("=== Tirage GRTS ===\n\n")
+
+  # Calculer l'allocation par strate (proportionnelle avec minimum)
+  strata_counts <- table(frame$stratum)
+  n_strata <- length(strata_counts)
+
+  # Allocation proportionnelle
+  allocation <- round(strata_counts / sum(strata_counts) * config$n_main)
+
+  # Assurer le minimum par strate
+  allocation <- pmax(allocation, config$min_per_stratum)
+
+  # Ajuster si le total dépasse n_main
+  while (sum(allocation) > config$n_main) {
+    # Réduire les strates les plus grandes
+    max_idx <- which.max(allocation)
+    allocation[max_idx] <- allocation[max_idx] - 1
+  }
+
+  cat("Allocation par strate:\n")
+  print(allocation)
+  cat("\nTotal:", sum(allocation), "placettes\n")
+
+  # Tirage GRTS
+  sample_result <- spsurvey::grts(
+    sframe = frame,
+    n_base = allocation,
+    stratum_var = "stratum",
+    n_over = config$n_replacement
+  )
+
+  # Extraire l'échantillon
+  sample_main <- sample_result$sites_base
+  sample_over <- sample_result$sites_over
+
+  cat("\nRésultats:\n")
+  cat("  Placettes principales:", nrow(sample_main), "\n")
+  cat("  Placettes remplacement:", nrow(sample_over), "\n")
+
+  # Visualiser
+  ggplot() +
+    geom_sf(data = zone_etude, fill = "lightgray", alpha = 0.3) +
+    geom_sf(data = frame, color = "gray70", size = 0.3, alpha = 0.5) +
+    geom_sf(data = sample_over, color = "orange", size = 2, shape = 1) +
+    geom_sf(data = sample_main, color = "darkgreen", size = 3) +
+    labs(
+      title = "Échantillon GRTS",
+      subtitle = sprintf("%d principales + %d remplacement",
+                        nrow(sample_main), nrow(sample_over))
+    ) +
+    theme_minimal()
+
+} else {
+  cat("Package spsurvey non disponible.\n")
+  cat("Installation: install.packages('spsurvey')\n")
+}
+```
+
+### Quiz 4 : GRTS
+
+```{r quiz-4, echo=FALSE}
+quiz(
+  question("Quel est l'avantage principal du tirage GRTS par rapport au tirage aléatoire simple ?",
+    answer("Plus rapide à calculer"),
+    answer("Garantit un échantillon spatialement équilibré", correct = TRUE),
+    answer("Nécessite moins de placettes"),
+    answer("Fonctionne sans coordonnées")
+  ),
+  question("Pourquoi utiliser des strates basées sur la hauteur de canopée ?",
+    answer("Pour capturer les différents stades de développement forestier", correct = TRUE),
+    answer("Pour réduire le nombre de placettes"),
+    answer("Pour faciliter l'accès terrain"),
+    answer("Pour éviter les zones pentues")
+  ),
+  question("À quoi sert l'oversample dans GRTS ?",
+    answer("À augmenter la précision statistique"),
+    answer("À fournir des placettes de remplacement ordonnées", correct = TRUE),
+    answer("À valider les modèles"),
+    answer("À équilibrer les strates")
+  )
+)
+```
+
+## Section 4 : Réseau et TSP {data-progressive=TRUE}
+
+### Introduction
+
+L'optimisation du **parcours terrain** utilise :
+
+1. Le **réseau de chemins** (BD TOPO)
+2. La **distance hors-chemin** jusqu'aux placettes
+3. Le **problème du voyageur de commerce** (TSP)
+
+### Exercice 4.1 : Construire le réseau de chemins
+
+```{r network-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+routes <- tryCatch(st_read(file.path(data_dir, "routes.gpkg"), quiet = TRUE), error = function(e) NULL)
+```
+
+```{r network, exercise=TRUE, exercise.setup="network-setup"}
+if (!is.null(routes) && requireNamespace("sfnetworks", quietly = TRUE)) {
+  library(sfnetworks)
+  library(tidygraph)
+
+  cat("=== Construction du réseau ===\n\n")
+
+  # Filtrer les chemins praticables à pied
+  paths <- routes |>
+    filter(nature %in% c("Chemin", "Sentier", "Route à 1 chaussée",
+                         "Route à 2 chaussées", "Route empierrée"))
+
+  cat("Tronçons utilisables:", nrow(paths), "\n")
+
+  # Créer le réseau sfnetworks
+  network <- as_sfnetwork(paths, directed = FALSE)
+
+  # Ajouter les poids (longueur en mètres)
+  network <- network |>
+    activate("edges") |>
+    mutate(weight = as.numeric(st_length(geometry)))
+
+  # Statistiques
+  cat("Noeuds:", igraph::vcount(network), "\n")
+  cat("Arêtes:", igraph::ecount(network), "\n")
+  cat("Longueur totale:", round(sum(igraph::E(network)$weight) / 1000, 1), "km\n")
+
+  # Visualiser
+  ggplot() +
+    geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.2) +
+    geom_sf(data = st_as_sf(network, "edges"), color = "brown", linewidth = 0.8) +
+    geom_sf(data = st_as_sf(network, "nodes"), color = "darkred", size = 0.5) +
+    labs(title = "Réseau de chemins",
+         subtitle = sprintf("%d noeuds, %d arêtes",
+                           igraph::vcount(network), igraph::ecount(network))) +
+    theme_minimal()
+
+} else {
+  cat("Données routes ou package sfnetworks non disponible.\n")
+}
+```
+
+### Exercice 4.2 : Résoudre le TSP
+
+```{r tsp-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+
+config <- list(
+  walk_speed_kmh = 4,
+  offpath_speed_kmh = 2,
+  offpath_penalty = 2,
+  seed = 2024
+)
+
+# Créer des points d'échantillon simulés pour la démo
+set.seed(config$seed)
+sample_points <- st_sample(zone_etude, 20, type = "random") |>
+  st_as_sf() |>
+  mutate(plot_id = paste0("P", sprintf("%02d", row_number())))
+```
+```{r tsp, exercise=TRUE, exercise.setup="tsp-setup"}
+if (requireNamespace("TSP", quietly = TRUE)) {
+  library(TSP)
+
+  cat("=== Optimisation TSP ===\n\n")
+
+  # Calculer la matrice de distances euclidiennes
+  coords <- st_coordinates(sample_points)
+  dist_matrix <- as.matrix(dist(coords))
+
+  # Convertir en temps (minutes) - distance directe comme approximation
+  # Vitesse moyenne: mix chemin/hors-chemin
+  avg_speed <- (config$walk_speed_kmh + config$offpath_speed_kmh) / 2
+  time_matrix <- dist_matrix / 1000 / avg_speed * 60  # en minutes
+
+  cat("Placettes:", nrow(sample_points), "\n")
+  cat("Distance moyenne inter-placettes:", round(mean(dist_matrix[dist_matrix > 0])), "m\n")
+
+  # Créer l'objet TSP
+  tsp <- TSP(time_matrix)
+
+  # Résoudre avec nearest insertion + 2-opt
+  tour_ni <- solve_TSP(tsp, method = "nearest_insertion")
+  tour_opt <- solve_TSP(tsp, method = "2-opt", control = list(tour = tour_ni))
+
+  # Résultats
+  tour_order <- as.integer(tour_opt)
+  tour_length <- tour_length(tour_opt)
+
+  cat("\nParcours optimal:\n")
+  cat("  Durée estimée:", round(tour_length), "minutes\n")
+  cat("  Ordre de visite:", paste(sample_points$plot_id[tour_order], collapse = " → "), "\n")
+
+  # Créer la ligne du parcours
+  tour_coords <- coords[c(tour_order, tour_order[1]), ]
+  tour_line <- st_linestring(tour_coords) |>
+    st_sfc(crs = st_crs(sample_points)) |>
+    st_sf(geometry = _)
+
+  # Ajouter l'ordre aux points
+  sample_ordered <- sample_points |>
+    mutate(visit_order = match(row_number(), tour_order))
+
+  # Visualiser
+  ggplot() +
+    geom_sf(data = zone_etude, fill = "lightgreen", alpha = 0.2) +
+    geom_sf(data = tour_line, color = "blue", linewidth = 1, linetype = "dashed") +
+    geom_sf(data = sample_ordered, aes(color = visit_order), size = 4) +
+    geom_sf_text(data = sample_ordered, aes(label = visit_order),
+                 color = "white", size = 3, fontface = "bold") +
+    scale_color_viridis_c(name = "Ordre") +
+    labs(
+      title = "Parcours TSP optimisé",
+      subtitle = sprintf("Durée: ~%d min pour %d placettes",
+                        round(tour_length), nrow(sample_points))
+    ) +
+    theme_minimal()
+
+} else {
+  cat("Package TSP non disponible.\n")
+  cat("Installation: install.packages('TSP')\n")
+}
+```
+
+### Quiz 5 : TSP
+
+```{r quiz-5, echo=FALSE}
+quiz(
+  question("Que signifie TSP ?",
+    answer("Total Sampling Points"),
+    answer("Traveling Salesman Problem", correct = TRUE),
+    answer("Terrain Survey Protocol"),
+    answer("Tree Structure Pattern")
+  ),
+  question("Pourquoi pénaliser le déplacement hors-chemin ?",
+    answer("Car il est plus lent et fatigant", correct = TRUE),
+    answer("Car il est interdit"),
+    answer("Car il endommage la végétation"),
+    answer("Car le GPS ne fonctionne pas hors-chemin")
+  ),
+  question("Quelle heuristique est recommandée pour le TSP ?",
+    answer("Force brute (toutes les permutations)"),
+    answer("Nearest insertion + 2-opt", correct = TRUE),
+    answer("Ordre alphabétique des placettes"),
+    answer("Ordre aléatoire")
+  )
+)
+```
+
+## Section 5 : Export {data-progressive=TRUE}
+
+### Exercice 5.1 : Exporter les résultats
+
+```{r export-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- rappdirs::user_data_dir("nemeton", "nemeton_tutorials")
+} else {
+  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+
+# Points simulés avec ordre de visite
+set.seed(2024)
+sample_points <- st_sample(zone_etude, 20, type = "random") |>
+  st_as_sf() |>
+  mutate(
+    plot_id = paste0("P", sprintf("%02d", row_number())),
+    visit_order = row_number()
+  )
+```
+
+```{r export, exercise=TRUE, exercise.setup="export-setup"}
+# Créer le répertoire d'export
+export_dir <- file.path(data_dir, "result_sampling")
+dir.create(export_dir, showWarnings = FALSE, recursive = TRUE)
+
+cat("=== Export des résultats ===\n\n")
+cat("Répertoire:", export_dir, "\n\n")
+
+# 1. Export GeoPackage (pour SIG)
+gpkg_path <- file.path(export_dir, "echantillon.gpkg")
+
+# Zone d'étude
+st_write(zone_etude, gpkg_path, layer = "zone_etude",
+         delete_layer = TRUE, quiet = TRUE)
+cat("✓ Zone d'étude exportée\n")
+
+# Placettes
+st_write(sample_points, gpkg_path, layer = "placettes",
+         append = TRUE, quiet = TRUE)
+cat("✓ Placettes exportées\n")
+
+# 2. Export GPX (pour GPS terrain)
+# Convertir en WGS84 (obligatoire pour GPX)
+sample_wgs84 <- st_transform(sample_points, 4326)
+
+gpx_path <- file.path(export_dir, "placettes.gpx")
+tryCatch({
+  st_write(sample_wgs84, gpx_path, driver = "GPX",
+           dataset_options = c("GPX_USE_EXTENSIONS=YES"),
+           delete_dsn = TRUE, quiet = TRUE)
+  cat("✓ Fichier GPX exporté\n")
+}, error = function(e) {
+  cat("⚠ Export GPX échoué:", e$message, "\n")
+})
+
+# 3. Export CSV (tableau récapitulatif)
+csv_path <- file.path(export_dir, "placettes.csv")
+sample_df <- sample_points |>
+  st_transform(4326) |>
+  mutate(
+    longitude = st_coordinates(geometry)[, 1],
+    latitude = st_coordinates(geometry)[, 2]
+  ) |>
+  st_drop_geometry() |>
+  select(plot_id, visit_order, longitude, latitude)
+
+write.csv(sample_df, csv_path, row.names = FALSE)
+cat("✓ Tableau CSV exporté\n")
+
+# Afficher le contenu
+cat("\n=== Fichiers créés ===\n")
+files <- list.files(export_dir, full.names = TRUE)
+for (f in files) {
+  cat(sprintf("  %s (%.1f KB)\n", basename(f), file.size(f) / 1024))
+}
+
+# Aperçu du tableau
+cat("\n=== Aperçu des placettes ===\n")
+print(sample_df)
+```
+
+## Synthèse
+
+Félicitations ! Vous avez appris à :
+
+1. **Construire une sampling frame** avec contraintes terrain
+2. **Stratifier** selon les gradients forestiers
+3. **Réaliser un tirage GRTS** spatialement équilibré
+4. **Optimiser le parcours terrain** avec TSP
+5. **Exporter** pour le terrain (GeoPackage, GPX)
+
+### Points clés à retenir
+
+- Le **tirage GRTS** garantit un échantillon spatialement équilibré
+- La **stratification** assure la représentativité des gradients
+- L'**oversample** fournit des placettes de remplacement ordonnées
+- Le **TSP** minimise le temps de déplacement terrain
+- Les exports **GPX** permettent la navigation GPS sur le terrain
+
+### Pour aller plus loin
+
+- Ajuster les contraintes selon le terrain local
+- Utiliser les vraies métriques LiDAR pour la stratification
+- Intégrer les données d'accessibilité (barrières, propriétés)
+- Tester différentes tailles d'échantillon
+
+```{r final-quiz, echo=FALSE}
+quiz(
+  question("Quel est l'ordre recommandé pour un plan d'échantillonnage LiDAR ?",
+    answer("Terrain → Tirage → Contraintes → Export"),
+    answer("Contraintes → Stratification → Tirage GRTS → TSP → Export", correct = TRUE),
+    answer("Export → TSP → Tirage → Contraintes"),
+    answer("TSP → Contraintes → Tirage → Export")
+  )
+)
+```

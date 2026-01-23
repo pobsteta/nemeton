@@ -1,3 +1,44 @@
+# nemeton 0.5.2
+
+## v0.5.2 - Tutorial 09 Sampling + TSP
+
+**Date**: 2026-01-23
+
+### New Features
+
+#### Tutorial 09: Échantillonnage de calibration LiDAR HD + TSP (180 min)
+
+* **Dimensionnement optimal** - Calcul du nombre de placettes basé sur la formule n = t² × CV² / E²
+  - Fonctions `calculate_sample_size()` et `sample_size_table()`
+  - Tableau de référence interactif pour CV (10-40%) et erreur (5-20%)
+  - Correction pour population finie
+* **Sampling Frame** - Construction d'une grille de candidats avec contraintes terrain
+* **Contraintes terrain** - Filtrage par couvert forestier (≥70%) et pente (≤45%)
+* **Stratification** - 16 strates (4 altitude × 2 couvert × 2 pente)
+* **Tirage GRTS** - Échantillonnage spatialement équilibré avec `spsurvey`
+* **Réseau de chemins** - Construction réseau avec `sfnetworks` depuis BD TOPO
+* **Optimisation TSP** - Parcours optimal avec package `TSP` (nearest insertion + 2-opt)
+* **Export terrain** - GeoPackage, GPX et CSV pour navigation GPS
+
+### Dependencies
+
+* Added `spsurvey (>= 5.0.0)` to Suggests
+* Added `sfnetworks (>= 0.6.0)` to Suggests
+* Added `TSP (>= 1.2.0)` to Suggests
+* Added `tidygraph (>= 1.2.0)` to Suggests
+* Added `igraph (>= 1.4.0)` to Suggests
+
+### Documentation
+
+* Updated `vignettes/tutorial-guide.Rmd` with Tutorial 09
+* Updated `TUTORIAL_INSTALL.md` with Tutorial 09
+
+**References**:
+- Stevens, D. L., & Olsen, A. R. (2004). Spatially balanced sampling of natural resources. *JASA*, 99(465), 262-278.
+- Hahsler, M., & Hornik, K. (2007). TSP—Infrastructure for the traveling salesperson problem. *Journal of Statistical Software*, 23(2).
+
+---
+
 # nemeton 0.5.1
 
 ## v0.5.1 - Tutorial 08 Coregistration
