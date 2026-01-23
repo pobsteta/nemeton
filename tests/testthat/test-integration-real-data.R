@@ -96,7 +96,7 @@ test_that("Full workflow with real parcel and synthetic layers", {
   # Compute indicators with preprocessing
   result <- nemeton_compute(
     units, layers,
-    indicators = c("carbon", "accessibility", "fragmentation"),
+    indicators = c("carbon_biomass", "social_accessibility", "landscape_fragmentation"),
     preprocess = TRUE,
     forest_values = c(1, 2, 3)
   )
@@ -106,9 +106,9 @@ test_that("Full workflow with real parcel and synthetic layers", {
   expect_equal(nrow(result), 1)
 
   # Check that indicator columns were added
-  expect_true("carbon" %in% names(result))
-  expect_true("accessibility" %in% names(result))
-  expect_true("fragmentation" %in% names(result))
+  expect_true("carbon_biomass" %in% names(result))
+  expect_true("social_accessibility" %in% names(result))
+  expect_true("landscape_fragmentation" %in% names(result))
 
   # Check metadata
   meta <- attr(result, "metadata")
@@ -117,9 +117,9 @@ test_that("Full workflow with real parcel and synthetic layers", {
   expect_equal(meta$site_name, "Test Cadastral Parcel")
 
   # Indicator values should be present
-  expect_false(is.na(result$carbon))
-  expect_false(is.na(result$accessibility))
-  expect_false(is.na(result$fragmentation))
+  expect_false(is.na(result$carbon_biomass))
+  expect_false(is.na(result$social_accessibility))
+  expect_false(is.na(result$landscape_fragmentation))
 })
 
 test_that("Real parcel with all 5 indicators", {
@@ -153,18 +153,18 @@ test_that("Real parcel with all 5 indicators", {
   )
 
   # Should have all 5 indicator columns
-  expect_true("carbon" %in% names(result))
-  expect_true("biodiversity" %in% names(result))
-  expect_true("water" %in% names(result))
-  expect_true("fragmentation" %in% names(result))
-  expect_true("accessibility" %in% names(result))
+  expect_true("carbon_biomass" %in% names(result))
+  expect_true("biodiversity_protection" %in% names(result))
+  expect_true("water_twi" %in% names(result))
+  expect_true("landscape_fragmentation" %in% names(result))
+  expect_true("social_accessibility" %in% names(result))
 
   # Check that values are in expected ranges
-  expect_true(result$carbon >= 0)
-  expect_true(result$biodiversity >= 0)
-  expect_true(result$water >= 0 && result$water <= 1)
-  expect_true(result$fragmentation >= 0 && result$fragmentation <= 100)
-  expect_true(result$accessibility >= 0 && result$accessibility <= 1)
+  expect_true(result$carbon_biomass >= 0)
+  expect_true(result$biodiversity_protection >= 0)
+  expect_true(result$water_twi >= 0 && result$water_twi <= 1)
+  expect_true(result$landscape_fragmentation >= 0 && result$landscape_fragmentation <= 100)
+  expect_true(result$social_accessibility >= 0 && result$social_accessibility <= 1)
 })
 
 test_that("Real parcel survives CRS harmonization", {
@@ -195,12 +195,12 @@ test_that("Real parcel survives CRS harmonization", {
   # Compute with preprocessing (should harmonize CRS)
   result <- nemeton_compute(
     units, layers,
-    indicators = "carbon",
+    indicators = "carbon_biomass",
     preprocess = TRUE
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon" %in% names(result))
+  expect_true("carbon_biomass" %in% names(result))
 })
 
 test_that("Real parcel metadata is preserved through computation", {
@@ -220,7 +220,7 @@ test_that("Real parcel metadata is preserved through computation", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
 
   # Original metadata should be preserved
   meta <- attr(result, "metadata")

@@ -88,21 +88,25 @@ normalize_indicators <- function(data,
 
   # Auto-detect indicators if not specified
   if (is.null(indicators)) {
-    # v0.1.0 indicator names
-    v1_indicators <- c(
-      "carbon", "biodiversity", "water",
-      "fragmentation", "accessibility"
-    )
+    all_cols <- names(data)
+
+    # v0.6.0+ indicator names (family_subname format)
+    known_indicators <- list_indicators()
+    v6_indicators <- intersect(all_cols, known_indicators)
 
     # v0.2.0+ family indicators (C1, C2, W1, etc.)
-    all_cols <- names(data)
     family_pattern <- "^[A-Z][0-9]" # Matches C1, W1, F1, etc.
     family_indicators <- grep(family_pattern, all_cols, value = TRUE)
 
-    # Combine both
+    # Family index columns (family_carbon, family_water, etc.)
+    family_index_pattern <- "^family_"
+    family_index_indicators <- grep(family_index_pattern, all_cols, value = TRUE)
+
+    # Combine all
     indicators <- unique(c(
-      intersect(all_cols, v1_indicators),
-      family_indicators
+      v6_indicators,
+      family_indicators,
+      family_index_indicators
     ))
 
     if (length(indicators) == 0) {

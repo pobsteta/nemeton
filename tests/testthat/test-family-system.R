@@ -183,15 +183,15 @@ test_that("normalize_indicators maintains backward compatibility", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
-  units$carbon <- c(50, 60, 55)
-  units$water <- c(10, 15, 12)
+  units$carbon_biomass <- c(50, 60, 55)
+  units$water_twi <- c(10, 15, 12)
 
   # Should work without family detection
   result <- normalize_indicators(units, method = "minmax")
 
   expect_s3_class(result, "sf")
-  expect_true("carbon" %in% names(result))
-  expect_true("water" %in% names(result))
+  expect_true("carbon_biomass" %in% names(result))
+  expect_true("water_twi" %in% names(result))
 })
 
 # ==============================================================================
@@ -244,7 +244,7 @@ test_that("nemeton_radar maintains backward compatibility with indicator mode", 
 
   # v0.1.0 style workflow
   units <- massif_demo_units[1:3, ]
-  results <- nemeton_compute(units, layers, indicators = c("carbon", "water"))
+  results <- nemeton_compute(units, layers, indicators = c("carbon_biomass", "water_twi"))
   normalized <- normalize_indicators(results, method = "minmax")
 
   # Should work without family mode

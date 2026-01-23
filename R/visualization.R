@@ -93,13 +93,34 @@ plot_indicators_map <- function(data,
 
   # Auto-detect indicators if not specified
   if (is.null(indicators)) {
-    possible_indicators <- c(
-      "carbon", "biodiversity", "water", "fragmentation", "accessibility",
-      "carbon_norm", "biodiversity_norm", "water_norm",
-      "fragmentation_norm", "accessibility_norm",
+    all_cols <- names(data)
+
+    # v0.6.0+ indicator names from list_indicators()
+    known_indicators <- list_indicators()
+    v6_indicators <- intersect(all_cols, known_indicators)
+
+    # Normalized versions (indicator_name_norm)
+    norm_indicators <- grep("_norm$", all_cols, value = TRUE)
+
+    # Family indicators (C1, W1, etc.) and family indices (family_carbon, etc.)
+    family_pattern <- "^[A-Z][0-9]"
+    family_indicators <- grep(family_pattern, all_cols, value = TRUE)
+    family_index_pattern <- "^family_"
+    family_index_indicators <- grep(family_index_pattern, all_cols, value = TRUE)
+
+    # Composite indices
+    composite_indicators <- intersect(all_cols, c(
       "composite_index", "ecosystem_health", "wilderness_index"
-    )
-    indicators <- intersect(names(data), possible_indicators)
+    ))
+
+    # Combine all
+    indicators <- unique(c(
+      v6_indicators,
+      norm_indicators,
+      family_indicators,
+      family_index_indicators,
+      composite_indicators
+    ))
 
     if (length(indicators) == 0) {
       msg_error("viz_no_indicators")

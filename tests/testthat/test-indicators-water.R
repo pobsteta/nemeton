@@ -15,7 +15,7 @@ test_that("indicator_water_network calculates stream density within parcels", {
 
   units <- massif_demo_units[1:5, ]
 
-  # Use "water" layer (actual name in massif_demo, not "watercourses")
+  # Use "water_twi" layer (actual name in massif_demo, not "watercourses")
   density <- indicator_water_network(units, layers, watercourse_layer = "water")
 
   # Test output

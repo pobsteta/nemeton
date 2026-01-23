@@ -20,7 +20,7 @@ nemeton_compute(
 \item{layers}{A \code{nemeton_layers} object containing spatial data layers}
 
 \item{indicators}{Character vector of indicator names to calculate, or "all" for all available.
-Available indicators: "carbon", "biodiversity", "water", "fragmentation", "accessibility"}
+See \code{\link{list_indicators}} for available indicators from the 12-family framework.}
 
 \item{preprocess}{Logical. Automatically harmonize CRS and crop layers? Default TRUE.}
 
@@ -88,7 +88,5 @@ results <- nemeton_compute(
 
 }
 \seealso{
-\code{\link{indicator_carbon}}, \code{\link{indicator_biodiversity}},
-\code{\link{indicator_water}}, \code{\link{indicator_fragmentation}},
-\code{\link{indicator_accessibility}}
+\code{\link{list_indicators}} for available indicators in the 12-family framework
 }

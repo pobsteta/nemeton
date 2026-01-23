@@ -243,41 +243,6 @@ test_that("indicator_carbon_ndvi with trend option (future implementation)", {
 })
 
 # ==============================================================================
-# BACKWARD COMPATIBILITY: OLD indicator_carbon()
-# ==============================================================================
-
-test_that("old indicator_carbon() still works with deprecation warning", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:3, ]
-
-  # Should work but warn about deprecation
-  expect_warning(
-    carbon <- indicator_carbon(units, layers),
-    "deprecated"
-  )
-
-  # Should still produce valid output
-  expect_type(carbon, "double")
-  expect_length(carbon, 3)
-})
-
-test_that("indicator_carbon() produces same results as before (regression)", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:5, ]
-
-  # Calculate with old function (suppressing deprecation warning)
-  suppressWarnings(carbon_old <- indicator_carbon(units, layers))
-
-  # Should be positive values
-  expect_true(all(!is.na(carbon_old)))
-  expect_true(all(carbon_old > 0))
-})
-
-# ==============================================================================
 # INTEGRATION WITH nemeton_compute()
 # ==============================================================================
 

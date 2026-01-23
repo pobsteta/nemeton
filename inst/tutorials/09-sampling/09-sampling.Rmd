@@ -1042,7 +1042,7 @@ Le nombre de strates dépend des combinaisons présentes sur la zone.
 
 ### Exercice 3.1 : Créer les strates
 
-```{r strata-setup}
+```{r strata-setup, exercise.timelimit=3000}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
@@ -1083,7 +1083,7 @@ grid_sf <- st_sf(geometry = grid_points) |>
 grid_buffers <- st_buffer(grid_sf, config$plot_radius)
 
 # Calcul couverture forestière
-forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret, use_parallel = TRUE)
+forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret)
 
 # Calcul pente (vectorisé avec exactextractr)
 if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
