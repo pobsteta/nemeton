@@ -37,9 +37,9 @@
 #' units <- nemeton_units(
 #'   polygons,
 #'   metadata = list(
-#'     site_name = "Forêt de Fontainebleau",
+#'     site_name = "For\u00eat de Fontainebleau",
 #'     year = 2024,
-#'     source = "IGN BD Forêt v2"
+#'     source = "IGN BD For\u00eat v2"
 #'   )
 #' )
 #'
@@ -117,7 +117,7 @@ nemeton_units <- function(x, id_col = NULL, metadata = list(), validate = TRUE) 
 print.nemeton_units <- function(x, ...) {
   meta <- attr(x, "metadata")
 
-  cat("\n── nemeton_units ───────────────\n\n")
+  cat("\n\u2500\u2500 nemeton_units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n")
 
   if (!is.null(meta$site_name)) {
     cat("Site:", meta$site_name, "\n")
@@ -152,7 +152,7 @@ print.nemeton_units <- function(x, ...) {
 summary.nemeton_units <- function(object, ...) {
   meta <- attr(object, "metadata")
 
-  cat("\n── Nemeton Units Summary ───────\n\n")
+  cat("\n\u2500\u2500 Nemeton Units Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n")
 
   cat("Number of units:", nrow(object), "\n")
   cat("CRS:", if (!is.null(meta$crs)) meta$crs$input else "Unknown", "\n")
@@ -288,23 +288,23 @@ nemeton_layers <- function(rasters = NULL, vectors = NULL, validate = TRUE) {
 #' @return Invisible x
 #' @export
 print.nemeton_layers <- function(x, ...) {
-  cat("\n── nemeton_layers object ───────\n\n")
+  cat("\n\u2500\u2500 nemeton_layers object \u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n")
 
-  cat("── Rasters (", length(x$rasters), ") ──\n\n", sep = "")
+  cat("\u2500\u2500 Rasters (", length(x$rasters), ") \u2500\u2500\n\n", sep = "")
   if (length(x$rasters) > 0) {
     for (name in names(x$rasters)) {
       status <- if (x$rasters[[name]]$loaded) "[loaded]" else "[not loaded]"
-      cat("•", name, ":", basename(x$rasters[[name]]$path), status, "\n")
+      cat("\u2022", name, ":", basename(x$rasters[[name]]$path), status, "\n")
     }
   } else {
     cat("  (none)\n")
   }
 
-  cat("\n── Vectors (", length(x$vectors), ") ──\n\n", sep = "")
+  cat("\n\u2500\u2500 Vectors (", length(x$vectors), ") \u2500\u2500\n\n", sep = "")
   if (length(x$vectors) > 0) {
     for (name in names(x$vectors)) {
       status <- if (x$vectors[[name]]$loaded) "[loaded]" else "[not loaded]"
-      cat("•", name, ":", basename(x$vectors[[name]]$path), status, "\n")
+      cat("\u2022", name, ":", basename(x$vectors[[name]]$path), status, "\n")
     }
   } else {
     cat("  (none)\n")
@@ -323,7 +323,7 @@ print.nemeton_layers <- function(x, ...) {
 #' @return Invisible object
 #' @export
 summary.nemeton_layers <- function(object, ...) {
-  cat("\n── Nemeton Layers Summary ──────\n\n")
+  cat("\n\u2500\u2500 Nemeton Layers Summary \u2500\u2500\u2500\u2500\u2500\u2500\n\n")
 
   cat("Rasters:", length(object$rasters), "\n")
   cat("Vectors:", length(object$vectors), "\n")

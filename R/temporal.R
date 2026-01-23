@@ -300,7 +300,7 @@ print.nemeton_temporal <- function(x, ...) {
 
   if (x$metadata$n_complete < x$metadata$n_units) {
     cat(sprintf(
-      "  ⚠ %d units not present in all periods\n",
+      "  \u26a0 %d units not present in all periods\n",
       x$metadata$n_units - x$metadata$n_complete
     ))
   }

@@ -1,7 +1,7 @@
 #' Productive & Economic Services Indicators (Family P)
 #'
 #' Functions for calculating timber production and economic value indicators:
-#' - P1: Standing timber volume (m³/ha) via allometric models
+#' - P1: Standing timber volume (m\u00b3/ha) via allometric models
 #' - P2: Site productivity index (growth potential)
 #' - P3: Timber quality score (commercial value potential)
 #'
@@ -12,7 +12,7 @@ NULL
 
 #' P1: Standing Timber Volume Indicator
 #'
-#' Calculates standing timber volume (m³/ha) using IFN allometric equations
+#' Calculates standing timber volume (m\u00b3/ha) using IFN allometric equations
 #' based on species, diameter (DBH), and height data.
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
@@ -24,21 +24,21 @@ NULL
 #' @param column_name Character. Name for output column. Default "P1".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added column: P1 (standing volume in m³/ha)
+#' @return sf object with added column: P1 (standing volume in m\u00b3/ha)
 #'
 #' @details
 #' **Calculation** (IFN tarif method):
 #' \itemize{
-#'   \item Lookup species-specific IFN equation: \code{V = a × DBH^b × H^c}
+#'   \item Lookup species-specific IFN equation: \code{V = a \u00d7 DBH^b \u00d7 H^c}
 #'   \item Calculate individual tree volume
-#'   \item Scale by tree density: \code{P1 = V_individual × density_stems_ha}
+#'   \item Scale by tree density: \code{P1 = V_individual \u00d7 density_stems_ha}
 #' }
 #'
 #' **Species Fallback**:
 #' If species code not found in IFN tables, uses genus-level equations:
 #' \itemize{
-#'   \item Broadleaf species → BROADLEAF_GENUS equation
-#'   \item Conifer species → CONIFER_GENUS equation
+#'   \item Broadleaf species \u2192 BROADLEAF_GENUS equation
+#'   \item Conifer species \u2192 CONIFER_GENUS equation
 #' }
 #'
 #' **Data Requirements**:
@@ -108,7 +108,7 @@ indicator_productive_volume <- function(units,
     if (height_field %in% names(units) && !is.na(units[[height_field]][i])) {
       height_m <- units[[height_field]][i]
     } else {
-      # Simple height estimation from DBH (Näslund function approximation)
+      # Simple height estimation from DBH (N\u00e4slund function approximation)
       height_m <- 1.3 + (dbh_cm * 0.65) # Rough approximation
     }
 
@@ -121,14 +121,14 @@ indicator_productive_volume <- function(units,
     }
 
     # Calculate individual tree volume using IFN tarif formula
-    # V = a × DBH^b × H^c
+    # V = a \u00d7 DBH^b \u00d7 H^c
     a <- as.numeric(equation$a)
     b <- as.numeric(equation$b)
     c <- as.numeric(equation$c)
 
     volume_individual_m3 <- a * (dbh_cm^b) * (height_m^c)
 
-    # Scale by density to get m³/ha
+    # Scale by density to get m\u00b3/ha
     volume_per_ha <- volume_individual_m3 * density_ha
 
     p1_values[i] <- volume_per_ha
@@ -140,7 +140,7 @@ indicator_productive_volume <- function(units,
   # Add to result
   result[[column_name]] <- p1_values
 
-  cli::cli_alert_success("Calculated {column_name}: Standing timber volume (m³/ha)")
+  cli::cli_alert_success("Calculated {column_name}: Standing timber volume (m\u00b3/ha)")
 
   return(result)
 }
@@ -158,14 +158,14 @@ indicator_productive_volume <- function(units,
 #' @param column_name Character. Name for output column. Default "P2".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added column: P2 (annual increment in m³/ha/yr)
+#' @return sf object with added column: P2 (annual increment in m\u00b3/ha/yr)
 #'
 #' @details
 #' **Calculation**:
 #' \itemize{
 #'   \item Lookup reference productivity from ONF/IFN tables
-#'   \item Match by species × fertility class × climate zone
-#'   \item P2 = annual increment (m³/ha/year) for the site
+#'   \item Match by species \u00d7 fertility class \u00d7 climate zone
+#'   \item P2 = annual increment (m\u00b3/ha/year) for the site
 #' }
 #'
 #' **Fertility Classes**:
@@ -272,7 +272,7 @@ indicator_productive_station <- function(units,
   # Add to result
   result[[column_name]] <- p2_values
 
-  cli::cli_alert_success("Calculated {column_name}: Site productivity index (m³/ha/yr)")
+  cli::cli_alert_success("Calculated {column_name}: Site productivity index (m\u00b3/ha/yr)")
 
   return(result)
 }

@@ -298,18 +298,18 @@ get_family_name <- function(family_code, lang = NULL) {
   )
 
   family_names_fr <- c(
-    B = "B – Biodiversité / V - Vivant",
-    W = "W – Water (eau) / I - Infiltrée",
-    A = "A – Air (microclimat) / V – Vaporeuse",
-    F = "F – Fertilité / R - Riche",
-    C = "C – Carbone / E – Énergétique",
-    L = "L – Landscape (paysage) / E – Esthétique",
-    T = "T – Trame / N - Nervurée",
-    R = "R – Résilience / F - Flexible",
-    S = "S – Social / U – Usages récréatifs",
-    P = "P – Productif / É – Économie forestière",
-    E = "E – Énergie / C – Climat",
-    N = "N – Naturalité / S – Sauvage"
+    B = "B \u2013 Biodiversit\u00e9 / V - Vivant",
+    W = "W \u2013 Water (eau) / I - Infiltr\u00e9e",
+    A = "A \u2013 Air (microclimat) / V \u2013 Vaporeuse",
+    F = "F \u2013 Fertilit\u00e9 / R - Riche",
+    C = "C \u2013 Carbone / E \u2013 \u00c9nerg\u00e9tique",
+    L = "L \u2013 Landscape (paysage) / E \u2013 Esth\u00e9tique",
+    T = "T \u2013 Trame / N - Nervur\u00e9e",
+    R = "R \u2013 R\u00e9silience / F - Flexible",
+    S = "S \u2013 Social / U \u2013 Usages r\u00e9cr\u00e9atifs",
+    P = "P \u2013 Productif / \u00c9 \u2013 \u00c9conomie foresti\u00e8re",
+    E = "E \u2013 \u00c9nergie / C \u2013 Climat",
+    N = "N \u2013 Naturalit\u00e9 / S \u2013 Sauvage"
   )
 
   names_list <- if (lang == "fr") family_names_fr else family_names_en
