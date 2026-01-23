@@ -12,17 +12,45 @@
   - Fonctions `calculate_sample_size()` et `sample_size_table()`
   - Tableau de référence interactif pour CV (10-40%) et erreur (5-20%)
   - Correction pour population finie
+
 * **Sampling Frame** - Construction d'une grille de candidats avec contraintes terrain
-* **Contraintes terrain** - Filtrage par couvert forestier (≥70%) et pente (≤45%)
-* **Stratification** - 16 strates (4 altitude × 2 couvert × 2 pente)
-* **Tirage GRTS** - Échantillonnage spatialement équilibré avec `spsurvey`
+  - Filtrage par couvert forestier (≥70%) et pente (≤45%)
+  - Utilisation des données T01/T03/T07 (zone_etude, bd_foret, mnt, chm_complet)
+
+* **Stratification triple** - Basée sur 3 critères forestiers
+  - **Hauteur CHM LiDAR** : 4 classes (H1-H4) par quartiles
+  - **Type de peuplement** (BD Forêt v2 tfv) : FEU/CON/MIX/POP/AUT
+  - **Position topographique** (TPI) : Bas/Milieu/Haut de pente
+  - Calcul TPI avec `focal()` (rayon 100m)
+
+* **Tirage GRTS stratifié** - Échantillonnage spatialement équilibré
+  - Package `spsurvey::grts()` avec allocation proportionnelle
+  - Oversample par strate pour placettes de remplacement
+  - Fallback `BalancedSampling::lpm2` si GRTS échoue
+
 * **Réseau de chemins** - Construction réseau avec `sfnetworks` depuis BD TOPO
-* **Optimisation TSP** - Parcours optimal avec package `TSP` (nearest insertion + 2-opt)
-* **Export terrain** - GeoPackage, GPX et CSV pour navigation GPS
+  - Filtrage chemins praticables à pied
+  - Calcul poids avec `edge_length()`
+
+* **Optimisation TSP** - Parcours optimal avec package `TSP`
+  - Méthode nearest insertion + 2-opt
+  - Visualisation avec distinction Base/Remplacement
+
+* **Export terrain** - Formats multiples pour GPS
+  - GeoPackage (SIG)
+  - GPX (navigation GPS)
+  - CSV (tableau récapitulatif avec coordonnées WGS84)
+
+### Improvements
+
+* **Harmonisation data_dir** - Chemin unifié sur tous les tutoriels T01-T09
+  - `~/.local/share/nemeton/tutorial_data`
+  - Suppression variable `cache_dir` dans T08
 
 ### Dependencies
 
 * Added `spsurvey (>= 5.0.0)` to Suggests
+* Added `BalancedSampling (>= 1.6.0)` to Suggests
 * Added `sfnetworks (>= 0.6.0)` to Suggests
 * Added `TSP (>= 1.2.0)` to Suggests
 * Added `tidygraph (>= 1.2.0)` to Suggests
@@ -35,6 +63,7 @@
 
 **References**:
 - Stevens, D. L., & Olsen, A. R. (2004). Spatially balanced sampling of natural resources. *JASA*, 99(465), 262-278.
+- Grafström, A., & Tillé, Y. (2013). Doubly balanced spatial sampling with spreading and restitution of auxiliary totals. *Environmetrics*, 24(2), 120-131.
 - Hahsler, M., & Hornik, K. (2007). TSP—Infrastructure for the traveling salesperson problem. *Journal of Statistical Software*, 23(2).
 
 ---
