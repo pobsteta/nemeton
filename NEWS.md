@@ -2,7 +2,7 @@
 
 ## v0.6.0 - Legacy Indicators Removal
 
-**Date**: 2026-01-21
+**Date**: 2026-01-23
 
 ### BREAKING CHANGES ⚠️
 
@@ -62,6 +62,76 @@ The legacy indicators were functional placeholders from the v0.1.0 MVP. The new 
 - **Improved flexibility**: Multiple sub-indicators per ecosystem service
 
 All legacy indicators had superior replacements available since v0.2.0 (January 2026).
+
+---
+
+# nemeton 0.5.2
+
+## v0.5.2 - Tutorial 09 Sampling + TSP
+
+**Date**: 2026-01-23
+
+### New Features
+
+#### Tutorial 09: Échantillonnage de calibration LiDAR HD + TSP (180 min)
+
+* **Dimensionnement optimal** - Calcul du nombre de placettes basé sur la formule n = t² × CV² / E²
+  - Fonctions `calculate_sample_size()` et `sample_size_table()`
+  - Tableau de référence interactif pour CV (10-40%) et erreur (5-20%)
+  - Correction pour population finie
+
+* **Sampling Frame** - Construction d'une grille de candidats avec contraintes terrain
+  - Filtrage par couvert forestier (≥70%) et pente (≤45%)
+  - Utilisation des données T01/T03/T07 (zone_etude, bd_foret, mnt, chm_complet)
+
+* **Stratification triple** - Basée sur 3 critères forestiers
+  - **Hauteur CHM LiDAR** : 4 classes (H1-H4) par quartiles
+  - **Type de peuplement** (BD Forêt v2 tfv) : FEU/CON/MIX/POP/AUT
+  - **Position topographique** (TPI) : Bas/Milieu/Haut de pente
+  - Calcul TPI avec `focal()` (rayon 100m)
+
+* **Tirage GRTS stratifié** - Échantillonnage spatialement équilibré
+  - Package `spsurvey::grts()` avec allocation proportionnelle
+  - Oversample par strate pour placettes de remplacement
+  - Fallback `BalancedSampling::lpm2` si GRTS échoue
+
+* **Réseau de chemins** - Construction réseau avec `sfnetworks` depuis BD TOPO
+  - Filtrage chemins praticables à pied
+  - Calcul poids avec `edge_length()`
+
+* **Optimisation TSP** - Parcours optimal avec package `TSP`
+  - Méthode nearest insertion + 2-opt
+  - Visualisation avec distinction Base/Remplacement
+
+* **Export terrain** - Formats multiples pour GPS
+  - GeoPackage (SIG)
+  - GPX (navigation GPS)
+  - CSV (tableau récapitulatif avec coordonnées WGS84)
+
+### Improvements
+
+* **Harmonisation data_dir** - Chemin unifié sur tous les tutoriels T01-T09
+  - `~/.local/share/nemeton/tutorial_data`
+  - Suppression variable `cache_dir` dans T08
+
+### Dependencies
+
+* Added `spsurvey (>= 5.0.0)` to Suggests
+* Added `BalancedSampling (>= 1.6.0)` to Suggests
+* Added `sfnetworks (>= 0.6.0)` to Suggests
+* Added `TSP (>= 1.2.0)` to Suggests
+* Added `tidygraph (>= 1.2.0)` to Suggests
+* Added `igraph (>= 1.4.0)` to Suggests
+
+### Documentation
+
+* Updated `vignettes/tutorial-guide.Rmd` with Tutorial 09
+* Updated `TUTORIAL_INSTALL.md` with Tutorial 09
+
+**References**:
+- Stevens, D. L., & Olsen, A. R. (2004). Spatially balanced sampling of natural resources. *JASA*, 99(465), 262-278.
+- Grafström, A., & Tillé, Y. (2013). Doubly balanced spatial sampling with spreading and restitution of auxiliary totals. *Environmetrics*, 24(2), 120-131.
+- Hahsler, M., & Hornik, K. (2007). TSP—Infrastructure for the traveling salesperson problem. *Journal of Statistical Software*, 23(2).
 
 ---
 
@@ -131,6 +201,132 @@ Release featuring the complete Tutorial 07 (Advanced LiDAR) and CRAN compliance 
 * Removed development artifacts (RELEASE_*.md, .RData, .Rhistory, etc.)
 * Updated `.Rbuildignore` and `.gitignore`
 * Excluded spec-kit directories from version control
+
+---
+
+# nemeton 0.4.0
+
+## v0.4.0 - Complete 12-Family Ecosystem Services Referential
+
+**Date**: 2026-01-05
+
+### Overview
+
+Major release completing the **12-family ecosystem services referential** with 4 new indicator families (S, P, E, N) and advanced multi-criteria analysis tools. This release adds 11 new indicator functions, 3 analysis functions, and brings the total to **29 indicators across 12 families**.
+
+### New Indicator Families
+
+#### Social & Recreational Family (Famille S) - 3 Indicators
+
+* **`indicator_social_trails()`** (S1) - Trail density
+  - Calculates recreational trail density (km/ha) from OSM or local data
+  - Supports footways, cycleways, and bridleways
+  - Output: 0-5+ km/ha trail density
+
+* **`indicator_social_accessibility()`** (S2) - Multimodal accessibility score
+  - Distance-based scoring for road, parking, and public transport access
+  - Configurable distance thresholds and weights
+  - Output: 0-100 accessibility score
+
+* **`indicator_social_proximity()`** (S3) - Population proximity
+  - Population within configurable buffer zones (5/10/20 km)
+  - Supports INSEE population grid or custom data
+  - Output: Total population count within buffers
+
+#### Productive & Economic Family (Famille P) - 3 Indicators
+
+* **`indicator_productive_volume()`** (P1) - Standing timber volume
+  - IFN-based allometric equations by species
+  - Genus-level fallback for rare species
+  - Output: m³/ha standing volume
+
+* **`indicator_productive_station()`** (P2) - Site productivity index
+  - Fertility × climate × species interaction
+  - Based on French forestry station classification
+  - Output: m³/ha/yr potential productivity
+
+* **`indicator_productive_quality()`** (P3) - Timber quality score
+  - Form factor, diameter distribution, defect assessment
+  - Configurable quality criteria weights
+  - Output: 0-100 quality score
+
+#### Energy & Climate Family (Famille E) - 2 Indicators
+
+* **`indicator_energy_fuelwood()`** (E1) - Fuelwood potential
+  - Harvest residues + coppice biomass estimation
+  - Species-specific conversion factors
+  - Output: tonnes DM/ha/yr mobilizable fuelwood
+
+* **`indicator_energy_avoidance()`** (E2) - CO2 emission avoidance
+  - ADEME emission factors for energy substitution
+  - Supports energy and material substitution scenarios
+  - Output: tCO2eq/ha/yr avoided emissions
+
+#### Naturalness & Wilderness Family (Famille N) - 3 Indicators
+
+* **`indicator_naturalness_distance()`** (N1) - Infrastructure distance
+  - Distance to roads, buildings, powerlines from OSM
+  - Minimum distance to nearest infrastructure
+  - Output: meters to nearest infrastructure
+
+* **`indicator_naturalness_continuity()`** (N2) - Forest patch continuity
+  - Connected forest area calculation
+  - Based on landscape patch analysis
+  - Output: hectares of continuous forest
+
+* **`indicator_naturalness_composite()`** (N3) - Wilderness composite index
+  - Multiplicative aggregation of N1 × N2 × T1 × B1
+  - Weighted aggregation option available
+  - Output: 0-100 wilderness score
+
+### New Analysis Functions
+
+#### Multi-Criteria Decision Support
+
+* **`identify_pareto_optimal()`** - Pareto optimality analysis
+  - Identifies non-dominated solutions across multiple objectives
+  - Supports both maximization and minimization objectives
+  - Returns data with `is_optimal` column for Pareto-optimal parcels
+
+* **`cluster_parcels()`** - Multi-family clustering
+  - K-means and hierarchical clustering methods
+  - Automatic optimal k determination via silhouette analysis
+  - Returns cluster assignments with centroid profiles
+
+* **`plot_tradeoff()`** - Trade-off visualization
+  - 2D scatterplot with optional Pareto frontier overlay
+  - Color and size mapping for additional dimensions
+  - Label support for parcel identification
+
+### Enhanced Features
+
+* **12-axis radar plots** - `nemeton_radar()` now supports all 12 families
+* **12×12 correlation matrix** - `compute_family_correlations()` extended
+* **12-family hotspot detection** - `identify_hotspots()` updated
+* **Normalization presets** - Added for S, P, E, N families
+
+### New Demo Dataset
+
+* **`massif_demo_units_extended`** - Complete 12-family reference dataset
+  - 20 demo parcels with all 29 indicators
+  - 12 pre-calculated family composite indices
+  - Synthetic but realistic value distributions
+
+### New Vignettes
+
+* **`complete-referential_fr.Rmd`** - 12-family workflow demonstration
+* **`multi-criteria-optimization_fr.Rmd`** - Pareto, clustering, and trade-off analysis
+
+### Dependencies
+
+* Added `cluster` package dependency for silhouette analysis
+* Added `ggrepel` to Suggests for label positioning
+
+### Documentation
+
+* Updated README with v0.4.0 feature highlights
+* Updated pkgdown site configuration
+* Full roxygen2 documentation for all new functions
 
 ---
 

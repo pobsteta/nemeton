@@ -208,6 +208,12 @@ reference:
     contents:
     - nemeton-package
 
+  - title: "Utilities / Utilitaires"
+    desc: "Parallel processing helpers / Fonctions de traitement parallèle"
+    contents:
+    - smart_map
+    - smart_map_sf
+
   - title: "Internal Functions / Fonctions internes"
     desc: "Internal helper functions (for developers) / Fonctions d'aide internes (pour développeurs)"
     contents:

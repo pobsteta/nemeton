@@ -129,7 +129,7 @@ Le package `rappdirs` permet de trouver le bon emplacement selon votre système 
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 
 # Créer le répertoire s'il n'existe pas
@@ -180,7 +180,7 @@ cat("CRS:", st_crs(zone_etude_sf)$epsg, "(Lambert-93)\n\n")
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -202,7 +202,7 @@ library(ggplot2)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
 if (file.exists(zone_filepath)) {
@@ -291,7 +291,7 @@ library(happign)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -310,7 +310,7 @@ if (file.exists(zone_filepath)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 parcelles_filepath <- file.path(data_dir, "parcelles.gpkg")
@@ -360,7 +360,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 parcelles_filepath <- file.path(data_dir, "parcelles.gpkg")
@@ -400,7 +400,7 @@ library(ggplot2)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 parcelles <- st_read(file.path(data_dir, "parcelles.gpkg"), quiet = TRUE)
@@ -457,7 +457,7 @@ library(happign)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -475,7 +475,7 @@ if (file.exists(zone_filepath)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 mnt_filepath <- file.path(data_dir, "mnt.tif")
@@ -531,7 +531,7 @@ library(ggplot2)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 mnt_filepath <- file.path(data_dir, "mnt.tif")
@@ -588,7 +588,7 @@ library(ggplot2)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
@@ -647,7 +647,7 @@ library(happign)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -665,7 +665,7 @@ if (file.exists(zone_filepath)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 bdforet_filepath <- file.path(data_dir, "bd_foret.gpkg")
@@ -710,7 +710,7 @@ library(happign)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -728,7 +728,7 @@ if (file.exists(zone_filepath)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 routes_filepath <- file.path(data_dir, "routes.gpkg")
@@ -771,7 +771,7 @@ library(happign)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -789,7 +789,7 @@ if (file.exists(zone_filepath)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 courseau_filepath <- file.path(data_dir, "cours_eau.gpkg")
@@ -830,7 +830,7 @@ library(ggplot2)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -882,7 +882,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -899,7 +899,7 @@ if (file.exists(zone_filepath)) {
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 # Vérifier si lidarHD est disponible
 if (requireNamespace("lidarHD", quietly = TRUE)) {
@@ -944,7 +944,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 zone_filepath <- file.path(data_dir, "zone_etude.gpkg")
@@ -964,7 +964,7 @@ if (requireNamespace("lidarHD", quietly = TRUE)) {
   if (requireNamespace("rappdirs", quietly = TRUE)) {
     data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
   } else {
-    data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+    data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
   }
   dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
   lidar_dir <- file.path(data_dir, "lidar_hd")
@@ -1045,7 +1045,7 @@ library(lidaRtRee)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -1145,7 +1145,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 

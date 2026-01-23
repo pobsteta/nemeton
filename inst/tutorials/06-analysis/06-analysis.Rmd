@@ -23,11 +23,11 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 ```
 
-## Introduction
+## Bienvenue
 
-### Objectifs du Tutorial
+### Objectifs du tutoriel
 
-Bienvenue dans le **sixième et dernier tutoriel** de la série nemeton !
+Bienvenue dans le **sixième tutoriel** de la série nemeton !
 
 Vous avez calculé tous les indicateurs des 12 familles dans les tutoriels précédents. Maintenant, vous allez apprendre à :
 
@@ -43,7 +43,7 @@ Vous avez calculé tous les indicateurs des 12 familles dans les tutoriels préc
 Ce tutoriel utilise les données produites par le Tutorial 05 :
 
 ```
-~/nemeton_tutorial_data/
+~/.local/share/nemeton/tutorial_data/
 └── parcelles.gpkg
     ├── Indicateurs normalisés (*_norm)
     ├── Moyennes par famille (family_C, family_B, ...)
@@ -1322,7 +1322,7 @@ quiz(
 
 ---
 
-## Conclusion
+## Synthèse
 
 ### Félicitations !
 

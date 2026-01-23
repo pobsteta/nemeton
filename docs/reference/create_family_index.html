@@ -3,7 +3,7 @@
 score_water). Automatically detects indicator families from column name prefixes
 (C_, W_, F_, L_, etc.) and computes weighted averages."><meta property="og:description" content="Aggregates sub-indicators into family-level composite scores (e.g., score_carbon,
 score_water). Automatically detects indicator families from column name prefixes
-(C_, W_, F_, L_, etc.) and computes weighted averages."></head><body>
+(C_, W_, F_, L_, etc.) and computes weighted averages."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -11,7 +11,7 @@ score_water). Automatically detects indicator families from column name prefixes
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,8 +44,7 @@ score_water). Automatically detects indicator families from column name prefixes
 </nav><div class="container template-reference-topic">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Create Family Composite Indices</h1>
+      <img src="../logo.svg" class="logo" alt=""><h1>Create Family Composite Indices</h1>
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/R/family-system.R" class="external-link"><code>R/family-system.R</code></a></small>
       <div class="d-none name"><code>create_family_index.Rd</code></div>
     </div>
@@ -119,9 +118,9 @@ If NULL, equal weights are used.</p></dd>
 <span class="r-in"><span><span class="co"># Setup multi-family indicators</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span></span></span>
-<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">C1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">50</span>, <span class="fl">10</span><span class="op">)</span>  <span class="co"># Carbon biomass</span></span></span>
-<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">C2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">70</span>, <span class="fl">10</span><span class="op">)</span>  <span class="co"># Carbon NDVI</span></span></span>
-<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">W1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">15</span>, <span class="fl">5</span><span class="op">)</span>   <span class="co"># Water network</span></span></span>
+<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">C1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">50</span>, <span class="fl">10</span><span class="op">)</span> <span class="co"># Carbon biomass</span></span></span>
+<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">C2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">70</span>, <span class="fl">10</span><span class="op">)</span> <span class="co"># Carbon NDVI</span></span></span>
+<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">W1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">15</span>, <span class="fl">5</span><span class="op">)</span> <span class="co"># Water network</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Create family indices</span></span></span>
 <span class="r-in"><span><span class="va">units_fam</span> <span class="op">&lt;-</span> <span class="fu">create_family_index</span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span></span>

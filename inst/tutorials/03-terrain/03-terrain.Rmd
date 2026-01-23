@@ -74,7 +74,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -136,7 +136,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -277,7 +277,7 @@ faster(grassDir = "/usr/lib/grass84")
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -373,7 +373,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -479,7 +479,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -553,7 +553,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -630,7 +630,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -728,7 +728,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -938,7 +938,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1130,7 +1130,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1451,7 +1451,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1534,7 +1534,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1636,7 +1636,7 @@ library(terra)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1770,7 +1770,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1832,7 +1832,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1904,7 +1904,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -1965,7 +1965,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
@@ -2015,7 +2015,7 @@ library(sf)
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
 } else {
-  data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 ```
 
