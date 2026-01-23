@@ -1,6 +1,6 @@
 # Installation des Tutoriels nemeton
 
-Ce guide détaille l'installation complète pour exécuter les 8 tutoriels interactifs nemeton.
+Ce guide détaille l'installation complète pour exécuter les 9 tutoriels interactifs nemeton.
 
 ## Prérequis Système
 
@@ -91,7 +91,18 @@ install.packages(c(
 ))
 ```
 
-### 7. Package nemeton
+### 7. Packages Échantillonnage et TSP (Tutorial 09)
+
+```r
+install.packages(c(
+  "spsurvey",          # Échantillonnage GRTS
+  "BalancedSampling",  # Fallback LPM2
+  "sfnetworks",        # Réseau routier
+  "TSP"                # Optimisation parcours
+))
+```
+
+### 8. Package nemeton
 
 ```r
 # Depuis GitHub (dernière version)
@@ -114,7 +125,8 @@ check_nemeton_tutorials <- function() {
     ign = c("happign"),
     lidar = c("lidR"),
     lidar_avance = c("lasR", "lidaRtRee", "future", "future.apply"),
-    analysis = c("leaflet", "corrplot", "patchwork", "fmsb")
+    analysis = c("leaflet", "corrplot", "patchwork", "fmsb"),
+    sampling = c("spsurvey", "BalancedSampling", "sfnetworks", "TSP")
   )
 
   all_ok <- TRUE
@@ -190,6 +202,7 @@ learnr::run_tutorial("05-complete", package = "nemeton")       # 40 min
 learnr::run_tutorial("06-analysis", package = "nemeton")       # 50 min
 learnr::run_tutorial("07-lidar-advanced", package = "nemeton") # 90 min (optionnel)
 learnr::run_tutorial("08-coregistration", package = "nemeton") # 130 min (optionnel)
+learnr::run_tutorial("09-sampling", package = "nemeton")       # 60 min (optionnel)
 ```
 
 ## Structure du Cache

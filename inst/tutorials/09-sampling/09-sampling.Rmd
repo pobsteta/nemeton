@@ -1131,7 +1131,7 @@ candidates <- grid_sf |>
 frame <- candidates |> filter(valid)
 ```
 
-```{r strata, exercise=TRUE, exercise.setup="strata-setup", exercice.timelimit=2400}
+```{r strata, exercise=TRUE, exercise.setup="strata-setup", exercice.timelimit=3000, fig.width=12, fig.height=8}
 # Créer les strates basées sur CHM, BD Forêt et TPI
 cat("=== Création des strates ===\n\n")
 
