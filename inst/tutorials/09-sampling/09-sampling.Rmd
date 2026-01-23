@@ -1308,12 +1308,18 @@ if (requireNamespace("spsurvey", quietly = TRUE)) {
   # Tirage GRTS avec fallback sur BalancedSampling
   method <- "GRTS"  # Méthode utilisée (pour le titre)
 
+  # Calculer l'oversample par strate (n_over est PAR STRATE dans spsurvey)
+  # On veut environ n_replacement au total, donc on divise par le nombre de strates
+  n_over_per_stratum <- max(1, ceiling(config$n_replacement / n_strata))
+  cat("Oversample par strate:", n_over_per_stratum, "\n")
+  cat("Oversample total estimé:", n_over_per_stratum * n_strata, "\n\n")
+
   sample_result <- tryCatch({
     result <- spsurvey::grts(
       sframe = frame,
       n_base = allocation,
       stratum_var = "stratum",
-      n_over = config$n_replacement
+      n_over = n_over_per_stratum
     )
     method <<- "GRTS stratifié"
     result
