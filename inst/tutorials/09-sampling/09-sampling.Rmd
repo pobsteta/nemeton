@@ -195,12 +195,14 @@ load_or_download_raster <- function(cache_path, download_fn, zone) {
 # FONCTION DE CALCUL PARALLÈLE DE LA COUVERTURE FORESTIÈRE
 # =============================================================================
 
-#' Calcul de la couverture forestière (parallélisé si possible)
+#' Calcul de la couverture forestière
 #' @param grid_buffers sf object avec les buffers de placettes
 #' @param bd_foret sf object avec les polygones forestiers
-#' @param use_parallel Utiliser le calcul parallèle (défaut: TRUE si furrr disponible
+#' @param use_parallel Utiliser le calcul parallèle (défaut: FALSE dans learnr)
 #' @return Vecteur des proportions de couverture forestière
-calc_forest_cover_all <- function(grid_buffers, bd_foret, use_parallel = NULL) {
+#' @note La parallélisation est désactivée par défaut car future::multisession
+#'       cause des erreurs "getcwd() failed" dans les tutoriels learnr
+calc_forest_cover_all <- function(grid_buffers, bd_foret, use_parallel = FALSE) {
   if (is.null(bd_foret)) {
     return(rep(1, nrow(grid_buffers)))
   }
@@ -216,26 +218,10 @@ calc_forest_cover_all <- function(grid_buffers, bd_foret, use_parallel = NULL) {
     sum(as.numeric(st_area(intersection))) / as.numeric(st_area(buffer))
   }
 
-  # Déterminer si on utilise le parallèle
-  if (is.null(use_parallel)) {
-    use_parallel <- requireNamespace("furrr", quietly = TRUE) &&
-                    requireNamespace("future", quietly = TRUE)
-  }
-
   n <- nrow(grid_buffers)
 
-  if (use_parallel && requireNamespace("furrr", quietly = TRUE)) {
-    # Configuration future si pas déjà fait
-    if (!inherits(future::plan(), "multisession")) {
-      future::plan(future::multisession, workers = max(1, parallel::detectCores() - 1))
-    }
-    furrr::future_map_dbl(
-      1:n, calc_one,
-      buffers = grid_buffers,
-      foret = bd_foret,
-      .progress = FALSE
-    )
-  } else if (requireNamespace("purrr", quietly = TRUE)) {
+  # Mode séquentiel avec purrr (plus propre que sapply)
+  if (requireNamespace("purrr", quietly = TRUE)) {
     purrr::map_dbl(1:n, calc_one, buffers = grid_buffers, foret = bd_foret)
   } else {
     sapply(1:n, calc_one, buffers = grid_buffers, foret = bd_foret)
@@ -924,16 +910,6 @@ grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "cen
 grid_sf <- st_sf(geometry = grid_points) |>
   st_intersection(zone_etude) |>
   mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
-
-# Configuration parallèle avec future/furrr
-if (requireNamespace("future", quietly = TRUE) &&
-    requireNamespace("furrr", quietly = TRUE)) {
-  n_cores <- max(1, parallel::detectCores() - 1)
-  future::plan(future::multisession, workers = n_cores)
-  use_parallel <- TRUE
-} else {
-  use_parallel <- FALSE
-}
 ```
 
 ```{r constraints, exercise=TRUE, exercise.setup="constraints-setup", exercise.timelimit=2400}
@@ -941,38 +917,27 @@ if (requireNamespace("future", quietly = TRUE) &&
 cat("Création des buffers de placette...\n")
 grid_buffers <- st_buffer(grid_sf, config$plot_radius)
 
-# Contrainte 1: Couverture forestière (parallélisé avec furrr)
+# Contrainte 1: Couverture forestière
 cat("Calcul de la couverture forestière...\n")
 if (!is.null(bd_foret)) {
   # Fonction pour calculer le % de couvert forestier d'un buffer
-
   calc_forest_cover <- function(i, buffers, foret) {
     buffer <- buffers[i, ]
-    intersection <- st_intersection(buffer, foret)
-    if (nrow(intersection) == 0) return(0)
+    intersection <- tryCatch(
+      st_intersection(buffer, foret),
+      error = function(e) NULL
+    )
+    if (is.null(intersection) || nrow(intersection) == 0) return(0)
     sum(as.numeric(st_area(intersection))) / as.numeric(st_area(buffer))
   }
 
-  # Calcul parallèle avec furrr si disponible
-  if (use_parallel && requireNamespace("furrr", quietly = TRUE)) {
-    cat(sprintf("  Mode parallèle (%d workers)...\n",
-                future::nbrOfWorkers()))
-    forest_cover <- furrr::future_map_dbl(
-      1:nrow(grid_buffers),
-      calc_forest_cover,
-      buffers = grid_buffers,
-      foret = bd_foret,
-      .progress = FALSE
-    )
-  } else {
-    cat("  Mode séquentiel...\n")
-    forest_cover <- purrr::map_dbl(
-      1:nrow(grid_buffers),
-      calc_forest_cover,
-      buffers = grid_buffers,
-      foret = bd_foret
-    )
-  }
+  # Calcul séquentiel avec purrr
+  forest_cover <- purrr::map_dbl(
+    1:nrow(grid_buffers),
+    calc_forest_cover,
+    buffers = grid_buffers,
+    foret = bd_foret
+  )
 } else {
   # Si pas de BD Forêt, considérer tout comme forêt
   forest_cover <- rep(1, nrow(grid_buffers))
@@ -1157,6 +1122,11 @@ cat("Nombre de strates:", length(unique(frame$stratum)), "\n")
 cat("Candidats par strate:\n")
 print(strata_summary, n = 16)
 
+# Sauvegarder la frame avec strates dans le cache pour les exercices suivants
+frame_cache <- file.path(data_dir, "frame_stratified.gpkg")
+st_write(frame, frame_cache, delete_dsn = TRUE, quiet = TRUE)
+cat("\nFrame sauvegardée dans le cache pour l'exercice suivant.\n")
+
 # Visualiser les strates
 ggplot() +
   geom_sf(data = zone_etude, fill = "white", color = "black") +
@@ -1175,65 +1145,20 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 } else {
   data_dir <- file.path(path.expand("~"), "nemeton_tutorial_data")
 }
+
+# Charger la zone d'étude
 zone_etude <- tryCatch(
   st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
   error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
 )
-bd_foret <- tryCatch(st_read(file.path(data_dir, "bd_foret.gpkg"), quiet = TRUE), error = function(e) NULL)
-slope <- tryCatch(rast(file.path(data_dir, "slope.tif")), error = function(e) NULL)
-mnt <- tryCatch(rast(file.path(data_dir, "mnt.tif")), error = function(e) NULL)
+
+# Charger la frame stratifiée depuis le cache (créée dans l'exercice 3.1)
+frame_cache <- file.path(data_dir, "frame_stratified.gpkg")
+frame <- st_read(frame_cache, quiet = TRUE)
 # config est hérité du setup principal
-
-# Recréer la frame complète avec strates
-grid_points <- st_make_grid(zone_etude, cellsize = config$grid_step, what = "centers")
-grid_sf <- st_sf(geometry = grid_points) |>
-  st_intersection(zone_etude) |>
-  mutate(candidate_id = paste0("C", sprintf("%04d", row_number())))
-grid_buffers <- st_buffer(grid_sf, config$plot_radius)
-
-# Calcul parallélisé de la couverture forestière
-forest_cover <- calc_forest_cover_all(grid_buffers, bd_foret)
-
-# Calcul pente (vectorisé)
-if (!is.null(slope) && requireNamespace("exactextractr", quietly = TRUE)) {
-  mean_slope <- exactextractr::exact_extract(slope, grid_buffers, "mean")
-} else {
-  mean_slope <- rep(20, nrow(grid_buffers))
-}
-
-# Calcul altitude (vectorisé)
-if (!is.null(mnt) && requireNamespace("exactextractr", quietly = TRUE)) {
-  mean_altitude <- exactextractr::exact_extract(mnt, grid_buffers, "mean")
-} else {
-  mean_altitude <- rep(1000, nrow(grid_buffers))
-}
-
-candidates <- grid_sf |>
-  mutate(
-    forest_cover = forest_cover,
-    mean_slope = mean_slope,
-    mean_altitude = mean_altitude,
-    valid = forest_cover >= config$min_forest_cover &
-            !is.na(mean_slope) & mean_slope <= config$max_slope
-  )
-frame <- candidates |> filter(valid)
-
-# Strates
-altitude_breaks <- quantile(frame$mean_altitude, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
-cover_median <- median(frame$forest_cover, na.rm = TRUE)
-slope_median <- median(frame$mean_slope, na.rm = TRUE)
-
-frame <- frame |>
-  mutate(
-    strat_altitude = cut(mean_altitude, breaks = altitude_breaks,
-                         labels = c("A1", "A2", "A3", "A4"), include.lowest = TRUE),
-    strat_cover = ifelse(forest_cover >= cover_median, "C_high", "C_low"),
-    strat_slope = ifelse(mean_slope >= slope_median, "S_steep", "S_gentle"),
-    stratum = paste(strat_altitude, strat_cover, strat_slope, sep = "_")
-  )
 ```
 
-```{r grts, exercise=TRUE, exercise.setup="grts-setup", exercise.timelimit=2400}
+```{r grts, exercise=TRUE, exercise.setup="grts-setup"}
 # Tirage GRTS avec spsurvey
 set.seed(config$seed)
 
