@@ -1,3 +1,70 @@
+# nemeton 0.6.0 (Development)
+
+## v0.6.0 - Legacy Indicators Removal
+
+**Date**: 2026-01-23
+
+### BREAKING CHANGES ⚠️
+
+**Removed Legacy Indicators (v0.1.0)**
+
+The original 5 MVP indicators have been removed in favor of the comprehensive 12-family framework (32+ indicators). This is a breaking change for code using v0.1.0 indicators.
+
+#### Removed Functions
+
+- `indicator_carbon()` - **Use instead:** `indicator_carbon_biomass()` (C1) or `indicator_carbon_ndvi()` (C2)
+- `indicator_biodiversity()` - **Use instead:** `indicator_biodiversity_protection()` (B1), `indicator_biodiversity_structure()` (B2), or `indicator_biodiversity_connectivity()` (B3)
+- `indicator_water()` - **Use instead:** `indicator_water_network()` (W1), `indicator_water_wetlands()` (W2), or `indicator_water_twi()` (W3)
+- `indicator_fragmentation()` - **Use instead:** `indicator_landscape_fragmentation()` (L1) or `indicator_landscape_edge()` (L2)
+- `indicator_accessibility()` - **Use instead:** `indicator_social_accessibility()` (S2) or `indicator_social_trails()` (S1)
+
+#### Migration Guide
+
+**Before (v0.1.0-v0.5.x):**
+```r
+# Old API
+results <- nemeton_compute(
+  units, layers,
+  indicators = c("carbon", "biodiversity", "water")
+)
+```
+
+**After (v0.6.0+):**
+```r
+# New API with family-based indicators
+results <- nemeton_compute(
+  units, layers,
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi")
+)
+
+# Or use list_indicators() to see all available indicators
+available <- list_indicators(return_type = "details")
+```
+
+#### Updated Core Functions
+
+- `nemeton_compute()` - Now uses `list_indicators()` for available indicators
+- `list_indicators()` - Returns all 31 indicators from the 12-family framework
+- `compute_indicator()` - Dynamic dispatch supporting all family-based indicators
+
+#### Files Removed
+
+- `R/indicators-biophysical.R` - Legacy indicator implementations (567 lines)
+- `tests/testthat/test-indicators-biophysical.R` - Legacy tests (414 lines, 26 tests)
+
+### Rationale
+
+The legacy indicators were functional placeholders from the v0.1.0 MVP. The new 12-family framework (introduced in v0.2.0-v0.4.0) provides:
+
+- **More comprehensive coverage**: 31 indicators vs 5
+- **Better scientific foundation**: Species-specific allometric models, multiple data sources
+- **Clearer organization**: 12 families (C, W, F, L, B, R, T, A, S, P, E, N)
+- **Improved flexibility**: Multiple sub-indicators per ecosystem service
+
+All legacy indicators had superior replacements available since v0.2.0 (January 2026).
+
+---
+
 # nemeton 0.5.2
 
 ## v0.5.2 - Tutorial 09 Sampling + TSP
