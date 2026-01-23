@@ -29,7 +29,7 @@ test_that("Tutorial 05 contains required sections", {
 
   # Required sections for complete calculation tutorial
   required_sections <- c(
-    "Introduction|Assemblage",
+    "Bienvenue|Introduction|Assemblage",
     "Normalisation",
     "Famille|Family",
     "Composite|I_nemeton"
