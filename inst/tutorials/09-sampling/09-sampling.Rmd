@@ -198,11 +198,8 @@ load_or_download_raster <- function(cache_path, download_fn, zone) {
 #' Calcul de la couverture forestière
 #' @param grid_buffers sf object avec les buffers de placettes
 #' @param bd_foret sf object avec les polygones forestiers
-#' @param use_parallel Utiliser le calcul parallèle (défaut: FALSE dans learnr)
 #' @return Vecteur des proportions de couverture forestière
-#' @note La parallélisation est désactivée par défaut car future::multisession
-#'       cause des erreurs "getcwd() failed" dans les tutoriels learnr
-calc_forest_cover_all <- function(grid_buffers, bd_foret, use_parallel = FALSE) {
+calc_forest_cover_all <- function(grid_buffers, bd_foret) {
   if (is.null(bd_foret)) {
     return(rep(1, nrow(grid_buffers)))
   }
