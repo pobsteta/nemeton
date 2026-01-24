@@ -5,7 +5,6 @@ output:
     progressive: true
     allow_skip: true
     language: fr
-    css: css/custom.css
 runtime: shiny_prerendered
 description: "Apprendre à recaler les positions des placettes d'inventaire forestier sur les données LiDAR aéroporté"
 ---

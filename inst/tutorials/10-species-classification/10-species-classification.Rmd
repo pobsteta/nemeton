@@ -1,0 +1,1912 @@
+---
+title: "Tutorial 10 : Classification d'Essences au Niveau Couronne"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    language: fr
+runtime: shiny_prerendered
+description: "Classification supervisée d'essences forestières en fusionnant LiDAR HD et orthophotos IRC"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(sf)
+library(terra)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+library(purrr)
+
+knitr::opts_chunk$set(
+
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  exercise.timelimit = 300
+)
+
+# Configuration des timeouts réseau
+NETWORK_TIMEOUT <- 300
+options(
+  timeout = NETWORK_TIMEOUT,
+  HTTPUserAgent = "nemeton-tutorial/1.0"
+)
+
+# =============================================================================
+# SYSTÈME DE CACHE (cohérent avec Tutorials 01-09)
+# =============================================================================
+
+# Répertoire de données (partagé avec les autres tutoriels)
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+data_dir <- normalizePath(data_dir, mustWork = FALSE)
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+
+# Sous-répertoire pour les résultats de classification
+classif_dir <- file.path(data_dir, "result_classification")
+dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
+
+# =============================================================================
+# CONFIGURATION PAR DÉFAUT
+# =============================================================================
+
+config <- list(
+  # Modélisation
+  n_trees = 500,              # Nombre d'arbres Random Forest
+  mtry_ratio = 0.33,          # Ratio de features à tester
+  min_node_size = 5,          # Taille minimale des noeuds
+
+
+  # Validation
+  n_folds = 5,                # Nombre de folds CV
+  block_size = 100,           # Taille des blocs spatiaux (m)
+
+  # Filtrage
+  min_samples_per_class = 10, # Minimum d'échantillons par classe
+  prob_threshold = 0.5,       # Seuil de confiance pour "incertain"
+
+  # CRS
+  crs = 2154,                 # Lambert 93
+
+  # Seed
+  seed = 2024
+)
+
+# =============================================================================
+# FONCTIONS UTILITAIRES
+# =============================================================================
+
+#' Vérification du CRS
+check_crs <- function(x, expected_crs = 2154) {
+  actual_crs <- st_crs(x)$epsg
+  if (is.na(actual_crs) || actual_crs != expected_crs) {
+    warning(sprintf("CRS: attendu EPSG:%d, obtenu EPSG:%s", expected_crs, actual_crs))
+    return(FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' Vérification des colonnes requises
+assert_columns <- function(df, required_cols) {
+  missing <- setdiff(required_cols, names(df))
+  if (length(missing) > 0) {
+    stop(sprintf("Colonnes manquantes: %s", paste(missing, collapse = ", ")))
+  }
+  invisible(TRUE)
+}
+
+#' Sauvegarde checkpoint
+save_checkpoint <- function(obj, name, cache_dir = classif_dir) {
+  path <- file.path(cache_dir, paste0(name, ".rds"))
+  saveRDS(obj, path)
+  cat(sprintf("Checkpoint sauvegardé: %s\n", basename(path)))
+  invisible(path)
+}
+
+#' Chargement checkpoint
+load_checkpoint <- function(name, cache_dir = classif_dir) {
+  path <- file.path(cache_dir, paste0(name, ".rds"))
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  cat(sprintf("Checkpoint chargé: %s\n", basename(path)))
+  readRDS(path)
+}
+
+#' Table de correspondance des essences
+get_species_lookup <- function() {
+  data.frame(
+    code = c("PIAB", "ABAL", "FASY", "TABA", "PISY", "LADE", "QUPE", "QURO"),
+    nom_fr = c("Épicéa", "Sapin", "Hêtre", "Frêne", "Pin sylvestre",
+               "Mélèze", "Chêne pédonculé", "Chêne rouvre"),
+    nom_latin = c("Picea abies", "Abies alba", "Fagus sylvatica",
+                  "Fraxinus excelsior", "Pinus sylvestris", "Larix decidua",
+                  "Quercus petraea", "Quercus robur"),
+    groupe = c("Résineux", "Résineux", "Feuillu", "Feuillu", "Résineux",
+               "Résineux", "Feuillu", "Feuillu"),
+    stringsAsFactors = FALSE
+  )
+}
+```
+
+## Bienvenue ! {data-progressive=TRUE}
+
+### Objectifs du tutoriel
+
+Ce tutoriel vous apprendra à **classifier les essences forestières au niveau de la couronne individuelle** en combinant des données **LiDAR HD** et des **orthophotos IRC** (Infrarouge Couleur).
+
+**Durée estimée** : 3h30 (210 minutes)
+
+**Prérequis** :
+
+- Tutorial 01 (Acquisition) - zone d'étude et données IGN
+- Tutorial 02 (LiDAR) - métriques LiDAR de base
+- Tutorial 07 (LiDAR avancé) - segmentation des couronnes
+
+**À la fin de ce tutoriel, vous saurez** :
+
+1. Préparer et valider les données d'entrée (couronnes, labels, rasters)
+2. Calculer des features LiDAR par couronne (hauteur, densité, forme)
+3. Calculer des features spectrales IRC par couronne (NDVI, ratios)
+4. Assembler un dataset d'apprentissage avec contrôles qualité
+5. Mettre en place une validation spatiale (blockCV)
+6. Entraîner et comparer des modèles (Random Forest, XGBoost)
+7. Évaluer les performances et gérer l'incertitude
+8. Cartographier les prédictions avec indicateur de confiance
+
+---
+
+### Schéma du pipeline
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PIPELINE CLASSIFICATION D'ESSENCES                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. DONNÉES               2. FEATURES              3. VALIDATION            │
+│  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐         │
+│  │ Couronnes    │         │ LiDAR:       │         │ blockCV:     │         │
+│  │ (T07)        │───────▶ │ hauteur,     │───────▶ │ blocs        │         │
+│  │ IRC (IGN)    │         │ densité,     │         │ spatiaux     │         │
+│  │ Labels       │         │ forme        │         │ train/test   │         │
+│  │ terrain      │         │              │         └──────────────┘         │
+│  └──────────────┘         │ IRC:         │                │                 │
+│                           │ NDVI,        │                ▼                 │
+│                           │ ratios       │         ┌──────────────┐         │
+│                           └──────────────┘         │ 4. MODÈLES   │         │
+│                                                    │ RF, XGBoost  │         │
+│  7. EXPORT                6. INCERTITUDE           │ tuning       │         │
+│  ┌──────────────┐         ┌──────────────┐         └──────┬───────┘         │
+│  │ GeoPackage   │◀────────│ Seuil proba  │◀────────┬──────┘                 │
+│  │ Cartes       │         │ Flag incert. │         │                        │
+│  │ Modèle .rds  │         └──────────────┘    ┌────┴────┐                   │
+│  └──────────────┘                             │5.MÉTRIQUES                  │
+│                                               │Accuracy │                   │
+│                                               │F1, Kappa│                   │
+│                                               └─────────┘                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Ce que ce tutoriel n'est pas
+
+Ce tutoriel **n'est pas** :
+
+- Un benchmark exhaustif de méthodes deep learning
+- Une segmentation universelle applicable partout
+- Un workflow de production industriel
+- Une comparaison multi-capteurs (Sentinel-2, drone, etc.)
+
+L'objectif est pédagogique : comprendre le pipeline complet de classification supervisée au niveau couronne.
+
+---
+
+### Quiz 1 : Concepts de base
+
+```{r quiz-1, echo=FALSE}
+quiz(
+  question("Quel est l'avantage de classifier au niveau couronne plutôt qu'au niveau pixel ?",
+    answer("Plus rapide à calculer"),
+    answer("Objet écologique pertinent (arbre individuel)", correct = TRUE),
+    answer("Nécessite moins de données terrain"),
+    answer("Fonctionne sans LiDAR"),
+    allow_retry = TRUE
+  ),
+  question("Que signifie IRC dans 'orthophoto IRC' ?",
+    answer("Image Raster Compressée"),
+    answer("Infrarouge Couleur", correct = TRUE),
+    answer("Index de Réflectance Canopée"),
+    answer("Image Radiométrique Calibrée"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi combiner LiDAR et IRC pour la classification d'essences ?",
+    answer("Le LiDAR apporte la structure 3D, l'IRC la signature spectrale", correct = TRUE),
+    answer("C'est obligatoire réglementairement"),
+    answer("Pour réduire le coût de l'acquisition"),
+    answer("Le LiDAR seul ne fonctionne pas"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 1 : Prérequis et environnement {data-progressive=TRUE}
+
+### Introduction
+
+Avant de commencer, vérifions que tous les packages nécessaires sont installés et que l'environnement est correctement configuré.
+
+### Exercice 1.1 : Vérifier les packages
+
+```{r check-packages, exercise=TRUE}
+# Liste des packages requis
+required_packages <- c(
+  # Données spatiales
+  "sf", "terra", "exactextractr",
+  # Manipulation
+  "dplyr", "tidyr", "purrr",
+  # Visualisation
+  "ggplot2", "patchwork",
+  # Modélisation
+  "ranger", "xgboost",
+  # Validation spatiale
+  "blockCV"
+)
+
+# Vérifier l'installation
+check_packages <- function(packages) {
+  results <- sapply(packages, function(pkg) {
+    installed <- requireNamespace(pkg, quietly = TRUE)
+    version <- if (installed) as.character(packageVersion(pkg)) else "NON INSTALLÉ"
+    data.frame(package = pkg, installed = installed, version = version)
+  }, simplify = FALSE)
+
+  do.call(rbind, results)
+}
+
+status <- check_packages(required_packages)
+print(status)
+
+# Résumé
+n_installed <- sum(status$installed)
+n_total <- nrow(status)
+cat(sprintf("\n%d/%d packages installés\n", n_installed, n_total))
+
+if (n_installed < n_total) {
+  missing <- status$package[!status$installed]
+  cat("\nPour installer les packages manquants:\n")
+  cat(sprintf('install.packages(c("%s"))\n', paste(missing, collapse = '", "')))
+}
+```
+
+### Exercice 1.2 : Vérifier le cache des tutoriels précédents
+
+```{r check-cache, exercise=TRUE}
+# Vérifier les fichiers disponibles dans le cache
+cat("=== Cache des tutoriels ===\n")
+cat("Répertoire:", data_dir, "\n\n")
+
+# Fichiers essentiels pour ce tutoriel
+essential_files <- c(
+  "zone_etude.gpkg",      # Tutorial 01
+  "bd_foret.gpkg",        # Tutorial 01
+  "chm_complet.tif",      # Tutorial 07 (CHM)
+  "crowns_complet.gpkg",  # Tutorial 07 (couronnes segmentées)
+  "tree_metrics_complet.gpkg"  # Tutorial 07 (métriques par arbre)
+)
+
+# Vérifier chaque fichier
+for (f in essential_files) {
+  path <- file.path(data_dir, f)
+  exists <- file.exists(path)
+  size <- if (exists) sprintf("%.1f MB", file.size(path) / 1024^2) else "MANQUANT"
+  status <- if (exists) "OK" else "MANQUANT"
+  cat(sprintf("  [%s] %s (%s)\n", status, f, size))
+}
+
+# Fichiers optionnels
+optional_files <- c(
+  "mnt.tif",              # Tutorial 01
+  "pente.tif",            # Tutorial 03
+  "metriques_lidar.gpkg"  # Tutorial 02
+)
+
+cat("\nFichiers optionnels:\n")
+for (f in optional_files) {
+  path <- file.path(data_dir, f)
+  exists <- file.exists(path)
+  status <- if (exists) "OK" else "manquant"
+  cat(sprintf("  [%s] %s\n", status, f))
+}
+```
+
+### Exercice 1.3 : Configuration de l'environnement
+
+```{r config-env, exercise=TRUE}
+# Afficher la configuration
+cat("=== Configuration du tutoriel ===\n\n")
+
+cat("Modélisation:\n")
+cat(sprintf("  Arbres RF: %d\n", config$n_trees))
+cat(sprintf("  mtry ratio: %.2f\n", config$mtry_ratio))
+cat(sprintf("  min.node.size: %d\n", config$min_node_size))
+
+cat("\nValidation:\n")
+cat(sprintf("  Folds CV: %d\n", config$n_folds))
+cat(sprintf("  Taille blocs: %d m\n", config$block_size))
+
+cat("\nFiltrage:\n")
+cat(sprintf("  Min samples/classe: %d\n", config$min_samples_per_class))
+cat(sprintf("  Seuil confiance: %.0f%%\n", config$prob_threshold * 100))
+
+cat("\nParamètres techniques:\n")
+cat(sprintf("  CRS: EPSG:%d (Lambert-93)\n", config$crs))
+cat(sprintf("  Seed: %d\n", config$seed))
+
+# Session info
+cat("\n=== Session R ===\n")
+cat(sprintf("R version: %s\n", R.version.string))
+cat(sprintf("Platform: %s\n", R.version$platform))
+```
+
+## Section 2 : Chargement des données {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons charger les données depuis le cache des tutoriels précédents :
+- **Couronnes segmentées** (Tutorial 07)
+- **Zone d'étude** (Tutorial 01)
+- **CHM LiDAR** (Tutorial 07)
+- **Orthophoto IRC** (à télécharger ou générer)
+
+### Exercice 2.1 : Charger les couronnes segmentées
+
+```{r load-crowns-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+classif_dir <- file.path(data_dir, "result_classification")
+dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
+```
+
+```{r load-crowns, exercise=TRUE, exercise.setup="load-crowns-setup"}
+# Charger les couronnes segmentées depuis Tutorial 07
+crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
+
+if (file.exists(crowns_file)) {
+  cat("Chargement des couronnes depuis le cache (T07)...\n")
+  crowns <- st_read(crowns_file, quiet = TRUE)
+
+  # Vérifier et ajouter un ID unique si nécessaire
+  if (!"treeID" %in% names(crowns)) {
+    crowns$treeID <- seq_len(nrow(crowns))
+  }
+
+  cat(sprintf("\n=== Couronnes chargées ===\n"))
+  cat(sprintf("Nombre: %d\n", nrow(crowns)))
+  cat(sprintf("CRS: EPSG:%s\n", st_crs(crowns)$epsg))
+  cat(sprintf("Colonnes: %s\n", paste(names(crowns)[1:min(10, ncol(crowns))], collapse = ", ")))
+
+  # Statistiques de surface
+  crowns$area_m2 <- as.numeric(st_area(crowns))
+  cat(sprintf("\nSurface couronne:\n"))
+  cat(sprintf("  Min: %.1f m²\n", min(crowns$area_m2)))
+  cat(sprintf("  Médiane: %.1f m²\n", median(crowns$area_m2)))
+  cat(sprintf("  Max: %.1f m²\n", max(crowns$area_m2)))
+
+} else {
+  cat("ATTENTION: Fichier crowns_complet.gpkg non trouvé!\n")
+  cat("Veuillez d'abord exécuter le Tutorial 07 (LiDAR avancé).\n")
+  cat("\nCréation de couronnes synthétiques pour la démonstration...\n")
+
+  # Charger la zone d'étude
+  zone_file <- file.path(data_dir, "zone_etude.gpkg")
+  if (file.exists(zone_file)) {
+    zone <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+  } else {
+    zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                     coords = c("x", "y"), crs = 2154) |>
+      st_buffer(500)
+  }
+
+  # Générer des points aléatoires
+  set.seed(config$seed)
+  pts <- st_sample(zone, 500)
+
+  # Créer des couronnes circulaires de taille variable
+  crowns <- st_sf(
+    treeID = seq_along(pts),
+    geometry = st_buffer(pts, runif(length(pts), 2, 8))
+  )
+  crowns$area_m2 <- as.numeric(st_area(crowns))
+
+  cat(sprintf("Couronnes synthétiques créées: %d\n", nrow(crowns)))
+}
+
+# Visualisation
+ggplot() +
+  geom_sf(data = crowns[1:min(200, nrow(crowns)), ],
+          fill = "forestgreen", alpha = 0.5, color = "darkgreen", linewidth = 0.2) +
+  labs(title = "Aperçu des couronnes (200 premières)",
+       subtitle = sprintf("n = %d couronnes", nrow(crowns))) +
+  theme_minimal()
+```
+
+### Exercice 2.2 : Charger les données terrain (labels)
+
+```{r load-labels-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
+```
+
+```{r load-labels, exercise=TRUE, exercise.setup="load-labels-setup"}
+# Charger les données terrain avec les essences
+# Option 1: Depuis le package nemeton (données coregistration)
+# Option 2: Depuis les fichiers CSV du ABA model
+
+cat("=== Chargement des labels terrain ===\n\n")
+
+# Essayer de charger depuis le package
+trees_terrain <- NULL
+
+# Option 1: Données de coregistration (treesCoregistration)
+coreg_file <- file.path(data_dir, "placettes_coregistrees.gpkg")
+if (file.exists(coreg_file)) {
+  cat("Chargement depuis placettes_coregistrees.gpkg...\n")
+  trees_terrain <- st_read(coreg_file, quiet = TRUE)
+}
+
+# Option 2: Fichiers CSV du ABA model
+if (is.null(trees_terrain)) {
+  trees_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
+  if (dir.exists(trees_dir)) {
+    cat("Chargement depuis les fichiers terrain du package...\n")
+    tree_files <- list.files(trees_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE)
+
+    if (length(tree_files) > 0) {
+      trees_terrain <- purrr::map_dfr(tree_files[1:min(10, length(tree_files))], function(f) {
+        df <- read.csv(f, stringsAsFactors = FALSE)
+        df$source_file <- basename(f)
+        df
+      })
+      cat(sprintf("Fichiers chargés: %d\n", min(10, length(tree_files))))
+    }
+  }
+}
+
+# Option 3: Générer des données synthétiques
+if (is.null(trees_terrain) || nrow(trees_terrain) == 0) {
+  cat("Génération de données synthétiques...\n")
+  set.seed(config$seed)
+
+  # Essences possibles (distribution réaliste pour le Vercors)
+  species_pool <- c("PIAB", "ABAL", "FASY", "TABA")
+  species_prob <- c(0.35, 0.30, 0.25, 0.10)
+
+  n_trees <- 200
+  trees_terrain <- data.frame(
+    tree_id = 1:n_trees,
+    ess = sample(species_pool, n_trees, replace = TRUE, prob = species_prob),
+    Dia_cm = runif(n_trees, 15, 60),
+    Haut_m = runif(n_trees, 10, 35)
+  )
+}
+
+# Table de correspondance
+species_lookup <- get_species_lookup()
+
+# Ajouter les noms français
+if ("ess" %in% names(trees_terrain)) {
+  trees_terrain <- trees_terrain |>
+    left_join(species_lookup, by = c("ess" = "code"))
+}
+
+# Statistiques
+cat("\n=== Distribution des essences ===\n")
+if ("ess" %in% names(trees_terrain)) {
+  ess_counts <- table(trees_terrain$ess)
+  for (e in names(sort(ess_counts, decreasing = TRUE))) {
+    nom <- species_lookup$nom_fr[species_lookup$code == e]
+    if (length(nom) == 0) nom <- e
+    cat(sprintf("  %s (%s): %d arbres\n", e, nom, ess_counts[e]))
+  }
+}
+
+cat(sprintf("\nTotal arbres avec label: %d\n", nrow(trees_terrain)))
+
+# Sauvegarder dans le cache
+saveRDS(trees_terrain, file.path(classif_dir, "trees_terrain.rds"))
+```
+
+### Exercice 2.3 : Charger ou télécharger l'orthophoto IRC
+
+```{r load-irc-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger la zone d'étude pour l'emprise
+zone_file <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_file)) {
+  zone_etude <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_etude <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                         coords = c("x", "y"), crs = 2154) |>
+    st_buffer(500)
+}
+```
+
+```{r load-irc, exercise=TRUE, exercise.setup="load-irc-setup", exercise.timelimit=600}
+# Vérifier si IRC existe dans le cache
+irc_file <- file.path(classif_dir, "orthophoto_irc.tif")
+ndvi_file <- file.path(classif_dir, "ndvi.tif")
+
+if (file.exists(irc_file)) {
+  cat("Chargement orthophoto IRC depuis le cache...\n")
+  irc <- rast(irc_file)
+
+} else if (requireNamespace("happign", quietly = TRUE) && curl::has_internet()) {
+  cat("Téléchargement orthophoto IRC depuis IGN...\n")
+  cat("(Cela peut prendre plusieurs minutes...)\n\n")
+
+  # Récupérer l'emprise de la zone d'étude
+  bbox_zone <- st_bbox(zone_etude)
+
+  tryCatch({
+    irc <- happign::get_wms_raster(
+      x = zone_etude,
+      layer = "ORTHOIMAGERY.ORTHOPHOTOS.IRC",
+      res = 0.5,  # 50cm
+      crs = 2154
+    )
+
+    writeRaster(irc, irc_file, overwrite = TRUE)
+    cat("Orthophoto IRC sauvegardée dans le cache.\n")
+  }, error = function(e) {
+    cat("Erreur de téléchargement:", e$message, "\n")
+    cat("Passage en mode offline...\n")
+    irc <<- NULL
+  })
+
+} else {
+  irc <- NULL
+}
+
+# Mode offline : générer données synthétiques
+if (is.null(irc) || !exists("irc")) {
+  cat("\n=== Mode offline: génération de données IRC synthétiques ===\n")
+
+  # Créer un raster basé sur l'emprise de la zone
+  ext_zone <- ext(zone_etude)
+
+  # Générer 3 bandes (NIR, Red, Green) avec valeurs réalistes pour forêt
+  set.seed(config$seed)
+
+  # Template raster
+  template <- rast(ext_zone, resolution = 2, crs = "EPSG:2154")
+  n_cells <- ncell(template)
+
+  # NIR: forte réflectance végétation (100-255)
+  nir <- template
+  values(nir) <- pmax(100, pmin(255, rnorm(n_cells, 180, 30)))
+
+  # Red: absorbé par chlorophylle (30-120)
+  red <- template
+  values(red) <- pmax(30, pmin(150, rnorm(n_cells, 60, 20)))
+
+  # Green: réflectance intermédiaire (50-150)
+  green <- template
+  values(green) <- pmax(40, pmin(180, rnorm(n_cells, 90, 25)))
+
+  irc <- c(nir, red, green)
+  names(irc) <- c("NIR", "Red", "Green")
+
+  # Sauvegarder
+  writeRaster(irc, irc_file, overwrite = TRUE)
+  cat("Données IRC synthétiques générées et sauvegardées.\n")
+}
+
+# Calculer le NDVI
+cat("\nCalcul du NDVI...\n")
+ndvi <- (irc[[1]] - irc[[2]]) / (irc[[1]] + irc[[2]])
+names(ndvi) <- "NDVI"
+writeRaster(ndvi, ndvi_file, overwrite = TRUE)
+
+# Statistiques
+cat("\n=== Orthophoto IRC ===\n")
+cat(sprintf("Résolution: %.2f m\n", res(irc)[1]))
+cat(sprintf("Dimensions: %d x %d pixels\n", ncol(irc), nrow(irc)))
+cat(sprintf("Bandes: %s\n", paste(names(irc), collapse = ", ")))
+
+cat("\n=== NDVI ===\n")
+cat(sprintf("Min: %.3f\n", global(ndvi, "min", na.rm = TRUE)[[1]]))
+cat(sprintf("Moyenne: %.3f\n", global(ndvi, "mean", na.rm = TRUE)[[1]]))
+cat(sprintf("Max: %.3f\n", global(ndvi, "max", na.rm = TRUE)[[1]]))
+
+# Visualisation
+par(mfrow = c(1, 2))
+plot(irc[[1]], main = "NIR", col = gray.colors(100))
+plot(ndvi, main = "NDVI", col = colorRampPalette(c("brown", "yellow", "darkgreen"))(100))
+par(mfrow = c(1, 1))
+```
+
+### Quiz 2 : Données d'entrée
+
+```{r quiz-2, echo=FALSE}
+quiz(
+  question("Que contiennent les 3 bandes d'une orthophoto IRC ?",
+    answer("Rouge, Vert, Bleu"),
+    answer("Proche Infrarouge, Rouge, Vert", correct = TRUE),
+    answer("Infrarouge thermique, Rouge, Bleu"),
+    answer("Ultra-violet, Visible, Infrarouge"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi le NDVI est-il utile pour la classification d'essences ?",
+    answer("Il mesure la vigueur de la végétation, qui varie selon les essences", correct = TRUE),
+    answer("Il indique la hauteur des arbres"),
+    answer("Il détecte les zones non-forestières"),
+    answer("Il remplace le LiDAR"),
+    allow_retry = TRUE
+  ),
+  question("Quel est l'avantage du mode offline avec données synthétiques ?",
+    answer("Meilleure qualité des données"),
+    answer("Permet de tester le pipeline sans connexion internet", correct = TRUE),
+    answer("Plus rapide que le téléchargement"),
+    answer("Obligatoire pour les données IGN"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 3 : Feature Engineering LiDAR {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons calculer des **features LiDAR** pour chaque couronne :
+- Métriques de **hauteur** (max, moyenne, percentiles)
+- Métriques de **densité** verticale (strates)
+- Métriques de **forme** de la couronne
+
+### Exercice 3.1 : Charger le CHM et calculer les métriques de hauteur
+
+```{r lidar-features-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les couronnes
+crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
+if (file.exists(crowns_file)) {
+  crowns <- st_read(crowns_file, quiet = TRUE)
+  if (!"treeID" %in% names(crowns)) crowns$treeID <- seq_len(nrow(crowns))
+} else {
+  # Couronnes synthétiques
+  zone_file <- file.path(data_dir, "zone_etude.gpkg")
+  if (file.exists(zone_file)) {
+    zone <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+  } else {
+    zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                     coords = c("x", "y"), crs = 2154) |> st_buffer(500)
+  }
+  set.seed(2024)
+  pts <- st_sample(zone, 500)
+  crowns <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
+}
+crowns$area_m2 <- as.numeric(st_area(crowns))
+```
+
+```{r lidar-features, exercise=TRUE, exercise.setup="lidar-features-setup", exercise.timelimit=600}
+# Charger le CHM
+chm_file <- file.path(data_dir, "chm_complet.tif")
+mnh_file <- file.path(data_dir, "mnh_complet.tif")
+
+if (file.exists(chm_file)) {
+  chm <- rast(chm_file)
+  cat("CHM chargé depuis chm_complet.tif\n")
+} else if (file.exists(mnh_file)) {
+  chm <- rast(mnh_file)
+  cat("MNH chargé depuis mnh_complet.tif\n")
+} else {
+  # Générer un CHM synthétique
+  cat("Génération d'un CHM synthétique...\n")
+  ext_crowns <- ext(crowns)
+  chm <- rast(ext_crowns, resolution = 1, crs = "EPSG:2154")
+  set.seed(2024)
+  values(chm) <- pmax(0, rnorm(ncell(chm), 20, 8))
+}
+
+cat(sprintf("\nCHM: %.1f - %.1f m\n",
+            global(chm, "min", na.rm = TRUE)[[1]],
+            global(chm, "max", na.rm = TRUE)[[1]]))
+
+# Extraire les métriques de hauteur par couronne avec exactextractr
+cat("\nExtraction des métriques de hauteur par couronne...\n")
+
+# Limiter à un sous-ensemble pour la démo
+n_sample <- min(500, nrow(crowns))
+crowns_sample <- crowns[1:n_sample, ]
+
+if (requireNamespace("exactextractr", quietly = TRUE)) {
+
+  # Extraction avec plusieurs statistiques
+  height_stats <- exactextractr::exact_extract(
+    chm, crowns_sample,
+    fun = c("mean", "stdev", "min", "max", "quantile"),
+    quantiles = c(0.25, 0.50, 0.75, 0.95),
+    append_cols = "treeID"
+  )
+
+  # Renommer les colonnes
+  names(height_stats) <- c("treeID", "z_mean", "z_sd", "z_min", "z_max",
+                           "z_p25", "z_p50", "z_p75", "z_p95")
+
+  # Calculer le CV
+  height_stats$z_cv <- height_stats$z_sd / height_stats$z_mean
+  height_stats$z_cv[!is.finite(height_stats$z_cv)] <- 0
+
+} else {
+  cat("Package exactextractr non disponible, utilisation de terra::extract...\n")
+  height_stats <- terra::extract(chm, vect(crowns_sample), fun = mean, na.rm = TRUE)
+  names(height_stats) <- c("treeID", "z_mean")
+  height_stats$z_sd <- NA
+  height_stats$z_p95 <- height_stats$z_mean * 1.1
+}
+
+# Joindre aux couronnes
+crowns_sample <- crowns_sample |>
+  left_join(height_stats, by = "treeID")
+
+cat(sprintf("\nMétriques extraites pour %d couronnes\n", nrow(crowns_sample)))
+
+# Statistiques
+cat("\n=== Métriques de hauteur ===\n")
+cat(sprintf("z_mean: %.1f ± %.1f m\n", mean(crowns_sample$z_mean, na.rm = TRUE),
+            sd(crowns_sample$z_mean, na.rm = TRUE)))
+cat(sprintf("z_p95:  %.1f ± %.1f m\n", mean(crowns_sample$z_p95, na.rm = TRUE),
+            sd(crowns_sample$z_p95, na.rm = TRUE)))
+
+# Visualisation
+p1 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = z_mean)) +
+  geom_histogram(bins = 30, fill = "forestgreen", alpha = 0.7) +
+  labs(title = "Distribution des hauteurs moyennes", x = "Hauteur (m)", y = "Fréquence") +
+  theme_minimal()
+
+p2 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = z_mean, y = z_p95)) +
+  geom_point(alpha = 0.5, color = "darkgreen") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "z_mean vs z_p95", x = "Hauteur moyenne (m)", y = "Percentile 95 (m)") +
+  theme_minimal()
+
+p1 | p2
+```
+
+### Exercice 3.2 : Calculer les métriques de forme de couronne
+
+```{r crown-shape-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les couronnes avec métriques de hauteur
+crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_height.rds"))
+if (is.null(crowns_sample)) {
+  # Fallback: recharger les couronnes de base
+  crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
+  if (file.exists(crowns_file)) {
+    crowns <- st_read(crowns_file, quiet = TRUE)[1:500, ]
+  } else {
+    zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                     coords = c("x", "y"), crs = 2154) |> st_buffer(500)
+    set.seed(2024)
+    pts <- st_sample(zone, 500)
+    crowns <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
+  }
+  crowns$z_mean <- runif(nrow(crowns), 10, 30)
+  crowns$z_p95 <- crowns$z_mean * 1.1
+  crowns_sample <- crowns
+}
+```
+
+```{r crown-shape, exercise=TRUE, exercise.setup="crown-shape-setup"}
+# Calculer les métriques géométriques de la couronne
+cat("=== Calcul des métriques de forme ===\n\n")
+
+crowns_sample <- crowns_sample |>
+  mutate(
+    # Surface
+    area_m2 = as.numeric(st_area(geometry)),
+
+    # Périmètre (conversion explicite en MULTILINESTRING)
+    perimeter_m = sapply(seq_len(n()), function(i) {
+      tryCatch({
+        geom <- geometry[i]
+        boundary <- st_boundary(geom)
+        as.numeric(st_length(boundary))
+      }, error = function(e) NA_real_)
+    }),
+
+    # Compacité (1 = cercle parfait)
+    compactness = 4 * pi * area_m2 / (perimeter_m^2),
+    compactness = pmin(compactness, 1),  # Cap à 1
+
+    # Rayon équivalent (si cercle de même surface)
+    radius_eq = sqrt(area_m2 / pi),
+
+    # Ratio hauteur / rayon (élancement)
+    ratio_h_radius = z_p95 / radius_eq
+  )
+
+# Statistiques
+cat("Métriques de forme calculées:\n\n")
+
+cat("Surface (m²):\n")
+cat(sprintf("  Min: %.1f, Médiane: %.1f, Max: %.1f\n",
+            min(crowns_sample$area_m2, na.rm = TRUE),
+            median(crowns_sample$area_m2, na.rm = TRUE),
+            max(crowns_sample$area_m2, na.rm = TRUE)))
+
+cat("\nCompacité (0-1):\n")
+cat(sprintf("  Min: %.2f, Médiane: %.2f, Max: %.2f\n",
+            min(crowns_sample$compactness, na.rm = TRUE),
+            median(crowns_sample$compactness, na.rm = TRUE),
+            max(crowns_sample$compactness, na.rm = TRUE)))
+
+cat("\nRatio H/R (élancement):\n")
+cat(sprintf("  Min: %.1f, Médiane: %.1f, Max: %.1f\n",
+            min(crowns_sample$ratio_h_radius, na.rm = TRUE),
+            median(crowns_sample$ratio_h_radius, na.rm = TRUE),
+            max(crowns_sample$ratio_h_radius, na.rm = TRUE)))
+
+# Sauvegarder
+saveRDS(crowns_sample, file.path(classif_dir, "crowns_with_lidar.rds"))
+cat("\nCouronnes avec features LiDAR sauvegardées.\n")
+
+# Visualisation
+p1 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = area_m2)) +
+  geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7) +
+  labs(title = "Distribution des surfaces", x = "Surface (m²)", y = "Fréquence") +
+  theme_minimal()
+
+p2 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = compactness)) +
+  geom_histogram(bins = 30, fill = "coral", alpha = 0.7) +
+  labs(title = "Distribution de la compacité", x = "Compacité", y = "Fréquence") +
+  theme_minimal()
+
+p3 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = area_m2, y = z_p95)) +
+  geom_point(alpha = 0.5, color = "darkgreen") +
+  labs(title = "Surface vs Hauteur", x = "Surface (m²)", y = "Hauteur p95 (m)") +
+  theme_minimal()
+
+(p1 | p2) / p3
+```
+
+### Quiz 3 : Features LiDAR
+
+```{r quiz-3, echo=FALSE}
+quiz(
+  question("Pourquoi utiliser le percentile 95 (z_p95) plutôt que le maximum (z_max) ?",
+    answer("Le p95 est plus rapide à calculer"),
+    answer("Le p95 est plus robuste aux valeurs aberrantes (bruit)", correct = TRUE),
+    answer("Le max n'est pas disponible dans exactextractr"),
+    answer("Le p95 représente mieux les arbres dominants"),
+    allow_retry = TRUE
+  ),
+  question("Que mesure la compacité d'une couronne ?",
+    answer("Sa hauteur par rapport au sol"),
+    answer("Sa ressemblance avec un cercle parfait", correct = TRUE),
+    answer("Sa densité de points LiDAR"),
+    answer("Son volume de biomasse"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi le ratio H/R (élancement) peut-il aider à distinguer les essences ?",
+    answer("Les résineux ont généralement des couronnes plus élancées que les feuillus", correct = TRUE),
+    answer("C'est un indicateur de santé de l'arbre"),
+    answer("Il remplace le NDVI"),
+    answer("Il est obligatoire pour Random Forest"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 4 : Feature Engineering IRC {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons maintenant extraire les **features spectrales** de l'orthophoto IRC :
+- **NDVI** et ratios spectraux
+- Statistiques par couronne (moyenne, écart-type, percentiles)
+
+### Exercice 4.1 : Extraire les features IRC par couronne
+
+```{r irc-features-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les couronnes avec features LiDAR
+crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_lidar.rds"))
+if (is.null(crowns_sample)) {
+  stop("Exécutez d'abord la section 3 (Feature Engineering LiDAR)")
+}
+
+# Charger l'IRC et le NDVI
+irc_file <- file.path(classif_dir, "orthophoto_irc.tif")
+ndvi_file <- file.path(classif_dir, "ndvi.tif")
+irc <- rast(irc_file)
+ndvi <- rast(ndvi_file)
+```
+
+```{r irc-features, exercise=TRUE, exercise.setup="irc-features-setup", exercise.timelimit=600}
+cat("=== Extraction des features IRC ===\n\n")
+
+# Vérifier l'alignement spatial
+cat("Vérification de l'alignement spatial...\n")
+cat(sprintf("IRC CRS: EPSG:%s\n", crs(irc, describe = TRUE)$code))
+cat(sprintf("Couronnes CRS: EPSG:%s\n", st_crs(crowns_sample)$epsg))
+
+# Reprojeter si nécessaire
+if (st_crs(crowns_sample)$epsg != crs(irc, describe = TRUE)$code) {
+  cat("Reprojection des couronnes...\n")
+  crowns_sample <- st_transform(crowns_sample, crs(irc))
+}
+
+# Extraction avec exactextractr
+if (requireNamespace("exactextractr", quietly = TRUE)) {
+
+  cat("\nExtraction des statistiques IRC...\n")
+
+  # NIR
+  nir_stats <- exactextractr::exact_extract(
+    irc[[1]], crowns_sample,
+    fun = c("mean", "stdev", "quantile", "quantile"),
+    quantiles = c(0.1, 0.9)
+  )
+  names(nir_stats) <- c("nir_mean", "nir_sd", "nir_p10", "nir_p90")
+
+  # Red
+  red_stats <- exactextractr::exact_extract(
+    irc[[2]], crowns_sample,
+    fun = c("mean", "stdev")
+  )
+  names(red_stats) <- c("red_mean", "red_sd")
+
+  # Green
+  green_stats <- exactextractr::exact_extract(
+    irc[[3]], crowns_sample,
+    fun = c("mean", "stdev")
+  )
+  names(green_stats) <- c("green_mean", "green_sd")
+
+  # NDVI
+  ndvi_stats <- exactextractr::exact_extract(
+    ndvi, crowns_sample,
+    fun = c("mean", "stdev", "quantile", "quantile"),
+    quantiles = c(0.1, 0.9)
+  )
+  names(ndvi_stats) <- c("ndvi_mean", "ndvi_sd", "ndvi_p10", "ndvi_p90")
+
+  # Combiner
+  irc_features <- cbind(nir_stats, red_stats, green_stats, ndvi_stats)
+
+} else {
+  cat("Package exactextractr non disponible.\n")
+  irc_features <- data.frame(
+    nir_mean = terra::extract(irc[[1]], vect(crowns_sample), fun = mean, na.rm = TRUE)[, 2],
+    ndvi_mean = terra::extract(ndvi, vect(crowns_sample), fun = mean, na.rm = TRUE)[, 2]
+  )
+}
+
+# Ajouter aux couronnes
+crowns_sample <- cbind(crowns_sample, irc_features)
+
+# Calculer des ratios supplémentaires
+crowns_sample <- crowns_sample |>
+  mutate(
+    nir_red_ratio = nir_mean / red_mean,
+    nir_green_ratio = nir_mean / green_mean,
+    red_green_ratio = red_mean / green_mean
+  )
+
+cat(sprintf("\nFeatures IRC extraites: %d variables\n", ncol(irc_features) + 3))
+
+# Statistiques
+cat("\n=== Statistiques IRC ===\n")
+cat(sprintf("NDVI moyen: %.3f ± %.3f\n",
+            mean(crowns_sample$ndvi_mean, na.rm = TRUE),
+            sd(crowns_sample$ndvi_mean, na.rm = TRUE)))
+cat(sprintf("NIR moyen: %.1f ± %.1f\n",
+            mean(crowns_sample$nir_mean, na.rm = TRUE),
+            sd(crowns_sample$nir_mean, na.rm = TRUE)))
+
+# Sauvegarder
+saveRDS(crowns_sample, file.path(classif_dir, "crowns_with_features.rds"))
+cat("\nCouronnes avec features complètes sauvegardées.\n")
+
+# Visualisation
+p1 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = ndvi_mean)) +
+  geom_histogram(bins = 30, fill = "darkgreen", alpha = 0.7) +
+  labs(title = "Distribution NDVI", x = "NDVI moyen", y = "Fréquence") +
+  theme_minimal()
+
+p2 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = nir_mean, y = red_mean)) +
+  geom_point(aes(color = ndvi_mean), alpha = 0.6) +
+  scale_color_viridis_c(name = "NDVI") +
+  labs(title = "NIR vs Red", x = "NIR moyen", y = "Red moyen") +
+  theme_minimal()
+
+p3 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = z_p95, y = ndvi_mean)) +
+  geom_point(alpha = 0.5, color = "forestgreen") +
+  labs(title = "Hauteur vs NDVI", x = "Hauteur p95 (m)", y = "NDVI moyen") +
+  theme_minimal()
+
+(p1 | p2) / p3
+```
+
+### Quiz 4 : Features IRC
+
+```{r quiz-4, echo=FALSE}
+quiz(
+  question("Pourquoi extraire des statistiques (mean, sd, p10, p90) plutôt qu'une seule valeur par couronne ?",
+    answer("Pour réduire le temps de calcul"),
+    answer("Pour capturer la variabilité intra-couronne", correct = TRUE),
+    answer("C'est obligatoire pour exactextractr"),
+    answer("Pour éviter les valeurs NA"),
+    allow_retry = TRUE
+  ),
+  question("Que peut indiquer un écart-type élevé du NDVI au sein d'une couronne ?",
+    answer("Une erreur de mesure"),
+    answer("Une couronne avec mélange d'ombre et de zones ensoleillées", correct = TRUE),
+    answer("Un arbre mort"),
+    answer("Une mauvaise segmentation"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi calculer des ratios spectraux (NIR/Red, NIR/Green) ?",
+    answer("Ils sont normalisés et moins sensibles aux conditions d'éclairement", correct = TRUE),
+    answer("Ils remplacent le NDVI"),
+    answer("Ils sont obligatoires pour XGBoost"),
+    answer("Ils réduisent le nombre de features"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 5 : Assemblage du Dataset {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons maintenant :
+1. **Joindre** les features aux labels terrain
+2. **Nettoyer** les données (NA, outliers, classes rares)
+3. **Sélectionner** les features finales
+
+### Exercice 5.1 : Joindre features et labels
+
+```{r assemble-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les données
+crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_features.rds"))
+trees_terrain <- readRDS(file.path(classif_dir, "trees_terrain.rds"))
+```
+
+```{r assemble, exercise=TRUE, exercise.setup="assemble-setup"}
+cat("=== Assemblage du dataset d'apprentissage ===\n\n")
+
+# Pour la démonstration, nous allons associer les labels aux couronnes
+# de manière simplifiée (assignation aléatoire stratifiée)
+
+# Distribution des essences disponibles
+ess_available <- table(trees_terrain$ess)
+cat("Essences disponibles dans les données terrain:\n")
+print(ess_available)
+
+# Assigner des essences aux couronnes (simulation pour la démo)
+set.seed(config$seed)
+n_crowns <- nrow(crowns_sample)
+
+# Probabilités basées sur la distribution terrain
+ess_names <- names(ess_available)
+ess_probs <- as.numeric(ess_available) / sum(ess_available)
+
+crowns_sample$ess <- sample(ess_names, n_crowns, replace = TRUE, prob = ess_probs)
+
+# Ajouter les noms français
+species_lookup <- get_species_lookup()
+crowns_sample <- crowns_sample |>
+  left_join(species_lookup[, c("code", "nom_fr", "groupe")],
+            by = c("ess" = "code"))
+
+# Renommer pour clarté
+crowns_sample <- crowns_sample |>
+  rename(species = nom_fr, species_group = groupe)
+
+# Statistiques
+cat("\n=== Distribution des essences ===\n")
+species_counts <- table(crowns_sample$species)
+for (s in names(sort(species_counts, decreasing = TRUE))) {
+  cat(sprintf("  %s: %d (%.1f%%)\n", s, species_counts[s],
+              100 * species_counts[s] / n_crowns))
+}
+
+cat(sprintf("\nTotal couronnes labellisées: %d\n", n_crowns))
+```
+
+### Exercice 5.2 : Nettoyage et sélection des features
+
+```{r clean-data-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les données assemblées (simuler si pas disponible)
+crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_features.rds"))
+if (!"species" %in% names(crowns_sample)) {
+  set.seed(2024)
+  species_pool <- c("Épicéa", "Sapin", "Hêtre", "Frêne")
+  crowns_sample$species <- sample(species_pool, nrow(crowns_sample), replace = TRUE,
+                                   prob = c(0.35, 0.30, 0.25, 0.10))
+  crowns_sample$species_group <- ifelse(crowns_sample$species %in% c("Hêtre", "Frêne"),
+                                         "Feuillu", "Résineux")
+}
+```
+
+```{r clean-data, exercise=TRUE, exercise.setup="clean-data-setup"}
+cat("=== Nettoyage du dataset ===\n\n")
+
+n_initial <- nrow(crowns_sample)
+
+# 1. Supprimer les lignes sans label
+crowns_clean <- crowns_sample |>
+  filter(!is.na(species))
+cat(sprintf("Après filtrage NA species: %d lignes\n", nrow(crowns_clean)))
+
+# 2. Définir les features à utiliser
+feature_cols <- c(
+  # LiDAR - hauteur
+  "z_mean", "z_sd", "z_p25", "z_p50", "z_p75", "z_p95",
+  # LiDAR - forme
+  "area_m2", "compactness", "radius_eq", "ratio_h_radius",
+  # IRC
+  "nir_mean", "nir_sd", "red_mean", "green_mean",
+  "ndvi_mean", "ndvi_sd", "ndvi_p10", "ndvi_p90",
+  "nir_red_ratio", "nir_green_ratio"
+)
+
+# Garder seulement les colonnes existantes
+feature_cols <- intersect(feature_cols, names(crowns_clean))
+cat(sprintf("\nFeatures disponibles: %d\n", length(feature_cols)))
+
+# 3. Compter les NA par feature
+na_counts <- sapply(crowns_clean[, feature_cols, drop = FALSE] |> st_drop_geometry(),
+                    function(x) sum(is.na(x)))
+cat("\nNA par feature:\n")
+print(na_counts[na_counts > 0])
+
+# 4. Supprimer les lignes avec trop de NA
+crowns_clean$na_count <- rowSums(is.na(st_drop_geometry(crowns_clean)[, feature_cols]))
+crowns_clean <- crowns_clean |>
+  filter(na_count < length(feature_cols) * 0.3)  # Max 30% de NA
+cat(sprintf("\nAprès filtrage NA features: %d lignes\n", nrow(crowns_clean)))
+
+# 5. Vérifier la taille des classes
+class_counts <- table(crowns_clean$species)
+cat("\n=== Taille des classes ===\n")
+print(class_counts)
+
+# 6. Regrouper ou supprimer les classes rares
+rare_classes <- names(class_counts)[class_counts < config$min_samples_per_class]
+if (length(rare_classes) > 0) {
+  cat(sprintf("\nClasses rares (< %d): %s\n",
+              config$min_samples_per_class,
+              paste(rare_classes, collapse = ", ")))
+
+  # Option: regrouper en "Autre" ou supprimer
+  crowns_clean <- crowns_clean |>
+    filter(!species %in% rare_classes)
+
+  cat(sprintf("Après suppression classes rares: %d lignes\n", nrow(crowns_clean)))
+}
+
+# 7. Encoder en facteur
+crowns_clean$species <- as.factor(crowns_clean$species)
+
+# Résumé final
+cat("\n=== Dataset final ===\n")
+cat(sprintf("Couronnes: %d (%.1f%% du départ)\n",
+            nrow(crowns_clean), 100 * nrow(crowns_clean) / n_initial))
+cat(sprintf("Features: %d\n", length(feature_cols)))
+cat(sprintf("Classes: %d (%s)\n", nlevels(crowns_clean$species),
+            paste(levels(crowns_clean$species), collapse = ", ")))
+
+# Sauvegarder
+saveRDS(crowns_clean, file.path(classif_dir, "training_data.rds"))
+saveRDS(feature_cols, file.path(classif_dir, "feature_cols.rds"))
+cat("\nDataset d'apprentissage sauvegardé.\n")
+```
+
+### Quiz 5 : Assemblage du dataset
+
+```{r quiz-5, echo=FALSE}
+quiz(
+  question("Pourquoi supprimer les classes avec peu d'échantillons ?",
+    answer("Pour accélérer l'entraînement"),
+    answer("Pour éviter le surapprentissage sur les classes rares", correct = TRUE),
+    answer("Parce que Random Forest ne les supporte pas"),
+    answer("Pour équilibrer les classes"),
+    allow_retry = TRUE
+  ),
+  question("Quel est le risque principal d'avoir trop de features par rapport au nombre d'échantillons ?",
+    answer("Temps de calcul trop long"),
+    answer("Surapprentissage (overfitting)", correct = TRUE),
+    answer("Sous-apprentissage (underfitting)"),
+    answer("Erreurs de mémoire"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi sauvegarder le dataset et la liste des features dans des fichiers séparés ?",
+    answer("Pour réduire la taille des fichiers"),
+    answer("Pour pouvoir reproduire exactement le même entraînement", correct = TRUE),
+    answer("C'est obligatoire pour learnr"),
+    answer("Pour faciliter le débogage"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 6 : Validation Spatiale {data-progressive=TRUE}
+
+### Introduction
+
+La **validation croisée classique** surestime les performances car les observations proches sont autocorrélées. Nous utiliserons **blockCV** pour une validation spatiale réaliste.
+
+### Exercice 6.1 : Créer les blocs spatiaux
+
+```{r blockcv-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les données
+training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
+feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
+```
+
+```{r blockcv, exercise=TRUE, exercise.setup="blockcv-setup", exercise.timelimit=300}
+cat("=== Validation spatiale avec blockCV ===\n\n")
+
+if (requireNamespace("blockCV", quietly = TRUE)) {
+  library(blockCV)
+
+  # Créer les blocs spatiaux
+  cat("Création des blocs spatiaux...\n")
+  cat(sprintf("Taille des blocs: %d m\n", config$block_size))
+  cat(sprintf("Nombre de folds: %d\n", config$n_folds))
+
+  # Conversion en sf valide
+  training_sf <- training_data |>
+    st_as_sf()
+
+  # Créer les folds avec blockCV
+  set.seed(config$seed)
+
+  spatial_folds <- tryCatch({
+    cv_spatial(
+      x = training_sf,
+      column = "species",
+      size = config$block_size,
+      k = config$n_folds,
+      hexagon = TRUE,
+      selection = "random",
+      iteration = 50
+    )
+  }, error = function(e) {
+    cat("Erreur blockCV:", e$message, "\n")
+    cat("Utilisation de folds aléatoires...\n")
+
+    # Fallback: folds aléatoires
+    n <- nrow(training_sf)
+    fold_ids <- sample(rep(1:config$n_folds, length.out = n))
+
+    list(
+      folds_list = lapply(1:config$n_folds, function(k) {
+        list(
+          train = which(fold_ids != k),
+          test = which(fold_ids == k)
+        )
+      })
+    )
+  })
+
+  # Statistiques par fold
+  cat("\n=== Répartition par fold ===\n")
+  for (i in seq_along(spatial_folds$folds_list)) {
+    n_train <- length(spatial_folds$folds_list[[i]]$train)
+    n_test <- length(spatial_folds$folds_list[[i]]$test)
+    cat(sprintf("Fold %d: train=%d, test=%d\n", i, n_train, n_test))
+  }
+
+  # Sauvegarder
+  saveRDS(spatial_folds, file.path(classif_dir, "spatial_folds.rds"))
+  cat("\nFolds spatiaux sauvegardés.\n")
+
+  # Visualisation (si cv_plot disponible)
+  tryCatch({
+    cv_plot(spatial_folds, x = training_sf)
+  }, error = function(e) {
+    # Visualisation alternative
+    ggplot() +
+      geom_sf(data = training_sf, aes(color = species), size = 1, alpha = 0.7) +
+      scale_color_brewer(palette = "Set2") +
+      labs(title = "Distribution spatiale des couronnes labellisées") +
+      theme_minimal()
+  })
+
+} else {
+  cat("Package blockCV non disponible.\n")
+  cat("Installation: install.packages('blockCV')\n")
+
+  # Créer des folds aléatoires comme fallback
+  n <- nrow(training_data)
+  set.seed(config$seed)
+  fold_ids <- sample(rep(1:config$n_folds, length.out = n))
+
+  spatial_folds <- list(
+    folds_list = lapply(1:config$n_folds, function(k) {
+      list(train = which(fold_ids != k), test = which(fold_ids == k))
+    })
+  )
+
+  saveRDS(spatial_folds, file.path(classif_dir, "spatial_folds.rds"))
+}
+```
+
+### Quiz 6 : Validation spatiale
+
+```{r quiz-6, echo=FALSE}
+quiz(
+  question("Pourquoi la CV classique surestime les performances en classification spatiale ?",
+    answer("Elle utilise trop de données en test"),
+    answer("Les observations proches sont autocorrélées", correct = TRUE),
+    answer("Elle ne gère pas les données manquantes"),
+    answer("Elle est biaisée vers les classes majoritaires"),
+    allow_retry = TRUE
+  ),
+  question("Que garantit la validation par blocs spatiaux ?",
+    answer("Un temps de calcul plus court"),
+    answer("Aucun bloc n'est à cheval entre train et test", correct = TRUE),
+    answer("Des classes équilibrées"),
+    answer("Une meilleure précision"),
+    allow_retry = TRUE
+  ),
+  question("Comment choisir la taille des blocs ?",
+    answer("Toujours 100m"),
+    answer("Basée sur l'autocorrélation spatiale des features ou résidus", correct = TRUE),
+    answer("Égale au nombre de folds"),
+    answer("La plus petite possible"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 7 : Modélisation {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons entraîner et comparer deux modèles :
+- **Random Forest** (ranger) - baseline robuste
+- **XGBoost** - challenger performant
+
+### Exercice 7.1 : Entraîner Random Forest
+
+```{r rf-model-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les données
+training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
+feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
+spatial_folds <- readRDS(file.path(classif_dir, "spatial_folds.rds"))
+```
+
+```{r rf-model, exercise=TRUE, exercise.setup="rf-model-setup", exercise.timelimit=300}
+cat("=== Entraînement Random Forest ===\n\n")
+
+if (requireNamespace("ranger", quietly = TRUE)) {
+  library(ranger)
+
+  # Préparer les données
+  model_data <- training_data |>
+    st_drop_geometry() |>
+    select(all_of(c(feature_cols, "species"))) |>
+    na.omit()
+
+  cat(sprintf("Données: %d observations, %d features\n",
+              nrow(model_data), length(feature_cols)))
+
+  # Utiliser le premier fold pour train/test
+  fold <- spatial_folds$folds_list[[1]]
+  train_idx <- fold$train[fold$train <= nrow(model_data)]
+  test_idx <- fold$test[fold$test <= nrow(model_data)]
+
+  train_data <- model_data[train_idx, ]
+  test_data <- model_data[test_idx, ]
+
+  cat(sprintf("Train: %d, Test: %d\n", nrow(train_data), nrow(test_data)))
+
+  # Paramètres
+  mtry <- max(1, floor(length(feature_cols) * config$mtry_ratio))
+
+  # Entraîner le modèle
+  set.seed(config$seed)
+  rf_model <- ranger(
+    species ~ .,
+    data = train_data,
+    num.trees = config$n_trees,
+    mtry = mtry,
+    min.node.size = config$min_node_size,
+    importance = "permutation",
+    probability = TRUE
+  )
+
+  cat("\n=== Modèle Random Forest ===\n")
+  cat(sprintf("Arbres: %d\n", rf_model$num.trees))
+  cat(sprintf("mtry: %d\n", rf_model$mtry))
+  cat(sprintf("OOB error: %.3f\n", rf_model$prediction.error))
+
+  # Prédiction sur test
+  rf_pred <- predict(rf_model, test_data)
+  pred_probs <- rf_pred$predictions
+  pred_class <- colnames(pred_probs)[apply(pred_probs, 1, which.max)]
+  prob_max <- apply(pred_probs, 1, max)
+
+  # Métriques
+  accuracy <- mean(pred_class == test_data$species)
+  cat(sprintf("\nAccuracy test: %.1f%%\n", 100 * accuracy))
+
+  # Matrice de confusion
+  cat("\n=== Matrice de confusion ===\n")
+  conf_matrix <- table(Prédit = pred_class, Réel = test_data$species)
+  print(conf_matrix)
+
+  # Importance des variables
+  importance <- data.frame(
+    variable = names(rf_model$variable.importance),
+    importance = rf_model$variable.importance
+  ) |>
+    arrange(desc(importance)) |>
+    head(10)
+
+  cat("\n=== Top 10 variables importantes ===\n")
+  print(importance)
+
+  # Sauvegarder
+  saveRDS(rf_model, file.path(classif_dir, "rf_model.rds"))
+
+  # Visualisation importance
+  ggplot(importance, aes(x = reorder(variable, importance), y = importance)) +
+    geom_col(fill = "forestgreen") +
+    coord_flip() +
+    labs(title = "Importance des variables (Random Forest)",
+         x = "", y = "Importance (permutation)") +
+    theme_minimal()
+
+} else {
+  cat("Package ranger non disponible.\n")
+  cat("Installation: install.packages('ranger')\n")
+}
+```
+
+### Exercice 7.2 : Entraîner XGBoost
+
+```{r xgb-model-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les données
+training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
+feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
+spatial_folds <- readRDS(file.path(classif_dir, "spatial_folds.rds"))
+```
+
+```{r xgb-model, exercise=TRUE, exercise.setup="xgb-model-setup", exercise.timelimit=300}
+cat("=== Entraînement XGBoost ===\n\n")
+
+if (requireNamespace("xgboost", quietly = TRUE)) {
+  library(xgboost)
+
+  # Préparer les données
+  model_data <- training_data |>
+    st_drop_geometry() |>
+    select(all_of(c(feature_cols, "species"))) |>
+    na.omit()
+
+  # Utiliser le premier fold
+  fold <- spatial_folds$folds_list[[1]]
+  train_idx <- fold$train[fold$train <= nrow(model_data)]
+  test_idx <- fold$test[fold$test <= nrow(model_data)]
+
+  # Encoder les labels (0-indexed)
+  labels <- levels(model_data$species)
+  train_y <- as.integer(model_data$species[train_idx]) - 1
+  test_y <- as.integer(model_data$species[test_idx]) - 1
+
+  # Matrices
+  train_x <- as.matrix(model_data[train_idx, feature_cols])
+  test_x <- as.matrix(model_data[test_idx, feature_cols])
+
+  # DMatrix
+  dtrain <- xgb.DMatrix(data = train_x, label = train_y)
+  dtest <- xgb.DMatrix(data = test_x, label = test_y)
+
+  cat(sprintf("Train: %d, Test: %d, Classes: %d\n",
+              nrow(train_x), nrow(test_x), length(labels)))
+
+  # Paramètres
+  params <- list(
+    objective = "multi:softprob",
+    num_class = length(labels),
+    eta = 0.1,
+    max_depth = 6,
+    subsample = 0.8,
+    colsample_bytree = 0.8,
+    eval_metric = "mlogloss"
+  )
+
+  # Entraînement avec early stopping
+  set.seed(config$seed)
+  xgb_model <- xgb.train(
+    params = params,
+    data = dtrain,
+    nrounds = 200,
+    watchlist = list(train = dtrain, test = dtest),
+    early_stopping_rounds = 20,
+    print_every_n = 50,
+    verbose = 1
+  )
+
+  cat(sprintf("\nMeilleur nrounds: %d\n", xgb_model$best_iteration))
+
+  # Prédiction
+  xgb_pred_raw <- predict(xgb_model, dtest)
+  xgb_pred <- matrix(xgb_pred_raw, ncol = length(labels), byrow = TRUE)
+  pred_class <- labels[apply(xgb_pred, 1, which.max)]
+  prob_max <- apply(xgb_pred, 1, max)
+
+  # Métriques
+  accuracy <- mean(pred_class == labels[test_y + 1])
+  cat(sprintf("\nAccuracy test: %.1f%%\n", 100 * accuracy))
+
+  # Matrice de confusion
+  cat("\n=== Matrice de confusion ===\n")
+  conf_matrix <- table(Prédit = pred_class, Réel = labels[test_y + 1])
+  print(conf_matrix)
+
+  # Importance
+  importance <- xgb.importance(model = xgb_model) |>
+    head(10)
+
+  cat("\n=== Top 10 variables importantes ===\n")
+  print(importance)
+
+  # Sauvegarder
+  xgb.save(xgb_model, file.path(classif_dir, "xgb_model.xgb"))
+
+  # Visualisation
+  xgb.plot.importance(importance, main = "Importance des variables (XGBoost)")
+
+} else {
+  cat("Package xgboost non disponible.\n")
+  cat("Installation: install.packages('xgboost')\n")
+}
+```
+
+### Quiz 7 : Modélisation
+
+```{r quiz-7, echo=FALSE}
+quiz(
+  question("Quel est l'avantage principal de Random Forest pour la classification d'essences ?",
+    answer("Plus rapide que les autres méthodes"),
+    answer("Robuste, peu de tuning requis, gère bien les features non-linéaires", correct = TRUE),
+    answer("Fonctionne sans données d'entraînement"),
+    answer("Toujours meilleur que XGBoost"),
+    allow_retry = TRUE
+  ),
+  question("Que permet l'early stopping dans XGBoost ?",
+    answer("D'accélérer l'entraînement"),
+    answer("D'éviter le surapprentissage en arrêtant quand le test ne s'améliore plus", correct = TRUE),
+    answer("De réduire le nombre de features"),
+    answer("D'équilibrer les classes"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi comparer plusieurs modèles ?",
+    answer("Pour choisir le plus rapide"),
+    answer("Parce que les performances varient selon les données et le problème", correct = TRUE),
+    answer("C'est obligatoire pour publier"),
+    answer("Pour éviter les bugs"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Section 8 : Cartographie des Résultats {data-progressive=TRUE}
+
+### Introduction
+
+Nous allons maintenant :
+1. **Prédire** sur toutes les couronnes
+2. **Cartographier** les classes et la confiance
+3. **Exporter** les résultats
+
+### Exercice 8.1 : Prédiction et cartographie
+
+```{r mapping-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+classif_dir <- file.path(data_dir, "result_classification")
+
+# Charger les données et le modèle
+training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
+feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
+rf_model <- readRDS(file.path(classif_dir, "rf_model.rds"))
+```
+
+```{r mapping, exercise=TRUE, exercise.setup="mapping-setup", fig.width=12, fig.height=10}
+cat("=== Cartographie des prédictions ===\n\n")
+
+# Préparer les données pour prédiction
+predict_data <- training_data |>
+  st_drop_geometry() |>
+  select(all_of(feature_cols))
+
+# Prédire avec Random Forest
+rf_pred <- predict(rf_model, predict_data)
+pred_probs <- rf_pred$predictions
+
+# Ajouter les prédictions aux couronnes
+training_data$pred_class <- colnames(pred_probs)[apply(pred_probs, 1, which.max)]
+training_data$pred_prob <- apply(pred_probs, 1, max)
+training_data$uncertain <- training_data$pred_prob < config$prob_threshold
+training_data$final_class <- ifelse(training_data$uncertain,
+                                     "Incertain",
+                                     training_data$pred_class)
+
+# Statistiques
+cat("=== Résumé des prédictions ===\n")
+summary_stats <- training_data |>
+  st_drop_geometry() |>
+  group_by(final_class) |>
+  summarise(
+    n = n(),
+    pct = n() / nrow(training_data) * 100,
+    prob_mean = mean(pred_prob),
+    .groups = "drop"
+  ) |>
+  arrange(desc(n))
+
+print(summary_stats)
+
+cat(sprintf("\nCouronnes incertaines (proba < %.0f%%): %d (%.1f%%)\n",
+            config$prob_threshold * 100,
+            sum(training_data$uncertain),
+            100 * mean(training_data$uncertain)))
+
+# Palette de couleurs
+species_colors <- c(
+  "Épicéa" = "#1b9e77",
+  "Sapin" = "#d95f02",
+  "Hêtre" = "#7570b3",
+  "Frêne" = "#e7298a",
+  "Autre" = "#66a61e",
+  "Incertain" = "grey70"
+)
+
+# Cartes
+p1 <- ggplot() +
+  geom_sf(data = training_data, aes(fill = final_class),
+          color = "white", linewidth = 0.1) +
+  scale_fill_manual(values = species_colors, name = "Essence") +
+  labs(title = "Classification des essences",
+       subtitle = sprintf("n = %d couronnes", nrow(training_data))) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p2 <- ggplot() +
+  geom_sf(data = training_data, aes(fill = pred_prob), color = NA) +
+  scale_fill_viridis_c(name = "Probabilité", option = "plasma", limits = c(0, 1)) +
+  labs(title = "Confiance de la classification") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p3 <- ggplot() +
+  geom_sf(data = training_data, aes(fill = uncertain),
+          color = "white", linewidth = 0.1) +
+  scale_fill_manual(
+    values = c("FALSE" = "forestgreen", "TRUE" = "red"),
+    labels = c("Confiant", "Incertain"),
+    name = "Statut"
+  ) +
+  labs(title = "Zones de confiance") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Combiner
+(p1 | p2) / p3
+
+# Exporter
+output_file <- file.path(classif_dir, "crowns_classified.gpkg")
+st_write(training_data, output_file, delete_dsn = TRUE, quiet = TRUE)
+cat(sprintf("\nRésultats exportés: %s\n", output_file))
+```
+
+### Quiz 8 : Cartographie
+
+```{r quiz-8, echo=FALSE}
+quiz(
+  question("Pourquoi marquer certaines couronnes comme 'incertaines' ?",
+    answer("Pour réduire le nombre de classes"),
+    answer("Pour signaler les prédictions peu fiables à vérifier sur le terrain", correct = TRUE),
+    answer("Parce que le modèle a échoué"),
+    answer("Pour équilibrer la distribution des classes"),
+    allow_retry = TRUE
+  ),
+  question("Quel seuil de probabilité est typiquement utilisé pour marquer l'incertitude ?",
+    answer("10%"),
+    answer("25%"),
+    answer("50%", correct = TRUE),
+    answer("90%"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi exporter en GeoPackage plutôt qu'en Shapefile ?",
+    answer("Plus rapide à écrire"),
+    answer("Supporte les noms de colonnes longs, plusieurs couches, et les types modernes", correct = TRUE),
+    answer("Obligatoire pour QGIS"),
+    answer("Plus petit en taille"),
+    allow_retry = TRUE
+  )
+)
+```
+
+## Synthèse {data-progressive=TRUE}
+
+### Félicitations !
+
+Vous avez complété le **Tutorial 10 : Classification d'Essences au Niveau Couronne**.
+
+### Workflow complet
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WORKFLOW CLASSIFICATION D'ESSENCES                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ 1. DONNÉES D'ENTRÉE                                              │
+  │   - Couronnes segmentées (Tutorial 07)                           │
+  │   - Orthophoto IRC (IGN ou synthétique)                          │
+  │   - Labels terrain (essences)                                    │
+  └─────────────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ 2. FEATURE ENGINEERING                                           │
+  │   - LiDAR : z_mean, z_p95, z_sd, area, compactness, ratio_h_r   │
+  │   - IRC : ndvi_mean, ndvi_sd, nir_mean, ratios spectraux         │
+  └─────────────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ 3. VALIDATION SPATIALE                                           │
+  │   - blockCV pour éviter la fuite spatiale                        │
+  │   - Estimation réaliste des performances                         │
+  └─────────────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ 4. MODÉLISATION                                                  │
+  │   - Random Forest (ranger) : robuste, peu de tuning              │
+  │   - XGBoost : performant, early stopping                         │
+  └─────────────────────────────────────────────────────────────────┘
+                          │
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ 5. CARTOGRAPHIE                                                  │
+  │   - Carte des classes prédites                                   │
+  │   - Carte des probabilités (confiance)                           │
+  │   - Flag "incertain" pour proba < 50%                           │
+  │   - Export GeoPackage                                            │
+  └─────────────────────────────────────────────────────────────────┘
+```
+
+### Produits générés
+
+| Fichier | Description |
+|---------|-------------|
+| `result_classification/training_data.rds` | Dataset d'apprentissage |
+| `result_classification/feature_cols.rds` | Liste des features |
+| `result_classification/spatial_folds.rds` | Folds de validation |
+| `result_classification/rf_model.rds` | Modèle Random Forest |
+| `result_classification/crowns_classified.gpkg` | Couronnes classifiées |
+
+### Recommandations pour aller plus loin
+
+1. **Améliorer la segmentation** : tester différents paramètres lidaRtRee
+2. **Enrichir les features** : Sentinel-2 red-edge, phénologie multi-date
+3. **Plus de données terrain** : augmenter le nombre de placettes de référence
+4. **Modèles avancés** : deep learning sur images (CNN), semi-supervisé
+
+### Quiz final
+
+```{r quiz-final, echo=FALSE}
+quiz(
+  question("Quel est l'ordre recommandé pour une classification d'essences ?",
+    answer("Modèle → Features → Données → Export"),
+    answer("Données → Features → Validation spatiale → Modèle → Cartographie", correct = TRUE),
+    answer("Features → Modèle → Données → Validation"),
+    answer("Export → Modèle → Features → Données"),
+    allow_retry = TRUE
+  ),
+  question("Quelle est la principale source d'erreur dans ce type de classification ?",
+    answer("Le temps de calcul"),
+    answer("La qualité de la segmentation des couronnes et les labels terrain", correct = TRUE),
+    answer("Le choix du modèle"),
+    answer("Le format d'export"),
+    allow_retry = TRUE
+  ),
+  question("Pourquoi la validation spatiale est-elle critique ?",
+    answer("Elle accélère l'entraînement"),
+    answer("Elle donne une estimation réaliste des performances en production", correct = TRUE),
+    answer("Elle est obligatoire pour publier"),
+    answer("Elle améliore l'accuracy"),
+    allow_retry = TRUE
+  )
+)
+```
+
+### Ressources
+
+- [Package ranger](https://cran.r-project.org/package=ranger) - Random Forest rapide
+- [Package xgboost](https://xgboost.readthedocs.io/) - Gradient Boosting
+- [Package blockCV](https://cran.r-project.org/package=blockCV) - Validation spatiale
+- [lidaRtRee](https://lidar.pages-forge.inrae.fr/lidaRtRee/) - Segmentation couronnes

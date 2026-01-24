@@ -5,7 +5,6 @@ output:
     progressive: true
     allow_skip: true
     language: fr
-    css: css/custom.css
 runtime: shiny_prerendered
 description: "Concevoir un plan d'échantillonnage optimal de placettes de calibration et calculer le parcours terrain le plus efficace"
 ---

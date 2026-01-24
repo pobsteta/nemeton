@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.4.18-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.4.18)
+[![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.6.1)
 [![Tests](https://img.shields.io/badge/tests-1322%20passing-success.svg)](https://github.com/pobsteta/nemeton)
 [![Coverage](https://img.shields.io/badge/coverage-85.8%25-brightgreen.svg)](https://github.com/pobsteta/nemeton)
 [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
@@ -15,7 +15,7 @@
 
 ## ✨ Fonctionnalités principales
 
-### Référentiel Complet (v0.4.18)
+### Référentiel Complet (v0.6.1)
 
 - 🌳 **12 familles d'indicateurs** (100% implémenté) :
   - **C** - Carbone & Vitalité | **B** - Biodiversité | **W** - Eau | **A** - Air & Microclimat
@@ -795,7 +795,7 @@ Si vous utilisez `nemeton` dans vos travaux de recherche, veuillez citer :
 
 ```
 Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-R package version 0.3.0. https://github.com/pobsteta/nemeton
+R package version 0.6.1. https://github.com/pobsteta/nemeton
 ```
 
 BibTeX :
@@ -804,7 +804,7 @@ BibTeX :
   title = {nemeton: Systemic Forest Analysis Using the Nemeton Method},
   author = {Pascal Obstétar},
   year = {2026},
-  note = {R package version 0.3.0},
+  note = {R package version 0.6.1},
   url = {https://github.com/pobsteta/nemeton},
 }
 ```
