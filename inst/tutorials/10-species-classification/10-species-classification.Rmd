@@ -2225,13 +2225,43 @@ Vous avez complété le **Tutorial 10 : Classification d'Essences au Niveau Cour
 
 ### Produits générés
 
-| Fichier | Description |
-|---------|-------------|
-| `result_classification/training_data.rds` | Dataset d'apprentissage |
-| `result_classification/feature_cols.rds` | Liste des features |
-| `result_classification/spatial_folds.rds` | Folds de validation |
-| `result_classification/rf_model.rds` | Modèle Random Forest |
-| `result_classification/crowns_classified.gpkg` | Couronnes classifiées |
+| Fichier | Description | Exercice |
+|---------|-------------|----------|
+| `zone_etude_tutorial.rds` | Zone d'étude 100m x 100m | 2.2 |
+| `crowns_labeled.rds` | Couronnes avec labels essences | 2.2 |
+| `trees_terrain.rds` | Table attributaire des labels | 2.2 |
+| `orthophoto_irc.tif` | Orthophoto IRC (NIR, R, G) | 2.3 |
+| `ndvi.tif` | Raster NDVI | 2.3 |
+| `crowns_with_height.rds` | Couronnes + métriques hauteur | 3.1 |
+| `crowns_with_lidar.rds` | Couronnes + métriques forme | 3.2 |
+| `crowns_with_features.rds` | Couronnes + features IRC | 4.1 |
+| `training_data.rds` | Dataset d'apprentissage nettoyé | 5.2 |
+| `feature_cols.rds` | Liste des 18 features | 5.2 |
+| `spatial_folds.rds` | Folds de validation blockCV | 6.1 |
+| `rf_model.rds` | Modèle Random Forest entraîné | 7.1 |
+
+### Lien avec les indicateurs nemeton
+
+Les résultats de ce tutoriel peuvent alimenter les indicateurs **nemeton** :
+
+| Indicateur | Famille | Utilisation des données |
+|------------|---------|------------------------|
+| **B2** (Diversité spécifique) | Biodiversité | Distribution des essences classifiées |
+| **B3** (Arbres remarquables) | Biodiversité | Identification des gros arbres par essence |
+| **P1** (Volume sur pied) | Productif | Volume par essence via équations IFN |
+| **R1** (Diversité structurelle) | Résilience | Structure verticale par essence |
+
+```r
+# Exemple d'intégration avec nemeton
+library(nemeton)
+
+# Charger les couronnes classifiées
+crowns <- readRDS("result_classification/crowns_with_features.rds")
+
+# Calculer l'indicateur B2 (diversité spécifique)
+units <- nemeton_units(zone_etude)
+units <- indicator_biodiversity_species(units, species_data = crowns)
+```
 
 ### Recommandations pour aller plus loin
 
