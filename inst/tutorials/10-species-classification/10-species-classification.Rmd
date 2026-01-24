@@ -991,7 +991,7 @@ if (file.exists(height_file)) {
 }
 ```
 
-```{r crown-shape, exercise=TRUE, exercise.setup="crown-shape-setup", exercise.timelimit=300}
+```{r crown-shape, exercise=TRUE, exercise.setup="crown-shape-setup", exercise.timelimit=3000}
 # Calculer les métriques géométriques de la couronne
 cat("=== Calcul des métriques de forme ===\n\n")
 cat(sprintf("Couronnes à traiter: %d\n", nrow(crowns_sample)))
@@ -1006,7 +1006,7 @@ cat("Calcul des surfaces et métriques dérivées...\n")
 crowns_sample <- crowns_sample |>
   mutate(
     # Surface (vectorisé)
-    area_m2 = as.numeric(st_area(geometry)),
+    area_m2 = as.numeric(st_area(geom)),
 
     # Compacité (1 = cercle parfait)
     compactness = 4 * pi * area_m2 / (perimeter_m^2),
@@ -1124,7 +1124,7 @@ ndvi <- rast(ndvi_file)
 ```
 
 ```{r irc-features, exercise=TRUE, exercise.setup="irc-features-setup", exercise.timelimit=600}
-cat("=== Extraction des features IRC ===\n\n")
+cat("=== Extraction des features IRC (optimisé) ===\n\n")
 
 # Vérifier l'alignement spatial
 cat("Vérification de l'alignement spatial...\n")
@@ -1137,41 +1137,52 @@ if (st_crs(crowns_sample)$epsg != crs(irc, describe = TRUE)$code) {
   crowns_sample <- st_transform(crowns_sample, crs(irc))
 }
 
-# Extraction avec exactextractr
+# Extraction avec exactextractr - OPTIMISÉ: un seul appel pour tous les rasters
 if (requireNamespace("exactextractr", quietly = TRUE)) {
 
-  cat("\nExtraction des statistiques IRC...\n")
+  cat("\nExtraction des statistiques spectrales (optimisé - 1 appel)...\n")
 
-  # NIR - statistiques de base
-  nir_stats <- exactextractr::exact_extract(
-    irc[[1]], crowns_sample,
-    fun = c("mean", "stdev")
+  # Empiler IRC (3 bandes) + NDVI (1 bande) pour extraction en un seul appel
+  # Ceci évite 4 appels séparés et réduit le temps de calcul
+  names(irc) <- c("nir", "red", "green")
+  names(ndvi) <- "ndvi"
+
+  # Créer un stack combiné (même CRS et extent requis)
+  # Resampler NDVI sur IRC si nécessaire
+  if (!compareGeom(irc, ndvi, stopOnError = FALSE)) {
+    cat("Rééchantillonnage du NDVI sur la grille IRC...\n")
+    ndvi_aligned <- resample(ndvi, irc, method = "bilinear")
+  } else {
+    ndvi_aligned <- ndvi
+  }
+
+  # Stack combiné: NIR, Red, Green, NDVI
+  spectral_stack <- c(irc, ndvi_aligned)
+  cat(sprintf("Stack spectral créé: %d bandes\n", nlyr(spectral_stack)))
+
+  # UN SEUL appel exact_extract pour toutes les bandes
+  # exactextractr gère automatiquement les multi-bandes
+  spectral_stats <- exactextractr::exact_extract(
+    spectral_stack, crowns_sample,
+    fun = c("mean", "stdev"),
+    stack_apply = TRUE,  # Applique les fonctions à chaque couche
+    append_cols = NULL
   )
-  names(nir_stats) <- c("nir_mean", "nir_sd")
 
-  # Red
-  red_stats <- exactextractr::exact_extract(
-    irc[[2]], crowns_sample,
-    fun = c("mean", "stdev")
+  # Renommer les colonnes (format: mean.nir, stdev.nir, etc.)
+  # Les convertir en format attendu: nir_mean, nir_sd, etc.
+  irc_features <- data.frame(
+    nir_mean = spectral_stats$mean.nir,
+    nir_sd = spectral_stats$stdev.nir,
+    red_mean = spectral_stats$mean.red,
+    red_sd = spectral_stats$stdev.red,
+    green_mean = spectral_stats$mean.green,
+    green_sd = spectral_stats$stdev.green,
+    ndvi_mean = spectral_stats$mean.ndvi,
+    ndvi_sd = spectral_stats$stdev.ndvi
   )
-  names(red_stats) <- c("red_mean", "red_sd")
 
-  # Green
-  green_stats <- exactextractr::exact_extract(
-    irc[[3]], crowns_sample,
-    fun = c("mean", "stdev")
-  )
-  names(green_stats) <- c("green_mean", "green_sd")
-
-  # NDVI - statistiques de base
-  ndvi_stats <- exactextractr::exact_extract(
-    ndvi, crowns_sample,
-    fun = c("mean", "stdev")
-  )
-  names(ndvi_stats) <- c("ndvi_mean", "ndvi_sd")
-
-  # Combiner
-  irc_features <- cbind(nir_stats, red_stats, green_stats, ndvi_stats)
+  cat("Extraction terminée (4 bandes x 2 stats en 1 appel)\n")
 
 } else {
   cat("Package exactextractr non disponible.\n")
