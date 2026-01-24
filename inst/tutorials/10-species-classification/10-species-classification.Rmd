@@ -1945,31 +1945,45 @@ species_colors <- c(
   "Incertain" = "grey70"
 )
 
-# Cartes
+# Zoom sur le centre (200m x 200m) pour visualiser les couronnes
+bbox <- st_bbox(training_data)
+center_x <- (bbox[[1]] + bbox[[3]]) / 2
+center_y <- (bbox[[2]] + bbox[[4]]) / 2
+zoom_size <- 100  # 100m de chaque côté
+
+zoom_xlim <- c(center_x - zoom_size, center_x + zoom_size)
+zoom_ylim <- c(center_y - zoom_size, center_y + zoom_size)
+
+cat(sprintf("Zoom centré sur: X=%.0f, Y=%.0f (200m x 200m)\n", center_x, center_y))
+
+# Cartes avec zoom
 p1 <- ggplot() +
   geom_sf(data = training_data, aes(fill = final_class),
-          color = "white", linewidth = 0.1) +
+          color = "white", linewidth = 0.3) +
   scale_fill_manual(values = species_colors, name = "Essence") +
+  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Classification des essences",
-       subtitle = sprintf("n = %d couronnes", nrow(training_data))) +
+       subtitle = sprintf("Zoom 200m x 200m - %d couronnes total", nrow(training_data))) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p2 <- ggplot() +
-  geom_sf(data = training_data, aes(fill = pred_prob), color = NA) +
+  geom_sf(data = training_data, aes(fill = pred_prob), color = "white", linewidth = 0.1) +
   scale_fill_viridis_c(name = "Probabilité", option = "plasma", limits = c(0, 1)) +
+  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Confiance de la classification") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p3 <- ggplot() +
   geom_sf(data = training_data, aes(fill = uncertain),
-          color = "white", linewidth = 0.1) +
+          color = "white", linewidth = 0.3) +
   scale_fill_manual(
     values = c("FALSE" = "forestgreen", "TRUE" = "red"),
     labels = c("Confiant", "Incertain"),
     name = "Statut"
   ) +
+  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Zones de confiance") +
   theme_minimal() +
   theme(legend.position = "bottom")
