@@ -994,19 +994,19 @@ if (file.exists(height_file)) {
 # Calculer les métriques géométriques de la couronne
 cat("=== Calcul des métriques de forme ===\n\n")
 
+# Calculer le périmètre via st_boundary (en dehors de mutate pour éviter les problèmes)
+crowns_sample$perimeter_m <- sapply(seq_len(nrow(crowns_sample)), function(i) {
+  tryCatch({
+    g <- st_geometry(crowns_sample)[i]
+    boundary <- st_boundary(g)
+    as.numeric(st_length(boundary))
+  }, error = function(e) NA_real_)
+})
+
 crowns_sample <- crowns_sample |>
   mutate(
     # Surface
-    area_m2 = as.numeric(st_area(geometry)),
-
-    # Périmètre (conversion explicite en MULTILINESTRING)
-    perimeter_m = sapply(seq_len(n()), function(i) {
-      tryCatch({
-        geom <- geometry[i]
-        boundary <- st_boundary(geom)
-        as.numeric(st_length(boundary))
-      }, error = function(e) NA_real_)
-    }),
+    area_m2 = as.numeric(st_area(st_geometry(crowns_sample))),
 
     # Compacité (1 = cercle parfait)
     compactness = 4 * pi * area_m2 / (perimeter_m^2),
