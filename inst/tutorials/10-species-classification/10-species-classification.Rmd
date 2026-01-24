@@ -1886,6 +1886,9 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 classif_dir <- file.path(data_dir, "result_classification")
 # config est hérité du setup principal
 
+# Charger ranger pour la méthode predict
+library(ranger)
+
 # Charger les données et le modèle
 training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
 feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
