@@ -1123,7 +1123,7 @@ irc <- rast(irc_file)
 ndvi <- rast(ndvi_file)
 ```
 
-```{r irc-features, exercise=TRUE, exercise.setup="irc-features-setup", exercise.timelimit=600}
+```{r irc-features, exercise=TRUE, exercise.setup="irc-features-setup", exercise.timelimit=3000}
 cat("=== Extraction des features IRC (optimisé) ===\n\n")
 
 # Vérifier l'alignement spatial
@@ -1286,6 +1286,18 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 classif_dir <- file.path(data_dir, "result_classification")
 # config est hérité du setup principal
 
+# Fonction de lookup des essences (nécessaire pour le join)
+get_species_lookup <- function() {
+  data.frame(
+    code = c("PIAB", "ABAL", "FASY", "TABA", "PISY", "LADE", "QUPE", "QURO"),
+    nom_fr = c("Épicéa", "Sapin", "Hêtre", "Frêne", "Pin sylvestre",
+               "Mélèze", "Chêne pédonculé", "Chêne rouvre"),
+    groupe = c("Résineux", "Résineux", "Feuillu", "Feuillu", "Résineux",
+               "Résineux", "Feuillu", "Feuillu"),
+    stringsAsFactors = FALSE
+  )
+}
+
 # Charger les données
 crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_features.rds"))
 trees_terrain <- readRDS(file.path(classif_dir, "trees_terrain.rds"))
@@ -1294,43 +1306,52 @@ trees_terrain <- readRDS(file.path(classif_dir, "trees_terrain.rds"))
 ```{r assemble, exercise=TRUE, exercise.setup="assemble-setup"}
 cat("=== Assemblage du dataset d'apprentissage ===\n\n")
 
-# Pour la démonstration, nous allons associer les labels aux couronnes
-# de manière simplifiée (assignation aléatoire stratifiée)
-
-# Distribution des essences disponibles
-ess_available <- table(trees_terrain$ess)
-cat("Essences disponibles dans les données terrain:\n")
-print(ess_available)
-
-# Assigner des essences aux couronnes (simulation pour la démo)
-set.seed(config$seed)
 n_crowns <- nrow(crowns_sample)
+cat(sprintf("Couronnes avec features: %d\n", n_crowns))
 
-# Probabilités basées sur la distribution terrain
-ess_names <- names(ess_available)
-ess_probs <- as.numeric(ess_available) / sum(ess_available)
+# Les couronnes ont déjà les labels d'essence depuis l'exercice 2.2
+# Vérifier les colonnes disponibles
+cat("\nColonnes d'essence disponibles:\n")
+ess_cols <- intersect(c("ess", "nom_fr", "groupe", "species", "species_group"), names(crowns_sample))
+cat(paste(" ", ess_cols, collapse = "\n"), "\n")
 
-crowns_sample$ess <- sample(ess_names, n_crowns, replace = TRUE, prob = ess_probs)
+# Renommer pour standardiser (si nécessaire)
+if ("nom_fr" %in% names(crowns_sample) && !"species" %in% names(crowns_sample)) {
+  # Gérer le cas des colonnes dupliquées (.x, .y)
+  if ("nom_fr.x" %in% names(crowns_sample)) {
+    crowns_sample$species <- crowns_sample$nom_fr.x
+    crowns_sample$species_group <- crowns_sample$groupe.x
+  } else {
+    crowns_sample$species <- crowns_sample$nom_fr
+    crowns_sample$species_group <- crowns_sample$groupe
+  }
+}
 
-# Ajouter les noms français
-species_lookup <- get_species_lookup()
-crowns_sample <- crowns_sample |>
-  left_join(species_lookup[, c("code", "nom_fr", "groupe")],
-            by = c("ess" = "code"))
-
-# Renommer pour clarté
-crowns_sample <- crowns_sample |>
-  rename(species = nom_fr, species_group = groupe)
-
-# Statistiques
+# Statistiques des essences
 cat("\n=== Distribution des essences ===\n")
-species_counts <- table(crowns_sample$species)
-for (s in names(sort(species_counts, decreasing = TRUE))) {
-  cat(sprintf("  %s: %d (%.1f%%)\n", s, species_counts[s],
-              100 * species_counts[s] / n_crowns))
+if ("species" %in% names(crowns_sample)) {
+  species_counts <- table(crowns_sample$species)
+  for (s in names(sort(species_counts, decreasing = TRUE))) {
+    cat(sprintf("  %s: %d (%.1f%%)\n", s, species_counts[s],
+                100 * species_counts[s] / n_crowns))
+  }
+} else if ("ess" %in% names(crowns_sample)) {
+  ess_counts <- table(crowns_sample$ess)
+  species_lookup <- get_species_lookup()
+  for (e in names(sort(ess_counts, decreasing = TRUE))) {
+    nom <- species_lookup$nom_fr[species_lookup$code == e]
+    if (length(nom) == 0) nom <- e
+    cat(sprintf("  %s (%s): %d (%.1f%%)\n", e, nom, ess_counts[e],
+                100 * ess_counts[e] / n_crowns))
+  }
+  # Créer species à partir de ess
+  crowns_sample <- crowns_sample |>
+    left_join(species_lookup[, c("code", "nom_fr", "groupe")], by = c("ess" = "code")) |>
+    rename(species = nom_fr, species_group = groupe)
 }
 
 cat(sprintf("\nTotal couronnes labellisées: %d\n", n_crowns))
+cat(sprintf("Features disponibles: %d\n", ncol(crowns_sample) - 1))  # -1 pour geometry
 ```
 
 ### Exercice 5.2 : Nettoyage et sélection des features
@@ -1480,7 +1501,7 @@ training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
 feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
 ```
 
-```{r blockcv, exercise=TRUE, exercise.setup="blockcv-setup", exercise.timelimit=300}
+```{r blockcv, exercise=TRUE, exercise.setup="blockcv-setup", exercise.timelimit=3000}
 cat("=== Validation spatiale avec blockCV ===\n\n")
 
 if (requireNamespace("blockCV", quietly = TRUE)) {
