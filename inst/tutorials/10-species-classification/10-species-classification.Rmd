@@ -1893,16 +1893,47 @@ library(ranger)
 training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
 feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
 rf_model <- readRDS(file.path(classif_dir, "rf_model.rds"))
+
+# Vérifier si training_data a des géométries valides
+if (!inherits(training_data, "sf") || is.null(st_geometry(training_data))) {
+  # Recharger les couronnes avec géométries
+  crowns_labeled <- readRDS(file.path(classif_dir, "crowns_labeled.rds"))
+  # Joindre par treeID si disponible
+  if ("treeID" %in% names(training_data) && "treeID" %in% names(crowns_labeled)) {
+    training_data <- crowns_labeled |>
+      inner_join(st_drop_geometry(training_data), by = "treeID")
+  } else {
+    # Sinon utiliser crowns_labeled directement
+    training_data <- crowns_labeled
+  }
+}
 ```
 
-```{r mapping, exercise=TRUE, exercise.setup="mapping-setup", fig.width=12, fig.height=10}
+```{r mapping, exercise=TRUE, exercise.setup="mapping-setup", fig.width=10, fig.height=10}
 cat("=== Cartographie des prédictions ===\n\n")
 
-# Diagnostics
-cat("Données chargées:\n")
-cat(sprintf("  Lignes: %d\n", nrow(training_data)))
-cat(sprintf("  Est sf: %s\n", inherits(training_data, "sf")))
-cat(sprintf("  Features disponibles: %d\n", sum(feature_cols %in% names(training_data))))
+# Diagnostics géométrie détaillés
+cat("=== Diagnostics données ===\n")
+cat(sprintf("Lignes: %d\n", nrow(training_data)))
+cat(sprintf("Est sf: %s\n", inherits(training_data, "sf")))
+cat(sprintf("Colonnes: %s\n", paste(head(names(training_data), 8), collapse = ", ")))
+
+if (inherits(training_data, "sf")) {
+  geom_col <- attr(training_data, "sf_column")
+  cat(sprintf("Colonne géométrie: %s\n", geom_col))
+  cat(sprintf("Type géométrie: %s\n", paste(unique(st_geometry_type(training_data)), collapse = ", ")))
+  cat(sprintf("Géométries vides: %d\n", sum(st_is_empty(training_data))))
+  cat(sprintf("CRS: EPSG:%s\n", st_crs(training_data)$epsg))
+  bbox <- st_bbox(training_data)
+  cat(sprintf("Bbox: %.0f,%.0f - %.0f,%.0f\n", bbox[1], bbox[2], bbox[3], bbox[4]))
+} else {
+  cat("ERREUR: training_data n'est pas un objet sf!\n")
+  stop("Impossible de cartographier sans géométrie")
+}
+
+cat(sprintf("Features disponibles: %d / %d\n",
+            sum(feature_cols %in% names(training_data)),
+            length(feature_cols)))
 
 # Préparer les données pour prédiction
 predict_data <- training_data |>
@@ -2061,7 +2092,7 @@ Vous avez complété le **Tutorial 10 : Classification d'Essences au Niveau Cour
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    WORKFLOW CLASSIFICATION D'ESSENCES                        │
+│                    WORKFLOW CLASSIFICATION D'ESSENCES                       │
 └─────────────────────────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────────────┐
