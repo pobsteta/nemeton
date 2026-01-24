@@ -63,14 +63,12 @@ reference:
   - title: "Family C: Carbon & Vitality / Famille C : Carbone & Vitalité"
     desc: "Carbon storage and vegetation vitality indicators / Indicateurs de stockage de carbone et de vitalité de la végétation"
     contents:
-    - indicator_carbon
     - indicator_carbon_biomass
     - indicator_carbon_ndvi
 
   - title: "Family W: Water Regulation / Famille W : Régulation de l'eau"
     desc: "Hydrological regulation and water-related indicators / Indicateurs de régulation hydrologique et relatifs à l'eau"
     contents:
-    - indicator_water
     - indicator_water_network
     - indicator_water_wetlands
     - indicator_water_twi
@@ -143,13 +141,6 @@ reference:
     - indicator_naturalness_distance
     - indicator_naturalness_continuity
     - indicator_naturalness_composite
-
-  - title: "Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)"
-    desc: "Biodiversity, fragmentation, accessibility indicators / Indicateurs de biodiversité, fragmentation, accessibilité"
-    contents:
-    - indicator_biodiversity
-    - indicator_fragmentation
-    - indicator_accessibility
 
   - title: "Temporal Analysis / Analyse temporelle"
     desc: "Multi-period analysis and change detection / Analyse multi-périodes et détection de changements"
