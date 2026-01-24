@@ -134,4 +134,4 @@ R package version 0.6.2. https://github.com/pobsteta/nemeton
 
 ---
 
-**Développé avec** [Claude Code](https://claude.com/claude-code)
+**Développé avec** ❤️ **et** [Claude Code](https://claude.com/claude-code)
