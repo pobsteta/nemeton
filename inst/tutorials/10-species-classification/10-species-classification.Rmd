@@ -1996,46 +1996,36 @@ species_colors <- setNames(
 cat("\nPalette utilisée:\n")
 print(species_colors)
 
-# Zoom sur le centre (200m x 200m) pour visualiser les couronnes
+# Affichage - utiliser toutes les données (pas de zoom pour éviter les problèmes)
 bbox <- st_bbox(training_data)
-center_x <- (bbox[[1]] + bbox[[3]]) / 2
-center_y <- (bbox[[2]] + bbox[[4]]) / 2
-zoom_size <- 100  # 100m de chaque côté
+cat(sprintf("\nBbox données: xmin=%.0f, ymin=%.0f, xmax=%.0f, ymax=%.0f\n",
+            bbox[[1]], bbox[[2]], bbox[[3]], bbox[[4]]))
+cat(sprintf("Étendue: %.0f x %.0f m\n", bbox[[3]] - bbox[[1]], bbox[[4]] - bbox[[2]]))
 
-zoom_xlim <- c(center_x - zoom_size, center_x + zoom_size)
-zoom_ylim <- c(center_y - zoom_size, center_y + zoom_size)
+# Utiliser directement training_data (toutes les couronnes classifiées)
+crowns_plot <- training_data
+cat(sprintf("Couronnes à afficher: %d\n", nrow(crowns_plot)))
 
-cat(sprintf("\nZoom centré sur: X=%.0f, Y=%.0f (200m x 200m)\n", center_x, center_y))
-cat(sprintf("Bbox: xmin=%.0f, xmax=%.0f, ymin=%.0f, ymax=%.0f\n",
-            bbox[[1]], bbox[[3]], bbox[[2]], bbox[[4]]))
-
-# Filtrer les couronnes dans la zone de zoom pour vérifier
-zoom_bbox <- st_bbox(c(xmin = zoom_xlim[1], ymin = zoom_ylim[1],
-                       xmax = zoom_xlim[2], ymax = zoom_ylim[2]),
-                     crs = st_crs(training_data))
-crowns_zoom <- st_crop(training_data, zoom_bbox)
-cat(sprintf("Couronnes dans le zoom: %d\n", nrow(crowns_zoom)))
-
-# Cartes avec les données filtrées (plus fiable que coord_sf seul)
+# Cartes
 p1 <- ggplot() +
-  geom_sf(data = crowns_zoom, aes(fill = final_class),
-          color = "darkgrey", linewidth = 0.3) +
+  geom_sf(data = crowns_plot, aes(fill = final_class),
+          color = "white", linewidth = 0.1) +
   scale_fill_manual(values = species_colors, name = "Essence", drop = FALSE) +
   labs(title = "Classification des essences",
-       subtitle = sprintf("Zoom 200m x 200m - %d couronnes", nrow(crowns_zoom))) +
+       subtitle = sprintf("%d couronnes classifiées", nrow(crowns_plot))) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p2 <- ggplot() +
-  geom_sf(data = crowns_zoom, aes(fill = pred_prob), color = "darkgrey", linewidth = 0.2) +
+  geom_sf(data = crowns_plot, aes(fill = pred_prob), color = "white", linewidth = 0.1) +
   scale_fill_viridis_c(name = "Probabilité", option = "plasma", limits = c(0, 1)) +
   labs(title = "Confiance de la classification") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p3 <- ggplot() +
-  geom_sf(data = crowns_zoom, aes(fill = uncertain),
-          color = "darkgrey", linewidth = 0.3) +
+  geom_sf(data = crowns_plot, aes(fill = uncertain),
+          color = "white", linewidth = 0.1) +
   scale_fill_manual(
     values = c("FALSE" = "forestgreen", "TRUE" = "red"),
     labels = c("Confiant", "Incertain"),
@@ -2046,7 +2036,7 @@ p3 <- ggplot() +
   theme(legend.position = "bottom")
 
 # Combiner
-(p1 | p2) / p3
+p1 / p2 / p3
 
 # Exporter
 output_file <- file.path(classif_dir, "crowns_classified.gpkg")
