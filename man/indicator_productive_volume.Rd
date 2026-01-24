@@ -42,9 +42,9 @@ based on species, diameter (DBH), and height data.
 \details{
 **Calculation** (IFN tarif method):
 \itemize{
-  \item Lookup species-specific IFN equation: \code{V = a * DBH^b * H^c}
+  \item Lookup species-specific IFN equation: \code{V = a x DBH^b x H^c}
   \item Calculate individual tree volume
-  \item Scale by tree density: \code{P1 = V_individual * density_stems_ha}
+  \item Scale by tree density: \code{P1 = V_individual x density_stems_ha}
 }
 
 **Species Fallback**:

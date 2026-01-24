@@ -37,9 +37,9 @@
 #' units <- nemeton_units(
 #'   polygons,
 #'   metadata = list(
-#'     site_name = "For\u00eat de Fontainebleau",
+#'     site_name = "Foret de Fontainebleau",
 #'     year = 2024,
-#'     source = "IGN BD For\u00eat v2"
+#'     source = "IGN BD Foret v2"
 #'   )
 #' )
 #'

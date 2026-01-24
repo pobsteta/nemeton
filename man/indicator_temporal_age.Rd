@@ -6,6 +6,7 @@
 \usage{
 indicator_temporal_age(
   units,
+  layers = NULL,
   age_field = "age",
   establishment_year_field = NULL,
   current_year = NULL

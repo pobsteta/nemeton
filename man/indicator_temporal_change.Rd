@@ -6,9 +6,10 @@
 \usage{
 indicator_temporal_change(
   units,
-  land_cover_early,
-  land_cover_late,
-  years_elapsed,
+  layers = NULL,
+  land_cover_early = NULL,
+  land_cover_late = NULL,
+  years_elapsed = NULL,
   interpretation = "stability"
 )
 }
