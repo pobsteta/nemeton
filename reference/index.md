@@ -31,8 +31,6 @@ calcul d’indicateurs
 Carbon storage and vegetation vitality indicators / Indicateurs de
 stockage de carbone et de vitalité de la végétation
 
-- [`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md)
-  : Calculate carbon stock indicator
 - [`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)
   : Carbon Stock via Biomass and Allometric Models (C1)
 - [`indicator_carbon_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md)
@@ -43,8 +41,6 @@ stockage de carbone et de vitalité de la végétation
 Hydrological regulation and water-related indicators / Indicateurs de
 régulation hydrologique et relatifs à l’eau
 
-- [`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md)
-  : Calculate water regulation indicator
 - [`indicator_water_network()`](https://pobsteta.github.io/nemeton/reference/indicator_water_network.md)
   : Hydrographic Network Density (W1)
 - [`indicator_water_wetlands()`](https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.md)
@@ -169,18 +165,6 @@ Distance infrastructures, continuité forestière et indice wilderness
 - [`indicator_naturalness_composite()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_composite.md)
   : N3: Composite Naturalness Index
 
-## Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)
-
-Biodiversity, fragmentation, accessibility indicators / Indicateurs de
-biodiversité, fragmentation, accessibilité
-
-- [`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md)
-  : Calculate biodiversity indicator
-- [`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md)
-  : Calculate forest fragmentation indicator
-- [`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)
-  : Calculate accessibility indicator
-
 ## Temporal Analysis / Analyse temporelle
 
 Multi-period analysis and change detection / Analyse multi-périodes et
@@ -276,6 +260,15 @@ summary pour les objets nemeton
 - [`nemeton-package`](https://pobsteta.github.io/nemeton/reference/nemeton-package.md)
   [`nemeton`](https://pobsteta.github.io/nemeton/reference/nemeton-package.md)
   : nemeton: Systemic Forest Analysis Using the Nemeton Method
+
+## Utilities / Utilitaires
+
+Parallel processing helpers / Fonctions de traitement parallèle
+
+- [`smart_map()`](https://pobsteta.github.io/nemeton/reference/smart_map.md)
+  : Smart Map with Adaptive Parallelization
+- [`smart_map_sf()`](https://pobsteta.github.io/nemeton/reference/smart_map_sf.md)
+  : Smart Map for Spatial Data with Row Indices
 
 ## Internal Functions / Fonctions internes
 

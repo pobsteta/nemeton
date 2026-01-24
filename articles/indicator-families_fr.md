@@ -286,13 +286,13 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("carbon", "water", "biodiversity")
+  indicators = c("carbon_biomass", "water_twi", "biodiversity_protection")
 )
 
 # Normaliser tous les indicateurs
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "water", "biodiversity"),
+  indicators = c("carbon_biomass", "water_twi", "biodiversity_protection"),
   method = "minmax"
 )
 
@@ -445,7 +445,7 @@ results <- nemeton_compute(
 # 3. Normaliser
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "water", "biodiversity"),
+  indicators = c("carbon_biomass", "water_twi", "biodiversity_protection"),
   method = "minmax"
 )
 
@@ -537,20 +537,20 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1  nemeton_0.4.23
+#> [1] ggplot2_4.0.1 nemeton_0.6.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    
-#>  [5] tidyselect_1.2.1   Rcpp_1.1.0         jquerylib_0.1.4    systemfonts_1.3.1 
+#>  [5] tidyselect_1.2.1   Rcpp_1.1.1         jquerylib_0.1.4    systemfonts_1.3.1 
 #>  [9] scales_1.4.0       textshaping_1.0.4  yaml_2.3.12        fastmap_1.2.0     
-#> [13] R6_2.6.1           generics_0.1.4     classInt_0.4-11    sf_1.0-23         
-#> [17] knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.0       desc_1.4.3        
+#> [13] R6_2.6.1           generics_0.1.4     classInt_0.4-11    sf_1.0-24         
+#> [17] knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.1       desc_1.4.3        
 #> [21] units_1.0-0        DBI_1.2.3          pillar_1.11.1      RColorBrewer_1.1-3
-#> [25] bslib_0.9.0        rlang_1.1.7        cachem_1.1.0       terra_1.8-86      
-#> [29] xfun_0.55          S7_0.2.1           fs_1.6.6           sass_0.4.10       
+#> [25] bslib_0.9.0        rlang_1.1.7        cachem_1.1.0       terra_1.8-93      
+#> [29] xfun_0.56          S7_0.2.1           fs_1.6.6           sass_0.4.10       
 #> [33] otel_0.2.0         cli_3.6.5          withr_3.0.2        pkgdown_2.2.0     
 #> [37] magrittr_2.0.4     class_7.3-23       digest_0.6.39      grid_4.5.2        
-#> [41] lifecycle_1.0.5    vctrs_0.6.5        KernSmooth_2.23-26 proxy_0.4-29      
+#> [41] lifecycle_1.0.5    vctrs_0.7.1        KernSmooth_2.23-26 proxy_0.4-29      
 #> [45] evaluate_1.0.5     glue_1.8.0         farver_2.1.2       codetools_0.2-20  
 #> [49] ragg_1.5.0         e1071_1.7-17       rmarkdown_2.30     pkgconfig_2.0.3   
 #> [53] tools_4.5.2        htmltools_0.5.9

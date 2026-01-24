@@ -15,6 +15,7 @@
 ">
 <meta property="og:description" content="Évaluation multi-famille des services écosystémiques pour la gestion forestière avec la méthode Nemeton. Calculez, normalisez, agrégez et visualisez des indicateurs biophysiques à travers 12 familles de services écosystémiques.
 ">
+<meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -24,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.23</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,8 +65,10 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="nemeton-">nemeton <img src="reference/figures/logo.png" align="right" height="139" alt=""><a class="anchor" aria-label="anchor" href="#nemeton-"></a>
-</h1></div>
+<div class="page-header">
+<img src="logo.svg" class="logo" alt=""><h1 id="nemeton-">nemeton <a class="anchor" aria-label="anchor" href="#nemeton-"></a>
+</h1>
+</div>
 <!-- badges: start -->
 
 <blockquote>
@@ -413,78 +416,88 @@
 </h3>
 <p>Stock de carbone forestier à partir de biomasse aérienne.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
+<code class="sourceCode R"><span><span class="co"># Exemple avec BD Forêt attributes</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
-<span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">carbon</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_carbon.html">indicator_carbon</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units</span>,</span>
-<span>  <span class="va">layers</span>,</span>
-<span>  biomass_layer <span class="op">=</span> <span class="st">"biomass"</span>,</span>
-<span>  conversion_factor <span class="op">=</span> <span class="fl">0.47</span>  <span class="co"># IPCC default</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">carbon</span><span class="op">)</span>  <span class="co"># Stock de carbone en Mg C/ha</span></span></code></pre></div>
-<p><strong>Données requises</strong> : Raster de biomasse (tonnes/ha ou Mg/ha) <strong>Source recommandée</strong> : Copernicus Biomass, GEDI, ou modèles locaux</p>
+<span></span>
+<span><span class="co"># Prepare units with required BD Forêt attributes</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">species</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Quercus"</span>, <span class="st">"Fagus"</span>, <span class="st">"Pinus"</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">age</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">80</span>, <span class="fl">60</span>, <span class="fl">40</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">density</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.7</span>, <span class="fl">0.8</span>, <span class="fl">0.6</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Calculate carbon stock using allometric models</span></span>
+<span><span class="va">carbon</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_carbon_biomass.html">indicator_carbon_biomass</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">carbon</span><span class="op">)</span>  <span class="co"># Stock de carbone en tC/ha</span></span></code></pre></div>
+<p><strong>Données requises</strong> : Attributs BD Forêt (espèce, âge, densité) <strong>Source recommandée</strong> : BD Forêt v2 IGN, inventaires forestiers locaux</p>
 </div>
 <div class="section level3">
 <h3 id="id_-indicateur-biodiversité">🦋 Indicateur Biodiversité<a class="anchor" aria-label="anchor" href="#id_-indicateur-biodiversit%C3%A9"></a>
 </h3>
-<p>Indices de diversité (richesse, Shannon, Simpson).</p>
+<p>Protection et diversité structurelle des habitats.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
-<span><span class="va">biodiv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_biodiversity.html">indicator_biodiversity</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Exemple - Protection status (B1)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">biodiv_prot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
-<span>  richness_layer <span class="op">=</span> <span class="st">"species_richness"</span>,</span>
-<span>  index <span class="op">=</span> <span class="st">"richness"</span></span>
+<span>  protection_layer <span class="op">=</span> <span class="st">"protected_areas"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">biodiv</span><span class="op">)</span>  <span class="co"># Nombre moyen d'espèces par parcelle</span></span></code></pre></div>
-<p><strong>Données requises</strong> : Raster de richesse spécifique ou indices pré-calculés <strong>Source recommandée</strong> : INPN, GBIF, inventaires forestiers</p>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">biodiv_prot</span><span class="op">)</span>  <span class="co"># Score de protection des habitats</span></span></code></pre></div>
+<p><strong>Données requises</strong> : Couches de zones protégées, diversité structurelle <strong>Source recommandée</strong> : INPN, ZNIEFF, réserves naturelles</p>
 </div>
 <div class="section level3">
 <h3 id="id_-indicateur-eau">💧 Indicateur Eau<a class="anchor" aria-label="anchor" href="#id_-indicateur-eau"></a>
 </h3>
-<p>Régulation hydrique (TWI + proximité cours d’eau).</p>
+<p>Régulation hydrique via TWI et réseau hydrographique.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
-<span><span class="va">water</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_water.html">indicator_water</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Exemple - Topographic Wetness Index (W3)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">water_twi</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_water_twi.html">indicator_water_twi</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
-<span>  dem_layer <span class="op">=</span> <span class="st">"dem"</span>,</span>
-<span>  water_layer <span class="op">=</span> <span class="st">"water"</span>,</span>
-<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span>
+<span>  dem_layer <span class="op">=</span> <span class="st">"dem"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">water</span><span class="op">)</span>  <span class="co"># Indice 0-1 (0 = faible, 1 = fort)</span></span></code></pre></div>
-<p><strong>Données requises</strong> : MNT (DEM) + vecteur réseau hydrographique <strong>Source recommandée</strong> : IGN RGE ALTI, BD TOPO Hydrographie</p>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">water_twi</span><span class="op">)</span>  <span class="co"># Indice 0-1 (zones humides potentielles)</span></span></code></pre></div>
+<p><strong>Données requises</strong> : MNT (DEM), réseau hydrographique, zones humides <strong>Source recommandée</strong> : IGN RGE ALTI, BD TOPO Hydrographie</p>
 </div>
 <div class="section level3">
-<h3 id="id_-indicateur-fragmentation">🌿 Indicateur Fragmentation<a class="anchor" aria-label="anchor" href="#id_-indicateur-fragmentation"></a>
+<h3 id="id_-indicateur-paysage">🌿 Indicateur Paysage<a class="anchor" aria-label="anchor" href="#id_-indicateur-paysage"></a>
 </h3>
-<p>Fragmentation forestière (couverture, connectivité).</p>
+<p>Fragmentation forestière et connectivité.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
-<span><span class="va">frag</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_fragmentation.html">indicator_fragmentation</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Exemple - Landscape fragmentation (L1)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">frag</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_landscape_fragmentation.html">indicator_landscape_fragmentation</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  landcover_layer <span class="op">=</span> <span class="st">"landcover"</span>,</span>
-<span>  forest_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>  <span class="co"># Classes forestières</span></span>
+<span>  forest_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>  <span class="co"># Classes forestières</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">frag</span><span class="op">)</span>  <span class="co"># Pourcentage de couverture forestière</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">frag</span><span class="op">)</span>  <span class="co"># Métriques de fragmentation paysagère</span></span></code></pre></div>
 <p><strong>Données requises</strong> : Raster d’occupation du sol <strong>Source recommandée</strong> : OSO (Theia), Corine Land Cover</p>
 </div>
 <div class="section level3">
-<h3 id="id_️-indicateur-accessibilité">🛤️ Indicateur Accessibilité<a class="anchor" aria-label="anchor" href="#id_%EF%B8%8F-indicateur-accessibilit%C3%A9"></a>
+<h3 id="id_️-indicateur-social">🛤️ Indicateur Social<a class="anchor" aria-label="anchor" href="#id_%EF%B8%8F-indicateur-social"></a>
 </h3>
-<p>Accessibilité humaine (distance routes/sentiers).</p>
+<p>Accessibilité et services récréatifs.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Exemple avec massif_demo</span></span>
-<span><span class="va">access</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_accessibility.html">indicator_accessibility</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Exemple - Social accessibility (S2)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span><span class="va">layers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">access</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_social_accessibility.html">indicator_social_accessibility</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  roads_layer <span class="op">=</span> <span class="st">"roads"</span>,</span>
-<span>  invert <span class="op">=</span> <span class="cn">FALSE</span>  <span class="co"># TRUE pour indice de sauvagerie</span></span>
+<span>  trails_layer <span class="op">=</span> <span class="st">"trails"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">access</span><span class="op">)</span>  <span class="co"># Indice 0-1 (0 = inaccessible, 1 = très accessible)</span></span></code></pre></div>
-<p><strong>Données requises</strong> : Vecteurs routes et sentiers <strong>Source recommandée</strong> : BD TOPO Routes, OpenStreetMap</p>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">access</span><span class="op">)</span>  <span class="co"># Indice 0-1 (accessibilité pour loisirs/services)</span></span></code></pre></div>
+<p><strong>Données requises</strong> : Vecteurs routes, sentiers, équipements <strong>Source recommandée</strong> : BD TOPO Routes, OpenStreetMap, IGN</p>
 </div>
 </div>
 <div class="section level2">

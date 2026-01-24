@@ -4,11 +4,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/LICENSE-text.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/LICENSE.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/MVP_STATUS_FINAL.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/RELEASE_INSTRUCTIONS.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/RELEASE_NOTES_v0.1.0-rc2.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/RELEASE_NOTES_v0.1.0.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/RELEASE_NOTES_v0.2.0.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/SPECIFICATION_TECHNIQUE.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/TUTORIAL_INSTALL.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/complete-referential_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/getting-started_fr.html</loc></url>
@@ -17,6 +14,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/articles/internationalization.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/multi-criteria-optimization_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/tutorial-guide.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/authors.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/mvp_status.html</loc></url>
@@ -35,19 +33,15 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_hotspots.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/index.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/reference/indicator_accessibility.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_air_quality.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/reference/indicator_carbon.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_energy_avoidance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_energy_fuelwood.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_naturalness_composite.html</loc></url>
@@ -67,7 +61,6 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_soil_fertility.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/reference/indicator_water.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_water_network.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_water_twi.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.html</loc></url>
@@ -99,6 +92,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_temporal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_units.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/smart_map.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/smart_map_sf.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/summary.nemeton_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/summary.nemeton_temporal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/summary.nemeton_units.html</loc></url>

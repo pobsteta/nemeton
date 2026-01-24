@@ -74,7 +74,7 @@ units$family_T <- runif(nrow(units), 40, 85)
 units$family_C <- runif(nrow(units), 45, 80)
 units$family_W <- runif(nrow(units), 35, 75)
 
-# Identify hotspots: top 20\% in at least 3 families
+# Identify hotspots: top 20\
 hotspots <- identify_hotspots(
   units,
   threshold = 80,
@@ -85,7 +85,7 @@ hotspots <- identify_hotspots(
 hotspot_parcels <- hotspots[hotspots$is_hotspot, ]
 print(hotspot_parcels[, c("parcel_id", "hotspot_count", "hotspot_families")])
 
-# Conservative threshold: top 10\% in 4+ families
+# Conservative threshold: top 10\
 elite_hotspots <- identify_hotspots(
   units,
   threshold = 90,

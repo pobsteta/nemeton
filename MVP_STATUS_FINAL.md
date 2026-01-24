@@ -21,18 +21,11 @@ Gestion des erreurs par indicateur (continue si échec)
 
 Dataset démo `massif_demo` (136 ha, 20 parcelles)
 
-**Fonctions implémentées**: -
-[`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md) -
-Stock de carbone -
-[`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md) -
-Richesse spécifique  
--
-[`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md) -
-Régulation hydrique (TWI + proximité) -
-[`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md) -
-Couverture forestière -
-[`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md) -
-Distance aux routes
+**Fonctions implémentées**: - `indicator_carbon()` - Stock de carbone -
+`indicator_biodiversity()` - Richesse spécifique  
+- `indicator_water()` - Régulation hydrique (TWI + proximité) -
+`indicator_fragmentation()` - Couverture forestière -
+`indicator_accessibility()` - Distance aux routes
 
 ------------------------------------------------------------------------
 
@@ -187,12 +180,9 @@ Calculer les indicateurs -
 [`massif_demo_layers()`](https://pobsteta.github.io/nemeton/reference/massif_demo_layers.md) -
 Charger le dataset démo
 
-**Indicateurs**: -
-[`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md) -
-[`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md) -
-[`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md) -
-[`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md) -
-[`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)
+**Indicateurs**: - `indicator_carbon()` - `indicator_biodiversity()` -
+`indicator_water()` - `indicator_fragmentation()` -
+`indicator_accessibility()`
 
 **Normalisation**: -
 [`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md) -

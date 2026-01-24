@@ -31,8 +31,9 @@ nemeton_compute(
 - indicators:
 
   Character vector of indicator names to calculate, or "all" for all
-  available. Available indicators: "carbon", "biodiversity", "water",
-  "fragmentation", "accessibility"
+  available. See
+  [`list_indicators`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+  for available indicators from the 12-family framework.
 
 - preprocess:
 
@@ -84,11 +85,8 @@ indicators.
 
 ## See also
 
-[`indicator_carbon`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md),
-[`indicator_biodiversity`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md),
-[`indicator_water`](https://pobsteta.github.io/nemeton/reference/indicator_water.md),
-[`indicator_fragmentation`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md),
-[`indicator_accessibility`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)
+[`list_indicators`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+for available indicators in the 12-family framework
 
 ## Examples
 

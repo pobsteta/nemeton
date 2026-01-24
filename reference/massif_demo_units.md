@@ -123,34 +123,45 @@ data(massif_demo_units)
 
 # Inspect parcels
 print(massif_demo_units)
-#> Simple feature collection with 20 features and 5 fields
+#> Simple feature collection with 20 features and 15 fields
 #> Geometry type: POLYGON
 #> Dimension:     XY
 #> Bounding box:  xmin: 698041.8 ymin: 6499215 xmax: 702793.8 ymax: 6504159
 #> Projected CRS: RGF93 v1 / Lambert-93
 #> First 10 features:
-#>    parcel_id      forest_type age_class   management surface_ha
-#> 1        P01     Futaie mixte    Mature        Mixte   4.989211
-#> 2        P02 Futaie résineuse     Moyen   Production   5.867935
-#> 3        P03  Futaie feuillue  Surannée Conservation   6.557777
-#> 4        P04  Futaie feuillue  Surannée   Production   9.989553
-#> 5        P05 Futaie résineuse     Moyen   Production   5.906395
-#> 6        P06 Futaie résineuse    Mature   Production   1.048296
-#> 7        P07  Futaie feuillue    Mature        Mixte  17.079363
-#> 8        P08  Futaie feuillue    Mature   Production  11.414577
-#> 9        P09     Futaie mixte     Moyen   Production  16.105209
-#> 10       P10          Taillis  Surannée   Production  10.733433
-#>                          geometry
-#> 1  POLYGON ((698299.9 6499928,...
-#> 2  POLYGON ((701702.2 6500418,...
-#> 3  POLYGON ((702240.4 6500270,...
-#> 4  POLYGON ((700641.3 6504129,...
-#> 5  POLYGON ((699268.2 6500307,...
-#> 6  POLYGON ((699943.5 6499421,...
-#> 7  POLYGON ((698500.5 6499360,...
-#> 8  POLYGON ((699061.9 6499649,...
-#> 9  POLYGON ((702258.5 6500666,...
-#> 10 POLYGON ((699897.1 6500739,...
+#>    parcel_id      forest_type age_class   management species age
+#> 1        P01     Futaie mixte    Mature        Mixte      09  68
+#> 2        P02 Futaie résineuse     Moyen   Production      64  33
+#> 3        P03  Futaie feuillue  Surannée Conservation      03 104
+#> 4        P04  Futaie feuillue  Surannée   Production      03 166
+#> 5        P05 Futaie résineuse     Moyen   Production      61  47
+#> 6        P06 Futaie résineuse    Mature   Production      61  79
+#> 7        P07  Futaie feuillue    Mature        Mixte      03  75
+#> 8        P08  Futaie feuillue    Mature   Production      52  71
+#> 9        P09     Futaie mixte     Moyen   Production      03  48
+#> 10       P10          Taillis  Surannée   Production      52 165
+#>    establishment_year density height  dbh volume strata fertility     climate
+#> 1                1958     266   30.3 45.8  557.7      4         1 continental
+#> 2                1993     465   30.4 57.5 1541.7      1         3  atlantique
+#> 3                1922     128   31.7 41.7  232.7      2         2  atlantique
+#> 4                1860     104   29.9 42.6  186.1      2         1  atlantique
+#> 5                1979     324   27.5 51.5  779.5      2         2  atlantique
+#> 6                1947     281   38.6 76.1 2072.1      2         1  atlantique
+#> 7                1951     184   33.9 47.1  456.5      2         3 continental
+#> 8                1955     169   27.2 38.8  228.3      3         2  montagnard
+#> 9                1978     369   24.8 34.0  349.0      4         3  atlantique
+#> 10               1861     632   25.7 34.0  619.4      2         2  montagnard
+#>    surface_ha                       geometry
+#> 1    4.989211 POLYGON ((698299.9 6499928,...
+#> 2    5.867935 POLYGON ((701702.2 6500418,...
+#> 3    6.557777 POLYGON ((702240.4 6500270,...
+#> 4    9.989553 POLYGON ((700641.3 6504129,...
+#> 5    5.906395 POLYGON ((699268.2 6500307,...
+#> 6    1.048296 POLYGON ((699943.5 6499421,...
+#> 7   17.079363 POLYGON ((698500.5 6499360,...
+#> 8   11.414577 POLYGON ((699061.9 6499649,...
+#> 9   16.105209 POLYGON ((702258.5 6500666,...
+#> 10  10.733433 POLYGON ((699897.1 6500739,...
 summary(massif_demo_units$surface_ha)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 #>   1.048   4.047   5.887   6.801  10.149  17.079 

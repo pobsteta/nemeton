@@ -3,7 +3,7 @@
 Contains 20 forest parcels with associated spatial layers covering a 5km x 5km
 area in France (Lambert-93 projection)."><meta property="og:description" content="Synthetic forest dataset for demonstrating the nemeton package functionality.
 Contains 20 forest parcels with associated spatial layers covering a 5km x 5km
-area in France (Lambert-93 projection)."></head><body>
+area in France (Lambert-93 projection)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -11,7 +11,7 @@ area in France (Lambert-93 projection)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.23</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,8 +44,7 @@ area in France (Lambert-93 projection)."></head><body>
 </nav><div class="container template-reference-topic">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Massif Demo - Example Forest Dataset</h1>
+      <img src="../logo.svg" class="logo" alt=""><h1>Massif Demo - Example Forest Dataset</h1>
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/main/R/data-massif_demo.R" class="external-link"><code>R/data-massif_demo.R</code></a></small>
       <div class="d-none name"><code>massif_demo_units.Rd</code></div>
     </div>
@@ -155,34 +154,45 @@ Generated with <code>set.seed(42)</code> for reproducibility.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Inspect parcels</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 20 features and 5 fields</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 20 features and 15 fields</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Geometry type: POLYGON</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dimension:     XY</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Bounding box:  xmin: 698041.8 ymin: 6499215 xmax: 702793.8 ymax: 6504159</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Projected CRS: RGF93 v1 / Lambert-93</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> First 10 features:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    parcel_id      forest_type age_class   management surface_ha</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1        P01     Futaie mixte    Mature        Mixte   4.989211</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2        P02 Futaie résineuse     Moyen   Production   5.867935</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3        P03  Futaie feuillue  Surannée Conservation   6.557777</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4        P04  Futaie feuillue  Surannée   Production   9.989553</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5        P05 Futaie résineuse     Moyen   Production   5.906395</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6        P06 Futaie résineuse    Mature   Production   1.048296</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7        P07  Futaie feuillue    Mature        Mixte  17.079363</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8        P08  Futaie feuillue    Mature   Production  11.414577</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9        P09     Futaie mixte     Moyen   Production  16.105209</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10       P10          Taillis  Surannée   Production  10.733433</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                          geometry</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  POLYGON ((698299.9 6499928,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  POLYGON ((701702.2 6500418,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  POLYGON ((702240.4 6500270,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  POLYGON ((700641.3 6504129,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  POLYGON ((699268.2 6500307,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  POLYGON ((699943.5 6499421,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  POLYGON ((698500.5 6499360,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8  POLYGON ((699061.9 6499649,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9  POLYGON ((702258.5 6500666,...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10 POLYGON ((699897.1 6500739,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    parcel_id      forest_type age_class   management species age</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1        P01     Futaie mixte    Mature        Mixte      09  68</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2        P02 Futaie résineuse     Moyen   Production      64  33</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3        P03  Futaie feuillue  Surannée Conservation      03 104</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        P04  Futaie feuillue  Surannée   Production      03 166</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5        P05 Futaie résineuse     Moyen   Production      61  47</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6        P06 Futaie résineuse    Mature   Production      61  79</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7        P07  Futaie feuillue    Mature        Mixte      03  75</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8        P08  Futaie feuillue    Mature   Production      52  71</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9        P09     Futaie mixte     Moyen   Production      03  48</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10       P10          Taillis  Surannée   Production      52 165</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    establishment_year density height  dbh volume strata fertility     climate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                1958     266   30.3 45.8  557.7      4         1 continental</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                1993     465   30.4 57.5 1541.7      1         3  atlantique</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                1922     128   31.7 41.7  232.7      2         2  atlantique</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                1860     104   29.9 42.6  186.1      2         1  atlantique</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                1979     324   27.5 51.5  779.5      2         2  atlantique</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                1947     281   38.6 76.1 2072.1      2         1  atlantique</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                1951     184   33.9 47.1  456.5      2         3 continental</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                1955     169   27.2 38.8  228.3      3         2  montagnard</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                1978     369   24.8 34.0  349.0      4         3  atlantique</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10               1861     632   25.7 34.0  619.4      2         2  montagnard</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    surface_ha                       geometry</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1    4.989211 POLYGON ((698299.9 6499928,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    5.867935 POLYGON ((701702.2 6500418,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3    6.557777 POLYGON ((702240.4 6500270,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4    9.989553 POLYGON ((700641.3 6504129,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5    5.906395 POLYGON ((699268.2 6500307,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6    1.048296 POLYGON ((699943.5 6499421,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   17.079363 POLYGON ((698500.5 6499360,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   11.414577 POLYGON ((699061.9 6499649,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9   16.105209 POLYGON ((702258.5 6500666,...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10  10.733433 POLYGON ((699897.1 6500739,...</span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">surface_ha</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   1.048   4.047   5.887   6.801  10.149  17.079 </span>

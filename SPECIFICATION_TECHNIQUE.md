@@ -347,38 +347,32 @@ erreurs et warnings par indicateur - Ajout des résultats aux unités sf
 
 **Responsabilité** : Calculer les indicateurs biophysiques.
 
-**Fonctions** : -
-[`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md)
-: stock de carbone (biomasse, sol) -
-[`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md)
-: indices de biodiversité (richesse, Shannon, Simpson) -
-[`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md)
-: régulation hydrique (TWI, proximité hydro) - `indicator_soil()` :
-qualité des sols (érosion, texture) - `indicator_climate_risk()` :
-risques climatiques (sécheresse, incendie)
+**Fonctions** : - `indicator_carbon()` : stock de carbone (biomasse,
+sol) - `indicator_biodiversity()` : indices de biodiversité (richesse,
+Shannon, Simpson) - `indicator_water()` : régulation hydrique (TWI,
+proximité hydro) - `indicator_soil()` : qualité des sols (érosion,
+texture) - `indicator_climate_risk()` : risques climatiques (sécheresse,
+incendie)
 
 ### 5.6 Module : Indicateurs sociaux (`indicators-social.R`)
 
 **Responsabilité** : Calculer les indicateurs sociaux et culturels.
 
-**Fonctions** : -
-[`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)
-: accessibilité (distance aux routes, sentiers) -
-`indicator_protection()` : niveau de protection (Natura 2000, etc.) -
-`indicator_usage()` : intensité d’usage (densité sentiers,
-équipements) - `indicator_heritage()` : valeur patrimoniale (sites
-classés, arbres remarquables)
+**Fonctions** : - `indicator_accessibility()` : accessibilité (distance
+aux routes, sentiers) - `indicator_protection()` : niveau de protection
+(Natura 2000, etc.) - `indicator_usage()` : intensité d’usage (densité
+sentiers, équipements) - `indicator_heritage()` : valeur patrimoniale
+(sites classés, arbres remarquables)
 
 ### 5.7 Module : Indicateurs paysagers (`indicators-landscape.R`)
 
 **Responsabilité** : Calculer les indicateurs de structure paysagère.
 
-**Fonctions** : -
-[`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md)
-: fragmentation (patches, connectivité) - `indicator_heterogeneity()` :
-hétérogénéité (diversité paysagère) - `indicator_naturalness()` : degré
-de naturalité (distance à l’intervention humaine) -
-`indicator_continuity()` : continuité forestière (taille des massifs)
+**Fonctions** : - `indicator_fragmentation()` : fragmentation (patches,
+connectivité) - `indicator_heterogeneity()` : hétérogénéité (diversité
+paysagère) - `indicator_naturalness()` : degré de naturalité (distance à
+l’intervention humaine) - `indicator_continuity()` : continuité
+forestière (taille des massifs)
 
 ### 5.8 Module : Gestion temporelle (`temporal.R`)
 
@@ -791,7 +785,7 @@ indicator_<name>(
 
 #### Exemples
 
-**[`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md)**
+**`indicator_carbon()`**
 
 ``` r
 indicator_carbon(
@@ -804,7 +798,7 @@ indicator_carbon(
 )
 ```
 
-**[`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md)**
+**`indicator_biodiversity()`**
 
 ``` r
 indicator_biodiversity(
@@ -816,7 +810,7 @@ indicator_biodiversity(
 )
 ```
 
-**[`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md)**
+**`indicator_water()`**
 
 ``` r
 indicator_water(
@@ -829,7 +823,7 @@ indicator_water(
 )
 ```
 
-**[`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)**
+**`indicator_accessibility()`**
 
 ``` r
 indicator_accessibility(
@@ -1541,11 +1535,11 @@ Module `data-preprocessing` : harmonisation basique
 
 5 indicateurs biophysiques essentiels :
 
-- [`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md)
-- [`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md)
-- [`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md)
-- [`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md)
-- [`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)
+- `indicator_carbon()`
+- `indicator_biodiversity()`
+- `indicator_water()`
+- `indicator_fragmentation()`
+- `indicator_accessibility()`
 
 Fonction
 [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)

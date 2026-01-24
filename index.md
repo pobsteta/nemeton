@@ -1,4 +1,4 @@
-# nemeton ![](reference/figures/logo.png)
+# nemeton
 
 > **Analyse systémique de territoires forestiers selon la méthode
 > Nemeton**
@@ -314,93 +314,103 @@ plot_indicators_map(
 Stock de carbone forestier à partir de biomasse aérienne.
 
 ``` r
-# Exemple avec massif_demo
+# Exemple avec BD Forêt attributes
 data(massif_demo_units)
-layers <- massif_demo_layers()
-carbon <- indicator_carbon(
-  massif_demo_units,
-  layers,
-  biomass_layer = "biomass",
-  conversion_factor = 0.47  # IPCC default
-)
-summary(carbon)  # Stock de carbone en Mg C/ha
+
+# Prepare units with required BD Forêt attributes
+massif_demo_units$species <- c("Quercus", "Fagus", "Pinus")
+massif_demo_units$age <- c(80, 60, 40)
+massif_demo_units$density <- c(0.7, 0.8, 0.6)
+
+# Calculate carbon stock using allometric models
+carbon <- indicator_carbon_biomass(massif_demo_units)
+summary(carbon)  # Stock de carbone en tC/ha
 ```
 
-**Données requises** : Raster de biomasse (tonnes/ha ou Mg/ha) **Source
-recommandée** : Copernicus Biomass, GEDI, ou modèles locaux
+**Données requises** : Attributs BD Forêt (espèce, âge, densité)
+**Source recommandée** : BD Forêt v2 IGN, inventaires forestiers locaux
 
 ### 🦋 Indicateur Biodiversité
 
-Indices de diversité (richesse, Shannon, Simpson).
+Protection et diversité structurelle des habitats.
 
 ``` r
-# Exemple avec massif_demo
-biodiv <- indicator_biodiversity(
+# Exemple - Protection status (B1)
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+biodiv_prot <- indicator_biodiversity_protection(
   massif_demo_units,
   layers,
-  richness_layer = "species_richness",
-  index = "richness"
+  protection_layer = "protected_areas"
 )
-summary(biodiv)  # Nombre moyen d'espèces par parcelle
+summary(biodiv_prot)  # Score de protection des habitats
 ```
 
-**Données requises** : Raster de richesse spécifique ou indices
-pré-calculés **Source recommandée** : INPN, GBIF, inventaires forestiers
+**Données requises** : Couches de zones protégées, diversité
+structurelle **Source recommandée** : INPN, ZNIEFF, réserves naturelles
 
 ### 💧 Indicateur Eau
 
-Régulation hydrique (TWI + proximité cours d’eau).
+Régulation hydrique via TWI et réseau hydrographique.
 
 ``` r
-# Exemple avec massif_demo
-water <- indicator_water(
+# Exemple - Topographic Wetness Index (W3)
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+water_twi <- indicator_water_twi(
   massif_demo_units,
   layers,
-  dem_layer = "dem",
-  water_layer = "water",
-  weights = c(0.6, 0.4)
+  dem_layer = "dem"
 )
-summary(water)  # Indice 0-1 (0 = faible, 1 = fort)
+summary(water_twi)  # Indice 0-1 (zones humides potentielles)
 ```
 
-**Données requises** : MNT (DEM) + vecteur réseau hydrographique
+**Données requises** : MNT (DEM), réseau hydrographique, zones humides
 **Source recommandée** : IGN RGE ALTI, BD TOPO Hydrographie
 
-### 🌿 Indicateur Fragmentation
+### 🌿 Indicateur Paysage
 
-Fragmentation forestière (couverture, connectivité).
+Fragmentation forestière et connectivité.
 
 ``` r
-# Exemple avec massif_demo
-frag <- indicator_fragmentation(
+# Exemple - Landscape fragmentation (L1)
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+frag <- indicator_landscape_fragmentation(
   massif_demo_units,
   layers,
   landcover_layer = "landcover",
-  forest_values = c(1, 2, 3)  # Classes forestières
+  forest_classes = c(1, 2, 3)  # Classes forestières
 )
-summary(frag)  # Pourcentage de couverture forestière
+summary(frag)  # Métriques de fragmentation paysagère
 ```
 
 **Données requises** : Raster d’occupation du sol **Source recommandée**
 : OSO (Theia), Corine Land Cover
 
-### 🛤️ Indicateur Accessibilité
+### 🛤️ Indicateur Social
 
-Accessibilité humaine (distance routes/sentiers).
+Accessibilité et services récréatifs.
 
 ``` r
-# Exemple avec massif_demo
-access <- indicator_accessibility(
+# Exemple - Social accessibility (S2)
+data(massif_demo_units)
+layers <- massif_demo_layers()
+
+access <- indicator_social_accessibility(
   massif_demo_units,
   layers,
   roads_layer = "roads",
-  invert = FALSE  # TRUE pour indice de sauvagerie
+  trails_layer = "trails"
 )
-summary(access)  # Indice 0-1 (0 = inaccessible, 1 = très accessible)
+summary(access)  # Indice 0-1 (accessibilité pour loisirs/services)
 ```
 
-**Données requises** : Vecteurs routes et sentiers **Source
-recommandée** : BD TOPO Routes, OpenStreetMap
+**Données requises** : Vecteurs routes, sentiers, équipements **Source
+recommandée** : BD TOPO Routes, OpenStreetMap, IGN
 
 ## 🔄 Workflow complet
 
