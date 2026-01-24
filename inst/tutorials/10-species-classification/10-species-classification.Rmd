@@ -477,13 +477,38 @@ if (file.exists(crowns_file)) {
   cat(sprintf("Couronnes synthétiques créées: %d\n", nrow(crowns)))
 }
 
-# Visualisation
+# Visualisation - Zoom sur le centre de la zone (100m x 100m)
+bbox <- st_bbox(crowns)
+center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+
+# Créer une fenêtre de 100m x 100m
+zoom_size <- 50  # 50m de chaque côté du centre
+zoom_bbox <- c(
+  xmin = center_x - zoom_size,
+  xmax = center_x + zoom_size,
+  ymin = center_y - zoom_size,
+  ymax = center_y + zoom_size
+)
+
+# Filtrer les couronnes dans la zone de zoom
+crowns_zoom <- st_crop(crowns, st_bbox(c(
+  xmin = zoom_bbox["xmin"], ymin = zoom_bbox["ymin"],
+  xmax = zoom_bbox["xmax"], ymax = zoom_bbox["ymax"]
+), crs = st_crs(crowns)))
+
+cat(sprintf("\nZoom centré sur: X=%.0f, Y=%.0f\n", center_x, center_y))
+cat(sprintf("Couronnes dans la zone: %d\n", nrow(crowns_zoom)))
+
 ggplot() +
-  geom_sf(data = crowns[1:min(200, nrow(crowns)), ],
-          fill = "forestgreen", alpha = 0.5, color = "darkgreen", linewidth = 0.2) +
-  labs(title = "Aperçu des couronnes (200 premières)",
-       subtitle = sprintf("n = %d couronnes", nrow(crowns))) +
-  theme_minimal()
+  geom_sf(data = crowns_zoom,
+          fill = "forestgreen", alpha = 0.5, color = "darkgreen", linewidth = 0.3) +
+  coord_sf(xlim = c(zoom_bbox["xmin"], zoom_bbox["xmax"]),
+           ylim = c(zoom_bbox["ymin"], zoom_bbox["ymax"])) +
+  labs(title = "Aperçu des couronnes (zoom 100m x 100m)",
+       subtitle = sprintf("Centre de la zone - %d couronnes affichées", nrow(crowns_zoom))) +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 8))
 ```
 
 ### Exercice 2.2 : Charger les données terrain (labels)
