@@ -513,6 +513,9 @@ ggplot() +
 
 ### Exercice 2.2 : Charger les données terrain (labels)
 
+Nous allons créer des labels d'essences en regroupant les couronnes en clusters spatiaux
+et en assignant une essence par cluster (simulation réaliste de peuplements homogènes).
+
 ```{r load-labels-setup}
 if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
@@ -522,85 +525,139 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 classif_dir <- file.path(data_dir, "result_classification")
 dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
 # config est hérité du setup principal
+
+# Charger les couronnes depuis l'exercice 2.1
+crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
+if (file.exists(crowns_file)) {
+  crowns <- st_read(crowns_file, quiet = TRUE)
+  if (!"treeID" %in% names(crowns)) crowns$treeID <- seq_len(nrow(crowns))
+} else {
+  # Couronnes synthétiques si fichier absent
+  zone_file <- file.path(data_dir, "zone_etude.gpkg")
+  if (file.exists(zone_file)) {
+    zone <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+  } else {
+    zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                     coords = c("x", "y"), crs = 2154) |> st_buffer(500)
+  }
+  set.seed(2024)
+  pts <- st_sample(zone, 500)
+  crowns <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
+}
+crowns$area_m2 <- as.numeric(st_area(crowns))
 ```
 
 ```{r load-labels, exercise=TRUE, exercise.setup="load-labels-setup"}
-# Charger les données terrain avec les essences
-# Option 1: Depuis le package nemeton (données coregistration)
-# Option 2: Depuis les fichiers CSV du ABA model
+# =============================================================================
+# CRÉATION DES LABELS PAR CLUSTER SPATIAL (Quatre Montagnes)
+# =============================================================================
 
-cat("=== Chargement des labels terrain ===\n\n")
+cat("=== Création des labels terrain (Quatre Montagnes) ===\n\n")
 
-# Essayer de charger depuis le package
-trees_terrain <- NULL
+# Sous-échantillonner pour la démo (max 2000 couronnes)
+set.seed(config$seed)
+n_sample <- min(2000, nrow(crowns))
+crowns_sample <- crowns[sample(nrow(crowns), n_sample), ]
+cat(sprintf("Couronnes échantillonnées: %d\n", n_sample))
 
-# Option 1: Données de coregistration (treesCoregistration)
-coreg_file <- file.path(data_dir, "placettes_coregistrees.gpkg")
-if (file.exists(coreg_file)) {
-  cat("Chargement depuis placettes_coregistrees.gpkg...\n")
-  trees_terrain <- st_read(coreg_file, quiet = TRUE)
-}
+# -----------------------------------------------------------------------------
+# 1. Créer des clusters spatiaux (grille de 50m)
+# -----------------------------------------------------------------------------
+cluster_size <- 50  # mètres
 
-# Option 2: Fichiers CSV du ABA model
-if (is.null(trees_terrain)) {
-  trees_dir <- system.file("extdata", "aba.model", "field", package = "nemeton")
-  if (dir.exists(trees_dir)) {
-    cat("Chargement depuis les fichiers terrain du package...\n")
-    tree_files <- list.files(trees_dir, pattern = "_ArbresTerrain\\.csv$", full.names = TRUE)
+# Extraire les centroïdes
+centroids <- st_centroid(crowns_sample)
+coords <- st_coordinates(centroids)
 
-    if (length(tree_files) > 0) {
-      trees_terrain <- purrr::map_dfr(tree_files[1:min(10, length(tree_files))], function(f) {
-        df <- read.csv(f, stringsAsFactors = FALSE)
-        df$source_file <- basename(f)
-        df
-      })
-      cat(sprintf("Fichiers chargés: %d\n", min(10, length(tree_files))))
-    }
-  }
-}
+# Assigner un cluster_id basé sur une grille
+crowns_sample$cluster_x <- floor(coords[, 1] / cluster_size)
+crowns_sample$cluster_y <- floor(coords[, 2] / cluster_size)
+crowns_sample$cluster_id <- paste(crowns_sample$cluster_x, crowns_sample$cluster_y, sep = "_")
 
-# Option 3: Générer des données synthétiques
-if (is.null(trees_terrain) || nrow(trees_terrain) == 0) {
-  cat("Génération de données synthétiques...\n")
-  set.seed(config$seed)
+n_clusters <- length(unique(crowns_sample$cluster_id))
+cat(sprintf("Clusters spatiaux créés: %d (grille %dm)\n", n_clusters, cluster_size))
 
-  # Essences possibles (distribution réaliste pour le Vercors)
-  species_pool <- c("PIAB", "ABAL", "FASY", "TABA")
-  species_prob <- c(0.35, 0.30, 0.25, 0.10)
+# -----------------------------------------------------------------------------
+# 2. Assigner une essence par cluster (peuplement homogène)
+# -----------------------------------------------------------------------------
+# Essences du Vercors / Quatre Montagnes
+species_pool <- c("PIAB", "ABAL", "FASY", "TABA")
+species_prob <- c(0.35, 0.30, 0.25, 0.10)  # Distribution réaliste
 
-  n_trees <- 200
-  trees_terrain <- data.frame(
-    tree_id = 1:n_trees,
-    ess = sample(species_pool, n_trees, replace = TRUE, prob = species_prob),
-    Dia_cm = runif(n_trees, 15, 60),
-    Haut_m = runif(n_trees, 10, 35)
-  )
-}
+# Créer une table cluster -> essence
+unique_clusters <- unique(crowns_sample$cluster_id)
+cluster_species <- data.frame(
+  cluster_id = unique_clusters,
+  ess = sample(species_pool, length(unique_clusters), replace = TRUE, prob = species_prob)
+)
 
-# Table de correspondance
+# Joindre aux couronnes
+crowns_sample <- crowns_sample |>
+  left_join(cluster_species, by = "cluster_id")
+
+cat(sprintf("Essences assignées par cluster\n"))
+
+# -----------------------------------------------------------------------------
+# 3. Ajouter les métadonnées des essences
+# -----------------------------------------------------------------------------
 species_lookup <- get_species_lookup()
 
-# Ajouter les noms français
-if ("ess" %in% names(trees_terrain)) {
-  trees_terrain <- trees_terrain |>
-    left_join(species_lookup, by = c("ess" = "code"))
-}
+crowns_sample <- crowns_sample |>
+  left_join(species_lookup, by = c("ess" = "code"))
 
-# Statistiques
+# -----------------------------------------------------------------------------
+# 4. Statistiques
+# -----------------------------------------------------------------------------
 cat("\n=== Distribution des essences ===\n")
-if ("ess" %in% names(trees_terrain)) {
-  ess_counts <- table(trees_terrain$ess)
-  for (e in names(sort(ess_counts, decreasing = TRUE))) {
-    nom <- species_lookup$nom_fr[species_lookup$code == e]
-    if (length(nom) == 0) nom <- e
-    cat(sprintf("  %s (%s): %d arbres\n", e, nom, ess_counts[e]))
-  }
+ess_counts <- table(crowns_sample$ess)
+for (e in names(sort(ess_counts, decreasing = TRUE))) {
+  nom <- species_lookup$nom_fr[species_lookup$code == e]
+  if (length(nom) == 0) nom <- e
+  pct <- 100 * ess_counts[e] / n_sample
+  cat(sprintf("  %s (%s): %d arbres (%.1f%%)\n", e, nom, ess_counts[e], pct))
 }
 
-cat(sprintf("\nTotal arbres avec label: %d\n", nrow(trees_terrain)))
+cat(sprintf("\nTotal arbres avec label: %d\n", nrow(crowns_sample)))
+cat(sprintf("Clusters: %d\n", n_clusters))
 
-# Sauvegarder dans le cache
+# Sauvegarder
+trees_terrain <- crowns_sample |> st_drop_geometry()
 saveRDS(trees_terrain, file.path(classif_dir, "trees_terrain.rds"))
+saveRDS(crowns_sample, file.path(classif_dir, "crowns_labeled.rds"))
+
+# -----------------------------------------------------------------------------
+# 5. Visualisation des clusters et essences
+# -----------------------------------------------------------------------------
+# Zoom sur le centre (100m x 100m)
+bbox <- st_bbox(crowns_sample)
+center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+zoom_size <- 100
+
+crowns_zoom <- st_crop(crowns_sample, st_bbox(c(
+  xmin = center_x - zoom_size, ymin = center_y - zoom_size,
+  xmax = center_x + zoom_size, ymax = center_y + zoom_size
+), crs = st_crs(crowns_sample)))
+
+# Palette d'essences
+species_colors <- c(
+  "PIAB" = "#1b9e77",  # Épicéa - vert foncé
+
+  "ABAL" = "#d95f02",  # Sapin - orange
+  "FASY" = "#7570b3",  # Hêtre - violet
+  "TABA" = "#e7298a"   # Frêne - rose
+)
+
+ggplot() +
+  geom_sf(data = crowns_zoom, aes(fill = ess), color = "white", linewidth = 0.2) +
+  scale_fill_manual(values = species_colors,
+                    labels = c("PIAB" = "Épicéa", "ABAL" = "Sapin",
+                               "FASY" = "Hêtre", "TABA" = "Frêne"),
+                    name = "Essence") +
+  labs(title = "Labels d'essences par cluster spatial",
+       subtitle = sprintf("Zoom 200m x 200m - %d couronnes", nrow(crowns_zoom))) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 ### Exercice 2.3 : Charger ou télécharger l'orthophoto IRC
