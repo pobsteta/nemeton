@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.6.1)
+[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/pobsteta/nemeton/releases/tag/v0.6.2)
 [![Tests](https://img.shields.io/badge/tests-1478%20passing-success.svg)](https://github.com/pobsteta/nemeton)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
@@ -129,7 +129,7 @@ MIT - Voir [LICENSE](LICENSE)
 
 ```
 Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-R package version 0.6.1. https://github.com/pobsteta/nemeton
+R package version 0.6.2. https://github.com/pobsteta/nemeton
 ```
 
 ---
