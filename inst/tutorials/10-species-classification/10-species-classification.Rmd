@@ -1898,25 +1898,44 @@ rf_model <- readRDS(file.path(classif_dir, "rf_model.rds"))
 ```{r mapping, exercise=TRUE, exercise.setup="mapping-setup", fig.width=12, fig.height=10}
 cat("=== Cartographie des prédictions ===\n\n")
 
+# Diagnostics
+cat("Données chargées:\n")
+cat(sprintf("  Lignes: %d\n", nrow(training_data)))
+cat(sprintf("  Est sf: %s\n", inherits(training_data, "sf")))
+cat(sprintf("  Features disponibles: %d\n", sum(feature_cols %in% names(training_data))))
+
 # Préparer les données pour prédiction
 predict_data <- training_data |>
   st_drop_geometry() |>
-  select(all_of(feature_cols))
+  select(all_of(intersect(feature_cols, names(training_data))))
+
+cat(sprintf("  Colonnes pour prédiction: %d\n", ncol(predict_data)))
 
 # Prédire avec Random Forest
 rf_pred <- predict(rf_model, predict_data)
 pred_probs <- rf_pred$predictions
 
+cat("\nClasses du modèle:", paste(colnames(pred_probs), collapse = ", "), "\n")
+
 # Ajouter les prédictions aux couronnes
 training_data$pred_class <- colnames(pred_probs)[apply(pred_probs, 1, which.max)]
 training_data$pred_prob <- apply(pred_probs, 1, max)
+
+# Diagnostics probabilités
+cat(sprintf("\nProbabilités max: min=%.2f, median=%.2f, max=%.2f\n",
+            min(training_data$pred_prob),
+            median(training_data$pred_prob),
+            max(training_data$pred_prob)))
+
 training_data$uncertain <- training_data$pred_prob < config$prob_threshold
 training_data$final_class <- ifelse(training_data$uncertain,
                                      "Incertain",
                                      training_data$pred_class)
 
 # Statistiques
-cat("=== Résumé des prédictions ===\n")
+cat("\n=== Résumé des prédictions ===\n")
+cat("Classes prédites:", paste(unique(training_data$final_class), collapse = ", "), "\n\n")
+
 summary_stats <- training_data |>
   st_drop_geometry() |>
   group_by(final_class) |>
@@ -1935,15 +1954,16 @@ cat(sprintf("\nCouronnes incertaines (proba < %.0f%%): %d (%.1f%%)\n",
             sum(training_data$uncertain),
             100 * mean(training_data$uncertain)))
 
-# Palette de couleurs
-species_colors <- c(
-  "Épicéa" = "#1b9e77",
-  "Sapin" = "#d95f02",
-  "Hêtre" = "#7570b3",
-  "Frêne" = "#e7298a",
-  "Autre" = "#66a61e",
-  "Incertain" = "grey70"
+# Palette de couleurs dynamique basée sur les classes réelles
+all_classes <- unique(training_data$final_class)
+base_colors <- c("#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02")
+species_colors <- setNames(
+  c(base_colors[seq_along(setdiff(all_classes, "Incertain"))], "grey70"),
+  c(setdiff(all_classes, "Incertain"), "Incertain")
 )
+
+cat("\nPalette utilisée:\n")
+print(species_colors)
 
 # Zoom sur le centre (200m x 200m) pour visualiser les couronnes
 bbox <- st_bbox(training_data)
@@ -1954,36 +1974,42 @@ zoom_size <- 100  # 100m de chaque côté
 zoom_xlim <- c(center_x - zoom_size, center_x + zoom_size)
 zoom_ylim <- c(center_y - zoom_size, center_y + zoom_size)
 
-cat(sprintf("Zoom centré sur: X=%.0f, Y=%.0f (200m x 200m)\n", center_x, center_y))
+cat(sprintf("\nZoom centré sur: X=%.0f, Y=%.0f (200m x 200m)\n", center_x, center_y))
+cat(sprintf("Bbox: xmin=%.0f, xmax=%.0f, ymin=%.0f, ymax=%.0f\n",
+            bbox[[1]], bbox[[3]], bbox[[2]], bbox[[4]]))
 
-# Cartes avec zoom
+# Filtrer les couronnes dans la zone de zoom pour vérifier
+zoom_bbox <- st_bbox(c(xmin = zoom_xlim[1], ymin = zoom_ylim[1],
+                       xmax = zoom_xlim[2], ymax = zoom_ylim[2]),
+                     crs = st_crs(training_data))
+crowns_zoom <- st_crop(training_data, zoom_bbox)
+cat(sprintf("Couronnes dans le zoom: %d\n", nrow(crowns_zoom)))
+
+# Cartes avec les données filtrées (plus fiable que coord_sf seul)
 p1 <- ggplot() +
-  geom_sf(data = training_data, aes(fill = final_class),
-          color = "white", linewidth = 0.3) +
-  scale_fill_manual(values = species_colors, name = "Essence") +
-  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
+  geom_sf(data = crowns_zoom, aes(fill = final_class),
+          color = "darkgrey", linewidth = 0.3) +
+  scale_fill_manual(values = species_colors, name = "Essence", drop = FALSE) +
   labs(title = "Classification des essences",
-       subtitle = sprintf("Zoom 200m x 200m - %d couronnes total", nrow(training_data))) +
+       subtitle = sprintf("Zoom 200m x 200m - %d couronnes", nrow(crowns_zoom))) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p2 <- ggplot() +
-  geom_sf(data = training_data, aes(fill = pred_prob), color = "white", linewidth = 0.1) +
+  geom_sf(data = crowns_zoom, aes(fill = pred_prob), color = "darkgrey", linewidth = 0.2) +
   scale_fill_viridis_c(name = "Probabilité", option = "plasma", limits = c(0, 1)) +
-  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Confiance de la classification") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p3 <- ggplot() +
-  geom_sf(data = training_data, aes(fill = uncertain),
-          color = "white", linewidth = 0.3) +
+  geom_sf(data = crowns_zoom, aes(fill = uncertain),
+          color = "darkgrey", linewidth = 0.3) +
   scale_fill_manual(
     values = c("FALSE" = "forestgreen", "TRUE" = "red"),
     labels = c("Confiant", "Incertain"),
     name = "Statut"
   ) +
-  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Zones de confiance") +
   theme_minimal() +
   theme(legend.position = "bottom")
@@ -2039,36 +2065,36 @@ Vous avez complété le **Tutorial 10 : Classification d'Essences au Niveau Cour
 └─────────────────────────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────────────┐
-  │ 1. DONNÉES D'ENTRÉE                                              │
-  │   - Couronnes segmentées (Tutorial 07)                           │
-  │   - Orthophoto IRC (IGN ou synthétique)                          │
-  │   - Labels terrain (essences)                                    │
+  │ 1. DONNÉES D'ENTRÉE                                             │
+  │   - Couronnes segmentées (Tutorial 07)                          │
+  │   - Orthophoto IRC (IGN ou synthétique)                         │
+  │   - Labels terrain (essences)                                   │
   └─────────────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────────────┐
-  │ 2. FEATURE ENGINEERING                                           │
+  │ 2. FEATURE ENGINEERING                                          │
   │   - LiDAR : z_mean, z_p95, z_sd, area, compactness, ratio_h_r   │
-  │   - IRC : ndvi_mean, ndvi_sd, nir_mean, ratios spectraux         │
+  │   - IRC : ndvi_mean, ndvi_sd, nir_mean, ratios spectraux        │
   └─────────────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────────────┐
-  │ 3. VALIDATION SPATIALE                                           │
-  │   - blockCV pour éviter la fuite spatiale                        │
-  │   - Estimation réaliste des performances                         │
+  │ 3. VALIDATION SPATIALE                                          │
+  │   - blockCV pour éviter la fuite spatiale                       │
+  │   - Estimation réaliste des performances                        │
   └─────────────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────────────┐
-  │ 4. MODÉLISATION                                                  │
-  │   - Random Forest (ranger) : robuste, peu de tuning              │
-  │   - XGBoost : performant, early stopping                         │
+  │ 4. MODÉLISATION                                                 │
+  │   - Random Forest (ranger) : robuste, peu de tuning             │
+  │   - XGBoost : performant, early stopping                        │
   └─────────────────────────────────────────────────────────────────┘
                           │
   ┌─────────────────────────────────────────────────────────────────┐
-  │ 5. CARTOGRAPHIE                                                  │
-  │   - Carte des classes prédites                                   │
-  │   - Carte des probabilités (confiance)                           │
+  │ 5. CARTOGRAPHIE                                                 │
+  │   - Carte des classes prédites                                  │
+  │   - Carte des probabilités (confiance)                          │
   │   - Flag "incertain" pour proba < 50%                           │
-  │   - Export GeoPackage                                            │
+  │   - Export GeoPackage                                           │
   └─────────────────────────────────────────────────────────────────┘
 ```
 
