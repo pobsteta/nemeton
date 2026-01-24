@@ -1504,11 +1504,27 @@ feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
 ```{r blockcv, exercise=TRUE, exercise.setup="blockcv-setup", exercise.timelimit=3000}
 cat("=== Validation spatiale avec blockCV ===\n\n")
 
+# Vérifier le nombre de lignes - si trop, sous-échantillonner
+max_rows_for_blockcv <- 2000  # blockCV devient lent au-delà
+n_total <- nrow(training_data)
+
+if (n_total > max_rows_for_blockcv) {
+  cat(sprintf("ATTENTION: %d lignes détectées (max recommandé: %d)\n", n_total, max_rows_for_blockcv))
+  cat("Cela peut indiquer que le pipeline n'a pas filtré sur la zone d'étude.\n")
+  cat("Conseil: Réexécutez le tutoriel depuis l'exercice 3.1.\n\n")
+  cat(sprintf("Pour continuer, sous-échantillonnage à %d lignes...\n\n", max_rows_for_blockcv))
+
+  set.seed(config$seed)
+  sample_idx <- sample(n_total, max_rows_for_blockcv)
+  training_data <- training_data[sample_idx, ]
+}
+
 if (requireNamespace("blockCV", quietly = TRUE)) {
   library(blockCV)
 
   # Créer les blocs spatiaux
   cat("Création des blocs spatiaux...\n")
+  cat(sprintf("Données: %d couronnes\n", nrow(training_data)))
   cat(sprintf("Taille des blocs: %d m\n", config$block_size))
   cat(sprintf("Nombre de folds: %d\n", config$n_folds))
 
