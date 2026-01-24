@@ -47,30 +47,34 @@ test_that("indicator_carbon_biomass errors on missing required columns", {
 
   units <- massif_demo_units[1:3, ]
 
-  # Missing species
-  units$age <- c(80, 60, 40)
-  units$density <- c(0.7, 0.8, 0.6)
+  # Missing species - remove species column first
+  units_no_species <- units
+  units_no_species$species <- NULL
+  units_no_species$age <- c(80, 60, 40)
+  units_no_species$density <- c(0.7, 0.8, 0.6)
   expect_error(
-    indicator_carbon_biomass(units),
-    "species.*not found"
+    indicator_carbon_biomass(units_no_species),
+    "species.*not found|introuvable"
   )
 
-  # Missing age
-  units <- massif_demo_units[1:3, ]
-  units$species <- c("Quercus", "Fagus", "Pinus")
-  units$density <- c(0.7, 0.8, 0.6)
+  # Missing age - remove age column first
+  units_no_age <- units
+  units_no_age$age <- NULL
+  units_no_age$species <- c("Quercus", "Fagus", "Pinus")
+  units_no_age$density <- c(0.7, 0.8, 0.6)
   expect_error(
-    indicator_carbon_biomass(units),
-    "age.*not found"
+    indicator_carbon_biomass(units_no_age),
+    "age.*not found|introuvable"
   )
 
-  # Missing density
-  units <- massif_demo_units[1:3, ]
-  units$species <- c("Quercus", "Fagus", "Pinus")
-  units$age <- c(80, 60, 40)
+  # Missing density - remove density column first
+  units_no_density <- units
+  units_no_density$density <- NULL
+  units_no_density$species <- c("Quercus", "Fagus", "Pinus")
+  units_no_density$age <- c(80, 60, 40)
   expect_error(
-    indicator_carbon_biomass(units),
-    "density.*not found"
+    indicator_carbon_biomass(units_no_density),
+    "density.*not found|introuvable"
   )
 })
 

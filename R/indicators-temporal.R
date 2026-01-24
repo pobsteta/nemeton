@@ -59,6 +59,7 @@ NULL
 #' result <- indicator_temporal_age(units, age_field = NULL, establishment_year_field = "planted", current_year = 2025)
 #' }
 indicator_temporal_age <- function(units,
+                                   layers = NULL,
                                    age_field = "age",
                                    establishment_year_field = NULL,
                                    current_year = NULL) {
@@ -81,9 +82,6 @@ indicator_temporal_age <- function(units,
     stop("Either age_field or establishment_year_field must be provided and exist in units", call. = FALSE)
   }
 
-  # Raw T1 score (age in years)
-  units$T1 <- age_values
-
   # Normalize with log scale (ancient forests score high)
   # Log transformation: log(1 + age) scaled to 0-100
   # Reference points: 30yr=30, 100yr=60, 200yr=80, 300yr=90
@@ -91,11 +89,13 @@ indicator_temporal_age <- function(units,
   log_min <- log(1 + 20) # Minimum age ~20 years
   log_max <- log(1 + 300) # Maximum ancient forest ~300 years
 
-  units$T1_norm <- pmin(pmax((log_age - log_min) / (log_max - log_min), 0), 1) * 100
+  # Normalized T1 score (0-100)
+  t1_norm <- pmin(pmax((log_age - log_min) / (log_max - log_min), 0), 1) * 100
 
   msg_info("indicator_temporal_age")
 
-  units
+  # Return normalized score (can be used directly for aggregation)
+  t1_norm
 }
 
 # ==============================================================================
@@ -154,9 +154,10 @@ indicator_temporal_age <- function(units,
 #' result <- indicator_temporal_change(units, lc_1990, lc_2020, years_elapsed = 30, interpretation = "dynamism")
 #' }
 indicator_temporal_change <- function(units,
-                                      land_cover_early,
-                                      land_cover_late,
-                                      years_elapsed,
+                                      layers = NULL,
+                                      land_cover_early = NULL,
+                                      land_cover_late = NULL,
+                                      years_elapsed = NULL,
                                       interpretation = "stability") {
   # Validate inputs
   validate_sf(units)

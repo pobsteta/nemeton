@@ -64,27 +64,147 @@ for (i in 1:n_parcels) {
 # Créer sf object
 parcels_geom <- st_sfc(parcels_list, crs = 2154)
 
-# Ajouter attributs
+# Ajouter attributs de base
+forest_type <- sample(
+  c("Futaie feuillue", "Futaie r\u00e9sineuse", "Futaie mixte", "Taillis"),
+  n_parcels,
+  replace = TRUE,
+  prob = c(0.4, 0.3, 0.2, 0.1)
+)
+
+age_class <- sample(
+  c("Jeune", "Moyen", "Mature", "Surann\u00e9e"),
+  n_parcels,
+  replace = TRUE,
+  prob = c(0.2, 0.3, 0.4, 0.1)
+)
+
+management <- sample(
+  c("Production", "Conservation", "Mixte"),
+  n_parcels,
+  replace = TRUE,
+  prob = c(0.5, 0.2, 0.3)
+)
+
+# Colonnes d\u00e9riv\u00e9es pour les indicateurs
+
+# species: Code IFN de l'esp\u00e8ce principale (bas\u00e9 sur forest_type)
+species <- sapply(forest_type, function(ft) {
+  switch(ft,
+    "Futaie feuillue" = sample(c("03", "09", "52"), 1, prob = c(0.5, 0.3, 0.2)),  # Ch\u00eane, H\u00eatre, Ch\u00e2taignier
+    "Futaie r\u00e9sineuse" = sample(c("61", "62", "64"), 1, prob = c(0.4, 0.4, 0.2)),  # Sapin, \u00c9pic\u00e9a, Douglas
+    "Futaie mixte" = sample(c("03", "61", "09", "62"), 1),  # M\u00e9lange
+    "Taillis" = sample(c("17", "52", "03"), 1, prob = c(0.5, 0.3, 0.2))  # Charme, Ch\u00e2taignier, Ch\u00eane
+  )
+})
+
+# age: \u00c2ge num\u00e9rique en ann\u00e9es (bas\u00e9 sur age_class)
+age <- sapply(age_class, function(ac) {
+  switch(ac,
+    "Jeune" = round(runif(1, 10, 30)),
+    "Moyen" = round(runif(1, 30, 60)),
+    "Mature" = round(runif(1, 60, 100)),
+    "Surann\u00e9e" = round(runif(1, 100, 180))
+  )
+})
+
+# establishment_year: Ann\u00e9e d'\u00e9tablissement
+establishment_year <- as.integer(format(Sys.Date(), "%Y")) - age
+
+# density: Densit\u00e9 de tiges/ha (d\u00e9pend du type et de l'\u00e2ge)
+density <- mapply(function(ft, a) {
+  base_density <- switch(ft,
+    "Futaie feuillue" = 250,
+    "Futaie r\u00e9sineuse" = 400,
+    "Futaie mixte" = 320,
+    "Taillis" = 1500
+  )
+  # La densit\u00e9 diminue avec l'\u00e2ge (auto-\u00e9claircie)
+  age_factor <- if (a < 30) 1.5 else if (a < 60) 1.0 else if (a < 100) 0.7 else 0.5
+  round(base_density * age_factor * runif(1, 0.8, 1.2))
+}, forest_type, age)
+
+# height: Hauteur dominante en m (bas\u00e9e sur esp\u00e8ce et \u00e2ge, courbe de croissance simplifi\u00e9e)
+height <- mapply(function(sp, a) {
+  # Hauteur maximale selon esp\u00e8ce (code IFN)
+  h_max <- switch(sp,
+    "03" = 35,  # Ch\u00eane
+    "09" = 40,  # H\u00eatre
+    "52" = 30,  # Ch\u00e2taignier
+    "61" = 45,  # Sapin
+    "62" = 40,  # \u00c9pic\u00e9a
+    "64" = 50,  # Douglas
+    "17" = 25,  # Charme
+    30  # D\u00e9faut
+  )
+  # Courbe de croissance: h = h_max * (1 - exp(-k * age))
+  k <- 0.025
+  h <- h_max * (1 - exp(-k * a)) * runif(1, 0.85, 1.15)
+  round(h, 1)
+}, species, age)
+
+# dbh: Diam\u00e8tre moyen \u00e0 1.30m en cm (relation hauteur-diam\u00e8tre)
+dbh <- mapply(function(sp, h, a) {
+  # Ratio hauteur/diam\u00e8tre selon esp\u00e8ce
+  hd_ratio <- switch(sp,
+    "03" = 0.7,   # Ch\u00eane (trapu)
+    "09" = 0.65,  # H\u00eatre
+    "52" = 0.75,  # Ch\u00e2taignier
+    "61" = 0.55,  # Sapin (\u00e9lanc\u00e9)
+    "62" = 0.5,   # \u00c9pic\u00e9a
+    "64" = 0.5,   # Douglas
+    "17" = 0.8,   # Charme (petit)
+    0.6  # D\u00e9faut
+  )
+  d <- h / hd_ratio * runif(1, 0.9, 1.1)
+  round(d, 1)
+}, species, height, age)
+
+# volume: Volume sur pied en m\u00b3/ha (formule simplifi\u00e9e: V = G * H * 0.4)
+# G = surface terri\u00e8re = N * pi * (D/200)\u00b2
+volume <- mapply(function(n, d, h) {
+  g <- n * pi * (d / 200)^2  # Surface terri\u00e8re m\u00b2/ha
+  v <- g * h * 0.42  # Coefficient de forme moyen
+  round(v, 1)
+}, density, dbh, height)
+
+# strata: Nombre de strates de v\u00e9g\u00e9tation (1-4)
+strata <- sapply(forest_type, function(ft) {
+  switch(ft,
+    "Futaie feuillue" = sample(2:4, 1, prob = c(0.2, 0.5, 0.3)),
+    "Futaie r\u00e9sineuse" = sample(1:3, 1, prob = c(0.3, 0.5, 0.2)),
+    "Futaie mixte" = sample(2:4, 1, prob = c(0.1, 0.4, 0.5)),
+    "Taillis" = sample(1:2, 1, prob = c(0.6, 0.4))
+  )
+})
+
+# fertility: Classe de fertilit\u00e9 (1=bonne, 2=moyenne, 3=faible)
+fertility <- sample(1:3, n_parcels, replace = TRUE, prob = c(0.3, 0.5, 0.2))
+
+# climate: Zone climatique (pour indicateur P2)
+climate <- sample(
+  c("atlantique", "continental", "montagnard"),
+  n_parcels,
+  replace = TRUE,
+  prob = c(0.5, 0.3, 0.2)
+)
+
+# Cr\u00e9er le sf object avec toutes les colonnes
 massif_demo_units <- st_sf(
   parcel_id = sprintf("P%02d", 1:n_parcels),
-  forest_type = sample(
-    c("Futaie feuillue", "Futaie résineuse", "Futaie mixte", "Taillis"),
-    n_parcels,
-    replace = TRUE,
-    prob = c(0.4, 0.3, 0.2, 0.1)
-  ),
-  age_class = sample(
-    c("Jeune", "Moyen", "Mature", "Surannée"),
-    n_parcels,
-    replace = TRUE,
-    prob = c(0.2, 0.3, 0.4, 0.1)
-  ),
-  management = sample(
-    c("Production", "Conservation", "Mixte"),
-    n_parcels,
-    replace = TRUE,
-    prob = c(0.5, 0.2, 0.3)
-  ),
+  forest_type = forest_type,
+  age_class = age_class,
+  management = management,
+  species = species,
+  age = as.integer(age),
+  establishment_year = establishment_year,
+  density = as.integer(density),
+  height = height,
+  dbh = dbh,
+  volume = volume,
+  strata = as.integer(strata),
+  fertility = as.integer(fertility),
+  climate = climate,
   surface_ha = as.numeric(st_area(parcels_geom)) / 10000,
   geometry = parcels_geom
 )

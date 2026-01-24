@@ -106,10 +106,15 @@ test_that("indicator_risk_storm handles missing attributes with defaults", {
 
   dem <- terra::rast(test_path("fixtures/climate/dem_demo.tif"))
 
-  # Missing height/density attributes should not crash
+  # Remove height and density columns to test error handling
+  units_no_height <- units
+  units_no_height$height <- NULL
+  units_no_height$density <- NULL
+
+  # Missing height/density attributes should error
   expect_error(
-    indicator_risk_storm(units, dem = dem),
-    "height" # Should error mentioning missing height field
+    indicator_risk_storm(units_no_height, dem = dem),
+    "height|hauteur" # Should error mentioning missing height field
   )
 })
 
