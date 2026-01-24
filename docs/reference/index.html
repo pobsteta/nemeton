@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,12 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
-    <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -44,9 +43,9 @@
     </div>
 
     <div class="section level2">
-      <h2 id="data-management-gestion-des-donn-es">Data Management / Gestion des données<a class="anchor" aria-label="anchor" href="#data-management-gestion-des-donn-es"></a></h2>
+      <h2 id="gestion-des-donn-es">Gestion des données<a class="anchor" aria-label="anchor" href="#gestion-des-donn-es"></a></h2>
 
-      <div class="section-desc"><p>Create and manage spatial units and layers / Créer et gérer les unités spatiales et les couches</p></div>
+      <div class="section-desc"><p>Créer et gérer les unités spatiales et les couches</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -76,21 +75,14 @@
 
         <dt>
 
-          <code><a href="massif_demo_units_extended.html">massif_demo_units_extended</a></code>
-
-        </dt>
-        <dd>Complete Demo Dataset with 12-Family Ecosystem Services Referential</dd>
-
-        <dt>
-
           <code><a href="massif_demo_layers.html">massif_demo_layers()</a></code>
 
         </dt>
         <dd>Load Massif Demo Spatial Layers</dd>
       </dl></div><div class="section level2">
-      <h2 id="core-workflow-workflow-principal">Core Workflow / Workflow principal<a class="anchor" aria-label="anchor" href="#core-workflow-workflow-principal"></a></h2>
+      <h2 id="workflow-principal">Workflow principal<a class="anchor" aria-label="anchor" href="#workflow-principal"></a></h2>
 
-      <div class="section-desc"><p>Main functions for indicator calculation / Fonctions principales pour le calcul d’indicateurs</p></div>
+      <div class="section-desc"><p>Fonctions principales pour le calcul d’indicateurs</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -111,9 +103,9 @@
         </dt>
         <dd>List available indicators</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-c-carbon-vitality-famille-c-carbone-vitalit-">Family C: Carbon &amp; Vitality / Famille C : Carbone &amp; Vitalité<a class="anchor" aria-label="anchor" href="#family-c-carbon-vitality-famille-c-carbone-vitalit-"></a></h2>
+      <h2 id="famille-c-carbone-vitalit-">Famille C : Carbone &amp; Vitalité<a class="anchor" aria-label="anchor" href="#famille-c-carbone-vitalit-"></a></h2>
 
-      <div class="section-desc"><p>Carbon storage and vegetation vitality indicators / Indicateurs de stockage de carbone et de vitalité de la végétation</p></div>
+      <div class="section-desc"><p>Stockage de carbone et vitalité de la végétation</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -121,13 +113,6 @@
 
 
       <dl><dt>
-
-          <code><a href="indicator_carbon.html">indicator_carbon()</a></code>
-
-        </dt>
-        <dd>Calculate carbon stock indicator</dd>
-
-        <dt>
 
           <code><a href="indicator_carbon_biomass.html">indicator_carbon_biomass()</a></code>
 
@@ -141,92 +126,9 @@
         </dt>
         <dd>NDVI Mean and Trend Analysis (C2)</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-w-water-regulation-famille-w-r-gulation-de-l-eau">Family W: Water Regulation / Famille W : Régulation de l’eau<a class="anchor" aria-label="anchor" href="#family-w-water-regulation-famille-w-r-gulation-de-l-eau"></a></h2>
+      <h2 id="famille-b-biodiversit-">Famille B : Biodiversité<a class="anchor" aria-label="anchor" href="#famille-b-biodiversit-"></a></h2>
 
-      <div class="section-desc"><p>Hydrological regulation and water-related indicators / Indicateurs de régulation hydrologique et relatifs à l’eau</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="indicator_water.html">indicator_water()</a></code>
-
-        </dt>
-        <dd>Calculate water regulation indicator</dd>
-
-        <dt>
-
-          <code><a href="indicator_water_network.html">indicator_water_network()</a></code>
-
-        </dt>
-        <dd>Hydrographic Network Density (W1)</dd>
-
-        <dt>
-
-          <code><a href="indicator_water_wetlands.html">indicator_water_wetlands()</a></code>
-
-        </dt>
-        <dd>Wetland Coverage (W2)</dd>
-
-        <dt>
-
-          <code><a href="indicator_water_twi.html">indicator_water_twi()</a></code>
-
-        </dt>
-        <dd>Topographic Wetness Index (W3)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="family-f-soil-fertility-famille-f-fertilit-des-sols">Family F: Soil Fertility / Famille F : Fertilité des sols<a class="anchor" aria-label="anchor" href="#family-f-soil-fertility-famille-f-fertilit-des-sols"></a></h2>
-
-      <div class="section-desc"><p>Soil quality and erosion risk indicators / Indicateurs de qualité du sol et de risque d’érosion</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="indicator_soil_fertility.html">indicator_soil_fertility()</a></code>
-
-        </dt>
-        <dd>Soil Fertility Class (F1)</dd>
-
-        <dt>
-
-          <code><a href="indicator_soil_erosion.html">indicator_soil_erosion()</a></code>
-
-        </dt>
-        <dd>Erosion Risk Index (F2)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="family-l-landscape-quality-famille-l-qualit-du-paysage">Family L: Landscape Quality / Famille L : Qualité du paysage<a class="anchor" aria-label="anchor" href="#family-l-landscape-quality-famille-l-qualit-du-paysage"></a></h2>
-
-      <div class="section-desc"><p>Landscape structure and connectivity indicators / Indicateurs de structure du paysage et de connectivité</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="indicator_landscape_fragmentation.html">indicator_landscape_fragmentation()</a></code>
-
-        </dt>
-        <dd>Landscape Fragmentation (L1)</dd>
-
-        <dt>
-
-          <code><a href="indicator_landscape_edge.html">indicator_landscape_edge()</a></code>
-
-        </dt>
-        <dd>Edge-to-Area Ratio (L2)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="family-b-biodiversity-famille-b-biodiversit-v-">Family B: Biodiversity / Famille B : Biodiversité (v0.3.0)<a class="anchor" aria-label="anchor" href="#family-b-biodiversity-famille-b-biodiversit-v-"></a></h2>
-
-      <div class="section-desc"><p>Biodiversity protection, structure, and connectivity / Protection, diversité structurelle et connectivité écologique</p></div>
+      <div class="section-desc"><p>Protection, diversité structurelle et connectivité écologique</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -254,9 +156,131 @@
         </dt>
         <dd>Calculate Ecological Connectivity (B3)</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-r-risk-resilience-famille-r-risques-r-silience-v-">Family R: Risk &amp; Resilience / Famille R : Risques &amp; Résilience (v0.3.0)<a class="anchor" aria-label="anchor" href="#family-r-risk-resilience-famille-r-risques-r-silience-v-"></a></h2>
+      <h2 id="famille-w-r-gulation-de-l-eau">Famille W : Régulation de l’eau<a class="anchor" aria-label="anchor" href="#famille-w-r-gulation-de-l-eau"></a></h2>
 
-      <div class="section-desc"><p>Fire, storm, and drought vulnerability / Vulnérabilité aux incendies, tempêtes et sécheresse</p></div>
+      <div class="section-desc"><p>Régulation hydrologique et zones humides</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="indicator_water_network.html">indicator_water_network()</a></code>
+
+        </dt>
+        <dd>Hydrographic Network Density (W1)</dd>
+
+        <dt>
+
+          <code><a href="indicator_water_wetlands.html">indicator_water_wetlands()</a></code>
+
+        </dt>
+        <dd>Wetland Coverage (W2)</dd>
+
+        <dt>
+
+          <code><a href="indicator_water_twi.html">indicator_water_twi()</a></code>
+
+        </dt>
+        <dd>Topographic Wetness Index (W3)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="famille-a-air-microclimat">Famille A : Air &amp; Microclimat<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat"></a></h2>
+
+      <div class="section-desc"><p>Couverture arborée et qualité de l’air</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="indicator_air_coverage.html">indicator_air_coverage()</a></code>
+
+        </dt>
+        <dd>Calculate Tree Coverage Buffer Index (A1)</dd>
+
+        <dt>
+
+          <code><a href="indicator_air_quality.html">indicator_air_quality()</a></code>
+
+        </dt>
+        <dd>Calculate Air Quality Index (A2)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="famille-f-fertilit-des-sols">Famille F : Fertilité des sols<a class="anchor" aria-label="anchor" href="#famille-f-fertilit-des-sols"></a></h2>
+
+      <div class="section-desc"><p>Qualité du sol et risque d’érosion</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="indicator_soil_fertility.html">indicator_soil_fertility()</a></code>
+
+        </dt>
+        <dd>Soil Fertility Class (F1)</dd>
+
+        <dt>
+
+          <code><a href="indicator_soil_erosion.html">indicator_soil_erosion()</a></code>
+
+        </dt>
+        <dd>Erosion Risk Index (F2)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="famille-l-paysage">Famille L : Paysage<a class="anchor" aria-label="anchor" href="#famille-l-paysage"></a></h2>
+
+      <div class="section-desc"><p>Structure du paysage et connectivité</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="indicator_landscape_fragmentation.html">indicator_landscape_fragmentation()</a></code>
+
+        </dt>
+        <dd>Landscape Fragmentation (L1)</dd>
+
+        <dt>
+
+          <code><a href="indicator_landscape_edge.html">indicator_landscape_edge()</a></code>
+
+        </dt>
+        <dd>Edge-to-Area Ratio (L2)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="famille-t-dynamique-temporelle">Famille T : Dynamique temporelle<a class="anchor" aria-label="anchor" href="#famille-t-dynamique-temporelle"></a></h2>
+
+      <div class="section-desc"><p>Ancienneté des peuplements et changements d’occupation</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="indicator_temporal_age.html">indicator_temporal_age()</a></code>
+
+        </dt>
+        <dd>Calculate Stand Age Index (T1)</dd>
+
+        <dt>
+
+          <code><a href="indicator_temporal_change.html">indicator_temporal_change()</a></code>
+
+        </dt>
+        <dd>Calculate Land Cover Change Rate Index (T2)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="famille-r-risques-r-silience">Famille R : Risques &amp; Résilience<a class="anchor" aria-label="anchor" href="#famille-r-risques-r-silience"></a></h2>
+
+      <div class="section-desc"><p>Vulnérabilité aux incendies, tempêtes et sécheresse</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -312,55 +336,9 @@
         </dt>
         <dd>Get Game Pressure Raster for R4 Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-t-temporal-dynamics-famille-t-dynamique-temporelle-v-">Family T: Temporal Dynamics / Famille T : Dynamique temporelle (v0.3.0)<a class="anchor" aria-label="anchor" href="#family-t-temporal-dynamics-famille-t-dynamique-temporelle-v-"></a></h2>
+      <h2 id="famille-s-social-usages">Famille S : Social &amp; Usages<a class="anchor" aria-label="anchor" href="#famille-s-social-usages"></a></h2>
 
-      <div class="section-desc"><p>Forest age and land cover change / Ancienneté des peuplements et changements d’occupation</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="indicator_temporal_age.html">indicator_temporal_age()</a></code>
-
-        </dt>
-        <dd>Calculate Stand Age Index (T1)</dd>
-
-        <dt>
-
-          <code><a href="indicator_temporal_change.html">indicator_temporal_change()</a></code>
-
-        </dt>
-        <dd>Calculate Land Cover Change Rate Index (T2)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="family-a-air-microclimate-famille-a-air-microclimat-v-">Family A: Air &amp; Microclimate / Famille A : Air &amp; Microclimat (v0.3.0)<a class="anchor" aria-label="anchor" href="#family-a-air-microclimate-famille-a-air-microclimat-v-"></a></h2>
-
-      <div class="section-desc"><p>Tree coverage and air quality / Couverture arborée et qualité de l’air</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="indicator_air_coverage.html">indicator_air_coverage()</a></code>
-
-        </dt>
-        <dd>Calculate Tree Coverage Buffer Index (A1)</dd>
-
-        <dt>
-
-          <code><a href="indicator_air_quality.html">indicator_air_quality()</a></code>
-
-        </dt>
-        <dd>Calculate Air Quality Index (A2)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="family-s-social-recreation-famille-s-social-usages-r-cr-atifs-v-">Family S: Social &amp; Recreation / Famille S : Social &amp; Usages récréatifs (v0.4.0)<a class="anchor" aria-label="anchor" href="#family-s-social-recreation-famille-s-social-usages-r-cr-atifs-v-"></a></h2>
-
-      <div class="section-desc"><p>Trail density, accessibility, and population proximity / Densité de sentiers, accessibilité et proximité population</p></div>
+      <div class="section-desc"><p>Densité de sentiers, accessibilité et proximité population</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -388,9 +366,9 @@
         </dt>
         <dd>S3: Population Proximity Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-p-production-economy-famille-p-production-conomie-v-">Family P: Production &amp; Economy / Famille P : Production &amp; Économie (v0.4.0)<a class="anchor" aria-label="anchor" href="#family-p-production-economy-famille-p-production-conomie-v-"></a></h2>
+      <h2 id="famille-p-production-conomie">Famille P : Production &amp; Économie<a class="anchor" aria-label="anchor" href="#famille-p-production-conomie"></a></h2>
 
-      <div class="section-desc"><p>Wood volume, site productivity, and timber quality / Volume bois, productivité station et qualité bois d’œuvre</p></div>
+      <div class="section-desc"><p>Volume bois, productivité station et qualité bois d’œuvre</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -418,9 +396,9 @@
         </dt>
         <dd>P3: Timber Quality Score Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-e-energy-climate-famille-e-nergie-climat-v-">Family E: Energy &amp; Climate / Famille E : Énergie &amp; Climat (v0.4.0)<a class="anchor" aria-label="anchor" href="#family-e-energy-climate-famille-e-nergie-climat-v-"></a></h2>
+      <h2 id="famille-e-nergie-climat">Famille E : Énergie &amp; Climat<a class="anchor" aria-label="anchor" href="#famille-e-nergie-climat"></a></h2>
 
-      <div class="section-desc"><p>Fuelwood potential and carbon avoidance / Potentiel bois-énergie et évitement carbone</p></div>
+      <div class="section-desc"><p>Potentiel bois-énergie et évitement carbone</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -441,9 +419,9 @@
         </dt>
         <dd>E2: Carbon Emission Avoidance Indicator</dd>
       </dl></div><div class="section level2">
-      <h2 id="family-n-naturalness-wilderness-famille-n-naturalit-v-">Family N: Naturalness &amp; Wilderness / Famille N : Naturalité (v0.4.0)<a class="anchor" aria-label="anchor" href="#family-n-naturalness-wilderness-famille-n-naturalit-v-"></a></h2>
+      <h2 id="famille-n-naturalit-">Famille N : Naturalité<a class="anchor" aria-label="anchor" href="#famille-n-naturalit-"></a></h2>
 
-      <div class="section-desc"><p>Infrastructure distance, forest continuity, and wilderness composite / Distance infrastructures, continuité forestière et indice wilderness</p></div>
+      <div class="section-desc"><p>Distance infrastructures, continuité forestière et indice wilderness</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -471,39 +449,9 @@
         </dt>
         <dd>N3: Composite Naturalness Index</dd>
       </dl></div><div class="section level2">
-      <h2 id="other-indicators-v-autres-indicateurs-v-">Other Indicators (v0.1.0) / Autres indicateurs (v0.1.0)<a class="anchor" aria-label="anchor" href="#other-indicators-v-autres-indicateurs-v-"></a></h2>
+      <h2 id="analyse-temporelle">Analyse temporelle<a class="anchor" aria-label="anchor" href="#analyse-temporelle"></a></h2>
 
-      <div class="section-desc"><p>Biodiversity, fragmentation, accessibility indicators / Indicateurs de biodiversité, fragmentation, accessibilité</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="indicator_biodiversity.html">indicator_biodiversity()</a></code>
-
-        </dt>
-        <dd>Calculate biodiversity indicator</dd>
-
-        <dt>
-
-          <code><a href="indicator_fragmentation.html">indicator_fragmentation()</a></code>
-
-        </dt>
-        <dd>Calculate forest fragmentation indicator</dd>
-
-        <dt>
-
-          <code><a href="indicator_accessibility.html">indicator_accessibility()</a></code>
-
-        </dt>
-        <dd>Calculate accessibility indicator</dd>
-      </dl></div><div class="section level2">
-      <h2 id="temporal-analysis-analyse-temporelle">Temporal Analysis / Analyse temporelle<a class="anchor" aria-label="anchor" href="#temporal-analysis-analyse-temporelle"></a></h2>
-
-      <div class="section-desc"><p>Multi-period analysis and change detection / Analyse multi-périodes et détection de changements</p></div>
+      <div class="section-desc"><p>Analyse multi-périodes et détection de changements</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -524,9 +472,9 @@
         </dt>
         <dd>Calculate Change Rates Between Periods</dd>
       </dl></div><div class="section level2">
-      <h2 id="cross-family-analysis-analyse-crois-e-inter-familles-v-">Cross-Family Analysis / Analyse Croisée Inter-Familles (v0.3.0)<a class="anchor" aria-label="anchor" href="#cross-family-analysis-analyse-crois-e-inter-familles-v-"></a></h2>
+      <h2 id="analyse-inter-familles">Analyse inter-familles<a class="anchor" aria-label="anchor" href="#analyse-inter-familles"></a></h2>
 
-      <div class="section-desc"><p>Correlation analysis and multi-criteria hotspot identification / Analyse de corrélations et identification de hotspots multi-critères</p></div>
+      <div class="section-desc"><p>Corrélations et hotspots multi-critères</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -554,9 +502,9 @@
         </dt>
         <dd>Plot Correlation Matrix Heatmap</dd>
       </dl></div><div class="section level2">
-      <h2 id="advanced-multi-criteria-analysis-analyse-avanc-e-multi-crit-res-v-">Advanced Multi-Criteria Analysis / Analyse Avancée Multi-Critères (v0.4.0)<a class="anchor" aria-label="anchor" href="#advanced-multi-criteria-analysis-analyse-avanc-e-multi-crit-res-v-"></a></h2>
+      <h2 id="analyse-multi-crit-res-avanc-e">Analyse multi-critères avancée<a class="anchor" aria-label="anchor" href="#analyse-multi-crit-res-avanc-e"></a></h2>
 
-      <div class="section-desc"><p>Pareto optimality, clustering, and trade-off analysis / Optimisation Pareto, clustering et analyse de trade-offs</p></div>
+      <div class="section-desc"><p>Optimisation Pareto, clustering et trade-offs</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -584,9 +532,9 @@
         </dt>
         <dd>Plot Trade-off Analysis Between Two Objectives</dd>
       </dl></div><div class="section level2">
-      <h2 id="normalization-aggregation-normalisation-agr-gation">Normalization &amp; Aggregation / Normalisation &amp; Agrégation<a class="anchor" aria-label="anchor" href="#normalization-aggregation-normalisation-agr-gation"></a></h2>
+      <h2 id="normalisation-agr-gation">Normalisation &amp; Agrégation<a class="anchor" aria-label="anchor" href="#normalisation-agr-gation"></a></h2>
 
-      <div class="section-desc"><p>Transform and combine indicators / Transformer et combiner les indicateurs</p></div>
+      <div class="section-desc"><p>Transformer et combiner les indicateurs</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -621,9 +569,9 @@
         </dt>
         <dd>Invert indicator values</dd>
       </dl></div><div class="section level2">
-      <h2 id="visualization-visualisation">Visualization / Visualisation<a class="anchor" aria-label="anchor" href="#visualization-visualisation"></a></h2>
+      <h2 id="visualisation">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation"></a></h2>
 
-      <div class="section-desc"><p>Maps and charts for results / Cartes et graphiques pour les résultats</p></div>
+      <div class="section-desc"><p>Cartes et graphiques</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -672,9 +620,9 @@
         </dt>
         <dd>Plot Temporal Heatmap</dd>
       </dl></div><div class="section level2">
-      <h2 id="internationalization-internationalisation">Internationalization / Internationalisation<a class="anchor" aria-label="anchor" href="#internationalization-internationalisation"></a></h2>
+      <h2 id="internationalisation">Internationalisation<a class="anchor" aria-label="anchor" href="#internationalisation"></a></h2>
 
-      <div class="section-desc"><p>Multi-language support / Support multi-langues</p></div>
+      <div class="section-desc"><p>Support multi-langues</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -688,9 +636,9 @@
         </dt>
         <dd>Set language manually</dd>
       </dl></div><div class="section level2">
-      <h2 id="s-methods-m-thodes-s-">S3 Methods / Méthodes S3<a class="anchor" aria-label="anchor" href="#s-methods-m-thodes-s-"></a></h2>
+      <h2 id="m-thodes-s-">Méthodes S3<a class="anchor" aria-label="anchor" href="#m-thodes-s-"></a></h2>
 
-      <div class="section-desc"><p>Print and summary methods for nemeton objects / Méthodes print et summary pour les objets nemeton</p></div>
+      <div class="section-desc"><p>Méthodes print et summary pour les objets nemeton</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -739,7 +687,7 @@
         </dt>
         <dd>Summary Method for nemeton_temporal Objects</dd>
       </dl></div><div class="section level2">
-      <h2 id="package-documentation-documentation-du-package">Package Documentation / Documentation du package<a class="anchor" aria-label="anchor" href="#package-documentation-documentation-du-package"></a></h2>
+      <h2 id="documentation-du-package">Documentation du package<a class="anchor" aria-label="anchor" href="#documentation-du-package"></a></h2>
 
 
 
@@ -755,9 +703,9 @@
         </dt>
         <dd>nemeton: Systemic Forest Analysis Using the Nemeton Method</dd>
       </dl></div><div class="section level2">
-      <h2 id="utilities-utilitaires">Utilities / Utilitaires<a class="anchor" aria-label="anchor" href="#utilities-utilitaires"></a></h2>
+      <h2 id="utilitaires">Utilitaires<a class="anchor" aria-label="anchor" href="#utilitaires"></a></h2>
 
-      <div class="section-desc"><p>Parallel processing helpers / Fonctions de traitement parallèle</p></div>
+      <div class="section-desc"><p>Fonctions de traitement parallèle</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -778,9 +726,9 @@
         </dt>
         <dd>Smart Map for Spatial Data with Row Indices</dd>
       </dl></div><div class="section level2">
-      <h2 id="internal-functions-fonctions-internes">Internal Functions / Fonctions internes<a class="anchor" aria-label="anchor" href="#internal-functions-fonctions-internes"></a></h2>
+      <h2 id="fonctions-internes">Fonctions internes<a class="anchor" aria-label="anchor" href="#fonctions-internes"></a></h2>
 
-      <div class="section-desc"><p>Internal helper functions (for developers) / Fonctions d’aide internes (pour développeurs)</p></div>
+      <div class="section-desc"><p>Fonctions d’aide internes (pour développeurs)</p></div>
 
       <dl></dl></div><div class="section level2">
 

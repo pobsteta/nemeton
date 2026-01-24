@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,12 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/getting-started_fr.html">Démarrage rapide</a></li>
-    <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
-    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
+    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -46,7 +45,7 @@
 
 <div id="installation-des-tutoriels-nemeton" class="section level1">
 
-<p>Ce guide détaille l’installation complète pour exécuter les 8 tutoriels interactifs nemeton.</p>
+<p>Ce guide détaille l’installation complète pour exécuter les 9 tutoriels interactifs nemeton.</p>
 <div class="section level2">
 <h2 id="prérequis-système">Prérequis Système<a class="anchor" aria-label="anchor" href="#pr%C3%A9requis-syst%C3%A8me"></a></h2>
 <ul><li>
@@ -134,8 +133,18 @@
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="id_7-package-nemeton">7. Package nemeton<a class="anchor" aria-label="anchor" href="#id_7-package-nemeton"></a></h3>
+<h3 id="id_7-packages-échantillonnage-et-tsp-tutorial-09">7. Packages Échantillonnage et TSP (Tutorial 09)<a class="anchor" aria-label="anchor" href="#id_7-packages-%C3%A9chantillonnage-et-tsp-tutorial-09"></a></h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"spsurvey"</span>,          <span class="co"># Échantillonnage GRTS</span></span>
+<span>  <span class="st">"BalancedSampling"</span>,  <span class="co"># Fallback LPM2</span></span>
+<span>  <span class="st">"sfnetworks"</span>,        <span class="co"># Réseau routier</span></span>
+<span>  <span class="st">"TSP"</span>                <span class="co"># Optimisation parcours</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_8-package-nemeton">8. Package nemeton<a class="anchor" aria-label="anchor" href="#id_8-package-nemeton"></a></h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Depuis GitHub (dernière version)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemeton"</span><span class="op">)</span></span>
 <span></span>
@@ -145,7 +154,7 @@
 </div>
 <div class="section level2">
 <h2 id="vérification-de-linstallation">Vérification de l’Installation<a class="anchor" aria-label="anchor" href="#v%C3%A9rification-de-linstallation"></a></h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Script de vérification complet</span></span>
 <span><span class="va">check_nemeton_tutorials</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
@@ -156,7 +165,8 @@
 <span>    ign <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"happign"</span><span class="op">)</span>,</span>
 <span>    lidar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lidR"</span><span class="op">)</span>,</span>
 <span>    lidar_avance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lasR"</span>, <span class="st">"lidaRtRee"</span>, <span class="st">"future"</span>, <span class="st">"future.apply"</span><span class="op">)</span>,</span>
-<span>    analysis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"leaflet"</span>, <span class="st">"corrplot"</span>, <span class="st">"patchwork"</span>, <span class="st">"fmsb"</span><span class="op">)</span></span>
+<span>    analysis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"leaflet"</span>, <span class="st">"corrplot"</span>, <span class="st">"patchwork"</span>, <span class="st">"fmsb"</span><span class="op">)</span>,</span>
+<span>    sampling <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"spsurvey"</span>, <span class="st">"BalancedSampling"</span>, <span class="st">"sfnetworks"</span>, <span class="st">"TSP"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span>  <span class="va">all_ok</span> <span class="op">&lt;-</span> <span class="cn">TRUE</span></span>
@@ -211,7 +221,7 @@
 <h2 id="lancer-les-tutoriels">Lancer les Tutoriels<a class="anchor" aria-label="anchor" href="#lancer-les-tutoriels"></a></h2>
 <div class="section level3">
 <h3 id="méthode-1--depuis-rstudio">Méthode 1 : Depuis RStudio<a class="anchor" aria-label="anchor" href="#m%C3%A9thode-1--depuis-rstudio"></a></h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Lister les tutoriels</span></span>
 <span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/available_tutorials.html" class="external-link">available_tutorials</a></span><span class="op">(</span><span class="st">"nemeton"</span><span class="op">)</span></span>
 <span></span>
@@ -220,7 +230,7 @@
 </div>
 <div class="section level3">
 <h3 id="méthode-2--ordre-recommandé">Méthode 2 : Ordre recommandé<a class="anchor" aria-label="anchor" href="#m%C3%A9thode-2--ordre-recommand%C3%A9"></a></h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Suivre l'ordre pour une progression logique</span></span>
 <span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"01-acquisition"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span>    <span class="co"># 45 min</span></span>
 <span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"02-lidar"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span>          <span class="co"># 60 min</span></span>
@@ -229,7 +239,8 @@
 <span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"05-complete"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span>       <span class="co"># 40 min</span></span>
 <span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"06-analysis"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span>       <span class="co"># 50 min</span></span>
 <span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"07-lidar-advanced"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span> <span class="co"># 90 min (optionnel)</span></span>
-<span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"08-coregistration"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span> <span class="co"># 130 min (optionnel)</span></span></code></pre></div>
+<span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"08-coregistration"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span> <span class="co"># 130 min (optionnel)</span></span>
+<span><span class="fu">learnr</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/learnr/reference/run_tutorial.html" class="external-link">run_tutorial</a></span><span class="op">(</span><span class="st">"09-sampling"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span>       <span class="co"># 60 min (optionnel)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -243,7 +254,7 @@
 <td><code>~/Library/Application Support/nemeton/tutorial_data/</code></td>
 </tr><tr class="odd"><td>Windows</td>
 <td><code>%LOCALAPPDATA%/nemeton/nemeton/tutorial_data/</code></td>
-</tr></tbody></table><div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+</tr></tbody></table><div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Afficher le chemin du cache</span></span>
 <span><span class="fu">rappdirs</span><span class="fu">::</span><span class="fu"><a href="https://rappdirs.r-lib.org/reference/user_data_dir.html" class="external-link">user_data_dir</a></span><span class="op">(</span><span class="st">"nemeton"</span><span class="op">)</span></span>
 <span></span>
@@ -255,7 +266,7 @@
 <h2 id="dépannage">Dépannage<a class="anchor" aria-label="anchor" href="#d%C3%A9pannage"></a></h2>
 <div class="section level3">
 <h3 id="erreur--tutorial-not-found">Erreur : “Tutorial not found”<a class="anchor" aria-label="anchor" href="#erreur--tutorial-not-found"></a></h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Réinstaller nemeton</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemeton"</span>, force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -267,7 +278,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="erreur--out-of-memory-lidar">Erreur : “Out of memory” (LiDAR)<a class="anchor" aria-label="anchor" href="#erreur--out-of-memory-lidar"></a></h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Augmenter la limite mémoire</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>future.globals.maxSize <span class="op">=</span> <span class="op">+</span><span class="cn">Inf</span><span class="op">)</span></span>
 <span></span>
@@ -279,7 +290,7 @@
 </div>
 <div class="section level3">
 <h3 id="erreur--package-xxx-not-available">Erreur : “Package ‘xxx’ not available”<a class="anchor" aria-label="anchor" href="#erreur--package-xxx-not-available"></a></h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Mettre à jour les dépôts CRAN</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>CRAN <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>

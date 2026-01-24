@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,12 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/getting-started_fr.html">Démarrage rapide</a></li>
-    <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
-    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
+    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -339,17 +338,17 @@
 <div class="section level3">
 <h3 id="id_55-module--indicateurs-biophysiques-indicators-biophysicalr">5.5 Module : Indicateurs biophysiques (<code>indicators-biophysical.R</code>)<a class="anchor" aria-label="anchor" href="#id_55-module--indicateurs-biophysiques-indicators-biophysicalr"></a></h3>
 <p><strong>Responsabilité</strong> : Calculer les indicateurs biophysiques.</p>
-<p><strong>Fonctions</strong> : - <code><a href="reference/indicator_carbon.html">indicator_carbon()</a></code> : stock de carbone (biomasse, sol) - <code><a href="reference/indicator_biodiversity.html">indicator_biodiversity()</a></code> : indices de biodiversité (richesse, Shannon, Simpson) - <code><a href="reference/indicator_water.html">indicator_water()</a></code> : régulation hydrique (TWI, proximité hydro) - <code>indicator_soil()</code> : qualité des sols (érosion, texture) - <code>indicator_climate_risk()</code> : risques climatiques (sécheresse, incendie)</p>
+<p><strong>Fonctions</strong> : - <code>indicator_carbon()</code> : stock de carbone (biomasse, sol) - <code>indicator_biodiversity()</code> : indices de biodiversité (richesse, Shannon, Simpson) - <code>indicator_water()</code> : régulation hydrique (TWI, proximité hydro) - <code>indicator_soil()</code> : qualité des sols (érosion, texture) - <code>indicator_climate_risk()</code> : risques climatiques (sécheresse, incendie)</p>
 </div>
 <div class="section level3">
 <h3 id="id_56-module--indicateurs-sociaux-indicators-socialr">5.6 Module : Indicateurs sociaux (<code>indicators-social.R</code>)<a class="anchor" aria-label="anchor" href="#id_56-module--indicateurs-sociaux-indicators-socialr"></a></h3>
 <p><strong>Responsabilité</strong> : Calculer les indicateurs sociaux et culturels.</p>
-<p><strong>Fonctions</strong> : - <code><a href="reference/indicator_accessibility.html">indicator_accessibility()</a></code> : accessibilité (distance aux routes, sentiers) - <code>indicator_protection()</code> : niveau de protection (Natura 2000, etc.) - <code>indicator_usage()</code> : intensité d’usage (densité sentiers, équipements) - <code>indicator_heritage()</code> : valeur patrimoniale (sites classés, arbres remarquables)</p>
+<p><strong>Fonctions</strong> : - <code>indicator_accessibility()</code> : accessibilité (distance aux routes, sentiers) - <code>indicator_protection()</code> : niveau de protection (Natura 2000, etc.) - <code>indicator_usage()</code> : intensité d’usage (densité sentiers, équipements) - <code>indicator_heritage()</code> : valeur patrimoniale (sites classés, arbres remarquables)</p>
 </div>
 <div class="section level3">
 <h3 id="id_57-module--indicateurs-paysagers-indicators-landscaper">5.7 Module : Indicateurs paysagers (<code>indicators-landscape.R</code>)<a class="anchor" aria-label="anchor" href="#id_57-module--indicateurs-paysagers-indicators-landscaper"></a></h3>
 <p><strong>Responsabilité</strong> : Calculer les indicateurs de structure paysagère.</p>
-<p><strong>Fonctions</strong> : - <code><a href="reference/indicator_fragmentation.html">indicator_fragmentation()</a></code> : fragmentation (patches, connectivité) - <code>indicator_heterogeneity()</code> : hétérogénéité (diversité paysagère) - <code>indicator_naturalness()</code> : degré de naturalité (distance à l’intervention humaine) - <code>indicator_continuity()</code> : continuité forestière (taille des massifs)</p>
+<p><strong>Fonctions</strong> : - <code>indicator_fragmentation()</code> : fragmentation (patches, connectivité) - <code>indicator_heterogeneity()</code> : hétérogénéité (diversité paysagère) - <code>indicator_naturalness()</code> : degré de naturalité (distance à l’intervention humaine) - <code>indicator_continuity()</code> : continuité forestière (taille des massifs)</p>
 </div>
 <div class="section level3">
 <h3 id="id_58-module--gestion-temporelle-temporalr">5.8 Module : Gestion temporelle (<code>temporal.R</code>)<a class="anchor" aria-label="anchor" href="#id_58-module--gestion-temporelle-temporalr"></a></h3>
@@ -611,9 +610,9 @@
 <p><strong>Retour</strong> : vecteur numérique (même longueur que nrow(units))</p>
 <div class="section level4">
 <h4 id="exemples">Exemples<a class="anchor" aria-label="anchor" href="#exemples"></a></h4>
-<p><strong><code><a href="reference/indicator_carbon.html">indicator_carbon()</a></code></strong></p>
+<p><strong><code>indicator_carbon()</code></strong></p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/indicator_carbon.html">indicator_carbon</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu">indicator_carbon</span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biomass"</span>, <span class="st">"soil"</span>, <span class="st">"total"</span><span class="op">)</span>,</span>
@@ -621,18 +620,18 @@
 <span>  soil_depth <span class="op">=</span> <span class="fl">30</span>,      <span class="co"># cm</span></span>
 <span>  fun <span class="op">=</span> <span class="st">"sum"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><strong><code><a href="reference/indicator_biodiversity.html">indicator_biodiversity()</a></code></strong></p>
+<p><strong><code>indicator_biodiversity()</code></strong></p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/indicator_biodiversity.html">indicator_biodiversity</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu">indicator_biodiversity</span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"richness"</span>, <span class="st">"shannon"</span>, <span class="st">"simpson"</span><span class="op">)</span>,</span>
 <span>  species_layer <span class="op">=</span> <span class="st">"species_raster"</span>,</span>
 <span>  fun <span class="op">=</span> <span class="st">"mean"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><strong><code><a href="reference/indicator_water.html">indicator_water()</a></code></strong></p>
+<p><strong><code>indicator_water()</code></strong></p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/indicator_water.html">indicator_water</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu">indicator_water</span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"twi"</span>, <span class="st">"proximity"</span>, <span class="st">"retention"</span><span class="op">)</span>,</span>
@@ -640,9 +639,9 @@
 <span>  hydro_layer <span class="op">=</span> <span class="st">"rivers"</span>,</span>
 <span>  buffer <span class="op">=</span> <span class="fl">100</span>  <span class="co"># mètres</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><strong><code><a href="reference/indicator_accessibility.html">indicator_accessibility()</a></code></strong></p>
+<p><strong><code>indicator_accessibility()</code></strong></p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/indicator_accessibility.html">indicator_accessibility</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu">indicator_accessibility</span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  <span class="va">layers</span>,</span>
 <span>  roads_layer <span class="op">=</span> <span class="st">"roads"</span>,</span>
@@ -934,7 +933,7 @@
 <p>À chaque modification d’un indicateur, vérifier que les valeurs calculées sur les fixtures ne changent pas (ou documenter pourquoi).</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">test_that</span><span class="op">(</span><span class="st">"carbon indicator gives expected values"</span>, <span class="op">{</span></span>
-<span>  <span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/indicator_carbon.html">indicator_carbon</a></span><span class="op">(</span><span class="va">demo_units</span>, <span class="va">demo_layers</span><span class="op">)</span></span>
+<span>  <span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">indicator_carbon</span><span class="op">(</span><span class="va">demo_units</span>, <span class="va">demo_layers</span><span class="op">)</span></span>
 <span>  <span class="va">expected</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"fixtures/expected_carbon.rds"</span><span class="op">)</span></span>
 <span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">results</span>, <span class="va">expected</span>, tolerance <span class="op">=</span> <span class="fl">1e-6</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
@@ -1270,11 +1269,11 @@
 <li><label><input type="checkbox">Module <code>data-preprocessing</code> : harmonisation basique</label></li>
 <li>
 <label><input type="checkbox">5 indicateurs biophysiques essentiels :</label>
-<ul><li><code><a href="reference/indicator_carbon.html">indicator_carbon()</a></code></li>
-<li><code><a href="reference/indicator_biodiversity.html">indicator_biodiversity()</a></code></li>
-<li><code><a href="reference/indicator_water.html">indicator_water()</a></code></li>
-<li><code><a href="reference/indicator_fragmentation.html">indicator_fragmentation()</a></code></li>
-<li><code><a href="reference/indicator_accessibility.html">indicator_accessibility()</a></code></li>
+<ul><li><code>indicator_carbon()</code></li>
+<li><code>indicator_biodiversity()</code></li>
+<li><code>indicator_water()</code></li>
+<li><code>indicator_fragmentation()</code></li>
+<li><code>indicator_accessibility()</code></li>
 </ul></li>
 <li><label><input type="checkbox">Fonction <code><a href="reference/nemeton_compute.html">nemeton_compute()</a></code> complète</label></li>
 <li><label><input type="checkbox">Normalisation et indices (<code>nemeton_index()</code>)</label></li>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,12 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/getting-started_fr.html">Démarrage rapide</a></li>
-    <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
-    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
+    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -56,8 +55,8 @@
 <li><label><input type="checkbox" checked>Préprocessing automatique (harmonisation CRS, crop)</label></li>
 <li><label><input type="checkbox" checked>Gestion des erreurs par indicateur (continue si échec)</label></li>
 <li><label><input type="checkbox" checked>Dataset démo <code>massif_demo</code> (136 ha, 20 parcelles)</label></li>
-</ul><p><strong>Fonctions implémentées</strong>: - <code><a href="reference/indicator_carbon.html">indicator_carbon()</a></code> - Stock de carbone - <code><a href="reference/indicator_biodiversity.html">indicator_biodiversity()</a></code> - Richesse spécifique<br>
-- <code><a href="reference/indicator_water.html">indicator_water()</a></code> - Régulation hydrique (TWI + proximité) - <code><a href="reference/indicator_fragmentation.html">indicator_fragmentation()</a></code> - Couverture forestière - <code><a href="reference/indicator_accessibility.html">indicator_accessibility()</a></code> - Distance aux routes</p>
+</ul><p><strong>Fonctions implémentées</strong>: - <code>indicator_carbon()</code> - Stock de carbone - <code>indicator_biodiversity()</code> - Richesse spécifique<br>
+- <code>indicator_water()</code> - Régulation hydrique (TWI + proximité) - <code>indicator_fragmentation()</code> - Couverture forestière - <code>indicator_accessibility()</code> - Distance aux routes</p>
 <hr></div>
 <div class="section level3">
 <h3 id="id_-user-story-2-p2---normalisation--indices">✅ User Story 2 (P2) - Normalisation &amp; Indices<a class="anchor" aria-label="anchor" href="#id_-user-story-2-p2---normalisation--indices"></a></h3>
@@ -221,7 +220,7 @@
 <div class="section level3">
 <h3 id="fonctions-exportées-17">Fonctions Exportées (17)<a class="anchor" aria-label="anchor" href="#fonctions-export%C3%A9es-17"></a></h3>
 <p><strong>Core</strong>: - <code><a href="reference/nemeton_units.html">nemeton_units()</a></code> - Créer des unités spatiales - <code><a href="reference/nemeton_layers.html">nemeton_layers()</a></code> - Cataloguer les couches - <code><a href="reference/nemeton_compute.html">nemeton_compute()</a></code> - Calculer les indicateurs - <code><a href="reference/massif_demo_layers.html">massif_demo_layers()</a></code> - Charger le dataset démo</p>
-<p><strong>Indicateurs</strong>: - <code><a href="reference/indicator_carbon.html">indicator_carbon()</a></code> - <code><a href="reference/indicator_biodiversity.html">indicator_biodiversity()</a></code> - <code><a href="reference/indicator_water.html">indicator_water()</a></code> - <code><a href="reference/indicator_fragmentation.html">indicator_fragmentation()</a></code> - <code><a href="reference/indicator_accessibility.html">indicator_accessibility()</a></code></p>
+<p><strong>Indicateurs</strong>: - <code>indicator_carbon()</code> - <code>indicator_biodiversity()</code> - <code>indicator_water()</code> - <code>indicator_fragmentation()</code> - <code>indicator_accessibility()</code></p>
 <p><strong>Normalisation</strong>: - <code><a href="reference/normalize_indicators.html">normalize_indicators()</a></code> - Normaliser (3 méthodes) - <code><a href="reference/create_composite_index.html">create_composite_index()</a></code> - Indice composite - <code><a href="reference/invert_indicator.html">invert_indicator()</a></code> - Inverser polarité</p>
 <p><strong>Visualisation</strong>: - <code><a href="reference/plot_indicators_map.html">plot_indicators_map()</a></code> - Carte thématique - <code><a href="reference/plot_comparison_map.html">plot_comparison_map()</a></code> - Comparaison - <code><a href="reference/plot_difference_map.html">plot_difference_map()</a></code> - Changement</p>
 <p><strong>Utilitaires</strong>: - <code><a href="reference/list_indicators.html">list_indicators()</a></code> - Lister indicateurs disponibles - <code><a href="reference/nemeton_set_language.html">nemeton_set_language()</a></code> - Changer langue</p>

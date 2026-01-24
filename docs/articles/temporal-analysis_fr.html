@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,12 +34,11 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
-    <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -68,7 +67,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-01-23</h4>
+            <h4 data-toc-skip class="date">2026-01-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/vignettes/temporal-analysis_fr.Rmd" class="external-link"><code>vignettes/temporal-analysis_fr.Rmd</code></a></small>
       <div class="d-none name"><code>temporal-analysis_fr.Rmd</code></div>
@@ -169,7 +168,7 @@ cartes de différence</li>
 <code class="sourceCode R"><span><span class="co"># Calculer automatiquement pour toutes les périodes</span></span>
 <span><span class="va">temporal_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span></span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Afficher la structure</span></span>
@@ -187,7 +186,7 @@ contenant les indicateurs calculés pour chaque période.</p>
 <code class="sourceCode R"><span><span class="co"># Calculer le taux de changement annuel (%)</span></span>
 <span><span class="va">change_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_change_rate.html">calculate_change_rate</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span><span class="op">)</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"2015"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"2025"</span></span>
 <span><span class="op">)</span></span>
@@ -204,7 +203,7 @@ contenant les indicateurs calculés pour chaque période.</p>
 <code class="sourceCode R"><span><span class="co"># Calculer les différences entre 2020 et 2025</span></span>
 <span><span class="va">differences</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_change_rate.html">calculate_change_rate</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="st">"carbon"</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="st">"carbon_biomass"</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"2020"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"2025"</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"absolute"</span> <span class="co"># Différence absolue au lieu de taux</span></span>
@@ -222,7 +221,7 @@ contenant les indicateurs calculés pour chaque période.</p>
 <span><span class="fu"><a href="../reference/plot_temporal_trend.html">plot_temporal_trend</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
 <span>  unit_id <span class="op">=</span> <span class="st">"P01"</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Évolution des indicateurs - Parcelle P01"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -233,7 +232,7 @@ contenant les indicateurs calculés pour chaque période.</p>
 <code class="sourceCode R"><span><span class="co"># Heatmap de tous les indicateurs sur toutes les périodes</span></span>
 <span><span class="fu"><a href="../reference/plot_temporal_heatmap.html">plot_temporal_heatmap</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span>, <span class="st">"fragmentation"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span>, <span class="st">"landscape_fragmentation"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Heatmap temporelle - Tous indicateurs"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Visualisation</strong> : Matrice colorée montrant l’intensité
@@ -280,7 +279,7 @@ de chaque indicateur par période et parcelle.</p>
 <span><span class="co"># 2. Calculer indicateurs</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_intervention</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span>, <span class="st">"fragmentation"</span><span class="op">)</span></span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span>, <span class="st">"landscape_fragmentation"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3. Analyser les impacts</span></span>
@@ -288,21 +287,21 @@ de chaque indicateur par période et parcelle.</p>
 <span>  <span class="va">results</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"avant_2018"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"apres_2020"</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span><span class="op">)</span></span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity_protection"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">recovery_2025</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_change_rate.html">calculate_change_rate</a></span><span class="op">(</span></span>
 <span>  <span class="va">results</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"apres_2020"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"suivi_2025"</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span><span class="op">)</span></span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity_protection"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 4. Visualiser trajectoire</span></span>
 <span><span class="fu"><a href="../reference/plot_temporal_trend.html">plot_temporal_trend</a></span><span class="op">(</span></span>
 <span>  <span class="va">results</span>,</span>
 <span>  unit_id <span class="op">=</span> <span class="st">"PARCEL_INTERV_01"</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity_protection"</span><span class="op">)</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Trajectoire post-intervention"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -317,7 +316,7 @@ de chaque indicateur par période et parcelle.</p>
 <code class="sourceCode R"><span><span class="co"># Calculer taux de changement</span></span>
 <span><span class="va">rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_change_rate.html">calculate_change_rate</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="st">"carbon"</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="st">"carbon_biomass"</span>,</span>
 <span>  period_start <span class="op">=</span> <span class="st">"2015"</span>,</span>
 <span>  period_end <span class="op">=</span> <span class="st">"2025"</span></span>
 <span><span class="op">)</span></span>
@@ -365,7 +364,7 @@ de chaque indicateur par période et parcelle.</p>
 <code class="sourceCode R"><span><span class="co"># Normaliser les indicateurs de chaque période séparément</span></span>
 <span><span class="va">temporal_norm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"minmax"</span>,</span>
 <span>  by_period <span class="op">=</span> <span class="cn">TRUE</span> <span class="co"># Normalisation intra-période</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -379,7 +378,7 @@ entre périodes.</p>
 <code class="sourceCode R"><span><span class="co"># Normaliser sur toutes les périodes ensemble</span></span>
 <span><span class="va">temporal_norm_global</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span></span>
 <span>  <span class="va">temporal_results</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"minmax"</span>,</span>
 <span>  by_period <span class="op">=</span> <span class="cn">FALSE</span> <span class="co"># Normalisation sur toutes les données</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -441,7 +440,7 @@ périodes.</p>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">period</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2015"</span>, <span class="st">"2020"</span>, <span class="st">"2025"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span></span>
 <span>    <span class="va">temporal_results</span><span class="op">[[</span><span class="va">period</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>    indicators <span class="op">=</span> <span class="st">"carbon"</span>,</span>
+<span>    indicators <span class="op">=</span> <span class="st">"carbon_biomass"</span>,</span>
 <span>    title <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Stock carbone -"</span>, <span class="va">period</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span></span>
@@ -541,7 +540,7 @@ scénarios</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_4.0.1 nemeton_0.5.1</span></span>
+<span><span class="co">#&gt; [1] ggplot2_4.0.1 nemeton_0.6.1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    </span></span>

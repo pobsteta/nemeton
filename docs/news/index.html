@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,12 +19,11 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
-    <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles + radar)</a></li>
+    <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">🌟 NOUVEAU v0.4.0: Référentiel Complet 12 Familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">🌟 NOUVEAU v0.4.0: Optimisation Multi-Critères</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">✨ v0.3.0: Biodiversité, Risques, Climat</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
@@ -44,6 +43,185 @@
       <small>Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.2" id="nemeton-062">nemeton 0.6.2<a class="anchor" aria-label="anchor" href="#nemeton-062"></a></h2>
+<p><strong>Date</strong>: 2026-01-24</p>
+<div class="section level4">
+<h4 id="changes-0-6-2">Changes<a class="anchor" aria-label="anchor" href="#changes-0-6-2"></a></h4>
+<ul><li>
+<strong>Data consolidation</strong>: Merged <code>massif_demo_units</code> and <code>massif_demo_units_extended</code> into a single dataset with 89 columns (29 indicators, 12 family composites, normalized values)</li>
+<li>
+<strong>Tests</strong>: Fixed 19 skipped tests, now 1478 tests passing (0 skipped)</li>
+<li>
+<strong>Documentation</strong>: Simplified README from 846 to 138 lines</li>
+<li>
+<strong>Fixtures</strong>: Added synthetic cadastral file for integration tests</li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.1" id="nemeton-061">nemeton 0.6.1<a class="anchor" aria-label="anchor" href="#nemeton-061"></a></h2>
+<p><strong>Date</strong>: 2026-01-23</p>
+<div class="section level4">
+<h4 id="changes-0-6-1">Changes<a class="anchor" aria-label="anchor" href="#changes-0-6-1"></a></h4>
+<ul><li>Fix pkgdown references to obsolete v0.1.0 indicators</li>
+<li>Add lasR remote for GitHub Actions CI</li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="nemeton-060-development">nemeton 0.6.0 (Development)<a class="anchor" aria-label="anchor" href="#nemeton-060-development"></a></h2>
+<div class="section level3">
+<h3 id="v060---legacy-indicators-removal-0-6-0">v0.6.0 - Legacy Indicators Removal<a class="anchor" aria-label="anchor" href="#v060---legacy-indicators-removal-0-6-0"></a></h3>
+<p><strong>Date</strong>: 2026-01-23</p>
+<div class="section level4">
+<h4 id="breaking-changes-️-0-6-0">BREAKING CHANGES ⚠️<a class="anchor" aria-label="anchor" href="#breaking-changes-%EF%B8%8F-0-6-0"></a></h4>
+<p><strong>Removed Legacy Indicators (v0.1.0)</strong></p>
+<p>The original 5 MVP indicators have been removed in favor of the comprehensive 12-family framework (32+ indicators). This is a breaking change for code using v0.1.0 indicators.</p>
+<div class="section level5">
+<h5 id="removed-functions-0-6-0">Removed Functions<a class="anchor" aria-label="anchor" href="#removed-functions-0-6-0"></a></h5>
+<ul><li>
+<code>indicator_carbon()</code> - <strong>Use instead:</strong> <code><a href="../reference/indicator_carbon_biomass.html">indicator_carbon_biomass()</a></code> (C1) or <code><a href="../reference/indicator_carbon_ndvi.html">indicator_carbon_ndvi()</a></code> (C2)</li>
+<li>
+<code>indicator_biodiversity()</code> - <strong>Use instead:</strong> <code><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection()</a></code> (B1), <code><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure()</a></code> (B2), or <code><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity()</a></code> (B3)</li>
+<li>
+<code>indicator_water()</code> - <strong>Use instead:</strong> <code><a href="../reference/indicator_water_network.html">indicator_water_network()</a></code> (W1), <code><a href="../reference/indicator_water_wetlands.html">indicator_water_wetlands()</a></code> (W2), or <code><a href="../reference/indicator_water_twi.html">indicator_water_twi()</a></code> (W3)</li>
+<li>
+<code>indicator_fragmentation()</code> - <strong>Use instead:</strong> <code><a href="../reference/indicator_landscape_fragmentation.html">indicator_landscape_fragmentation()</a></code> (L1) or <code><a href="../reference/indicator_landscape_edge.html">indicator_landscape_edge()</a></code> (L2)</li>
+<li>
+<code>indicator_accessibility()</code> - <strong>Use instead:</strong> <code><a href="../reference/indicator_social_accessibility.html">indicator_social_accessibility()</a></code> (S2) or <code><a href="../reference/indicator_social_trails.html">indicator_social_trails()</a></code> (S1)</li>
+</ul></div>
+<div class="section level5">
+<h5 id="migration-guide-0-6-0">Migration Guide<a class="anchor" aria-label="anchor" href="#migration-guide-0-6-0"></a></h5>
+<p><strong>Before (v0.1.0-v0.5.x):</strong></p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Old API</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon"</span>, <span class="st">"biodiversity"</span>, <span class="st">"water"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>After (v0.6.0+):</strong></p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># New API with family-based indicators</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span></span>
+<span>  <span class="va">units</span>, <span class="va">layers</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_biomass"</span>, <span class="st">"biodiversity_protection"</span>, <span class="st">"water_twi"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or use list_indicators() to see all available indicators</span></span>
+<span><span class="va">available</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_indicators.html">list_indicators</a></span><span class="op">(</span>return_type <span class="op">=</span> <span class="st">"details"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level5">
+<h5 id="updated-core-functions-0-6-0">Updated Core Functions<a class="anchor" aria-label="anchor" href="#updated-core-functions-0-6-0"></a></h5>
+<ul><li>
+<code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code> - Now uses <code><a href="../reference/list_indicators.html">list_indicators()</a></code> for available indicators</li>
+<li>
+<code><a href="../reference/list_indicators.html">list_indicators()</a></code> - Returns all 31 indicators from the 12-family framework</li>
+<li>
+<code>compute_indicator()</code> - Dynamic dispatch supporting all family-based indicators</li>
+</ul></div>
+<div class="section level5">
+<h5 id="files-removed-0-6-0">Files Removed<a class="anchor" aria-label="anchor" href="#files-removed-0-6-0"></a></h5>
+<ul><li>
+<code>R/indicators-biophysical.R</code> - Legacy indicator implementations (567 lines)</li>
+<li>
+<code>tests/testthat/test-indicators-biophysical.R</code> - Legacy tests (414 lines, 26 tests)</li>
+</ul></div>
+</div>
+<div class="section level4">
+<h4 id="rationale-0-6-0">Rationale<a class="anchor" aria-label="anchor" href="#rationale-0-6-0"></a></h4>
+<p>The legacy indicators were functional placeholders from the v0.1.0 MVP. The new 12-family framework (introduced in v0.2.0-v0.4.0) provides:</p>
+<ul><li>
+<strong>More comprehensive coverage</strong>: 31 indicators vs 5</li>
+<li>
+<strong>Better scientific foundation</strong>: Species-specific allometric models, multiple data sources</li>
+<li>
+<strong>Clearer organization</strong>: 12 families (C, W, F, L, B, R, T, A, S, P, E, N)</li>
+<li>
+<strong>Improved flexibility</strong>: Multiple sub-indicators per ecosystem service</li>
+</ul><p>All legacy indicators had superior replacements available since v0.2.0 (January 2026).</p>
+<hr></div>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.2" id="nemeton-052">nemeton 0.5.2<a class="anchor" aria-label="anchor" href="#nemeton-052"></a></h2>
+<div class="section level3">
+<h3 id="v052---tutorial-sampling--tsp-0-5-2">v0.5.2 - Tutorial 09 Sampling + TSP<a class="anchor" aria-label="anchor" href="#v052---tutorial-sampling--tsp-0-5-2"></a></h3>
+<p><strong>Date</strong>: 2026-01-23</p>
+<div class="section level4">
+<h4 id="new-features-0-5-2">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-5-2"></a></h4>
+<div class="section level5">
+<h5 id="tutorial-échantillonnage-de-calibration-lidar-hd--tsp-min-0-5-2">Tutorial 09: Échantillonnage de calibration LiDAR HD + TSP (180 min)<a class="anchor" aria-label="anchor" href="#tutorial-%C3%A9chantillonnage-de-calibration-lidar-hd--tsp-min-0-5-2"></a></h5>
+<ul><li>
+<strong>Dimensionnement optimal</strong> - Calcul du nombre de placettes basé sur la formule n = t² × CV² / E²
+<ul><li>Fonctions <code>calculate_sample_size()</code> et <code>sample_size_table()</code>
+</li>
+<li>Tableau de référence interactif pour CV (10-40%) et erreur (5-20%)</li>
+<li>Correction pour population finie</li>
+</ul></li>
+<li>
+<strong>Sampling Frame</strong> - Construction d’une grille de candidats avec contraintes terrain
+<ul><li>Filtrage par couvert forestier (≥70%) et pente (≤45%)</li>
+<li>Utilisation des données T01/T03/T07 (zone_etude, bd_foret, mnt, chm_complet)</li>
+</ul></li>
+<li>
+<strong>Stratification triple</strong> - Basée sur 3 critères forestiers
+<ul><li>
+<strong>Hauteur CHM LiDAR</strong> : 4 classes (H1-H4) par quartiles</li>
+<li>
+<strong>Type de peuplement</strong> (BD Forêt v2 tfv) : FEU/CON/MIX/POP/AUT</li>
+<li>
+<strong>Position topographique</strong> (TPI) : Bas/Milieu/Haut de pente</li>
+<li>Calcul TPI avec <code><a href="https://rspatial.github.io/terra/reference/focal.html" class="external-link">focal()</a></code> (rayon 100m)</li>
+</ul></li>
+<li>
+<strong>Tirage GRTS stratifié</strong> - Échantillonnage spatialement équilibré
+<ul><li>Package <code><a href="https://usepa.github.io/spsurvey/reference/grts.html" class="external-link">spsurvey::grts()</a></code> avec allocation proportionnelle</li>
+<li>Oversample par strate pour placettes de remplacement</li>
+<li>Fallback <code><a href="https://rdrr.io/pkg/BalancedSampling/man/lpm.html" class="external-link">BalancedSampling::lpm2</a></code> si GRTS échoue</li>
+</ul></li>
+<li>
+<strong>Réseau de chemins</strong> - Construction réseau avec <code>sfnetworks</code> depuis BD TOPO
+<ul><li>Filtrage chemins praticables à pied</li>
+<li>Calcul poids avec <code>edge_length()</code>
+</li>
+</ul></li>
+<li>
+<strong>Optimisation TSP</strong> - Parcours optimal avec package <code>TSP</code>
+<ul><li>Méthode nearest insertion + 2-opt</li>
+<li>Visualisation avec distinction Base/Remplacement</li>
+</ul></li>
+<li>
+<strong>Export terrain</strong> - Formats multiples pour GPS
+<ul><li>GeoPackage (SIG)</li>
+<li>GPX (navigation GPS)</li>
+<li>CSV (tableau récapitulatif avec coordonnées WGS84)</li>
+</ul></li>
+</ul></div>
+</div>
+<div class="section level4">
+<h4 id="improvements-0-5-2">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-5-2"></a></h4>
+<ul><li>
+<strong>Harmonisation data_dir</strong> - Chemin unifié sur tous les tutoriels T01-T09
+<ul><li><code>~/.local/share/nemeton/tutorial_data</code></li>
+<li>Suppression variable <code>cache_dir</code> dans T08</li>
+</ul></li>
+</ul></div>
+<div class="section level4">
+<h4 id="dependencies-0-5-2">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-5-2"></a></h4>
+<ul><li>Added <code>spsurvey (&gt;= 5.0.0)</code> to Suggests</li>
+<li>Added <code>BalancedSampling (&gt;= 1.6.0)</code> to Suggests</li>
+<li>Added <code>sfnetworks (&gt;= 0.6.0)</code> to Suggests</li>
+<li>Added <code>TSP (&gt;= 1.2.0)</code> to Suggests</li>
+<li>Added <code>tidygraph (&gt;= 1.2.0)</code> to Suggests</li>
+<li>Added <code>igraph (&gt;= 1.4.0)</code> to Suggests</li>
+</ul></div>
+<div class="section level4">
+<h4 id="documentation-0-5-2">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-5-2"></a></h4>
+<ul><li>Updated <code>vignettes/tutorial-guide.Rmd</code> with Tutorial 09</li>
+<li>Updated <code>TUTORIAL_INSTALL.md</code> with Tutorial 09</li>
+</ul><p><strong>References</strong>: - Stevens, D. L., &amp; Olsen, A. R. (2004). Spatially balanced sampling of natural resources. <em>JASA</em>, 99(465), 262-278. - Grafström, A., &amp; Tillé, Y. (2013). Doubly balanced spatial sampling with spreading and restitution of auxiliary totals. <em>Environmetrics</em>, 24(2), 120-131. - Hahsler, M., &amp; Hornik, K. (2007). TSP—Infrastructure for the traveling salesperson problem. <em>Journal of Statistical Software</em>, 23(2).</p>
+<hr></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.1" id="nemeton-051">nemeton 0.5.1<a class="anchor" aria-label="anchor" href="#nemeton-051"></a></h2>
 <div class="section level3">
@@ -855,7 +1033,7 @@
 <li>
 <strong>W2 Wetland Coverage</strong>: Uses exactextractr for area-weighted raster value extraction</li>
 <li>
-<strong>W3 TWI</strong>: Terra hydrology functions (<code>terrain(v="flowdir")</code>, <code>flowAccumulation()</code>)</li>
+<strong>W3 TWI</strong>: Terra hydrology functions (<code>terrain(v="flowdir")</code>, <code><a href="https://rspatial.github.io/terra/reference/flowAccumulation.html" class="external-link">flowAccumulation()</a></code>)</li>
 <li>
 <strong>Flow algorithm</strong>: D8 (8-neighbor) for computational efficiency</li>
 <li>
@@ -910,7 +1088,7 @@
 <div class="section level4">
 <h4 id="deprecations-0-2-0">Deprecations<a class="anchor" aria-label="anchor" href="#deprecations-0-2-0"></a></h4>
 <ul><li>
-<strong><code><a href="../reference/indicator_carbon.html">indicator_carbon()</a></code></strong> - Now deprecated (will be removed in v1.0.0)
+<strong><code>indicator_carbon()</code></strong> - Now deprecated (will be removed in v1.0.0)
 <ul><li>Replacement: Use <code><a href="../reference/indicator_carbon_biomass.html">indicator_carbon_biomass()</a></code> for BD Forêt support, or <code><a href="../reference/indicator_carbon_ndvi.html">indicator_carbon_ndvi()</a></code> for NDVI</li>
 <li>Backward compatibility: Function still works with deprecation warning</li>
 <li>All existing workflows continue to function</li>
@@ -964,15 +1142,15 @@
 <div class="section level5">
 <h5 id="indicators--complete-0-1-0">Indicators (✅ 5/5 Complete)<a class="anchor" aria-label="anchor" href="#indicators--complete-0-1-0"></a></h5>
 <ul><li>
-<code><a href="../reference/indicator_carbon.html">indicator_carbon()</a></code> - Carbon stock from biomass (Mg C/ha)</li>
+<code>indicator_carbon()</code> - Carbon stock from biomass (Mg C/ha)</li>
 <li>
-<code><a href="../reference/indicator_biodiversity.html">indicator_biodiversity()</a></code> - Species richness / Shannon index</li>
+<code>indicator_biodiversity()</code> - Species richness / Shannon index</li>
 <li>
-<code><a href="../reference/indicator_water.html">indicator_water()</a></code> - Water regulation (TWI + proximity to streams)</li>
+<code>indicator_water()</code> - Water regulation (TWI + proximity to streams)</li>
 <li>
-<code><a href="../reference/indicator_fragmentation.html">indicator_fragmentation()</a></code> - Forest coverage and connectivity</li>
+<code>indicator_fragmentation()</code> - Forest coverage and connectivity</li>
 <li>
-<code><a href="../reference/indicator_accessibility.html">indicator_accessibility()</a></code> - Distance to roads and trails</li>
+<code>indicator_accessibility()</code> - Distance to roads and trails</li>
 </ul></div>
 <div class="section level5">
 <h5 id="normalization--indices--complete-0-1-0">Normalization &amp; Indices (✅ Complete)<a class="anchor" aria-label="anchor" href="#normalization--indices--complete-0-1-0"></a></h5>
@@ -1020,7 +1198,7 @@
 </div>
 <div class="section level4">
 <h4 id="exported-functions-0-1-0">Exported Functions (17)<a class="anchor" aria-label="anchor" href="#exported-functions-0-1-0"></a></h4>
-<p><strong>Core</strong>: <code><a href="../reference/nemeton_units.html">nemeton_units()</a></code>, <code><a href="../reference/nemeton_layers.html">nemeton_layers()</a></code>, <code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code>, <code><a href="../reference/massif_demo_layers.html">massif_demo_layers()</a></code> <strong>Indicators</strong>: <code><a href="../reference/indicator_carbon.html">indicator_carbon()</a></code>, <code><a href="../reference/indicator_biodiversity.html">indicator_biodiversity()</a></code>, <code><a href="../reference/indicator_water.html">indicator_water()</a></code>, <code><a href="../reference/indicator_fragmentation.html">indicator_fragmentation()</a></code>, <code><a href="../reference/indicator_accessibility.html">indicator_accessibility()</a></code> <strong>Normalization</strong>: <code><a href="../reference/normalize_indicators.html">normalize_indicators()</a></code>, <code><a href="../reference/create_composite_index.html">create_composite_index()</a></code>, <code><a href="../reference/invert_indicator.html">invert_indicator()</a></code> <strong>Visualization</strong>: <code><a href="../reference/plot_indicators_map.html">plot_indicators_map()</a></code>, <code><a href="../reference/plot_comparison_map.html">plot_comparison_map()</a></code>, <code><a href="../reference/plot_difference_map.html">plot_difference_map()</a></code> <strong>Utilities</strong>: <code><a href="../reference/list_indicators.html">list_indicators()</a></code>, <code><a href="../reference/nemeton_set_language.html">nemeton_set_language()</a></code></p>
+<p><strong>Core</strong>: <code><a href="../reference/nemeton_units.html">nemeton_units()</a></code>, <code><a href="../reference/nemeton_layers.html">nemeton_layers()</a></code>, <code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code>, <code><a href="../reference/massif_demo_layers.html">massif_demo_layers()</a></code> <strong>Indicators</strong>: <code>indicator_carbon()</code>, <code>indicator_biodiversity()</code>, <code>indicator_water()</code>, <code>indicator_fragmentation()</code>, <code>indicator_accessibility()</code> <strong>Normalization</strong>: <code><a href="../reference/normalize_indicators.html">normalize_indicators()</a></code>, <code><a href="../reference/create_composite_index.html">create_composite_index()</a></code>, <code><a href="../reference/invert_indicator.html">invert_indicator()</a></code> <strong>Visualization</strong>: <code><a href="../reference/plot_indicators_map.html">plot_indicators_map()</a></code>, <code><a href="../reference/plot_comparison_map.html">plot_comparison_map()</a></code>, <code><a href="../reference/plot_difference_map.html">plot_difference_map()</a></code> <strong>Utilities</strong>: <code><a href="../reference/list_indicators.html">list_indicators()</a></code>, <code><a href="../reference/nemeton_set_language.html">nemeton_set_language()</a></code></p>
 </div>
 <div class="section level4">
 <h4 id="documentation--complete-0-1-0">Documentation (✅ Complete)<a class="anchor" aria-label="anchor" href="#documentation--complete-0-1-0"></a></h4>
@@ -1066,7 +1244,7 @@
 </ul></div>
 <div class="section level4">
 <h4 id="quick-start-example-0-1-0">Quick Start Example<a class="anchor" aria-label="anchor" href="#quick-start-example-0-1-0"></a></h4>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 5-line workflow</span></span>
