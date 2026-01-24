@@ -53,28 +53,26 @@ dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
 
 # =============================================================================
 # CONFIGURATION PAR DÉFAUT
+# Modifiez ces valeurs pour personnaliser le tutoriel
 # =============================================================================
 
 config <- list(
-  # Modélisation
-  n_trees = 500,              # Nombre d'arbres Random Forest
-  mtry_ratio = 0.33,          # Ratio de features à tester
-  min_node_size = 5,          # Taille minimale des noeuds
+  # Modélisation Random Forest
+  n_trees = 500,              # Nombre d'arbres (200-1000)
+  mtry_ratio = 0.33,          # Ratio de features à tester (0.2-0.5)
+  min_node_size = 5,          # Taille minimale des noeuds (1-10)
 
+  # Validation croisée spatiale
+  n_folds = 5,                # Nombre de folds CV (3-10)
+  block_size = 100,           # Taille des blocs spatiaux en mètres (50-200)
 
-  # Validation
-  n_folds = 5,                # Nombre de folds CV
-  block_size = 100,           # Taille des blocs spatiaux (m)
+  # Filtrage des données
+  min_samples_per_class = 10, # Minimum d'échantillons par classe (5-20)
+  prob_threshold = 0.5,       # Seuil de confiance pour "incertain" (0.3-0.7)
 
-  # Filtrage
-  min_samples_per_class = 10, # Minimum d'échantillons par classe
-  prob_threshold = 0.5,       # Seuil de confiance pour "incertain"
-
-  # CRS
+  # Paramètres techniques
   crs = 2154,                 # Lambert 93
-
-  # Seed
-  seed = 2024
+  seed = 2024                 # Seed pour reproductibilité
 )
 
 # =============================================================================
@@ -165,7 +163,7 @@ Ce tutoriel vous apprendra à **classifier les essences forestières au niveau d
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PIPELINE CLASSIFICATION D'ESSENCES                        │
+│                    PIPELINE CLASSIFICATION D'ESSENCES                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  1. DONNÉES               2. FEATURES              3. VALIDATION            │
@@ -327,26 +325,85 @@ for (f in optional_files) {
 
 ### Exercice 1.3 : Configuration de l'environnement
 
+Explorez les paramètres du tutoriel. Pour personnaliser les valeurs utilisées dans tout le tutoriel, modifiez la section `CONFIGURATION PAR DÉFAUT` dans le setup principal du fichier Rmd.
+
 ```{r config-env, exercise=TRUE}
-# Afficher la configuration
+# =============================================================================
+# CONFIGUREZ VOS PARAMÈTRES ICI
+# =============================================================================
+
+# --- Modélisation Random Forest ---
+n_trees <- 500              # Nombre d'arbres (200-1000)
+mtry_ratio <- 0.33          # Ratio de features à tester (0.2-0.5)
+min_node_size <- 5          # Taille minimale des noeuds (1-10)
+
+# --- Validation croisée spatiale ---
+n_folds <- 5                # Nombre de folds CV (3-10)
+block_size <- 100           # Taille des blocs spatiaux en mètres (50-200)
+
+# --- Filtrage des données ---
+min_samples_per_class <- 10 # Minimum d'échantillons par classe (5-20)
+prob_threshold <- 0.5       # Seuil de confiance pour "incertain" (0.3-0.7)
+
+# --- Paramètres techniques ---
+crs <- 2154                 # Lambert 93 (ne pas modifier)
+seed <- 2024                # Seed pour reproductibilité
+
+# =============================================================================
+# CRÉATION DE LA CONFIGURATION (ne pas modifier)
+# =============================================================================
+
+config <- list(
+  n_trees = n_trees,
+  mtry_ratio = mtry_ratio,
+  min_node_size = min_node_size,
+  n_folds = n_folds,
+  block_size = block_size,
+  min_samples_per_class = min_samples_per_class,
+  prob_threshold = prob_threshold,
+  crs = crs,
+  seed = seed
+)
+
+# =============================================================================
+# AFFICHAGE DE LA CONFIGURATION
+# =============================================================================
+
 cat("=== Configuration du tutoriel ===\n\n")
 
-cat("Modélisation:\n")
-cat(sprintf("  Arbres RF: %d\n", config$n_trees))
-cat(sprintf("  mtry ratio: %.2f\n", config$mtry_ratio))
+cat("Modélisation Random Forest:\n")
+cat(sprintf("  Nombre d'arbres: %d\n", config$n_trees))
+cat(sprintf("  mtry ratio: %.2f (%.0f%% des features)\n", config$mtry_ratio, config$mtry_ratio * 100))
 cat(sprintf("  min.node.size: %d\n", config$min_node_size))
 
-cat("\nValidation:\n")
-cat(sprintf("  Folds CV: %d\n", config$n_folds))
-cat(sprintf("  Taille blocs: %d m\n", config$block_size))
+cat("\nValidation croisée spatiale:\n")
+cat(sprintf("  Nombre de folds: %d\n", config$n_folds))
+cat(sprintf("  Taille des blocs: %d m\n", config$block_size))
 
-cat("\nFiltrage:\n")
+cat("\nFiltrage des données:\n")
 cat(sprintf("  Min samples/classe: %d\n", config$min_samples_per_class))
-cat(sprintf("  Seuil confiance: %.0f%%\n", config$prob_threshold * 100))
+cat(sprintf("  Seuil de confiance: %.0f%%\n", config$prob_threshold * 100))
 
 cat("\nParamètres techniques:\n")
 cat(sprintf("  CRS: EPSG:%d (Lambert-93)\n", config$crs))
 cat(sprintf("  Seed: %d\n", config$seed))
+
+# Validation des paramètres
+cat("\n=== Validation ===\n")
+errors <- c()
+if (config$n_trees < 100) errors <- c(errors, "n_trees trop faible (min 100)")
+if (config$n_trees > 2000) errors <- c(errors, "n_trees trop élevé (max 2000)")
+if (config$mtry_ratio < 0.1 || config$mtry_ratio > 0.8) errors <- c(errors, "mtry_ratio hors limites (0.1-0.8)")
+if (config$n_folds < 3 || config$n_folds > 10) errors <- c(errors, "n_folds hors limites (3-10)")
+if (config$block_size < 30 || config$block_size > 500) errors <- c(errors, "block_size hors limites (30-500m)")
+if (config$prob_threshold < 0.3 || config$prob_threshold > 0.9) errors <- c(errors, "prob_threshold hors limites (0.3-0.9)")
+
+if (length(errors) == 0) {
+  cat("✓ Tous les paramètres sont valides\n")
+} else {
+  cat("✗ Erreurs détectées:\n")
+  for (e in errors) cat(sprintf("  - %s\n", e))
+}
 
 # Session info
 cat("\n=== Session R ===\n")
@@ -366,18 +423,7 @@ Nous allons charger les données depuis le cache des tutoriels précédents :
 
 ### Exercice 2.1 : Charger les couronnes segmentées
 
-```{r load-crowns-setup}
-if (requireNamespace("rappdirs", quietly = TRUE)) {
-  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
-} else {
-  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
-}
-dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-classif_dir <- file.path(data_dir, "result_classification")
-dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
-```
-
-```{r load-crowns, exercise=TRUE, exercise.setup="load-crowns-setup"}
+```{r load-crowns, exercise=TRUE}
 # Charger les couronnes segmentées depuis Tutorial 07
 crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
 
@@ -450,6 +496,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 }
 classif_dir <- file.path(data_dir, "result_classification")
 dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
+# config est hérité du setup principal
 ```
 
 ```{r load-labels, exercise=TRUE, exercise.setup="load-labels-setup"}
@@ -540,6 +587,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger la zone d'étude pour l'emprise
 zone_file <- file.path(data_dir, "zone_etude.gpkg")
@@ -692,6 +740,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les couronnes
 crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
@@ -808,6 +857,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les couronnes avec métriques de hauteur
 crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_height.rds"))
@@ -947,6 +997,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les couronnes avec features LiDAR
 crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_lidar.rds"))
@@ -1113,6 +1164,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les données
 crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_features.rds"))
@@ -1170,11 +1222,12 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les données assemblées (simuler si pas disponible)
 crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_features.rds"))
 if (!"species" %in% names(crowns_sample)) {
-  set.seed(2024)
+  set.seed(config$seed)
   species_pool <- c("Épicéa", "Sapin", "Hêtre", "Frêne")
   crowns_sample$species <- sample(species_pool, nrow(crowns_sample), replace = TRUE,
                                    prob = c(0.35, 0.30, 0.25, 0.10))
@@ -1300,6 +1353,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les données
 training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
@@ -1440,6 +1494,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les données
 training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
@@ -1544,6 +1599,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les données
 training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
@@ -1689,6 +1745,7 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
   data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
 }
 classif_dir <- file.path(data_dir, "result_classification")
+# config est hérité du setup principal
 
 # Charger les données et le modèle
 training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
