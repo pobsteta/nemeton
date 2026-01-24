@@ -11,7 +11,7 @@ forestière durable.
 
 ## ✨ Fonctionnalités principales
 
-### Référentiel Complet (v0.4.18)
+### Référentiel Complet (v0.6.1)
 
 - 🌳 **12 familles d’indicateurs** (100% implémenté) :
   - **C** - Carbone & Vitalité \| **B** - Biodiversité \| **W** - Eau \|
@@ -825,7 +825,7 @@ Si vous utilisez `nemeton` dans vos travaux de recherche, veuillez citer
 :
 
     Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-    R package version 0.3.0. https://github.com/pobsteta/nemeton
+    R package version 0.6.1. https://github.com/pobsteta/nemeton
 
 BibTeX :
 
@@ -834,7 +834,7 @@ BibTeX :
   title = {nemeton: Systemic Forest Analysis Using the Nemeton Method},
   author = {Pascal Obstétar},
   year = {2026},
-  note = {R package version 0.3.0},
+  note = {R package version 0.6.1},
   url = {https://github.com/pobsteta/nemeton},
 }
 ```
