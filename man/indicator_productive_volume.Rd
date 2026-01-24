@@ -33,25 +33,25 @@ indicator_productive_volume(
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added column: P1 (standing volume in m³/ha)
+sf object with added column: P1 (standing volume in m3/ha)
 }
 \description{
-Calculates standing timber volume (m³/ha) using IFN allometric equations
+Calculates standing timber volume (m3/ha) using IFN allometric equations
 based on species, diameter (DBH), and height data.
 }
 \details{
 **Calculation** (IFN tarif method):
 \itemize{
-  \item Lookup species-specific IFN equation: \code{V = a × DBH^b × H^c}
+  \item Lookup species-specific IFN equation: \code{V = a * DBH^b * H^c}
   \item Calculate individual tree volume
-  \item Scale by tree density: \code{P1 = V_individual × density_stems_ha}
+  \item Scale by tree density: \code{P1 = V_individual * density_stems_ha}
 }
 
 **Species Fallback**:
 If species code not found in IFN tables, uses genus-level equations:
 \itemize{
-  \item Broadleaf species → BROADLEAF_GENUS equation
-  \item Conifer species → CONIFER_GENUS equation
+  \item Broadleaf species -> BROADLEAF_GENUS equation
+  \item Conifer species -> CONIFER_GENUS equation
 }
 
 **Data Requirements**:

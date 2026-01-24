@@ -30,7 +30,7 @@ indicator_productive_station(
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added column: P2 (annual increment in m³/ha/yr)
+sf object with added column: P2 (annual increment in m3/ha/yr)
 }
 \description{
 Calculates a site productivity index combining soil fertility, climate suitability,
@@ -40,8 +40,8 @@ and species-specific growth potential using reference productivity tables.
 **Calculation**:
 \itemize{
   \item Lookup reference productivity from ONF/IFN tables
-  \item Match by species × fertility class × climate zone
-  \item P2 = annual increment (m³/ha/year) for the site
+  \item Match by species x fertility class x climate zone
+  \item P2 = annual increment (m3/ha/year) for the site
 }
 
 **Fertility Classes**:

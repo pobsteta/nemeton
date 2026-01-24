@@ -49,9 +49,9 @@ polygons <- st_read("parcels.gpkg")
 units <- nemeton_units(
   polygons,
   metadata = list(
-    site_name = "Forêt de Fontainebleau",
+    site_name = "Foret de Fontainebleau",
     year = 2024,
-    source = "IGN BD Forêt v2"
+    source = "IGN BD Foret v2"
   )
 )
 
