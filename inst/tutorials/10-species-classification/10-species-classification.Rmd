@@ -1741,26 +1741,43 @@ if (requireNamespace("xgboost", quietly = TRUE)) {
     select(all_of(c(feature_cols, "species"))) |>
     na.omit()
 
-  # Utiliser le premier fold
-  fold <- spatial_folds$folds_list[[1]]
-  train_idx <- fold$train[fold$train <= nrow(model_data)]
-  test_idx <- fold$test[fold$test <= nrow(model_data)]
+  # Vérifier qu'on a assez de données
+  if (nrow(model_data) < 50) {
+    stop("Pas assez de données pour l'entraînement (< 50 observations)")
+  }
 
-  # Encoder les labels (0-indexed)
+  # Split train/test simple (80/20)
+  set.seed(config$seed)
+  train_prop <- 0.8
+  train_idx <- sample(nrow(model_data), size = floor(train_prop * nrow(model_data)))
+  test_idx <- setdiff(seq_len(nrow(model_data)), train_idx)
+
+  # Supprimer les niveaux inutilisés et encoder les labels (0-indexed)
+  model_data$species <- droplevels(model_data$species)
   labels <- levels(model_data$species)
+
   train_y <- as.integer(model_data$species[train_idx]) - 1
   test_y <- as.integer(model_data$species[test_idx]) - 1
 
-  # Matrices
-  train_x <- as.matrix(model_data[train_idx, feature_cols])
-  test_x <- as.matrix(model_data[test_idx, feature_cols])
+  # Créer des matrices numériques propres (éviter les problèmes d'alignement)
+  train_x <- matrix(
+    as.numeric(as.matrix(model_data[train_idx, feature_cols])),
+    nrow = length(train_idx),
+    ncol = length(feature_cols)
+  )
+  test_x <- matrix(
+    as.numeric(as.matrix(model_data[test_idx, feature_cols])),
+    nrow = length(test_idx),
+    ncol = length(feature_cols)
+  )
+
+  cat(sprintf("Train: %d, Test: %d, Classes: %d\n",
+              nrow(train_x), nrow(test_x), length(labels)))
+  cat(sprintf("Classes: %s\n", paste(labels, collapse = ", ")))
 
   # DMatrix
   dtrain <- xgb.DMatrix(data = train_x, label = train_y)
   dtest <- xgb.DMatrix(data = test_x, label = test_y)
-
-  cat(sprintf("Train: %d, Test: %d, Classes: %d\n",
-              nrow(train_x), nrow(test_x), length(labels)))
 
   # Paramètres
   params <- list(
