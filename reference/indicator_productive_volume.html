@@ -108,9 +108,9 @@ based on species, diameter (DBH), and height data.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>**Calculation** (IFN tarif method):</p><ul><li><p>Lookup species-specific IFN equation: <code>V = a * DBH^b * H^c</code></p></li>
+    <p>**Calculation** (IFN tarif method):</p><ul><li><p>Lookup species-specific IFN equation: <code>V = a x DBH^b x H^c</code></p></li>
 <li><p>Calculate individual tree volume</p></li>
-<li><p>Scale by tree density: <code>P1 = V_individual * density_stems_ha</code></p></li>
+<li><p>Scale by tree density: <code>P1 = V_individual x density_stems_ha</code></p></li>
 </ul><p>**Species Fallback**:
 If species code not found in IFN tables, uses genus-level equations:</p><ul><li><p>Broadleaf species -&gt; BROADLEAF_GENUS equation</p></li>
 <li><p>Conifer species -&gt; CONIFER_GENUS equation</p></li>

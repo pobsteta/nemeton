@@ -8,6 +8,7 @@ log-scale normalization favoring ancient forests.
 ``` r
 indicator_temporal_age(
   units,
+  layers = NULL,
   age_field = "age",
   establishment_year_field = NULL,
   current_year = NULL

@@ -65,11 +65,11 @@ sf object with added column: P1 (standing volume in m3/ha)
 
 \*\*Calculation\*\* (IFN tarif method):
 
-- Lookup species-specific IFN equation: `V = a * DBH^b * H^c`
+- Lookup species-specific IFN equation: `V = a x DBH^b x H^c`
 
 - Calculate individual tree volume
 
-- Scale by tree density: `P1 = V_individual * density_stems_ha`
+- Scale by tree density: `P1 = V_individual x density_stems_ha`
 
 \*\*Species Fallback\*\*: If species code not found in IFN tables, uses
 genus-level equations:
