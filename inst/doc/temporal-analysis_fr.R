@@ -56,7 +56,7 @@ library(ggplot2)
 # # Calculer automatiquement pour toutes les périodes
 # temporal_results <- nemeton_compute(
 #   temporal,
-#   indicators = c("carbon", "biodiversity", "water")
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi")
 # )
 # 
 # # Afficher la structure
@@ -66,7 +66,7 @@ library(ggplot2)
 # # Calculer le taux de changement annuel (%)
 # change_rates <- calculate_change_rate(
 #   temporal_results,
-#   indicators = c("carbon", "biodiversity", "water"),
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
 #   period_start = "2015",
 #   period_end = "2025"
 # )
@@ -78,7 +78,7 @@ library(ggplot2)
 # # Calculer les différences entre 2020 et 2025
 # differences <- calculate_change_rate(
 #   temporal_results,
-#   indicators = "carbon",
+#   indicators = "carbon_biomass",
 #   period_start = "2020",
 #   period_end = "2025",
 #   method = "absolute" # Différence absolue au lieu de taux
@@ -89,7 +89,7 @@ library(ggplot2)
 # plot_temporal_trend(
 #   temporal_results,
 #   unit_id = "P01",
-#   indicators = c("carbon", "biodiversity", "water"),
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
 #   title = "Évolution des indicateurs - Parcelle P01"
 # )
 
@@ -97,7 +97,7 @@ library(ggplot2)
 # # Heatmap de tous les indicateurs sur toutes les périodes
 # plot_temporal_heatmap(
 #   temporal_results,
-#   indicators = c("carbon", "biodiversity", "water", "fragmentation"),
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi", "landscape_fragmentation"),
 #   title = "Heatmap temporelle - Tous indicateurs"
 # )
 
@@ -130,7 +130,7 @@ library(ggplot2)
 # # 2. Calculer indicateurs
 # results <- nemeton_compute(
 #   temporal_intervention,
-#   indicators = c("carbon", "biodiversity", "water", "fragmentation")
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi", "landscape_fragmentation")
 # )
 # 
 # # 3. Analyser les impacts
@@ -138,21 +138,21 @@ library(ggplot2)
 #   results,
 #   period_start = "avant_2018",
 #   period_end = "apres_2020",
-#   indicators = c("carbon", "biodiversity")
+#   indicators = c("carbon", "biodiversity_protection")
 # )
 # 
 # recovery_2025 <- calculate_change_rate(
 #   results,
 #   period_start = "apres_2020",
 #   period_end = "suivi_2025",
-#   indicators = c("carbon", "biodiversity")
+#   indicators = c("carbon", "biodiversity_protection")
 # )
 # 
 # # 4. Visualiser trajectoire
 # plot_temporal_trend(
 #   results,
 #   unit_id = "PARCEL_INTERV_01",
-#   indicators = c("carbon", "biodiversity"),
+#   indicators = c("carbon", "biodiversity_protection"),
 #   title = "Trajectoire post-intervention"
 # )
 
@@ -160,7 +160,7 @@ library(ggplot2)
 # # Calculer taux de changement
 # rates <- calculate_change_rate(
 #   temporal_results,
-#   indicators = "carbon",
+#   indicators = "carbon_biomass",
 #   period_start = "2015",
 #   period_end = "2025"
 # )
@@ -198,7 +198,7 @@ library(ggplot2)
 # # Normaliser les indicateurs de chaque période séparément
 # temporal_norm <- normalize_indicators(
 #   temporal_results,
-#   indicators = c("carbon", "biodiversity", "water"),
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
 #   method = "minmax",
 #   by_period = TRUE # Normalisation intra-période
 # )
@@ -207,7 +207,7 @@ library(ggplot2)
 # # Normaliser sur toutes les périodes ensemble
 # temporal_norm_global <- normalize_indicators(
 #   temporal_results,
-#   indicators = c("carbon", "biodiversity", "water"),
+#   indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
 #   method = "minmax",
 #   by_period = FALSE # Normalisation sur toutes les données
 # )
@@ -254,7 +254,7 @@ library(ggplot2)
 # for (period in c("2015", "2020", "2025")) {
 #   p <- plot_indicators_map(
 #     temporal_results[[period]],
-#     indicators = "carbon",
+#     indicators = "carbon_biomass",
 #     title = paste("Stock carbone -", period)
 #   )
 #   ggsave(

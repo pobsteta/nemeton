@@ -19,6 +19,7 @@ library(ggplot2)
 #   layers,
 #   indicators = "carbon_biomass"
 # )
+# 
 # # C2 - NDVI et tendance vitalité
 # carbon_ndvi <- nemeton_compute(
 #   units,
@@ -33,12 +34,14 @@ library(ggplot2)
 #   layers,
 #   indicators = "water_network"
 # )
+# 
 # # W2 - Surface en zones humides (%)
 # water_wetlands <- nemeton_compute(
 #   units,
 #   layers,
 #   indicators = "water_wetlands"
 # )
+# 
 # # W3 - Topographic Wetness Index
 # water_twi <- nemeton_compute(
 #   units,
@@ -196,13 +199,13 @@ library(ggplot2)
 # results <- nemeton_compute(
 #   massif_demo_units,
 #   layers,
-#   indicators = c("carbon", "water", "biodiversity")
+#   indicators = c("carbon_biomass", "water_twi", "biodiversity_protection")
 # )
 # 
 # # Normaliser tous les indicateurs
 # normalized <- normalize_indicators(
 #   results,
-#   indicators = c("carbon", "water", "biodiversity"),
+#   indicators = c("carbon_biomass", "water_twi", "biodiversity_protection"),
 #   method = "minmax"
 # )
 # 
@@ -312,7 +315,7 @@ library(ggplot2)
 # # 3. Normaliser
 # normalized <- normalize_indicators(
 #   results,
-#   indicators = c("carbon", "water", "biodiversity"),
+#   indicators = c("carbon_biomass", "water_twi", "biodiversity_protection"),
 #   method = "minmax"
 # )
 # 

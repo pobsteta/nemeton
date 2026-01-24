@@ -41,64 +41,61 @@ layers <- massif_demo_layers()
 print(layers)
 
 ## -----------------------------------------------------------------------------
-# Carbone (stock de biomasse)
+# Carbone (via NDVI)
 carbon <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = "carbon"
+  indicators = "carbon_ndvi"
 )
 
-# Eau (régulation hydrique)
+# Eau (TWI - Topographic Wetness Index)
 water <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = "water"
+  indicators = "water_twi"
 )
 
 # Afficher les résultats
-head(carbon[, c("parcel_id", "forest_type", "carbon")])
+head(carbon[, c("parcel_id", "forest_type", "carbon_ndvi")])
 
 ## -----------------------------------------------------------------------------
-# Calculer 5 indicateurs en une fois
+# Calculer 3 indicateurs en une fois
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c(
-    "carbon", "biodiversity", "water",
-    "fragmentation", "accessibility"
-  )
+  indicators = c("carbon_ndvi", "water_twi", "landscape_fragmentation")
 )
 
 # Vue d'ensemble
-summary(results[, c("carbon", "biodiversity", "water")])
+summary(results[, c("carbon_ndvi", "water_twi", "landscape_fragmentation")])
 
 ## -----------------------------------------------------------------------------
 # Normalisation min-max
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "biodiversity", "water"),
+  indicators = c("carbon_ndvi", "water_twi", "landscape_fragmentation"),
   method = "minmax"
 )
 
 # Comparer avant/après
-cat("\nAvant normalisation (carbone):\n")
-summary(results$carbon)
+cat("\nAvant normalisation (carbone NDVI):\n")
+summary(results$carbon_ndvi)
 
-cat("\nAprès normalisation (carbone):\n")
-summary(normalized$carbon_norm)
+cat("\nAprès normalisation (carbone NDVI):\n")
+summary(normalized$carbon_ndvi_norm)
 
 ## -----------------------------------------------------------------------------
 # z-score (distribution normale centrée-réduite)
 norm_zscore <- normalize_indicators(
   results,
-  indicators = "carbon",
+  indicators = "carbon_ndvi",
   method = "zscore"
 )
 
 # Quantiles (distribution uniforme)
 norm_quantile <- normalize_indicators(
   results,
-  indicators = "carbon",
+  indicators = "carbon_ndvi",
   method = "quantile"
 )
 
@@ -106,7 +103,7 @@ norm_quantile <- normalize_indicators(
 # Indice composite avec poids égaux
 composite <- create_composite_index(
   normalized,
-  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm", "landscape_fragmentation_norm"),
   name = "ecosystem_health"
 )
 
@@ -114,10 +111,10 @@ composite <- create_composite_index(
 head(composite[, c("parcel_id", "forest_type", "ecosystem_health")])
 
 ## -----------------------------------------------------------------------------
-# Poids personnalisés (carbone 50%, biodiversité 30%, eau 20%)
+# Poids personnalisés (carbone 50%, paysage 30%, eau 20%)
 composite_weighted <- create_composite_index(
   normalized,
-  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  indicators = c("carbon_ndvi_norm", "landscape_fragmentation_norm", "water_twi_norm"),
   weights = c(0.5, 0.3, 0.2),
   name = "conservation_index"
 )
@@ -126,7 +123,7 @@ composite_weighted <- create_composite_index(
 # Moyenne géométrique (effets multiplicatifs)
 composite_geom <- create_composite_index(
   normalized,
-  indicators = c("carbon_norm", "water_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm"),
   aggregation = "geometric_mean",
   name = "water_carbon_index"
 )
@@ -134,7 +131,7 @@ composite_geom <- create_composite_index(
 # Minimum (approche conservatrice, facteur limitant)
 composite_min <- create_composite_index(
   normalized,
-  indicators = c("carbon_norm", "biodiversity_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm"),
   aggregation = "min",
   name = "minimum_performance"
 )
@@ -147,21 +144,21 @@ plot_indicators_map(
   legend_title = "Score (0-100)"
 )
 
-## ----fig.cap = "Comparaison carbone vs biodiversité", fig.width = 10----------
+## ----fig.cap = "Comparaison carbone vs eau", fig.width = 10-------------------
 plot_indicators_map(
   normalized,
-  indicators = c("carbon_norm", "biodiversity_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm"),
   palette = "viridis",
   facet = TRUE,
   ncol = 2,
-  title = "Comparaison carbone vs biodiversité"
+  title = "Comparaison carbone vs eau"
 )
 
 ## ----fig.cap = "Profil écosystémique - Parcelle P01"--------------------------
 nemeton_radar(
   normalized,
   unit_id = "P01",
-  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm", "landscape_fragmentation_norm"),
   title = "Profil multi-indicateurs - Parcelle P01"
 )
 
@@ -175,8 +172,7 @@ results <- nemeton_compute(
   massif_demo_units,
   layers,
   indicators = c(
-    "carbon", "biodiversity", "water",
-    "fragmentation", "accessibility"
+    "carbon_ndvi", "water_twi", "landscape_fragmentation"
   )
 )
 
@@ -184,8 +180,7 @@ results <- nemeton_compute(
 normalized <- normalize_indicators(
   results,
   indicators = c(
-    "carbon", "biodiversity", "water",
-    "fragmentation", "accessibility"
+    "carbon_ndvi", "water_twi", "landscape_fragmentation"
   ),
   method = "minmax"
 )
@@ -193,7 +188,7 @@ normalized <- normalize_indicators(
 # 4. Créer un indice composite
 composite <- create_composite_index(
   normalized,
-  indicators = c("carbon_norm", "biodiversity_norm", "water_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm", "landscape_fragmentation_norm"),
   weights = c(0.4, 0.4, 0.2),
   name = "forest_quality"
 )
@@ -211,12 +206,12 @@ plot_indicators_map(
 # # (Utilisé pour les indicateurs où une valeur faible est souhaitable)
 # normalized_inv <- invert_indicator(
 #   normalized,
-#   indicators = "water_norm",
+#   indicators = "water_twi_norm",
 #   suffix = "_inv"
 # )
 # 
 # # L'indicateur inversé
-# head(normalized_inv[, c("parcel_id", "water_norm", "water_norm_inv")])
+# head(normalized_inv[, c("parcel_id", "water_twi_norm", "water_twi_norm_inv")])
 
 ## -----------------------------------------------------------------------------
 # Sélectionner uniquement les futaies feuillues
@@ -225,7 +220,7 @@ broadleaf <- normalized[normalized$forest_type == "Futaie feuillue", ]
 # Créer un indice spécifique
 broadleaf_index <- create_composite_index(
   broadleaf,
-  indicators = c("carbon_norm", "biodiversity_norm"),
+  indicators = c("carbon_ndvi_norm", "water_twi_norm"),
   name = "broadleaf_quality"
 )
 

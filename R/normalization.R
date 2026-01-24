@@ -198,12 +198,17 @@ normalize_indicators <- function(data,
 #' @keywords internal
 #' @noRd
 normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
+  # Check if all values are NA
+  if (all(is.na(reference))) {
+    return(rep(NA_real_, length(x)))
+  }
+
   if (method == "minmax") {
     # Min-max to 0-100 scale
     min_val <- min(reference, na.rm = na.rm)
     max_val <- max(reference, na.rm = na.rm)
 
-    if (max_val == min_val) {
+    if (is.na(min_val) || is.na(max_val) || max_val == min_val) {
       msg_warn("normalize_all_identical")
       return(rep(50, length(x)))
     }
@@ -214,7 +219,7 @@ normalize_vector <- function(x, method, reference = x, na.rm = TRUE) {
     mean_val <- mean(reference, na.rm = na.rm)
     sd_val <- sd(reference, na.rm = na.rm)
 
-    if (sd_val == 0) {
+    if (is.na(sd_val) || sd_val == 0) {
       msg_warn("normalize_sd_zero")
       return(rep(0, length(x)))
     }
