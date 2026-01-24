@@ -40,11 +40,11 @@
 #' @examples
 #' \dontrun{
 #' # Load demo dataset
-#' data("massif_demo_units_extended")
+#' data("massif_demo_units")
 #'
 #' # Find parcels that are optimal for carbon, biodiversity, and production
 #' result <- identify_pareto_optimal(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   objectives = c("family_C", "family_B", "family_P"),
 #'   maximize = c(TRUE, TRUE, TRUE)
 #' )
@@ -54,7 +54,7 @@
 #'
 #' # Mixed objectives: maximize carbon and biodiversity, minimize fire risk
 #' result_mixed <- identify_pareto_optimal(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   objectives = c("family_C", "family_B", "family_R"),
 #'   maximize = c(TRUE, TRUE, FALSE)
 #' )

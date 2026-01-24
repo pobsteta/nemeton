@@ -48,11 +48,11 @@
 #' @examples
 #' \dontrun{
 #' # Load demo dataset
-#' data("massif_demo_units_extended")
+#' data("massif_demo_units")
 #'
 #' # Cluster parcels into 3 groups based on 4 families
 #' result <- cluster_parcels(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   families = c("family_C", "family_B", "family_P", "family_S"),
 #'   k = 3,
 #'   method = "kmeans"
@@ -66,7 +66,7 @@
 #'
 #' # Auto-determine optimal k
 #' result_auto <- cluster_parcels(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   families = c("family_C", "family_B", "family_P", "family_S"),
 #'   k = NULL
 #' )
@@ -75,7 +75,7 @@
 #'
 #' # Use hierarchical clustering
 #' result_hclust <- cluster_parcels(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   families = c("family_C", "family_B", "family_P", "family_S"),
 #'   k = 3,
 #'   method = "hierarchical"

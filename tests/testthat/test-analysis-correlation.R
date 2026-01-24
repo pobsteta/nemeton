@@ -18,10 +18,8 @@ library(sf)
 # ==============================================================================
 
 test_that("compute_family_correlations returns correlation matrix for family indices", {
-  data(massif_demo_units, package = "nemeton")
-
-  # Create dataset with multiple family indicators
-  units <- massif_demo_units[1:10, ]
+  # Use clean test units to avoid conflicts with pre-existing family columns
+  units <- create_test_units(n_features = 10)
   units$family_C <- runif(10, 40, 90)
   units$family_B <- runif(10, 30, 85)
   units$family_W <- runif(10, 35, 80)
@@ -36,10 +34,7 @@ test_that("compute_family_correlations returns correlation matrix for family ind
   expect_true(is.matrix(result))
   expect_true(is.numeric(result))
   expect_equal(nrow(result), ncol(result)) # Square matrix
-  expect_true(all(colnames(result) %in% c(
-    "family_C", "family_B", "family_W",
-    "family_R", "family_T", "family_A"
-  )))
+  expect_true(all(c("family_C", "family_B", "family_W", "family_R", "family_T", "family_A") %in% colnames(result)))
 
   # Test properties of correlation matrix
   expect_true(all(result >= -1 & result <= 1)) # Correlations in [-1, 1]
@@ -101,9 +96,8 @@ test_that("compute_family_correlations handles NA values gracefully", {
 })
 
 test_that("compute_family_correlations auto-detects family columns", {
-  data(massif_demo_units, package = "nemeton")
-
-  units <- massif_demo_units[1:10, ]
+  # Use clean test units to control exactly which family columns exist
+  units <- create_test_units(n_features = 10)
   units$family_C <- runif(10, 40, 90)
   units$family_B <- runif(10, 30, 85)
   units$family_W <- runif(10, 35, 80)
@@ -246,10 +240,8 @@ test_that("identify_hotspots handles no hotspots when threshold very high", {
 # ==============================================================================
 
 test_that("Complete workflow: correlation + hotspot identification", {
-  data(massif_demo_units, package = "nemeton")
-
-  # Simulate complete multi-family analysis
-  units <- massif_demo_units[1:15, ]
+  # Use clean test units to control exactly which family columns exist
+  units <- create_test_units(n_features = 15)
 
   # Simulate family indices with realistic relationships
   set.seed(42)
@@ -292,9 +284,8 @@ test_that("Complete workflow: correlation + hotspot identification", {
 })
 
 test_that("Workflow handles edge case: only 2 families available", {
-  data(massif_demo_units, package = "nemeton")
-
-  units <- massif_demo_units[1:10, ]
+  # Use clean test units to control exactly which family columns exist
+  units <- create_test_units(n_features = 10)
   units$family_C <- runif(10, 40, 90)
   units$family_B <- runif(10, 30, 85)
 

@@ -136,35 +136,35 @@
 #' @examples
 #' \dontrun{
 #' # Load the extended demo dataset
-#' data("massif_demo_units_extended")
+#' data("massif_demo_units")
 #'
 #' # Explore structure
 #' library(sf)
-#' plot(massif_demo_units_extended["family_S"]) # Social services
-#' plot(massif_demo_units_extended["family_E"]) # Energy services
+#' plot(massif_demo_units["family_S"]) # Social services
+#' plot(massif_demo_units["family_E"]) # Energy services
 #'
 #' # Create 12-axis radar plot for parcel 1
 #' library(nemeton)
 #' nemeton_radar(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   unit_id = 1,
 #'   mode = "family"
 #' )
 #'
 #' # Compute correlations across all 12 families
-#' cor_matrix <- compute_family_correlations(massif_demo_units_extended)
+#' cor_matrix <- compute_family_correlations(massif_demo_units)
 #' plot_correlation_matrix(cor_matrix)
 #'
 #' # Identify multi-service hotspots
 #' hotspots <- identify_hotspots(
-#'   massif_demo_units_extended,
+#'   massif_demo_units,
 #'   threshold = 75,
 #'   min_families = 6
 #' )
 #'
 #' # Summary statistics
-#' summary(massif_demo_units_extended[, c("family_S", "family_P", "family_E", "family_N")])
+#' summary(massif_demo_units[, c("family_S", "family_P", "family_E", "family_N")])
 #' }
 #'
 #' @keywords datasets
-"massif_demo_units_extended"
+"massif_demo_units"

@@ -7,10 +7,8 @@
 # ==============================================================================
 
 test_that("create_family_index aggregates indicators by family", {
-  data(massif_demo_units)
-
-  # Create dataset with multiple family indicators
-  units <- massif_demo_units[1:5, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 5)
   units$C1 <- c(50, 60, 55, 65, 70) # Carbon biomass
   units$C2 <- c(70, 75, 72, 78, 80) # Carbon NDVI
   units$W1 <- c(10, 15, 12, 18, 20) # Water network
@@ -31,9 +29,8 @@ test_that("create_family_index aggregates indicators by family", {
 })
 
 test_that("create_family_index supports custom weights per indicator", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:3, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 3)
   units$C1 <- c(50, 60, 55)
   units$C2 <- c(70, 75, 72)
   units$W1 <- c(10, 15, 12)
@@ -53,10 +50,10 @@ test_that("create_family_index supports custom weights per indicator", {
 })
 
 test_that("create_family_index handles partial families", {
-  data(massif_demo_units)
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 3)
 
   # Only one indicator from Carbon family
-  units <- massif_demo_units[1:3, ]
   units$C1 <- c(50, 60, 55)
   units$W1 <- c(10, 15, 12)
   units$W2 <- c(30, 35, 32)
@@ -69,23 +66,21 @@ test_that("create_family_index handles partial families", {
 })
 
 test_that("create_family_index detects family from indicator names", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:2, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 2)
   units$C1_biomass <- c(50, 60) # Alternative naming
   units$carbon_ndvi <- c(70, 75) # Non-standard
   units$W1 <- c(10, 15)
 
-  # Should detect C1 prefix
+  # Should detect C1 prefix or W1
   result <- create_family_index(units)
 
   expect_true("family_C" %in% names(result) || "family_W" %in% names(result))
 })
 
 test_that("create_family_index supports different aggregation methods", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:3, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 3)
   units$C1 <- c(50, 60, 55)
   units$C2 <- c(70, 75, 72)
 
@@ -103,9 +98,8 @@ test_that("create_family_index supports different aggregation methods", {
 })
 
 test_that("create_family_index handles NA values appropriately", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:3, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 3)
   units$C1 <- c(50, NA, 55)
   units$C2 <- c(70, 75, NA)
 
@@ -122,16 +116,14 @@ test_that("create_family_index handles NA values appropriately", {
 })
 
 test_that("create_family_index validates inputs", {
-  data(massif_demo_units)
-
   # Invalid data
   expect_error(
     create_family_index(data.frame(x = 1:3)),
     "must be.*sf"
   )
 
-  # No indicators
-  units <- massif_demo_units[1:2, ]
+  # No indicators - use clean units without indicator columns
+  units <- create_test_units(n_features = 2)
   expect_error(
     create_family_index(units),
     "No family indicators found|No indicators"
@@ -143,9 +135,8 @@ test_that("create_family_index validates inputs", {
 # ==============================================================================
 
 test_that("normalize_indicators recognizes family prefixes", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:5, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 5)
   units$C1 <- c(50, 60, 55, 65, 70)
   units$C2 <- c(70, 75, 72, 78, 80)
   units$W1 <- c(10, 15, 12, 18, 20)
@@ -495,9 +486,8 @@ test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)"
 })
 
 test_that("create_family_index aggregation methods work for new families", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:3, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 3)
   units$B1 <- c(20, 40, 60)
   units$B2 <- c(30, 50, 70)
   units$B3 <- c(40, 60, 80)
@@ -517,9 +507,8 @@ test_that("create_family_index aggregation methods work for new families", {
 })
 
 test_that("create_family_index supports custom weights for new families", {
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:2, ]
+  # Use clean test units without pre-existing indicator columns
+  units <- create_test_units(n_features = 2)
   units$R1 <- c(50, 60)
   units$R2 <- c(40, 50)
   units$R3 <- c(30, 40)

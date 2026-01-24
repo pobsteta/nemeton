@@ -73,18 +73,18 @@ best possible trade-offs - improving one objective requires sacrificing another.
 \examples{
 \dontrun{
 # Load demo dataset
-data("massif_demo_units_extended")
+data("massif_demo_units")
 
 # Basic trade-off plot: carbon vs biodiversity
 plot_tradeoff(
-  massif_demo_units_extended,
+  massif_demo_units,
   x = "family_C",
   y = "family_B"
 )
 
 # Add color for a third dimension (production)
 plot_tradeoff(
-  massif_demo_units_extended,
+  massif_demo_units,
   x = "family_C",
   y = "family_B",
   color = "family_P",
@@ -93,7 +93,7 @@ plot_tradeoff(
 
 # Overlay Pareto frontier
 result <- identify_pareto_optimal(
-  massif_demo_units_extended,
+  massif_demo_units,
   objectives = c("family_C", "family_B", "family_P"),
   maximize = rep(TRUE, 3)
 )
@@ -116,9 +116,9 @@ plot_tradeoff(
 
 # Multiple trade-off comparisons
 library(patchwork)
-p1 <- plot_tradeoff(massif_demo_units_extended, "family_C", "family_B")
-p2 <- plot_tradeoff(massif_demo_units_extended, "family_C", "family_P")
-p3 <- plot_tradeoff(massif_demo_units_extended, "family_B", "family_P")
+p1 <- plot_tradeoff(massif_demo_units, "family_C", "family_B")
+p2 <- plot_tradeoff(massif_demo_units, "family_C", "family_P")
+p3 <- plot_tradeoff(massif_demo_units, "family_B", "family_P")
 p1 + p2 + p3
 }
 
