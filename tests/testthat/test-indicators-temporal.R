@@ -179,17 +179,5 @@ test_that("indicator_temporal_change uses terra and exactextractr", {
 
 # ==============================================================================
 # T040: Integration Test for T Family Workflow
-# ==============================================================================
-
-test_that("T family workflow via nemeton_compute", {
-  skip_if_not_installed("nemeton")
-  skip("Pipe workflow needs redesign - use nemeton_compute instead")
-
-  # The indicator functions now return numeric vectors for use with nemeton_compute()
-  # For a complete workflow, use:
-  # result <- nemeton_compute(units, layers, indicators = c("temporal_age", "temporal_change"))
-  # normalized <- normalize_indicators(result, indicators = c("temporal_age", "temporal_change"))
-  # final <- create_family_index(normalized, family_codes = "T")
-})
-
+# Note: Pipe workflow test removed - use nemeton_compute() instead
 # Note: Regression fixture test removed - will be added when fixtures are created
