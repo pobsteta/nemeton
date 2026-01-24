@@ -2033,7 +2033,7 @@ crowns_plot <- st_crop(crowns_predicted, zoom_bbox)
 cat(sprintf("Zoom centré sur: X=%.0f, Y=%.0f (100m x 100m)\n", center_x, center_y))
 cat(sprintf("Couronnes dans le zoom: %d\n", nrow(crowns_plot)))
 
-# Cartes zoomées sur les 15 couronnes
+# Cartes zoomées sur le centre de la zone d'étude
 p1 <- ggplot() +
   geom_sf(data = crowns_plot, aes(fill = final_class),
           color = "darkgrey", linewidth = 0.5) +
@@ -2042,7 +2042,9 @@ p1 <- ggplot() +
   labs(title = "Classification des essences",
        subtitle = sprintf("Zoom sur %d couronnes", nrow(crowns_plot))) +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
 
 p2 <- ggplot() +
   geom_sf(data = crowns_plot, aes(fill = pred_prob), color = "darkgrey", linewidth = 0.5) +
@@ -2050,7 +2052,9 @@ p2 <- ggplot() +
   coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Confiance de la classification") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
 
 p3 <- ggplot() +
   geom_sf(data = crowns_plot, aes(fill = uncertain),
@@ -2063,7 +2067,9 @@ p3 <- ggplot() +
   coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Zones de confiance") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        axis.text = element_blank(),
+        axis.ticks = element_blank())
 
 # Combiner
 p1 / p2 / p3
