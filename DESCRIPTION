@@ -66,7 +66,8 @@ Suggests:
     tidygraph (>= 1.2.0),
     igraph (>= 1.4.0)
 Remotes:
-    rstudio/gradethis
+    rstudio/gradethis,
+    r-lidar/lasR
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton
