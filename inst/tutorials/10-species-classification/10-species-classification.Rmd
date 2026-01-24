@@ -945,6 +945,10 @@ p2 <- ggplot(crowns_sample |> st_drop_geometry(), aes(x = z_mean, y = z_p95)) +
   theme_minimal()
 
 p1 | p2
+
+# Sauvegarder pour l'exercice suivant
+saveRDS(crowns_sample, file.path(classif_dir, "crowns_with_height.rds"))
+cat("\nCouronnes avec hauteurs sauvegardées.\n")
 ```
 
 ### Exercice 3.2 : Calculer les métriques de forme de couronne
@@ -959,22 +963,30 @@ classif_dir <- file.path(data_dir, "result_classification")
 # config est hérité du setup principal
 
 # Charger les couronnes avec métriques de hauteur
-crowns_sample <- readRDS(file.path(classif_dir, "crowns_with_height.rds"))
-if (is.null(crowns_sample)) {
-  # Fallback: recharger les couronnes de base
+height_file <- file.path(classif_dir, "crowns_with_height.rds")
+if (file.exists(height_file)) {
+  crowns_sample <- readRDS(height_file)
+} else {
+  # Fallback: recharger les couronnes de base avec hauteurs synthétiques
   crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
   if (file.exists(crowns_file)) {
-    crowns <- st_read(crowns_file, quiet = TRUE)[1:500, ]
+    crowns_sample <- st_read(crowns_file, quiet = TRUE)[1:500, ]
+    if (!"treeID" %in% names(crowns_sample)) crowns_sample$treeID <- seq_len(nrow(crowns_sample))
   } else {
     zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
                      coords = c("x", "y"), crs = 2154) |> st_buffer(500)
     set.seed(2024)
     pts <- st_sample(zone, 500)
-    crowns <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
+    crowns_sample <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
   }
-  crowns$z_mean <- runif(nrow(crowns), 10, 30)
-  crowns$z_p95 <- crowns$z_mean * 1.1
-  crowns_sample <- crowns
+  # Ajouter des hauteurs synthétiques
+  set.seed(2024)
+  crowns_sample$z_mean <- runif(nrow(crowns_sample), 10, 30)
+  crowns_sample$z_sd <- crowns_sample$z_mean * 0.1
+  crowns_sample$z_p25 <- crowns_sample$z_mean * 0.7
+  crowns_sample$z_p50 <- crowns_sample$z_mean * 0.9
+  crowns_sample$z_p75 <- crowns_sample$z_mean * 1.0
+  crowns_sample$z_p95 <- crowns_sample$z_mean * 1.1
 }
 ```
 
