@@ -1,6 +1,6 @@
 # P1: Standing Timber Volume Indicator
 
-Calculates standing timber volume (m³/ha) using IFN allometric equations
+Calculates standing timber volume (m3/ha) using IFN allometric equations
 based on species, diameter (DBH), and height data.
 
 ## Usage
@@ -59,24 +59,24 @@ indicator_productive_volume(
 
 ## Value
 
-sf object with added column: P1 (standing volume in m³/ha)
+sf object with added column: P1 (standing volume in m3/ha)
 
 ## Details
 
 \*\*Calculation\*\* (IFN tarif method):
 
-- Lookup species-specific IFN equation: `V = a × DBH^b × H^c`
+- Lookup species-specific IFN equation: `V = a * DBH^b * H^c`
 
 - Calculate individual tree volume
 
-- Scale by tree density: `P1 = V_individual × density_stems_ha`
+- Scale by tree density: `P1 = V_individual * density_stems_ha`
 
 \*\*Species Fallback\*\*: If species code not found in IFN tables, uses
 genus-level equations:
 
-- Broadleaf species → BROADLEAF_GENUS equation
+- Broadleaf species -\> BROADLEAF_GENUS equation
 
-- Conifer species → CONIFER_GENUS equation
+- Conifer species -\> CONIFER_GENUS equation
 
 \*\*Data Requirements\*\*:
 
