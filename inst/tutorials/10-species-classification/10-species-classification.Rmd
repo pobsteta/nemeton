@@ -1894,13 +1894,20 @@ feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
 rf_model <- readRDS(file.path(classif_dir, "rf_model.rds"))
 
 # Charger TOUTES les couronnes avec features (pas juste training_data)
-# pour prédire sur l'ensemble de la zone d'étude
 all_crowns_file <- file.path(classif_dir, "crowns_with_features.rds")
 if (file.exists(all_crowns_file)) {
   all_crowns <- readRDS(all_crowns_file)
 } else {
-  # Fallback sur training_data si crowns_with_features n'existe pas
   all_crowns <- readRDS(file.path(classif_dir, "training_data.rds"))
+}
+
+# Charger la zone d'étude pour le zoom (même centre que exercice 2.1)
+zone_file <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_file)) {
+  zone_etude <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+} else {
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  zone_etude <- st_read(zone_pkg, quiet = TRUE)
 }
 ```
 
@@ -2002,29 +2009,29 @@ species_colors <- setNames(
 cat("\nPalette utilisée:\n")
 print(species_colors)
 
-# Sélectionner ~15 couronnes proches pour un zoom lisible
+# Zoom sur le centre de la zone d'étude (même que exercice 2.1)
 cat(sprintf("\nTotal couronnes classifiées: %d\n", nrow(crowns_predicted)))
 
-# Trouver un groupe de couronnes proches (voisines de la première)
-centroids <- st_centroid(crowns_predicted)
-coords <- st_coordinates(centroids)
+# Calculer le centre de la zone d'étude
+bbox_zone <- st_bbox(zone_etude)
+center_x <- (bbox_zone[[1]] + bbox_zone[[3]]) / 2
+center_y <- (bbox_zone[[2]] + bbox_zone[[4]]) / 2
 
-# Prendre la première couronne et trouver ses 15 plus proches voisines
-ref_point <- coords[1, ]
-distances <- sqrt((coords[, 1] - ref_point[1])^2 + (coords[, 2] - ref_point[2])^2)
-nearest_idx <- order(distances)[1:min(15, nrow(crowns_predicted))]
+# Zoom 100m x 100m (50m de chaque côté)
+zoom_size <- 50
+zoom_xlim <- c(center_x - zoom_size, center_x + zoom_size)
+zoom_ylim <- c(center_y - zoom_size, center_y + zoom_size)
 
-crowns_plot <- crowns_predicted[nearest_idx, ]
+# Filtrer les couronnes dans la zone de zoom
+zoom_bbox <- st_bbox(c(
+  xmin = center_x - zoom_size, ymin = center_y - zoom_size,
+  xmax = center_x + zoom_size, ymax = center_y + zoom_size
+), crs = st_crs(crowns_predicted))
 
-# Calculer le bbox du groupe avec un buffer de 10m
-bbox <- st_bbox(crowns_plot)
-buffer <- 10
-zoom_xlim <- c(bbox[[1]] - buffer, bbox[[3]] + buffer)
-zoom_ylim <- c(bbox[[2]] - buffer, bbox[[4]] + buffer)
+crowns_plot <- st_crop(crowns_predicted, zoom_bbox)
 
-cat(sprintf("Zoom sur %d couronnes proches\n", nrow(crowns_plot)))
-cat(sprintf("Étendue zoom: %.0f x %.0f m\n",
-            zoom_xlim[2] - zoom_xlim[1], zoom_ylim[2] - zoom_ylim[1]))
+cat(sprintf("Zoom centré sur: X=%.0f, Y=%.0f (100m x 100m)\n", center_x, center_y))
+cat(sprintf("Couronnes dans le zoom: %d\n", nrow(crowns_plot)))
 
 # Cartes zoomées sur les 15 couronnes
 p1 <- ggplot() +
