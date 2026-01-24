@@ -228,13 +228,4 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
   expect_true(all(result$family_A >= 0 & result$family_A <= 100, na.rm = TRUE))
 })
 
-# ==============================================================================
-# T051: Regression Test Fixture
-# ==============================================================================
-
-test_that("A indicators match expected regression fixture", {
-  skip("Regression fixture not yet created - will be generated after implementation")
-
-  # This test will be enabled after creating expected_indicators_v030_air.rds
-  # with known A1/A2 values
-})
+# Note: Regression fixture test removed - will be added when fixtures are created

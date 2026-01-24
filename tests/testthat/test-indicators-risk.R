@@ -217,13 +217,4 @@ test_that("R family workflow: R1-R3 → normalize → family_R composite", {
   expect_true(all(result$family_R >= 0 & result$family_R <= 100, na.rm = TRUE))
 })
 
-# ==============================================================================
-# T030: Regression Test Fixture
-# ==============================================================================
-
-test_that("R indicators match expected regression fixture", {
-  skip("Regression fixture not yet created - will be generated after implementation")
-
-  # This test will be enabled after creating expected_indicators_v030_risk.rds
-  # with known R1/R2/R3 values
-})
+# Note: Regression fixture test removed - will be added when fixtures are created

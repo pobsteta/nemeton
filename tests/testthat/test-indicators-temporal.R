@@ -192,13 +192,4 @@ test_that("T family workflow via nemeton_compute", {
   # final <- create_family_index(normalized, family_codes = "T")
 })
 
-# ==============================================================================
-# T041: Regression Test Fixture
-# ==============================================================================
-
-test_that("T indicators match expected regression fixture", {
-  skip("Regression fixture not yet created - will be generated after implementation")
-
-  # This test will be enabled after creating expected_indicators_v030_temporal.rds
-  # with known T1/T2 values
-})
+# Note: Regression fixture test removed - will be added when fixtures are created

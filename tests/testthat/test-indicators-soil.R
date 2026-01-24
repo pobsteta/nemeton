@@ -33,11 +33,8 @@ test_that("indicator_soil_fertility extracts fertility from raster", {
   expect_true(all(fertility <= 100))
 })
 
-test_that("indicator_soil_fertility handles vector soil data", {
-  skip("Vector soil data handling - implementation detail")
-  # This would test sf vector layers with fertility attributes
-  # Skipped for now as we're using raster in MVP
-})
+# Note: Vector soil data handling is not implemented in MVP (raster-only)
+# This test was removed as it was a placeholder
 
 test_that("indicator_soil_fertility with custom fertility mapping", {
   data(massif_demo_units)

@@ -213,13 +213,4 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
   expect_true(all(result$family_B >= 0 & result$family_B <= 100, na.rm = TRUE))
 })
 
-# ==============================================================================
-# T018: Regression Test Fixture
-# ==============================================================================
-
-test_that("B indicators match expected regression fixture", {
-  skip("Regression fixture not yet created - will be generated after implementation")
-
-  # This test will be enabled after creating expected_indicators_v030_biodiversity.rds
-  # with known B1/B2/B3 values
-})
+# Note: Regression fixture test removed - will be added when fixtures are created
