@@ -526,6 +526,21 @@ classif_dir <- file.path(data_dir, "result_classification")
 dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
 # config est hérité du setup principal
 
+# Charger la zone d'étude (Quatre Montagnes)
+zone_file <- file.path(data_dir, "zone_etude.gpkg")
+if (file.exists(zone_file)) {
+  zone_etude <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+} else {
+  # Fallback: charger depuis le package
+  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
+  if (file.exists(zone_pkg)) {
+    zone_etude <- st_read(zone_pkg, quiet = TRUE)
+  } else {
+    zone_etude <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                           coords = c("x", "y"), crs = 2154) |> st_buffer(500)
+  }
+}
+
 # Charger les couronnes depuis l'exercice 2.1
 crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
 if (file.exists(crowns_file)) {
@@ -533,15 +548,8 @@ if (file.exists(crowns_file)) {
   if (!"treeID" %in% names(crowns)) crowns$treeID <- seq_len(nrow(crowns))
 } else {
   # Couronnes synthétiques si fichier absent
-  zone_file <- file.path(data_dir, "zone_etude.gpkg")
-  if (file.exists(zone_file)) {
-    zone <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
-  } else {
-    zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
-                     coords = c("x", "y"), crs = 2154) |> st_buffer(500)
-  }
   set.seed(2024)
-  pts <- st_sample(zone, 500)
+  pts <- st_sample(zone_etude, 500)
   crowns <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
 }
 crowns$area_m2 <- as.numeric(st_area(crowns))
@@ -554,90 +562,99 @@ crowns$area_m2 <- as.numeric(st_area(crowns))
 
 cat("=== Création des labels terrain (Quatre Montagnes) ===\n\n")
 
-# Sous-échantillonner pour la démo (max 2000 couronnes)
-set.seed(config$seed)
-n_sample <- min(2000, nrow(crowns))
-crowns_sample <- crowns[sample(nrow(crowns), n_sample), ]
-cat(sprintf("Couronnes échantillonnées: %d\n", n_sample))
+# -----------------------------------------------------------------------------
+# 1. Filtrer les couronnes sur la zone d'étude
+# -----------------------------------------------------------------------------
+cat("Zone d'étude:\n")
+cat(sprintf("  Surface: %.1f ha\n", as.numeric(st_area(zone_etude)) / 10000))
+if ("cluster_id" %in% names(zone_etude)) {
+  cat(sprintf("  Cluster: %s\n", zone_etude$cluster_id))
+}
+
+cat("\nFiltrage des couronnes sur la zone d'étude...\n")
+crowns_zone <- suppressWarnings(st_intersection(crowns, zone_etude))
+cat(sprintf("Couronnes dans la zone: %d (sur %d total)\n", nrow(crowns_zone), nrow(crowns)))
 
 # -----------------------------------------------------------------------------
-# 1. Créer des clusters spatiaux (grille de 50m)
+# 2. Créer des clusters spatiaux (grille de 50m)
 # -----------------------------------------------------------------------------
 cluster_size <- 50  # mètres
 
 # Extraire les centroïdes
-centroids <- st_centroid(crowns_sample)
+centroids <- st_centroid(crowns_zone)
 coords <- st_coordinates(centroids)
 
 # Assigner un cluster_id basé sur une grille
-crowns_sample$cluster_x <- floor(coords[, 1] / cluster_size)
-crowns_sample$cluster_y <- floor(coords[, 2] / cluster_size)
-crowns_sample$cluster_id <- paste(crowns_sample$cluster_x, crowns_sample$cluster_y, sep = "_")
+crowns_zone$cluster_x <- floor(coords[, 1] / cluster_size)
+crowns_zone$cluster_y <- floor(coords[, 2] / cluster_size)
+crowns_zone$cluster_id <- paste(crowns_zone$cluster_x, crowns_zone$cluster_y, sep = "_")
 
-n_clusters <- length(unique(crowns_sample$cluster_id))
-cat(sprintf("Clusters spatiaux créés: %d (grille %dm)\n", n_clusters, cluster_size))
+n_clusters <- length(unique(crowns_zone$cluster_id))
+cat(sprintf("\nClusters spatiaux créés: %d (grille %dm)\n", n_clusters, cluster_size))
 
 # -----------------------------------------------------------------------------
-# 2. Assigner une essence par cluster (peuplement homogène)
+# 3. Assigner une essence par cluster (peuplement homogène)
 # -----------------------------------------------------------------------------
 # Essences du Vercors / Quatre Montagnes
+set.seed(config$seed)
 species_pool <- c("PIAB", "ABAL", "FASY", "TABA")
 species_prob <- c(0.35, 0.30, 0.25, 0.10)  # Distribution réaliste
 
 # Créer une table cluster -> essence
-unique_clusters <- unique(crowns_sample$cluster_id)
+unique_clusters <- unique(crowns_zone$cluster_id)
 cluster_species <- data.frame(
   cluster_id = unique_clusters,
   ess = sample(species_pool, length(unique_clusters), replace = TRUE, prob = species_prob)
 )
 
 # Joindre aux couronnes
-crowns_sample <- crowns_sample |>
+crowns_zone <- crowns_zone |>
   left_join(cluster_species, by = "cluster_id")
 
 cat(sprintf("Essences assignées par cluster\n"))
 
 # -----------------------------------------------------------------------------
-# 3. Ajouter les métadonnées des essences
+# 4. Ajouter les métadonnées des essences
 # -----------------------------------------------------------------------------
 species_lookup <- get_species_lookup()
 
-crowns_sample <- crowns_sample |>
+crowns_zone <- crowns_zone |>
   left_join(species_lookup, by = c("ess" = "code"))
 
 # -----------------------------------------------------------------------------
-# 4. Statistiques
+# 5. Statistiques
 # -----------------------------------------------------------------------------
 cat("\n=== Distribution des essences ===\n")
-ess_counts <- table(crowns_sample$ess)
+ess_counts <- table(crowns_zone$ess)
+n_crowns <- nrow(crowns_zone)
 for (e in names(sort(ess_counts, decreasing = TRUE))) {
   nom <- species_lookup$nom_fr[species_lookup$code == e]
   if (length(nom) == 0) nom <- e
-  pct <- 100 * ess_counts[e] / n_sample
+  pct <- 100 * ess_counts[e] / n_crowns
   cat(sprintf("  %s (%s): %d arbres (%.1f%%)\n", e, nom, ess_counts[e], pct))
 }
 
-cat(sprintf("\nTotal arbres avec label: %d\n", nrow(crowns_sample)))
+cat(sprintf("\nTotal arbres avec label: %d\n", n_crowns))
 cat(sprintf("Clusters: %d\n", n_clusters))
 
 # Sauvegarder
-trees_terrain <- crowns_sample |> st_drop_geometry()
+trees_terrain <- crowns_zone |> st_drop_geometry()
 saveRDS(trees_terrain, file.path(classif_dir, "trees_terrain.rds"))
-saveRDS(crowns_sample, file.path(classif_dir, "crowns_labeled.rds"))
+saveRDS(crowns_zone, file.path(classif_dir, "crowns_labeled.rds"))
 
 # -----------------------------------------------------------------------------
-# 5. Visualisation des clusters et essences
+# 6. Visualisation des clusters et essences
 # -----------------------------------------------------------------------------
-# Zoom sur le centre (100m x 100m)
-bbox <- st_bbox(crowns_sample)
+# Zoom sur le centre de la zone d'étude (200m x 200m)
+bbox <- st_bbox(zone_etude)
 center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
 center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
 zoom_size <- 100
 
-crowns_zoom <- st_crop(crowns_sample, st_bbox(c(
+crowns_zoom <- st_crop(crowns_zone, st_bbox(c(
   xmin = center_x - zoom_size, ymin = center_y - zoom_size,
   xmax = center_x + zoom_size, ymax = center_y + zoom_size
-), crs = st_crs(crowns_sample)))
+), crs = st_crs(crowns_zone)))
 
 # Palette d'essences
 species_colors <- c(
