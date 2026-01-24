@@ -493,8 +493,8 @@ zoom_bbox <- c(
 
 # Filtrer les couronnes dans la zone de zoom
 crowns_zoom <- st_crop(crowns, st_bbox(c(
-  xmin = zoom_bbox["xmin"], ymin = zoom_bbox["ymin"],
-  xmax = zoom_bbox["xmax"], ymax = zoom_bbox["ymax"]
+  xmin = zoom_bbox[[1]], ymin = zoom_bbox[[3]],
+  xmax = zoom_bbox[[2]], ymax = zoom_bbox[[4]]
 ), crs = st_crs(crowns)))
 
 cat(sprintf("\nZoom centré sur: X=%.0f, Y=%.0f\n", center_x, center_y))
