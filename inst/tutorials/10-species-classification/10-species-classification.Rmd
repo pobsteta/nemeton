@@ -543,8 +543,8 @@ crowns$area_m2 <- as.numeric(st_area(crowns))
 
 # Créer la zone d'étude = même zone que l'exercice 2.1 (100m x 100m au centre)
 bbox <- st_bbox(crowns)
-center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
-center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+center_x <- (bbox[[1]] + bbox[[3]]) / 2
+center_y <- (bbox[[2]] + bbox[[4]]) / 2
 zoom_size <- 50  # 50m de chaque côté = 100m x 100m
 
 zone_etude <- st_as_sfc(st_bbox(c(
@@ -573,6 +573,16 @@ if ("cluster_id" %in% names(zone_etude)) {
 
 cat("\nFiltrage des couronnes sur la zone d'étude...\n")
 crowns_zone <- suppressWarnings(st_intersection(crowns, zone_etude))
+
+# Garder uniquement les polygones (l'intersection peut créer des lignes/points)
+geom_types <- st_geometry_type(crowns_zone)
+crowns_zone <- crowns_zone[geom_types %in% c("POLYGON", "MULTIPOLYGON"), ]
+
+# Extraire les polygones des GEOMETRYCOLLECTION si présentes
+if (any(st_geometry_type(crowns_zone) == "GEOMETRYCOLLECTION")) {
+  crowns_zone <- st_collection_extract(crowns_zone, "POLYGON")
+}
+
 cat(sprintf("Couronnes dans la zone: %d (sur %d total)\n", nrow(crowns_zone), nrow(crowns)))
 
 # -----------------------------------------------------------------------------
