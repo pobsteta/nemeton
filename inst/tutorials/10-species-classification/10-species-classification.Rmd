@@ -841,13 +841,14 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 classif_dir <- file.path(data_dir, "result_classification")
 # config est hérité du setup principal
 
-# Charger les couronnes
-crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
-if (file.exists(crowns_file)) {
-  crowns <- st_read(crowns_file, quiet = TRUE)
+# Charger les couronnes LABELLISÉES (depuis exercice 2.2)
+# pour garder la cohérence des treeID tout au long du pipeline
+crowns_labeled_file <- file.path(classif_dir, "crowns_labeled.rds")
+if (file.exists(crowns_labeled_file)) {
+  crowns <- readRDS(crowns_labeled_file)
   if (!"treeID" %in% names(crowns)) crowns$treeID <- seq_len(nrow(crowns))
 } else {
-  # Couronnes synthétiques
+  # Fallback: couronnes synthétiques
   zone_file <- file.path(data_dir, "zone_etude.gpkg")
   if (file.exists(zone_file)) {
     zone <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
@@ -888,10 +889,10 @@ cat(sprintf("\nCHM: %.1f - %.1f m\n",
 
 # Extraire les métriques de hauteur par couronne avec exactextractr
 cat("\nExtraction des métriques de hauteur par couronne...\n")
+cat(sprintf("Couronnes à traiter: %d\n", nrow(crowns)))
 
-# Limiter à un sous-ensemble pour la démo
-n_sample <- min(500, nrow(crowns))
-crowns_sample <- crowns[1:n_sample, ]
+# Utiliser TOUTES les couronnes labellisées (pas de sous-échantillonnage)
+crowns_sample <- crowns
 
 if (requireNamespace("exactextractr", quietly = TRUE)) {
 
@@ -967,10 +968,10 @@ height_file <- file.path(classif_dir, "crowns_with_height.rds")
 if (file.exists(height_file)) {
   crowns_sample <- readRDS(height_file)
 } else {
-  # Fallback: recharger les couronnes de base avec hauteurs synthétiques
-  crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
-  if (file.exists(crowns_file)) {
-    crowns_sample <- st_read(crowns_file, quiet = TRUE)[1:500, ]
+  # Fallback: recharger depuis crowns_labeled avec hauteurs synthétiques
+  labeled_file <- file.path(classif_dir, "crowns_labeled.rds")
+  if (file.exists(labeled_file)) {
+    crowns_sample <- readRDS(labeled_file)
     if (!"treeID" %in% names(crowns_sample)) crowns_sample$treeID <- seq_len(nrow(crowns_sample))
   } else {
     zone <- st_as_sf(data.frame(x = 899500, y = 6447500),
