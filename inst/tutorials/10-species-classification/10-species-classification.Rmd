@@ -1626,15 +1626,28 @@ if (requireNamespace("ranger", quietly = TRUE)) {
   cat(sprintf("Données: %d observations, %d features\n",
               nrow(model_data), length(feature_cols)))
 
-  # Utiliser le premier fold pour train/test
-  fold <- spatial_folds$folds_list[[1]]
-  train_idx <- fold$train[fold$train <= nrow(model_data)]
-  test_idx <- fold$test[fold$test <= nrow(model_data)]
+  # Vérifier qu'on a assez de données
+  if (nrow(model_data) < 50) {
+    stop("Pas assez de données pour l'entraînement (< 50 observations)")
+  }
+
+  # Split train/test simple (80/20) au lieu des folds spatiaux
+  # car les indices des folds peuvent ne plus correspondre après na.omit
+  set.seed(config$seed)
+  train_prop <- 0.8
+  train_idx <- sample(nrow(model_data), size = floor(train_prop * nrow(model_data)))
+  test_idx <- setdiff(seq_len(nrow(model_data)), train_idx)
 
   train_data <- model_data[train_idx, ]
   test_data <- model_data[test_idx, ]
 
+  # Supprimer les niveaux de facteur inutilisés
+
+  train_data$species <- droplevels(train_data$species)
+  test_data$species <- factor(test_data$species, levels = levels(train_data$species))
+
   cat(sprintf("Train: %d, Test: %d\n", nrow(train_data), nrow(test_data)))
+  cat(sprintf("Classes: %s\n", paste(levels(train_data$species), collapse = ", ")))
 
   # Paramètres
   mtry <- max(1, floor(length(feature_cols) * config$mtry_ratio))
