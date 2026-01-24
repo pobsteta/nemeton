@@ -526,21 +526,6 @@ classif_dir <- file.path(data_dir, "result_classification")
 dir.create(classif_dir, showWarnings = FALSE, recursive = TRUE)
 # config est hérité du setup principal
 
-# Charger la zone d'étude (Quatre Montagnes)
-zone_file <- file.path(data_dir, "zone_etude.gpkg")
-if (file.exists(zone_file)) {
-  zone_etude <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
-} else {
-  # Fallback: charger depuis le package
-  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
-  if (file.exists(zone_pkg)) {
-    zone_etude <- st_read(zone_pkg, quiet = TRUE)
-  } else {
-    zone_etude <- st_as_sf(data.frame(x = 899500, y = 6447500),
-                           coords = c("x", "y"), crs = 2154) |> st_buffer(500)
-  }
-}
-
 # Charger les couronnes depuis l'exercice 2.1
 crowns_file <- file.path(data_dir, "crowns_complet.gpkg")
 if (file.exists(crowns_file)) {
@@ -549,10 +534,25 @@ if (file.exists(crowns_file)) {
 } else {
   # Couronnes synthétiques si fichier absent
   set.seed(2024)
-  pts <- st_sample(zone_etude, 500)
+  zone_tmp <- st_as_sf(data.frame(x = 899500, y = 6447500),
+                       coords = c("x", "y"), crs = 2154) |> st_buffer(500)
+  pts <- st_sample(zone_tmp, 500)
   crowns <- st_sf(treeID = seq_along(pts), geometry = st_buffer(pts, runif(length(pts), 2, 8)))
 }
 crowns$area_m2 <- as.numeric(st_area(crowns))
+
+# Créer la zone d'étude = même zone que l'exercice 2.1 (100m x 100m au centre)
+bbox <- st_bbox(crowns)
+center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+zoom_size <- 50  # 50m de chaque côté = 100m x 100m
+
+zone_etude <- st_as_sfc(st_bbox(c(
+  xmin = center_x - zoom_size,
+  ymin = center_y - zoom_size,
+  xmax = center_x + zoom_size,
+  ymax = center_y + zoom_size
+), crs = st_crs(crowns))) |> st_as_sf()
 ```
 
 ```{r load-labels, exercise=TRUE, exercise.setup="load-labels-setup"}
@@ -641,6 +641,8 @@ cat(sprintf("Clusters: %d\n", n_clusters))
 trees_terrain <- crowns_zone |> st_drop_geometry()
 saveRDS(trees_terrain, file.path(classif_dir, "trees_terrain.rds"))
 saveRDS(crowns_zone, file.path(classif_dir, "crowns_labeled.rds"))
+saveRDS(zone_etude, file.path(classif_dir, "zone_etude_tutorial.rds"))
+cat(sprintf("Zone d'étude sauvegardée: %.1f ha\n", as.numeric(st_area(zone_etude)) / 10000))
 
 # -----------------------------------------------------------------------------
 # 6. Visualisation des clusters et essences
@@ -688,14 +690,15 @@ if (requireNamespace("rappdirs", quietly = TRUE)) {
 classif_dir <- file.path(data_dir, "result_classification")
 # config est hérité du setup principal
 
-# Charger la zone d'étude pour l'emprise
-zone_file <- file.path(data_dir, "zone_etude.gpkg")
-if (file.exists(zone_file)) {
-  zone_etude <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+# Charger la zone d'étude depuis l'exercice 2.2 (100m x 100m)
+zone_tutorial_file <- file.path(classif_dir, "zone_etude_tutorial.rds")
+if (file.exists(zone_tutorial_file)) {
+  zone_etude <- readRDS(zone_tutorial_file)
 } else {
+  # Fallback: créer une zone par défaut
   zone_etude <- st_as_sf(data.frame(x = 899500, y = 6447500),
                          coords = c("x", "y"), crs = 2154) |>
-    st_buffer(500)
+    st_buffer(50)  # 100m x 100m
 }
 ```
 
@@ -1949,13 +1952,20 @@ if (file.exists(all_crowns_file)) {
   all_crowns <- readRDS(file.path(classif_dir, "training_data.rds"))
 }
 
-# Charger la zone d'étude pour le zoom (même centre que exercice 2.1)
-zone_file <- file.path(data_dir, "zone_etude.gpkg")
-if (file.exists(zone_file)) {
-  zone_etude <- st_read(zone_file, layer = "zone_etude", quiet = TRUE)
+# Charger la zone d'étude depuis l'exercice 2.2 (100m x 100m)
+zone_tutorial_file <- file.path(classif_dir, "zone_etude_tutorial.rds")
+if (file.exists(zone_tutorial_file)) {
+  zone_etude <- readRDS(zone_tutorial_file)
 } else {
-  zone_pkg <- system.file("extdata", "zone_etude.gpkg", package = "nemeton")
-  zone_etude <- st_read(zone_pkg, quiet = TRUE)
+  # Fallback: créer depuis le centre des couronnes
+  bbox <- st_bbox(all_crowns)
+  center_x <- (bbox["xmin"] + bbox["xmax"]) / 2
+  center_y <- (bbox["ymin"] + bbox["ymax"]) / 2
+  zoom_size <- 50
+  zone_etude <- st_as_sfc(st_bbox(c(
+    xmin = center_x - zoom_size, ymin = center_y - zoom_size,
+    xmax = center_x + zoom_size, ymax = center_y + zoom_size
+  ), crs = st_crs(all_crowns))) |> st_as_sf()
 }
 ```
 
