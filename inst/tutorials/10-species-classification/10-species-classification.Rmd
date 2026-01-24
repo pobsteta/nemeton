@@ -991,23 +991,22 @@ if (file.exists(height_file)) {
 }
 ```
 
-```{r crown-shape, exercise=TRUE, exercise.setup="crown-shape-setup"}
+```{r crown-shape, exercise=TRUE, exercise.setup="crown-shape-setup", exercise.timelimit=300}
 # Calculer les métriques géométriques de la couronne
 cat("=== Calcul des métriques de forme ===\n\n")
+cat(sprintf("Couronnes à traiter: %d\n", nrow(crowns_sample)))
 
-# Calculer le périmètre via st_boundary (en dehors de mutate pour éviter les problèmes)
-crowns_sample$perimeter_m <- sapply(seq_len(nrow(crowns_sample)), function(i) {
-  tryCatch({
-    g <- st_geometry(crowns_sample)[i]
-    boundary <- st_boundary(g)
-    as.numeric(st_length(boundary))
-  }, error = function(e) NA_real_)
-})
+# Calcul VECTORISÉ du périmètre (beaucoup plus rapide que sapply)
+cat("Calcul des périmètres (vectorisé)...\n")
+boundaries <- st_boundary(st_geometry(crowns_sample))
+crowns_sample$perimeter_m <- as.numeric(st_length(boundaries))
 
+# Calcul VECTORISÉ de la surface et autres métriques
+cat("Calcul des surfaces et métriques dérivées...\n")
 crowns_sample <- crowns_sample |>
   mutate(
-    # Surface
-    area_m2 = as.numeric(st_area(st_geometry(crowns_sample))),
+    # Surface (vectorisé)
+    area_m2 = as.numeric(st_area(geometry)),
 
     # Compacité (1 = cercle parfait)
     compactness = 4 * pi * area_m2 / (perimeter_m^2),
