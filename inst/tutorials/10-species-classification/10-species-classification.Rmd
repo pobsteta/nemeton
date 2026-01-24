@@ -1889,90 +1889,96 @@ classif_dir <- file.path(data_dir, "result_classification")
 # Charger ranger pour la méthode predict
 library(ranger)
 
-# Charger les données et le modèle
-training_data <- readRDS(file.path(classif_dir, "training_data.rds"))
+# Charger le modèle et les features
 feature_cols <- readRDS(file.path(classif_dir, "feature_cols.rds"))
 rf_model <- readRDS(file.path(classif_dir, "rf_model.rds"))
 
-# Vérifier si training_data a des géométries valides
-if (!inherits(training_data, "sf") || is.null(st_geometry(training_data))) {
-  # Recharger les couronnes avec géométries
-  crowns_labeled <- readRDS(file.path(classif_dir, "crowns_labeled.rds"))
-  # Joindre par treeID si disponible
-  if ("treeID" %in% names(training_data) && "treeID" %in% names(crowns_labeled)) {
-    training_data <- crowns_labeled |>
-      inner_join(st_drop_geometry(training_data), by = "treeID")
-  } else {
-    # Sinon utiliser crowns_labeled directement
-    training_data <- crowns_labeled
-  }
+# Charger TOUTES les couronnes avec features (pas juste training_data)
+# pour prédire sur l'ensemble de la zone d'étude
+all_crowns_file <- file.path(classif_dir, "crowns_with_features.rds")
+if (file.exists(all_crowns_file)) {
+  all_crowns <- readRDS(all_crowns_file)
+} else {
+  # Fallback sur training_data si crowns_with_features n'existe pas
+  all_crowns <- readRDS(file.path(classif_dir, "training_data.rds"))
 }
 ```
 
 ```{r mapping, exercise=TRUE, exercise.setup="mapping-setup", fig.width=10, fig.height=10}
-cat("=== Cartographie des prédictions ===\n\n")
+cat("=== Cartographie des prédictions sur TOUTES les couronnes ===\n\n")
 
-# Diagnostics géométrie détaillés
-cat("=== Diagnostics données ===\n")
-cat(sprintf("Lignes: %d\n", nrow(training_data)))
-cat(sprintf("Est sf: %s\n", inherits(training_data, "sf")))
-cat(sprintf("Colonnes: %s\n", paste(head(names(training_data), 8), collapse = ", ")))
+# Diagnostics
+cat("=== Données chargées ===\n")
+cat(sprintf("Couronnes totales: %d\n", nrow(all_crowns)))
+cat(sprintf("Est sf: %s\n", inherits(all_crowns, "sf")))
 
-if (inherits(training_data, "sf")) {
-  geom_col <- attr(training_data, "sf_column")
-  cat(sprintf("Colonne géométrie: %s\n", geom_col))
-  cat(sprintf("Type géométrie: %s\n", paste(unique(st_geometry_type(training_data)), collapse = ", ")))
-  cat(sprintf("Géométries vides: %d\n", sum(st_is_empty(training_data))))
-  cat(sprintf("CRS: EPSG:%s\n", st_crs(training_data)$epsg))
-  bbox <- st_bbox(training_data)
-  cat(sprintf("Bbox: %.0f,%.0f - %.0f,%.0f\n", bbox[1], bbox[2], bbox[3], bbox[4]))
+if (inherits(all_crowns, "sf")) {
+  cat(sprintf("Type géométrie: %s\n", paste(unique(st_geometry_type(all_crowns)), collapse = ", ")))
+  cat(sprintf("CRS: EPSG:%s\n", st_crs(all_crowns)$epsg))
 } else {
-  cat("ERREUR: training_data n'est pas un objet sf!\n")
+  cat("ERREUR: all_crowns n'est pas un objet sf!\n")
   stop("Impossible de cartographier sans géométrie")
 }
 
 cat(sprintf("Features disponibles: %d / %d\n",
-            sum(feature_cols %in% names(training_data)),
+            sum(feature_cols %in% names(all_crowns)),
             length(feature_cols)))
 
-# Préparer les données pour prédiction
-predict_data <- training_data |>
-  st_drop_geometry() |>
-  select(all_of(intersect(feature_cols, names(training_data))))
+# Préparer les données pour prédiction (TOUTES les couronnes)
+# Filtrer les lignes avec NA dans les features
+available_features <- intersect(feature_cols, names(all_crowns))
+cat(sprintf("Features utilisées: %d\n", length(available_features)))
 
-cat(sprintf("  Colonnes pour prédiction: %d\n", ncol(predict_data)))
+# Garder seulement les couronnes avec features complètes
+predict_data <- all_crowns |>
+  st_drop_geometry() |>
+  select(all_of(available_features))
+
+# Identifier les lignes avec NA
+complete_rows <- complete.cases(predict_data)
+cat(sprintf("Couronnes avec features complètes: %d / %d\n",
+            sum(complete_rows), nrow(all_crowns)))
+
+# Prédire seulement sur les lignes complètes
+predict_data_clean <- predict_data[complete_rows, ]
 
 # Prédire avec Random Forest
-rf_pred <- predict(rf_model, predict_data)
+rf_pred <- predict(rf_model, predict_data_clean)
 pred_probs <- rf_pred$predictions
 
 cat("\nClasses du modèle:", paste(colnames(pred_probs), collapse = ", "), "\n")
 
-# Ajouter les prédictions aux couronnes
-training_data$pred_class <- colnames(pred_probs)[apply(pred_probs, 1, which.max)]
-training_data$pred_prob <- apply(pred_probs, 1, max)
+# Créer un dataframe avec les prédictions
+all_crowns$pred_class <- NA_character_
+all_crowns$pred_prob <- NA_real_
+
+all_crowns$pred_class[complete_rows] <- colnames(pred_probs)[apply(pred_probs, 1, which.max)]
+all_crowns$pred_prob[complete_rows] <- apply(pred_probs, 1, max)
+
+# Filtrer pour garder seulement les couronnes prédites
+crowns_predicted <- all_crowns[complete_rows, ]
 
 # Diagnostics probabilités
 cat(sprintf("\nProbabilités max: min=%.2f, median=%.2f, max=%.2f\n",
-            min(training_data$pred_prob),
-            median(training_data$pred_prob),
-            max(training_data$pred_prob)))
+            min(crowns_predicted$pred_prob, na.rm = TRUE),
+            median(crowns_predicted$pred_prob, na.rm = TRUE),
+            max(crowns_predicted$pred_prob, na.rm = TRUE)))
 
-training_data$uncertain <- training_data$pred_prob < config$prob_threshold
-training_data$final_class <- ifelse(training_data$uncertain,
-                                     "Incertain",
-                                     training_data$pred_class)
+crowns_predicted$uncertain <- crowns_predicted$pred_prob < config$prob_threshold
+crowns_predicted$final_class <- ifelse(crowns_predicted$uncertain,
+                                        "Incertain",
+                                        crowns_predicted$pred_class)
 
 # Statistiques
 cat("\n=== Résumé des prédictions ===\n")
-cat("Classes prédites:", paste(unique(training_data$final_class), collapse = ", "), "\n\n")
+cat("Classes prédites:", paste(unique(crowns_predicted$final_class), collapse = ", "), "\n\n")
 
-summary_stats <- training_data |>
+summary_stats <- crowns_predicted |>
   st_drop_geometry() |>
   group_by(final_class) |>
   summarise(
     n = n(),
-    pct = n() / nrow(training_data) * 100,
+    pct = n() / nrow(crowns_predicted) * 100,
     prob_mean = mean(pred_prob),
     .groups = "drop"
   ) |>
@@ -1982,33 +1988,33 @@ print(summary_stats)
 
 cat(sprintf("\nCouronnes incertaines (proba < %.0f%%): %d (%.1f%%)\n",
             config$prob_threshold * 100,
-            sum(training_data$uncertain),
-            100 * mean(training_data$uncertain)))
+            sum(crowns_predicted$uncertain),
+            100 * mean(crowns_predicted$uncertain)))
 
 # Palette de couleurs dynamique basée sur les classes réelles
-all_classes <- unique(training_data$final_class)
+unique_classes <- unique(crowns_predicted$final_class)
 base_colors <- c("#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02")
 species_colors <- setNames(
-  c(base_colors[seq_along(setdiff(all_classes, "Incertain"))], "grey70"),
-  c(setdiff(all_classes, "Incertain"), "Incertain")
+  c(base_colors[seq_along(setdiff(unique_classes, "Incertain"))], "grey70"),
+  c(setdiff(unique_classes, "Incertain"), "Incertain")
 )
 
 cat("\nPalette utilisée:\n")
 print(species_colors)
 
 # Sélectionner ~15 couronnes proches pour un zoom lisible
-cat(sprintf("\nTotal couronnes classifiées: %d\n", nrow(training_data)))
+cat(sprintf("\nTotal couronnes classifiées: %d\n", nrow(crowns_predicted)))
 
 # Trouver un groupe de couronnes proches (voisines de la première)
-centroids <- st_centroid(training_data)
+centroids <- st_centroid(crowns_predicted)
 coords <- st_coordinates(centroids)
 
 # Prendre la première couronne et trouver ses 15 plus proches voisines
 ref_point <- coords[1, ]
 distances <- sqrt((coords[, 1] - ref_point[1])^2 + (coords[, 2] - ref_point[2])^2)
-nearest_idx <- order(distances)[1:min(15, nrow(training_data))]
+nearest_idx <- order(distances)[1:min(15, nrow(crowns_predicted))]
 
-crowns_plot <- training_data[nearest_idx, ]
+crowns_plot <- crowns_predicted[nearest_idx, ]
 
 # Calculer le bbox du groupe avec un buffer de 10m
 bbox <- st_bbox(crowns_plot)
@@ -2055,10 +2061,10 @@ p3 <- ggplot() +
 # Combiner
 p1 / p2 / p3
 
-# Exporter
+# Exporter TOUTES les couronnes classifiées
 output_file <- file.path(classif_dir, "crowns_classified.gpkg")
-st_write(training_data, output_file, delete_dsn = TRUE, quiet = TRUE)
-cat(sprintf("\nRésultats exportés: %s\n", output_file))
+st_write(crowns_predicted, output_file, delete_dsn = TRUE, quiet = TRUE)
+cat(sprintf("\nRésultats exportés: %s (%d couronnes)\n", output_file, nrow(crowns_predicted)))
 ```
 
 ### Quiz 8 : Cartographie
