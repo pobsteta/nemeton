@@ -1996,41 +1996,58 @@ species_colors <- setNames(
 cat("\nPalette utilisée:\n")
 print(species_colors)
 
-# Affichage - utiliser toutes les données (pas de zoom pour éviter les problèmes)
-bbox <- st_bbox(training_data)
-cat(sprintf("\nBbox données: xmin=%.0f, ymin=%.0f, xmax=%.0f, ymax=%.0f\n",
-            bbox[[1]], bbox[[2]], bbox[[3]], bbox[[4]]))
-cat(sprintf("Étendue: %.0f x %.0f m\n", bbox[[3]] - bbox[[1]], bbox[[4]] - bbox[[2]]))
+# Sélectionner ~15 couronnes proches pour un zoom lisible
+cat(sprintf("\nTotal couronnes classifiées: %d\n", nrow(training_data)))
 
-# Utiliser directement training_data (toutes les couronnes classifiées)
-crowns_plot <- training_data
-cat(sprintf("Couronnes à afficher: %d\n", nrow(crowns_plot)))
+# Trouver un groupe de couronnes proches (voisines de la première)
+centroids <- st_centroid(training_data)
+coords <- st_coordinates(centroids)
 
-# Cartes
+# Prendre la première couronne et trouver ses 15 plus proches voisines
+ref_point <- coords[1, ]
+distances <- sqrt((coords[, 1] - ref_point[1])^2 + (coords[, 2] - ref_point[2])^2)
+nearest_idx <- order(distances)[1:min(15, nrow(training_data))]
+
+crowns_plot <- training_data[nearest_idx, ]
+
+# Calculer le bbox du groupe avec un buffer de 10m
+bbox <- st_bbox(crowns_plot)
+buffer <- 10
+zoom_xlim <- c(bbox[[1]] - buffer, bbox[[3]] + buffer)
+zoom_ylim <- c(bbox[[2]] - buffer, bbox[[4]] + buffer)
+
+cat(sprintf("Zoom sur %d couronnes proches\n", nrow(crowns_plot)))
+cat(sprintf("Étendue zoom: %.0f x %.0f m\n",
+            zoom_xlim[2] - zoom_xlim[1], zoom_ylim[2] - zoom_ylim[1]))
+
+# Cartes zoomées sur les 15 couronnes
 p1 <- ggplot() +
   geom_sf(data = crowns_plot, aes(fill = final_class),
-          color = "white", linewidth = 0.1) +
+          color = "darkgrey", linewidth = 0.5) +
   scale_fill_manual(values = species_colors, name = "Essence", drop = FALSE) +
+  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Classification des essences",
-       subtitle = sprintf("%d couronnes classifiées", nrow(crowns_plot))) +
+       subtitle = sprintf("Zoom sur %d couronnes", nrow(crowns_plot))) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p2 <- ggplot() +
-  geom_sf(data = crowns_plot, aes(fill = pred_prob), color = "white", linewidth = 0.1) +
+  geom_sf(data = crowns_plot, aes(fill = pred_prob), color = "darkgrey", linewidth = 0.5) +
   scale_fill_viridis_c(name = "Probabilité", option = "plasma", limits = c(0, 1)) +
+  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Confiance de la classification") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
 p3 <- ggplot() +
   geom_sf(data = crowns_plot, aes(fill = uncertain),
-          color = "white", linewidth = 0.1) +
+          color = "darkgrey", linewidth = 0.5) +
   scale_fill_manual(
     values = c("FALSE" = "forestgreen", "TRUE" = "red"),
     labels = c("Confiant", "Incertain"),
     name = "Statut"
   ) +
+  coord_sf(xlim = zoom_xlim, ylim = zoom_ylim) +
   labs(title = "Zones de confiance") +
   theme_minimal() +
   theme(legend.position = "bottom")
