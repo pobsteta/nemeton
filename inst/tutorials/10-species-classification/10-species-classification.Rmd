@@ -1142,13 +1142,12 @@ if (requireNamespace("exactextractr", quietly = TRUE)) {
 
   cat("\nExtraction des statistiques IRC...\n")
 
-  # NIR
+  # NIR - statistiques de base
   nir_stats <- exactextractr::exact_extract(
     irc[[1]], crowns_sample,
-    fun = c("mean", "stdev", "quantile", "quantile"),
-    quantiles = c(0.1, 0.9)
+    fun = c("mean", "stdev")
   )
-  names(nir_stats) <- c("nir_mean", "nir_sd", "nir_p10", "nir_p90")
+  names(nir_stats) <- c("nir_mean", "nir_sd")
 
   # Red
   red_stats <- exactextractr::exact_extract(
@@ -1164,13 +1163,12 @@ if (requireNamespace("exactextractr", quietly = TRUE)) {
   )
   names(green_stats) <- c("green_mean", "green_sd")
 
-  # NDVI
+  # NDVI - statistiques de base
   ndvi_stats <- exactextractr::exact_extract(
     ndvi, crowns_sample,
-    fun = c("mean", "stdev", "quantile", "quantile"),
-    quantiles = c(0.1, 0.9)
+    fun = c("mean", "stdev")
   )
-  names(ndvi_stats) <- c("ndvi_mean", "ndvi_sd", "ndvi_p10", "ndvi_p90")
+  names(ndvi_stats) <- c("ndvi_mean", "ndvi_sd")
 
   # Combiner
   irc_features <- cbind(nir_stats, red_stats, green_stats, ndvi_stats)
@@ -1365,7 +1363,7 @@ feature_cols <- c(
   "area_m2", "compactness", "radius_eq", "ratio_h_radius",
   # IRC
   "nir_mean", "nir_sd", "red_mean", "green_mean",
-  "ndvi_mean", "ndvi_sd", "ndvi_p10", "ndvi_p90",
+  "ndvi_mean", "ndvi_sd",
   "nir_red_ratio", "nir_green_ratio"
 )
 
