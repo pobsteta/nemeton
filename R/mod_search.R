@@ -252,9 +252,9 @@ mod_search_server <- function(id, app_state) {
     # Restore Project Location
     # ========================================
 
-    shiny::observe({
+    shiny::observeEvent(app_state$restore_project, {
       restore <- app_state$restore_project
-      shiny::req(restore)
+      if (is.null(restore) || is.null(restore$commune_code)) return()
 
       dept_code <- restore$department_code
       commune_code <- restore$commune_code
@@ -262,10 +262,12 @@ mod_search_server <- function(id, app_state) {
       # Update department dropdown
       shiny::updateSelectInput(session, "departement", selected = dept_code)
 
-      # Load communes for department and update dropdown
+      # Load communes for department
       communes <- get_communes_in_department(dept_code)
       if (!is.null(communes) && nrow(communes) > 0) {
         choices <- format_communes_for_selectize(communes)
+
+        # Update commune dropdown with choices and selection
         shiny::updateSelectizeInput(
           session,
           "commune",
@@ -287,7 +289,7 @@ mod_search_server <- function(id, app_state) {
           }
         }
       }
-    })
+    }, ignoreInit = TRUE)
 
 
     # ========================================

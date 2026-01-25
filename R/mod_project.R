@@ -224,6 +224,44 @@ mod_project_server <- function(id, app_state, selected_parcels) {
     }) |> shiny::bindEvent(input$name, ignoreInit = TRUE)
 
     # ========================================
+    # Restore Project Form When Loading
+    # ========================================
+
+    shiny::observeEvent(app_state$current_project, {
+      project <- app_state$current_project
+      if (is.null(project) || is.null(project$metadata)) return()
+
+      # Fill in form fields with project data
+      shiny::updateTextInput(
+        session,
+        "name",
+        value = project$metadata$name %||% ""
+      )
+      shiny::updateTextAreaInput(
+        session,
+        "description",
+        value = project$metadata$description %||% ""
+      )
+      shiny::updateTextInput(
+        session,
+        "owner",
+        value = project$metadata$owner %||% ""
+      )
+
+      # Update date display
+      if (!is.null(project$metadata$created_at)) {
+        date_str <- format(as.POSIXct(project$metadata$created_at), "%d/%m/%Y %H:%M")
+        shiny::runjs(sprintf(
+          "$('#%s').text('%s');",
+          ns("date_display"), date_str
+        ))
+      }
+
+      rv$current_project <- project
+    }, ignoreInit = TRUE)
+
+
+    # ========================================
     # Create Project
     # ========================================
 
