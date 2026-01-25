@@ -347,7 +347,7 @@ get_commune_geometry <- function(code_insee) {
     }
 
     # Convert geometry to GeoJSON string and parse with sf
-    geom_json <- jsonlite::toJSON(data$contour, auto_unbox = TRUE)
+    geom_json <- as.character(jsonlite::toJSON(data$contour, auto_unbox = TRUE))
     geom_sfc <- sf::st_as_sfc(geom_json, crs = 4326)
 
     # Handle GEOMETRYCOLLECTION by extracting polygons
