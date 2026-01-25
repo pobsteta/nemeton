@@ -60,3 +60,11 @@ jobs:
           args: 'c("--no-manual", "--as-cran")'
           error-on: '"error"'
           upload-snapshots: true
+
+      - name: Test coverage
+        run: |
+          install.packages("covr")
+          covr::codecov(quiet = FALSE)
+        shell: Rscript {0}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
