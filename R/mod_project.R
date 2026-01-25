@@ -319,6 +319,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           # UPDATE mode
           cli::cli_alert_info("Updating project {rv$editing_project_id}...")
 
+          # Update metadata
           update_project_metadata(
             project_id = rv$editing_project_id,
             updates = list(
@@ -327,8 +328,11 @@ mod_project_server <- function(id, app_state, selected_parcels) {
               owner = input$owner %||% ""
             )
           )
-
           cli::cli_alert_success("Project metadata updated")
+
+          # Update parcels if selection changed
+          save_parcels(rv$editing_project_id, parcels)
+          cli::cli_alert_success("Project parcels updated ({nrow(parcels)} parcels)")
 
           # Reload the updated project
           project <- load_project(rv$editing_project_id)
@@ -337,7 +341,11 @@ mod_project_server <- function(id, app_state, selected_parcels) {
 
           # Show success notification
           shiny::showNotification(
-            sprintf("%s: %s", i18n$t("project_updated"), project$metadata$name),
+            sprintf("%s: %s (%d %s)",
+                    i18n$t("project_updated"),
+                    project$metadata$name,
+                    nrow(parcels),
+                    i18n$t("parcels")),
             type = "message"
           )
         }
