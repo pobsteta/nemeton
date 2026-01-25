@@ -143,7 +143,7 @@ get_departments <- function() {
 #' @return A data.frame with columns: code_insee, nom, code_postal, departement, label
 #'
 #' @examples
-#' \dontrun
+#' \dontrun{
 #' # Search for communes starting with "Lyon"
 #' search_communes("Lyon")
 #'
