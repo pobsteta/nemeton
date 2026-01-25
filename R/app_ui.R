@@ -26,7 +26,7 @@ app_ui <- function(request) {
       title = htmltools::div(
         class = "d-flex align-items-center",
         htmltools::img(
-          src = "www/img/logo.png",
+          src = "www/img/logo.svg",
           height = "36px",
           class = "me-2",
           alt = "nemeton logo"
@@ -170,8 +170,8 @@ app_add_external_resources <- function() {
       # Favicon
       htmltools::tags$link(
         rel = "icon",
-        type = "image/png",
-        href = "www/img/logo.png"
+        type = "image/svg+xml",
+        href = "www/img/logo.svg"
       ),
       # Meta tags for mobile
       htmltools::tags$meta(
