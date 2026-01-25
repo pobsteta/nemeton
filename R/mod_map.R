@@ -153,7 +153,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     rv <- shiny::reactiveValues(
       selected_ids = character(0),
       basemap = "osm",
-      parcels_zoomed = FALSE  # Flag to zoom only once per commune
+      parcels_zoomed = FALSE,  # Flag to zoom only once per commune
+      pending_restore = NULL   # Pending restoration data
     )
 
 
@@ -450,17 +451,24 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # Restore Project Selection
     # ========================================
 
-    shiny::observe({
+    # Capture restore request
+    shiny::observeEvent(app_state$restore_project, {
       restore <- app_state$restore_project
-      shiny::req(restore)
-      shiny::req(restore$selected_ids)
+      if (!is.null(restore) && !is.null(restore$selected_ids)) {
+        rv$pending_restore <- restore
+        cli::cli_alert_info("Restoration pending for {length(restore$selected_ids)} parcels")
+      }
+    }, ignoreInit = TRUE)
 
-      # Wait for parcels to be loaded
+    # Apply restoration when parcels are loaded
+    shiny::observe({
+      restore <- rv$pending_restore
+      if (is.null(restore)) return()
+
       parcel_data <- parcels()
-      shiny::req(parcel_data)
-      shiny::req(nrow(parcel_data) > 0)
+      if (is.null(parcel_data) || nrow(parcel_data) == 0) return()
 
-      # Find matching parcel IDs (intersection of saved and loaded)
+      # Find matching parcel IDs
       matching_ids <- intersect(restore$selected_ids, parcel_data$id)
 
       if (length(matching_ids) > 0) {
@@ -488,8 +496,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
       }
 
-      # Clear restore signal to prevent re-triggering
-      app_state$restore_project <- NULL
+      # Clear pending restore
+      rv$pending_restore <- NULL
     })
 
 

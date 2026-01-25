@@ -320,7 +320,7 @@ mod_home_server <- function(id, app_state) {
       }
 
       parcels
-    }) |> shiny::bindCache(search_result$selected_commune())
+    })
 
     # ========================================
     # Map Module
