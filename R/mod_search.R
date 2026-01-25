@@ -177,6 +177,7 @@ mod_search_server <- function(id, app_state) {
             session,
             "commune",
             choices = choices,
+            selected = "",
             server = FALSE
           )
         } else {
@@ -184,6 +185,7 @@ mod_search_server <- function(id, app_state) {
             session,
             "commune",
             choices = character(0),
+            selected = "",
             server = FALSE
           )
         }
@@ -217,7 +219,7 @@ mod_search_server <- function(id, app_state) {
 
       # Get commune geometry
       shiny::withProgress(
-        message = get_i18n(get_lang())$t("loading_parcels"),
+        message = get_i18n(get_lang())$t("loading_commune"),
         value = 0.5,
         {
           geometry <- get_commune_geometry(code)
