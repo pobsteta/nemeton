@@ -131,12 +131,7 @@ mod_project_ui <- function(id) {
     bslib::card_footer(
       class = "d-flex justify-content-between align-items-center",
       shiny::uiOutput(ns("validation_message")),
-      shiny::actionButton(
-        ns("create"),
-        label = i18n$t("create_project"),
-        class = "btn-success",
-        icon = bsicons::bs_icon("plus-circle")
-      )
+      shiny::uiOutput(ns("action_button"))
     )
   )
 }
@@ -165,6 +160,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
     # Reactive values
     rv <- shiny::reactiveValues(
       current_project = NULL,
+      editing_project_id = NULL,  # NULL = create mode, ID = edit mode
       validation_errors = character(0),
       project_date = format(Sys.time(), "%d/%m/%Y %H:%M")
     )
@@ -208,6 +204,27 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       )
     })
 
+    # Dynamic action button (create vs update)
+    output$action_button <- shiny::renderUI({
+      if (is.null(rv$editing_project_id)) {
+        # Create mode
+        shiny::actionButton(
+          ns("create"),
+          label = i18n$t("create_project"),
+          class = "btn-success",
+          icon = bsicons::bs_icon("plus-circle")
+        )
+      } else {
+        # Edit mode
+        shiny::actionButton(
+          ns("create"),
+          label = i18n$t("update_project"),
+          class = "btn-primary",
+          icon = bsicons::bs_icon("pencil-square")
+        )
+      }
+    })
+
     # ========================================
     # Restore Project Form When Loading
     # ========================================
@@ -238,6 +255,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         rv$project_date <- format(as.POSIXct(project$metadata$created_at), "%d/%m/%Y %H:%M")
       }
 
+      # Set editing mode with project ID
+      rv$editing_project_id <- project$id
       rv$current_project <- project
     }, ignoreInit = TRUE)
 
@@ -274,31 +293,50 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         return()
       }
 
-      # Create project
       tryCatch({
-        project <- create_project(
-          name = trimws(input$name),
-          description = input$description %||% "",
-          owner = input$owner %||% "",
-          parcels = parcels
-        )
+        if (is.null(rv$editing_project_id)) {
+          # CREATE mode
+          project <- create_project(
+            name = trimws(input$name),
+            description = input$description %||% "",
+            owner = input$owner %||% "",
+            parcels = parcels
+          )
 
-        rv$current_project <- project
+          rv$current_project <- project
+          rv$editing_project_id <- project$id
 
-        # Update app state
-        app_state$current_project <- project
-        app_state$project_id <- project$id
+          # Update app state
+          app_state$current_project <- project
+          app_state$project_id <- project$id
 
-        # Show success notification
-        shiny::showNotification(
-          sprintf("%s: %s", i18n$t("project_created"), project$metadata$name),
-          type = "message"
-        )
+          # Show success notification
+          shiny::showNotification(
+            sprintf("%s: %s", i18n$t("project_created"), project$metadata$name),
+            type = "message"
+          )
+        } else {
+          # UPDATE mode
+          update_project_metadata(
+            project_id = rv$editing_project_id,
+            updates = list(
+              name = trimws(input$name),
+              description = input$description %||% "",
+              owner = input$owner %||% ""
+            )
+          )
 
-        # Clear form
-        shiny::updateTextInput(session, "name", value = "")
-        shiny::updateTextAreaInput(session, "description", value = "")
-        shiny::updateTextInput(session, "owner", value = "")
+          # Reload the updated project
+          project <- load_project(rv$editing_project_id)
+          rv$current_project <- project
+          app_state$current_project <- project
+
+          # Show success notification
+          shiny::showNotification(
+            sprintf("%s: %s", i18n$t("project_updated"), project$metadata$name),
+            type = "message"
+          )
+        }
 
       }, error = function(e) {
         shiny::showNotification(
