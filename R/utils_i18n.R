@@ -308,6 +308,10 @@ TRANSLATIONS <- list(
     fr = "Aucune parcelle trouv\u00e9e pour cette commune",
     en = "No parcels found for this municipality"
   ),
+  error_invalid_postal = list(
+    fr = "Code postal invalide (5 chiffres requis)",
+    en = "Invalid postal code (5 digits required)"
+  ),
   error_computation = list(
     fr = "Erreur lors du calcul des indicateurs",
     en = "Error computing indicators"
