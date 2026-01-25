@@ -173,7 +173,7 @@ ACCESSIBILITY_CONFIG <- list(
   # Always use symbols in addition to colors
   use_symbols = TRUE,
   # Circle, triangle up, square, diamond, triangle down, plus, cross
- symbol_shapes = c(16, 17, 15, 18, 25, 3, 4),
+  symbol_shapes = c(16L, 17L, 15L, 18L, 25L, 3L, 4L),
 
   # Minimum touch target size (WCAG 2.5.5)
   min_touch_target = 44L,  # pixels

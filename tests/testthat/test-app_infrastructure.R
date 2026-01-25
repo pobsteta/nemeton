@@ -103,10 +103,10 @@ test_that("get_family_config returns valid config or NULL", {
   expect_null(invalid)
 })
 
-test_that("get_all_indicator_codes returns 29 indicators", {
+test_that("get_all_indicator_codes returns 31 indicators", {
   codes <- nemeton:::get_all_indicator_codes()
   expect_type(codes, "character")
-  expect_length(codes, 29)
+  expect_length(codes, 31)
 
   # Check some known indicators
   expect_true("C1" %in% codes)
