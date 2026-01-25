@@ -461,6 +461,45 @@
 
 
 /* ============================================================
+   Navigation Tabs
+   ============================================================ */
+.nav-tabs .nav-link,
+.nav-pills .nav-link,
+.bslib-page-navbar .nav-link {
+  color: var(--nemeton-fg);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.nav-tabs .nav-link:hover,
+.nav-pills .nav-link:hover,
+.bslib-page-navbar .nav-link:hover {
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nav-tabs .nav-link.active,
+.nav-pills .nav-link.active,
+.bslib-page-navbar .nav-link.active,
+.nav-tabs .nav-link[aria-selected="true"],
+.nav-pills .nav-link[aria-selected="true"] {
+  color: #000000 !important;
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Override bslib navbar tab styling */
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+  color: #000000 !important;
+}
+
+.navbar-nav .nav-link.active {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+
+/* ============================================================
    Print Styles
    ============================================================ */
 @media print {
