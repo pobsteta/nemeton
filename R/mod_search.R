@@ -129,10 +129,10 @@ mod_search_server <- function(id, app_state) {
 
 
     # ========================================
-    # Initialize Department Dropdown
+    # Initialize Department Dropdown (once on start)
     # ========================================
 
-    shiny::observe({
+    shiny::observeEvent(TRUE, {
       i18n <- get_i18n(get_lang())
       depts <- get_departments()
 
@@ -144,7 +144,7 @@ mod_search_server <- function(id, app_state) {
           depts
         )
       )
-    })
+    }, once = TRUE, ignoreInit = FALSE)
 
 
     # ========================================
