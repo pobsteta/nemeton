@@ -363,6 +363,13 @@ Méthodes print et summary pour les objets nemeton
 - [`summary(`*`<nemeton_temporal>`*`)`](https://pobsteta.github.io/nemeton/reference/summary.nemeton_temporal.md)
   : Summary Method for nemeton_temporal Objects
 
+## Application Shiny
+
+Interface interactive nemetonApp
+
+- [`run_app()`](https://pobsteta.github.io/nemeton/reference/run_app.md)
+  : Launch the nemetonApp Shiny Application
+
 ## Documentation du package
 
 - [`nemeton-package`](https://pobsteta.github.io/nemeton/reference/nemeton-package.md)

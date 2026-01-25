@@ -4,7 +4,9 @@ Implement the Nemeton method for systemic forest territory analysis.
 Calculate multi-family biophysical indicators across 12 ecosystem
 service families (carbon, water, soil, landscape, biodiversity, etc.),
 perform temporal analysis, normalize to composite indices, and visualize
-results. Designed for foresters, ecologists, and land managers.
+results. Includes nemetonApp, a Shiny application for interactive parcel
+selection and analysis. Designed for foresters, ecologists, and land
+managers.
 
 The nemeton package implements the Nemeton method for comprehensive
 forest ecosystem analysis. It provides tools to calculate, normalize,
