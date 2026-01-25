@@ -309,6 +309,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           # Update app state
           app_state$current_project <- project
           app_state$project_id <- project$id
+          app_state$refresh_projects <- Sys.time()  # Refresh recent projects list
 
           # Show success notification
           shiny::showNotification(
@@ -338,6 +339,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           project <- load_project(rv$editing_project_id)
           rv$current_project <- project
           app_state$current_project <- project
+          app_state$refresh_projects <- Sys.time()  # Refresh recent projects list
 
           # Show success notification
           shiny::showNotification(
