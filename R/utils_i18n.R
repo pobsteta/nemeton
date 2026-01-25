@@ -80,6 +80,8 @@ TRANSLATIONS <- list(
   created_at = list(fr = "Cr\u00e9\u00e9 le", en = "Created on"),
   auto_generated = list(fr = "G\u00e9n\u00e9r\u00e9 automatiquement", en = "Auto-generated"),
   create_project = list(fr = "Cr\u00e9er le projet", en = "Create project"),
+  update_project = list(fr = "Mettre \u00e0 jour", en = "Update"),
+  project_updated = list(fr = "Projet mis \u00e0 jour", en = "Project updated"),
   field_required = list(fr = "Ce champ est obligatoire", en = "This field is required"),
   max_chars = list(fr = "Maximum", en = "Maximum"),
   characters = list(fr = "caract\u00e8res", en = "characters"),
