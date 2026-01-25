@@ -16,6 +16,7 @@ NULL
 #' with log-scale normalization favoring ancient forests.
 #'
 #' @param units An sf object with forest parcels.
+#' @param layers A nemeton_layers object (optional, not used in this indicator).
 #' @param age_field Character. Column name with stand age (years). Default "age".
 #' @param establishment_year_field Character. Column name with establishment year.
 #'   Used if age_field is NULL.
@@ -108,6 +109,7 @@ indicator_temporal_age <- function(units,
 #' (e.g., Corine Land Cover).
 #'
 #' @param units An sf object with forest parcels.
+#' @param layers A nemeton_layers object (optional, not used in this indicator).
 #' @param land_cover_early A SpatRaster with early land cover classification.
 #' @param land_cover_late A SpatRaster with late land cover classification.
 #' @param years_elapsed Numeric. Number of years between the two land cover dates.

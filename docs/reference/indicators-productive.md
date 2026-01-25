@@ -1,7 +1,7 @@
 # Productive & Economic Services Indicators (Family P)
 
 Functions for calculating timber production and economic value
-indicators: - P1: Standing timber volume (m³/ha) via allometric models -
+indicators: - P1: Standing timber volume (m3/ha) via allometric models -
 P2: Site productivity index (growth potential) - P3: Timber quality
 score (commercial value potential)
 

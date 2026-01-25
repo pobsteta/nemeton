@@ -6,6 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Familles d'indicateurs - Référentiel complet • nemeton</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.1/jquery-3.6.1.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -67,7 +72,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-01-24</h4>
+            <h4 data-toc-skip class="date">2026-01-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/vignettes/indicator-families_fr.Rmd" class="external-link"><code>vignettes/indicator-families_fr.Rmd</code></a></small>
       <div class="d-none name"><code>indicator-families_fr.Rmd</code></div>
@@ -83,8 +88,6 @@ Obstétar</h4>
 d’indicateurs</strong> couvrant les dimensions biophysiques, écologiques
 et socio-économiques. Cette vignette présente le référentiel complet et
 démontre l’utilisation du système de familles.</p>
-<p><strong>Version actuelle : v0.3.0</strong> - <strong>9 familles sur
-12 implémentées</strong> avec 23 indicateurs opérationnels.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
@@ -273,7 +276,7 @@ pauvre) - F2 &gt; 5 : Risque d’érosion élevé</p>
 - L2 élevé : Forte proportion de lisière (effet de bord)</p>
 </div>
 <div class="section level3">
-<h3 id="famille-b-biodiversité-v0-3-0">Famille B : Biodiversité (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-b-biodiversit%C3%A9-v0-3-0"></a>
+<h3 id="famille-b-biodiversité">Famille B : Biodiversité<a class="anchor" aria-label="anchor" href="#famille-b-biodiversit%C3%A9"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># B1 - Protection réglementaire (% surface en zones protégées)</span></span>
@@ -305,7 +308,7 @@ significative - B2 (Shannon) &gt; 1.5 : Diversité structurelle élevée -
 B3 &lt; 500m : Excellente connectivité écologique</p>
 </div>
 <div class="section level3">
-<h3 id="famille-r-risques-résilience-v0-3-0">Famille R : Risques &amp; Résilience (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-r-risques-r%C3%A9silience-v0-3-0"></a>
+<h3 id="famille-r-risques-résilience">Famille R : Risques &amp; Résilience<a class="anchor" aria-label="anchor" href="#famille-r-risques-r%C3%A9silience"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># R1 - Risque incendie (pente + essence + climat)</span></span>
@@ -336,7 +339,7 @@ Vulnérabilité élevée - Risques cumulés (≥2 indicateurs élevés) :
 Priorité gestion préventive</p>
 </div>
 <div class="section level3">
-<h3 id="famille-t-trame-temporelle-v0-3-0">Famille T : Trame Temporelle (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-t-trame-temporelle-v0-3-0"></a>
+<h3 id="famille-t-trame-temporelle">Famille T : Trame Temporelle<a class="anchor" aria-label="anchor" href="#famille-t-trame-temporelle"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># T1 - Ancienneté des peuplements (années)</span></span>
@@ -359,7 +362,7 @@ Priorité gestion préventive</p>
 - T2 &gt; 3%/an : Dynamique forte (urbanisation, déprise agricole)</p>
 </div>
 <div class="section level3">
-<h3 id="famille-a-air-microclimat-v0-3-0">Famille A : Air &amp; Microclimat (v0.3.0)<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat-v0-3-0"></a>
+<h3 id="famille-a-air-microclimat">Famille A : Air &amp; Microclimat<a class="anchor" aria-label="anchor" href="#famille-a-air-microclimat"></a>
 </h3>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A1 - Couverture arborée dans buffer 1km (%)</span></span>
@@ -507,10 +510,11 @@ indicateurs de la famille (préfixe) - Agrège par moyenne arithmétique
 </div>
 </div>
 <div class="section level2">
-<h2 id="analyse-croisée-inter-familles-v0-3-0">Analyse croisée inter-familles (v0.3.0)<a class="anchor" aria-label="anchor" href="#analyse-crois%C3%A9e-inter-familles-v0-3-0"></a>
+<h2 id="analyse-croisée-inter-familles">Analyse croisée inter-familles<a class="anchor" aria-label="anchor" href="#analyse-crois%C3%A9e-inter-familles"></a>
 </h2>
-<p>La v0.3.0 introduit des outils d’<strong>analyse croisée</strong>
-pour identifier synergies et conflits entre familles.</p>
+<p><code>nemeton</code> propose des outils d’<strong>analyse
+croisée</strong> pour identifier synergies et conflits entre
+familles.</p>
 <div class="section level3">
 <h3 id="matrice-de-corrélations">Matrice de corrélations<a class="anchor" aria-label="anchor" href="#matrice-de-corr%C3%A9lations"></a>
 </h3>
@@ -627,24 +631,6 @@ production/protection</p>
 <span><span class="fu"><a href="../reference/list_indicators.html">list_indicators</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"W"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="roadmap-v0-3-0-v1-0-0">Roadmap v0.3.0 → v1.0.0<a class="anchor" aria-label="anchor" href="#roadmap-v0-3-0-v1-0-0"></a>
-</h2>
-<p><strong>Version actuelle (v0.3.0)</strong> : <strong>9 familles sur
-12 implémentées</strong> (C, B, W, A, F, L, T, R + partiel S)</p>
-<p><strong>Indicateurs opérationnels</strong> : - ✅ <strong>23
-indicateurs</strong> pleinement fonctionnels - ✅ <strong>Analyse
-croisée inter-familles</strong> (corrélations, hotspots multi-critères)
-- ✅ <strong>Infrastructure temporelle complète</strong> (analyse
-multi-périodes, détection de changements) - ✅ <strong>Support bilingue
-FR/EN</strong> - ✅ <strong>845+ tests</strong> avec 87% de
-couverture</p>
-<p><strong>Versions futures</strong> : - <strong>v0.4.0</strong> :
-Familles S, P complètes (usages sociaux, production) -
-<strong>v0.5.0</strong> : Familles E, N + Dashboard Shiny interactif -
-<strong>v1.0.0</strong> : Référentiel complet 12 familles (36
-indicateurs) + analyses avancées</p>
-</div>
-<div class="section level2">
 <h2 id="références">Références<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences"></a>
 </h2>
 <ul>
@@ -655,10 +641,9 @@ indicateurs) + analyses avancées</p>
 <li>Analyse temporelle :
 <code><a href="../articles/temporal-analysis_fr.html">vignette("temporal-analysis_fr")</a></code>
 </li>
-<li>
-<strong>Nouveautés v0.3.0</strong> :
-<code><a href="../articles/biodiversity-resilience-v030_fr.html">vignette("biodiversity-resilience-v030_fr")</a></code> - Familles B,
-R, T, A + Analyse croisée</li>
+<li>Biodiversité et résilience :
+<code><a href="../articles/biodiversity-resilience-v030_fr.html">vignette("biodiversity-resilience-v030_fr")</a></code>
+</li>
 </ul>
 </div>
 <div class="section level2">
@@ -687,7 +672,7 @@ R, T, A + Analyse croisée</li>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_4.0.1 nemeton_0.6.1</span></span>
+<span><span class="co">#&gt; [1] ggplot2_4.0.1 nemeton_0.6.2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    </span></span>

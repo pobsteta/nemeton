@@ -218,3 +218,214 @@ test_that("R family workflow: R1-R3 → normalize → family_R composite", {
 })
 
 # Note: Regression fixture test removed - will be added when fixtures are created
+
+# ==============================================================================
+# T030: Unit Tests for indicator_risk_browsing() (R4)
+# ==============================================================================
+
+test_that("indicator_risk_browsing calculates composite risk correctly", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:5, ]
+
+  # Add required attributes
+  units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), 5, replace = TRUE)
+  units$height <- c(2, 5, 10, 15, 25)  # Various heights
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    height_field = "height"
+  )
+
+  # Tests
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+  expect_true("R4_palatability" %in% names(result))
+  expect_true("R4_vulnerability" %in% names(result))
+  expect_type(result$R4, "double")
+  expect_true(all(result$R4 >= 0 & result$R4 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_browsing uses height for vulnerability", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  units$species <- rep("Quercus", 3)
+  units$height <- c(1, 5, 15)  # Very short, medium, tall
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    height_field = "height"
+  )
+
+  # Short stand (1m) should have highest vulnerability
+  expect_true(result$R4_vulnerability[1] > result$R4_vulnerability[2])
+  expect_true(result$R4_vulnerability[2] > result$R4_vulnerability[3])
+})
+
+test_that("indicator_risk_browsing uses age when height not available", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  units$species <- rep("Fagus", 3)
+  units$age <- c(5, 20, 50)  # Young, medium, old
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    age_field = "age"
+  )
+
+  # Young stand (5 years) should have highest vulnerability
+  expect_true(result$R4_vulnerability[1] > result$R4_vulnerability[2])
+  expect_true(result$R4_vulnerability[2] > result$R4_vulnerability[3])
+})
+
+test_that("indicator_risk_browsing calculates palatability correctly", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:4, ]
+
+  units$species <- c("Quercus", "Fagus", "Pinus", "Picea")
+  units$height <- rep(10, 4)
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    height_field = "height"
+  )
+
+  # Quercus (oak) should have highest palatability
+  expect_true(result$R4_palatability[1] > result$R4_palatability[3])  # Oak > Pine
+
+  # Picea (spruce) should have lowest palatability
+  expect_true(result$R4_palatability[4] < result$R4_palatability[1])  # Spruce < Oak
+})
+
+test_that("indicator_risk_browsing handles missing species field", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  expect_error(
+    indicator_risk_browsing(units, species_field = "nonexistent_column"),
+    "not found"
+  )
+})
+
+test_that("indicator_risk_browsing uses custom weights", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  units$species <- rep("Quercus", 3)
+  units$height <- c(2, 5, 10)
+
+  # Use only palatability (weight = 1, others = 0)
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    height_field = "height",
+    weights = c(palatability = 1, vulnerability = 0, edge = 0, density = 0)
+  )
+
+  # All parcels should have same R4 (same species, same palatability)
+  expect_true(max(result$R4) - min(result$R4) < 5)  # Close to identical
+})
+
+test_that("indicator_risk_browsing calculates edge exposure", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  units$species <- rep("Fagus", 3)
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    edge_buffer = 50
+  )
+
+  # Edge factor should be calculated (part of R4)
+  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+})
+
+test_that("indicator_risk_browsing uses game density raster when provided", {
+  # Use test units that match raster extent
+  units <- create_test_units(n_features = 3)
+  units$species <- rep("Quercus", 3)
+  units$height <- rep(10, 3)
+
+  # Create mock game density raster matching the test units extent
+  game_raster <- create_test_raster(values = "random")
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species",
+    height_field = "height",
+    game_density = game_raster
+  )
+
+  expect_true("R4" %in% names(result))
+  expect_true(all(result$R4 >= 0 & result$R4 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_browsing handles default vulnerability when no height/age", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  units$species <- rep("Fagus", 3)
+  # No height or age field
+
+  result <- indicator_risk_browsing(
+    units,
+    species_field = "species"
+  )
+
+  # Should use default moderate vulnerability (50)
+  expect_true(all(result$R4_vulnerability == 50))
+})
+
+# ==============================================================================
+# Additional edge case tests for R family
+# ==============================================================================
+
+test_that("indicator_risk_fire handles units outside raster extent gracefully", {
+  # Create units outside the standard test raster extent
+  offset_units <- create_test_units(n_features = 2)
+  sf::st_geometry(offset_units) <- sf::st_geometry(offset_units) + c(10000, 10000)
+  sf::st_crs(offset_units) <- 2154
+
+  offset_units$species <- c("Pinus", "Fagus")
+
+  dem <- create_test_raster()
+
+  # Should still work but may have NA values for slope
+  result <- indicator_risk_fire(
+    offset_units,
+    dem = dem,
+    species_field = "species"
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("R1" %in% names(result))
+})
+
+test_that("R indicators validate sf input", {
+  expect_error(
+    indicator_risk_fire(data.frame(x = 1:3), dem = create_test_raster()),
+    "must be an.*sf.*object"
+  )
+
+  expect_error(
+    indicator_risk_storm(data.frame(x = 1:3), dem = create_test_raster()),
+    "must be an.*sf.*object"
+  )
+
+  expect_error(
+    indicator_risk_drought(data.frame(x = 1:3)),
+    "must be an.*sf.*object"
+  )
+
+  expect_error(
+    indicator_risk_browsing(data.frame(x = 1:3)),
+    "must be an.*sf.*object"
+  )
+})

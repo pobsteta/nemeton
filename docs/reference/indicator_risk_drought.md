@@ -61,6 +61,7 @@ w3×species_sensitivity
 ## See also
 
 Other risk-indicators:
+[`indicator_risk_browsing()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.md),
 [`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md),
 [`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)
 

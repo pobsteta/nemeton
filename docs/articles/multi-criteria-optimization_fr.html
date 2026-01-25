@@ -6,6 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Optimisation Multi-Critères • nemeton</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.1/jquery-3.6.1.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -67,7 +72,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-01-24</h4>
+            <h4 data-toc-skip class="date">2026-01-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/vignettes/multi-criteria-optimization_fr.Rmd" class="external-link"><code>vignettes/multi-criteria-optimization_fr.Rmd</code></a></small>
       <div class="d-none name"><code>multi-criteria-optimization_fr.Rmd</code></div>
@@ -83,7 +88,7 @@ objectifs multiples et potentiellement conflictuels : production de
 bois, conservation de la biodiversité, services récréatifs,
 séquestration du carbone, etc.</p>
 <p>Cette vignette présente les outils d’<strong>optimisation
-multi-critères</strong> du package <code>nemeton</code> (v0.4.0) :</p>
+multi-critères</strong> du package <code>nemeton</code> :</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Analyse de Pareto</strong> : Identifier les solutions
@@ -100,7 +105,47 @@ objectifs</li>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Le jeu de données étendu est disponible via LazyData</span></span></code></pre></div>
+<span><span class="co"># Charger le jeu de données de démonstration</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Générer des indicateurs synthétiques pour la démonstration</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Indicateurs de chaque famille</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">C1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">50</span>, <span class="fl">300</span><span class="op">)</span>  <span class="co"># Biomasse</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">C2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0.3</span>, <span class="fl">0.9</span><span class="op">)</span>  <span class="co"># NDVI</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">B1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">100</span><span class="op">)</span>    <span class="co"># Protection</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">B2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">20</span>, <span class="fl">80</span><span class="op">)</span>    <span class="co"># Structure</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">B3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">100</span>, <span class="fl">3000</span><span class="op">)</span> <span class="co"># Connectivité</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">W1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">500</span><span class="op">)</span>    <span class="co"># Eau</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">W2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">50</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">W3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">2</span>, <span class="fl">15</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">A1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">40</span>, <span class="fl">95</span><span class="op">)</span>    <span class="co"># Air</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">A2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">F1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">30</span>, <span class="fl">90</span><span class="op">)</span>    <span class="co"># Fertilité</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">F2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">50</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">L1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span><span class="op">)</span>  <span class="co"># Paysage</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">L2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">T1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">20</span>, <span class="fl">150</span><span class="op">)</span>   <span class="co"># Temps</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">T2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="fl">20</span>, <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">R1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">10</span>, <span class="fl">90</span><span class="op">)</span>    <span class="co"># Risques</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">R2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">10</span>, <span class="fl">80</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">R3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">S1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span>      <span class="co"># Social</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">S2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">S3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">50000</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">P1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">50</span>, <span class="fl">500</span><span class="op">)</span>   <span class="co"># Production</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">P2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">2</span>, <span class="fl">15</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">P3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">30</span>, <span class="fl">90</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">E1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fl">12</span><span class="op">)</span>     <span class="co"># Énergie</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">E2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">5</span>, <span class="fl">25</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">N1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">100</span>, <span class="fl">5000</span><span class="op">)</span> <span class="co"># Naturalité</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">N2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">massif_demo_units</span><span class="op">$</span><span class="va">N3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">20</span>, <span class="fl">80</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Calculer les indices de famille</span></span>
+<span><span class="va">massif_demo_units</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_family_index.html">create_family_index</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="analyse-de-pareto-optimality">1. Analyse de Pareto Optimality<a class="anchor" aria-label="anchor" href="#analyse-de-pareto-optimality"></a>
@@ -120,7 +165,7 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple 1: Maximiser Carbon (C), Biodiversité (B), et Production (P)</span></span>
 <span><span class="va">result_pareto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span><span class="op">)</span>,</span>
 <span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -135,15 +180,15 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <span><span class="va">result_pareto</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">family_C</span>, <span class="va">family_B</span>, <span class="va">family_P</span>, <span class="va">is_optimal</span><span class="op">)</span></span>
-<span><span class="co">#&gt;        name family_C family_B family_P is_optimal</span></span>
-<span><span class="co">#&gt; 1 Parcel_01 94.92197 44.14061 47.68739       TRUE</span></span>
-<span><span class="co">#&gt; 2 Parcel_02 75.51266 17.71910 86.78162       TRUE</span></span>
-<span><span class="co">#&gt; 3 Parcel_03 79.05953 56.77938 46.78139       TRUE</span></span>
-<span><span class="co">#&gt; 4 Parcel_05 85.85022 44.31909 75.19072       TRUE</span></span>
-<span><span class="co">#&gt; 5 Parcel_07 69.72693 93.35580 86.90201       TRUE</span></span>
-<span><span class="co">#&gt; 6 Parcel_08 73.31753 64.45627 51.09994       TRUE</span></span>
-<span><span class="co">#&gt; 7 Parcel_09 16.81178 35.13385 90.63200       TRUE</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_C</span>, <span class="va">family_B</span>, <span class="va">family_P</span>, <span class="va">is_optimal</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   parcel_id family_C family_B family_P is_optimal</span></span>
+<span><span class="co">#&gt; 1       P01 94.92197 44.14061 47.68739       TRUE</span></span>
+<span><span class="co">#&gt; 2       P02 75.51266 17.71910 86.78162       TRUE</span></span>
+<span><span class="co">#&gt; 3       P03 79.05953 56.77938 46.78139       TRUE</span></span>
+<span><span class="co">#&gt; 4       P05 85.85022 44.31909 75.19072       TRUE</span></span>
+<span><span class="co">#&gt; 5       P07 69.72693 93.35580 86.90201       TRUE</span></span>
+<span><span class="co">#&gt; 6       P08 73.31753 64.45627 51.09994       TRUE</span></span>
+<span><span class="co">#&gt; 7       P09 16.81178 35.13385 90.63200       TRUE</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="visualisation-spatiale">Visualisation Spatiale<a class="anchor" aria-label="anchor" href="#visualisation-spatiale"></a>
@@ -167,7 +212,7 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Exemple 2: Maximiser C et B, Minimiser Risque incendie (R1)</span></span>
 <span><span class="va">result_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"R1"</span><span class="op">)</span>,</span>
 <span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># Minimiser R1</span></span>
 <span><span class="op">)</span></span>
@@ -175,20 +220,22 @@ améliorer un objectif nécessite de dégrader au moins un autre.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">result_mixed</span><span class="op">$</span><span class="va">is_optimal</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; FALSE  TRUE </span></span>
-<span><span class="co">#&gt;    14     6</span></span>
+<span><span class="co">#&gt;    12     8</span></span>
 <span></span>
 <span><span class="co"># Profil des parcelles optimales</span></span>
 <span><span class="va">result_mixed</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">is_optimal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">family_C</span>, <span class="va">family_B</span>, <span class="va">R1</span>, <span class="va">is_optimal</span><span class="op">)</span></span>
-<span><span class="co">#&gt;        name family_C family_B R1 is_optimal</span></span>
-<span><span class="co">#&gt; 1 Parcel_01 94.92197 44.14061  1       TRUE</span></span>
-<span><span class="co">#&gt; 2 Parcel_03 79.05953 56.77938  2       TRUE</span></span>
-<span><span class="co">#&gt; 3 Parcel_05 85.85022 44.31909  3       TRUE</span></span>
-<span><span class="co">#&gt; 4 Parcel_07 69.72693 93.35580  4       TRUE</span></span>
-<span><span class="co">#&gt; 5 Parcel_08 73.31753 64.45627  2       TRUE</span></span>
-<span><span class="co">#&gt; 6 Parcel_12 65.68338 88.53671  1       TRUE</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_C</span>, <span class="va">family_B</span>, <span class="va">R1</span>, <span class="va">is_optimal</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   parcel_id family_C family_B       R1 is_optimal</span></span>
+<span><span class="co">#&gt; 1       P01 94.92197 44.14061 44.42666       TRUE</span></span>
+<span><span class="co">#&gt; 2       P03 79.05953 56.77938 21.35271       TRUE</span></span>
+<span><span class="co">#&gt; 3       P05 85.85022 44.31909 55.18578       TRUE</span></span>
+<span><span class="co">#&gt; 4       P07 69.72693 93.35580 38.67201       TRUE</span></span>
+<span><span class="co">#&gt; 5       P08 73.31753 64.45627 77.36057       TRUE</span></span>
+<span><span class="co">#&gt; 6       P12 65.68338 88.53671 10.19025       TRUE</span></span>
+<span><span class="co">#&gt; 7       P13 67.71298 62.12282 22.83439       TRUE</span></span>
+<span><span class="co">#&gt; 8       P14 86.82437 20.31195 41.94184       TRUE</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -202,7 +249,7 @@ similaires sur plusieurs familles d’indicateurs.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clustering avec k=3 prédéfini</span></span>
 <span><span class="va">result_kmeans</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"kmeans"</span></span>
@@ -212,15 +259,15 @@ similaires sur plusieurs familles d’indicateurs.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">result_kmeans</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; 1 2 3 </span></span>
-<span><span class="co">#&gt; 8 4 8</span></span>
+<span><span class="co">#&gt; 8 8 4</span></span>
 <span></span>
 <span><span class="co"># Profil moyen de chaque cluster</span></span>
 <span><span class="va">profiles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">result_kmeans</span>, <span class="st">"cluster_profile"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">profiles</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   family_C family_B family_P family_S</span></span>
-<span><span class="co">#&gt; 1 70.64928 36.67757 49.25494 29.92551</span></span>
-<span><span class="co">#&gt; 2 32.69497 63.34291 81.12851 36.32015</span></span>
-<span><span class="co">#&gt; 3 61.99780 60.78833 50.53400 66.00966</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 61.99780 60.78833 50.53400 66.00966</span></span>
+<span><span class="co">#&gt; 2 70.64928 36.67757 49.25494 29.92551</span></span>
+<span><span class="co">#&gt; 3 32.69497 63.34291 81.12851 36.32015</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="visualisation-des-clusters">Visualisation des Clusters<a class="anchor" aria-label="anchor" href="#visualisation-des-clusters"></a>
@@ -242,7 +289,7 @@ nombre optimal de clusters :</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Laisser l'algorithme déterminer k optimal</span></span>
 <span><span class="va">result_auto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
 <span>  k <span class="op">=</span> <span class="cn">NULL</span>, <span class="co"># Auto-détermination</span></span>
 <span>  method <span class="op">=</span> <span class="st">"kmeans"</span></span>
@@ -279,7 +326,7 @@ nombre optimal de clusters :</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clustering hiérarchique</span></span>
 <span><span class="va">result_hclust</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"hierarchical"</span></span>
@@ -293,9 +340,9 @@ nombre optimal de clusters :</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       hierarchical</span></span>
 <span><span class="co">#&gt; kmeans 1 2 3</span></span>
-<span><span class="co">#&gt;      1 5 3 0</span></span>
-<span><span class="co">#&gt;      2 0 1 3</span></span>
-<span><span class="co">#&gt;      3 0 8 0</span></span></code></pre></div>
+<span><span class="co">#&gt;      1 0 8 0</span></span>
+<span><span class="co">#&gt;      2 5 3 0</span></span>
+<span><span class="co">#&gt;      3 0 1 3</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="interprétation-des-clusters">Interprétation des Clusters<a class="anchor" aria-label="anchor" href="#interpr%C3%A9tation-des-clusters"></a>
@@ -325,24 +372,24 @@ nombre optimal de clusters :</p>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; === Cluster 1 ===</span></span>
+<span><span class="co">#&gt; Carbone (C): 62 </span></span>
+<span><span class="co">#&gt; Biodiversité (B): 60.79 </span></span>
+<span><span class="co">#&gt; Production (P): 50.53 </span></span>
+<span><span class="co">#&gt; Social (S): 66.01 </span></span>
+<span><span class="co">#&gt; → Type: Haute conservation</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; === Cluster 2 ===</span></span>
 <span><span class="co">#&gt; Carbone (C): 70.65 </span></span>
 <span><span class="co">#&gt; Biodiversité (B): 36.68 </span></span>
 <span><span class="co">#&gt; Production (P): 49.25 </span></span>
 <span><span class="co">#&gt; Social (S): 29.93 </span></span>
 <span><span class="co">#&gt; → Type: Haute conservation</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; === Cluster 2 ===</span></span>
+<span><span class="co">#&gt; === Cluster 3 ===</span></span>
 <span><span class="co">#&gt; Carbone (C): 32.69 </span></span>
 <span><span class="co">#&gt; Biodiversité (B): 63.34 </span></span>
 <span><span class="co">#&gt; Production (P): 81.13 </span></span>
 <span><span class="co">#&gt; Social (S): 36.32 </span></span>
-<span><span class="co">#&gt; → Type: Haute conservation</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; === Cluster 3 ===</span></span>
-<span><span class="co">#&gt; Carbone (C): 62 </span></span>
-<span><span class="co">#&gt; Biodiversité (B): 60.79 </span></span>
-<span><span class="co">#&gt; Production (P): 50.53 </span></span>
-<span><span class="co">#&gt; Social (S): 66.01 </span></span>
 <span><span class="co">#&gt; → Type: Haute conservation</span></span></code></pre></div>
 </div>
 </div>
@@ -357,7 +404,7 @@ entre paires de services écosystémiques.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Trade-off entre Carbone et Biodiversité</span></span>
 <span><span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
 <span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
 <span>  xlab <span class="op">=</span> <span class="st">"Carbone &amp; Vitalité"</span>,</span>
@@ -386,7 +433,7 @@ Trade-off/compromis</li>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Ajouter une 3ème dimension (Production) via la couleur</span></span>
 <span><span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
 <span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
 <span>  color <span class="op">=</span> <span class="st">"family_P"</span>,</span>
@@ -404,7 +451,7 @@ visuellement les meilleures solutions :</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># D'abord identifier les parcelles Pareto-optimales</span></span>
 <span><span class="va">pareto_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span><span class="op">)</span>,</span>
 <span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -431,22 +478,22 @@ représentent les meilleures combinaisons possibles de C et B.</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Créer une matrice de trade-off plots</span></span>
-<span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_C"</span>, <span class="st">"family_B"</span>,</span>
+<span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="st">"family_C"</span>, <span class="st">"family_B"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"C vs B"</span></span>
 <span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
-<span><span class="va">p2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_C"</span>, <span class="st">"family_P"</span>,</span>
+<span><span class="va">p2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="st">"family_C"</span>, <span class="st">"family_P"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"C vs P"</span></span>
 <span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
-<span><span class="va">p3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>,</span>
+<span><span class="va">p3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"B vs P"</span></span>
 <span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
-<span><span class="va">p4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_P"</span>, <span class="st">"family_E"</span>,</span>
+<span><span class="va">p4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="st">"family_P"</span>, <span class="st">"family_E"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"P vs E"</span></span>
 <span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
-<span><span class="va">p5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_S"</span>, <span class="st">"family_N"</span>,</span>
+<span><span class="va">p5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="st">"family_S"</span>, <span class="st">"family_N"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"S vs N"</span></span>
 <span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
-<span><span class="va">p6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units_extended</span>, <span class="st">"family_B"</span>, <span class="st">"family_N"</span>,</span>
+<span><span class="va">p6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, <span class="st">"family_B"</span>, <span class="st">"family_N"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"B vs N"</span></span>
 <span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
 <span></span>
@@ -465,7 +512,7 @@ représentent les meilleures combinaisons possibles de C et B.</p>
 <span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
 <span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
 <span>  pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  label <span class="op">=</span> <span class="st">"name"</span>, <span class="co"># Afficher les noms</span></span>
+<span>  label <span class="op">=</span> <span class="st">"parcel_id"</span>, <span class="co"># Afficher les identifiants</span></span>
 <span>  xlab <span class="op">=</span> <span class="st">"Carbone"</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="st">"Biodiversité"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Parcelles Identifiées sur la Frontière de Pareto"</span></span>
@@ -485,7 +532,7 @@ carbone, et la naturalité.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Étape 1: Analyse de Pareto sur les 3 objectifs</span></span>
 <span><span class="va">conservation_pareto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_B"</span>, <span class="st">"family_C"</span>, <span class="st">"family_N"</span><span class="op">)</span>,</span>
 <span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
@@ -506,13 +553,13 @@ carbone, et la naturalité.</p>
 <span></span>
 <span><span class="va">top5</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">family_B</span>, <span class="va">family_C</span>, <span class="va">family_N</span>, <span class="va">composite_score</span><span class="op">)</span></span>
-<span><span class="co">#&gt;        name family_B family_C family_N composite_score</span></span>
-<span><span class="co">#&gt; 1 Parcel_07 93.35580 69.72693 52.46156        71.84810</span></span>
-<span><span class="co">#&gt; 2 Parcel_01 44.14061 94.92197 50.88637        63.31632</span></span>
-<span><span class="co">#&gt; 3 Parcel_08 64.45627 73.31753 48.98929        62.25436</span></span>
-<span><span class="co">#&gt; 4 Parcel_18 63.04992 62.97529 54.28779        60.10433</span></span>
-<span><span class="co">#&gt; 5 Parcel_04 28.87016 58.41750 82.49126        56.59298</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_B</span>, <span class="va">family_C</span>, <span class="va">family_N</span>, <span class="va">composite_score</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   parcel_id family_B family_C family_N composite_score</span></span>
+<span><span class="co">#&gt; 1       P07 93.35580 69.72693 52.46156        71.84810</span></span>
+<span><span class="co">#&gt; 2       P01 44.14061 94.92197 50.88637        63.31632</span></span>
+<span><span class="co">#&gt; 3       P08 64.45627 73.31753 48.98929        62.25436</span></span>
+<span><span class="co">#&gt; 4       P18 63.04992 62.97529 54.28779        60.10433</span></span>
+<span><span class="co">#&gt; 5       P04 28.87016 58.41750 82.49126        56.59298</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="visualisation-de-la-sélection">Visualisation de la Sélection<a class="anchor" aria-label="anchor" href="#visualisation-de-la-s%C3%A9lection"></a>
@@ -521,7 +568,7 @@ carbone, et la naturalité.</p>
 <code class="sourceCode R"><span><span class="co"># Cartographier les 5 parcelles sélectionnées</span></span>
 <span><span class="va">conservation_pareto</span> <span class="op">&lt;-</span> <span class="va">conservation_pareto</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    selected <span class="op">=</span> <span class="va">name</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="va">top5</span><span class="op">$</span><span class="va">name</span></span>
+<span>    selected <span class="op">=</span> <span class="va">parcel_id</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="va">top5</span><span class="op">$</span><span class="va">parcel_id</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">conservation_pareto</span><span class="op">)</span> <span class="op">+</span></span>
@@ -564,7 +611,7 @@ profils multi-familles des parcelles.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clustering sur 8 familles représentatives</span></span>
 <span><span class="va">zonage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units_extended</span>,</span>
+<span>  <span class="va">massif_demo_units</span>,</span>
 <span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_W"</span>, <span class="st">"family_N"</span>, <span class="co"># Conservation</span></span>
 <span>    <span class="st">"family_P"</span>, <span class="st">"family_E"</span>, <span class="co"># Production</span></span>
@@ -578,10 +625,10 @@ profils multi-familles des parcelles.</p>
 <span><span class="va">profiles_zonage</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">zonage</span>, <span class="st">"cluster_profile"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">profiles_zonage</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   family_C family_B family_W family_N family_P  family_E family_S family_A</span></span>
-<span><span class="co">#&gt; 1 35.63441 62.98255 49.48810 42.18054 82.87250 65.451418 29.33653 74.05585</span></span>
-<span><span class="co">#&gt; 2 57.75064 63.41323 43.62682 28.05449 58.17645  8.948895 65.43480 42.88935</span></span>
-<span><span class="co">#&gt; 3 77.27847 48.11494 12.60870 33.16677 36.40858 18.554559 41.34474 42.24662</span></span>
-<span><span class="co">#&gt; 4 65.20213 32.08343 53.14786 37.58738 49.92845  9.802700 29.53996 65.46039</span></span>
+<span><span class="co">#&gt; 1 57.75064 63.41323 43.62682 28.05449 58.17645  8.948895 65.43480 42.88935</span></span>
+<span><span class="co">#&gt; 2 35.63441 62.98255 49.48810 42.18054 82.87250 65.451418 29.33653 74.05585</span></span>
+<span><span class="co">#&gt; 3 65.20213 32.08343 53.14786 37.58738 49.92845  9.802700 29.53996 65.46039</span></span>
+<span><span class="co">#&gt; 4 77.27847 48.11494 12.60870 33.16677 36.40858 18.554559 41.34474 42.24662</span></span>
 <span></span>
 <span><span class="co"># Attribuer des noms de zones selon les profils</span></span>
 <span><span class="va">zonage</span> <span class="op">&lt;-</span> <span class="va">zonage</span> <span class="op">|&gt;</span></span>
@@ -598,9 +645,9 @@ profils multi-familles des parcelles.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">zonage</span><span class="op">$</span><span class="va">zone_name</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Conservation intégrale          Gestion mixte     Production durable </span></span>
-<span><span class="co">#&gt;                      3                      6                      8 </span></span>
+<span><span class="co">#&gt;                      8                      3                      3 </span></span>
 <span><span class="co">#&gt;        Usage récréatif </span></span>
-<span><span class="co">#&gt;                      3</span></span></code></pre></div>
+<span><span class="co">#&gt;                      6</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="carte-du-zonage">Carte du Zonage<a class="anchor" aria-label="anchor" href="#carte-du-zonage"></a>
@@ -634,17 +681,17 @@ profils multi-familles des parcelles.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 7</span></span></span>
 <span><span class="co">#&gt;   zone_name              n_parcelles C_mean B_mean P_mean S_mean N_mean</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Conservation intégrale           3   35.6   63.0   82.9   29.3   42.2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Gestion mixte                    6   65.2   32.1   49.9   29.5   37.6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Production durable               8   57.8   63.4   58.2   65.4   28.0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Usage récréatif                  3   77.3   48.1   36.4   41.3   33.2</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Conservation intégrale           8   57.8   63.4   58.2   65.4   28.0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Gestion mixte                    3   77.3   48.1   36.4   41.3   33.2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Production durable               3   35.6   63.0   82.9   29.3   42.2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Usage récréatif                  6   65.2   32.1   49.9   29.5   37.6</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
 <p>Cette vignette a présenté les outils d’optimisation multi-critères du
-package <code>nemeton</code> (v0.4.0) :</p>
+package <code>nemeton</code> :</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Analyse de Pareto</strong> : Identifier les solutions
@@ -677,7 +724,7 @@ différents objectifs de gestion</li>
 </h2>
 <ul>
 <li>Obstétar, P. (2025). <em>nemeton: Ecosystem Services Assessment for
-Forest Management</em>. R package version 0.4.0.</li>
+Forest Management</em>. R package.</li>
 <li>Miettinen, K. (1998). <em>Nonlinear Multiobjective
 Optimization</em>. Springer.</li>
 <li>Jain, A. K., Murty, M. N., &amp; Flynn, P. J. (1999). <em>Data

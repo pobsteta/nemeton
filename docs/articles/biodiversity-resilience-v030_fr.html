@@ -5,12 +5,17 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Biodiversité, Résilience &amp; Services Climatiques (v0.3.0) • nemeton</title>
+<title>Biodiversité, Résilience &amp; Services Climatiques • nemeton</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.1/jquery-3.6.1.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Biodiversité, Résilience &amp; Services Climatiques (v0.3.0)">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Biodiversité, Résilience &amp; Services Climatiques">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -63,11 +68,11 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.svg" class="logo" alt=""><h1>Biodiversité, Résilience &amp; Services Climatiques (v0.3.0)</h1>
+      <img src="../logo.svg" class="logo" alt=""><h1>Biodiversité, Résilience &amp; Services Climatiques</h1>
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-01-24</h4>
+            <h4 data-toc-skip class="date">2026-01-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/HEAD/vignettes/biodiversity-resilience-v030_fr.Rmd" class="external-link"><code>vignettes/biodiversity-resilience-v030_fr.Rmd</code></a></small>
       <div class="d-none name"><code>biodiversity-resilience-v030_fr.Rmd</code></div>
@@ -78,12 +83,12 @@ Obstétar</h4>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>La version 0.3.0 de <code>nemeton</code> étend le référentiel
-d’indicateurs avec <strong>4 nouvelles familles</strong> couvrant la
-biodiversité, la résilience aux risques, les dynamiques temporelles et
-les services climatiques. Cette vignette démontre l’utilisation des
-<strong>10 nouveaux indicateurs</strong> (B1-B3, R1-R3, T1-T2, A1-A2) et
-leur intégration dans des workflows multi-familles.</p>
+<p><code>nemeton</code> propose un référentiel d’indicateurs avec
+<strong>4 familles</strong> couvrant la biodiversité, la résilience aux
+risques, les dynamiques temporelles et les services climatiques. Cette
+vignette démontre l’utilisation des <strong>10 indicateurs</strong>
+(B1-B3, R1-R3, T1-T2, A1-A2) et leur intégration dans des workflows
+multi-familles.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
@@ -300,7 +305,7 @@ ATMO ou sources de pollution pour un usage réel.</em></p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="workflow-multi-familles-v0-3-0">Workflow Multi-Familles v0.3.0<a class="anchor" aria-label="anchor" href="#workflow-multi-familles-v0-3-0"></a>
+<h2 id="workflow-multi-familles">Workflow Multi-Familles<a class="anchor" aria-label="anchor" href="#workflow-multi-familles"></a>
 </h2>
 <div class="section level3">
 <h3 id="normalisation-et-agrégation">Normalisation et agrégation<a class="anchor" aria-label="anchor" href="#normalisation-et-agr%C3%A9gation"></a>
@@ -373,17 +378,17 @@ facteur limitant (risque le plus élevé).</p>
 <h2 id="visualisation-radar-multi-axes">Visualisation Radar Multi-Axes<a class="anchor" aria-label="anchor" href="#visualisation-radar-multi-axes"></a>
 </h2>
 <div class="section level3">
-<h3 id="radar-à-4-familles-nouvelles-v0-3-0">Radar à 4 familles (nouvelles v0.3.0)<a class="anchor" aria-label="anchor" href="#radar-%C3%A0-4-familles-nouvelles-v0-3-0"></a>
+<h3 id="radar-à-4-familles">Radar à 4 familles<a class="anchor" aria-label="anchor" href="#radar-%C3%A0-4-familles"></a>
 </h3>
 <p>Visualisons le profil écosystémique d’une parcelle avec les 4
-nouvelles familles :</p>
+familles :</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Radar pour une parcelle (4 nouvelles familles)</span></span>
+<code class="sourceCode R"><span><span class="co"># Radar pour une parcelle (4 familles)</span></span>
 <span><span class="fu"><a href="../reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span></span>
 <span>  <span class="va">result_norm</span>,</span>
 <span>  unit_id <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  mode <span class="op">=</span> <span class="st">"family"</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Profil v0.3.0 - Parcelle 1 (nouvelles familles)"</span></span>
+<span>  title <span class="op">=</span> <span class="st">"Profil - Parcelle 1"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><img src="biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="672"></p>
 </div>
@@ -391,7 +396,7 @@ nouvelles familles :</p>
 <h3 id="radar-complet-avec-toutes-les-familles-disponibles">Radar complet avec toutes les familles disponibles<a class="anchor" aria-label="anchor" href="#radar-complet-avec-toutes-les-familles-disponibles"></a>
 </h3>
 <p>Pour voir l’ensemble des services écosystémiques, ajoutons aussi les
-familles v0.2.0 existantes :</p>
+autres familles :</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Ajouter quelques indicateurs des familles existantes pour démonstration</span></span>
 <span><span class="va">result_norm</span><span class="op">$</span><span class="va">C1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">40</span>, <span class="fl">90</span><span class="op">)</span> <span class="co"># Carbon biomass</span></span>
@@ -423,10 +428,10 @@ familles v0.2.0 existantes :</p>
 <p><img src="biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
-<h3 id="comparaison-de-parcelles-nouveau-v0-3-0">Comparaison de parcelles (NOUVEAU v0.3.0)<a class="anchor" aria-label="anchor" href="#comparaison-de-parcelles-nouveau-v0-3-0"></a>
+<h3 id="comparaison-de-parcelles">Comparaison de parcelles<a class="anchor" aria-label="anchor" href="#comparaison-de-parcelles"></a>
 </h3>
-<p>La v0.3.0 introduit le <strong>mode comparaison</strong> pour
-visualiser plusieurs parcelles simultanément :</p>
+<p><code>nemeton</code> propose le <strong>mode comparaison</strong>
+pour visualiser plusieurs parcelles simultanément :</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Comparer 3 parcelles sur le même radar</span></span>
 <span><span class="fu"><a href="../reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span></span>
@@ -544,7 +549,7 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 </h2>
 <p>Vue d’ensemble des indicateurs calculés :</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Résumé des 10 nouveaux indicateurs v0.3.0</span></span>
+<code class="sourceCode R"><span><span class="co"># Résumé des indicateurs</span></span>
 <span><span class="va">summary_table</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
@@ -577,26 +582,15 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
-<p>La version <strong>0.3.0</strong> de nemeton apporte :</p>
+<p>Cette vignette a présenté :</p>
 <ul>
-<li>✅ <strong>10 nouveaux indicateurs</strong> (B1-B3, R1-R3, T1-T2,
-A1-A2)</li>
-<li>✅ <strong>4 nouvelles familles</strong> (Biodiversité, Risques,
-Temps, Air)</li>
-<li>✅ <strong>8 familles sur 12</strong> maintenant implémentées (avec
-données complètes)</li>
-<li>✅ Méthode d’agrégation <strong>“min”</strong> pour analyses de
+<li>
+<strong>10 indicateurs</strong> (B1-B3, R1-R3, T1-T2, A1-A2)</li>
+<li>
+<strong>4 familles</strong> (Biodiversité, Risques, Temps, Air)</li>
+<li>Méthode d’agrégation <strong>“min”</strong> pour analyses de
 risque</li>
-<li>✅ Mode <strong>comparaison</strong> pour radars
-multi-parcelles</li>
-<li>✅ <strong>845+ tests</strong> avec 87.35% de couverture</li>
-</ul>
-<p><strong>Prochaines étapes (v0.4.0)</strong> :</p>
-<ul>
-<li>Familles S (Social), P (Production), E (Énergie), N
-(Naturalité)</li>
-<li>Analyses d’incertitude Monte Carlo</li>
-<li>Intégration avancée de données externes</li>
+<li>Mode <strong>comparaison</strong> pour radars multi-parcelles</li>
 </ul>
 <p><strong>Ressources</strong> :</p>
 <ul>

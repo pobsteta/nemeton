@@ -52,7 +52,7 @@ indicator_productive_station(
 
 ## Value
 
-sf object with added column: P2 (annual increment in m³/ha/yr)
+sf object with added column: P2 (annual increment in m3/ha/yr)
 
 ## Details
 
@@ -60,9 +60,9 @@ sf object with added column: P2 (annual increment in m³/ha/yr)
 
 - Lookup reference productivity from ONF/IFN tables
 
-- Match by species × fertility class × climate zone
+- Match by species x fertility class x climate zone
 
-- P2 = annual increment (m³/ha/year) for the site
+- P2 = annual increment (m3/ha/year) for the site
 
 \*\*Fertility Classes\*\*:
 

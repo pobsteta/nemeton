@@ -16,6 +16,8 @@ indicator_temporal_change(
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
+\item{layers}{A nemeton_layers object (optional, not used in this indicator).}
+
 \item{land_cover_early}{A SpatRaster with early land cover classification.}
 
 \item{land_cover_late}{A SpatRaster with late land cover classification.}

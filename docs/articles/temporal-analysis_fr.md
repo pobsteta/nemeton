@@ -51,7 +51,7 @@ temporal_data <- nemeton_temporal(
       layers = layers_2025
     )
   ),
-  unit_id = "parcel_id"  # Colonne identifiant les parcelles
+  unit_id = "parcel_id" # Colonne identifiant les parcelles
 )
 ```
 
@@ -84,7 +84,7 @@ print(temporal)
 # Calculer automatiquement pour toutes les périodes
 temporal_results <- nemeton_compute(
   temporal,
-  indicators = c("carbon", "biodiversity", "water")
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi")
 )
 
 # Afficher la structure
@@ -102,7 +102,7 @@ calculés pour chaque période.
 # Calculer le taux de changement annuel (%)
 change_rates <- calculate_change_rate(
   temporal_results,
-  indicators = c("carbon", "biodiversity", "water"),
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
   period_start = "2015",
   period_end = "2025"
 )
@@ -120,10 +120,10 @@ Diminution - Taux en %/an
 # Calculer les différences entre 2020 et 2025
 differences <- calculate_change_rate(
   temporal_results,
-  indicators = "carbon",
+  indicators = "carbon_biomass",
   period_start = "2020",
   period_end = "2025",
-  method = "absolute"  # Différence absolue au lieu de taux
+  method = "absolute" # Différence absolue au lieu de taux
 )
 ```
 
@@ -136,7 +136,7 @@ differences <- calculate_change_rate(
 plot_temporal_trend(
   temporal_results,
   unit_id = "P01",
-  indicators = c("carbon", "biodiversity", "water"),
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
   title = "Évolution des indicateurs - Parcelle P01"
 )
 ```
@@ -147,7 +147,7 @@ plot_temporal_trend(
 # Heatmap de tous les indicateurs sur toutes les périodes
 plot_temporal_heatmap(
   temporal_results,
-  indicators = c("carbon", "biodiversity", "water", "fragmentation"),
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi", "landscape_fragmentation"),
   title = "Heatmap temporelle - Tous indicateurs"
 )
 ```
@@ -193,7 +193,7 @@ temporal_intervention <- nemeton_temporal(
 # 2. Calculer indicateurs
 results <- nemeton_compute(
   temporal_intervention,
-  indicators = c("carbon", "biodiversity", "water", "fragmentation")
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi", "landscape_fragmentation")
 )
 
 # 3. Analyser les impacts
@@ -201,21 +201,21 @@ impact_2020 <- calculate_change_rate(
   results,
   period_start = "avant_2018",
   period_end = "apres_2020",
-  indicators = c("carbon", "biodiversity")
+  indicators = c("carbon", "biodiversity_protection")
 )
 
 recovery_2025 <- calculate_change_rate(
   results,
   period_start = "apres_2020",
   period_end = "suivi_2025",
-  indicators = c("carbon", "biodiversity")
+  indicators = c("carbon", "biodiversity_protection")
 )
 
 # 4. Visualiser trajectoire
 plot_temporal_trend(
   results,
   unit_id = "PARCEL_INTERV_01",
-  indicators = c("carbon", "biodiversity"),
+  indicators = c("carbon", "biodiversity_protection"),
   title = "Trajectoire post-intervention"
 )
 ```
@@ -228,14 +228,14 @@ plot_temporal_trend(
 # Calculer taux de changement
 rates <- calculate_change_rate(
   temporal_results,
-  indicators = "carbon",
+  indicators = "carbon_biomass",
   period_start = "2015",
   period_end = "2025"
 )
 
 # Filtrer les parcelles avec forte dynamique
-high_change <- rates %>%
-  filter(abs(carbon_rate) > 2.0)  # > ±2% par an
+high_change <- rates |>
+  filter(abs(carbon_rate) > 2.0) # > ±2% par an
 
 # Visualiser sur carte
 plot_indicators_map(
@@ -251,7 +251,7 @@ plot_indicators_map(
 
 ``` r
 # Classer les trajectoires
-rates <- rates %>%
+rates <- rates |>
   mutate(
     trajectory = case_when(
       carbon_rate > 1.0 ~ "Forte augmentation",
@@ -274,9 +274,9 @@ table(rates$trajectory)
 # Normaliser les indicateurs de chaque période séparément
 temporal_norm <- normalize_indicators(
   temporal_results,
-  indicators = c("carbon", "biodiversity", "water"),
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
   method = "minmax",
-  by_period = TRUE  # Normalisation intra-période
+  by_period = TRUE # Normalisation intra-période
 )
 ```
 
@@ -288,9 +288,9 @@ temporal_norm <- normalize_indicators(
 # Normaliser sur toutes les périodes ensemble
 temporal_norm_global <- normalize_indicators(
   temporal_results,
-  indicators = c("carbon", "biodiversity", "water"),
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
   method = "minmax",
-  by_period = FALSE  # Normalisation sur toutes les données
+  by_period = FALSE # Normalisation sur toutes les données
 )
 ```
 
@@ -322,8 +322,8 @@ plot_temporal_trend(
 
 ``` r
 # Créer tableau récapitulatif
-summary_table <- temporal_results %>%
-  group_by(period) %>%
+summary_table <- temporal_results |>
+  group_by(period) |>
   summarise(
     carbon_mean = mean(carbon, na.rm = TRUE),
     carbon_sd = sd(carbon, na.rm = TRUE),
@@ -348,7 +348,7 @@ write.csv(
 for (period in c("2015", "2020", "2025")) {
   p <- plot_indicators_map(
     temporal_results[[period]],
-    indicators = "carbon",
+    indicators = "carbon_biomass",
     title = paste("Stock carbone -", period)
   )
   ggsave(
@@ -384,12 +384,12 @@ for (period in c("2015", "2020", "2025")) {
 
 ## Limitations et perspectives
 
-**Version actuelle (v0.2.0)** : - Framework de base pour 2-3 périodes -
+**Fonctionnalités actuelles** : - Framework de base pour 2-3 périodes -
 Taux de changement linéaires - Visualisations standard
 
-**Développements futurs (v0.3.0+)** : - Modèles de tendances
-non-linéaires - Détection automatique de ruptures (breakpoints) -
-Analyse d’incertitude temporelle - Projections et scénarios
+**Développements futurs** : - Modèles de tendances non-linéaires -
+Détection automatique de ruptures (breakpoints) - Analyse d’incertitude
+temporelle - Projections et scénarios
 
 ## Références
 
@@ -413,12 +413,10 @@ sessionInfo()
 #> LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=fr_FR.UTF-8       LC_NUMERIC=C              
-#>  [3] LC_TIME=fr_FR.UTF-8        LC_COLLATE=fr_FR.UTF-8    
-#>  [5] LC_MONETARY=fr_FR.UTF-8    LC_MESSAGES=fr_FR.UTF-8   
-#>  [7] LC_PAPER=fr_FR.UTF-8       LC_NAME=C                 
-#>  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-#> [11] LC_MEASUREMENT=fr_FR.UTF-8 LC_IDENTIFICATION=C       
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 #> 
 #> time zone: Europe/Paris
 #> tzcode source: system (glibc)
@@ -427,20 +425,20 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1 nemeton_0.4.0
+#> [1] ggplot2_4.0.1 nemeton_0.6.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    
-#>  [5] tidyselect_1.2.1   Rcpp_1.1.0         dichromat_2.0-0.1  jquerylib_0.1.4   
+#>  [5] tidyselect_1.2.1   Rcpp_1.1.1         dichromat_2.0-0.1  jquerylib_0.1.4   
 #>  [9] systemfonts_1.3.1  scales_1.4.0       textshaping_1.0.4  yaml_2.3.12       
 #> [13] fastmap_1.2.0      R6_2.6.1           generics_0.1.4     classInt_0.4-11   
-#> [17] sf_1.0-23          knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.0      
+#> [17] sf_1.0-23          knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.1      
 #> [21] desc_1.4.3         units_1.0-0        DBI_1.2.3          pillar_1.11.1     
-#> [25] RColorBrewer_1.1-3 bslib_0.9.0        rlang_1.1.6        cachem_1.1.0      
-#> [29] terra_1.8-86       xfun_0.55          S7_0.2.1           fs_1.6.6          
+#> [25] RColorBrewer_1.1-3 bslib_0.9.0        rlang_1.1.7        cachem_1.1.0      
+#> [29] terra_1.8-93       xfun_0.55          S7_0.2.1           fs_1.6.6          
 #> [33] sass_0.4.10        otel_0.2.0         cli_3.6.5          withr_3.0.2       
 #> [37] pkgdown_2.2.0      magrittr_2.0.4     class_7.3-23       digest_0.6.39     
-#> [41] grid_4.5.2         lifecycle_1.0.4    vctrs_0.6.5        KernSmooth_2.23-26
+#> [41] grid_4.5.2         lifecycle_1.0.5    vctrs_0.6.5        KernSmooth_2.23-26
 #> [45] proxy_0.4-29       evaluate_1.0.5     glue_1.8.0         farver_2.1.2      
 #> [49] codetools_0.2-20   ragg_1.5.0         e1071_1.7-17       rmarkdown_2.30    
 #> [53] pkgconfig_2.0.3    tools_4.5.2        htmltools_0.5.9

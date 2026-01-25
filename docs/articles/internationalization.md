@@ -63,7 +63,7 @@ la langue définie.
 nemeton_set_language("fr")
 
 # Erreur si données manquantes
-nemeton_compute(NULL, NULL, "carbon")
+nemeton_compute(NULL, NULL, "carbon_biomass")
 # Erreur : Les données 'data' doivent être un objet sf
 ```
 
@@ -73,7 +73,7 @@ nemeton_compute(NULL, NULL, "carbon")
 nemeton_set_language("en")
 
 # Error with missing data
-nemeton_compute(NULL, NULL, "carbon")
+nemeton_compute(NULL, NULL, "carbon_biomass")
 # Error: 'data' must be an sf object
 ```
 
@@ -186,14 +186,14 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = "carbon"
+  indicators = "carbon_biomass"
 )
 # ℹ Calcul de 1 indicateurs...
 # ✔ 1/1 indicateurs calculés
 
 plot_indicators_map(
   results,
-  indicators = "carbon",
+  indicators = "carbon_biomass",
   title = "Stock de carbone",
   legend_title = "Mg C/parcel"
 )
@@ -207,14 +207,14 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = "carbon"
+  indicators = "carbon_biomass"
 )
 # ℹ Computing 1 indicators...
 # ✔ 1/1 indicators computed
 
 plot_indicators_map(
   results,
-  indicators = "carbon",
+  indicators = "carbon_biomass",
   title = "Carbon Stock",
   legend_title = "Mg C/parcel"
 )
@@ -255,12 +255,10 @@ sessionInfo()
 #> LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=fr_FR.UTF-8       LC_NUMERIC=C              
-#>  [3] LC_TIME=fr_FR.UTF-8        LC_COLLATE=fr_FR.UTF-8    
-#>  [5] LC_MONETARY=fr_FR.UTF-8    LC_MESSAGES=fr_FR.UTF-8   
-#>  [7] LC_PAPER=fr_FR.UTF-8       LC_NAME=C                 
-#>  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-#> [11] LC_MEASUREMENT=fr_FR.UTF-8 LC_IDENTIFICATION=C       
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 #> 
 #> time zone: Europe/Paris
 #> tzcode source: system (glibc)
@@ -269,16 +267,16 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] nemeton_0.4.0
+#> [1] nemeton_0.6.2
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] terra_1.8-86       cli_3.6.5          knitr_1.51         rlang_1.1.6       
+#>  [1] terra_1.8-93       cli_3.6.5          knitr_1.51         rlang_1.1.7       
 #>  [5] xfun_0.55          KernSmooth_2.23-26 otel_0.2.0         DBI_1.2.3         
 #>  [9] textshaping_1.0.4  sf_1.0-23          jsonlite_2.0.0     glue_1.8.0        
 #> [13] e1071_1.7-17       htmltools_0.5.9    ragg_1.5.0         sass_0.4.10       
 #> [17] rmarkdown_2.30     grid_4.5.2         classInt_0.4-11    evaluate_1.0.5    
-#> [21] jquerylib_0.1.4    fastmap_1.2.0      yaml_2.3.12        lifecycle_1.0.4   
-#> [25] compiler_4.5.2     codetools_0.2-20   fs_1.6.6           Rcpp_1.1.0        
+#> [21] jquerylib_0.1.4    fastmap_1.2.0      yaml_2.3.12        lifecycle_1.0.5   
+#> [25] compiler_4.5.2     codetools_0.2-20   fs_1.6.6           Rcpp_1.1.1        
 #> [29] htmlwidgets_1.6.4  systemfonts_1.3.1  digest_0.6.39      R6_2.6.1          
 #> [33] class_7.3-23       magrittr_2.0.4     bslib_0.9.0        proxy_0.4-29      
 #> [37] tools_4.5.2        units_1.0-0        pkgdown_2.2.0      cachem_1.1.0      

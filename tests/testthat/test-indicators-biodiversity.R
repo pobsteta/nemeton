@@ -214,3 +214,156 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
 })
 
 # Note: Regression fixture test removed - will be added when fixtures are created
+
+# ==============================================================================
+# Additional tests for better coverage
+# ==============================================================================
+
+test_that("indicator_biodiversity_protection validates input", {
+  expect_error(
+    indicator_biodiversity_protection(data.frame(x = 1:3), source = "local"),
+    "must be an.*sf.*object"
+  )
+})
+
+test_that("indicator_biodiversity_protection errors when source='local' and no protected_areas", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  expect_error(
+    indicator_biodiversity_protection(units, protected_areas = NULL, source = "local"),
+    "must be provided"
+  )
+})
+
+test_that("indicator_biodiversity_protection handles WFS source with fallback", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  # WFS source without protected_areas should warn but work
+  expect_warning(
+    result <- indicator_biodiversity_protection(units, source = "wfs"),
+    "WFS"
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+  # All should be 0 since WFS failed
+  expect_true(all(result$B1 == 0))
+})
+
+test_that("indicator_biodiversity_protection transforms CRS when needed", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  # Create protected area in different CRS
+  pa <- sf::st_sf(
+    zone_id = "Z1",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(
+        c(566400, 6615100, 567000, 6615100, 567000, 6615500, 566400, 6615500, 566400, 6615100),
+        ncol = 2, byrow = TRUE
+      ))),
+      crs = 2154
+    )
+  )
+  pa_4326 <- sf::st_transform(pa, 4326)
+
+  result <- indicator_biodiversity_protection(
+    units,
+    protected_areas = pa_4326,
+    source = "local",
+    preprocess = TRUE
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+})
+
+test_that("indicator_biodiversity_structure validates input", {
+  expect_error(
+    indicator_biodiversity_structure(data.frame(x = 1:3)),
+    "must be an.*sf.*object"
+  )
+})
+
+test_that("indicator_biodiversity_structure errors when required fields missing", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  # Missing strata/age fields should error
+  expect_error(
+    indicator_biodiversity_structure(
+      units,
+      strata_field = "nonexistent_field",
+      age_class_field = "nonexistent_field"
+    ),
+    "not found"
+  )
+})
+
+test_that("indicator_biodiversity_structure uses species field when provided", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:5, ]
+
+  units$species <- c("Quercus", "Fagus", "Pinus", "Quercus", "Fagus")
+  units$strata_classes <- sample(c("Dominant", "Intermediate"), 5, replace = TRUE)
+
+  result <- indicator_biodiversity_structure(
+    units,
+    strata_field = "strata_classes",
+    species_field = "species"
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("B2" %in% names(result))
+})
+
+test_that("indicator_biodiversity_connectivity validates input", {
+  expect_error(
+    indicator_biodiversity_connectivity(data.frame(x = 1:3)),
+    "must be an.*sf.*object"
+  )
+})
+
+test_that("indicator_biodiversity_connectivity handles empty corridors", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  empty_corridors <- sf::st_sf(
+    corridor_id = character(0),
+    geometry = sf::st_sfc(crs = sf::st_crs(units))
+  )
+
+  result <- indicator_biodiversity_connectivity(
+    units,
+    corridors = empty_corridors
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
+})
+
+test_that("indicator_biodiversity_connectivity uses centroid method", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  # Create corridor
+  bbox <- sf::st_bbox(units)
+  corridor <- sf::st_sf(
+    corridor_id = "C1",
+    geometry = sf::st_sfc(
+      sf::st_point(c(mean(c(bbox["xmin"], bbox["xmax"])), mean(c(bbox["ymin"], bbox["ymax"])))),
+      crs = sf::st_crs(units)
+    )
+  )
+
+  result <- indicator_biodiversity_connectivity(
+    units,
+    corridors = corridor,
+    distance_method = "centroid"
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
+})

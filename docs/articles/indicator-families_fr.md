@@ -8,9 +8,6 @@ dimensions biophysiques, écologiques et socio-économiques. Cette
 vignette présente le référentiel complet et démontre l’utilisation du
 système de familles.
 
-**Version actuelle : v0.3.0** - **9 familles sur 12 implémentées** avec
-23 indicateurs opérationnels.
-
 ``` r
 library(nemeton)
 library(ggplot2)
@@ -127,32 +124,32 @@ landscape_edge <- nemeton_compute(
 **Interprétation** : - L1 faible : Continuité forestière - L2 élevé :
 Forte proportion de lisière (effet de bord)
 
-### Famille B : Biodiversité (v0.3.0)
+### Famille B : Biodiversité
 
 ``` r
 # B1 - Protection réglementaire (% surface en zones protégées)
 biodiversity_protection <- indicator_biodiversity_protection(
   units,
-  protected_areas = protected_areas,  # sf object ZNIEFF, Natura2000
-  source = "local"  # ou "wfs" pour téléchargement automatique
+  protected_areas = protected_areas, # sf object ZNIEFF, Natura2000
+  source = "local" # ou "wfs" pour téléchargement automatique
 )
 
 # B2 - Diversité structurelle (Shannon)
 biodiversity_structure <- indicator_biodiversity_structure(
   units,
-  strata_field = "strata",          # Strates (Emergent, Dominant, etc.)
-  age_class_field = "age_class",    # Classes d'âge
-  species_field = "species",        # Essences
-  method = "shannon",               # ou "simpson"
+  strata_field = "strata", # Strates (Emergent, Dominant, etc.)
+  age_class_field = "age_class", # Classes d'âge
+  species_field = "species", # Essences
+  method = "shannon", # ou "simpson"
   weights = c(strata = 0.4, age = 0.3, species = 0.3)
 )
 
 # B3 - Connectivité écologique (distance corridors)
 biodiversity_connectivity <- indicator_biodiversity_connectivity(
   units,
-  corridors = corridors_sf,  # Trames vertes et bleues
-  distance_method = "edge",  # ou "centroid"
-  max_distance = 3000        # Distance max en mètres
+  corridors = corridors_sf, # Trames vertes et bleues
+  distance_method = "edge", # ou "centroid"
+  max_distance = 3000 # Distance max en mètres
 )
 ```
 
@@ -160,29 +157,29 @@ biodiversity_connectivity <- indicator_biodiversity_connectivity(
 (Shannon) \> 1.5 : Diversité structurelle élevée - B3 \< 500m :
 Excellente connectivité écologique
 
-### Famille R : Risques & Résilience (v0.3.0)
+### Famille R : Risques & Résilience
 
 ``` r
 # R1 - Risque incendie (pente + essence + climat)
 risk_fire <- indicator_risk_fire(
   units,
-  dem = dem_raster,              # Modèle numérique de terrain
-  species_field = "species",     # Champ essence
-  climate = climate_data         # Température, précipitations
+  dem = dem_raster, # Modèle numérique de terrain
+  species_field = "species", # Champ essence
+  climate = climate_data # Température, précipitations
 )
 
 # R2 - Vulnérabilité tempête (hauteur + densité + exposition)
 risk_storm <- indicator_risk_storm(
   units,
   dem = dem_raster,
-  height_field = "height",       # Hauteur dominante (m)
-  density_field = "density"      # Densité (0-1)
+  height_field = "height", # Hauteur dominante (m)
+  density_field = "density" # Densité (0-1)
 )
 
 # R3 - Stress hydrique (TWI + climat + essences)
 risk_drought <- indicator_risk_drought(
   units,
-  twi_field = "W3",              # Topographic Wetness Index
+  twi_field = "W3", # Topographic Wetness Index
   climate = climate_data,
   species_field = "species"
 )
@@ -191,14 +188,14 @@ risk_drought <- indicator_risk_drought(
 **Interprétation** : - R1, R2, R3 \> 60 : Vulnérabilité élevée - Risques
 cumulés (≥2 indicateurs élevés) : Priorité gestion préventive
 
-### Famille T : Trame Temporelle (v0.3.0)
+### Famille T : Trame Temporelle
 
 ``` r
 # T1 - Ancienneté des peuplements (années)
 temporal_age <- indicator_temporal_age(
   units,
-  age_field = "age",                    # Âge actuel
-  establishment_year_field = "planted"  # Année plantation (optionnel)
+  age_field = "age", # Âge actuel
+  establishment_year_field = "planted" # Année plantation (optionnel)
 )
 
 # T2 - Changements d'occupation du sol (%/an)
@@ -207,7 +204,7 @@ temporal_change <- indicator_temporal_change(
   land_cover_early = lc_1990_raster,
   land_cover_late = lc_2020_raster,
   years_elapsed = 30,
-  interpretation = "stability"  # ou "dynamism"
+  interpretation = "stability" # ou "dynamism"
 )
 ```
 
@@ -215,23 +212,23 @@ temporal_change <- indicator_temporal_change(
 patrimoniale) - T2 \< 1%/an : Stabilité de l’occupation - T2 \> 3%/an :
 Dynamique forte (urbanisation, déprise agricole)
 
-### Famille A : Air & Microclimat (v0.3.0)
+### Famille A : Air & Microclimat
 
 ``` r
 # A1 - Couverture arborée dans buffer 1km (%)
 air_coverage <- indicator_air_coverage(
   units,
   land_cover = land_cover_raster,
-  buffer_radius = 1000  # Rayon en mètres
+  buffer_radius = 1000 # Rayon en mètres
 )
 
 # A2 - Qualité de l'air (indice ou proxy distance)
 air_quality <- indicator_air_quality(
   units,
-  roads = roads_sf,           # Réseau routier (optionnel)
-  urban_areas = urban_sf,     # Zones urbaines (optionnel)
-  atmo_data = NULL,           # Données ATMO si disponibles
-  method = "proxy"            # "atmo" si données disponibles
+  roads = roads_sf, # Réseau routier (optionnel)
+  urban_areas = urban_sf, # Zones urbaines (optionnel)
+  atmo_data = NULL, # Données ATMO si disponibles
+  method = "proxy" # "atmo" si données disponibles
 )
 ```
 
@@ -246,9 +243,9 @@ les indicateurs :
 ``` r
 # Les indicateurs bruts suivent le pattern : famille_nom
 # Exemples :
-carbon_biomass    # Famille C
-water_network     # Famille W
-soil_fertility    # Famille F
+carbon_biomass # Famille C
+water_network # Famille W
+soil_fertility # Famille F
 
 # Les indicateurs normalisés ajoutent le suffixe _norm :
 carbon_biomass_norm
@@ -286,13 +283,13 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = c("carbon", "water", "biodiversity")
+  indicators = c("carbon_biomass", "water_twi", "biodiversity_protection")
 )
 
 # Normaliser tous les indicateurs
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "water", "biodiversity"),
+  indicators = c("carbon_biomass", "water_twi", "biodiversity_protection"),
   method = "minmax"
 )
 
@@ -365,9 +362,9 @@ plot_indicators_map(
 )
 ```
 
-## Analyse croisée inter-familles (v0.3.0)
+## Analyse croisée inter-familles
 
-La v0.3.0 introduit des outils d’**analyse croisée** pour identifier
+`nemeton` propose des outils d’**analyse croisée** pour identifier
 synergies et conflits entre familles.
 
 ### Matrice de corrélations
@@ -376,15 +373,15 @@ synergies et conflits entre familles.
 # Calculer les corrélations entre indices de familles
 corr_matrix <- compute_family_correlations(
   units,
-  families = NULL,      # Auto-détection des family_*
-  method = "pearson"    # ou "spearman", "kendall"
+  families = NULL, # Auto-détection des family_*
+  method = "pearson" # ou "spearman", "kendall"
 )
 
 # Visualiser les corrélations
 plot_correlation_matrix(
   corr_matrix,
-  method = "circle",    # ou "square", "number", "color"
-  palette = "RdBu",     # Rouge=synergies, Bleu=conflits
+  method = "circle", # ou "square", "number", "color"
+  palette = "RdBu", # Rouge=synergies, Bleu=conflits
   title = "Synergies et conflits entre services écosystémiques"
 )
 ```
@@ -400,8 +397,8 @@ Conflits/trade-offs (ex: Protection × Risques) - **Corrélation faible
 # Identifier parcelles excellentes sur plusieurs familles
 hotspots <- identify_hotspots(
   units,
-  threshold = 80,      # Top 20% pour chaque famille
-  min_families = 3     # Au moins 3 familles élevées
+  threshold = 80, # Top 20% pour chaque famille
+  min_families = 3 # Au moins 3 familles élevées
 )
 
 # Filtrer les hotspots
@@ -436,16 +433,16 @@ results <- nemeton_compute(
   massif_demo_units,
   layers,
   indicators = c(
-    "carbon",        # Famille C
-    "water",         # Famille W
-    "biodiversity"   # Famille B
+    "carbon", # Famille C
+    "water", # Famille W
+    "biodiversity" # Famille B
   )
 )
 
 # 3. Normaliser
 normalized <- normalize_indicators(
   results,
-  indicators = c("carbon", "water", "biodiversity"),
+  indicators = c("carbon_biomass", "water_twi", "biodiversity_protection"),
   method = "minmax"
 )
 
@@ -485,22 +482,6 @@ list_indicators(family = "C")
 list_indicators(family = "W")
 ```
 
-## Roadmap v0.3.0 → v1.0.0
-
-**Version actuelle (v0.3.0)** : **9 familles sur 12 implémentées** (C,
-B, W, A, F, L, T, R + partiel S)
-
-**Indicateurs opérationnels** : - ✅ **23 indicateurs** pleinement
-fonctionnels - ✅ **Analyse croisée inter-familles** (corrélations,
-hotspots multi-critères) - ✅ **Infrastructure temporelle complète**
-(analyse multi-périodes, détection de changements) - ✅ **Support
-bilingue FR/EN** - ✅ **845+ tests** avec 87% de couverture
-
-**Versions futures** : - **v0.4.0** : Familles S, P complètes (usages
-sociaux, production) - **v0.5.0** : Familles E, N + Dashboard Shiny
-interactif - **v1.0.0** : Référentiel complet 12 familles (36
-indicateurs) + analyses avancées
-
 ## Références
 
 - Référentiel Nemeton : Documentation technique Vivre en Forêt
@@ -508,9 +489,8 @@ indicateurs) + analyses avancées
   [`vignette("getting-started_fr")`](https://pobsteta.github.io/nemeton/articles/getting-started_fr.md)
 - Analyse temporelle :
   [`vignette("temporal-analysis_fr")`](https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.md)
-- **Nouveautés v0.3.0** :
-  [`vignette("biodiversity-resilience-v030_fr")`](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.md) -
-  Familles B, R, T, A + Analyse croisée
+- Biodiversité et résilience :
+  [`vignette("biodiversity-resilience-v030_fr")`](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.md)
 
 ## Session Info
 
@@ -525,12 +505,10 @@ sessionInfo()
 #> LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=fr_FR.UTF-8       LC_NUMERIC=C              
-#>  [3] LC_TIME=fr_FR.UTF-8        LC_COLLATE=fr_FR.UTF-8    
-#>  [5] LC_MONETARY=fr_FR.UTF-8    LC_MESSAGES=fr_FR.UTF-8   
-#>  [7] LC_PAPER=fr_FR.UTF-8       LC_NAME=C                 
-#>  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-#> [11] LC_MEASUREMENT=fr_FR.UTF-8 LC_IDENTIFICATION=C       
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 #> 
 #> time zone: Europe/Paris
 #> tzcode source: system (glibc)
@@ -539,20 +517,20 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1 nemeton_0.4.0
+#> [1] ggplot2_4.0.1 nemeton_0.6.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    
-#>  [5] tidyselect_1.2.1   Rcpp_1.1.0         dichromat_2.0-0.1  jquerylib_0.1.4   
+#>  [5] tidyselect_1.2.1   Rcpp_1.1.1         dichromat_2.0-0.1  jquerylib_0.1.4   
 #>  [9] systemfonts_1.3.1  scales_1.4.0       textshaping_1.0.4  yaml_2.3.12       
 #> [13] fastmap_1.2.0      R6_2.6.1           generics_0.1.4     classInt_0.4-11   
-#> [17] sf_1.0-23          knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.0      
+#> [17] sf_1.0-23          knitr_1.51         htmlwidgets_1.6.4  tibble_3.3.1      
 #> [21] desc_1.4.3         units_1.0-0        DBI_1.2.3          pillar_1.11.1     
-#> [25] RColorBrewer_1.1-3 bslib_0.9.0        rlang_1.1.6        cachem_1.1.0      
-#> [29] terra_1.8-86       xfun_0.55          S7_0.2.1           fs_1.6.6          
+#> [25] RColorBrewer_1.1-3 bslib_0.9.0        rlang_1.1.7        cachem_1.1.0      
+#> [29] terra_1.8-93       xfun_0.55          S7_0.2.1           fs_1.6.6          
 #> [33] sass_0.4.10        otel_0.2.0         cli_3.6.5          withr_3.0.2       
 #> [37] pkgdown_2.2.0      magrittr_2.0.4     class_7.3-23       digest_0.6.39     
-#> [41] grid_4.5.2         lifecycle_1.0.4    vctrs_0.6.5        KernSmooth_2.23-26
+#> [41] grid_4.5.2         lifecycle_1.0.5    vctrs_0.6.5        KernSmooth_2.23-26
 #> [45] proxy_0.4-29       evaluate_1.0.5     glue_1.8.0         farver_2.1.2      
 #> [49] codetools_0.2-20   ragg_1.5.0         e1071_1.7-17       rmarkdown_2.30    
 #> [53] pkgconfig_2.0.3    tools_4.5.2        htmltools_0.5.9

@@ -395,12 +395,12 @@ for (period in c("2015", "2020", "2025")) {
 
 # Limitations et perspectives
 
-**Version actuelle (v0.2.0)** :
+**Fonctionnalités actuelles** :
 - Framework de base pour 2-3 périodes
 - Taux de changement linéaires
 - Visualisations standard
 
-**Développements futurs (v0.3.0+)** :
+**Développements futurs** :
 - Modèles de tendances non-linéaires
 - Détection automatique de ruptures (breakpoints)
 - Analyse d'incertitude temporelle

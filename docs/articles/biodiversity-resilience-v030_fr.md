@@ -1,13 +1,12 @@
-# Biodiversité, Résilience & Services Climatiques (v0.3.0)
+# Biodiversité, Résilience & Services Climatiques
 
 ## Introduction
 
-La version 0.3.0 de `nemeton` étend le référentiel d’indicateurs avec
-**4 nouvelles familles** couvrant la biodiversité, la résilience aux
-risques, les dynamiques temporelles et les services climatiques. Cette
-vignette démontre l’utilisation des **10 nouveaux indicateurs** (B1-B3,
-R1-R3, T1-T2, A1-A2) et leur intégration dans des workflows
-multi-familles.
+`nemeton` propose un référentiel d’indicateurs avec **4 familles**
+couvrant la biodiversité, la résilience aux risques, les dynamiques
+temporelles et les services climatiques. Cette vignette démontre
+l’utilisation des **10 indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2) et
+leur intégration dans des workflows multi-familles.
 
 ``` r
 library(nemeton)
@@ -29,9 +28,13 @@ units <- massif_demo_units[1:10, ]
 # Ajouter des attributs synthétiques pour les exemples
 set.seed(42)
 units$strata <- sample(c("Emergent", "Dominant", "Intermediate", "Suppressed"),
-                       10, replace = TRUE)
+  10,
+  replace = TRUE
+)
 units$age_class <- sample(c("Young", "Intermediate", "Mature", "Old", "Ancient"),
-                          10, replace = TRUE)
+  10,
+  replace = TRUE
+)
 units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), 10, replace = TRUE)
 units$age <- sample(c(45, 80, 120, 150, 200), 10, replace = TRUE)
 units$height <- runif(10, 15, 30)
@@ -137,9 +140,9 @@ avec des données DEM et climatiques.*
 # Simulation des indicateurs de risque
 # (Dans un cas réel, utiliser les fonctions avec DEM et données climatiques)
 set.seed(43)
-result$R1 <- pmin(100, pmax(0, 40 + runif(10, -20, 30)))  # Risque incendie
-result$R2 <- pmin(100, pmax(0, 45 + runif(10, -25, 35)))  # Vulnérabilité tempête
-result$R3 <- pmin(100, pmax(0, 35 + runif(10, -15, 40)))  # Stress hydrique
+result$R1 <- pmin(100, pmax(0, 40 + runif(10, -20, 30))) # Risque incendie
+result$R2 <- pmin(100, pmax(0, 45 + runif(10, -25, 35))) # Vulnérabilité tempête
+result$R3 <- pmin(100, pmax(0, 35 + runif(10, -15, 40))) # Stress hydrique
 
 # Les pins en pente ont plus de risque incendie
 result$R1[result$species == "Pinus"] <- result$R1[result$species == "Pinus"] * 1.3
@@ -167,7 +170,7 @@ L’indicateur **T1** mesure l’âge des peuplements.
 
 ``` r
 # Utiliser les âges déjà définis
-result$T1 <- result$age  # Directement l'âge en années
+result$T1 <- result$age # Directement l'âge en années
 summary(result$T1)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 #>    45.0    80.0   100.0   113.5   150.0   200.0
@@ -223,7 +226,7 @@ summary(result$A2)
 #>   62.37   65.76   78.55   77.23   87.91   92.94
 ```
 
-## Workflow Multi-Familles v0.3.0
+## Workflow Multi-Familles
 
 ### Normalisation et agrégation
 
@@ -245,9 +248,9 @@ result_norm <- create_family_index(
 )
 
 # Afficher les indices par famille
-result_norm %>%
-  st_drop_geometry() %>%
-  select(parcel_id, family_B, family_R, family_T, family_A) %>%
+result_norm |>
+  st_drop_geometry() |>
+  select(parcel_id, family_B, family_R, family_T, family_A) |>
   head()
 #>   parcel_id family_B family_R family_T family_A
 #> 1       P01 39.80832 60.45303 61.29032 50.00000
@@ -267,16 +270,16 @@ Pour les risques, utilisons la méthode **“min”** (pire cas) :
 result_risk_min <- create_family_index(
   result_norm,
   family_codes = "R",
-  method = "min"  # Score = pire indicateur
+  method = "min" # Score = pire indicateur
 )
 
 # Comparer méthodes "mean" vs "min"
-comparison <- result_norm %>%
-  st_drop_geometry() %>%
-  select(parcel_id, R1_norm, R2_norm, R3_norm, family_R) %>%
+comparison <- result_norm |>
+  st_drop_geometry() |>
+  select(parcel_id, R1_norm, R2_norm, R3_norm, family_R) |>
   mutate(
     risk_min = pmin(R1_norm, R2_norm, R3_norm)
-  ) %>%
+  ) |>
   head()
 
 comparison
@@ -294,18 +297,17 @@ comparison
 
 ## Visualisation Radar Multi-Axes
 
-### Radar à 4 familles (nouvelles v0.3.0)
+### Radar à 4 familles
 
-Visualisons le profil écosystémique d’une parcelle avec les 4 nouvelles
-familles :
+Visualisons le profil écosystémique d’une parcelle avec les 4 familles :
 
 ``` r
-# Radar pour une parcelle (4 nouvelles familles)
+# Radar pour une parcelle (4 familles)
 nemeton_radar(
   result_norm,
   unit_id = 1,
   mode = "family",
-  title = "Profil v0.3.0 - Parcelle 1 (nouvelles familles)"
+  title = "Profil - Parcelle 1"
 )
 ```
 
@@ -314,14 +316,14 @@ nemeton_radar(
 ### Radar complet avec toutes les familles disponibles
 
 Pour voir l’ensemble des services écosystémiques, ajoutons aussi les
-familles v0.2.0 existantes :
+autres familles :
 
 ``` r
 # Ajouter quelques indicateurs des familles existantes pour démonstration
-result_norm$C1 <- runif(10, 40, 90)  # Carbon biomass
-result_norm$W1 <- runif(10, 30, 80)  # Water network
-result_norm$F1 <- runif(10, 35, 85)  # Soil fertility
-result_norm$L1 <- runif(10, 25, 75)  # Landscape fragmentation
+result_norm$C1 <- runif(10, 40, 90) # Carbon biomass
+result_norm$W1 <- runif(10, 30, 80) # Water network
+result_norm$F1 <- runif(10, 35, 85) # Soil fertility
+result_norm$L1 <- runif(10, 25, 75) # Landscape fragmentation
 
 # Normaliser
 result_norm <- normalize_indicators(
@@ -350,9 +352,9 @@ nemeton_radar(
 
 ![](biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-15-1.png)
 
-### Comparaison de parcelles (NOUVEAU v0.3.0)
+### Comparaison de parcelles
 
-La v0.3.0 introduit le **mode comparaison** pour visualiser plusieurs
+`nemeton` propose le **mode comparaison** pour visualiser plusieurs
 parcelles simultanément :
 
 ``` r
@@ -377,18 +379,18 @@ biodiversité (famille B) mais forte vulnérabilité (famille R).
 Identifier les forêts anciennes à haute valeur écologique :
 
 ``` r
-hotspots_bio <- result_complete %>%
-  filter(family_B > 60, T1 > 100) %>%
+hotspots_bio <- result_complete |>
+  filter(family_B > 60, T1 > 100) |>
   arrange(desc(family_B))
 
 cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles\n")
 #> Forêts anciennes à haute biodiversité : 1 parcelles
 
 # Afficher les parcelles identifiées
-if(nrow(hotspots_bio) > 0) {
-  hotspots_bio %>%
-    st_drop_geometry() %>%
-    select(parcel_id, family_B, T1, family_R) %>%
+if (nrow(hotspots_bio) > 0) {
+  hotspots_bio |>
+    st_drop_geometry() |>
+    select(parcel_id, family_B, T1, family_R) |>
     head()
 }
 #>   parcel_id family_B  T1 family_R
@@ -400,21 +402,21 @@ if(nrow(hotspots_bio) > 0) {
 Détecter les parcelles cumulant plusieurs risques :
 
 ``` r
-multi_risques <- result_complete %>%
+multi_risques <- result_complete |>
   mutate(
     nb_risques = (R1_norm > 60) + (R2_norm > 60) + (R3_norm > 60)
-  ) %>%
-  filter(nb_risques >= 2) %>%
+  ) |>
+  filter(nb_risques >= 2) |>
   arrange(desc(nb_risques))
 
 cat("Parcelles à risques multiples (≥2) :", nrow(multi_risques), "\n")
 #> Parcelles à risques multiples (≥2) : 1
 
 # Détail des risques
-if(nrow(multi_risques) > 0) {
-  multi_risques %>%
-    st_drop_geometry() %>%
-    select(parcel_id, R1_norm, R2_norm, R3_norm, nb_risques, family_R) %>%
+if (nrow(multi_risques) > 0) {
+  multi_risques |>
+    st_drop_geometry() |>
+    select(parcel_id, R1_norm, R2_norm, R3_norm, nb_risques, family_R) |>
     head()
 }
 #>   parcel_id  R1_norm  R2_norm  R3_norm nb_risques family_R
@@ -426,17 +428,17 @@ if(nrow(multi_risques) > 0) {
 Évaluer le potentiel de régulation climatique :
 
 ``` r
-services_climat <- result_complete %>%
-  filter(A1 > 70, A2 > 70) %>%
+services_climat <- result_complete |>
+  filter(A1 > 70, A2 > 70) |>
   arrange(desc(family_A))
 
 cat("Parcelles à fort potentiel climatique :", nrow(services_climat), "\n")
 #> Parcelles à fort potentiel climatique : 1
 
-if(nrow(services_climat) > 0) {
-  services_climat %>%
-    st_drop_geometry() %>%
-    select(parcel_id, A1, A2, family_A) %>%
+if (nrow(services_climat) > 0) {
+  services_climat |>
+    st_drop_geometry() |>
+    select(parcel_id, A1, A2, family_A) |>
     head()
 }
 #>   parcel_id       A1       A2 family_A
@@ -450,14 +452,22 @@ Visualisons les indices composites pour les nouvelles familles :
 ``` r
 library(patchwork)
 
-p_bio <- plot_indicators_map(result_complete, indicator = "family_B",
-                              palette = "Greens", title = "Biodiversité (B)")
-p_risk <- plot_indicators_map(result_complete, indicator = "family_R",
-                               palette = "YlOrRd", title = "Risques (R)")
-p_temp <- plot_indicators_map(result_complete, indicator = "T1",
-                               palette = "Blues", title = "Ancienneté (T1)")
-p_air <- plot_indicators_map(result_complete, indicator = "family_A",
-                              palette = "viridis", title = "Air & Climat (A)")
+p_bio <- plot_indicators_map(result_complete,
+  indicator = "family_B",
+  palette = "Greens", title = "Biodiversité (B)"
+)
+p_risk <- plot_indicators_map(result_complete,
+  indicator = "family_R",
+  palette = "YlOrRd", title = "Risques (R)"
+)
+p_temp <- plot_indicators_map(result_complete,
+  indicator = "T1",
+  palette = "Blues", title = "Ancienneté (T1)"
+)
+p_air <- plot_indicators_map(result_complete,
+  indicator = "family_A",
+  palette = "viridis", title = "Air & Climat (A)"
+)
 
 (p_bio + p_risk) / (p_temp + p_air)
 ```
@@ -469,18 +479,20 @@ p_air <- plot_indicators_map(result_complete, indicator = "family_A",
 Vue d’ensemble des indicateurs calculés :
 
 ``` r
-# Résumé des 10 nouveaux indicateurs v0.3.0
-summary_table <- result_complete %>%
-  st_drop_geometry() %>%
-  select(parcel_id,
-         # Biodiversité
-         B1, B2, B3, family_B,
-         # Risques
-         R1, R2, R3, family_R,
-         # Temporel
-         T1, T2, family_T,
-         # Air
-         A1, A2, family_A) %>%
+# Résumé des indicateurs
+summary_table <- result_complete |>
+  st_drop_geometry() |>
+  select(
+    parcel_id,
+    # Biodiversité
+    B1, B2, B3, family_B,
+    # Risques
+    R1, R2, R3, family_R,
+    # Temporel
+    T1, T2, family_T,
+    # Air
+    A1, A2, family_A
+  ) |>
   head(5)
 
 summary_table
@@ -500,21 +512,12 @@ summary_table
 
 ## Conclusion
 
-La version **0.3.0** de nemeton apporte :
+Cette vignette a présenté :
 
-- ✅ **10 nouveaux indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2)
-- ✅ **4 nouvelles familles** (Biodiversité, Risques, Temps, Air)
-- ✅ **8 familles sur 12** maintenant implémentées (avec données
-  complètes)
-- ✅ Méthode d’agrégation **“min”** pour analyses de risque
-- ✅ Mode **comparaison** pour radars multi-parcelles
-- ✅ **845+ tests** avec 87.35% de couverture
-
-**Prochaines étapes (v0.4.0)** :
-
-- Familles S (Social), P (Production), E (Énergie), N (Naturalité)
-- Analyses d’incertitude Monte Carlo
-- Intégration avancée de données externes
+- **10 indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2)
+- **4 familles** (Biodiversité, Risques, Temps, Air)
+- Méthode d’agrégation **“min”** pour analyses de risque
+- Mode **comparaison** pour radars multi-parcelles
 
 **Ressources** :
 

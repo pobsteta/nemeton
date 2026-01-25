@@ -12,6 +12,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-05
 - R \>= 4.0.0 (targeting R 4.1.0+ for compatibility with existing
   codebase) (001-mvp-v0.4.0)
 
+- R \>= 4.0.0 (compatible avec nemeton v0.4.0) (001-learnr-tutorial)
+
 - R \>= 4.1.0 (constitution minimum 4.1.0, recommend 4.3.0+ for
   performance) (001-mvp-v0.2.0)
 
@@ -33,10 +35,8 @@ performance): Follow standard conventions
 
 ## Recent Changes
 
+- 001-learnr-tutorial: Added R \>= 4.0.0 (compatible avec nemeton
+  v0.4.0)
 - 001-mvp-v0.4.0: Added R \>= 4.0.0 (targeting R 4.1.0+ for
   compatibility with existing codebase)
-
 - 001-mvp-v0-3-0: Added R \>= 4.0.0 (v0.2.0 uses R 4.5.2)
-
-- 001-mvp-v0.2.0: Added R \>= 4.1.0 (constitution minimum 4.1.0,
-  recommend 4.3.0+ for performance)

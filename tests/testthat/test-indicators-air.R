@@ -229,3 +229,70 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
 })
 
 # Note: Regression fixture test removed - will be added when fixtures are created
+
+# ==============================================================================
+# Additional tests for better coverage
+# ==============================================================================
+
+test_that("indicator_air_coverage validates input", {
+  expect_error(
+    indicator_air_coverage(data.frame(x = 1:3)),
+    "must be an.*sf.*object"
+  )
+})
+
+test_that("indicator_air_coverage handles missing land_cover", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  expect_error(
+    indicator_air_coverage(units, land_cover = NULL),
+    "land_cover"
+  )
+})
+
+test_that("indicator_air_coverage works with custom forest classes", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:2, ]
+
+  land_cover <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
+
+  # Custom classes
+  result <- indicator_air_coverage(
+    units,
+    land_cover = land_cover,
+    forest_classes = c(311)  # Only broadleaf
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("A1" %in% names(result))
+})
+
+test_that("indicator_air_quality validates input", {
+  expect_error(
+    indicator_air_quality(data.frame(x = 1:3)),
+    "must be an.*sf.*object"
+  )
+})
+
+test_that("indicator_air_quality handles empty ATMO data", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:2, ]
+
+  # Empty ATMO data
+  atmo_empty <- sf::st_sf(
+    station_id = character(0),
+    NO2 = numeric(0),
+    PM10 = numeric(0),
+    geometry = sf::st_sfc(crs = sf::st_crs(units))
+  )
+
+  # Should either error or produce NA/0 values
+  result <- tryCatch(
+    indicator_air_quality(units, atmo_data = atmo_empty, method = "direct"),
+    error = function(e) NULL
+  )
+
+  # Either returns NULL (error) or a valid sf with A2 column
+  expect_true(is.null(result) || (inherits(result, "sf") && "A2" %in% names(result)))
+})

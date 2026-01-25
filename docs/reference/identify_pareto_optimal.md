@@ -63,11 +63,11 @@ objectives - Benchmarking parcel performance across multiple dimensions
 ``` r
 if (FALSE) { # \dontrun{
 # Load demo dataset
-data("massif_demo_units_extended")
+data("massif_demo_units")
 
 # Find parcels that are optimal for carbon, biodiversity, and production
 result <- identify_pareto_optimal(
-  massif_demo_units_extended,
+  massif_demo_units,
   objectives = c("family_C", "family_B", "family_P"),
   maximize = c(TRUE, TRUE, TRUE)
 )
@@ -77,7 +77,7 @@ sum(result$is_optimal)
 
 # Mixed objectives: maximize carbon and biodiversity, minimize fire risk
 result_mixed <- identify_pareto_optimal(
-  massif_demo_units_extended,
+  massif_demo_units,
   objectives = c("family_C", "family_B", "family_R"),
   maximize = c(TRUE, TRUE, FALSE)
 )
@@ -87,7 +87,9 @@ library(ggplot2)
 ggplot(result, aes(x = family_C, y = family_B, color = is_optimal)) +
   geom_point(size = 3) +
   scale_color_manual(values = c("gray", "red")) +
-  labs(title = "Pareto Optimal Parcels",
-       x = "Carbon Storage", y = "Biodiversity")
+  labs(
+    title = "Pareto Optimal Parcels",
+    x = "Carbon Storage", y = "Biodiversity"
+  )
 } # }
 ```

@@ -1,5 +1,436 @@
 # Changelog
 
+## nemeton 0.6.2
+
+**Date**: 2026-01-24
+
+#### Changes
+
+- **Data consolidation**: Merged `massif_demo_units` and
+  `massif_demo_units_extended` into a single dataset with 89 columns (29
+  indicators, 12 family composites, normalized values)
+- **Tests**: Fixed 19 skipped tests, now 1478 tests passing (0 skipped)
+- **Documentation**: Simplified README from 846 to 138 lines
+- **Fixtures**: Added synthetic cadastral file for integration tests
+
+------------------------------------------------------------------------
+
+## nemeton 0.6.1
+
+**Date**: 2026-01-23
+
+#### Changes
+
+- Fix pkgdown references to obsolete v0.1.0 indicators
+- Add lasR remote for GitHub Actions CI
+
+------------------------------------------------------------------------
+
+## nemeton 0.6.0 (Development)
+
+### v0.6.0 - Legacy Indicators Removal
+
+**Date**: 2026-01-23
+
+#### BREAKING CHANGES ⚠️
+
+**Removed Legacy Indicators (v0.1.0)**
+
+The original 5 MVP indicators have been removed in favor of the
+comprehensive 12-family framework (32+ indicators). This is a breaking
+change for code using v0.1.0 indicators.
+
+##### Removed Functions
+
+- `indicator_carbon()` - **Use instead:**
+  [`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)
+  (C1) or
+  [`indicator_carbon_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md)
+  (C2)
+- `indicator_biodiversity()` - **Use instead:**
+  [`indicator_biodiversity_protection()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md)
+  (B1),
+  [`indicator_biodiversity_structure()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.md)
+  (B2), or
+  [`indicator_biodiversity_connectivity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.md)
+  (B3)
+- `indicator_water()` - **Use instead:**
+  [`indicator_water_network()`](https://pobsteta.github.io/nemeton/reference/indicator_water_network.md)
+  (W1),
+  [`indicator_water_wetlands()`](https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.md)
+  (W2), or
+  [`indicator_water_twi()`](https://pobsteta.github.io/nemeton/reference/indicator_water_twi.md)
+  (W3)
+- `indicator_fragmentation()` - **Use instead:**
+  [`indicator_landscape_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md)
+  (L1) or
+  [`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)
+  (L2)
+- `indicator_accessibility()` - **Use instead:**
+  [`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)
+  (S2) or
+  [`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)
+  (S1)
+
+##### Migration Guide
+
+**Before (v0.1.0-v0.5.x):**
+
+``` r
+# Old API
+results <- nemeton_compute(
+  units, layers,
+  indicators = c("carbon", "biodiversity", "water")
+)
+```
+
+**After (v0.6.0+):**
+
+``` r
+# New API with family-based indicators
+results <- nemeton_compute(
+  units, layers,
+  indicators = c("carbon_biomass", "biodiversity_protection", "water_twi")
+)
+
+# Or use list_indicators() to see all available indicators
+available <- list_indicators(return_type = "details")
+```
+
+##### Updated Core Functions
+
+- [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md) -
+  Now uses
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+  for available indicators
+- [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md) -
+  Returns all 31 indicators from the 12-family framework
+- `compute_indicator()` - Dynamic dispatch supporting all family-based
+  indicators
+
+##### Files Removed
+
+- `R/indicators-biophysical.R` - Legacy indicator implementations (567
+  lines)
+- `tests/testthat/test-indicators-biophysical.R` - Legacy tests (414
+  lines, 26 tests)
+
+#### Rationale
+
+The legacy indicators were functional placeholders from the v0.1.0 MVP.
+The new 12-family framework (introduced in v0.2.0-v0.4.0) provides:
+
+- **More comprehensive coverage**: 31 indicators vs 5
+- **Better scientific foundation**: Species-specific allometric models,
+  multiple data sources
+- **Clearer organization**: 12 families (C, W, F, L, B, R, T, A, S, P,
+  E, N)
+- **Improved flexibility**: Multiple sub-indicators per ecosystem
+  service
+
+All legacy indicators had superior replacements available since v0.2.0
+(January 2026).
+
+------------------------------------------------------------------------
+
+## nemeton 0.5.2
+
+### v0.5.2 - Tutorial 09 Sampling + TSP
+
+**Date**: 2026-01-23
+
+#### New Features
+
+##### Tutorial 09: Échantillonnage de calibration LiDAR HD + TSP (180 min)
+
+- **Dimensionnement optimal** - Calcul du nombre de placettes basé sur
+  la formule n = t² × CV² / E²
+  - Fonctions `calculate_sample_size()` et `sample_size_table()`
+  - Tableau de référence interactif pour CV (10-40%) et erreur (5-20%)
+  - Correction pour population finie
+- **Sampling Frame** - Construction d’une grille de candidats avec
+  contraintes terrain
+  - Filtrage par couvert forestier (≥70%) et pente (≤45%)
+  - Utilisation des données T01/T03/T07 (zone_etude, bd_foret, mnt,
+    chm_complet)
+- **Stratification triple** - Basée sur 3 critères forestiers
+  - **Hauteur CHM LiDAR** : 4 classes (H1-H4) par quartiles
+  - **Type de peuplement** (BD Forêt v2 tfv) : FEU/CON/MIX/POP/AUT
+  - **Position topographique** (TPI) : Bas/Milieu/Haut de pente
+  - Calcul TPI avec
+    [`focal()`](https://rspatial.github.io/terra/reference/focal.html)
+    (rayon 100m)
+- **Tirage GRTS stratifié** - Échantillonnage spatialement équilibré
+  - Package
+    [`spsurvey::grts()`](https://usepa.github.io/spsurvey/reference/grts.html)
+    avec allocation proportionnelle
+  - Oversample par strate pour placettes de remplacement
+  - Fallback
+    [`BalancedSampling::lpm2`](https://rdrr.io/pkg/BalancedSampling/man/lpm.html)
+    si GRTS échoue
+- **Réseau de chemins** - Construction réseau avec `sfnetworks` depuis
+  BD TOPO
+  - Filtrage chemins praticables à pied
+  - Calcul poids avec `edge_length()`
+- **Optimisation TSP** - Parcours optimal avec package `TSP`
+  - Méthode nearest insertion + 2-opt
+  - Visualisation avec distinction Base/Remplacement
+- **Export terrain** - Formats multiples pour GPS
+  - GeoPackage (SIG)
+  - GPX (navigation GPS)
+  - CSV (tableau récapitulatif avec coordonnées WGS84)
+
+#### Improvements
+
+- **Harmonisation data_dir** - Chemin unifié sur tous les tutoriels
+  T01-T09
+  - `~/.local/share/nemeton/tutorial_data`
+  - Suppression variable `cache_dir` dans T08
+
+#### Dependencies
+
+- Added `spsurvey (>= 5.0.0)` to Suggests
+- Added `BalancedSampling (>= 1.6.0)` to Suggests
+- Added `sfnetworks (>= 0.6.0)` to Suggests
+- Added `TSP (>= 1.2.0)` to Suggests
+- Added `tidygraph (>= 1.2.0)` to Suggests
+- Added `igraph (>= 1.4.0)` to Suggests
+
+#### Documentation
+
+- Updated `vignettes/tutorial-guide.Rmd` with Tutorial 09
+- Updated `TUTORIAL_INSTALL.md` with Tutorial 09
+
+**References**: - Stevens, D. L., & Olsen, A. R. (2004). Spatially
+balanced sampling of natural resources. *JASA*, 99(465), 262-278. -
+Grafström, A., & Tillé, Y. (2013). Doubly balanced spatial sampling with
+spreading and restitution of auxiliary totals. *Environmetrics*, 24(2),
+120-131. - Hahsler, M., & Hornik, K. (2007). TSP—Infrastructure for the
+traveling salesperson problem. *Journal of Statistical Software*, 23(2).
+
+------------------------------------------------------------------------
+
+## nemeton 0.5.1
+
+### v0.5.1 - Tutorial 08 Coregistration
+
+**Date**: 2025-01-18
+
+#### New Features
+
+##### Tutorial 08: Coregistration LiDAR/Terrain (130 min)
+
+- **Problématique GPS** - Précision GPS sous couvert forestier (2-10 m)
+- **Corrélation MNH/Terrain** - Recalage par corrélation croisée
+- **lidaRtRee::coregistration()** - Recherche translation optimale (dx,
+  dy)
+- **Traitement parallèle** - `future_lapply()` pour lots de placettes
+- **Analyse statistique** - Tests de significativité, visualisation
+  vecteurs
+- **Export** - CSV et GeoPackage pour utilisation SIG
+
+#### Documentation
+
+- Updated `vignettes/tutorial-guide.Rmd` with Tutorial 08
+- Updated `TUTORIAL_INSTALL.md` with Tutorial 08
+
+**Reference**: Monnet, J.-M., & Mermin, É. (2014). Cross-correlation of
+diameter measures for the co-registration of forest inventory plots with
+airborne laser scanning data. *Forests*, 5(9), 2307-2326.
+
+------------------------------------------------------------------------
+
+## nemeton 0.5.0
+
+### v0.5.0 - Tutorial 07 & CRAN Compliance
+
+**Date**: 2025-01-18
+
+#### Overview
+
+Release featuring the complete Tutorial 07 (Advanced LiDAR) and CRAN
+compliance improvements. All 7 interactive tutorials are now complete
+(195/195 tasks).
+
+#### New Features
+
+##### Tutorial 07: LiDAR Avancé (90 min)
+
+- **LAScatalog Management** - Multi-tile LiDAR processing with lidR
+- **lasR Pipelines** - Ultra-fast C++ processing for DTM/CHM generation
+- **Individual Tree Detection (ITD)** - Tree segmentation with lidaRtRee
+- **Gap & Edge Detection** - Forest structure analysis
+- **Area-Based Approach (ABA)** - Model calibration and wall-to-wall
+  prediction
+- **BABA Exploration** - Rapid LiDAR metrics without field calibration
+- **Parallelization** - `future_lapply()` for tile-based processing
+- **Incremental Caching** - Resume interrupted processing
+- **OSO Forest Mask** - Land cover filtering for predictions
+
+#### Dependencies
+
+- Added `lasR` to Suggests (from r-lidar.r-universe.dev)
+- Added `lidaRtRee` to Suggests
+
+#### Documentation
+
+- Updated `vignettes/tutorial-guide.Rmd` with Tutorial 07
+- Updated `TUTORIAL_INSTALL.md` with lasR/lidaRtRee installation
+- Updated quickstart guide with Tutorial 07 instructions
+
+#### CRAN Compliance
+
+- Removed development artifacts (RELEASE\_\*.md, .RData, .Rhistory,
+  etc.)
+- Updated `.Rbuildignore` and `.gitignore`
+- Excluded spec-kit directories from version control
+
+------------------------------------------------------------------------
+
+## nemeton 0.4.0
+
+### v0.4.0 - Complete 12-Family Ecosystem Services Referential
+
+**Date**: 2026-01-05
+
+#### Overview
+
+Major release completing the **12-family ecosystem services
+referential** with 4 new indicator families (S, P, E, N) and advanced
+multi-criteria analysis tools. This release adds 11 new indicator
+functions, 3 analysis functions, and brings the total to **29 indicators
+across 12 families**.
+
+#### New Indicator Families
+
+##### Social & Recreational Family (Famille S) - 3 Indicators
+
+- **[`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)**
+  (S1) - Trail density
+  - Calculates recreational trail density (km/ha) from OSM or local data
+  - Supports footways, cycleways, and bridleways
+  - Output: 0-5+ km/ha trail density
+- **[`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)**
+  (S2) - Multimodal accessibility score
+  - Distance-based scoring for road, parking, and public transport
+    access
+  - Configurable distance thresholds and weights
+  - Output: 0-100 accessibility score
+- **[`indicator_social_proximity()`](https://pobsteta.github.io/nemeton/reference/indicator_social_proximity.md)**
+  (S3) - Population proximity
+  - Population within configurable buffer zones (5/10/20 km)
+  - Supports INSEE population grid or custom data
+  - Output: Total population count within buffers
+
+##### Productive & Economic Family (Famille P) - 3 Indicators
+
+- **[`indicator_productive_volume()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_volume.md)**
+  (P1) - Standing timber volume
+  - IFN-based allometric equations by species
+  - Genus-level fallback for rare species
+  - Output: m³/ha standing volume
+- **[`indicator_productive_station()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_station.md)**
+  (P2) - Site productivity index
+  - Fertility × climate × species interaction
+  - Based on French forestry station classification
+  - Output: m³/ha/yr potential productivity
+- **[`indicator_productive_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_quality.md)**
+  (P3) - Timber quality score
+  - Form factor, diameter distribution, defect assessment
+  - Configurable quality criteria weights
+  - Output: 0-100 quality score
+
+##### Energy & Climate Family (Famille E) - 2 Indicators
+
+- **[`indicator_energy_fuelwood()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_fuelwood.md)**
+  (E1) - Fuelwood potential
+  - Harvest residues + coppice biomass estimation
+  - Species-specific conversion factors
+  - Output: tonnes DM/ha/yr mobilizable fuelwood
+- **[`indicator_energy_avoidance()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_avoidance.md)**
+  (E2) - CO2 emission avoidance
+  - ADEME emission factors for energy substitution
+  - Supports energy and material substitution scenarios
+  - Output: tCO2eq/ha/yr avoided emissions
+
+##### Naturalness & Wilderness Family (Famille N) - 3 Indicators
+
+- **[`indicator_naturalness_distance()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_distance.md)**
+  (N1) - Infrastructure distance
+  - Distance to roads, buildings, powerlines from OSM
+  - Minimum distance to nearest infrastructure
+  - Output: meters to nearest infrastructure
+- **[`indicator_naturalness_continuity()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_continuity.md)**
+  (N2) - Forest patch continuity
+  - Connected forest area calculation
+  - Based on landscape patch analysis
+  - Output: hectares of continuous forest
+- **[`indicator_naturalness_composite()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_composite.md)**
+  (N3) - Wilderness composite index
+  - Multiplicative aggregation of N1 × N2 × T1 × B1
+  - Weighted aggregation option available
+  - Output: 0-100 wilderness score
+
+#### New Analysis Functions
+
+##### Multi-Criteria Decision Support
+
+- **[`identify_pareto_optimal()`](https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.md)** -
+  Pareto optimality analysis
+  - Identifies non-dominated solutions across multiple objectives
+  - Supports both maximization and minimization objectives
+  - Returns data with `is_optimal` column for Pareto-optimal parcels
+- **[`cluster_parcels()`](https://pobsteta.github.io/nemeton/reference/cluster_parcels.md)** -
+  Multi-family clustering
+  - K-means and hierarchical clustering methods
+  - Automatic optimal k determination via silhouette analysis
+  - Returns cluster assignments with centroid profiles
+- **[`plot_tradeoff()`](https://pobsteta.github.io/nemeton/reference/plot_tradeoff.md)** -
+  Trade-off visualization
+  - 2D scatterplot with optional Pareto frontier overlay
+  - Color and size mapping for additional dimensions
+  - Label support for parcel identification
+
+#### Enhanced Features
+
+- **12-axis radar plots** -
+  [`nemeton_radar()`](https://pobsteta.github.io/nemeton/reference/nemeton_radar.md)
+  now supports all 12 families
+- **12×12 correlation matrix** -
+  [`compute_family_correlations()`](https://pobsteta.github.io/nemeton/reference/compute_family_correlations.md)
+  extended
+- **12-family hotspot detection** -
+  [`identify_hotspots()`](https://pobsteta.github.io/nemeton/reference/identify_hotspots.md)
+  updated
+- **Normalization presets** - Added for S, P, E, N families
+
+#### New Demo Dataset
+
+- **`massif_demo_units_extended`** - Complete 12-family reference
+  dataset
+  - 20 demo parcels with all 29 indicators
+  - 12 pre-calculated family composite indices
+  - Synthetic but realistic value distributions
+
+#### New Vignettes
+
+- **`complete-referential_fr.Rmd`** - 12-family workflow demonstration
+- **`multi-criteria-optimization_fr.Rmd`** - Pareto, clustering, and
+  trade-off analysis
+
+#### Dependencies
+
+- Added `cluster` package dependency for silhouette analysis
+- Added `ggrepel` to Suggests for label positioning
+
+#### Documentation
+
+- Updated README with v0.4.0 feature highlights
+- Updated pkgdown site configuration
+- Full roxygen2 documentation for all new functions
+
+------------------------------------------------------------------------
+
 ## nemeton 0.3.0 (Development)
 
 ### v0.3.0 MVP - Multi-Family Extension (B, R, T, A)
@@ -575,8 +1006,7 @@ enhances the family aggregation and visualization system.
 
 #### Deprecations
 
-- **[`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md)** -
-  Now deprecated (will be removed in v1.0.0)
+- **`indicator_carbon()`** - Now deprecated (will be removed in v1.0.0)
   - Replacement: Use
     [`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)
     for BD Forêt support, or
@@ -632,16 +1062,11 @@ enhances the family aggregation and visualization system.
 
 ##### Indicators (✅ 5/5 Complete)
 
-- [`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md) -
-  Carbon stock from biomass (Mg C/ha)
-- [`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md) -
-  Species richness / Shannon index
-- [`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md) -
-  Water regulation (TWI + proximity to streams)
-- [`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md) -
-  Forest coverage and connectivity
-- [`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md) -
-  Distance to roads and trails
+- `indicator_carbon()` - Carbon stock from biomass (Mg C/ha)
+- `indicator_biodiversity()` - Species richness / Shannon index
+- `indicator_water()` - Water regulation (TWI + proximity to streams)
+- `indicator_fragmentation()` - Forest coverage and connectivity
+- `indicator_accessibility()` - Distance to roads and trails
 
 ##### Normalization & Indices (✅ Complete)
 
@@ -687,13 +1112,9 @@ enhances the family aggregation and visualization system.
 [`nemeton_layers()`](https://pobsteta.github.io/nemeton/reference/nemeton_layers.md),
 [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md),
 [`massif_demo_layers()`](https://pobsteta.github.io/nemeton/reference/massif_demo_layers.md)
-**Indicators**:
-[`indicator_carbon()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon.md),
-[`indicator_biodiversity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity.md),
-[`indicator_water()`](https://pobsteta.github.io/nemeton/reference/indicator_water.md),
-[`indicator_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_fragmentation.md),
-[`indicator_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_accessibility.md)
-**Normalization**:
+**Indicators**: `indicator_carbon()`, `indicator_biodiversity()`,
+`indicator_water()`, `indicator_fragmentation()`,
+`indicator_accessibility()` **Normalization**:
 [`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md),
 [`create_composite_index()`](https://pobsteta.github.io/nemeton/reference/create_composite_index.md),
 [`invert_indicator()`](https://pobsteta.github.io/nemeton/reference/invert_indicator.md)

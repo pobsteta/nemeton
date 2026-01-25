@@ -90,3 +90,127 @@ test_that("massif_demo_units covers realistic value ranges", {
   expect_true(all(massif_demo_units$N2 >= 0, na.rm = TRUE))
   expect_true(all(massif_demo_units$N3 >= 0 & massif_demo_units$N3 <= 100, na.rm = TRUE))
 })
+
+# ==============================================================================
+# Tests for massif_demo_layers()
+# ==============================================================================
+
+test_that("massif_demo_layers returns valid nemeton_layers object", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+
+  layers <- massif_demo_layers()
+
+  expect_s3_class(layers, "nemeton_layers")
+  expect_true(is.list(layers))
+  expect_true("rasters" %in% names(layers))
+  expect_true("vectors" %in% names(layers))
+})
+
+test_that("massif_demo_layers contains required rasters", {
+  skip_if_not_installed("terra")
+
+  layers <- massif_demo_layers()
+
+  # Required rasters
+  required_rasters <- c("biomass", "dem", "landcover")
+
+  for (raster_name in required_rasters) {
+    expect_true(raster_name %in% names(layers$rasters),
+      info = paste("Missing raster:", raster_name))
+  }
+})
+
+test_that("massif_demo_layers contains required vectors", {
+  skip_if_not_installed("sf")
+
+  layers <- massif_demo_layers()
+
+  # Required vectors
+  required_vectors <- c("roads", "water")
+
+  for (vector_name in required_vectors) {
+    expect_true(vector_name %in% names(layers$vectors),
+      info = paste("Missing vector:", vector_name))
+  }
+})
+
+test_that("massif_demo_layers rasters are loadable from paths", {
+  skip_if_not_installed("terra")
+
+  layers <- massif_demo_layers()
+
+  # Rasters are lazy-loaded, get the path
+  expect_true(!is.null(layers$rasters$biomass$path))
+
+  # Test that we can load biomass raster from path
+  biomass <- terra::rast(layers$rasters$biomass$path)
+  expect_s4_class(biomass, "SpatRaster")
+  expect_true(terra::ncell(biomass) > 0)
+})
+
+test_that("massif_demo_layers vectors are loadable from paths", {
+  skip_if_not_installed("sf")
+
+  layers <- massif_demo_layers()
+
+  # Vectors are lazy-loaded, get the path
+  expect_true(!is.null(layers$vectors$roads$path))
+
+  # Test that we can load roads vector from path
+  roads <- sf::st_read(layers$vectors$roads$path, quiet = TRUE)
+  expect_s3_class(roads, "sf")
+  expect_true(nrow(roads) > 0)
+})
+
+test_that("massif_demo_layers has consistent CRS across layers", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+
+  layers <- massif_demo_layers()
+
+  # Load a raster and vector from paths
+  biomass <- terra::rast(layers$rasters$biomass$path)
+  roads <- sf::st_read(layers$vectors$roads$path, quiet = TRUE)
+
+  # Get CRS
+  raster_crs <- terra::crs(biomass, describe = TRUE)$code
+  vector_crs <- sf::st_crs(roads)$epsg
+
+  # Both should be EPSG:2154 (Lambert 93)
+  expect_equal(as.numeric(raster_crs), 2154)
+  expect_equal(vector_crs, 2154)
+})
+
+test_that("massif_demo_layers works with nemeton_compute", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+
+  data("massif_demo_units", package = "nemeton")
+  layers <- massif_demo_layers()
+
+  # Test computing a simple indicator
+  result <- nemeton_compute(
+    massif_demo_units[1:3, ],
+    layers,
+    indicators = "carbon_biomass",
+    preprocess = TRUE
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("C1" %in% names(result))
+})
+
+test_that("massif_demo_layers print method works", {
+  layers <- massif_demo_layers()
+
+  expect_output(print(layers), "nemeton_layers")
+})
+
+test_that("massif_demo_layers summary method works", {
+  layers <- massif_demo_layers()
+
+  # summary should return a summary
+  summary_result <- summary(layers)
+  expect_true(is.list(summary_result) || is.character(summary_result) || !is.null(summary_result))
+})

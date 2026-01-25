@@ -524,3 +524,85 @@ test_that("create_family_index supports custom weights for new families", {
   expected <- units$R1 * 0.5 + units$R2 * 0.3 + units$R3 * 0.2
   expect_equal(result$family_R, expected)
 })
+
+# ==============================================================================
+# Additional tests for better coverage
+# ==============================================================================
+
+test_that("create_family_index uses harmonic mean method", {
+  units <- create_test_units(n_features = 2)
+  units$C1 <- c(40, 80)
+  units$C2 <- c(60, 90)
+
+  result <- create_family_index(units, method = "harmonic", family_codes = "C")
+
+  expect_true("family_C" %in% names(result))
+  # Harmonic mean should be less than arithmetic mean for unequal values
+  mean_result <- create_family_index(units, method = "mean", family_codes = "C")
+  expect_true(result$family_C[1] <= mean_result$family_C[1])
+})
+
+test_that("create_family_index warns when weights don't match all indicators", {
+  units <- create_test_units(n_features = 2)
+  units$C1 <- c(50, 60)
+  units$C2 <- c(70, 80)
+
+  # Weights only for C1, not C2
+  expect_warning(
+    result <- create_family_index(
+      units,
+      family_codes = "C",
+      weights = list(C = c(C1 = 0.7))  # Missing C2
+    ),
+    "weights"
+  )
+})
+
+test_that("create_family_index prefers _norm columns when available", {
+  units <- create_test_units(n_features = 2)
+  units$C1 <- c(500, 600)  # Raw values
+  units$C1_norm <- c(50, 60)  # Normalized values
+  units$C2 <- c(70, 80)
+
+  result <- create_family_index(units, family_codes = "C")
+
+  # Should use normalized C1_norm, not raw C1
+  # So family_C should be closer to (50+70)/2 = 60 than (500+70)/2 = 285
+  expect_true(result$family_C[1] < 100)
+})
+
+test_that("get_family_name returns family names", {
+  # Test family name lookups - check that non-empty strings are returned
+  expect_type(get_family_name("C"), "character")
+  expect_true(nchar(get_family_name("C")) > 0)
+  expect_true(nchar(get_family_name("B")) > 0)
+  expect_true(nchar(get_family_name("W")) > 0)
+  expect_true(nchar(get_family_name("R")) > 0)
+  expect_true(nchar(get_family_name("S")) > 0)
+  expect_true(nchar(get_family_name("P")) > 0)
+  expect_true(nchar(get_family_name("E")) > 0)
+  expect_true(nchar(get_family_name("N")) > 0)
+})
+
+test_that("get_family_name handles invalid codes", {
+  # Invalid codes should return something (might be the code itself or Unknown)
+  result_x <- get_family_name("X")
+  result_zzz <- get_family_name("ZZZ")
+
+  expect_type(result_x, "character")
+  expect_type(result_zzz, "character")
+})
+
+test_that("detect_indicator_family extracts family from various patterns", {
+  # Standard patterns
+  expect_equal(detect_indicator_family("C1"), "C")
+  expect_equal(detect_indicator_family("B3"), "B")
+
+  # With suffix
+  expect_equal(detect_indicator_family("W2_norm"), "W")
+
+  # Non-indicator columns
+  expect_true(is.na(detect_indicator_family("geometry")))
+  expect_true(is.na(detect_indicator_family("parcel_id")))
+  expect_true(is.na(detect_indicator_family("area")))
+})

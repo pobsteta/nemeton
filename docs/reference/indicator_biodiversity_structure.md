@@ -85,9 +85,13 @@ units <- massif_demo_units
 
 # Add structure attributes (normally from BD Forêt)
 units$strata <- sample(c("Emergent", "Dominant", "Intermediate"),
-                       nrow(units), replace = TRUE)
+  nrow(units),
+  replace = TRUE
+)
 units$age_class <- sample(c("Young", "Mature", "Old"),
-                          nrow(units), replace = TRUE)
+  nrow(units),
+  replace = TRUE
+)
 
 result <- indicator_biodiversity_structure(
   units,

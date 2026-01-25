@@ -15,6 +15,8 @@ indicator_temporal_age(
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
+\item{layers}{A nemeton_layers object (optional, not used in this indicator).}
+
 \item{age_field}{Character. Column name with stand age (years). Default "age".}
 
 \item{establishment_year_field}{Character. Column name with establishment year.

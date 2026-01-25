@@ -8,9 +8,10 @@ Computes annualized land cover change rate from multi-date rasters
 ``` r
 indicator_temporal_change(
   units,
-  land_cover_early,
-  land_cover_late,
-  years_elapsed,
+  layers = NULL,
+  land_cover_early = NULL,
+  land_cover_late = NULL,
+  years_elapsed = NULL,
   interpretation = "stability"
 )
 ```
@@ -20,6 +21,10 @@ indicator_temporal_change(
 - units:
 
   An sf object with forest parcels.
+
+- layers:
+
+  A nemeton_layers object (optional, not used in this indicator).
 
 - land_cover_early:
 

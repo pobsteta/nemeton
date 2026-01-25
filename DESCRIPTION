@@ -64,7 +64,8 @@ Suggests:
     sfnetworks (>= 0.6.0),
     TSP (>= 1.2.0),
     tidygraph (>= 1.2.0),
-    igraph (>= 1.4.0)
+    igraph (>= 1.4.0),
+    curl
 Remotes:
     rstudio/gradethis,
     r-lidar/lasR

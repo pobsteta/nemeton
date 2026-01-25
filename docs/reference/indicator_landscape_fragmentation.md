@@ -47,7 +47,8 @@ Numeric vector of fragmentation index (patch count / mean size)
 if (FALSE) { # \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
 results <- indicator_landscape_fragmentation(
-  units, layers, forest_values = c(1, 2, 3), buffer = 1000
+  units, layers,
+  forest_values = c(1, 2, 3), buffer = 1000
 )
 } # }
 ```

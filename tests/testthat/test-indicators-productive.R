@@ -224,3 +224,177 @@ test_that("Productive family indicators integrate with family system", {
   expect_type(result_family$family_P, "double")
   expect_true(all(result_family$family_P > 0))
 })
+
+# ==============================================================================
+# Additional tests for better coverage
+# ==============================================================================
+
+test_that("indicator_productive_volume validates input", {
+  expect_error(
+    indicator_productive_volume(data.frame(x = 1:3)),
+    "must be an sf object"
+  )
+})
+
+test_that("indicator_productive_volume requires fields", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  expect_error(
+    indicator_productive_volume(test_units),
+    "Missing required fields"
+  )
+})
+
+test_that("indicator_productive_volume handles unknown species with fallback", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    species = "UNKNOWN_SPECIES_XYZ",
+    dbh = 30,
+    density = 200,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Unknown species should use fallback - may or may not warn
+  result <- suppressWarnings(
+    indicator_productive_volume(
+      test_units,
+      species_field = "species",
+      dbh_field = "dbh",
+      density_field = "density"
+    )
+  )
+
+  # Should still calculate something with fallback
+  expect_true("P1" %in% names(result))
+  expect_false(is.na(result$P1[1]))
+})
+
+test_that("indicator_productive_volume uses custom column name", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    species = "FASY",
+    dbh = 35,
+    density = 250,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_productive_volume(
+    test_units,
+    species_field = "species",
+    dbh_field = "dbh",
+    density_field = "density",
+    column_name = "volume_m3_ha"
+  )
+
+  expect_true("volume_m3_ha" %in% names(result))
+  expect_false("P1" %in% names(result))
+})
+
+test_that("indicator_productive_station validates input", {
+  expect_error(
+    indicator_productive_station(data.frame(x = 1:3)),
+    "must be an sf object"
+  )
+})
+
+test_that("indicator_productive_station uses custom column name", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    species = "FASY",
+    fertility = 1,
+    climate = "temperate_oceanic",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_productive_station(
+    test_units,
+    species_field = "species",
+    fertility_field = "fertility",
+    climate_field = "climate",
+    column_name = "site_index"
+  )
+
+  expect_true("site_index" %in% names(result))
+})
+
+test_that("indicator_productive_quality validates input", {
+  expect_error(
+    indicator_productive_quality(data.frame(x = 1:3)),
+    "must be an sf object"
+  )
+})
+
+test_that("indicator_productive_quality uses custom column name", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    dbh = 40,
+    species = "FASY",
+    form_score = 80,
+    defects = 0,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_productive_quality(
+    test_units,
+    dbh_field = "dbh",
+    form_score_field = "form_score",
+    defects_field = "defects",
+    species_field = "species",
+    column_name = "quality_score"
+  )
+
+  expect_true("quality_score" %in% names(result))
+})
+
+test_that("indicator_productive_quality handles missing optional fields", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1:2,
+    dbh = c(40, 30),
+    species = c("FASY", "PIAB"),
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(1000, 0, 2000, 0, 2000, 1000, 1000, 1000, 1000, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Without form_score and defects
+  result <- indicator_productive_quality(
+    test_units,
+    dbh_field = "dbh",
+    species_field = "species"
+  )
+
+  expect_true("P3" %in% names(result))
+  expect_true(all(result$P3 >= 0 & result$P3 <= 100))
+})
