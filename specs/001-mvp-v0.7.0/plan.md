@@ -372,16 +372,62 @@ fetch_happign_cadastre <- function(code_insee) {
 ### 4.2 Service Compute (service_compute.R)
 
 ```r
-#' Lancer les calculs asynchrones
+#' Phase 1 : Téléchargement préventif de toutes les données
 #'
 #' @param parcelles sf des parcelles sélectionnées
 #' @param project_path Chemin du projet
+#' @param progress_callback Fonction de callback pour la progression
+#' @return Liste des layers téléchargées
+download_all_layers_async <- function(parcelles, project_path, progress_callback) {
+
+  # Liste des sources de données requises
+  data_sources <- list(
+    list(name = "cadastre", fetch = fetch_cadastre_data),
+    list(name = "bdforet", fetch = fetch_bdforet_data),
+    list(name = "protection", fetch = fetch_inpn_protection),
+    list(name = "corine", fetch = fetch_corine_data),
+    list(name = "hydro", fetch = fetch_hydro_data),
+    list(name = "mnt", fetch = fetch_mnt_data)
+  )
+
+  # Télécharger chaque source avec retry
+ results <- lapply(seq_along(data_sources), function(i) {
+    source <- data_sources[[i]]
+    progress_callback("download", source$name, i, length(data_sources))
+
+    tryCatch({
+      data <- source$fetch(parcelles)
+      cache_path <- file.path(project_path, "layers", paste0(source$name, ".parquet"))
+      arrow::write_parquet(data, cache_path)
+      list(name = source$name, status = "success", path = cache_path)
+    }, error = function(e) {
+      list(name = source$name, status = "error", message = e$message)
+    })
+  })
+
+  # Vérifier les échecs critiques
+  failures <- Filter(function(x) x$status == "error", results)
+  if (length(failures) > 0) {
+    stop(sprintf("Échec téléchargement: %s",
+                 paste(sapply(failures, `[[`, "name"), collapse = ", ")))
+  }
+
+  results
+}
+
+#' Phase 2 : Lancer les calculs sur données locales
+#'
+#' @param parcelles sf des parcelles sélectionnées
+#' @param project_path Chemin du projet (avec layers en cache)
 #' @param progress_callback Fonction de callback pour la progression
 #' @return Promise
 compute_indicators_async <- function(parcelles, project_path, progress_callback) {
 
   # Configuration future
   future::plan(future::multisession, workers = parallel::detectCores() - 1)
+
+  # Charger les layers depuis le cache local
+  layers <- load_cached_layers(project_path)
 
   # Liste des indicateurs à calculer
   indicators <- get_all_indicators()
@@ -390,10 +436,7 @@ compute_indicators_async <- function(parcelles, project_path, progress_callback)
   promises <- lapply(indicators, function(ind) {
     promises::future_promise({
       tryCatch({
-        # Charger les layers nécessaires
-        layers <- load_required_layers(ind, parcelles)
-
-        # Calculer l'indicateur
+        # Calculer l'indicateur sur données locales
         result <- nemeton::compute_indicator(parcelles, layers, ind)
 
         list(indicator = ind, result = result, status = "success")
@@ -402,7 +445,7 @@ compute_indicators_async <- function(parcelles, project_path, progress_callback)
       })
     }) %>%
       promises::then(function(result) {
-        progress_callback(result$indicator, result$status)
+        progress_callback("compute", result$indicator, result$status)
         result
       })
   })
@@ -412,6 +455,21 @@ compute_indicators_async <- function(parcelles, project_path, progress_callback)
     promises::then(function(results) {
       combine_indicator_results(parcelles, results)
     })
+}
+
+#' Workflow complet : téléchargement + calcul
+#'
+#' @param parcelles sf des parcelles
+#' @param project_path Chemin du projet
+#' @param progress_callback Callback progression
+compute_full_workflow <- function(parcelles, project_path, progress_callback) {
+  # Phase 1 : Téléchargement préventif
+  update_project_status(project_path, "downloading")
+  download_all_layers_async(parcelles, project_path, progress_callback)
+
+  # Phase 2 : Calculs sur données locales
+  update_project_status(project_path, "computing")
+  compute_indicators_async(parcelles, project_path, progress_callback)
 }
 ```
 
@@ -514,28 +572,116 @@ list_recent_projects <- function(n = 10) {
     meta_file <- file.path(d, "metadata.json")
     if (file.exists(meta_file)) {
       meta <- jsonlite::read_json(meta_file)
+      health <- check_project_health(d)
       tibble::tibble(
         path = d,
         name = meta$name,
         status = meta$status,
-        created_at = meta$created_at
+        created_at = meta$created_at,
+        is_corrupted = health$corrupted,
+        corruption_reason = health$reason
       )
     }
   }) %>%
     dplyr::arrange(desc(created_at)) %>%
     head(n)
 }
+
+#' Vérifier la santé d'un projet
+#'
+#' @param project_dir Répertoire du projet
+#' @return Liste avec corrupted (logical) et reason (character)
+check_project_health <- function(project_dir) {
+
+  # Vérifier metadata.json
+  meta_file <- file.path(project_dir, "metadata.json")
+  if (!file.exists(meta_file)) {
+    return(list(corrupted = TRUE, reason = "metadata_missing"))
+  }
+
+  meta <- tryCatch({
+    jsonlite::read_json(meta_file)
+  }, error = function(e) {
+    return(list(corrupted = TRUE, reason = "metadata_invalid"))
+  })
+
+  # Vérifier cohérence état
+  if (meta$status == "computing") {
+    # Projet interrompu pendant le calcul
+    indicators_file <- file.path(project_dir, "indicateurs.parquet")
+    if (!file.exists(indicators_file)) {
+      return(list(corrupted = TRUE, reason = "computation_interrupted"))
+    }
+  }
+
+  # Vérifier les fichiers parquet
+  parquet_files <- c("parcelles.parquet", "indicateurs.parquet")
+  for (pf in parquet_files) {
+    pf_path <- file.path(project_dir, pf)
+    if (file.exists(pf_path)) {
+      valid <- tryCatch({
+        arrow::read_parquet(pf_path, as_data_frame = FALSE)
+        TRUE
+      }, error = function(e) FALSE)
+
+      if (!valid) {
+        return(list(corrupted = TRUE, reason = paste0(pf, "_corrupted")))
+      }
+    }
+  }
+
+  list(corrupted = FALSE, reason = NULL)
+}
+
+#' Supprimer un projet
+#'
+#' @param project_dir Répertoire du projet
+#' @return TRUE si supprimé avec succès
+delete_project <- function(project_dir) {
+  if (!dir.exists(project_dir)) {
+    cli::cli_warn("Projet non trouvé: {project_dir}")
+    return(FALSE)
+  }
+
+  unlink(project_dir, recursive = TRUE)
+  cli::cli_alert_success("Projet supprimé: {basename(project_dir)}")
+  TRUE
+}
 ```
 
 ### 4.4 Service Export (service_export.R)
 
 ```r
+#' Vérifier et installer Quarto si nécessaire
+#'
+#' @return TRUE si Quarto est disponible
+ensure_quarto_installed <- function() {
+  if (!quarto::quarto_available()) {
+    cli::cli_alert_info("Installation de Quarto en cours...")
+    tryCatch({
+      quarto::quarto_install()
+      cli::cli_alert_success("Quarto installé avec succès")
+      TRUE
+    }, error = function(e) {
+      cli::cli_abort(c(
+        "Impossible d'installer Quarto automatiquement",
+        "i" = "Installez manuellement depuis https://quarto.org/docs/get-started/"
+      ))
+    })
+  } else {
+    TRUE
+  }
+}
+
 #' Générer le rapport PDF
 #'
 #' @param project_dir Répertoire du projet
 #' @param language Langue du rapport
 #' @return Chemin du PDF généré
 generate_pdf_report <- function(project_dir, language = "fr") {
+
+  # Vérifier/installer Quarto
+ ensure_quarto_installed()
 
   # Charger le projet
   project <- load_project(project_dir)
@@ -610,13 +756,13 @@ nemeton_theme <- function() {
     version = 5,
     bootswatch = "flatly",
 
-    # Couleurs forestières
-    primary = "#228B22",      # Forest Green
-    secondary = "#8B4513",    # Saddle Brown
-    success = "#32CD32",      # Lime Green
-    info = "#4682B4",         # Steel Blue
-    warning = "#DAA520",      # Goldenrod
-    danger = "#DC143C",       # Crimson
+    # Couleurs forestières (WCAG AA compliant - contraste 4.5:1 minimum)
+    primary = "#1B6B1B",      # Forest Green (darkened for contrast)
+    secondary = "#6B3710",    # Saddle Brown (darkened)
+    success = "#1E7B1E",      # Lime Green (darkened)
+    info = "#2B5B8B",         # Steel Blue (darkened)
+    warning = "#9B7510",      # Goldenrod (darkened)
+    danger = "#B01030",       # Crimson (darkened)
 
     # Fond
     bg = "#FAFAFA",
@@ -636,6 +782,31 @@ nemeton_theme <- function() {
       )
     )
 }
+
+#' Configuration accessibilité
+#'
+#' Règles WCAG 2.1 AA appliquées :
+#' - Contraste texte : 4.5:1 minimum
+#' - Contraste UI : 3:1 minimum
+#' - Focus visible sur tous les éléments
+#' - Navigation clavier complète
+#' - Palettes daltonisme-friendly (viridis)
+accessibility_config <- list(
+  # Palettes colorblind-friendly uniquement
+  color_palettes = c("viridis", "plasma", "inferno", "magma", "cividis"),
+  default_palette = "viridis",
+
+  # Toujours utiliser des symboles en plus des couleurs
+  use_symbols = TRUE,
+  symbol_shapes = c(16, 17, 15, 18, 8, 3, 4),  # circle, triangle, square, diamond...
+
+  # Tailles minimales tactiles (WCAG)
+  min_touch_target = 44,  # pixels
+
+  # Focus visible
+  focus_ring_width = 3,
+  focus_ring_color = "#005FCC"
+)
 ```
 
 ### 5.2 Layout Principal

@@ -144,12 +144,15 @@ nemetonApp est une application Shiny intégrée au package nemeton permettant au
 
 - [ ] AC5.1 : Bouton "Lancer les calculs" actif si ≥1 parcelle sélectionnée
 - [ ] AC5.2 : Confirmation avant lancement (modal)
-- [ ] AC5.3 : Calculs exécutés en background (async)
-- [ ] AC5.4 : Barre de progression globale visible
-- [ ] AC5.5 : Détail des jobs en cours (indicateur X/29)
-- [ ] AC5.6 : Parallélisation maximale des calculs
-- [ ] AC5.7 : État du projet : Brouillon → En cours → Terminé
-- [ ] AC5.8 : Modification des parcelles impossible après lancement
+- [ ] AC5.3 : **Phase 1 - Téléchargement préventif** : Récupération de toutes les données externes avant calcul
+- [ ] AC5.4 : Progression téléchargement visible (données X/Y téléchargées)
+- [ ] AC5.5 : Si téléchargement échoue → message explicatif, annulation possible
+- [ ] AC5.6 : **Phase 2 - Calculs** : Exécutés en background (async) sur données locales
+- [ ] AC5.7 : Barre de progression globale visible
+- [ ] AC5.8 : Détail des jobs en cours (indicateur X/29)
+- [ ] AC5.9 : Parallélisation maximale des calculs
+- [ ] AC5.10 : État du projet : Brouillon → Téléchargement → En cours → Terminé
+- [ ] AC5.11 : Modification des parcelles impossible après lancement
 
 ---
 
@@ -266,6 +269,24 @@ nemetonApp est une application Shiny intégrée au package nemeton permettant au
 
 ---
 
+### US11b [P2] - Gestion des Projets Corrompus
+
+**En tant que** utilisateur,
+**Je veux** être informé si un projet est corrompu ou incomplet,
+**Afin de** pouvoir le supprimer et recommencer.
+
+#### Critères d'Acceptation
+
+- [ ] AC11b.1 : Détection automatique à l'ouverture d'un projet corrompu
+- [ ] AC11b.2 : Fichiers corrompus = parquet illisible, JSON invalide
+- [ ] AC11b.3 : Projet incomplet = calcul interrompu (état "En cours" mais pas de résultats)
+- [ ] AC11b.4 : Modal de confirmation : "Ce projet est corrompu/incomplet. Voulez-vous le supprimer ?"
+- [ ] AC11b.5 : Option "Supprimer" → suppression du répertoire projet
+- [ ] AC11b.6 : Option "Annuler" → retour à la liste des projets
+- [ ] AC11b.7 : Projets corrompus marqués visuellement dans la liste (icône warning)
+
+---
+
 ### US12 [P2] - Internationalisation
 
 **En tant que** utilisateur anglophone,
@@ -341,9 +362,9 @@ nemetonApp est une application Shiny intégrée au package nemeton permettant au
 |----------|-------|
 | Temps de chargement initial | < 3 secondes |
 | Récupération parcelles cadastrales | < 5 secondes par commune |
-| Calcul complet 20 parcelles | < 5 minutes |
+| Calcul complet 20 parcelles | < 10 minutes |
 | Génération PDF | < 30 secondes |
-| Mémoire maximale | < 2 Go RAM |
+| Mémoire maximale | < 4 Go RAM |
 
 ### 4.2 Fiabilité
 
@@ -364,6 +385,20 @@ nemetonApp est une application Shiny intégrée au package nemeton permettant au
 - R >= 4.1.0
 - Navigateurs : Chrome, Firefox, Safari, Edge (dernières versions)
 - Résolution minimum : 768×1024 (tablette portrait)
+
+### 4.5 Accessibilité
+
+| Exigence | Spécification |
+|----------|---------------|
+| Standard | WCAG 2.1 niveau AA |
+| Contraste texte | Ratio minimum 4.5:1 |
+| Contraste éléments UI | Ratio minimum 3:1 |
+| Navigation clavier | Tous les éléments interactifs accessibles au clavier |
+| Daltonisme | Palettes viridis exclusivement (colorblind-friendly) |
+| Symboles | Utiliser des symboles/formes en complément des couleurs |
+| Labels | Tous les graphiques avec légendes textuelles |
+| Focus visible | Indicateur de focus clairement visible |
+| Taille tactile | Zones cliquables minimum 44×44 px |
 
 ---
 
@@ -406,8 +441,9 @@ nemetonApp est une application Shiny intégrée au package nemeton permettant au
 
 - L'utilisateur dispose d'une connexion Internet pour les données externes
 - Les calculs LiDAR ne sont pas disponibles (indicateurs grisés si absents)
-- Quarto est installé sur le système pour la génération PDF
+- **Quarto** : Installation automatique via `quarto::quarto_install()` si absent
 - Le répertoire utilisateur est accessible en écriture
+- Toutes les données externes sont téléchargées **avant** le lancement des calculs (cache préventif)
 
 ---
 

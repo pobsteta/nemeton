@@ -17,9 +17,9 @@
 
 - [x] CHK006 - Le terme "parcelle cadastrale" est-il défini dans le glossaire ? [Clarté, Spec §7]
 - [x] CHK007 - La limite de 20 parcelles est-elle justifiée et documentée ? [Clarté, Spec §2.1]
-- [x] CHK008 - Les états du projet (Brouillon, En cours, Terminé) sont-ils définis avec transitions ? [Clarté, US5]
+- [x] CHK008 - Les états du projet (Brouillon, Téléchargement, En cours, Terminé) sont-ils définis avec transitions ? [Clarté, US5]
 - [x] CHK009 - Le format GeoParquet est-il spécifié avec sa structure ? [Clarté, Spec §Annexe B]
-- [ ] CHK010 - Les seuils de performance sont-ils réalistes et testables ? [Clarté, Spec §4.1] - À valider avec benchmarks
+- [x] CHK010 - Les seuils de performance sont-ils réalistes et testables ? [Clarté, Spec §4.1] - Ajustés : 10 min calcul, 4 Go RAM
 
 ## Cohérence des Exigences
 
@@ -35,8 +35,8 @@
 - [x] CHK017 - Le scénario "données LiDAR manquantes" est-il couvert ? [Couverture, US6]
 - [x] CHK018 - Le scénario "limite 20 parcelles atteinte" est-il couvert ? [Couverture, US3]
 - [x] CHK019 - Le scénario "premier lancement" (tour guidé) est-il couvert ? [Couverture, US13]
-- [ ] CHK020 - Le scénario "perte de connexion pendant calcul" est-il couvert ? [Gap] - À ajouter
-- [ ] CHK021 - Le scénario "projet corrompu/incomplet" est-il couvert ? [Gap] - À ajouter
+- [x] CHK020 - Le scénario "perte de connexion pendant calcul" est-il couvert ? [Couverture, US5] - Cache préventif : téléchargement avant calcul
+- [x] CHK021 - Le scénario "projet corrompu/incomplet" est-il couvert ? [Couverture, US11b] - Modal suppression ajoutée
 
 ## Qualité des Critères d'Acceptation
 
@@ -48,10 +48,10 @@
 ## Exigences Non-Fonctionnelles
 
 - [x] CHK026 - Les temps de réponse sont-ils spécifiés pour les opérations critiques ? [NFR, Spec §4.1]
-- [x] CHK027 - La limite mémoire (2 Go RAM) est-elle réaliste pour 20 parcelles ? [NFR] - À valider
+- [x] CHK027 - La limite mémoire (4 Go RAM) est-elle réaliste pour 20 parcelles ? [NFR, Spec §4.1] - Ajustée à 4 Go
 - [x] CHK028 - La compatibilité navigateurs est-elle spécifiée ? [NFR, Spec §4.4]
 - [x] CHK029 - La résolution minimum tablette est-elle définie ? [NFR, Spec §4.4]
-- [ ] CHK030 - Les exigences d'accessibilité (WCAG) sont-elles définies ? [Gap] - À ajouter
+- [x] CHK030 - Les exigences d'accessibilité (WCAG) sont-elles définies ? [NFR, Spec §4.5] - WCAG 2.1 AA + daltonisme
 
 ## Traçabilité
 
@@ -63,7 +63,7 @@
 
 - [x] CHK034 - Les hypothèses sont-elles documentées et validables ? [Hypothèses, Spec §6.2]
 - [x] CHK035 - Les contraintes techniques sont-elles clairement énoncées ? [Contraintes, Spec §6.1]
-- [ ] CHK036 - L'hypothèse "Quarto installé" est-elle acceptable pour tous les utilisateurs ? [Hypothèse] - À clarifier
+- [x] CHK036 - L'hypothèse "Quarto installé" est-elle acceptable pour tous les utilisateurs ? [Hypothèse, Spec §6.2] - Installation automatique via `quarto::quarto_install()`
 
 ---
 
@@ -72,22 +72,24 @@
 | Catégorie | Total | Validés | En attente |
 |-----------|-------|---------|------------|
 | Complétude | 5 | 5 | 0 |
-| Clarté | 5 | 4 | 1 |
+| Clarté | 5 | 5 | 0 |
 | Cohérence | 5 | 5 | 0 |
-| Couverture | 6 | 4 | 2 |
+| Couverture | 6 | 6 | 0 |
 | Mesurabilité | 4 | 4 | 0 |
-| NFR | 5 | 4 | 1 |
+| NFR | 5 | 5 | 0 |
 | Traçabilité | 3 | 3 | 0 |
-| Hypothèses | 3 | 2 | 1 |
+| Hypothèses | 3 | 3 | 0 |
 
-**Total : 36 items, 31 validés, 5 en attente**
+**Total : 36 items, 36 validés, 0 en attente**
 
 ---
 
-## Actions Requises
+## Clarifications Résolues (2026-01-25)
 
-1. **CHK010** : Valider les seuils de performance avec des benchmarks réels
-2. **CHK020** : Ajouter scénario de perte de connexion pendant le calcul
-3. **CHK021** : Ajouter scénario de projet corrompu/incomplet
-4. **CHK030** : Définir les exigences d'accessibilité WCAG
-5. **CHK036** : Clarifier la dépendance à Quarto (installation automatique ?)
+| Point | Décision | Impact |
+|-------|----------|--------|
+| CHK010 - Seuils performance | Calcul 10 min, RAM 4 Go | Spec §4.1 mis à jour |
+| CHK020 - Perte connexion | Cache préventif avant calcul | US5 modifiée, nouveaux états projet |
+| CHK021 - Projet corrompu | Modal suppression | US11b ajoutée |
+| CHK030 - Accessibilité | WCAG 2.1 AA + viridis | Spec §4.5 ajoutée |
+| CHK036 - Quarto | Installation automatique | Spec §6.2 mis à jour |

@@ -19,12 +19,18 @@
 - [ ] T007 [P] Ajouter logo nemeton dans `inst/app/www/img/logo.png`
 - [ ] T008 Mettre à jour `DESCRIPTION` avec nouvelles dépendances Shiny
 
-### 1.2 Thème et Styles
+### 1.2 Thème, Styles et Accessibilité
 
 - [ ] T009 Créer `R/utils_theme.R` avec fonction `nemeton_theme()` bslib
-- [ ] T010 Définir palette couleurs forestières (primary, secondary, etc.)
+- [ ] T010 Définir palette couleurs forestières WCAG AA (contraste 4.5:1)
+- [ ] T010b Créer `accessibility_config` avec règles WCAG 2.1 AA
+- [ ] T010c Configurer palettes viridis uniquement (daltonisme-friendly)
+- [ ] T010d Définir symboles/formes en complément des couleurs
 - [ ] T011 [P] Créer `inst/app/www/css/custom.scss` avec styles personnalisés
+- [ ] T011b [P] Ajouter styles focus visible (ring 3px)
+- [ ] T011c [P] Configurer tailles tactiles minimum 44px
 - [ ] T012 [P] Créer `inst/app/www/js/custom.js` avec helpers JavaScript
+- [ ] T012b [P] Ajouter gestion navigation clavier
 - [ ] T013 Configurer responsive breakpoints pour tablette
 
 ### 1.3 Internationalisation
@@ -103,6 +109,9 @@
 - [ ] T059 [US4] Implémenter `list_recent_projects()` - projets récents
 - [ ] T060 [US4] Implémenter `update_project_status()` - gestion états
 - [ ] T061 [US4] Créer fonction `get_projects_root()` - répertoire racine
+- [ ] T061b [US11b] Implémenter `check_project_health()` - détection corruption
+- [ ] T061c [US11b] Implémenter `delete_project()` - suppression projet
+- [ ] T061d [US11b] Ajouter colonne `is_corrupted` dans `list_recent_projects()`
 - [ ] T062 Créer tests `tests/testthat/test-service_project.R`
 
 ### 3.2 Module Project
@@ -119,6 +128,9 @@
 
 - [ ] T070 Créer `R/mod_home.R` - page d'accueil intégrée
 - [ ] T071 Afficher liste projets récents au lancement
+- [ ] T071b [US11b] Marquer projets corrompus avec icône warning
+- [ ] T071c [US11b] Modal confirmation suppression projet corrompu
+- [ ] T071d [US11b] Implémenter action suppression projet
 - [ ] T072 Intégrer mod_search + mod_map + mod_project
 - [ ] T073 Ajouter workflow création projet → sélection
 
@@ -126,13 +138,18 @@
 
 ## Phase 4 : Calculs Asynchrones [US5, US6]
 
-### 4.1 Service Compute
+### 4.1 Service Compute (avec cache préventif)
 
 - [ ] T074 [US5] Créer `R/service_compute.R` avec orchestration calculs
-- [ ] T075 [US5] Implémenter `compute_indicators_async()` avec future/promises
+- [ ] T074b [US5] Implémenter `download_all_layers_async()` - téléchargement préventif
+- [ ] T074c [US5] Définir liste des sources de données à télécharger
+- [ ] T074d [US5] Implémenter cache local des layers dans `project/layers/`
+- [ ] T075 [US5] Implémenter `compute_indicators_async()` sur données locales
+- [ ] T075b [US5] Implémenter `compute_full_workflow()` - orchestration téléchargement + calcul
 - [ ] T076 [US5] Configurer parallélisation multi-workers
-- [ ] T077 [US5] Implémenter callback progression par indicateur
+- [ ] T077 [US5] Implémenter callback progression par phase (téléchargement / calcul)
 - [ ] T078 [US6] Gérer indicateurs manquants (LiDAR, connexion KO)
+- [ ] T078b [US5] Gérer échec téléchargement avec message explicatif
 - [ ] T079 [US5] Intégrer avec `nemeton_compute()` existant
 - [ ] T080 Créer tests `tests/testthat/test-service_compute.R`
 
@@ -275,6 +292,7 @@
 ### 6.1 Service Export
 
 - [ ] T158 [US9] Créer `R/service_export.R` avec fonctions export
+- [ ] T158b [US9] Implémenter `ensure_quarto_installed()` - installation auto Quarto
 - [ ] T159 [US9] Implémenter `generate_pdf_report()` avec Quarto
 - [ ] T160 [US10] Implémenter `export_geopackage()` avec sf::st_write
 - [ ] T161 Créer tests `tests/testthat/test-service_export.R`
@@ -403,14 +421,22 @@ graph TD
 
 | Phase | Tâches | User Stories |
 |-------|--------|--------------|
-| 1. Infrastructure | T001-T021 (21) | - |
+| 1. Infrastructure + Accessibilité | T001-T021 (26) | - |
 | 2. Sélection Parcelles | T022-T053 (32) | US1, US2, US3 |
-| 3. Gestion Projets | T054-T073 (20) | US4, US11 |
-| 4. Calculs Async | T074-T090 (17) | US5, US6 |
+| 3. Gestion Projets + Corruption | T054-T073 (24) | US4, US11, US11b |
+| 4. Calculs Async + Cache Préventif | T074-T090 (22) | US5, US6 |
 | 5. Analyses Familles | T091-T157 (67) | US7, US8 |
-| 6. Exports | T158-T171 (14) | US9, US10 |
+| 6. Exports + Quarto Auto | T158-T171 (15) | US9, US10 |
 | 7. Tour et Aide | T172-T182 (11) | US13, US14 |
 | 8. Responsive | T183-T190 (8) | US15 |
 | 9. Finalisation | T191-T202 (12) | - |
 
-**Total : 202 tâches**
+**Total : 217 tâches**
+
+## Nouvelles fonctionnalités ajoutées (Clarifications)
+
+1. **Cache préventif** (US5) : Téléchargement de toutes les données avant calcul
+2. **Gestion projets corrompus** (US11b) : Détection et suppression
+3. **Accessibilité WCAG 2.1 AA** : Contraste, clavier, daltonisme (viridis)
+4. **Installation auto Quarto** : `quarto::quarto_install()` si absent
+5. **Seuils ajustés** : Calcul 10 min, RAM 4 Go
