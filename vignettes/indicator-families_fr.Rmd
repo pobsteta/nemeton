@@ -292,41 +292,28 @@ family_means
 
 ## Radar chart 12 familles
 
+La fonction `nemeton_radar()` avec `mode = "family"` permet de visualiser le profil complet d'une parcelle sur les 12 familles :
+
 ```{r, fig.height=7}
-# Préparer les données pour le radar
-radar_data <- demo_norm |>
-  st_drop_geometry() |>
-  filter(parcel_id %in% c("P01", "P05", "P10")) |>
-  select(parcel_id, starts_with("family_")) |>
-  pivot_longer(
-    cols = starts_with("family_"),
-    names_to = "family",
-    values_to = "score"
-  ) |>
-  mutate(family = gsub("family_", "", family))
+# Radar pour une parcelle (mode famille)
+nemeton_radar(
+  demo_norm,
+  unit_id = "P01",
+  mode = "family",
+  title = "Profil écosystémique - Parcelle P01"
+)
+```
 
-# Ordonner les familles
-family_order <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
-radar_data$family <- factor(radar_data$family, levels = family_order)
+## Comparaison de plusieurs parcelles
 
-# Radar plot
-ggplot(radar_data, aes(x = family, y = score, group = parcel_id, color = parcel_id)) +
-  geom_polygon(fill = NA, linewidth = 1.2) +
-  geom_point(size = 3) +
-  coord_polar() +
-  scale_y_continuous(limits = c(0, 100)) +
-  scale_color_viridis_d(option = "D", end = 0.8) +
-  labs(
-    title = "Profil radar 12 familles",
-    subtitle = "Comparaison de 3 parcelles",
-    color = "Parcelle"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.y = element_blank(),
-    axis.title = element_blank(),
-    legend.position = "bottom"
-  )
+```{r, fig.height=7}
+# Comparer plusieurs parcelles sur le même radar
+nemeton_radar(
+  demo_norm,
+  unit_id = c("P01", "P05", "P10"),
+  mode = "family",
+  title = "Comparaison de 3 parcelles - 12 familles"
+)
 ```
 
 ## Cartes des scores de famille
