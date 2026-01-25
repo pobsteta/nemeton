@@ -117,6 +117,12 @@ mod_search_server <- function(id, app_state) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # Get language with fallback
+    get_lang <- function() {
+      lang <- app_state$language
+      if (is.null(lang) || lang == "") "fr" else lang
+    }
+
     # ========================================
     # Reactive Values
     # ========================================
@@ -134,7 +140,7 @@ mod_search_server <- function(id, app_state) {
     # ========================================
 
     shiny::observe({
-      i18n <- get_i18n(app_state$language)
+      i18n <- get_i18n(get_lang())
       depts <- get_departments()
 
       shiny::updateSelectInput(
@@ -159,7 +165,7 @@ mod_search_server <- function(id, app_state) {
         shiny::updateSelectizeInput(
           session,
           "commune",
-          choices = list(),
+          choices = character(0),
           server = FALSE
         )
         return()
@@ -169,17 +175,32 @@ mod_search_server <- function(id, app_state) {
       rv$is_loading <- TRUE
 
       # Fetch communes in department
-      communes <- get_communes_in_department(dept)
+      tryCatch({
+        communes <- get_communes_in_department(dept)
 
-      if (nrow(communes) > 0) {
-        choices <- format_communes_for_selectize(communes)
-        shiny::updateSelectizeInput(
-          session,
-          "commune",
-          choices = choices,
-          server = FALSE
+        if (!is.null(communes) && nrow(communes) > 0) {
+          choices <- format_communes_for_selectize(communes)
+          shiny::updateSelectizeInput(
+            session,
+            "commune",
+            choices = choices,
+            server = FALSE
+          )
+        } else {
+          shiny::updateSelectizeInput(
+            session,
+            "commune",
+            choices = character(0),
+            server = FALSE
+          )
+        }
+      }, error = function(e) {
+        cli::cli_warn("Error fetching communes: {e$message}")
+        shiny::showNotification(
+          paste("Erreur:", e$message),
+          type = "error"
         )
-      }
+      })
 
       rv$is_loading <- FALSE
     }, ignoreInit = TRUE)
@@ -203,7 +224,7 @@ mod_search_server <- function(id, app_state) {
 
       # Get commune geometry
       shiny::withProgress(
-        message = get_i18n(app_state$language)$t("loading_parcels"),
+        message = get_i18n(get_lang())$t("loading_parcels"),
         value = 0.5,
         {
           geometry <- get_commune_geometry(code)
@@ -237,7 +258,7 @@ mod_search_server <- function(id, app_state) {
 
       if (is.null(postal) || !grepl("^[0-9]{5}$", postal)) {
         shiny::showNotification(
-          get_i18n(app_state$language)$t("error_invalid_postal"),
+          get_i18n(get_lang())$t("error_invalid_postal"),
           type = "warning"
         )
         return()
@@ -250,7 +271,7 @@ mod_search_server <- function(id, app_state) {
 
       if (nrow(communes) == 0) {
         shiny::showNotification(
-          get_i18n(app_state$language)$t("error_no_parcels"),
+          get_i18n(get_lang())$t("error_no_parcels"),
           type = "warning"
         )
         rv$is_loading <- FALSE
@@ -289,7 +310,7 @@ mod_search_server <- function(id, app_state) {
     # ========================================
 
     output$search_info <- shiny::renderUI({
-      i18n <- get_i18n(app_state$language)
+      i18n <- get_i18n(get_lang())
 
       if (is.null(rv$commune_info)) {
         return(NULL)

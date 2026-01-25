@@ -514,18 +514,17 @@ validate_insee_code <- function(code) {
 #'
 #' @param communes_df Data.frame from search_communes or get_communes_in_department.
 #'
-#' @return Named list suitable for selectize choices.
+#' @return Named character vector suitable for selectize choices.
 #'
 #' @noRd
 format_communes_for_selectize <- function(communes_df) {
-  if (nrow(communes_df) == 0) {
-    return(NULL)
+  if (is.null(communes_df) || nrow(communes_df) == 0) {
+    return(character(0))
   }
 
-  choices <- stats::setNames(
+  # Return named character vector (name = label displayed, value = code_insee)
+  stats::setNames(
     communes_df$code_insee,
     communes_df$label
   )
-
-  as.list(choices)
 }
