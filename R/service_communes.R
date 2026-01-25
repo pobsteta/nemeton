@@ -350,6 +350,22 @@ get_commune_geometry <- function(code_insee) {
         sf::st_crs(commune_sf) <- 4326
       }
 
+      # Verify geometry type is POLYGON or MULTIPOLYGON
+      geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
+      if (!geom_type %in% c("POLYGON", "MULTIPOLYGON", "GEOMETRY")) {
+        # Check individual geometries
+        geom_types <- sf::st_geometry_type(commune_sf)
+        polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+        if (sum(polygon_idx) == 0) {
+          cli::cli_warn("Commune geometry is not a polygon: {geom_type}")
+          return(NULL)
+        }
+        commune_sf <- commune_sf[polygon_idx, ]
+      }
+
+      # Make valid geometries
+      commune_sf <- sf::st_make_valid(commune_sf)
+
       commune_sf
     } else {
       cli::cli_warn("Unexpected content type from API: {content_type}")

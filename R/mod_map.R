@@ -248,6 +248,17 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(geom)) return()
 
+      # Verify geometry is polygon type
+      geom_types <- sf::st_geometry_type(geom)
+      polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+      if (sum(polygon_idx) == 0) {
+        cli::cli_warn("Commune geometry is not a polygon, skipping display")
+        return()
+      }
+      if (sum(!polygon_idx) > 0) {
+        geom <- geom[polygon_idx, ]
+      }
+
       # Get bounding box
       bbox <- sf::st_bbox(geom)
 
@@ -284,6 +295,19 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("parcels")
         return()
+      }
+
+      # Filter to keep only polygon geometries (defensive check)
+      geom_types <- sf::st_geometry_type(parcel_data)
+      polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+      if (sum(polygon_idx) == 0) {
+        cli::cli_warn("No polygon geometries in parcel data")
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("parcels")
+        return()
+      }
+      if (sum(!polygon_idx) > 0) {
+        parcel_data <- parcel_data[polygon_idx, ]
       }
 
       # Ensure WGS84
