@@ -152,7 +152,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
     rv <- shiny::reactiveValues(
       selected_ids = character(0),
-      basemap = "osm"
+      basemap = "osm",
+      parcels_zoomed = FALSE  # Flag to zoom only once per commune
     )
 
 
@@ -248,6 +249,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(geom)) return()
 
+      # Reset parcels zoom flag for new commune
+      rv$parcels_zoomed <- FALSE
+
       # Verify geometry is polygon type
       geom_types <- sf::st_geometry_type(geom)
       polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
@@ -341,15 +345,18 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           )
         )
 
-      # Zoom to parcels extent
-      bbox <- sf::st_bbox(parcel_data)
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::fitBounds(
-          lng1 = as.numeric(bbox[["xmin"]]),
-          lat1 = as.numeric(bbox[["ymin"]]),
-          lng2 = as.numeric(bbox[["xmax"]]),
-          lat2 = as.numeric(bbox[["ymax"]])
-        )
+      # Zoom to parcels extent only on first load (not on selection updates)
+      if (!rv$parcels_zoomed) {
+        bbox <- sf::st_bbox(parcel_data)
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::fitBounds(
+            lng1 = as.numeric(bbox[["xmin"]]),
+            lat1 = as.numeric(bbox[["ymin"]]),
+            lng2 = as.numeric(bbox[["xmax"]]),
+            lat2 = as.numeric(bbox[["ymax"]])
+          )
+        rv$parcels_zoomed <- TRUE
+      }
 
       # Re-apply selection styling if needed
       if (length(rv$selected_ids) > 0) {
