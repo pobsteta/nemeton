@@ -1,0 +1,482 @@
+/**
+ * nemetonApp Custom Styles
+ * WCAG 2.1 AA Compliant
+ */
+
+/* ============================================================
+   CSS Variables
+   ============================================================ */
+:root {
+  /* Forest color palette - WCAG AA compliant */
+  --nemeton-primary: #1B6B1B;
+  --nemeton-primary-dark: #145214;
+  --nemeton-primary-light: #2E8B2E;
+  --nemeton-secondary: #6B3710;
+  --nemeton-success: #1E7B1E;
+  --nemeton-info: #2B5B8B;
+  --nemeton-warning: #9B7510;
+  --nemeton-danger: #B01030;
+
+  /* Neutral colors */
+  --nemeton-bg: #FAFAFA;
+  --nemeton-fg: #2C3E50;
+  --nemeton-muted: #6C757D;
+  --nemeton-border: rgba(0, 0, 0, 0.125);
+
+  /* Focus ring - WCAG 2.4.7 */
+  --focus-ring-color: #005FCC;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+
+  /* Minimum touch target - WCAG 2.5.5 */
+  --min-touch-target: 44px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+}
+
+
+/* ============================================================
+   Accessibility: Focus Visible
+   ============================================================ */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color) !important;
+  outline-offset: var(--focus-ring-offset) !important;
+}
+
+/* Remove default focus for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--nemeton-primary);
+  color: white;
+  padding: 12px 24px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 600;
+  transition: top var(--transition-fast);
+  border-radius: 0 0 8px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+
+/* ============================================================
+   Accessibility: Minimum Touch Targets
+   ============================================================ */
+.btn,
+.form-control,
+.form-select,
+.nav-link,
+.dropdown-item,
+.list-group-item-action {
+  min-height: var(--min-touch-target);
+}
+
+.btn-sm {
+  min-height: 36px;
+}
+
+.btn-lg {
+  min-height: 52px;
+}
+
+
+/* ============================================================
+   Navbar
+   ============================================================ */
+.navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.navbar-brand img {
+  margin-right: 8px;
+}
+
+.nav-link {
+  font-weight: 500;
+  transition: opacity var(--transition-fast);
+}
+
+.nav-link:hover {
+  opacity: 0.9;
+}
+
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+.sidebar {
+  border-right: 1px solid var(--nemeton-border);
+  background: #f8f9fa;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  color: var(--nemeton-primary);
+  margin-bottom: 1rem;
+}
+
+.sidebar hr {
+  border-color: var(--nemeton-border);
+  opacity: 0.5;
+}
+
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  border: 1px solid var(--nemeton-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--nemeton-border);
+  font-weight: 600;
+  padding: 12px 16px;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid var(--nemeton-border);
+}
+
+
+/* ============================================================
+   Forms
+   ============================================================ */
+.form-label {
+  font-weight: 600;
+  color: var(--nemeton-fg);
+  margin-bottom: 4px;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--nemeton-primary);
+  box-shadow: 0 0 0 3px rgba(27, 107, 27, 0.2);
+}
+
+.form-control::placeholder {
+  color: var(--nemeton-muted);
+  opacity: 0.7;
+}
+
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 10px 20px;
+  transition: all var(--transition-fast);
+}
+
+.btn-primary {
+  background-color: var(--nemeton-primary);
+  border-color: var(--nemeton-primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--nemeton-primary-dark);
+  border-color: var(--nemeton-primary-dark);
+}
+
+.btn-success {
+  background-color: var(--nemeton-success);
+  border-color: var(--nemeton-success);
+}
+
+.btn-outline-secondary.active {
+  background-color: var(--nemeton-secondary);
+  border-color: var(--nemeton-secondary);
+  color: white;
+}
+
+/* Disabled state */
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   Map Container
+   ============================================================ */
+#map_container,
+.leaflet-container {
+  border-radius: 0 0 8px 8px;
+  min-height: 400px;
+}
+
+.leaflet-control-zoom a {
+  min-width: var(--min-touch-target);
+  min-height: var(--min-touch-target);
+  line-height: var(--min-touch-target);
+  font-size: 18px;
+}
+
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  border-bottom-width: 2px;
+}
+
+.table td,
+.table th {
+  padding: 12px;
+  vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+
+/* ============================================================
+   Progress Bar
+   ============================================================ */
+.progress {
+  height: 24px;
+  border-radius: 12px;
+  background-color: #e9ecef;
+  overflow: hidden;
+}
+
+.progress-bar {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 24px;
+  transition: width var(--transition-normal);
+}
+
+.progress-bar-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+}
+
+.progress-bar-animated {
+  animation: progress-bar-stripes 1s linear infinite;
+}
+
+
+/* ============================================================
+   Alerts
+   ============================================================ */
+.alert {
+  border-left-width: 4px;
+  border-radius: 6px;
+}
+
+.alert-warning {
+  border-left-color: var(--nemeton-warning);
+}
+
+.alert-danger {
+  border-left-color: var(--nemeton-danger);
+}
+
+.alert-success {
+  border-left-color: var(--nemeton-success);
+}
+
+.alert-info {
+  border-left-color: var(--nemeton-info);
+}
+
+
+/* ============================================================
+   Modal
+   ============================================================ */
+.modal-header {
+  border-bottom: 1px solid var(--nemeton-border);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--nemeton-border);
+}
+
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+
+/* ============================================================
+   Loading States
+   ============================================================ */
+.shiny-busy {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--nemeton-primary),
+    var(--nemeton-primary-light),
+    var(--nemeton-primary)
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  z-index: 9999;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ============================================================
+   Selection Indicator
+   ============================================================ */
+.parcel-selected {
+  fill: var(--nemeton-primary) !important;
+  fill-opacity: 0.4 !important;
+  stroke: var(--nemeton-primary) !important;
+  stroke-width: 3px !important;
+}
+
+.parcel-hover {
+  fill-opacity: 0.2 !important;
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   Family Icons
+   ============================================================ */
+.family-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+
+/* ============================================================
+   Responsive Design
+   ============================================================ */
+
+/* Tablet and smaller */
+@media (max-width: 991.98px) {
+  .sidebar {
+    width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid var(--nemeton-border);
+  }
+
+  .navbar-brand span {
+    font-size: 14px;
+  }
+
+  .card-body {
+    padding: 12px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 575.98px) {
+  .btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .btn-group .btn {
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  .d-grid.gap-2 .btn {
+    margin-bottom: 8px;
+  }
+}
+
+
+/* ============================================================
+   Print Styles
+   ============================================================ */
+@media print {
+  .sidebar,
+  .navbar,
+  .btn,
+  .shiny-busy {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  body {
+    font-size: 12pt;
+  }
+}
