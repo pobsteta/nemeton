@@ -347,7 +347,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         )
 
       # Zoom to parcels extent only on first load (not on selection updates)
-      if (!rv$parcels_zoomed) {
+      # Skip if there's a pending restore - let the restore handle the zoom
+      if (!rv$parcels_zoomed && is.null(rv$pending_restore)) {
         bbox <- sf::st_bbox(parcel_data)
         leaflet::leafletProxy(ns("map")) |>
           leaflet::fitBounds(
@@ -491,6 +492,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
               lng2 = as.numeric(bbox[["xmax"]]),
               lat2 = as.numeric(bbox[["ymax"]])
             )
+          # Mark as zoomed to prevent future auto-zoom
+          rv$parcels_zoomed <- TRUE
         }
 
         cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
