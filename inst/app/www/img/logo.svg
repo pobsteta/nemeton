@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="24" cy="24" r="22" fill="#1B6B1B"/>
+
+  <!-- Tree trunk -->
+  <rect x="21" y="28" width="6" height="12" rx="1" fill="#6B3710"/>
+
+  <!-- Tree canopy (three triangular layers) -->
+  <!-- Bottom layer -->
+  <path d="M24 10 L34 26 L14 26 Z" fill="#2E8B2E"/>
+
+  <!-- Middle layer -->
+  <path d="M24 6 L32 20 L16 20 Z" fill="#3CB371"/>
+
+  <!-- Top layer -->
+  <path d="M24 2 L30 14 L18 14 Z" fill="#90EE90"/>
+
+  <!-- Small roots -->
+  <path d="M18 40 Q21 38 21 40" stroke="#6B3710" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M27 40 Q30 38 30 40" stroke="#6B3710" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Small decorative elements (leaves) -->
+  <circle cx="15" cy="22" r="1.5" fill="#90EE90"/>
+  <circle cx="33" cy="22" r="1.5" fill="#90EE90"/>
+  <circle cx="19" cy="16" r="1" fill="#90EE90"/>
+  <circle cx="29" cy="16" r="1" fill="#90EE90"/>
+</svg>
