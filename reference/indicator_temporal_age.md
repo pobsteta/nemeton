@@ -21,6 +21,10 @@ indicator_temporal_age(
 
   An sf object with forest parcels.
 
+- layers:
+
+  A nemeton_layers object (optional, not used in this indicator).
+
 - age_field:
 
   Character. Column name with stand age (years). Default "age".

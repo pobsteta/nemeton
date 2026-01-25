@@ -1,5 +1,31 @@
 # Changelog
 
+## nemeton 0.6.2
+
+**Date**: 2026-01-24
+
+#### Changes
+
+- **Data consolidation**: Merged `massif_demo_units` and
+  `massif_demo_units_extended` into a single dataset with 89 columns (29
+  indicators, 12 family composites, normalized values)
+- **Tests**: Fixed 19 skipped tests, now 1478 tests passing (0 skipped)
+- **Documentation**: Simplified README from 846 to 138 lines
+- **Fixtures**: Added synthetic cadastral file for integration tests
+
+------------------------------------------------------------------------
+
+## nemeton 0.6.1
+
+**Date**: 2026-01-23
+
+#### Changes
+
+- Fix pkgdown references to obsolete v0.1.0 indicators
+- Add lasR remote for GitHub Actions CI
+
+------------------------------------------------------------------------
+
 ## nemeton 0.6.0 (Development)
 
 ### v0.6.0 - Legacy Indicators Removal

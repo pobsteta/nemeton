@@ -384,12 +384,12 @@ for (period in c("2015", "2020", "2025")) {
 
 ## Limitations et perspectives
 
-**Version actuelle (v0.2.0)** : - Framework de base pour 2-3 périodes -
+**Fonctionnalités actuelles** : - Framework de base pour 2-3 périodes -
 Taux de changement linéaires - Visualisations standard
 
-**Développements futurs (v0.3.0+)** : - Modèles de tendances
-non-linéaires - Détection automatique de ruptures (breakpoints) -
-Analyse d’incertitude temporelle - Projections et scénarios
+**Développements futurs** : - Modèles de tendances non-linéaires -
+Détection automatique de ruptures (breakpoints) - Analyse d’incertitude
+temporelle - Projections et scénarios
 
 ## Références
 
@@ -425,7 +425,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1 nemeton_0.6.1
+#> [1] ggplot2_4.0.1 nemeton_0.6.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    

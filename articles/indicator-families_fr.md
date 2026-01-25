@@ -8,9 +8,6 @@ dimensions biophysiques, écologiques et socio-économiques. Cette
 vignette présente le référentiel complet et démontre l’utilisation du
 système de familles.
 
-**Version actuelle : v0.3.0** - **9 familles sur 12 implémentées** avec
-23 indicateurs opérationnels.
-
 ``` r
 library(nemeton)
 library(ggplot2)
@@ -127,7 +124,7 @@ landscape_edge <- nemeton_compute(
 **Interprétation** : - L1 faible : Continuité forestière - L2 élevé :
 Forte proportion de lisière (effet de bord)
 
-### Famille B : Biodiversité (v0.3.0)
+### Famille B : Biodiversité
 
 ``` r
 # B1 - Protection réglementaire (% surface en zones protégées)
@@ -160,7 +157,7 @@ biodiversity_connectivity <- indicator_biodiversity_connectivity(
 (Shannon) \> 1.5 : Diversité structurelle élevée - B3 \< 500m :
 Excellente connectivité écologique
 
-### Famille R : Risques & Résilience (v0.3.0)
+### Famille R : Risques & Résilience
 
 ``` r
 # R1 - Risque incendie (pente + essence + climat)
@@ -191,7 +188,7 @@ risk_drought <- indicator_risk_drought(
 **Interprétation** : - R1, R2, R3 \> 60 : Vulnérabilité élevée - Risques
 cumulés (≥2 indicateurs élevés) : Priorité gestion préventive
 
-### Famille T : Trame Temporelle (v0.3.0)
+### Famille T : Trame Temporelle
 
 ``` r
 # T1 - Ancienneté des peuplements (années)
@@ -215,7 +212,7 @@ temporal_change <- indicator_temporal_change(
 patrimoniale) - T2 \< 1%/an : Stabilité de l’occupation - T2 \> 3%/an :
 Dynamique forte (urbanisation, déprise agricole)
 
-### Famille A : Air & Microclimat (v0.3.0)
+### Famille A : Air & Microclimat
 
 ``` r
 # A1 - Couverture arborée dans buffer 1km (%)
@@ -365,9 +362,9 @@ plot_indicators_map(
 )
 ```
 
-## Analyse croisée inter-familles (v0.3.0)
+## Analyse croisée inter-familles
 
-La v0.3.0 introduit des outils d’**analyse croisée** pour identifier
+`nemeton` propose des outils d’**analyse croisée** pour identifier
 synergies et conflits entre familles.
 
 ### Matrice de corrélations
@@ -485,22 +482,6 @@ list_indicators(family = "C")
 list_indicators(family = "W")
 ```
 
-## Roadmap v0.3.0 → v1.0.0
-
-**Version actuelle (v0.3.0)** : **9 familles sur 12 implémentées** (C,
-B, W, A, F, L, T, R + partiel S)
-
-**Indicateurs opérationnels** : - ✅ **23 indicateurs** pleinement
-fonctionnels - ✅ **Analyse croisée inter-familles** (corrélations,
-hotspots multi-critères) - ✅ **Infrastructure temporelle complète**
-(analyse multi-périodes, détection de changements) - ✅ **Support
-bilingue FR/EN** - ✅ **845+ tests** avec 87% de couverture
-
-**Versions futures** : - **v0.4.0** : Familles S, P complètes (usages
-sociaux, production) - **v0.5.0** : Familles E, N + Dashboard Shiny
-interactif - **v1.0.0** : Référentiel complet 12 familles (36
-indicateurs) + analyses avancées
-
 ## Références
 
 - Référentiel Nemeton : Documentation technique Vivre en Forêt
@@ -508,9 +489,8 @@ indicateurs) + analyses avancées
   [`vignette("getting-started_fr")`](https://pobsteta.github.io/nemeton/articles/getting-started_fr.md)
 - Analyse temporelle :
   [`vignette("temporal-analysis_fr")`](https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.md)
-- **Nouveautés v0.3.0** :
-  [`vignette("biodiversity-resilience-v030_fr")`](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.md) -
-  Familles B, R, T, A + Analyse croisée
+- Biodiversité et résilience :
+  [`vignette("biodiversity-resilience-v030_fr")`](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.md)
 
 ## Session Info
 
@@ -537,7 +517,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1 nemeton_0.6.1
+#> [1] ggplot2_4.0.1 nemeton_0.6.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.5.2    

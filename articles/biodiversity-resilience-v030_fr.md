@@ -1,13 +1,12 @@
-# Biodiversité, Résilience & Services Climatiques (v0.3.0)
+# Biodiversité, Résilience & Services Climatiques
 
 ## Introduction
 
-La version 0.3.0 de `nemeton` étend le référentiel d’indicateurs avec
-**4 nouvelles familles** couvrant la biodiversité, la résilience aux
-risques, les dynamiques temporelles et les services climatiques. Cette
-vignette démontre l’utilisation des **10 nouveaux indicateurs** (B1-B3,
-R1-R3, T1-T2, A1-A2) et leur intégration dans des workflows
-multi-familles.
+`nemeton` propose un référentiel d’indicateurs avec **4 familles**
+couvrant la biodiversité, la résilience aux risques, les dynamiques
+temporelles et les services climatiques. Cette vignette démontre
+l’utilisation des **10 indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2) et
+leur intégration dans des workflows multi-familles.
 
 ``` r
 library(nemeton)
@@ -227,7 +226,7 @@ summary(result$A2)
 #>   62.37   65.76   78.55   77.23   87.91   92.94
 ```
 
-## Workflow Multi-Familles v0.3.0
+## Workflow Multi-Familles
 
 ### Normalisation et agrégation
 
@@ -298,18 +297,17 @@ comparison
 
 ## Visualisation Radar Multi-Axes
 
-### Radar à 4 familles (nouvelles v0.3.0)
+### Radar à 4 familles
 
-Visualisons le profil écosystémique d’une parcelle avec les 4 nouvelles
-familles :
+Visualisons le profil écosystémique d’une parcelle avec les 4 familles :
 
 ``` r
-# Radar pour une parcelle (4 nouvelles familles)
+# Radar pour une parcelle (4 familles)
 nemeton_radar(
   result_norm,
   unit_id = 1,
   mode = "family",
-  title = "Profil v0.3.0 - Parcelle 1 (nouvelles familles)"
+  title = "Profil - Parcelle 1"
 )
 ```
 
@@ -318,7 +316,7 @@ nemeton_radar(
 ### Radar complet avec toutes les familles disponibles
 
 Pour voir l’ensemble des services écosystémiques, ajoutons aussi les
-familles v0.2.0 existantes :
+autres familles :
 
 ``` r
 # Ajouter quelques indicateurs des familles existantes pour démonstration
@@ -354,9 +352,9 @@ nemeton_radar(
 
 ![](biodiversity-resilience-v030_fr_files/figure-html/unnamed-chunk-15-1.png)
 
-### Comparaison de parcelles (NOUVEAU v0.3.0)
+### Comparaison de parcelles
 
-La v0.3.0 introduit le **mode comparaison** pour visualiser plusieurs
+`nemeton` propose le **mode comparaison** pour visualiser plusieurs
 parcelles simultanément :
 
 ``` r
@@ -481,7 +479,7 @@ p_air <- plot_indicators_map(result_complete,
 Vue d’ensemble des indicateurs calculés :
 
 ``` r
-# Résumé des 10 nouveaux indicateurs v0.3.0
+# Résumé des indicateurs
 summary_table <- result_complete |>
   st_drop_geometry() |>
   select(
@@ -514,21 +512,12 @@ summary_table
 
 ## Conclusion
 
-La version **0.3.0** de nemeton apporte :
+Cette vignette a présenté :
 
-- ✅ **10 nouveaux indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2)
-- ✅ **4 nouvelles familles** (Biodiversité, Risques, Temps, Air)
-- ✅ **8 familles sur 12** maintenant implémentées (avec données
-  complètes)
-- ✅ Méthode d’agrégation **“min”** pour analyses de risque
-- ✅ Mode **comparaison** pour radars multi-parcelles
-- ✅ **845+ tests** avec 87.35% de couverture
-
-**Prochaines étapes (v0.4.0)** :
-
-- Familles S (Social), P (Production), E (Énergie), N (Naturalité)
-- Analyses d’incertitude Monte Carlo
-- Intégration avancée de données externes
+- **10 indicateurs** (B1-B3, R1-R3, T1-T2, A1-A2)
+- **4 familles** (Biodiversité, Risques, Temps, Air)
+- Méthode d’agrégation **“min”** pour analyses de risque
+- Mode **comparaison** pour radars multi-parcelles
 
 **Ressources** :
 

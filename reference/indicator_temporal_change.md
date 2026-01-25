@@ -22,6 +22,10 @@ indicator_temporal_change(
 
   An sf object with forest parcels.
 
+- layers:
+
+  A nemeton_layers object (optional, not used in this indicator).
+
 - land_cover_early:
 
   A SpatRaster with early land cover classification.

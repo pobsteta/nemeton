@@ -2,8 +2,8 @@
 
 ### All vignettes
 
-- [Biodiversité, Résilience & Services Climatiques
-  (v0.3.0)](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.md):
+- [Biodiversité, Résilience & Services
+  Climatiques](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.md):
 - [Référentiel Complet 12
   Familles](https://pobsteta.github.io/nemeton/articles/complete-referential_fr.md):
 - [Démarrage rapide avec
