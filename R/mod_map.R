@@ -168,26 +168,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       leaflet::leaflet() |>
         # Set default view (France)
         leaflet::setView(lng = 2.5, lat = 46.5, zoom = 6) |>
-        # Add OSM tiles (default)
+        # Add OSM tiles (default basemap)
         leaflet::addProviderTiles(
           leaflet::providers$OpenStreetMap,
-          group = "OSM",
+          group = "basemap",
+          layerId = "basemap_tiles",
           options = leaflet::providerTileOptions(
             updateWhenZooming = FALSE,
             updateWhenIdle = TRUE
           )
         ) |>
-        # Add satellite tiles
-        leaflet::addProviderTiles(
-          leaflet::providers$Esri.WorldImagery,
-          group = "Satellite",
-          options = leaflet::providerTileOptions(
-            updateWhenZooming = FALSE,
-            updateWhenIdle = TRUE
-          )
-        ) |>
-        # Layers control (hidden, controlled by buttons)
-        leaflet::hideGroup("Satellite") |>
         # Scale bar
         leaflet::addScaleBar(
           position = "bottomleft",
@@ -216,30 +206,28 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
     shiny::observeEvent(input$basemap_osm, {
       rv$basemap <- "osm"
+      cli::cli_alert_info("Switching to OSM basemap")
 
       leaflet::leafletProxy(ns("map")) |>
-        leaflet::showGroup("OSM") |>
-        leaflet::hideGroup("Satellite")
-
-      # Update button states
-      shiny::updateActionButton(session, "basemap_osm",
-                                class = "btn btn-outline-secondary active")
-      shiny::updateActionButton(session, "basemap_satellite",
-                                class = "btn btn-outline-secondary")
+        leaflet::clearGroup("basemap") |>
+        leaflet::addProviderTiles(
+          leaflet::providers$OpenStreetMap,
+          group = "basemap",
+          layerId = "basemap_tiles"
+        )
     })
 
     shiny::observeEvent(input$basemap_satellite, {
       rv$basemap <- "satellite"
+      cli::cli_alert_info("Switching to Satellite basemap")
 
       leaflet::leafletProxy(ns("map")) |>
-        leaflet::hideGroup("OSM") |>
-        leaflet::showGroup("Satellite")
-
-      # Update button states
-      shiny::updateActionButton(session, "basemap_osm",
-                                class = "btn btn-outline-secondary")
-      shiny::updateActionButton(session, "basemap_satellite",
-                                class = "btn btn-outline-secondary active")
+        leaflet::clearGroup("basemap") |>
+        leaflet::addProviderTiles(
+          leaflet::providers$Esri.WorldImagery,
+          group = "basemap",
+          layerId = "basemap_tiles"
+        )
     })
 
 
