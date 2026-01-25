@@ -63,6 +63,8 @@ Suggests:
     RSQLite,
     leaflet (>= 2.1.0),
     leaflet.extras (>= 1.0.0),
+    shinyjs (>= 2.1.0),
+    htmlwidgets (>= 1.6.0),
     rappdirs,
     rsconnect,
     nasapower (>= 4.0.0),

@@ -211,12 +211,12 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       name <- input$name
 
       if (is.null(name) || nchar(trimws(name)) == 0) {
-        shiny::runjs(sprintf(
+        shinyjs::runjs(sprintf(
           "$('#%s').addClass('is-invalid'); $('#%s').removeClass('d-none');",
           ns("name"), ns("name_feedback")
         ))
       } else {
-        shiny::runjs(sprintf(
+        shinyjs::runjs(sprintf(
           "$('#%s').removeClass('is-invalid'); $('#%s').addClass('d-none');",
           ns("name"), ns("name_feedback")
         ))
@@ -376,11 +376,11 @@ mod_project_info_server <- function(id, project) {
       proj <- project()
 
       if (is.null(proj)) {
-        shiny::runjs(sprintf("$('#%s').addClass('d-none');", ns("project_info_container")))
+        shinyjs::runjs(sprintf("$('#%s').addClass('d-none');", ns("project_info_container")))
         return()
       }
 
-      shiny::runjs(sprintf("$('#%s').removeClass('d-none');", ns("project_info_container")))
+      shinyjs::runjs(sprintf("$('#%s').removeClass('d-none');", ns("project_info_container")))
 
       # Update fields
       shinyjs::html(ns("project_name"), proj$metadata$name)
