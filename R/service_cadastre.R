@@ -401,3 +401,38 @@ create_parcel_popup <- function(parcel) {
     area_ha
   )
 }
+
+
+#' Create hover label for parcel
+#'
+#' @description
+#' Creates a simple label shown on hover for a parcel.
+#'
+#' @param parcel sf row with parcel data.
+#'
+#' @return Character string with HTML.
+#'
+#' @noRd
+create_parcel_label <- function(parcel) {
+  # Build label parts
+  parts <- c()
+
+  # Lieu-dit if available
+  lieu_dit <- parcel$nom_com %||% parcel$lieu_dit %||% parcel$lieudit %||% NULL
+  if (!is.null(lieu_dit) && nchar(lieu_dit) > 0 && lieu_dit != "NA") {
+    parts <- c(parts, lieu_dit)
+  }
+
+  # Section and number
+  section <- parcel$section %||% "-"
+  numero <- parcel$numero %||% "-"
+  parts <- c(parts, sprintf("Section %s - N\u00b0%s", section, numero))
+
+  # Area in hectares
+  if (!is.null(parcel$contenance) && !is.na(parcel$contenance)) {
+    area_ha <- round(parcel$contenance / 10000, 2)
+    parts <- c(parts, sprintf("%s ha", area_ha))
+  }
+
+  paste(parts, collapse = " | ")
+}

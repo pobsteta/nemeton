@@ -310,9 +310,13 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         parcel_data <- sf::st_transform(parcel_data, 4326)
       }
 
-      # Create popups
+      # Create popups and labels
       popups <- sapply(seq_len(nrow(parcel_data)), function(i) {
         create_parcel_popup(parcel_data[i, ])
+      })
+
+      labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
+        create_parcel_label(parcel_data[i, ])
       })
 
       leaflet::leafletProxy(ns("map")) |>
@@ -326,6 +330,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           fillColor = STYLE$parcel_default$fillColor,
           fillOpacity = STYLE$parcel_default$fillOpacity,
           popup = popups,
+          label = lapply(labels, htmltools::HTML),
+          labelOptions = leaflet::labelOptions(
+            style = list(
+              "font-size" = "12px",
+              "font-weight" = "normal",
+              "padding" = "4px 8px"
+            ),
+            direction = "top",
+            offset = c(0, -10)
+          ),
           highlightOptions = leaflet::highlightOptions(
             weight = STYLE$parcel_hover$weight,
             fillOpacity = STYLE$parcel_hover$fillOpacity,
@@ -549,6 +563,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
       popup <- create_parcel_popup(parcel)
+      label <- create_parcel_label(parcel)
 
       # Replace polygon with updated style (layerId ensures replacement)
       leaflet::leafletProxy(ns("map")) |>
@@ -562,6 +577,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           fillColor = style$fillColor,
           fillOpacity = style$fillOpacity,
           popup = popup,
+          label = htmltools::HTML(label),
+          labelOptions = leaflet::labelOptions(
+            style = list(
+              "font-size" = "12px",
+              "font-weight" = "normal",
+              "padding" = "4px 8px"
+            ),
+            direction = "top",
+            offset = c(0, -10)
+          ),
           highlightOptions = leaflet::highlightOptions(
             weight = STYLE$parcel_hover$weight,
             fillOpacity = STYLE$parcel_hover$fillOpacity,
