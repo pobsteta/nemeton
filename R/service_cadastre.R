@@ -176,6 +176,7 @@ fetch_happign_cadastre <- function(code_insee, commune_geometry = NULL) {
 #'
 #' @description
 #' Ensures consistent column names and data types across different sources.
+#' Filters to only keep POLYGON/MULTIPOLYGON geometries.
 #'
 #' @param parcels sf object from any source.
 #' @param code_insee Character. INSEE code for reference.
@@ -184,6 +185,21 @@ fetch_happign_cadastre <- function(code_insee, commune_geometry = NULL) {
 #'
 #' @noRd
 standardize_parcels <- function(parcels, code_insee) {
+  # Filter to keep only polygon geometries (exclude points, lines)
+  geom_types <- sf::st_geometry_type(parcels)
+  polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+
+  if (sum(polygon_idx) == 0) {
+    cli::cli_abort("No polygon geometries found in parcels data")
+  }
+
+  if (sum(!polygon_idx) > 0) {
+    cli::cli_alert_warning(
+      "Filtered out {sum(!polygon_idx)} non-polygon geometries (POINT/LINE)"
+    )
+    parcels <- parcels[polygon_idx, ]
+  }
+
   # Get column names (case insensitive matching)
   cols <- tolower(names(parcels))
 
