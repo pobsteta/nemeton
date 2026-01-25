@@ -95,11 +95,7 @@ mod_project_ui <- function(id) {
           class = "form-label",
           i18n$t("project_date")
         ),
-        htmltools::div(
-          class = "form-control bg-light",
-          id = ns("date_display"),
-          format(Sys.time(), "%d/%m/%Y %H:%M")
-        ),
+        shiny::uiOutput(ns("date_display")),
         htmltools::tags$small(
           class = "text-muted",
           i18n$t("auto_generated")
@@ -134,10 +130,7 @@ mod_project_ui <- function(id) {
     ),
     bslib::card_footer(
       class = "d-flex justify-content-between align-items-center",
-      htmltools::div(
-        id = ns("validation_message"),
-        class = "text-danger small"
-      ),
+      shiny::uiOutput(ns("validation_message")),
       shiny::actionButton(
         ns("create"),
         label = i18n$t("create_project"),
@@ -172,7 +165,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
     # Reactive values
     rv <- shiny::reactiveValues(
       current_project = NULL,
-      validation_errors = character(0)
+      validation_errors = character(0),
+      project_date = format(Sys.time(), "%d/%m/%Y %H:%M")
     )
 
     # ========================================
@@ -206,22 +200,13 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       length(errors) == 0
     }
 
-    # Update validation UI
-    shiny::observe({
-      name <- input$name
-
-      if (is.null(name) || nchar(trimws(name)) == 0) {
-        shiny::runjs(sprintf(
-          "$('#%s').addClass('is-invalid'); $('#%s').removeClass('d-none');",
-          ns("name"), ns("name_feedback")
-        ))
-      } else {
-        shiny::runjs(sprintf(
-          "$('#%s').removeClass('is-invalid'); $('#%s').addClass('d-none');",
-          ns("name"), ns("name_feedback")
-        ))
-      }
-    }) |> shiny::bindEvent(input$name, ignoreInit = TRUE)
+    # Date display (reactive)
+    output$date_display <- shiny::renderUI({
+      htmltools::div(
+        class = "form-control bg-light",
+        rv$project_date
+      )
+    })
 
     # ========================================
     # Restore Project Form When Loading
@@ -248,13 +233,9 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         value = project$metadata$owner %||% ""
       )
 
-      # Update date display
+      # Store date for display update
       if (!is.null(project$metadata$created_at)) {
-        date_str <- format(as.POSIXct(project$metadata$created_at), "%d/%m/%Y %H:%M")
-        shiny::runjs(sprintf(
-          "$('#%s').text('%s');",
-          ns("date_display"), date_str
-        ))
+        rv$project_date <- format(as.POSIXct(project$metadata$created_at), "%d/%m/%Y %H:%M")
       }
 
       rv$current_project <- project
@@ -265,18 +246,19 @@ mod_project_server <- function(id, app_state, selected_parcels) {
     # Create Project
     # ========================================
 
+    # Validation message output
+    output$validation_message <- shiny::renderUI({
+      errors <- rv$validation_errors
+      if (length(errors) == 0) return(NULL)
+      htmltools::div(
+        class = "text-danger small",
+        htmltools::HTML(paste(errors, collapse = "<br>"))
+      )
+    })
+
     shiny::observe({
       if (!validate_form()) {
-        # Show validation errors
-        shiny::updateTextInput(
-          session,
-          "validation_message",
-          value = paste(rv$validation_errors, collapse = "; ")
-        )
-        shinyjs::html(
-          ns("validation_message"),
-          paste(rv$validation_errors, collapse = "<br>")
-        )
+        # Validation errors are displayed via renderUI above
         return()
       }
 
@@ -349,49 +331,9 @@ mod_project_server <- function(id, app_state, selected_parcels) {
 #' @noRd
 mod_project_info_ui <- function(id) {
   ns <- shiny::NS(id)
+  # Entire card is rendered dynamically based on project state
 
-  opts <- get_app_options()
-  lang <- opts$language %||% "fr"
-  i18n <- get_i18n(lang)
-
-  htmltools::div(
-    id = ns("project_info_container"),
-    class = "d-none",
-    bslib::card(
-      class = "border-success",
-      bslib::card_header(
-        class = "bg-success text-white py-2",
-        htmltools::div(
-          class = "d-flex align-items-center justify-content-between",
-          htmltools::div(
-            bsicons::bs_icon("folder-check", class = "me-2"),
-            htmltools::span(id = ns("project_name"), class = "fw-bold")
-          ),
-          htmltools::tags$small(
-            id = ns("project_status"),
-            class = "badge bg-light text-dark"
-          )
-        )
-      ),
-      bslib::card_body(
-        class = "py-2",
-        htmltools::div(
-          class = "row small",
-          htmltools::div(
-            class = "col-md-6",
-            htmltools::tags$strong(i18n$t("parcels")), ": ",
-            htmltools::span(id = ns("parcels_count"))
-          ),
-          htmltools::div(
-            class = "col-md-6",
-            htmltools::tags$strong(i18n$t("created")), ": ",
-            htmltools::span(id = ns("created_at"))
-          )
-        ),
-        shiny::uiOutput(ns("description_display"))
-      )
-    )
-  )
+  shiny::uiOutput(ns("project_info_card"))
 }
 
 
@@ -409,37 +351,61 @@ mod_project_info_server <- function(id, project) {
     lang <- opts$language %||% "fr"
     i18n <- get_i18n(lang)
 
-    # Update display when project changes
-    shiny::observe({
+    # Render entire card dynamically based on project state
+    output$project_info_card <- shiny::renderUI({
       proj <- project()
 
+      # Hide card if no project
       if (is.null(proj)) {
-        shiny::runjs(sprintf("$('#%s').addClass('d-none');", ns("project_info_container")))
-        return()
-      }
-
-      shiny::runjs(sprintf("$('#%s').removeClass('d-none');", ns("project_info_container")))
-
-      # Update fields
-      shinyjs::html(ns("project_name"), proj$metadata$name)
-      shinyjs::html(ns("project_status"), i18n$t(paste0("status_", proj$metadata$status)))
-      shinyjs::html(ns("parcels_count"), as.character(proj$metadata$parcels_count))
-      shinyjs::html(ns("created_at"), format(
-        as.POSIXct(proj$metadata$created_at),
-        "%d/%m/%Y"
-      ))
-    })
-
-    # Description (only if not empty)
-    output$description_display <- shiny::renderUI({
-      proj <- project()
-      if (is.null(proj) || nchar(proj$metadata$description %||% "") == 0) {
         return(NULL)
       }
 
-      htmltools::div(
-        class = "mt-2 small text-muted",
-        htmltools::tags$em(proj$metadata$description)
+      # Build description section if present
+      description_ui <- NULL
+      if (nchar(proj$metadata$description %||% "") > 0) {
+        description_ui <- htmltools::div(
+          class = "mt-2 small text-muted",
+          htmltools::tags$em(proj$metadata$description)
+        )
+      }
+
+      # Render the card
+      bslib::card(
+        class = "border-success",
+        bslib::card_header(
+          class = "bg-success text-white py-2",
+          htmltools::div(
+            class = "d-flex align-items-center justify-content-between",
+            htmltools::div(
+              bsicons::bs_icon("folder-check", class = "me-2"),
+              htmltools::span(class = "fw-bold", proj$metadata$name)
+            ),
+            htmltools::tags$small(
+              class = "badge bg-light text-dark",
+              i18n$t(paste0("status_", proj$metadata$status))
+            )
+          )
+        ),
+        bslib::card_body(
+          class = "py-2",
+          htmltools::div(
+            class = "row small",
+            htmltools::div(
+              class = "col-md-6",
+              htmltools::tags$strong(i18n$t("parcels")), ": ",
+              htmltools::span(as.character(proj$metadata$parcels_count))
+            ),
+            htmltools::div(
+              class = "col-md-6",
+              htmltools::tags$strong(i18n$t("created")), ": ",
+              htmltools::span(format(
+                as.POSIXct(proj$metadata$created_at),
+                "%d/%m/%Y"
+              ))
+            )
+          ),
+          description_ui
+        )
       )
     })
   })
