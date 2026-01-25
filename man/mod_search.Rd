@@ -5,6 +5,6 @@
 \title{Search Module for nemetonApp}
 \description{
 Shiny module for searching and selecting French communes.
-Provides department filtering, name autocomplete, and postal code search.
+Provides department filtering and commune selection.
 }
 \keyword{internal}
