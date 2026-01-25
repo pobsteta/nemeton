@@ -259,36 +259,44 @@ mod_search_server <- function(id, app_state) {
       dept_code <- restore$department_code
       commune_code <- restore$commune_code
 
+      cli::cli_alert_info("Restoring location: dept={dept_code}, commune={commune_code}")
+
       # Update department dropdown
       shiny::updateSelectInput(session, "departement", selected = dept_code)
 
-      # Load communes for department
-      communes <- get_communes_in_department(dept_code)
-      if (!is.null(communes) && nrow(communes) > 0) {
-        choices <- format_communes_for_selectize(communes)
+      # Load communes for department and update with delay to ensure dept is updated first
+      later::later(function() {
+        communes <- get_communes_in_department(dept_code)
+        if (!is.null(communes) && nrow(communes) > 0) {
+          choices <- format_communes_for_selectize(communes)
 
-        # Update commune dropdown with choices and selection
-        shiny::updateSelectizeInput(
-          session,
-          "commune",
-          choices = choices,
-          selected = commune_code,
-          server = FALSE
-        )
+          cli::cli_alert_info("Updating commune dropdown with {nrow(communes)} choices")
 
-        # Load commune geometry
-        geometry <- get_commune_geometry(commune_code)
-        if (!is.null(geometry)) {
-          rv$selected_commune <- commune_code
-          rv$commune_geometry <- geometry
+          # Update commune dropdown with choices and selection
+          shiny::updateSelectizeInput(
+            session,
+            "commune",
+            choices = choices,
+            selected = commune_code,
+            server = FALSE
+          )
 
-          # Get commune info
-          info <- communes[communes$code_insee == commune_code, ]
-          if (nrow(info) > 0) {
-            rv$commune_info <- as.list(info[1, ])
+          # Load commune geometry
+          geometry <- get_commune_geometry(commune_code)
+          if (!is.null(geometry)) {
+            rv$selected_commune <- commune_code
+            rv$commune_geometry <- geometry
+
+            # Get commune info
+            info <- communes[communes$code_insee == commune_code, ]
+            if (nrow(info) > 0) {
+              rv$commune_info <- as.list(info[1, ])
+            }
+
+            cli::cli_alert_success("Location restored successfully")
           }
         }
-      }
+      }, delay = 0.5)  # 500ms delay to ensure department dropdown is updated
     }, ignoreInit = TRUE)
 
 

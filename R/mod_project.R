@@ -317,6 +317,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           )
         } else {
           # UPDATE mode
+          cli::cli_alert_info("Updating project {rv$editing_project_id}...")
+
           update_project_metadata(
             project_id = rv$editing_project_id,
             updates = list(
@@ -325,6 +327,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
               owner = input$owner %||% ""
             )
           )
+
+          cli::cli_alert_success("Project metadata updated")
 
           # Reload the updated project
           project <- load_project(rv$editing_project_id)
