@@ -44,14 +44,7 @@ mod_search_ui <- function(id) {
       choices = NULL,
       options = list(
         placeholder = i18n$t("search_commune"),
-        maxOptions = 100,
-        loadThrottle = 300,
-        searchField = c("label", "value"),
-        render = I("{
-          option: function(item, escape) {
-            return '<div>' + escape(item.label) + '</div>';
-          }
-        }")
+        maxOptions = 500
       ),
       width = "100%"
     ),
