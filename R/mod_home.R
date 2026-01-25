@@ -191,9 +191,29 @@ mod_home_server <- function(id, app_state) {
         return()
       }
 
-      # Update app state
+      # Update app state with loaded project
       app_state$current_project <- project
       app_state$project_id <- project$id
+
+      # Extract commune code from parcels if available
+      if (!is.null(project$parcels) && nrow(project$parcels) > 0) {
+        commune_code <- unique(project$parcels$code_insee)[1]
+        # Extract department from commune code (first 2 or 3 chars)
+        dept_code <- if (grepl("^97", commune_code)) {
+          substr(commune_code, 1, 3)  # DOM-TOM
+        } else {
+          substr(commune_code, 1, 2)
+        }
+
+        # Signal to restore location and parcels
+        app_state$restore_project <- list(
+          commune_code = commune_code,
+          department_code = dept_code,
+          parcels = project$parcels,
+          selected_ids = project$parcels$id,  # All saved parcels were selected
+          timestamp = Sys.time()  # Force reactivity
+        )
+      }
 
       # Notify
       shiny::showNotification(

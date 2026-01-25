@@ -447,6 +447,40 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
+    # Restore Project Selection
+    # ========================================
+
+    shiny::observe({
+      restore <- app_state$restore_project
+      shiny::req(restore)
+      shiny::req(restore$selected_ids)
+
+      # Wait for parcels to be loaded
+      parcel_data <- parcels()
+      shiny::req(parcel_data)
+      shiny::req(nrow(parcel_data) > 0)
+
+      # Find matching parcel IDs (intersection of saved and loaded)
+      matching_ids <- intersect(restore$selected_ids, parcel_data$id)
+
+      if (length(matching_ids) > 0) {
+        # Set selected IDs
+        rv$selected_ids <- matching_ids
+
+        # Update styles for selected parcels
+        for (pid in matching_ids) {
+          update_parcel_style(pid, selected = TRUE)
+        }
+
+        cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
+      }
+
+      # Clear restore signal to prevent re-triggering
+      app_state$restore_project <- NULL
+    })
+
+
+    # ========================================
     # Update Parcel Style Helper
     # ========================================
 
