@@ -150,95 +150,31 @@ app_server <- function(input, output, session) {
 
 
   # ============================================================
-  # MODULE SERVERS (Placeholders)
+  # MODULE SERVERS
   # ============================================================
 
-  # Home module would be called here
-  # mod_home_server("home", app_state, selection_state, compute_state)
+  # Home module (search, map, project form)
+  home_result <- mod_home_server("home", app_state)
 
-  # Synthesis module
+  # Update selection state from home module
+  shiny::observe({
+    selection_state$commune_code <- home_result$selected_commune()
+    selection_state$selected_ids <- if (!is.null(home_result$selected_parcels())) {
+      home_result$selected_parcels()$id
+    } else {
+      character(0)
+    }
+  })
+
+  # Synthesis module (placeholder - Phase 5)
   # mod_synthesis_server("synthesis", app_state, compute_state)
 
-  # Family modules (one per family)
+  # Family modules (placeholder - Phase 6)
   # lapply(get_family_codes(), function(code) {
   #   mod_family_server(paste0("family_", code), code, app_state, compute_state)
   # })
 
-
-  # ============================================================
-  # PLACEHOLDER: Home Module Logic (inline for now)
-  # ============================================================
-
-  # Department choices
-  shiny::observe({
-    i18n <- get_i18n(app_state$language)
-    depts <- get_departments_list()
-
-    shiny::updateSelectInput(
-      session,
-      "home-departement",
-      choices = c(i18n$t("select_department"), depts)
-    )
-  })
-
-  # Selection info
-  output$`home-selection_info` <- shiny::renderUI({
-    n <- length(selection_state$selected_ids)
-    max_n <- get_app_config("max_parcels")
-    i18n <- get_i18n(app_state$language)
-
-    if (n == 0) {
-      htmltools::div(
-        class = "text-muted",
-        i18n$t("no_selection")
-      )
-    } else {
-      htmltools::div(
-        htmltools::p(
-          class = if (n >= max_n) "text-warning fw-bold" else "text-success",
-          sprintf("%d / %d %s", n, max_n, i18n$t("parcels_selected"))
-        ),
-        if (n >= max_n) {
-          htmltools::p(
-            class = "small text-warning",
-            i18n$t("max_parcels_warning")
-          )
-        }
-      )
-    }
-  })
-
-  # Map placeholder
-  output$`home-map_placeholder` <- shiny::renderUI({
-    i18n <- get_i18n(app_state$language)
-
-    if (!requireNamespace("leaflet", quietly = TRUE)) {
-      htmltools::div(
-        class = "d-flex justify-content-center align-items-center h-100",
-        htmltools::p(
-          class = "text-muted",
-          "Leaflet package required. Install with: install.packages('leaflet')"
-        )
-      )
-    } else {
-      # When leaflet is available, render map
-      leaflet::leafletOutput("home-map", height = "100%")
-    }
-  })
-
-  # Enable compute button when selection is valid
-  shiny::observe({
-    n <- length(selection_state$selected_ids)
-    has_name <- nchar(trimws(input$`home-project_name` %||% "")) > 0
-
-    can_compute <- n > 0 && has_name && app_state$project_status != "computing"
-
-    shiny::updateActionButton(
-      session,
-      "home-btn_compute",
-      disabled = !can_compute
-    )
-  })
+  # Note: Selection info, map, and compute button are now handled by mod_home
 
 
   # ============================================================
