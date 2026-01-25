@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,9 +40,74 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/pascalobstetar/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/pascalobstetar/nemeton/blob/v0.8.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.0" id="nemeton-080">nemeton 0.8.0<a class="anchor" aria-label="anchor" href="#nemeton-080"></a></h2>
+<p><strong>Date</strong>: 2026-01-25</p>
+<div class="section level4">
+<h4 id="new-features-0-8-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-8-0"></a></h4>
+<div class="section level5">
+<h5 id="nemetonapp---interactive-shiny-application-0-8-0">nemetonApp - Interactive Shiny Application<a class="anchor" aria-label="anchor" href="#nemetonapp---interactive-shiny-application-0-8-0"></a></h5>
+<ul><li>
+<strong><code><a href="../reference/run_app.html">run_app()</a></code></strong> - Launch the nemetonApp Shiny application
+<ul><li>Interactive parcel selection on a map (Leaflet)</li>
+<li>French commune search with autocomplete</li>
+<li>Calculate all 31 nemeton indicators automatically</li>
+<li>Visualize results with 12-family radar charts</li>
+<li>Export PDF reports and GeoPackage data</li>
+<li>Bilingual support (French/English)</li>
+</ul></li>
+<li>
+<strong>Application Architecture</strong>
+<ul><li>
+<code>app_ui.R</code> - bslib-based responsive UI with Bootstrap 5</li>
+<li>
+<code>app_server.R</code> - Modular server with reactive state management</li>
+<li>
+<code>app_config.R</code> - Configuration constants and indicator families</li>
+<li>
+<code>utils_theme.R</code> - WCAG 2.1 AA accessible theme</li>
+<li>
+<code>utils_i18n.R</code> - Internationalization with 200+ messages</li>
+</ul></li>
+<li>
+<strong>Accessibility (WCAG 2.1 AA)</strong>
+<ul><li>Color contrast ratio &gt;= 4.5:1 for text</li>
+<li>Colorblind-friendly viridis palettes</li>
+<li>Minimum touch target 44×44px</li>
+<li>Focus visible indicators</li>
+<li>Keyboard navigation support</li>
+</ul></li>
+<li>
+<strong>Data Services</strong>
+<ul><li>
+<code>service_communes.R</code> - French commune search API</li>
+<li>
+<code>service_cadastre.R</code> - Cadastral parcel retrieval</li>
+<li>
+<code>service_project.R</code> - Project management and persistence</li>
+</ul></li>
+</ul></div>
+</div>
+<div class="section level4">
+<h4 id="bug-fixes-0-8-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-8-0"></a></h4>
+<ul><li>Fixed <code>\dontrun</code> missing brace in service_communes.R documentation</li>
+<li>Fixed integer type for symbol_shapes in accessibility config</li>
+<li>Updated indicator count test (29 → 31 indicators)</li>
+</ul></div>
+<div class="section level4">
+<h4 id="dependencies-0-8-0">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-8-0"></a></h4>
+<ul><li>Added <code>shiny (&gt;= 1.8.0)</code> to Imports</li>
+<li>Added <code>bslib (&gt;= 0.6.0)</code> to Imports</li>
+<li>Added <code>htmltools (&gt;= 0.5.7)</code> to Imports</li>
+<li>Added <code>leaflet (&gt;= 2.1.0)</code> to Suggests</li>
+<li>Added <code>cicerone (&gt;= 1.0.0)</code> to Suggests (guided tour)</li>
+<li>Added <code>shinyWidgets (&gt;= 0.8.0)</code> to Suggests</li>
+<li>Added <code>rappdirs</code> to Suggests (project directories)</li>
+</ul><hr></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.2" id="nemeton-062">nemeton 0.6.2<a class="anchor" aria-label="anchor" href="#nemeton-062"></a></h2>
 <p><strong>Date</strong>: 2026-01-24</p>

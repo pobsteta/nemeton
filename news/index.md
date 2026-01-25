@@ -1,5 +1,56 @@
 # Changelog
 
+## nemeton 0.8.0
+
+**Date**: 2026-01-25
+
+#### New Features
+
+##### nemetonApp - Interactive Shiny Application
+
+- **[`run_app()`](https://pobsteta.github.io/nemeton/reference/run_app.md)** -
+  Launch the nemetonApp Shiny application
+  - Interactive parcel selection on a map (Leaflet)
+  - French commune search with autocomplete
+  - Calculate all 31 nemeton indicators automatically
+  - Visualize results with 12-family radar charts
+  - Export PDF reports and GeoPackage data
+  - Bilingual support (French/English)
+- **Application Architecture**
+  - `app_ui.R` - bslib-based responsive UI with Bootstrap 5
+  - `app_server.R` - Modular server with reactive state management
+  - `app_config.R` - Configuration constants and indicator families
+  - `utils_theme.R` - WCAG 2.1 AA accessible theme
+  - `utils_i18n.R` - Internationalization with 200+ messages
+- **Accessibility (WCAG 2.1 AA)**
+  - Color contrast ratio \>= 4.5:1 for text
+  - Colorblind-friendly viridis palettes
+  - Minimum touch target 44×44px
+  - Focus visible indicators
+  - Keyboard navigation support
+- **Data Services**
+  - `service_communes.R` - French commune search API
+  - `service_cadastre.R` - Cadastral parcel retrieval
+  - `service_project.R` - Project management and persistence
+
+#### Bug Fixes
+
+- Fixed `\dontrun` missing brace in service_communes.R documentation
+- Fixed integer type for symbol_shapes in accessibility config
+- Updated indicator count test (29 → 31 indicators)
+
+#### Dependencies
+
+- Added `shiny (>= 1.8.0)` to Imports
+- Added `bslib (>= 0.6.0)` to Imports
+- Added `htmltools (>= 0.5.7)` to Imports
+- Added `leaflet (>= 2.1.0)` to Suggests
+- Added `cicerone (>= 1.0.0)` to Suggests (guided tour)
+- Added `shinyWidgets (>= 0.8.0)` to Suggests
+- Added `rappdirs` to Suggests (project directories)
+
+------------------------------------------------------------------------
+
 ## nemeton 0.6.2
 
 **Date**: 2026-01-24
