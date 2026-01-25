@@ -472,6 +472,19 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           update_parcel_style(pid, selected = TRUE)
         }
 
+        # Zoom to selected parcels extent
+        selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
+        if (nrow(selected_parcels) > 0) {
+          bbox <- sf::st_bbox(selected_parcels)
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = as.numeric(bbox[["xmin"]]),
+              lat1 = as.numeric(bbox[["ymin"]]),
+              lng2 = as.numeric(bbox[["xmax"]]),
+              lat2 = as.numeric(bbox[["ymax"]])
+            )
+        }
+
         cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
       }
 
