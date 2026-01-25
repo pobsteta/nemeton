@@ -193,6 +193,11 @@ reference:
     - summary.nemeton_layers
     - summary.nemeton_temporal
 
+  - title: "Application Shiny"
+    desc: "Interface interactive nemetonApp"
+    contents:
+    - run_app
+
   - title: "Documentation du package"
     contents:
     - nemeton-package
