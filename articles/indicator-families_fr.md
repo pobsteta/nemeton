@@ -300,44 +300,36 @@ family_means
 
 ### Radar chart 12 familles
 
+La fonction
+[`nemeton_radar()`](https://pobsteta.github.io/nemeton/reference/nemeton_radar.md)
+avec `mode = "family"` permet de visualiser le profil complet d’une
+parcelle sur les 12 familles :
+
 ``` r
-# Préparer les données pour le radar
-radar_data <- demo_norm |>
-  st_drop_geometry() |>
-  filter(parcel_id %in% c("P01", "P05", "P10")) |>
-  select(parcel_id, starts_with("family_")) |>
-  pivot_longer(
-    cols = starts_with("family_"),
-    names_to = "family",
-    values_to = "score"
-  ) |>
-  mutate(family = gsub("family_", "", family))
-
-# Ordonner les familles
-family_order <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
-radar_data$family <- factor(radar_data$family, levels = family_order)
-
-# Radar plot
-ggplot(radar_data, aes(x = family, y = score, group = parcel_id, color = parcel_id)) +
-  geom_polygon(fill = NA, linewidth = 1.2) +
-  geom_point(size = 3) +
-  coord_polar() +
-  scale_y_continuous(limits = c(0, 100)) +
-  scale_color_viridis_d(option = "D", end = 0.8) +
-  labs(
-    title = "Profil radar 12 familles",
-    subtitle = "Comparaison de 3 parcelles",
-    color = "Parcelle"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.y = element_blank(),
-    axis.title = element_blank(),
-    legend.position = "bottom"
-  )
+# Radar pour une parcelle (mode famille)
+nemeton_radar(
+  demo_norm,
+  unit_id = "P01",
+  mode = "family",
+  title = "Profil écosystémique - Parcelle P01"
+)
 ```
 
 ![](indicator-families_fr_files/figure-html/unnamed-chunk-9-1.png)
+
+### Comparaison de plusieurs parcelles
+
+``` r
+# Comparer plusieurs parcelles sur le même radar
+nemeton_radar(
+  demo_norm,
+  unit_id = c("P01", "P05", "P10"),
+  mode = "family",
+  title = "Comparaison de 3 parcelles - 12 familles"
+)
+```
+
+![](indicator-families_fr_files/figure-html/unnamed-chunk-10-1.png)
 
 ### Cartes des scores de famille
 
@@ -373,7 +365,7 @@ ggplot(map_data) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-10-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-11-1.png)
 
 ## Analyse croisée inter-familles
 
@@ -417,7 +409,7 @@ ggplot(cor_data, aes(x = Family1, y = Family2, fill = Correlation)) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-11-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-12-1.png)
 
 **Interprétation** : - **Corrélation positive (rouge)** : Synergies (ex:
 Carbone × Production) - **Corrélation négative (bleu)** :
@@ -440,7 +432,7 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = family_C, y = family_B)) +
   theme_minimal()
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-12-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-13-1.png)
 
 ## Identification de hotspots multi-services
 
@@ -479,7 +471,7 @@ ggplot(demo_norm) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-13-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-14-1.png)
 
 ### Statistiques des hotspots
 
@@ -546,7 +538,7 @@ ggplot(demo_norm) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-15-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-16-1.png)
 
 ### Distribution de l’indice global
 
@@ -570,7 +562,7 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = ecosystem_index)) +
   theme_minimal()
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-16-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-17-1.png)
 
 ## Bonnes pratiques
 
