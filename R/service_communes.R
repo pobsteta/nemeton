@@ -367,8 +367,15 @@ get_commune_geometry <- function(code_insee) {
       sf::st_crs(commune_sf) <- 4326
     }
 
-    # Verify geometry type is POLYGON or MULTIPOLYGON
+    # Handle different geometry types
     geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
+
+    if (geom_type == "GEOMETRYCOLLECTION") {
+      # Extract polygon parts from geometry collection
+      commune_sf <- sf::st_collection_extract(commune_sf, type = "POLYGON")
+      geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
+    }
+
     if (!geom_type %in% c("POLYGON", "MULTIPOLYGON")) {
       cli::cli_warn("Commune geometry is not a polygon: {geom_type}")
       return(NULL)
