@@ -48,6 +48,7 @@ TRANSLATIONS <- list(
   basemap_osm = list(fr = "OSM", en = "OSM"),
   basemap_satellite = list(fr = "Satellite", en = "Satellite"),
   loading_parcels = list(fr = "Chargement des parcelles...", en = "Loading parcels..."),
+  loading_commune = list(fr = "Chargement de la commune...", en = "Loading commune..."),
   click_to_select = list(fr = "Cliquez pour s\u00e9lectionner", en = "Click to select"),
 
   # ============================================================
