@@ -346,18 +346,18 @@ get_commune_geometry <- function(code_insee) {
       return(NULL)
     }
 
-    # Build GeoJSON Feature from contour
+    # Build GeoJSON Feature from contour using proper list structure
     geojson_feature <- list(
-      type = "Feature",
+      type = jsonlite::unbox("Feature"),
       properties = list(
-        code = data$code,
-        nom = data$nom
+        code = jsonlite::unbox(data$code),
+        nom = jsonlite::unbox(data$nom)
       ),
       geometry = data$contour
     )
 
-    # Convert to JSON string
-    geojson_str <- jsonlite::toJSON(geojson_feature, auto_unbox = TRUE)
+    # Convert to JSON string (without auto_unbox to avoid warning)
+    geojson_str <- jsonlite::toJSON(geojson_feature)
 
     # Parse as sf
     commune_sf <- sf::st_read(geojson_str, quiet = TRUE)
