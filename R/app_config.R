@@ -71,7 +71,7 @@ INDICATOR_FAMILIES <- list(
     code = "C",
     name_fr = "Carbone & Vitalit\u00e9",
     name_en = "Carbon & Vitality",
-    icon = "leaf",
+    icon = "tree-fill",
     color = "#228B22",
     indicators = c("C1", "C2")
   ),
@@ -79,7 +79,7 @@ INDICATOR_FAMILIES <- list(
     code = "B",
     name_fr = "Biodiversit\u00e9",
     name_en = "Biodiversity",
-    icon = "bug",
+    icon = "bug-fill",
     color = "#9932CC",
     indicators = c("B1", "B2", "B3")
   ),
@@ -87,7 +87,7 @@ INDICATOR_FAMILIES <- list(
     code = "W",
     name_fr = "Eau",
     name_en = "Water",
-    icon = "droplet",
+    icon = "droplet-fill",
     color = "#1E90FF",
     indicators = c("W1", "W2", "W3")
   ),
@@ -103,7 +103,7 @@ INDICATOR_FAMILIES <- list(
     code = "F",
     name_fr = "Fertilit\u00e9 des Sols",
     name_en = "Soil Fertility",
-    icon = "mountain",
+    icon = "globe-americas",
     color = "#8B4513",
     indicators = c("F1", "F2")
   ),
@@ -111,7 +111,7 @@ INDICATOR_FAMILIES <- list(
     code = "L",
     name_fr = "Paysage",
     name_en = "Landscape",
-    icon = "image",
+    icon = "image-fill",
     color = "#32CD32",
     indicators = c("L1", "L2")
   ),
@@ -119,7 +119,7 @@ INDICATOR_FAMILIES <- list(
     code = "T",
     name_fr = "Dynamique Temporelle",
     name_en = "Temporal Dynamics",
-    icon = "clock",
+    icon = "clock-fill",
     color = "#FFD700",
     indicators = c("T1", "T2")
   ),
@@ -127,7 +127,7 @@ INDICATOR_FAMILIES <- list(
     code = "R",
     name_fr = "Risques & R\u00e9silience",
     name_en = "Risks & Resilience",
-    icon = "triangle-exclamation",
+    icon = "exclamation-triangle-fill",
     color = "#DC143C",
     indicators = c("R1", "R2", "R3", "R4")
   ),
@@ -135,7 +135,7 @@ INDICATOR_FAMILIES <- list(
     code = "S",
     name_fr = "Social & R\u00e9cr\u00e9atif",
     name_en = "Social & Recreational",
-    icon = "users",
+    icon = "people-fill",
     color = "#FF69B4",
     indicators = c("S1", "S2", "S3")
   ),
@@ -143,7 +143,7 @@ INDICATOR_FAMILIES <- list(
     code = "P",
     name_fr = "Production",
     name_en = "Production",
-    icon = "tree",
+    icon = "box-seam-fill",
     color = "#006400",
     indicators = c("P1", "P2", "P3")
   ),
@@ -151,7 +151,7 @@ INDICATOR_FAMILIES <- list(
     code = "E",
     name_fr = "\u00c9nergie & Climat",
     name_en = "Energy & Climate",
-    icon = "bolt",
+    icon = "lightning-fill",
     color = "#FF8C00",
     indicators = c("E1", "E2")
   ),
@@ -159,7 +159,7 @@ INDICATOR_FAMILIES <- list(
     code = "N",
     name_fr = "Naturalit\u00e9",
     name_en = "Naturalness",
-    icon = "spa",
+    icon = "flower1",
     color = "#2E8B57",
     indicators = c("N1", "N2", "N3")
   )
