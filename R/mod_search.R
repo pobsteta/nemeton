@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Shiny module for searching and selecting French communes.
-#' Provides department filtering, name autocomplete, and postal code search.
+#' Provides department filtering and commune selection.
 #'
 #' @name mod_search
 #' @keywords internal
@@ -49,36 +49,12 @@ mod_search_ui <- function(id) {
       width = "100%"
     ),
 
-    # Postal code search
-    htmltools::div(
-      class = "mb-3",
-      shiny::textInput(
-        inputId = ns("code_postal"),
-        label = htmltools::tagList(
-          bsicons::bs_icon("mailbox"),
-          i18n$t("postal_code")
-        ),
-        placeholder = "75001",
-        width = "100%"
-      ),
-
-      # Search by postal code button
-      shiny::actionButton(
-        inputId = ns("search_postal"),
-        label = NULL,
-        icon = shiny::icon("search"),
-        class = "btn-outline-secondary btn-sm mt-n2",
-        style = "position: absolute; right: 15px; top: 50%; transform: translateY(-50%);"
-      )
-    ),
-
     # Results info
     shiny::uiOutput(ns("search_info")),
 
     # Loading indicator
     shiny::conditionalPanel(
-      condition = sprintf("input['%s'] || input['%s']",
-                          ns("commune"), ns("search_postal")),
+      condition = sprintf("input['%s']", ns("commune")),
       ns = ns,
       htmltools::div(
         class = "text-center py-2",
@@ -88,7 +64,7 @@ mod_search_ui <- function(id) {
           class = "spinner-border spinner-border-sm text-primary",
           role = "status"
         ),
-        htmltools::span(class = "ms-2 text-muted", i18n$t("loading_parcels"))
+        htmltools::span(class = "ms-2 text-muted", i18n$t("loading_commune"))
       )
     )
   )
@@ -241,62 +217,6 @@ mod_search_server <- function(id, app_state) {
       )
 
       rv$is_loading <- FALSE
-    }, ignoreInit = TRUE)
-
-
-    # ========================================
-    # Handle Postal Code Search
-    # ========================================
-
-    shiny::observeEvent(input$search_postal, {
-      postal <- input$code_postal
-
-      if (is.null(postal) || !grepl("^[0-9]{5}$", postal)) {
-        shiny::showNotification(
-          get_i18n(get_lang())$t("error_invalid_postal"),
-          type = "warning"
-        )
-        return()
-      }
-
-      rv$is_loading <- TRUE
-
-      # Search by postal code
-      communes <- search_by_postal_code(postal)
-
-      if (nrow(communes) == 0) {
-        shiny::showNotification(
-          get_i18n(get_lang())$t("error_no_parcels"),
-          type = "warning"
-        )
-        rv$is_loading <- FALSE
-        return()
-      }
-
-      # If multiple communes, show first one
-      code <- communes$code_insee[1]
-
-      # Update department if needed
-      dept <- communes$departement[1]
-      shiny::updateSelectInput(session, "departement", selected = dept)
-
-      # Update commune selection
-      shiny::updateSelectizeInput(
-        session,
-        "commune",
-        choices = format_communes_for_selectize(communes),
-        selected = code
-      )
-
-      rv$is_loading <- FALSE
-    })
-
-    # Also search on Enter key
-    shiny::observeEvent(input$code_postal, {
-      if (!is.null(input$code_postal) && nchar(input$code_postal) == 5) {
-        # Trigger search after a short delay
-        shiny::invalidateLater(500)
-      }
     }, ignoreInit = TRUE)
 
 
