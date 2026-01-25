@@ -36,7 +36,7 @@ test_that("format_communes_for_selectize returns correct structure", {
 
   result <- nemeton:::format_communes_for_selectize(communes)
 
-  expect_type(result, "list")
+  expect_type(result, "character")
   expect_length(result, 2)
   expect_equal(names(result)[1], "Commune A (01001)")
   expect_equal(result[[1]], "01001")
@@ -52,7 +52,8 @@ test_that("format_communes_for_selectize handles empty data", {
 
   result <- nemeton:::format_communes_for_selectize(communes)
 
-  expect_null(result)
+  expect_length(result, 0)
+  expect_type(result, "character")
 })
 
 test_that("validate_insee_code accepts valid codes", {
