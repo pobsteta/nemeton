@@ -349,6 +349,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       # Zoom to parcels extent only on first load (not on selection updates)
       # Skip if there's a pending restore - let the restore handle the zoom
       if (!rv$parcels_zoomed && is.null(rv$pending_restore)) {
+        cli::cli_alert_info("Zooming to all parcels (no pending restore)")
         bbox <- sf::st_bbox(parcel_data)
         leaflet::leafletProxy(ns("map")) |>
           leaflet::fitBounds(
@@ -358,6 +359,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             lat2 = as.numeric(bbox[["ymax"]])
           )
         rv$parcels_zoomed <- TRUE
+      } else if (!is.null(rv$pending_restore)) {
+        cli::cli_alert_info("Skipping zoom - pending restore exists")
       }
 
       # Re-apply selection styling if needed
@@ -473,34 +476,44 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       matching_ids <- intersect(restore$selected_ids, parcel_data$id)
 
       if (length(matching_ids) > 0) {
+        cli::cli_alert_info("Found {length(matching_ids)} matching parcels to restore")
+
         # Set selected IDs
         rv$selected_ids <- matching_ids
 
-        # Update styles for selected parcels
-        for (pid in matching_ids) {
-          update_parcel_style(pid, selected = TRUE)
-        }
+        # Mark as zoomed to prevent "Display Parcels" from overriding
+        rv$parcels_zoomed <- TRUE
 
-        # Zoom to selected parcels extent
-        selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
-        if (nrow(selected_parcels) > 0) {
-          bbox <- sf::st_bbox(selected_parcels)
-          leaflet::leafletProxy(ns("map")) |>
-            leaflet::fitBounds(
-              lng1 = as.numeric(bbox[["xmin"]]),
-              lat1 = as.numeric(bbox[["ymin"]]),
-              lng2 = as.numeric(bbox[["xmax"]]),
-              lat2 = as.numeric(bbox[["ymax"]])
-            )
-          # Mark as zoomed to prevent future auto-zoom
-          rv$parcels_zoomed <- TRUE
-        }
+        # Clear pending restore now to avoid race conditions
+        rv$pending_restore <- NULL
+
+        # Delay style updates and zoom to ensure parcels are on the map
+        later::later(function() {
+          # Update styles for selected parcels
+          for (pid in matching_ids) {
+            update_parcel_style(pid, selected = TRUE)
+          }
+
+          # Zoom to selected parcels extent
+          selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
+          if (nrow(selected_parcels) > 0) {
+            bbox <- sf::st_bbox(selected_parcels)
+            leaflet::leafletProxy(ns("map")) |>
+              leaflet::fitBounds(
+                lng1 = as.numeric(bbox[["xmin"]]),
+                lat1 = as.numeric(bbox[["ymin"]]),
+                lng2 = as.numeric(bbox[["xmax"]]),
+                lat2 = as.numeric(bbox[["ymax"]])
+              )
+            cli::cli_alert_success("Zoomed to {length(matching_ids)} selected parcels")
+          }
+        }, delay = 0.3)  # 300ms delay to ensure parcels are rendered
 
         cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
+      } else {
+        # No matching parcels, clear pending restore
+        rv$pending_restore <- NULL
       }
-
-      # Clear pending restore
-      rv$pending_restore <- NULL
     })
 
 
