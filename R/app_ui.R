@@ -36,7 +36,7 @@ app_ui <- function(request) {
       window_title = i18n$t("app_title"),
       theme = nemeton_theme(),
       fillable = TRUE,
-      bg = "#1B6B1B",
+      navbar_options = bslib::navbar_options(bg = "#1B6B1B"),
 
       # === Tab 1: Selection ===
       bslib::nav_panel(
