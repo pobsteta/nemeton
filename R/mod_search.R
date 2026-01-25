@@ -249,6 +249,48 @@ mod_search_server <- function(id, app_state) {
 
 
     # ========================================
+    # Restore Project Location
+    # ========================================
+
+    shiny::observe({
+      restore <- app_state$restore_project
+      shiny::req(restore)
+
+      dept_code <- restore$department_code
+      commune_code <- restore$commune_code
+
+      # Update department dropdown
+      shiny::updateSelectInput(session, "departement", selected = dept_code)
+
+      # Load communes for department and update dropdown
+      communes <- get_communes_in_department(dept_code)
+      if (!is.null(communes) && nrow(communes) > 0) {
+        choices <- format_communes_for_selectize(communes)
+        shiny::updateSelectizeInput(
+          session,
+          "commune",
+          choices = choices,
+          selected = commune_code,
+          server = FALSE
+        )
+
+        # Load commune geometry
+        geometry <- get_commune_geometry(commune_code)
+        if (!is.null(geometry)) {
+          rv$selected_commune <- commune_code
+          rv$commune_geometry <- geometry
+
+          # Get commune info
+          info <- communes[communes$code_insee == commune_code, ]
+          if (nrow(info) > 0) {
+            rv$commune_info <- as.list(info[1, ])
+          }
+        }
+      }
+    })
+
+
+    # ========================================
     # Return Values
     # ========================================
 
