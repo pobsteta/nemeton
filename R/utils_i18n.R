@@ -75,7 +75,51 @@ TRANSLATIONS <- list(
   ),
   project_owner = list(fr = "Propri\u00e9taire / Gestionnaire", en = "Owner / Manager"),
   project_owner_placeholder = list(fr = "Nom du propri\u00e9taire", en = "Owner name"),
+  project_date = list(fr = "Date de cr\u00e9ation", en = "Creation date"),
   created_at = list(fr = "Cr\u00e9\u00e9 le", en = "Created on"),
+  auto_generated = list(fr = "G\u00e9n\u00e9r\u00e9 automatiquement", en = "Auto-generated"),
+  create_project = list(fr = "Cr\u00e9er le projet", en = "Create project"),
+  field_required = list(fr = "Ce champ est obligatoire", en = "This field is required"),
+  max_chars = list(fr = "Maximum", en = "Maximum"),
+  characters = list(fr = "caract\u00e8res", en = "characters"),
+  name_required = list(fr = "Le nom du projet est obligatoire", en = "Project name is required"),
+  name_too_long = list(fr = "Le nom ne doit pas d\u00e9passer 100 caract\u00e8res", en = "Name must not exceed 100 characters"),
+  description_too_long = list(fr = "La description ne doit pas d\u00e9passer 500 caract\u00e8res", en = "Description must not exceed 500 characters"),
+  owner_too_long = list(fr = "Le propri\u00e9taire ne doit pas d\u00e9passer 100 caract\u00e8res", en = "Owner must not exceed 100 characters"),
+  no_parcels_selected = list(fr = "Veuillez s\u00e9lectionner au moins une parcelle", en = "Please select at least one parcel"),
+  project_created = list(fr = "Projet cr\u00e9\u00e9", en = "Project created"),
+  project_loaded = list(fr = "Projet charg\u00e9", en = "Project loaded"),
+  project_not_found = list(fr = "Projet non trouv\u00e9", en = "Project not found"),
+  project_deleted = list(fr = "Projet supprim\u00e9", en = "Project deleted"),
+
+  # Recent projects
+  recent_projects = list(fr = "Projets r\u00e9cents", en = "Recent projects"),
+  no_recent_projects = list(fr = "Aucun projet r\u00e9cent", en = "No recent projects"),
+
+  # Project status
+  status_draft = list(fr = "Brouillon", en = "Draft"),
+  status_downloading = list(fr = "T\u00e9l\u00e9chargement", en = "Downloading"),
+  status_computing = list(fr = "Calcul en cours", en = "Computing"),
+  status_completed = list(fr = "Termin\u00e9", en = "Completed"),
+  status_error = list(fr = "Erreur", en = "Error"),
+  status_unknown = list(fr = "Inconnu", en = "Unknown"),
+  corrupted = list(fr = "Corrompu", en = "Corrupted"),
+
+  # Delete corrupted projects
+  delete_corrupted_project = list(fr = "Supprimer le projet corrompu", en = "Delete corrupted project"),
+  delete_corrupted_confirm = list(
+    fr = "Ce projet est corrompu et ne peut pas \u00eatre ouvert. Voulez-vous le supprimer d\u00e9finitivement ?",
+    en = "This project is corrupted and cannot be opened. Do you want to delete it permanently?"
+  ),
+
+  # Parcels
+  parcels = list(fr = "parcelles", en = "parcels"),
+  created = list(fr = "Cr\u00e9\u00e9", en = "Created"),
+  parcels_loaded = list(fr = "parcelles charg\u00e9es", en = "parcels loaded"),
+  error_loading_parcels = list(fr = "Erreur chargement parcelles", en = "Error loading parcels"),
+
+  # General
+  error = list(fr = "Erreur", en = "Error"),
 
   # ============================================================
   # Computation
