@@ -172,34 +172,24 @@
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Visualiser le profil radar d'une parcelle</span></span>
-<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, unit_id <span class="op">=</span> <span class="fl">1</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Identifier les parcelles Pareto-optimales</span></span>
+<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, unit_id <span class="op">=</span> <span class="fl">1</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/readme-radar.png" width="100%"></p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Identifier les parcelles Pareto-optimales</span></span>
 <span><span class="va">pareto</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
 <span>  <span class="va">massif_demo_units</span>,</span>
-<span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span><span class="op">)</span>,</span>
-<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Clustering automatique</span></span>
-<span><span class="va">clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cluster_parcels.html">cluster_parcels</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units</span>,</span>
-<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span>
-<span>  k <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Auto-détermination</span></span>
+<span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span><span class="op">)</span>,</span>
+<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Trade-offs avec frontière de Pareto</span></span>
-<span><span class="fu"><a href="reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span></span>
-<span>  <span class="va">pareto</span>,</span>
-<span>  x <span class="op">=</span> <span class="st">"family_C"</span>,</span>
-<span>  y <span class="op">=</span> <span class="st">"family_B"</span>,</span>
-<span>  pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">pareto</span>, x <span class="op">=</span> <span class="st">"family_C"</span>, y <span class="op">=</span> <span class="st">"family_B"</span>, pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/readme-tradeoff.png" width="100%"></p>
 </div>
 <div class="section level2">
 <h2 id="workflow-avec-vos-données">Workflow avec vos données<a class="anchor" aria-label="anchor" href="#workflow-avec-vos-donn%C3%A9es"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
@@ -231,7 +221,7 @@
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Vignettes</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"getting-started"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"temporal-analysis"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>

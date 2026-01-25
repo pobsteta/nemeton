@@ -52,29 +52,23 @@ data(massif_demo_units)
 
 # Visualiser le profil radar d'une parcelle
 nemeton_radar(massif_demo_units, unit_id = 1, mode = "family")
+```
 
+<img src="man/figures/readme-radar.png" width="100%" />
+
+```r
 # Identifier les parcelles Pareto-optimales
 pareto <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "family_P"),
-  maximize = c(TRUE, TRUE, TRUE)
-)
-
-# Clustering automatique
-clusters <- cluster_parcels(
-  massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
-  k = NULL  # Auto-détermination
+  objectives = c("family_C", "family_B"),
+  maximize = c(TRUE, TRUE)
 )
 
 # Trade-offs avec frontière de Pareto
-plot_tradeoff(
-  pareto,
-  x = "family_C",
-  y = "family_B",
-  pareto_frontier = TRUE
-)
+plot_tradeoff(pareto, x = "family_C", y = "family_B", pareto_frontier = TRUE)
 ```
+
+<img src="man/figures/readme-tradeoff.png" width="100%" />
 
 ## Workflow avec vos données
 
