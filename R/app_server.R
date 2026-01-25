@@ -70,7 +70,7 @@ app_server <- function(input, output, session) {
 
     if (!tour_seen && requireNamespace("cicerone", quietly = TRUE)) {
       # Delay to let UI render
-      shiny::later::later(function() {
+      later::later(function() {
         show_app_tour(session)
       }, delay = 1)
     }
