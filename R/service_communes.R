@@ -346,40 +346,28 @@ get_commune_geometry <- function(code_insee) {
       return(NULL)
     }
 
-    # Build GeoJSON Feature from contour using proper list structure
-    geojson_feature <- list(
-      type = jsonlite::unbox("Feature"),
-      properties = list(
-        code = jsonlite::unbox(data$code),
-        nom = jsonlite::unbox(data$nom)
-      ),
-      geometry = data$contour
-    )
+    # Convert geometry to GeoJSON string and parse with sf
+    geom_json <- jsonlite::toJSON(data$contour, auto_unbox = TRUE)
+    geom_sfc <- sf::st_as_sfc(geom_json, crs = 4326)
 
-    # Convert to JSON string (without auto_unbox to avoid warning)
-    geojson_str <- jsonlite::toJSON(geojson_feature)
-
-    # Parse as sf
-    commune_sf <- sf::st_read(geojson_str, quiet = TRUE)
-
-    # Ensure CRS is set (WGS84)
-    if (is.na(sf::st_crs(commune_sf))) {
-      sf::st_crs(commune_sf) <- 4326
-    }
-
-    # Handle different geometry types
-    geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
-
+    # Handle GEOMETRYCOLLECTION by extracting polygons
+    geom_type <- sf::st_geometry_type(geom_sfc, by_geometry = FALSE)
     if (geom_type == "GEOMETRYCOLLECTION") {
-      # Extract polygon parts from geometry collection
-      commune_sf <- sf::st_collection_extract(commune_sf, type = "POLYGON")
-      geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
+      geom_sfc <- sf::st_collection_extract(geom_sfc, type = "POLYGON")
+      geom_type <- sf::st_geometry_type(geom_sfc, by_geometry = FALSE)
     }
 
     if (!geom_type %in% c("POLYGON", "MULTIPOLYGON")) {
       cli::cli_warn("Commune geometry is not a polygon: {geom_type}")
       return(NULL)
     }
+
+    # Build sf object with attributes
+    commune_sf <- sf::st_sf(
+      code = data$code,
+      nom = data$nom,
+      geometry = geom_sfc
+    )
 
     # Make valid geometries
     commune_sf <- sf::st_make_valid(commune_sf)
