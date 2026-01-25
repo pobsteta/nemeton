@@ -31,7 +31,7 @@ app_ui <- function(request) {
           class = "me-2",
           alt = "nemeton logo"
         ),
-        htmltools::span("nemetonApp", class = "fw-bold")
+        htmltools::span("N\u00e9m\u00e9ton", class = "fw-bold")
       ),
       window_title = i18n$t("app_title"),
       theme = nemeton_theme(),

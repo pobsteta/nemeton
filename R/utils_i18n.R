@@ -20,8 +20,8 @@ TRANSLATIONS <- list(
   # Application
   # ============================================================
   app_title = list(
-    fr = "nemetonApp - Diagnostic Forestier",
-    en = "nemetonApp - Forest Diagnostic"
+    fr = "N\u00e9m\u00e9ton - Diagnostic Forestier",
+    en = "N\u00e9m\u00e9ton - Forest Diagnostic"
   ),
 
   # ============================================================
@@ -239,8 +239,8 @@ TRANSLATIONS <- list(
   help = list(fr = "Aide", en = "Help"),
   help_title = list(fr = "Guide d'utilisation", en = "User Guide"),
   help_intro = list(
-    fr = "nemetonApp vous permet d'analyser des parcelles foresti\u00e8res selon 12 familles d'indicateurs.",
-    en = "nemetonApp allows you to analyze forest parcels across 12 indicator families."
+    fr = "N\u00e9m\u00e9ton vous permet d'analyser des parcelles foresti\u00e8res selon 12 familles d'indicateurs.",
+    en = "N\u00e9m\u00e9ton allows you to analyze forest parcels across 12 indicator families."
   ),
   help_steps_title = list(fr = "\u00c9tapes d'utilisation", en = "Usage Steps"),
   help_step1 = list(
