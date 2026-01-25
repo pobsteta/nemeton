@@ -154,7 +154,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       selected_ids = character(0),
       basemap = "osm",
       parcels_zoomed = FALSE,  # Flag to zoom only once per commune
-      pending_restore = NULL   # Pending restoration data
+      pending_restore = NULL,  # Pending restoration data
+      pending_zoom = NULL,     # Pending zoom bbox (to execute in Shiny context)
+      pending_styles = NULL    # Pending style updates
     )
 
 
@@ -487,44 +489,62 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         # Clear pending restore now to avoid race conditions
         rv$pending_restore <- NULL
 
-        # Capture the bbox now (before the delayed call)
+        # Capture the bbox and store for delayed execution
         selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
         bbox <- sf::st_bbox(selected_parcels)
-        bbox_values <- list(
+
+        # Store pending operations to be executed by the delayed observer
+        rv$pending_styles <- matching_ids
+        rv$pending_zoom <- list(
           xmin = as.numeric(bbox[["xmin"]]),
           ymin = as.numeric(bbox[["ymin"]]),
           xmax = as.numeric(bbox[["xmax"]]),
           ymax = as.numeric(bbox[["ymax"]])
         )
 
-        cli::cli_alert_info("Bbox: xmin={bbox_values$xmin}, ymin={bbox_values$ymin}")
-
-        # Delay style updates and zoom to ensure parcels are on the map
-        later::later(function() {
-          cli::cli_alert_info("Applying delayed restore...")
-
-          # Update styles for selected parcels
-          for (pid in matching_ids) {
-            update_parcel_style(pid, selected = TRUE)
-          }
-
-          # Zoom to selected parcels extent
-          leaflet::leafletProxy(ns("map")) |>
-            leaflet::fitBounds(
-              lng1 = bbox_values$xmin,
-              lat1 = bbox_values$ymin,
-              lng2 = bbox_values$xmax,
-              lat2 = bbox_values$ymax
-            )
-          cli::cli_alert_success("Zoomed to {length(matching_ids)} selected parcels")
-        }, delay = 1)  # 1 second delay to ensure parcels are rendered
-
-        cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
+        cli::cli_alert_info("Bbox stored: xmin={rv$pending_zoom$xmin}, ymin={rv$pending_zoom$ymin}")
+        cli::cli_alert_success("Restored {length(matching_ids)} selected parcels (zoom pending)")
       } else {
         cli::cli_alert_warning("No matching parcels found in current data")
         # No matching parcels, clear pending restore
         rv$pending_restore <- NULL
       }
+    })
+
+    # Delayed observer to apply zoom and styles (runs in Shiny context)
+    shiny::observe({
+      # Check if there are pending operations
+      zoom <- rv$pending_zoom
+      styles <- rv$pending_styles
+
+      if (is.null(zoom) && is.null(styles)) return()
+
+      # Use invalidateLater to delay execution
+      shiny::invalidateLater(500)  # 500ms delay
+
+      # Only execute once
+      shiny::isolate({
+        if (!is.null(styles)) {
+          cli::cli_alert_info("Applying {length(styles)} style updates...")
+          for (pid in styles) {
+            update_parcel_style(pid, selected = TRUE)
+          }
+          rv$pending_styles <- NULL
+        }
+
+        if (!is.null(zoom)) {
+          cli::cli_alert_info("Applying zoom to selected parcels...")
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = zoom$xmin,
+              lat1 = zoom$ymin,
+              lng2 = zoom$xmax,
+              lat2 = zoom$ymax
+            )
+          rv$pending_zoom <- NULL
+          cli::cli_alert_success("Zoomed to selected parcels")
+        }
+      })
     })
 
 
