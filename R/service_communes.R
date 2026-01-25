@@ -326,8 +326,9 @@ get_commune_geometry <- function(code_insee) {
       cli::cli_abort("Package 'httr2' is required for API calls")
     }
 
+    # Request contour field (without format=geojson to get raw JSON)
     url <- sprintf(
-      "https://geo.api.gouv.fr/communes/%s?fields=nom,code,contour&format=geojson",
+      "https://geo.api.gouv.fr/communes/%s?fields=nom,code,contour",
       code_insee
     )
 
@@ -336,41 +337,47 @@ get_commune_geometry <- function(code_insee) {
       httr2::req_retry(max_tries = 3, backoff = ~ 2) |>
       httr2::req_perform()
 
-    # Check content type
-    content_type <- httr2::resp_content_type(resp)
+    # Parse JSON response
+    data <- httr2::resp_body_json(resp)
 
-    if (grepl("json", content_type)) {
-      geojson <- httr2::resp_body_string(resp)
-
-      # Parse as sf
-      commune_sf <- sf::st_read(geojson, quiet = TRUE)
-
-      # Ensure CRS is set
-      if (is.na(sf::st_crs(commune_sf))) {
-        sf::st_crs(commune_sf) <- 4326
-      }
-
-      # Verify geometry type is POLYGON or MULTIPOLYGON
-      geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
-      if (!geom_type %in% c("POLYGON", "MULTIPOLYGON", "GEOMETRY")) {
-        # Check individual geometries
-        geom_types <- sf::st_geometry_type(commune_sf)
-        polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
-        if (sum(polygon_idx) == 0) {
-          cli::cli_warn("Commune geometry is not a polygon: {geom_type}")
-          return(NULL)
-        }
-        commune_sf <- commune_sf[polygon_idx, ]
-      }
-
-      # Make valid geometries
-      commune_sf <- sf::st_make_valid(commune_sf)
-
-      commune_sf
-    } else {
-      cli::cli_warn("Unexpected content type from API: {content_type}")
-      NULL
+    # Check if contour exists
+    if (is.null(data$contour)) {
+      cli::cli_warn("No contour geometry available for commune {code_insee}")
+      return(NULL)
     }
+
+    # Build GeoJSON Feature from contour
+    geojson_feature <- list(
+      type = "Feature",
+      properties = list(
+        code = data$code,
+        nom = data$nom
+      ),
+      geometry = data$contour
+    )
+
+    # Convert to JSON string
+    geojson_str <- jsonlite::toJSON(geojson_feature, auto_unbox = TRUE)
+
+    # Parse as sf
+    commune_sf <- sf::st_read(geojson_str, quiet = TRUE)
+
+    # Ensure CRS is set (WGS84)
+    if (is.na(sf::st_crs(commune_sf))) {
+      sf::st_crs(commune_sf) <- 4326
+    }
+
+    # Verify geometry type is POLYGON or MULTIPOLYGON
+    geom_type <- sf::st_geometry_type(commune_sf, by_geometry = FALSE)
+    if (!geom_type %in% c("POLYGON", "MULTIPOLYGON")) {
+      cli::cli_warn("Commune geometry is not a polygon: {geom_type}")
+      return(NULL)
+    }
+
+    # Make valid geometries
+    commune_sf <- sf::st_make_valid(commune_sf)
+
+    commune_sf
 
   }, error = function(e) {
     cli::cli_warn("Error getting commune geometry: {e$message}")
