@@ -276,10 +276,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         ) |>
         # Zoom to bounds
         leaflet::fitBounds(
-          lng1 = bbox["xmin"],
-          lat1 = bbox["ymin"],
-          lng2 = bbox["xmax"],
-          lat2 = bbox["ymax"]
+          lng1 = as.numeric(bbox[["xmin"]]),
+          lat1 = as.numeric(bbox[["ymin"]]),
+          lng2 = as.numeric(bbox[["xmax"]]),
+          lat2 = as.numeric(bbox[["ymax"]])
         )
     })
 
@@ -345,10 +345,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       bbox <- sf::st_bbox(parcel_data)
       leaflet::leafletProxy(ns("map")) |>
         leaflet::fitBounds(
-          lng1 = bbox["xmin"],
-          lat1 = bbox["ymin"],
-          lng2 = bbox["xmax"],
-          lat2 = bbox["ymax"]
+          lng1 = as.numeric(bbox[["xmin"]]),
+          lat1 = as.numeric(bbox[["ymin"]]),
+          lng2 = as.numeric(bbox[["xmax"]]),
+          lat2 = as.numeric(bbox[["ymax"]])
         )
 
       # Re-apply selection styling if needed
