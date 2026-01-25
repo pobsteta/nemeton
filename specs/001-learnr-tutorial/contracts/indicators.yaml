@@ -1,0 +1,357 @@
+# Indicators Contract Schema
+# nemeton v0.4.1 - Tutorial Series
+
+openapi: 3.0.0
+info:
+  title: nemeton Indicators API
+  version: 0.4.1
+  description: Schema for the 12 families of ecosystem indicators
+
+components:
+  schemas:
+    # Base indicator structure
+    Indicator:
+      type: object
+      required:
+        - code
+        - value
+        - family
+      properties:
+        code:
+          type: string
+          pattern: "^[A-Z][0-9]$"
+          description: Indicator code (e.g., C1, B2)
+        value:
+          type: number
+          description: Raw indicator value
+        normalized:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Normalized value (0-100 scale)
+        family:
+          type: string
+          enum: [C, B, W, A, F, L, T, R, S, P, E, N]
+          description: Family code
+        unit:
+          type: string
+          description: Unit of measurement
+        method:
+          type: string
+          description: Calculation method reference
+
+    # Family-specific schemas
+    CarbonFamily:
+      type: object
+      properties:
+        C1:
+          type: number
+          description: Biomass (t/ha)
+          minimum: 0
+          maximum: 1000
+        C2:
+          type: number
+          description: NDVI trend (-1 to 1)
+          minimum: -1
+          maximum: 1
+
+    BiodiversityFamily:
+      type: object
+      properties:
+        B1:
+          type: number
+          description: Protected area coverage (%)
+          minimum: 0
+          maximum: 100
+        B2:
+          type: number
+          description: Vertical structure index
+          minimum: 0
+          maximum: 1
+        B3:
+          type: number
+          description: Connectivity score
+          minimum: 0
+          maximum: 100
+
+    WaterFamily:
+      type: object
+      properties:
+        W1:
+          type: number
+          description: TWI (Topographic Wetness Index)
+          minimum: 0
+        W2:
+          type: number
+          description: Distance to water network (m)
+          minimum: 0
+        W3:
+          type: number
+          description: Wetland coverage (%)
+          minimum: 0
+          maximum: 100
+
+    AirFamily:
+      type: object
+      properties:
+        A1:
+          type: number
+          description: Canopy coverage (%)
+          minimum: 0
+          maximum: 100
+        A2:
+          type: number
+          description: Air quality index
+          minimum: 0
+          maximum: 100
+
+    SoilFamily:
+      type: object
+      properties:
+        F1:
+          type: number
+          description: Erosion risk (0-100)
+          minimum: 0
+          maximum: 100
+        F2:
+          type: number
+          description: Fertility index
+          minimum: 0
+          maximum: 100
+
+    LandscapeFamily:
+      type: object
+      properties:
+        L1:
+          type: number
+          description: Edge density (m/ha)
+          minimum: 0
+        L2:
+          type: number
+          description: Fragmentation index
+          minimum: 0
+          maximum: 100
+
+    TemporalFamily:
+      type: object
+      properties:
+        T1:
+          type: number
+          description: Stand age (years)
+          minimum: 0
+          maximum: 500
+        T2:
+          type: number
+          description: Change rate (% per year)
+
+    RiskFamily:
+      type: object
+      properties:
+        R1:
+          type: number
+          description: Fire risk index
+          minimum: 0
+          maximum: 100
+        R2:
+          type: number
+          description: Storm risk index
+          minimum: 0
+          maximum: 100
+        R3:
+          type: number
+          description: Drought risk index
+          minimum: 0
+          maximum: 100
+
+    SocialFamily:
+      type: object
+      properties:
+        S1:
+          type: number
+          description: Road accessibility (m)
+          minimum: 0
+        S2:
+          type: number
+          description: Building proximity (m)
+          minimum: 0
+        S3:
+          type: number
+          description: Trail density (m/ha)
+          minimum: 0
+
+    ProductionFamily:
+      type: object
+      properties:
+        P1:
+          type: number
+          description: Standing volume (m³/ha)
+          minimum: 0
+          maximum: 1000
+        P2:
+          type: number
+          description: Site fertility index
+          minimum: 0
+          maximum: 100
+        P3:
+          type: number
+          description: Wood quality index
+          minimum: 0
+          maximum: 100
+
+    EnergyFamily:
+      type: object
+      properties:
+        E1:
+          type: number
+          description: Fuelwood potential (t/ha)
+          minimum: 0
+        E2:
+          type: number
+          description: Carbon avoidance (tCO2/ha)
+          minimum: 0
+
+    NaturalnessFamily:
+      type: object
+      properties:
+        N1:
+          type: number
+          description: Forest continuity (years)
+          minimum: 0
+        N2:
+          type: number
+          description: Distance to disturbance (m)
+          minimum: 0
+        N3:
+          type: number
+          description: Naturalness composite
+          minimum: 0
+          maximum: 100
+
+    # Complete parcel with all indicators
+    ParcelIndicators:
+      type: object
+      required:
+        - id_parcelle
+        - geometry
+      properties:
+        id_parcelle:
+          type: string
+        geometry:
+          type: object
+          description: GeoJSON geometry
+        surface_ha:
+          type: number
+          minimum: 0
+        carbon:
+          $ref: '#/components/schemas/CarbonFamily'
+        biodiversity:
+          $ref: '#/components/schemas/BiodiversityFamily'
+        water:
+          $ref: '#/components/schemas/WaterFamily'
+        air:
+          $ref: '#/components/schemas/AirFamily'
+        soil:
+          $ref: '#/components/schemas/SoilFamily'
+        landscape:
+          $ref: '#/components/schemas/LandscapeFamily'
+        temporal:
+          $ref: '#/components/schemas/TemporalFamily'
+        risk:
+          $ref: '#/components/schemas/RiskFamily'
+        social:
+          $ref: '#/components/schemas/SocialFamily'
+        production:
+          $ref: '#/components/schemas/ProductionFamily'
+        energy:
+          $ref: '#/components/schemas/EnergyFamily'
+        naturalness:
+          $ref: '#/components/schemas/NaturalnessFamily'
+        # Aggregated indices
+        idx_C:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_B:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_W:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_A:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_F:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_L:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_T:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_R:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_S:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_P:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_E:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_N:
+          type: number
+          minimum: 0
+          maximum: 100
+        idx_global:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Composite index of all 12 families
+
+    # LiDAR metrics
+    LidarMetrics:
+      type: object
+      properties:
+        zmax:
+          type: number
+          description: Maximum height (m)
+          minimum: 0
+        zmean:
+          type: number
+          description: Mean height (m)
+          minimum: 0
+        zsd:
+          type: number
+          description: Height standard deviation (m)
+          minimum: 0
+        zq95:
+          type: number
+          description: 95th percentile height (m)
+          minimum: 0
+        pzabove2:
+          type: number
+          description: Percentage of points above 2m
+          minimum: 0
+          maximum: 100
+        zentropy:
+          type: number
+          description: Vertical entropy
+          minimum: 0
+          maximum: 1
+        density:
+          type: number
+          description: Tree density (n/ha)
+          minimum: 0

@@ -7,7 +7,6 @@
 *.Rproj
 
 # Spec-kit (development artifacts)
-specs/
 .specify/
 
 # Compiled files
