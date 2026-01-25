@@ -341,6 +341,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           )
         )
 
+      # Zoom to parcels extent
+      bbox <- sf::st_bbox(parcel_data)
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::fitBounds(
+          lng1 = bbox["xmin"],
+          lat1 = bbox["ymin"],
+          lng2 = bbox["xmax"],
+          lat2 = bbox["ymax"]
+        )
+
       # Re-apply selection styling if needed
       if (length(rv$selected_ids) > 0) {
         update_parcel_styles(rv$selected_ids)
@@ -434,17 +444,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     update_parcel_style <- function(parcel_id, selected) {
-      parcel_data <- parcels()
+      parcel_data <- shiny::isolate(parcels())
       if (is.null(parcel_data)) return()
 
       parcel <- parcel_data[parcel_data$id == parcel_id, ]
       if (nrow(parcel) == 0) return()
 
       style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
-
-      # Re-add polygon with updated style
       popup <- create_parcel_popup(parcel)
 
+      # Replace polygon with updated style (layerId ensures replacement)
       leaflet::leafletProxy(ns("map")) |>
         leaflet::removeShape(parcel_id) |>
         leaflet::addPolygons(
