@@ -26,7 +26,7 @@ app_ui <- function(request) {
       title = htmltools::div(
         class = "d-flex align-items-center",
         htmltools::img(
-          src = "img/logo.svg",
+          src = "www/img/logo.svg",
           height = "36px",
           class = "me-2",
           alt = "nemeton logo"
@@ -158,6 +158,12 @@ app_ui <- function(request) {
 #' @return A tagList of HTML dependencies.
 #' @noRd
 app_add_external_resources <- function() {
+  # Add resource path for static files (www folder)
+  www_path <- system.file("app/www", package = "nemeton")
+  if (www_path != "") {
+    shiny::addResourcePath("www", www_path)
+  }
+
   htmltools::tagList(
     # Add CSS
     htmltools::tags$head(
@@ -171,7 +177,7 @@ app_add_external_resources <- function() {
       htmltools::tags$link(
         rel = "icon",
         type = "image/svg+xml",
-        href = "img/logo.svg"
+        href = "www/img/logo.svg"
       ),
       # Meta tags for mobile
       htmltools::tags$meta(
