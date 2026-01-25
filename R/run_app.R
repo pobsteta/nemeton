@@ -88,7 +88,7 @@ run_app <- function(language = NULL,
 #' @return NULL invisibly. Stops with error if dependencies missing.
 #' @noRd
 check_app_dependencies <- function() {
-  required_pkgs <- c("shiny", "bslib", "leaflet", "sf", "jsonlite")
+  required_pkgs <- c("shiny", "bslib", "leaflet", "sf", "jsonlite", "httr2")
   missing <- vapply(required_pkgs, function(pkg) {
     !requireNamespace(pkg, quietly = TRUE)
   }, logical(1))
