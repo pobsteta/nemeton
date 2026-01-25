@@ -7,7 +7,7 @@
 *.Rproj
 
 # Spec-kit (development artifacts)
-specs/
+# specs/ - Tracked for MVP documentation
 .specify/
 
 # Compiled files
