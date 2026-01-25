@@ -487,30 +487,41 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         # Clear pending restore now to avoid race conditions
         rv$pending_restore <- NULL
 
+        # Capture the bbox now (before the delayed call)
+        selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
+        bbox <- sf::st_bbox(selected_parcels)
+        bbox_values <- list(
+          xmin = as.numeric(bbox[["xmin"]]),
+          ymin = as.numeric(bbox[["ymin"]]),
+          xmax = as.numeric(bbox[["xmax"]]),
+          ymax = as.numeric(bbox[["ymax"]])
+        )
+
+        cli::cli_alert_info("Bbox: xmin={bbox_values$xmin}, ymin={bbox_values$ymin}")
+
         # Delay style updates and zoom to ensure parcels are on the map
         later::later(function() {
+          cli::cli_alert_info("Applying delayed restore...")
+
           # Update styles for selected parcels
           for (pid in matching_ids) {
             update_parcel_style(pid, selected = TRUE)
           }
 
           # Zoom to selected parcels extent
-          selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
-          if (nrow(selected_parcels) > 0) {
-            bbox <- sf::st_bbox(selected_parcels)
-            leaflet::leafletProxy(ns("map")) |>
-              leaflet::fitBounds(
-                lng1 = as.numeric(bbox[["xmin"]]),
-                lat1 = as.numeric(bbox[["ymin"]]),
-                lng2 = as.numeric(bbox[["xmax"]]),
-                lat2 = as.numeric(bbox[["ymax"]])
-              )
-            cli::cli_alert_success("Zoomed to {length(matching_ids)} selected parcels")
-          }
-        }, delay = 0.3)  # 300ms delay to ensure parcels are rendered
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = bbox_values$xmin,
+              lat1 = bbox_values$ymin,
+              lng2 = bbox_values$xmax,
+              lat2 = bbox_values$ymax
+            )
+          cli::cli_alert_success("Zoomed to {length(matching_ids)} selected parcels")
+        }, delay = 1)  # 1 second delay to ensure parcels are rendered
 
         cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
       } else {
+        cli::cli_alert_warning("No matching parcels found in current data")
         # No matching parcels, clear pending restore
         rv$pending_restore <- NULL
       }
