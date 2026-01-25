@@ -1,0 +1,307 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+
+## -----------------------------------------------------------------------------
+library(nemeton)
+library(ggplot2)
+library(dplyr)
+library(sf)
+
+## -----------------------------------------------------------------------------
+# Charger les données de base
+data(massif_demo_units)
+
+# Créer des données pour 3 périodes avec évolution simulée
+set.seed(42)
+n <- nrow(massif_demo_units)
+
+# Période 2015 - valeurs de base
+units_2015 <- massif_demo_units
+units_2015$period <- "2015"
+units_2015$C1 <- runif(n, 80, 200)  # Carbone biomasse
+units_2015$B1 <- runif(n, 30, 70)   # Protection biodiversité
+units_2015$W1 <- runif(n, 100, 400) # Distance réseau hydro
+
+# Période 2020 - évolution (+10% carbone, +5% biodiv)
+units_2020 <- massif_demo_units
+units_2020$period <- "2020"
+units_2020$C1 <- units_2015$C1 * runif(n, 1.05, 1.15)
+units_2020$B1 <- units_2015$B1 * runif(n, 1.02, 1.08)
+units_2020$W1 <- units_2015$W1 * runif(n, 0.95, 1.05)
+
+# Période 2025 - évolution continue
+units_2025 <- massif_demo_units
+units_2025$period <- "2025"
+units_2025$C1 <- units_2020$C1 * runif(n, 1.03, 1.12)
+units_2025$B1 <- units_2020$B1 * runif(n, 1.01, 1.06)
+units_2025$W1 <- units_2020$W1 * runif(n, 0.98, 1.02)
+
+# Combiner en un seul dataset
+temporal_data <- rbind(units_2015, units_2020, units_2025)
+temporal_data$period <- factor(temporal_data$period, levels = c("2015", "2020", "2025"))
+
+## ----fig.height=6-------------------------------------------------------------
+# Sélectionner quelques parcelles pour visualisation
+parcels_select <- c("P01", "P05", "P10", "P15")
+
+temporal_subset <- temporal_data |>
+  st_drop_geometry() |>
+  filter(parcel_id %in% parcels_select) |>
+  tidyr::pivot_longer(
+    cols = c(C1, B1, W1),
+    names_to = "indicator",
+    values_to = "value"
+  )
+
+# Graphique de tendance
+ggplot(temporal_subset, aes(x = period, y = value, color = parcel_id, group = parcel_id)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  facet_wrap(~indicator, scales = "free_y", labeller = labeller(
+    indicator = c(C1 = "Carbone (t/ha)", B1 = "Biodiversité (%)", W1 = "Distance hydro (m)")
+  )) +
+  scale_color_viridis_d() +
+  labs(
+    title = "Évolution des indicateurs par parcelle",
+    x = "Période",
+    y = "Valeur",
+    color = "Parcelle"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+## -----------------------------------------------------------------------------
+# Calculer les moyennes par période
+temporal_summary <- temporal_data |>
+  st_drop_geometry() |>
+  group_by(period) |>
+  summarise(
+    C1_mean = mean(C1, na.rm = TRUE),
+    C1_sd = sd(C1, na.rm = TRUE),
+    B1_mean = mean(B1, na.rm = TRUE),
+    B1_sd = sd(B1, na.rm = TRUE),
+    W1_mean = mean(W1, na.rm = TRUE),
+    W1_sd = sd(W1, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+temporal_summary_long <- temporal_summary |>
+  tidyr::pivot_longer(
+    cols = -period,
+    names_to = c("indicator", "stat"),
+    names_sep = "_",
+    values_to = "value"
+  ) |>
+  tidyr::pivot_wider(names_from = stat, values_from = value)
+
+ggplot(temporal_summary_long, aes(x = period, y = mean, group = indicator, color = indicator)) +
+  geom_ribbon(aes(ymin = mean - sd, ymax = mean + sd, fill = indicator), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c(C1 = "#2E7D32", B1 = "#1976D2", W1 = "#00838F"),
+                     labels = c("Carbone", "Biodiversité", "Eau")) +
+  scale_fill_manual(values = c(C1 = "#2E7D32", B1 = "#1976D2", W1 = "#00838F"),
+                    labels = c("Carbone", "Biodiversité", "Eau")) +
+  labs(
+    title = "Tendance moyenne du massif (±1 écart-type)",
+    x = "Période",
+    y = "Valeur moyenne",
+    color = "Indicateur",
+    fill = "Indicateur"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+## ----fig.height=7-------------------------------------------------------------
+# Préparer les données pour heatmap
+heatmap_data <- temporal_data |>
+  st_drop_geometry() |>
+  select(parcel_id, period, C1, B1, W1) |>
+  tidyr::pivot_longer(cols = c(C1, B1, W1), names_to = "indicator", values_to = "value") |>
+  group_by(indicator) |>
+  mutate(value_scaled = (value - min(value)) / (max(value) - min(value))) |>
+  ungroup()
+
+ggplot(heatmap_data, aes(x = period, y = parcel_id, fill = value_scaled)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  facet_wrap(~indicator, labeller = labeller(
+    indicator = c(C1 = "Carbone", B1 = "Biodiversité", W1 = "Eau")
+  )) +
+  scale_fill_viridis_c(name = "Score\n(normalisé)", option = "D") +
+  labs(
+    title = "Heatmap temporelle des indicateurs",
+    x = "Période",
+    y = "Parcelle"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 7),
+    strip.text = element_text(face = "bold")
+  )
+
+## -----------------------------------------------------------------------------
+# Calculer les taux de changement
+change_data <- temporal_data |>
+  st_drop_geometry() |>
+  select(parcel_id, period, C1, B1, W1) |>
+  tidyr::pivot_wider(names_from = period, values_from = c(C1, B1, W1)) |>
+  mutate(
+    C1_rate = ((C1_2025 - C1_2015) / C1_2015) / 10 * 100,  # %/an sur 10 ans
+    B1_rate = ((B1_2025 - B1_2015) / B1_2015) / 10 * 100,
+    W1_rate = ((W1_2025 - W1_2015) / W1_2015) / 10 * 100
+  )
+
+# Afficher les taux
+change_data |>
+  select(parcel_id, C1_rate, B1_rate, W1_rate) |>
+  head(10)
+
+## ----fig.height=5-------------------------------------------------------------
+change_long <- change_data |>
+  select(parcel_id, C1_rate, B1_rate, W1_rate) |>
+  tidyr::pivot_longer(cols = -parcel_id, names_to = "indicator", values_to = "rate") |>
+  mutate(indicator = gsub("_rate", "", indicator))
+
+ggplot(change_long, aes(x = rate, fill = indicator)) +
+  geom_histogram(bins = 15, alpha = 0.7, position = "identity") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  facet_wrap(~indicator, scales = "free_x", labeller = labeller(
+    indicator = c(C1 = "Carbone", B1 = "Biodiversité", W1 = "Eau")
+  )) +
+  scale_fill_manual(values = c(C1 = "#2E7D32", B1 = "#1976D2", W1 = "#00838F")) +
+  labs(
+    title = "Distribution des taux de changement annuels",
+    subtitle = "Période 2015-2025",
+    x = "Taux de changement (%/an)",
+    y = "Nombre de parcelles"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+## ----fig.height=6-------------------------------------------------------------
+# Joindre les taux de changement aux géométries
+change_sf <- massif_demo_units |>
+  left_join(change_data |> select(parcel_id, C1_rate, B1_rate, W1_rate), by = "parcel_id")
+
+ggplot(change_sf) +
+  geom_sf(aes(fill = C1_rate), color = "white", linewidth = 0.3) +
+  scale_fill_gradient2(
+    low = "#D32F2F",
+    mid = "white",
+    high = "#388E3C",
+    midpoint = 0,
+    name = "Taux\n(%/an)"
+  ) +
+  labs(
+    title = "Changement du stock carbone (2015-2025)",
+    subtitle = "Rouge = perte, Vert = gain"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+## ----fig.height=6-------------------------------------------------------------
+ggplot(change_sf) +
+  geom_sf(aes(fill = B1_rate), color = "white", linewidth = 0.3) +
+  scale_fill_gradient2(
+    low = "#D32F2F",
+    mid = "white",
+    high = "#1976D2",
+    midpoint = 0,
+    name = "Taux\n(%/an)"
+  ) +
+  labs(
+    title = "Changement de la protection biodiversité (2015-2025)",
+    subtitle = "Rouge = perte, Bleu = gain"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+## ----fig.height=6-------------------------------------------------------------
+# Classer les trajectoires de carbone
+change_sf <- change_sf |>
+  mutate(
+    trajectory = case_when(
+      C1_rate > 1.5 ~ "Forte augmentation",
+      C1_rate > 0.5 ~ "Augmentation modérée",
+      abs(C1_rate) <= 0.5 ~ "Stable",
+      C1_rate > -1.5 ~ "Diminution modérée",
+      TRUE ~ "Forte diminution"
+    ),
+    trajectory = factor(trajectory, levels = c(
+      "Forte augmentation", "Augmentation modérée", "Stable",
+      "Diminution modérée", "Forte diminution"
+    ))
+  )
+
+ggplot(change_sf) +
+  geom_sf(aes(fill = trajectory), color = "white", linewidth = 0.3) +
+  scale_fill_manual(
+    values = c(
+      "Forte augmentation" = "#1B5E20",
+      "Augmentation modérée" = "#81C784",
+      "Stable" = "#FFF9C4",
+      "Diminution modérée" = "#EF9A9A",
+      "Forte diminution" = "#C62828"
+    ),
+    name = "Trajectoire"
+  ) +
+  labs(
+    title = "Classification des trajectoires carbone",
+    subtitle = "Période 2015-2025"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "bottom"
+  )
+
+## -----------------------------------------------------------------------------
+# Tableau récapitulatif
+trajectory_stats <- change_sf |>
+  st_drop_geometry() |>
+  group_by(trajectory) |>
+  summarise(
+    n_parcelles = n(),
+    C1_rate_mean = round(mean(C1_rate), 2),
+    surface_ha = round(sum(surface_ha), 1),
+    .groups = "drop"
+  ) |>
+  arrange(desc(C1_rate_mean))
+
+trajectory_stats
+
+## ----fig.height=6-------------------------------------------------------------
+# Scatter plot des taux de changement
+ggplot(change_data, aes(x = C1_rate, y = B1_rate)) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_point(aes(size = abs(W1_rate), color = W1_rate), alpha = 0.7) +
+  scale_color_gradient2(low = "#D32F2F", mid = "gray80", high = "#00838F", midpoint = 0) +
+  labs(
+    title = "Corrélation des changements entre indicateurs",
+    x = "Taux changement Carbone (%/an)",
+    y = "Taux changement Biodiversité (%/an)",
+    color = "Δ Eau\n(%/an)",
+    size = "|Δ Eau|"
+  ) +
+  theme_minimal() +
+  annotate("text", x = 1.5, y = 0.8, label = "Synergies\nC↑ B↑", color = "darkgreen", fontface = "bold") +
+  annotate("text", x = -0.5, y = -0.2, label = "Dégradation\nC↓ B↓", color = "darkred", fontface = "bold")
+
+## -----------------------------------------------------------------------------
+sessionInfo()
+

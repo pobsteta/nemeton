@@ -37,6 +37,7 @@ Suggests:
     knitr,
     rmarkdown,
     covr,
+    withr,
     units,
     here,
     dplyr (>= 1.1.0),
