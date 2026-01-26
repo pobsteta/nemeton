@@ -53,12 +53,15 @@ mod_home_ui <- function(id) {
       htmltools::hr(class = "my-3"),
 
       # Search Section
-      htmltools::h6(
-        class = "text-muted mb-2 d-flex align-items-center",
-        bsicons::bs_icon("search", class = "me-2"),
-        i18n$t("search_commune")
+      htmltools::div(
+        id = ns("search_section"),
+        htmltools::h6(
+          class = "text-muted mb-2 d-flex align-items-center",
+          bsicons::bs_icon("search", class = "me-2"),
+          i18n$t("search_commune")
+        ),
+        mod_search_ui(ns("search"))
       ),
-      mod_search_ui(ns("search")),
 
       htmltools::hr(class = "my-3"),
 
@@ -360,13 +363,11 @@ mod_home_server <- function(id, app_state) {
       start_tour <- function() {
         message("[TOUR] Creating and starting guide...")
 
-        # Target elements - use CSS selectors for visible elements
-        # selectInput creates a hidden <select>, the visible part is .selectize-control
-        # textInput creates a visible input directly
-        # card has a visible ID
-        el1 <- "#home-search-departement + .selectize-control"  # selectInput visible part
-        el2 <- "#home-map-map_card"                              # map card (visible)
-        el3 <- "#home-project-name"                              # textInput (visible)
+        # Target elements - use element IDs (cicerone adds # prefix automatically)
+        # Using wrapper divs for sections that contain hidden elements
+        el1 <- "home-search_section"   # wrapper div around search (visible)
+        el2 <- "home-map-map_card"     # map card (visible)
+        el3 <- "home-project-name"     # textInput (visible)
 
         message("[TOUR] Target elements: ", el1, ", ", el2, ", ", el3)
 
