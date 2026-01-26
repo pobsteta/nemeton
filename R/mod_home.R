@@ -360,11 +360,13 @@ mod_home_server <- function(id, app_state) {
       start_tour <- function() {
         message("[TOUR] Creating and starting guide...")
 
-        # Target elements - use the actual DOM IDs
-        # Note: Shiny selectInput creates a wrapper div with the ID
-        el1 <- "home-search-departement"  # selectInput wrapper
-        el2 <- "home-map-map_card"         # map card
-        el3 <- "home-project-name"         # textInput wrapper
+        # Target elements - use CSS selectors for visible elements
+        # selectInput creates a hidden <select>, the visible part is .selectize-control
+        # textInput creates a visible input directly
+        # card has a visible ID
+        el1 <- "#home-search-departement + .selectize-control"  # selectInput visible part
+        el2 <- "#home-map-map_card"                              # map card (visible)
+        el3 <- "#home-project-name"                              # textInput (visible)
 
         message("[TOUR] Target elements: ", el1, ", ", el2, ", ", el3)
 
