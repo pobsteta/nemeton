@@ -60,21 +60,8 @@ app_server <- function(input, output, session) {
 
 
   # ============================================================
-  # GUIDED TOUR
+  # GUIDED TOUR (now handled in mod_home)
   # ============================================================
-
-  # Show tour on first visit
-  shiny::observeEvent(session$clientData$url_protocol, {
-    # Check if user has seen tour before
-    tour_seen <- get_tour_preference()
-
-    if (!tour_seen && requireNamespace("cicerone", quietly = TRUE)) {
-      # Delay to let UI render
-      later::later(function() {
-        show_app_tour(session)
-      }, delay = 1)
-    }
-  }, once = TRUE)
 
   # Manual tour trigger
   shiny::observeEvent(input$show_help, {
@@ -127,9 +114,8 @@ app_server <- function(input, output, session) {
   # Restart tour from help modal
   shiny::observeEvent(input$restart_tour, {
     shiny::removeModal()
-    if (requireNamespace("cicerone", quietly = TRUE)) {
-      show_app_tour(session)
-    }
+    # Tour is now handled in mod_home
+    # TODO: Add way to trigger tour restart from here
   })
 
 
@@ -365,42 +351,4 @@ get_tour_preference <- function() {
 }
 
 
-#' Show guided tour
-#' @noRd
-show_app_tour <- function(session) {
-  if (!requireNamespace("cicerone", quietly = TRUE)) {
-    return(invisible(NULL))
-  }
-
-  tryCatch({
-    i18n <- get_i18n(get_app_options()$language)
-
-    guide <- cicerone::Cicerone$new(
-      id = "nemeton-tour"
-    )$step(
-      el = "home-search-departement",
-      title = i18n$t("tour_search_title"),
-      description = i18n$t("tour_search_desc")
-    )$step(
-      el = "home-map-map_card",
-      title = i18n$t("tour_map_title"),
-      description = i18n$t("tour_map_desc")
-    )$step(
-      el = "home-project-name",
-      title = i18n$t("tour_project_title"),
-      description = i18n$t("tour_project_desc")
-    )$step(
-      el = "home-project-create",
-      title = i18n$t("tour_compute_title"),
-      description = i18n$t("tour_compute_desc")
-    )
-
-    guide$init(session = session)
-    guide$start()
-
-    # Mark tour as seen
-    options(nemeton.tour_seen = TRUE)
-  }, error = function(e) {
-    cli::cli_warn("Tour could not be started: {e$message}")
-  })
-}
+# Tour is now handled in mod_home_server

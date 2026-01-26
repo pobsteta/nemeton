@@ -344,6 +344,43 @@ mod_home_server <- function(id, app_state) {
     )
 
     # ========================================
+    # Guided Tour (cicerone)
+    # ========================================
+
+    if (requireNamespace("cicerone", quietly = TRUE)) {
+      # Build namespaced element IDs
+      ns <- session$ns
+
+      guide <- cicerone::Cicerone$
+        new(id = "nemeton-tour")$
+        step(
+          el = paste0("#", ns("search-departement")),
+          title = i18n$t("tour_search_title"),
+          description = i18n$t("tour_search_desc")
+        )$
+        step(
+          el = paste0("#", ns("map-map_card")),
+          title = i18n$t("tour_map_title"),
+          description = i18n$t("tour_map_desc")
+        )$
+        step(
+          el = paste0("#", ns("project-name")),
+          title = i18n$t("tour_project_title"),
+          description = i18n$t("tour_project_desc")
+        )
+
+      # Start tour on first visit (with delay for elements to render)
+      tour_seen <- getOption("nemeton.tour_seen", FALSE)
+      if (!tour_seen) {
+        shiny::observe({
+          shiny::invalidateLater(1000)  # Wait 1 second for UI to render
+          guide$init()$start()
+          options(nemeton.tour_seen = TRUE)
+        }) |> shiny::bindEvent(once = TRUE)
+      }
+    }
+
+    # ========================================
     # Return Values
     # ========================================
 
