@@ -369,15 +369,25 @@ mod_home_server <- function(id, app_state) {
           description = i18n$t("tour_project_desc")
         )
 
+      # Initialize the guide once
+      guide$init()
+
       # Start tour on first visit (with delay for elements to render)
       tour_seen <- getOption("nemeton.tour_seen", FALSE)
       if (!tour_seen) {
         shiny::observe({
           shiny::invalidateLater(1000)  # Wait 1 second for UI to render
-          guide$init()$start()
-          options(nemeton.tour_seen = TRUE)
-        }) |> shiny::bindEvent(once = TRUE)
+          shiny::isolate({
+            guide$start()
+            options(nemeton.tour_seen = TRUE)
+          })
+        })
       }
+
+      # Restart tour when requested from app_server
+      shiny::observeEvent(app_state$restart_tour, {
+        guide$start()
+      }, ignoreInit = TRUE)
     }
 
     # ========================================

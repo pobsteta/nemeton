@@ -114,8 +114,8 @@ app_server <- function(input, output, session) {
   # Restart tour from help modal
   shiny::observeEvent(input$restart_tour, {
     shiny::removeModal()
-    # Tour is now handled in mod_home
-    # TODO: Add way to trigger tour restart from here
+    # Signal to mod_home to restart the tour
+    app_state$restart_tour <- Sys.time()
   })
 
 
