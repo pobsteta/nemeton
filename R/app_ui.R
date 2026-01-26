@@ -26,15 +26,10 @@ app_ui <- function(request) {
     # Main page with navbar
     bslib::page_navbar(
       id = "main_nav",
-      title = htmltools::div(
-        class = "d-flex align-items-center",
-        htmltools::img(
-          src = "www/img/logo.svg",
-          height = "36px",
-          class = "me-2",
-          alt = "nemeton logo"
-        ),
-        htmltools::span("N\u00e9m\u00e9ton", class = "fw-bold")
+      title = htmltools::img(
+        src = "www/img/logo.svg",
+        height = "48px",
+        alt = "N\u00e9m\u00e9ton logo"
       ),
       window_title = i18n$t("app_title"),
       theme = nemeton_theme(),
