@@ -351,21 +351,22 @@ mod_home_server <- function(id, app_state) {
       ns <- session$ns
 
       # Function to create and start the tour
+      # Note: cicerone adds the # prefix automatically, so just pass the ID
       start_tour <- function() {
         guide <- cicerone::Cicerone$
           new(id = "nemeton-tour")$
           step(
-            el = paste0("#", ns("search-departement")),
+            el = ns("search-departement"),
             title = i18n$t("tour_search_title"),
             description = i18n$t("tour_search_desc")
           )$
           step(
-            el = paste0("#", ns("map-map_card")),
+            el = ns("map-map_card"),
             title = i18n$t("tour_map_title"),
             description = i18n$t("tour_map_desc")
           )$
           step(
-            el = paste0("#", ns("project-name")),
+            el = ns("project-name"),
             title = i18n$t("tour_project_title"),
             description = i18n$t("tour_project_desc")
           )
