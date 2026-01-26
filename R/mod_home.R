@@ -348,52 +348,72 @@ mod_home_server <- function(id, app_state) {
     # ========================================
 
     if (requireNamespace("cicerone", quietly = TRUE)) {
-      message("[TOUR] Cicerone package loaded, creating guide...")
+      message("[TOUR] Cicerone package loaded")
 
       # Track if tour has been shown in this session
       tour_shown_this_session <- shiny::reactiveVal(FALSE)
 
-      # Create the guide once at module initialization
-      guide <- cicerone::Cicerone$new(id = "nemeton-tour")$
-        step(
-          el = ns("search-departement"),
-          title = i18n$t("tour_search_title"),
-          description = i18n$t("tour_search_desc")
-        )$
-        step(
-          el = ns("map-map_card"),
-          title = i18n$t("tour_map_title"),
-          description = i18n$t("tour_map_desc")
-        )$
-        step(
-          el = ns("project-name"),
-          title = i18n$t("tour_project_title"),
-          description = i18n$t("tour_project_desc")
-        )
+      # Timer for delayed start (NULL = not started, timestamp = when to start)
+      tour_start_time <- shiny::reactiveVal(NULL)
 
-      message("[TOUR] Guide created with elements: ", ns("search-departement"), ", ", ns("map-map_card"), ", ", ns("project-name"))
+      # Function to create and start a fresh guide (must be called in reactive context)
+      start_tour <- function() {
+        message("[TOUR] Creating and starting guide...")
+        tryCatch({
+          cicerone::Cicerone$new(id = "nemeton-tour")$
+            step(
+              el = ns("search-departement"),
+              title = i18n$t("tour_search_title"),
+              description = i18n$t("tour_search_desc")
+            )$
+            step(
+              el = ns("map-map_card"),
+              title = i18n$t("tour_map_title"),
+              description = i18n$t("tour_map_desc")
+            )$
+            step(
+              el = ns("project-name"),
+              title = i18n$t("tour_project_title"),
+              description = i18n$t("tour_project_desc")
+            )$
+            init(session = session)$
+            start()
+          message("[TOUR] Tour started successfully!")
+        }, error = function(e) {
+          message("[TOUR] Error: ", e$message)
+        })
+      }
 
-      # Initialize the guide with the session
-      guide$init(session = session)
-      message("[TOUR] Guide initialized with session")
+      # Schedule tour to start after delay
+      shiny::observe({
+        if (!tour_shown_this_session()) {
+          message("[TOUR] Scheduling tour start in 2 seconds...")
+          tour_start_time(Sys.time())
+          tour_shown_this_session(TRUE)
+        }
+      })
 
-      # Start tour on first visit (with delay for elements to render)
-      message("[TOUR] Setting up onFlushed callback for auto-start...")
-      session$onFlushed(function() {
-        message("[TOUR] onFlushed triggered, starting later...")
-        later::later(function() {
-          if (!tour_shown_this_session()) {
-            message("[TOUR] Starting tour now!")
-            guide$start()
-            tour_shown_this_session(TRUE)
-          }
-        }, delay = 1.5)
-      }, once = TRUE)
+      # Poll for tour start time
+      shiny::observe({
+        start_time <- tour_start_time()
+        shiny::req(start_time)
+
+        # Check if 2 seconds have passed
+        elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+        if (elapsed >= 2) {
+          message("[TOUR] 2 seconds elapsed, starting tour...")
+          tour_start_time(NULL)  # Reset to prevent re-triggering
+          start_tour()
+        } else {
+          # Keep polling every 500ms
+          shiny::invalidateLater(500, session)
+        }
+      })
 
       # Restart tour when requested from app_server
       shiny::observeEvent(app_state$restart_tour, {
-        message("[TOUR] Restart requested, starting tour...")
-        guide$start()
+        message("[TOUR] Restart requested...")
+        start_tour()
       }, ignoreInit = TRUE)
     } else {
       message("[TOUR] Cicerone package not available!")
