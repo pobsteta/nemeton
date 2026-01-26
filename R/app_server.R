@@ -368,37 +368,8 @@ get_tour_preference <- function() {
 #' Show guided tour
 #' @noRd
 show_app_tour <- function(session) {
-  if (!requireNamespace("cicerone", quietly = TRUE)) {
-    return(invisible(NULL))
-  }
+  # Temporarily disabled - cicerone causing issues
 
-  i18n <- get_i18n(get_app_options()$language)
-
-  tour <- cicerone::Cicerone$new()$
-    step(
-      el = "home-departement",
-      title = i18n$t("tour_search_title"),
-      description = i18n$t("tour_search_desc")
-    )$
-    step(
-      el = "home-map_container",
-      title = i18n$t("tour_map_title"),
-      description = i18n$t("tour_map_desc")
-    )$
-    step(
-      el = "home-project_name",
-      title = i18n$t("tour_project_title"),
-      description = i18n$t("tour_project_desc")
-    )$
-    step(
-      el = "home-btn_compute",
-      title = i18n$t("tour_compute_title"),
-      description = i18n$t("tour_compute_desc")
-    )
-
-  tour$init(session = session)
-  tour$start()
-
-  # Mark tour as seen
-  options(nemeton.tour_seen = TRUE)
+  # TODO: Fix cicerone integration
+  return(invisible(NULL))
 }
