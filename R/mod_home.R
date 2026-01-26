@@ -377,13 +377,10 @@ mod_home_server <- function(id, app_state) {
       # Start tour on first visit (with delay for elements to render)
       tour_seen <- getOption("nemeton.tour_seen", FALSE)
       if (!tour_seen) {
-        shiny::observe({
-          shiny::invalidateLater(1000)
-          shiny::isolate({
-            start_tour()
-            options(nemeton.tour_seen = TRUE)
-          })
-        })
+        later::later(function() {
+          start_tour()
+          options(nemeton.tour_seen = TRUE)
+        }, delay = 2)  # 2 seconds delay
       }
 
       # Restart tour when requested from app_server
