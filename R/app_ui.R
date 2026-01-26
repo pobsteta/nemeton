@@ -28,7 +28,7 @@ app_ui <- function(request) {
       id = "main_nav",
       title = htmltools::img(
         src = "www/img/logo.svg",
-        height = "48px",
+        height = "60px",
         alt = "N\u00e9m\u00e9ton logo"
       ),
       window_title = i18n$t("app_title"),
