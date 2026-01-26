@@ -348,44 +348,42 @@ mod_home_server <- function(id, app_state) {
     # ========================================
 
     if (requireNamespace("cicerone", quietly = TRUE)) {
-      ns <- session$ns
+      # Create the guide once at module initialization
+      guide <- cicerone::Cicerone$new(id = "nemeton-tour")$
+        step(
+          el = ns("search-departement"),
+          title = i18n$t("tour_search_title"),
+          description = i18n$t("tour_search_desc")
+        )$
+        step(
+          el = ns("map-map_card"),
+          title = i18n$t("tour_map_title"),
+          description = i18n$t("tour_map_desc")
+        )$
+        step(
+          el = ns("project-name"),
+          title = i18n$t("tour_project_title"),
+          description = i18n$t("tour_project_desc")
+        )
 
-      # Function to create and start the tour
-      # Note: cicerone adds the # prefix automatically, so just pass the ID
-      start_tour <- function() {
-        guide <- cicerone::Cicerone$
-          new(id = "nemeton-tour")$
-          step(
-            el = ns("search-departement"),
-            title = i18n$t("tour_search_title"),
-            description = i18n$t("tour_search_desc")
-          )$
-          step(
-            el = ns("map-map_card"),
-            title = i18n$t("tour_map_title"),
-            description = i18n$t("tour_map_desc")
-          )$
-          step(
-            el = ns("project-name"),
-            title = i18n$t("tour_project_title"),
-            description = i18n$t("tour_project_desc")
-          )
-
-        guide$init()$start()
-      }
+      # Initialize the guide with the session
+      guide$init(session = session)
 
       # Start tour on first visit (with delay for elements to render)
       tour_seen <- getOption("nemeton.tour_seen", FALSE)
       if (!tour_seen) {
-        later::later(function() {
-          start_tour()
-          options(nemeton.tour_seen = TRUE)
-        }, delay = 2)  # 2 seconds delay
+        # Use session$onFlushed to wait for UI, then delay before starting tour
+        session$onFlushed(function() {
+          later::later(function() {
+            guide$start()
+            options(nemeton.tour_seen = TRUE)
+          }, delay = 1.5)
+        }, once = TRUE)
       }
 
       # Restart tour when requested from app_server
       shiny::observeEvent(app_state$restart_tour, {
-        start_tour()
+        guide$start()
       }, ignoreInit = TRUE)
     }
 
