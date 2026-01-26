@@ -220,6 +220,28 @@
 
 
   // ============================================================
+  // Tour Element Debugging
+  // ============================================================
+
+  /**
+   * Check if tour target elements exist
+   */
+  Shiny.addCustomMessageHandler('checkElements', function(data) {
+    console.log('[TOUR] Checking elements...');
+    console.log('[TOUR] el1 (' + data.el1 + '):', document.getElementById(data.el1));
+    console.log('[TOUR] el2 (' + data.el2 + '):', document.getElementById(data.el2));
+    console.log('[TOUR] el3 (' + data.el3 + '):', document.getElementById(data.el3));
+
+    // Also check what IDs exist in the DOM that match "home-"
+    const allElements = document.querySelectorAll('[id^="home-"]');
+    console.log('[TOUR] All elements with id starting with "home-":', allElements.length);
+    allElements.forEach(function(el) {
+      console.log('[TOUR]   -', el.id);
+    });
+  });
+
+
+  // ============================================================
   // Initialization
   // ============================================================
 

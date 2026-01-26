@@ -359,25 +359,50 @@ mod_home_server <- function(id, app_state) {
       # Function to create and start a fresh guide (must be called in reactive context)
       start_tour <- function() {
         message("[TOUR] Creating and starting guide...")
+
+        # Use simple, existing element IDs that we know exist
+        # Check browser console for actual element IDs
+        el1 <- ns("search-departement")
+        el2 <- ns("map-map_card")
+        el3 <- ns("project-name")
+
+        message("[TOUR] Target elements: ", el1, ", ", el2, ", ", el3)
+
+        # Send JS to check if elements exist
+        session$sendCustomMessage("checkElements", list(
+          el1 = el1,
+          el2 = el2,
+          el3 = el3
+        ))
+
         tryCatch({
-          cicerone::Cicerone$new(id = "nemeton-tour")$
+          guide <- cicerone::Cicerone$new(
+            id = "nemeton-tour",
+            overlay_close_button = TRUE,
+            keyboard_control = TRUE,
+            allow_close = TRUE
+          )$
             step(
-              el = ns("search-departement"),
+              el = el1,
               title = i18n$t("tour_search_title"),
-              description = i18n$t("tour_search_desc")
+              description = i18n$t("tour_search_desc"),
+              position = "bottom"
             )$
             step(
-              el = ns("map-map_card"),
+              el = el2,
               title = i18n$t("tour_map_title"),
-              description = i18n$t("tour_map_desc")
+              description = i18n$t("tour_map_desc"),
+              position = "right"
             )$
             step(
-              el = ns("project-name"),
+              el = el3,
               title = i18n$t("tour_project_title"),
-              description = i18n$t("tour_project_desc")
-            )$
-            init(session = session)$
-            start()
+              description = i18n$t("tour_project_desc"),
+              position = "bottom"
+            )
+
+          guide$init(session = session)
+          guide$start()
           message("[TOUR] Tour started successfully!")
         }, error = function(e) {
           message("[TOUR] Error: ", e$message)
