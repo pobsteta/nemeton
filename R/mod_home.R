@@ -360,23 +360,18 @@ mod_home_server <- function(id, app_state) {
       start_tour <- function() {
         message("[TOUR] Creating and starting guide...")
 
-        # Use simple, existing element IDs that we know exist
-        # Check browser console for actual element IDs
-        el1 <- ns("search-departement")
-        el2 <- ns("map-map_card")
-        el3 <- ns("project-name")
+        # Target elements - use the actual DOM IDs
+        # Note: Shiny selectInput creates a wrapper div with the ID
+        el1 <- "home-search-departement"  # selectInput wrapper
+        el2 <- "home-map-map_card"         # map card
+        el3 <- "home-project-name"         # textInput wrapper
 
         message("[TOUR] Target elements: ", el1, ", ", el2, ", ", el3)
 
-        # Send JS to check if elements exist
-        session$sendCustomMessage("checkElements", list(
-          el1 = el1,
-          el2 = el2,
-          el3 = el3
-        ))
-
         tryCatch({
-          guide <- cicerone::Cicerone$new()$
+          # Create guide and chain all steps
+          cicerone::Cicerone$
+            new()$
             step(
               el = el1,
               title = i18n$t("tour_search_title"),
@@ -391,10 +386,10 @@ mod_home_server <- function(id, app_state) {
               el = el3,
               title = i18n$t("tour_project_title"),
               description = i18n$t("tour_project_desc")
-            )
+            )$
+            init(session = session)$
+            start()
 
-          guide$init(session = session)
-          guide$start()
           message("[TOUR] Tour started successfully!")
         }, error = function(e) {
           message("[TOUR] Error: ", e$message)
