@@ -368,8 +368,38 @@ get_tour_preference <- function() {
 #' Show guided tour
 #' @noRd
 show_app_tour <- function(session) {
-  # Temporarily disabled - cicerone causing issues
+  if (!requireNamespace("cicerone", quietly = TRUE)) {
+    return(invisible(NULL))
+  }
 
-  # TODO: Fix cicerone integration
-  return(invisible(NULL))
+  tryCatch({
+    i18n <- get_i18n(get_app_options()$language)
+
+    guide <- cicerone::Cicerone$new(
+      id = "nemeton-tour"
+    )$step(
+      el = "home-search-departement",
+      title = i18n$t("tour_search_title"),
+      description = i18n$t("tour_search_desc")
+    )$step(
+      el = "home-map-map_card",
+      title = i18n$t("tour_map_title"),
+      description = i18n$t("tour_map_desc")
+    )$step(
+      el = "home-project-name",
+      title = i18n$t("tour_project_title"),
+      description = i18n$t("tour_project_desc")
+    )$step(
+      el = "home-project-create",
+      title = i18n$t("tour_compute_title"),
+      description = i18n$t("tour_compute_desc")
+    )
+
+    guide$init()$start()
+
+    # Mark tour as seen
+    options(nemeton.tour_seen = TRUE)
+  }, error = function(e) {
+    cli::cli_warn("Tour could not be started: {e$message}")
+  })
 }
