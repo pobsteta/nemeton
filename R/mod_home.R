@@ -351,8 +351,6 @@ mod_home_server <- function(id, app_state) {
     # ========================================
 
     if (requireNamespace("cicerone", quietly = TRUE)) {
-      message("[TOUR] Cicerone package loaded")
-
       # Track if tour has been shown in this session
       tour_shown_this_session <- shiny::reactiveVal(FALSE)
 
@@ -361,15 +359,11 @@ mod_home_server <- function(id, app_state) {
 
       # Function to create and start a fresh guide (must be called in reactive context)
       start_tour <- function() {
-        message("[TOUR] Creating and starting guide...")
-
         # Target elements - use element IDs (cicerone adds # prefix automatically)
         # Using wrapper divs for sections that contain hidden elements
         el1 <- "home-search_section"   # wrapper div around search (visible)
         el2 <- "home-map-map_card"     # map card (visible)
         el3 <- "home-project-name"     # textInput (visible)
-
-        message("[TOUR] Target elements: ", el1, ", ", el2, ", ", el3)
 
         tryCatch({
           # Create guide and chain all steps
@@ -392,17 +386,14 @@ mod_home_server <- function(id, app_state) {
             )$
             init(session = session)$
             start()
-
-          message("[TOUR] Tour started successfully!")
         }, error = function(e) {
-          message("[TOUR] Error: ", e$message)
+          warning("[Tour] Could not start: ", e$message)
         })
       }
 
       # Schedule tour to start after delay
       shiny::observe({
         if (!tour_shown_this_session()) {
-          message("[TOUR] Scheduling tour start in 2 seconds...")
           tour_start_time(Sys.time())
           tour_shown_this_session(TRUE)
         }
@@ -416,7 +407,6 @@ mod_home_server <- function(id, app_state) {
         # Check if 2 seconds have passed
         elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
         if (elapsed >= 2) {
-          message("[TOUR] 2 seconds elapsed, starting tour...")
           tour_start_time(NULL)  # Reset to prevent re-triggering
           start_tour()
         } else {
@@ -427,7 +417,6 @@ mod_home_server <- function(id, app_state) {
 
       # Restart tour when requested from app_server
       shiny::observeEvent(app_state$restart_tour, {
-        message("[TOUR] Restart requested...")
         start_tour()
       }, ignoreInit = TRUE)
     } else {
