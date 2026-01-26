@@ -192,6 +192,9 @@ app_add_external_resources <- function() {
     htmltools::tags$script(
       src = "www/js/custom.js"
     ),
+    htmltools::tags$script(
+      src = "www/js/cadastre_select.js"
+    ),
 
     # Shiny busy indicator
     shiny::tags$style(
