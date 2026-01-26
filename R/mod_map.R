@@ -434,10 +434,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     shiny::observeEvent(input$clear_selection, {
       if (length(rv$selected_ids) == 0) return()
 
-      # Clear all selections via JavaScript
-      session$sendCustomMessage("cadastre_clear", list(
-        mapId = ns("map")
-      ))
+      # Clear the selection overlay group
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("selection")
 
       rv$selected_ids <- character(0)
 
@@ -548,12 +547,34 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     update_parcel_style <- function(parcel_id, selected) {
-      # Use JavaScript to update style directly (no flash)
-      session$sendCustomMessage("cadastre_select", list(
-        mapId = ns("map"),
-        id = parcel_id,
-        selected = selected
-      ))
+      if (selected) {
+        # Add parcel to selection overlay
+        parcel_data <- shiny::isolate(parcels())
+        if (is.null(parcel_data)) return()
+
+        parcel <- parcel_data[parcel_data$id == parcel_id, ]
+        if (nrow(parcel) == 0) return()
+
+        style <- STYLE$parcel_selected
+
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::addPolygons(
+            data = parcel,
+            layerId = paste0("sel_", parcel_id),
+            group = "selection",
+            color = style$color,
+            weight = style$weight,
+            fillColor = style$fillColor,
+            fillOpacity = style$fillOpacity,
+            options = leaflet::pathOptions(
+              interactive = FALSE
+            )
+          )
+      } else {
+        # Remove from selection overlay
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::removeShape(paste0("sel_", parcel_id))
+      }
     }
 
     update_parcel_styles <- function(selected_ids) {
