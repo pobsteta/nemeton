@@ -376,29 +376,21 @@ mod_home_server <- function(id, app_state) {
         ))
 
         tryCatch({
-          guide <- cicerone::Cicerone$new(
-            id = "nemeton-tour",
-            overlay_close_button = TRUE,
-            keyboard_control = TRUE,
-            allow_close = TRUE
-          )$
+          guide <- cicerone::Cicerone$new()$
             step(
               el = el1,
               title = i18n$t("tour_search_title"),
-              description = i18n$t("tour_search_desc"),
-              position = "bottom"
+              description = i18n$t("tour_search_desc")
             )$
             step(
               el = el2,
               title = i18n$t("tour_map_title"),
-              description = i18n$t("tour_map_desc"),
-              position = "right"
+              description = i18n$t("tour_map_desc")
             )$
             step(
               el = el3,
               title = i18n$t("tour_project_title"),
-              description = i18n$t("tour_project_desc"),
-              position = "bottom"
+              description = i18n$t("tour_project_desc")
             )
 
           guide$init(session = session)
