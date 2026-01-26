@@ -434,9 +434,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     shiny::observeEvent(input$clear_selection, {
       if (length(rv$selected_ids) == 0) return()
 
-      # Clear the selection overlay group
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::clearGroup("selection")
+      # Reset all parcel styles to default
+      for (pid in rv$selected_ids) {
+        update_parcel_style(pid, selected = FALSE)
+      }
 
       rv$selected_ids <- character(0)
 
@@ -547,34 +548,20 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     update_parcel_style <- function(parcel_id, selected) {
-      if (selected) {
-        # Add parcel to selection overlay
-        parcel_data <- shiny::isolate(parcels())
-        if (is.null(parcel_data)) return()
+      style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
 
-        parcel <- parcel_data[parcel_data$id == parcel_id, ]
-        if (nrow(parcel) == 0) return()
-
-        style <- STYLE$parcel_selected
-
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::addPolygons(
-            data = parcel,
-            layerId = paste0("sel_", parcel_id),
-            group = "selection",
-            color = style$color,
-            weight = style$weight,
-            fillColor = style$fillColor,
-            fillOpacity = style$fillOpacity,
-            options = leaflet::pathOptions(
-              interactive = FALSE  # Clicks pass through to original parcel
-            )
-          )
-      } else {
-        # Remove from selection overlay
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::removeShape(paste0("sel_", parcel_id))
-      }
+      # Use JavaScript to directly modify SVG attributes (instant, no flash)
+      session$sendCustomMessage("setParcelSelected", list(
+        mapId = ns("map"),
+        layerId = parcel_id,
+        selected = selected,
+        style = list(
+          color = style$color,
+          weight = style$weight,
+          fillColor = style$fillColor,
+          fillOpacity = style$fillOpacity
+        )
+      ))
     }
 
     update_parcel_styles <- function(selected_ids) {

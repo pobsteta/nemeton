@@ -178,6 +178,46 @@
 
 
   // ============================================================
+  // Parcel Selection Style (direct SVG manipulation)
+  // ============================================================
+
+  /**
+   * Update parcel polygon style by directly modifying SVG attributes
+   * This is instant - no flash
+   */
+  Shiny.addCustomMessageHandler('setParcelSelected', function(data) {
+    var mapId = data.mapId;
+    var layerId = data.layerId;
+    var selected = data.selected;
+    var style = data.style;
+
+    // Find the map widget
+    var widget = HTMLWidgets.find('#' + mapId);
+    if (!widget) return;
+
+    var map = widget.getMap();
+    if (!map) return;
+
+    // Find the layer by layerId
+    map.eachLayer(function(layer) {
+      if (layer.options && layer.options.layerId === layerId && layer._path) {
+        // Directly modify SVG path attributes
+        var path = layer._path;
+        path.setAttribute('stroke', style.color);
+        path.setAttribute('stroke-width', style.weight);
+        path.setAttribute('fill', style.fillColor);
+        path.setAttribute('fill-opacity', style.fillOpacity);
+
+        // Bring to front if selected
+        if (selected && layer.bringToFront) {
+          layer.bringToFront();
+        }
+      }
+    });
+  });
+
+
+  // ============================================================
   // Selection Counter
   // ============================================================
 
