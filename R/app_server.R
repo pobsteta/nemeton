@@ -396,7 +396,7 @@ show_app_tour <- function(session) {
       description = i18n$t("tour_compute_desc")
     )
 
-  tour$init()$start()
+  tour$init(session = session)$start()
 
   # Mark tour as seen
   options(nemeton.tour_seen = TRUE)
