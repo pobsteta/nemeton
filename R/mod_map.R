@@ -434,17 +434,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     shiny::observeEvent(input$clear_selection, {
       if (length(rv$selected_ids) == 0) return()
 
-      # Reset all parcel styles
-      parcel_data <- parcels()
-      if (!is.null(parcel_data) && nrow(parcel_data) > 0) {
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::removeShape(rv$selected_ids)
-
-        # Re-add with default style
-        for (pid in rv$selected_ids) {
-          update_parcel_style(pid, selected = FALSE)
-        }
-      }
+      # Clear the selection overlay group
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("selection")
 
       rv$selected_ids <- character(0)
 
@@ -555,20 +547,34 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     update_parcel_style <- function(parcel_id, selected) {
-      style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
+      if (selected) {
+        # Add parcel to selection overlay
+        parcel_data <- shiny::isolate(parcels())
+        if (is.null(parcel_data)) return()
 
-      # Use JavaScript setStyle for smooth update (no flash)
-      session$sendCustomMessage("updateParcelStyle", list(
-        mapId = ns("map"),
-        layerId = parcel_id,
-        style = list(
-          color = style$color,
-          weight = style$weight,
-          fillColor = style$fillColor,
-          fillOpacity = style$fillOpacity,
-          bringToFront = selected
-        )
-      ))
+        parcel <- parcel_data[parcel_data$id == parcel_id, ]
+        if (nrow(parcel) == 0) return()
+
+        style <- STYLE$parcel_selected
+
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::addPolygons(
+            data = parcel,
+            layerId = paste0("sel_", parcel_id),
+            group = "selection",
+            color = style$color,
+            weight = style$weight,
+            fillColor = style$fillColor,
+            fillOpacity = style$fillOpacity,
+            options = leaflet::pathOptions(
+              interactive = FALSE  # Clicks pass through to original parcel
+            )
+          )
+      } else {
+        # Remove from selection overlay
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::removeShape(paste0("sel_", parcel_id))
+      }
     }
 
     update_parcel_styles <- function(selected_ids) {
