@@ -178,50 +178,6 @@
 
 
   // ============================================================
-  // Parcel Style Updates (no re-render)
-  // ============================================================
-
-  /**
-   * Update polygon style directly via Leaflet without removing/re-adding
-   * This prevents the full interface flash on selection
-   */
-  Shiny.addCustomMessageHandler('updateParcelStyle', function(data) {
-    var mapId = data.mapId;
-    var layerId = data.layerId;
-    var style = data.style;
-
-    // Find the Leaflet map instance
-    var map = null;
-    if (window.HTMLWidgets && HTMLWidgets.find) {
-      var widget = HTMLWidgets.find('#' + mapId);
-      if (widget && widget.getMap) {
-        map = widget.getMap();
-      }
-    }
-
-    if (!map) return;
-
-    // Find the layer by its layerId
-    map.eachLayer(function(layer) {
-      if (layer.options && layer.options.layerId === layerId) {
-        // Update the style directly
-        layer.setStyle({
-          color: style.color,
-          weight: style.weight,
-          fillColor: style.fillColor,
-          fillOpacity: style.fillOpacity
-        });
-
-        // Bring to front if selected
-        if (style.bringToFront) {
-          layer.bringToFront();
-        }
-      }
-    });
-  });
-
-
-  // ============================================================
   // Selection Counter
   // ============================================================
 

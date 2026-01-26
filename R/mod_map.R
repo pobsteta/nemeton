@@ -555,20 +555,44 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     update_parcel_style <- function(parcel_id, selected) {
-      style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
+      parcel_data <- shiny::isolate(parcels())
+      if (is.null(parcel_data)) return()
 
-      # Use JavaScript to update style directly (no remove/re-add = no flash)
-      session$sendCustomMessage("updateParcelStyle", list(
-        mapId = ns("map"),
-        layerId = parcel_id,
-        style = list(
+      parcel <- parcel_data[parcel_data$id == parcel_id, ]
+      if (nrow(parcel) == 0) return()
+
+      style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
+      popup <- create_parcel_popup(parcel)
+      label <- create_parcel_label(parcel)
+
+      # Update polygon style using leafletProxy
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::removeShape(parcel_id) |>
+        leaflet::addPolygons(
+          data = parcel,
+          layerId = parcel_id,
+          group = "parcels",
           color = style$color,
           weight = style$weight,
           fillColor = style$fillColor,
           fillOpacity = style$fillOpacity,
-          bringToFront = selected
+          popup = popup,
+          label = htmltools::HTML(label),
+          labelOptions = leaflet::labelOptions(
+            style = list(
+              "font-size" = "12px",
+              "font-weight" = "normal",
+              "padding" = "4px 8px"
+            ),
+            direction = "top",
+            offset = c(0, -10)
+          ),
+          highlightOptions = leaflet::highlightOptions(
+            weight = STYLE$parcel_hover$weight,
+            fillOpacity = STYLE$parcel_hover$fillOpacity,
+            bringToFront = TRUE
+          )
         )
-      ))
     }
 
     update_parcel_styles <- function(selected_ids) {
