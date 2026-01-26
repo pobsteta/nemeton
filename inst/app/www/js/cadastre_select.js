@@ -7,18 +7,66 @@
   // Track selected parcels per map
   const selectedParcels = {};
 
-  Shiny.addCustomMessageHandler("cadastre_select", function (msg) {
-    const el = document.getElementById(msg.mapId);
+  // Helper function to find the Leaflet map instance
+  function findLeafletMap(mapId) {
+    const el = document.getElementById(mapId);
     if (!el) {
-      console.warn('cadastre_select: element not found:', msg.mapId);
-      return;
+      console.warn('cadastre_select: element not found:', mapId);
+      return null;
     }
 
-    const map = el._leaflet_map;
-    if (!map) {
-      console.warn('cadastre_select: no _leaflet_map on element');
-      return;
+    // Method 1: Try _leaflet_map (some versions)
+    if (el._leaflet_map) {
+      return el._leaflet_map;
     }
+
+    // Method 2: Try HTMLWidgets.getInstance
+    if (window.HTMLWidgets && HTMLWidgets.getInstance) {
+      const instance = HTMLWidgets.getInstance(el);
+      if (instance && instance.getMap) {
+        return instance.getMap();
+      }
+    }
+
+    // Method 3: Try to find via Leaflet's internal registry
+    if (window.L && L.Map) {
+      // Leaflet stores map instances with _leaflet_id
+      const leafletId = el._leaflet_id;
+      if (leafletId !== undefined) {
+        // Iterate through all Leaflet maps
+        for (let key in L.Map._instances) {
+          if (L.Map._instances.hasOwnProperty(key)) {
+            const map = L.Map._instances[key];
+            if (map._container === el) {
+              return map;
+            }
+          }
+        }
+      }
+    }
+
+    // Method 4: Search in child elements (leaflet container might be nested)
+    const leafletContainer = el.querySelector('.leaflet-container');
+    if (leafletContainer) {
+      if (leafletContainer._leaflet_map) {
+        return leafletContainer._leaflet_map;
+      }
+      // Try HTMLWidgets on the container
+      if (window.HTMLWidgets && HTMLWidgets.getInstance) {
+        const instance = HTMLWidgets.getInstance(leafletContainer);
+        if (instance && instance.getMap) {
+          return instance.getMap();
+        }
+      }
+    }
+
+    console.warn('cadastre_select: could not find Leaflet map for:', mapId);
+    return null;
+  }
+
+  Shiny.addCustomMessageHandler("cadastre_select", function (msg) {
+    const map = findLeafletMap(msg.mapId);
+    if (!map) return;
 
     // Find layer by layerId
     let targetLayer = null;
@@ -38,8 +86,6 @@
       selectedParcels[msg.mapId] = new Set();
     }
 
-    const isCurrentlySelected = selectedParcels[msg.mapId].has(msg.id);
-
     if (msg.selected) {
       // Select
       targetLayer.setStyle(selectedStyle);
@@ -54,10 +100,8 @@
 
   // Handler to clear all selections
   Shiny.addCustomMessageHandler("cadastre_clear", function (msg) {
-    const el = document.getElementById(msg.mapId);
-    if (!el || !el._leaflet_map) return;
-
-    const map = el._leaflet_map;
+    const map = findLeafletMap(msg.mapId);
+    if (!map) return;
 
     if (selectedParcels[msg.mapId]) {
       selectedParcels[msg.mapId].forEach(function(id) {
