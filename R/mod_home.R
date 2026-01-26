@@ -348,6 +348,8 @@ mod_home_server <- function(id, app_state) {
     # ========================================
 
     if (requireNamespace("cicerone", quietly = TRUE)) {
+      message("[TOUR] Cicerone package loaded, creating guide...")
+
       # Create the guide once at module initialization
       guide <- cicerone::Cicerone$new(id = "nemeton-tour")$
         step(
@@ -366,15 +368,22 @@ mod_home_server <- function(id, app_state) {
           description = i18n$t("tour_project_desc")
         )
 
+      message("[TOUR] Guide created with elements: ", ns("search-departement"), ", ", ns("map-map_card"), ", ", ns("project-name"))
+
       # Initialize the guide with the session
       guide$init(session = session)
+      message("[TOUR] Guide initialized with session")
 
       # Start tour on first visit (with delay for elements to render)
       tour_seen <- getOption("nemeton.tour_seen", FALSE)
+      message("[TOUR] tour_seen = ", tour_seen)
       if (!tour_seen) {
+        message("[TOUR] Setting up onFlushed callback...")
         # Use session$onFlushed to wait for UI, then delay before starting tour
         session$onFlushed(function() {
+          message("[TOUR] onFlushed triggered, starting later...")
           later::later(function() {
+            message("[TOUR] Starting tour now!")
             guide$start()
             options(nemeton.tour_seen = TRUE)
           }, delay = 1.5)
@@ -383,8 +392,11 @@ mod_home_server <- function(id, app_state) {
 
       # Restart tour when requested from app_server
       shiny::observeEvent(app_state$restart_tour, {
+        message("[TOUR] Restart requested, starting tour...")
         guide$start()
       }, ignoreInit = TRUE)
+    } else {
+      message("[TOUR] Cicerone package not available!")
     }
 
     # ========================================
