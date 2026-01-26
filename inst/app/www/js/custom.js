@@ -240,6 +240,24 @@
     });
   });
 
+  /**
+   * Debug: Log all Shiny custom messages
+   */
+  $(document).on('shiny:message', function(event) {
+    if (event.message && event.message.custom) {
+      console.log('[SHINY] Custom message received:', Object.keys(event.message.custom));
+    }
+  });
+
+  /**
+   * Debug: Check if cicerone/driver.js is loaded
+   */
+  $(document).on('shiny:connected', function() {
+    console.log('[TOUR] Shiny connected');
+    console.log('[TOUR] Driver available:', typeof Driver !== 'undefined');
+    console.log('[TOUR] driver available:', typeof driver !== 'undefined');
+  });
+
 
   // ============================================================
   // Initialization
