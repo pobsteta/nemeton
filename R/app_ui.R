@@ -20,6 +20,9 @@ app_ui <- function(request) {
     # Add external resources (CSS, JS)
     app_add_external_resources(),
 
+    # Cicerone for guided tours
+    if (requireNamespace("cicerone", quietly = TRUE)) cicerone::use_cicerone(),
+
     # Main page with navbar
     bslib::page_navbar(
       id = "main_nav",
