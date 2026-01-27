@@ -222,30 +222,37 @@ start_computation <- function(project_id,
 
   # Wrap entire computation in tryCatch to handle all errors
   tryCatch({
-    # Load parcels directly from path (using geoarrow for GeoParquet)
-    parcels_path <- file.path(project_path, "data", "parcels.parquet")
-    if (!file.exists(parcels_path)) {
-      stop("Parcels file not found: ", parcels_path)
+    # Load parcels - try Parquet first (faster), fall back to GeoPackage
+    parquet_path <- file.path(project_path, "data", "parcels.parquet")
+    gpkg_path <- file.path(project_path, "data", "parcels.gpkg")
+
+    parcels <- NULL
+
+    # Try Parquet first
+    if (file.exists(parquet_path) &&
+        requireNamespace("geoarrow", quietly = TRUE) &&
+        requireNamespace("arrow", quietly = TRUE)) {
+      parcels <- tryCatch({
+        parcels_arrow <- arrow::read_parquet(parquet_path, as_data_frame = FALSE)
+        sf::st_as_sf(parcels_arrow)
+      }, error = function(e) NULL)
     }
 
-    parcels <- tryCatch({
-      # Load geoarrow to enable sf <-> arrow conversions
-      requireNamespace("geoarrow", quietly = TRUE)
-      requireNamespace("arrow", quietly = TRUE)
+    # Fall back to GeoPackage
+    if (is.null(parcels) && file.exists(gpkg_path)) {
+      parcels <- tryCatch({
+        sf::st_read(gpkg_path, quiet = TRUE)
+      }, error = function(e) NULL)
+    }
 
-      # Read GeoParquet: read as Arrow Table, then convert to sf
-      parcels_arrow <- arrow::read_parquet(parcels_path, as_data_frame = FALSE)
-      parcels_sf <- sf::st_as_sf(parcels_arrow)
+    # Check if parcels were loaded
+    if (is.null(parcels)) {
+      stop("Parcels file not found or could not be loaded")
+    }
 
-      # Verify it's an sf object
-      if (!inherits(parcels_sf, "sf")) {
-        stop("Failed to load parcels as sf object")
-      }
-
-      parcels_sf
-    }, error = function(e) {
-      stop("Failed to load parcels: ", e$message)
-    })
+    if (!inherits(parcels, "sf")) {
+      stop("Failed to load parcels as sf object")
+    }
 
     if (nrow(parcels) == 0) {
       stop("No parcels found in project")
