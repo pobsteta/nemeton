@@ -300,24 +300,11 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
-    # Display Parcels
+    # Display Parcels (with loading overlay)
     # ========================================
 
-    shiny::observe({
-      parcel_data <- parcels()
-
-      if (is.null(parcel_data) || nrow(parcel_data) == 0) {
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels")
-        return()
-      }
-
-      # Show loading overlay
-      session$sendCustomMessage("showMapLoading", list(
-        loadingId = ns("map_loading"),
-        show = TRUE
-      ))
-
+    # Helper function to render parcels (called via later::later for deferred execution)
+    render_parcels <- function(parcel_data) {
       # Filter to keep only polygon geometries (defensive check)
       geom_types <- sf::st_geometry_type(parcel_data)
       polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
@@ -325,6 +312,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         cli::cli_warn("No polygon geometries in parcel data")
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("parcels")
+        session$sendCustomMessage("showMapLoading", list(
+          loadingId = ns("map_loading"),
+          show = FALSE
+        ))
         return()
       }
       if (sum(!polygon_idx) > 0) {
@@ -405,6 +396,30 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           show = FALSE
         ))
       }, delay = 0.5)
+    }
+
+    # Observer that triggers when parcels change
+    shiny::observe({
+      parcel_data <- parcels()
+
+      if (is.null(parcel_data) || nrow(parcel_data) == 0) {
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("parcels") |>
+          leaflet::clearGroup("selection")
+        return()
+      }
+
+      # Show loading overlay FIRST
+      session$sendCustomMessage("showMapLoading", list(
+        loadingId = ns("map_loading"),
+        show = TRUE
+      ))
+
+      # Defer rendering to allow overlay to be shown
+      # Use later::later with small delay to let browser process the overlay message
+      later::later(function() {
+        render_parcels(parcel_data)
+      }, delay = 0.05)
     })
 
 
