@@ -52,15 +52,34 @@ mod_home_ui <- function(id) {
 
       htmltools::hr(class = "my-3"),
 
-      # Search Section
-      htmltools::div(
-        id = ns("search_section"),
-        htmltools::h6(
-          class = "text-muted mb-2 d-flex align-items-center",
-          bsicons::bs_icon("search", class = "me-2"),
-          i18n$t("search_commune")
+      # Search Section (collapsible)
+      htmltools::tags$div(
+        class = "card mb-3",
+        htmltools::tags$div(
+          class = "card-header bg-primary text-white py-2",
+          style = "cursor: pointer;",
+          `data-bs-toggle` = "collapse",
+          `data-bs-target` = paste0("#", ns("search_collapse")),
+          `aria-expanded` = "true",
+          `aria-controls` = ns("search_collapse"),
+          htmltools::div(
+            class = "d-flex align-items-center justify-content-between",
+            htmltools::div(
+              class = "d-flex align-items-center",
+              bsicons::bs_icon("search", class = "me-2"),
+              i18n$t("search_commune")
+            ),
+            bsicons::bs_icon("chevron-down", class = "collapse-icon")
+          )
         ),
-        mod_search_ui(ns("search"))
+        htmltools::tags$div(
+          id = ns("search_collapse"),
+          class = "collapse show",
+          htmltools::tags$div(
+            class = "card-body",
+            mod_search_ui(ns("search"))
+          )
+        )
       ),
 
       htmltools::hr(class = "my-3"),
