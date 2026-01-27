@@ -1320,7 +1320,73 @@ compute_single_indicator <- function(indicator, parcels, layers) {
 
   if (exists(func_name, mode = "function")) {
     func <- get(func_name, mode = "function")
-    return(func(units = parcels, layers = layers))
+
+    # Get function's formal arguments
+    func_args <- names(formals(func))
+
+    # Build argument list based on what the function accepts
+    args <- list()
+
+    # units/parcels parameter (required)
+    if ("units" %in% func_args) {
+      args$units <- parcels
+    } else if ("parcels" %in% func_args) {
+      args$parcels <- parcels
+    }
+
+    # layers parameter (optional - only pass if function accepts it)
+    if ("layers" %in% func_args) {
+      args$layers <- layers
+    }
+
+    # Extract specific layers the function might need
+    if ("dem" %in% func_args && !is.null(layers$dem)) {
+      args$dem <- layers$dem
+    }
+    if ("ndvi" %in% func_args && !is.null(layers$ndvi)) {
+      args$ndvi <- layers$ndvi
+    }
+    if ("landcover" %in% func_args && !is.null(layers$landcover)) {
+      args$landcover <- layers$landcover
+    }
+    if ("protected_areas" %in% func_args && !is.null(layers$protected_areas)) {
+      args$protected_areas <- layers$protected_areas
+    }
+    if ("watercourses" %in% func_args && !is.null(layers$watercourses)) {
+      args$watercourses <- layers$watercourses
+    }
+    if ("wetlands" %in% func_args && !is.null(layers$wetlands)) {
+      args$wetlands <- layers$wetlands
+    }
+
+    # Call function with appropriate arguments
+    result <- do.call(func, args)
+
+    # Extract the indicator value from result
+    # Some functions return the units with the indicator added
+    if (inherits(result, "sf") || inherits(result, "data.frame")) {
+      # Look for the indicator column
+      indicator_col <- intersect(
+        c(indicator, toupper(indicator), paste0("indicator_", indicator)),
+        names(result)
+      )
+      if (length(indicator_col) > 0) {
+        return(result[[indicator_col[1]]])
+      }
+      # Try common column patterns (B1, C1, etc.)
+      pattern_cols <- grep("^[A-Z][0-9]$", names(result), value = TRUE)
+      if (length(pattern_cols) > 0) {
+        return(result[[pattern_cols[1]]])
+      }
+    }
+
+    # If result is a vector, return it directly
+    if (is.numeric(result) && length(result) == nrow(parcels)) {
+      return(result)
+    }
+
+    # Return as-is and hope for the best
+    return(result)
   }
 
   # Fallback: return random values for demo (to be replaced with actual calculations)

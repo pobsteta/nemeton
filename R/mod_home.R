@@ -523,13 +523,20 @@ mod_home_server <- function(id, app_state) {
     # Watch for ExtendedTask errors (handles failures before progress file is written)
     shiny::observe({
       # Only check when we have an active computation
-      shiny::req(computing_project_id())
+      project_id <- computing_project_id()
+      shiny::req(project_id)
 
       # Get ExtendedTask status
       task_status <- compute_task$status()
 
       if (task_status == "error") {
         cli::cli_alert_danger("ExtendedTask failed")
+
+        # Try to read the final state from progress file
+        progress_state <- read_progress_state(project_id)
+        if (!is.null(progress_state)) {
+          compute_state(progress_state)
+        }
 
         # Hide progress card, show error card
         session$sendCustomMessage("hideElement", list(
@@ -539,10 +546,17 @@ mod_home_server <- function(id, app_state) {
           id = ns("progress-error_card_wrapper")
         ))
 
-        # Try to get the error message
+        # Try to get the error message from task result or progress state
         error_msg <- tryCatch({
           result <- compute_task$result()
-          if (inherits(result, "error")) result$message else "Unknown error"
+          if (inherits(result, "error")) {
+            result$message
+          } else if (!is.null(progress_state) && length(progress_state$errors) > 0) {
+            last_error <- progress_state$errors[[length(progress_state$errors)]]
+            last_error$message %||% "Unknown error"
+          } else {
+            "Unknown error"
+          }
         }, error = function(e) e$message)
 
         shiny::showNotification(
