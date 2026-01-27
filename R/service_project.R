@@ -224,6 +224,17 @@ load_parcels <- function(project_id) {
     # Read parquet
     parcels_df <- arrow::read_parquet(parcels_path)
 
+    # Check if geometry_wkt column exists
+    if (!"geometry_wkt" %in% names(parcels_df)) {
+      cli::cli_warn("Parcels file missing geometry_wkt column")
+      # Try to find geometry column
+      geom_cols <- grep("geom|geometry", names(parcels_df), value = TRUE, ignore.case = TRUE)
+      if (length(geom_cols) > 0) {
+        cli::cli_alert_info("Found potential geometry column: {geom_cols[1]}")
+      }
+      return(NULL)
+    }
+
     # Get CRS
     crs <- 4326  # Default
     if (file.exists(crs_path)) {
@@ -239,6 +250,12 @@ load_parcels <- function(project_id) {
       wkt = "geometry_wkt",
       crs = crs
     )
+
+    # Verify conversion succeeded
+    if (!inherits(parcels_sf, "sf")) {
+      cli::cli_warn("Failed to convert parcels to sf object")
+      return(NULL)
+    }
 
     # Remove WKT column
     parcels_sf$geometry_wkt <- NULL

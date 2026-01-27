@@ -199,6 +199,27 @@ start_computation <- function(project_id,
     stop("No parcels found in project")
   }
 
+  # Verify parcels is an sf object
+  if (!inherits(parcels, "sf")) {
+    # Try to convert if geometry_wkt column exists
+    if ("geometry_wkt" %in% names(parcels)) {
+      parcels <- tryCatch({
+        sf::st_as_sf(parcels, wkt = "geometry_wkt", crs = 4326)
+      }, error = function(e) {
+        stop("Parcels could not be converted to spatial format: ", e$message)
+      })
+    } else if ("geometry" %in% names(parcels)) {
+      # Try using geometry column directly
+      parcels <- tryCatch({
+        sf::st_as_sf(parcels)
+      }, error = function(e) {
+        stop("Parcels have no valid geometry: ", e$message)
+      })
+    } else {
+      stop("Parcels data is not in spatial format (missing geometry)")
+    }
+  }
+
   # Initialize state
   state <- init_compute_state(project_id, indicators)
   state$started_at <- Sys.time()
