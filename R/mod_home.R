@@ -361,28 +361,46 @@ mod_home_server <- function(id, app_state) {
       start_tour <- function() {
         # Target elements - use element IDs (cicerone adds # prefix automatically)
         # Using wrapper divs for sections that contain hidden elements
-        el1 <- "home-search_section"   # wrapper div around search (visible)
-        el2 <- "home-map-map_card"     # map card (visible)
-        el3 <- "home-project-name"     # textInput (visible)
+        el_search <- "home-search_section"      # wrapper div around search (visible)
+        el_map <- "home-map-map_card"           # map card (visible)
+        el_name <- "home-project-name"          # textInput (visible)
+        el_desc <- "home-project-description"   # textAreaInput (visible)
+        el_owner <- "home-project-owner"        # textInput (visible)
+        el_create <- "home-project-create"      # create button (visible)
 
         tryCatch({
           # Create guide and chain all steps
           cicerone::Cicerone$
             new()$
             step(
-              el = el1,
+              el = el_search,
               title = i18n$t("tour_search_title"),
               description = i18n$t("tour_search_desc")
             )$
             step(
-              el = el2,
+              el = el_map,
               title = i18n$t("tour_map_title"),
               description = i18n$t("tour_map_desc")
             )$
             step(
-              el = el3,
+              el = el_name,
               title = i18n$t("tour_project_title"),
               description = i18n$t("tour_project_desc")
+            )$
+            step(
+              el = el_desc,
+              title = i18n$t("tour_description_title"),
+              description = i18n$t("tour_description_desc")
+            )$
+            step(
+              el = el_owner,
+              title = i18n$t("tour_owner_title"),
+              description = i18n$t("tour_owner_desc")
+            )$
+            step(
+              el = el_create,
+              title = i18n$t("tour_create_title"),
+              description = i18n$t("tour_create_desc")
             )$
             init(session = session)$
             start()
