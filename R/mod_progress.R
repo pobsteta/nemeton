@@ -133,6 +133,7 @@ mod_progress_ui <- function(id) {
     ),
 
     # Completion card (shown when done, via JavaScript)
+    # Auto-hides after 5 seconds - main "View Results" button is in the interface
     htmltools::div(
       id = ns("complete_card_wrapper"),
       style = "display: none;",
@@ -146,16 +147,10 @@ mod_progress_ui <- function(id) {
         ),
         bslib::card_body(
           htmltools::div(
-            class = "text-center py-3",
+            class = "text-center py-2",
             htmltools::p(
-              class = "lead mb-3",
+              class = "mb-0",
               shiny::textOutput(ns("completion_message"), inline = TRUE)
-            ),
-            shiny::actionButton(
-              ns("view_results"),
-              label = i18n$t("view_results"),
-              icon = shiny::icon("chart-bar"),
-              class = "btn-success"
             )
           )
         )
@@ -435,11 +430,6 @@ mod_progress_server <- function(id, compute_state, app_state) {
       rv$show_error <- FALSE
       rv$start_time <- NULL
       app_state$retry_computation <- Sys.time()
-    })
-
-    # View results button
-    shiny::observeEvent(input$view_results, {
-      app_state$view_results <- Sys.time()
     })
 
     # ========================================
