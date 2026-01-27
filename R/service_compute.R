@@ -19,9 +19,9 @@ DATA_SOURCES <- list(
   # Raster sources
   rasters = list(
     ndvi = list(
-      name = "NDVI",
+      name = "NDVI (from IGN IRC)",
       type = "raster",
-      source = "sentinel2",
+      source = "ign_irc",
       required_for = c("carbon_ndvi")
     ),
     dem = list(
@@ -498,7 +498,7 @@ download_raster_source <- function(source_name,
   # Download based on source type
   raster_data <- switch(
     source_config$source,
-    "sentinel2" = download_sentinel2_ndvi(bbox, cache_file),
+    "ign_irc" = download_ign_irc_ndvi(bbox, cache_file),
     "ign_bd_alti" = download_ign_dem(bbox, cache_file),
     "corine_land_cover" = download_clc(bbox, cache_file),
     {
@@ -971,117 +971,174 @@ download_ign_dem <- function(bbox, cache_file) {
 }
 
 
-#' Download Sentinel-2 NDVI
+#' Download IGN IRC orthophoto and compute NDVI
 #'
 #' @description
-#' Downloads NDVI derived from Sentinel-2 imagery.
-#' Note: Requires Copernicus Data Space credentials for full functionality.
-#' Currently uses a simplified approach with pre-computed products.
+#' Downloads Infrared Color (IRC) orthophoto from IGN Geoplateforme
+#' and computes NDVI from the NIR and Red bands.
+#'
+#' IRC bands:
+#' - Band 1: Near-Infrared (NIR)
+#' - Band 2: Red
+#' - Band 3: Green
+#'
+#' NDVI = (NIR - Red) / (NIR + Red) = (Band1 - Band2) / (Band1 + Band2)
 #'
 #' @param bbox Numeric vector or sf bbox. Bounding box in WGS84.
-#' @param cache_file Character. Path to save the downloaded raster.
+#' @param cache_file Character. Path to save the computed NDVI raster.
 #'
-#' @return SpatRaster object, or NULL if download fails.
+#' @return SpatRaster object with NDVI values (-1 to 1), or NULL if download fails.
 #'
 #' @noRd
-download_sentinel2_ndvi <- function(bbox, cache_file) {
-  # Copernicus Global Land Service - NDVI 300m
-  # This is a pre-computed NDVI product (not raw Sentinel-2)
-  # For raw Sentinel-2, users would need Copernicus Data Space credentials
-
-  cli::cli_alert_info("Downloading NDVI data...")
+download_ign_irc_ndvi <- function(bbox, cache_file) {
+  # IGN Geoplateforme WMS for IRC orthophotos
+  base_url <- "https://data.geopf.fr/wms-r/wms"
 
   # Ensure bbox is numeric
   if (inherits(bbox, "bbox")) {
     bbox <- as.numeric(bbox)
   }
 
+  cli::cli_alert_info("Downloading IGN IRC orthophoto for NDVI calculation...")
+
+
   tryCatch({
-    # Use Copernicus Global Land Service WCS for NDVI 300m
-    # Alternative: generate synthetic NDVI from land cover
-    base_url <- "https://viewer.globalland.vgt.vito.be/geoserver/ows"
+    # Calculate image dimensions
+    # Target resolution: ~5m (IRC is available at 50cm but we downsample for performance)
+    # 1 degree ~ 111km, so 0.00005 degrees ~ 5m
+    target_res <- 0.00005
+    width <- ceiling((bbox[3] - bbox[1]) / target_res)
+    height <- ceiling((bbox[4] - bbox[2]) / target_res)
 
-    # Calculate dimensions (~300m resolution)
-    width <- ceiling((bbox[3] - bbox[1]) / 0.003)
-    height <- ceiling((bbox[4] - bbox[2]) / 0.003)
+    # Limit size to avoid memory issues and server limits
+    max_size <- 4000
+    if (width > max_size) {
+      scale <- max_size / width
+      width <- max_size
+      height <- ceiling(height * scale)
+    }
+    if (height > max_size) {
+      scale <- max_size / height
+      height <- max_size
+      width <- ceiling(width * scale)
+    }
 
-    # Limit size
-    max_size <- 1000
-    if (width > max_size) width <- max_size
-    if (height > max_size) height <- max_size
-
-    # Try WCS request for NDVI
-    wcs_url <- paste0(
+    # Build WMS GetMap URL for IRC orthophoto
+    # Layer: ORTHOIMAGERY.ORTHOPHOTOS.IRC (most recent IRC)
+    wms_url <- paste0(
       base_url,
-      "?SERVICE=WCS",
-      "&VERSION=2.0.1",
-      "&REQUEST=GetCoverage",
-      "&COVERAGEID=CGLS:ndvi300_v2_333m",
-      "&SUBSET=Long(", bbox[1], ",", bbox[3], ")",
-      "&SUBSET=Lat(", bbox[2], ",", bbox[4], ")",
-      "&FORMAT=image/tiff"
+      "?SERVICE=WMS",
+      "&VERSION=1.3.0",
+      "&REQUEST=GetMap",
+      "&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS.IRC",
+      "&STYLES=",
+      "&CRS=EPSG:4326",
+      "&BBOX=", paste(bbox[c(2, 1, 4, 3)], collapse = ","),  # WMS 1.3.0: lat,lon order
+      "&WIDTH=", width,
+      "&HEIGHT=", height,
+      "&FORMAT=image/geotiff"
     )
 
+    # Download to temp file
     temp_file <- tempfile(fileext = ".tif")
 
-    resp <- httr2::request(wcs_url) |>
-      httr2::req_timeout(180) |>
+    cli::cli_alert_info("  Requesting {width}x{height} pixels...")
+
+    resp <- httr2::request(wms_url) |>
+      httr2::req_timeout(300) |>  # 5 minutes for large images
       httr2::req_error(is_error = function(resp) FALSE) |>
       httr2::req_perform(path = temp_file)
 
-    if (httr2::resp_status(resp) == 200 &&
-        file.exists(temp_file) &&
-        file.size(temp_file) > 1000) {
-
-      file.copy(temp_file, cache_file, overwrite = TRUE)
+    if (httr2::resp_status(resp) != 200) {
+      cli::cli_warn("IGN WMS returned status {httr2::resp_status(resp)}")
       unlink(temp_file)
-
-      rast <- terra::rast(cache_file)
-      cli::cli_alert_success("Downloaded NDVI raster")
-      return(rast)
+      return(create_synthetic_ndvi(bbox, cache_file))
     }
 
+    # Check if valid file
+    if (!file.exists(temp_file) || file.size(temp_file) < 1000) {
+      cli::cli_warn("Invalid or empty IRC response")
+      unlink(temp_file)
+      return(create_synthetic_ndvi(bbox, cache_file))
+    }
+
+    # Load IRC raster
+    irc <- terra::rast(temp_file)
+
+    # Check we have at least 3 bands
+    if (terra::nlyr(irc) < 3) {
+      cli::cli_warn("IRC image has insufficient bands ({terra::nlyr(irc)})")
+      unlink(temp_file)
+      return(create_synthetic_ndvi(bbox, cache_file))
+    }
+
+    cli::cli_alert_info("  Computing NDVI from IRC bands...")
+
+    # Extract NIR (band 1) and Red (band 2)
+    nir <- irc[[1]]
+    red <- irc[[2]]
+
+    # Compute NDVI = (NIR - Red) / (NIR + Red)
+    # Handle division by zero by setting those pixels to 0
+    ndvi <- (nir - red) / (nir + red)
+
+    # Replace NaN/Inf with 0
+    ndvi[is.nan(terra::values(ndvi))] <- 0
+    ndvi[is.infinite(terra::values(ndvi))] <- 0
+
+    # Ensure NDVI is in valid range [-1, 1]
+    ndvi <- terra::clamp(ndvi, lower = -1, upper = 1)
+
+    # Set proper name
+    names(ndvi) <- "ndvi"
+
+    # Save to cache
+    terra::writeRaster(ndvi, cache_file, overwrite = TRUE)
     unlink(temp_file)
 
-    # Fallback: Create synthetic NDVI based on typical forest values
-    cli::cli_alert_warning("NDVI service unavailable, using synthetic values")
+    cli::cli_alert_success("Computed NDVI from IGN IRC ({width}x{height} pixels)")
 
-    # Create a simple raster with forest-typical NDVI (0.6-0.8)
-    # This is a placeholder until proper Sentinel-2 access is configured
-    rast <- terra::rast(
-      xmin = bbox[1], xmax = bbox[3],
-      ymin = bbox[2], ymax = bbox[4],
-      resolution = 0.001,  # ~100m
-      crs = "EPSG:4326"
-    )
-
-    # Fill with realistic forest NDVI values (randomized slightly)
-    set.seed(42)
-    values(rast) <- runif(terra::ncell(rast), 0.5, 0.85)
-
-    terra::writeRaster(rast, cache_file, overwrite = TRUE)
-    cli::cli_alert_info("Created synthetic NDVI (configure Copernicus credentials for real data)")
-
-    return(rast)
+    return(terra::rast(cache_file))
 
   }, error = function(e) {
-    cli::cli_warn("Failed to download NDVI: {e$message}")
-
-    # Return synthetic as last resort
-    cli::cli_alert_info("Using synthetic NDVI values")
-
-    rast <- terra::rast(
-      xmin = bbox[1], xmax = bbox[3],
-      ymin = bbox[2], ymax = bbox[4],
-      resolution = 0.001,
-      crs = "EPSG:4326"
-    )
-    set.seed(42)
-    terra::values(rast) <- runif(terra::ncell(rast), 0.5, 0.85)
-    terra::writeRaster(rast, cache_file, overwrite = TRUE)
-
-    return(rast)
+    cli::cli_warn("Failed to download/compute NDVI from IRC: {e$message}")
+    return(create_synthetic_ndvi(bbox, cache_file))
   })
+}
+
+
+#' Create synthetic NDVI raster (fallback)
+#'
+#' @description
+#' Creates a synthetic NDVI raster with realistic forest values
+#' when the IRC download fails.
+#'
+#' @param bbox Numeric vector. Bounding box.
+#' @param cache_file Character. Path to save the raster.
+#'
+#' @return SpatRaster with synthetic NDVI values.
+#'
+#' @noRd
+create_synthetic_ndvi <- function(bbox, cache_file) {
+  cli::cli_alert_warning("Using synthetic NDVI values (IRC unavailable)")
+
+  # Create raster with ~100m resolution
+  rast <- terra::rast(
+    xmin = bbox[1], xmax = bbox[3],
+    ymin = bbox[2], ymax = bbox[4],
+    resolution = 0.001,  # ~100m
+    crs = "EPSG:4326"
+  )
+
+  # Fill with realistic forest NDVI values (0.5-0.85)
+  set.seed(42)
+  terra::values(rast) <- runif(terra::ncell(rast), 0.5, 0.85)
+  names(rast) <- "ndvi"
+
+  terra::writeRaster(rast, cache_file, overwrite = TRUE)
+  cli::cli_alert_info("Created synthetic NDVI raster")
+
+  return(rast)
 }
 
 
