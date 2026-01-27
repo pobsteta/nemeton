@@ -293,6 +293,18 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         return()
       }
 
+      # Validate parcels are sf objects
+      if (!inherits(parcels, "sf")) {
+        cli::cli_alert_danger("Parcels are not sf objects! Class: {paste(class(parcels), collapse=', ')}")
+        shiny::showNotification(
+          "Erreur: les parcelles ne sont pas au format spatial",
+          type = "error"
+        )
+        return()
+      }
+
+      cli::cli_alert_info("Saving {nrow(parcels)} parcels (class: {paste(class(parcels), collapse=', ')})")
+
       tryCatch({
         if (is.null(rv$editing_project_id)) {
           # CREATE mode
