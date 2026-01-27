@@ -204,7 +204,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       )
     })
 
-    # Dynamic action button (create vs update)
+    # Dynamic action button (create vs update + delete)
     output$action_button <- shiny::renderUI({
       if (is.null(rv$editing_project_id)) {
         # Create mode
@@ -215,12 +215,21 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           icon = bsicons::bs_icon("plus-circle")
         )
       } else {
-        # Edit mode
-        shiny::actionButton(
-          ns("create"),
-          label = i18n$t("update_project"),
-          class = "btn-primary",
-          icon = bsicons::bs_icon("pencil-square")
+        # Edit mode - show update and delete buttons
+        htmltools::div(
+          class = "d-flex gap-2",
+          shiny::actionButton(
+            ns("create"),
+            label = i18n$t("update_project"),
+            class = "btn-primary",
+            icon = bsicons::bs_icon("pencil-square")
+          ),
+          shiny::actionButton(
+            ns("delete_project"),
+            label = i18n$t("delete"),
+            class = "btn-outline-danger",
+            icon = bsicons::bs_icon("trash")
+          )
         )
       }
     })
@@ -371,6 +380,78 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         )
       })
     }) |> shiny::bindEvent(input$create)
+
+    # ========================================
+    # Delete Project
+    # ========================================
+
+    shiny::observeEvent(input$delete_project, {
+      shiny::req(rv$editing_project_id)
+
+      project <- rv$current_project
+      project_name <- if (!is.null(project$metadata$name)) project$metadata$name else rv$editing_project_id
+
+      # Show confirmation modal
+      shiny::showModal(shiny::modalDialog(
+        title = htmltools::div(
+          class = "text-danger",
+          bsicons::bs_icon("exclamation-triangle-fill", class = "me-2"),
+          i18n$t("delete_project")
+        ),
+        htmltools::p(
+          sprintf("%s '%s' ?", i18n$t("confirm_delete_project"), project_name)
+        ),
+        htmltools::p(
+          class = "text-muted small",
+          i18n$t("delete_project_warning")
+        ),
+        footer = htmltools::tagList(
+          shiny::modalButton(i18n$t("cancel")),
+          shiny::actionButton(
+            ns("confirm_delete_project"),
+            label = i18n$t("delete"),
+            class = "btn-danger"
+          )
+        ),
+        easyClose = TRUE
+      ))
+    })
+
+    # Confirm delete
+    shiny::observeEvent(input$confirm_delete_project, {
+      shiny::req(rv$editing_project_id)
+
+      project_id <- rv$editing_project_id
+
+      tryCatch({
+        if (delete_project(project_id)) {
+          shiny::removeModal()
+
+          # Reset form
+          rv$editing_project_id <- NULL
+          rv$current_project <- NULL
+          rv$project_date <- format(Sys.Date(), "%d/%m/%Y")
+          shiny::updateTextInput(session, "name", value = "")
+          shiny::updateTextAreaInput(session, "description", value = "")
+          shiny::updateTextInput(session, "owner", value = "")
+
+          # Clear app state
+          app_state$current_project <- NULL
+          app_state$project_id <- NULL
+          app_state$refresh_projects <- Sys.time()
+
+          shiny::showNotification(
+            i18n$t("project_deleted"),
+            type = "message"
+          )
+        }
+      }, error = function(e) {
+        shiny::showNotification(
+          sprintf("%s: %s", i18n$t("error"), e$message),
+          type = "error"
+        )
+      })
+    })
 
     # ========================================
     # Return Values
