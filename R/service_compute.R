@@ -31,9 +31,9 @@ DATA_SOURCES <- list(
       required_for = c("water_twi", "risk_erosion")
     ),
     forest_cover = list(
-      name = "Forest Cover",
+      name = "Forest Cover (OSO)",
       type = "raster",
-      source = "corine_land_cover",
+      source = "oso",
       required_for = c("carbon_biomass", "landscape_fragmentation", "temporal_change")
     )
   ),
@@ -518,7 +518,7 @@ download_raster_source <- function(source_name,
     source_config$source,
     "ign_irc" = download_ign_irc_ndvi(bbox, cache_file),
     "ign_bd_alti" = download_ign_dem(bbox, cache_file),
-    "corine_land_cover" = download_clc(bbox, cache_file),
+    "oso" = download_oso(bbox, cache_file),
     {
       cli::cli_warn("Unknown raster source: {source_config$source}")
       NULL
@@ -802,11 +802,12 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 }
 
 
-#' Download Corine Land Cover raster
+#' Download OSO land cover raster
 #'
 #' @description
-#' Downloads Corine Land Cover 2018 raster data from Copernicus.
-#' Uses WCS service or direct download fallback.
+#' Downloads OSO (Occupation du Sol) land cover data from Theia/CESBIO via
+#' Recherche Data Gouv. OSO provides 10m resolution land cover classification
+#' for France with forest classes (17=Feuillus, 18=Coniferes, 19=Mixte).
 #'
 #' @param bbox Numeric vector or sf bbox. Bounding box in WGS84.
 #' @param cache_file Character. Path to save the downloaded raster.
@@ -814,83 +815,112 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 #' @return SpatRaster object, or NULL if download fails.
 #'
 #' @noRd
-download_clc <- function(bbox, cache_file) {
-  # Copernicus Land Monitoring Service WCS
-  # CLC 2018 100m resolution
-  base_url <- "https://image.discomap.eea.europa.eu/arcgis/services/Corine/CLC2018_WM/MapServer/WCSServer"
-
+download_oso <- function(bbox, cache_file) {
   # Ensure bbox is numeric
   if (inherits(bbox, "bbox")) {
     bbox <- as.numeric(bbox)
   }
 
-  cli::cli_alert_info("Downloading Corine Land Cover 2018...")
+  cli::cli_alert_info("Downloading OSO land cover (Theia/CESBIO)...")
+
+  # OSO cache directory
+  oso_cache <- dirname(cache_file)
+  oso_path <- file.path(oso_cache, "oso.tif")
 
   tryCatch({
-    # Transform bbox to Web Mercator (EPSG:3857) for the service
-    bbox_sf <- sf::st_bbox(
-      c(xmin = bbox[1], ymin = bbox[2], xmax = bbox[3], ymax = bbox[4]),
-      crs = sf::st_crs(4326)
-    ) |> sf::st_as_sfc()
+    # Check if full OSO file already exists
+    if (!file.exists(oso_path)) {
+      cli::cli_alert_info("Downloading OSO from Recherche Data Gouv...")
+      oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
 
-    bbox_3857 <- sf::st_transform(bbox_sf, 3857) |> sf::st_bbox()
+      # Check for existing archive
+      oso_tar_files <- list.files(oso_cache, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
+      if (length(oso_tar_files) > 0) {
+        oso_tar <- oso_tar_files[1]
+      } else {
+        oso_tar <- file.path(oso_cache, "OSO_RASTER.tar.gz")
+      }
 
-    # Calculate resolution (approximately 100m in degrees at mid-latitude)
-    width <- ceiling((bbox[3] - bbox[1]) / 0.001)  # ~100m
-    height <- ceiling((bbox[4] - bbox[2]) / 0.001)
+      oso_expected_size <- 5e9
 
-    # Limit size to avoid memory issues
-    max_size <- 2000
-    if (width > max_size) width <- max_size
-    if (height > max_size) height <- max_size
+      # Download if needed
+      need_download <- TRUE
+      if (file.exists(oso_tar)) {
+        existing_size <- file.info(oso_tar)$size
+        if (existing_size >= oso_expected_size) {
+          cli::cli_alert_info("Using existing OSO archive ({round(existing_size/1e9, 1)} GB)")
+          need_download <- FALSE
+        }
+      }
 
-    # Build WCS GetCoverage URL
-    wcs_url <- paste0(
-      base_url,
-      "?SERVICE=WCS",
-      "&VERSION=1.1.1",
-      "&REQUEST=GetCoverage",
-      "&IDENTIFIER=1",  # CLC 2018 layer
-      "&FORMAT=GeoTIFF",
-      "&BOUNDINGBOX=", paste(as.numeric(bbox_3857)[c(1,2,3,4)], collapse = ","), ",EPSG:3857",
-      "&WIDTH=", width,
-      "&HEIGHT=", height
-    )
+      if (need_download) {
+        cli::cli_alert_info("Downloading OSO (~6 GB, this may take a while)...")
+        utils::download.file(
+          url = oso_url,
+          destfile = oso_tar,
+          mode = "wb",
+          quiet = FALSE
+        )
+      }
 
-    # Download to temp file first
-    temp_file <- tempfile(fileext = ".tif")
+      # Extract archive
+      cli::cli_alert_info("Extracting OSO archive...")
+      utils::untar(path.expand(oso_tar), exdir = path.expand(oso_cache), extras = "--touch")
 
-    resp <- httr2::request(wcs_url) |>
-      httr2::req_timeout(180) |>
-      httr2::req_error(is_error = function(resp) FALSE) |>
-      httr2::req_perform(path = temp_file)
+      # Find extracted TIF file
+      tif_files <- list.files(oso_cache, pattern = "^OCS_.*\\.tif$",
+                              recursive = TRUE, full.names = TRUE)
+      if (length(tif_files) > 0) {
+        file.copy(tif_files[1], oso_path)
+        cli::cli_alert_success("OSO extracted to {oso_path}")
 
-    if (httr2::resp_status(resp) != 200) {
-      cli::cli_warn("Copernicus WCS returned status {httr2::resp_status(resp)}")
-      unlink(temp_file)
-      return(NULL)
+        # Cleanup extracted directories and archive
+        oso_dirs <- list.dirs(oso_cache, full.names = TRUE, recursive = FALSE)
+        oso_dirs <- oso_dirs[grepl("^OSO_", basename(oso_dirs))]
+        if (length(oso_dirs) > 0) {
+          unlink(oso_dirs, recursive = TRUE)
+        }
+        if (file.exists(oso_tar)) {
+          file.remove(oso_tar)
+        }
+      } else {
+        cli::cli_warn("Could not find OCS_*.tif in extracted archive")
+        return(NULL)
+      }
     }
 
-    # Check if file is valid GeoTIFF
-    if (file.exists(temp_file) && file.size(temp_file) > 1000) {
-      # Load and reproject to WGS84
-      rast <- terra::rast(temp_file)
-      rast_wgs84 <- terra::project(rast, "EPSG:4326")
+    # Load and crop OSO to bbox
+    if (file.exists(oso_path)) {
+      cli::cli_alert_info("Cropping OSO to study area...")
+      oso_full <- terra::rast(oso_path)
+
+      # Create bbox extent in OSO CRS
+      bbox_sf <- sf::st_bbox(
+        c(xmin = bbox[1], ymin = bbox[2], xmax = bbox[3], ymax = bbox[4]),
+        crs = sf::st_crs(4326)
+      ) |> sf::st_as_sfc()
+
+      bbox_oso_crs <- sf::st_transform(bbox_sf, terra::crs(oso_full))
+      bbox_ext <- terra::ext(terra::vect(bbox_oso_crs))
+
+      # Crop to study area
+      oso_crop <- terra::crop(oso_full, bbox_ext)
+
+      # Reproject to WGS84
+      oso_wgs84 <- terra::project(oso_crop, "EPSG:4326", method = "near")
 
       # Save to cache
-      terra::writeRaster(rast_wgs84, cache_file, overwrite = TRUE)
-      unlink(temp_file)
+      terra::writeRaster(oso_wgs84, cache_file, overwrite = TRUE)
 
-      cli::cli_alert_success("Downloaded Corine Land Cover raster")
+      cli::cli_alert_success("Downloaded and cropped OSO land cover raster")
       return(terra::rast(cache_file))
     } else {
-      cli::cli_warn("Invalid or empty CLC response")
-      unlink(temp_file)
+      cli::cli_warn("OSO file not found: {oso_path}")
       return(NULL)
     }
 
   }, error = function(e) {
-    cli::cli_warn("Failed to download Corine Land Cover: {e$message}")
+    cli::cli_warn("Failed to download OSO: {e$message}")
     NULL
   })
 }

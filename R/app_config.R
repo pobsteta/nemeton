@@ -216,9 +216,9 @@ DATA_SOURCES <- list(
     fallback = "local_cache",
     required = FALSE
   ),
-  corine = list(
-    name = "corine",
-    primary = "copernicus",
+  oso = list(
+    name = "oso",
+    primary = "recherche_data_gouv",
     fallback = "local_cache",
     required = FALSE
   ),

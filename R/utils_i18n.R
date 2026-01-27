@@ -420,7 +420,7 @@ TRANSLATIONS <- list(
   # Data source names
   source_ndvi = list(fr = "NDVI (IRC IGN)", en = "NDVI (IGN IRC)"),
   source_dem = list(fr = "Mod\u00e8le Num\u00e9rique de Terrain", en = "Digital Elevation Model"),
-  source_forest_cover = list(fr = "Occupation du sol (Corine Land Cover)", en = "Land Cover (Corine Land Cover)"),
+  source_forest_cover = list(fr = "Occupation du sol (OSO Theia/CESBIO)", en = "Land Cover (OSO Theia/CESBIO)"),
   source_protected_areas = list(fr = "Aires prot\u00e9g\u00e9es (INPN)", en = "Protected Areas (INPN)"),
   source_water_network = list(fr = "R\u00e9seau hydrographique (IGN)", en = "Water Network (IGN)"),
   source_wetlands = list(fr = "Zones humides (ZNIEFF)", en = "Wetlands (ZNIEFF)"),
