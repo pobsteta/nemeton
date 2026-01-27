@@ -221,10 +221,14 @@ load_parcels <- function(project_id) {
       cli::cli_abort("Package 'arrow' is required")
     }
 
-    # Read parquet
-    parcels_df <- arrow::read_parquet(parcels_path)
+    # Read parquet (returns a tibble)
+    parcels_tbl <- arrow::read_parquet(parcels_path)
 
-    cli::cli_alert_info("Loaded parquet with {nrow(parcels_df)} rows, columns: {paste(names(parcels_df), collapse=', ')}")
+    cli::cli_alert_info("Loaded parquet with {nrow(parcels_tbl)} rows, columns: {paste(names(parcels_tbl), collapse=', ')}")
+
+    # IMPORTANT: Convert arrow tibble to plain data.frame for reliable sf conversion
+    # Arrow tibbles can have issues with sf::st_as_sf() in some environments
+    parcels_df <- as.data.frame(parcels_tbl)
 
     # Check if geometry_wkt column exists
     if (!"geometry_wkt" %in% names(parcels_df)) {
@@ -248,6 +252,12 @@ load_parcels <- function(project_id) {
       }
     }
 
+    # Verify geometry_wkt contains valid data
+    if (all(is.na(parcels_df$geometry_wkt)) || all(parcels_df$geometry_wkt == "")) {
+      cli::cli_warn("geometry_wkt column is empty or contains only NA values")
+      return(NULL)
+    }
+
     # Get CRS
     crs <- 4326  # Default
     if (file.exists(crs_path)) {
@@ -266,16 +276,23 @@ load_parcels <- function(project_id) {
 
     # Verify conversion succeeded
     if (!inherits(parcels_sf, "sf")) {
-      cli::cli_warn("Failed to convert parcels to sf object")
+      cli::cli_warn("Failed to convert parcels to sf object (class: {paste(class(parcels_sf), collapse=', ')})")
       return(NULL)
     }
 
-    # Remove WKT column if it exists
+    # Verify geometry exists
+    geom <- sf::st_geometry(parcels_sf)
+    if (is.null(geom) || length(geom) == 0) {
+      cli::cli_warn("sf object has no valid geometry")
+      return(NULL)
+    }
+
+    # Remove WKT column if it exists (geometry is now in the sf geometry column)
     if ("geometry_wkt" %in% names(parcels_sf)) {
       parcels_sf$geometry_wkt <- NULL
     }
 
-    cli::cli_alert_success("Loaded {nrow(parcels_sf)} parcels as sf object")
+    cli::cli_alert_success("Loaded {nrow(parcels_sf)} parcels as sf object (CRS: {crs})")
     parcels_sf
 
   }, error = function(e) {
