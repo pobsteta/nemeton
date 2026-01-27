@@ -533,31 +533,37 @@ mod_home_server <- function(id, app_state) {
       # Track if tour has been shown in this session
       tour_shown_this_session <- shiny::reactiveVal(FALSE)
 
-      # Function to create and start a fresh guide
-      start_tour <- function() {
-        # Target elements - use element IDs (cicerone adds # prefix automatically)
-        # Collapsible sections need to be opened before highlighting
-        el_search_collapse <- ns("search_collapse")
-        el_project_collapse <- "home-project-project_collapse"
+      # Function to open collapsed sections
+      open_collapsed_sections <- function() {
+        shiny::insertUI(
+          selector = "body",
+          where = "beforeEnd",
+          ui = htmltools::tags$script(htmltools::HTML(sprintf("
+            $('#%s').collapse('show');
+            $('#%s').collapse('show');
+          ", ns("search_collapse"), "home-project-project_collapse"))),
+          immediate = TRUE
+        )
+      }
+
+      # Function to create and start tour
+      do_start_tour <- function() {
+        # Target elements - use element IDs
+        el_search <- ns("search_collapse")
         el_map <- "home-map-map_card"
         el_name <- "home-project-name"
         el_desc <- "home-project-description"
         el_owner <- "home-project-owner"
         el_create <- "home-project-create_project"
 
-        # JavaScript to open collapsed sections
-        open_search_js <- sprintf("$('#%s').collapse('show');", el_search_collapse)
-        open_project_js <- sprintf("$('#%s').collapse('show');", el_project_collapse)
-
         tryCatch({
           # Create guide and chain all steps
           cicerone::Cicerone$
             new()$
             step(
-              el = el_search_collapse,
+              el = el_search,
               title = i18n$t("tour_search_title"),
-              description = i18n$t("tour_search_desc"),
-              on_highlight_started = open_search_js
+              description = i18n$t("tour_search_desc")
             )$
             step(
               el = el_map,
@@ -567,8 +573,7 @@ mod_home_server <- function(id, app_state) {
             step(
               el = el_name,
               title = i18n$t("tour_project_title"),
-              description = i18n$t("tour_project_desc"),
-              on_highlight_started = open_project_js
+              description = i18n$t("tour_project_desc")
             )$
             step(
               el = el_desc,
@@ -590,6 +595,12 @@ mod_home_server <- function(id, app_state) {
         }, error = function(e) {
           warning("[Tour] Could not start: ", e$message)
         })
+      }
+
+      # Combined function: open sections then start tour with delay
+      start_tour <- function() {
+        open_collapsed_sections()
+        do_start_tour()
       }
 
       # Schedule tour to start after delay (one-time)
