@@ -585,8 +585,8 @@ mod_home_server <- function(id, app_state) {
         return()
       }
 
-      # Check if computation is still running (from file status)
-      is_running <- progress_state$status %in% c("downloading", "computing")
+      # Check if computation is still running or starting (from file status)
+      is_running <- progress_state$status %in% c("pending", "downloading", "computing")
 
       if (is_running) {
         # Update reactive state
@@ -631,47 +631,78 @@ mod_home_server <- function(id, app_state) {
         # Continue polling every 500ms
         shiny::invalidateLater(500)
 
-      } else {
-        # Computation finished - handle completion
+      } else if (progress_state$status == "completed") {
+        # Computation completed successfully
         # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
         ))
 
-        if (progress_state$status == "completed") {
-          # Show completion card
-          session$sendCustomMessage("showElement", list(
-            id = ns("progress-complete_card_wrapper")
-          ))
+        # Show completion card
+        session$sendCustomMessage("showElement", list(
+          id = ns("progress-complete_card_wrapper")
+        ))
 
-          # Reload project to get updated metadata
-          app_state$current_project <- load_project(project_id)
-          app_state$refresh_projects <- Sys.time()
+        # Reload project to get updated metadata
+        app_state$current_project <- load_project(project_id)
+        app_state$refresh_projects <- Sys.time()
 
-          shiny::showNotification(
-            i18n$t("computation_complete"),
-            type = "message"
-          )
-        } else if (progress_state$status == "error") {
-          # Show error card
-          session$sendCustomMessage("showElement", list(
-            id = ns("progress-error_card_wrapper")
-          ))
-
-          error_msg <- if (length(progress_state$errors) > 0) {
-            progress_state$errors[[length(progress_state$errors)]]$message
-          } else {
-            "Unknown error"
-          }
-
-          shiny::showNotification(
-            paste(i18n$t("computation_error"), error_msg),
-            type = "error",
-            duration = 10
-          )
-        }
+        shiny::showNotification(
+          i18n$t("computation_complete"),
+          type = "message"
+        )
 
         # Reset computing state
+        computing_project_id(NULL)
+
+      } else if (progress_state$status == "error") {
+        # Computation failed with error
+        # Hide progress card
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-progress_card_wrapper")
+        ))
+
+        # Show error card
+        session$sendCustomMessage("showElement", list(
+          id = ns("progress-error_card_wrapper")
+        ))
+
+        error_msg <- if (length(progress_state$errors) > 0) {
+          progress_state$errors[[length(progress_state$errors)]]$message
+        } else {
+          "Unknown error"
+        }
+
+        shiny::showNotification(
+          paste(i18n$t("computation_error"), error_msg),
+          type = "error",
+          duration = 10
+        )
+
+        # Reset computing state
+        computing_project_id(NULL)
+
+      } else if (progress_state$status == "cancelled") {
+        # Computation was cancelled
+        # Hide progress card
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-progress_card_wrapper")
+        ))
+
+        shiny::showNotification(
+          i18n$t("computation_cancelled"),
+          type = "warning"
+        )
+
+        # Reset computing state
+        computing_project_id(NULL)
+
+      } else {
+        # Unknown status - log and reset to avoid infinite loop
+        cli::cli_warn("Unknown computation status: {progress_state$status}")
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-progress_card_wrapper")
+        ))
         computing_project_id(NULL)
       }
     })

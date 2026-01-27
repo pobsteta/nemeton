@@ -242,14 +242,16 @@ mod_progress_server <- function(id, compute_state, app_state) {
 
       # Update visibility based on status
       rv$show_progress <- state$status %in% c(
+        COMPUTE_STATUS$PENDING,
         COMPUTE_STATUS$DOWNLOADING,
         COMPUTE_STATUS$COMPUTING
       )
       rv$show_complete <- state$status == COMPUTE_STATUS$COMPLETED
       rv$show_error <- state$status == COMPUTE_STATUS$ERROR
 
-      if (state$status == COMPUTE_STATUS$DOWNLOADING ||
-          state$status == COMPUTE_STATUS$COMPUTING) {
+      if (state$status %in% c(COMPUTE_STATUS$PENDING,
+                              COMPUTE_STATUS$DOWNLOADING,
+                              COMPUTE_STATUS$COMPUTING)) {
         # Track start time
         if (is.null(rv$start_time)) {
           rv$start_time <- Sys.time()
