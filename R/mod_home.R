@@ -69,7 +69,18 @@ mod_home_ui <- function(id) {
       htmltools::div(
         id = ns("project_form_section"),
         mod_project_ui(ns("project"))
-      )
+      ),
+
+      htmltools::hr(class = "my-3"),
+
+      # Compute Button Section (shown when project exists)
+      htmltools::div(
+        id = ns("compute_section"),
+        shiny::uiOutput(ns("compute_button_ui"))
+      ),
+
+      # Progress Module (shown during computation)
+      mod_progress_ui(ns("progress"))
     ),
 
     # ========================================
@@ -345,6 +356,156 @@ mod_home_server <- function(id, app_state) {
       app_state = app_state,
       selected_parcels = map_result$selected_parcels
     )
+
+    # ========================================
+    # Compute Button
+    # ========================================
+
+    output$compute_button_ui <- shiny::renderUI({
+      project <- app_state$current_project
+      if (is.null(project)) return(NULL)
+
+      # Check project status
+      status <- project$metadata$status %||% "draft"
+
+      # Show button only for draft status (not yet computed)
+      if (status %in% c("draft", "error")) {
+        shiny::actionButton(
+          ns("start_compute"),
+          label = i18n$t("compute_button"),
+          class = "btn-primary w-100",
+          icon = bsicons::bs_icon("cpu")
+        )
+      } else if (status == "completed") {
+        # Show "view results" button
+        htmltools::div(
+          class = "d-grid gap-2",
+          shiny::actionButton(
+            ns("view_results"),
+            label = i18n$t("view_results"),
+            class = "btn-success w-100",
+            icon = bsicons::bs_icon("bar-chart")
+          ),
+          shiny::actionButton(
+            ns("recompute"),
+            label = i18n$t("retry"),
+            class = "btn-outline-secondary btn-sm w-100 mt-2",
+            icon = bsicons::bs_icon("arrow-repeat")
+          )
+        )
+      } else {
+        NULL
+      }
+    })
+
+    # ========================================
+    # Progress Module
+    # ========================================
+
+    # Computation state (reactive)
+    compute_state <- shiny::reactiveVal(NULL)
+
+    # Progress module server
+    progress_result <- mod_progress_server(
+      "progress",
+      compute_state = compute_state,
+      app_state = app_state
+    )
+
+    # Start computation handler
+    shiny::observeEvent(input$start_compute, {
+      project <- app_state$current_project
+      shiny::req(project)
+
+      # Initialize computation state
+      state <- init_compute_state(project$id)
+      compute_state(state)
+
+      # Progress callback to update reactive state
+      progress_callback <- function(new_state) {
+        compute_state(new_state)
+      }
+
+      # Start computation in background-ish manner
+      # Note: For true async, we'd use promises/future
+      # For now, we run synchronously but update progress
+      shiny::withProgress(
+        message = i18n$t("computing"),
+        value = 0,
+        {
+          result <- start_computation(
+            project_id = project$id,
+            indicators = "all",
+            progress_callback = progress_callback
+          )
+
+          if (result$success) {
+            # Reload project to get updated metadata
+            app_state$current_project <- load_project(project$id)
+            app_state$refresh_projects <- Sys.time()
+
+            shiny::showNotification(
+              i18n$t("computation_complete"),
+              type = "message"
+            )
+          } else {
+            shiny::showNotification(
+              paste(i18n$t("computation_error"), result$error),
+              type = "error",
+              duration = 10
+            )
+          }
+        }
+      )
+    })
+
+    # Recompute handler
+    shiny::observeEvent(input$recompute, {
+      project <- app_state$current_project
+      shiny::req(project)
+
+      # Reset status to allow recomputation
+      update_project_status(project$id, "draft")
+      app_state$current_project <- load_project(project$id)
+    })
+
+    # View results handler
+    shiny::observeEvent(input$view_results, {
+      # Navigate to synthesis tab
+      shiny::updateNavbarPage(
+        session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
+        inputId = "main_nav",
+        selected = "synthesis"
+      )
+    })
+
+    # Handle cancel from progress module
+    shiny::observeEvent(app_state$cancel_computation, {
+      # For now, just show notification (true cancellation would require async)
+      shiny::showNotification(
+        i18n$t("cancel"),
+        type = "warning"
+      )
+    }, ignoreInit = TRUE)
+
+    # Handle retry from progress module
+    shiny::observeEvent(app_state$retry_computation, {
+      project <- app_state$current_project
+      shiny::req(project)
+
+      # Reset status and trigger UI refresh
+      update_project_status(project$id, "draft")
+      app_state$current_project <- load_project(project$id)
+    }, ignoreInit = TRUE)
+
+    # Handle view_results from progress module
+    shiny::observeEvent(app_state$view_results, {
+      shiny::updateNavbarPage(
+        session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
+        inputId = "main_nav",
+        selected = "synthesis"
+      )
+    }, ignoreInit = TRUE)
 
     # ========================================
     # Guided Tour (cicerone)

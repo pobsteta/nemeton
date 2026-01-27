@@ -137,6 +137,30 @@ TRANSLATIONS <- list(
   computation_complete = list(fr = "Calculs termin\u00e9s", en = "Calculations complete"),
   computation_error = list(fr = "Erreur lors du calcul", en = "Computation error"),
 
+  # Progress module
+  progress_overall = list(fr = "Progression globale", en = "Overall progress"),
+  completed = list(fr = "termin\u00e9s", en = "completed"),
+  failed = list(fr = "\u00e9chou\u00e9s", en = "failed"),
+  pending = list(fr = "en attente", en = "pending"),
+  phase_init = list(fr = "Initialisation...", en = "Initializing..."),
+  phase_downloading = list(fr = "T\u00e9l\u00e9chargement des donn\u00e9es...", en = "Downloading data..."),
+  phase_computing = list(fr = "Calcul des indicateurs...", en = "Computing indicators..."),
+  phase_complete = list(fr = "Termin\u00e9", en = "Complete"),
+  task_download_start = list(fr = "D\u00e9marrage du t\u00e9l\u00e9chargement", en = "Starting download"),
+  task_compute_start = list(fr = "D\u00e9marrage des calculs", en = "Starting calculations"),
+  task_complete = list(fr = "Traitement termin\u00e9", en = "Processing complete"),
+  task_error = list(fr = "Erreur de traitement", en = "Processing error"),
+  elapsed_time = list(fr = "Temps \u00e9coul\u00e9", en = "Elapsed time"),
+  errors_title = list(fr = "Erreurs rencontr\u00e9es :", en = "Errors encountered:"),
+  computation_summary = list(
+    fr = "%d indicateur(s) calcul\u00e9(s) sur %d",
+    en = "%d indicator(s) computed out of %d"
+  ),
+  unknown_error = list(fr = "Erreur inconnue", en = "Unknown error"),
+  and_n_more_errors = list(fr = "Et %d autre(s) erreur(s)...", en = "And %d more error(s)..."),
+  retry = list(fr = "R\u00e9essayer", en = "Retry"),
+  view_results = list(fr = "Voir les r\u00e9sultats", en = "View results"),
+
   # ============================================================
   # Synthesis
   # ============================================================

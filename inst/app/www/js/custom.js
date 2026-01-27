@@ -198,7 +198,7 @@
   // ============================================================
 
   /**
-   * Handle progress bar updates
+   * Handle progress bar updates (generic)
    */
   Shiny.addCustomMessageHandler('updateProgress', function(data) {
     const progress = data.progress;
@@ -215,6 +215,46 @@
     // Announce significant progress to screen readers
     if (progress === 25 || progress === 50 || progress === 75 || progress === 100) {
       window.announceToScreenReader(message);
+    }
+  });
+
+  /**
+   * Handle progress bar updates with specific element IDs
+   */
+  Shiny.addCustomMessageHandler('updateProgressBar', function(data) {
+    const barId = data.barId;
+    const percentId = data.percentId;
+    const percent = data.percent;
+
+    // Update progress bar width
+    const progressBar = document.getElementById(barId);
+    if (progressBar) {
+      progressBar.style.width = percent + '%';
+      progressBar.setAttribute('aria-valuenow', percent);
+    }
+
+    // Update percentage text
+    const percentEl = document.getElementById(percentId);
+    if (percentEl) {
+      percentEl.textContent = percent + '%';
+    }
+
+    // Announce significant progress to screen readers
+    if (percent === 25 || percent === 50 || percent === 75 || percent === 100) {
+      window.announceToScreenReader('Progression: ' + percent + '%');
+    }
+  });
+
+  /**
+   * Handle text updates for specific elements
+   */
+  Shiny.addCustomMessageHandler('updateText', function(data) {
+    const id = data.id;
+    const text = data.text;
+
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = text;
     }
   });
 
