@@ -97,6 +97,8 @@ init_compute_state <- function(project_id, indicators = "all") {
   if (length(indicators) == 1 && indicators == "all") {
     indicators <- list_available_indicators()
   }
+  # Ensure indicators is always a character vector (not a list)
+  indicators <- as.character(unlist(indicators))
 
   # Check for existing progress (for resume)
   existing_progress <- get_computation_progress(project_id)
