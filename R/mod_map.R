@@ -72,10 +72,13 @@ mod_map_ui <- function(id) {
       padding = 0,
       class = "p-0",
 
-      # Map container
+      # Map container with loading overlay
       htmltools::div(
         id = ns("map_container"),
-        style = "height: 100%; min-height: 500px;",
+        style = "height: 100%; min-height: 500px; position: relative;",
+
+        # Loading overlay (hidden by default, shown via uiOutput)
+        shiny::uiOutput(ns("map_loading_ui")),
 
         # Leaflet output
         leaflet::leafletOutput(ns("map"), height = "100%")
@@ -156,8 +159,35 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       parcels_zoomed = FALSE,  # Flag to zoom only once per commune
       pending_zoom = NULL,     # Pending zoom bbox (to execute in Shiny context)
       pending_styles = NULL,   # Pending style updates
-      last_restore_timestamp = NULL  # Track last processed restore request
+      last_restore_timestamp = NULL,  # Track last processed restore request
+      map_loading = FALSE,     # Loading state for map overlay
+      pending_parcels = NULL   # Parcels waiting to be rendered
     )
+
+
+    # ========================================
+    # Map Loading Overlay
+    # ========================================
+
+    output$map_loading_ui <- shiny::renderUI({
+      if (!rv$map_loading) return(NULL)
+
+      htmltools::div(
+        class = "position-absolute top-0 start-0 w-100 h-100",
+        style = "background: rgba(255,255,255,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center;",
+        htmltools::div(
+          class = "text-center",
+          htmltools::div(
+            class = "spinner-border text-success mb-2",
+            role = "status"
+          ),
+          htmltools::div(
+            class = "text-muted",
+            i18n$t("rendering_parcels")
+          )
+        )
+      )
+    })
 
 
     # ========================================
@@ -280,96 +310,124 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
-    # Display Parcels
+    # Display Parcels (two-phase with loading overlay)
     # ========================================
 
+    # Phase 1: When parcels change, show loading overlay and queue for rendering
     shiny::observe({
       parcel_data <- parcels()
 
       if (is.null(parcel_data) || nrow(parcel_data) == 0) {
+        rv$map_loading <- FALSE
+        rv$pending_parcels <- NULL
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("parcels") |>
           leaflet::clearGroup("selection")
         return()
       }
 
-      # Filter to keep only polygon geometries (defensive check)
-      geom_types <- sf::st_geometry_type(parcel_data)
-      polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
-      if (sum(polygon_idx) == 0) {
-        cli::cli_warn("No polygon geometries in parcel data")
+      # Show loading overlay and store parcels for phase 2
+      rv$map_loading <- TRUE
+      rv$pending_parcels <- parcel_data
+    })
+
+    # Phase 2: Render parcels after overlay is shown
+    shiny::observe({
+      # Wait for pending parcels
+      parcel_data <- rv$pending_parcels
+      if (is.null(parcel_data)) return()
+
+      # Small delay to allow overlay to render first
+      shiny::invalidateLater(100)
+
+      shiny::isolate({
+        # Only render once per pending_parcels update
+        if (is.null(rv$pending_parcels)) return()
+
+        # Filter to keep only polygon geometries (defensive check)
+        geom_types <- sf::st_geometry_type(parcel_data)
+        polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+        if (sum(polygon_idx) == 0) {
+          cli::cli_warn("No polygon geometries in parcel data")
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::clearGroup("parcels")
+          rv$map_loading <- FALSE
+          rv$pending_parcels <- NULL
+          return()
+        }
+        if (sum(!polygon_idx) > 0) {
+          parcel_data <- parcel_data[polygon_idx, ]
+        }
+
+        # Ensure WGS84
+        if (sf::st_crs(parcel_data)$epsg != 4326) {
+          parcel_data <- sf::st_transform(parcel_data, 4326)
+        }
+
+        # Create popups and labels
+        popups <- sapply(seq_len(nrow(parcel_data)), function(i) {
+          create_parcel_popup(parcel_data[i, ])
+        })
+
+        labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
+          create_parcel_label(parcel_data[i, ])
+        })
+
         leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels")
-        return()
-      }
-      if (sum(!polygon_idx) > 0) {
-        parcel_data <- parcel_data[polygon_idx, ]
-      }
-
-      # Ensure WGS84
-      if (sf::st_crs(parcel_data)$epsg != 4326) {
-        parcel_data <- sf::st_transform(parcel_data, 4326)
-      }
-
-      # Create popups and labels
-      popups <- sapply(seq_len(nrow(parcel_data)), function(i) {
-        create_parcel_popup(parcel_data[i, ])
-      })
-
-      labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
-        create_parcel_label(parcel_data[i, ])
-      })
-
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::clearGroup("parcels") |>
-        leaflet::addPolygons(
-          data = parcel_data,
-          layerId = parcel_data$id,
-          group = "parcels",
-          color = STYLE$parcel_default$color,
-          weight = STYLE$parcel_default$weight,
-          fillColor = STYLE$parcel_default$fillColor,
-          fillOpacity = STYLE$parcel_default$fillOpacity,
-          popup = popups,
-          label = lapply(labels, htmltools::HTML),
-          labelOptions = leaflet::labelOptions(
-            style = list(
-              "font-size" = "12px",
-              "font-weight" = "normal",
-              "padding" = "4px 8px"
+          leaflet::clearGroup("parcels") |>
+          leaflet::addPolygons(
+            data = parcel_data,
+            layerId = parcel_data$id,
+            group = "parcels",
+            color = STYLE$parcel_default$color,
+            weight = STYLE$parcel_default$weight,
+            fillColor = STYLE$parcel_default$fillColor,
+            fillOpacity = STYLE$parcel_default$fillOpacity,
+            popup = popups,
+            label = lapply(labels, htmltools::HTML),
+            labelOptions = leaflet::labelOptions(
+              style = list(
+                "font-size" = "12px",
+                "font-weight" = "normal",
+                "padding" = "4px 8px"
+              ),
+              direction = "top",
+              offset = c(0, -10)
             ),
-            direction = "top",
-            offset = c(0, -10)
-          ),
-          highlightOptions = leaflet::highlightOptions(
-            weight = STYLE$parcel_hover$weight,
-            fillOpacity = STYLE$parcel_hover$fillOpacity,
-            bringToFront = TRUE
-          ),
-          options = leaflet::pathOptions(
-            className = "parcel-polygon"
+            highlightOptions = leaflet::highlightOptions(
+              weight = STYLE$parcel_hover$weight,
+              fillOpacity = STYLE$parcel_hover$fillOpacity,
+              bringToFront = TRUE
+            ),
+            options = leaflet::pathOptions(
+              className = "parcel-polygon"
+            )
           )
-        )
 
-      # Zoom to parcels extent only on first load (not on selection updates)
-      # Skip if parcels_zoomed is TRUE (set by restore or previous zoom)
-      if (!rv$parcels_zoomed) {
-        cli::cli_alert_info("Zooming to all parcels")
-        bbox <- sf::st_bbox(parcel_data)
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::fitBounds(
-            lng1 = as.numeric(bbox[["xmin"]]),
-            lat1 = as.numeric(bbox[["ymin"]]),
-            lng2 = as.numeric(bbox[["xmax"]]),
-            lat2 = as.numeric(bbox[["ymax"]])
-          )
-        rv$parcels_zoomed <- TRUE
-      }
+        # Zoom to parcels extent only on first load (not on selection updates)
+        # Skip if parcels_zoomed is TRUE (set by restore or previous zoom)
+        if (!rv$parcels_zoomed) {
+          cli::cli_alert_info("Zooming to all parcels")
+          bbox <- sf::st_bbox(parcel_data)
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = as.numeric(bbox[["xmin"]]),
+              lat1 = as.numeric(bbox[["ymin"]]),
+              lng2 = as.numeric(bbox[["xmax"]]),
+              lat2 = as.numeric(bbox[["ymax"]])
+            )
+          rv$parcels_zoomed <- TRUE
+        }
 
-      # Re-apply selection styling if needed
-      if (length(rv$selected_ids) > 0) {
-        update_parcel_styles(rv$selected_ids)
-      }
+        # Re-apply selection styling if needed
+        if (length(rv$selected_ids) > 0) {
+          update_parcel_styles(rv$selected_ids)
+        }
+
+        # Clear pending and hide overlay
+        rv$pending_parcels <- NULL
+        rv$map_loading <- FALSE
+      })
     })
 
 
