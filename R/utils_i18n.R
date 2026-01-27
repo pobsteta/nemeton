@@ -388,6 +388,15 @@ TRANSLATIONS <- list(
     en = "This project is corrupted or incomplete. Do you want to delete it?"
   ),
   delete = list(fr = "Supprimer", en = "Delete"),
+  delete_project = list(fr = "Supprimer le projet", en = "Delete project"),
+  confirm_delete_project = list(
+    fr = "Voulez-vous vraiment supprimer le projet",
+    en = "Are you sure you want to delete the project"
+  ),
+  delete_project_warning = list(
+    fr = "Cette action est irr\u00e9versible. Toutes les donn\u00e9es du projet seront perdues.",
+    en = "This action cannot be undone. All project data will be lost."
+  ),
   cancel = list(fr = "Annuler", en = "Cancel")
 )
 
