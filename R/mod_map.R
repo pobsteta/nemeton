@@ -524,13 +524,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         return()
       }
 
-      # Mark this restore as processed
-      rv$last_restore_timestamp <- restore$timestamp
-
       # Find matching parcel IDs
       matching_ids <- intersect(restore$selected_ids, parcel_data$id)
 
       if (length(matching_ids) > 0) {
+        # Only mark as processed when we actually find matching parcels
+        # This ensures we retry when the correct parcels are loaded
+        rv$last_restore_timestamp <- restore$timestamp
+
         cli::cli_alert_info("Restoring {length(matching_ids)} parcels...")
 
         # Set selected IDs
@@ -554,7 +555,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
         cli::cli_alert_success("Restore prepared: {length(matching_ids)} parcels")
       } else {
-        cli::cli_alert_warning("No matching parcels found for restore")
+        # Don't mark as processed - wait for correct parcels to load
+        cli::cli_alert_info("Waiting for matching parcels to load...")
       }
     })
 
