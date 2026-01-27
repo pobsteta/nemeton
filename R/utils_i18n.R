@@ -160,6 +160,14 @@ TRANSLATIONS <- list(
   and_n_more_errors = list(fr = "Et %d autre(s) erreur(s)...", en = "And %d more error(s)..."),
   retry = list(fr = "R\u00e9essayer", en = "Retry"),
   view_results = list(fr = "Voir les r\u00e9sultats", en = "View results"),
+  resuming_computation = list(
+    fr = "Reprise du calcul - %d indicateur(s) d\u00e9j\u00e0 calcul\u00e9(s)",
+    en = "Resuming computation - %d indicator(s) already computed"
+  ),
+  skipped_indicators = list(
+    fr = "%d indicateur(s) saut\u00e9(s) (d\u00e9j\u00e0 calcul\u00e9s)",
+    en = "%d indicator(s) skipped (already computed)"
+  ),
 
   # ============================================================
   # Synthesis

@@ -84,6 +84,7 @@ COMPUTE_STATUS <- list(
 #'
 #' @description
 #' Creates a reactive state object for tracking computation progress.
+#' Checks for existing progress to support resume.
 #'
 #' @param project_id Character. Project ID.
 #' @param indicators Character vector. Indicators to compute.
@@ -97,6 +98,17 @@ init_compute_state <- function(project_id, indicators = "all") {
     indicators <- list_available_indicators()
   }
 
+  # Check for existing progress (for resume)
+  existing_progress <- get_computation_progress(project_id)
+  already_computed <- existing_progress$computed_indicators %||% character(0)
+  already_computed <- intersect(already_computed, indicators)
+
+  # Initialize status based on existing progress
+  initial_status <- stats::setNames(rep("pending", length(indicators)), indicators)
+  if (length(already_computed) > 0) {
+    initial_status[already_computed] <- "completed"
+  }
+
   list(
     project_id = project_id,
     status = COMPUTE_STATUS$PENDING,
@@ -105,15 +117,15 @@ init_compute_state <- function(project_id, indicators = "all") {
     progress_max = length(indicators) + 10,  # +10 for download phase
     current_task = NULL,
     indicators_total = length(indicators),
-    indicators_completed = 0L,
+    indicators_completed = length(already_computed),
+    indicators_skipped = length(already_computed),
     indicators_failed = 0L,
-    indicators_status = stats::setNames(
-      rep("pending", length(indicators)),
-      indicators
-    ),
+    indicators_status = initial_status,
     errors = list(),
     started_at = NULL,
-    completed_at = NULL
+    completed_at = NULL,
+    is_resume = length(already_computed) > 0,
+    last_saved_at = existing_progress$last_saved_at
   )
 }
 
@@ -248,12 +260,17 @@ start_computation <- function(project_id,
           state$indicators_status <- ind_progress$status
           state$current_task <- ind_progress$current
           state$errors <- ind_progress$errors
+          # Track skipped indicators (already computed)
+          if (!is.null(ind_progress$skipped)) {
+            state$indicators_skipped <- ind_progress$skipped
+          }
           progress_callback(state)
         }
-      }
+      },
+      project_id = project_id  # Enable incremental saving
     )
 
-    # Save results
+    # Final save (ensures metadata is updated)
     save_indicators(project_id, results)
 
     # Update final state
@@ -523,11 +540,13 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 #'
 #' @description
 #' Computes all requested indicators on the parcels.
+#' Supports incremental computation and resume from previous state.
 #'
 #' @param parcels sf object. Parcels to compute indicators for.
 #' @param layers nemeton_layers object. Data layers.
 #' @param indicators Character vector. Indicators to compute.
 #' @param progress_callback Function. Progress callback.
+#' @param project_id Character. Project ID for incremental saving.
 #'
 #' @return sf object with computed indicator values.
 #'
@@ -535,16 +554,68 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 compute_all_indicators <- function(parcels,
                                    layers,
                                    indicators,
-                                   progress_callback = NULL) {
+                                   progress_callback = NULL,
+                                   project_id = NULL) {
 
-  results <- parcels
+  # Load existing results if available (for resume)
+  existing_results <- NULL
+  computed_indicators <- character(0)
+
+  if (!is.null(project_id)) {
+    existing_results <- load_indicators(project_id)
+    if (!is.null(existing_results)) {
+      # Find which indicators are already computed (non-NA values)
+      available_cols <- intersect(names(existing_results), indicators)
+      for (col in available_cols) {
+        if (!all(is.na(existing_results[[col]]))) {
+          computed_indicators <- c(computed_indicators, col)
+        }
+      }
+
+      if (length(computed_indicators) > 0) {
+        cli::cli_alert_info(
+          "Found {length(computed_indicators)} already computed indicator(s), skipping..."
+        )
+      }
+    }
+  }
+
+  # Start with existing results or parcels
+  if (!is.null(existing_results) && nrow(existing_results) == nrow(parcels)) {
+    results <- existing_results
+  } else {
+    results <- parcels
+  }
+
+  # Filter out already computed indicators
+  indicators_to_compute <- setdiff(indicators, computed_indicators)
   n_indicators <- length(indicators)
-  completed <- 0
+  n_to_compute <- length(indicators_to_compute)
+
+  # Initialize counters (include already completed)
+  completed <- length(computed_indicators)
   failed <- 0
   errors <- list()
-  status <- stats::setNames(rep("pending", n_indicators), indicators)
 
-  for (ind in indicators) {
+  # Initialize status
+  status <- stats::setNames(rep("pending", n_indicators), indicators)
+  status[computed_indicators] <- "completed"
+
+  # Report initial progress
+  if (!is.null(progress_callback)) {
+    progress_callback(list(
+      completed = completed,
+      failed = failed,
+      total = n_indicators,
+      current = if (n_to_compute > 0) "resuming" else "complete",
+      status = status,
+      errors = errors,
+      skipped = length(computed_indicators)
+    ))
+  }
+
+  # Compute remaining indicators
+ for (ind in indicators_to_compute) {
     if (!is.null(progress_callback)) {
       progress_callback(list(
         completed = completed,
@@ -566,6 +637,11 @@ compute_all_indicators <- function(parcels,
       results[[ind]] <- values
       status[ind] <- "completed"
       completed <- completed + 1
+
+      # Incremental save after each successful computation
+      if (!is.null(project_id)) {
+        save_indicators_incremental(project_id, results, ind)
+      }
 
     }, error = function(e) {
       status[ind] <<- "error"
@@ -625,10 +701,106 @@ compute_single_indicator <- function(indicator, parcels, layers) {
 }
 
 
+#' Save indicators incrementally
+#'
+#' @description
+#' Saves indicators after each successful computation.
+#' Uses a lightweight approach to avoid overhead.
+#'
+#' @param project_id Character. Project ID.
+#' @param results sf object. Current results.
+#' @param indicator Character. Name of just-computed indicator.
+#'
+#' @return Logical. TRUE if successful.
+#'
+#' @noRd
+save_indicators_incremental <- function(project_id, results, indicator) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) {
+    return(FALSE)
+  }
+
+  # Save to temporary incremental file
+  results_path <- file.path(project_path, "data", "indicators.parquet")
+  progress_path <- file.path(project_path, "data", "compute_progress.json")
+
+  tryCatch({
+    if (!requireNamespace("arrow", quietly = TRUE)) {
+      return(FALSE)
+    }
+
+    # Convert sf to data.frame with WKT geometry
+    results_df <- results
+    results_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(results))
+    results_df <- sf::st_drop_geometry(results_df)
+
+    # Write parquet (overwrites with current state)
+    arrow::write_parquet(results_df, results_path)
+
+    # Update progress tracking file
+    progress <- list(
+      last_indicator = indicator,
+      last_saved_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      computed_indicators = names(results)[
+        vapply(names(results), function(col) {
+          col %in% list_available_indicators() && !all(is.na(results[[col]]))
+        }, logical(1))
+      ]
+    )
+    jsonlite::write_json(progress, progress_path, auto_unbox = TRUE, pretty = TRUE)
+
+    cli::cli_alert_success("Saved indicator: {indicator}")
+    TRUE
+
+  }, error = function(e) {
+    cli::cli_warn("Failed to save incrementally: {e$message}")
+    FALSE
+  })
+}
+
+
+#' Get computation progress
+#'
+#' @description
+#' Returns the list of already computed indicators for a project.
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @return List with computed indicators and last save time.
+#'
+#' @noRd
+get_computation_progress <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) {
+    return(NULL)
+  }
+
+  progress_path <- file.path(project_path, "data", "compute_progress.json")
+
+  if (!file.exists(progress_path)) {
+    return(list(
+      computed_indicators = character(0),
+      last_indicator = NULL,
+      last_saved_at = NULL
+    ))
+  }
+
+  tryCatch({
+    jsonlite::read_json(progress_path)
+  }, error = function(e) {
+    list(
+      computed_indicators = character(0),
+      last_indicator = NULL,
+      last_saved_at = NULL
+    )
+  })
+}
+
+
 #' Save indicators to project
 #'
 #' @description
-#' Saves computed indicators to project.
+#' Saves computed indicators to project (final save).
 #'
 #' @param project_id Character. Project ID.
 #' @param results sf object. Computed results.

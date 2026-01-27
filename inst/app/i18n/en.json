@@ -128,5 +128,7 @@
   "unknown_error": "Unknown error",
   "and_n_more_errors": "And %d more error(s)...",
   "retry": "Retry",
-  "view_results": "View results"
+  "view_results": "View results",
+  "resuming_computation": "Resuming computation - %d indicator(s) already computed",
+  "skipped_indicators": "%d indicator(s) skipped (already computed)"
 }
