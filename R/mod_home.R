@@ -439,42 +439,86 @@ mod_home_server <- function(id, app_state) {
       state <- init_compute_state(project$id)
       compute_state(state)
 
-      # Progress callback to update reactive state
+      # Progress callback to update reactive state AND send direct UI updates
       progress_callback <- function(new_state) {
+        # Update reactive state
         compute_state(new_state)
+
+        # Send direct JavaScript updates for real-time feedback
+        # Progress bar
+        progress_pct <- round(new_state$progress / new_state$progress_max * 100)
+        session$sendCustomMessage("updateProgressBar", list(
+          barId = ns("progress-progress_bar"),
+          percentId = ns("progress-progress_percent"),
+          percent = progress_pct
+        ))
+
+        # Current task text - translate here
+        task_text <- translate_task_message(new_state$current_task, i18n)
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-current_task_text"),
+          text = task_text
+        ))
+
+        # Counters
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-completed_count"),
+          text = as.character(new_state$indicators_completed)
+        ))
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-failed_count"),
+          text = as.character(new_state$indicators_failed)
+        ))
+        pending <- new_state$indicators_total - new_state$indicators_completed - new_state$indicators_failed
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-pending_count"),
+          text = as.character(pending)
+        ))
       }
 
-      # Start computation in background-ish manner
-      # Note: For true async, we'd use promises/future
-      # For now, we run synchronously but update progress
-      shiny::withProgress(
-        message = i18n$t("computing"),
-        value = 0,
-        {
-          result <- start_computation(
-            project_id = project$id,
-            indicators = "all",
-            progress_callback = progress_callback
-          )
+      # Show progress card wrapper immediately via JavaScript
+      session$sendCustomMessage("showElement", list(
+        id = ns("progress-progress_card_wrapper")
+      ))
 
-          if (result$success) {
-            # Reload project to get updated metadata
-            app_state$current_project <- load_project(project$id)
-            app_state$refresh_projects <- Sys.time()
-
-            shiny::showNotification(
-              i18n$t("computation_complete"),
-              type = "message"
-            )
-          } else {
-            shiny::showNotification(
-              paste(i18n$t("computation_error"), result$error),
-              type = "error",
-              duration = 10
-            )
-          }
-        }
+      # Run computation (no withProgress - we use our own progress UI)
+      result <- start_computation(
+        project_id = project$id,
+        indicators = "all",
+        progress_callback = progress_callback
       )
+
+      # Hide progress card after computation
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-progress_card_wrapper")
+      ))
+
+      if (result$success) {
+        # Show completion card
+        session$sendCustomMessage("showElement", list(
+          id = ns("progress-complete_card_wrapper")
+        ))
+
+        # Reload project to get updated metadata
+        app_state$current_project <- load_project(project$id)
+        app_state$refresh_projects <- Sys.time()
+
+        shiny::showNotification(
+          i18n$t("computation_complete"),
+          type = "message"
+        )
+      } else {
+        # Show error card
+        session$sendCustomMessage("showElement", list(
+          id = ns("progress-error_card_wrapper")
+        ))
+
+        shiny::showNotification(
+          paste(i18n$t("computation_error"), result$error),
+          type = "error",
+          duration = 10
+        )
+      }
     })
 
     # Recompute handler

@@ -22,10 +22,10 @@ mod_progress_ui <- function(id) {
   i18n <- get_i18n(opts$language)
 
   htmltools::tagList(
-    # Progress card (hidden by default)
-    shiny::conditionalPanel(
-      condition = sprintf("output['%s'] == true", ns("show_progress")),
-      ns = ns,
+    # Progress card (hidden by default, shown via JavaScript)
+    htmltools::div(
+      id = ns("progress_card_wrapper"),
+      style = "display: none;",
       bslib::card(
         id = ns("progress_card"),
         class = "border-primary",
@@ -74,13 +74,16 @@ mod_progress_ui <- function(id) {
             )
           ),
 
-          # Current task
+          # Current task (with fixed ID for JavaScript updates)
           htmltools::div(
             class = "mb-3",
             htmltools::tags$small(
               class = "text-muted",
               bsicons::bs_icon("arrow-right", class = "me-1"),
-              shiny::textOutput(ns("current_task"), inline = TRUE)
+              htmltools::span(
+                id = ns("current_task_text"),
+                shiny::textOutput(ns("current_task"), inline = TRUE)
+              )
             )
           ),
 
@@ -129,10 +132,10 @@ mod_progress_ui <- function(id) {
       )
     ),
 
-    # Completion card (shown when done)
-    shiny::conditionalPanel(
-      condition = sprintf("output['%s'] == true", ns("show_complete")),
-      ns = ns,
+    # Completion card (shown when done, via JavaScript)
+    htmltools::div(
+      id = ns("complete_card_wrapper"),
+      style = "display: none;",
       bslib::card(
         id = ns("complete_card"),
         class = "border-success",
@@ -159,10 +162,10 @@ mod_progress_ui <- function(id) {
       )
     ),
 
-    # Error card (shown on fatal error)
-    shiny::conditionalPanel(
-      condition = sprintf("output['%s'] == true", ns("show_error")),
-      ns = ns,
+    # Error card (shown on fatal error, via JavaScript)
+    htmltools::div(
+      id = ns("error_card_wrapper"),
+      style = "display: none;",
       bslib::card(
         id = ns("error_card"),
         class = "border-danger",

@@ -575,3 +575,49 @@ export_translations_json <- function(output_dir = "inst/app/i18n") {
 
   invisible(NULL)
 }
+
+
+#' Translate task message for progress display
+#'
+#' @description
+#' Translates a task message from the computation progress callback.
+#' Handles the special format "download:source_key" and "compute:indicator_key".
+#'
+#' @param task Character. The task identifier from progress callback.
+#' @param i18n The i18n translator object.
+#'
+#' @return Character. The translated message.
+#'
+#' @noRd
+translate_task_message <- function(task, i18n) {
+  if (is.null(task) || task == "") {
+    return("")
+  }
+
+  # Handle special task keywords
+  if (task %in% c("download_start", "compute_start", "complete", "error", "resuming")) {
+    return(i18n$t(paste0("task_", task)))
+  }
+
+  # Handle download_complete
+  if (task == "download_complete") {
+    return(i18n$t("download_complete"))
+  }
+
+  # Handle new format: "download:source_key"
+  if (grepl("^download:", task)) {
+    source_key <- sub("^download:", "", task)
+    source_name <- i18n$t(source_key)
+    return(i18n$t("downloading_source", source = source_name))
+  }
+
+  # Handle new format: "compute:indicator_key"
+  if (grepl("^compute:", task)) {
+    indicator_key <- sub("^compute:", "", task)
+    indicator_name <- i18n$t(indicator_key)
+    return(i18n$t("computing_indicator_name", indicator = indicator_name))
+  }
+
+  # Fallback: return task as-is
+  task
+}

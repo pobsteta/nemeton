@@ -259,6 +259,30 @@
   });
 
   /**
+   * Show/hide element by ID
+   */
+  Shiny.addCustomMessageHandler('showElement', function(data) {
+    const id = data.id;
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'block';
+      el.classList.remove('d-none');
+    }
+  });
+
+  /**
+   * Hide element by ID
+   */
+  Shiny.addCustomMessageHandler('hideElement', function(data) {
+    const id = data.id;
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'none';
+      el.classList.add('d-none');
+    }
+  });
+
+  /**
    * Handle map loading overlay visibility
    */
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
