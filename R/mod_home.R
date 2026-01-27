@@ -417,11 +417,14 @@ mod_home_server <- function(id, app_state) {
     })
 
     # ========================================
-    # Progress Module
+    # Progress Module (ExtendedTask for async computation)
     # ========================================
 
     # Computation state (reactive)
     compute_state <- shiny::reactiveVal(NULL)
+
+    # Track active computation project
+    computing_project_id <- shiny::reactiveVal(NULL)
 
     # Progress module server
     progress_result <- mod_progress_server(
@@ -429,6 +432,17 @@ mod_home_server <- function(id, app_state) {
       compute_state = compute_state,
       app_state = app_state
     )
+
+    # Create ExtendedTask for async computation
+    compute_task <- shiny::ExtendedTask$new(function(project_id) {
+      # This runs in a separate R process
+      start_computation(
+        project_id = project_id,
+        indicators = "all",
+        progress_callback = NULL,  # No callback in async mode
+        use_file_progress = TRUE   # Write progress to file
+      )
+    })
 
     # Start computation handler
     shiny::observeEvent(input$start_compute, {
@@ -439,68 +453,113 @@ mod_home_server <- function(id, app_state) {
       state <- init_compute_state(project$id)
       compute_state(state)
 
-      # Progress callback to update reactive state AND send direct UI updates
-      progress_callback <- function(new_state) {
-        # Update reactive state
-        compute_state(new_state)
+      # Store project ID for polling
+      computing_project_id(project$id)
 
-        # Send direct JavaScript updates for real-time feedback
-        # Progress bar
-        progress_pct <- round(new_state$progress / new_state$progress_max * 100)
-        session$sendCustomMessage("updateProgressBar", list(
-          barId = ns("progress-progress_bar"),
-          percentId = ns("progress-progress_percent"),
-          percent = progress_pct
-        ))
-
-        # Current task text - translate here
-        task_text <- translate_task_message(new_state$current_task, i18n)
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-current_task_text"),
-          text = task_text
-        ))
-
-        # Counters
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-completed_count"),
-          text = as.character(new_state$indicators_completed)
-        ))
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-failed_count"),
-          text = as.character(new_state$indicators_failed)
-        ))
-        pending <- new_state$indicators_total - new_state$indicators_completed - new_state$indicators_failed
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-pending_count"),
-          text = as.character(pending)
-        ))
-      }
-
-      # Show progress card wrapper immediately via JavaScript
+      # Show progress card immediately
       session$sendCustomMessage("showElement", list(
         id = ns("progress-progress_card_wrapper")
       ))
 
-      # Run computation (no withProgress - we use our own progress UI)
-      result <- start_computation(
-        project_id = project$id,
-        indicators = "all",
-        progress_callback = progress_callback
-      )
+      # Hide completion/error cards if visible
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-complete_card_wrapper")
+      ))
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-error_card_wrapper")
+      ))
 
-      # Hide progress card after computation
+      # Start the async computation
+      compute_task$invoke(project$id)
+    })
+
+    # Poll progress file while computation is running
+    shiny::observe({
+      project_id <- computing_project_id()
+      shiny::req(project_id)
+
+      # Check task status
+      task_status <- compute_task$status()
+
+      if (task_status == "running") {
+        # Read progress from file
+        progress_state <- read_progress_state(project_id)
+
+        if (!is.null(progress_state)) {
+          # Update reactive state
+          compute_state(progress_state)
+
+          # Send JavaScript updates for real-time feedback
+          progress_pct <- round(
+            (progress_state$progress %||% 0) /
+            (progress_state$progress_max %||% 1) * 100
+          )
+
+          session$sendCustomMessage("updateProgressBar", list(
+            barId = ns("progress-progress_bar"),
+            percentId = ns("progress-progress_percent"),
+            percent = progress_pct
+          ))
+
+          # Current task text - translate
+          task_text <- translate_task_message(progress_state$current_task, i18n)
+          session$sendCustomMessage("updateText", list(
+            id = ns("progress-current_task_text"),
+            text = task_text
+          ))
+
+          # Counters
+          session$sendCustomMessage("updateText", list(
+            id = ns("progress-completed_count"),
+            text = as.character(progress_state$indicators_completed %||% 0)
+          ))
+          session$sendCustomMessage("updateText", list(
+            id = ns("progress-failed_count"),
+            text = as.character(progress_state$indicators_failed %||% 0)
+          ))
+          pending <- (progress_state$indicators_total %||% 0) -
+                     (progress_state$indicators_completed %||% 0) -
+                     (progress_state$indicators_failed %||% 0)
+          session$sendCustomMessage("updateText", list(
+            id = ns("progress-pending_count"),
+            text = as.character(pending)
+          ))
+        }
+
+        # Continue polling every 500ms
+        shiny::invalidateLater(500)
+      }
+    })
+
+    # Handle task completion
+    shiny::observe({
+      # Only react when task is done (success or error)
+      task_status <- compute_task$status()
+      shiny::req(task_status %in% c("success", "error"))
+
+      project_id <- computing_project_id()
+      shiny::req(project_id)
+
+      # Get result
+      result <- tryCatch({
+        compute_task$result()
+      }, error = function(e) {
+        list(success = FALSE, error = e$message)
+      })
+
+      # Hide progress card
       session$sendCustomMessage("hideElement", list(
         id = ns("progress-progress_card_wrapper")
       ))
 
-      if (result$success) {
+      if (isTRUE(result$success)) {
         # Show completion card
         session$sendCustomMessage("showElement", list(
           id = ns("progress-complete_card_wrapper")
         ))
 
         # Reload project to get updated metadata
-        app_state$current_project <- load_project(project$id)
+        app_state$current_project <- load_project(project_id)
         app_state$refresh_projects <- Sys.time()
 
         shiny::showNotification(
@@ -514,11 +573,14 @@ mod_home_server <- function(id, app_state) {
         ))
 
         shiny::showNotification(
-          paste(i18n$t("computation_error"), result$error),
+          paste(i18n$t("computation_error"), result$error %||% "Unknown error"),
           type = "error",
           duration = 10
         )
       }
+
+      # Reset computing state
+      computing_project_id(NULL)
     })
 
     # Recompute handler
@@ -543,9 +605,21 @@ mod_home_server <- function(id, app_state) {
 
     # Handle cancel from progress module
     shiny::observeEvent(app_state$cancel_computation, {
-      # For now, just show notification (true cancellation would require async)
+      # Cancel the ExtendedTask
+      if (compute_task$status() == "running") {
+        compute_task$cancel()
+
+        # Hide progress card
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-progress_card_wrapper")
+        ))
+
+        # Reset computing state
+        computing_project_id(NULL)
+      }
+
       shiny::showNotification(
-        i18n$t("cancel"),
+        i18n$t("computation_cancelled") %||% i18n$t("cancel"),
         type = "warning"
       )
     }, ignoreInit = TRUE)

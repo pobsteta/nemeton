@@ -139,6 +139,7 @@ TRANSLATIONS <- list(
     en = "Computing indicator {indicator}..."
   ),
   computation_complete = list(fr = "Calculs termin\u00e9s", en = "Calculations complete"),
+  computation_cancelled = list(fr = "Calculs annul\u00e9s", en = "Calculations cancelled"),
   computation_error = list(fr = "Erreur lors du calcul", en = "Computation error"),
 
   # Progress module

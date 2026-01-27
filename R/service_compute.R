@@ -184,16 +184,16 @@ list_available_indicators <- function() {
 #'
 #' @param project_id Character. Project ID.
 #' @param indicators Character vector. Indicators to compute, or "all".
-#' @param progress_callback Function. Called with progress updates.
-#' @param session Shiny session object (optional, for async context).
+#' @param progress_callback Function. Called with progress updates (for sync mode).
+#' @param use_file_progress Logical. If TRUE, write progress to file for async polling.
 #'
-#' @return Promise that resolves with computation results.
+#' @return List with success status and results.
 #'
 #' @noRd
 start_computation <- function(project_id,
                               indicators = "all",
                               progress_callback = NULL,
-                              session = NULL) {
+                              use_file_progress = FALSE) {
 
   # Validate project exists
   project_path <- get_project_path(project_id)
@@ -246,31 +246,34 @@ start_computation <- function(project_id,
   # Update project status
   update_project_status(project_id, "computing")
 
-  # Report initial progress
-  if (!is.null(progress_callback)) {
-    progress_callback(state)
+  # Helper function to report progress (callback or file)
+  report_progress <- function(state) {
+    if (!is.null(progress_callback)) {
+      progress_callback(state)
+    }
+    if (use_file_progress) {
+      save_progress_state(project_id, state)
+    }
   }
+
+  # Report initial progress
+  report_progress(state)
 
   # Run computation (wrapped in tryCatch for error handling)
   tryCatch({
     # Phase 1: Download data layers
     state$phase <- "downloading"
     state$status <- COMPUTE_STATUS$DOWNLOADING
-
-    if (!is.null(progress_callback)) {
-      state$current_task <- "download_start"
-      progress_callback(state)
-    }
+    state$current_task <- "download_start"
+    report_progress(state)
 
     layers <- download_layers_for_parcels(
       parcels = parcels,
       project_path = project_path,
       progress_callback = function(layer_progress) {
-        if (!is.null(progress_callback)) {
-          state$progress <- layer_progress$completed
-          state$current_task <- layer_progress$current
-          progress_callback(state)
-        }
+        state$progress <- layer_progress$completed
+        state$current_task <- layer_progress$current
+        report_progress(state)
       }
     )
 
@@ -278,11 +281,8 @@ start_computation <- function(project_id,
     state$phase <- "computing"
     state$status <- COMPUTE_STATUS$COMPUTING
     state$progress <- 10  # Download phase complete
-
-    if (!is.null(progress_callback)) {
-      state$current_task <- "compute_start"
-      progress_callback(state)
-    }
+    state$current_task <- "compute_start"
+    report_progress(state)
 
     results <- compute_all_indicators(
       parcels = parcels,
@@ -293,19 +293,17 @@ start_computation <- function(project_id,
         indicators
       },
       progress_callback = function(ind_progress) {
-        if (!is.null(progress_callback)) {
-          state$progress <- 10 + ind_progress$completed
-          state$indicators_completed <- ind_progress$completed
-          state$indicators_failed <- ind_progress$failed
-          state$indicators_status <- ind_progress$status
-          state$current_task <- ind_progress$current
-          state$errors <- ind_progress$errors
-          # Track skipped indicators (already computed)
-          if (!is.null(ind_progress$skipped)) {
-            state$indicators_skipped <- ind_progress$skipped
-          }
-          progress_callback(state)
+        state$progress <- 10 + ind_progress$completed
+        state$indicators_completed <- ind_progress$completed
+        state$indicators_failed <- ind_progress$failed
+        state$indicators_status <- ind_progress$status
+        state$current_task <- ind_progress$current
+        state$errors <- ind_progress$errors
+        # Track skipped indicators (already computed)
+        if (!is.null(ind_progress$skipped)) {
+          state$indicators_skipped <- ind_progress$skipped
         }
+        report_progress(state)
       },
       project_id = project_id  # Enable incremental saving
     )
@@ -318,14 +316,12 @@ start_computation <- function(project_id,
     state$phase <- "complete"
     state$completed_at <- Sys.time()
     state$progress <- state$progress_max
+    state$current_task <- "complete"
 
     # Update project status
     update_project_status(project_id, "completed")
 
-    if (!is.null(progress_callback)) {
-      state$current_task <- "complete"
-      progress_callback(state)
-    }
+    report_progress(state)
 
     list(
       success = TRUE,
@@ -335,21 +331,19 @@ start_computation <- function(project_id,
 
   }, error = function(e) {
     state$status <- COMPUTE_STATUS$ERROR
+    state$current_task <- "error"
     state$errors <- c(state$errors, list(
       list(
         type = "fatal",
         message = e$message,
-        time = Sys.time()
+        time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
       )
     ))
 
     # Update project status
     update_project_status(project_id, "error")
 
-    if (!is.null(progress_callback)) {
-      state$current_task <- "error"
-      progress_callback(state)
-    }
+    report_progress(state)
 
     list(
       success = FALSE,
@@ -1387,6 +1381,91 @@ save_indicators_incremental <- function(project_id, results, indicator) {
   }, error = function(e) {
     cli::cli_warn("Failed to save incrementally: {e$message}")
     FALSE
+  })
+}
+
+
+#' Save progress state for async polling
+#'
+#' @description
+#' Saves the full computation progress state to a JSON file for polling.
+#' Used by ExtendedTask to communicate progress to the UI.
+#'
+#' @param project_id Character. Project ID.
+#' @param state List. Full progress state.
+#'
+#' @return Invisible NULL.
+#'
+#' @noRd
+save_progress_state <- function(project_id, state) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) {
+    return(invisible(NULL))
+  }
+
+  progress_file <- file.path(project_path, "data", "progress_state.json")
+
+  # Ensure data directory exists
+  data_dir <- file.path(project_path, "data")
+  if (!dir.exists(data_dir)) {
+    dir.create(data_dir, recursive = TRUE)
+  }
+
+  # Convert state to JSON-safe format
+  state_json <- list(
+    project_id = state$project_id,
+    status = state$status,
+    phase = state$phase,
+    progress = state$progress,
+    progress_max = state$progress_max,
+    current_task = state$current_task,
+    indicators_total = state$indicators_total,
+    indicators_completed = state$indicators_completed,
+    indicators_skipped = state$indicators_skipped %||% 0L,
+    indicators_failed = state$indicators_failed,
+    errors = state$errors,
+    started_at = if (!is.null(state$started_at)) format(state$started_at, "%Y-%m-%d %H:%M:%S") else NULL,
+    completed_at = if (!is.null(state$completed_at)) format(state$completed_at, "%Y-%m-%d %H:%M:%S") else NULL,
+    updated_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  )
+
+  tryCatch({
+    jsonlite::write_json(state_json, progress_file, auto_unbox = TRUE, pretty = TRUE)
+  }, error = function(e) {
+    cli::cli_warn("Failed to save progress state: {e$message}")
+  })
+
+  invisible(NULL)
+}
+
+
+#' Read progress state for async polling
+#'
+#' @description
+#' Reads the full computation progress state from the JSON file.
+#' Used by the UI to poll progress during ExtendedTask execution.
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @return List with progress state, or NULL if not found.
+#'
+#' @noRd
+read_progress_state <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) {
+    return(NULL)
+  }
+
+  progress_file <- file.path(project_path, "data", "progress_state.json")
+
+  if (!file.exists(progress_file)) {
+    return(NULL)
+  }
+
+  tryCatch({
+    jsonlite::read_json(progress_file)
+  }, error = function(e) {
+    NULL
   })
 }
 
