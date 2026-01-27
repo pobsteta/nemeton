@@ -539,7 +539,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
     })
 
-    # Delayed observer to apply zoom and styles (runs in Shiny context)
+    # Apply pending zoom and styles when set (one-time execution)
     shiny::observe({
       # Check if there are pending operations
       zoom <- rv$pending_zoom
@@ -547,32 +547,29 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(zoom) && is.null(styles)) return()
 
-      # Use invalidateLater to delay execution
-      shiny::invalidateLater(500)  # 500ms delay
-
-      # Only execute once
-      shiny::isolate({
-        if (!is.null(styles)) {
-          cli::cli_alert_info("Applying {length(styles)} style updates...")
-          for (pid in styles) {
+      # Use later::later for one-time delayed execution (no polling)
+      later::later(function() {
+        if (!is.null(rv$pending_styles)) {
+          cli::cli_alert_info("Applying {length(rv$pending_styles)} style updates...")
+          for (pid in rv$pending_styles) {
             update_parcel_style(pid, selected = TRUE)
           }
           rv$pending_styles <- NULL
         }
 
-        if (!is.null(zoom)) {
+        if (!is.null(rv$pending_zoom)) {
           cli::cli_alert_info("Applying zoom to selected parcels...")
           leaflet::leafletProxy(ns("map")) |>
             leaflet::fitBounds(
-              lng1 = zoom$xmin,
-              lat1 = zoom$ymin,
-              lng2 = zoom$xmax,
-              lat2 = zoom$ymax
+              lng1 = rv$pending_zoom$xmin,
+              lat1 = rv$pending_zoom$ymin,
+              lng2 = rv$pending_zoom$xmax,
+              lat2 = rv$pending_zoom$ymax
             )
           rv$pending_zoom <- NULL
           cli::cli_alert_success("Zoomed to selected parcels")
         }
-      })
+      }, delay = 0.5)
     })
 
 
