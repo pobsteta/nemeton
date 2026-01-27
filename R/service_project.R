@@ -135,6 +135,7 @@ create_project <- function(name, description = "", owner = "", parcels = NULL) {
 #'
 #' @description
 #' Saves selected parcels to project in GeoParquet format.
+#' Uses sfarrow for proper GeoParquet format compatible with QGIS/GIS tools.
 #'
 #' @param project_id Character. Project ID.
 #' @param parcels sf object. Parcels to save.
@@ -156,22 +157,41 @@ save_parcels <- function(project_id, parcels) {
   parcels_path <- file.path(project_path, "data", "parcels.parquet")
 
   tryCatch({
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'arrow' is required for GeoParquet support")
+    # Store CRS info for reference
+    crs_epsg <- sf::st_crs(parcels)$epsg
+    if (is.null(crs_epsg) || is.na(crs_epsg)) {
+      crs_epsg <- 4326
     }
 
-    # Convert sf to data.frame with WKT geometry for arrow
-    parcels_df <- parcels
-    parcels_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(parcels))
-    parcels_df <- sf::st_drop_geometry(parcels_df)
+    # Try to use sfarrow for proper GeoParquet (QGIS compatible)
+    if (requireNamespace("sfarrow", quietly = TRUE)) {
+      cli::cli_alert_info("Saving {nrow(parcels)} parcels as GeoParquet (sfarrow)")
 
-    arrow::write_parquet(parcels_df, parcels_path)
+      # Ensure valid CRS before saving
+      if (is.na(sf::st_crs(parcels))) {
+        parcels <- sf::st_set_crs(parcels, 4326)
+      }
 
-    # Also save CRS info
+      sfarrow::st_write_parquet(parcels, parcels_path)
+
+    } else if (requireNamespace("arrow", quietly = TRUE)) {
+      # Fallback to arrow with WKT geometry (less compatible but works)
+      cli::cli_alert_warning("sfarrow not available, saving with WKT geometry (may not open in QGIS)")
+
+      parcels_df <- parcels
+      parcels_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(parcels))
+      parcels_df <- sf::st_drop_geometry(parcels_df)
+
+      arrow::write_parquet(parcels_df, parcels_path)
+    } else {
+      cli::cli_abort("Package 'sfarrow' or 'arrow' is required for GeoParquet support")
+    }
+
+    # Save CRS info as backup
     crs_path <- file.path(project_path, "data", "parcels_crs.json")
     jsonlite::write_json(
       list(
-        epsg = sf::st_crs(parcels)$epsg,
+        epsg = crs_epsg,
         wkt = sf::st_crs(parcels)$wkt
       ),
       crs_path,
@@ -197,6 +217,7 @@ save_parcels <- function(project_id, parcels) {
 #'
 #' @description
 #' Loads parcels from project GeoParquet file.
+#' Supports both proper GeoParquet (sfarrow) and legacy WKT format.
 #'
 #' @param project_id Character. Project ID.
 #'
@@ -217,62 +238,80 @@ load_parcels <- function(project_id) {
   }
 
   tryCatch({
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'arrow' is required")
+    parcels_sf <- NULL
+
+    # Try sfarrow first for proper GeoParquet format
+    if (requireNamespace("sfarrow", quietly = TRUE)) {
+      parcels_sf <- tryCatch({
+        sf_obj <- sfarrow::st_read_parquet(parcels_path)
+        if (inherits(sf_obj, "sf") && !is.null(sf::st_geometry(sf_obj))) {
+          cli::cli_alert_info("Loaded {nrow(sf_obj)} parcels from GeoParquet (sfarrow)")
+          sf_obj
+        } else {
+          NULL
+        }
+      }, error = function(e) {
+        cli::cli_alert_info("GeoParquet read failed, trying legacy format: {e$message}")
+        NULL
+      })
     }
 
-    # Read parquet (returns a tibble)
-    parcels_tbl <- arrow::read_parquet(parcels_path)
+    # Fallback to legacy WKT format if sfarrow failed or not available
+    if (is.null(parcels_sf)) {
+      if (!requireNamespace("arrow", quietly = TRUE)) {
+        cli::cli_abort("Package 'arrow' is required")
+      }
 
-    cli::cli_alert_info("Loaded parquet with {nrow(parcels_tbl)} rows, columns: {paste(names(parcels_tbl), collapse=', ')}")
+      # Read parquet (returns a tibble)
+      parcels_tbl <- arrow::read_parquet(parcels_path)
 
-    # IMPORTANT: Convert arrow tibble to plain data.frame for reliable sf conversion
-    # Arrow tibbles can have issues with sf::st_as_sf() in some environments
-    parcels_df <- as.data.frame(parcels_tbl)
+      cli::cli_alert_info("Loaded parquet with {nrow(parcels_tbl)} rows, columns: {paste(names(parcels_tbl), collapse=', ')}")
 
-    # Check if geometry_wkt column exists
-    if (!"geometry_wkt" %in% names(parcels_df)) {
-      cli::cli_warn("Parcels file missing geometry_wkt column")
-      # Try to find geometry column
-      geom_cols <- grep("geom|geometry", names(parcels_df), value = TRUE, ignore.case = TRUE)
-      if (length(geom_cols) > 0) {
-        cli::cli_alert_info("Found potential geometry column: {geom_cols[1]}")
-        # Try to use the found geometry column
-        geom_col <- geom_cols[1]
-        if (inherits(parcels_df[[geom_col]], "character")) {
-          cli::cli_alert_info("Attempting to convert WKT from column: {geom_col}")
-          parcels_df$geometry_wkt <- parcels_df[[geom_col]]
+      # IMPORTANT: Convert arrow tibble to plain data.frame for reliable sf conversion
+      parcels_df <- as.data.frame(parcels_tbl)
+
+      # Check if geometry_wkt column exists
+      if (!"geometry_wkt" %in% names(parcels_df)) {
+        cli::cli_warn("Parcels file missing geometry_wkt column")
+        # Try to find geometry column
+        geom_cols <- grep("geom|geometry", names(parcels_df), value = TRUE, ignore.case = TRUE)
+        if (length(geom_cols) > 0) {
+          cli::cli_alert_info("Found potential geometry column: {geom_cols[1]}")
+          geom_col <- geom_cols[1]
+          if (inherits(parcels_df[[geom_col]], "character")) {
+            cli::cli_alert_info("Attempting to convert WKT from column: {geom_col}")
+            parcels_df$geometry_wkt <- parcels_df[[geom_col]]
+          }
+        }
+
+        if (!"geometry_wkt" %in% names(parcels_df)) {
+          cli::cli_warn("Could not find valid geometry column")
+          return(NULL)
         }
       }
 
-      # If still no geometry_wkt, return NULL
-      if (!"geometry_wkt" %in% names(parcels_df)) {
-        cli::cli_warn("Could not find valid geometry column")
+      # Verify geometry_wkt contains valid data
+      if (all(is.na(parcels_df$geometry_wkt)) || all(parcels_df$geometry_wkt == "")) {
+        cli::cli_warn("geometry_wkt column is empty or contains only NA values")
         return(NULL)
       }
-    }
 
-    # Verify geometry_wkt contains valid data
-    if (all(is.na(parcels_df$geometry_wkt)) || all(parcels_df$geometry_wkt == "")) {
-      cli::cli_warn("geometry_wkt column is empty or contains only NA values")
-      return(NULL)
-    }
-
-    # Get CRS
-    crs <- 4326  # Default
-    if (file.exists(crs_path)) {
-      crs_info <- jsonlite::read_json(crs_path)
-      if (!is.null(crs_info$epsg)) {
-        crs <- crs_info$epsg
+      # Get CRS
+      crs <- 4326
+      if (file.exists(crs_path)) {
+        crs_info <- jsonlite::read_json(crs_path)
+        if (!is.null(crs_info$epsg)) {
+          crs <- crs_info$epsg
+        }
       }
-    }
 
-    # Convert back to sf
-    parcels_sf <- sf::st_as_sf(
-      parcels_df,
-      wkt = "geometry_wkt",
-      crs = crs
-    )
+      # Convert back to sf
+      parcels_sf <- sf::st_as_sf(
+        parcels_df,
+        wkt = "geometry_wkt",
+        crs = crs
+      )
+    }
 
     # Verify conversion succeeded
     if (!inherits(parcels_sf, "sf")) {
@@ -292,7 +331,11 @@ load_parcels <- function(project_id) {
       parcels_sf$geometry_wkt <- NULL
     }
 
-    cli::cli_alert_success("Loaded {nrow(parcels_sf)} parcels as sf object (CRS: {crs})")
+    # Get CRS for logging
+    crs_info <- sf::st_crs(parcels_sf)$epsg
+    if (is.null(crs_info) || is.na(crs_info)) crs_info <- "unknown"
+
+    cli::cli_alert_success("Loaded {nrow(parcels_sf)} parcels as sf object (CRS: {crs_info})")
     parcels_sf
 
   }, error = function(e) {
