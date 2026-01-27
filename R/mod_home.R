@@ -536,22 +536,28 @@ mod_home_server <- function(id, app_state) {
       # Function to create and start a fresh guide
       start_tour <- function() {
         # Target elements - use element IDs (cicerone adds # prefix automatically)
-        # Using wrapper divs for sections that contain hidden elements
-        el_search <- "home-search_section"      # wrapper div around search (visible)
-        el_map <- "home-map-map_card"           # map card (visible)
-        el_name <- "home-project-name"          # textInput (visible)
-        el_desc <- "home-project-description"   # textAreaInput (visible)
-        el_owner <- "home-project-owner"        # textInput (visible)
-        el_create <- "home-project-create"      # create button (visible)
+        # Collapsible sections need to be opened before highlighting
+        el_search_collapse <- ns("search_collapse")
+        el_project_collapse <- "home-project-project_collapse"
+        el_map <- "home-map-map_card"
+        el_name <- "home-project-name"
+        el_desc <- "home-project-description"
+        el_owner <- "home-project-owner"
+        el_create <- "home-project-create_project"
+
+        # JavaScript to open collapsed sections
+        open_search_js <- sprintf("$('#%s').collapse('show');", el_search_collapse)
+        open_project_js <- sprintf("$('#%s').collapse('show');", el_project_collapse)
 
         tryCatch({
           # Create guide and chain all steps
           cicerone::Cicerone$
             new()$
             step(
-              el = el_search,
+              el = el_search_collapse,
               title = i18n$t("tour_search_title"),
-              description = i18n$t("tour_search_desc")
+              description = i18n$t("tour_search_desc"),
+              on_highlight_started = open_search_js
             )$
             step(
               el = el_map,
@@ -561,7 +567,8 @@ mod_home_server <- function(id, app_state) {
             step(
               el = el_name,
               title = i18n$t("tour_project_title"),
-              description = i18n$t("tour_project_desc")
+              description = i18n$t("tour_project_desc"),
+              on_highlight_started = open_project_js
             )$
             step(
               el = el_desc,
