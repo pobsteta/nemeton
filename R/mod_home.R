@@ -763,8 +763,24 @@ mod_home_server <- function(id, app_state) {
       # Combined function: open sections then start tour with delay
       start_tour <- function() {
         open_collapsed_sections()
-        do_start_tour()
+        # Add delay to allow UI to render before starting tour
+        shiny::insertUI(
+          selector = "body",
+          where = "beforeEnd",
+          ui = htmltools::tags$script(htmltools::HTML("
+            setTimeout(function() {
+              // Trigger Shiny to start tour after UI is ready
+              Shiny.setInputValue('home-tour_ready', Date.now());
+            }, 500);
+          ")),
+          immediate = TRUE
+        )
       }
+
+      # Start tour when UI is ready (triggered by JavaScript)
+      shiny::observeEvent(input$tour_ready, {
+        do_start_tour()
+      }, ignoreInit = TRUE)
 
       # Schedule tour to start after delay (one-time)
       tour_timer <- shiny::reactiveVal(0)
