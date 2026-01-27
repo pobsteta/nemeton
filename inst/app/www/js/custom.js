@@ -277,35 +277,6 @@
     }
   });
 
-  /**
-   * Close map popup after delay
-   */
-  Shiny.addCustomMessageHandler('closeMapPopup', function(data) {
-    const mapId = data.mapId;
-    const delay = data.delay || 100;
-
-    setTimeout(function() {
-      // Get the Leaflet map instance
-      const mapContainer = document.getElementById(mapId);
-      if (mapContainer && mapContainer._leaflet_map) {
-        mapContainer._leaflet_map.closePopup();
-      } else if (window.HTMLWidgets && window.HTMLWidgets.widgets) {
-        // Try to find the map through HTMLWidgets
-        const widgets = window.HTMLWidgets.widgets;
-        for (let i = 0; i < widgets.length; i++) {
-          if (widgets[i].el && widgets[i].el.id === mapId) {
-            const map = widgets[i].getMap();
-            if (map) {
-              map.closePopup();
-            }
-            break;
-          }
-        }
-      }
-    }, delay);
-  });
-
-
   // ============================================================
   // Initialization
   // ============================================================

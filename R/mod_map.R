@@ -364,11 +364,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           parcel_data <- sf::st_transform(parcel_data, 4326)
         }
 
-        # Create popups and labels
-        popups <- sapply(seq_len(nrow(parcel_data)), function(i) {
-          create_parcel_popup(parcel_data[i, ])
-        })
-
+        # Create labels for hover display (no popups - user requested hover-only)
         labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
           create_parcel_label(parcel_data[i, ])
         })
@@ -383,16 +379,19 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             weight = STYLE$parcel_default$weight,
             fillColor = STYLE$parcel_default$fillColor,
             fillOpacity = STYLE$parcel_default$fillOpacity,
-            popup = popups,
             label = lapply(labels, htmltools::HTML),
             labelOptions = leaflet::labelOptions(
               style = list(
                 "font-size" = "12px",
                 "font-weight" = "normal",
-                "padding" = "4px 8px"
+                "padding" = "6px 10px",
+                "background-color" = "white",
+                "border" = "1px solid #ccc",
+                "border-radius" = "4px",
+                "box-shadow" = "0 2px 4px rgba(0,0,0,0.2)"
               ),
-              direction = "top",
-              offset = c(0, -10)
+              direction = "auto",
+              offset = c(0, -5)
             ),
             highlightOptions = leaflet::highlightOptions(
               weight = STYLE$parcel_hover$weight,
@@ -441,13 +440,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (is.null(click) || is.null(click$id)) return()
 
       parcel_id <- click$id
-
-      # Close popup via JavaScript (delayed to run after Leaflet opens it)
-      session$sendCustomMessage("closeMapPopup", list(
-        mapId = ns("map"),
-        delay = 100
-      ))
-
       i18n <- get_i18n(app_state$language)
 
       # Check if already selected
