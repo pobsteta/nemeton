@@ -459,13 +459,15 @@ get_commune_centroid <- function(code_insee) {
 #'
 #' @noRd
 get_communes_in_department <- function(department_code) {
+  empty_result <- data.frame(
+    code_insee = character(0),
+    nom = character(0),
+    code_postal = character(0),
+    label = character(0)
+  )
+
   if (is.null(department_code) || department_code == "") {
-    return(data.frame(
-      code_insee = character(0),
-      nom = character(0),
-      code_postal = character(0),
-      label = character(0)
-    ))
+    return(empty_result)
   }
 
   result <- tryCatch({
@@ -487,12 +489,7 @@ get_communes_in_department <- function(department_code) {
     data <- httr2::resp_body_json(resp)
 
     if (length(data) == 0) {
-      return(data.frame(
-        code_insee = character(0),
-        nom = character(0),
-        code_postal = character(0),
-        label = character(0)
-      ))
+      return(empty_result)
     }
 
     communes_df <- do.call(rbind, lapply(data, function(commune) {
@@ -514,13 +511,24 @@ get_communes_in_department <- function(department_code) {
     communes_df[order(communes_df$nom), ]
 
   }, error = function(e) {
-    cli::cli_warn("Error getting communes in department: {e$message}")
-    data.frame(
-      code_insee = character(0),
-      nom = character(0),
-      code_postal = character(0),
-      label = character(0)
+    # Detect network/connection errors
+    error_msg <- e$message
+    is_network_error <- grepl(
+      "HTTP request|connection|timeout|resolve|network|internet|curl",
+      error_msg,
+      ignore.case = TRUE
     )
+
+    if (is_network_error) {
+      attr(empty_result, "error") <- "network"
+      attr(empty_result, "error_message") <- "no_internet_connection"
+    } else {
+      attr(empty_result, "error") <- "other"
+      attr(empty_result, "error_message") <- error_msg
+    }
+
+    cli::cli_warn("Error getting communes in department: {error_msg}")
+    empty_result
   })
 
   result

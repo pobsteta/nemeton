@@ -96,5 +96,12 @@
   "project_corrupted_title": "Corrupted Project",
   "project_corrupted_message": "This project is corrupted or incomplete. Do you want to delete it?",
   "delete": "Delete",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "error_no_internet": "No internet connection. Check your connection and try again.",
+  "error_loading_communes": "Error loading municipalities: ",
+  "max_chars": "Max",
+  "characters": "characters",
+  "field_required": "This field is required",
+  "no_recent_projects": "No recent projects",
+  "recent_projects": "Recent projects"
 }

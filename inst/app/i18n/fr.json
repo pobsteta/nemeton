@@ -96,5 +96,12 @@
   "project_corrupted_title": "Projet corrompu",
   "project_corrupted_message": "Ce projet est corrompu ou incomplet. Voulez-vous le supprimer ?",
   "delete": "Supprimer",
-  "cancel": "Annuler"
+  "cancel": "Annuler",
+  "error_no_internet": "Pas de connexion internet. Vérifiez votre connexion et réessayez.",
+  "error_loading_communes": "Erreur lors du chargement des communes : ",
+  "max_chars": "Max",
+  "characters": "caractères",
+  "field_required": "Ce champ est requis",
+  "no_recent_projects": "Aucun projet récent",
+  "recent_projects": "Projets récents"
 }

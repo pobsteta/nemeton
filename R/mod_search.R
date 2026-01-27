@@ -144,34 +144,49 @@ mod_search_server <- function(id, app_state) {
       rv$is_loading <- TRUE
 
       # Fetch communes in department
-      tryCatch({
-        communes <- get_communes_in_department(dept)
+      communes <- get_communes_in_department(dept)
 
-        if (!is.null(communes) && nrow(communes) > 0) {
-          choices <- format_communes_for_selectize(communes)
-          shiny::updateSelectizeInput(
-            session,
-            "commune",
-            choices = choices,
-            selected = "",
-            server = FALSE
+      # Check for errors (returned as attribute)
+      error_type <- attr(communes, "error")
+      if (!is.null(error_type)) {
+        if (error_type == "network") {
+          shiny::showNotification(
+            i18n$t("error_no_internet"),
+            type = "error",
+            duration = 8
           )
         } else {
-          shiny::updateSelectizeInput(
-            session,
-            "commune",
-            choices = character(0),
-            selected = "",
-            server = FALSE
+          shiny::showNotification(
+            paste(i18n$t("error_loading_communes"), attr(communes, "error_message")),
+            type = "error",
+            duration = 8
           )
         }
-      }, error = function(e) {
-        cli::cli_warn("Error fetching communes: {e$message}")
-        shiny::showNotification(
-          paste("Erreur:", e$message),
-          type = "error"
+        shiny::updateSelectizeInput(
+          session,
+          "commune",
+          choices = character(0),
+          selected = "",
+          server = FALSE
         )
-      })
+      } else if (!is.null(communes) && nrow(communes) > 0) {
+        choices <- format_communes_for_selectize(communes)
+        shiny::updateSelectizeInput(
+          session,
+          "commune",
+          choices = choices,
+          selected = "",
+          server = FALSE
+        )
+      } else {
+        shiny::updateSelectizeInput(
+          session,
+          "commune",
+          choices = character(0),
+          selected = "",
+          server = FALSE
+        )
+      }
 
       rv$is_loading <- FALSE
     }, ignoreInit = TRUE)
