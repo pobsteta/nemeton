@@ -515,10 +515,7 @@ mod_home_server <- function(id, app_state) {
       # Track if tour has been shown in this session
       tour_shown_this_session <- shiny::reactiveVal(FALSE)
 
-      # Timer for delayed start (NULL = not started, timestamp = when to start)
-      tour_start_time <- shiny::reactiveVal(NULL)
-
-      # Function to create and start a fresh guide (must be called in reactive context)
+      # Function to create and start a fresh guide
       start_tour <- function() {
         # Target elements - use element IDs (cicerone adds # prefix automatically)
         # Using wrapper divs for sections that contain hidden elements
@@ -570,27 +567,15 @@ mod_home_server <- function(id, app_state) {
         })
       }
 
-      # Schedule tour to start after delay
+      # Schedule tour to start after 2 second delay (one-time, no polling)
       shiny::observe({
         if (!tour_shown_this_session()) {
-          tour_start_time(Sys.time())
           tour_shown_this_session(TRUE)
-        }
-      })
 
-      # Poll for tour start time
-      shiny::observe({
-        start_time <- tour_start_time()
-        shiny::req(start_time)
-
-        # Check if 2 seconds have passed
-        elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
-        if (elapsed >= 2) {
-          tour_start_time(NULL)  # Reset to prevent re-triggering
-          start_tour()
-        } else {
-          # Keep polling every 500ms
-          shiny::invalidateLater(500, session)
+          # Use later::later for a one-time delayed execution (no polling)
+          later::later(function() {
+            start_tour()
+          }, delay = 2)
         }
       })
 
