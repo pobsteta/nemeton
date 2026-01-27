@@ -516,7 +516,44 @@ mod_home_server <- function(id, app_state) {
       ))
 
       # Start the async computation with both project_id and project_path
+      cli::cli_alert_info("Starting computation for project {project$id}")
       compute_task$invoke(project$id, project_path)
+    })
+
+    # Watch for ExtendedTask errors (handles failures before progress file is written)
+    shiny::observe({
+      # Only check when we have an active computation
+      shiny::req(computing_project_id())
+
+      # Get ExtendedTask status
+      task_status <- compute_task$status()
+
+      if (task_status == "error") {
+        cli::cli_alert_danger("ExtendedTask failed")
+
+        # Hide progress card, show error card
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-progress_card_wrapper")
+        ))
+        session$sendCustomMessage("showElement", list(
+          id = ns("progress-error_card_wrapper")
+        ))
+
+        # Try to get the error message
+        error_msg <- tryCatch({
+          result <- compute_task$result()
+          if (inherits(result, "error")) result$message else "Unknown error"
+        }, error = function(e) e$message)
+
+        shiny::showNotification(
+          paste("Erreur de calcul:", error_msg),
+          type = "error",
+          duration = 10
+        )
+
+        # Reset computing state
+        computing_project_id(NULL)
+      }
     })
 
     # Poll progress file while computation is running
