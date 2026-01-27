@@ -195,28 +195,39 @@ start_computation <- function(project_id,
 
   # Load parcels
   parcels <- load_parcels(project_id)
-  if (is.null(parcels) || nrow(parcels) == 0) {
+  if (is.null(parcels)) {
+    stop("Failed to load parcels from project (file may be corrupted or missing)")
+  }
+  if (nrow(parcels) == 0) {
     stop("No parcels found in project")
   }
 
   # Verify parcels is an sf object
   if (!inherits(parcels, "sf")) {
+    # Log debug info
+    cli::cli_alert_warning("Parcels is not an sf object. Class: {paste(class(parcels), collapse=', ')}")
+    cli::cli_alert_info("Columns: {paste(names(parcels), collapse=', ')}")
+
     # Try to convert if geometry_wkt column exists
     if ("geometry_wkt" %in% names(parcels)) {
+      cli::cli_alert_info("Attempting conversion from geometry_wkt...")
       parcels <- tryCatch({
         sf::st_as_sf(parcels, wkt = "geometry_wkt", crs = 4326)
       }, error = function(e) {
         stop("Parcels could not be converted to spatial format: ", e$message)
       })
-    } else if ("geometry" %in% names(parcels)) {
-      # Try using geometry column directly
+    } else if ("geometry" %in% names(parcels) && inherits(parcels$geometry, "sfc")) {
+      # Try using geometry column directly if it's an sfc
+      cli::cli_alert_info("Attempting conversion from geometry column...")
       parcels <- tryCatch({
         sf::st_as_sf(parcels)
       }, error = function(e) {
         stop("Parcels have no valid geometry: ", e$message)
       })
     } else {
-      stop("Parcels data is not in spatial format (missing geometry)")
+      stop("Parcels data is not in spatial format. ",
+           "Class: ", paste(class(parcels), collapse=", "),
+           ". Columns: ", paste(names(parcels), collapse=", "))
     }
   }
 
