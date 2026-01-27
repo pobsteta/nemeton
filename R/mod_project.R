@@ -439,6 +439,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           app_state$current_project <- NULL
           app_state$project_id <- NULL
           app_state$refresh_projects <- Sys.time()
+          app_state$clear_map_selection <- Sys.time()  # Trigger map selection clear
 
           shiny::showNotification(
             i18n$t("project_deleted"),

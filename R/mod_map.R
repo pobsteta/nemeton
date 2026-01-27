@@ -503,6 +503,18 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       )
     })
 
+    # Clear selection when triggered externally (e.g., project deletion)
+    shiny::observeEvent(app_state$clear_map_selection, {
+      if (length(rv$selected_ids) == 0) return()
+
+      # Clear the selection overlay group
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("selection")
+
+      rv$selected_ids <- character(0)
+      rv$parcels_zoomed <- FALSE
+    }, ignoreInit = TRUE)
+
 
     # ========================================
     # Restore Project Selection
