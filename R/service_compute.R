@@ -279,6 +279,12 @@ start_computation <- function(project_id,
       }
     )
 
+    # Propagate download warnings to state errors (for UI display)
+    if (length(layers$warnings) > 0) {
+      state$errors <- c(state$errors, layers$warnings)
+      report_progress(state)
+    }
+
     # Phase 2: Compute indicators
     state$phase <- "computing"
     state$status <- COMPUTE_STATUS$COMPUTING
@@ -390,6 +396,7 @@ download_layers_for_parcels <- function(parcels,
   # Initialize layers structure
   rasters <- list()
   vectors <- list()
+  download_warnings <- list()  # Collect download warnings for UI display
 
   total_sources <- length(DATA_SOURCES$rasters) + length(DATA_SOURCES$vectors)
   completed <- 0
@@ -432,9 +439,34 @@ download_layers_for_parcels <- function(parcels,
 
       if (!is.null(raster_data)) {
         rasters[[source_name]] <- raster_data
+      } else if (source_name == "forest_cover") {
+        # Special warning for OSO download failure
+        download_warnings <- c(download_warnings, list(list(
+          type = "warning",
+          source = "OSO",
+          message = paste0(
+            "Le t\u00e9l\u00e9chargement OSO a \u00e9chou\u00e9 (fichier de 6 Go). ",
+            "T\u00e9l\u00e9chargez manuellement depuis: ",
+            "https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7 ",
+            "et placez oso.tif dans: ", cache_dir
+          ),
+          time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+        )))
       }
     }, error = function(e) {
       cli::cli_warn("Failed to download {source$name}: {e$message}")
+      if (source_name == "forest_cover") {
+        download_warnings <<- c(download_warnings, list(list(
+          type = "warning",
+          source = "OSO",
+          message = paste0(
+            "Le t\u00e9l\u00e9chargement OSO a \u00e9chou\u00e9: ", e$message, ". ",
+            "T\u00e9l\u00e9chargez manuellement depuis: ",
+            "https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7"
+          ),
+          time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+        )))
+      }
     })
 
     completed <- completed + 1
@@ -490,7 +522,8 @@ download_layers_for_parcels <- function(parcels,
       rasters = rasters,
       vectors = vectors,
       bbox = bbox_buffered,
-      crs = sf::st_crs(parcels)
+      crs = sf::st_crs(parcels),
+      warnings = download_warnings  # Include download warnings for UI display
     ),
     class = "nemeton_layers"
   )
