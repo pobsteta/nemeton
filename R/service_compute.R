@@ -855,12 +855,48 @@ download_oso <- function(bbox, cache_file) {
 
       if (need_download) {
         cli::cli_alert_info("Downloading OSO (~6 GB, this may take a while)...")
-        utils::download.file(
-          url = oso_url,
-          destfile = oso_tar,
-          mode = "wb",
-          quiet = FALSE
-        )
+
+        # Increase timeout for large file download (1 hour)
+        old_timeout <- getOption("timeout")
+        options(timeout = 3600)
+        on.exit(options(timeout = old_timeout), add = TRUE)
+
+        # Try download with curl method for better reliability
+        download_result <- tryCatch({
+          utils::download.file(
+            url = oso_url,
+            destfile = oso_tar,
+            mode = "wb",
+            method = "libcurl",
+            quiet = FALSE
+          )
+          TRUE
+        }, error = function(e) {
+          cli::cli_warn("Download failed: {e$message}")
+          FALSE
+        }, warning = function(w) {
+          cli::cli_warn("Download warning: {w$message}")
+          # Check if file was partially downloaded
+          if (file.exists(oso_tar) && file.info(oso_tar)$size > 0) {
+            cli::cli_alert_info("Partial download detected, file may be incomplete")
+          }
+          FALSE
+        })
+
+        if (!download_result || !file.exists(oso_tar)) {
+          cli::cli_warn("OSO download failed. Please download manually from:")
+          cli::cli_alert("https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7")
+          cli::cli_alert("Extract and place oso.tif in: {oso_cache}")
+          return(NULL)
+        }
+
+        # Verify download size
+        downloaded_size <- file.info(oso_tar)$size
+        if (downloaded_size < oso_expected_size) {
+          cli::cli_warn("Downloaded file smaller than expected ({round(downloaded_size/1e9, 1)} GB < {round(oso_expected_size/1e9, 1)} GB)")
+          cli::cli_alert_info("Download may be incomplete. Please download manually.")
+          return(NULL)
+        }
       }
 
       # Extract archive
@@ -1455,8 +1491,20 @@ save_indicators_incremental <- function(project_id, results, indicator) {
 
     # Convert sf to data.frame with WKT geometry
     results_df <- results
-    results_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(results))
-    results_df <- sf::st_drop_geometry(results_df)
+
+    # Check if results is an sf object before extracting geometry
+    if (inherits(results, "sf")) {
+      results_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(results))
+      results_df <- sf::st_drop_geometry(results_df)
+    } else if (is.data.frame(results)) {
+      # Already a data.frame, check if geometry_wkt exists
+      if (!"geometry_wkt" %in% names(results_df)) {
+        cli::cli_warn("Results is not an sf object, geometry may be missing")
+      }
+    } else {
+      cli::cli_warn("Unexpected results type: {class(results)[1]}")
+      return(FALSE)
+    }
 
     # Write parquet (overwrites with current state)
     arrow::write_parquet(results_df, results_path)

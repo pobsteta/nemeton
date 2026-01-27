@@ -426,6 +426,9 @@ mod_home_server <- function(id, app_state) {
     # Track active computation project
     computing_project_id <- shiny::reactiveVal(NULL)
 
+    # Track last progress state to avoid unnecessary updates
+    last_progress_key <- shiny::reactiveVal("")
+
     # Progress module server
     progress_result <- mod_progress_server(
       "progress",
@@ -498,6 +501,9 @@ mod_home_server <- function(id, app_state) {
       # Initialize computation state
       state <- init_compute_state(project$id)
       compute_state(state)
+
+      # Reset progress tracking key for new computation
+      last_progress_key("")
 
       # Store project ID for polling
       computing_project_id(project$id)
@@ -589,15 +595,28 @@ mod_home_server <- function(id, app_state) {
       is_running <- progress_state$status %in% c("pending", "downloading", "computing")
 
       if (is_running) {
-        # Update reactive state
-        compute_state(progress_state)
-
-        # Send JavaScript updates for real-time feedback
+        # Create a key based on important state values to detect changes
         progress_pct <- round(
           (progress_state$progress %||% 0) /
           (progress_state$progress_max %||% 1) * 100
         )
+        current_key <- paste(
+          progress_state$status,
+          progress_pct,
+          progress_state$indicators_completed %||% 0,
+          progress_state$indicators_failed %||% 0,
+          progress_state$current_task %||% "",
+          sep = "|"
+        )
 
+        # Only update reactive state if something changed
+        # This prevents unnecessary re-renders of the entire UI
+        if (current_key != last_progress_key()) {
+          last_progress_key(current_key)
+          compute_state(progress_state)
+        }
+
+        # Always send JavaScript updates (lightweight, no re-render)
         session$sendCustomMessage("updateProgressBar", list(
           barId = ns("progress-progress_bar"),
           percentId = ns("progress-progress_percent"),
