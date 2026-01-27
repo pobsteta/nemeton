@@ -434,13 +434,16 @@ mod_home_server <- function(id, app_state) {
     )
 
     # Create ExtendedTask for async computation
-    compute_task <- shiny::ExtendedTask$new(function(project_id) {
+    # Note: ExtendedTask runs in a separate R process, so we pass project_path
+    # directly to avoid dependency on session options (nemeton.app_options)
+    compute_task <- shiny::ExtendedTask$new(function(project_id, project_path) {
       # This runs in a separate R process
       start_computation(
         project_id = project_id,
         indicators = "all",
         progress_callback = NULL,  # No callback in async mode
-        use_file_progress = TRUE   # Write progress to file
+        use_file_progress = TRUE,  # Write progress to file
+        project_path = project_path
       )
     })
 
@@ -489,6 +492,9 @@ mod_home_server <- function(id, app_state) {
       project <- app_state$current_project
       shiny::req(project)
 
+      # Get project path for async mode
+      project_path <- get_project_path(project$id)
+
       # Initialize computation state
       state <- init_compute_state(project$id)
       compute_state(state)
@@ -509,8 +515,8 @@ mod_home_server <- function(id, app_state) {
         id = ns("progress-error_card_wrapper")
       ))
 
-      # Start the async computation
-      compute_task$invoke(project$id)
+      # Start the async computation with both project_id and project_path
+      compute_task$invoke(project$id, project_path)
     })
 
     # Poll progress file while computation is running

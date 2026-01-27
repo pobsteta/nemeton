@@ -186,6 +186,7 @@ list_available_indicators <- function() {
 #' @param indicators Character vector. Indicators to compute, or "all".
 #' @param progress_callback Function. Called with progress updates (for sync mode).
 #' @param use_file_progress Logical. If TRUE, write progress to file for async polling.
+#' @param project_path Character. Full path to project directory (for async mode).
 #'
 #' @return List with success status and results.
 #'
@@ -193,58 +194,44 @@ list_available_indicators <- function() {
 start_computation <- function(project_id,
                               indicators = "all",
                               progress_callback = NULL,
-                              use_file_progress = FALSE) {
+                              use_file_progress = FALSE,
+                              project_path = NULL) {
 
-  # Validate project exists
-  project_path <- get_project_path(project_id)
+  # Get project path (use provided or look up)
   if (is.null(project_path)) {
+    project_path <- get_project_path(project_id)
+  }
+  if (is.null(project_path) || !dir.exists(project_path)) {
     stop("Project not found: ", project_id)
   }
 
-  # Load parcels
-  parcels <- load_parcels(project_id)
-  if (is.null(parcels)) {
-    stop("Failed to load parcels from project (file may be corrupted or missing)")
+  # Load parcels directly from path
+  parcels_path <- file.path(project_path, "data", "parcels.parquet")
+  if (!file.exists(parcels_path)) {
+    stop("Parcels file not found: ", parcels_path)
   }
+
+  parcels <- tryCatch({
+    df <- arrow::read_parquet(parcels_path)
+    if ("geometry_wkt" %in% names(df)) {
+      sf::st_as_sf(df, wkt = "geometry_wkt", crs = 4326)
+    } else {
+      stop("No geometry_wkt column found")
+    }
+  }, error = function(e) {
+    stop("Failed to load parcels: ", e$message)
+  })
+
   if (nrow(parcels) == 0) {
     stop("No parcels found in project")
-  }
-
-  # Verify parcels is an sf object
-  if (!inherits(parcels, "sf")) {
-    # Log debug info
-    cli::cli_alert_warning("Parcels is not an sf object. Class: {paste(class(parcels), collapse=', ')}")
-    cli::cli_alert_info("Columns: {paste(names(parcels), collapse=', ')}")
-
-    # Try to convert if geometry_wkt column exists
-    if ("geometry_wkt" %in% names(parcels)) {
-      cli::cli_alert_info("Attempting conversion from geometry_wkt...")
-      parcels <- tryCatch({
-        sf::st_as_sf(parcels, wkt = "geometry_wkt", crs = 4326)
-      }, error = function(e) {
-        stop("Parcels could not be converted to spatial format: ", e$message)
-      })
-    } else if ("geometry" %in% names(parcels) && inherits(parcels$geometry, "sfc")) {
-      # Try using geometry column directly if it's an sfc
-      cli::cli_alert_info("Attempting conversion from geometry column...")
-      parcels <- tryCatch({
-        sf::st_as_sf(parcels)
-      }, error = function(e) {
-        stop("Parcels have no valid geometry: ", e$message)
-      })
-    } else {
-      stop("Parcels data is not in spatial format. ",
-           "Class: ", paste(class(parcels), collapse=", "),
-           ". Columns: ", paste(names(parcels), collapse=", "))
-    }
   }
 
   # Initialize state
   state <- init_compute_state(project_id, indicators)
   state$started_at <- Sys.time()
 
-  # Update project status
-  update_project_status(project_id, "computing")
+  # Update project status (with path for async mode)
+  update_project_status(project_id, "computing", project_path = project_path)
 
   # Helper function to report progress (callback or file)
   report_progress <- function(state) {
@@ -252,7 +239,7 @@ start_computation <- function(project_id,
       progress_callback(state)
     }
     if (use_file_progress) {
-      save_progress_state(project_id, state)
+      save_progress_state(project_id, state, project_path = project_path)
     }
   }
 
@@ -309,7 +296,7 @@ start_computation <- function(project_id,
     )
 
     # Final save (ensures metadata is updated)
-    save_indicators(project_id, results)
+    save_indicators(project_id, results, project_path = project_path)
 
     # Update final state
     state$status <- COMPUTE_STATUS$COMPLETED
@@ -319,7 +306,7 @@ start_computation <- function(project_id,
     state$current_task <- "complete"
 
     # Update project status
-    update_project_status(project_id, "completed")
+    update_project_status(project_id, "completed", project_path = project_path)
 
     report_progress(state)
 
@@ -341,7 +328,7 @@ start_computation <- function(project_id,
     ))
 
     # Update project status
-    update_project_status(project_id, "error")
+    update_project_status(project_id, "error", project_path = project_path)
 
     report_progress(state)
 
@@ -1393,13 +1380,16 @@ save_indicators_incremental <- function(project_id, results, indicator) {
 #'
 #' @param project_id Character. Project ID.
 #' @param state List. Full progress state.
+#' @param project_path Character. Optional project path (for async mode).
 #'
 #' @return Invisible NULL.
 #'
 #' @noRd
-save_progress_state <- function(project_id, state) {
-  project_path <- get_project_path(project_id)
+save_progress_state <- function(project_id, state, project_path = NULL) {
   if (is.null(project_path)) {
+    project_path <- get_project_path(project_id)
+  }
+  if (is.null(project_path) || !dir.exists(project_path)) {
     return(invisible(NULL))
   }
 
@@ -1519,9 +1509,11 @@ get_computation_progress <- function(project_id) {
 #' @return Logical. TRUE if successful.
 #'
 #' @noRd
-save_indicators <- function(project_id, results) {
-  project_path <- get_project_path(project_id)
+save_indicators <- function(project_id, results, project_path = NULL) {
   if (is.null(project_path)) {
+    project_path <- get_project_path(project_id)
+  }
+  if (is.null(project_path) || !dir.exists(project_path)) {
     cli::cli_abort("Project not found: {project_id}")
   }
 
@@ -1545,7 +1537,7 @@ save_indicators <- function(project_id, results) {
       indicators_computed = TRUE,
       indicators_computed_at = Sys.time(),
       updated_at = Sys.time()
-    ))
+    ), project_path = project_path)
 
     cli::cli_alert_success("Saved indicators for {nrow(results)} parcels")
     TRUE
