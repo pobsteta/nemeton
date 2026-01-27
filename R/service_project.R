@@ -131,6 +131,85 @@ create_project <- function(name, description = "", owner = "", parcels = NULL) {
 }
 
 
+#' Update an existing project
+#'
+#' @description
+#' Updates project metadata (name, description, owner) and optionally parcels.
+#'
+#' @param project_id Character. Project ID.
+#' @param name Character. New project name.
+#' @param description Character. New description.
+#' @param owner Character. New owner.
+#' @param parcels sf object. New parcels (optional).
+#'
+#' @return List with project info (id, path, metadata, parcels).
+#'
+#' @noRd
+update_project <- function(project_id, name, description = "", owner = "", parcels = NULL) {
+  # Check project exists
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) {
+    cli::cli_abort("Project not found: {project_id}")
+  }
+
+  # Validate name
+  if (missing(name) || is.null(name) || nchar(trimws(name)) == 0) {
+    cli::cli_abort("Project name is required")
+  }
+
+  name <- trimws(name)
+  if (nchar(name) > 100) {
+    cli::cli_abort("Project name must be 100 characters or less")
+  }
+
+  # Validate description
+  if (nchar(description) > 500) {
+    cli::cli_abort("Description must be 500 characters or less")
+  }
+
+  # Validate owner
+  if (nchar(owner) > 100) {
+    cli::cli_abort("Owner must be 100 characters or less")
+  }
+
+  # Load existing metadata
+  metadata <- load_project_metadata(project_id)
+  if (is.null(metadata)) {
+    cli::cli_abort("Could not load project metadata")
+  }
+
+  # Update metadata fields
+  metadata$name <- name
+  metadata$description <- description
+  metadata$owner <- owner
+  metadata$updated_at <- Sys.time()
+
+  # Update parcels if provided
+  if (!is.null(parcels) && inherits(parcels, "sf") && nrow(parcels) > 0) {
+    save_parcels(project_id, parcels)
+    metadata$parcels_count <- nrow(parcels)
+  }
+
+  # Save updated metadata
+  metadata_path <- file.path(project_path, "metadata.json")
+  jsonlite::write_json(
+    metadata,
+    metadata_path,
+    auto_unbox = TRUE,
+    pretty = TRUE
+  )
+
+  cli::cli_alert_success("Project updated: {.val {name}}")
+
+  list(
+    id = project_id,
+    path = project_path,
+    metadata = metadata,
+    parcels = if (!is.null(parcels)) parcels else load_parcels(project_id)
+  )
+}
+
+
 #' Save parcels to project
 #'
 #' @description
