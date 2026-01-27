@@ -306,15 +306,23 @@ mod_home_server <- function(id, app_state) {
       # Get commune geometry for fallback
       commune_geom <- search_result$commune_geometry()
 
-      parcels <- tryCatch({
-        get_cadastral_parcels(commune, commune_geom)
-      }, error = function(e) {
-        shiny::showNotification(
-          sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
-          type = "error"
-        )
-        NULL
-      })
+      parcels <- NULL
+
+      shiny::withProgress(
+        message = i18n$t("loading_parcels"),
+        value = 0.5,
+        {
+          parcels <- tryCatch({
+            get_cadastral_parcels(commune, commune_geom)
+          }, error = function(e) {
+            shiny::showNotification(
+              sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
+              type = "error"
+            )
+            NULL
+          })
+        }
+      )
 
       if (!is.null(parcels) && nrow(parcels) > 0) {
         shiny::showNotification(
