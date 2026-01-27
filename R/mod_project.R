@@ -24,16 +24,18 @@ mod_project_ui <- function(id) {
   lang <- opts$language %||% "fr"
   i18n <- get_i18n(lang)
 
-  bslib::card(
-    bslib::card_header(
-      class = "bg-success text-white",
-      htmltools::div(
+  bslib::accordion(
+    id = ns("project_accordion"),
+    open = FALSE,  # Collapsed by default
+    bslib::accordion_panel(
+      title = htmltools::div(
         class = "d-flex align-items-center",
-        bsicons::bs_icon("folder-plus", class = "me-2"),
+        bsicons::bs_icon("folder-plus", class = "me-2 text-success"),
         i18n$t("project_info")
-      )
-    ),
-    bslib::card_body(
+      ),
+      value = "project_panel",
+      icon = NULL,
+
       # Project name (required)
       htmltools::div(
         class = "mb-3",
@@ -126,12 +128,15 @@ mod_project_ui <- function(id) {
             }
           });
         });
-      ", ns("name"), ns("description"), ns("owner"))))
-    ),
-    bslib::card_footer(
-      class = "d-flex justify-content-between align-items-center",
-      shiny::uiOutput(ns("validation_message")),
-      shiny::uiOutput(ns("action_button"))
+      ", ns("name"), ns("description"), ns("owner"))),
+
+      # Footer with validation and action button
+      htmltools::hr(class = "my-2"),
+      htmltools::div(
+        class = "d-flex justify-content-between align-items-center",
+        shiny::uiOutput(ns("validation_message")),
+        shiny::uiOutput(ns("action_button"))
+      )
     )
   )
 }
@@ -267,6 +272,26 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       # Set editing mode with project ID
       rv$editing_project_id <- project$id
       rv$current_project <- project
+
+      # Open the accordion panel to show project info
+      bslib::accordion_panel_open(
+        id = "project_accordion",
+        values = "project_panel",
+        session = session
+      )
+    }, ignoreInit = TRUE)
+
+    # Open accordion when parcels are selected (new project mode)
+    shiny::observeEvent(selected_parcels(), {
+      parcels <- selected_parcels()
+      if (!is.null(parcels) && nrow(parcels) > 0 && is.null(rv$editing_project_id)) {
+        # New parcels selected and not in edit mode - open the form
+        bslib::accordion_panel_open(
+          id = "project_accordion",
+          values = "project_panel",
+          session = session
+        )
+      }
     }, ignoreInit = TRUE)
 
 
