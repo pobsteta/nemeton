@@ -205,41 +205,10 @@ start_computation <- function(project_id,
     stop("Project not found: ", project_id)
   }
 
-  # Load parcels directly from path (using geoarrow for GeoParquet)
-  parcels_path <- file.path(project_path, "data", "parcels.parquet")
-  if (!file.exists(parcels_path)) {
-    stop("Parcels file not found: ", parcels_path)
-  }
-
-  parcels <- tryCatch({
-    # Load geoarrow to enable sf <-> arrow conversions
-    requireNamespace("geoarrow", quietly = TRUE)
-    requireNamespace("arrow", quietly = TRUE)
-
-    # Read GeoParquet: read as Arrow Table, then convert to sf
-    parcels_arrow <- arrow::read_parquet(parcels_path, as_data_frame = FALSE)
-    parcels_sf <- sf::st_as_sf(parcels_arrow)
-
-    # Verify it's an sf object
-    if (!inherits(parcels_sf, "sf")) {
-      stop("Failed to load parcels as sf object")
-    }
-
-    parcels_sf
-  }, error = function(e) {
-    stop("Failed to load parcels: ", e$message)
-  })
-
-  if (nrow(parcels) == 0) {
-    stop("No parcels found in project")
-  }
-
-  # Initialize state
+  # Initialize state FIRST (before anything that can fail)
+  # This ensures errors can be properly recorded and reported
   state <- init_compute_state(project_id, indicators)
   state$started_at <- Sys.time()
-
-  # Update project status (with path for async mode)
-  update_project_status(project_id, "computing", project_path = project_path)
 
   # Helper function to report progress (callback or file)
   report_progress <- function(state) {
@@ -251,11 +220,42 @@ start_computation <- function(project_id,
     }
   }
 
-  # Report initial progress
-  report_progress(state)
-
-  # Run computation (wrapped in tryCatch for error handling)
+  # Wrap entire computation in tryCatch to handle all errors
   tryCatch({
+    # Load parcels directly from path (using geoarrow for GeoParquet)
+    parcels_path <- file.path(project_path, "data", "parcels.parquet")
+    if (!file.exists(parcels_path)) {
+      stop("Parcels file not found: ", parcels_path)
+    }
+
+    parcels <- tryCatch({
+      # Load geoarrow to enable sf <-> arrow conversions
+      requireNamespace("geoarrow", quietly = TRUE)
+      requireNamespace("arrow", quietly = TRUE)
+
+      # Read GeoParquet: read as Arrow Table, then convert to sf
+      parcels_arrow <- arrow::read_parquet(parcels_path, as_data_frame = FALSE)
+      parcels_sf <- sf::st_as_sf(parcels_arrow)
+
+      # Verify it's an sf object
+      if (!inherits(parcels_sf, "sf")) {
+        stop("Failed to load parcels as sf object")
+      }
+
+      parcels_sf
+    }, error = function(e) {
+      stop("Failed to load parcels: ", e$message)
+    })
+
+    if (nrow(parcels) == 0) {
+      stop("No parcels found in project")
+    }
+
+    # Update project status (with path for async mode)
+    update_project_status(project_id, "computing", project_path = project_path)
+
+    # Report initial progress
+    report_progress(state)
     # Phase 1: Download data layers
     state$phase <- "downloading"
     state$status <- COMPUTE_STATUS$DOWNLOADING

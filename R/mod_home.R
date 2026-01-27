@@ -674,9 +674,32 @@ mod_home_server <- function(id, app_state) {
       project <- app_state$current_project
       shiny::req(project)
 
-      # Reset status and trigger UI refresh
+      # Get project path for async mode
+      project_path <- get_project_path(project$id)
+
+      # Reset status to allow recomputation
       update_project_status(project$id, "draft")
-      app_state$current_project <- load_project(project$id)
+
+      # Initialize computation state
+      state <- init_compute_state(project$id)
+      compute_state(state)
+
+      # Store project ID for polling
+      computing_project_id(project$id)
+
+      # Show progress card, hide error card
+      session$sendCustomMessage("showElement", list(
+        id = ns("progress-progress_card_wrapper")
+      ))
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-error_card_wrapper")
+      ))
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-complete_card_wrapper")
+      ))
+
+      # Start the async computation
+      compute_task$invoke(project$id, project_path)
     }, ignoreInit = TRUE)
 
     # Handle view_results from progress module
