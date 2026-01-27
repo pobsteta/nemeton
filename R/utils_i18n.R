@@ -281,10 +281,25 @@ TRANSLATIONS <- list(
     fr = "Cliquez sur les parcelles cadastrales pour les s\u00e9lectionner. Un second clic les d\u00e9s\u00e9lectionne. Maximum 20 parcelles.",
     en = "Click on cadastral parcels to select them. A second click deselects them. Maximum 20 parcels."
   ),
-  tour_project_title = list(fr = "Informations projet", en = "Project Information"),
+  tour_project_title = list(fr = "Nom du projet", en = "Project Name"),
   tour_project_desc = list(
-    fr = "Donnez un nom \u00e0 votre projet. La description et le propri\u00e9taire sont optionnels.",
-    en = "Give your project a name. Description and owner are optional."
+    fr = "Donnez un nom \u00e0 votre projet. Ce champ est obligatoire.",
+    en = "Give your project a name. This field is required."
+  ),
+  tour_description_title = list(fr = "Description", en = "Description"),
+  tour_description_desc = list(
+    fr = "Ajoutez une description optionnelle pour mieux identifier votre projet.",
+    en = "Add an optional description to better identify your project."
+  ),
+  tour_owner_title = list(fr = "Propri\u00e9taire", en = "Owner"),
+  tour_owner_desc = list(
+    fr = "Indiquez le nom du propri\u00e9taire ou gestionnaire (optionnel).",
+    en = "Enter the name of the owner or manager (optional)."
+  ),
+  tour_create_title = list(fr = "Cr\u00e9er le projet", en = "Create Project"),
+  tour_create_desc = list(
+    fr = "Cliquez sur ce bouton pour cr\u00e9er votre projet et passer \u00e0 l'\u00e9tape suivante.",
+    en = "Click this button to create your project and proceed to the next step."
   ),
   tour_compute_title = list(fr = "Lancement des calculs", en = "Start Calculations"),
   tour_compute_desc = list(
@@ -318,6 +333,14 @@ TRANSLATIONS <- list(
   error_computation = list(
     fr = "Erreur lors du calcul des indicateurs",
     en = "Error computing indicators"
+  ),
+  error_no_internet = list(
+    fr = "Pas de connexion internet. V\u00e9rifiez votre connexion et r\u00e9essayez.",
+    en = "No internet connection. Check your connection and try again."
+  ),
+  error_loading_communes = list(
+    fr = "Erreur lors du chargement des communes : ",
+    en = "Error loading municipalities: "
   ),
 
   # ============================================================
