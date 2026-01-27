@@ -398,15 +398,31 @@ download_layers_for_parcels <- function(parcels,
   total_sources <- length(DATA_SOURCES$rasters) + length(DATA_SOURCES$vectors)
   completed <- 0
 
+  # Mapping source names to translation keys
+  source_translation_keys <- list(
+    ndvi = "source_ndvi",
+    dem = "source_dem",
+    forest_cover = "source_forest_cover",
+    protected_areas = "source_protected_areas",
+    water_network = "source_water_network",
+    wetlands = "source_wetlands",
+    roads = "source_roads"
+  )
+
   # Download raster sources
   for (source_name in names(DATA_SOURCES$rasters)) {
     source <- DATA_SOURCES$rasters[[source_name]]
+
+    # Get translated source name
+    translation_key <- source_translation_keys[[source_name]] %||% source_name
+    translated_name <- paste0("download:", translation_key)
 
     if (!is.null(progress_callback)) {
       progress_callback(list(
         completed = completed,
         total = total_sources,
-        current = paste("Downloading", source$name)
+        current = translated_name,
+        source_key = translation_key
       ))
     }
 
@@ -432,11 +448,16 @@ download_layers_for_parcels <- function(parcels,
   for (source_name in names(DATA_SOURCES$vectors)) {
     source <- DATA_SOURCES$vectors[[source_name]]
 
+    # Get translated source name
+    translation_key <- source_translation_keys[[source_name]] %||% source_name
+    translated_name <- paste0("download:", translation_key)
+
     if (!is.null(progress_callback)) {
       progress_callback(list(
         completed = completed,
         total = total_sources,
-        current = paste("Downloading", source$name)
+        current = translated_name,
+        source_key = translation_key
       ))
     }
 
@@ -462,7 +483,8 @@ download_layers_for_parcels <- function(parcels,
     progress_callback(list(
       completed = total_sources,
       total = total_sources,
-      current = "Download complete"
+      current = "download_complete",
+      source_key = NULL
     ))
   }
 
@@ -1222,12 +1244,16 @@ compute_all_indicators <- function(parcels,
 
   # Compute remaining indicators
  for (ind in indicators_to_compute) {
+    # Send indicator key with compute prefix for translation
+    indicator_key <- paste0("indicator_", ind)
+
     if (!is.null(progress_callback)) {
       progress_callback(list(
         completed = completed,
         failed = failed,
         total = n_indicators,
-        current = ind,
+        current = paste0("compute:", indicator_key),
+        indicator_key = indicator_key,
         status = status,
         errors = errors
       ))

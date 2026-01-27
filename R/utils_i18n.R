@@ -154,6 +154,7 @@ TRANSLATIONS <- list(
   task_compute_start = list(fr = "D\u00e9marrage des calculs", en = "Starting calculations"),
   task_complete = list(fr = "Traitement termin\u00e9", en = "Processing complete"),
   task_error = list(fr = "Erreur de traitement", en = "Processing error"),
+  task_resuming = list(fr = "Reprise des calculs...", en = "Resuming calculations..."),
   elapsed_time = list(fr = "Temps \u00e9coul\u00e9", en = "Elapsed time"),
   errors_title = list(fr = "Erreurs rencontr\u00e9es :", en = "Errors encountered:"),
   computation_summary = list(
@@ -397,7 +398,67 @@ TRANSLATIONS <- list(
     fr = "Cette action est irr\u00e9versible. Toutes les donn\u00e9es du projet seront perdues.",
     en = "This action cannot be undone. All project data will be lost."
   ),
-  cancel = list(fr = "Annuler", en = "Cancel")
+  cancel = list(fr = "Annuler", en = "Cancel"),
+
+  # ============================================================
+  # Progress Messages - Data Sources
+  # ============================================================
+  downloading_source = list(
+    fr = "T\u00e9l\u00e9chargement : {source}",
+    en = "Downloading: {source}"
+  ),
+  computing_indicator_name = list(
+    fr = "Calcul de l'indicateur : {indicator}",
+    en = "Computing indicator: {indicator}"
+  ),
+  download_complete = list(
+    fr = "T\u00e9l\u00e9chargement termin\u00e9",
+    en = "Download complete"
+  ),
+
+  # Data source names
+  source_ndvi = list(fr = "NDVI (IRC IGN)", en = "NDVI (IGN IRC)"),
+  source_dem = list(fr = "Mod\u00e8le Num\u00e9rique de Terrain", en = "Digital Elevation Model"),
+  source_forest_cover = list(fr = "Occupation du sol (Corine Land Cover)", en = "Land Cover (Corine Land Cover)"),
+  source_protected_areas = list(fr = "Aires prot\u00e9g\u00e9es (INPN)", en = "Protected Areas (INPN)"),
+  source_water_network = list(fr = "R\u00e9seau hydrographique (IGN)", en = "Water Network (IGN)"),
+  source_wetlands = list(fr = "Zones humides (ZNIEFF)", en = "Wetlands (ZNIEFF)"),
+  source_roads = list(fr = "R\u00e9seau routier (IGN)", en = "Road Network (IGN)"),
+
+  # ============================================================
+  # Progress Messages - Indicator Names
+  # ============================================================
+  indicator_carbon_biomass = list(fr = "Biomasse carbone", en = "Carbon Biomass"),
+  indicator_carbon_ndvi = list(fr = "NDVI - Vitalit\u00e9 v\u00e9g\u00e9tation", en = "NDVI - Vegetation Vitality"),
+  indicator_biodiversity_protection = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+  indicator_biodiversity_structure = list(fr = "Structure biodiversit\u00e9", en = "Biodiversity Structure"),
+  indicator_biodiversity_connectivity = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+  indicator_water_network = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+  indicator_water_wetlands = list(fr = "Zones humides", en = "Wetlands"),
+  indicator_water_twi = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+  indicator_air_forest_buffer = list(fr = "Tampon forestier", en = "Forest Buffer"),
+  indicator_air_quality = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+  indicator_fertility_soil = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
+  indicator_fertility_erosion = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
+  indicator_landscape_fragmentation = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+  indicator_landscape_edge_ratio = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio"),
+  indicator_temporal_age = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+  indicator_temporal_change = list(fr = "Taux de changement", en = "Change Rate"),
+  indicator_risk_fire = list(fr = "Risque incendie", en = "Fire Risk"),
+  indicator_risk_storm = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+  indicator_risk_drought = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+  indicator_risk_browsing = list(fr = "Risque abroutissement", en = "Browsing Risk"),
+  indicator_social_trails = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+  indicator_social_accessibility = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+  indicator_social_population = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
+  indicator_production_volume = list(fr = "Volume de bois", en = "Timber Volume"),
+  indicator_production_productivity = list(fr = "Productivit\u00e9", en = "Productivity"),
+  indicator_production_quality = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+  indicator_energy_wood = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+  indicator_energy_co2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
+  indicator_naturalness_distance = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+  indicator_naturalness_continuity = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+  indicator_naturalness_score = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score")
 )
 
 

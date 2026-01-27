@@ -308,12 +308,33 @@ mod_progress_server <- function(id, compute_state, app_state) {
         return("")
       }
 
-      # Translate task or show indicator name
-      if (state$current_task %in% c("download_start", "compute_start", "complete", "error")) {
-        i18n$t(paste0("task_", state$current_task))
-      } else {
-        paste(i18n$t("computing_indicator"), state$current_task)
+      task <- state$current_task
+
+      # Handle special task keywords
+      if (task %in% c("download_start", "compute_start", "complete", "error", "resuming")) {
+        return(i18n$t(paste0("task_", task)))
       }
+
+      # Handle download_complete
+      if (task == "download_complete") {
+        return(i18n$t("download_complete"))
+      }
+
+      # Handle new format: "download:source_key" or "compute:indicator_key"
+      if (grepl("^download:", task)) {
+        source_key <- sub("^download:", "", task)
+        source_name <- i18n$t(source_key)
+        return(i18n$t("downloading_source", source = source_name))
+      }
+
+      if (grepl("^compute:", task)) {
+        indicator_key <- sub("^compute:", "", task)
+        indicator_name <- i18n$t(indicator_key)
+        return(i18n$t("computing_indicator_name", indicator = indicator_name))
+      }
+
+      # Fallback: show the task as-is
+      paste(i18n$t("computing_indicator"), task)
     })
 
     # Errors list
