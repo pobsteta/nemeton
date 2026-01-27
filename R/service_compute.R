@@ -205,19 +205,22 @@ start_computation <- function(project_id,
     stop("Project not found: ", project_id)
   }
 
-  # Load parcels directly from path
+  # Load parcels directly from path (using sfarrow for GeoParquet)
   parcels_path <- file.path(project_path, "data", "parcels.parquet")
   if (!file.exists(parcels_path)) {
     stop("Parcels file not found: ", parcels_path)
   }
 
   parcels <- tryCatch({
-    df <- arrow::read_parquet(parcels_path)
-    if ("geometry_wkt" %in% names(df)) {
-      sf::st_as_sf(df, wkt = "geometry_wkt", crs = 4326)
-    } else {
-      stop("No geometry_wkt column found")
+    # Use sfarrow to read GeoParquet (same as load_parcels)
+    parcels_sf <- sfarrow::st_read_parquet(parcels_path)
+
+    # Verify it's an sf object
+    if (!inherits(parcels_sf, "sf")) {
+      stop("Failed to load parcels as sf object")
     }
+
+    parcels_sf
   }, error = function(e) {
     stop("Failed to load parcels: ", e$message)
   })
