@@ -13,6 +13,7 @@
   "basemap_osm": "OSM",
   "basemap_satellite": "Satellite",
   "loading_parcels": "Chargement des parcelles...",
+  "rendering_parcels": "Affichage des parcelles sur la carte...",
   "connecting_api": "Connexion à l'API...",
   "downloading_data": "Téléchargement des données...",
   "processing_data": "Traitement des données...",

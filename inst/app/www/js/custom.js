@@ -258,6 +258,25 @@
     }
   });
 
+  /**
+   * Handle map loading overlay visibility
+   */
+  Shiny.addCustomMessageHandler('showMapLoading', function(data) {
+    const loadingId = data.loadingId;
+    const show = data.show;
+
+    const overlay = document.getElementById(loadingId);
+    if (overlay) {
+      if (show) {
+        overlay.classList.remove('d-none');
+        overlay.style.display = 'flex';
+      } else {
+        overlay.classList.add('d-none');
+        overlay.style.display = 'none';
+      }
+    }
+  });
+
 
   // ============================================================
   // Initialization

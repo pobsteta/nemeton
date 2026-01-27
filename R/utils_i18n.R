@@ -48,6 +48,7 @@ TRANSLATIONS <- list(
   basemap_osm = list(fr = "OSM", en = "OSM"),
   basemap_satellite = list(fr = "Satellite", en = "Satellite"),
   loading_parcels = list(fr = "Chargement des parcelles...", en = "Loading parcels..."),
+  rendering_parcels = list(fr = "Affichage des parcelles sur la carte...", en = "Rendering parcels on map..."),
   loading_commune = list(fr = "Chargement de la commune...", en = "Loading commune..."),
   connecting_api = list(fr = "Connexion \u00e0 l'API...", en = "Connecting to API..."),
   downloading_data = list(fr = "T\u00e9l\u00e9chargement des donn\u00e9es...", en = "Downloading data..."),

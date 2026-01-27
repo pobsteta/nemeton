@@ -72,10 +72,30 @@ mod_map_ui <- function(id) {
       padding = 0,
       class = "p-0",
 
-      # Map container
+      # Map container with loading overlay
       htmltools::div(
         id = ns("map_container"),
-        style = "height: 100%; min-height: 500px;",
+        style = "height: 100%; min-height: 500px; position: relative;",
+
+        # Loading overlay (hidden by default)
+        htmltools::div(
+          id = ns("map_loading"),
+          class = "position-absolute top-0 start-0 w-100 h-100 d-none",
+          style = "background: rgba(255,255,255,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;",
+          htmltools::div(
+            class = "text-center",
+            htmltools::div(
+              class = "spinner-border text-success mb-2",
+              role = "status",
+              htmltools::span(class = "visually-hidden", "Loading...")
+            ),
+            htmltools::div(
+              id = ns("map_loading_text"),
+              class = "text-muted",
+              i18n$t("rendering_parcels")
+            )
+          )
+        ),
 
         # Leaflet output
         leaflet::leafletOutput(ns("map"), height = "100%")
@@ -292,6 +312,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         return()
       }
 
+      # Show loading overlay
+      session$sendCustomMessage("showMapLoading", list(
+        loadingId = ns("map_loading"),
+        show = TRUE
+      ))
+
       # Filter to keep only polygon geometries (defensive check)
       geom_types <- sf::st_geometry_type(parcel_data)
       polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
@@ -371,6 +397,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (length(rv$selected_ids) > 0) {
         update_parcel_styles(rv$selected_ids)
       }
+
+      # Hide loading overlay after a short delay to ensure rendering is complete
+      later::later(function() {
+        session$sendCustomMessage("showMapLoading", list(
+          loadingId = ns("map_loading"),
+          show = FALSE
+        ))
+      }, delay = 0.5)
     })
 
 
