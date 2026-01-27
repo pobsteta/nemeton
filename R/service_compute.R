@@ -205,15 +205,15 @@ start_computation <- function(project_id,
     stop("Project not found: ", project_id)
   }
 
-  # Load parcels directly from path (using sfarrow for GeoParquet)
+  # Load parcels directly from path (using geoarrow for GeoParquet)
   parcels_path <- file.path(project_path, "data", "parcels.parquet")
   if (!file.exists(parcels_path)) {
     stop("Parcels file not found: ", parcels_path)
   }
 
   parcels <- tryCatch({
-    # Use sfarrow to read GeoParquet (same as load_parcels)
-    parcels_sf <- sfarrow::st_read_parquet(parcels_path)
+    # Use geoarrow to read GeoParquet (standard format)
+    parcels_sf <- geoarrow::read_geoparquet_sf(parcels_path)
 
     # Verify it's an sf object
     if (!inherits(parcels_sf, "sf")) {

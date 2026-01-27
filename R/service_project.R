@@ -213,7 +213,7 @@ update_project <- function(project_id, name, description = "", owner = "", parce
 #' Save parcels to project
 #'
 #' @description
-#' Saves selected parcels to project in GeoParquet format using sfarrow.
+#' Saves selected parcels to project in GeoParquet format using geoarrow.
 #' GeoParquet is compatible with QGIS, Python (geopandas), and other GIS tools.
 #'
 #' @param project_id Character. Project ID.
@@ -235,8 +235,8 @@ save_parcels <- function(project_id, parcels) {
   parcels_path <- file.path(project_path, "data", "parcels.parquet")
 
   tryCatch({
-    if (!requireNamespace("sfarrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'sfarrow' is required for GeoParquet support")
+    if (!requireNamespace("geoarrow", quietly = TRUE)) {
+      cli::cli_abort("Package 'geoarrow' is required for GeoParquet support")
     }
 
     # Ensure valid CRS before saving (default to WGS84)
@@ -244,9 +244,9 @@ save_parcels <- function(project_id, parcels) {
       parcels <- sf::st_set_crs(parcels, 4326)
     }
 
-    # Save as GeoParquet
+    # Save as GeoParquet (standard format, compatible with QGIS)
     cli::cli_alert_info("Saving {nrow(parcels)} parcels as GeoParquet")
-    sfarrow::st_write_parquet(parcels, parcels_path)
+    geoarrow::write_geoparquet(parcels, parcels_path)
 
     # Update metadata
     update_project_metadata(project_id, list(
@@ -266,7 +266,7 @@ save_parcels <- function(project_id, parcels) {
 #' Load parcels from project
 #'
 #' @description
-#' Loads parcels from project GeoParquet file using sfarrow.
+#' Loads parcels from project GeoParquet file using geoarrow.
 #'
 #' @param project_id Character. Project ID.
 #'
@@ -286,12 +286,12 @@ load_parcels <- function(project_id) {
   }
 
   tryCatch({
-    if (!requireNamespace("sfarrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'sfarrow' is required for GeoParquet support")
+    if (!requireNamespace("geoarrow", quietly = TRUE)) {
+      cli::cli_abort("Package 'geoarrow' is required for GeoParquet support")
     }
 
-    # Read GeoParquet
-    parcels_sf <- sfarrow::st_read_parquet(parcels_path)
+    # Read GeoParquet (standard format)
+    parcels_sf <- geoarrow::read_geoparquet_sf(parcels_path)
 
     # Verify it's an sf object
     if (!inherits(parcels_sf, "sf")) {

@@ -75,7 +75,7 @@ Suggests:
     httr2 (>= 1.0.0),
     jsonlite (>= 1.8.0),
     arrow (>= 14.0.0),
-    sfarrow (>= 0.4.0),
+    geoarrow (>= 0.2.0),
     shiny.i18n (>= 0.3.0),
     cicerone (>= 1.0.0),
     shinyWidgets (>= 0.8.0),
