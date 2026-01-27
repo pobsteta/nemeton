@@ -172,6 +172,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     output$map_loading_ui <- shiny::renderUI({
       if (!rv$map_loading) return(NULL)
 
+      i18n <- get_i18n(app_state$language)
+
       htmltools::div(
         class = "position-absolute top-0 start-0 w-100 h-100",
         style = "background: rgba(255,255,255,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center;",
