@@ -558,15 +558,16 @@ mod_home_server <- function(id, app_state) {
         })
       }
 
-      # Schedule tour to start after 2 second delay (one-time, no polling)
-      shiny::observe({
-        if (!tour_shown_this_session()) {
-          tour_shown_this_session(TRUE)
+      # Schedule tour to start after delay (one-time)
+      tour_timer <- shiny::reactiveVal(0)
 
-          # Use later::later for a one-time delayed execution (no polling)
-          later::later(function() {
-            start_tour()
-          }, delay = 2)
+      shiny::observe({
+        if (!tour_shown_this_session() && tour_timer() == 0) {
+          tour_timer(Sys.time())
+          shiny::invalidateLater(2000)  # Wait 2 seconds
+        } else if (!tour_shown_this_session() && tour_timer() > 0) {
+          tour_shown_this_session(TRUE)
+          start_tour()
         }
       })
 
