@@ -237,8 +237,8 @@ mod_home_server <- function(id, app_state) {
 
       # If project has indicators, navigate to synthesis
       if (project$metadata$indicators_computed) {
-        shiny::updateTabsetPanel(
-          session = session$userData$parent_session,
+        shiny::updateNavbarPage(
+          session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
           inputId = "main_nav",
           selected = "synthesis"
         )
