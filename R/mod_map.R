@@ -440,11 +440,13 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(click) || is.null(click$id)) return()
 
-      # Close any open popup
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::clearPopups()
-
       parcel_id <- click$id
+
+      # Close popup after a short delay (popup opens after this handler)
+      later::later(function() {
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearPopups()
+      }, delay = 0.1)
       i18n <- get_i18n(app_state$language)
 
       # Check if already selected
