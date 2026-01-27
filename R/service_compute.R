@@ -100,7 +100,11 @@ init_compute_state <- function(project_id, indicators = "all") {
 
   # Check for existing progress (for resume)
   existing_progress <- get_computation_progress(project_id)
+  # Ensure computed_indicators is a character vector (JSON reads as list)
   already_computed <- existing_progress$computed_indicators %||% character(0)
+  if (is.list(already_computed)) {
+    already_computed <- unlist(already_computed)
+  }
   already_computed <- intersect(already_computed, indicators)
 
   # Initialize status based on existing progress
