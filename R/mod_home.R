@@ -444,6 +444,46 @@ mod_home_server <- function(id, app_state) {
       )
     })
 
+    # ========================================
+    # Resume progress tracking on project load
+    # ========================================
+    # When a project is loaded, check if computation is in progress
+    shiny::observeEvent(app_state$current_project, {
+      project <- app_state$current_project
+      if (is.null(project)) return()
+
+      # Don't interfere if we already have an active computation
+      if (!is.null(computing_project_id())) return()
+
+      # Check if there's an ongoing computation for this project
+      progress_state <- read_progress_state(project$id)
+
+      if (!is.null(progress_state) &&
+          progress_state$status %in% c("downloading", "computing")) {
+
+        cli::cli_alert_info("Resuming progress tracking for project {project$id}")
+
+        # Set computing project ID to trigger polling
+        computing_project_id(project$id)
+
+        # Update compute state from file
+        compute_state(progress_state)
+
+        # Show progress card
+        session$sendCustomMessage("showElement", list(
+          id = ns("progress-progress_card_wrapper")
+        ))
+
+        # Hide completion/error cards
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-complete_card_wrapper")
+        ))
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-error_card_wrapper")
+        ))
+      }
+    }, ignoreInit = TRUE)
+
     # Start computation handler
     shiny::observeEvent(input$start_compute, {
       project <- app_state$current_project
@@ -474,114 +514,113 @@ mod_home_server <- function(id, app_state) {
     })
 
     # Poll progress file while computation is running
+    # Works both for new computations (ExtendedTask) and resumed tracking
     shiny::observe({
       project_id <- computing_project_id()
       shiny::req(project_id)
 
-      # Check task status
-      task_status <- compute_task$status()
+      # Read progress from file
+      progress_state <- read_progress_state(project_id)
 
-      if (task_status == "running") {
-        # Read progress from file
-        progress_state <- read_progress_state(project_id)
+      if (is.null(progress_state)) {
+        # No progress file - computation may have finished or never started
+        shiny::invalidateLater(1000)
+        return()
+      }
 
-        if (!is.null(progress_state)) {
-          # Update reactive state
-          compute_state(progress_state)
+      # Check if computation is still running (from file status)
+      is_running <- progress_state$status %in% c("downloading", "computing")
 
-          # Send JavaScript updates for real-time feedback
-          progress_pct <- round(
-            (progress_state$progress %||% 0) /
-            (progress_state$progress_max %||% 1) * 100
-          )
+      if (is_running) {
+        # Update reactive state
+        compute_state(progress_state)
 
-          session$sendCustomMessage("updateProgressBar", list(
-            barId = ns("progress-progress_bar"),
-            percentId = ns("progress-progress_percent"),
-            percent = progress_pct
-          ))
+        # Send JavaScript updates for real-time feedback
+        progress_pct <- round(
+          (progress_state$progress %||% 0) /
+          (progress_state$progress_max %||% 1) * 100
+        )
 
-          # Current task text - translate
-          task_text <- translate_task_message(progress_state$current_task, i18n)
-          session$sendCustomMessage("updateText", list(
-            id = ns("progress-current_task_text"),
-            text = task_text
-          ))
+        session$sendCustomMessage("updateProgressBar", list(
+          barId = ns("progress-progress_bar"),
+          percentId = ns("progress-progress_percent"),
+          percent = progress_pct
+        ))
 
-          # Counters
-          session$sendCustomMessage("updateText", list(
-            id = ns("progress-completed_count"),
-            text = as.character(progress_state$indicators_completed %||% 0)
-          ))
-          session$sendCustomMessage("updateText", list(
-            id = ns("progress-failed_count"),
-            text = as.character(progress_state$indicators_failed %||% 0)
-          ))
-          pending <- (progress_state$indicators_total %||% 0) -
-                     (progress_state$indicators_completed %||% 0) -
-                     (progress_state$indicators_failed %||% 0)
-          session$sendCustomMessage("updateText", list(
-            id = ns("progress-pending_count"),
-            text = as.character(pending)
-          ))
-        }
+        # Current task text - translate
+        task_text <- translate_task_message(progress_state$current_task, i18n)
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-current_task_text"),
+          text = task_text
+        ))
+
+        # Counters
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-completed_count"),
+          text = as.character(progress_state$indicators_completed %||% 0)
+        ))
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-failed_count"),
+          text = as.character(progress_state$indicators_failed %||% 0)
+        ))
+        pending <- (progress_state$indicators_total %||% 0) -
+                   (progress_state$indicators_completed %||% 0) -
+                   (progress_state$indicators_failed %||% 0)
+        session$sendCustomMessage("updateText", list(
+          id = ns("progress-pending_count"),
+          text = as.character(pending)
+        ))
 
         # Continue polling every 500ms
         shiny::invalidateLater(500)
-      }
-    })
 
-    # Handle task completion
-    shiny::observe({
-      # Only react when task is done (success or error)
-      task_status <- compute_task$status()
-      shiny::req(task_status %in% c("success", "error"))
-
-      project_id <- computing_project_id()
-      shiny::req(project_id)
-
-      # Get result
-      result <- tryCatch({
-        compute_task$result()
-      }, error = function(e) {
-        list(success = FALSE, error = e$message)
-      })
-
-      # Hide progress card
-      session$sendCustomMessage("hideElement", list(
-        id = ns("progress-progress_card_wrapper")
-      ))
-
-      if (isTRUE(result$success)) {
-        # Show completion card
-        session$sendCustomMessage("showElement", list(
-          id = ns("progress-complete_card_wrapper")
-        ))
-
-        # Reload project to get updated metadata
-        app_state$current_project <- load_project(project_id)
-        app_state$refresh_projects <- Sys.time()
-
-        shiny::showNotification(
-          i18n$t("computation_complete"),
-          type = "message"
-        )
       } else {
-        # Show error card
-        session$sendCustomMessage("showElement", list(
-          id = ns("progress-error_card_wrapper")
+        # Computation finished - handle completion
+        # Hide progress card
+        session$sendCustomMessage("hideElement", list(
+          id = ns("progress-progress_card_wrapper")
         ))
 
-        shiny::showNotification(
-          paste(i18n$t("computation_error"), result$error %||% "Unknown error"),
-          type = "error",
-          duration = 10
-        )
-      }
+        if (progress_state$status == "completed") {
+          # Show completion card
+          session$sendCustomMessage("showElement", list(
+            id = ns("progress-complete_card_wrapper")
+          ))
 
-      # Reset computing state
-      computing_project_id(NULL)
+          # Reload project to get updated metadata
+          app_state$current_project <- load_project(project_id)
+          app_state$refresh_projects <- Sys.time()
+
+          shiny::showNotification(
+            i18n$t("computation_complete"),
+            type = "message"
+          )
+        } else if (progress_state$status == "error") {
+          # Show error card
+          session$sendCustomMessage("showElement", list(
+            id = ns("progress-error_card_wrapper")
+          ))
+
+          error_msg <- if (length(progress_state$errors) > 0) {
+            progress_state$errors[[length(progress_state$errors)]]$message
+          } else {
+            "Unknown error"
+          }
+
+          shiny::showNotification(
+            paste(i18n$t("computation_error"), error_msg),
+            type = "error",
+            duration = 10
+          )
+        }
+
+        # Reset computing state
+        computing_project_id(NULL)
+      }
     })
+
+    # Note: ExtendedTask completion is handled by the polling observer above
+    # which detects status changes from the progress_state.json file
 
     # Recompute handler
     shiny::observeEvent(input$recompute, {
