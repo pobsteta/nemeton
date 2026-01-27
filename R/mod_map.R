@@ -72,30 +72,10 @@ mod_map_ui <- function(id) {
       padding = 0,
       class = "p-0",
 
-      # Map container with loading overlay
+      # Map container
       htmltools::div(
         id = ns("map_container"),
-        style = "height: 100%; min-height: 500px; position: relative;",
-
-        # Loading overlay (hidden by default)
-        htmltools::div(
-          id = ns("map_loading"),
-          class = "position-absolute top-0 start-0 w-100 h-100 d-none",
-          style = "background: rgba(255,255,255,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;",
-          htmltools::div(
-            class = "text-center",
-            htmltools::div(
-              class = "spinner-border text-success mb-2",
-              role = "status",
-              htmltools::span(class = "visually-hidden", "Loading...")
-            ),
-            htmltools::div(
-              id = ns("map_loading_text"),
-              class = "text-muted",
-              i18n$t("rendering_parcels")
-            )
-          )
-        ),
+        style = "height: 100%; min-height: 500px;",
 
         # Leaflet output
         leaflet::leafletOutput(ns("map"), height = "100%")
@@ -526,7 +506,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
     })
 
-    # Apply pending zoom and styles when set (one-time execution)
+    # Apply pending zoom and styles when set (with small delay for timing)
     shiny::observe({
       # Check if there are pending operations
       zoom <- rv$pending_zoom
@@ -534,32 +514,32 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(zoom) && is.null(styles)) return()
 
-      # Capture values and clear immediately to prevent re-triggering
-      local_styles <- styles
-      local_zoom <- zoom
-      rv$pending_styles <- NULL
-      rv$pending_zoom <- NULL
+      # Use invalidateLater to allow map to render first
+      shiny::invalidateLater(300)
 
-      # Apply styles immediately
-      if (!is.null(local_styles)) {
-        cli::cli_alert_info("Applying {length(local_styles)} style updates...")
-        for (pid in local_styles) {
-          update_parcel_style(pid, selected = TRUE)
+      # Execute in isolate to prevent re-triggering
+      shiny::isolate({
+        if (!is.null(rv$pending_styles)) {
+          cli::cli_alert_info("Applying {length(rv$pending_styles)} style updates...")
+          for (pid in rv$pending_styles) {
+            update_parcel_style(pid, selected = TRUE)
+          }
+          rv$pending_styles <- NULL
         }
-      }
 
-      # Apply zoom immediately
-      if (!is.null(local_zoom)) {
-        cli::cli_alert_info("Applying zoom to selected parcels...")
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::fitBounds(
-            lng1 = local_zoom$xmin,
-            lat1 = local_zoom$ymin,
-            lng2 = local_zoom$xmax,
-            lat2 = local_zoom$ymax
-          )
-        cli::cli_alert_success("Zoomed to selected parcels")
-      }
+        if (!is.null(rv$pending_zoom)) {
+          cli::cli_alert_info("Applying zoom to selected parcels...")
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = rv$pending_zoom$xmin,
+              lat1 = rv$pending_zoom$ymin,
+              lng2 = rv$pending_zoom$xmax,
+              lat2 = rv$pending_zoom$ymax
+            )
+          rv$pending_zoom <- NULL
+          cli::cli_alert_success("Zoomed to selected parcels")
+        }
+      })
     })
 
 
