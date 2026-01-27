@@ -212,8 +212,13 @@ start_computation <- function(project_id,
   }
 
   parcels <- tryCatch({
-    # Use geoarrow to read GeoParquet (standard format)
-    parcels_sf <- geoarrow::read_geoparquet_sf(parcels_path)
+    # Load geoarrow to enable sf <-> arrow conversions
+    requireNamespace("geoarrow", quietly = TRUE)
+    requireNamespace("arrow", quietly = TRUE)
+
+    # Read GeoParquet: read as Arrow Table, then convert to sf
+    parcels_arrow <- arrow::read_parquet(parcels_path, as_data_frame = FALSE)
+    parcels_sf <- sf::st_as_sf(parcels_arrow)
 
     # Verify it's an sf object
     if (!inherits(parcels_sf, "sf")) {

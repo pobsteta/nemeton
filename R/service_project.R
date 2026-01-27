@@ -238,15 +238,23 @@ save_parcels <- function(project_id, parcels) {
     if (!requireNamespace("geoarrow", quietly = TRUE)) {
       cli::cli_abort("Package 'geoarrow' is required for GeoParquet support")
     }
+    if (!requireNamespace("arrow", quietly = TRUE)) {
+      cli::cli_abort("Package 'arrow' is required for GeoParquet support")
+    }
 
     # Ensure valid CRS before saving (default to WGS84)
     if (is.na(sf::st_crs(parcels))) {
       parcels <- sf::st_set_crs(parcels, 4326)
     }
 
+    # Load geoarrow to enable sf <-> arrow conversions
+    # This registers the conversion methods so arrow::write_parquet works with sf
+    requireNamespace("geoarrow", quietly = TRUE)
+
     # Save as GeoParquet (standard format, compatible with QGIS)
+    # When geoarrow is loaded, arrow::write_parquet handles sf geometry automatically
     cli::cli_alert_info("Saving {nrow(parcels)} parcels as GeoParquet")
-    geoarrow::write_geoparquet(parcels, parcels_path)
+    arrow::write_parquet(parcels, parcels_path)
 
     # Update metadata
     update_project_metadata(project_id, list(
@@ -289,9 +297,17 @@ load_parcels <- function(project_id) {
     if (!requireNamespace("geoarrow", quietly = TRUE)) {
       cli::cli_abort("Package 'geoarrow' is required for GeoParquet support")
     }
+    if (!requireNamespace("arrow", quietly = TRUE)) {
+      cli::cli_abort("Package 'arrow' is required for GeoParquet support")
+    }
 
-    # Read GeoParquet (standard format)
-    parcels_sf <- geoarrow::read_geoparquet_sf(parcels_path)
+    # Load geoarrow to enable sf <-> arrow conversions
+    requireNamespace("geoarrow", quietly = TRUE)
+
+    # Read GeoParquet: read as Arrow Table, then convert to sf
+    # The as_data_frame = FALSE is important to preserve geometry metadata
+    parcels_arrow <- arrow::read_parquet(parcels_path, as_data_frame = FALSE)
+    parcels_sf <- sf::st_as_sf(parcels_arrow)
 
     # Verify it's an sf object
     if (!inherits(parcels_sf, "sf")) {
