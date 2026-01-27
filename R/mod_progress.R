@@ -378,10 +378,9 @@ mod_progress_server <- function(id, compute_state, app_state) {
       )
     })
 
-    # Elapsed time updater
+    # Elapsed time updater (only active during computation)
     shiny::observe({
-      shiny::invalidateLater(1000, session)
-
+      # Only run when progress is visible
       if (rv$show_progress && !is.null(rv$start_time)) {
         elapsed <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs"))
         mins <- floor(elapsed / 60)
@@ -391,6 +390,9 @@ mod_progress_server <- function(id, compute_state, app_state) {
           id = ns("elapsed_time"),
           text = sprintf("%s: %02d:%02d", i18n$t("elapsed_time"), mins, secs)
         ))
+
+        # Only continue polling while showing progress
+        shiny::invalidateLater(1000, session)
       }
     })
 
