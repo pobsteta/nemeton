@@ -440,6 +440,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(click) || is.null(click$id)) return()
 
+      # Close any open popup
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearPopups()
+
       parcel_id <- click$id
       i18n <- get_i18n(app_state$language)
 
