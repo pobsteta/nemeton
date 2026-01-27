@@ -34,7 +34,6 @@ mod_project_ui <- function(id) {
         i18n$t("project_info")
       ),
       value = "project_panel",
-      icon = NULL,
 
       # Project name (required)
       htmltools::div(
