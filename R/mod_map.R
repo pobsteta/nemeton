@@ -442,11 +442,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       parcel_id <- click$id
 
-      # Close popup after a short delay (popup opens after this handler)
-      later::later(function() {
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearPopups()
-      }, delay = 0.1)
+      # Close popup via JavaScript (delayed to run after Leaflet opens it)
+      session$sendCustomMessage("closeMapPopup", list(
+        mapId = ns("map"),
+        delay = 100
+      ))
+
       i18n <- get_i18n(app_state$language)
 
       # Check if already selected
