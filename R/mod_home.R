@@ -306,39 +306,15 @@ mod_home_server <- function(id, app_state) {
       # Get commune geometry for fallback
       commune_geom <- search_result$commune_geometry()
 
-      parcels <- NULL
-
-      # Use progress bar for visual feedback
-      shiny::withProgress(
-        message = i18n$t("loading_parcels"),
-        detail = commune,
-        value = 0,
-        {
-          # Step 1: Connecting to API
-          shiny::incProgress(0.2, detail = i18n$t("connecting_api"))
-
-          parcels <- tryCatch({
-            # Step 2: Downloading data
-            shiny::incProgress(0.3, detail = i18n$t("downloading_data"))
-
-            result <- get_cadastral_parcels(commune, commune_geom)
-
-            # Step 3: Processing
-            shiny::incProgress(0.4, detail = i18n$t("processing_data"))
-
-            result
-          }, error = function(e) {
-            shiny::showNotification(
-              sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
-              type = "error"
-            )
-            NULL
-          })
-
-          # Step 4: Complete
-          shiny::incProgress(0.1, detail = i18n$t("phase_complete"))
-        }
-      )
+      parcels <- tryCatch({
+        get_cadastral_parcels(commune, commune_geom)
+      }, error = function(e) {
+        shiny::showNotification(
+          sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
+          type = "error"
+        )
+        NULL
+      })
 
       if (!is.null(parcels) && nrow(parcels) > 0) {
         shiny::showNotification(
