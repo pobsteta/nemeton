@@ -273,7 +273,9 @@ start_computation <- function(project_id,
       parcels = parcels,
       project_path = project_path,
       progress_callback = function(layer_progress) {
-        state$progress <- layer_progress$completed
+        if (!is.null(layer_progress$completed)) {
+          state$progress <- layer_progress$completed
+        }
         state$current_task <- layer_progress$current
         report_progress(state)
       }
@@ -434,7 +436,8 @@ download_layers_for_parcels <- function(parcels,
         source_name = source_name,
         source_config = source,
         bbox = bbox_buffered,
-        cache_dir = cache_dir
+        cache_dir = cache_dir,
+        progress_callback = progress_callback
       )
 
       if (!is.null(raster_data)) {
@@ -536,7 +539,8 @@ download_layers_for_parcels <- function(parcels,
 download_raster_source <- function(source_name,
                                    source_config,
                                    bbox,
-                                   cache_dir) {
+                                   cache_dir,
+                                   progress_callback = NULL) {
 
   cache_file <- file.path(cache_dir, paste0(source_name, ".tif"))
 
@@ -551,7 +555,7 @@ download_raster_source <- function(source_name,
     source_config$source,
     "ign_irc" = download_ign_irc_ndvi(bbox, cache_file),
     "ign_bd_alti" = download_ign_dem(bbox, cache_file),
-    "oso" = download_oso(bbox, cache_file),
+    "oso" = download_oso(bbox, cache_file, progress_callback = progress_callback),
     {
       cli::cli_warn("Unknown raster source: {source_config$source}")
       NULL
@@ -844,11 +848,12 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 #'
 #' @param bbox Numeric vector or sf bbox. Bounding box in WGS84.
 #' @param cache_file Character. Path to save the downloaded raster.
+#' @param progress_callback Function. Optional callback for download progress.
 #'
 #' @return SpatRaster object, or NULL if download fails.
 #'
 #' @noRd
-download_oso <- function(bbox, cache_file) {
+download_oso <- function(bbox, cache_file, progress_callback = NULL) {
   # Ensure bbox is numeric
   if (inherits(bbox, "bbox")) {
     bbox <- as.numeric(bbox)
@@ -894,25 +899,65 @@ download_oso <- function(bbox, cache_file) {
         options(timeout = 3600)
         on.exit(options(timeout = old_timeout), add = TRUE)
 
-        # Try download with curl method for better reliability
+        # Use curl for download with progress tracking
         download_result <- tryCatch({
-          utils::download.file(
-            url = oso_url,
-            destfile = oso_tar,
-            mode = "wb",
-            method = "libcurl",
-            quiet = FALSE
+          # Create curl handle with follow redirects and long timeout
+          h <- curl::new_handle()
+          curl::handle_setopt(h,
+            followlocation = TRUE,
+            timeout = 3600,
+            low_speed_limit = 1000,
+            low_speed_time = 300
           )
+
+          # Track progress for UI feedback
+          last_report_time <- Sys.time()
+          con <- curl::curl(oso_url, handle = h, open = "rb")
+          on.exit(try(close(con), silent = TRUE), add = TRUE)
+          out <- file(oso_tar, open = "wb")
+          on.exit(try(close(out), silent = TRUE), add = TRUE)
+
+          total_size <- oso_expected_size  # ~5.6 GB
+          downloaded <- 0
+          chunk_size <- 1024 * 1024  # 1 MB chunks
+
+          while (TRUE) {
+            buf <- readBin(con, raw(), n = chunk_size)
+            if (length(buf) == 0) break
+            writeBin(buf, out)
+            downloaded <- downloaded + length(buf)
+
+            # Report progress every 2 seconds (avoid flooding)
+            now <- Sys.time()
+            if (!is.null(progress_callback) &&
+                as.numeric(difftime(now, last_report_time, units = "secs")) >= 2) {
+              last_report_time <- now
+              pct <- min(round(downloaded / total_size * 100), 99)
+              progress_callback(list(
+                current = paste0("download_oso_progress:", pct),
+                download_percent = pct,
+                download_size = downloaded,
+                download_total = total_size
+              ))
+            }
+          }
+          close(out)
+          close(con)
+
+          # Final progress report
+          if (!is.null(progress_callback)) {
+            progress_callback(list(
+              current = "download_oso_progress:100",
+              download_percent = 100,
+              download_size = downloaded,
+              download_total = total_size
+            ))
+          }
+
+          cli::cli_alert_success("OSO downloaded: {round(downloaded/1e9, 1)} GB")
           TRUE
         }, error = function(e) {
           cli::cli_warn("Download failed: {e$message}")
-          FALSE
-        }, warning = function(w) {
-          cli::cli_warn("Download warning: {w$message}")
-          # Check if file was partially downloaded
-          if (file.exists(oso_tar) && file.info(oso_tar)$size > 0) {
-            cli::cli_alert_info("Partial download detected, file may be incomplete")
-          }
           FALSE
         })
 

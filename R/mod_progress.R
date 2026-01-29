@@ -240,6 +240,10 @@ mod_progress_server <- function(id, compute_state, app_state) {
         return(i18n$t(paste0("task_", task)))
       }
       if (task == "download_complete") return(i18n$t("download_complete"))
+      if (grepl("^download_oso_progress:", task)) {
+        pct <- sub("^download_oso_progress:", "", task)
+        return(paste0("T\u00e9l\u00e9chargement OSO : ", pct, " %"))
+      }
       if (grepl("^download:", task)) {
         source_key <- sub("^download:", "", task)
         return(i18n$t("downloading_source", source = i18n$t(source_key)))
