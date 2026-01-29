@@ -1925,28 +1925,3 @@ load_indicators <- function(project_id) {
   })
 }
 
-
-#' Update project status
-#'
-#' @description
-#' Updates the project status (draft, computing, completed, error).
-#'
-#' @param project_id Character. Project ID.
-#' @param status Character. New status.
-#'
-#' @return Logical. TRUE if successful.
-#'
-#' @noRd
-update_project_status <- function(project_id, status) {
-  valid_statuses <- c("draft", "downloading", "computing", "completed", "error")
-
-  if (!status %in% valid_statuses) {
-    cli::cli_warn("Invalid status: {status}")
-    return(FALSE)
-  }
-
-  update_project_metadata(project_id, list(
-    status = status,
-    updated_at = Sys.time()
-  ))
-}
