@@ -132,8 +132,9 @@ mod_home_server <- function(id, app_state) {
     # ========================================
 
     output$recent_projects_list <- shiny::renderUI({
-      # Refresh when requested
+      # Refresh when requested or when active project changes
       app_state$refresh_projects
+      current_id <- app_state$project_id
 
       projects <- list_recent_projects(limit = 5)
 
@@ -148,6 +149,9 @@ mod_home_server <- function(id, app_state) {
       project_items <- lapply(seq_len(nrow(projects)), function(i) {
         proj <- projects[i, ]
 
+        # Check if this is the currently loaded project
+        is_active <- !is.null(current_id) && identical(proj$id, current_id)
+
         # Determine status badge color
         status_class <- switch(
           proj$status,
@@ -159,25 +163,42 @@ mod_home_server <- function(id, app_state) {
         )
 
         # Corrupted project styling
-        card_class <- if (proj$is_corrupted) "border-danger" else "border-light"
+        card_class <- if (proj$is_corrupted) {
+          "border-danger"
+        } else if (is_active) {
+          "border-primary bg-light"
+        } else {
+          "border-light"
+        }
+
         icon <- if (proj$is_corrupted) {
           bsicons::bs_icon("exclamation-triangle", class = "text-danger me-1")
+        } else if (is_active) {
+          bsicons::bs_icon("folder-fill", class = "text-primary me-1")
         } else {
           bsicons::bs_icon("folder", class = "text-muted me-1")
         }
 
+        # Disable click on active project
+        onclick_handler <- if (is_active) {
+          NULL
+        } else if (proj$is_corrupted) {
+          sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
+                  ns("delete_corrupted"), proj$id)
+        } else {
+          sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
+                  ns("load_project"), proj$id)
+        }
+
+        cursor_class <- if (is_active) "project-card-active" else "cursor-pointer project-card"
+
         htmltools::div(
-          class = paste("card mb-2 cursor-pointer project-card", card_class),
+          class = paste("card mb-2", cursor_class, card_class),
           id = ns(paste0("project_", proj$id)),
           `data-project-id` = proj$id,
           `data-corrupted` = tolower(as.character(proj$is_corrupted)),
-          onclick = if (proj$is_corrupted) {
-            sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
-                    ns("delete_corrupted"), proj$id)
-          } else {
-            sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
-                    ns("load_project"), proj$id)
-          },
+          style = if (is_active) "opacity: 0.7; pointer-events: none;" else NULL,
+          onclick = onclick_handler,
 
           htmltools::div(
             class = "card-body py-2 px-3",
@@ -194,10 +215,17 @@ mod_home_server <- function(id, app_state) {
                   sprintf("%d %s", proj$parcels_count, i18n$t("parcels"))
                 )
               ),
-              htmltools::span(
-                class = paste("badge", status_class, "smaller"),
-                if (proj$is_corrupted) i18n$t("corrupted") else i18n$t(paste0("status_", proj$status))
-              )
+              if (is_active) {
+                htmltools::span(
+                  class = "badge bg-primary smaller",
+                  i18n$t("active") %||% "Actif"
+                )
+              } else {
+                htmltools::span(
+                  class = paste("badge", status_class, "smaller"),
+                  if (proj$is_corrupted) i18n$t("corrupted") else i18n$t(paste0("status_", proj$status))
+                )
+              }
             )
           )
         )
@@ -213,6 +241,11 @@ mod_home_server <- function(id, app_state) {
     shiny::observe({
       project_id <- input$load_project
       shiny::req(project_id)
+
+      # Skip if this project is already loaded
+      if (!is.null(app_state$project_id) && identical(app_state$project_id, project_id)) {
+        return()
+      }
 
       project <- load_project(project_id)
 
