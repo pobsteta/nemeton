@@ -482,7 +482,9 @@ mod_home_server <- function(id, app_state) {
       # Without this, the future runs sequentially in the main process,
       # blocking the Shiny event loop (no UI updates, no progress polling).
       if (requireNamespace("future", quietly = TRUE)) {
-        if (inherits(future::plan(), "sequential")) {
+        plan_classes <- class(future::plan())
+        is_parallel <- any(c("multisession", "multicore", "cluster") %in% plan_classes)
+        if (!is_parallel) {
           future::plan("multisession")
         }
       }
@@ -586,8 +588,8 @@ mod_home_server <- function(id, app_state) {
       # App options are passed explicitly because future runs in a separate R process
       cli::cli_alert_info("Starting computation for project {project$id}")
       if (requireNamespace("future", quietly = TRUE)) {
-        plan_class <- class(future::plan())[1]
-        cli::cli_alert_info("Future plan: {plan_class}")
+        plan_classes <- paste(class(future::plan()), collapse = ", ")
+        cli::cli_alert_info("Future plan classes: {plan_classes}")
       }
       compute_task$invoke(project$id, project_path, get_app_options())
     })
