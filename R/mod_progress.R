@@ -211,23 +211,9 @@ mod_progress_server <- function(id, compute_state, app_state) {
     )
 
     # ========================================
-    # Visibility outputs
+    # Visibility outputs (removed - unused, caused unnecessary reactivity)
+    # Visibility is managed via JavaScript showElement/hideElement in mod_home.R
     # ========================================
-
-    output$show_progress <- shiny::reactive({
-      rv$show_progress
-    })
-    shiny::outputOptions(output, "show_progress", suspendWhenHidden = FALSE)
-
-    output$show_complete <- shiny::reactive({
-      rv$show_complete
-    })
-    shiny::outputOptions(output, "show_complete", suspendWhenHidden = FALSE)
-
-    output$show_error <- shiny::reactive({
-      rv$show_error
-    })
-    shiny::outputOptions(output, "show_error", suspendWhenHidden = FALSE)
 
     # ========================================
     # Progress updates (all via JavaScript to avoid re-renders)
@@ -271,14 +257,25 @@ mod_progress_server <- function(id, compute_state, app_state) {
       state <- compute_state()
       shiny::req(state)
 
-      # Update visibility flags (used by elapsed time observer)
-      rv$show_progress <- state$status %in% c(
+      # Update visibility flags only when they actually change
+      # (avoids unnecessary reactive invalidation that causes UI flickering)
+      new_show_progress <- state$status %in% c(
         COMPUTE_STATUS$PENDING,
         COMPUTE_STATUS$DOWNLOADING,
         COMPUTE_STATUS$COMPUTING
       )
-      rv$show_complete <- state$status == COMPUTE_STATUS$COMPLETED
-      rv$show_error <- state$status == COMPUTE_STATUS$ERROR
+      new_show_complete <- state$status == COMPUTE_STATUS$COMPLETED
+      new_show_error <- state$status == COMPUTE_STATUS$ERROR
+
+      if (!identical(rv$show_progress, new_show_progress)) {
+        rv$show_progress <- new_show_progress
+      }
+      if (!identical(rv$show_complete, new_show_complete)) {
+        rv$show_complete <- new_show_complete
+      }
+      if (!identical(rv$show_error, new_show_error)) {
+        rv$show_error <- new_show_error
+      }
 
       if (rv$show_progress) {
         # Track start time

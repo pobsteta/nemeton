@@ -611,41 +611,11 @@ mod_home_server <- function(id, app_state) {
 
         # Only update reactive state if something changed
         # This prevents unnecessary re-renders of the entire UI
+        # The mod_progress observer handles all JavaScript UI updates
         if (current_key != last_progress_key()) {
           last_progress_key(current_key)
           compute_state(progress_state)
         }
-
-        # Always send JavaScript updates (lightweight, no re-render)
-        session$sendCustomMessage("updateProgressBar", list(
-          barId = ns("progress-progress_bar"),
-          percentId = ns("progress-progress_percent"),
-          percent = progress_pct
-        ))
-
-        # Current task text - translate
-        task_text <- translate_task_message(progress_state$current_task, i18n)
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-current_task_text"),
-          text = task_text
-        ))
-
-        # Counters
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-completed_count"),
-          text = as.character(progress_state$indicators_completed %||% 0)
-        ))
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-failed_count"),
-          text = as.character(progress_state$indicators_failed %||% 0)
-        ))
-        pending <- (progress_state$indicators_total %||% 0) -
-                   (progress_state$indicators_completed %||% 0) -
-                   (progress_state$indicators_failed %||% 0)
-        session$sendCustomMessage("updateText", list(
-          id = ns("progress-pending_count"),
-          text = as.character(pending)
-        ))
 
         # Continue polling every 500ms
         shiny::invalidateLater(500)
