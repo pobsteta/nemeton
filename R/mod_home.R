@@ -721,21 +721,32 @@ mod_home_server <- function(id, app_state) {
 
     # Handle cancel from progress module
     shiny::observeEvent(app_state$cancel_computation, {
-      # Cancel the ExtendedTask
-      if (compute_task$status() == "running") {
-        compute_task$cancel()
+      project_id <- computing_project_id()
 
-        # Hide progress card
-        session$sendCustomMessage("hideElement", list(
-          id = ns("progress-progress_card_wrapper")
-        ))
-
-        # Reset computing state
-        computing_project_id(NULL)
+      # Write cancelled status to progress file (so async process can detect it)
+      if (!is.null(project_id)) {
+        cancel_computation(project_id)
       }
 
+      # Cancel the ExtendedTask process if running
+      tryCatch({
+        if (compute_task$status() == "running") {
+          compute_task$cancel()
+        }
+      }, error = function(e) {
+        # ExtendedTask may not be running (resumed tracking mode)
+      })
+
+      # Hide progress card
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-progress_card_wrapper")
+      ))
+
+      # Reset computing state
+      computing_project_id(NULL)
+
       shiny::showNotification(
-        i18n$t("computation_cancelled") %||% i18n$t("cancel"),
+        i18n$t("computation_cancelled") %||% "Calcul annul\u00e9",
         type = "warning"
       )
     }, ignoreInit = TRUE)

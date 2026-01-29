@@ -246,11 +246,12 @@ mod_progress_server <- function(id, compute_state, app_state) {
     }
 
     shiny::observe({
+      # Only reactive dependency: compute_state()
+      # All rv reads use isolate() to prevent self-invalidation loops
       state <- compute_state()
       shiny::req(state)
 
       # Update visibility flags only when they actually change
-      # (avoids unnecessary reactive invalidation that causes UI flickering)
       new_show_progress <- state$status %in% c(
         COMPUTE_STATUS$PENDING,
         COMPUTE_STATUS$DOWNLOADING,
@@ -259,141 +260,142 @@ mod_progress_server <- function(id, compute_state, app_state) {
       new_show_complete <- state$status == COMPUTE_STATUS$COMPLETED
       new_show_error <- state$status == COMPUTE_STATUS$ERROR
 
-      if (!identical(rv$show_progress, new_show_progress)) {
-        rv$show_progress <- new_show_progress
-      }
-      if (!identical(rv$show_complete, new_show_complete)) {
-        rv$show_complete <- new_show_complete
-      }
-      if (!identical(rv$show_error, new_show_error)) {
-        rv$show_error <- new_show_error
-      }
-
-      if (rv$show_progress) {
-        # Track start time and reset notification state for new computation
-        if (is.null(rv$start_time)) {
-          rv$start_time <- Sys.time()
-          rv$last_task <- ""
-          rv$last_notif_id <- NULL
-          rv$last_error_count <- 0
+      shiny::isolate({
+        if (!identical(rv$show_progress, new_show_progress)) {
+          rv$show_progress <- new_show_progress
+        }
+        if (!identical(rv$show_complete, new_show_complete)) {
+          rv$show_complete <- new_show_complete
+        }
+        if (!identical(rv$show_error, new_show_error)) {
+          rv$show_error <- new_show_error
         }
 
-        # Sidebar: global progress bar + counters (via JavaScript)
-        progress_pct <- round(state$progress / state$progress_max * 100)
-
-        session$sendCustomMessage("updateProgressBar", list(
-          barId = ns("progress_bar"),
-          percentId = ns("progress_percent"),
-          percent = progress_pct
-        ))
-
-        # Phase text (sidebar)
-        session$sendCustomMessage("updateText", list(
-          id = ns("phase_text"),
-          text = translate_phase(state$phase)
-        ))
-
-        # Counters (sidebar)
-        session$sendCustomMessage("updateText", list(
-          id = ns("completed_count"),
-          text = as.character(state$indicators_completed)
-        ))
-        session$sendCustomMessage("updateText", list(
-          id = ns("failed_count"),
-          text = as.character(state$indicators_failed)
-        ))
-
-        pending <- state$indicators_total - state$indicators_completed - state$indicators_failed
-        session$sendCustomMessage("updateText", list(
-          id = ns("pending_count"),
-          text = as.character(pending)
-        ))
-
-        # Toast notifications (bottom-right) for task changes
-        current_task <- state$current_task %||% ""
-        if (current_task != "" && current_task != rv$last_task) {
-          rv$last_task <- current_task
-          task_text <- translate_task(current_task)
-
-          # Remove previous task notification if still visible
-          if (!is.null(rv$last_notif_id)) {
-            shiny::removeNotification(rv$last_notif_id)
+        if (new_show_progress) {
+          # Track start time and reset notification state for new computation
+          if (is.null(rv$start_time)) {
+            rv$start_time <- Sys.time()
+            rv$last_task <- ""
+            rv$last_notif_id <- NULL
+            rv$last_error_count <- 0
           }
 
-          # Determine notification type based on task
-          notif_type <- if (grepl("^download", current_task)) {
-            "message"
-          } else if (grepl("^compute", current_task)) {
-            "default"
-          } else {
-            "message"
-          }
+          # Sidebar: global progress bar + counters (via JavaScript)
+          progress_pct <- round(state$progress / state$progress_max * 100)
 
-          # Show toast notification (auto-dismiss after 4s, or longer for downloads)
-          notif_duration <- if (grepl("download_oso_progress", current_task)) 8 else 4
-          rv$last_notif_id <- shiny::showNotification(
-            htmltools::tagList(
-              htmltools::tags$strong(task_text)
-            ),
-            type = notif_type,
-            duration = notif_duration,
-            closeButton = TRUE
-          )
-        }
+          session$sendCustomMessage("updateProgressBar", list(
+            barId = ns("progress_bar"),
+            percentId = ns("progress_percent"),
+            percent = progress_pct
+          ))
 
-        # Error toast notifications (only for newly appeared errors)
-        n_errors <- length(state$errors)
-        if (n_errors > rv$last_error_count) {
-          # Show notifications for each new error
-          for (idx in seq(rv$last_error_count + 1, n_errors)) {
-            err <- state$errors[[idx]]
-            prefix <- if (!is.null(err$indicator)) {
-              paste0(err$indicator, ": ")
-            } else {
-              ""
+          # Phase text (sidebar)
+          session$sendCustomMessage("updateText", list(
+            id = ns("phase_text"),
+            text = translate_phase(state$phase)
+          ))
+
+          # Counters (sidebar)
+          session$sendCustomMessage("updateText", list(
+            id = ns("completed_count"),
+            text = as.character(state$indicators_completed)
+          ))
+          session$sendCustomMessage("updateText", list(
+            id = ns("failed_count"),
+            text = as.character(state$indicators_failed)
+          ))
+
+          pending <- state$indicators_total - state$indicators_completed - state$indicators_failed
+          session$sendCustomMessage("updateText", list(
+            id = ns("pending_count"),
+            text = as.character(pending)
+          ))
+
+          # Toast notifications (bottom-right) for task changes
+          current_task <- state$current_task %||% ""
+          if (current_task != "" && current_task != rv$last_task) {
+            rv$last_task <- current_task
+            task_text <- translate_task(current_task)
+
+            # Remove previous task notification if still visible
+            if (!is.null(rv$last_notif_id)) {
+              shiny::removeNotification(rv$last_notif_id)
             }
-            shiny::showNotification(
-              paste0("\u26a0 ", prefix, err$message),
-              type = "warning",
-              duration = 8
+
+            # Determine notification type based on task
+            notif_type <- if (grepl("^download", current_task)) {
+              "message"
+            } else if (grepl("^compute", current_task)) {
+              "default"
+            } else {
+              "message"
+            }
+
+            # Show toast notification (auto-dismiss after 4s, or longer for downloads)
+            notif_duration <- if (grepl("download_oso_progress", current_task)) 8 else 4
+            rv$last_notif_id <- shiny::showNotification(
+              htmltools::tagList(
+                htmltools::tags$strong(task_text)
+              ),
+              type = notif_type,
+              duration = notif_duration,
+              closeButton = TRUE
             )
           }
-          rv$last_error_count <- n_errors
-        }
-      }
 
-      # Completion message (only set once at the end, no re-render loop)
-      if (rv$show_complete) {
-        session$sendCustomMessage("updateText", list(
-          id = ns("completion_message_text"),
-          text = sprintf(
-            i18n$t("computation_summary"),
-            state$indicators_completed,
-            state$indicators_total
-          )
-        ))
-      }
+          # Error toast notifications (only for newly appeared errors)
+          n_errors <- length(state$errors)
+          if (n_errors > rv$last_error_count) {
+            for (idx in seq(rv$last_error_count + 1, n_errors)) {
+              err <- state$errors[[idx]]
+              prefix <- if (!is.null(err$indicator)) {
+                paste0(err$indicator, ": ")
+              } else {
+                ""
+              }
+              shiny::showNotification(
+                paste0("\u26a0 ", prefix, err$message),
+                type = "warning",
+                duration = 8
+              )
+            }
+            rv$last_error_count <- n_errors
+          }
+        }
 
-      # Error message (only set once at the end)
-      if (rv$show_error) {
-        error_msg <- if (length(state$errors) > 0) {
-          state$errors[[length(state$errors)]]$message
-        } else {
-          i18n$t("unknown_error")
+        # Completion message (only set once at the end)
+        if (new_show_complete) {
+          session$sendCustomMessage("updateText", list(
+            id = ns("completion_message_text"),
+            text = sprintf(
+              i18n$t("computation_summary"),
+              state$indicators_completed,
+              state$indicators_total
+            )
+          ))
         }
-        extra <- if (length(state$errors) > 1) {
-          paste0('<small class="text-muted">',
-                 sprintf(i18n$t("and_n_more_errors"), length(state$errors) - 1),
-                 '</small>')
-        } else {
-          ""
+
+        # Error message (only set once at the end)
+        if (new_show_error) {
+          error_msg <- if (length(state$errors) > 0) {
+            state$errors[[length(state$errors)]]$message
+          } else {
+            i18n$t("unknown_error")
+          }
+          extra <- if (length(state$errors) > 1) {
+            paste0('<small class="text-muted">',
+                   sprintf(i18n$t("and_n_more_errors"), length(state$errors) - 1),
+                   '</small>')
+          } else {
+            ""
+          }
+          session$sendCustomMessage("updateHTML", list(
+            id = ns("error_message_content"),
+            html = paste0('<p class="text-danger">',
+                          htmltools::htmlEscape(error_msg), '</p>', extra)
+          ))
         }
-        session$sendCustomMessage("updateHTML", list(
-          id = ns("error_message_content"),
-          html = paste0('<p class="text-danger">',
-                        htmltools::htmlEscape(error_msg), '</p>', extra)
-        ))
-      }
+      })
     })
 
     # Elapsed time updater (only active during computation)

@@ -205,6 +205,9 @@ start_computation <- function(project_id,
     stop("Project not found: ", project_id)
   }
 
+  # Clear any previous cancellation signal
+  clear_cancel(project_id)
+
   # Initialize state FIRST (before anything that can fail)
   # This ensures errors can be properly recorded and reported
   state <- init_compute_state(project_id, indicators)
@@ -287,6 +290,14 @@ start_computation <- function(project_id,
       report_progress(state)
     }
 
+    # Check cancellation after download phase
+    if (is_cancelled(project_id)) {
+      state$status <- COMPUTE_STATUS$CANCELLED
+      state$current_task <- "cancelled"
+      report_progress(state)
+      return(list(success = FALSE, state = state, cancelled = TRUE))
+    }
+
     # Phase 2: Compute indicators
     state$phase <- "computing"
     state$status <- COMPUTE_STATUS$COMPUTING
@@ -317,6 +328,15 @@ start_computation <- function(project_id,
       },
       project_id = project_id  # Enable incremental saving
     )
+
+    # Check cancellation after compute phase
+    if (is_cancelled(project_id)) {
+      state$status <- COMPUTE_STATUS$CANCELLED
+      state$current_task <- "cancelled"
+      report_progress(state)
+      clear_cancel(project_id)
+      return(list(success = FALSE, state = state, cancelled = TRUE))
+    }
 
     # Final save (ensures metadata is updated)
     save_indicators(project_id, results, project_path = project_path)
@@ -1383,7 +1403,13 @@ compute_all_indicators <- function(parcels,
   }
 
   # Compute remaining indicators
- for (ind in indicators_to_compute) {
+  for (ind in indicators_to_compute) {
+    # Check for cancellation before each indicator
+    if (!is.null(project_id) && is_cancelled(project_id)) {
+      cli::cli_alert_warning("Computation cancelled by user")
+      break
+    }
+
     # Send indicator key with compute prefix for translation
     indicator_key <- paste0("indicator_", ind)
 
@@ -1661,6 +1687,64 @@ save_progress_state <- function(project_id, state, project_path = NULL) {
   }, error = function(e) {
     cli::cli_warn("Failed to save progress state: {e$message}")
   })
+
+  invisible(NULL)
+}
+
+
+#' Cancel a running computation
+#'
+#' @description
+#' Writes a cancellation signal file that the compute process checks
+#' between indicators.
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @noRd
+cancel_computation <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) return(invisible(NULL))
+
+  cancel_file <- file.path(project_path, "data", "cancel_requested")
+  tryCatch({
+    writeLines("cancel", cancel_file)
+  }, error = function(e) {
+    cli::cli_warn("Failed to write cancel file: {e$message}")
+  })
+
+  invisible(NULL)
+}
+
+
+#' Check if cancellation was requested
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @return Logical. TRUE if cancellation was requested.
+#'
+#' @noRd
+is_cancelled <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) return(FALSE)
+
+  cancel_file <- file.path(project_path, "data", "cancel_requested")
+  file.exists(cancel_file)
+}
+
+
+#' Clear cancellation signal
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @noRd
+clear_cancel <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) return(invisible(NULL))
+
+  cancel_file <- file.path(project_path, "data", "cancel_requested")
+  if (file.exists(cancel_file)) {
+    file.remove(cancel_file)
+  }
 
   invisible(NULL)
 }
