@@ -470,17 +470,23 @@ mod_home_server <- function(id, app_state) {
     )
 
     # Create ExtendedTask for async computation
-    # Note: ExtendedTask runs in a separate R process, so we pass project_path
-    # directly to avoid dependency on session options (nemeton.app_options)
-    compute_task <- shiny::ExtendedTask$new(function(project_id, project_path) {
-      # This runs in a separate R process
-      start_computation(
-        project_id = project_id,
-        indicators = "all",
-        progress_callback = NULL,  # No callback in async mode
-        use_file_progress = TRUE,  # Write progress to file
-        project_path = project_path
-      )
+    # Uses future_promise() to run in a separate R process via future::multisession
+    # This prevents blocking the Shiny main loop during computation
+    compute_task <- shiny::ExtendedTask$new(function(project_id, project_path, app_opts) {
+      promises::future_promise({
+        # Restore app options in the future process
+        # (needed by get_project_path and other functions)
+        options(nemeton.app_options = app_opts)
+
+        # This runs in a separate R process
+        start_computation(
+          project_id = project_id,
+          indicators = "all",
+          progress_callback = NULL,  # No callback in async mode
+          use_file_progress = TRUE,  # Write progress to file
+          project_path = project_path
+        )
+      }, seed = TRUE)
     })
 
     # ========================================
@@ -554,9 +560,10 @@ mod_home_server <- function(id, app_state) {
         id = ns("progress-error_card_wrapper")
       ))
 
-      # Start the async computation with both project_id and project_path
+      # Start the async computation with project_id, project_path, and app options
+      # App options are passed explicitly because future runs in a separate R process
       cli::cli_alert_info("Starting computation for project {project$id}")
-      compute_task$invoke(project$id, project_path)
+      compute_task$invoke(project$id, project_path, get_app_options())
     })
 
     # Watch for ExtendedTask errors (handles failures before progress file is written)
@@ -818,7 +825,7 @@ mod_home_server <- function(id, app_state) {
       ))
 
       # Start the async computation
-      compute_task$invoke(project$id, project_path)
+      compute_task$invoke(project$id, project_path, get_app_options())
     }, ignoreInit = TRUE)
 
     # Handle view_results from progress module

@@ -73,6 +73,12 @@ run_app <- function(language = NULL,
   # Store options for access in modules
   options(nemeton.app_options = app_options)
 
+  # Configure async computation (ExtendedTask uses future for separate R process)
+  if (requireNamespace("future", quietly = TRUE)) {
+    future::plan("multisession")
+    cli::cli_alert_info("Async computation enabled (future::multisession)")
+  }
+
   # Launch app
   shiny::shinyApp(
     ui = app_ui,
