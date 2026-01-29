@@ -23,6 +23,8 @@ mod_progress_ui <- function(id) {
 
   htmltools::tagList(
     # Progress card (hidden by default, shown via JavaScript)
+    # Sidebar: global progress bar + indicator counters only
+    # Detailed task messages go to toast notifications (bottom-right)
     htmltools::div(
       id = ns("progress_card_wrapper"),
       style = "display: none;",
@@ -74,16 +76,6 @@ mod_progress_ui <- function(id) {
             )
           ),
 
-          # Current task (updated via JavaScript only)
-          htmltools::div(
-            class = "mb-3",
-            htmltools::tags$small(
-              class = "text-muted",
-              bsicons::bs_icon("arrow-right", class = "me-1"),
-              htmltools::span(id = ns("current_task_text"))
-            )
-          ),
-
           # Indicators summary
           htmltools::div(
             class = "d-flex justify-content-between mb-2",
@@ -108,10 +100,7 @@ mod_progress_ui <- function(id) {
               " ",
               i18n$t("pending")
             )
-          ),
-
-          # Errors list (updated via JavaScript only)
-          htmltools::div(id = ns("errors_list"))
+          )
         ),
         bslib::card_footer(
           class = "d-flex justify-content-between align-items-center",
@@ -207,7 +196,10 @@ mod_progress_server <- function(id, compute_state, app_state) {
       show_progress = FALSE,
       show_complete = FALSE,
       show_error = FALSE,
-      start_time = NULL
+      start_time = NULL,
+      last_task = "",
+      last_notif_id = NULL,
+      last_error_count = 0
     )
 
     # ========================================
@@ -278,12 +270,15 @@ mod_progress_server <- function(id, compute_state, app_state) {
       }
 
       if (rv$show_progress) {
-        # Track start time
+        # Track start time and reset notification state for new computation
         if (is.null(rv$start_time)) {
           rv$start_time <- Sys.time()
+          rv$last_task <- ""
+          rv$last_notif_id <- NULL
+          rv$last_error_count <- 0
         }
 
-        # All updates via JavaScript (no renderText/renderUI re-renders)
+        # Sidebar: global progress bar + counters (via JavaScript)
         progress_pct <- round(state$progress / state$progress_max * 100)
 
         session$sendCustomMessage("updateProgressBar", list(
@@ -292,19 +287,13 @@ mod_progress_server <- function(id, compute_state, app_state) {
           percent = progress_pct
         ))
 
-        # Phase text
+        # Phase text (sidebar)
         session$sendCustomMessage("updateText", list(
           id = ns("phase_text"),
           text = translate_phase(state$phase)
         ))
 
-        # Current task
-        session$sendCustomMessage("updateText", list(
-          id = ns("current_task_text"),
-          text = translate_task(state$current_task)
-        ))
-
-        # Counters
+        # Counters (sidebar)
         session$sendCustomMessage("updateText", list(
           id = ns("completed_count"),
           text = as.character(state$indicators_completed)
@@ -320,29 +309,56 @@ mod_progress_server <- function(id, compute_state, app_state) {
           text = as.character(pending)
         ))
 
-        # Errors list (as HTML via JavaScript)
-        if (length(state$errors) > 0) {
-          error_items <- vapply(state$errors, function(err) {
-            prefix <- if (!is.null(err$indicator)) paste0(err$indicator, ": ") else ""
-            paste0("<li>\u26a0 ", htmltools::htmlEscape(prefix),
-                   htmltools::htmlEscape(err$message), "</li>")
-          }, character(1))
-          errors_html <- paste0(
-            '<div class="mt-3"><small class="text-danger fw-bold">',
-            htmltools::htmlEscape(i18n$t("errors_title")),
-            '</small><ul class="list-unstyled small text-danger mt-1">',
-            paste(error_items, collapse = ""),
-            '</ul></div>'
+        # Toast notifications (bottom-right) for task changes
+        current_task <- state$current_task %||% ""
+        if (current_task != "" && current_task != rv$last_task) {
+          rv$last_task <- current_task
+          task_text <- translate_task(current_task)
+
+          # Remove previous task notification if still visible
+          if (!is.null(rv$last_notif_id)) {
+            shiny::removeNotification(rv$last_notif_id)
+          }
+
+          # Determine notification type based on task
+          notif_type <- if (grepl("^download", current_task)) {
+            "message"
+          } else if (grepl("^compute", current_task)) {
+            "default"
+          } else {
+            "message"
+          }
+
+          # Show toast notification (auto-dismiss after 4s, or longer for downloads)
+          notif_duration <- if (grepl("download_oso_progress", current_task)) 8 else 4
+          rv$last_notif_id <- shiny::showNotification(
+            htmltools::tagList(
+              htmltools::tags$strong(task_text)
+            ),
+            type = notif_type,
+            duration = notif_duration,
+            closeButton = TRUE
           )
-          session$sendCustomMessage("updateHTML", list(
-            id = ns("errors_list"),
-            html = errors_html
-          ))
-        } else {
-          session$sendCustomMessage("updateHTML", list(
-            id = ns("errors_list"),
-            html = ""
-          ))
+        }
+
+        # Error toast notifications (only for newly appeared errors)
+        n_errors <- length(state$errors)
+        if (n_errors > rv$last_error_count) {
+          # Show notifications for each new error
+          for (idx in seq(rv$last_error_count + 1, n_errors)) {
+            err <- state$errors[[idx]]
+            prefix <- if (!is.null(err$indicator)) {
+              paste0(err$indicator, ": ")
+            } else {
+              ""
+            }
+            shiny::showNotification(
+              paste0("\u26a0 ", prefix, err$message),
+              type = "warning",
+              duration = 8
+            )
+          }
+          rv$last_error_count <- n_errors
         }
       }
 
