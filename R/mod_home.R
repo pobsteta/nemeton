@@ -587,7 +587,7 @@ mod_home_server <- function(id, app_state) {
 
       if (is.null(progress_state)) {
         # No progress file - computation may have finished or never started
-        shiny::invalidateLater(1000)
+        shiny::invalidateLater(2000)
         return()
       }
 
@@ -617,8 +617,8 @@ mod_home_server <- function(id, app_state) {
           compute_state(progress_state)
         }
 
-        # Continue polling every 500ms
-        shiny::invalidateLater(500)
+        # Continue polling every 2 seconds (reduce DOM updates)
+        shiny::invalidateLater(2000)
 
       } else if (progress_state$status == "completed") {
         # Computation completed successfully
@@ -726,6 +726,10 @@ mod_home_server <- function(id, app_state) {
       # Write cancelled status to progress file (so async process can detect it)
       if (!is.null(project_id)) {
         cancel_computation(project_id)
+
+        # Reset project status to draft so "Lancer les calculs" reappears
+        update_project_status(project_id, "draft")
+        app_state$current_project <- load_project(project_id)
       }
 
       # Cancel the ExtendedTask process if running

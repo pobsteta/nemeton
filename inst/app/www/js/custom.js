@@ -323,6 +323,46 @@
   });
 
   // ============================================================
+  // Task Toast (fixed position, no DOM churn)
+  // ============================================================
+
+  /**
+   * Update fixed task toast without creating/destroying DOM elements
+   */
+  Shiny.addCustomMessageHandler('updateTaskToast', function(data) {
+    var wrapper = document.getElementById(data.wrapperId);
+    var inner = document.getElementById(data.innerId);
+    var textEl = document.getElementById(data.textId);
+    var iconEl = document.getElementById(data.iconId);
+
+    if (!wrapper || !textEl) return;
+
+    if (data.visible) {
+      textEl.textContent = data.text || '';
+      // Set toast style based on type
+      if (inner) {
+        inner.className = 'toast show align-items-center border-0 text-bg-' +
+          (data.type === 'warning' ? 'warning' : data.type === 'error' ? 'danger' : 'info');
+      }
+      if (iconEl) {
+        iconEl.textContent = data.type === 'warning' ? '\u26a0' : data.type === 'error' ? '\u2716' : '\u2139';
+      }
+      wrapper.style.display = 'block';
+
+      // Auto-hide after duration
+      if (data.duration && data.duration > 0) {
+        if (wrapper._hideTimer) clearTimeout(wrapper._hideTimer);
+        wrapper._hideTimer = setTimeout(function() {
+          wrapper.style.display = 'none';
+        }, data.duration);
+      }
+    } else {
+      wrapper.style.display = 'none';
+      if (wrapper._hideTimer) clearTimeout(wrapper._hideTimer);
+    }
+  });
+
+  // ============================================================
   // Tour Persistence (localStorage)
   // ============================================================
 

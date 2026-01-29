@@ -143,6 +143,36 @@ mod_progress_ui <- function(id) {
       )
     ),
 
+    # Fixed toast for task notifications (bottom-right, no DOM churn)
+    htmltools::div(
+      id = ns("task_toast"),
+      class = "position-fixed bottom-0 end-0 p-3",
+      style = "z-index: 1080; display: none;",
+      htmltools::div(
+        class = "toast show align-items-center border-0",
+        id = ns("task_toast_inner"),
+        role = "status",
+        `aria-live` = "polite",
+        htmltools::div(
+          class = "d-flex",
+          htmltools::div(
+            class = "toast-body",
+            htmltools::span(id = ns("task_toast_icon"), class = "me-2"),
+            htmltools::strong(id = ns("task_toast_text"))
+          ),
+          htmltools::tags$button(
+            type = "button",
+            class = "btn-close me-2 m-auto",
+            `aria-label` = "Close",
+            onclick = sprintf(
+              "document.getElementById('%s').style.display='none';",
+              ns("task_toast")
+            )
+          )
+        )
+      )
+    ),
+
     # Error card (shown on fatal error, via JavaScript)
     htmltools::div(
       id = ns("error_card_wrapper"),
@@ -311,60 +341,59 @@ mod_progress_server <- function(id, compute_state, app_state) {
             text = as.character(pending)
           ))
 
-          # Toast notifications (bottom-right) for task changes
+          # Fixed toast notification (bottom-right) for task changes
+          # Uses JavaScript-only DOM update - no showNotification to avoid flickering
           current_task <- state$current_task %||% ""
           if (current_task != "" && current_task != rv$last_task) {
             rv$last_task <- current_task
             task_text <- translate_task(current_task)
 
-            # Remove previous task notification if still visible
-            if (!is.null(rv$last_notif_id)) {
-              shiny::removeNotification(rv$last_notif_id)
-            }
+            # Determine toast type and duration
+            toast_type <- if (grepl("^download", current_task)) "info" else "info"
+            toast_duration <- if (grepl("download_oso_progress", current_task)) 8000 else 4000
 
-            # Determine notification type based on task
-            notif_type <- if (grepl("^download", current_task)) {
-              "message"
-            } else if (grepl("^compute", current_task)) {
-              "default"
-            } else {
-              "message"
-            }
-
-            # Show toast notification (auto-dismiss after 4s, or longer for downloads)
-            notif_duration <- if (grepl("download_oso_progress", current_task)) 8 else 4
-            rv$last_notif_id <- shiny::showNotification(
-              htmltools::tagList(
-                htmltools::tags$strong(task_text)
-              ),
-              type = notif_type,
-              duration = notif_duration,
-              closeButton = TRUE
-            )
+            session$sendCustomMessage("updateTaskToast", list(
+              wrapperId = ns("task_toast"),
+              innerId = ns("task_toast_inner"),
+              textId = ns("task_toast_text"),
+              iconId = ns("task_toast_icon"),
+              visible = TRUE,
+              text = task_text,
+              type = toast_type,
+              duration = toast_duration
+            ))
           }
 
-          # Error toast notifications (only for newly appeared errors)
+          # Error toast: show errors in the same fixed toast (warning style)
           n_errors <- length(state$errors)
           if (n_errors > rv$last_error_count) {
-            for (idx in seq(rv$last_error_count + 1, n_errors)) {
-              err <- state$errors[[idx]]
-              prefix <- if (!is.null(err$indicator)) {
-                paste0(err$indicator, ": ")
-              } else {
-                ""
-              }
-              shiny::showNotification(
-                paste0("\u26a0 ", prefix, err$message),
-                type = "warning",
-                duration = 8
-              )
+            last_err <- state$errors[[n_errors]]
+            prefix <- if (!is.null(last_err$indicator)) {
+              paste0(last_err$indicator, ": ")
+            } else {
+              ""
             }
+            session$sendCustomMessage("updateTaskToast", list(
+              wrapperId = ns("task_toast"),
+              innerId = ns("task_toast_inner"),
+              textId = ns("task_toast_text"),
+              iconId = ns("task_toast_icon"),
+              visible = TRUE,
+              text = paste0(prefix, last_err$message),
+              type = "warning",
+              duration = 8000
+            ))
             rv$last_error_count <- n_errors
           }
         }
 
         # Completion message (only set once at the end)
         if (new_show_complete) {
+          # Hide task toast
+          session$sendCustomMessage("updateTaskToast", list(
+            wrapperId = ns("task_toast"),
+            visible = FALSE
+          ))
           session$sendCustomMessage("updateText", list(
             id = ns("completion_message_text"),
             text = sprintf(
@@ -373,10 +402,17 @@ mod_progress_server <- function(id, compute_state, app_state) {
               state$indicators_total
             )
           ))
+          # Reset start time for next computation
+          rv$start_time <- NULL
         }
 
         # Error message (only set once at the end)
         if (new_show_error) {
+          # Hide task toast
+          session$sendCustomMessage("updateTaskToast", list(
+            wrapperId = ns("task_toast"),
+            visible = FALSE
+          ))
           error_msg <- if (length(state$errors) > 0) {
             state$errors[[length(state$errors)]]$message
           } else {
