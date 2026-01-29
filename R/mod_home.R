@@ -862,6 +862,8 @@ mod_home_server <- function(id, app_state) {
       tour_shown_this_session <- shiny::reactiveVal(FALSE)
 
       # Function to open collapsed sections
+      # Note: must pass session explicitly because this may be called from
+      # later::later() which runs outside the Shiny reactive context
       open_collapsed_sections <- function() {
         shiny::insertUI(
           selector = "body",
@@ -870,7 +872,8 @@ mod_home_server <- function(id, app_state) {
             $('#%s').collapse('show');
             $('#%s').collapse('show');
           ", ns("search_collapse"), "home-project-project_collapse"))),
-          immediate = TRUE
+          immediate = TRUE,
+          session = session
         )
       }
 
@@ -926,6 +929,8 @@ mod_home_server <- function(id, app_state) {
       }
 
       # Combined function: open sections then start tour with delay
+      # Note: must pass session explicitly because this is called from
+      # later::later() which runs outside the Shiny reactive context
       start_tour <- function() {
         open_collapsed_sections()
         # Mark tour as seen in browser localStorage
@@ -940,7 +945,8 @@ mod_home_server <- function(id, app_state) {
               Shiny.setInputValue('home-tour_ready', Date.now());
             }, 500);
           ")),
-          immediate = TRUE
+          immediate = TRUE,
+          session = session
         )
       }
 
