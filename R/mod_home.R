@@ -479,7 +479,8 @@ mod_home_server <- function(id, app_state) {
         options(nemeton.app_options = app_opts)
 
         # This runs in a separate R process
-        start_computation(
+        # Use nemeton::: to access internal functions from the future process
+        nemeton:::start_computation(
           project_id = project_id,
           indicators = "all",
           progress_callback = NULL,  # No callback in async mode

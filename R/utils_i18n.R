@@ -110,6 +110,7 @@ TRANSLATIONS <- list(
   status_completed = list(fr = "Termin\u00e9", en = "Completed"),
   status_error = list(fr = "Erreur", en = "Error"),
   status_unknown = list(fr = "Inconnu", en = "Unknown"),
+  active = list(fr = "Actif", en = "Active"),
   corrupted = list(fr = "Corrompu", en = "Corrupted"),
 
   # Delete corrupted projects
