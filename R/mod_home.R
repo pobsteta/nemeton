@@ -472,15 +472,28 @@ mod_home_server <- function(id, app_state) {
     # Create ExtendedTask for async computation
     # Uses future_promise() to run in a separate R process via future::multisession
     # This prevents blocking the Shiny main loop during computation
+    #
+    # The future worker is a fresh R process that doesn't have nemeton loaded.
+    # We detect the package source path here (main process) and load it in the worker.
+    # This works both in dev mode (devtools::load_all) and production (installed pkg).
+    .pkg_path <- tryCatch(pkgload::pkg_path(), error = function(e) NULL)
     compute_task <- shiny::ExtendedTask$new(function(project_id, project_path, app_opts) {
       promises::future_promise({
+        # Load nemeton package in the worker process
+        if (!is.null(.pkg_path) && requireNamespace("pkgload", quietly = TRUE)) {
+          # Dev mode: reload from source directory
+          pkgload::load_all(.pkg_path, quiet = TRUE)
+        } else if (requireNamespace("nemeton", quietly = TRUE)) {
+          # Production: load installed package
+          loadNamespace("nemeton")
+        }
+
         # Restore app options in the future process
         # (needed by get_project_path and other functions)
         options(nemeton.app_options = app_opts)
 
         # This runs in a separate R process
-        # Use nemeton::: to access internal functions from the future process
-        nemeton:::start_computation(
+        start_computation(
           project_id = project_id,
           indicators = "all",
           progress_callback = NULL,  # No callback in async mode
