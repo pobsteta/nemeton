@@ -114,6 +114,8 @@ app_server <- function(input, output, session) {
   # Restart tour from help modal
   shiny::observeEvent(input$restart_tour, {
     shiny::removeModal()
+    # Reset localStorage flag so tour can restart
+    session$sendCustomMessage("resetTourSeen", list())
     # Delay to let modal close before starting tour
     later::later(function() {
       app_state$restart_tour <- Sys.time()

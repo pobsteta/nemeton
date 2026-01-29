@@ -323,6 +323,35 @@
   });
 
   // ============================================================
+  // Tour Persistence (localStorage)
+  // ============================================================
+
+  /**
+   * Check if guided tour was already seen and inform Shiny
+   */
+  function initTourPersistence() {
+    var tourSeen = localStorage.getItem('nemeton_tour_seen') === 'true';
+    // Send to Shiny once connected (namespaced for home module)
+    $(document).on('shiny:connected', function() {
+      Shiny.setInputValue('home-tour_seen_browser', tourSeen, {priority: 'event'});
+    });
+  }
+
+  /**
+   * Mark tour as seen in localStorage
+   */
+  Shiny.addCustomMessageHandler('markTourSeen', function(data) {
+    localStorage.setItem('nemeton_tour_seen', 'true');
+  });
+
+  /**
+   * Reset tour flag (for manual restart)
+   */
+  Shiny.addCustomMessageHandler('resetTourSeen', function(data) {
+    localStorage.removeItem('nemeton_tour_seen');
+  });
+
+  // ============================================================
   // Initialization
   // ============================================================
 
@@ -336,6 +365,7 @@
     initFormValidation();
     initBasemapToggle();
     initLiveRegion();
+    initTourPersistence();
   }
 
   // Run on DOM ready

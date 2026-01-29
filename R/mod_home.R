@@ -887,6 +887,8 @@ mod_home_server <- function(id, app_state) {
       # Combined function: open sections then start tour with delay
       start_tour <- function() {
         open_collapsed_sections()
+        # Mark tour as seen in browser localStorage
+        session$sendCustomMessage("markTourSeen", list())
         # Add delay to allow UI to render before starting tour
         shiny::insertUI(
           selector = "body",
@@ -906,18 +908,17 @@ mod_home_server <- function(id, app_state) {
         do_start_tour()
       }, ignoreInit = TRUE)
 
-      # Schedule tour to start after delay (one-time)
-      tour_timer <- shiny::reactiveVal(0)
-
-      shiny::observe({
-        if (!tour_shown_this_session() && tour_timer() == 0) {
-          tour_timer(Sys.time())
-          shiny::invalidateLater(2000)  # Wait 2 seconds
-        } else if (!tour_shown_this_session() && tour_timer() > 0) {
+      # Auto-start tour only if not already seen in browser localStorage.
+      # The 'tour_seen_browser' input is sent by custom.js on shiny:connected.
+      shiny::observeEvent(input$tour_seen_browser, {
+        if (!isTRUE(input$tour_seen_browser) && !tour_shown_this_session()) {
           tour_shown_this_session(TRUE)
-          start_tour()
+          # Delay to let UI fully render before starting tour
+          later::later(function() {
+            start_tour()
+          }, delay = 2)
         }
-      })
+      }, once = TRUE)
 
       # Restart tour when requested from app_server
       shiny::observeEvent(app_state$restart_tour, {
