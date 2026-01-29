@@ -161,7 +161,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       pending_styles = NULL,   # Pending style updates
       last_restore_timestamp = NULL,  # Track last processed restore request
       map_loading = FALSE,     # Loading state for map overlay
-      pending_parcels = NULL   # Parcels waiting to be rendered
+      pending_parcels = NULL,  # Parcels waiting to be rendered
+      restoring_project = FALSE  # Flag to prevent commune zoom during project restore
     )
 
 
@@ -272,8 +273,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(geom)) return()
 
-      # Reset parcels zoom flag for new commune
-      rv$parcels_zoomed <- FALSE
+      # Skip commune zoom if we are restoring a project
+      # (the restore observer will handle zooming to selected parcels)
+      skip_zoom <- rv$restoring_project
+
+      if (!skip_zoom) {
+        # Reset parcels zoom flag for new commune (normal navigation only)
+        rv$parcels_zoomed <- FALSE
+      }
 
       # Verify geometry is polygon type
       geom_types <- sf::st_geometry_type(geom)
@@ -289,7 +296,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       # Get bounding box
       bbox <- sf::st_bbox(geom)
 
-      leaflet::leafletProxy(ns("map")) |>
+      proxy <- leaflet::leafletProxy(ns("map")) |>
         # Clear previous commune boundary
         leaflet::clearGroup("commune") |>
         # Add new boundary
@@ -300,14 +307,18 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           weight = STYLE$commune$weight,
           fill = STYLE$commune$fill,
           dashArray = STYLE$commune$dashArray
-        ) |>
-        # Zoom to bounds
-        leaflet::fitBounds(
-          lng1 = as.numeric(bbox[["xmin"]]),
-          lat1 = as.numeric(bbox[["ymin"]]),
-          lng2 = as.numeric(bbox[["xmax"]]),
-          lat2 = as.numeric(bbox[["ymax"]])
         )
+
+      # Only zoom to commune bounds if NOT restoring a project
+      if (!skip_zoom) {
+        proxy |>
+          leaflet::fitBounds(
+            lng1 = as.numeric(bbox[["xmin"]]),
+            lat1 = as.numeric(bbox[["ymin"]]),
+            lng2 = as.numeric(bbox[["xmax"]]),
+            lat2 = as.numeric(bbox[["ymax"]])
+          )
+      }
     })
 
 
@@ -547,6 +558,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
         cli::cli_alert_info("Restoring {length(matching_ids)} parcels...")
 
+        # Block commune zoom during restore
+        rv$restoring_project <- TRUE
+
         # Set selected IDs
         rv$selected_ids <- matching_ids
 
@@ -600,6 +614,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             lat2 = zoom$ymax
           )
         rv$pending_zoom <- NULL
+
+        # Restore complete - allow commune zoom for future navigation
+        rv$restoring_project <- FALSE
+
         cli::cli_alert_success("Zoomed to selected parcels")
       }
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
