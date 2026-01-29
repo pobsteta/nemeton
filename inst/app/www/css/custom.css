@@ -353,6 +353,18 @@
 
 
 /* ============================================================
+   Anti-flicker: Prevent Shiny's default opacity flash on
+   recalculating uiOutput elements during async computation.
+   Shiny sets opacity:0.5 on .recalculating outputs which
+   causes visible flickering every time the reactive graph flushes.
+   ============================================================ */
+.shiny-bound-output.recalculating {
+  opacity: 1 !important;
+  transition: none !important;
+}
+
+
+/* ============================================================
    Loading States
    ============================================================ */
 .shiny-busy {

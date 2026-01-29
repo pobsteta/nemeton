@@ -219,41 +219,6 @@
   });
 
   /**
-   * Batched progress update: applies all progress UI changes in a single
-   * requestAnimationFrame to avoid multiple DOM reflows/repaints (flickering).
-   */
-  Shiny.addCustomMessageHandler('batchProgressUpdate', function(data) {
-    requestAnimationFrame(function() {
-      // Progress bar
-      if (data.barId) {
-        var progressBar = document.getElementById(data.barId);
-        if (progressBar) {
-          progressBar.style.width = data.percent + '%';
-          progressBar.setAttribute('aria-valuenow', data.percent);
-        }
-        var percentEl = document.getElementById(data.percentId);
-        if (percentEl) {
-          percentEl.textContent = data.percent + '%';
-        }
-      }
-
-      // Text updates (array of {id, text})
-      if (data.textUpdates) {
-        for (var i = 0; i < data.textUpdates.length; i++) {
-          var item = data.textUpdates[i];
-          var el = document.getElementById(item.id);
-          if (el) el.textContent = item.text;
-        }
-      }
-
-      // Announce significant progress to screen readers
-      if (data.percent === 25 || data.percent === 50 || data.percent === 75 || data.percent === 100) {
-        window.announceToScreenReader('Progression: ' + data.percent + '%');
-      }
-    });
-  });
-
-  /**
    * Handle progress bar updates with specific element IDs
    */
   Shiny.addCustomMessageHandler('updateProgressBar', function(data) {

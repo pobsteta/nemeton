@@ -416,11 +416,6 @@ mod_home_server <- function(id, app_state) {
       project <- app_state$current_project
       if (is.null(project)) return(NULL)
 
-      # Ignore reactive updates while computation is running
-      # The polling observer handles all UI changes during computation via JS
-      comp_id <- shiny::isolate(computing_project_id())
-      if (!is.null(comp_id)) return(NULL)
-
       # Check project status
       status <- project$metadata$status %||% "draft"
 
@@ -566,10 +561,7 @@ mod_home_server <- function(id, app_state) {
       # Store project ID for polling
       computing_project_id(project$id)
 
-      # Hide compute button and show progress card immediately
-      session$sendCustomMessage("hideElement", list(
-        id = ns("compute_section")
-      ))
+      # Show progress card immediately
       session$sendCustomMessage("showElement", list(
         id = ns("progress-progress_card_wrapper")
       ))
@@ -606,12 +598,9 @@ mod_home_server <- function(id, app_state) {
           compute_state(progress_state)
         }
 
-        # Hide progress card, restore compute section, show error card
+        # Hide progress card, show error card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
-        ))
-        session$sendCustomMessage("showElement", list(
-          id = ns("compute_section")
         ))
         session$sendCustomMessage("showElement", list(
           id = ns("progress-error_card_wrapper")
@@ -689,12 +678,9 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "completed") {
         # Computation completed successfully
-        # Hide progress card, restore compute section
+        # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
-        ))
-        session$sendCustomMessage("showElement", list(
-          id = ns("compute_section")
         ))
 
         # Show completion card
@@ -716,12 +702,9 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "error") {
         # Computation failed with error
-        # Hide progress card, restore compute section
+        # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
-        ))
-        session$sendCustomMessage("showElement", list(
-          id = ns("compute_section")
         ))
 
         # Show error card
@@ -746,12 +729,9 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "cancelled") {
         # Computation was cancelled
-        # Hide progress card, restore compute section
+        # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
-        ))
-        session$sendCustomMessage("showElement", list(
-          id = ns("compute_section")
         ))
 
         shiny::showNotification(
@@ -767,9 +747,6 @@ mod_home_server <- function(id, app_state) {
         cli::cli_warn("Unknown computation status: {progress_state$status}")
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
-        ))
-        session$sendCustomMessage("showElement", list(
-          id = ns("compute_section")
         ))
         computing_project_id(NULL)
       }
@@ -820,12 +797,9 @@ mod_home_server <- function(id, app_state) {
         # ExtendedTask may not be running (resumed tracking mode)
       })
 
-      # Hide progress card, restore compute section
+      # Hide progress card
       session$sendCustomMessage("hideElement", list(
         id = ns("progress-progress_card_wrapper")
-      ))
-      session$sendCustomMessage("showElement", list(
-        id = ns("compute_section")
       ))
 
       # Reset computing state
@@ -855,10 +829,7 @@ mod_home_server <- function(id, app_state) {
       # Store project ID for polling
       computing_project_id(project$id)
 
-      # Hide compute section, show progress card, hide error/complete cards
-      session$sendCustomMessage("hideElement", list(
-        id = ns("compute_section")
-      ))
+      # Show progress card, hide error card
       session$sendCustomMessage("showElement", list(
         id = ns("progress-progress_card_wrapper")
       ))

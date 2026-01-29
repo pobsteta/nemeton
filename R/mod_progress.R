@@ -311,20 +311,34 @@ mod_progress_server <- function(id, compute_state, app_state) {
           }
 
           # Sidebar: global progress bar + counters (via JavaScript)
-          # Use a single batched message to avoid multiple DOM reflows
           progress_pct <- round(state$progress / state$progress_max * 100)
-          pending <- state$indicators_total - state$indicators_completed - state$indicators_failed
 
-          session$sendCustomMessage("batchProgressUpdate", list(
+          session$sendCustomMessage("updateProgressBar", list(
             barId = ns("progress_bar"),
             percentId = ns("progress_percent"),
-            percent = progress_pct,
-            textUpdates = list(
-              list(id = ns("phase_text"), text = translate_phase(state$phase)),
-              list(id = ns("completed_count"), text = as.character(state$indicators_completed)),
-              list(id = ns("failed_count"), text = as.character(state$indicators_failed)),
-              list(id = ns("pending_count"), text = as.character(pending))
-            )
+            percent = progress_pct
+          ))
+
+          # Phase text (sidebar)
+          session$sendCustomMessage("updateText", list(
+            id = ns("phase_text"),
+            text = translate_phase(state$phase)
+          ))
+
+          # Counters (sidebar)
+          session$sendCustomMessage("updateText", list(
+            id = ns("completed_count"),
+            text = as.character(state$indicators_completed)
+          ))
+          session$sendCustomMessage("updateText", list(
+            id = ns("failed_count"),
+            text = as.character(state$indicators_failed)
+          ))
+
+          pending <- state$indicators_total - state$indicators_completed - state$indicators_failed
+          session$sendCustomMessage("updateText", list(
+            id = ns("pending_count"),
+            text = as.character(pending)
           ))
 
           # Fixed toast notification (bottom-right) for task changes
