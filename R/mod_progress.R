@@ -43,7 +43,7 @@ mod_progress_ui <- function(id) {
             class = "mb-3",
             htmltools::tags$small(
               class = "text-muted",
-              shiny::textOutput(ns("phase_text"), inline = TRUE)
+              htmltools::span(id = ns("phase_text"))
             )
           ),
 
@@ -74,16 +74,13 @@ mod_progress_ui <- function(id) {
             )
           ),
 
-          # Current task (with fixed ID for JavaScript updates)
+          # Current task (updated via JavaScript only)
           htmltools::div(
             class = "mb-3",
             htmltools::tags$small(
               class = "text-muted",
               bsicons::bs_icon("arrow-right", class = "me-1"),
-              htmltools::span(
-                id = ns("current_task_text"),
-                shiny::textOutput(ns("current_task"), inline = TRUE)
-              )
+              htmltools::span(id = ns("current_task_text"))
             )
           ),
 
@@ -113,8 +110,8 @@ mod_progress_ui <- function(id) {
             )
           ),
 
-          # Errors list (if any)
-          shiny::uiOutput(ns("errors_list"))
+          # Errors list (updated via JavaScript only)
+          htmltools::div(id = ns("errors_list"))
         ),
         bslib::card_footer(
           class = "d-flex justify-content-between align-items-center",
@@ -150,7 +147,7 @@ mod_progress_ui <- function(id) {
             class = "text-center py-2",
             htmltools::p(
               class = "mb-0",
-              shiny::textOutput(ns("completion_message"), inline = TRUE)
+              htmltools::span(id = ns("completion_message_text"))
             )
           )
         )
@@ -170,7 +167,7 @@ mod_progress_ui <- function(id) {
           i18n$t("computation_error")
         ),
         bslib::card_body(
-          shiny::uiOutput(ns("error_message")),
+          htmltools::div(id = ns("error_message_content")),
           htmltools::div(
             class = "mt-3",
             shiny::actionButton(
@@ -233,14 +230,44 @@ mod_progress_server <- function(id, compute_state, app_state) {
     shiny::outputOptions(output, "show_error", suspendWhenHidden = FALSE)
 
     # ========================================
-    # Progress updates
+    # Progress updates (all via JavaScript to avoid re-renders)
     # ========================================
+
+    # Helper: translate task message
+    translate_task <- function(task) {
+      if (is.null(task)) return("")
+      if (task %in% c("download_start", "compute_start", "complete", "error", "resuming")) {
+        return(i18n$t(paste0("task_", task)))
+      }
+      if (task == "download_complete") return(i18n$t("download_complete"))
+      if (grepl("^download:", task)) {
+        source_key <- sub("^download:", "", task)
+        return(i18n$t("downloading_source", source = i18n$t(source_key)))
+      }
+      if (grepl("^compute:", task)) {
+        indicator_key <- sub("^compute:", "", task)
+        return(i18n$t("computing_indicator_name", indicator = i18n$t(indicator_key)))
+      }
+      paste(i18n$t("computing_indicator"), task)
+    }
+
+    # Helper: translate phase
+    translate_phase <- function(phase) {
+      switch(
+        phase %||% "",
+        "init" = i18n$t("phase_init"),
+        "downloading" = i18n$t("phase_downloading"),
+        "computing" = i18n$t("phase_computing"),
+        "complete" = i18n$t("phase_complete"),
+        ""
+      )
+    }
 
     shiny::observe({
       state <- compute_state()
       shiny::req(state)
 
-      # Update visibility based on status
+      # Update visibility flags (used by elapsed time observer)
       rv$show_progress <- state$status %in% c(
         COMPUTE_STATUS$PENDING,
         COMPUTE_STATUS$DOWNLOADING,
@@ -249,15 +276,13 @@ mod_progress_server <- function(id, compute_state, app_state) {
       rv$show_complete <- state$status == COMPUTE_STATUS$COMPLETED
       rv$show_error <- state$status == COMPUTE_STATUS$ERROR
 
-      if (state$status %in% c(COMPUTE_STATUS$PENDING,
-                              COMPUTE_STATUS$DOWNLOADING,
-                              COMPUTE_STATUS$COMPUTING)) {
+      if (rv$show_progress) {
         # Track start time
         if (is.null(rv$start_time)) {
           rv$start_time <- Sys.time()
         }
 
-        # Update progress bar via JavaScript
+        # All updates via JavaScript (no renderText/renderUI re-renders)
         progress_pct <- round(state$progress / state$progress_max * 100)
 
         session$sendCustomMessage("updateProgressBar", list(
@@ -266,7 +291,19 @@ mod_progress_server <- function(id, compute_state, app_state) {
           percent = progress_pct
         ))
 
-        # Update counters
+        # Phase text
+        session$sendCustomMessage("updateText", list(
+          id = ns("phase_text"),
+          text = translate_phase(state$phase)
+        ))
+
+        # Current task
+        session$sendCustomMessage("updateText", list(
+          id = ns("current_task_text"),
+          text = translate_task(state$current_task)
+        ))
+
+        # Counters
         session$sendCustomMessage("updateText", list(
           id = ns("completed_count"),
           text = as.character(state$indicators_completed)
@@ -281,122 +318,65 @@ mod_progress_server <- function(id, compute_state, app_state) {
           id = ns("pending_count"),
           text = as.character(pending)
         ))
-      }
-    })
 
-    # Phase text
-    output$phase_text <- shiny::renderText({
-      state <- compute_state()
-      shiny::req(state)
-
-      switch(
-        state$phase,
-        "init" = i18n$t("phase_init"),
-        "downloading" = i18n$t("phase_downloading"),
-        "computing" = i18n$t("phase_computing"),
-        "complete" = i18n$t("phase_complete"),
-        ""
-      )
-    })
-
-    # Current task text
-    output$current_task <- shiny::renderText({
-      state <- compute_state()
-      shiny::req(state)
-
-      if (is.null(state$current_task)) {
-        return("")
-      }
-
-      task <- state$current_task
-
-      # Handle special task keywords
-      if (task %in% c("download_start", "compute_start", "complete", "error", "resuming")) {
-        return(i18n$t(paste0("task_", task)))
-      }
-
-      # Handle download_complete
-      if (task == "download_complete") {
-        return(i18n$t("download_complete"))
-      }
-
-      # Handle new format: "download:source_key" or "compute:indicator_key"
-      if (grepl("^download:", task)) {
-        source_key <- sub("^download:", "", task)
-        source_name <- i18n$t(source_key)
-        return(i18n$t("downloading_source", source = source_name))
-      }
-
-      if (grepl("^compute:", task)) {
-        indicator_key <- sub("^compute:", "", task)
-        indicator_name <- i18n$t(indicator_key)
-        return(i18n$t("computing_indicator_name", indicator = indicator_name))
-      }
-
-      # Fallback: show the task as-is
-      paste(i18n$t("computing_indicator"), task)
-    })
-
-    # Errors list
-    output$errors_list <- shiny::renderUI({
-      state <- compute_state()
-      shiny::req(state)
-
-      if (length(state$errors) == 0) {
-        return(NULL)
-      }
-
-      htmltools::div(
-        class = "mt-3",
-        htmltools::tags$small(class = "text-danger fw-bold", i18n$t("errors_title")),
-        htmltools::tags$ul(
-          class = "list-unstyled small text-danger mt-1",
-          lapply(state$errors, function(err) {
-            htmltools::tags$li(
-              bsicons::bs_icon("exclamation-circle", class = "me-1"),
-              if (!is.null(err$indicator)) paste0(err$indicator, ": "),
-              err$message
-            )
-          })
-        )
-      )
-    })
-
-    # Completion message
-    output$completion_message <- shiny::renderText({
-      state <- compute_state()
-      shiny::req(state)
-
-      sprintf(
-        i18n$t("computation_summary"),
-        state$indicators_completed,
-        state$indicators_total
-      )
-    })
-
-    # Error message
-    output$error_message <- shiny::renderUI({
-      state <- compute_state()
-      shiny::req(state)
-
-      if (length(state$errors) == 0) {
-        return(htmltools::p(i18n$t("unknown_error")))
-      }
-
-      # Get fatal error
-      fatal_error <- state$errors[[length(state$errors)]]
-
-      htmltools::div(
-        htmltools::p(class = "text-danger", fatal_error$message),
-        if (length(state$errors) > 1) {
-          htmltools::div(
-            htmltools::tags$small(
-              class = "text-muted",
-              sprintf(i18n$t("and_n_more_errors"), length(state$errors) - 1)
-            )
+        # Errors list (as HTML via JavaScript)
+        if (length(state$errors) > 0) {
+          error_items <- vapply(state$errors, function(err) {
+            prefix <- if (!is.null(err$indicator)) paste0(err$indicator, ": ") else ""
+            paste0("<li>\u26a0 ", htmltools::htmlEscape(prefix),
+                   htmltools::htmlEscape(err$message), "</li>")
+          }, character(1))
+          errors_html <- paste0(
+            '<div class="mt-3"><small class="text-danger fw-bold">',
+            htmltools::htmlEscape(i18n$t("errors_title")),
+            '</small><ul class="list-unstyled small text-danger mt-1">',
+            paste(error_items, collapse = ""),
+            '</ul></div>'
           )
+          session$sendCustomMessage("updateHTML", list(
+            id = ns("errors_list"),
+            html = errors_html
+          ))
+        } else {
+          session$sendCustomMessage("updateHTML", list(
+            id = ns("errors_list"),
+            html = ""
+          ))
         }
-      )
+      }
+
+      # Completion message (only set once at the end, no re-render loop)
+      if (rv$show_complete) {
+        session$sendCustomMessage("updateText", list(
+          id = ns("completion_message_text"),
+          text = sprintf(
+            i18n$t("computation_summary"),
+            state$indicators_completed,
+            state$indicators_total
+          )
+        ))
+      }
+
+      # Error message (only set once at the end)
+      if (rv$show_error) {
+        error_msg <- if (length(state$errors) > 0) {
+          state$errors[[length(state$errors)]]$message
+        } else {
+          i18n$t("unknown_error")
+        }
+        extra <- if (length(state$errors) > 1) {
+          paste0('<small class="text-muted">',
+                 sprintf(i18n$t("and_n_more_errors"), length(state$errors) - 1),
+                 '</small>')
+        } else {
+          ""
+        }
+        session$sendCustomMessage("updateHTML", list(
+          id = ns("error_message_content"),
+          html = paste0('<p class="text-danger">',
+                        htmltools::htmlEscape(error_msg), '</p>', extra)
+        ))
+      }
     })
 
     # Elapsed time updater (only active during computation)

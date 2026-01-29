@@ -259,6 +259,19 @@
   });
 
   /**
+   * Handle HTML updates for specific elements
+   */
+  Shiny.addCustomMessageHandler('updateHTML', function(data) {
+    const id = data.id;
+    const html = data.html;
+
+    const el = document.getElementById(id);
+    if (el) {
+      el.innerHTML = html;
+    }
+  });
+
+  /**
    * Show/hide element by ID
    */
   Shiny.addCustomMessageHandler('showElement', function(data) {
