@@ -478,6 +478,14 @@ mod_home_server <- function(id, app_state) {
     # This works both in dev mode (devtools::load_all) and production (installed pkg).
     .pkg_path <- tryCatch(pkgload::pkg_path(), error = function(e) NULL)
     compute_task <- shiny::ExtendedTask$new(function(project_id, project_path, app_opts) {
+      # Ensure multisession plan is active before creating the future.
+      # Without this, the future runs sequentially in the main process,
+      # blocking the Shiny event loop (no UI updates, no progress polling).
+      if (requireNamespace("future", quietly = TRUE)) {
+        if (inherits(future::plan(), "sequential")) {
+          future::plan("multisession")
+        }
+      }
       promises::future_promise({
         # Load nemeton package in the worker process
         if (!is.null(.pkg_path) && requireNamespace("pkgload", quietly = TRUE)) {
@@ -577,6 +585,10 @@ mod_home_server <- function(id, app_state) {
       # Start the async computation with project_id, project_path, and app options
       # App options are passed explicitly because future runs in a separate R process
       cli::cli_alert_info("Starting computation for project {project$id}")
+      if (requireNamespace("future", quietly = TRUE)) {
+        plan_class <- class(future::plan())[1]
+        cli::cli_alert_info("Future plan: {plan_class}")
+      }
       compute_task$invoke(project$id, project_path, get_app_options())
     })
 
