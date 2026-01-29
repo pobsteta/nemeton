@@ -161,8 +161,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       pending_styles = NULL,   # Pending style updates
       last_restore_timestamp = NULL,  # Track last processed restore request
       map_loading = FALSE,     # Loading state for map overlay
-      pending_parcels = NULL,  # Parcels waiting to be rendered
-      restoring_project = FALSE  # Flag to prevent commune zoom during project restore
+      pending_parcels = NULL   # Parcels waiting to be rendered
     )
 
 
@@ -273,12 +272,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(geom)) return()
 
-      # Skip commune zoom if we are restoring a project
-      # (the restore observer will handle zooming to selected parcels)
-      skip_zoom <- rv$restoring_project
+      # Check if a project restore is pending (has selected parcels to zoom to)
+      # In that case, skip commune zoom - the restore observer will handle zoom
+      restore <- shiny::isolate(app_state$restore_project)
+      has_pending_restore <- !is.null(restore) &&
+        !is.null(restore$selected_ids) &&
+        length(restore$selected_ids) > 0 &&
+        (is.null(rv$last_restore_timestamp) || !identical(rv$last_restore_timestamp, restore$timestamp))
 
-      if (!skip_zoom) {
-        # Reset parcels zoom flag for new commune (normal navigation only)
+      if (!has_pending_restore) {
+        # Normal navigation: reset parcels zoom flag for new commune
         rv$parcels_zoomed <- FALSE
       }
 
@@ -309,8 +312,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           dashArray = STYLE$commune$dashArray
         )
 
-      # Only zoom to commune bounds if NOT restoring a project
-      if (!skip_zoom) {
+      # Only zoom to commune bounds during normal navigation (not project restore)
+      if (!has_pending_restore) {
         proxy |>
           leaflet::fitBounds(
             lng1 = as.numeric(bbox[["xmin"]]),
@@ -558,9 +561,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
         cli::cli_alert_info("Restoring {length(matching_ids)} parcels...")
 
-        # Block commune zoom during restore
-        rv$restoring_project <- TRUE
-
         # Set selected IDs
         rv$selected_ids <- matching_ids
 
@@ -614,10 +614,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             lat2 = zoom$ymax
           )
         rv$pending_zoom <- NULL
-
-        # Restore complete - allow commune zoom for future navigation
-        rv$restoring_project <- FALSE
-
         cli::cli_alert_success("Zoomed to selected parcels")
       }
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
