@@ -276,14 +276,10 @@
    */
   Shiny.addCustomMessageHandler('showElement', function(data) {
     const id = data.id;
-    console.log('showElement called with id:', id);
     const el = document.getElementById(id);
     if (el) {
-      console.log('Element found, showing:', id);
       el.style.display = 'block';
       el.classList.remove('d-none');
-    } else {
-      console.warn('Element not found:', id);
     }
   });
 
@@ -292,14 +288,10 @@
    */
   Shiny.addCustomMessageHandler('hideElement', function(data) {
     const id = data.id;
-    console.log('hideElement called with id:', id);
     const el = document.getElementById(id);
     if (el) {
-      console.log('Element found, hiding:', id);
       el.style.display = 'none';
       el.classList.add('d-none');
-    } else {
-      console.warn('Element not found for hiding:', id);
     }
   });
 

@@ -587,10 +587,6 @@ mod_home_server <- function(id, app_state) {
       # Start the async computation with project_id, project_path, and app options
       # App options are passed explicitly because future runs in a separate R process
       cli::cli_alert_info("Starting computation for project {project$id}")
-      if (requireNamespace("future", quietly = TRUE)) {
-        plan_classes <- paste(class(future::plan()), collapse = ", ")
-        cli::cli_alert_info("Future plan classes: {plan_classes}")
-      }
       compute_task$invoke(project$id, project_path, get_app_options())
     })
 
