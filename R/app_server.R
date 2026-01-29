@@ -14,6 +14,22 @@
 app_server <- function(input, output, session) {
 
   # ============================================================
+  # ASYNC COMPUTATION SETUP
+  # ============================================================
+
+  # Ensure future::multisession is active for ExtendedTask async computation.
+  # run_app() already sets this, but if the app is started via shiny::runApp()
+  # or devtools::load_all(), the default plan is "sequential" which blocks the
+  # Shiny main loop during computation (no UI updates, no progress polling).
+  if (requireNamespace("future", quietly = TRUE)) {
+    current_plan <- future::plan()
+    if (inherits(current_plan, "sequential")) {
+      future::plan("multisession")
+      cli::cli_alert_info("Switched to future::multisession for async computation")
+    }
+  }
+
+  # ============================================================
   # REACTIVE VALUES - Application State
   # ============================================================
 
