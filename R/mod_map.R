@@ -77,8 +77,23 @@ mod_map_ui <- function(id) {
         id = ns("map_container"),
         style = "height: 100%; min-height: 500px; position: relative;",
 
-        # Loading overlay (hidden by default, shown via uiOutput)
-        shiny::uiOutput(ns("map_loading_ui")),
+        # Loading overlay (static element, hidden by default, shown/hidden via JS)
+        htmltools::div(
+          id = ns("map_loading_overlay"),
+          class = "position-absolute top-0 start-0 w-100 h-100 d-none",
+          style = "background: rgba(255,255,255,0.9); z-index: 1000; display: none; align-items: center; justify-content: center;",
+          htmltools::div(
+            class = "text-center",
+            htmltools::div(
+              class = "spinner-border text-success mb-2",
+              role = "status"
+            ),
+            htmltools::div(
+              class = "text-muted",
+              i18n$t("rendering_parcels")
+            )
+          )
+        ),
 
         # Leaflet output
         leaflet::leafletOutput(ns("map"), height = "100%")
@@ -160,7 +175,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       pending_zoom = NULL,     # Pending zoom bbox (to execute in Shiny context)
       pending_styles = NULL,   # Pending style updates
       last_restore_timestamp = NULL,  # Track last processed restore request
-      map_loading = FALSE,     # Loading state for map overlay
       pending_parcels = NULL   # Parcels waiting to be rendered
     )
 
@@ -169,27 +183,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # Map Loading Overlay
     # ========================================
 
-    output$map_loading_ui <- shiny::renderUI({
-      if (!rv$map_loading) return(NULL)
-
-      i18n <- get_i18n(app_state$language)
-
-      htmltools::div(
-        class = "position-absolute top-0 start-0 w-100 h-100",
-        style = "background: rgba(255,255,255,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center;",
-        htmltools::div(
-          class = "text-center",
-          htmltools::div(
-            class = "spinner-border text-success mb-2",
-            role = "status"
-          ),
-          htmltools::div(
-            class = "text-muted",
-            i18n$t("rendering_parcels")
-          )
-        )
-      )
-    })
+    # Helper to show/hide map loading overlay via direct JS message
+    # (avoids renderUI round-trip delay that caused green flash)
+    show_map_loading <- function(show) {
+      session$sendCustomMessage("showMapLoading", list(
+        loadingId = ns("map_loading_overlay"),
+        show = show
+      ))
+    }
 
 
     # ========================================
@@ -334,7 +335,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       parcel_data <- parcels()
 
       if (is.null(parcel_data) || nrow(parcel_data) == 0) {
-        rv$map_loading <- FALSE
+        show_map_loading(FALSE)
         rv$pending_parcels <- NULL
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("parcels") |>
@@ -343,7 +344,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
 
       # Show loading overlay and store parcels for phase 2
-      rv$map_loading <- TRUE
+      show_map_loading(TRUE)
       rv$pending_parcels <- parcel_data
     })
 
@@ -367,7 +368,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           cli::cli_warn("No polygon geometries in parcel data")
           leaflet::leafletProxy(ns("map")) |>
             leaflet::clearGroup("parcels")
-          rv$map_loading <- FALSE
+          show_map_loading(FALSE)
           rv$pending_parcels <- NULL
           return()
         }
@@ -451,7 +452,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         # Clear pending parcels and hide overlay (unless restore pending)
         rv$pending_parcels <- NULL
         if (!has_pending_restore) {
-          rv$map_loading <- FALSE
+          show_map_loading(FALSE)
         }
       })
     })
@@ -547,12 +548,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     # Show loading overlay immediately when a project restore starts
-    # This prevents any green flash from commune boundary or parcels
-    # being visible during the restore sequence
+    # Uses direct JS message (not renderUI) to avoid race condition
+    # where the green commune boundary renders before the overlay appears
     shiny::observeEvent(app_state$restore_project, {
       restore <- app_state$restore_project
       if (!is.null(restore) && !is.null(restore$selected_ids)) {
-        rv$map_loading <- TRUE
+        show_map_loading(TRUE)
       }
     }, ignoreInit = TRUE)
 
@@ -639,7 +640,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
 
       # Hide loading overlay now that restore is complete
-      rv$map_loading <- FALSE
+      show_map_loading(FALSE)
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
 
