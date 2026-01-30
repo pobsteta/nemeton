@@ -187,6 +187,7 @@ mod_home_server <- function(id, app_state) {
                   ns("delete_corrupted"), proj$id)
         } else {
           sprintf(paste0(
+            "if(window._mapLoadingTimer){clearTimeout(window._mapLoadingTimer);window._mapLoadingTimer=null;}",
             "document.body.classList.add('nemeton-map-loading');",
             "var ov=document.getElementById('%s');",
             "if(ov){ov.classList.remove('d-none');ov.style.display='flex';}",

@@ -319,6 +319,11 @@
    * Uses body class 'nemeton-map-loading' to hide all leaflet widgets via CSS
    * (opacity:0 !important) — most reliable approach, no element targeting issues.
    */
+  // Track pending hide timeout so show() can cancel it (prevents stale
+  // timeout from a previous navigation from clobbering the new overlay).
+  // Exposed on window so the synchronous onclick handler can also cancel it.
+  window._mapLoadingTimer = null;
+
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     var loadingId = data.loadingId;
     var show = data.show;
@@ -326,6 +331,11 @@
     var overlay = document.getElementById(loadingId);
 
     if (show) {
+      // Cancel any pending hide timeout from a previous showMapLoading(false)
+      if (window._mapLoadingTimer) {
+        clearTimeout(window._mapLoadingTimer);
+        window._mapLoadingTimer = null;
+      }
       // Hide all leaflet content via CSS body class
       document.body.classList.add('nemeton-map-loading');
       // Show loading overlay
@@ -338,7 +348,8 @@
       // Wait for the browser to complete rendering before revealing the map.
       // Strategy: 500ms delay + requestAnimationFrame to ensure at least one
       // full paint cycle has occurred with all polygons rendered.
-      setTimeout(function() {
+      window._mapLoadingTimer = setTimeout(function() {
+        window._mapLoadingTimer = null;
         requestAnimationFrame(function() {
           requestAnimationFrame(function() {
             if (overlay) {
