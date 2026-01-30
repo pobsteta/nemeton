@@ -315,18 +315,31 @@
   });
 
   /**
-   * Handle map loading overlay visibility
+   * Handle map loading overlay visibility.
+   * Also hides the leaflet map itself (opacity:0) to prevent any green flash
+   * from leafletProxy commands executing before the overlay is painted.
    */
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     const loadingId = data.loadingId;
     const show = data.show;
 
     const overlay = document.getElementById(loadingId);
+    // Find the leaflet map container (sibling of the overlay)
+    var leafletMap = overlay ? overlay.parentElement.querySelector('.leaflet-container') : null;
+
     if (overlay) {
       if (show) {
         overlay.classList.remove('d-none');
         overlay.style.display = 'flex';
+        // Hide leaflet content to prevent green flash through async rendering
+        if (leafletMap) {
+          leafletMap.style.opacity = '0';
+        }
       } else {
+        // Reveal the map first, then hide overlay
+        if (leafletMap) {
+          leafletMap.style.opacity = '1';
+        }
         overlay.classList.add('d-none');
         overlay.style.display = 'none';
       }
