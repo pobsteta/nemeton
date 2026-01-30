@@ -291,7 +291,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(geom)) return()
 
-      if (!rv$restore_in_progress) {
+      # isolate() to prevent re-firing when restore_in_progress changes to FALSE
+      if (!shiny::isolate(rv$restore_in_progress)) {
         # Normal navigation: reset parcels zoom flag for new commune
         rv$parcels_zoomed <- FALSE
       } else {
@@ -346,11 +347,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       parcel_data <- parcels()
 
       if (is.null(parcel_data) || nrow(parcel_data) == 0) {
-        show_map_loading(FALSE)
-        rv$pending_parcels <- NULL
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels") |>
-          leaflet::clearGroup("selection")
+        # Don't hide overlay during restore (parcels may be NULL while loading)
+        if (!shiny::isolate(rv$restore_in_progress)) {
+          show_map_loading(FALSE)
+          rv$pending_parcels <- NULL
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::clearGroup("parcels") |>
+            leaflet::clearGroup("selection")
+        }
         return()
       }
 
