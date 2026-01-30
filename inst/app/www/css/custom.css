@@ -225,21 +225,23 @@
   color: white;
 }
 
-/* Basemap toggle buttons (no btn-default — uses tags$button, not actionButton) */
+/* Basemap toggle buttons — !important needed to override Bootstrap 5 .btn
+   which sets --bs-btn-bg/--bs-btn-border-color: transparent via CSS variables */
 .basemap-btn {
-  background-color: white;
-  color: var(--nemeton-secondary);
-  border-color: var(--nemeton-secondary);
+  background-color: white !important;
+  color: #6B3710 !important;
+  border: 1px solid #6B3710 !important;
 }
 
 .basemap-btn:hover {
-  background-color: rgba(107, 55, 16, 0.1);
+  background-color: rgba(107, 55, 16, 0.1) !important;
 }
 
-.basemap-btn.basemap-btn-active {
-  background-color: var(--nemeton-secondary);
-  border-color: var(--nemeton-secondary);
-  color: white;
+.basemap-btn.basemap-btn-active,
+.basemap-btn.basemap-btn-active:hover {
+  background-color: #6B3710 !important;
+  border-color: #6B3710 !important;
+  color: white !important;
 }
 
 /* Disabled state */
