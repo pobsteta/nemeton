@@ -126,9 +126,14 @@
   // ============================================================
 
   /**
-   * Handle basemap toggle button group
+   * Handle basemap toggle button group (client-side click)
    */
   function initBasemapToggle() {
+    // Remove btn-default from basemap buttons on init (Shiny adds it, conflicts with Bootstrap 5)
+    document.querySelectorAll('[id$="-basemap_osm"], [id$="-basemap_satellite"]').forEach(function(btn) {
+      btn.classList.remove('btn-default');
+    });
+
     document.addEventListener('click', function(e) {
       // Use closest() to handle clicks on child elements inside the button
       var btn = e.target.closest('[id$="-basemap_osm"], [id$="-basemap_satellite"]');
@@ -137,12 +142,36 @@
         if (btnGroup) {
           btnGroup.querySelectorAll('.btn').forEach(function(b) {
             b.classList.remove('active');
+            // Remove btn-default added by Shiny (conflicts with Bootstrap 5 outline style)
+            b.classList.remove('btn-default');
           });
           btn.classList.add('active');
+          btn.classList.remove('btn-default');
         }
       }
     });
   }
+
+  /**
+   * Server-driven basemap button toggle (reliable fallback)
+   */
+  Shiny.addCustomMessageHandler('toggleBasemapButtons', function(data) {
+    var osmBtn = document.getElementById(data.osmId);
+    var satBtn = document.getElementById(data.satId);
+    if (!osmBtn || !satBtn) return;
+
+    // Remove btn-default (Shiny legacy class) from both buttons
+    osmBtn.classList.remove('btn-default');
+    satBtn.classList.remove('btn-default');
+
+    if (data.active === 'osm') {
+      osmBtn.classList.add('active');
+      satBtn.classList.remove('active');
+    } else {
+      satBtn.classList.add('active');
+      osmBtn.classList.remove('active');
+    }
+  });
 
 
   // ============================================================

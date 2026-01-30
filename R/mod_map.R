@@ -249,6 +249,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           group = "basemap",
           layerId = "basemap_tiles"
         )
+
+      session$sendCustomMessage("toggleBasemapButtons", list(
+        osmId = ns("basemap_osm"),
+        satId = ns("basemap_satellite"),
+        active = "osm"
+      ))
     })
 
     shiny::observeEvent(input$basemap_satellite, {
@@ -262,6 +268,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           group = "basemap",
           layerId = "basemap_tiles"
         )
+
+      session$sendCustomMessage("toggleBasemapButtons", list(
+        osmId = ns("basemap_osm"),
+        satId = ns("basemap_satellite"),
+        active = "satellite"
+      ))
     })
 
 
