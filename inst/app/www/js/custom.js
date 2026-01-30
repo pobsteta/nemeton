@@ -430,4 +430,11 @@
     initFormValidation();
   });
 
+  // Strip btn-default from basemap buttons once Shiny has rendered them
+  $(document).on('shiny:connected', function() {
+    document.querySelectorAll('.basemap-btn').forEach(function(btn) {
+      btn.classList.remove('btn-default');
+    });
+  });
+
 })();

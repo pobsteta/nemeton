@@ -225,18 +225,18 @@
   color: white;
 }
 
-/* Basemap toggle buttons - custom classes to avoid Bootstrap/bslib conflicts */
-.basemap-btn {
+/* Basemap toggle buttons - high specificity to override bslib .btn.btn-default */
+.btn-group .btn.basemap-btn {
   background-color: white !important;
   color: var(--nemeton-secondary) !important;
   border: 1px solid var(--nemeton-secondary) !important;
 }
 
-.basemap-btn:hover {
+.btn-group .btn.basemap-btn:hover {
   background-color: rgba(107, 55, 16, 0.1) !important;
 }
 
-.basemap-btn.basemap-btn-active {
+.btn-group .btn.basemap-btn.basemap-btn-active {
   background-color: var(--nemeton-secondary) !important;
   border-color: var(--nemeton-secondary) !important;
   color: white !important;
