@@ -181,7 +181,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       pending_commune_geom = NULL,  # Deferred commune geometry during restore
       last_restore_timestamp = NULL,  # Track last processed restore request
       restore_in_progress = FALSE,    # TRUE while project restore is active (prevents premature overlay hide)
-      restore_render_done = FALSE     # TRUE when pending observer has finished rendering (commune + selection + zoom)
+      restore_render_done = FALSE,    # TRUE when pending observer has finished rendering (commune + selection + zoom)
       pending_parcels = NULL   # Parcels waiting to be rendered
     )
 
