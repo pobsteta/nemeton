@@ -48,12 +48,12 @@ mod_map_ui <- function(id) {
           shiny::actionButton(
             ns("basemap_osm"),
             "OSM",
-            class = "btn btn-outline-secondary active"
+            class = "basemap-btn basemap-btn-active"
           ),
           shiny::actionButton(
             ns("basemap_satellite"),
             "Satellite",
-            class = "btn btn-outline-secondary"
+            class = "basemap-btn"
           )
         ),
 
