@@ -100,7 +100,8 @@ mod_search_server <- function(id, app_state) {
       selected_commune = NULL,
       commune_info = NULL,
       commune_geometry = NULL,
-      is_loading = FALSE
+      is_loading = FALSE,
+      is_restoring = FALSE
     )
 
 
@@ -130,6 +131,10 @@ mod_search_server <- function(id, app_state) {
     shiny::observeEvent(input$departement, {
       dept <- input$departement
       i18n <- get_i18n(get_lang())
+
+      # During project restore, the restore observer handles commune loading
+      # directly via later::later - skip redundant API call here
+      if (rv$is_restoring) return()
 
       if (is.null(dept) || dept == "") {
         shiny::updateSelectizeInput(
@@ -277,6 +282,9 @@ mod_search_server <- function(id, app_state) {
 
       cli::cli_alert_info("Restoring location: dept={dept_code}, commune={commune_code}")
 
+      # Flag to prevent department observer from making redundant API calls
+      rv$is_restoring <- TRUE
+
       # Update department dropdown
       shiny::updateSelectInput(session, "departement", selected = dept_code)
 
@@ -289,6 +297,8 @@ mod_search_server <- function(id, app_state) {
           cli::cli_alert_info("Updating commune dropdown with {nrow(communes)} choices")
 
           # Update commune dropdown with choices and selection
+          # This triggers the input$commune observer which handles
+          # commune_geometry, commune_info, and selected_commune
           shiny::updateSelectizeInput(
             session,
             "commune",
@@ -297,21 +307,11 @@ mod_search_server <- function(id, app_state) {
             server = FALSE
           )
 
-          # Load commune geometry
-          geometry <- get_commune_geometry(commune_code)
-          if (!is.null(geometry)) {
-            rv$selected_commune <- commune_code
-            rv$commune_geometry <- geometry
-
-            # Get commune info
-            info <- communes[communes$code_insee == commune_code, ]
-            if (nrow(info) > 0) {
-              rv$commune_info <- as.list(info[1, ])
-            }
-
-            cli::cli_alert_success("Location restored successfully")
-          }
+          cli::cli_alert_success("Location restored successfully")
         }
+
+        # Clear restoring flag
+        rv$is_restoring <- FALSE
       }, delay = 0.5)  # 500ms delay to ensure department dropdown is updated
     }, ignoreInit = TRUE)
 

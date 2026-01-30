@@ -283,10 +283,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (!has_pending_restore) {
         # Normal navigation: reset parcels zoom flag for new commune
         rv$parcels_zoomed <- FALSE
-      } else {
-        # Project restore: show loading overlay immediately to hide
-        # the commune boundary rendering and avoid a green flash
-        rv$map_loading <- TRUE
       }
 
       # Verify geometry is polygon type
@@ -549,6 +545,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
     # Restore Project Selection
     # ========================================
+
+    # Show loading overlay immediately when a project restore starts
+    # This prevents any green flash from commune boundary or parcels
+    # being visible during the restore sequence
+    shiny::observeEvent(app_state$restore_project, {
+      restore <- app_state$restore_project
+      if (!is.null(restore) && !is.null(restore$selected_ids)) {
+        rv$map_loading <- TRUE
+      }
+    }, ignoreInit = TRUE)
 
     # Single observer that handles restoration when both restore request and parcels are available
     shiny::observe({
