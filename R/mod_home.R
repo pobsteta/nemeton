@@ -186,8 +186,10 @@ mod_home_server <- function(id, app_state) {
           sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
                   ns("delete_corrupted"), proj$id)
         } else {
-          sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
-                  ns("load_project"), proj$id)
+          sprintf(paste0(
+            "document.querySelectorAll('.leaflet-container').forEach(function(el){el.style.visibility='hidden'});",
+            "Shiny.setInputValue('%s', '%s', {priority: 'event'});"
+          ), ns("load_project"), proj$id)
         }
 
         cursor_class <- if (is_active) "project-card-active" else "cursor-pointer project-card"

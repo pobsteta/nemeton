@@ -316,29 +316,31 @@
 
   /**
    * Handle map loading overlay visibility.
-   * Also hides the leaflet map itself (opacity:0) to prevent any green flash
-   * from leafletProxy commands executing before the overlay is painted.
+   * Hides the leaflet map output entirely (visibility:hidden) to prevent
+   * green flash from leafletProxy commands executing asynchronously.
    */
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     const loadingId = data.loadingId;
     const show = data.show;
 
     const overlay = document.getElementById(loadingId);
-    // Find the leaflet map container (sibling of the overlay)
-    var leafletMap = overlay ? overlay.parentElement.querySelector('.leaflet-container') : null;
+    // Find the leaflet output div by deriving its ID from the overlay ID
+    // Overlay: "home-map-map_loading_overlay" → Map output: "home-map-map"
+    var mapOutputId = loadingId.replace('_loading_overlay', '');
+    var mapOutput = document.getElementById(mapOutputId);
 
     if (overlay) {
       if (show) {
         overlay.classList.remove('d-none');
         overlay.style.display = 'flex';
-        // Hide leaflet content to prevent green flash through async rendering
-        if (leafletMap) {
-          leafletMap.style.opacity = '0';
+        // Completely hide the leaflet output to prevent any green flash
+        if (mapOutput) {
+          mapOutput.style.visibility = 'hidden';
         }
       } else {
-        // Reveal the map first, then hide overlay
-        if (leafletMap) {
-          leafletMap.style.opacity = '1';
+        // Reveal map, then hide overlay
+        if (mapOutput) {
+          mapOutput.style.visibility = 'visible';
         }
         overlay.classList.add('d-none');
         overlay.style.display = 'none';
