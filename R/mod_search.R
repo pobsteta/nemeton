@@ -129,6 +129,7 @@ mod_search_server <- function(id, app_state) {
 
     shiny::observeEvent(input$departement, {
       dept <- input$departement
+      i18n <- get_i18n(get_lang())
 
       if (is.null(dept) || dept == "") {
         shiny::updateSelectizeInput(
