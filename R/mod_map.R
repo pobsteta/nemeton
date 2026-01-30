@@ -419,9 +419,18 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             )
           )
 
+        # Check if a project restore is pending
+        restore <- shiny::isolate(app_state$restore_project)
+        has_pending_restore <- !is.null(restore) &&
+          !is.null(restore$selected_ids) &&
+          length(restore$selected_ids) > 0 &&
+          (is.null(rv$last_restore_timestamp) ||
+           !identical(rv$last_restore_timestamp, restore$timestamp))
+
         # Zoom to parcels extent only on first load (not on selection updates)
-        # Skip if parcels_zoomed is TRUE (set by restore or previous zoom)
-        if (!rv$parcels_zoomed) {
+        # Skip if parcels_zoomed is TRUE or if a project restore is pending
+        # (the restore observer will handle zoom to selected parcels)
+        if (!rv$parcels_zoomed && !has_pending_restore) {
           cli::cli_alert_info("Zooming to all parcels")
           bbox <- sf::st_bbox(parcel_data)
           leaflet::leafletProxy(ns("map")) |>
@@ -439,9 +448,11 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           update_parcel_styles(rv$selected_ids)
         }
 
-        # Clear pending and hide overlay
+        # Clear pending parcels and hide overlay (unless restore pending)
         rv$pending_parcels <- NULL
-        rv$map_loading <- FALSE
+        if (!has_pending_restore) {
+          rv$map_loading <- FALSE
+        }
       })
     })
 
@@ -616,6 +627,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         rv$pending_zoom <- NULL
         cli::cli_alert_success("Zoomed to selected parcels")
       }
+
+      # Hide loading overlay now that restore is complete
+      rv$map_loading <- FALSE
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
 
