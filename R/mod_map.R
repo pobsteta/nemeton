@@ -40,20 +40,24 @@ mod_map_ui <- function(id) {
       htmltools::div(
         class = "d-flex gap-2 align-items-center",
 
-        # Basemap toggle
+        # Basemap toggle (use tags$button to avoid Shiny's btn-default class)
         htmltools::div(
           class = "btn-group btn-group-sm",
           role = "group",
           `aria-label` = "Basemap selection",
-          shiny::actionButton(
-            ns("basemap_osm"),
-            "OSM",
-            class = "basemap-btn basemap-btn-active"
+          htmltools::tags$button(
+            id = ns("basemap_osm"),
+            type = "button",
+            class = "btn action-button basemap-btn basemap-btn-active",
+            `data-val` = 0,
+            "OSM"
           ),
-          shiny::actionButton(
-            ns("basemap_satellite"),
-            "Satellite",
-            class = "basemap-btn"
+          htmltools::tags$button(
+            id = ns("basemap_satellite"),
+            type = "button",
+            class = "btn action-button basemap-btn",
+            `data-val` = 0,
+            "Satellite"
           )
         ),
 
@@ -237,16 +241,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
     # Basemap Toggle
     # ========================================
-
-    # Apply initial button styles once the leaflet map is rendered in the DOM
-    # (input$map_bounds is set by leaflet on first render)
-    shiny::observeEvent(input$map_bounds, {
-      session$sendCustomMessage("toggleBasemapButtons", list(
-        osmId = ns("basemap_osm"),
-        satId = ns("basemap_satellite"),
-        active = "osm"
-      ))
-    }, once = TRUE)
 
     shiny::observeEvent(input$basemap_osm, {
       rv$basemap <- "osm"

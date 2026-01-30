@@ -225,9 +225,22 @@
   color: white;
 }
 
-/* Basemap toggle button styles are applied via inline JS (styleBasemapBtn)
-   because bslib injects .btn-default styles dynamically after CSS load,
-   making stylesheet-based overrides unreliable regardless of specificity. */
+/* Basemap toggle buttons (no btn-default — uses tags$button, not actionButton) */
+.basemap-btn {
+  background-color: white;
+  color: var(--nemeton-secondary);
+  border-color: var(--nemeton-secondary);
+}
+
+.basemap-btn:hover {
+  background-color: rgba(107, 55, 16, 0.1);
+}
+
+.basemap-btn.basemap-btn-active {
+  background-color: var(--nemeton-secondary);
+  border-color: var(--nemeton-secondary);
+  color: white;
+}
 
 /* Disabled state */
 .btn:disabled,

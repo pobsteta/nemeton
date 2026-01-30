@@ -126,33 +126,18 @@
   // ============================================================
 
   /**
-   * Apply inline styles to basemap buttons (inline styles beat any stylesheet)
-   */
-  function styleBasemapBtn(btn, active) {
-    if (active) {
-      btn.style.setProperty('background-color', '#6B3710', 'important');
-      btn.style.setProperty('border-color', '#6B3710', 'important');
-      btn.style.setProperty('color', 'white', 'important');
-    } else {
-      btn.style.setProperty('background-color', 'white', 'important');
-      btn.style.setProperty('border-color', '#6B3710', 'important');
-      btn.style.setProperty('color', '#6B3710', 'important');
-    }
-  }
-
-  /**
    * Handle basemap toggle button group (client-side click)
    */
   function initBasemapToggle() {
     document.addEventListener('click', function(e) {
-      var btn = e.target.closest('[id$="-basemap_osm"], [id$="-basemap_satellite"]');
+      var btn = e.target.closest('.basemap-btn');
       if (btn) {
         var btnGroup = btn.closest('.btn-group');
         if (btnGroup) {
           btnGroup.querySelectorAll('.basemap-btn').forEach(function(b) {
-            styleBasemapBtn(b, false);
+            b.classList.remove('basemap-btn-active');
           });
-          styleBasemapBtn(btn, true);
+          btn.classList.add('basemap-btn-active');
         }
       }
     });
@@ -166,12 +151,13 @@
     var satBtn = document.getElementById(data.satId);
     if (!osmBtn || !satBtn) return;
 
+    osmBtn.classList.remove('basemap-btn-active');
+    satBtn.classList.remove('basemap-btn-active');
+
     if (data.active === 'osm') {
-      styleBasemapBtn(osmBtn, true);
-      styleBasemapBtn(satBtn, false);
+      osmBtn.classList.add('basemap-btn-active');
     } else {
-      styleBasemapBtn(satBtn, true);
-      styleBasemapBtn(osmBtn, false);
+      satBtn.classList.add('basemap-btn-active');
     }
   });
 
@@ -443,20 +429,6 @@
   // Re-initialize after Shiny updates
   $(document).on('shiny:value', function() {
     initFormValidation();
-  });
-
-  // Apply initial inline styles to basemap buttons after all outputs are rendered.
-  // shiny:idle fires after the initial render cycle completes (buttons exist in DOM).
-  $(document).on('shiny:idle', function initBasemapStyles() {
-    var btns = document.querySelectorAll('.basemap-btn');
-    if (btns.length > 0) {
-      btns.forEach(function(btn) {
-        var isActive = btn.classList.contains('basemap-btn-active');
-        styleBasemapBtn(btn, isActive);
-      });
-      // Only need to run once at startup
-      $(document).off('shiny:idle', initBasemapStyles);
-    }
   });
 
 })();
