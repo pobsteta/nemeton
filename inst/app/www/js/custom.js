@@ -445,12 +445,18 @@
     initFormValidation();
   });
 
-  // Apply initial inline styles to basemap buttons once Shiny has rendered them
-  $(document).on('shiny:connected', function() {
-    document.querySelectorAll('.basemap-btn').forEach(function(btn) {
-      var isActive = btn.classList.contains('basemap-btn-active');
-      styleBasemapBtn(btn, isActive);
-    });
+  // Apply initial inline styles to basemap buttons after all outputs are rendered.
+  // shiny:idle fires after the initial render cycle completes (buttons exist in DOM).
+  $(document).on('shiny:idle', function initBasemapStyles() {
+    var btns = document.querySelectorAll('.basemap-btn');
+    if (btns.length > 0) {
+      btns.forEach(function(btn) {
+        var isActive = btn.classList.contains('basemap-btn-active');
+        styleBasemapBtn(btn, isActive);
+      });
+      // Only need to run once at startup
+      $(document).off('shiny:idle', initBasemapStyles);
+    }
   });
 
 })();

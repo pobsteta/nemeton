@@ -238,6 +238,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # Basemap Toggle
     # ========================================
 
+    # Apply initial button styles once the leaflet map is rendered in the DOM
+    # (input$map_bounds is set by leaflet on first render)
+    shiny::observeEvent(input$map_bounds, {
+      session$sendCustomMessage("toggleBasemapButtons", list(
+        osmId = ns("basemap_osm"),
+        satId = ns("basemap_satellite"),
+        active = "osm"
+      ))
+    }, once = TRUE)
+
     shiny::observeEvent(input$basemap_osm, {
       rv$basemap <- "osm"
       cli::cli_alert_info("Switching to OSM basemap")
