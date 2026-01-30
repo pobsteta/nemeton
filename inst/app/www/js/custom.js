@@ -316,24 +316,18 @@
 
   /**
    * Handle map loading overlay visibility.
-   * Hides the leaflet widget output by ID (visibility:hidden) while showing
-   * the overlay. Leaflet output ID is derived from overlay ID.
-   * Overlay: "home-map-map_loading_overlay" → Leaflet: "home-map-map"
+   * Uses body class 'nemeton-map-loading' to hide all leaflet widgets via CSS
+   * (opacity:0 !important) — most reliable approach, no element targeting issues.
    */
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     var loadingId = data.loadingId;
     var show = data.show;
 
     var overlay = document.getElementById(loadingId);
-    // Derive leaflet output ID: remove "_loading_overlay" suffix
-    var leafletId = loadingId.replace('_loading_overlay', '');
-    var leafletOutput = document.getElementById(leafletId);
 
     if (show) {
-      // Hide leaflet output so no green content is visible
-      if (leafletOutput) {
-        leafletOutput.style.visibility = 'hidden';
-      }
+      // Hide all leaflet content via CSS body class
+      document.body.classList.add('nemeton-map-loading');
       // Show loading overlay
       if (overlay) {
         overlay.classList.remove('d-none');
@@ -345,10 +339,8 @@
         overlay.classList.add('d-none');
         overlay.style.display = 'none';
       }
-      // Reveal leaflet output with all content already rendered
-      if (leafletOutput) {
-        leafletOutput.style.visibility = 'visible';
-      }
+      // Reveal leaflet content
+      document.body.classList.remove('nemeton-map-loading');
     }
   });
 

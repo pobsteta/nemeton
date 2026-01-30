@@ -259,6 +259,13 @@
 /* ============================================================
    Map Container
    ============================================================ */
+/* Hide leaflet output completely while restoring a project.
+   Uses body class for maximum reliability — no JS targeting issues. */
+body.nemeton-map-loading .leaflet {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 #map_container,
 .leaflet-container {
   border-radius: 0 0 8px 8px;

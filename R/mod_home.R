@@ -187,12 +187,11 @@ mod_home_server <- function(id, app_state) {
                   ns("delete_corrupted"), proj$id)
         } else {
           sprintf(paste0(
-            "var lf=document.getElementById('%s');",
-            "if(lf){lf.style.visibility='hidden';}",
+            "document.body.classList.add('nemeton-map-loading');",
             "var ov=document.getElementById('%s');",
             "if(ov){ov.classList.remove('d-none');ov.style.display='flex';}",
             "Shiny.setInputValue('%s', '%s', {priority: 'event'});"
-          ), ns("map-map"), ns("map-map_loading_overlay"),
+          ), ns("map-map_loading_overlay"),
              ns("load_project"), proj$id)
         }
 
