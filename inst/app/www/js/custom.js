@@ -130,13 +130,15 @@
    */
   function initBasemapToggle() {
     document.addEventListener('click', function(e) {
-      if (e.target.matches('[id$="-basemap_osm"], [id$="-basemap_satellite"]')) {
-        const btnGroup = e.target.closest('.btn-group');
+      // Use closest() to handle clicks on child elements inside the button
+      var btn = e.target.closest('[id$="-basemap_osm"], [id$="-basemap_satellite"]');
+      if (btn) {
+        var btnGroup = btn.closest('.btn-group');
         if (btnGroup) {
-          btnGroup.querySelectorAll('.btn').forEach(function(btn) {
-            btn.classList.remove('active');
+          btnGroup.querySelectorAll('.btn').forEach(function(b) {
+            b.classList.remove('active');
           });
-          e.target.classList.add('active');
+          btn.classList.add('active');
         }
       }
     });
