@@ -181,6 +181,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       pending_commune_geom = NULL,  # Deferred commune geometry during restore
       last_restore_timestamp = NULL,  # Track last processed restore request
       restore_in_progress = FALSE,    # TRUE while project restore is active (prevents premature overlay hide)
+      restore_render_done = FALSE     # TRUE when pending observer has finished rendering (commune + selection + zoom)
       pending_parcels = NULL   # Parcels waiting to be rendered
     )
 
@@ -456,9 +457,18 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           update_parcel_styles(rv$selected_ids)
         }
 
-        # Clear pending parcels and hide overlay (unless restore in progress)
+        # Clear pending parcels
         rv$pending_parcels <- NULL
-        if (!rv$restore_in_progress) {
+
+        if (rv$restore_in_progress) {
+          # During restore: reveal map only if the pending observer has
+          # already finished rendering commune + selection + zoom
+          if (rv$restore_render_done) {
+            rv$restore_in_progress <- FALSE
+            rv$restore_render_done <- FALSE
+            show_map_loading(FALSE)
+          }
+        } else {
           show_map_loading(FALSE)
         }
       })
@@ -668,9 +678,15 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         cli::cli_alert_success("Zoomed to selected parcels")
       }
 
-      # Mark restore as complete and reveal the map
-      rv$restore_in_progress <- FALSE
-      show_map_loading(FALSE)
+      # Check if Phase 2 already rendered base parcels
+      if (is.null(rv$pending_parcels)) {
+        # Phase 2 already done — reveal now
+        rv$restore_in_progress <- FALSE
+        show_map_loading(FALSE)
+      } else {
+        # Phase 2 not done yet — let Phase 2 reveal when it finishes
+        rv$restore_render_done <- TRUE
+      }
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
 
