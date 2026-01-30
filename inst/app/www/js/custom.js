@@ -126,6 +126,21 @@
   // ============================================================
 
   /**
+   * Apply inline styles to basemap buttons (inline styles beat any stylesheet)
+   */
+  function styleBasemapBtn(btn, active) {
+    if (active) {
+      btn.style.setProperty('background-color', '#6B3710', 'important');
+      btn.style.setProperty('border-color', '#6B3710', 'important');
+      btn.style.setProperty('color', 'white', 'important');
+    } else {
+      btn.style.setProperty('background-color', 'white', 'important');
+      btn.style.setProperty('border-color', '#6B3710', 'important');
+      btn.style.setProperty('color', '#6B3710', 'important');
+    }
+  }
+
+  /**
    * Handle basemap toggle button group (client-side click)
    */
   function initBasemapToggle() {
@@ -135,9 +150,9 @@
         var btnGroup = btn.closest('.btn-group');
         if (btnGroup) {
           btnGroup.querySelectorAll('.basemap-btn').forEach(function(b) {
-            b.classList.remove('basemap-btn-active');
+            styleBasemapBtn(b, false);
           });
-          btn.classList.add('basemap-btn-active');
+          styleBasemapBtn(btn, true);
         }
       }
     });
@@ -152,11 +167,11 @@
     if (!osmBtn || !satBtn) return;
 
     if (data.active === 'osm') {
-      osmBtn.classList.add('basemap-btn-active');
-      satBtn.classList.remove('basemap-btn-active');
+      styleBasemapBtn(osmBtn, true);
+      styleBasemapBtn(satBtn, false);
     } else {
-      satBtn.classList.add('basemap-btn-active');
-      osmBtn.classList.remove('basemap-btn-active');
+      styleBasemapBtn(satBtn, true);
+      styleBasemapBtn(osmBtn, false);
     }
   });
 
@@ -430,10 +445,11 @@
     initFormValidation();
   });
 
-  // Strip btn-default from basemap buttons once Shiny has rendered them
+  // Apply initial inline styles to basemap buttons once Shiny has rendered them
   $(document).on('shiny:connected', function() {
     document.querySelectorAll('.basemap-btn').forEach(function(btn) {
-      btn.classList.remove('btn-default');
+      var isActive = btn.classList.contains('basemap-btn-active');
+      styleBasemapBtn(btn, isActive);
     });
   });
 
