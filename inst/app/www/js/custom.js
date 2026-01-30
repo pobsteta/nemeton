@@ -316,19 +316,18 @@
 
   /**
    * Handle map loading overlay visibility.
-   * Hides the leaflet widget output (visibility:hidden) while showing the
-   * overlay on top. The overlay stays visible as a loading indicator.
+   * Hides the leaflet widget output by ID (visibility:hidden) while showing
+   * the overlay. Leaflet output ID is derived from overlay ID.
+   * Overlay: "home-map-map_loading_overlay" → Leaflet: "home-map-map"
    */
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
-    const loadingId = data.loadingId;
-    const show = data.show;
+    var loadingId = data.loadingId;
+    var show = data.show;
 
-    const overlay = document.getElementById(loadingId);
-    if (!overlay) return;
-
-    // Find the leaflet output widget div (sibling of the overlay inside the container)
-    var mapContainer = overlay.parentElement;
-    var leafletOutput = mapContainer ? mapContainer.querySelector('.html-widget-output') : null;
+    var overlay = document.getElementById(loadingId);
+    // Derive leaflet output ID: remove "_loading_overlay" suffix
+    var leafletId = loadingId.replace('_loading_overlay', '');
+    var leafletOutput = document.getElementById(leafletId);
 
     if (show) {
       // Hide leaflet output so no green content is visible
@@ -336,12 +335,16 @@
         leafletOutput.style.visibility = 'hidden';
       }
       // Show loading overlay
-      overlay.classList.remove('d-none');
-      overlay.style.display = 'flex';
+      if (overlay) {
+        overlay.classList.remove('d-none');
+        overlay.style.display = 'flex';
+      }
     } else {
       // Hide overlay
-      overlay.classList.add('d-none');
-      overlay.style.display = 'none';
+      if (overlay) {
+        overlay.classList.add('d-none');
+        overlay.style.display = 'none';
+      }
       // Reveal leaflet output with all content already rendered
       if (leafletOutput) {
         leafletOutput.style.visibility = 'visible';
