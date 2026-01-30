@@ -334,13 +334,15 @@
         overlay.style.display = 'flex';
       }
     } else {
-      // Hide overlay
-      if (overlay) {
-        overlay.classList.add('d-none');
-        overlay.style.display = 'none';
-      }
-      // Reveal leaflet content
-      document.body.classList.remove('nemeton-map-loading');
+      // Delay reveal to let leaflet finish rendering polygons asynchronously.
+      // Without this, the body class removal exposes half-painted layers.
+      setTimeout(function() {
+        if (overlay) {
+          overlay.classList.add('d-none');
+          overlay.style.display = 'none';
+        }
+        document.body.classList.remove('nemeton-map-loading');
+      }, 200);
     }
   });
 

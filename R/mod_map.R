@@ -181,7 +181,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       pending_commune_geom = NULL,  # Deferred commune geometry during restore
       last_restore_timestamp = NULL,  # Track last processed restore request
       restore_in_progress = FALSE,    # TRUE while project restore is active (prevents premature overlay hide)
-      restore_render_done = FALSE,    # TRUE when pending observer has finished rendering (commune + selection + zoom)
       pending_parcels = NULL   # Parcels waiting to be rendered
     )
 
@@ -365,10 +364,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     })
 
     # Phase 2: Render parcels after overlay is shown
+    # During restore, this observer is SKIPPED — the pending observer
+    # renders everything (parcels + commune + selection + zoom) in one batch
+    # to avoid green flash from split message batches.
     shiny::observe({
       # Wait for pending parcels
       parcel_data <- rv$pending_parcels
       if (is.null(parcel_data)) return()
+
+      # During restore, skip — pending observer handles all rendering
+      if (shiny::isolate(rv$restore_in_progress)) return()
 
       # Small delay to allow overlay to render first
       shiny::invalidateLater(100)
@@ -377,69 +382,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         # Only render once per pending_parcels update
         if (is.null(rv$pending_parcels)) return()
 
-        # Filter to keep only polygon geometries (defensive check)
-        geom_types <- sf::st_geometry_type(parcel_data)
-        polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
-        if (sum(polygon_idx) == 0) {
-          cli::cli_warn("No polygon geometries in parcel data")
-          leaflet::leafletProxy(ns("map")) |>
-            leaflet::clearGroup("parcels")
-          show_map_loading(FALSE)
-          rv$pending_parcels <- NULL
-          return()
-        }
-        if (sum(!polygon_idx) > 0) {
-          parcel_data <- parcel_data[polygon_idx, ]
-        }
-
-        # Ensure WGS84
-        if (sf::st_crs(parcel_data)$epsg != 4326) {
-          parcel_data <- sf::st_transform(parcel_data, 4326)
-        }
-
-        # Create labels for hover display (no popups - user requested hover-only)
-        labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
-          create_parcel_label(parcel_data[i, ])
-        })
-
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels") |>
-          leaflet::addPolygons(
-            data = parcel_data,
-            layerId = parcel_data$id,
-            group = "parcels",
-            color = STYLE$parcel_default$color,
-            weight = STYLE$parcel_default$weight,
-            fillColor = STYLE$parcel_default$fillColor,
-            fillOpacity = STYLE$parcel_default$fillOpacity,
-            label = lapply(labels, htmltools::HTML),
-            labelOptions = leaflet::labelOptions(
-              style = list(
-                "font-size" = "12px",
-                "font-weight" = "normal",
-                "padding" = "6px 10px",
-                "background-color" = "white",
-                "border" = "1px solid #ccc",
-                "border-radius" = "4px",
-                "box-shadow" = "0 2px 4px rgba(0,0,0,0.2)"
-              ),
-              direction = "auto",
-              offset = c(0, -5)
-            ),
-            highlightOptions = leaflet::highlightOptions(
-              weight = STYLE$parcel_hover$weight,
-              fillOpacity = STYLE$parcel_hover$fillOpacity,
-              bringToFront = TRUE
-            ),
-            options = leaflet::pathOptions(
-              className = "parcel-polygon"
-            )
-          )
+        render_parcels_to_map(parcel_data)
 
         # Zoom to parcels extent only on first load (not on selection updates)
-        # Skip if parcels_zoomed is TRUE or if a project restore is in progress
-        # (the restore observer will handle zoom to selected parcels)
-        if (!rv$parcels_zoomed && !rv$restore_in_progress) {
+        if (!rv$parcels_zoomed) {
           cli::cli_alert_info("Zooming to all parcels")
           bbox <- sf::st_bbox(parcel_data)
           leaflet::leafletProxy(ns("map")) |>
@@ -452,25 +398,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           rv$parcels_zoomed <- TRUE
         }
 
-        # Re-apply selection styling if needed (skip during restore)
-        if (length(rv$selected_ids) > 0 && !rv$restore_in_progress) {
+        # Re-apply selection styling if needed
+        if (length(rv$selected_ids) > 0) {
           update_parcel_styles(rv$selected_ids)
         }
 
         # Clear pending parcels
         rv$pending_parcels <- NULL
-
-        if (rv$restore_in_progress) {
-          # During restore: reveal map only if the pending observer has
-          # already finished rendering commune + selection + zoom
-          if (rv$restore_render_done) {
-            rv$restore_in_progress <- FALSE
-            rv$restore_render_done <- FALSE
-            show_map_loading(FALSE)
-          }
-        } else {
-          show_map_loading(FALSE)
-        }
+        show_map_loading(FALSE)
       })
     })
 
@@ -627,13 +562,23 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
     })
 
-    # Apply pending zoom, styles, and deferred commune boundary when set
+    # Apply pending zoom, styles, deferred commune boundary, and base parcels.
+    # During restore, this observer renders EVERYTHING in one batch so all
+    # leafletProxy messages are sent together — no green flash between batches.
     shiny::observeEvent(list(rv$pending_zoom, rv$pending_styles), {
       styles <- shiny::isolate(rv$pending_styles)
       zoom <- shiny::isolate(rv$pending_zoom)
       commune_geom <- shiny::isolate(rv$pending_commune_geom)
+      parcel_data <- shiny::isolate(rv$pending_parcels)
 
       if (is.null(zoom) && is.null(styles)) return()
+
+      # Render base parcels first (during restore, Phase 2 is skipped)
+      if (!is.null(parcel_data)) {
+        render_parcels_to_map(parcel_data)
+        rv$pending_parcels <- NULL
+        rv$parcels_zoomed <- TRUE
+      }
 
       # Add deferred commune boundary (was skipped to avoid green flash)
       if (!is.null(commune_geom)) {
@@ -678,16 +623,78 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         cli::cli_alert_success("Zoomed to selected parcels")
       }
 
-      # Check if Phase 2 already rendered base parcels
-      if (is.null(rv$pending_parcels)) {
-        # Phase 2 already done — reveal now
-        rv$restore_in_progress <- FALSE
-        show_map_loading(FALSE)
-      } else {
-        # Phase 2 not done yet — let Phase 2 reveal when it finishes
-        rv$restore_render_done <- TRUE
-      }
+      # All rendering done — reveal the map
+      rv$restore_in_progress <- FALSE
+      show_map_loading(FALSE)
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
+
+
+    # ========================================
+    # Render Parcels Helper
+    # ========================================
+
+    # Renders base parcel polygons to the map.
+    # Used by both Phase 2 (normal navigation) and the pending observer (restore).
+    render_parcels_to_map <- function(parcel_data) {
+      # Filter to keep only polygon geometries (defensive check)
+      geom_types <- sf::st_geometry_type(parcel_data)
+      polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+      if (sum(polygon_idx) == 0) {
+        cli::cli_warn("No polygon geometries in parcel data")
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("parcels")
+        return(invisible(FALSE))
+      }
+      if (sum(!polygon_idx) > 0) {
+        parcel_data <- parcel_data[polygon_idx, ]
+      }
+
+      # Ensure WGS84
+      if (sf::st_crs(parcel_data)$epsg != 4326) {
+        parcel_data <- sf::st_transform(parcel_data, 4326)
+      }
+
+      # Create labels for hover display
+      labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
+        create_parcel_label(parcel_data[i, ])
+      })
+
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("parcels") |>
+        leaflet::addPolygons(
+          data = parcel_data,
+          layerId = parcel_data$id,
+          group = "parcels",
+          color = STYLE$parcel_default$color,
+          weight = STYLE$parcel_default$weight,
+          fillColor = STYLE$parcel_default$fillColor,
+          fillOpacity = STYLE$parcel_default$fillOpacity,
+          label = lapply(labels, htmltools::HTML),
+          labelOptions = leaflet::labelOptions(
+            style = list(
+              "font-size" = "12px",
+              "font-weight" = "normal",
+              "padding" = "6px 10px",
+              "background-color" = "white",
+              "border" = "1px solid #ccc",
+              "border-radius" = "4px",
+              "box-shadow" = "0 2px 4px rgba(0,0,0,0.2)"
+            ),
+            direction = "auto",
+            offset = c(0, -5)
+          ),
+          highlightOptions = leaflet::highlightOptions(
+            weight = STYLE$parcel_hover$weight,
+            fillOpacity = STYLE$parcel_hover$fillOpacity,
+            bringToFront = TRUE
+          ),
+          options = leaflet::pathOptions(
+            className = "parcel-polygon"
+          )
+        )
+
+      invisible(TRUE)
+    }
 
 
     # ========================================
