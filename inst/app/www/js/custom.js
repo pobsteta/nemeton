@@ -334,15 +334,21 @@
         overlay.style.display = 'flex';
       }
     } else {
-      // Delay reveal to let leaflet finish rendering polygons asynchronously.
-      // Without this, the body class removal exposes half-painted layers.
+      // Leaflet renders polygons asynchronously after receiving proxy commands.
+      // Wait for the browser to complete rendering before revealing the map.
+      // Strategy: 500ms delay + requestAnimationFrame to ensure at least one
+      // full paint cycle has occurred with all polygons rendered.
       setTimeout(function() {
-        if (overlay) {
-          overlay.classList.add('d-none');
-          overlay.style.display = 'none';
-        }
-        document.body.classList.remove('nemeton-map-loading');
-      }, 200);
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            if (overlay) {
+              overlay.classList.add('d-none');
+              overlay.style.display = 'none';
+            }
+            document.body.classList.remove('nemeton-map-loading');
+          });
+        });
+      }, 500);
     }
   });
 

@@ -261,8 +261,9 @@
    ============================================================ */
 /* Hide leaflet output completely while restoring a project.
    Uses body class for maximum reliability — no JS targeting issues. */
-body.nemeton-map-loading .leaflet {
-  opacity: 0 !important;
+body.nemeton-map-loading .leaflet,
+body.nemeton-map-loading .leaflet-container {
+  visibility: hidden !important;
   pointer-events: none !important;
 }
 
