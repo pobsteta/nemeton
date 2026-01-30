@@ -488,7 +488,8 @@ mod_home_server <- function(id, app_state) {
           future::plan("multisession")
         }
       }
-      promises::future_promise({
+      cli::cli_alert_info("Creating future promise (plan: {paste(class(future::plan()), collapse=', ')})")
+      p <- promises::future_promise({
         # Load nemeton package in the worker process
         if (!is.null(.pkg_path) && requireNamespace("pkgload", quietly = TRUE)) {
           # Dev mode: reload from source directory
@@ -511,6 +512,8 @@ mod_home_server <- function(id, app_state) {
           project_path = project_path
         )
       }, seed = TRUE)
+      cli::cli_alert_info("Future promise created - returning to event loop")
+      p
     })
 
     # ========================================
@@ -648,6 +651,7 @@ mod_home_server <- function(id, app_state) {
 
       # Read progress from file
       progress_state <- read_progress_state(project_id)
+      cli::cli_alert_info("[POLL] project={project_id}, state={progress_state$status %||% 'NULL'}")
 
       if (is.null(progress_state)) {
         # No progress file - computation may have finished or never started
