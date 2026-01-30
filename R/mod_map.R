@@ -174,6 +174,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       parcels_zoomed = FALSE,  # Flag to zoom only once per commune
       pending_zoom = NULL,     # Pending zoom bbox (to execute in Shiny context)
       pending_styles = NULL,   # Pending style updates
+      pending_commune_geom = NULL,  # Deferred commune geometry during restore
       last_restore_timestamp = NULL,  # Track last processed restore request
       pending_parcels = NULL   # Parcels waiting to be rendered
     )
@@ -274,7 +275,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (is.null(geom)) return()
 
       # Check if a project restore is pending (has selected parcels to zoom to)
-      # In that case, skip commune zoom - the restore observer will handle zoom
+      # In that case, defer ALL map operations - the restore observer handles everything
       restore <- shiny::isolate(app_state$restore_project)
       has_pending_restore <- !is.null(restore) &&
         !is.null(restore$selected_ids) &&
@@ -284,6 +285,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (!has_pending_restore) {
         # Normal navigation: reset parcels zoom flag for new commune
         rv$parcels_zoomed <- FALSE
+      } else {
+        # Project restore: store geometry for deferred rendering and return.
+        # The pending zoom/styles observer will add the commune boundary
+        # together with parcels and selection, all behind the loading overlay.
+        rv$pending_commune_geom <- geom
+        return()
       }
 
       # Verify geometry is polygon type
@@ -300,7 +307,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       # Get bounding box
       bbox <- sf::st_bbox(geom)
 
-      proxy <- leaflet::leafletProxy(ns("map")) |>
+      leaflet::leafletProxy(ns("map")) |>
         # Clear previous commune boundary
         leaflet::clearGroup("commune") |>
         # Add new boundary
@@ -311,18 +318,13 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           weight = STYLE$commune$weight,
           fill = STYLE$commune$fill,
           dashArray = STYLE$commune$dashArray
+        ) |>
+        leaflet::fitBounds(
+          lng1 = as.numeric(bbox[["xmin"]]),
+          lat1 = as.numeric(bbox[["ymin"]]),
+          lng2 = as.numeric(bbox[["xmax"]]),
+          lat2 = as.numeric(bbox[["ymax"]])
         )
-
-      # Only zoom to commune bounds during normal navigation (not project restore)
-      if (!has_pending_restore) {
-        proxy |>
-          leaflet::fitBounds(
-            lng1 = as.numeric(bbox[["xmin"]]),
-            lat1 = as.numeric(bbox[["ymin"]]),
-            lng2 = as.numeric(bbox[["xmax"]]),
-            lat2 = as.numeric(bbox[["ymax"]])
-          )
-      }
     })
 
 
@@ -609,14 +611,35 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
     })
 
-    # Apply pending zoom and styles when set
+    # Apply pending zoom, styles, and deferred commune boundary when set
     shiny::observeEvent(list(rv$pending_zoom, rv$pending_styles), {
       styles <- shiny::isolate(rv$pending_styles)
       zoom <- shiny::isolate(rv$pending_zoom)
+      commune_geom <- shiny::isolate(rv$pending_commune_geom)
 
       if (is.null(zoom) && is.null(styles)) return()
 
-      # Apply styles
+      # Add deferred commune boundary (was skipped to avoid green flash)
+      if (!is.null(commune_geom)) {
+        geom_types <- sf::st_geometry_type(commune_geom)
+        polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+        if (sum(polygon_idx) > 0) {
+          geom_to_add <- if (sum(!polygon_idx) > 0) commune_geom[polygon_idx, ] else commune_geom
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::clearGroup("commune") |>
+            leaflet::addPolygons(
+              data = geom_to_add,
+              group = "commune",
+              color = STYLE$commune$color,
+              weight = STYLE$commune$weight,
+              fill = STYLE$commune$fill,
+              dashArray = STYLE$commune$dashArray
+            )
+        }
+        rv$pending_commune_geom <- NULL
+      }
+
+      # Apply selected parcel styles
       if (!is.null(styles)) {
         cli::cli_alert_info("Applying {length(styles)} style updates...")
         for (pid in styles) {
