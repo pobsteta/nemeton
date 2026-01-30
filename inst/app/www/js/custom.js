@@ -316,34 +316,35 @@
 
   /**
    * Handle map loading overlay visibility.
-   * Hides the leaflet map output entirely (visibility:hidden) to prevent
-   * green flash from leafletProxy commands executing asynchronously.
+   * Hides the leaflet widget output (visibility:hidden) while showing the
+   * overlay on top. The overlay stays visible as a loading indicator.
    */
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     const loadingId = data.loadingId;
     const show = data.show;
 
     const overlay = document.getElementById(loadingId);
-    // Find the leaflet output div by deriving its ID from the overlay ID
-    // Overlay: "home-map-map_loading_overlay" → Map output: "home-map-map"
-    var mapOutputId = loadingId.replace('_loading_overlay', '');
-    var mapOutput = document.getElementById(mapOutputId);
+    if (!overlay) return;
 
-    if (overlay) {
-      if (show) {
-        overlay.classList.remove('d-none');
-        overlay.style.display = 'flex';
-        // Completely hide the leaflet output to prevent any green flash
-        if (mapOutput) {
-          mapOutput.style.visibility = 'hidden';
-        }
-      } else {
-        // Reveal map, then hide overlay
-        if (mapOutput) {
-          mapOutput.style.visibility = 'visible';
-        }
-        overlay.classList.add('d-none');
-        overlay.style.display = 'none';
+    // Find the leaflet output widget div (sibling of the overlay inside the container)
+    var mapContainer = overlay.parentElement;
+    var leafletOutput = mapContainer ? mapContainer.querySelector('.html-widget-output') : null;
+
+    if (show) {
+      // Hide leaflet output so no green content is visible
+      if (leafletOutput) {
+        leafletOutput.style.visibility = 'hidden';
+      }
+      // Show loading overlay
+      overlay.classList.remove('d-none');
+      overlay.style.display = 'flex';
+    } else {
+      // Hide overlay
+      overlay.classList.add('d-none');
+      overlay.style.display = 'none';
+      // Reveal leaflet output with all content already rendered
+      if (leafletOutput) {
+        leafletOutput.style.visibility = 'visible';
       }
     }
   });

@@ -187,9 +187,16 @@ mod_home_server <- function(id, app_state) {
                   ns("delete_corrupted"), proj$id)
         } else {
           sprintf(paste0(
-            "document.querySelectorAll('.leaflet-container').forEach(function(el){el.style.visibility='hidden'});",
+            "var mc=document.getElementById('%s');",
+            "if(mc){",
+            "var lf=mc.querySelector('.html-widget-output');",
+            "if(lf){lf.style.visibility='hidden';}",
+            "var ov=document.getElementById('%s');",
+            "if(ov){ov.classList.remove('d-none');ov.style.display='flex';}",
+            "}",
             "Shiny.setInputValue('%s', '%s', {priority: 'event'});"
-          ), ns("load_project"), proj$id)
+          ), ns("map-map_container"), ns("map-map_loading_overlay"),
+             ns("load_project"), proj$id)
         }
 
         cursor_class <- if (is_active) "project-card-active" else "cursor-pointer project-card"
