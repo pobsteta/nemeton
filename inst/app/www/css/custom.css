@@ -225,23 +225,27 @@
   color: white;
 }
 
-/* Basemap toggle buttons — !important needed to override Bootstrap 5 .btn
-   which sets --bs-btn-bg/--bs-btn-border-color: transparent via CSS variables */
+/* Basemap toggle buttons — override Bootstrap 5 CSS custom properties
+   that .btn uses internally for background-color, color, and border-color */
 .basemap-btn {
-  background-color: white !important;
-  color: #6B3710 !important;
-  border: 1px solid #6B3710 !important;
+  --bs-btn-bg: white;
+  --bs-btn-color: #6B3710;
+  --bs-btn-border-color: #6B3710;
+  --bs-btn-hover-bg: rgba(107, 55, 16, 0.1);
+  --bs-btn-hover-color: #6B3710;
+  --bs-btn-hover-border-color: #6B3710;
+  --bs-btn-active-bg: #6B3710;
+  --bs-btn-active-color: white;
+  --bs-btn-active-border-color: #6B3710;
 }
 
-.basemap-btn:hover {
-  background-color: rgba(107, 55, 16, 0.1) !important;
-}
-
-.basemap-btn.basemap-btn-active,
-.basemap-btn.basemap-btn-active:hover {
-  background-color: #6B3710 !important;
-  border-color: #6B3710 !important;
-  color: white !important;
+.basemap-btn.basemap-btn-active {
+  --bs-btn-bg: #6B3710;
+  --bs-btn-color: white;
+  --bs-btn-border-color: #6B3710;
+  --bs-btn-hover-bg: #5a2e0d;
+  --bs-btn-hover-color: white;
+  --bs-btn-hover-border-color: #5a2e0d;
 }
 
 /* Disabled state */
