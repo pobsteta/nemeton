@@ -547,7 +547,7 @@ mod_home_server <- function(id, app_state) {
 
       # Clear map selection
       app_state$clear_map_selection <- Sys.time()
-    }, ignoreInit = TRUE)
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
 
     # Create ExtendedTask for async computation
     # Uses future_promise() to run in a separate R process via future::multisession

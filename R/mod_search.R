@@ -136,6 +136,11 @@ mod_search_server <- function(id, app_state) {
       # directly via later::later - skip redundant API call here
       if (rv$is_restoring) return()
 
+      # Clear previous commune selection when department changes
+      rv$selected_commune <- NULL
+      rv$commune_info <- NULL
+      rv$commune_geometry <- NULL
+
       if (is.null(dept) || dept == "") {
         shiny::updateSelectizeInput(
           session,
