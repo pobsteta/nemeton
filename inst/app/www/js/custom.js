@@ -337,12 +337,17 @@
     var restoreComplete = data.restore_complete || false;
 
     var overlay = document.getElementById(loadingId);
+    console.log('[showMapLoading]', show ? 'SHOW' : 'HIDE',
+      'lock=' + window._mapRestoreLock,
+      'restoreLock=' + restoreLock,
+      'restoreComplete=' + restoreComplete);
 
     if (show) {
       // While restore lock is active, the overlay is already visible and
       // the pending observer has rendered everything.  Ignore redundant
       // show(true) calls from Phase 1 re-firing after restore completes.
       if (window._mapRestoreLock && !restoreLock) {
+        console.log('[showMapLoading] IGNORED: lock active, not a restore_lock show');
         return;
       }
       // Cancel any pending hide timeout from a previous showMapLoading(false)
@@ -364,6 +369,7 @@
     } else {
       // During restore, ignore ALL hide requests except restore_complete
       if (window._mapRestoreLock && !restoreComplete) {
+        console.log('[showMapLoading] IGNORED: lock active, not restore_complete');
         return;
       }
       // Leaflet renders polygons asynchronously after receiving proxy commands.

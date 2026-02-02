@@ -351,28 +351,26 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # Display Parcels (two-phase with loading overlay)
     # ========================================
 
-    # Phase 1: When parcels change, show loading overlay and queue for rendering
+    # Phase 1: When parcels change, show loading overlay and queue for rendering.
+    # During restore, this observer is COMPLETELY INERT — the restore observer
+    # sets pending_parcels directly to avoid any intermediate show/hide messages.
     shiny::observe({
       parcel_data <- parcels()
 
+      # During restore, skip entirely — restore observer handles parcels directly
+      if (shiny::isolate(rv$restore_in_progress)) return()
+
       if (is.null(parcel_data) || nrow(parcel_data) == 0) {
-        # Don't hide overlay during restore (parcels may be NULL while loading)
-        if (!shiny::isolate(rv$restore_in_progress)) {
-          show_map_loading(FALSE)
-          rv$pending_parcels <- NULL
-          leaflet::leafletProxy(ns("map")) |>
-            leaflet::clearGroup("parcels") |>
-            leaflet::clearGroup("selection")
-        }
+        show_map_loading(FALSE)
+        rv$pending_parcels <- NULL
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("parcels") |>
+          leaflet::clearGroup("selection")
         return()
       }
 
       # Show loading overlay and store parcels for phase 2
-      # During restore, the overlay is already visible (set by onclick handler
-      # and restore observer) — don't toggle it again to avoid double cycle
-      if (!shiny::isolate(rv$restore_in_progress)) {
-        show_map_loading(TRUE)
-      }
+      show_map_loading(TRUE)
       rv$pending_parcels <- parcel_data
     })
 
@@ -559,7 +557,11 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
         bbox <- sf::st_bbox(selected_parcels)
 
-        # Store pending operations
+        # Store ALL pending operations — including parcels.
+        # Phase 1 is completely inert during restore, so we set
+        # pending_parcels directly here to avoid any intermediate
+        # show/hide messages that could flash the green map tiles.
+        rv$pending_parcels <- parcel_data
         rv$pending_styles <- matching_ids
         rv$pending_zoom <- list(
           xmin = as.numeric(bbox[["xmin"]]),
