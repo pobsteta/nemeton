@@ -513,14 +513,11 @@ mod_home_server <- function(id, app_state) {
     )
 
     # ========================================
-    # Reset state when commune changes
+    # Reset state when commune or department changes
     # ========================================
-    # When the user selects a different commune, all project/computation
-    # state must be cleared to avoid showing stale results.
-    shiny::observeEvent(search_result$selected_commune(), {
-      # Skip during project restore (commune change is part of the restore flow)
-      if (isTRUE(app_state$restore_in_progress)) return()
 
+    # Helper to clear all project/computation state
+    reset_project_state <- function() {
       # Clear current project
       app_state$current_project <- NULL
       app_state$project_id <- NULL
@@ -547,7 +544,19 @@ mod_home_server <- function(id, app_state) {
 
       # Clear map selection
       app_state$clear_map_selection <- Sys.time()
-    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    }
+
+    # When the user selects a different commune
+    shiny::observeEvent(search_result$selected_commune(), {
+      if (isTRUE(app_state$restore_in_progress)) return()
+      reset_project_state()
+    }, ignoreInit = TRUE)
+
+    # When the user selects a different department
+    shiny::observeEvent(search_result$department_changed(), {
+      if (isTRUE(app_state$restore_in_progress)) return()
+      reset_project_state()
+    }, ignoreInit = TRUE)
 
     # Create ExtendedTask for async computation
     # Uses future_promise() to run in a separate R process via future::multisession

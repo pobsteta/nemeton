@@ -101,7 +101,8 @@ mod_search_server <- function(id, app_state) {
       commune_info = NULL,
       commune_geometry = NULL,
       is_loading = FALSE,
-      is_restoring = FALSE
+      is_restoring = FALSE,
+      department_changed = NULL  # Signal when department changes (timestamp)
     )
 
 
@@ -136,10 +137,8 @@ mod_search_server <- function(id, app_state) {
       # directly via later::later - skip redundant API call here
       if (rv$is_restoring) return()
 
-      # Clear previous commune selection when department changes
-      rv$selected_commune <- NULL
-      rv$commune_info <- NULL
-      rv$commune_geometry <- NULL
+      # Signal that department changed (so other modules can reset state)
+      rv$department_changed <- Sys.time()
 
       if (is.null(dept) || dept == "") {
         shiny::updateSelectizeInput(
@@ -346,7 +345,8 @@ mod_search_server <- function(id, app_state) {
       selected_commune = shiny::reactive(rv$selected_commune),
       commune_info = shiny::reactive(rv$commune_info),
       commune_geometry = shiny::reactive(rv$commune_geometry),
-      is_loading = shiny::reactive(rv$is_loading)
+      is_loading = shiny::reactive(rv$is_loading),
+      department_changed = shiny::reactive(rv$department_changed)
     )
   })
 }
