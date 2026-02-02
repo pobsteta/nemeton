@@ -281,9 +281,9 @@ mod_progress_server <- function(id, compute_state, app_state) {
       state <- compute_state()
       shiny::req(state)
 
-      # Guard: status can be NA when progress file is partially written
+      # Guard: status can be NA or length-zero when progress file is partially written
       status <- state$status
-      if (is.null(status) || is.na(status)) return()
+      if (is.null(status) || length(status) != 1 || is.na(status)) return()
 
       # Update visibility flags only when they actually change
       new_show_progress <- status %in% c(
@@ -317,8 +317,8 @@ mod_progress_server <- function(id, compute_state, app_state) {
           # Sidebar: global progress bar + counters (via JavaScript)
           progress <- state$progress %||% 0
           progress_max <- state$progress_max %||% 1
-          if (is.na(progress)) progress <- 0
-          if (is.na(progress_max) || progress_max == 0) progress_max <- 1
+          if (length(progress) != 1 || is.na(progress)) progress <- 0
+          if (length(progress_max) != 1 || is.na(progress_max) || progress_max == 0) progress_max <- 1
           progress_pct <- round(progress / progress_max * 100)
 
           session$sendCustomMessage("updateProgressBar", list(
@@ -334,16 +334,23 @@ mod_progress_server <- function(id, compute_state, app_state) {
           ))
 
           # Counters (sidebar)
+          n_completed <- state$indicators_completed %||% 0
+          n_failed <- state$indicators_failed %||% 0
+          n_total <- state$indicators_total %||% 0
+          if (length(n_completed) != 1 || is.na(n_completed)) n_completed <- 0
+          if (length(n_failed) != 1 || is.na(n_failed)) n_failed <- 0
+          if (length(n_total) != 1 || is.na(n_total)) n_total <- 0
+
           session$sendCustomMessage("updateText", list(
             id = ns("completed_count"),
-            text = as.character(state$indicators_completed)
+            text = as.character(n_completed)
           ))
           session$sendCustomMessage("updateText", list(
             id = ns("failed_count"),
-            text = as.character(state$indicators_failed)
+            text = as.character(n_failed)
           ))
 
-          pending <- state$indicators_total - state$indicators_completed - state$indicators_failed
+          pending <- n_total - n_completed - n_failed
           session$sendCustomMessage("updateText", list(
             id = ns("pending_count"),
             text = as.character(pending)
@@ -352,7 +359,7 @@ mod_progress_server <- function(id, compute_state, app_state) {
           # Fixed toast notification (bottom-right) for task changes
           # Uses JavaScript-only DOM update - no showNotification to avoid flickering
           current_task <- state$current_task %||% ""
-          if (is.na(current_task)) current_task <- ""
+          if (length(current_task) != 1 || is.na(current_task)) current_task <- ""
           if (current_task != "" && current_task != rv$last_task) {
             rv$last_task <- current_task
             task_text <- translate_task(current_task)
