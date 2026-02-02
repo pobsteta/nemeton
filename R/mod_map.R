@@ -359,7 +359,11 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
 
       # Show loading overlay and store parcels for phase 2
-      show_map_loading(TRUE)
+      # During restore, the overlay is already visible (set by onclick handler
+      # and restore observer) — don't toggle it again to avoid double cycle
+      if (!shiny::isolate(rv$restore_in_progress)) {
+        show_map_loading(TRUE)
+      }
       rv$pending_parcels <- parcel_data
     })
 

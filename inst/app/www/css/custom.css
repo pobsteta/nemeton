@@ -265,6 +265,7 @@ body.nemeton-map-loading .leaflet,
 body.nemeton-map-loading .leaflet-container {
   visibility: hidden !important;
   pointer-events: none !important;
+  background: white !important;
 }
 
 #map_container,
