@@ -498,55 +498,6 @@
     }
   });
 
-  // ============================================================
-  // Map Navigation Cover (département/commune transitions)
-  // ============================================================
-
-  /**
-   * Show/hide the full-page cover during map navigation transitions
-   * (département zoom, commune change). Unlike the restore flow, this
-   * does NOT use a lock.
-   */
-  window._navCoverTimer = null;
-
-  function navCoverHide() {
-    if (window._mapRestoreLock) return;
-    if (window._navCoverTimer) {
-      clearTimeout(window._navCoverTimer);
-      window._navCoverTimer = null;
-    }
-    // Restore leaflet container visibility
-    var containers = document.querySelectorAll('.leaflet-container');
-    containers.forEach(function(c) { c.style.opacity = ''; });
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        hideFullPageCover();
-      });
-    });
-  }
-
-  Shiny.addCustomMessageHandler('showNavCover', function(data) {
-    if (data.show) {
-      if (window._navCoverTimer) {
-        clearTimeout(window._navCoverTimer);
-        window._navCoverTimer = null;
-      }
-      if (window._mapRestoreLock) return;
-      showFullPageCover();
-      // Also hide all leaflet containers directly via inline style
-      // to prevent GPU-composited tiles from painting above the cover
-      var containers = document.querySelectorAll('.leaflet-container');
-      containers.forEach(function(c) { c.style.opacity = '0'; });
-    } else {
-      if (window._mapRestoreLock) return;
-      // Restore leaflet container visibility
-      var containers = document.querySelectorAll('.leaflet-container');
-      containers.forEach(function(c) { c.style.opacity = ''; });
-      navCoverHide();
-    }
-  });
-
-
 
   // ============================================================
   // Task Toast (fixed position, no DOM churn)

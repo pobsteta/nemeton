@@ -312,9 +312,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         return()
       }
 
-      # Show full-page cover + in-map overlay to cover the transition
-      # (parcels take time to fetch/render after commune change)
-      session$sendCustomMessage("showNavCover", list(show = TRUE))
+      # Show in-map loading overlay (spinner over map area only)
       show_map_loading(TRUE)
 
       # Verify geometry is polygon type
@@ -370,7 +368,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(parcel_data) || nrow(parcel_data) == 0) {
         show_map_loading(FALSE)
-        session$sendCustomMessage("showNavCover", list(show = FALSE))
         rv$pending_parcels <- NULL
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("parcels") |>
@@ -426,7 +423,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         # Clear pending parcels
         rv$pending_parcels <- NULL
         show_map_loading(FALSE)
-        session$sendCustomMessage("showNavCover", list(show = FALSE))
       })
     })
 
