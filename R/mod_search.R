@@ -100,7 +100,6 @@ mod_search_server <- function(id, app_state) {
       selected_commune = NULL,
       commune_info = NULL,
       commune_geometry = NULL,
-      department_bbox = NULL,    # Bounding box for map zoom on department
       is_loading = FALSE,
       is_restoring = FALSE,
       department_changed = NULL  # Signal when department changes (timestamp)
@@ -153,9 +152,6 @@ mod_search_server <- function(id, app_state) {
 
       # Show loading
       rv$is_loading <- TRUE
-
-      # Fetch department bounding box for map zoom
-      rv$department_bbox <- get_department_bbox(dept)
 
       # Fetch communes in department
       communes <- get_communes_in_department(dept)
@@ -349,7 +345,6 @@ mod_search_server <- function(id, app_state) {
       selected_commune = shiny::reactive(rv$selected_commune),
       commune_info = shiny::reactive(rv$commune_info),
       commune_geometry = shiny::reactive(rv$commune_geometry),
-      department_bbox = shiny::reactive(rv$department_bbox),
       is_loading = shiny::reactive(rv$is_loading),
       department_changed = shiny::reactive(rv$department_changed)
     )

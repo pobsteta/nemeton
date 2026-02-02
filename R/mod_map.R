@@ -127,7 +127,7 @@ mod_map_ui <- function(id) {
 #'   - selection_count: Reactive integer
 #'
 #' @noRd
-mod_map_server <- function(id, app_state, commune_geometry, department_bbox, parcels) {
+mod_map_server <- function(id, app_state, commune_geometry, parcels) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -288,36 +288,6 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
         satId = ns("basemap_satellite"),
         active = "satellite"
       ))
-    })
-
-
-    # ========================================
-    # Zoom to Department
-    # ========================================
-
-    shiny::observe({
-      bbox <- department_bbox()
-      if (is.null(bbox)) return()
-
-      # Skip during project restore
-      if (shiny::isolate(rv$restore_in_progress)) return()
-
-      # Zoom with cover: JS shows the white cover, waits for it to be
-      # painted (double rAF), then calls Leaflet fitBounds from JS.
-      # This guarantees the cover hides any green tiles during zoom.
-      session$sendCustomMessage("zoomMapWithCover", list(
-        mapId = ns("map"),
-        bbox = list(
-          xmin = as.numeric(bbox[["xmin"]]),
-          ymin = as.numeric(bbox[["ymin"]]),
-          xmax = as.numeric(bbox[["xmax"]]),
-          ymax = as.numeric(bbox[["ymax"]])
-        ),
-        autoHideMs = 1500
-      ))
-
-      rv$selected_ids <- character(0)
-      rv$parcels_zoomed <- FALSE
     })
 
 
