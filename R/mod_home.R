@@ -520,7 +520,7 @@ mod_home_server <- function(id, app_state) {
     # We detect the package source path here (main process) and load it in the worker.
     # This works both in dev mode (devtools::load_all) and production (installed pkg).
     .pkg_path <- tryCatch(pkgload::pkg_path(), error = function(e) NULL)
-    compute_task <- shiny::ExtendedTask$new(function(project_id, project_path, app_opts) {
+    compute_task <- shiny::ExtendedTask$new(function(project_id, app_opts) {
       # Ensure multisession plan is active before creating the future.
       # Without this, the future runs sequentially in the main process,
       # blocking the Shiny event loop (no UI updates, no progress polling).
@@ -546,12 +546,13 @@ mod_home_server <- function(id, app_state) {
         options(nemeton.app_options = app_opts)
 
         # This runs in a separate R process
+        # project_path is resolved internally by start_computation() via
+        # get_project_path(), which works because app_opts are restored above.
         start_computation(
           project_id = project_id,
           indicators = "all",
-          progress_callback = NULL,  # No callback in async mode
-          use_file_progress = TRUE,  # Write progress to file
-          project_path = project_path
+          progress_callback = NULL,
+          use_file_progress = TRUE
         )
       }, seed = TRUE)
     })
@@ -633,10 +634,10 @@ mod_home_server <- function(id, app_state) {
         id = ns("progress-error_card_wrapper")
       ))
 
-      # Start the async computation with project_id, project_path, and app options
+      # Start the async computation with project_id and app options
       # App options are passed explicitly because future runs in a separate R process
       cli::cli_alert_info("Starting computation for project {project$id}")
-      compute_task$invoke(project$id, project_path, get_app_options())
+      compute_task$invoke(project$id, get_app_options())
     })
 
     # Watch for ExtendedTask errors (handles failures before progress file is written)
@@ -900,7 +901,7 @@ mod_home_server <- function(id, app_state) {
       ))
 
       # Start the async computation
-      compute_task$invoke(project$id, project_path, get_app_options())
+      compute_task$invoke(project$id, get_app_options())
     }, ignoreInit = TRUE)
 
     # Handle view_results from progress module
