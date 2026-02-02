@@ -178,7 +178,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       current_project = NULL,
       editing_project_id = NULL,  # NULL = create mode, ID = edit mode
       validation_errors = character(0),
-      project_date = format(Sys.time(), "%d/%m/%Y %H:%M")
+      project_date = format(Sys.time(), "%d/%m/%Y %H:%M"),
+      last_opened_project_id = NULL  # Track to avoid re-opening panel on same project
     )
 
     # ========================================
@@ -293,12 +294,13 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       rv$editing_project_id <- project$id
       rv$current_project <- project
 
-      # Open the collapse panel only for draft/new projects that need editing.
-      # Skip during restore (loading recent project) and after computation
-      # (completed/error) to avoid the panel popping open unexpectedly.
-      status <- project$metadata$status %||% "draft"
-      if (!isTRUE(app_state$restore_in_progress) &&
-          status %in% c("draft", "error")) {
+      # Open the collapse panel only when a NEW project is loaded for
+      # the first time (different project ID). Skip when the same project
+      # is reloaded (after computation, retry, cancel, etc.) to avoid
+      # the panel popping open unexpectedly.
+      is_new_project <- !identical(project$id, rv$last_opened_project_id)
+      if (is_new_project && !isTRUE(app_state$restore_in_progress)) {
+        rv$last_opened_project_id <- project$id
         shiny::insertUI(
           selector = "body",
           where = "beforeEnd",
