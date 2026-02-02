@@ -293,15 +293,17 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       rv$editing_project_id <- project$id
       rv$current_project <- project
 
-      # Open the collapse panel via JavaScript
-      shiny::insertUI(
-        selector = "body",
-        where = "beforeEnd",
-        ui = htmltools::tags$script(htmltools::HTML(sprintf("
-          $('#%s').collapse('show');
-        ", ns("project_collapse")))),
-        immediate = TRUE
-      )
+      # Open the collapse panel via JavaScript (skip during project restore)
+      if (!isTRUE(app_state$restore_in_progress)) {
+        shiny::insertUI(
+          selector = "body",
+          where = "beforeEnd",
+          ui = htmltools::tags$script(htmltools::HTML(sprintf("
+            $('#%s').collapse('show');
+          ", ns("project_collapse")))),
+          immediate = TRUE
+        )
+      }
     }, ignoreInit = TRUE)
 
     # Open collapse when parcels are selected (new project mode)
