@@ -3,13 +3,9 @@
  * WCAG 2.1 AA Compliant
  */
 
-/* ============================================================
-   DIAGNOSTIC: If white screen appears and body bg shows through,
-   user will see GRAY instead of white. This helps determine if
-   the issue is content disappearing vs. an overlay covering it.
-   ============================================================ */
+/* Page background: light gray so browser freeze frames don't appear white */
 html, body {
-  background-color: #e0e0e0 !important;
+  background-color: #f0f0f0 !important;
 }
 
 /* ============================================================
@@ -27,7 +23,7 @@ html, body {
   --nemeton-danger: #B01030;
 
   /* Neutral colors */
-  --nemeton-bg: #FAFAFA;
+  --nemeton-bg: #f0f0f0;
   --nemeton-fg: #2C3E50;
   --nemeton-muted: #6C757D;
   --nemeton-border: rgba(0, 0, 0, 0.125);
@@ -155,6 +151,7 @@ html, body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   overflow: hidden;
+  background-color: #ffffff;
 }
 
 .card-header {
@@ -394,90 +391,35 @@ html, body {
 
 
 /* ============================================================
-   NUCLEAR: Prevent ALL white screen flashes.
+   Busy Indicator Suppression
 
-   Shiny/bslib uses CSS pseudo-elements (::after/::before) on
-   page containers to show busy indicator overlays. These are
-   INVISIBLE to JavaScript (MutationObserver can't detect them).
-
-   The approach: kill pseudo-elements on ALL page/tab/fill
-   containers, and force visibility on all layout elements.
+   Shiny/bslib busy indicators are disabled because:
+   1. R option shiny.busy_indicators = FALSE (set in run_app.R)
+   2. useBusyIndicators(FALSE, FALSE) called in app_ui.R
+   3. CSS below as a safety net to hide any residual indicators
    ============================================================ */
 
-/* --- Hide Shiny built-in indicators --- */
-.shiny-busy {
-  display: none !important;
-}
+/* Hide Shiny built-in busy indicators */
+.shiny-busy,
 .shiny-busy-panel-wrapper,
 .bslib-page-spinner,
 .bslib-busy-indicator-pulse,
 [data-busy-spinner] {
   display: none !important;
 }
-#shiny-notification-panel .shiny-notification.shiny-notification-progress,
-.shiny-notification.shiny-notification-progress {
-  display: none !important;
-}
 
-/* --- Force all page containers to stay visible --- */
-html, body,
-.bslib-page-fill,
-.bslib-page-navbar,
-.bslib-page-navbar > .container-fluid,
-.bslib-page-navbar > .main,
-.tab-content,
-.tab-pane,
-.tab-pane.active,
-.html-fill-container,
-.html-fill-item,
-.bslib-sidebar-layout,
-.bslib-sidebar-layout > .main,
-.bslib-sidebar-layout > .sidebar,
-.navbar,
-.shiny-bound-output,
+/* Force containers to stay visible during recalculation */
 .shiny-bound-output.recalculating,
-.recalculating,
-body.nemeton-computing .shiny-bound-output {
+.recalculating {
   opacity: 1 !important;
   visibility: visible !important;
-  transition: none !important;
 }
 
-/* --- Kill ALL pseudo-elements on page/tab/fill containers ---
-   This is the key fix: bslib creates ::after pseudo-elements
-   with position:absolute, white background, and high z-index
-   on these containers when Shiny is busy. They cover the
-   entire page and are invisible to JavaScript. */
-.bslib-page-fill::after,
-.bslib-page-fill::before,
-.bslib-page-navbar::after,
-.bslib-page-navbar::before,
-.tab-content::after,
-.tab-content::before,
-.tab-pane::after,
-.tab-pane::before,
-.tab-pane.active::after,
-.tab-pane.active::before,
-.html-fill-container::after,
-.html-fill-container::before,
-.html-fill-item::after,
-.html-fill-item::before,
-.bslib-sidebar-layout::after,
-.bslib-sidebar-layout::before,
-.bslib-sidebar-layout > .main::after,
-.bslib-sidebar-layout > .main::before,
-.container-fluid::after,
-.container-fluid::before,
+/* Kill bslib pseudo-element overlays on recalculating outputs */
 .recalculating::after,
 .recalculating::before {
   content: none !important;
   display: none !important;
-  background: none !important;
-  opacity: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  position: static !important;
-  z-index: -1 !important;
 }
 
 .spinner {

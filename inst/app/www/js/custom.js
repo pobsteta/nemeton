@@ -492,91 +492,21 @@
   });
 
   // ============================================================
-  // White Screen Prevention (Nuclear Safety Net)
+  // Busy State: force visibility on recalculating outputs
   // ============================================================
 
   /**
-   * White screen diagnostic + prevention.
-   *
-   * Previous approach: scan for white-background elements.
-   * Result: NOTHING found in console. Body is gray but screen is white.
-   *
-   * New approach: use document.elementFromPoint() at center of viewport
-   * to find what's ACTUALLY visible. This catches everything: real
-   * elements, pseudo-elements rendered as children, iframe overlays, etc.
-   * Logs on every shiny:busy + on a 200ms interval during busy state.
+   * During Shiny busy state, force key containers to remain visible.
+   * This complements the CSS rules that suppress bslib busy overlays.
    */
-  function initWhiteScreenPrevention() {
-
-    // What element is at the center of the screen right now?
-    function logCenterElement(label) {
-      var cx = Math.round(window.innerWidth / 2);
-      var cy = Math.round(window.innerHeight / 2);
-      var el = document.elementFromPoint(cx, cy);
-      if (!el) {
-        console.log('[nemeton]', label, 'elementFromPoint: NULL');
-        return;
-      }
-      var cs = window.getComputedStyle(el);
-      console.log('[nemeton]', label, 'CENTER:', el.tagName,
-        'id=' + el.id,
-        'class=' + (el.className || '').toString().substring(0, 120),
-        'bg=' + cs.backgroundColor, 'pos=' + cs.position,
-        'z=' + cs.zIndex, 'opacity=' + cs.opacity,
-        'size=' + el.offsetWidth + 'x' + el.offsetHeight);
-      // Log 5 parents
-      var p = el.parentElement;
-      for (var d = 0; d < 5 && p; d++) {
-        var pcs = window.getComputedStyle(p);
-        console.log('[nemeton]   parent' + d + ':', p.tagName,
-          'id=' + p.id,
-          'class=' + (p.className || '').toString().substring(0, 80),
-          'bg=' + pcs.backgroundColor, 'pos=' + pcs.position);
-        p = p.parentElement;
-      }
-    }
-
-    // Track busy state for interval scanning
-    var busyInterval = null;
-
+  function initBusyVisibility() {
     $(document).on('shiny:busy', function() {
-      console.log('[nemeton] ======= SHINY:BUSY =======');
-      logCenterElement('BUSY-NOW');
-      // Keep scanning during entire busy period
-      if (busyInterval) clearInterval(busyInterval);
-      busyInterval = setInterval(function() {
-        logCenterElement('BUSY-SCAN');
-      }, 200);
-    });
-
-    $(document).on('shiny:idle', function() {
-      console.log('[nemeton] ======= SHINY:IDLE =======');
-      logCenterElement('IDLE-NOW');
-      if (busyInterval) {
-        clearInterval(busyInterval);
-        busyInterval = null;
+      var els = document.querySelectorAll('.recalculating');
+      for (var i = 0; i < els.length; i++) {
+        els[i].style.setProperty('opacity', '1', 'important');
+        els[i].style.setProperty('visibility', 'visible', 'important');
       }
     });
-
-    // Force visibility on key containers
-    function forceVisible() {
-      var selectors = [
-        '.bslib-page-fill', '.bslib-page-navbar', '.tab-content',
-        '.tab-pane.active', '.html-fill-container', '.html-fill-item',
-        '.bslib-sidebar-layout', '.bslib-sidebar-layout > .main',
-        '.bslib-sidebar-layout > .sidebar'
-      ];
-      for (var i = 0; i < selectors.length; i++) {
-        var els = document.querySelectorAll(selectors[i]);
-        for (var j = 0; j < els.length; j++) {
-          els[j].style.setProperty('opacity', '1', 'important');
-          els[j].style.setProperty('visibility', 'visible', 'important');
-        }
-      }
-    }
-
-    $(document).on('shiny:busy', forceVisible);
-    setInterval(forceVisible, 1000);
   }
 
 
@@ -595,7 +525,7 @@
     initBasemapToggle();
     initLiveRegion();
     initTourPersistence();
-    initWhiteScreenPrevention();
+    initBusyVisibility();
   }
 
   // Run on DOM ready

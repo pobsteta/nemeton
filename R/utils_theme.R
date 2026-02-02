@@ -49,7 +49,8 @@ nemeton_theme <- function() {
     danger = "#B01030",
 
     # Background and foreground
-    bg = "#FAFAFA",
+    # Page bg is light gray so browser freeze doesn't show as white screen
+    bg = "#f0f0f0",
     fg = "#2C3E50",
 
     # Typography
@@ -144,37 +145,14 @@ nemeton_theme <- function() {
       font-weight: 600;
     }
 
-    /* ====== WHITE SCREEN PREVENTION ======
-       Injected directly into bslib's own <style> tag via bs_add_rules
-       so these rules cannot be overridden by bslib's CSS. */
-
-    /* Kill ALL pseudo-element overlays on page containers */
-    .bslib-page-fill::after, .bslib-page-fill::before,
-    .bslib-page-navbar::after, .bslib-page-navbar::before,
-    .tab-content::after, .tab-content::before,
-    .tab-pane::after, .tab-pane::before,
-    .html-fill-container::after, .html-fill-container::before,
-    .html-fill-item::after, .html-fill-item::before,
-    .bslib-sidebar-layout::after, .bslib-sidebar-layout::before,
-    .container-fluid::after, .container-fluid::before,
-    .recalculating::after, .recalculating::before {
-      content: none !important;
-      display: none !important;
+    /* Cards stay white for clean content appearance */
+    .card {
+      background-color: #ffffff;
     }
 
-    /* Force all containers visible */
-    .bslib-page-fill, .bslib-page-navbar, .tab-content,
-    .tab-pane, .tab-pane.active, .html-fill-container,
-    .html-fill-item, .bslib-sidebar-layout,
-    .shiny-bound-output, .recalculating {
-      opacity: 1 !important;
-      visibility: visible !important;
-      transition: none !important;
+    .card-body {
+      background-color: #ffffff;
     }
-
-    /* Hide ALL Shiny/bslib busy indicators */
-    .shiny-busy { display: none !important; }
-    .shiny-busy-panel-wrapper { display: none !important; }
   ")
 
   theme
@@ -346,7 +324,7 @@ theme_nemeton_accessible <- function() {
       panel.grid.major = ggplot2::element_line(color = "#EEEEEE"),
 
       # Background
-      panel.background = ggplot2::element_rect(fill = "#FAFAFA", color = NA),
+      panel.background = ggplot2::element_rect(fill = "#f0f0f0", color = NA),
       plot.background = ggplot2::element_rect(fill = "#FFFFFF", color = NA),
 
       # Strip (facets)

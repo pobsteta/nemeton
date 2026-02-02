@@ -152,37 +152,7 @@ app_ui <- function(request) {
           title = i18n$t("help")
         )
       )
-    ),
-
-    # LAST RESORT: inline <style> tag loaded AFTER everything else.
-    # This ensures our overrides come after bslib's dynamically injected CSS.
-    htmltools::tags$style(htmltools::HTML("
-      /* Prevent ALL busy indicator overlays */
-      .bslib-page-fill::after, .bslib-page-fill::before,
-      .bslib-page-navbar::after, .bslib-page-navbar::before,
-      .tab-content::after, .tab-content::before,
-      .tab-pane::after, .tab-pane::before,
-      .html-fill-container::after, .html-fill-container::before,
-      .html-fill-item::after, .html-fill-item::before,
-      .bslib-sidebar-layout::after, .bslib-sidebar-layout::before,
-      .container-fluid::after, .container-fluid::before,
-      .recalculating::after, .recalculating::before {
-        content: none !important;
-        display: none !important;
-      }
-      .bslib-page-fill, .bslib-page-navbar, .tab-content,
-      .tab-pane, .tab-pane.active, .html-fill-container,
-      .html-fill-item, .bslib-sidebar-layout,
-      .shiny-bound-output, .recalculating {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transition: none !important;
-      }
-      .shiny-busy, .shiny-busy-panel-wrapper,
-      .bslib-page-spinner, [data-busy-spinner] {
-        display: none !important;
-      }
-    "))
+    )
   )
 }
 
