@@ -496,16 +496,81 @@
   // ============================================================
 
   /**
-   * White screen prevention.
+   * White screen diagnostic + prevention.
    *
-   * The white screen is caused by CSS pseudo-elements (::after/::before)
-   * that bslib adds to page containers when Shiny is busy. These are
-   * invisible to JavaScript — only CSS can prevent them (see custom.css).
-   *
-   * This JS handler forces opacity:1 on all page containers when Shiny
-   * goes busy, as a belt-and-suspenders approach alongside the CSS.
+   * When Shiny goes busy, scans the ENTIRE DOM to find any element
+   * that covers the viewport with a white background. Logs full
+   * details to console and forcefully hides it.
    */
   function initWhiteScreenPrevention() {
+
+    function findWhiteScreen() {
+      // Walk EVERY element in the DOM
+      var all = document.querySelectorAll('*');
+      var found = [];
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        var rect = el.getBoundingClientRect();
+        // Skip small elements
+        if (rect.width < window.innerWidth * 0.5 ||
+            rect.height < window.innerHeight * 0.5) continue;
+
+        var cs = window.getComputedStyle(el);
+        var bg = cs.backgroundColor || '';
+        var hasWhiteBg = bg.indexOf('255, 255, 255') !== -1;
+        var pos = cs.position;
+        var z = cs.zIndex;
+        var op = cs.opacity;
+
+        // Log any large element with white background
+        if (hasWhiteBg && (pos === 'fixed' || pos === 'absolute' ||
+            (rect.width >= window.innerWidth * 0.8 &&
+             rect.height >= window.innerHeight * 0.8))) {
+          found.push({
+            tag: el.tagName,
+            id: el.id,
+            className: el.className,
+            position: pos,
+            zIndex: z,
+            opacity: op,
+            bg: bg,
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+            element: el
+          });
+        }
+      }
+      return found;
+    }
+
+    function diagnoseAndKill() {
+      var found = findWhiteScreen();
+      if (found.length > 0) {
+        console.warn('[nemeton] WHITE SCREEN ELEMENTS FOUND:');
+        for (var i = 0; i < found.length; i++) {
+          var f = found[i];
+          console.warn('[nemeton]', f.tag, 'id=' + f.id,
+            'class=' + f.className, 'pos=' + f.position,
+            'z=' + f.zIndex, 'opacity=' + f.opacity,
+            'bg=' + f.bg, f.width + 'x' + f.height);
+          console.warn('[nemeton] Element:', f.element);
+          // Kill it
+          f.element.style.setProperty('background', 'transparent', 'important');
+        }
+      }
+    }
+
+    // Run diagnostic on shiny:busy
+    $(document).on('shiny:busy', function() {
+      // Scan immediately, then at intervals during busy state
+      diagnoseAndKill();
+      setTimeout(diagnoseAndKill, 50);
+      setTimeout(diagnoseAndKill, 150);
+      setTimeout(diagnoseAndKill, 500);
+      setTimeout(diagnoseAndKill, 1000);
+    });
+
+    // Also force visibility on key containers
     function forceVisible() {
       var selectors = [
         '.bslib-page-fill', '.bslib-page-navbar', '.tab-content',
@@ -529,7 +594,6 @@
       setTimeout(forceVisible, 200);
     });
 
-    // Periodic fallback
     setInterval(forceVisible, 1000);
   }
 
