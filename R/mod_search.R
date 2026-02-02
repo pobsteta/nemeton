@@ -153,52 +153,62 @@ mod_search_server <- function(id, app_state) {
       # Show loading
       rv$is_loading <- TRUE
 
-      # Fetch communes in department
-      communes <- get_communes_in_department(dept)
-
-      # Check for errors (returned as attribute)
-      error_type <- attr(communes, "error")
-      if (!is.null(error_type)) {
-        if (error_type == "network") {
-          shiny::showNotification(
-            i18n$t("error_no_internet"),
-            type = "error",
-            duration = 8
+      # Fetch communes asynchronously so the browser stays responsive
+      promises::future_promise({
+        get_communes_in_department(dept)
+      }) %...>% (function(communes) {
+        # Check for errors (returned as attribute)
+        error_type <- attr(communes, "error")
+        if (!is.null(error_type)) {
+          if (error_type == "network") {
+            shiny::showNotification(
+              i18n$t("error_no_internet"),
+              type = "error",
+              duration = 8
+            )
+          } else {
+            shiny::showNotification(
+              paste(i18n$t("error_loading_communes"), attr(communes, "error_message")),
+              type = "error",
+              duration = 8
+            )
+          }
+          shiny::updateSelectizeInput(
+            session,
+            "commune",
+            choices = character(0),
+            selected = "",
+            server = FALSE
+          )
+        } else if (!is.null(communes) && nrow(communes) > 0) {
+          choices <- format_communes_for_selectize(communes)
+          shiny::updateSelectizeInput(
+            session,
+            "commune",
+            choices = choices,
+            selected = "",
+            server = FALSE
           )
         } else {
-          shiny::showNotification(
-            paste(i18n$t("error_loading_communes"), attr(communes, "error_message")),
-            type = "error",
-            duration = 8
+          shiny::updateSelectizeInput(
+            session,
+            "commune",
+            choices = character(0),
+            selected = "",
+            server = FALSE
           )
         }
-        shiny::updateSelectizeInput(
-          session,
-          "commune",
-          choices = character(0),
-          selected = "",
-          server = FALSE
-        )
-      } else if (!is.null(communes) && nrow(communes) > 0) {
-        choices <- format_communes_for_selectize(communes)
-        shiny::updateSelectizeInput(
-          session,
-          "commune",
-          choices = choices,
-          selected = "",
-          server = FALSE
-        )
-      } else {
-        shiny::updateSelectizeInput(
-          session,
-          "commune",
-          choices = character(0),
-          selected = "",
-          server = FALSE
-        )
-      }
 
-      rv$is_loading <- FALSE
+        rv$is_loading <- FALSE
+      }) %...!% (function(err) {
+        cli::cli_alert_danger("Error loading communes: {err$message}")
+        shiny::showNotification(
+          paste(i18n$t("error_loading_communes"), err$message),
+          type = "error",
+          duration = 8
+        )
+        rv$is_loading <- FALSE
+      })
     }, ignoreInit = TRUE)
 
 
@@ -217,37 +227,39 @@ mod_search_server <- function(id, app_state) {
       }
 
       rv$is_loading <- TRUE
+      is_restoring <- rv$is_restoring
+      dept <- input$departement
 
-      # During project restore, skip withProgress to avoid visual noise
-      # (Shiny's progress overlay causes repaint flashes between phases)
-      load_commune <- function() {
+      # Fetch commune geometry + info asynchronously
+      promises::future_promise({
         geometry <- get_commune_geometry(code)
-
-        if (!is.null(geometry)) {
+        communes <- get_communes_in_department(dept)
+        list(geometry = geometry, communes = communes)
+      }) %...>% (function(result) {
+        if (!is.null(result$geometry)) {
           rv$selected_commune <- code
-          rv$commune_geometry <- geometry
+          rv$commune_geometry <- result$geometry
 
-          # Get commune info from search
-          dept <- input$departement
-          communes <- get_communes_in_department(dept)
-          info <- communes[communes$code_insee == code, ]
-
-          if (nrow(info) > 0) {
-            rv$commune_info <- as.list(info[1, ])
+          communes <- result$communes
+          if (!is.null(communes) && nrow(communes) > 0) {
+            info <- communes[communes$code_insee == code, ]
+            if (nrow(info) > 0) {
+              rv$commune_info <- as.list(info[1, ])
+            }
           }
         }
-      }
 
-      load_commune()
-
-      if (rv$is_restoring) {
-        # Clear restoring flag NOW — commune observer has finished its work.
-        # This flag was kept alive through the later::later callback so that
-        # the department observer skips redundant API calls. Safe to clear now.
-        rv$is_restoring <- FALSE
-      }
-
-      rv$is_loading <- FALSE
+        if (is_restoring) {
+          rv$is_restoring <- FALSE
+        }
+        rv$is_loading <- FALSE
+      }) %...!% (function(err) {
+        cli::cli_alert_danger("Error loading commune: {err$message}")
+        if (is_restoring) {
+          rv$is_restoring <- FALSE
+        }
+        rv$is_loading <- FALSE
+      })
     }, ignoreInit = TRUE)
 
 
