@@ -138,5 +138,10 @@
   "retry": "Réessayer",
   "view_results": "Voir les résultats",
   "resuming_computation": "Reprise du calcul - %d indicateur(s) déjà calculé(s)",
-  "skipped_indicators": "%d indicateur(s) sauté(s) (déjà calculés)"
+  "skipped_indicators": "%d indicateur(s) sauté(s) (déjà calculés)",
+  "indicator_column": "Indicateur",
+  "status_column": "Statut",
+  "status_ok": "Calculé",
+  "status_error": "Erreur",
+  "status_not_computed": "Non calculé"
 }

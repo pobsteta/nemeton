@@ -135,9 +135,13 @@ mod_progress_ui <- function(id) {
           htmltools::div(
             class = "text-center py-2",
             htmltools::p(
-              class = "mb-0",
+              class = "mb-2",
               htmltools::span(id = ns("completion_message_text"))
             )
+          ),
+          htmltools::div(
+            id = ns("indicators_table_container"),
+            style = "max-height: 300px; overflow-y: auto;"
           )
         )
       )
@@ -261,6 +265,45 @@ mod_progress_server <- function(id, compute_state, app_state) {
         return(i18n$t("computing_indicator_name", indicator = i18n$t(indicator_key)))
       }
       paste(i18n$t("computing_indicator"), task)
+    }
+
+    # Helper: translate indicator name for the summary table
+    translate_indicator_name <- function(key) {
+      # Map internal names to readable French labels grouped by family
+      indicator_labels <- list(
+        carbon_biomass = "Carbone - Biomasse",
+        carbon_ndvi = "Carbone - NDVI",
+        biodiversity_protection = "Biodiversit\u00e9 - Protection",
+        biodiversity_structure = "Biodiversit\u00e9 - Structure",
+        biodiversity_connectivity = "Biodiversit\u00e9 - Connectivit\u00e9",
+        water_network = "Eau - R\u00e9seau hydrographique",
+        water_wetlands = "Eau - Zones humides",
+        water_twi = "Eau - Indice topographique",
+        air_forest_buffer = "Air - Couvert forestier tampon",
+        air_quality = "Air - Qualit\u00e9 de l'air",
+        fertility_soil = "Fertilit\u00e9 - Sol",
+        fertility_erosion = "Fertilit\u00e9 - \u00c9rosion",
+        landscape_fragmentation = "Paysage - Fragmentation",
+        landscape_edge_ratio = "Paysage - Ratio bordure",
+        temporal_age = "Temporel - Anciennet\u00e9",
+        temporal_change = "Temporel - Changement",
+        risk_fire = "Risque - Incendie",
+        risk_storm = "Risque - Temp\u00eate",
+        risk_drought = "Risque - S\u00e9cheresse",
+        risk_browsing = "Risque - Abroutissement",
+        social_trails = "Social - Sentiers",
+        social_accessibility = "Social - Accessibilit\u00e9",
+        social_population = "Social - Population",
+        production_volume = "Production - Volume",
+        production_productivity = "Production - Productivit\u00e9",
+        production_quality = "Production - Qualit\u00e9",
+        energy_wood = "Energie - Bois-\u00e9nergie",
+        energy_co2 = "Energie - CO2 \u00e9vit\u00e9",
+        naturalness_distance = "Naturalit\u00e9 - Distance",
+        naturalness_continuity = "Naturalit\u00e9 - Continuit\u00e9",
+        naturalness_score = "Naturalit\u00e9 - Score"
+      )
+      indicator_labels[[key]] %||% key
     }
 
     # Helper: translate phase
@@ -427,6 +470,33 @@ mod_progress_server <- function(id, compute_state, app_state) {
               total
             )
           ))
+
+          # Build indicator status table
+          ind_status <- state$indicators_status
+          if (!is.null(ind_status) && length(ind_status) > 0) {
+            # Convert named list/vector to array of {name, status}
+            ind_names <- names(ind_status)
+            indicators_list <- lapply(ind_names, function(nm) {
+              s <- ind_status[[nm]]
+              if (is.null(s) || length(s) != 1) s <- "pending"
+              list(
+                name = translate_indicator_name(nm),
+                status = as.character(s)
+              )
+            })
+            session$sendCustomMessage("updateIndicatorsTable", list(
+              containerId = ns("indicators_table_container"),
+              indicators = indicators_list,
+              labels = list(
+                indicator = i18n$t("indicator_column"),
+                status = i18n$t("status_column"),
+                completed = i18n$t("status_ok"),
+                failed = i18n$t("status_error"),
+                pending = i18n$t("status_not_computed")
+              )
+            ))
+          }
+
           # Reset start time for next computation
           rv$start_time <- NULL
           session$sendCustomMessage("stopElapsedTimer", list())

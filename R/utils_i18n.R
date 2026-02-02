@@ -175,6 +175,11 @@ TRANSLATIONS <- list(
     fr = "%d indicateur(s) saut\u00e9(s) (d\u00e9j\u00e0 calcul\u00e9s)",
     en = "%d indicator(s) skipped (already computed)"
   ),
+  indicator_column = list(fr = "Indicateur", en = "Indicator"),
+  status_column = list(fr = "Statut", en = "Status"),
+  status_ok = list(fr = "Calcul\u00e9", en = "Computed"),
+  status_error = list(fr = "Erreur", en = "Error"),
+  status_not_computed = list(fr = "Non calcul\u00e9", en = "Not computed"),
 
   # ============================================================
   # Synthesis

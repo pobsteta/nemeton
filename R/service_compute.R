@@ -1676,6 +1676,7 @@ save_progress_state <- function(project_id, state, project_path = NULL) {
     indicators_completed = state$indicators_completed,
     indicators_skipped = state$indicators_skipped %||% 0L,
     indicators_failed = state$indicators_failed,
+    indicators_status = as.list(state$indicators_status),
     errors = state$errors,
     started_at = if (!is.null(state$started_at)) format(state$started_at, "%Y-%m-%d %H:%M:%S") else NULL,
     completed_at = if (!is.null(state$completed_at)) format(state$completed_at, "%Y-%m-%d %H:%M:%S") else NULL,
