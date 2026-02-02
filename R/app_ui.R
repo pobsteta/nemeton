@@ -20,11 +20,6 @@ app_ui <- function(request) {
     # Add external resources (CSS, JS)
     app_add_external_resources(),
 
-    # Disable Shiny 1.8+ / bslib 0.6+ automatic busy indicators.
-    # They create white pulse overlays on recalculating outputs (including
-    # the leaflet map). The app uses its own in-map loading overlay.
-    shiny::useBusyIndicators(spinners = FALSE, pulse = FALSE),
-
     # Cicerone for guided tours
     if (requireNamespace("cicerone", quietly = TRUE)) cicerone::use_cicerone(),
 

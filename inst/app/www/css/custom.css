@@ -259,14 +259,19 @@
 /* ============================================================
    Map Container
    ============================================================ */
-/* Map loading: the in-map overlay (semi-transparent white + spinner)
-   sits on top of the map. We no longer hide the leaflet container —
-   the map stays visible beneath the overlay to avoid white screen flashes. */
+/* Map loading: the in-map overlay (semi-transparent + spinner)
+   sits on top of the map. The map stays visible beneath at all times. */
 
 #map_container,
+[id$="-map_container"] {
+  border-radius: 0 0 8px 8px;
+  min-height: 400px;
+  background: #e8e8e8 !important;
+}
 .leaflet-container {
   border-radius: 0 0 8px 8px;
   min-height: 400px;
+  background: #e8e8e8 !important;
 }
 
 .leaflet-control-zoom a {
@@ -380,45 +385,52 @@
 
 
 /* ============================================================
-   Anti-flicker: Prevent Shiny's default opacity flash on
-   recalculating uiOutput elements during async computation.
-   Shiny sets opacity:0.5 on .recalculating outputs which
-   causes visible flickering every time the reactive graph flushes.
+   Anti-flicker: Suppress ALL Shiny/bslib visual indicators.
+   The app uses its own loading system (in-map spinner overlay,
+   progress cards). Every default Shiny/bslib indicator that
+   changes opacity, adds overlays, or shows progress bars is
+   disabled here to prevent white screen flashes.
    ============================================================ */
-.shiny-bound-output.recalculating {
-  opacity: 1 !important;
-  transition: none !important;
+
+/* 1. Shiny's default busy bar (green progress bar at top) */
+.shiny-busy {
+  display: none !important;
 }
 
-/* During computation: suppress all output flicker.
-   The progress card provides its own visual feedback. */
+/* 2. Shiny's recalculating opacity on outputs */
+.shiny-bound-output.recalculating,
+.recalculating,
 body.nemeton-computing .shiny-bound-output {
   opacity: 1 !important;
   transition: none !important;
 }
 
-
-/* ============================================================
-   Loading States
-   ============================================================ */
-/* Hide Shiny's default green busy bar entirely.
-   The app uses its own loading indicators (spinners, progress cards). */
-.shiny-busy {
-  display: none !important;
-}
-
-/* Disable bslib 0.6+ / Shiny 1.8+ busy indicators.
-   These add a white semi-transparent pulse overlay (::after pseudo-element)
-   on recalculating outputs, causing a full white screen flash on the
-   leaflet map. The app has its own in-map loading overlay with spinner. */
+/* 3. bslib 0.6+ / Shiny 1.8+ busy indicator pulse overlay
+      (::after pseudo-element with white semi-transparent bg) */
 .recalculating::after,
 .recalculating::before,
-.html-fill-item.recalculating::after {
+.html-fill-item.recalculating::after,
+.html-fill-item.recalculating::before,
+.html-fill-container.recalculating::after,
+.html-fill-container.recalculating::before {
   display: none !important;
   content: none !important;
+  background: none !important;
+  opacity: 0 !important;
 }
+
+/* 4. bslib busy spinner panel (top-of-page spinbar) */
 .bslib-page-fill > .shiny-busy-panel-wrapper,
-.shiny-busy-panel-wrapper {
+.shiny-busy-panel-wrapper,
+.bslib-page-spinner,
+.bslib-busy-indicator-pulse,
+[data-busy-spinner] {
+  display: none !important;
+}
+
+/* 5. Shiny notification/progress overlay container */
+#shiny-notification-panel .shiny-notification.shiny-notification-progress,
+.shiny-notification.shiny-notification-progress {
   display: none !important;
 }
 
