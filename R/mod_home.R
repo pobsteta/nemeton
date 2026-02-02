@@ -375,47 +375,60 @@ mod_home_server <- function(id, app_state) {
     # Cadastre Parcels
     # ========================================
 
-    parcels <- shiny::reactive({
-      commune <- search_result$selected_commune()
-      shiny::req(commune)
-
-      # Get commune geometry for fallback
-      commune_geom <- search_result$commune_geometry()
-
-      parcels <- NULL
-
-      # During project restore, skip withProgress to avoid visual noise
-      # (Shiny's progress overlay causes repaint flashes between phases)
-      is_restoring <- isTRUE(shiny::isolate(app_state$restore_in_progress))
-
-      fetch_parcels <- function() {
-        tryCatch({
-          get_cadastral_parcels(commune, commune_geom)
-        }, error = function(e) {
-          shiny::showNotification(
-            sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
-            type = "error"
-          )
-          NULL
-        })
+    # ExtendedTask for parcel loading (non-blocking)
+    parcels_task <- shiny::ExtendedTask$new(function(commune, commune_geom) {
+      if (requireNamespace("future", quietly = TRUE)) {
+        plan_classes <- class(future::plan())
+        is_parallel <- any(c("multisession", "multicore", "cluster") %in% plan_classes)
+        if (!is_parallel) future::plan("multisession")
       }
+      promises::future_promise({
+        if (!is.null(.pkg_path) && requireNamespace("pkgload", quietly = TRUE)) {
+          pkgload::load_all(.pkg_path, quiet = TRUE)
+        } else if (requireNamespace("nemeton", quietly = TRUE)) {
+          loadNamespace("nemeton")
+        }
+        get_cadastral_parcels(commune, commune_geom)
+      }, seed = TRUE)
+    })
 
-      # Always fetch without withProgress — the in-map loading overlay
-      # (show_map_loading) provides visual feedback with a spinner.
-      # Shiny's withProgress creates a full-screen overlay that blocks
-      # the UI and causes the white screen flash.
-      parcels <- fetch_parcels()
+    # Hold parcel data in a reactiveVal (updated by task result observer)
+    parcels_data <- shiny::reactiveVal(NULL)
 
-      if (!is.null(parcels) && nrow(parcels) > 0 && !is_restoring) {
+    # Invoke parcels task when commune is selected
+    shiny::observeEvent(search_result$selected_commune(), {
+      commune <- search_result$selected_commune()
+      if (is.null(commune) || commune == "") {
+        parcels_data(NULL)
+        return()
+      }
+      commune_geom <- search_result$commune_geometry()
+      shiny::req(commune_geom)
+      parcels_task$invoke(commune, commune_geom)
+    }, ignoreInit = TRUE)
+
+    # Handle parcels task result
+    shiny::observeEvent(parcels_task$result(), {
+      result <- tryCatch(parcels_task$result(), error = function(e) {
         shiny::showNotification(
-          sprintf("%d %s", nrow(parcels), i18n$t("parcels_loaded")),
+          sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
+          type = "error"
+        )
+        NULL
+      })
+      parcels_data(result)
+      is_restoring <- isTRUE(shiny::isolate(app_state$restore_in_progress))
+      if (!is.null(result) && nrow(result) > 0 && !is_restoring) {
+        shiny::showNotification(
+          sprintf("%d %s", nrow(result), i18n$t("parcels_loaded")),
           type = "message",
           duration = 3
         )
       }
-
-      parcels
     })
+
+    # Parcels reactive (consumed by mod_map_server)
+    parcels <- shiny::reactive(parcels_data())
 
     # ========================================
     # Map Module

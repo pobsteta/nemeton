@@ -154,6 +154,16 @@ mod_search_server <- function(id, app_state) {
       }, seed = TRUE)
     })
 
+    # ExtendedTask: fetch communes for project restore (needs to carry commune_code)
+    restore_task <- shiny::ExtendedTask$new(function(dept_code, commune_code) {
+      ensure_future_plan()
+      promises::future_promise({
+        load_nemeton_in_worker()
+        communes <- get_communes_in_department(dept_code)
+        list(communes = communes, commune_code = commune_code)
+      }, seed = TRUE)
+    })
+
 
     # ========================================
     # Initialize Department Dropdown (once on start)
@@ -341,6 +351,7 @@ mod_search_server <- function(id, app_state) {
     # Restore Project Location
     # ========================================
 
+    # Step 1: invoke restore task (non-blocking)
     shiny::observeEvent(app_state$restore_project, {
       restore <- app_state$restore_project
       if (is.null(restore) || is.null(restore$commune_code)) return()
@@ -356,35 +367,45 @@ mod_search_server <- function(id, app_state) {
       # Update department dropdown
       shiny::updateSelectInput(session, "departement", selected = dept_code)
 
-      # Load communes for department and update with delay to ensure dept is updated first
-      later::later(function() {
-        communes <- get_communes_in_department(dept_code)
-        if (!is.null(communes) && nrow(communes) > 0) {
-          choices <- format_communes_for_selectize(communes)
+      # Fetch communes asynchronously via ExtendedTask
+      restore_task$invoke(dept_code, commune_code)
+    }, ignoreInit = TRUE)
 
-          cli::cli_alert_info("Updating commune dropdown with {nrow(communes)} choices")
+    # Step 2: handle restore task result
+    shiny::observeEvent(restore_task$result(), {
+      result <- tryCatch(restore_task$result(), error = function(e) {
+        cli::cli_alert_danger("Error restoring location: {e$message}")
+        rv$is_restoring <- FALSE
+        NULL
+      })
 
-          # Update commune dropdown with choices and selection
-          # This triggers the input$commune observer which handles
-          # commune_geometry, commune_info, and selected_commune
-          shiny::updateSelectizeInput(
-            session,
-            "commune",
-            choices = choices,
-            selected = commune_code,
-            server = FALSE
-          )
+      if (is.null(result)) return()
 
-          cli::cli_alert_success("Location restored successfully")
-        }
+      communes <- result$communes
+      commune_code <- result$commune_code
 
-        # NOTE: Do NOT clear rv$is_restoring here. The updateSelectizeInput
-        # above queues a message to the browser; the commune observer fires
-        # on a LATER flush when the browser sends back the new input$commune.
-        # If we clear the flag now, the commune observer sees is_restoring=FALSE
-        # and uses withProgress, which causes the green flash.
-        # The flag is cleared in the commune observer after load_commune().
-      }, delay = 0.5)  # 500ms delay to ensure department dropdown is updated
+      if (!is.null(communes) && nrow(communes) > 0) {
+        choices <- format_communes_for_selectize(communes)
+        cli::cli_alert_info("Updating commune dropdown with {nrow(communes)} choices")
+
+        # Update commune dropdown with choices and selection
+        # This triggers the input$commune observer which handles
+        # commune_geometry, commune_info, and selected_commune
+        shiny::updateSelectizeInput(
+          session,
+          "commune",
+          choices = choices,
+          selected = commune_code,
+          server = FALSE
+        )
+
+        cli::cli_alert_success("Location restored successfully")
+      }
+
+      # NOTE: Do NOT clear rv$is_restoring here. The updateSelectizeInput
+      # above queues a message to the browser; the commune observer fires
+      # on a LATER flush when the browser sends back the new input$commune.
+      # The flag is cleared in the commune result observer.
     }, ignoreInit = TRUE)
 
 
