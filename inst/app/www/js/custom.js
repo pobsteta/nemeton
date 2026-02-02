@@ -330,6 +330,19 @@
   // Restore lock: when true, hide requests are ignored until restore_complete.
   window._mapRestoreLock = false;
 
+  /**
+   * Find the leaflet output div (sibling of the overlay inside map_container).
+   * Returns the element or null.
+   */
+  function findLeafletOutput(overlay) {
+    if (!overlay || !overlay.parentElement) return null;
+    var container = overlay.parentElement;
+    // The leaflet output div has class 'html-widget-output' or 'leaflet'
+    var leafletDiv = container.querySelector('.html-widget-output') ||
+                     container.querySelector('.leaflet');
+    return leafletDiv || null;
+  }
+
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     var loadingId = data.loadingId;
     var show = data.show;
@@ -337,10 +350,12 @@
     var restoreComplete = data.restore_complete || false;
 
     var overlay = document.getElementById(loadingId);
+    var leafletDiv = findLeafletOutput(overlay);
     console.log('[showMapLoading]', show ? 'SHOW' : 'HIDE',
       'lock=' + window._mapRestoreLock,
       'restoreLock=' + restoreLock,
-      'restoreComplete=' + restoreComplete);
+      'restoreComplete=' + restoreComplete,
+      'leafletDiv=' + !!leafletDiv);
 
     if (show) {
       // While restore lock is active, the overlay is already visible and
@@ -359,7 +374,12 @@
       if (restoreLock) {
         window._mapRestoreLock = true;
       }
-      // Hide all leaflet content via CSS body class
+      // NUCLEAR: hide the leaflet output div entirely (display:none removes
+      // it from the render tree — no GPU layer, no compositing, nothing paints)
+      if (leafletDiv) {
+        leafletDiv.style.display = 'none';
+      }
+      // Also apply CSS body class as belt-and-suspenders
       document.body.classList.add('nemeton-map-loading');
       // Show loading overlay
       if (overlay) {
@@ -382,6 +402,11 @@
         window._mapLoadingTimer = null;
         // NOW clear the restore lock — overlay is about to be removed
         window._mapRestoreLock = false;
+        // Re-show the leaflet output div BEFORE removing the overlay
+        // so leaflet can render while still covered
+        if (leafletDiv) {
+          leafletDiv.style.display = '';
+        }
         requestAnimationFrame(function() {
           requestAnimationFrame(function() {
             if (overlay) {

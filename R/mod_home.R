@@ -191,7 +191,9 @@ mod_home_server <- function(id, app_state) {
             "window._mapRestoreLock=true;",
             "document.body.classList.add('nemeton-map-loading');",
             "var ov=document.getElementById('%s');",
-            "if(ov){ov.classList.remove('d-none');ov.style.display='flex';}",
+            "if(ov){ov.classList.remove('d-none');ov.style.display='flex';",
+            "var lf=ov.parentElement.querySelector('.html-widget-output')||ov.parentElement.querySelector('.leaflet');",
+            "if(lf){lf.style.display='none';}}",
             "Shiny.setInputValue('%s', '%s', {priority: 'event'});"
           ), ns("map-map_loading_overlay"),
              ns("load_project"), proj$id)
