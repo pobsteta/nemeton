@@ -214,28 +214,37 @@ mod_search_server <- function(id, app_state) {
 
       rv$is_loading <- TRUE
 
-      # Get commune geometry
-      shiny::withProgress(
-        message = get_i18n(get_lang())$t("loading_commune"),
-        value = 0.5,
-        {
-          geometry <- get_commune_geometry(code)
+      # During project restore, skip withProgress to avoid visual noise
+      # (Shiny's progress overlay causes repaint flashes between phases)
+      load_commune <- function() {
+        geometry <- get_commune_geometry(code)
 
-          if (!is.null(geometry)) {
-            rv$selected_commune <- code
-            rv$commune_geometry <- geometry
+        if (!is.null(geometry)) {
+          rv$selected_commune <- code
+          rv$commune_geometry <- geometry
 
-            # Get commune info from search
-            dept <- input$departement
-            communes <- get_communes_in_department(dept)
-            info <- communes[communes$code_insee == code, ]
+          # Get commune info from search
+          dept <- input$departement
+          communes <- get_communes_in_department(dept)
+          info <- communes[communes$code_insee == code, ]
 
-            if (nrow(info) > 0) {
-              rv$commune_info <- as.list(info[1, ])
-            }
+          if (nrow(info) > 0) {
+            rv$commune_info <- as.list(info[1, ])
           }
         }
-      )
+      }
+
+      if (rv$is_restoring) {
+        load_commune()
+      } else {
+        shiny::withProgress(
+          message = get_i18n(get_lang())$t("loading_commune"),
+          value = 0.5,
+          {
+            load_commune()
+          }
+        )
+      }
 
       rv$is_loading <- FALSE
     }, ignoreInit = TRUE)

@@ -377,23 +377,35 @@ mod_home_server <- function(id, app_state) {
 
       parcels <- NULL
 
-      shiny::withProgress(
-        message = i18n$t("loading_parcels"),
-        value = 0.5,
-        {
-          parcels <- tryCatch({
-            get_cadastral_parcels(commune, commune_geom)
-          }, error = function(e) {
-            shiny::showNotification(
-              sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
-              type = "error"
-            )
-            NULL
-          })
-        }
-      )
+      # During project restore, skip withProgress to avoid visual noise
+      # (Shiny's progress overlay causes repaint flashes between phases)
+      is_restoring <- !is.null(shiny::isolate(app_state$restore_project))
 
-      if (!is.null(parcels) && nrow(parcels) > 0) {
+      fetch_parcels <- function() {
+        tryCatch({
+          get_cadastral_parcels(commune, commune_geom)
+        }, error = function(e) {
+          shiny::showNotification(
+            sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
+            type = "error"
+          )
+          NULL
+        })
+      }
+
+      if (is_restoring) {
+        parcels <- fetch_parcels()
+      } else {
+        shiny::withProgress(
+          message = i18n$t("loading_parcels"),
+          value = 0.5,
+          {
+            parcels <- fetch_parcels()
+          }
+        )
+      }
+
+      if (!is.null(parcels) && nrow(parcels) > 0 && !is_restoring) {
         shiny::showNotification(
           sprintf("%d %s", nrow(parcels), i18n$t("parcels_loaded")),
           type = "message",

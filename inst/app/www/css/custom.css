@@ -272,9 +272,12 @@
 
 /* Layer 2: CSS-only white cover over the entire map container.
    Uses ::after pseudo-element so no JS DOM manipulation can remove it.
-   Only disappears when the body class is removed. */
+   Only disappears when the body class is removed.
+   will-change:transform forces GPU compositing so it competes with
+   leaflet's translate3d GPU layers on equal terms. */
 body.nemeton-map-loading [id$="-map_container"] {
   position: relative;
+  background: white !important;
 }
 body.nemeton-map-loading [id$="-map_container"]::after {
   content: '';
@@ -286,17 +289,21 @@ body.nemeton-map-loading [id$="-map_container"]::after {
   background: white;
   z-index: 99998;
   pointer-events: none;
+  will-change: transform;
 }
 
-/* Layer 3: hide tile/overlay panes, white container background */
+/* Layer 3: make leaflet content fully transparent.
+   opacity:0 affects the ENTIRE compositing layer including all
+   GPU-promoted children (translate3d tiles), unlike visibility:hidden
+   which can be overridden by child stacking contexts.
+   The white map_container background shows through. */
+body.nemeton-map-loading .leaflet-container {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 body.nemeton-map-loading .leaflet-map-pane,
 body.nemeton-map-loading .leaflet-control-container {
   visibility: hidden !important;
-}
-body.nemeton-map-loading .leaflet,
-body.nemeton-map-loading .leaflet-container {
-  background: white !important;
-  pointer-events: none !important;
 }
 
 #map_container,
