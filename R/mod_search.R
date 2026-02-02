@@ -107,6 +107,55 @@ mod_search_server <- function(id, app_state) {
 
 
     # ========================================
+    # ExtendedTask: non-blocking API calls
+    #
+    # Unlike future_promise() in observers (which still blocks the
+    # current session), ExtendedTask truly frees the session so the
+    # browser stays responsive during the API call.
+    # ========================================
+
+    .pkg_path <- tryCatch(pkgload::pkg_path(), error = function(e) NULL)
+
+    # Helper: ensure future plan is parallel in the worker
+    ensure_future_plan <- function() {
+      if (requireNamespace("future", quietly = TRUE)) {
+        plan_classes <- class(future::plan())
+        is_parallel <- any(c("multisession", "multicore", "cluster") %in% plan_classes)
+        if (!is_parallel) future::plan("multisession")
+      }
+    }
+
+    # Helper: load nemeton in the future worker process
+    load_nemeton_in_worker <- function() {
+      if (!is.null(.pkg_path) && requireNamespace("pkgload", quietly = TRUE)) {
+        pkgload::load_all(.pkg_path, quiet = TRUE)
+      } else if (requireNamespace("nemeton", quietly = TRUE)) {
+        loadNamespace("nemeton")
+      }
+    }
+
+    # ExtendedTask: fetch communes for a department
+    dept_task <- shiny::ExtendedTask$new(function(dept) {
+      ensure_future_plan()
+      promises::future_promise({
+        load_nemeton_in_worker()
+        get_communes_in_department(dept)
+      }, seed = TRUE)
+    })
+
+    # ExtendedTask: fetch commune geometry + info
+    commune_task <- shiny::ExtendedTask$new(function(code, dept) {
+      ensure_future_plan()
+      promises::future_promise({
+        load_nemeton_in_worker()
+        geometry <- get_commune_geometry(code)
+        communes <- get_communes_in_department(dept)
+        list(geometry = geometry, communes = communes, code = code)
+      }, seed = TRUE)
+    })
+
+
+    # ========================================
     # Initialize Department Dropdown (once on start)
     # ========================================
 
@@ -129,9 +178,9 @@ mod_search_server <- function(id, app_state) {
     # Update Communes When Department Changes
     # ========================================
 
+    # Step 1: invoke the ExtendedTask (non-blocking)
     shiny::observeEvent(input$departement, {
       dept <- input$departement
-      i18n <- get_i18n(get_lang())
 
       # During project restore, the restore observer handles commune loading
       # directly via later::later - skip redundant API call here
@@ -150,72 +199,75 @@ mod_search_server <- function(id, app_state) {
         return()
       }
 
-      # Show loading
+      # Show loading and invoke async task
       rv$is_loading <- TRUE
+      dept_task$invoke(dept)
+    }, ignoreInit = TRUE)
 
-      # Fetch communes asynchronously so the browser stays responsive
-      promises::future_promise({
-        get_communes_in_department(dept)
-      }) %...>% (function(communes) {
-        # Check for errors (returned as attribute)
-        error_type <- attr(communes, "error")
-        if (!is.null(error_type)) {
-          if (error_type == "network") {
-            shiny::showNotification(
-              i18n$t("error_no_internet"),
-              type = "error",
-              duration = 8
-            )
-          } else {
-            shiny::showNotification(
-              paste(i18n$t("error_loading_communes"), attr(communes, "error_message")),
-              type = "error",
-              duration = 8
-            )
-          }
-          shiny::updateSelectizeInput(
-            session,
-            "commune",
-            choices = character(0),
-            selected = "",
-            server = FALSE
-          )
-        } else if (!is.null(communes) && nrow(communes) > 0) {
-          choices <- format_communes_for_selectize(communes)
-          shiny::updateSelectizeInput(
-            session,
-            "commune",
-            choices = choices,
-            selected = "",
-            server = FALSE
-          )
-        } else {
-          shiny::updateSelectizeInput(
-            session,
-            "commune",
-            choices = character(0),
-            selected = "",
-            server = FALSE
-          )
-        }
-
-        rv$is_loading <- FALSE
-      }) %...!% (function(err) {
-        cli::cli_alert_danger("Error loading communes: {err$message}")
+    # Step 2: handle the result when the task completes
+    shiny::observeEvent(dept_task$result(), {
+      i18n <- get_i18n(get_lang())
+      communes <- tryCatch(dept_task$result(), error = function(e) {
+        cli::cli_alert_danger("Error loading communes: {e$message}")
         shiny::showNotification(
-          paste(i18n$t("error_loading_communes"), err$message),
+          paste(i18n$t("error_loading_communes"), e$message),
           type = "error",
           duration = 8
         )
-        rv$is_loading <- FALSE
+        NULL
       })
-    }, ignoreInit = TRUE)
+
+      if (is.null(communes)) {
+        shiny::updateSelectizeInput(
+          session, "commune",
+          choices = character(0), selected = "", server = FALSE
+        )
+        rv$is_loading <- FALSE
+        return()
+      }
+
+      # Check for errors (returned as attribute)
+      error_type <- attr(communes, "error")
+      if (!is.null(error_type)) {
+        if (error_type == "network") {
+          shiny::showNotification(
+            i18n$t("error_no_internet"),
+            type = "error",
+            duration = 8
+          )
+        } else {
+          shiny::showNotification(
+            paste(i18n$t("error_loading_communes"), attr(communes, "error_message")),
+            type = "error",
+            duration = 8
+          )
+        }
+        shiny::updateSelectizeInput(
+          session, "commune",
+          choices = character(0), selected = "", server = FALSE
+        )
+      } else if (!is.null(communes) && nrow(communes) > 0) {
+        choices <- format_communes_for_selectize(communes)
+        shiny::updateSelectizeInput(
+          session, "commune",
+          choices = choices, selected = "", server = FALSE
+        )
+      } else {
+        shiny::updateSelectizeInput(
+          session, "commune",
+          choices = character(0), selected = "", server = FALSE
+        )
+      }
+
+      rv$is_loading <- FALSE
+    })
 
 
     # ========================================
     # Handle Commune Selection
     # ========================================
 
+    # Step 1: invoke the ExtendedTask (non-blocking)
     shiny::observeEvent(input$commune, {
       code <- input$commune
 
@@ -227,40 +279,34 @@ mod_search_server <- function(id, app_state) {
       }
 
       rv$is_loading <- TRUE
-      is_restoring <- rv$is_restoring
-      dept <- input$departement
+      commune_task$invoke(code, input$departement)
+    }, ignoreInit = TRUE)
 
-      # Fetch commune geometry + info asynchronously
-      promises::future_promise({
-        geometry <- get_commune_geometry(code)
-        communes <- get_communes_in_department(dept)
-        list(geometry = geometry, communes = communes)
-      }) %...>% (function(result) {
-        if (!is.null(result$geometry)) {
-          rv$selected_commune <- code
-          rv$commune_geometry <- result$geometry
+    # Step 2: handle the result when the task completes
+    shiny::observeEvent(commune_task$result(), {
+      result <- tryCatch(commune_task$result(), error = function(e) {
+        cli::cli_alert_danger("Error loading commune: {e$message}")
+        NULL
+      })
 
-          communes <- result$communes
-          if (!is.null(communes) && nrow(communes) > 0) {
-            info <- communes[communes$code_insee == code, ]
-            if (nrow(info) > 0) {
-              rv$commune_info <- as.list(info[1, ])
-            }
+      if (!is.null(result) && !is.null(result$geometry)) {
+        rv$selected_commune <- result$code
+        rv$commune_geometry <- result$geometry
+
+        communes <- result$communes
+        if (!is.null(communes) && nrow(communes) > 0) {
+          info <- communes[communes$code_insee == result$code, ]
+          if (nrow(info) > 0) {
+            rv$commune_info <- as.list(info[1, ])
           }
         }
+      }
 
-        if (is_restoring) {
-          rv$is_restoring <- FALSE
-        }
-        rv$is_loading <- FALSE
-      }) %...!% (function(err) {
-        cli::cli_alert_danger("Error loading commune: {err$message}")
-        if (is_restoring) {
-          rv$is_restoring <- FALSE
-        }
-        rv$is_loading <- FALSE
-      })
-    }, ignoreInit = TRUE)
+      if (rv$is_restoring) {
+        rv$is_restoring <- FALSE
+      }
+      rv$is_loading <- FALSE
+    })
 
 
     # ========================================
