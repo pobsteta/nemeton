@@ -419,7 +419,9 @@
         'display:flex',
         'align-items:center',
         'justify-content:center',
-        'pointer-events:all'
+        'pointer-events:all',
+        'transform:translateZ(0)',
+        'will-change:transform'
       ].join(';');
       cover.innerHTML = '<div style="text-align:center">' +
         '<div class="spinner-border text-success mb-2" role="status"></div>' +
@@ -504,21 +506,18 @@
    * Show/hide the full-page cover during map navigation transitions
    * (département zoom, commune change). Unlike the restore flow, this
    * does NOT use a lock.
-   *
-   * Usage:
-   *   show=TRUE               → show cover, wait for explicit hide
-   *   show=TRUE, autoHideMs=N → show cover, auto-hide after N ms
-   *   show=FALSE              → hide cover (with double-rAF for paint)
    */
   window._navCoverTimer = null;
 
   function navCoverHide() {
-    // Don't interfere with restore lock
     if (window._mapRestoreLock) return;
     if (window._navCoverTimer) {
       clearTimeout(window._navCoverTimer);
       window._navCoverTimer = null;
     }
+    // Restore leaflet container visibility
+    var containers = document.querySelectorAll('.leaflet-container');
+    containers.forEach(function(c) { c.style.opacity = ''; });
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         hideFullPageCover();
@@ -527,30 +526,92 @@
   }
 
   Shiny.addCustomMessageHandler('showNavCover', function(data) {
-    var show = data.show;
-    if (show) {
-      // Cancel any pending hide
+    if (data.show) {
       if (window._navCoverTimer) {
         clearTimeout(window._navCoverTimer);
         window._navCoverTimer = null;
       }
-      // Don't interfere with restore lock
       if (window._mapRestoreLock) return;
       showFullPageCover();
-
-      // If autoHideMs is set, schedule auto-hide (for département zoom)
-      var autoHide = data.autoHideMs;
-      if (autoHide && autoHide > 0) {
-        window._navCoverTimer = setTimeout(function() {
-          window._navCoverTimer = null;
-          navCoverHide();
-        }, autoHide);
-      }
+      // Also hide all leaflet containers directly via inline style
+      // to prevent GPU-composited tiles from painting above the cover
+      var containers = document.querySelectorAll('.leaflet-container');
+      containers.forEach(function(c) { c.style.opacity = '0'; });
     } else {
-      // Don't interfere with restore lock
       if (window._mapRestoreLock) return;
+      // Restore leaflet container visibility
+      var containers = document.querySelectorAll('.leaflet-container');
+      containers.forEach(function(c) { c.style.opacity = ''; });
       navCoverHide();
     }
+  });
+
+  /**
+   * Zoom map with full-page cover: show cover FIRST, wait for it to be
+   * painted (rAF), THEN perform the Leaflet fitBounds. This guarantees
+   * the white cover hides any green tiles during the zoom transition.
+   *
+   * data: { mapId, bbox: {xmin,ymin,xmax,ymax}, autoHideMs }
+   */
+  function getLeafletMap(mapId) {
+    // Try HTMLWidgets first
+    if (window.HTMLWidgets) {
+      var widget = HTMLWidgets.find('#' + mapId);
+      if (widget) {
+        // leaflet R package stores the map on the widget
+        if (widget.getMap) return widget.getMap();
+        if (widget.map) return widget.map;
+      }
+    }
+    // Fallback: leaflet stores the map instance on the container element
+    var el = document.getElementById(mapId);
+    if (el) {
+      // Check common leaflet storage keys
+      if (el._leaflet_map) return el._leaflet_map;
+      // htmlwidgets stores data on the element
+      var keys = Object.keys(el);
+      for (var i = 0; i < keys.length; i++) {
+        var val = el[keys[i]];
+        if (val && typeof val.fitBounds === 'function') return val;
+      }
+    }
+    return null;
+  }
+
+  Shiny.addCustomMessageHandler('zoomMapWithCover', function(data) {
+    if (window._mapRestoreLock) return;
+    // Cancel any pending hide
+    if (window._navCoverTimer) {
+      clearTimeout(window._navCoverTimer);
+      window._navCoverTimer = null;
+    }
+    // 1) Show cover AND hide leaflet container immediately
+    showFullPageCover();
+    var containers = document.querySelectorAll('.leaflet-container');
+    containers.forEach(function(c) { c.style.opacity = '0'; });
+
+    // 2) Wait for the cover to be painted, THEN zoom
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        var map = getLeafletMap(data.mapId);
+        if (map) {
+          var bbox = data.bbox;
+          map.fitBounds([
+            [bbox.ymin, bbox.xmin],
+            [bbox.ymax, bbox.xmax]
+          ]);
+        }
+
+        // Auto-hide after delay (tiles need time to load)
+        var hideMs = data.autoHideMs || 1500;
+        window._navCoverTimer = setTimeout(function() {
+          window._navCoverTimer = null;
+          // Restore leaflet visibility before hiding cover
+          containers.forEach(function(c) { c.style.opacity = ''; });
+          navCoverHide();
+        }, hideMs);
+      });
+    });
   });
 
 

@@ -302,20 +302,19 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
       # Skip during project restore
       if (shiny::isolate(rv$restore_in_progress)) return()
 
-      # Show full-page cover during zoom; auto-hide after 1.5s
-      # (enough time for Leaflet to load tiles for the new viewport)
-      session$sendCustomMessage("showNavCover", list(
-        show = TRUE, autoHideMs = 1500
+      # Zoom with cover: JS shows the white cover, waits for it to be
+      # painted (double rAF), then calls Leaflet fitBounds from JS.
+      # This guarantees the cover hides any green tiles during zoom.
+      session$sendCustomMessage("zoomMapWithCover", list(
+        mapId = ns("map"),
+        bbox = list(
+          xmin = as.numeric(bbox[["xmin"]]),
+          ymin = as.numeric(bbox[["ymin"]]),
+          xmax = as.numeric(bbox[["xmax"]]),
+          ymax = as.numeric(bbox[["ymax"]])
+        ),
+        autoHideMs = 1500
       ))
-
-      # Zoom to department bounds without clearing layers
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::fitBounds(
-          lng1 = as.numeric(bbox[["xmin"]]),
-          lat1 = as.numeric(bbox[["ymin"]]),
-          lng2 = as.numeric(bbox[["xmax"]]),
-          lat2 = as.numeric(bbox[["ymax"]])
-        )
 
       rv$selected_ids <- character(0)
       rv$parcels_zoomed <- FALSE
