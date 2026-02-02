@@ -236,6 +236,10 @@ mod_search_server <- function(id, app_state) {
 
       if (rv$is_restoring) {
         load_commune()
+        # Clear restoring flag NOW — commune observer has finished its work.
+        # This flag was kept alive through the later::later callback so that
+        # we could skip withProgress here. Safe to clear now.
+        rv$is_restoring <- FALSE
       } else {
         shiny::withProgress(
           message = get_i18n(get_lang())$t("loading_commune"),
@@ -319,8 +323,12 @@ mod_search_server <- function(id, app_state) {
           cli::cli_alert_success("Location restored successfully")
         }
 
-        # Clear restoring flag
-        rv$is_restoring <- FALSE
+        # NOTE: Do NOT clear rv$is_restoring here. The updateSelectizeInput
+        # above queues a message to the browser; the commune observer fires
+        # on a LATER flush when the browser sends back the new input$commune.
+        # If we clear the flag now, the commune observer sees is_restoring=FALSE
+        # and uses withProgress, which causes the green flash.
+        # The flag is cleared in the commune observer after load_commune().
       }, delay = 0.5)  # 500ms delay to ensure department dropdown is updated
     }, ignoreInit = TRUE)
 

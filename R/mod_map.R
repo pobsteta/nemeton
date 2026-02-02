@@ -646,6 +646,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
         # 5. All rendering done — reveal the map
         rv$restore_in_progress <- FALSE
+        app_state$restore_in_progress <- FALSE
         show_map_loading(FALSE, restore_complete = TRUE)
       })
     })

@@ -331,16 +331,47 @@
   window._mapRestoreLock = false;
 
   /**
-   * Find the leaflet output div (sibling of the overlay inside map_container).
-   * Returns the element or null.
+   * Find the leaflet output div by deriving its ID from the overlay ID.
+   * Overlay ID = "home-map-map_loading_overlay"
+   * Map output ID = "home-map-map" (remove "_loading_overlay" suffix)
    */
-  function findLeafletOutput(overlay) {
-    if (!overlay || !overlay.parentElement) return null;
-    var container = overlay.parentElement;
-    // The leaflet output div has class 'html-widget-output' or 'leaflet'
-    var leafletDiv = container.querySelector('.html-widget-output') ||
-                     container.querySelector('.leaflet');
-    return leafletDiv || null;
+  function getMapElementId(loadingId) {
+    return loadingId.replace('_loading_overlay', '');
+  }
+
+  /**
+   * Hide the leaflet map element so no green tiles can paint.
+   * Uses visibility:hidden (keeps layout for leafletProxy) + opacity:0 (hides GPU layers).
+   * Also sets parent map_container background to white.
+   */
+  function hideMapElement(loadingId) {
+    var mapId = getMapElementId(loadingId);
+    var mapEl = document.getElementById(mapId);
+    console.log('[hideMapElement] mapId=' + mapId, 'found=' + !!mapEl);
+    if (mapEl) {
+      mapEl.style.visibility = 'hidden';
+      mapEl.style.opacity = '0';
+      // White background on parent container shows through
+      if (mapEl.parentElement) {
+        mapEl.parentElement.style.background = 'white';
+      }
+    }
+    return mapEl;
+  }
+
+  /**
+   * Show the leaflet map element (undo hideMapElement).
+   */
+  function showMapElement(loadingId) {
+    var mapId = getMapElementId(loadingId);
+    var mapEl = document.getElementById(mapId);
+    if (mapEl) {
+      mapEl.style.visibility = '';
+      mapEl.style.opacity = '';
+      if (mapEl.parentElement) {
+        mapEl.parentElement.style.background = '';
+      }
+    }
   }
 
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
@@ -350,35 +381,25 @@
     var restoreComplete = data.restore_complete || false;
 
     var overlay = document.getElementById(loadingId);
-    var leafletDiv = findLeafletOutput(overlay);
     console.log('[showMapLoading]', show ? 'SHOW' : 'HIDE',
       'lock=' + window._mapRestoreLock,
       'restoreLock=' + restoreLock,
-      'restoreComplete=' + restoreComplete,
-      'leafletDiv=' + !!leafletDiv);
+      'restoreComplete=' + restoreComplete);
 
     if (show) {
-      // While restore lock is active, the overlay is already visible and
-      // the pending observer has rendered everything.  Ignore redundant
-      // show(true) calls from Phase 1 re-firing after restore completes.
       if (window._mapRestoreLock && !restoreLock) {
         console.log('[showMapLoading] IGNORED: lock active, not a restore_lock show');
         return;
       }
-      // Cancel any pending hide timeout from a previous showMapLoading(false)
       if (window._mapLoadingTimer) {
         clearTimeout(window._mapLoadingTimer);
         window._mapLoadingTimer = null;
       }
-      // Activate restore lock if requested
       if (restoreLock) {
         window._mapRestoreLock = true;
       }
-      // NUCLEAR: hide the leaflet output div entirely (display:none removes
-      // it from the render tree — no GPU layer, no compositing, nothing paints)
-      if (leafletDiv) {
-        leafletDiv.style.display = 'none';
-      }
+      // Hide leaflet map via inline styles (ID-based lookup, no class querySelector)
+      hideMapElement(loadingId);
       // Also apply CSS body class as belt-and-suspenders
       document.body.classList.add('nemeton-map-loading');
       // Show loading overlay
@@ -387,26 +408,15 @@
         overlay.style.display = 'flex';
       }
     } else {
-      // During restore, ignore ALL hide requests except restore_complete
       if (window._mapRestoreLock && !restoreComplete) {
         console.log('[showMapLoading] IGNORED: lock active, not restore_complete');
         return;
       }
-      // Leaflet renders polygons asynchronously after receiving proxy commands.
-      // Wait for the browser to complete rendering before revealing the map.
-      // Strategy: 500ms delay + requestAnimationFrame to ensure at least one
-      // full paint cycle has occurred with all polygons rendered.
-      // The restore lock is kept active until the overlay is actually removed,
-      // so any late show/hide calls from Shiny reactives are silently ignored.
       window._mapLoadingTimer = setTimeout(function() {
         window._mapLoadingTimer = null;
-        // NOW clear the restore lock — overlay is about to be removed
         window._mapRestoreLock = false;
-        // Re-show the leaflet output div BEFORE removing the overlay
-        // so leaflet can render while still covered
-        if (leafletDiv) {
-          leafletDiv.style.display = '';
-        }
+        // Re-show map element while still covered by overlay
+        showMapElement(loadingId);
         requestAnimationFrame(function() {
           requestAnimationFrame(function() {
             if (overlay) {

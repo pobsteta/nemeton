@@ -191,11 +191,13 @@ mod_home_server <- function(id, app_state) {
             "window._mapRestoreLock=true;",
             "document.body.classList.add('nemeton-map-loading');",
             "var ov=document.getElementById('%s');",
-            "if(ov){ov.classList.remove('d-none');ov.style.display='flex';",
-            "var lf=ov.parentElement.querySelector('.html-widget-output')||ov.parentElement.querySelector('.leaflet');",
-            "if(lf){lf.style.display='none';}}",
+            "if(ov){ov.classList.remove('d-none');ov.style.display='flex';}",
+            "var mp=document.getElementById('%s');",
+            "if(mp){mp.style.visibility='hidden';mp.style.opacity='0';",
+            "if(mp.parentElement){mp.parentElement.style.background='white';}}",
             "Shiny.setInputValue('%s', '%s', {priority: 'event'});"
           ), ns("map-map_loading_overlay"),
+             ns("map-map"),
              ns("load_project"), proj$id)
         }
 
@@ -290,6 +292,10 @@ mod_home_server <- function(id, app_state) {
           substr(commune_code, 1, 2)
         }
 
+        # Flag for other modules to detect restore-in-progress
+        # Cleared by mod_map.R pending observer after all rendering is done
+        app_state$restore_in_progress <- TRUE
+
         # Signal to restore location and parcels
         app_state$restore_project <- list(
           commune_code = commune_code,
@@ -381,7 +387,7 @@ mod_home_server <- function(id, app_state) {
 
       # During project restore, skip withProgress to avoid visual noise
       # (Shiny's progress overlay causes repaint flashes between phases)
-      is_restoring <- !is.null(shiny::isolate(app_state$restore_project))
+      is_restoring <- isTRUE(shiny::isolate(app_state$restore_in_progress))
 
       fetch_parcels <- function() {
         tryCatch({
