@@ -188,9 +188,9 @@ app_add_external_resources <- function() {
       )
     ),
 
-    # Add JS
+    # Add JS (cache-busting query string forces browser to reload on each app start)
     htmltools::tags$script(
-      src = "www/js/custom.js"
+      src = paste0("www/js/custom.js?v=", as.integer(Sys.time()))
     ),
 
     # Shiny busy indicator

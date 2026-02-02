@@ -260,12 +260,18 @@
    Map Container
    ============================================================ */
 /* Hide leaflet output completely while restoring a project.
-   Uses body class for maximum reliability — no JS targeting issues. */
+   Uses body class for maximum reliability — no JS targeting issues.
+   Strategy: hide the internal map pane (tiles, polygons) but keep
+   the container itself visible with a white background.  This way
+   even if the loading overlay fails, the user sees white not green. */
+body.nemeton-map-loading .leaflet-map-pane,
+body.nemeton-map-loading .leaflet-control-container {
+  visibility: hidden !important;
+}
 body.nemeton-map-loading .leaflet,
 body.nemeton-map-loading .leaflet-container {
-  visibility: hidden !important;
-  pointer-events: none !important;
   background: white !important;
+  pointer-events: none !important;
 }
 
 #map_container,

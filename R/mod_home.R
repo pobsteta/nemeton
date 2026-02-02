@@ -264,12 +264,14 @@ mod_home_server <- function(id, app_state) {
         return()
       }
 
-      # Show map loading overlay IMMEDIATELY, before any app_state change
+      # Show map loading overlay IMMEDIATELY, before any app_state change.
       # This must be the first message queued to guarantee it arrives at
-      # the browser before any reactive renderUI re-renders green elements
+      # the browser before any reactive renderUI re-renders green elements.
+      # restore_lock prevents ANY intermediate hide from removing the overlay.
       session$sendCustomMessage("showMapLoading", list(
         loadingId = ns("map-map_loading_overlay"),
-        show = TRUE
+        show = TRUE,
+        restore_lock = TRUE
       ))
 
       # Update app state with loaded project
