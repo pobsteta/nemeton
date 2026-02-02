@@ -745,6 +745,9 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "completed") {
         # Computation completed successfully
+        # Update compute_state so mod_progress populates the completion summary
+        compute_state(progress_state)
+
         session$sendCustomMessage("setComputingMode", list(active = FALSE))
 
         # Hide progress card
@@ -771,6 +774,9 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "error") {
         # Computation failed with error
+        # Update compute_state so mod_progress populates the error details
+        compute_state(progress_state)
+
         session$sendCustomMessage("setComputingMode", list(active = FALSE))
 
         # Hide progress card

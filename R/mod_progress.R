@@ -415,12 +415,16 @@ mod_progress_server <- function(id, compute_state, app_state) {
             wrapperId = ns("task_toast"),
             visible = FALSE
           ))
+          completed <- state$indicators_completed %||% 0L
+          total <- state$indicators_total %||% 0L
+          if (length(completed) != 1 || is.na(completed)) completed <- 0L
+          if (length(total) != 1 || is.na(total)) total <- 0L
           session$sendCustomMessage("updateText", list(
             id = ns("completion_message_text"),
             text = sprintf(
               i18n$t("computation_summary"),
-              state$indicators_completed,
-              state$indicators_total
+              completed,
+              total
             )
           ))
           # Reset start time for next computation
