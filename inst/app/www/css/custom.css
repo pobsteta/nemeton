@@ -4,6 +4,15 @@
  */
 
 /* ============================================================
+   DIAGNOSTIC: If white screen appears and body bg shows through,
+   user will see GRAY instead of white. This helps determine if
+   the issue is content disappearing vs. an overlay covering it.
+   ============================================================ */
+html, body {
+  background-color: #e0e0e0 !important;
+}
+
+/* ============================================================
    CSS Variables
    ============================================================ */
 :root {
