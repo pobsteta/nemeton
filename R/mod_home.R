@@ -555,14 +555,13 @@ mod_home_server <- function(id, app_state) {
       app_state$clear_map_selection <- Sys.time()
     }
 
-    # When the user selects a different commune
+    # When the user selects a different commune, reset project state.
+    # No need for a department_changed observer: when the department
+    # changes, the commune dropdown is cleared asynchronously, which
+    # triggers this observer. This avoids touching the map prematurely
+    # on department selection (the map stays unchanged until the commune
+    # dropdown is actually updated).
     shiny::observeEvent(search_result$selected_commune(), {
-      if (isTRUE(app_state$restore_in_progress)) return()
-      reset_project_state()
-    }, ignoreInit = TRUE)
-
-    # When the user selects a different department
-    shiny::observeEvent(search_result$department_changed(), {
       if (isTRUE(app_state$restore_in_progress)) return()
       reset_project_state()
     }, ignoreInit = TRUE)

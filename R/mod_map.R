@@ -300,8 +300,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       parcel_data <- parcels()
       geom <- commune_geometry()
 
-      # When data is cleared (department change, commune deselected), clear map
-      if (is.null(parcel_data) || nrow(parcel_data) == 0) {
+      # Both cleared (commune deselected): clear map and hide overlay
+      if ((is.null(parcel_data) || nrow(parcel_data) == 0) && is.null(geom)) {
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("commune") |>
           leaflet::clearGroup("parcels") |>
@@ -310,8 +310,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         return()
       }
 
-      # Wait for commune geometry before rendering
-      if (is.null(geom)) return()
+      # Wait for both commune geometry AND parcels before rendering.
+      # While parcels are loading (geom set, parcels NULL), the loading
+      # overlay stays visible — no map clearing or flashing.
+      if (is.null(geom) || is.null(parcel_data) || nrow(parcel_data) == 0) {
+        return()
+      }
 
       # --- Both commune geometry and parcels are ready: render everything ---
 
