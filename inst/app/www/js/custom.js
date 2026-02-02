@@ -389,112 +389,35 @@
   });
 
   /**
-   * Handle map loading overlay visibility.
-   *
-   * Strategy: a FULL-VIEWPORT fixed white cover appended to <body>.
-   * position:fixed with z-index:999999 sits above absolutely everything:
-   * Shiny progress overlays, leaflet GPU-composited layers, any stacking
-   * context. Nothing in the app can paint above it.
-   *
-   * During project restore, a JS-level lock prevents intermediate hide
-   * requests from removing the cover between reactive flush cycles.
+   * In-map loading overlay: semi-transparent white + spinner over the map.
+   * The map stays visible beneath the overlay at all times — no full-page
+   * cover, no body class, no opacity changes on the leaflet container.
    */
   window._mapLoadingTimer = null;
-  window._mapRestoreLock = false;
-  var COVER_ID = '_nemeton_fullpage_cover';
-
-  /**
-   * Create (or show) the full-page white cover with spinner.
-   */
-  function showFullPageCover() {
-    var cover = document.getElementById(COVER_ID);
-    if (!cover) {
-      cover = document.createElement('div');
-      cover.id = COVER_ID;
-      cover.style.cssText = [
-        'position:fixed',
-        'top:0','left:0','right:0','bottom:0',
-        'background:white',
-        'z-index:999999',
-        'display:flex',
-        'align-items:center',
-        'justify-content:center',
-        'pointer-events:all',
-        'transform:translateZ(0)',
-        'will-change:transform'
-      ].join(';');
-      cover.innerHTML = '<div style="text-align:center">' +
-        '<div class="spinner-border text-success mb-2" role="status"></div>' +
-        '<div class="text-muted">Chargement…</div></div>';
-      document.body.appendChild(cover);
-    } else {
-      cover.style.display = 'flex';
-    }
-  }
-
-  /**
-   * Remove the full-page cover (with a double-rAF to ensure leaflet has painted).
-   */
-  function hideFullPageCover() {
-    var cover = document.getElementById(COVER_ID);
-    if (cover) {
-      cover.style.display = 'none';
-    }
-  }
-
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     var loadingId = data.loadingId;
     var show = data.show;
-    var restoreLock = data.restore_lock || false;
-    var restoreComplete = data.restore_complete || false;
-
     var overlay = document.getElementById(loadingId);
-    console.log('[showMapLoading]', show ? 'SHOW' : 'HIDE',
-      'lock=' + window._mapRestoreLock,
-      'restoreLock=' + restoreLock,
-      'restoreComplete=' + restoreComplete);
 
     if (show) {
-      if (window._mapRestoreLock && !restoreLock) {
-        console.log('[showMapLoading] IGNORED: lock active');
-        return;
-      }
+      // Cancel any pending hide timer
       if (window._mapLoadingTimer) {
         clearTimeout(window._mapLoadingTimer);
         window._mapLoadingTimer = null;
       }
-      if (restoreLock) {
-        window._mapRestoreLock = true;
-        // Full-page cover for restore (bulletproof against all rendering)
-        showFullPageCover();
-      }
-      // Also show the in-map overlay for non-restore loading
-      document.body.classList.add('nemeton-map-loading');
       if (overlay) {
         overlay.classList.remove('d-none');
         overlay.style.display = 'flex';
       }
     } else {
-      if (window._mapRestoreLock && !restoreComplete) {
-        console.log('[showMapLoading] IGNORED: lock active, not restore_complete');
-        return;
-      }
+      // Brief delay so the spinner is visible for at least a moment
       window._mapLoadingTimer = setTimeout(function() {
         window._mapLoadingTimer = null;
-        window._mapRestoreLock = false;
-        requestAnimationFrame(function() {
-          requestAnimationFrame(function() {
-            // Remove full-page cover
-            hideFullPageCover();
-            // Remove in-map overlay
-            if (overlay) {
-              overlay.classList.add('d-none');
-              overlay.style.display = 'none';
-            }
-            document.body.classList.remove('nemeton-map-loading');
-          });
-        });
-      }, 500);
+        if (overlay) {
+          overlay.classList.add('d-none');
+          overlay.style.display = 'none';
+        }
+      }, 300);
     }
   });
 

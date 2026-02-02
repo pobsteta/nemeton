@@ -186,17 +186,10 @@ mod_home_server <- function(id, app_state) {
           sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'});",
                   ns("delete_corrupted"), proj$id)
         } else {
-          sprintf(paste0(
-            "if(window._mapLoadingTimer){clearTimeout(window._mapLoadingTimer);window._mapLoadingTimer=null;}",
-            "window._mapRestoreLock=true;",
-            "(function(){var c=document.getElementById('_nemeton_fullpage_cover');",
-            "if(!c){c=document.createElement('div');c.id='_nemeton_fullpage_cover';",
-            "c.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:white;z-index:999999;display:flex;align-items:center;justify-content:center;pointer-events:all';",
-            "c.innerHTML='<div style=\"text-align:center\"><div class=\"spinner-border text-success mb-2\" role=\"status\"></div><div class=\"text-muted\">Chargement\\u2026</div></div>';",
-            "document.body.appendChild(c);}else{c.style.display='flex';}})();",
-            "document.body.classList.add('nemeton-map-loading');",
-            "Shiny.setInputValue('%s', '%s', {priority: 'event'});"
-          ), ns("load_project"), proj$id)
+          sprintf(
+            "Shiny.setInputValue('%s', '%s', {priority: 'event'});",
+            ns("load_project"), proj$id
+          )
         }
 
         cursor_class <- if (is_active) "project-card-active" else "cursor-pointer project-card"

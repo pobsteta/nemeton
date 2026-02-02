@@ -259,23 +259,9 @@
 /* ============================================================
    Map Container
    ============================================================ */
-/* Hide leaflet tiles while loading parcels.
-   Uses body class toggled by show_map_loading().
-
-   Two layers:
-   1. JS overlay div  (z-index: 99999, white bg, spinner) — visible feedback
-   2. opacity:0 on leaflet container — hides GPU-composited tile layers
-
-   The overlay spinner (inside map_container but outside .leaflet-container)
-   remains visible while tiles are hidden. */
-body.nemeton-map-loading [id$="-map_container"] {
-  position: relative;
-  background: white !important;
-}
-body.nemeton-map-loading .leaflet-container {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
+/* Map loading: the in-map overlay (semi-transparent white + spinner)
+   sits on top of the map. We no longer hide the leaflet container —
+   the map stays visible beneath the overlay to avoid white screen flashes. */
 
 #map_container,
 .leaflet-container {

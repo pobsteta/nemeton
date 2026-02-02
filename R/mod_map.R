@@ -81,11 +81,11 @@ mod_map_ui <- function(id) {
         id = ns("map_container"),
         style = "height: 100%; min-height: 500px; position: relative;",
 
-        # Loading overlay (static element, hidden by default, shown/hidden via JS)
+        # Loading overlay (semi-transparent over map, hidden by default)
         htmltools::div(
           id = ns("map_loading_overlay"),
           class = "position-absolute top-0 start-0 w-100 h-100 d-none",
-          style = "background: white; z-index: 99999; display: none; align-items: center; justify-content: center;",
+          style = "background: rgba(255,255,255,0.7); z-index: 99999; display: none; align-items: center; justify-content: center;",
           htmltools::div(
             class = "text-center",
             htmltools::div(
@@ -192,18 +192,10 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # Helper to show/hide map loading overlay via direct JS message
     # (avoids renderUI round-trip delay that caused green flash)
     #
-    # restore_lock: when TRUE, activates a JS-level lock that blocks
-    #   all subsequent hide requests until restore_complete is sent.
-    # restore_complete: when TRUE (with show=FALSE), releases the lock
-    #   and performs the final reveal. Intermediate show(FALSE) calls
-    #   during restore are silently ignored by JS.
-    show_map_loading <- function(show, restore_lock = FALSE,
-                                 restore_complete = FALSE) {
+    show_map_loading <- function(show, ...) {
       session$sendCustomMessage("showMapLoading", list(
         loadingId = ns("map_loading_overlay"),
-        show = show,
-        restore_lock = restore_lock,
-        restore_complete = restore_complete
+        show = show
       ))
     }
 
@@ -523,7 +515,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       restore <- app_state$restore_project
       if (!is.null(restore) && !is.null(restore$selected_ids)) {
         rv$restore_in_progress <- TRUE
-        show_map_loading(TRUE, restore_lock = TRUE)
+        show_map_loading(TRUE)
       }
     }, ignoreInit = TRUE)
 
@@ -653,7 +645,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         # 5. All rendering done — reveal the map
         rv$restore_in_progress <- FALSE
         app_state$restore_in_progress <- FALSE
-        show_map_loading(FALSE, restore_complete = TRUE)
+        show_map_loading(FALSE)
       })
     })
 
