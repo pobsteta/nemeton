@@ -421,6 +421,21 @@ body.nemeton-computing .shiny-bound-output {
   display: none !important;
 }
 
+/* Disable bslib 0.6+ / Shiny 1.8+ busy indicators.
+   These add a white semi-transparent pulse overlay (::after pseudo-element)
+   on recalculating outputs, causing a full white screen flash on the
+   leaflet map. The app has its own in-map loading overlay with spinner. */
+.recalculating::after,
+.recalculating::before,
+.html-fill-item.recalculating::after {
+  display: none !important;
+  content: none !important;
+}
+.bslib-page-fill > .shiny-busy-panel-wrapper,
+.shiny-busy-panel-wrapper {
+  display: none !important;
+}
+
 .spinner {
   display: inline-block;
   width: 20px;
