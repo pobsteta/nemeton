@@ -85,7 +85,7 @@ mod_map_ui <- function(id) {
         htmltools::div(
           id = ns("map_loading_overlay"),
           class = "position-absolute top-0 start-0 w-100 h-100 d-none",
-          style = "background: white; z-index: 1000; display: none; align-items: center; justify-content: center;",
+          style = "background: white; z-index: 99999; display: none; align-items: center; justify-content: center;",
           htmltools::div(
             class = "text-center",
             htmltools::div(

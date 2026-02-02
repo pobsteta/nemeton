@@ -165,11 +165,11 @@ app_add_external_resources <- function() {
   htmltools::tagList(
     # Add CSS
     htmltools::tags$head(
-      # Custom CSS
+      # Custom CSS (cache-busting to ensure latest version)
       htmltools::tags$link(
         rel = "stylesheet",
         type = "text/css",
-        href = "www/css/custom.css"
+        href = paste0("www/css/custom.css?v=", as.integer(Sys.time()))
       ),
       # Favicon
       htmltools::tags$link(

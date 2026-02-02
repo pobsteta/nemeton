@@ -261,9 +261,34 @@
    ============================================================ */
 /* Hide leaflet output completely while restoring a project.
    Uses body class for maximum reliability — no JS targeting issues.
-   Strategy: hide the internal map pane (tiles, polygons) but keep
-   the container itself visible with a white background.  This way
-   even if the loading overlay fails, the user sees white not green. */
+
+   Defence-in-depth (three layers):
+   1. JS overlay div  (z-index: 99999, white bg, spinner)
+   2. CSS ::after      (z-index: 99998, white bg, covers map_container)
+   3. visibility:hidden on tile/overlay panes + white leaflet background
+
+   Even if one layer fails, the others prevent the green tiles from
+   showing.  Layer 2 (::after) is pure CSS — no JS can remove it. */
+
+/* Layer 2: CSS-only white cover over the entire map container.
+   Uses ::after pseudo-element so no JS DOM manipulation can remove it.
+   Only disappears when the body class is removed. */
+body.nemeton-map-loading [id$="-map_container"] {
+  position: relative;
+}
+body.nemeton-map-loading [id$="-map_container"]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 99998;
+  pointer-events: none;
+}
+
+/* Layer 3: hide tile/overlay panes, white container background */
 body.nemeton-map-loading .leaflet-map-pane,
 body.nemeton-map-loading .leaflet-control-container {
   visibility: hidden !important;
