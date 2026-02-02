@@ -497,6 +497,47 @@
   });
 
   // ============================================================
+  // Map Navigation Cover (département/commune transitions)
+  // ============================================================
+
+  /**
+   * Show/hide the full-page cover during map navigation transitions
+   * (département zoom, commune change). Unlike the restore flow, this
+   * does NOT use a lock — it simply shows/hides the white cover with
+   * a Leaflet tileload listener so it only disappears once tiles are
+   * loaded and painted.
+   */
+  window._navCoverTileHandler = null;
+  window._navCoverTimer = null;
+
+  Shiny.addCustomMessageHandler('showNavCover', function(data) {
+    var show = data.show;
+    if (show) {
+      // Cancel any pending hide
+      if (window._navCoverTimer) {
+        clearTimeout(window._navCoverTimer);
+        window._navCoverTimer = null;
+      }
+      // Don't interfere with restore lock
+      if (window._mapRestoreLock) return;
+      showFullPageCover();
+    } else {
+      // Don't interfere with restore lock
+      if (window._mapRestoreLock) return;
+      // Delay hide to allow tiles to load + Leaflet to paint
+      window._navCoverTimer = setTimeout(function() {
+        window._navCoverTimer = null;
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            hideFullPageCover();
+          });
+        });
+      }, 300);
+    }
+  });
+
+
+  // ============================================================
   // Task Toast (fixed position, no DOM churn)
   // ============================================================
 

@@ -302,9 +302,10 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
       # Skip during project restore
       if (shiny::isolate(rv$restore_in_progress)) return()
 
+      # Show full-page cover during zoom to prevent green flash from tile loading
+      session$sendCustomMessage("showNavCover", list(show = TRUE))
+
       # Zoom to department bounds without clearing layers
-      # (previous commune/parcels stay visible until a new commune is selected,
-      # avoiding green flash from bare map background)
       leaflet::leafletProxy(ns("map")) |>
         leaflet::fitBounds(
           lng1 = as.numeric(bbox[["xmin"]]),
@@ -315,6 +316,9 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
 
       rv$selected_ids <- character(0)
       rv$parcels_zoomed <- FALSE
+
+      # Hide cover after tiles have loaded
+      session$sendCustomMessage("showNavCover", list(show = FALSE))
     })
 
 
@@ -339,8 +343,9 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
         return()
       }
 
-      # Show loading overlay immediately to cover the transition
+      # Show full-page cover + in-map overlay to cover the transition
       # (parcels take time to fetch/render after commune change)
+      session$sendCustomMessage("showNavCover", list(show = TRUE))
       show_map_loading(TRUE)
 
       # Verify geometry is polygon type
@@ -396,6 +401,7 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
 
       if (is.null(parcel_data) || nrow(parcel_data) == 0) {
         show_map_loading(FALSE)
+        session$sendCustomMessage("showNavCover", list(show = FALSE))
         rv$pending_parcels <- NULL
         leaflet::leafletProxy(ns("map")) |>
           leaflet::clearGroup("parcels") |>
@@ -451,6 +457,7 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
         # Clear pending parcels
         rv$pending_parcels <- NULL
         show_map_loading(FALSE)
+        session$sendCustomMessage("showNavCover", list(show = FALSE))
       })
     })
 
