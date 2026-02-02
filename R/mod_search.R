@@ -390,6 +390,18 @@ mod_search_server <- function(id, app_state) {
 
       # Fetch communes asynchronously via ExtendedTask
       restore_task$invoke(dept_code, commune_code)
+
+      # Safety timeout: if restore_task never completes (worker crash, etc.),
+      # clear flags after 30 seconds so the spinner doesn't spin forever.
+      later::later(function() {
+        if (isTRUE(rv$is_restoring)) {
+          cli::cli_warn("Restore safety timeout — clearing stale flags")
+          rv$is_restoring <- FALSE
+        }
+        if (isTRUE(app_state$restore_in_progress)) {
+          app_state$restore_in_progress <- FALSE
+        }
+      }, delay = 30)
     }, ignoreInit = TRUE)
 
     # Step 2: handle restore task result
@@ -397,6 +409,10 @@ mod_search_server <- function(id, app_state) {
       result <- tryCatch(restore_task$result(), error = function(e) {
         cli::cli_alert_danger("Error restoring location: {e$message}")
         rv$is_restoring <- FALSE
+        # Clear restore flag so spinner is hidden (mod_map watches this)
+        later::later(function() {
+          app_state$restore_in_progress <- FALSE
+        }, delay = 0)
         NULL
       })
 
@@ -419,6 +435,13 @@ mod_search_server <- function(id, app_state) {
             rv$commune_info <- as.list(info[1, ])
           }
         }
+      } else {
+        # Geometry fetch failed — clear flags so spinner doesn't spin forever
+        cli::cli_warn("Restore: commune geometry is NULL for {commune_code}")
+        rv$is_restoring <- FALSE
+        later::later(function() {
+          app_state$restore_in_progress <- FALSE
+        }, delay = 0)
       }
 
       if (!is.null(communes) && nrow(communes) > 0) {

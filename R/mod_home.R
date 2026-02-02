@@ -278,43 +278,55 @@ mod_home_server <- function(id, app_state) {
       app_state$project_id <- project$id
 
       # Extract commune code from parcels if available
-      if (!is.null(project$parcels) && nrow(project$parcels) > 0) {
+      if (!is.null(project$parcels) && nrow(project$parcels) > 0 &&
+          "code_insee" %in% names(project$parcels)) {
         commune_code <- unique(project$parcels$code_insee)[1]
-        # Extract department from commune code (first 2 or 3 chars)
-        dept_code <- if (grepl("^97", commune_code)) {
-          substr(commune_code, 1, 3)  # DOM-TOM
+
+        # Guard against NA/empty commune code (corrupted project data)
+        if (!is.na(commune_code) && nzchar(commune_code)) {
+          # Extract department from commune code (first 2 or 3 chars)
+          dept_code <- if (grepl("^97", commune_code)) {
+            substr(commune_code, 1, 3)  # DOM-TOM
+          } else {
+            substr(commune_code, 1, 2)
+          }
+
+          # Flag for other modules to detect restore-in-progress
+          # Cleared by mod_map.R pending observer after all rendering is done
+          app_state$restore_in_progress <- TRUE
+
+          # Set parcels directly from stored project data — no API call needed.
+          # This makes parcels() available immediately for mod_map.R's restore
+          # observer, avoiding the slow async chain (restore_task → commune_task
+          # → parcels_task) which could get stuck or take several seconds.
+          parcels_data(project$parcels)
+
+          # Signal to restore location and parcels
+          app_state$restore_project <- list(
+            commune_code = commune_code,
+            department_code = dept_code,
+            parcels = project$parcels,
+            selected_ids = project$parcels$id,  # All saved parcels were selected
+            timestamp = Sys.time()  # Force reactivity
+          )
         } else {
-          substr(commune_code, 1, 2)
+          cli::cli_warn("Project {project$id}: invalid commune code in parcels")
+          session$sendCustomMessage("showMapLoading", list(
+            loadingId = ns("map-map_loading_overlay"),
+            show = FALSE
+          ))
         }
-
-        # Flag for other modules to detect restore-in-progress
-        # Cleared by mod_map.R pending observer after all rendering is done
-        app_state$restore_in_progress <- TRUE
-
-        # Set parcels directly from stored project data — no API call needed.
-        # This makes parcels() available immediately for mod_map.R's restore
-        # observer, avoiding the slow async chain (restore_task → commune_task
-        # → parcels_task) which could get stuck or take several seconds.
-        parcels_data(project$parcels)
-
-        # Signal to restore location and parcels
-        app_state$restore_project <- list(
-          commune_code = commune_code,
-          department_code = dept_code,
-          parcels = project$parcels,
-          selected_ids = project$parcels$id,  # All saved parcels were selected
-          timestamp = Sys.time()  # Force reactivity
-        )
       }
 
       # Notify
       shiny::showNotification(
-        sprintf("%s: %s", i18n$t("project_loaded"), project$metadata$name),
+        sprintf("%s: %s", i18n$t("project_loaded"),
+                project$metadata$name %||% project$id),
         type = "message"
       )
 
       # If project has indicators, navigate to synthesis
-      if (project$metadata$indicators_computed) {
+      if (isTRUE(project$metadata$indicators_computed)) {
         shiny::updateNavbarPage(
           session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
           inputId = "main_nav",

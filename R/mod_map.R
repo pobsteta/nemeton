@@ -516,6 +516,17 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
     }, ignoreInit = TRUE)
 
+    # Safety net: when restore_in_progress goes FALSE (from success in the
+    # combined observer, or from failure in mod_search), ensure the spinner
+    # is hidden. On success, the combined observer already called
+    # show_map_loading(FALSE), so this is a no-op. On failure (e.g.
+    # commune_geometry never arrived), this ensures the spinner stops.
+    shiny::observeEvent(app_state$restore_in_progress, {
+      if (identical(app_state$restore_in_progress, FALSE)) {
+        show_map_loading(FALSE)
+      }
+    }, ignoreInit = TRUE)
+
 
     # ========================================
     # Render Parcels Helper
@@ -537,7 +548,8 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       }
 
       # Ensure WGS84
-      if (sf::st_crs(parcel_data)$epsg != 4326) {
+      crs_epsg <- tryCatch(sf::st_crs(parcel_data)$epsg, error = function(e) NULL)
+      if (!is.null(crs_epsg) && !is.na(crs_epsg) && crs_epsg != 4326) {
         parcel_data <- sf::st_transform(parcel_data, 4326)
       }
 
