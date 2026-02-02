@@ -259,51 +259,22 @@
 /* ============================================================
    Map Container
    ============================================================ */
-/* Hide leaflet output completely while restoring a project.
-   Uses body class for maximum reliability — no JS targeting issues.
+/* Hide leaflet tiles while loading parcels.
+   Uses body class toggled by show_map_loading().
 
-   Defence-in-depth (three layers):
-   1. JS overlay div  (z-index: 99999, white bg, spinner)
-   2. CSS ::after      (z-index: 99998, white bg, covers map_container)
-   3. visibility:hidden on tile/overlay panes + white leaflet background
+   Two layers:
+   1. JS overlay div  (z-index: 99999, white bg, spinner) — visible feedback
+   2. opacity:0 on leaflet container — hides GPU-composited tile layers
 
-   Even if one layer fails, the others prevent the green tiles from
-   showing.  Layer 2 (::after) is pure CSS — no JS can remove it. */
-
-/* Layer 2: CSS-only white cover over the entire map container.
-   Uses ::after pseudo-element so no JS DOM manipulation can remove it.
-   Only disappears when the body class is removed.
-   will-change:transform forces GPU compositing so it competes with
-   leaflet's translate3d GPU layers on equal terms. */
+   The overlay spinner (inside map_container but outside .leaflet-container)
+   remains visible while tiles are hidden. */
 body.nemeton-map-loading [id$="-map_container"] {
   position: relative;
   background: white !important;
 }
-body.nemeton-map-loading [id$="-map_container"]::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white;
-  z-index: 99998;
-  pointer-events: none;
-  will-change: transform;
-}
-
-/* Layer 3: make leaflet content fully transparent.
-   opacity:0 affects the ENTIRE compositing layer including all
-   GPU-promoted children (translate3d tiles), unlike visibility:hidden
-   which can be overridden by child stacking contexts.
-   The white map_container background shows through. */
 body.nemeton-map-loading .leaflet-container {
   opacity: 0 !important;
   pointer-events: none !important;
-}
-body.nemeton-map-loading .leaflet-map-pane,
-body.nemeton-map-loading .leaflet-control-container {
-  visibility: hidden !important;
 }
 
 #map_container,
