@@ -284,9 +284,17 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
     shiny::observe({
       geom <- commune_geometry()
+      parcel_data <- parcels()
       if (!is.null(geom)) {
-        show_map_loading(TRUE)
         rv$parcels_zoomed <- FALSE
+        # Only show loading if parcels aren't available yet.
+        # During project restore, parcels are set directly BEFORE
+        # commune_geometry arrives, so loading is already visible
+        # (shown by mod_home) and the combined observer will render
+        # immediately — no need to re-show here.
+        if (is.null(parcel_data) || nrow(parcel_data) == 0) {
+          show_map_loading(TRUE)
+        }
       }
     })
 
