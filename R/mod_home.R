@@ -276,6 +276,14 @@ mod_home_server <- function(id, app_state) {
         restore_lock = TRUE
       ))
 
+      # Collapse search and project info sections in sidebar
+      session$sendCustomMessage("collapseElement", list(
+        id = ns("search_collapse")
+      ))
+      session$sendCustomMessage("collapseElement", list(
+        id = ns("project-project_collapse")
+      ))
+
       # Update app state with loaded project
       app_state$current_project <- project
       app_state$project_id <- project$id

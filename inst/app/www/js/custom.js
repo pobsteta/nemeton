@@ -315,6 +315,17 @@
   });
 
   /**
+   * Collapse a Bootstrap collapse element by ID
+   */
+  Shiny.addCustomMessageHandler('collapseElement', function(data) {
+    var el = document.getElementById(data.id);
+    if (el && typeof bootstrap !== 'undefined') {
+      var bsCollapse = bootstrap.Collapse.getOrCreateInstance(el, {toggle: false});
+      bsCollapse.hide();
+    }
+  });
+
+  /**
    * Handle map loading overlay visibility.
    *
    * Strategy: a FULL-VIEWPORT fixed white cover appended to <body>.
