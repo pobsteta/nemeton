@@ -315,6 +315,17 @@
   });
 
   /**
+   * Toggle computation mode on body (suppresses busy indicator flicker)
+   */
+  Shiny.addCustomMessageHandler('setComputingMode', function(data) {
+    if (data.active) {
+      document.body.classList.add('nemeton-computing');
+    } else {
+      document.body.classList.remove('nemeton-computing');
+    }
+  });
+
+  /**
    * Collapse a Bootstrap collapse element by ID
    */
   Shiny.addCustomMessageHandler('collapseElement', function(data) {

@@ -582,6 +582,9 @@ mod_home_server <- function(id, app_state) {
         # Update compute state from file
         compute_state(progress_state)
 
+        # Suppress busy bar flicker during computation
+        session$sendCustomMessage("setComputingMode", list(active = TRUE))
+
         # Show progress card
         session$sendCustomMessage("showElement", list(
           id = ns("progress-progress_card_wrapper")
@@ -621,6 +624,9 @@ mod_home_server <- function(id, app_state) {
       # Store project ID for polling
       computing_project_id(project$id)
 
+      # Suppress busy bar flicker during computation
+      session$sendCustomMessage("setComputingMode", list(active = TRUE))
+
       # Show progress card immediately
       session$sendCustomMessage("showElement", list(
         id = ns("progress-progress_card_wrapper")
@@ -658,7 +664,8 @@ mod_home_server <- function(id, app_state) {
           compute_state(progress_state)
         }
 
-        # Hide progress card, show error card
+        # End computing mode, hide progress card, show error card
+        session$sendCustomMessage("setComputingMode", list(active = FALSE))
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
         ))
@@ -738,6 +745,8 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "completed") {
         # Computation completed successfully
+        session$sendCustomMessage("setComputingMode", list(active = FALSE))
+
         # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
@@ -762,6 +771,8 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "error") {
         # Computation failed with error
+        session$sendCustomMessage("setComputingMode", list(active = FALSE))
+
         # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
@@ -789,6 +800,8 @@ mod_home_server <- function(id, app_state) {
 
       } else if (progress_state$status == "cancelled") {
         # Computation was cancelled
+        session$sendCustomMessage("setComputingMode", list(active = FALSE))
+
         # Hide progress card
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
@@ -804,6 +817,7 @@ mod_home_server <- function(id, app_state) {
 
       } else {
         # Unknown status - log and reset to avoid infinite loop
+        session$sendCustomMessage("setComputingMode", list(active = FALSE))
         cli::cli_warn("Unknown computation status: {progress_state$status}")
         session$sendCustomMessage("hideElement", list(
           id = ns("progress-progress_card_wrapper")
@@ -857,7 +871,8 @@ mod_home_server <- function(id, app_state) {
         # ExtendedTask may not be running (resumed tracking mode)
       })
 
-      # Hide progress card
+      # End computing mode and hide progress card
+      session$sendCustomMessage("setComputingMode", list(active = FALSE))
       session$sendCustomMessage("hideElement", list(
         id = ns("progress-progress_card_wrapper")
       ))
@@ -888,6 +903,9 @@ mod_home_server <- function(id, app_state) {
 
       # Store project ID for polling
       computing_project_id(project$id)
+
+      # Suppress busy bar flicker during computation
+      session$sendCustomMessage("setComputingMode", list(active = TRUE))
 
       # Show progress card, hide error card
       session$sendCustomMessage("showElement", list(

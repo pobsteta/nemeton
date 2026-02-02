@@ -433,6 +433,16 @@ body.nemeton-map-loading .leaflet-control-container {
   transition: none !important;
 }
 
+/* During computation: hide the busy bar and suppress all output flicker.
+   The progress card provides its own visual feedback. */
+body.nemeton-computing .shiny-busy {
+  display: none !important;
+}
+body.nemeton-computing .shiny-bound-output {
+  opacity: 1 !important;
+  transition: none !important;
+}
+
 
 /* ============================================================
    Loading States
