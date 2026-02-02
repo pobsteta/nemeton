@@ -407,17 +407,11 @@ mod_home_server <- function(id, app_state) {
         })
       }
 
-      if (is_restoring) {
-        parcels <- fetch_parcels()
-      } else {
-        shiny::withProgress(
-          message = i18n$t("loading_parcels"),
-          value = 0.5,
-          {
-            parcels <- fetch_parcels()
-          }
-        )
-      }
+      # Always fetch without withProgress — the in-map loading overlay
+      # (show_map_loading) provides visual feedback with a spinner.
+      # Shiny's withProgress creates a full-screen overlay that blocks
+      # the UI and causes the white screen flash.
+      parcels <- fetch_parcels()
 
       if (!is.null(parcels) && nrow(parcels) > 0 && !is_restoring) {
         shiny::showNotification(
