@@ -404,22 +404,65 @@ html, body {
 .shiny-busy-panel-wrapper,
 .bslib-page-spinner,
 .bslib-busy-indicator-pulse,
-[data-busy-spinner] {
+[data-busy-spinner],
+.shiny-busy-indicator {
   display: none !important;
 }
 
-/* Force containers to stay visible during recalculation */
+/* Prevent bslib from activating busy overlay via data attributes */
+html[data-shiny-busy] .bslib-page-fill::after,
+html[data-shiny-busy] .html-fill-container::after,
+html.shiny-busy .bslib-page-fill::after,
+[data-shiny-busy="busy"]::after,
+[data-bs-busy]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Force ALL layout containers to stay visible during Shiny busy state */
+.bslib-page-fill,
+.bslib-page-navbar,
+.html-fill-container,
+.html-fill-item,
+.tab-content,
+.tab-pane,
+.tab-pane.active,
+.bslib-sidebar-layout,
+.bslib-sidebar-layout > .main,
+.bslib-sidebar-layout > .sidebar,
+.shiny-bound-output,
 .shiny-bound-output.recalculating,
 .recalculating {
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-/* Kill bslib pseudo-element overlays on recalculating outputs */
+/* Kill bslib busy-indicator pulse overlay on page-level containers.
+   bslib 0.6+ injects ::after pseudo-elements with white/semi-transparent
+   backgrounds on these containers during Shiny busy state. These cover
+   the entire viewport and appear as a white screen. */
+.bslib-page-fill::after,
+.bslib-page-fill::before,
+.bslib-page-navbar::after,
+.bslib-page-navbar::before,
+.html-fill-container::after,
+.html-fill-container::before,
+.html-fill-item::after,
+.html-fill-item::before,
+.tab-content::after,
+.tab-content::before,
+.tab-pane::after,
+.tab-pane::before,
+.bslib-sidebar-layout::after,
+.bslib-sidebar-layout::before,
 .recalculating::after,
 .recalculating::before {
   content: none !important;
   display: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .spinner {
