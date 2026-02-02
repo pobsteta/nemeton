@@ -496,101 +496,132 @@
   // ============================================================
 
   /**
-   * MutationObserver that catches ANY full-screen white overlay
-   * element added to the DOM and forcefully hides it.
+   * Aggressive white screen prevention.
    *
-   * This handles all Shiny/bslib busy indicators, progress overlays,
-   * and any other framework-generated full-screen covers regardless
-   * of CSS class names (which vary between versions).
+   * 1. Intercept Shiny's busy/idle events and kill overlays immediately
+   * 2. MutationObserver on the FULL DOM tree (subtree:true)
+   * 3. Periodic fallback scan every 500ms
+   * 4. Check for position:fixed OR large absolutely-positioned overlays
    */
   function initWhiteScreenPrevention() {
-    // IDs/classes we explicitly ALLOW (our own overlay, modals, notifications)
-    var ALLOWED = [
-      'shiny-modal-wrapper',
-      'shiny-notification-panel',
-      'modal-backdrop'
-    ];
 
     function isAllowed(el) {
-      for (var i = 0; i < ALLOWED.length; i++) {
-        if (el.id === ALLOWED[i] ||
-            el.classList.contains(ALLOWED[i]) ||
-            el.closest('#shiny-modal-wrapper') ||
-            el.closest('#shiny-notification-panel')) {
+      if (!el || !el.id) {
+        // Check parent chain for known containers
+        if (el && el.closest &&
+            (el.closest('#shiny-modal-wrapper') ||
+             el.closest('#shiny-notification-panel') ||
+             el.closest('[id$="-map_container"]'))) {
           return true;
         }
+        // Allow elements with these classes
+        if (el && el.classList &&
+            (el.classList.contains('modal-backdrop') ||
+             el.classList.contains('modal'))) {
+          return true;
+        }
+        return false;
       }
-      // Allow our in-map overlay (it's inside map_container, not body-level)
-      if (el.id && el.id.indexOf('map_loading_overlay') !== -1) return true;
-      return false;
-    }
-
-    function isFullScreenOverlay(el) {
-      if (!el || el.nodeType !== 1) return false;
-      if (isAllowed(el)) return false;
-      var style = window.getComputedStyle(el);
-      // Check: position fixed, covering viewport
-      if (style.position !== 'fixed') return false;
-      var rect = el.getBoundingClientRect();
-      var coversScreen = rect.width >= window.innerWidth * 0.9 &&
-                         rect.height >= window.innerHeight * 0.9;
-      if (!coversScreen) return false;
-      // Check: white-ish background or high opacity
-      var bg = style.backgroundColor;
-      if (bg && (bg.indexOf('255, 255, 255') !== -1 ||
-                 bg === 'white' ||
-                 bg === '#fff' ||
-                 bg === '#ffffff' ||
-                 bg === 'rgb(255, 255, 255)')) {
+      if (el.id === 'shiny-modal-wrapper' ||
+          el.id === 'shiny-notification-panel' ||
+          el.id.indexOf('map_loading_overlay') !== -1) {
         return true;
       }
-      // Also catch transparent/inherit with no visible content (blank cover)
-      if (style.zIndex && parseInt(style.zIndex) > 1000) {
-        var hasContent = el.textContent.trim().length > 0 ||
-                        el.querySelector('img, svg, canvas, video');
-        if (!hasContent) return true;
-      }
       return false;
     }
 
-    function killOverlays() {
-      var bodyChildren = document.body.children;
-      for (var i = 0; i < bodyChildren.length; i++) {
-        if (isFullScreenOverlay(bodyChildren[i])) {
-          console.log('[nemeton] Killed full-screen overlay:', bodyChildren[i]);
-          bodyChildren[i].style.display = 'none';
-          bodyChildren[i].style.opacity = '0';
-          bodyChildren[i].style.pointerEvents = 'none';
+    function isWhiteOverlay(el) {
+      if (!el || el.nodeType !== 1) return false;
+      if (isAllowed(el)) return false;
+
+      var style;
+      try { style = window.getComputedStyle(el); } catch(e) { return false; }
+
+      var pos = style.position;
+      if (pos !== 'fixed' && pos !== 'absolute') return false;
+
+      var rect = el.getBoundingClientRect();
+      // Must cover at least 80% of the viewport
+      if (rect.width < window.innerWidth * 0.8 ||
+          rect.height < window.innerHeight * 0.8) return false;
+
+      // Check background color
+      var bg = style.backgroundColor || '';
+      var isWhiteBg = bg.indexOf('255, 255, 255') !== -1 ||
+                      bg === 'rgb(255, 255, 255)' ||
+                      bg === 'rgba(255, 255, 255, 1)';
+
+      // Also check for semi-transparent white (pulse overlays)
+      var isSemiWhiteBg = bg.indexOf('255, 255, 255') !== -1;
+
+      // Check for high z-index blank element
+      var zIndex = parseInt(style.zIndex) || 0;
+      var hasVisibleContent = el.textContent.trim().length > 0 ||
+                              el.querySelector('img, svg, canvas, video, .spinner-border');
+
+      if (isWhiteBg) return true;
+      if (isSemiWhiteBg && zIndex > 100) return true;
+      if (zIndex > 1000 && !hasVisibleContent) return true;
+
+      return false;
+    }
+
+    function killElement(el) {
+      console.log('[nemeton] Killed overlay:', el.tagName, el.className, el.id,
+        'z-index:', el.style.zIndex || window.getComputedStyle(el).zIndex);
+      el.style.setProperty('display', 'none', 'important');
+      el.style.setProperty('opacity', '0', 'important');
+      el.style.setProperty('visibility', 'hidden', 'important');
+      el.style.setProperty('pointer-events', 'none', 'important');
+    }
+
+    function scanAndKill() {
+      // Scan ALL elements with position:fixed or position:absolute
+      var candidates = document.querySelectorAll('*');
+      for (var i = 0; i < candidates.length; i++) {
+        if (isWhiteOverlay(candidates[i])) {
+          killElement(candidates[i]);
         }
       }
     }
 
-    // Watch for new elements added to body
+    // 1. Intercept Shiny busy events
+    $(document).on('shiny:busy', function() {
+      // Immediately kill any existing overlays
+      requestAnimationFrame(scanAndKill);
+      // And again after a short delay (for elements created after busy signal)
+      setTimeout(scanAndKill, 100);
+      setTimeout(scanAndKill, 300);
+    });
+
+    // 2. MutationObserver on FULL DOM tree
     var observer = new MutationObserver(function(mutations) {
+      var shouldScan = false;
       for (var i = 0; i < mutations.length; i++) {
-        var added = mutations[i].addedNodes;
-        for (var j = 0; j < added.length; j++) {
-          var node = added[j];
-          if (node.nodeType !== 1) continue;
-          // Defer check to let styles compute
-          (function(el) {
-            requestAnimationFrame(function() {
-              if (isFullScreenOverlay(el)) {
-                console.log('[nemeton] Killed full-screen overlay (MutationObserver):', el);
-                el.style.display = 'none';
-                el.style.opacity = '0';
-                el.style.pointerEvents = 'none';
-              }
-            });
-          })(node);
+        if (mutations[i].addedNodes.length > 0) {
+          shouldScan = true;
+          break;
         }
+        // Also trigger on class/style changes (overlay might be shown via class toggle)
+        if (mutations[i].type === 'attributes') {
+          shouldScan = true;
+          break;
+        }
+      }
+      if (shouldScan) {
+        requestAnimationFrame(scanAndKill);
       }
     });
 
-    observer.observe(document.body, { childList: true });
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class']
+    });
 
-    // Also run periodic check as fallback (some elements may change style later)
-    setInterval(killOverlays, 2000);
+    // 3. Periodic fallback every 500ms
+    setInterval(scanAndKill, 500);
   }
 
 

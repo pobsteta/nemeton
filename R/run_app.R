@@ -70,8 +70,11 @@ run_app <- function(language = NULL,
     cli::cli_alert_success("Created project directory: {app_options$project_dir}")
   }
 
-  # Store options for access in modules
-  options(nemeton.app_options = app_options)
+  # Store options + disable Shiny/bslib busy indicators (white screen overlays)
+  options(
+    nemeton.app_options = app_options,
+    shiny.busy_indicators = FALSE
+  )
 
   # Configure async computation (ExtendedTask uses future for separate R process)
   if (requireNamespace("future", quietly = TRUE)) {

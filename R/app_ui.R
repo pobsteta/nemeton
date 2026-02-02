@@ -16,9 +16,18 @@ app_ui <- function(request) {
   # Get translations
   i18n <- get_i18n(lang)
 
+  # Disable Shiny 1.8+ / bslib 0.6+ busy indicators (white overlays)
+  busy_indicator_tag <- tryCatch(
+    shiny::useBusyIndicators(spinners = FALSE, pulse = FALSE),
+    error = function(e) NULL
+  )
+
   htmltools::tagList(
     # Add external resources (CSS, JS)
     app_add_external_resources(),
+
+    # Disable busy indicators (safe — returns NULL if function doesn't exist)
+    busy_indicator_tag,
 
     # Cicerone for guided tours
     if (requireNamespace("cicerone", quietly = TRUE)) cicerone::use_cicerone(),
