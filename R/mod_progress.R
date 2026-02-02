@@ -281,14 +281,18 @@ mod_progress_server <- function(id, compute_state, app_state) {
       state <- compute_state()
       shiny::req(state)
 
+      # Guard: status can be NA when progress file is partially written
+      status <- state$status
+      if (is.null(status) || is.na(status)) return()
+
       # Update visibility flags only when they actually change
-      new_show_progress <- state$status %in% c(
+      new_show_progress <- status %in% c(
         COMPUTE_STATUS$PENDING,
         COMPUTE_STATUS$DOWNLOADING,
         COMPUTE_STATUS$COMPUTING
       )
-      new_show_complete <- identical(state$status, COMPUTE_STATUS$COMPLETED)
-      new_show_error <- identical(state$status, COMPUTE_STATUS$ERROR)
+      new_show_complete <- identical(status, COMPUTE_STATUS$COMPLETED)
+      new_show_error <- identical(status, COMPUTE_STATUS$ERROR)
 
       shiny::isolate({
         if (!identical(rv$show_progress, new_show_progress)) {
@@ -311,7 +315,11 @@ mod_progress_server <- function(id, compute_state, app_state) {
           }
 
           # Sidebar: global progress bar + counters (via JavaScript)
-          progress_pct <- round(state$progress / state$progress_max * 100)
+          progress <- state$progress %||% 0
+          progress_max <- state$progress_max %||% 1
+          if (is.na(progress)) progress <- 0
+          if (is.na(progress_max) || progress_max == 0) progress_max <- 1
+          progress_pct <- round(progress / progress_max * 100)
 
           session$sendCustomMessage("updateProgressBar", list(
             barId = ns("progress_bar"),
@@ -344,6 +352,7 @@ mod_progress_server <- function(id, compute_state, app_state) {
           # Fixed toast notification (bottom-right) for task changes
           # Uses JavaScript-only DOM update - no showNotification to avoid flickering
           current_task <- state$current_task %||% ""
+          if (is.na(current_task)) current_task <- ""
           if (current_task != "" && current_task != rv$last_task) {
             rv$last_task <- current_task
             task_text <- translate_task(current_task)
