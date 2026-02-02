@@ -260,13 +260,9 @@ mod_home_server <- function(id, app_state) {
       }
 
       # Show map loading overlay IMMEDIATELY, before any app_state change.
-      # This must be the first message queued to guarantee it arrives at
-      # the browser before any reactive renderUI re-renders green elements.
-      # restore_lock prevents ANY intermediate hide from removing the overlay.
       session$sendCustomMessage("showMapLoading", list(
         loadingId = ns("map-map_loading_overlay"),
-        show = TRUE,
-        restore_lock = TRUE
+        show = TRUE
       ))
 
       # Collapse search and project info sections in sidebar
@@ -408,8 +404,15 @@ mod_home_server <- function(id, app_state) {
         parcels_data(NULL)
         return()
       }
+
+      # During project restore, parcels are set directly — skip API call
+      if (isTRUE(app_state$restore_in_progress)) return()
+
       commune_geom <- search_result$commune_geometry()
       shiny::req(commune_geom)
+
+      # Clear stale parcels while loading new ones
+      parcels_data(NULL)
       parcels_task$invoke(commune, commune_geom)
     }, ignoreInit = TRUE)
 

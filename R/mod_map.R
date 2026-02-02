@@ -176,12 +176,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       selected_ids = character(0),
       basemap = "osm",
       parcels_zoomed = FALSE,  # Flag to zoom only once per commune
-      pending_zoom = NULL,     # Pending zoom bbox (to execute in Shiny context)
-      pending_styles = NULL,   # Pending style updates
-      pending_commune_geom = NULL,  # Deferred commune geometry during restore
-      last_restore_timestamp = NULL,  # Track last processed restore request
-      restore_in_progress = FALSE,    # TRUE while project restore is active (prevents premature overlay hide)
-      pending_parcels = NULL   # Parcels waiting to be rendered
+      last_restore_timestamp = NULL  # Track last processed restore request
     )
 
 
@@ -284,30 +279,43 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
-    # Zoom to Commune
+    # Show loading when commune changes (before parcels arrive)
     # ========================================
 
     shiny::observe({
       geom <- commune_geometry()
-
-      if (is.null(geom)) return()
-
-      # isolate() to prevent re-firing when restore_in_progress changes to FALSE
-      if (!shiny::isolate(rv$restore_in_progress)) {
-        # Normal navigation: reset parcels zoom flag for new commune
+      if (!is.null(geom)) {
+        show_map_loading(TRUE)
         rv$parcels_zoomed <- FALSE
-      } else {
-        # Project restore: store geometry for deferred rendering and return.
-        # The pending zoom/styles observer will add the commune boundary
-        # together with parcels and selection, all behind the loading overlay.
-        rv$pending_commune_geom <- geom
+      }
+    })
+
+
+    # ========================================
+    # Single combined observer: render map when both
+    # commune_geometry AND parcels are ready
+    # ========================================
+
+    shiny::observe({
+      parcel_data <- parcels()
+      geom <- commune_geometry()
+
+      # When data is cleared (department change, commune deselected), clear map
+      if (is.null(parcel_data) || nrow(parcel_data) == 0) {
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("commune") |>
+          leaflet::clearGroup("parcels") |>
+          leaflet::clearGroup("selection")
+        show_map_loading(FALSE)
         return()
       }
 
-      # Show in-map loading overlay (spinner over map area only)
-      show_map_loading(TRUE)
+      # Wait for commune geometry before rendering
+      if (is.null(geom)) return()
 
-      # Verify geometry is polygon type
+      # --- Both commune geometry and parcels are ready: render everything ---
+
+      # 1. Validate and add commune boundary
       geom_types <- sf::st_geometry_type(geom)
       polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
       if (sum(polygon_idx) == 0) {
@@ -319,15 +327,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         geom <- geom[polygon_idx, ]
       }
 
-      # Get bounding box
-      bbox <- sf::st_bbox(geom)
+      bbox_commune <- sf::st_bbox(geom)
 
       leaflet::leafletProxy(ns("map")) |>
-        # Clear previous commune boundary and parcels
         leaflet::clearGroup("commune") |>
         leaflet::clearGroup("parcels") |>
         leaflet::clearGroup("selection") |>
-        # Add new boundary
         leaflet::addPolygons(
           data = geom,
           group = "commune",
@@ -335,87 +340,68 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           weight = STYLE$commune$weight,
           fill = STYLE$commune$fill,
           dashArray = STYLE$commune$dashArray
-        ) |>
-        leaflet::fitBounds(
-          lng1 = as.numeric(bbox[["xmin"]]),
-          lat1 = as.numeric(bbox[["ymin"]]),
-          lng2 = as.numeric(bbox[["xmax"]]),
-          lat2 = as.numeric(bbox[["ymax"]])
         )
-    })
 
+      # 2. Render parcels
+      render_parcels_to_map(parcel_data)
 
-    # ========================================
-    # Display Parcels (two-phase with loading overlay)
-    # ========================================
+      # 3. Handle project restore (apply saved selection)
+      restore <- shiny::isolate(app_state$restore_project)
+      if (!is.null(restore) && !is.null(restore$selected_ids) &&
+          (is.null(rv$last_restore_timestamp) ||
+           !identical(rv$last_restore_timestamp, restore$timestamp))) {
 
-    # Phase 1: When parcels change, show loading overlay and queue for rendering.
-    # During restore, this observer is COMPLETELY INERT — the restore observer
-    # sets pending_parcels directly to avoid any intermediate show/hide messages.
-    shiny::observe({
-      parcel_data <- parcels()
+        matching_ids <- intersect(restore$selected_ids, parcel_data$id)
+        if (length(matching_ids) > 0) {
+          rv$last_restore_timestamp <- restore$timestamp
+          rv$selected_ids <- matching_ids
+          cli::cli_alert_info("Restoring {length(matching_ids)} parcels")
 
-      # During restore, skip entirely — restore observer handles parcels directly
-      if (shiny::isolate(rv$restore_in_progress)) return()
+          # Apply selection styles
+          for (pid in matching_ids) {
+            update_parcel_style(pid, selected = TRUE)
+          }
 
-      if (is.null(parcel_data) || nrow(parcel_data) == 0) {
-        show_map_loading(FALSE)
-        rv$pending_parcels <- NULL
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels") |>
-          leaflet::clearGroup("selection")
-        return()
-      }
-
-      # Show loading overlay and store parcels for phase 2
-      show_map_loading(TRUE)
-      rv$pending_parcels <- parcel_data
-    })
-
-    # Phase 2: Render parcels after overlay is shown
-    # During restore, this observer is SKIPPED — the pending observer
-    # renders everything (parcels + commune + selection + zoom) in one batch
-    # to avoid green flash from split message batches.
-    shiny::observe({
-      # Wait for pending parcels
-      parcel_data <- rv$pending_parcels
-      if (is.null(parcel_data)) return()
-
-      # During restore, skip — pending observer handles all rendering
-      if (shiny::isolate(rv$restore_in_progress)) return()
-
-      # Small delay to allow overlay to render first
-      shiny::invalidateLater(100)
-
-      shiny::isolate({
-        # Only render once per pending_parcels update
-        if (is.null(rv$pending_parcels)) return()
-
-        render_parcels_to_map(parcel_data)
-
-        # Zoom to parcels extent only on first load (not on selection updates)
-        if (!rv$parcels_zoomed) {
-          cli::cli_alert_info("Zooming to all parcels")
-          bbox <- sf::st_bbox(parcel_data)
+          # Zoom to selected parcels
+          selected_sf <- parcel_data[parcel_data$id %in% matching_ids, ]
+          bbox_sel <- sf::st_bbox(selected_sf)
           leaflet::leafletProxy(ns("map")) |>
             leaflet::fitBounds(
-              lng1 = as.numeric(bbox[["xmin"]]),
-              lat1 = as.numeric(bbox[["ymin"]]),
-              lng2 = as.numeric(bbox[["xmax"]]),
-              lat2 = as.numeric(bbox[["ymax"]])
+              lng1 = as.numeric(bbox_sel[["xmin"]]),
+              lat1 = as.numeric(bbox_sel[["ymin"]]),
+              lng2 = as.numeric(bbox_sel[["xmax"]]),
+              lat2 = as.numeric(bbox_sel[["ymax"]])
+            )
+          rv$parcels_zoomed <- TRUE
+
+          shiny::isolate({
+            app_state$restore_in_progress <- FALSE
+          })
+          cli::cli_alert_success("Location restored successfully")
+        }
+
+      } else {
+        # Normal navigation: zoom to parcels on first load
+        if (!rv$parcels_zoomed) {
+          cli::cli_alert_info("Zooming to all parcels")
+          bbox_p <- sf::st_bbox(parcel_data)
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = as.numeric(bbox_p[["xmin"]]),
+              lat1 = as.numeric(bbox_p[["ymin"]]),
+              lng2 = as.numeric(bbox_p[["xmax"]]),
+              lat2 = as.numeric(bbox_p[["ymax"]])
             )
           rv$parcels_zoomed <- TRUE
         }
 
         # Re-apply selection styling if needed
-        if (length(rv$selected_ids) > 0) {
-          update_parcel_styles(rv$selected_ids)
+        if (length(shiny::isolate(rv$selected_ids)) > 0) {
+          update_parcel_styles(shiny::isolate(rv$selected_ids))
         }
+      }
 
-        # Clear pending parcels
-        rv$pending_parcels <- NULL
-        show_map_loading(FALSE)
-      })
+      show_map_loading(FALSE)
     })
 
 
@@ -505,149 +491,15 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
-    # Restore Project Selection
+    # Restore Project: show loading overlay immediately
     # ========================================
 
-    # Show loading overlay immediately when a project restore starts
-    # Uses direct JS message (not renderUI) to avoid race condition
-    # where the green commune boundary renders before the overlay appears
     shiny::observeEvent(app_state$restore_project, {
       restore <- app_state$restore_project
       if (!is.null(restore) && !is.null(restore$selected_ids)) {
-        rv$restore_in_progress <- TRUE
         show_map_loading(TRUE)
       }
     }, ignoreInit = TRUE)
-
-    # Single observer that handles restoration when both restore request and parcels are available
-    shiny::observe({
-      # Get restore request directly from app_state
-      restore <- app_state$restore_project
-      if (is.null(restore) || is.null(restore$selected_ids)) return()
-
-      # Wait for parcels to be available
-      parcel_data <- parcels()
-      if (is.null(parcel_data) || nrow(parcel_data) == 0) return()
-
-      # Check if we already processed this restore request (using timestamp)
-      if (!is.null(rv$last_restore_timestamp) &&
-          identical(rv$last_restore_timestamp, restore$timestamp)) {
-        return()
-      }
-
-      # Find matching parcel IDs
-      matching_ids <- intersect(restore$selected_ids, parcel_data$id)
-
-      if (length(matching_ids) > 0) {
-        # Only mark as processed when we actually find matching parcels
-        # This ensures we retry when the correct parcels are loaded
-        rv$last_restore_timestamp <- restore$timestamp
-
-        cli::cli_alert_info("Restoring {length(matching_ids)} parcels...")
-
-        # Set selected IDs
-        rv$selected_ids <- matching_ids
-
-        # Mark as zoomed to prevent "Display Parcels" from overriding
-        rv$parcels_zoomed <- TRUE
-
-        # Calculate bbox for selected parcels
-        selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
-        bbox <- sf::st_bbox(selected_parcels)
-
-        # Store ALL pending operations — including parcels.
-        # Phase 1 is completely inert during restore, so we set
-        # pending_parcels directly here to avoid any intermediate
-        # show/hide messages that could flash the green map tiles.
-        rv$pending_parcels <- parcel_data
-        rv$pending_styles <- matching_ids
-        rv$pending_zoom <- list(
-          xmin = as.numeric(bbox[["xmin"]]),
-          ymin = as.numeric(bbox[["ymin"]]),
-          xmax = as.numeric(bbox[["xmax"]]),
-          ymax = as.numeric(bbox[["ymax"]])
-        )
-
-        cli::cli_alert_success("Restore prepared: {length(matching_ids)} parcels")
-      } else {
-        # Don't mark as processed - wait for correct parcels to load
-        cli::cli_alert_info("Waiting for matching parcels to load...")
-      }
-    })
-
-    # Render everything during restore: parcels + commune + selection + zoom.
-    # Uses observe() with REACTIVE reads on all three pending values so it
-    # only proceeds when ALL are available — regardless of Shiny observer
-    # execution order within a flush cycle (fixes race condition where the
-    # pending observer could fire before Phase 1 set pending_parcels).
-    shiny::observe({
-      # Reactive reads — observer re-fires when ANY of these change
-      zoom <- rv$pending_zoom
-      styles <- rv$pending_styles
-      parcel_data <- rv$pending_parcels
-
-      # Only proceed during restore when all data is ready
-      if (is.null(zoom) && is.null(styles)) return()
-      if (is.null(parcel_data)) return()
-
-      # All data available — render everything in one batch inside isolate()
-      shiny::isolate({
-        commune_geom <- rv$pending_commune_geom
-
-        # 1. Render base parcels
-        render_parcels_to_map(parcel_data)
-        rv$pending_parcels <- NULL
-        rv$parcels_zoomed <- TRUE
-
-        # 2. Add deferred commune boundary
-        if (!is.null(commune_geom)) {
-          geom_types <- sf::st_geometry_type(commune_geom)
-          polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
-          if (sum(polygon_idx) > 0) {
-            geom_to_add <- if (sum(!polygon_idx) > 0) commune_geom[polygon_idx, ] else commune_geom
-            leaflet::leafletProxy(ns("map")) |>
-              leaflet::clearGroup("commune") |>
-              leaflet::addPolygons(
-                data = geom_to_add,
-                group = "commune",
-                color = STYLE$commune$color,
-                weight = STYLE$commune$weight,
-                fill = STYLE$commune$fill,
-                dashArray = STYLE$commune$dashArray
-              )
-          }
-          rv$pending_commune_geom <- NULL
-        }
-
-        # 3. Apply selected parcel styles
-        if (!is.null(styles)) {
-          cli::cli_alert_info("Applying {length(styles)} style updates...")
-          for (pid in styles) {
-            update_parcel_style(pid, selected = TRUE)
-          }
-          rv$pending_styles <- NULL
-        }
-
-        # 4. Apply zoom
-        if (!is.null(zoom)) {
-          cli::cli_alert_info("Applying zoom to selected parcels...")
-          leaflet::leafletProxy(ns("map")) |>
-            leaflet::fitBounds(
-              lng1 = zoom$xmin,
-              lat1 = zoom$ymin,
-              lng2 = zoom$xmax,
-              lat2 = zoom$ymax
-            )
-          rv$pending_zoom <- NULL
-          cli::cli_alert_success("Zoomed to selected parcels")
-        }
-
-        # 5. All rendering done — reveal the map
-        rv$restore_in_progress <- FALSE
-        app_state$restore_in_progress <- FALSE
-        show_map_loading(FALSE)
-      })
-    })
 
 
     # ========================================
@@ -655,7 +507,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     # Renders base parcel polygons to the map.
-    # Used by both Phase 2 (normal navigation) and the pending observer (restore).
     render_parcels_to_map <- function(parcel_data) {
       # Filter to keep only polygon geometries (defensive check)
       geom_types <- sf::st_geometry_type(parcel_data)
