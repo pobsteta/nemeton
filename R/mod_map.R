@@ -127,7 +127,7 @@ mod_map_ui <- function(id) {
 #'   - selection_count: Reactive integer
 #'
 #' @noRd
-mod_map_server <- function(id, app_state, commune_geometry, parcels) {
+mod_map_server <- function(id, app_state, commune_geometry, department_bbox, parcels) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -288,6 +288,34 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         satId = ns("basemap_satellite"),
         active = "satellite"
       ))
+    })
+
+
+    # ========================================
+    # Zoom to Department
+    # ========================================
+
+    shiny::observe({
+      bbox <- department_bbox()
+      if (is.null(bbox)) return()
+
+      # Skip during project restore
+      if (shiny::isolate(rv$restore_in_progress)) return()
+
+      # Clear previous commune boundary and parcel selection
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("commune") |>
+        leaflet::clearGroup("parcels") |>
+        leaflet::clearGroup("selection") |>
+        leaflet::fitBounds(
+          lng1 = as.numeric(bbox[["xmin"]]),
+          lat1 = as.numeric(bbox[["ymin"]]),
+          lng2 = as.numeric(bbox[["xmax"]]),
+          lat2 = as.numeric(bbox[["ymax"]])
+        )
+
+      rv$selected_ids <- character(0)
+      rv$parcels_zoomed <- FALSE
     })
 
 

@@ -328,7 +328,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           immediate = TRUE
         )
       }
-    }, ignoreInit = TRUE)
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
 
     # Open collapse when parcels are selected (new project mode)
     shiny::observeEvent(selected_parcels(), {

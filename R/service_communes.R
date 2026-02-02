@@ -535,6 +535,58 @@ get_communes_in_department <- function(department_code) {
 }
 
 
+#' Get department bounding box
+#'
+#' @description
+#' Retrieve the bounding box of a department from the geo.api.gouv.fr API.
+#' Returns a named numeric vector with xmin, ymin, xmax, ymax (WGS84).
+#'
+#' @param department_code Character. Department code (e.g. "73", "2A").
+#'
+#' @return A named numeric vector c(xmin, ymin, xmax, ymax) or NULL if not found.
+#'
+#' @noRd
+get_department_bbox <- function(department_code) {
+  if (is.null(department_code) || department_code == "") {
+    return(NULL)
+  }
+
+  tryCatch({
+    if (!requireNamespace("httr2", quietly = TRUE)) {
+      cli::cli_abort("Package 'httr2' is required for API calls")
+    }
+
+    url <- sprintf(
+      "https://geo.api.gouv.fr/departements/%s?fields=contour",
+      department_code
+    )
+
+    resp <- httr2::request(url) |>
+      httr2::req_timeout(10) |>
+      httr2::req_retry(max_tries = 3, backoff = ~ 2) |>
+      httr2::req_perform()
+
+    data <- httr2::resp_body_json(resp)
+
+    if (is.null(data$contour) || is.null(data$contour$coordinates)) {
+      return(NULL)
+    }
+
+    # Extract all coordinates to compute bbox
+    coords <- unlist(data$contour$coordinates)
+    # Coordinates come as lng, lat pairs
+    lngs <- coords[seq(1, length(coords), by = 2)]
+    lats <- coords[seq(2, length(coords), by = 2)]
+
+    c(xmin = min(lngs), ymin = min(lats), xmax = max(lngs), ymax = max(lats))
+
+  }, error = function(e) {
+    cli::cli_warn("Error getting department bbox: {e$message}")
+    NULL
+  })
+}
+
+
 #' Validate INSEE code format
 #'
 #' @description

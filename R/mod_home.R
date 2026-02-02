@@ -438,6 +438,7 @@ mod_home_server <- function(id, app_state) {
       "map",
       app_state = app_state,
       commune_geometry = search_result$commune_geometry,
+      department_bbox = search_result$department_bbox,
       parcels = parcels
     )
 
