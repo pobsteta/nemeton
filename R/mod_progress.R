@@ -287,8 +287,8 @@ mod_progress_server <- function(id, compute_state, app_state) {
         COMPUTE_STATUS$DOWNLOADING,
         COMPUTE_STATUS$COMPUTING
       )
-      new_show_complete <- state$status == COMPUTE_STATUS$COMPLETED
-      new_show_error <- state$status == COMPUTE_STATUS$ERROR
+      new_show_complete <- identical(state$status, COMPUTE_STATUS$COMPLETED)
+      new_show_error <- identical(state$status, COMPUTE_STATUS$ERROR)
 
       shiny::isolate({
         if (!identical(rv$show_progress, new_show_progress)) {
