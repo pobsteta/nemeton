@@ -302,11 +302,10 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
       # Skip during project restore
       if (shiny::isolate(rv$restore_in_progress)) return()
 
-      # Clear previous commune boundary and parcel selection
+      # Zoom to department bounds without clearing layers
+      # (previous commune/parcels stay visible until a new commune is selected,
+      # avoiding green flash from bare map background)
       leaflet::leafletProxy(ns("map")) |>
-        leaflet::clearGroup("commune") |>
-        leaflet::clearGroup("parcels") |>
-        leaflet::clearGroup("selection") |>
         leaflet::fitBounds(
           lng1 = as.numeric(bbox[["xmin"]]),
           lat1 = as.numeric(bbox[["ymin"]]),
@@ -340,11 +339,16 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
         return()
       }
 
+      # Show loading overlay immediately to cover the transition
+      # (parcels take time to fetch/render after commune change)
+      show_map_loading(TRUE)
+
       # Verify geometry is polygon type
       geom_types <- sf::st_geometry_type(geom)
       polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
       if (sum(polygon_idx) == 0) {
         cli::cli_warn("Commune geometry is not a polygon, skipping display")
+        show_map_loading(FALSE)
         return()
       }
       if (sum(!polygon_idx) > 0) {
@@ -355,8 +359,10 @@ mod_map_server <- function(id, app_state, commune_geometry, department_bbox, par
       bbox <- sf::st_bbox(geom)
 
       leaflet::leafletProxy(ns("map")) |>
-        # Clear previous commune boundary
+        # Clear previous commune boundary and parcels
         leaflet::clearGroup("commune") |>
+        leaflet::clearGroup("parcels") |>
+        leaflet::clearGroup("selection") |>
         # Add new boundary
         leaflet::addPolygons(
           data = geom,
