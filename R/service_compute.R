@@ -219,7 +219,7 @@ start_computation <- function(project_id,
       progress_callback(state)
     }
     if (use_file_progress) {
-      save_progress_state(project_id, state, project_path = project_path)
+      save_progress_state(project_id, state)
     }
   }
 
@@ -262,7 +262,7 @@ start_computation <- function(project_id,
     }
 
     # Update project status (with path for async mode)
-    update_project_status(project_id, "computing", project_path = project_path)
+    update_project_status(project_id, "computing")
 
     # Report initial progress
     report_progress(state)
@@ -339,7 +339,7 @@ start_computation <- function(project_id,
     }
 
     # Final save (ensures metadata is updated)
-    save_indicators(project_id, results, project_path = project_path)
+    save_indicators(project_id, results)
 
     # Update final state
     state$status <- COMPUTE_STATUS$COMPLETED
@@ -349,7 +349,7 @@ start_computation <- function(project_id,
     state$current_task <- "complete"
 
     # Update project status
-    update_project_status(project_id, "completed", project_path = project_path)
+    update_project_status(project_id, "completed")
 
     report_progress(state)
 
@@ -371,7 +371,7 @@ start_computation <- function(project_id,
     ))
 
     # Update project status
-    update_project_status(project_id, "error", project_path = project_path)
+    update_project_status(project_id, "error")
 
     report_progress(state)
 
@@ -1858,7 +1858,7 @@ save_indicators <- function(project_id, results, project_path = NULL) {
       indicators_computed = TRUE,
       indicators_computed_at = Sys.time(),
       updated_at = Sys.time()
-    ), project_path = project_path)
+    ))
 
     cli::cli_alert_success("Saved indicators for {nrow(results)} parcels")
     TRUE

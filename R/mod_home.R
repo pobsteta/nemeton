@@ -613,7 +613,7 @@ mod_home_server <- function(id, app_state) {
       # the async future. Without this, the polling observer reads the
       # stale progress file (e.g. status="error" from a previous run)
       # and immediately stops polling, preventing any UI updates.
-      save_progress_state(project$id, state, project_path = project_path)
+      save_progress_state(project$id, state)
 
       # Reset progress tracking key for new computation
       last_progress_key("")

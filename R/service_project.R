@@ -684,7 +684,7 @@ update_project_status <- function(project_id, status, project_path = NULL) {
   update_project_metadata(project_id, list(
     status = status,
     updated_at = Sys.time()
-  ), project_path = project_path)
+  ))
 }
 
 
