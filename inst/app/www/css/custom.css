@@ -433,11 +433,8 @@ body.nemeton-map-loading .leaflet-control-container {
   transition: none !important;
 }
 
-/* During computation: hide the busy bar and suppress all output flicker.
+/* During computation: suppress all output flicker.
    The progress card provides its own visual feedback. */
-body.nemeton-computing .shiny-busy {
-  display: none !important;
-}
 body.nemeton-computing .shiny-bound-output {
   opacity: 1 !important;
   transition: none !important;
@@ -447,26 +444,10 @@ body.nemeton-computing .shiny-bound-output {
 /* ============================================================
    Loading States
    ============================================================ */
+/* Hide Shiny's default green busy bar entirely.
+   The app uses its own loading indicators (spinners, progress cards). */
 .shiny-busy {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--nemeton-primary),
-    var(--nemeton-primary-light),
-    var(--nemeton-primary)
-  );
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  z-index: 9999;
-}
-
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  display: none !important;
 }
 
 .spinner {
