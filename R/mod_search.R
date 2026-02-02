@@ -286,6 +286,10 @@ mod_search_server <- function(id, app_state) {
       code <- input$commune
 
       if (is.null(code) || code == "") {
+        # During restore, selectize may briefly fire "" when choices are
+        # updated before the selected value is applied. Don't clear
+        # geometry that restore_task just set.
+        if (rv$is_restoring) return()
         rv$selected_commune <- NULL
         rv$commune_info <- NULL
         rv$commune_geometry <- NULL
@@ -294,10 +298,15 @@ mod_search_server <- function(id, app_state) {
 
       # During restore, geometry + selected_commune are set directly by
       # restore_task result handler — skip redundant commune_task call.
+      # Clear is_restoring now that the final input$commune value arrived.
+      if (rv$is_restoring) {
+        rv$is_restoring <- FALSE
+        return()
+      }
+
       # Also skip if geometry is already available for this exact commune
       # (browser roundtrip from updateSelectizeInput fires input$commune
       # AFTER restore_task already set everything).
-      if (rv$is_restoring) return()
       if (!is.null(rv$commune_geometry) && identical(rv$selected_commune, code)) return()
 
       rv$is_loading <- TRUE
@@ -428,7 +437,12 @@ mod_search_server <- function(id, app_state) {
         cli::cli_alert_success("Location restored successfully")
       }
 
-      rv$is_restoring <- FALSE
+      # NOTE: Don't clear rv$is_restoring here. The updateSelectizeInput
+      # above queues a message to the browser. The selectize may briefly
+      # fire input$commune="" before the selected value. If is_restoring
+      # is already FALSE, the commune observer clears rv$commune_geometry.
+      # is_restoring is cleared by the commune observer when the final
+      # input$commune value arrives.
       rv$is_loading <- FALSE
     }, ignoreInit = TRUE)
 
