@@ -303,30 +303,17 @@
     var indicators = data.indicators || [];
     if (indicators.length === 0) { container.innerHTML = ''; return; }
     var labels = data.labels || {};
-    var statusIcon = function(s) {
-      if (s === 'completed') return '<span class="text-success">&#10003;</span>';
-      if (s === 'error') return '<span class="text-danger">&#10007;</span>';
-      return '<span class="text-muted">&#8212;</span>';
-    };
-    var statusLabel = function(s) {
-      if (s === 'completed') return labels.completed || 'OK';
-      if (s === 'error') return labels.failed || 'Erreur';
-      return labels.pending || 'Non calculé';
-    };
-    var statusClass = function(s) {
-      if (s === 'completed') return 'text-success';
-      if (s === 'error') return 'text-danger';
-      return 'text-muted';
+    var statusCell = function(s) {
+      if (s === 'completed') return '<span class="text-success" style="font-size:1.1rem;">&#10003;</span>';
+      return '<span class="text-danger" style="font-size:1.1rem;">&#10007;</span>';
     };
     var html = '<table class="table table-sm table-striped mb-0" style="font-size:0.85rem;">';
     html += '<thead><tr><th>' + (labels.indicator || 'Indicateur') + '</th>';
-    html += '<th class="text-center">' + (labels.status || 'Statut') + '</th></tr></thead><tbody>';
+    html += '<th class="text-center" style="width:60px;"></th></tr></thead><tbody>';
     for (var i = 0; i < indicators.length; i++) {
       var ind = indicators[i];
       html += '<tr><td>' + ind.name + '</td>';
-      html += '<td class="text-center ' + statusClass(ind.status) + '">';
-      html += statusIcon(ind.status) + ' ' + statusLabel(ind.status);
-      html += '</td></tr>';
+      html += '<td class="text-center">' + statusCell(ind.status) + '</td></tr>';
     }
     html += '</tbody></table>';
     container.innerHTML = html;
