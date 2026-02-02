@@ -293,8 +293,12 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       rv$editing_project_id <- project$id
       rv$current_project <- project
 
-      # Open the collapse panel via JavaScript (skip during project restore)
-      if (!isTRUE(app_state$restore_in_progress)) {
+      # Open the collapse panel only for draft/new projects that need editing.
+      # Skip during restore (loading recent project) and after computation
+      # (completed/error) to avoid the panel popping open unexpectedly.
+      status <- project$metadata$status %||% "draft"
+      if (!isTRUE(app_state$restore_in_progress) &&
+          status %in% c("draft", "error")) {
         shiny::insertUI(
           selector = "body",
           where = "beforeEnd",
