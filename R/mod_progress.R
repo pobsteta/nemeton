@@ -312,6 +312,11 @@ mod_progress_server <- function(id, compute_state, app_state) {
             rv$last_task <- ""
             rv$last_notif_id <- NULL
             rv$last_error_count <- 0
+            # Start client-side elapsed timer (avoids server-side invalidateLater flicker)
+            session$sendCustomMessage("startElapsedTimer", list(
+              id = ns("elapsed_time"),
+              label = paste0(i18n$t("elapsed_time"), ": ")
+            ))
           }
 
           # Sidebar: global progress bar + counters (via JavaScript)
@@ -420,6 +425,7 @@ mod_progress_server <- function(id, compute_state, app_state) {
           ))
           # Reset start time for next computation
           rv$start_time <- NULL
+          session$sendCustomMessage("stopElapsedTimer", list())
         }
 
         # Error message (only set once at the end)
@@ -450,23 +456,9 @@ mod_progress_server <- function(id, compute_state, app_state) {
       })
     })
 
-    # Elapsed time updater (only active during computation)
-    shiny::observe({
-      # Only run when progress is visible
-      if (rv$show_progress && !is.null(rv$start_time)) {
-        elapsed <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs"))
-        mins <- floor(elapsed / 60)
-        secs <- floor(elapsed %% 60)
-
-        session$sendCustomMessage("updateText", list(
-          id = ns("elapsed_time"),
-          text = sprintf("%s: %02d:%02d", i18n$t("elapsed_time"), mins, secs)
-        ))
-
-        # Only continue polling while showing progress
-        shiny::invalidateLater(1000, session)
-      }
-    })
+    # NOTE: Elapsed time is updated by a client-side JavaScript timer
+    # (startElapsedTimer/stopElapsedTimer) to avoid server-side
+    # invalidateLater(1000) which causes reactive flush flicker.
 
     # ========================================
     # Button handlers
@@ -474,7 +466,7 @@ mod_progress_server <- function(id, compute_state, app_state) {
 
     # Cancel button
     shiny::observeEvent(input$cancel, {
-      # Signal cancellation to app_state
+      session$sendCustomMessage("stopElapsedTimer", list())
       app_state$cancel_computation <- Sys.time()
     })
 
@@ -482,6 +474,7 @@ mod_progress_server <- function(id, compute_state, app_state) {
     shiny::observeEvent(input$retry, {
       rv$show_error <- FALSE
       rv$start_time <- NULL
+      session$sendCustomMessage("stopElapsedTimer", list())
       app_state$retry_computation <- Sys.time()
     })
 

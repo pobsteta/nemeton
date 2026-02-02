@@ -267,6 +267,30 @@
   /**
    * Handle text updates for specific elements
    */
+  /**
+   * Client-side elapsed time timer.
+   * Avoids server-side invalidateLater(1000) which causes reactive flush flicker.
+   */
+  var _elapsedTimer = null;
+  Shiny.addCustomMessageHandler('startElapsedTimer', function(data) {
+    if (_elapsedTimer) clearInterval(_elapsedTimer);
+    var el = document.getElementById(data.id);
+    if (!el) return;
+    var label = data.label || '';
+    var startTime = Date.now();
+    function tick() {
+      var secs = Math.floor((Date.now() - startTime) / 1000);
+      var m = Math.floor(secs / 60);
+      var s = secs % 60;
+      el.textContent = label + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    tick();
+    _elapsedTimer = setInterval(tick, 1000);
+  });
+  Shiny.addCustomMessageHandler('stopElapsedTimer', function(data) {
+    if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
+  });
+
   Shiny.addCustomMessageHandler('updateText', function(data) {
     const id = data.id;
     const text = data.text;
