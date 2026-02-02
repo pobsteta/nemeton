@@ -492,6 +492,109 @@
   });
 
   // ============================================================
+  // White Screen Prevention (Nuclear Safety Net)
+  // ============================================================
+
+  /**
+   * MutationObserver that catches ANY full-screen white overlay
+   * element added to the DOM and forcefully hides it.
+   *
+   * This handles all Shiny/bslib busy indicators, progress overlays,
+   * and any other framework-generated full-screen covers regardless
+   * of CSS class names (which vary between versions).
+   */
+  function initWhiteScreenPrevention() {
+    // IDs/classes we explicitly ALLOW (our own overlay, modals, notifications)
+    var ALLOWED = [
+      'shiny-modal-wrapper',
+      'shiny-notification-panel',
+      'modal-backdrop'
+    ];
+
+    function isAllowed(el) {
+      for (var i = 0; i < ALLOWED.length; i++) {
+        if (el.id === ALLOWED[i] ||
+            el.classList.contains(ALLOWED[i]) ||
+            el.closest('#shiny-modal-wrapper') ||
+            el.closest('#shiny-notification-panel')) {
+          return true;
+        }
+      }
+      // Allow our in-map overlay (it's inside map_container, not body-level)
+      if (el.id && el.id.indexOf('map_loading_overlay') !== -1) return true;
+      return false;
+    }
+
+    function isFullScreenOverlay(el) {
+      if (!el || el.nodeType !== 1) return false;
+      if (isAllowed(el)) return false;
+      var style = window.getComputedStyle(el);
+      // Check: position fixed, covering viewport
+      if (style.position !== 'fixed') return false;
+      var rect = el.getBoundingClientRect();
+      var coversScreen = rect.width >= window.innerWidth * 0.9 &&
+                         rect.height >= window.innerHeight * 0.9;
+      if (!coversScreen) return false;
+      // Check: white-ish background or high opacity
+      var bg = style.backgroundColor;
+      if (bg && (bg.indexOf('255, 255, 255') !== -1 ||
+                 bg === 'white' ||
+                 bg === '#fff' ||
+                 bg === '#ffffff' ||
+                 bg === 'rgb(255, 255, 255)')) {
+        return true;
+      }
+      // Also catch transparent/inherit with no visible content (blank cover)
+      if (style.zIndex && parseInt(style.zIndex) > 1000) {
+        var hasContent = el.textContent.trim().length > 0 ||
+                        el.querySelector('img, svg, canvas, video');
+        if (!hasContent) return true;
+      }
+      return false;
+    }
+
+    function killOverlays() {
+      var bodyChildren = document.body.children;
+      for (var i = 0; i < bodyChildren.length; i++) {
+        if (isFullScreenOverlay(bodyChildren[i])) {
+          console.log('[nemeton] Killed full-screen overlay:', bodyChildren[i]);
+          bodyChildren[i].style.display = 'none';
+          bodyChildren[i].style.opacity = '0';
+          bodyChildren[i].style.pointerEvents = 'none';
+        }
+      }
+    }
+
+    // Watch for new elements added to body
+    var observer = new MutationObserver(function(mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        var added = mutations[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var node = added[j];
+          if (node.nodeType !== 1) continue;
+          // Defer check to let styles compute
+          (function(el) {
+            requestAnimationFrame(function() {
+              if (isFullScreenOverlay(el)) {
+                console.log('[nemeton] Killed full-screen overlay (MutationObserver):', el);
+                el.style.display = 'none';
+                el.style.opacity = '0';
+                el.style.pointerEvents = 'none';
+              }
+            });
+          })(node);
+        }
+      }
+    });
+
+    observer.observe(document.body, { childList: true });
+
+    // Also run periodic check as fallback (some elements may change style later)
+    setInterval(killOverlays, 2000);
+  }
+
+
+  // ============================================================
   // Initialization
   // ============================================================
 
@@ -506,6 +609,7 @@
     initBasemapToggle();
     initLiveRegion();
     initTourPersistence();
+    initWhiteScreenPrevention();
   }
 
   // Run on DOM ready

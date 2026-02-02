@@ -188,30 +188,9 @@ app_add_external_resources <- function() {
       )
     ),
 
-    # Add JS (cache-busting query string forces browser to reload on each app start)
+    # Custom JS (cache-busting query string forces browser to reload on each app start)
     htmltools::tags$script(
       src = paste0("www/js/custom.js?v=", as.integer(Sys.time()))
-    ),
-
-    # Shiny busy indicator
-    shiny::tags$style(
-      htmltools::HTML("
-        .shiny-busy {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, #1B6B1B, #32CD32, #1B6B1B);
-          background-size: 200% 100%;
-          animation: loading 1.5s infinite;
-          z-index: 9999;
-        }
-        @keyframes loading {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      ")
     )
   )
 }
