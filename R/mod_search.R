@@ -238,20 +238,13 @@ mod_search_server <- function(id, app_state) {
         }
       }
 
+      load_commune()
+
       if (rv$is_restoring) {
-        load_commune()
         # Clear restoring flag NOW — commune observer has finished its work.
         # This flag was kept alive through the later::later callback so that
-        # we could skip withProgress here. Safe to clear now.
+        # the department observer skips redundant API calls. Safe to clear now.
         rv$is_restoring <- FALSE
-      } else {
-        shiny::withProgress(
-          message = get_i18n(get_lang())$t("loading_commune"),
-          value = 0.5,
-          {
-            load_commune()
-          }
-        )
       }
 
       rv$is_loading <- FALSE
