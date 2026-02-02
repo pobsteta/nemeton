@@ -503,12 +503,28 @@
   /**
    * Show/hide the full-page cover during map navigation transitions
    * (département zoom, commune change). Unlike the restore flow, this
-   * does NOT use a lock — it simply shows/hides the white cover with
-   * a Leaflet tileload listener so it only disappears once tiles are
-   * loaded and painted.
+   * does NOT use a lock.
+   *
+   * Usage:
+   *   show=TRUE               → show cover, wait for explicit hide
+   *   show=TRUE, autoHideMs=N → show cover, auto-hide after N ms
+   *   show=FALSE              → hide cover (with double-rAF for paint)
    */
-  window._navCoverTileHandler = null;
   window._navCoverTimer = null;
+
+  function navCoverHide() {
+    // Don't interfere with restore lock
+    if (window._mapRestoreLock) return;
+    if (window._navCoverTimer) {
+      clearTimeout(window._navCoverTimer);
+      window._navCoverTimer = null;
+    }
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        hideFullPageCover();
+      });
+    });
+  }
 
   Shiny.addCustomMessageHandler('showNavCover', function(data) {
     var show = data.show;
@@ -521,18 +537,19 @@
       // Don't interfere with restore lock
       if (window._mapRestoreLock) return;
       showFullPageCover();
+
+      // If autoHideMs is set, schedule auto-hide (for département zoom)
+      var autoHide = data.autoHideMs;
+      if (autoHide && autoHide > 0) {
+        window._navCoverTimer = setTimeout(function() {
+          window._navCoverTimer = null;
+          navCoverHide();
+        }, autoHide);
+      }
     } else {
       // Don't interfere with restore lock
       if (window._mapRestoreLock) return;
-      // Delay hide to allow tiles to load + Leaflet to paint
-      window._navCoverTimer = setTimeout(function() {
-        window._navCoverTimer = null;
-        requestAnimationFrame(function() {
-          requestAnimationFrame(function() {
-            hideFullPageCover();
-          });
-        });
-      }, 300);
+      navCoverHide();
     }
   });
 
