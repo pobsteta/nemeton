@@ -295,6 +295,12 @@ mod_home_server <- function(id, app_state) {
         # Cleared by mod_map.R pending observer after all rendering is done
         app_state$restore_in_progress <- TRUE
 
+        # Set parcels directly from stored project data — no API call needed.
+        # This makes parcels() available immediately for mod_map.R's restore
+        # observer, avoiding the slow async chain (restore_task → commune_task
+        # → parcels_task) which could get stuck or take several seconds.
+        parcels_data(project$parcels)
+
         # Signal to restore location and parcels
         app_state$restore_project <- list(
           commune_code = commune_code,
