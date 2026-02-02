@@ -496,132 +496,41 @@
   // ============================================================
 
   /**
-   * Aggressive white screen prevention.
+   * White screen prevention.
    *
-   * 1. Intercept Shiny's busy/idle events and kill overlays immediately
-   * 2. MutationObserver on the FULL DOM tree (subtree:true)
-   * 3. Periodic fallback scan every 500ms
-   * 4. Check for position:fixed OR large absolutely-positioned overlays
+   * The white screen is caused by CSS pseudo-elements (::after/::before)
+   * that bslib adds to page containers when Shiny is busy. These are
+   * invisible to JavaScript — only CSS can prevent them (see custom.css).
+   *
+   * This JS handler forces opacity:1 on all page containers when Shiny
+   * goes busy, as a belt-and-suspenders approach alongside the CSS.
    */
   function initWhiteScreenPrevention() {
-
-    function isAllowed(el) {
-      if (!el || !el.id) {
-        // Check parent chain for known containers
-        if (el && el.closest &&
-            (el.closest('#shiny-modal-wrapper') ||
-             el.closest('#shiny-notification-panel') ||
-             el.closest('[id$="-map_container"]'))) {
-          return true;
-        }
-        // Allow elements with these classes
-        if (el && el.classList &&
-            (el.classList.contains('modal-backdrop') ||
-             el.classList.contains('modal'))) {
-          return true;
-        }
-        return false;
-      }
-      if (el.id === 'shiny-modal-wrapper' ||
-          el.id === 'shiny-notification-panel' ||
-          el.id.indexOf('map_loading_overlay') !== -1) {
-        return true;
-      }
-      return false;
-    }
-
-    function isWhiteOverlay(el) {
-      if (!el || el.nodeType !== 1) return false;
-      if (isAllowed(el)) return false;
-
-      var style;
-      try { style = window.getComputedStyle(el); } catch(e) { return false; }
-
-      var pos = style.position;
-      if (pos !== 'fixed' && pos !== 'absolute') return false;
-
-      var rect = el.getBoundingClientRect();
-      // Must cover at least 80% of the viewport
-      if (rect.width < window.innerWidth * 0.8 ||
-          rect.height < window.innerHeight * 0.8) return false;
-
-      // Check background color
-      var bg = style.backgroundColor || '';
-      var isWhiteBg = bg.indexOf('255, 255, 255') !== -1 ||
-                      bg === 'rgb(255, 255, 255)' ||
-                      bg === 'rgba(255, 255, 255, 1)';
-
-      // Also check for semi-transparent white (pulse overlays)
-      var isSemiWhiteBg = bg.indexOf('255, 255, 255') !== -1;
-
-      // Check for high z-index blank element
-      var zIndex = parseInt(style.zIndex) || 0;
-      var hasVisibleContent = el.textContent.trim().length > 0 ||
-                              el.querySelector('img, svg, canvas, video, .spinner-border');
-
-      if (isWhiteBg) return true;
-      if (isSemiWhiteBg && zIndex > 100) return true;
-      if (zIndex > 1000 && !hasVisibleContent) return true;
-
-      return false;
-    }
-
-    function killElement(el) {
-      console.log('[nemeton] Killed overlay:', el.tagName, el.className, el.id,
-        'z-index:', el.style.zIndex || window.getComputedStyle(el).zIndex);
-      el.style.setProperty('display', 'none', 'important');
-      el.style.setProperty('opacity', '0', 'important');
-      el.style.setProperty('visibility', 'hidden', 'important');
-      el.style.setProperty('pointer-events', 'none', 'important');
-    }
-
-    function scanAndKill() {
-      // Scan ALL elements with position:fixed or position:absolute
-      var candidates = document.querySelectorAll('*');
-      for (var i = 0; i < candidates.length; i++) {
-        if (isWhiteOverlay(candidates[i])) {
-          killElement(candidates[i]);
+    function forceVisible() {
+      var selectors = [
+        '.bslib-page-fill', '.bslib-page-navbar', '.tab-content',
+        '.tab-pane.active', '.html-fill-container', '.html-fill-item',
+        '.bslib-sidebar-layout', '.bslib-sidebar-layout > .main',
+        '.bslib-sidebar-layout > .sidebar'
+      ];
+      for (var i = 0; i < selectors.length; i++) {
+        var els = document.querySelectorAll(selectors[i]);
+        for (var j = 0; j < els.length; j++) {
+          els[j].style.setProperty('opacity', '1', 'important');
+          els[j].style.setProperty('visibility', 'visible', 'important');
         }
       }
     }
 
-    // 1. Intercept Shiny busy events
     $(document).on('shiny:busy', function() {
-      // Immediately kill any existing overlays
-      requestAnimationFrame(scanAndKill);
-      // And again after a short delay (for elements created after busy signal)
-      setTimeout(scanAndKill, 100);
-      setTimeout(scanAndKill, 300);
+      forceVisible();
+      requestAnimationFrame(forceVisible);
+      setTimeout(forceVisible, 50);
+      setTimeout(forceVisible, 200);
     });
 
-    // 2. MutationObserver on FULL DOM tree
-    var observer = new MutationObserver(function(mutations) {
-      var shouldScan = false;
-      for (var i = 0; i < mutations.length; i++) {
-        if (mutations[i].addedNodes.length > 0) {
-          shouldScan = true;
-          break;
-        }
-        // Also trigger on class/style changes (overlay might be shown via class toggle)
-        if (mutations[i].type === 'attributes') {
-          shouldScan = true;
-          break;
-        }
-      }
-      if (shouldScan) {
-        requestAnimationFrame(scanAndKill);
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class']
-    });
-
-    // 3. Periodic fallback every 500ms
-    setInterval(scanAndKill, 500);
+    // Periodic fallback
+    setInterval(forceVisible, 1000);
   }
 
 

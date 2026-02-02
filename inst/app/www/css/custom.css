@@ -385,53 +385,90 @@
 
 
 /* ============================================================
-   Anti-flicker: Suppress ALL Shiny/bslib visual indicators.
-   The app uses its own loading system (in-map spinner overlay,
-   progress cards). Every default Shiny/bslib indicator that
-   changes opacity, adds overlays, or shows progress bars is
-   disabled here to prevent white screen flashes.
+   NUCLEAR: Prevent ALL white screen flashes.
+
+   Shiny/bslib uses CSS pseudo-elements (::after/::before) on
+   page containers to show busy indicator overlays. These are
+   INVISIBLE to JavaScript (MutationObserver can't detect them).
+
+   The approach: kill pseudo-elements on ALL page/tab/fill
+   containers, and force visibility on all layout elements.
    ============================================================ */
 
-/* 1. Shiny's default busy bar (green progress bar at top) */
+/* --- Hide Shiny built-in indicators --- */
 .shiny-busy {
   display: none !important;
 }
-
-/* 2. Shiny's recalculating opacity on outputs */
-.shiny-bound-output.recalculating,
-.recalculating,
-body.nemeton-computing .shiny-bound-output {
-  opacity: 1 !important;
-  transition: none !important;
-}
-
-/* 3. bslib 0.6+ / Shiny 1.8+ busy indicator pulse overlay
-      (::after pseudo-element with white semi-transparent bg) */
-.recalculating::after,
-.recalculating::before,
-.html-fill-item.recalculating::after,
-.html-fill-item.recalculating::before,
-.html-fill-container.recalculating::after,
-.html-fill-container.recalculating::before {
-  display: none !important;
-  content: none !important;
-  background: none !important;
-  opacity: 0 !important;
-}
-
-/* 4. bslib busy spinner panel (top-of-page spinbar) */
-.bslib-page-fill > .shiny-busy-panel-wrapper,
 .shiny-busy-panel-wrapper,
 .bslib-page-spinner,
 .bslib-busy-indicator-pulse,
 [data-busy-spinner] {
   display: none !important;
 }
-
-/* 5. Shiny notification/progress overlay container */
 #shiny-notification-panel .shiny-notification.shiny-notification-progress,
 .shiny-notification.shiny-notification-progress {
   display: none !important;
+}
+
+/* --- Force all page containers to stay visible --- */
+html, body,
+.bslib-page-fill,
+.bslib-page-navbar,
+.bslib-page-navbar > .container-fluid,
+.bslib-page-navbar > .main,
+.tab-content,
+.tab-pane,
+.tab-pane.active,
+.html-fill-container,
+.html-fill-item,
+.bslib-sidebar-layout,
+.bslib-sidebar-layout > .main,
+.bslib-sidebar-layout > .sidebar,
+.navbar,
+.shiny-bound-output,
+.shiny-bound-output.recalculating,
+.recalculating,
+body.nemeton-computing .shiny-bound-output {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: none !important;
+}
+
+/* --- Kill ALL pseudo-elements on page/tab/fill containers ---
+   This is the key fix: bslib creates ::after pseudo-elements
+   with position:absolute, white background, and high z-index
+   on these containers when Shiny is busy. They cover the
+   entire page and are invisible to JavaScript. */
+.bslib-page-fill::after,
+.bslib-page-fill::before,
+.bslib-page-navbar::after,
+.bslib-page-navbar::before,
+.tab-content::after,
+.tab-content::before,
+.tab-pane::after,
+.tab-pane::before,
+.tab-pane.active::after,
+.tab-pane.active::before,
+.html-fill-container::after,
+.html-fill-container::before,
+.html-fill-item::after,
+.html-fill-item::before,
+.bslib-sidebar-layout::after,
+.bslib-sidebar-layout::before,
+.bslib-sidebar-layout > .main::after,
+.bslib-sidebar-layout > .main::before,
+.container-fluid::after,
+.container-fluid::before,
+.recalculating::after,
+.recalculating::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: static !important;
+  z-index: -1 !important;
 }
 
 .spinner {
