@@ -266,7 +266,25 @@ mod_project_server <- function(id, app_state, selected_parcels) {
 
     shiny::observeEvent(app_state$current_project, {
       project <- app_state$current_project
-      if (is.null(project) || is.null(project$metadata)) return()
+      if (is.null(project) || is.null(project$metadata)) {
+        # Reset form fields when project is cleared (e.g., commune change)
+        shiny::updateTextInput(session, "name", value = "")
+        shiny::updateTextAreaInput(session, "description", value = "")
+        shiny::updateTextInput(session, "owner", value = "")
+        rv$editing_project_id <- NULL
+        rv$current_project <- NULL
+        rv$project_date <- format(Sys.time(), "%d/%m/%Y %H:%M")
+        # Collapse the panel
+        shiny::insertUI(
+          selector = "body",
+          where = "beforeEnd",
+          ui = htmltools::tags$script(htmltools::HTML(sprintf(
+            "$('#%s').collapse('hide');", ns("project_collapse")
+          ))),
+          immediate = TRUE
+        )
+        return()
+      }
 
       # Fill in form fields with project data
       shiny::updateTextInput(

@@ -512,6 +512,43 @@ mod_home_server <- function(id, app_state) {
       app_state = app_state
     )
 
+    # ========================================
+    # Reset state when commune changes
+    # ========================================
+    # When the user selects a different commune, all project/computation
+    # state must be cleared to avoid showing stale results.
+    shiny::observeEvent(search_result$selected_commune(), {
+      # Skip during project restore (commune change is part of the restore flow)
+      if (isTRUE(app_state$restore_in_progress)) return()
+
+      # Clear current project
+      app_state$current_project <- NULL
+      app_state$project_id <- NULL
+
+      # Reset computation state
+      compute_state(NULL)
+      computing_project_id(NULL)
+      last_progress_key("")
+
+      # Stop elapsed timer and computing mode
+      session$sendCustomMessage("stopElapsedTimer", list())
+      session$sendCustomMessage("setComputingMode", list(active = FALSE))
+
+      # Hide all progress/completion/error cards
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-progress_card_wrapper")
+      ))
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-complete_card_wrapper")
+      ))
+      session$sendCustomMessage("hideElement", list(
+        id = ns("progress-error_card_wrapper")
+      ))
+
+      # Clear map selection
+      app_state$clear_map_selection <- Sys.time()
+    }, ignoreInit = TRUE)
+
     # Create ExtendedTask for async computation
     # Uses future_promise() to run in a separate R process via future::multisession
     # This prevents blocking the Shiny main loop during computation
