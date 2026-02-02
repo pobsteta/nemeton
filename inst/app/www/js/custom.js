@@ -316,61 +316,53 @@
 
   /**
    * Handle map loading overlay visibility.
-   * Uses body class 'nemeton-map-loading' to hide all leaflet widgets via CSS
-   * (visibility:hidden !important) — most reliable approach, no targeting issues.
    *
-   * During project restore, a JS-level lock prevents intermediate hide requests
-   * from exposing the map (green OSM tiles) between reactive flush cycles.
-   * Only an explicit restore_complete=true message removes the lock.
+   * Strategy: a FULL-VIEWPORT fixed white cover appended to <body>.
+   * position:fixed with z-index:999999 sits above absolutely everything:
+   * Shiny progress overlays, leaflet GPU-composited layers, any stacking
+   * context. Nothing in the app can paint above it.
+   *
+   * During project restore, a JS-level lock prevents intermediate hide
+   * requests from removing the cover between reactive flush cycles.
    */
-  // Track pending hide timeout so show() can cancel it (prevents stale
-  // timeout from a previous navigation from clobbering the new overlay).
-  // Exposed on window so the synchronous onclick handler can also cancel it.
   window._mapLoadingTimer = null;
-  // Restore lock: when true, hide requests are ignored until restore_complete.
   window._mapRestoreLock = false;
+  var COVER_ID = '_nemeton_fullpage_cover';
 
   /**
-   * Find the leaflet output div by deriving its ID from the overlay ID.
-   * Overlay ID = "home-map-map_loading_overlay"
-   * Map output ID = "home-map-map" (remove "_loading_overlay" suffix)
+   * Create (or show) the full-page white cover with spinner.
    */
-  function getMapElementId(loadingId) {
-    return loadingId.replace('_loading_overlay', '');
-  }
-
-  /**
-   * Hide the leaflet map element so no green tiles can paint.
-   * Uses visibility:hidden (keeps layout for leafletProxy) + opacity:0 (hides GPU layers).
-   * Also sets parent map_container background to white.
-   */
-  function hideMapElement(loadingId) {
-    var mapId = getMapElementId(loadingId);
-    var mapEl = document.getElementById(mapId);
-    console.log('[hideMapElement] mapId=' + mapId, 'found=' + !!mapEl);
-    if (mapEl) {
-      mapEl.style.visibility = 'hidden';
-      mapEl.style.opacity = '0';
-      // White background on parent container shows through
-      if (mapEl.parentElement) {
-        mapEl.parentElement.style.background = 'white';
-      }
+  function showFullPageCover() {
+    var cover = document.getElementById(COVER_ID);
+    if (!cover) {
+      cover = document.createElement('div');
+      cover.id = COVER_ID;
+      cover.style.cssText = [
+        'position:fixed',
+        'top:0','left:0','right:0','bottom:0',
+        'background:white',
+        'z-index:999999',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'pointer-events:all'
+      ].join(';');
+      cover.innerHTML = '<div style="text-align:center">' +
+        '<div class="spinner-border text-success mb-2" role="status"></div>' +
+        '<div class="text-muted">Chargement…</div></div>';
+      document.body.appendChild(cover);
+    } else {
+      cover.style.display = 'flex';
     }
-    return mapEl;
   }
 
   /**
-   * Show the leaflet map element (undo hideMapElement).
+   * Remove the full-page cover (with a double-rAF to ensure leaflet has painted).
    */
-  function showMapElement(loadingId) {
-    var mapId = getMapElementId(loadingId);
-    var mapEl = document.getElementById(mapId);
-    if (mapEl) {
-      mapEl.style.visibility = '';
-      mapEl.style.opacity = '';
-      if (mapEl.parentElement) {
-        mapEl.parentElement.style.background = '';
-      }
+  function hideFullPageCover() {
+    var cover = document.getElementById(COVER_ID);
+    if (cover) {
+      cover.style.display = 'none';
     }
   }
 
@@ -388,7 +380,7 @@
 
     if (show) {
       if (window._mapRestoreLock && !restoreLock) {
-        console.log('[showMapLoading] IGNORED: lock active, not a restore_lock show');
+        console.log('[showMapLoading] IGNORED: lock active');
         return;
       }
       if (window._mapLoadingTimer) {
@@ -397,12 +389,11 @@
       }
       if (restoreLock) {
         window._mapRestoreLock = true;
+        // Full-page cover for restore (bulletproof against all rendering)
+        showFullPageCover();
       }
-      // Hide leaflet map via inline styles (ID-based lookup, no class querySelector)
-      hideMapElement(loadingId);
-      // Also apply CSS body class as belt-and-suspenders
+      // Also show the in-map overlay for non-restore loading
       document.body.classList.add('nemeton-map-loading');
-      // Show loading overlay
       if (overlay) {
         overlay.classList.remove('d-none');
         overlay.style.display = 'flex';
@@ -415,10 +406,11 @@
       window._mapLoadingTimer = setTimeout(function() {
         window._mapLoadingTimer = null;
         window._mapRestoreLock = false;
-        // Re-show map element while still covered by overlay
-        showMapElement(loadingId);
         requestAnimationFrame(function() {
           requestAnimationFrame(function() {
+            // Remove full-page cover
+            hideFullPageCover();
+            // Remove in-map overlay
             if (overlay) {
               overlay.classList.add('d-none');
               overlay.style.display = 'none';
