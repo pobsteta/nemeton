@@ -386,11 +386,12 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             )
           rv$parcels_zoomed <- TRUE
 
-          # Restore complete — clear flag so future commune selections
-          # are handled normally (not skipped by restore guards).
-          shiny::isolate({
+          # Defer clearing restore_in_progress to AFTER this flush cycle.
+          # The mod_home selected_commune observer runs in the SAME flush;
+          # if it sees FALSE it clears parcels_data and re-invokes parcels_task.
+          later::later(function() {
             app_state$restore_in_progress <- FALSE
-          })
+          }, delay = 0)
           cli::cli_alert_success("Location restored successfully")
         }
 

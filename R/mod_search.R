@@ -293,8 +293,12 @@ mod_search_server <- function(id, app_state) {
       }
 
       # During restore, geometry + selected_commune are set directly by
-      # restore_task result handler — skip redundant commune_task call
+      # restore_task result handler — skip redundant commune_task call.
+      # Also skip if geometry is already available for this exact commune
+      # (browser roundtrip from updateSelectizeInput fires input$commune
+      # AFTER restore_task already set everything).
       if (rv$is_restoring) return()
+      if (!is.null(rv$commune_geometry) && identical(rv$selected_commune, code)) return()
 
       rv$is_loading <- TRUE
       commune_task$invoke(code, input$departement)
