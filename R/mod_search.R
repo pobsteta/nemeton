@@ -154,13 +154,17 @@ mod_search_server <- function(id, app_state) {
       }, seed = TRUE)
     })
 
-    # ExtendedTask: fetch communes for project restore (needs to carry commune_code)
+    # ExtendedTask: fetch communes + commune geometry for project restore.
+    # By fetching geometry here (instead of relying on input$commune →
+    # commune_task chain), we eliminate the fragile 4-step async chain
+    # and set commune_geometry directly in the result handler.
     restore_task <- shiny::ExtendedTask$new(function(dept_code, commune_code) {
       ensure_future_plan()
       promises::future_promise({
         load_nemeton_in_worker()
         communes <- get_communes_in_department(dept_code)
-        list(communes = communes, commune_code = commune_code)
+        geometry <- get_commune_geometry(commune_code)
+        list(communes = communes, commune_code = commune_code, geometry = geometry)
       }, seed = TRUE)
     })
 
@@ -288,6 +292,10 @@ mod_search_server <- function(id, app_state) {
         return()
       }
 
+      # During restore, geometry + selected_commune are set directly by
+      # restore_task result handler — skip redundant commune_task call
+      if (rv$is_restoring) return()
+
       rv$is_loading <- TRUE
       commune_task$invoke(code, input$departement)
     }, ignoreInit = TRUE)
@@ -384,13 +392,27 @@ mod_search_server <- function(id, app_state) {
       communes <- result$communes
       commune_code <- result$commune_code
 
+      # Set commune geometry and selection DIRECTLY — no need to go
+      # through input$commune → commune_task chain. This makes
+      # commune_geometry() available immediately for the combined
+      # observer in mod_map (together with parcels_data set earlier).
+      if (!is.null(result$geometry)) {
+        rv$commune_geometry <- result$geometry
+        rv$selected_commune <- commune_code
+
+        if (!is.null(communes) && nrow(communes) > 0) {
+          info <- communes[communes$code_insee == commune_code, ]
+          if (nrow(info) > 0) {
+            rv$commune_info <- as.list(info[1, ])
+          }
+        }
+      }
+
       if (!is.null(communes) && nrow(communes) > 0) {
         choices <- format_communes_for_selectize(communes)
         cli::cli_alert_info("Updating commune dropdown with {nrow(communes)} choices")
 
-        # Update commune dropdown with choices and selection
-        # This triggers the input$commune observer which handles
-        # commune_geometry, commune_info, and selected_commune
+        # Update dropdown (for display only — geometry already set above)
         shiny::updateSelectizeInput(
           session,
           "commune",
@@ -402,10 +424,8 @@ mod_search_server <- function(id, app_state) {
         cli::cli_alert_success("Location restored successfully")
       }
 
-      # NOTE: Do NOT clear rv$is_restoring here. The updateSelectizeInput
-      # above queues a message to the browser; the commune observer fires
-      # on a LATER flush when the browser sends back the new input$commune.
-      # The flag is cleared in the commune result observer.
+      rv$is_restoring <- FALSE
+      rv$is_loading <- FALSE
     }, ignoreInit = TRUE)
 
 
