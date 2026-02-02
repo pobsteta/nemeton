@@ -498,79 +498,67 @@
   /**
    * White screen diagnostic + prevention.
    *
-   * When Shiny goes busy, scans the ENTIRE DOM to find any element
-   * that covers the viewport with a white background. Logs full
-   * details to console and forcefully hides it.
+   * Previous approach: scan for white-background elements.
+   * Result: NOTHING found in console. Body is gray but screen is white.
+   *
+   * New approach: use document.elementFromPoint() at center of viewport
+   * to find what's ACTUALLY visible. This catches everything: real
+   * elements, pseudo-elements rendered as children, iframe overlays, etc.
+   * Logs on every shiny:busy + on a 200ms interval during busy state.
    */
   function initWhiteScreenPrevention() {
 
-    function findWhiteScreen() {
-      // Walk EVERY element in the DOM
-      var all = document.querySelectorAll('*');
-      var found = [];
-      for (var i = 0; i < all.length; i++) {
-        var el = all[i];
-        var rect = el.getBoundingClientRect();
-        // Skip small elements
-        if (rect.width < window.innerWidth * 0.5 ||
-            rect.height < window.innerHeight * 0.5) continue;
-
-        var cs = window.getComputedStyle(el);
-        var bg = cs.backgroundColor || '';
-        var hasWhiteBg = bg.indexOf('255, 255, 255') !== -1;
-        var pos = cs.position;
-        var z = cs.zIndex;
-        var op = cs.opacity;
-
-        // Log any large element with white background
-        if (hasWhiteBg && (pos === 'fixed' || pos === 'absolute' ||
-            (rect.width >= window.innerWidth * 0.8 &&
-             rect.height >= window.innerHeight * 0.8))) {
-          found.push({
-            tag: el.tagName,
-            id: el.id,
-            className: el.className,
-            position: pos,
-            zIndex: z,
-            opacity: op,
-            bg: bg,
-            width: Math.round(rect.width),
-            height: Math.round(rect.height),
-            element: el
-          });
-        }
+    // What element is at the center of the screen right now?
+    function logCenterElement(label) {
+      var cx = Math.round(window.innerWidth / 2);
+      var cy = Math.round(window.innerHeight / 2);
+      var el = document.elementFromPoint(cx, cy);
+      if (!el) {
+        console.log('[nemeton]', label, 'elementFromPoint: NULL');
+        return;
       }
-      return found;
-    }
-
-    function diagnoseAndKill() {
-      var found = findWhiteScreen();
-      if (found.length > 0) {
-        console.warn('[nemeton] WHITE SCREEN ELEMENTS FOUND:');
-        for (var i = 0; i < found.length; i++) {
-          var f = found[i];
-          console.warn('[nemeton]', f.tag, 'id=' + f.id,
-            'class=' + f.className, 'pos=' + f.position,
-            'z=' + f.zIndex, 'opacity=' + f.opacity,
-            'bg=' + f.bg, f.width + 'x' + f.height);
-          console.warn('[nemeton] Element:', f.element);
-          // Kill it
-          f.element.style.setProperty('background', 'transparent', 'important');
-        }
+      var cs = window.getComputedStyle(el);
+      console.log('[nemeton]', label, 'CENTER:', el.tagName,
+        'id=' + el.id,
+        'class=' + (el.className || '').toString().substring(0, 120),
+        'bg=' + cs.backgroundColor, 'pos=' + cs.position,
+        'z=' + cs.zIndex, 'opacity=' + cs.opacity,
+        'size=' + el.offsetWidth + 'x' + el.offsetHeight);
+      // Log 5 parents
+      var p = el.parentElement;
+      for (var d = 0; d < 5 && p; d++) {
+        var pcs = window.getComputedStyle(p);
+        console.log('[nemeton]   parent' + d + ':', p.tagName,
+          'id=' + p.id,
+          'class=' + (p.className || '').toString().substring(0, 80),
+          'bg=' + pcs.backgroundColor, 'pos=' + pcs.position);
+        p = p.parentElement;
       }
     }
 
-    // Run diagnostic on shiny:busy
+    // Track busy state for interval scanning
+    var busyInterval = null;
+
     $(document).on('shiny:busy', function() {
-      // Scan immediately, then at intervals during busy state
-      diagnoseAndKill();
-      setTimeout(diagnoseAndKill, 50);
-      setTimeout(diagnoseAndKill, 150);
-      setTimeout(diagnoseAndKill, 500);
-      setTimeout(diagnoseAndKill, 1000);
+      console.log('[nemeton] ======= SHINY:BUSY =======');
+      logCenterElement('BUSY-NOW');
+      // Keep scanning during entire busy period
+      if (busyInterval) clearInterval(busyInterval);
+      busyInterval = setInterval(function() {
+        logCenterElement('BUSY-SCAN');
+      }, 200);
     });
 
-    // Also force visibility on key containers
+    $(document).on('shiny:idle', function() {
+      console.log('[nemeton] ======= SHINY:IDLE =======');
+      logCenterElement('IDLE-NOW');
+      if (busyInterval) {
+        clearInterval(busyInterval);
+        busyInterval = null;
+      }
+    });
+
+    // Force visibility on key containers
     function forceVisible() {
       var selectors = [
         '.bslib-page-fill', '.bslib-page-navbar', '.tab-content',
@@ -587,13 +575,7 @@
       }
     }
 
-    $(document).on('shiny:busy', function() {
-      forceVisible();
-      requestAnimationFrame(forceVisible);
-      setTimeout(forceVisible, 50);
-      setTimeout(forceVisible, 200);
-    });
-
+    $(document).on('shiny:busy', forceVisible);
     setInterval(forceVisible, 1000);
   }
 
