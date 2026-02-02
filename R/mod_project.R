@@ -299,8 +299,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
       # is reloaded (after computation, retry, cancel, etc.) to avoid
       # the panel popping open unexpectedly.
       is_new_project <- !identical(project$id, rv$last_opened_project_id)
+      rv$last_opened_project_id <- project$id
       if (is_new_project && !isTRUE(app_state$restore_in_progress)) {
-        rv$last_opened_project_id <- project$id
         shiny::insertUI(
           selector = "body",
           where = "beforeEnd",
