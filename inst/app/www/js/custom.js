@@ -317,16 +317,24 @@
   /**
    * Handle map loading overlay visibility.
    * Uses body class 'nemeton-map-loading' to hide all leaflet widgets via CSS
-   * (opacity:0 !important) — most reliable approach, no element targeting issues.
+   * (visibility:hidden !important) — most reliable approach, no targeting issues.
+   *
+   * During project restore, a JS-level lock prevents intermediate hide requests
+   * from exposing the map (green OSM tiles) between reactive flush cycles.
+   * Only an explicit restore_complete=true message removes the lock.
    */
   // Track pending hide timeout so show() can cancel it (prevents stale
   // timeout from a previous navigation from clobbering the new overlay).
   // Exposed on window so the synchronous onclick handler can also cancel it.
   window._mapLoadingTimer = null;
+  // Restore lock: when true, hide requests are ignored until restore_complete.
+  window._mapRestoreLock = false;
 
   Shiny.addCustomMessageHandler('showMapLoading', function(data) {
     var loadingId = data.loadingId;
     var show = data.show;
+    var restoreLock = data.restore_lock || false;
+    var restoreComplete = data.restore_complete || false;
 
     var overlay = document.getElementById(loadingId);
 
@@ -336,6 +344,10 @@
         clearTimeout(window._mapLoadingTimer);
         window._mapLoadingTimer = null;
       }
+      // Activate restore lock if requested
+      if (restoreLock) {
+        window._mapRestoreLock = true;
+      }
       // Hide all leaflet content via CSS body class
       document.body.classList.add('nemeton-map-loading');
       // Show loading overlay
@@ -344,6 +356,14 @@
         overlay.style.display = 'flex';
       }
     } else {
+      // During restore, ignore intermediate hide requests
+      if (window._mapRestoreLock && !restoreComplete) {
+        return;
+      }
+      // Clear restore lock on final reveal
+      if (restoreComplete) {
+        window._mapRestoreLock = false;
+      }
       // Leaflet renders polygons asynchronously after receiving proxy commands.
       // Wait for the browser to complete rendering before revealing the map.
       // Strategy: 500ms delay + requestAnimationFrame to ensure at least one

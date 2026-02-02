@@ -191,10 +191,19 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
     # Helper to show/hide map loading overlay via direct JS message
     # (avoids renderUI round-trip delay that caused green flash)
-    show_map_loading <- function(show) {
+    #
+    # restore_lock: when TRUE, activates a JS-level lock that blocks
+    #   all subsequent hide requests until restore_complete is sent.
+    # restore_complete: when TRUE (with show=FALSE), releases the lock
+    #   and performs the final reveal. Intermediate show(FALSE) calls
+    #   during restore are silently ignored by JS.
+    show_map_loading <- function(show, restore_lock = FALSE,
+                                 restore_complete = FALSE) {
       session$sendCustomMessage("showMapLoading", list(
         loadingId = ns("map_loading_overlay"),
-        show = show
+        show = show,
+        restore_lock = restore_lock,
+        restore_complete = restore_complete
       ))
     }
 
@@ -510,7 +519,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       restore <- app_state$restore_project
       if (!is.null(restore) && !is.null(restore$selected_ids)) {
         rv$restore_in_progress <- TRUE
-        show_map_loading(TRUE)
+        show_map_loading(TRUE, restore_lock = TRUE)
       }
     }, ignoreInit = TRUE)
 
@@ -635,7 +644,7 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
         # 5. All rendering done — reveal the map
         rv$restore_in_progress <- FALSE
-        show_map_loading(FALSE)
+        show_map_loading(FALSE, restore_complete = TRUE)
       })
     })
 
