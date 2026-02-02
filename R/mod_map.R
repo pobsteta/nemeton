@@ -386,9 +386,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             )
           rv$parcels_zoomed <- TRUE
 
-          shiny::isolate({
+          # Clear restore_in_progress AFTER the current flush cycle.
+          # If we clear it synchronously, the mod_home selected_commune
+          # observer (which runs in the same flush) sees it as FALSE,
+          # bypasses the restore guard, and clears parcels_data — causing
+          # the show-loading observer to re-show the spinner.
+          later::later(function() {
             app_state$restore_in_progress <- FALSE
-          })
+          }, delay = 0)
           cli::cli_alert_success("Location restored successfully")
         }
 
