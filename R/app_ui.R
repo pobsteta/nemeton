@@ -174,6 +174,17 @@ app_add_external_resources <- function() {
   htmltools::tagList(
     # Add CSS
     htmltools::tags$head(
+      # Critical inline CSS: loads BEFORE external stylesheets to prevent
+      # flash of white background while custom.css is being fetched.
+      htmltools::tags$style(htmltools::HTML("
+        html, body { background-color: #f0f0f0 !important; }
+        .bslib-page-fill, .html-fill-container { background-color: #f0f0f0 !important; }
+        .card, .bslib-card { background-color: #ffffff !important; }
+        .bslib-page-fill::after, .bslib-page-fill::before,
+        .html-fill-container::after, .html-fill-container::before {
+          content: none !important; display: none !important;
+        }
+      ")),
       # Custom CSS (cache-busting to ensure latest version)
       htmltools::tags$link(
         rel = "stylesheet",
