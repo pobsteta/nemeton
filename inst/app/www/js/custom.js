@@ -502,54 +502,25 @@
   // ============================================================
 
   function initBusyVisibility() {
-    // Strip bslib busy-indicator trigger attributes from ALL elements
-    function killBusyOverlays() {
-      // Remove data-shiny-busy attribute (bslib uses this to activate ::after overlays)
-      var busyEls = document.querySelectorAll('[data-shiny-busy]');
-      for (var i = 0; i < busyEls.length; i++) {
-        busyEls[i].removeAttribute('data-shiny-busy');
-      }
+    // Block data-shiny-busy from ever being set on any element.
+    // This is the root trigger for bslib's pulse overlay (::after
+    // pseudo-elements on page containers). The MutationObserver approach
+    // fires AFTER the browser paints, leaving a one-frame window where
+    // the overlay is visible. By intercepting setAttribute, the attribute
+    // is never set and the CSS overlay never activates — zero frames.
+    var origSetAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function(name, value) {
+      if (name === 'data-shiny-busy') return;
+      return origSetAttribute.call(this, name, value);
+    };
 
-      // Force visibility on recalculating outputs
+    // Force visibility on recalculating outputs (Shiny adds opacity: 0.5)
+    $(document).on('shiny:busy', function() {
       var recalc = document.querySelectorAll('.recalculating');
       for (var j = 0; j < recalc.length; j++) {
         recalc[j].style.setProperty('opacity', '1', 'important');
         recalc[j].style.setProperty('visibility', 'visible', 'important');
       }
-    }
-
-    // Fire on every Shiny busy event
-    $(document).on('shiny:busy', function() {
-      killBusyOverlays();
-      // Also fire after a microtask in case bslib sets attributes AFTER shiny:busy
-      setTimeout(killBusyOverlays, 0);
-      setTimeout(killBusyOverlays, 50);
-      setTimeout(killBusyOverlays, 150);
-    });
-
-    // MutationObserver: watch for data-shiny-busy being added anywhere in the DOM
-    // and remove it immediately. This catches bslib setting the attribute at any time.
-    var observer = new MutationObserver(function(mutations) {
-      for (var i = 0; i < mutations.length; i++) {
-        var m = mutations[i];
-        if (m.type === 'attributes' && m.attributeName === 'data-shiny-busy') {
-          m.target.removeAttribute('data-shiny-busy');
-        }
-        // Also catch class changes that add shiny-busy-related classes
-        if (m.type === 'attributes' && m.attributeName === 'class') {
-          var cls = m.target.className || '';
-          if (typeof cls === 'string' && cls.indexOf('bslib-busy') >= 0) {
-            m.target.classList.remove('bslib-busy-indicator-pulse');
-          }
-        }
-      }
-    });
-
-    // Observe the entire document for attribute changes
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-shiny-busy', 'class'],
-      subtree: true
     });
   }
 
