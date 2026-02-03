@@ -622,23 +622,23 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] tidyr_1.3.2   sf_1.0-24     dplyr_1.1.4   ggplot2_4.0.1 nemeton_0.8.0
+#> [1] tidyr_1.3.2   sf_1.0-24     dplyr_1.1.4   ggplot2_4.0.1 nemeton_0.9.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      
 #>  [5] KernSmooth_2.23-26 lattice_0.22-7     digest_0.6.39      magrittr_2.0.4    
 #>  [9] evaluate_1.0.5     grid_4.5.2         RColorBrewer_1.1-3 fastmap_1.2.0     
 #> [13] Matrix_1.7-4       jsonlite_2.0.0     e1071_1.7-17       DBI_1.2.3         
-#> [17] mgcv_1.9-3         purrr_1.2.1        viridisLite_0.4.2  scales_1.4.0      
-#> [21] codetools_0.2-20   textshaping_1.0.4  jquerylib_0.1.4    cli_3.6.5         
-#> [25] rlang_1.1.7        units_1.0-0        splines_4.5.2      withr_3.0.2       
-#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.5.2       
-#> [33] vctrs_0.7.1        R6_2.6.1           proxy_0.4-29       lifecycle_1.0.5   
-#> [37] classInt_0.4-11    fs_1.6.6           htmlwidgets_1.6.4  ragg_1.5.0        
-#> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0      terra_1.8-93      
-#> [45] bslib_0.9.0        pillar_1.11.1      gtable_0.3.6       glue_1.8.0        
-#> [49] Rcpp_1.1.1         systemfonts_1.3.1  xfun_0.56          tibble_3.3.1      
-#> [53] tidyselect_1.2.1   knitr_1.51         farver_2.1.2       nlme_3.1-168      
-#> [57] htmltools_0.5.9    rmarkdown_2.30     labeling_0.4.3     compiler_4.5.2    
-#> [61] S7_0.2.1
+#> [17] promises_1.5.0     mgcv_1.9-3         purrr_1.2.1        viridisLite_0.4.2 
+#> [21] scales_1.4.0       codetools_0.2-20   textshaping_1.0.4  jquerylib_0.1.4   
+#> [25] cli_3.6.5          rlang_1.1.7        units_1.0-0        splines_4.5.2     
+#> [29] withr_3.0.2        cachem_1.1.0       yaml_2.3.12        otel_0.2.0        
+#> [33] tools_4.5.2        vctrs_0.7.1        R6_2.6.1           proxy_0.4-29      
+#> [37] lifecycle_1.0.5    classInt_0.4-11    fs_1.6.6           htmlwidgets_1.6.4 
+#> [41] ragg_1.5.0         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0     
+#> [45] terra_1.8-93       bslib_0.10.0       pillar_1.11.1      later_1.4.5       
+#> [49] gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1         systemfonts_1.3.1 
+#> [53] xfun_0.56          tibble_3.3.1       tidyselect_1.2.1   knitr_1.51        
+#> [57] farver_2.1.2       nlme_3.1-168       htmltools_0.5.9    labeling_0.4.3    
+#> [61] rmarkdown_2.30     compiler_4.5.2     S7_0.2.1
 ```
