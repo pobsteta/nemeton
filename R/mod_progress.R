@@ -261,6 +261,16 @@ mod_progress_server <- function(id, compute_state, app_state) {
         pct <- sub("^download_oso_progress:", "", task)
         return(paste0("T\u00e9l\u00e9chargement OSO : ", pct, " %"))
       }
+      if (grepl("^download_lidar:", task)) {
+        parts <- strsplit(sub("^download_lidar:", "", task), ":")[[1]]
+        product <- tolower(parts[1])  # e.g. "mnh"
+        progress <- parts[2]  # e.g. "20/500"
+        # Map product to i18n key (nuage -> copc)
+        lidar_key_map <- c(mnh = "source_lidar_mnh", nuage = "source_lidar_copc")
+        source_key <- lidar_key_map[[product]] %||% paste0("source_lidar_", product)
+        return(paste0(i18n$t("downloading_source", source = i18n$t(source_key)),
+                      " (", progress, ")"))
+      }
       if (grepl("^download:", task)) {
         source_key <- sub("^download:", "", task)
         return(i18n$t("downloading_source", source = i18n$t(source_key)))

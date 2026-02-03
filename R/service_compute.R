@@ -1548,7 +1548,7 @@ download_ign_lidar_hd <- function(bbox,
 
     if (!is.null(progress_callback)) {
       progress_callback(list(
-        current = paste0("LiDAR ", toupper(product), " ", i, "/", n_tiles),
+        current = paste0("download_lidar:", toupper(product), ":", i, "/", n_tiles),
         lidar_tile = i - 1,
         lidar_tiles_total = n_tiles
       ))
