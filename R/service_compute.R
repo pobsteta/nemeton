@@ -99,6 +99,13 @@ DATA_SOURCES <- list(
       type = "vector",
       source = "ign_bd_topo",
       required_for = c("naturalness_distance", "social_accessibility")
+    ),
+    bdforet = list(
+      name = "BD For\u00eat V2 (IGN)",
+      type = "vector",
+      source = "ign_bdforet",
+      required_for = c("carbon_biomass", "production_volume", "production_site",
+                        "biodiversity_structure")
     )
   ),
   # Point cloud sources (not loaded as raster/vector but cached as files)
@@ -490,7 +497,8 @@ download_layers_for_parcels <- function(parcels,
     protected_areas = "source_protected_areas",
     water_network = "source_water_network",
     wetlands = "source_wetlands",
-    roads = "source_roads"
+    roads = "source_roads",
+    bdforet = "source_bdforet"
   )
 
   # Download raster sources
@@ -713,6 +721,7 @@ download_vector_source <- function(source_name,
     source_config$source,
     "inpn_wfs" = download_inpn_wfs(source_name, bbox, cache_file),
     "ign_bd_topo" = download_ign_bdtopo(source_name, bbox, cache_file),
+    "ign_bdforet" = download_ign_bdforet(bbox, cache_file),
     {
       cli::cli_warn("Unknown vector source: {source_config$source}")
       NULL
@@ -961,6 +970,79 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 
   }, error = function(e) {
     cli::cli_warn("Failed to download IGN BD TOPO {layer_name}: {e$message}")
+    NULL
+  })
+}
+
+
+#' Download BD Forêt V2 (formations végétales) from IGN WFS
+#'
+#' Downloads vegetation formation polygons from IGN Géoplateforme WFS.
+#' The layer \code{LANDCOVER.FORESTINVENTORY.V2:formation_vegetale} provides
+#' species, type and structure information used by carbon, production and
+#' biodiversity indicators.
+#'
+#' @param bbox Numeric vector. Bounding box (xmin, ymin, xmax, ymax) in WGS84.
+#' @param cache_file Character. Path to save the downloaded GeoPackage.
+#'
+#' @return sf object with BD Forêt features, or NULL if download fails.
+#' @noRd
+download_ign_bdforet <- function(bbox, cache_file) {
+  base_url <- "https://data.geopf.fr/wfs/ows"
+  typename <- "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale"
+
+  if (inherits(bbox, "bbox")) {
+    bbox <- as.numeric(bbox)
+  }
+
+  bbox_str <- paste(bbox[c(1, 2, 3, 4)], collapse = ",")
+
+  cli::cli_alert_info("Downloading BD For\u00eat V2 (formations v\u00e9g\u00e9tales)...")
+
+  tryCatch({
+    wfs_url <- paste0(
+      base_url,
+      "?SERVICE=WFS",
+      "&VERSION=2.0.0",
+      "&REQUEST=GetFeature",
+      "&TYPENAME=", typename,
+      "&BBOX=", bbox_str, ",EPSG:4326",
+      "&SRSNAME=EPSG:4326",
+      "&OUTPUTFORMAT=application/json",
+      "&COUNT=10000"
+    )
+
+    resp <- httr2::request(wfs_url) |>
+      httr2::req_timeout(120) |>
+      httr2::req_error(is_error = function(resp) FALSE) |>
+      httr2::req_perform()
+
+    if (httr2::resp_status(resp) != 200) {
+      cli::cli_warn("IGN WFS returned status {httr2::resp_status(resp)} for BD For\u00eat")
+      return(NULL)
+    }
+
+    geojson <- httr2::resp_body_string(resp)
+
+    if (nchar(geojson) < 50) {
+      cli::cli_alert_warning("No BD For\u00eat features found for this area")
+      return(NULL)
+    }
+
+    result <- sf::st_read(geojson, quiet = TRUE)
+
+    if (nrow(result) == 0) {
+      cli::cli_alert_warning("No BD For\u00eat features found for this area")
+      return(NULL)
+    }
+
+    sf::st_write(result, cache_file, quiet = TRUE, delete_dsn = TRUE)
+    cli::cli_alert_success("Downloaded {nrow(result)} BD For\u00eat formations")
+
+    result
+
+  }, error = function(e) {
+    cli::cli_warn("Failed to download BD For\u00eat V2: {e$message}")
     NULL
   })
 }
