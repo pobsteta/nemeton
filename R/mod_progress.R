@@ -421,6 +421,8 @@ mod_progress_server <- function(id, compute_state, app_state) {
         last_err <- state$errors[[n_errors]]
         prefix <- if (!is.null(last_err$indicator)) {
           paste0(last_err$indicator, ": ")
+        } else if (!is.null(last_err$source)) {
+          paste0(last_err$source, ": ")
         } else {
           ""
         }

@@ -543,6 +543,20 @@ download_layers_for_parcels <- function(parcels,
           ),
           time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
         )))
+      } else if (source$source == "ign_lidar_hd") {
+        # Warning when LiDAR HD tiles are not available for this area
+        product_label <- toupper(source$product %||% "MNH")
+        download_warnings <- c(download_warnings, list(list(
+          type = "info",
+          source = paste0("LiDAR HD ", product_label),
+          message = paste0(
+            "Aucune dalle LiDAR HD ", product_label,
+            " disponible pour cette zone. ",
+            "La couverture LiDAR HD de l'IGN est progressive et ne couvre pas encore tout le territoire. ",
+            "Les indicateurs concern\u00e9s utiliseront des donn\u00e9es alternatives (NDVI, BD ALTI)."
+          ),
+          time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+        )))
       }
     }, error = function(e) {
       cli::cli_warn("Failed to download {source$name}: {e$message}")
@@ -629,6 +643,18 @@ download_layers_for_parcels <- function(parcels,
         )
         if (!is.null(pc_files)) {
           point_clouds[[source_name]] <- pc_files
+        } else {
+          product_label <- toupper(source$product %||% "NUAGE")
+          download_warnings <- c(download_warnings, list(list(
+            type = "info",
+            source = paste0("LiDAR HD ", product_label),
+            message = paste0(
+              "Aucune dalle LiDAR HD ", product_label,
+              " (nuages de points) disponible pour cette zone. ",
+              "La couverture LiDAR HD de l'IGN est progressive et ne couvre pas encore tout le territoire."
+            ),
+            time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+          )))
         }
       }
     }, error = function(e) {
