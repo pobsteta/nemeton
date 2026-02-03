@@ -393,12 +393,13 @@ mod_search_server <- function(id, app_state) {
 
       # Safety timeout: if restore_task never completes (worker crash, etc.),
       # clear flags after 30 seconds so the spinner doesn't spin forever.
+      # isolate() is required because later::later runs outside reactive context.
       later::later(function() {
-        if (isTRUE(rv$is_restoring)) {
+        if (isTRUE(shiny::isolate(rv$is_restoring))) {
           cli::cli_warn("Restore safety timeout — clearing stale flags")
           rv$is_restoring <- FALSE
         }
-        if (isTRUE(app_state$restore_in_progress)) {
+        if (isTRUE(shiny::isolate(app_state$restore_in_progress))) {
           app_state$restore_in_progress <- FALSE
         }
       }, delay = 30)
