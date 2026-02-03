@@ -73,7 +73,11 @@ INDICATOR_FAMILIES <- list(
     name_en = "Carbon & Vitality",
     icon = "tree-fill",
     color = "#228B22",
-    indicators = c("C1", "C2")
+    indicators = c("C1", "C2"),
+    indicator_labels = list(
+      C1 = list(fr = "Biomasse carbone (tC/ha)", en = "Carbon Biomass (tC/ha)"),
+      C2 = list(fr = "NDVI - Vitalit\u00e9", en = "NDVI - Vitality")
+    )
   ),
   B = list(
     code = "B",
@@ -81,7 +85,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Biodiversity",
     icon = "bug-fill",
     color = "#9932CC",
-    indicators = c("B1", "B2", "B3")
+    indicators = c("B1", "B2", "B3"),
+    indicator_labels = list(
+      B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+      B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
+      B3 = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity")
+    )
   ),
   W = list(
     code = "W",
@@ -89,7 +98,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Water",
     icon = "droplet-fill",
     color = "#1E90FF",
-    indicators = c("W1", "W2", "W3")
+    indicators = c("W1", "W2", "W3"),
+    indicator_labels = list(
+      W1 = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+      W2 = list(fr = "Zones humides", en = "Wetlands"),
+      W3 = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index")
+    )
   ),
   A = list(
     code = "A",
@@ -97,7 +111,11 @@ INDICATOR_FAMILIES <- list(
     name_en = "Air & Microclimate",
     icon = "wind",
     color = "#87CEEB",
-    indicators = c("A1", "A2")
+    indicators = c("A1", "A2"),
+    indicator_labels = list(
+      A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
+      A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality")
+    )
   ),
   F = list(
     code = "F",
@@ -105,7 +123,11 @@ INDICATOR_FAMILIES <- list(
     name_en = "Soil Fertility",
     icon = "globe-americas",
     color = "#8B4513",
-    indicators = c("F1", "F2")
+    indicators = c("F1", "F2"),
+    indicator_labels = list(
+      F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
+      F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk")
+    )
   ),
   L = list(
     code = "L",
@@ -113,7 +135,11 @@ INDICATOR_FAMILIES <- list(
     name_en = "Landscape",
     icon = "image-fill",
     color = "#32CD32",
-    indicators = c("L1", "L2")
+    indicators = c("L1", "L2"),
+    indicator_labels = list(
+      L1 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+      L2 = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio")
+    )
   ),
   T = list(
     code = "T",
@@ -121,7 +147,11 @@ INDICATOR_FAMILIES <- list(
     name_en = "Temporal Dynamics",
     icon = "clock-fill",
     color = "#FFD700",
-    indicators = c("T1", "T2")
+    indicators = c("T1", "T2"),
+    indicator_labels = list(
+      T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+      T2 = list(fr = "Taux de changement", en = "Change Rate")
+    )
   ),
   R = list(
     code = "R",
@@ -129,7 +159,13 @@ INDICATOR_FAMILIES <- list(
     name_en = "Risks & Resilience",
     icon = "exclamation-triangle-fill",
     color = "#DC143C",
-    indicators = c("R1", "R2", "R3", "R4")
+    indicators = c("R1", "R2", "R3", "R4"),
+    indicator_labels = list(
+      R1 = list(fr = "Risque incendie", en = "Fire Risk"),
+      R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+      R3 = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+      R4 = list(fr = "Risque abroutissement", en = "Browsing Risk")
+    )
   ),
   S = list(
     code = "S",
@@ -137,7 +173,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Social & Recreational",
     icon = "people-fill",
     color = "#FF69B4",
-    indicators = c("S1", "S2", "S3")
+    indicators = c("S1", "S2", "S3"),
+    indicator_labels = list(
+      S1 = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+      S2 = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+      S3 = list(fr = "Proximit\u00e9 population", en = "Population Proximity")
+    )
   ),
   P = list(
     code = "P",
@@ -145,7 +186,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Production",
     icon = "box-seam-fill",
     color = "#006400",
-    indicators = c("P1", "P2", "P3")
+    indicators = c("P1", "P2", "P3"),
+    indicator_labels = list(
+      P1 = list(fr = "Volume de bois (m\u00b3/ha)", en = "Timber Volume (m\u00b3/ha)"),
+      P2 = list(fr = "Productivit\u00e9", en = "Productivity"),
+      P3 = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality")
+    )
   ),
   E = list(
     code = "E",
@@ -153,7 +199,11 @@ INDICATOR_FAMILIES <- list(
     name_en = "Energy & Climate",
     icon = "lightning-fill",
     color = "#FF8C00",
-    indicators = c("E1", "E2")
+    indicators = c("E1", "E2"),
+    indicator_labels = list(
+      E1 = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+      E2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance")
+    )
   ),
   N = list(
     code = "N",
@@ -161,7 +211,12 @@ INDICATOR_FAMILIES <- list(
     name_en = "Naturalness",
     icon = "flower1",
     color = "#2E8B57",
-    indicators = c("N1", "N2", "N3")
+    indicators = c("N1", "N2", "N3"),
+    indicator_labels = list(
+      N1 = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+      N2 = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+      N3 = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score")
+    )
   )
 )
 

@@ -263,6 +263,47 @@ TRANSLATIONS <- list(
   ),
 
   # ============================================================
+  # Indicator Codes (short labels for table/map display)
+  # ============================================================
+  indicator_C1 = list(fr = "Biomasse carbone (tC/ha)", en = "Carbon Biomass (tC/ha)"),
+  indicator_C2 = list(fr = "NDVI - Vitalit\u00e9", en = "NDVI - Vitality"),
+  indicator_B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+  indicator_B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
+  indicator_B3 = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+  indicator_W1 = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+  indicator_W2 = list(fr = "Zones humides", en = "Wetlands"),
+  indicator_W3 = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+  indicator_A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
+  indicator_A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+  indicator_F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
+  indicator_F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
+  indicator_L1 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+  indicator_L2 = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio"),
+  indicator_T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+  indicator_T2 = list(fr = "Taux de changement", en = "Change Rate"),
+  indicator_R1 = list(fr = "Risque incendie", en = "Fire Risk"),
+  indicator_R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+  indicator_R3 = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+  indicator_R4 = list(fr = "Risque abroutissement", en = "Browsing Risk"),
+  indicator_S1 = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+  indicator_S2 = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+  indicator_S3 = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
+  indicator_P1 = list(fr = "Volume de bois (m\u00b3/ha)", en = "Timber Volume (m\u00b3/ha)"),
+  indicator_P2 = list(fr = "Productivit\u00e9", en = "Productivity"),
+  indicator_P3 = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+  indicator_E1 = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+  indicator_E2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
+  indicator_N1 = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+  indicator_N2 = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+  indicator_N3 = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
+
+  # Missing indicators
+  missing_indicators_title = list(
+    fr = "Indicateurs manquants",
+    en = "Missing indicators"
+  ),
+
+  # ============================================================
   # Data Table
   # ============================================================
   data_table = list(fr = "Tableau des donn\u00e9es", en = "Data Table"),

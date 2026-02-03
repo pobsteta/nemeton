@@ -3,7 +3,7 @@
 **Version** : 1.0.0
 **Date** : 2026-01-25
 **Total estimé** : 217 tâches
-**Progression** : ~110/217 (51%)
+**Progression** : ~177/217 (82%)
 
 ---
 
@@ -176,115 +176,115 @@
 
 ### 5.1 Module Synthèse
 
-- [ ] T091 [US7] Créer `R/mod_synthesis.R` avec vue globale (scaffolding UI inline dans app_ui.R)
-- [ ] T092 [US7] Implémenter radar plot 12 axes avec `nemeton_radar()`
-- [ ] T093 [US7] Créer tableau récapitulatif scores par famille
-- [ ] T094 [US7] Ajouter carte thématique score global
-- [ ] T095 [US7] Afficher statistiques (surface, nb parcelles, min/max/moy)
-- [ ] T096 [US7] Ajouter boutons téléchargement PDF et GeoPackage
-- [ ] T097 [US6] Afficher récapitulatif indicateurs manquants
-- [ ] T098 Créer tests `tests/testthat/test-mod_synthesis.R`
+- [x] T091 [US7] Créer `R/mod_synthesis.R` avec vue globale (scaffolding UI inline dans app_ui.R)
+- [x] T092 [US7] Implémenter radar plot 12 axes avec `nemeton_radar()`
+- [x] T093 [US7] Créer tableau récapitulatif scores par famille
+- [x] T094 [US7] Ajouter carte thématique score global
+- [x] T095 [US7] Afficher statistiques (surface, nb parcelles, min/max/moy)
+- [x] T096 [US7] Ajouter boutons téléchargement PDF et GeoPackage
+- [x] T097 [US6] Afficher récapitulatif indicateurs manquants
+- [x] T098 Créer tests `tests/testthat/test-mod_synthesis.R`
 
 ### 5.2 Modules Familles (Template)
 
-- [ ] T099 Créer `R/mod_family_base.R` - template commun modules famille
-- [ ] T100 Implémenter pattern réutilisable : header, graphiques, table, missing
+- [x] T099 Créer `R/mod_family.R` - module générique unique pour les 12 familles
+- [x] T100 Implémenter pattern réutilisable : header, graphiques, table, missing
 
 ### 5.3 Module Carbone (C)
 
-- [ ] T101 [US8] Créer `R/mod_family_carbon.R`
-- [ ] T102 [US8] Graphique C1 : biomasse carbone (tC/ha)
-- [ ] T103 [US8] Graphique C2 : NDVI carte
-- [ ] T104 [US8] Tableau valeurs par parcelle
-- [ ] T105 Tooltips aide indicateurs C1, C2
+- [x] T101 [US8] Famille Carbone via `mod_family.R` générique
+- [x] T102 [US8] Graphique C1 : biomasse carbone (tC/ha)
+- [x] T103 [US8] Graphique C2 : NDVI carte
+- [x] T104 [US8] Tableau valeurs par parcelle
+- [x] T105 Tooltips aide indicateurs C1, C2
 
 ### 5.4 Module Biodiversité (B)
 
-- [ ] T106 [US8] Créer `R/mod_family_biodiversity.R`
-- [ ] T107 [US8] Carte B1 : zones protégées
-- [ ] T108 [US8] Graphique B2 : diversité structurale
-- [ ] T109 [US8] Graphique B3 : connectivité
-- [ ] T110 Tooltips aide indicateurs B1, B2, B3
+- [x] T106 [US8] Famille Biodiversité via `mod_family.R` générique
+- [x] T107 [US8] Carte B1 : zones protégées
+- [x] T108 [US8] Graphique B2 : diversité structurale
+- [x] T109 [US8] Graphique B3 : connectivité
+- [x] T110 Tooltips aide indicateurs B1, B2, B3
 
 ### 5.5 Module Eau (W)
 
-- [ ] T111 [US8] Créer `R/mod_family_water.R`
-- [ ] T112 [US8] Carte W1 : réseau hydrographique
-- [ ] T113 [US8] Carte W2 : zones humides
-- [ ] T114 [US8] Carte W3 : TWI
-- [ ] T115 Tooltips aide indicateurs W1, W2, W3
+- [x] T111 [US8] Famille Eau via `mod_family.R` générique
+- [x] T112 [US8] Carte W1 : réseau hydrographique
+- [x] T113 [US8] Carte W2 : zones humides
+- [x] T114 [US8] Carte W3 : TWI
+- [x] T115 Tooltips aide indicateurs W1, W2, W3
 
 ### 5.6 Module Air (A)
 
-- [ ] T116 [US8] Créer `R/mod_family_air.R`
-- [ ] T117 [US8] Graphique A1 : couverture forestière buffer
-- [ ] T118 [US8] Graphique A2 : indice qualité air
-- [ ] T119 Tooltips aide indicateurs A1, A2
+- [x] T116 [US8] Famille Air via `mod_family.R` générique
+- [x] T117 [US8] Graphique A1 : couverture forestière buffer
+- [x] T118 [US8] Graphique A2 : indice qualité air
+- [x] T119 Tooltips aide indicateurs A1, A2
 
 ### 5.7 Module Fertilité (F)
 
-- [ ] T120 [US8] Créer `R/mod_family_fertility.R`
-- [ ] T121 [US8] Carte F1 : classes de sol
-- [ ] T122 [US8] Carte F2 : risque érosion
-- [ ] T123 Tooltips aide indicateurs F1, F2
+- [x] T120 [US8] Famille Fertilité via `mod_family.R` générique
+- [x] T121 [US8] Carte F1 : classes de sol
+- [x] T122 [US8] Carte F2 : risque érosion
+- [x] T123 Tooltips aide indicateurs F1, F2
 
 ### 5.8 Module Paysage (L)
 
-- [ ] T124 [US8] Créer `R/mod_family_landscape.R`
-- [ ] T125 [US8] Graphique L1 : fragmentation
-- [ ] T126 [US8] Graphique L2 : ratio bordure/surface
-- [ ] T127 Tooltips aide indicateurs L1, L2
+- [x] T124 [US8] Famille Paysage via `mod_family.R` générique
+- [x] T125 [US8] Graphique L1 : fragmentation
+- [x] T126 [US8] Graphique L2 : ratio bordure/surface
+- [x] T127 Tooltips aide indicateurs L1, L2
 
 ### 5.9 Module Temporel (T)
 
-- [ ] T128 [US8] Créer `R/mod_family_temporal.R`
-- [ ] T129 [US8] Graphique T1 : ancienneté forêt
-- [ ] T130 [US8] Graphique T2 : taux de changement
-- [ ] T131 Tooltips aide indicateurs T1, T2
+- [x] T128 [US8] Famille Temporel via `mod_family.R` générique
+- [x] T129 [US8] Graphique T1 : ancienneté forêt
+- [x] T130 [US8] Graphique T2 : taux de changement
+- [x] T131 Tooltips aide indicateurs T1, T2
 
 ### 5.10 Module Risques (R)
 
-- [ ] T132 [US8] Créer `R/mod_family_risk.R`
-- [ ] T133 [US8] Graphique R1 : risque feu
-- [ ] T134 [US8] Graphique R2 : risque tempête
-- [ ] T135 [US8] Graphique R3 : risque sécheresse
-- [ ] T136 [US8] Graphique R4 : pression abroutissement
-- [ ] T137 Tooltips aide indicateurs R1-R4
+- [x] T132 [US8] Famille Risques via `mod_family.R` générique
+- [x] T133 [US8] Graphique R1 : risque feu
+- [x] T134 [US8] Graphique R2 : risque tempête
+- [x] T135 [US8] Graphique R3 : risque sécheresse
+- [x] T136 [US8] Graphique R4 : pression abroutissement
+- [x] T137 Tooltips aide indicateurs R1-R4
 
 ### 5.11 Module Social (S)
 
-- [ ] T138 [US8] Créer `R/mod_family_social.R`
-- [ ] T139 [US8] Carte S1 : densité sentiers
-- [ ] T140 [US8] Graphique S2 : accessibilité
-- [ ] T141 [US8] Graphique S3 : proximité population
-- [ ] T142 Tooltips aide indicateurs S1, S2, S3
+- [x] T138 [US8] Famille Social via `mod_family.R` générique
+- [x] T139 [US8] Carte S1 : densité sentiers
+- [x] T140 [US8] Graphique S2 : accessibilité
+- [x] T141 [US8] Graphique S3 : proximité population
+- [x] T142 Tooltips aide indicateurs S1, S2, S3
 
 ### 5.12 Module Production (P)
 
-- [ ] T143 [US8] Créer `R/mod_family_production.R`
-- [ ] T144 [US8] Graphique P1 : volume bois (m³/ha)
-- [ ] T145 [US8] Graphique P2 : productivité station
-- [ ] T146 [US8] Graphique P3 : qualité bois
-- [ ] T147 Tooltips aide indicateurs P1, P2, P3
+- [x] T143 [US8] Famille Production via `mod_family.R` générique
+- [x] T144 [US8] Graphique P1 : volume bois (m³/ha)
+- [x] T145 [US8] Graphique P2 : productivité station
+- [x] T146 [US8] Graphique P3 : qualité bois
+- [x] T147 Tooltips aide indicateurs P1, P2, P3
 
 ### 5.13 Module Énergie (E)
 
-- [ ] T148 [US8] Créer `R/mod_family_energy.R`
-- [ ] T149 [US8] Graphique E1 : potentiel bois-énergie
-- [ ] T150 [US8] Graphique E2 : évitement CO2
-- [ ] T151 Tooltips aide indicateurs E1, E2
+- [x] T148 [US8] Famille Énergie via `mod_family.R` générique
+- [x] T149 [US8] Graphique E1 : potentiel bois-énergie
+- [x] T150 [US8] Graphique E2 : évitement CO2
+- [x] T151 Tooltips aide indicateurs E1, E2
 
 ### 5.14 Module Naturalité (N)
 
-- [ ] T152 [US8] Créer `R/mod_family_naturalness.R`
-- [ ] T153 [US8] Graphique N1 : distance infrastructures
-- [ ] T154 [US8] Graphique N2 : continuité forestière
-- [ ] T155 [US8] Graphique N3 : score naturalité composite
-- [ ] T156 Tooltips aide indicateurs N1, N2, N3
+- [x] T152 [US8] Famille Naturalité via `mod_family.R` générique
+- [x] T153 [US8] Graphique N1 : distance infrastructures
+- [x] T154 [US8] Graphique N2 : continuité forestière
+- [x] T155 [US8] Graphique N3 : score naturalité composite
+- [x] T156 Tooltips aide indicateurs N1, N2, N3
 
 ### 5.15 Tests Modules Familles
 
-- [ ] T157 [P] Créer tests pour chaque module famille (12 fichiers)
+- [x] T157 [P] Créer tests `test-mod_family.R` et `test-mod_synthesis.R` (module générique)
 
 ---
 

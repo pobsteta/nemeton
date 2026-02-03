@@ -314,14 +314,9 @@ mod_home_server <- function(id, app_state) {
         type = "message"
       )
 
-      # If project has indicators, navigate to synthesis
-      if (isTRUE(project$metadata$indicators_computed)) {
-        shiny::updateNavbarPage(
-          session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
-          inputId = "main_nav",
-          selected = "synthesis"
-        )
-      }
+      # If project has indicators, stay on Selection tab so the user
+      # can see parcels on the map first. The "Voir les résultats" button
+      # lets them navigate to Synthesis when ready.
     }) |> shiny::bindEvent(input$load_project)
 
     # ========================================
@@ -921,7 +916,7 @@ mod_home_server <- function(id, app_state) {
     shiny::observeEvent(input$view_results, {
       # Navigate to synthesis tab
       shiny::updateNavbarPage(
-        session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
+        session = session$userData$root_session %||% session,
         inputId = "main_nav",
         selected = "synthesis"
       )
@@ -1005,7 +1000,7 @@ mod_home_server <- function(id, app_state) {
     # Handle view_results from progress module
     shiny::observeEvent(app_state$view_results, {
       shiny::updateNavbarPage(
-        session = session$userData$parent_session %||% shiny::getDefaultReactiveDomain(),
+        session = session$userData$root_session %||% session,
         inputId = "main_nav",
         selected = "synthesis"
       )

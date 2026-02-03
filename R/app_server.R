@@ -160,6 +160,10 @@ app_server <- function(input, output, session) {
   # MODULE SERVERS
   # ============================================================
 
+  # Store root session so child modules can navigate top-level tabs
+  # (modules receive a namespaced session that cannot update main_nav directly)
+  session$userData$root_session <- session
+
   # Home module (search, map, project form)
   home_result <- mod_home_server("home", app_state)
 
@@ -173,69 +177,15 @@ app_server <- function(input, output, session) {
     }
   })
 
-  # Synthesis module (placeholder - Phase 5)
-  # mod_synthesis_server("synthesis", app_state, compute_state)
+  # Synthesis module
+  mod_synthesis_server("synthesis", app_state)
 
-  # Family modules (placeholder - Phase 6)
-  # lapply(get_family_codes(), function(code) {
-  #   mod_family_server(paste0("family_", code), code, app_state, compute_state)
-  # })
+  # Family modules (one generic module per family)
+  lapply(get_family_codes(), function(code) {
+    mod_family_server(paste0("family_", code), code, app_state)
+  })
 
   # Note: Selection info, map, and compute button are now handled by mod_home
-
-
-  # ============================================================
-  # PLACEHOLDER: Synthesis Module Logic (inline for now)
-  # ============================================================
-
-  # Project summary
-  output$`synthesis-project_summary` <- shiny::renderUI({
-    i18n <- get_i18n(app_state$language)
-
-    if (is.null(app_state$current_project)) {
-      return(htmltools::div(
-        class = "text-muted",
-        i18n$t("no_project")
-      ))
-    }
-
-    htmltools::div(
-      shiny::h5(app_state$current_project$name),
-      shiny::p(app_state$current_project$description),
-      shiny::p(
-        class = "small text-muted",
-        sprintf("%s: %s", i18n$t("created_at"), app_state$current_project$created_at)
-      )
-    )
-  })
-
-  # Radar plot placeholder
-  output$`synthesis-radar_plot` <- shiny::renderPlot({
-    i18n <- get_i18n(app_state$language)
-
-    if (is.null(compute_state$indicators)) {
-      plot.new()
-      text(0.5, 0.5, i18n$t("no_data"), cex = 1.5, col = "gray50")
-      return()
-    }
-
-    # Would use nemeton_radar() here
-    plot.new()
-    text(0.5, 0.5, "Radar Plot", cex = 1.5)
-  })
-
-  # Summary table placeholder
-  output$`synthesis-summary_table` <- shiny::renderTable({
-    if (is.null(compute_state$indicators)) {
-      return(NULL)
-    }
-
-    # Return family summary
-    data.frame(
-      Family = get_family_codes(),
-      Score = rep(NA_real_, 12)
-    )
-  })
 
 
   # ============================================================
