@@ -49,31 +49,44 @@ indicator_carbon_biomass <- function(units,
     stop("units must be an sf object", call. = FALSE)
   }
 
-  # Check required columns
-  if (!species_col %in% names(units)) {
-    msg_error("carbon_species_missing", species_col)
+  has_inventory <- species_col %in% names(units) &&
+                   age_col %in% names(units) &&
+                   density_col %in% names(units)
+
+  if (has_inventory) {
+    # Full allometric model when forest inventory data is available
+    species <- units[[species_col]]
+    age <- units[[age_col]]
+    density <- units[[density_col]]
+
+    biomass <- calculate_allometric_biomass(species, age, density)
+    msg_info("indicator_carbon_biomass")
+    return(biomass)
   }
 
-  if (!age_col %in% names(units)) {
-    msg_error("carbon_age_missing", age_col)
+  # Fallback: estimate carbon stock from NDVI when inventory columns are missing
+  # (cadastral parcels typically lack species/age/density)
+  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+      "ndvi" %in% names(layers$rasters)) {
+    cli::cli_alert_info("No forest inventory columns; estimating C1 from NDVI")
+    ndvi_raster <- layers$rasters[["ndvi"]]
+    ndvi_mean <- exactextractr::exact_extract(
+      ndvi_raster,
+      as_pure_sf(units),
+      fun = "mean",
+      progress = FALSE
+    )
+    # NDVI-to-biomass proxy: scale NDVI (0-1) to approximate carbon stock
+    # (tC/ha). Typical temperate forest: ~80-150 tC/ha at high NDVI.
+    biomass <- pmax(0, ndvi_mean, na.rm = FALSE) * 150
+    return(biomass)
   }
 
-  if (!density_col %in% names(units)) {
-    msg_error("carbon_density_missing", density_col)
-  }
-
-  # Extract attributes
-  species <- units[[species_col]]
-  age <- units[[age_col]]
-  density <- units[[density_col]]
-
-  # Calculate biomass using allometric equations
-  biomass <- calculate_allometric_biomass(species, age, density)
-
-  # Log which equations were used (info message)
-  msg_info("indicator_carbon_biomass")
-
-  biomass
+  # Last resort: return NA
+  cli::cli_alert_warning(
+    "C1: no inventory data and no NDVI layer; returning NA"
+  )
+  rep(NA_real_, nrow(units))
 }
 
 #' NDVI Mean and Trend Analysis (C2)
@@ -119,7 +132,7 @@ indicator_carbon_ndvi <- function(units,
   }
 
   # Get NDVI raster
-  ndvi_raster <- layers$rasters[[ndvi_layer]]$object
+  ndvi_raster <- layers$rasters[[ndvi_layer]]
 
   # Extract mean NDVI for each unit
   ndvi_mean <- exactextractr::exact_extract(
@@ -185,8 +198,7 @@ indicator_water_network <- function(units,
   }
 
   # Get watercourse vector layer
-  watercourses <- layers$vectors[[watercourse_layer]]$object
-
+  watercourses <- layers$vectors[[watercourse_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(watercourses)) {
     watercourses <- sf::st_read(layers$vectors[[watercourse_layer]]$path, quiet = TRUE)
@@ -275,8 +287,7 @@ indicator_water_wetlands <- function(units,
   }
 
   # Get wetland raster
-  wetland_raster <- layers$rasters[[wetland_layer]]$object
-
+  wetland_raster <- layers$rasters[[wetland_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(wetland_raster)) {
     wetland_raster <- terra::rast(layers$rasters[[wetland_layer]]$path)
@@ -363,8 +374,7 @@ indicator_water_twi <- function(units,
   }
 
   # Get DEM raster
-  dem <- layers$rasters[[dem_layer]]$object
-
+  dem <- layers$rasters[[dem_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(dem)) {
     dem <- terra::rast(layers$rasters[[dem_layer]]$path)
@@ -528,8 +538,7 @@ indicator_soil_fertility <- function(units,
 #' @noRd
 extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_col) {
   # Get soil raster
-  soil_raster <- layers$rasters[[soil_layer]]$object
-
+  soil_raster <- layers$rasters[[soil_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(soil_raster)) {
     soil_raster <- terra::rast(layers$rasters[[soil_layer]]$path)
@@ -565,8 +574,7 @@ extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_c
 #' @noRd
 extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_col) {
   # Get soil vector layer
-  soil_vector <- layers$vectors[[soil_layer]]$object
-
+  soil_vector <- layers$vectors[[soil_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(soil_vector)) {
     soil_vector <- sf::st_read(layers$vectors[[soil_layer]]$path, quiet = TRUE)
@@ -658,13 +666,13 @@ indicator_soil_erosion <- function(units,
   }
 
   # Get DEM raster
-  dem <- layers$rasters[[dem_layer]]$object
+  dem <- layers$rasters[[dem_layer]]
   if (is.null(dem)) {
     dem <- terra::rast(layers$rasters[[dem_layer]]$path)
   }
 
   # Get landcover raster
-  landcover <- layers$rasters[[landcover_layer]]$object
+  landcover <- layers$rasters[[landcover_layer]]
   if (is.null(landcover)) {
     landcover <- terra::rast(layers$rasters[[landcover_layer]]$path)
   }
@@ -755,7 +763,7 @@ indicator_landscape_fragmentation <- function(units,
   }
 
   # Load landcover raster
-  landcover <- layers$rasters[[landcover_layer]]$object
+  landcover <- layers$rasters[[landcover_layer]]
   if (is.null(landcover)) {
     landcover <- terra::rast(layers$rasters[[landcover_layer]]$path)
   }
