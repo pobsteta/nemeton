@@ -249,6 +249,10 @@ mod_home_server <- function(id, app_state) {
         return()
       }
 
+      # Load the project from disk
+      project <- load_project(project_id)
+      shiny::req(project)
+
       # Update app state with loaded project
       app_state$current_project <- project
       app_state$project_id <- project$id
