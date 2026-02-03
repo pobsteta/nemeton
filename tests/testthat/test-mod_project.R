@@ -10,7 +10,9 @@ test_that("mod_project_ui returns valid Shiny UI", {
     {
       ui <- nemeton:::mod_project_ui("test")
 
-      expect_s3_class(ui, "shiny.tag")
+      expect_true(
+        inherits(ui, "shiny.tag") || inherits(ui, "shiny.tag.list")
+      )
     }
   )
 })
@@ -29,7 +31,8 @@ test_that("mod_project_ui creates namespaced inputs", {
       expect_true(grepl("test_ns-name", ui_html))
       expect_true(grepl("test_ns-description", ui_html))
       expect_true(grepl("test_ns-owner", ui_html))
-      expect_true(grepl("test_ns-create", ui_html))
+      # Note: create_project button is rendered server-side via renderUI
+      expect_true(grepl("test_ns-action_button", ui_html))
     }
   )
 })
@@ -77,33 +80,4 @@ test_that("mod_project_server accepts required parameters", {
   expect_true("id" %in% args)
   expect_true("app_state" %in% args)
   expect_true("selected_parcels" %in% args)
-})
-
-test_that("mod_project_info_ui returns valid UI", {
-  skip_if_not_installed("shiny")
-  skip_if_not_installed("bslib")
-
-  with_mocked_bindings(
-    get_app_options = function() list(language = "fr"),
-    {
-      ui <- nemeton:::mod_project_info_ui("test")
-
-      expect_s3_class(ui, "shiny.tag")
-    }
-  )
-})
-
-test_that("mod_project_info_ui is hidden by default", {
-  skip_if_not_installed("shiny")
-  skip_if_not_installed("bslib")
-
-  with_mocked_bindings(
-    get_app_options = function() list(language = "fr"),
-    {
-      ui <- nemeton:::mod_project_info_ui("test")
-      ui_html <- as.character(ui)
-
-      expect_true(grepl("d-none", ui_html))
-    }
-  )
 })

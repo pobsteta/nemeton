@@ -220,10 +220,9 @@ indicator_biodiversity_structure <- function(units,
   if (!has_strata || !has_age) {
     # Fallback 1: use LiDAR MNH (Canopy Height Model) for structural diversity
     # Height variability (std dev) is a direct measure of vertical structure
-    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-        "lidar_mnh" %in% names(layers$rasters)) {
+    mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
+    if (!is.null(mnh_raster)) {
       cli::cli_alert_info("B2: Using LiDAR MNH for structural diversity")
-      mnh_raster <- layers$rasters[["lidar_mnh"]]
       units_sf <- as_pure_sf(units)
       mnh_sd <- exactextractr::exact_extract(mnh_raster, units_sf,
         fun = "stdev", progress = FALSE)
@@ -239,10 +238,9 @@ indicator_biodiversity_structure <- function(units,
 
     # Fallback 2: use NDVI standard deviation as proxy for structural diversity
     # Higher NDVI variance within a parcel = more structural heterogeneity
-    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-        "ndvi" %in% names(layers$rasters)) {
+    ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
+    if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("B2: No strata/age/MNH; estimating structure from NDVI variability")
-      ndvi_raster <- layers$rasters[["ndvi"]]
       units_sf <- as_pure_sf(units)
       ndvi_sd <- exactextractr::exact_extract(ndvi_raster, units_sf,
         fun = "stdev", progress = FALSE)

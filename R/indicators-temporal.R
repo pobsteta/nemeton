@@ -82,10 +82,9 @@ indicator_temporal_age <- function(units,
   } else {
     # Fallback: estimate stand maturity from NDVI
     # Higher NDVI typically correlates with more mature forests
-    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-        "ndvi" %in% names(layers$rasters)) {
+    ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
+    if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("T1: No age data; estimating maturity from NDVI")
-      ndvi_raster <- layers$rasters[["ndvi"]]
       ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       # NDVI 0.2 ~ young (20yr), NDVI 0.8 ~ mature (120yr)
@@ -182,10 +181,9 @@ indicator_temporal_change <- function(units,
       is.null(land_cover_late) || !inherits(land_cover_late, "SpatRaster")) {
     # Fallback: assume forested areas are stable (high stability score)
     # Use NDVI as proxy - high NDVI = established forest = likely stable
-    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-        "ndvi" %in% names(layers$rasters)) {
+    ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
+    if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("T2: No multi-date rasters; estimating stability from NDVI")
-      ndvi_raster <- layers$rasters[["ndvi"]]
       ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       # High NDVI = likely stable forest = high stability score

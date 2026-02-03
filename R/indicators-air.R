@@ -194,8 +194,8 @@ indicator_air_quality <- function(units,
   validate_sf(units)
 
   # Extract roads from layers if not provided directly
-  if (is.null(roads) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
-    roads <- layers$vectors[["roads"]]
+  if (is.null(roads) && !is.null(layers)) {
+    roads <- resolve_vector_layer(layers, "roads")
   }
 
   # Auto-detect method

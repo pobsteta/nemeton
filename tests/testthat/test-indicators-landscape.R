@@ -89,16 +89,15 @@ test_that("indicator_landscape_fragmentation with different forest definitions",
   expect_true(all(!is.na(frag_123)))
 })
 
-test_that("indicator_landscape_fragmentation errors when landcover missing", {
+test_that("indicator_landscape_fragmentation returns NA when landcover missing", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_landscape_fragmentation(units, layers, landcover_layer = "nonexistent"),
-    "not found"
-  )
+  # Non-existent landcover -> returns NA
+  frag <- indicator_landscape_fragmentation(units, layers, landcover_layer = "nonexistent")
+  expect_true(all(is.na(frag)))
 })
 
 test_that("indicator_landscape_fragmentation validates inputs", {

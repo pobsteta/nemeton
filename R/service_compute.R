@@ -2112,19 +2112,20 @@ compute_single_indicator <- function(indicator, parcels, layers) {
       if (!is.null(dem)) args$dem <- dem
     }
     if ("ndvi" %in% func_args) {
-      ndvi <- layers$rasters[["ndvi"]]
+      ndvi <- resolve_raster_layer(layers, "ndvi")
       if (!is.null(ndvi)) args$ndvi <- ndvi
     }
     if ("land_cover" %in% func_args) {
-      lc <- layers$rasters[["forest_cover"]]
+      lc <- resolve_raster_layer(layers, "landcover")
+      if (is.null(lc)) lc <- resolve_raster_layer(layers, "forest_cover")
       if (!is.null(lc)) args$land_cover <- lc
     }
     if ("protected_areas" %in% func_args) {
-      pa <- layers$vectors[["protected_areas"]]
+      pa <- resolve_vector_layer(layers, "protected_areas")
       if (!is.null(pa)) args$protected_areas <- pa
     }
     if ("roads" %in% func_args) {
-      roads <- layers$vectors[["roads"]]
+      roads <- resolve_vector_layer(layers, "roads")
       if (!is.null(roads)) args$roads <- roads
     }
 

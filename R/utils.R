@@ -419,6 +419,74 @@ as_pure_sf <- function(x) {
   x_sf
 }
 
+#' Resolve a raster layer from a nemeton_layers object
+#'
+#' Extracts a SpatRaster from a lazy-load list structure (with path/object/loaded
+#' fields) or returns the object directly if it is already a SpatRaster.
+#'
+#' @param layers A nemeton_layers object.
+#' @param name Character. Name of the raster layer to resolve.
+#' @return A SpatRaster or NULL if the layer is not available.
+#' @keywords internal
+#' @noRd
+resolve_raster_layer <- function(layers, name) {
+  if (!inherits(layers, "nemeton_layers")) return(NULL)
+  if (!name %in% names(layers$rasters)) return(NULL)
+
+  entry <- layers$rasters[[name]]
+  if (is.null(entry)) return(NULL)
+
+  # Already a SpatRaster
+
+  if (inherits(entry, "SpatRaster")) return(entry)
+
+  # Lazy-load list: check for object first, then load from path
+
+  if (is.list(entry)) {
+    obj <- entry$object
+    if (!is.null(obj) && inherits(obj, "SpatRaster")) return(obj)
+    path <- entry$path
+    if (!is.null(path) && nzchar(path) && file.exists(path)) {
+      return(terra::rast(path))
+    }
+  }
+
+  NULL
+}
+
+#' Resolve a vector layer from a nemeton_layers object
+#'
+#' Extracts an sf object from a lazy-load list structure (with path/object/loaded
+#' fields) or returns the object directly if it is already an sf object.
+#'
+#' @param layers A nemeton_layers object.
+#' @param name Character. Name of the vector layer to resolve.
+#' @return An sf object or NULL if the layer is not available.
+#' @keywords internal
+#' @noRd
+resolve_vector_layer <- function(layers, name) {
+  if (!inherits(layers, "nemeton_layers")) return(NULL)
+  if (!name %in% names(layers$vectors)) return(NULL)
+
+  entry <- layers$vectors[[name]]
+  if (is.null(entry)) return(NULL)
+
+  # Already an sf object
+  if (inherits(entry, "sf")) return(entry)
+
+  # Lazy-load list: check for object first, then load from path
+  if (is.list(entry)) {
+    obj <- entry$object
+    if (!is.null(obj) && inherits(obj, "sf")) return(obj)
+    path <- entry$path
+    if (!is.null(path) && nzchar(path) && file.exists(path)) {
+      return(sf::st_read(path, quiet = TRUE))
+    }
+  }
+
+  NULL
+}
+
 #' Get best available DEM raster from layers
 #'
 #' Returns the LiDAR HD MNT (1m resolution) if available, otherwise falls back
@@ -431,12 +499,9 @@ as_pure_sf <- function(x) {
 get_dem_raster <- function(layers) {
   if (!inherits(layers, "nemeton_layers")) return(NULL)
   # Prefer LiDAR HD MNT (1m) over BD ALTI DEM (25m)
-  dem <- layers$rasters[["lidar_mnt"]]
-  if (is.null(dem) || !inherits(dem, "SpatRaster")) {
-    dem <- layers$rasters[["dem"]]
-  }
-  if (!is.null(dem) && !inherits(dem, "SpatRaster")) {
-    return(NULL)
+  dem <- resolve_raster_layer(layers, "lidar_mnt")
+  if (is.null(dem)) {
+    dem <- resolve_raster_layer(layers, "dem")
   }
   dem
 }

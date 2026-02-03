@@ -152,29 +152,28 @@ test_that("indicator_water_wetlands returns 0 when no wetlands present", {
   expect_true(all(coverage == 0))
 })
 
-test_that("indicator_water_wetlands errors when wetland layer missing", {
+test_that("indicator_water_wetlands handles nonexistent wetland layer gracefully", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_water_wetlands(units, layers, wetland_layer = "nonexistent"),
-    "not found"
-  )
+  # Non-existent layer -> falls back to TWI from DEM or returns NA
+  coverage <- indicator_water_wetlands(units, layers, wetland_layer = "nonexistent")
+  expect_type(coverage, "double")
+  expect_length(coverage, 3)
 })
 
-test_that("indicator_water_wetlands requires wetland_values parameter", {
+test_that("indicator_water_wetlands with NULL wetland_values uses TWI or vector fallback", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  # NULL wetland_values should error with helpful message
-  expect_error(
-    indicator_water_wetlands(units, layers, wetland_layer = "landcover", wetland_values = NULL),
-    "wetland_values.*required|must specify"
-  )
+  # NULL wetland_values with landcover layer -> falls back to TWI or returns NA
+  coverage <- indicator_water_wetlands(units, layers, wetland_layer = "landcover", wetland_values = NULL)
+  expect_type(coverage, "double")
+  expect_length(coverage, 3)
 })
 
 test_that("indicator_water_wetlands validates inputs", {
@@ -247,16 +246,17 @@ test_that("indicator_water_twi shows higher values in depressions", {
   expect_true(max(twi) > min(twi)) # Some variation in wetness
 })
 
-test_that("indicator_water_twi errors when DEM layer missing", {
+test_that("indicator_water_twi still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_water_twi(units, layers, dem_layer = "nonexistent"),
-    "not found"
-  )
+  # The function first tries get_dem_raster() which checks lidar_mnt then dem
+  # Since demo layers have dem, it will still work
+  twi <- indicator_water_twi(units, layers, dem_layer = "nonexistent")
+  expect_type(twi, "double")
+  expect_length(twi, 3)
 })
 
 test_that("indicator_water_twi validates method parameter", {

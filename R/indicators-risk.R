@@ -95,8 +95,9 @@ indicator_risk_fire <- function(units,
     species_factor <- get_species_flammability(species)
   } else {
     # Fallback: use NDVI. Low NDVI = dry vegetation = higher flammability
-    if (!is.null(layers) && "ndvi" %in% names(layers$rasters)) {
-      ndvi_mean <- exactextractr::exact_extract(layers$rasters[["ndvi"]],
+    ndvi_raster_r1 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
+    if (!is.null(ndvi_raster_r1)) {
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster_r1,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       # Low NDVI = dry = flammable. Invert: NDVI 0.2->80, NDVI 0.8->20
       species_factor <- pmax(0, pmin(100, 100 - ndvi_mean * 100))
@@ -208,9 +209,10 @@ indicator_risk_storm <- function(units,
   weights <- weights / sum(weights)
 
   # Component 1: Height factor (prefer LiDAR MNH, then field, then NDVI)
-  if (!is.null(layers) && "lidar_mnh" %in% names(layers$rasters)) {
+  mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
+  if (!is.null(mnh_raster)) {
     cli::cli_alert_info("R2: Using LiDAR MNH for canopy height")
-    mnh_mean <- exactextractr::exact_extract(layers$rasters[["lidar_mnh"]],
+    mnh_mean <- exactextractr::exact_extract(mnh_raster,
       as_pure_sf(units), fun = "mean", progress = FALSE)
     height_factor <- pmin(pmax((mnh_mean - 10) / 25, 0), 1) * 100
   } else if (height_field %in% names(units)) {
@@ -218,8 +220,9 @@ indicator_risk_storm <- function(units,
     height_factor <- pmin(pmax((height_values - 10) / 25, 0), 1) * 100
   } else {
     # Proxy: use NDVI as proxy for canopy height
-    if (!is.null(layers) && "ndvi" %in% names(layers$rasters)) {
-      ndvi_mean <- exactextractr::exact_extract(layers$rasters[["ndvi"]],
+    ndvi_r2 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
+    if (!is.null(ndvi_r2)) {
+      ndvi_mean <- exactextractr::exact_extract(ndvi_r2,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       height_factor <- pmin(pmax(ndvi_mean / 0.8, 0), 1) * 100
     } else {

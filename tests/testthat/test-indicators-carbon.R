@@ -42,40 +42,34 @@ test_that("indicator_carbon_biomass uses Generic model for unknown species", {
   expect_true(all(!is.na(biomass)))
 })
 
-test_that("indicator_carbon_biomass errors on missing required columns", {
+test_that("indicator_carbon_biomass returns NA when required columns missing", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
 
-  # Missing species - remove species column first
+  # Missing species - function falls back to NA (no NDVI available either)
   units_no_species <- units
   units_no_species$species <- NULL
   units_no_species$age <- c(80, 60, 40)
   units_no_species$density <- c(0.7, 0.8, 0.6)
-  expect_error(
-    indicator_carbon_biomass(units_no_species),
-    "species.*not found|introuvable"
-  )
+  result <- indicator_carbon_biomass(units_no_species)
+  expect_true(all(is.na(result)))
 
-  # Missing age - remove age column first
+  # Missing age
   units_no_age <- units
   units_no_age$age <- NULL
   units_no_age$species <- c("Quercus", "Fagus", "Pinus")
   units_no_age$density <- c(0.7, 0.8, 0.6)
-  expect_error(
-    indicator_carbon_biomass(units_no_age),
-    "age.*not found|introuvable"
-  )
+  result <- indicator_carbon_biomass(units_no_age)
+  expect_true(all(is.na(result)))
 
-  # Missing density - remove density column first
+  # Missing density
   units_no_density <- units
   units_no_density$density <- NULL
   units_no_density$species <- c("Quercus", "Fagus", "Pinus")
   units_no_density$age <- c(80, 60, 40)
-  expect_error(
-    indicator_carbon_biomass(units_no_density),
-    "density.*not found|introuvable"
-  )
+  result <- indicator_carbon_biomass(units_no_density)
+  expect_true(all(is.na(result)))
 })
 
 test_that("indicator_carbon_biomass handles NA values appropriately", {

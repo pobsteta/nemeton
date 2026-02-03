@@ -106,16 +106,15 @@ test_that("indicator_risk_storm handles missing attributes with defaults", {
 
   dem <- terra::rast(test_path("fixtures/climate/dem_demo.tif"))
 
-  # Remove height and density columns to test error handling
+  # Remove height and density columns - should use default neutral values
   units_no_height <- units
   units_no_height$height <- NULL
   units_no_height$density <- NULL
 
-  # Missing height/density attributes should error
-  expect_error(
-    indicator_risk_storm(units_no_height, dem = dem),
-    "height|hauteur" # Should error mentioning missing height field
-  )
+  result <- indicator_risk_storm(units_no_height, dem = dem)
+  expect_s3_class(result, "sf")
+  expect_true("R2" %in% names(result))
+  expect_true(all(result$R2 >= 0 & result$R2 <= 100, na.rm = TRUE))
 })
 
 # ==============================================================================
@@ -302,14 +301,15 @@ test_that("indicator_risk_browsing calculates palatability correctly", {
   expect_true(result$R4_palatability[4] < result$R4_palatability[1])  # Spruce < Oak
 })
 
-test_that("indicator_risk_browsing handles missing species field", {
+test_that("indicator_risk_browsing handles missing species field gracefully", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_risk_browsing(units, species_field = "nonexistent_column"),
-    "not found"
-  )
+  # Missing species field -> uses default moderate palatability
+  result <- indicator_risk_browsing(units, species_field = "nonexistent_column")
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
 })
 
 test_that("indicator_risk_browsing uses custom weights", {

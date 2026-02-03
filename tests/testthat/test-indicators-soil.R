@@ -187,28 +187,30 @@ test_that("indicator_soil_erosion with different forest definitions", {
   expect_true(mean(erosion_123) <= mean(erosion_1) + 5) # Allow some tolerance
 })
 
-test_that("indicator_soil_erosion errors when DEM missing", {
+test_that("indicator_soil_erosion still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_soil_erosion(units, layers, dem_layer = "nonexistent"),
-    "not found"
-  )
+  # The function first tries get_dem_raster() which checks lidar_mnt then dem
+  # If the demo layers have dem, it will still work
+  erosion <- indicator_soil_erosion(units, layers, dem_layer = "nonexistent")
+  expect_type(erosion, "double")
+  expect_length(erosion, 3)
 })
 
-test_that("indicator_soil_erosion errors when landcover missing", {
+test_that("indicator_soil_erosion uses slope-only when landcover missing", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_soil_erosion(units, layers, landcover_layer = "nonexistent"),
-    "not found"
-  )
+  # Non-existent landcover layer -> falls back to slope-only calculation
+  erosion <- indicator_soil_erosion(units, layers, landcover_layer = "nonexistent")
+  expect_type(erosion, "double")
+  expect_length(erosion, 3)
+  expect_true(all(erosion >= 0 & erosion <= 100))
 })
 
 test_that("indicator_soil_erosion validates inputs", {

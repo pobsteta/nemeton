@@ -226,14 +226,15 @@ test_that("indicator_biodiversity_protection validates input", {
   )
 })
 
-test_that("indicator_biodiversity_protection errors when source='local' and no protected_areas", {
+test_that("indicator_biodiversity_protection returns 0 when source='local' and no protected_areas", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicator_biodiversity_protection(units, protected_areas = NULL, source = "local"),
-    "must be provided"
-  )
+  # No protected areas data -> graceful degradation to 0% coverage
+  result <- indicator_biodiversity_protection(units, protected_areas = NULL, source = "local")
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+  expect_true(all(result$B1 == 0))
 })
 
 test_that("indicator_biodiversity_protection handles WFS source with fallback", {
@@ -287,19 +288,19 @@ test_that("indicator_biodiversity_structure validates input", {
   )
 })
 
-test_that("indicator_biodiversity_structure errors when required fields missing", {
+test_that("indicator_biodiversity_structure returns NA when required fields missing", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  # Missing strata/age fields should error
-  expect_error(
-    indicator_biodiversity_structure(
-      units,
-      strata_field = "nonexistent_field",
-      age_class_field = "nonexistent_field"
-    ),
-    "not found"
+  # Missing strata/age fields should return NA (graceful degradation)
+  result <- indicator_biodiversity_structure(
+    units,
+    strata_field = "nonexistent_field",
+    age_class_field = "nonexistent_field"
   )
+  expect_s3_class(result, "sf")
+  expect_true("B2" %in% names(result))
+  expect_true(all(is.na(result$B2)))
 })
 
 test_that("indicator_biodiversity_structure uses species field when provided", {
