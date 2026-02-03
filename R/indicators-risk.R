@@ -19,6 +19,8 @@ NULL
 #'
 #' @param units An sf object with forest parcels.
 #' @param dem A SpatRaster with digital elevation model (meters).
+#' @param layers A nemeton_layers object. Used to extract DEM and NDVI if
+#'   \code{dem} is NULL.
 #' @param species_field Character. Column name with species names.
 #' @param climate List with 'temperature' and 'precipitation' SpatRasters, or NULL.
 #' @param weights Named numeric vector. Weights for components:
@@ -148,6 +150,8 @@ indicator_risk_fire <- function(units,
 #'
 #' @param units An sf object with forest parcels.
 #' @param dem A SpatRaster with digital elevation model (meters).
+#' @param layers A nemeton_layers object. Used to extract DEM and LiDAR MNH
+#'   if \code{dem} is NULL.
 #' @param height_field Character. Column name with stand height (meters).
 #' @param density_field Character. Column name with stand density (0-1 scale).
 #' @param weights Named numeric vector. Weights for components:
@@ -264,6 +268,8 @@ indicator_risk_storm <- function(units,
 #' precipitation deficit, and species sensitivity.
 #'
 #' @param units An sf object with forest parcels.
+#' @param layers A nemeton_layers object. Used to extract DEM for TWI
+#'   computation when \code{twi_field} is not present in \code{units}.
 #' @param twi_field Character. Column name with Topographic Wetness Index (TWI).
 #'   Can reuse W3 from v0.2.0.
 #' @param climate List with 'precipitation' SpatRaster, or NULL.

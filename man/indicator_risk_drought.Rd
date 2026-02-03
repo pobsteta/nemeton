@@ -6,6 +6,7 @@
 \usage{
 indicator_risk_drought(
   units,
+  layers = NULL,
   twi_field = "W3",
   climate = NULL,
   species_field = "species",
@@ -14,6 +15,9 @@ indicator_risk_drought(
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
+
+\item{layers}{A nemeton_layers object. Used to extract DEM for TWI
+computation when \code{twi_field} is not present in \code{units}.}
 
 \item{twi_field}{Character. Column name with Topographic Wetness Index (TWI).
 Can reuse W3 from v0.2.0.}

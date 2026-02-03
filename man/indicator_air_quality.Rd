@@ -6,6 +6,7 @@
 \usage{
 indicator_air_quality(
   units,
+  layers = NULL,
   atmo_data = NULL,
   roads = NULL,
   urban_areas = NULL,
@@ -14,6 +15,9 @@ indicator_air_quality(
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
+
+\item{layers}{A nemeton_layers object. If provided, roads are extracted
+from the "roads" vector layer when the `roads` parameter is NULL.}
 
 \item{atmo_data}{An sf object with ATMO air quality stations (points).
 Must contain columns: NO2 (µg/m³), PM10 (µg/m³). Can be NULL.}

@@ -156,7 +156,7 @@ mod_search_server <- function(id, app_state) {
     })
 
     # ExtendedTask: fetch communes + commune geometry for project restore.
-    # By fetching geometry here (instead of relying on input$commune →
+    # By fetching geometry here (instead of relying on input$commune ->
     # commune_task chain), we eliminate the fragile 4-step async chain
     # and set commune_geometry directly in the result handler.
     restore_task <- shiny::ExtendedTask$new(function(dept_code, commune_code) {
@@ -318,7 +318,7 @@ mod_search_server <- function(id, app_state) {
       }
 
       # During restore, geometry + selected_commune are set directly by
-      # restore_task result handler — skip redundant commune_task call.
+      # restore_task result handler -- skip redundant commune_task call.
       # Delay clearing is_restoring so the department observer
       # (triggered by the updateSelectInput roundtrip that hasn't arrived
       # yet) still sees is_restoring = TRUE and skips dept_task$invoke().
@@ -356,7 +356,7 @@ mod_search_server <- function(id, app_state) {
       )
 
       if (!is.null(result) && !is.null(result$geometry)) {
-        # Signal that commune is transitioning — prevents the combined observer
+        # Signal that commune is transitioning -- prevents the combined observer
         # in mod_map from rendering stale parcels with the new geometry during
         # the flush cycle (observer execution order is non-deterministic).
         app_state$commune_transitioning <- TRUE
@@ -398,7 +398,7 @@ mod_search_server <- function(id, app_state) {
       # Without this, the combined observer in mod_map fires with new
       # parcels (set by load_project handler) + OLD geometry, rendering
       # everything prematurely. When restore_task completes and sets the
-      # correct geometry, the combined observer fires AGAIN — clearGroup
+      # correct geometry, the combined observer fires AGAIN -- clearGroup
       # wipes the map (white flash) then re-renders. By nullifying the
       # geometry here, the combined observer sees NULL geometry on its
       # first firing and returns early (line 330), avoiding the double-
@@ -415,7 +415,7 @@ mod_search_server <- function(id, app_state) {
 
       # Fetch communes asynchronously via ExtendedTask.
       # If the task is already running (rapid project switching), invoke()
-      # throws. Don't clear flags — the running task's result handler will
+      # throws. Don't clear flags -- the running task's result handler will
       # detect the generation mismatch and re-invoke for the current project.
       tryCatch(
         restore_task$invoke(dept_code, commune_code),
@@ -444,7 +444,7 @@ mod_search_server <- function(id, app_state) {
         # Only clear if this is still the same restore generation
         if (shiny::isolate(rv$restore_gen) != gen_snapshot) return()
         if (isTRUE(shiny::isolate(rv$is_restoring))) {
-          cli::cli_warn("Restore safety timeout (gen={gen_snapshot}) — clearing stale flags")
+          cli::cli_warn("Restore safety timeout (gen={gen_snapshot}) -- clearing stale flags")
           rv$is_restoring <- FALSE
         }
         if (isTRUE(shiny::isolate(app_state$restore_in_progress))) {
@@ -462,18 +462,18 @@ mod_search_server <- function(id, app_state) {
     # never executes. This left flags stuck and the spinner spinning forever.
     #
     # With observe(), we catch the error ourselves and handle it properly.
-    # - "shiny.silent.error" (from req()) = task not ready → re-raise to suspend
-    # - Regular error = task failed → handle and clear flags
-    # - Normal value = task succeeded → process result
+    # - "shiny.silent.error" (from req()) = task not ready -> re-raise to suspend
+    # - Regular error = task failed -> handle and clear flags
+    # - Normal value = task succeeded -> process result
     shiny::observe({
       result <- tryCatch(
         restore_task$result(),
         error = function(e) {
           if (inherits(e, "shiny.silent.error")) {
-            # Task not yet invoked or still running — re-raise to suspend
+            # Task not yet invoked or still running -- re-raise to suspend
             stop(e)
           }
-          # Task error — return error object for handling below
+          # Task error -- return error object for handling below
           e
         }
       )
@@ -517,8 +517,8 @@ mod_search_server <- function(id, app_state) {
       communes <- result$communes
       commune_code <- result$commune_code
 
-      # Set commune geometry and selection DIRECTLY — no need to go
-      # through input$commune → commune_task chain. This makes
+      # Set commune geometry and selection DIRECTLY -- no need to go
+      # through input$commune -> commune_task chain. This makes
       # commune_geometry() available immediately for the combined
       # observer in mod_map (together with parcels_data set earlier).
       if (!is.null(result$geometry)) {
@@ -532,7 +532,7 @@ mod_search_server <- function(id, app_state) {
           }
         }
       } else {
-        # Geometry fetch failed — clear flags so spinner doesn't spin forever
+        # Geometry fetch failed -- clear flags so spinner doesn't spin forever
         cli::cli_warn("Restore: commune geometry is NULL for {commune_code}")
         rv$is_restoring <- FALSE
         later::later(function() {
@@ -545,7 +545,7 @@ mod_search_server <- function(id, app_state) {
         choices <- format_communes_for_selectize(communes)
         cli::cli_alert_info("Updating commune dropdown with {nrow(communes)} choices")
 
-        # Update dropdown (for display only — geometry already set above)
+        # Update dropdown (for display only -- geometry already set above)
         shiny::updateSelectizeInput(
           session,
           "commune",

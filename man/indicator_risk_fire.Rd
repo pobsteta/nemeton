@@ -6,7 +6,8 @@
 \usage{
 indicator_risk_fire(
   units,
-  dem,
+  dem = NULL,
+  layers = NULL,
   species_field = "species",
   climate = NULL,
   weights = c(slope = 1/3, species = 1/3, climate = 1/3)
@@ -16,6 +17,9 @@ indicator_risk_fire(
 \item{units}{An sf object with forest parcels.}
 
 \item{dem}{A SpatRaster with digital elevation model (meters).}
+
+\item{layers}{A nemeton_layers object. Used to extract DEM and NDVI if
+\code{dem} is NULL.}
 
 \item{species_field}{Character. Column name with species names.}
 

@@ -6,6 +6,7 @@
 \usage{
 indicator_biodiversity_structure(
   units,
+  layers = NULL,
   strata_field = "strata",
   age_class_field = "age_class",
   species_field = NULL,
@@ -16,6 +17,9 @@ indicator_biodiversity_structure(
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
+
+\item{layers}{A nemeton_layers object. Used as fallback for structural
+diversity estimation via LiDAR MNH or NDVI when strata/age fields are missing.}
 
 \item{strata_field}{Character. Column name containing canopy strata classes
 (e.g., "Emergent", "Dominant", "Intermediate", "Suppressed").}

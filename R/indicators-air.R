@@ -139,6 +139,8 @@ indicator_air_coverage <- function(units,
 #' or proxy method based on distance to pollution sources (roads, urban areas).
 #'
 #' @param units An sf object with forest parcels.
+#' @param layers A nemeton_layers object. If provided, roads are extracted
+#'   from the "roads" vector layer when the `roads` parameter is NULL.
 #' @param atmo_data An sf object with ATMO air quality stations (points).
 #'   Must contain columns: NO2 (µg/m³), PM10 (µg/m³). Can be NULL.
 #' @param roads An sf object with road network (lines). Used for proxy method.

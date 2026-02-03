@@ -147,6 +147,8 @@ indicator_biodiversity_protection <- function(units,
 #' to canopy strata and age class distributions.
 #'
 #' @param units An sf object with forest parcels.
+#' @param layers A nemeton_layers object. Used as fallback for structural
+#'   diversity estimation via LiDAR MNH or NDVI when strata/age fields are missing.
 #' @param strata_field Character. Column name containing canopy strata classes
 #'   (e.g., "Emergent", "Dominant", "Intermediate", "Suppressed").
 #' @param age_class_field Character. Column name containing age classes

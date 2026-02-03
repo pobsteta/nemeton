@@ -6,7 +6,8 @@
 \usage{
 indicator_risk_storm(
   units,
-  dem,
+  dem = NULL,
+  layers = NULL,
   height_field = "height",
   density_field = "density",
   weights = c(height = 1/3, density = 1/3, exposure = 1/3)
@@ -16,6 +17,9 @@ indicator_risk_storm(
 \item{units}{An sf object with forest parcels.}
 
 \item{dem}{A SpatRaster with digital elevation model (meters).}
+
+\item{layers}{A nemeton_layers object. Used to extract DEM and LiDAR MNH
+if \code{dem} is NULL.}
 
 \item{height_field}{Character. Column name with stand height (meters).}
 
