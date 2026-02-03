@@ -185,12 +185,18 @@ indicator_air_coverage <- function(units,
 #' result <- indicator_air_quality(units, roads = roads, urban_areas = urban, method = "proxy")
 #' }
 indicator_air_quality <- function(units,
+                                  layers = NULL,
                                   atmo_data = NULL,
                                   roads = NULL,
                                   urban_areas = NULL,
                                   method = "auto") {
   # Validate inputs
   validate_sf(units)
+
+  # Extract roads from layers if not provided directly
+  if (is.null(roads) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
+    roads <- layers$vectors[["roads"]]
+  }
 
   # Auto-detect method
   if (method == "auto") {
@@ -199,7 +205,11 @@ indicator_air_quality <- function(units,
     } else if (!is.null(roads) || !is.null(urban_areas)) {
       method <- "proxy"
     } else {
-      stop("Either atmo_data or roads/urban_areas must be provided", call. = FALSE)
+      # No data available at all - return neutral score
+      cli::cli_alert_warning("A2: No ATMO data or roads available, returning neutral score")
+      units$A2 <- rep(50, nrow(units))
+      units$A2_method <- "none"
+      return(units)
     }
   }
 

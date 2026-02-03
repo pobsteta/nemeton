@@ -1515,33 +1515,66 @@ compute_single_indicator <- function(indicator, parcels, layers) {
       args$layers <- layers
     }
 
-    # Extract specific layers the function might need
-    if ("dem" %in% func_args && !is.null(layers$dem)) {
-      args$dem <- layers$dem
+    # Extract specific layers from nemeton_layers structure
+    # Rasters are in layers$rasters, vectors in layers$vectors
+    if ("dem" %in% func_args) {
+      dem <- layers$rasters[["dem"]]
+      if (!is.null(dem)) args$dem <- dem
     }
-    if ("ndvi" %in% func_args && !is.null(layers$ndvi)) {
-      args$ndvi <- layers$ndvi
+    if ("ndvi" %in% func_args) {
+      ndvi <- layers$rasters[["ndvi"]]
+      if (!is.null(ndvi)) args$ndvi <- ndvi
     }
-    if ("landcover" %in% func_args && !is.null(layers$landcover)) {
-      args$landcover <- layers$landcover
+    if ("land_cover" %in% func_args) {
+      lc <- layers$rasters[["forest_cover"]]
+      if (!is.null(lc)) args$land_cover <- lc
     }
-    if ("protected_areas" %in% func_args && !is.null(layers$protected_areas)) {
-      args$protected_areas <- layers$protected_areas
+    if ("protected_areas" %in% func_args) {
+      pa <- layers$vectors[["protected_areas"]]
+      if (!is.null(pa)) args$protected_areas <- pa
     }
-    if ("watercourses" %in% func_args && !is.null(layers$watercourses)) {
-      args$watercourses <- layers$watercourses
-    }
-    if ("wetlands" %in% func_args && !is.null(layers$wetlands)) {
-      args$wetlands <- layers$wetlands
+    if ("roads" %in% func_args) {
+      roads <- layers$vectors[["roads"]]
+      if (!is.null(roads)) args$roads <- roads
     }
 
     # Call function with appropriate arguments
     result <- do.call(func, args)
 
     # Extract the indicator value from result
-    # Some functions return the units with the indicator added
+    # Some functions return the units sf with the indicator added as a column
     if (inherits(result, "sf") || inherits(result, "data.frame")) {
-      # Look for the indicator column
+      # Map indicator names to the column names used by each function
+      col_map <- c(
+        "biodiversity_protection" = "B1",
+        "biodiversity_structure" = "B2",
+        "biodiversity_connectivity" = "B3",
+        "air_forest_buffer" = "A1",
+        "air_quality" = "A2",
+        "temporal_change" = "T2_norm",
+        "risk_fire" = "R1",
+        "risk_storm" = "R2",
+        "risk_drought" = "R3",
+        "risk_browsing" = "R4",
+        "naturalness_distance" = "N1",
+        "naturalness_continuity" = "N2",
+        "naturalness_score" = "N3",
+        "social_trails" = "S1",
+        "social_accessibility" = "S2",
+        "social_population" = "S3",
+        "energy_wood" = "E1",
+        "energy_co2" = "E2"
+      )
+
+      # Try mapped column name first
+      if (indicator %in% names(col_map)) {
+        mapped_col <- col_map[[indicator]]
+        if (mapped_col %in% names(result)) {
+          return(result[[mapped_col]])
+        }
+      }
+
+      # Look for the indicator column by name
       indicator_col <- intersect(
         c(indicator, toupper(indicator), paste0("indicator_", indicator)),
         names(result)
@@ -1550,7 +1583,12 @@ compute_single_indicator <- function(indicator, parcels, layers) {
         return(result[[indicator_col[1]]])
       }
       # Try common column patterns (B1, C1, etc.)
-      pattern_cols <- grep("^[A-Z][0-9]$", names(result), value = TRUE)
+      pattern_cols <- grep("^[A-Z][0-9](_norm)?$", names(result), value = TRUE)
+      # Exclude columns that existed before computation (from parcels)
+      new_cols <- setdiff(pattern_cols, names(parcels))
+      if (length(new_cols) > 0) {
+        return(result[[new_cols[1]]])
+      }
       if (length(pattern_cols) > 0) {
         return(result[[pattern_cols[1]]])
       }

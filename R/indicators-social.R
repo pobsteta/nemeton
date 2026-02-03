@@ -79,9 +79,10 @@ indicator_social_trails <- function(units,
   # Check dependencies
   if (method == "osm") {
     if (!requireNamespace("osmdata", quietly = TRUE)) {
-      stop("Package 'osmdata' required for method='osm'. Install with: install.packages('osmdata')",
-        call. = FALSE
-      )
+      cli::cli_alert_warning("S1: osmdata package not available, returning 0")
+      result <- units
+      result[[column_name]] <- rep(0, nrow(units))
+      return(result)
     }
   }
 

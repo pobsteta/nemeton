@@ -80,7 +80,20 @@ indicator_temporal_age <- function(units,
     establishment_years <- units[[establishment_year_field]]
     age_values <- current_year - establishment_years
   } else {
-    stop("Either age_field or establishment_year_field must be provided and exist in units", call. = FALSE)
+    # Fallback: estimate stand maturity from NDVI
+    # Higher NDVI typically correlates with more mature forests
+    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+        "ndvi" %in% names(layers$rasters)) {
+      cli::cli_alert_info("T1: No age data; estimating maturity from NDVI")
+      ndvi_raster <- layers$rasters[["ndvi"]]
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      # NDVI 0.2 ~ young (20yr), NDVI 0.8 ~ mature (120yr)
+      age_values <- 20 + pmax(0, ndvi_mean - 0.2) / 0.6 * 100
+    } else {
+      cli::cli_alert_warning("T1: No age or NDVI data, returning NA")
+      return(rep(NA_real_, nrow(units)))
+    }
   }
 
   # Normalize with log scale (ancient forests score high)
@@ -164,15 +177,29 @@ indicator_temporal_change <- function(units,
   # Validate inputs
   validate_sf(units)
 
-  if (!inherits(land_cover_early, "SpatRaster")) {
-    stop("land_cover_early must be a SpatRaster object", call. = FALSE)
+  # If no multi-date land cover available, estimate stability from current data
+  if (is.null(land_cover_early) || !inherits(land_cover_early, "SpatRaster") ||
+      is.null(land_cover_late) || !inherits(land_cover_late, "SpatRaster")) {
+    # Fallback: assume forested areas are stable (high stability score)
+    # Use NDVI as proxy - high NDVI = established forest = likely stable
+    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+        "ndvi" %in% names(layers$rasters)) {
+      cli::cli_alert_info("T2: No multi-date rasters; estimating stability from NDVI")
+      ndvi_raster <- layers$rasters[["ndvi"]]
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      # High NDVI = likely stable forest = high stability score
+      units$T2 <- rep(0, nrow(units))  # Assume 0% change rate
+      units$T2_norm <- pmin(pmax(ndvi_mean / 0.8, 0), 1) * 100
+      return(units)
+    }
+    cli::cli_alert_warning("T2: No land cover data available for change detection")
+    units$T2 <- rep(NA_real_, nrow(units))
+    units$T2_norm <- rep(NA_real_, nrow(units))
+    return(units)
   }
 
-  if (!inherits(land_cover_late, "SpatRaster")) {
-    stop("land_cover_late must be a SpatRaster object", call. = FALSE)
-  }
-
-  if (years_elapsed <= 0) {
+  if (is.null(years_elapsed) || years_elapsed <= 0) {
     stop("years_elapsed must be positive", call. = FALSE)
   }
 
