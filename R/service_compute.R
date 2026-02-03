@@ -15,6 +15,29 @@ NULL
 #' List of data sources required for indicator calculations.
 #'
 #' @noRd
+
+#' Get global shared cache directory
+#'
+#' @description
+#' Returns the path to a global cache directory shared across all projects.
+#' Used for large datasets like OSO (~6 GB) that should not be duplicated
+#' per project.
+#'
+#' @return Character. Path to the global cache directory.
+#' @noRd
+get_global_cache_dir <- function() {
+  if (requireNamespace("rappdirs", quietly = TRUE)) {
+    base_dir <- rappdirs::user_data_dir("nemeton", "nemeton")
+  } else {
+    base_dir <- file.path(Sys.getenv("HOME"), ".nemeton")
+  }
+  cache_dir <- file.path(base_dir, "cache")
+  if (!dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE)
+  }
+  cache_dir
+}
+
 DATA_SOURCES <- list(
   # Raster sources
   rasters = list(
@@ -488,6 +511,7 @@ download_layers_for_parcels <- function(parcels,
         rasters[[source_name]] <- raster_data
       } else if (source_name == "forest_cover") {
         # Special warning for OSO download failure
+        global_oso_dir <- file.path(get_global_cache_dir(), "oso")
         download_warnings <- c(download_warnings, list(list(
           type = "warning",
           source = "OSO",
@@ -495,7 +519,7 @@ download_layers_for_parcels <- function(parcels,
             "Le t\u00e9l\u00e9chargement OSO a \u00e9chou\u00e9 (fichier de 6 Go). ",
             "T\u00e9l\u00e9chargez manuellement depuis: ",
             "https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7 ",
-            "et placez oso.tif dans: ", cache_dir
+            "et placez oso.tif dans: ", global_oso_dir
           ),
           time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
         )))
@@ -503,13 +527,15 @@ download_layers_for_parcels <- function(parcels,
     }, error = function(e) {
       cli::cli_warn("Failed to download {source$name}: {e$message}")
       if (source_name == "forest_cover") {
+        global_oso_dir <- file.path(get_global_cache_dir(), "oso")
         download_warnings <<- c(download_warnings, list(list(
           type = "warning",
           source = "OSO",
           message = paste0(
             "Le t\u00e9l\u00e9chargement OSO a \u00e9chou\u00e9: ", e$message, ". ",
             "T\u00e9l\u00e9chargez manuellement depuis: ",
-            "https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7"
+            "https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7 ",
+            "et placez oso.tif dans: ", global_oso_dir
           ),
           time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
         )))
@@ -950,182 +976,200 @@ download_oso <- function(bbox, cache_file, progress_callback = NULL) {
 
   cli::cli_alert_info("Downloading OSO land cover (Theia/CESBIO)...")
 
-  # OSO cache directory
-  oso_cache <- dirname(cache_file)
-  oso_path <- file.path(oso_cache, "oso.tif")
+  # ---- Global cache: full oso.tif shared across all projects ----
+  global_cache <- file.path(get_global_cache_dir(), "oso")
+  if (!dir.exists(global_cache)) {
+    dir.create(global_cache, recursive = TRUE)
+  }
+  oso_path <- file.path(global_cache, "oso.tif")
 
   tryCatch({
-    # Check if full OSO file already exists
+    # Download & extract OSO to global cache if not already there
     if (!file.exists(oso_path)) {
-      cli::cli_alert_info("Downloading OSO from Recherche Data Gouv...")
-      oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
-
-      # Check for existing archive
-      oso_tar_files <- list.files(oso_cache, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
-      if (length(oso_tar_files) > 0) {
-        oso_tar <- oso_tar_files[1]
-      } else {
-        oso_tar <- file.path(oso_cache, "OSO_RASTER.tar.gz")
-      }
-
-      oso_expected_size <- 5e9
-
-      # Download if needed
-      need_download <- TRUE
-      if (file.exists(oso_tar)) {
-        existing_size <- file.info(oso_tar)$size
-        if (existing_size >= oso_expected_size) {
-          cli::cli_alert_info("Using existing OSO archive ({round(existing_size/1e9, 1)} GB)")
-          need_download <- FALSE
-        }
-      }
-
-      if (need_download) {
-        cli::cli_alert_info("Downloading OSO (~6 GB, this may take a while)...")
-
-        # Increase timeout for large file download (1 hour)
-        old_timeout <- getOption("timeout")
-        options(timeout = 3600)
-        on.exit(options(timeout = old_timeout), add = TRUE)
-
-        # Use curl for download with progress tracking
-        download_result <- tryCatch({
-          # Create curl handle with follow redirects and long timeout
-          h <- curl::new_handle()
-          curl::handle_setopt(h,
-            followlocation = TRUE,
-            timeout = 3600,
-            low_speed_limit = 1000,
-            low_speed_time = 300
-          )
-
-          # Track progress for UI feedback
-          last_report_time <- Sys.time()
-          con <- curl::curl(oso_url, handle = h, open = "rb")
-          on.exit(try(close(con), silent = TRUE), add = TRUE)
-          out <- file(oso_tar, open = "wb")
-          on.exit(try(close(out), silent = TRUE), add = TRUE)
-
-          total_size <- oso_expected_size  # ~5.6 GB
-          downloaded <- 0
-          chunk_size <- 1024 * 1024  # 1 MB chunks
-
-          while (TRUE) {
-            buf <- readBin(con, raw(), n = chunk_size)
-            if (length(buf) == 0) break
-            writeBin(buf, out)
-            downloaded <- downloaded + length(buf)
-
-            # Report progress every 2 seconds (avoid flooding)
-            now <- Sys.time()
-            if (!is.null(progress_callback) &&
-                as.numeric(difftime(now, last_report_time, units = "secs")) >= 2) {
-              last_report_time <- now
-              pct <- min(round(downloaded / total_size * 100), 99)
-              progress_callback(list(
-                current = paste0("download_oso_progress:", pct),
-                download_percent = pct,
-                download_size = downloaded,
-                download_total = total_size
-              ))
-            }
-          }
-          close(out)
-          close(con)
-
-          # Final progress report
-          if (!is.null(progress_callback)) {
-            progress_callback(list(
-              current = "download_oso_progress:100",
-              download_percent = 100,
-              download_size = downloaded,
-              download_total = total_size
-            ))
-          }
-
-          cli::cli_alert_success("OSO downloaded: {round(downloaded/1e9, 1)} GB")
-          TRUE
-        }, error = function(e) {
-          cli::cli_warn("Download failed: {e$message}")
-          FALSE
-        })
-
-        if (!download_result || !file.exists(oso_tar)) {
-          cli::cli_warn("OSO download failed. Please download manually from:")
-          cli::cli_alert("https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7")
-          cli::cli_alert("Extract and place oso.tif in: {oso_cache}")
-          return(NULL)
-        }
-
-        # Verify download size
-        downloaded_size <- file.info(oso_tar)$size
-        if (downloaded_size < oso_expected_size) {
-          cli::cli_warn("Downloaded file smaller than expected ({round(downloaded_size/1e9, 1)} GB < {round(oso_expected_size/1e9, 1)} GB)")
-          cli::cli_alert_info("Download may be incomplete. Please download manually.")
-          return(NULL)
-        }
-      }
-
-      # Extract archive
-      cli::cli_alert_info("Extracting OSO archive...")
-      utils::untar(path.expand(oso_tar), exdir = path.expand(oso_cache), extras = "--touch")
-
-      # Find extracted TIF file
-      tif_files <- list.files(oso_cache, pattern = "^OCS_.*\\.tif$",
-                              recursive = TRUE, full.names = TRUE)
-      if (length(tif_files) > 0) {
-        file.copy(tif_files[1], oso_path)
-        cli::cli_alert_success("OSO extracted to {oso_path}")
-
-        # Cleanup extracted directories and archive
-        oso_dirs <- list.dirs(oso_cache, full.names = TRUE, recursive = FALSE)
-        oso_dirs <- oso_dirs[grepl("^OSO_", basename(oso_dirs))]
-        if (length(oso_dirs) > 0) {
-          unlink(oso_dirs, recursive = TRUE)
-        }
-        if (file.exists(oso_tar)) {
-          file.remove(oso_tar)
-        }
-      } else {
-        cli::cli_warn("Could not find OCS_*.tif in extracted archive")
-        return(NULL)
-      }
+      download_oso_global(oso_path, global_cache, progress_callback)
     }
 
-    # Load and crop OSO to bbox
-    if (file.exists(oso_path)) {
-      cli::cli_alert_info("Cropping OSO to study area...")
-      oso_full <- terra::rast(oso_path)
-
-      # Create bbox extent in OSO CRS
-      bbox_sf <- sf::st_bbox(
-        c(xmin = bbox[1], ymin = bbox[2], xmax = bbox[3], ymax = bbox[4]),
-        crs = sf::st_crs(4326)
-      ) |> sf::st_as_sfc()
-
-      bbox_oso_crs <- sf::st_transform(bbox_sf, terra::crs(oso_full))
-      bbox_ext <- terra::ext(terra::vect(bbox_oso_crs))
-
-      # Crop to study area
-      oso_crop <- terra::crop(oso_full, bbox_ext)
-
-      # Reproject to WGS84
-      oso_wgs84 <- terra::project(oso_crop, "EPSG:4326", method = "near")
-
-      # Save to cache
-      terra::writeRaster(oso_wgs84, cache_file, overwrite = TRUE)
-
-      cli::cli_alert_success("Downloaded and cropped OSO land cover raster")
-      return(terra::rast(cache_file))
-    } else {
+    if (!file.exists(oso_path)) {
       cli::cli_warn("OSO file not found: {oso_path}")
       return(NULL)
     }
 
+    # ---- Project cache: crop to bbox and save per-project ----
+    cli::cli_alert_info("Cropping OSO to study area...")
+    oso_full <- terra::rast(oso_path)
+
+    # Create bbox extent in OSO CRS
+    bbox_sf <- sf::st_bbox(
+      c(xmin = bbox[1], ymin = bbox[2], xmax = bbox[3], ymax = bbox[4]),
+      crs = sf::st_crs(4326)
+    ) |> sf::st_as_sfc()
+
+    bbox_oso_crs <- sf::st_transform(bbox_sf, terra::crs(oso_full))
+    bbox_ext <- terra::ext(terra::vect(bbox_oso_crs))
+
+    # Crop to study area
+    oso_crop <- terra::crop(oso_full, bbox_ext)
+
+    # Reproject to WGS84
+    oso_wgs84 <- terra::project(oso_crop, "EPSG:4326", method = "near")
+
+    # Save cropped raster to project cache
+    terra::writeRaster(oso_wgs84, cache_file, overwrite = TRUE)
+
+    cli::cli_alert_success("Cropped OSO land cover to project area")
+    return(terra::rast(cache_file))
+
   }, error = function(e) {
-    cli::cli_warn("Failed to download OSO: {e$message}")
+    cli::cli_warn("Failed to process OSO: {e$message}")
     NULL
   })
+}
+
+
+#' Download full OSO raster to global shared cache
+#'
+#' @description
+#' Downloads the full OSO raster (~6 GB) to the global shared cache directory.
+#' This file is shared across all projects to avoid re-downloading.
+#'
+#' @param oso_path Character. Destination path for oso.tif.
+#' @param global_cache Character. Global cache directory for temporary files.
+#' @param progress_callback Function. Optional progress callback.
+#'
+#' @return Invisible NULL. Side-effect: creates oso_path if download succeeds.
+#' @noRd
+download_oso_global <- function(oso_path, global_cache, progress_callback = NULL) {
+  cli::cli_alert_info("Downloading OSO from Recherche Data Gouv to global cache...")
+  cli::cli_alert_info("  Global cache: {global_cache}")
+
+  oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
+
+  # Check for existing archive
+  oso_tar_files <- list.files(global_cache, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
+  if (length(oso_tar_files) > 0) {
+    oso_tar <- oso_tar_files[1]
+  } else {
+    oso_tar <- file.path(global_cache, "OSO_RASTER.tar.gz")
+  }
+
+  oso_expected_size <- 5e9
+
+  # Download if needed
+  need_download <- TRUE
+  if (file.exists(oso_tar)) {
+    existing_size <- file.info(oso_tar)$size
+    if (existing_size >= oso_expected_size) {
+      cli::cli_alert_info("Using existing OSO archive ({round(existing_size/1e9, 1)} GB)")
+      need_download <- FALSE
+    }
+  }
+
+  if (need_download) {
+    cli::cli_alert_info("Downloading OSO (~6 GB, this may take a while)...")
+
+    # Increase timeout for large file download (1 hour)
+    old_timeout <- getOption("timeout")
+    options(timeout = 3600)
+    on.exit(options(timeout = old_timeout), add = TRUE)
+
+    # Use curl for download with progress tracking
+    download_result <- tryCatch({
+      h <- curl::new_handle()
+      curl::handle_setopt(h,
+        followlocation = TRUE,
+        timeout = 3600,
+        low_speed_limit = 1000,
+        low_speed_time = 300
+      )
+
+      last_report_time <- Sys.time()
+      con <- curl::curl(oso_url, handle = h, open = "rb")
+      on.exit(try(close(con), silent = TRUE), add = TRUE)
+      out <- file(oso_tar, open = "wb")
+      on.exit(try(close(out), silent = TRUE), add = TRUE)
+
+      total_size <- oso_expected_size
+      downloaded <- 0
+      chunk_size <- 1024 * 1024  # 1 MB chunks
+
+      while (TRUE) {
+        buf <- readBin(con, raw(), n = chunk_size)
+        if (length(buf) == 0) break
+        writeBin(buf, out)
+        downloaded <- downloaded + length(buf)
+
+        now <- Sys.time()
+        if (!is.null(progress_callback) &&
+            as.numeric(difftime(now, last_report_time, units = "secs")) >= 2) {
+          last_report_time <- now
+          pct <- min(round(downloaded / total_size * 100), 99)
+          progress_callback(list(
+            current = paste0("download_oso_progress:", pct),
+            download_percent = pct,
+            download_size = downloaded,
+            download_total = total_size
+          ))
+        }
+      }
+      close(out)
+      close(con)
+
+      if (!is.null(progress_callback)) {
+        progress_callback(list(
+          current = "download_oso_progress:100",
+          download_percent = 100,
+          download_size = downloaded,
+          download_total = total_size
+        ))
+      }
+
+      cli::cli_alert_success("OSO downloaded: {round(downloaded/1e9, 1)} GB")
+      TRUE
+    }, error = function(e) {
+      cli::cli_warn("Download failed: {e$message}")
+      FALSE
+    })
+
+    if (!download_result || !file.exists(oso_tar)) {
+      cli::cli_warn("OSO download failed. Please download manually from:")
+      cli::cli_alert("https://entrepot.recherche.data.gouv.fr/dataset.xhtml?persistentId=doi:10.57745/UZ2NJ7")
+      cli::cli_alert("Extract and place oso.tif in: {global_cache}")
+      return(invisible(NULL))
+    }
+
+    downloaded_size <- file.info(oso_tar)$size
+    if (downloaded_size < oso_expected_size) {
+      cli::cli_warn("Downloaded file smaller than expected ({round(downloaded_size/1e9, 1)} GB < {round(oso_expected_size/1e9, 1)} GB)")
+      cli::cli_alert_info("Download may be incomplete. Please download manually.")
+      return(invisible(NULL))
+    }
+  }
+
+  # Extract archive
+  cli::cli_alert_info("Extracting OSO archive...")
+  utils::untar(path.expand(oso_tar), exdir = path.expand(global_cache), extras = "--touch")
+
+  # Find extracted TIF file
+  tif_files <- list.files(global_cache, pattern = "^OCS_.*\\.tif$",
+                          recursive = TRUE, full.names = TRUE)
+  if (length(tif_files) > 0) {
+    file.copy(tif_files[1], oso_path)
+    cli::cli_alert_success("OSO extracted to global cache: {oso_path}")
+
+    # Cleanup extracted directories and archive
+    oso_dirs <- list.dirs(global_cache, full.names = TRUE, recursive = FALSE)
+    oso_dirs <- oso_dirs[grepl("^OSO_", basename(oso_dirs))]
+    if (length(oso_dirs) > 0) {
+      unlink(oso_dirs, recursive = TRUE)
+    }
+    if (file.exists(oso_tar)) {
+      file.remove(oso_tar)
+    }
+  } else {
+    cli::cli_warn("Could not find OCS_*.tif in extracted archive")
+  }
+
+  invisible(NULL)
 }
 
 
