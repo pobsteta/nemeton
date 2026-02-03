@@ -453,7 +453,7 @@ download_layers_for_parcels <- function(parcels,
 
   # Get bounding box with buffer
   bbox <- sf::st_bbox(parcels)
-  buffer_m <- 1000  # 1km buffer
+  buffer_m <- 200  # 200m buffer
   bbox_buffered <- c(
     xmin = bbox["xmin"] - buffer_m,
     ymin = bbox["ymin"] - buffer_m,
