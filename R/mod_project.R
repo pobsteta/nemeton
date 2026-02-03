@@ -226,6 +226,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
     })
 
     # Action button (Create/Update)
+    # Force rendering even when the collapse panel is hidden, otherwise
+    # the button's disabled state won't update until the panel opens.
     output$action_button <- shiny::renderUI({
       parcels <- selected_parcels()
 
@@ -259,6 +261,7 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         )
       }
     })
+    shiny::outputOptions(output, "action_button", suspendWhenHidden = FALSE)
 
     # ========================================
     # Restore Project Form When Loading
