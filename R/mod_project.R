@@ -458,7 +458,8 @@ mod_project_server <- function(id, app_state, selected_parcels) {
           bsicons::bs_icon("exclamation-triangle", class = "me-2"),
           i18n$t("delete_project")
         ),
-        htmltools::p(i18n$t("delete_project_confirm")),
+        htmltools::p(i18n$t("confirm_delete_project")),
+        htmltools::p(class = "text-muted small", i18n$t("delete_project_warning")),
         footer = htmltools::tagList(
           shiny::modalButton(i18n$t("cancel")),
           shiny::actionButton(
