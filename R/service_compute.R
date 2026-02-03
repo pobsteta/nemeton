@@ -276,10 +276,14 @@ start_computation <- function(project_id,
       parcels = parcels,
       project_path = project_path,
       progress_callback = function(layer_progress) {
+        # Use <<- to modify state in enclosing scope (start_computation).
+        # Plain <- would create a local copy that reverts to the original
+        # state$progress (0) whenever layer_progress$completed is NULL
+        # (e.g. download_oso progress callbacks), resetting the progress bar.
         if (!is.null(layer_progress$completed)) {
-          state$progress <- layer_progress$completed
+          state$progress <<- layer_progress$completed
         }
-        state$current_task <- layer_progress$current
+        state$current_task <<- layer_progress$current
         report_progress(state)
       }
     )
@@ -314,15 +318,17 @@ start_computation <- function(project_id,
         indicators
       },
       progress_callback = function(ind_progress) {
-        state$progress <- 10 + ind_progress$completed
-        state$indicators_completed <- ind_progress$completed
-        state$indicators_failed <- ind_progress$failed
-        state$indicators_status <- ind_progress$status
-        state$current_task <- ind_progress$current
-        state$errors <- ind_progress$errors
+        # Use <<- to persist state changes in enclosing scope so that
+        # post-loop code (error handler, final status) sees accurate values.
+        state$progress <<- 10 + ind_progress$completed
+        state$indicators_completed <<- ind_progress$completed
+        state$indicators_failed <<- ind_progress$failed
+        state$indicators_status <<- ind_progress$status
+        state$current_task <<- ind_progress$current
+        state$errors <<- ind_progress$errors
         # Track skipped indicators (already computed)
         if (!is.null(ind_progress$skipped)) {
-          state$indicators_skipped <- ind_progress$skipped
+          state$indicators_skipped <<- ind_progress$skipped
         }
         report_progress(state)
       },
