@@ -2,7 +2,8 @@
 
 **Version** : 1.0.0
 **Date** : 2026-01-25
-**Total estimé** : 85 tâches
+**Total estimé** : 217 tâches
+**Progression** : ~110/217 (51%)
 
 ---
 
@@ -10,41 +11,41 @@
 
 ### 1.1 Setup Initial
 
-- [ ] T001 Initialiser la structure golem dans nemeton avec `golem::add_module()` pattern
-- [ ] T002 Créer `R/run_app.R` avec fonction `nemeton::run_app()` exportée
-- [ ] T003 Créer `R/app_config.R` avec configuration golem et options
-- [ ] T004 Créer `R/app_ui.R` avec layout page_navbar principal
-- [ ] T005 Créer `R/app_server.R` avec orchestration des modules
-- [ ] T006 [P] Créer `inst/app/www/` avec structure css/js/img
-- [ ] T007 [P] Ajouter logo nemeton dans `inst/app/www/img/logo.png`
-- [ ] T008 Mettre à jour `DESCRIPTION` avec nouvelles dépendances Shiny
+- [x] T001 Initialiser la structure golem dans nemeton avec `golem::add_module()` pattern
+- [x] T002 Créer `R/run_app.R` avec fonction `nemeton::run_app()` exportée
+- [x] T003 Créer `R/app_config.R` avec configuration golem et options
+- [x] T004 Créer `R/app_ui.R` avec layout page_navbar principal
+- [x] T005 Créer `R/app_server.R` avec orchestration des modules
+- [x] T006 [P] Créer `inst/app/www/` avec structure css/js/img
+- [x] T007 [P] Ajouter logo nemeton dans `inst/app/www/img/logo.svg`
+- [x] T008 Mettre à jour `DESCRIPTION` avec nouvelles dépendances Shiny
 
 ### 1.2 Thème, Styles et Accessibilité
 
-- [ ] T009 Créer `R/utils_theme.R` avec fonction `nemeton_theme()` bslib
-- [ ] T010 Définir palette couleurs forestières WCAG AA (contraste 4.5:1)
-- [ ] T010b Créer `accessibility_config` avec règles WCAG 2.1 AA
-- [ ] T010c Configurer palettes viridis uniquement (daltonisme-friendly)
-- [ ] T010d Définir symboles/formes en complément des couleurs
-- [ ] T011 [P] Créer `inst/app/www/css/custom.scss` avec styles personnalisés
-- [ ] T011b [P] Ajouter styles focus visible (ring 3px)
-- [ ] T011c [P] Configurer tailles tactiles minimum 44px
-- [ ] T012 [P] Créer `inst/app/www/js/custom.js` avec helpers JavaScript
-- [ ] T012b [P] Ajouter gestion navigation clavier
-- [ ] T013 Configurer responsive breakpoints pour tablette
+- [x] T009 Créer `R/utils_theme.R` avec fonction `nemeton_theme()` bslib
+- [x] T010 Définir palette couleurs forestières WCAG AA (contraste 4.5:1)
+- [x] T010b Créer `accessibility_config` avec règles WCAG 2.1 AA
+- [x] T010c Configurer palettes viridis uniquement (daltonisme-friendly)
+- [x] T010d Définir symboles/formes en complément des couleurs
+- [x] T011 [P] Créer `inst/app/www/css/custom.css` avec styles personnalisés
+- [x] T011b [P] Ajouter styles focus visible (ring 3px)
+- [x] T011c [P] Configurer tailles tactiles minimum 44px
+- [x] T012 [P] Créer `inst/app/www/js/custom.js` avec helpers JavaScript
+- [x] T012b [P] Ajouter gestion navigation clavier
+- [x] T013 Configurer responsive breakpoints pour tablette
 
 ### 1.3 Internationalisation
 
-- [ ] T014 Créer `R/utils_i18n.R` avec système shiny.i18n
-- [ ] T015 [P] Créer `inst/app/i18n/fr.json` avec traductions françaises
-- [ ] T016 [P] Créer `inst/app/i18n/en.json` avec traductions anglaises
-- [ ] T017 Implémenter détection langue système automatique
-- [ ] T018 Ajouter sélecteur de langue dans navbar
+- [x] T014 Créer `R/utils_i18n.R` avec système i18n (200+ clés de traduction)
+- [x] T015 [P] Créer `inst/app/i18n/fr.json` avec traductions françaises
+- [x] T016 [P] Créer `inst/app/i18n/en.json` avec traductions anglaises
+- [x] T017 Implémenter détection langue système automatique
+- [x] T018 Ajouter sélecteur de langue dans navbar
 
 ### 1.4 Tests Infrastructure
 
-- [ ] T019 Créer `tests/testthat/test-app_ui.R` avec tests UI de base
-- [ ] T020 Créer `tests/testthat/test-app_server.R` avec tests server
+- [x] T019 Créer `tests/testthat/test-app_infrastructure.R` avec tests UI de base
+- [x] T020 Créer tests server (inclus dans `test-app_infrastructure.R`)
 - [ ] T021 Configurer shinytest2 pour tests d'intégration
 
 ---
@@ -53,47 +54,47 @@
 
 ### 2.1 Service Communes
 
-- [ ] T022 [US1] Créer `R/service_communes.R` avec fonctions recherche
-- [ ] T023 [US1] Implémenter `get_departements()` - liste des départements français
-- [ ] T024 [US1] Implémenter `search_communes()` - autocomplétion par nom
-- [ ] T025 [US1] Implémenter `search_by_postal_code()` - recherche code postal
-- [ ] T026 [US1] Implémenter `get_commune_geometry()` - récupération géométrie sf
-- [ ] T027 [US1] Créer tests `tests/testthat/test-service_communes.R`
+- [x] T022 [US1] Créer `R/service_communes.R` avec fonctions recherche
+- [x] T023 [US1] Implémenter `get_departments()` - liste des départements français
+- [x] T024 [US1] Implémenter `search_communes()` - autocomplétion par nom
+- [x] T025 [US1] Implémenter `search_by_postal_code()` - recherche code postal
+- [x] T026 [US1] Implémenter `get_commune_geometry()` - récupération géométrie sf
+- [x] T027 [US1] Créer tests `tests/testthat/test-service_communes.R`
 
 ### 2.2 Service Cadastre
 
-- [ ] T028 [US2] Créer `R/service_cadastre.R` avec client API Cadastre
-- [ ] T029 [US2] Implémenter `fetch_api_cadastre()` - appel API data.gouv.fr
-- [ ] T030 [US2] Implémenter `fetch_happign_cadastre()` - fallback WFS happign
-- [ ] T031 [US2] Implémenter `get_parcelles_cadastrales()` - orchestration avec fallback
-- [ ] T032 [US2] Ajouter gestion timeout et retry (3 tentatives)
-- [ ] T033 [US2] Créer tests `tests/testthat/test-service_cadastre.R`
+- [x] T028 [US2] Créer `R/service_cadastre.R` avec client API Cadastre
+- [x] T029 [US2] Implémenter `fetch_api_cadastre()` - appel API data.gouv.fr
+- [x] T030 [US2] Implémenter `fetch_happign_cadastre()` - fallback WFS happign
+- [x] T031 [US2] Implémenter `get_cadastral_parcels()` - orchestration avec fallback
+- [x] T032 [US2] Ajouter gestion timeout et retry (3 tentatives)
+- [x] T033 [US2] Créer tests `tests/testthat/test-service_cadastre.R`
 
 ### 2.3 Module Search
 
-- [ ] T034 [US1] Créer `R/mod_search.R` avec UI et Server
-- [ ] T035 [US1] Implémenter selectInput département avec filtre
-- [ ] T036 [US1] Implémenter selectizeInput commune avec autocomplétion
-- [ ] T037 [US1] Implémenter textInput code postal
-- [ ] T038 [US1] Connecter search → récupération géométrie commune
-- [ ] T039 [US1] Créer tests `tests/testthat/test-mod_search.R`
+- [x] T034 [US1] Créer `R/mod_search.R` avec UI et Server
+- [x] T035 [US1] Implémenter selectInput département avec filtre
+- [x] T036 [US1] Implémenter selectizeInput commune avec autocomplétion
+- [ ] T037 [US1] Implémenter textInput code postal (non inclus dans mod_search)
+- [x] T038 [US1] Connecter search → récupération géométrie commune
+- [x] T039 [US1] Créer tests `tests/testthat/test-mod_search.R`
 
 ### 2.4 Module Map
 
-- [ ] T040 [US2] Créer `R/mod_map.R` avec UI et Server
-- [ ] T041 [US2] Implémenter carte Leaflet avec zoom sur commune
-- [ ] T042 [US2] Ajouter switch fond de carte OSM/Satellite
-- [ ] T043 [US2] Afficher parcelles cadastrales avec contours
-- [ ] T044 [US3] Implémenter clic toggle sélection/désélection
-- [ ] T045 [US3] Ajouter surlignage parcelles sélectionnées
-- [ ] T046 [US3] Implémenter limite 20 parcelles max
-- [ ] T047 [US3] Afficher compteur parcelles sélectionnées
-- [ ] T048 [US3] Ajouter bouton "Tout désélectionner"
-- [ ] T049 [US3] Afficher liste références cadastrales sélectionnées
-- [ ] T050 [US2] Ajouter indicateur chargement parcelles
-- [ ] T051 [US2] Gérer messages d'erreur API
-- [ ] T052 Créer `R/utils_map.R` avec helpers cartographiques
-- [ ] T053 Créer tests `tests/testthat/test-mod_map.R`
+- [x] T040 [US2] Créer `R/mod_map.R` avec UI et Server
+- [x] T041 [US2] Implémenter carte Leaflet avec zoom sur commune
+- [x] T042 [US2] Ajouter switch fond de carte OSM/Satellite
+- [x] T043 [US2] Afficher parcelles cadastrales avec contours
+- [x] T044 [US3] Implémenter clic toggle sélection/désélection
+- [x] T045 [US3] Ajouter surlignage parcelles sélectionnées
+- [x] T046 [US3] Implémenter limite 20 parcelles max
+- [x] T047 [US3] Afficher compteur parcelles sélectionnées
+- [x] T048 [US3] Ajouter bouton "Tout désélectionner"
+- [x] T049 [US3] Afficher liste références cadastrales sélectionnées
+- [x] T050 [US2] Ajouter indicateur chargement parcelles
+- [x] T051 [US2] Gérer messages d'erreur API
+- [ ] T052 Créer `R/utils_map.R` avec helpers cartographiques (helpers intégrés dans mod_map.R)
+- [x] T053 Créer tests `tests/testthat/test-mod_map.R`
 
 ---
 
@@ -101,38 +102,38 @@
 
 ### 3.1 Service Project
 
-- [ ] T054 [US4] Créer `R/service_project.R` avec gestion projets
-- [ ] T055 [US4] Implémenter `create_project()` - création répertoire + métadonnées
-- [ ] T056 [US4] Implémenter `save_parcelles()` - sauvegarde GeoParquet
-- [ ] T057 [US11] Implémenter `save_indicators()` - sauvegarde résultats
-- [ ] T058 [US11] Implémenter `load_project()` - chargement depuis cache
-- [ ] T059 [US4] Implémenter `list_recent_projects()` - projets récents
-- [ ] T060 [US4] Implémenter `update_project_status()` - gestion états
-- [ ] T061 [US4] Créer fonction `get_projects_root()` - répertoire racine
-- [ ] T061b [US11b] Implémenter `check_project_health()` - détection corruption
-- [ ] T061c [US11b] Implémenter `delete_project()` - suppression projet
-- [ ] T061d [US11b] Ajouter colonne `is_corrupted` dans `list_recent_projects()`
-- [ ] T062 Créer tests `tests/testthat/test-service_project.R`
+- [x] T054 [US4] Créer `R/service_project.R` avec gestion projets
+- [x] T055 [US4] Implémenter `create_project()` - création répertoire + métadonnées
+- [x] T056 [US4] Implémenter `save_parcels()` - sauvegarde GeoPackage + Parquet
+- [x] T057 [US11] Implémenter `save_indicators()` - sauvegarde résultats
+- [x] T058 [US11] Implémenter `load_project()` - chargement depuis cache
+- [x] T059 [US4] Implémenter `list_recent_projects()` - projets récents
+- [x] T060 [US4] Implémenter `update_project_status()` - gestion états
+- [x] T061 [US4] Créer fonction `get_projects_root()` - répertoire racine
+- [x] T061b [US11b] Implémenter `check_project_health()` - détection corruption
+- [x] T061c [US11b] Implémenter `delete_project()` - suppression projet
+- [x] T061d [US11b] Ajouter colonne `is_corrupted` dans `list_recent_projects()`
+- [x] T062 Créer tests `tests/testthat/test-service_project.R`
 
 ### 3.2 Module Project
 
-- [ ] T063 [US4] Créer `R/mod_project.R` avec UI formulaire
-- [ ] T064 [US4] Implémenter champ Nom projet (obligatoire, max 100 car)
-- [ ] T065 [US4] Implémenter champ Description (optionnel, max 500 car)
-- [ ] T066 [US4] Implémenter champ Propriétaire (optionnel, max 100 car)
-- [ ] T067 [US4] Implémenter champ Date avec horodatage auto
-- [ ] T068 [US4] Ajouter validation champs obligatoires
-- [ ] T069 Créer tests `tests/testthat/test-mod_project.R`
+- [x] T063 [US4] Créer `R/mod_project.R` avec UI formulaire
+- [x] T064 [US4] Implémenter champ Nom projet (obligatoire, max 100 car)
+- [x] T065 [US4] Implémenter champ Description (optionnel, max 500 car)
+- [x] T066 [US4] Implémenter champ Propriétaire (optionnel, max 100 car)
+- [x] T067 [US4] Implémenter champ Date avec horodatage auto
+- [x] T068 [US4] Ajouter validation champs obligatoires
+- [x] T069 Créer tests `tests/testthat/test-mod_project.R`
 
 ### 3.3 Module Home
 
-- [ ] T070 Créer `R/mod_home.R` - page d'accueil intégrée
-- [ ] T071 Afficher liste projets récents au lancement
-- [ ] T071b [US11b] Marquer projets corrompus avec icône warning
-- [ ] T071c [US11b] Modal confirmation suppression projet corrompu
-- [ ] T071d [US11b] Implémenter action suppression projet
-- [ ] T072 Intégrer mod_search + mod_map + mod_project
-- [ ] T073 Ajouter workflow création projet → sélection
+- [x] T070 Créer `R/mod_home.R` - page d'accueil intégrée
+- [x] T071 Afficher liste projets récents au lancement
+- [x] T071b [US11b] Marquer projets corrompus avec icône warning
+- [x] T071c [US11b] Modal confirmation suppression projet corrompu
+- [x] T071d [US11b] Implémenter action suppression projet
+- [x] T072 Intégrer mod_search + mod_map + mod_project
+- [x] T073 Ajouter workflow création projet → sélection
 
 ---
 
@@ -140,34 +141,34 @@
 
 ### 4.1 Service Compute (avec cache préventif)
 
-- [ ] T074 [US5] Créer `R/service_compute.R` avec orchestration calculs
-- [ ] T074b [US5] Implémenter `download_all_layers_async()` - téléchargement préventif
-- [ ] T074c [US5] Définir liste des sources de données à télécharger
-- [ ] T074d [US5] Implémenter cache local des layers dans `project/layers/`
-- [ ] T075 [US5] Implémenter `compute_indicators_async()` sur données locales
-- [ ] T075b [US5] Implémenter `compute_full_workflow()` - orchestration téléchargement + calcul
-- [ ] T076 [US5] Configurer parallélisation multi-workers
-- [ ] T077 [US5] Implémenter callback progression par phase (téléchargement / calcul)
-- [ ] T078 [US6] Gérer indicateurs manquants (LiDAR, connexion KO)
-- [ ] T078b [US5] Gérer échec téléchargement avec message explicatif
-- [ ] T079 [US5] Intégrer avec `nemeton_compute()` existant
+- [x] T074 [US5] Créer `R/service_compute.R` avec orchestration calculs
+- [x] T074b [US5] Implémenter `download_all_layers_async()` - téléchargement préventif
+- [x] T074c [US5] Définir liste des sources de données à télécharger
+- [x] T074d [US5] Implémenter cache local des layers dans `project/cache/`
+- [x] T075 [US5] Implémenter `compute_indicators_async()` sur données locales
+- [x] T075b [US5] Implémenter `start_computation()` - orchestration téléchargement + calcul
+- [x] T076 [US5] Configurer parallélisation multi-workers (future::multisession + ExtendedTask)
+- [x] T077 [US5] Implémenter callback progression par phase (téléchargement / calcul)
+- [x] T078 [US6] Gérer indicateurs manquants (LiDAR, connexion KO)
+- [x] T078b [US5] Gérer échec téléchargement avec message explicatif
+- [x] T079 [US5] Intégrer avec `nemeton_compute()` existant
 - [ ] T080 Créer tests `tests/testthat/test-service_compute.R`
 
 ### 4.2 Module Progress
 
-- [ ] T081 [US5] Créer `R/mod_progress.R` avec barre progression
-- [ ] T082 [US5] Afficher progression globale (X/29 indicateurs)
-- [ ] T083 [US5] Afficher détail jobs en cours
-- [ ] T084 [US5] Gérer états : pending, running, complete, error
-- [ ] T085 [US6] Afficher indicateurs en erreur avec raison
+- [x] T081 [US5] Créer `R/mod_progress.R` avec barre progression
+- [x] T082 [US5] Afficher progression globale (X/29 indicateurs)
+- [x] T083 [US5] Afficher détail jobs en cours
+- [x] T084 [US5] Gérer états : pending, running, complete, error
+- [x] T085 [US6] Afficher indicateurs en erreur avec raison
 - [ ] T086 Créer tests `tests/testthat/test-mod_progress.R`
 
 ### 4.3 Intégration Workflow
 
-- [ ] T087 [US5] Ajouter bouton "Lancer les calculs" conditionnel
+- [x] T087 [US5] Ajouter bouton "Lancer les calculs" conditionnel
 - [ ] T088 [US5] Implémenter modal confirmation avant lancement
 - [ ] T089 [US5] Bloquer modification parcelles après lancement
-- [ ] T090 [US5] Mettre à jour état projet : Brouillon → En cours → Terminé
+- [x] T090 [US5] Mettre à jour état projet : Brouillon → En cours → Terminé
 
 ---
 
@@ -175,7 +176,7 @@
 
 ### 5.1 Module Synthèse
 
-- [ ] T091 [US7] Créer `R/mod_synthesis.R` avec vue globale
+- [ ] T091 [US7] Créer `R/mod_synthesis.R` avec vue globale (scaffolding UI inline dans app_ui.R)
 - [ ] T092 [US7] Implémenter radar plot 12 axes avec `nemeton_radar()`
 - [ ] T093 [US7] Créer tableau récapitulatif scores par famille
 - [ ] T094 [US7] Ajouter carte thématique score global
@@ -319,20 +320,20 @@
 
 ### 7.1 Tour Guidé
 
-- [ ] T172 [US13] Créer `R/utils_tour.R` avec configuration cicerone
-- [ ] T173 [US13] Définir étapes tour : search → map → project → compute → results
-- [ ] T174 [US13] Implémenter déclenchement auto premier lancement
-- [ ] T175 [US13] Ajouter bouton "Passer le tour"
-- [ ] T176 [US13] Sauvegarder préférence "ne plus afficher"
-- [ ] T177 [US13] Ajouter lien "Relancer le tour" dans aide
+- [x] T172 [US13] Configuration cicerone (intégré dans mod_home.R)
+- [x] T173 [US13] Définir étapes tour : search → map → project → compute → results
+- [x] T174 [US13] Implémenter déclenchement auto premier lancement (localStorage)
+- [x] T175 [US13] Ajouter bouton "Passer le tour" (fonctionnalité cicerone intégrée)
+- [x] T176 [US13] Sauvegarder préférence "ne plus afficher" (localStorage)
+- [x] T177 [US13] Ajouter lien "Relancer le tour" dans aide
 
 ### 7.2 Aide Contextuelle
 
 - [ ] T178 [US14] Ajouter tooltips sur tous les indicateurs
-- [ ] T179 [US14] Ajouter descriptions familles dans chaque onglet
-- [ ] T180 [US14] Créer icône aide (?) dans navbar
-- [ ] T181 [US14] Ajouter lien vers documentation nemeton (pkgdown)
-- [ ] T182 [US14] Traduire tous les tooltips et aide (fr/en)
+- [x] T179 [US14] Ajouter descriptions familles dans chaque onglet
+- [x] T180 [US14] Créer icône aide (?) dans navbar
+- [x] T181 [US14] Ajouter lien vers documentation nemeton (pkgdown)
+- [x] T182 [US14] Traduire tooltips et aide (fr/en) — partiel : descriptions familles traduites, tooltips indicateurs restants
 
 ---
 
@@ -340,10 +341,10 @@
 
 ### 8.1 Layout Adaptatif
 
-- [ ] T183 [US15] Configurer breakpoints mobile-first dans SCSS
-- [ ] T184 [US15] Adapter navigation onglets pour petit écran
-- [ ] T185 [US15] Rendre carte tactile (zoom, pan)
-- [ ] T186 [US15] Augmenter taille boutons (min 44px)
+- [x] T183 [US15] Configurer breakpoints mobile-first dans CSS (991.98px, 575.98px)
+- [x] T184 [US15] Adapter navigation onglets pour petit écran
+- [x] T185 [US15] Rendre carte tactile (zoom, pan) — Leaflet natif + viewport meta
+- [x] T186 [US15] Augmenter taille boutons (min 44px)
 - [ ] T187 [US15] Tester sur tablette 10"
 
 ### 8.2 Optimisation Performance
@@ -358,7 +359,7 @@
 
 ### 9.1 Documentation
 
-- [ ] T191 Documenter `run_app()` dans roxygen2
+- [x] T191 Documenter `run_app()` dans roxygen2
 - [ ] T192 Ajouter section nemetonApp dans pkgdown
 - [ ] T193 Créer vignette "Getting Started with nemetonApp"
 - [ ] T194 Mettre à jour README avec section nemetonApp
@@ -368,12 +369,12 @@
 - [ ] T195 Tests d'intégration complets shinytest2
 - [ ] T196 Tests de performance (20 parcelles < 5 min)
 - [ ] T197 Tests responsive sur différents appareils
-- [ ] T198 Tests i18n (fr/en complet)
+- [x] T198 Tests i18n (fr/en complet) — `test-utils_i18n.R`
 
 ### 9.3 Release
 
-- [ ] T199 Mettre à jour NEWS.md avec v0.7.0
-- [ ] T200 Mettre à jour DESCRIPTION version 0.7.0
+- [x] T199 Mettre à jour NEWS.md (v0.9.0)
+- [x] T200 Mettre à jour DESCRIPTION version (0.9.0)
 - [ ] T201 R CMD check sans erreurs ni warnings
 - [ ] T202 Créer tag git v0.7.0
 
@@ -419,19 +420,19 @@ graph TD
 
 ## Résumé par Phase
 
-| Phase | Tâches | User Stories |
-|-------|--------|--------------|
-| 1. Infrastructure + Accessibilité | T001-T021 (26) | - |
-| 2. Sélection Parcelles | T022-T053 (32) | US1, US2, US3 |
-| 3. Gestion Projets + Corruption | T054-T073 (24) | US4, US11, US11b |
-| 4. Calculs Async + Cache Préventif | T074-T090 (22) | US5, US6 |
-| 5. Analyses Familles | T091-T157 (67) | US7, US8 |
-| 6. Exports + Quarto Auto | T158-T171 (15) | US9, US10 |
-| 7. Tour et Aide | T172-T182 (11) | US13, US14 |
-| 8. Responsive | T183-T190 (8) | US15 |
-| 9. Finalisation | T191-T202 (12) | - |
+| Phase | Tâches | Faites | Restantes | User Stories |
+|-------|--------|--------|-----------|--------------|
+| 1. Infrastructure + Accessibilité | T001-T021 (26) | 25 | 1 | - |
+| 2. Sélection Parcelles | T022-T053 (32) | 30 | 2 | US1, US2, US3 |
+| 3. Gestion Projets + Corruption | T054-T073 (24) | 24 | 0 | US4, US11, US11b |
+| 4. Calculs Async + Cache Préventif | T074-T090 (22) | 16 | 6 | US5, US6 |
+| 5. Analyses Familles | T091-T157 (67) | 0 | 67 | US7, US8 |
+| 6. Exports + Quarto Auto | T158-T171 (15) | 0 | 15 | US9, US10 |
+| 7. Tour et Aide | T172-T182 (11) | 10 | 1 | US13, US14 |
+| 8. Responsive | T183-T190 (8) | 4 | 4 | US15 |
+| 9. Finalisation | T191-T202 (12) | 4 | 8 | - |
 
-**Total : 217 tâches**
+**Total : 217 tâches — ~113 faites (52%), ~104 restantes (48%)**
 
 ## Nouvelles fonctionnalités ajoutées (Clarifications)
 
