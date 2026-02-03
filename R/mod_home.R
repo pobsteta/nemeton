@@ -292,8 +292,13 @@ mod_home_server <- function(id, app_state) {
           }
 
           # Flag for other modules to detect restore-in-progress
-          # Cleared by mod_map.R pending observer after all rendering is done
+          # Cleared by mod_search.R's restore_task result handler
           app_state$restore_in_progress <- TRUE
+
+          # Clear old map selection from previous project before setting
+          # new parcels. Without this, rv$selected_ids in mod_map retains
+          # the old project's IDs during the transition.
+          app_state$clear_map_selection <- Sys.time()
 
           # Set parcels directly from stored project data — no API call needed.
           # This makes parcels() available immediately for mod_map.R's restore

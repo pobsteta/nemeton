@@ -470,6 +470,14 @@ mod_search_server <- function(id, app_state) {
         cli::cli_alert_success("Location restored successfully")
       }
 
+      # Clear restore_in_progress AFTER this flush cycle.
+      # The mod_home selected_commune observer runs in the SAME flush;
+      # it must see TRUE to skip reset_project_state(). Using delay = 0
+      # defers the write to the NEXT event loop iteration.
+      later::later(function() {
+        app_state$restore_in_progress <- FALSE
+      }, delay = 0)
+
       # NOTE: Don't clear rv$is_restoring here. The updateSelectizeInput
       # above queues a message to the browser. The selectize may briefly
       # fire input$commune="" before the selected value. If is_restoring

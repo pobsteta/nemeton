@@ -392,13 +392,14 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
             )
           rv$parcels_zoomed <- TRUE
 
-          # Defer clearing restore_in_progress to AFTER this flush cycle.
-          # The mod_home selected_commune observer runs in the SAME flush;
-          # if it sees FALSE it clears parcels_data and re-invokes parcels_task.
-          later::later(function() {
-            app_state$restore_in_progress <- FALSE
-          }, delay = 0)
-          cli::cli_alert_success("Location restored successfully")
+          # NOTE: Do NOT clear restore_in_progress here. This observer
+          # can fire BEFORE restore_task completes (if parcels_data was set
+          # while commune_geometry still holds the PREVIOUS commune's geom).
+          # Clearing here would cause the selected_commune observer in
+          # mod_home to call reset_project_state(), wiping the selection.
+          # restore_in_progress is cleared by mod_search.R's restore_task
+          # result handler, after the commune geometry is actually updated.
+          cli::cli_alert_success("Parcels selection restored on map")
         }
 
       } else {
