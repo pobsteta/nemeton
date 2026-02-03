@@ -1534,7 +1534,7 @@ download_ign_lidar_hd <- function(bbox,
     return(NULL)
   }
 
-  download_urls <- tiles_sf[[url_col]]
+  download_urls <- as.character(tiles_sf[[url_col]])
 
   # Extract tile names for caching
   tile_names <- extract_tile_names(download_urls, file_ext)
@@ -1691,6 +1691,9 @@ find_url_column <- function(tiles_sf) {
 #' @return Character vector of filenames.
 #' @noRd
 extract_tile_names <- function(urls, file_ext) {
+  # Ensure urls is a character vector (WFS GeoJSON parsing may return a list)
+  urls <- as.character(urls)
+
   # Extract filename from URL
   basenames <- basename(urls)
 
