@@ -382,6 +382,14 @@ mod_project_server <- function(id, app_state, selected_parcels) {
         return()
       }
 
+      # Guard against renderUI button creation (NULL → 0 transition)
+      # When the form switches from create to edit mode, the new button's
+      # input value goes from NULL to 0, which triggers bindEvent.
+      # Only proceed if a button was actually clicked (value > 0).
+      create_clicked <- isTRUE(input$create_project > 0)
+      update_clicked <- isTRUE(input$update_project > 0)
+      shiny::req(create_clicked || update_clicked)
+
       # Validate parcels are sf objects
       if (!inherits(parcels, "sf")) {
         cli::cli_alert_danger("Parcels are not sf objects! Class: {paste(class(parcels), collapse=', ')}")

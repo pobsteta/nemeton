@@ -83,13 +83,27 @@ test_that("clean_indicator_label strips _norm suffix", {
   )
 })
 
-test_that("clean_indicator_label falls back to code name", {
+test_that("clean_indicator_label falls back to humanized name", {
   with_mocked_bindings(
     get_app_options = function() list(language = "fr"),
     {
       i18n <- nemeton:::get_i18n("fr")
       label <- nemeton:::clean_indicator_label("UNKNOWN_IND", i18n)
-      expect_equal(label, "UNKNOWN_IND")
+      expect_equal(label, "UNKNOWN IND")
+    }
+  )
+})
+
+test_that("clean_indicator_label resolves long-form column names", {
+  with_mocked_bindings(
+    get_app_options = function() list(language = "fr"),
+    {
+      i18n <- nemeton:::get_i18n("fr")
+      label <- nemeton:::clean_indicator_label("carbon_biomass", i18n)
+      expect_equal(label, "Biomasse carbone (tC/ha)")
+
+      label_en <- nemeton:::clean_indicator_label("water_twi", nemeton:::get_i18n("en"))
+      expect_equal(label_en, "Topographic Wetness Index")
     }
   )
 })

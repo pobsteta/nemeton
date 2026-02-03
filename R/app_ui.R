@@ -345,12 +345,15 @@ mod_synthesis_ui <- function(id) {
   bslib::layout_columns(
     col_widths = c(12),
 
-    # Top row: Downloads and summary
+    # Top row: Downloads, summary, and global score
     bslib::card(
       bslib::card_header(i18n$t("synthesis_title")),
       bslib::card_body(
         bslib::layout_columns(
-          col_widths = c(6, 6),
+          col_widths = c(4, 4, 4),
+
+          # Project summary
+          shiny::uiOutput(ns("project_summary")),
 
           # Download buttons
           htmltools::div(
@@ -369,25 +372,26 @@ mod_synthesis_ui <- function(id) {
             )
           ),
 
-          # Project summary
-          shiny::uiOutput(ns("project_summary"))
+          # Global score
+          shiny::uiOutput(ns("global_score"))
         )
       )
     ),
 
-    # Radar plot
-    bslib::card(
-      bslib::card_header(i18n$t("radar_title")),
-      bslib::card_body(
-        shiny::plotOutput(ns("radar_plot"), height = "400px")
-      )
-    ),
-
-    # Summary table
-    bslib::card(
-      bslib::card_header(i18n$t("summary_table_title")),
-      bslib::card_body(
-        shiny::tableOutput(ns("summary_table"))
+    # Radar plot + Summary table side by side
+    bslib::layout_columns(
+      col_widths = c(7, 5),
+      bslib::card(
+        bslib::card_header(i18n$t("radar_title")),
+        bslib::card_body(
+          shiny::plotOutput(ns("radar_plot"), height = "500px")
+        )
+      ),
+      bslib::card(
+        bslib::card_header(i18n$t("summary_table_title")),
+        bslib::card_body(
+          shiny::tableOutput(ns("summary_table"))
+        )
       )
     )
   )

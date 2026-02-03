@@ -256,6 +256,7 @@ mod_home_server <- function(id, app_state) {
       # Update app state with loaded project
       app_state$current_project <- project
       app_state$project_id <- project$id
+      app_state$project_status <- project$metadata$status %||% "draft"
 
       # Extract commune code from parcels if available
       if (!is.null(project$parcels) && nrow(project$parcels) > 0 &&
@@ -835,6 +836,7 @@ mod_home_server <- function(id, app_state) {
           ))
 
           app_state$current_project <- load_project(project_id)
+          app_state$project_status <- "completed"
           app_state$refresh_projects <- Sys.time()
 
           shiny::showNotification(

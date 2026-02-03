@@ -19,7 +19,21 @@ mod_synthesis_server <- function(id, app_state) {
     project_indicators <- shiny::reactive({
       project <- app_state$current_project
       if (is.null(project) || is.null(project$indicators)) return(NULL)
-      project$indicators
+
+      df <- project$indicators
+
+      # Drop geometry if sf (indicators from parquet may have geoarrow geometry)
+      if (inherits(df, "sf")) {
+        df <- tryCatch(sf::st_drop_geometry(df),
+                       error = function(e) {
+                         geo_col <- attr(df, "sf_column") %||% "geometry"
+                         result <- df[, setdiff(names(df), geo_col), drop = FALSE]
+                         class(result) <- "data.frame"
+                         result
+                       })
+      }
+
+      df
     })
 
     # ================================================================
@@ -47,8 +61,17 @@ mod_synthesis_server <- function(id, app_state) {
 
       if (is.null(join_col)) return(NULL)
 
-      # Merge indicators into sf
-      merged <- merge(parcels, indicators, by = join_col, all.x = FALSE)
+      # Subset indicators to only keep join column + actual indicator columns
+      # (avoid duplicating metadata columns like section, numero, contenance, etc.)
+      all_indicator_cols <- get_all_column_names()
+      # Also include _norm variants
+      norm_cols <- paste0(all_indicator_cols, "_norm")
+      keep_cols <- intersect(names(indicators),
+                             c(join_col, all_indicator_cols, norm_cols))
+      indicators_subset <- indicators[, keep_cols, drop = FALSE]
+
+      # Merge: parcels (sf) + indicators subset (data.frame)
+      merged <- merge(parcels, indicators_subset, by = join_col, all.x = FALSE)
       if (nrow(merged) == 0) return(NULL)
 
       # Compute family indices
@@ -94,6 +117,54 @@ mod_synthesis_server <- function(id, app_state) {
         shiny::tags$span(
           class = paste0("badge bg-", if (meta$status == "completed") "success" else "secondary"),
           i18n$t(paste0("status_", meta$status))
+        )
+      )
+    })
+
+    # ================================================================
+    # OUTPUT: Global score (mean of all family scores)
+    # ================================================================
+    output$global_score <- shiny::renderUI({
+      i18n <- get_i18n(app_state$language)
+      sf_data <- family_scores()
+
+      if (is.null(sf_data)) {
+        return(htmltools::div(
+          class = "text-center text-muted py-4",
+          shiny::icon("chart-line", class = "fa-2x"),
+          shiny::p(i18n$t("no_data"))
+        ))
+      }
+
+      family_cols <- grep("^family_[A-Z]$", names(sf_data), value = TRUE)
+      if (length(family_cols) == 0) {
+        return(htmltools::div(class = "text-muted", i18n$t("no_data")))
+      }
+
+      # Compute global score: mean of family means across all parcels
+      df <- sf::st_drop_geometry(sf_data)
+      family_means <- vapply(family_cols, function(col) {
+        mean(df[[col]], na.rm = TRUE)
+      }, numeric(1))
+      global <- round(mean(family_means, na.rm = TRUE), 1)
+
+      # Color based on score
+      score_color <- if (global >= 60) "#228B22" else if (global >= 40) "#FF8C00" else "#DC143C"
+
+      htmltools::div(
+        class = "text-center py-3",
+        shiny::p(class = "text-muted mb-1", "Score global"),
+        htmltools::div(
+          style = paste0(
+            "font-size: 4rem; font-weight: bold; color: ", score_color,
+            "; line-height: 1;"
+          ),
+          global
+        ),
+        shiny::p(
+          class = "text-muted mt-1 mb-0",
+          sprintf("/ 100 (%d %s)", length(family_cols),
+                  if (i18n$language == "fr") "familles" else "families")
         )
       )
     })

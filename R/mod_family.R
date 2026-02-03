@@ -23,22 +23,36 @@ mod_family_server <- function(id, family_code, app_state) {
       project <- app_state$current_project
       if (is.null(project) || is.null(project$indicators)) return(NULL)
 
-      ind_codes <- family_config$indicators
       df <- project$indicators
 
-      # Find columns matching this family's indicators (exact or with _norm suffix)
+      # Drop geometry if sf (indicators from parquet may have geoarrow geometry)
+      if (inherits(df, "sf")) {
+        df <- tryCatch(sf::st_drop_geometry(df),
+                       error = function(e) {
+                         geo_col <- attr(df, "sf_column") %||% "geometry"
+                         result <- df[, setdiff(names(df), geo_col), drop = FALSE]
+                         class(result) <- "data.frame"
+                         result
+                       })
+      }
+
       all_cols <- names(df)
+
+      # Try both short codes (C1, C2) and long-form column names (carbon_biomass)
+      candidates <- c(family_config$indicators, family_config$column_names)
       matched <- character(0)
-      for (code in ind_codes) {
+      for (col in candidates) {
         # Prefer normalized version
-        norm_col <- paste0(code, "_norm")
+        norm_col <- paste0(col, "_norm")
         if (norm_col %in% all_cols) {
           matched <- c(matched, norm_col)
-        } else if (code %in% all_cols) {
-          matched <- c(matched, code)
+        } else if (col %in% all_cols) {
+          matched <- c(matched, col)
         }
       }
 
+      # Deduplicate (in case short and long both matched)
+      matched <- unique(matched)
       if (length(matched) == 0) return(NULL)
 
       # Keep id column for joining + matched indicator columns
@@ -189,21 +203,34 @@ mod_family_server <- function(id, family_code, app_state) {
         ))
       }
 
-      ind_codes <- family_config$indicators
       df <- project$indicators
       all_cols <- names(df)
+
+      # Check both short codes and long-form column names
+      candidates <- c(family_config$indicators, family_config$column_names)
 
       # Check which indicators are missing entirely
       missing <- character(0)
       all_na <- character(0)
-      for (code in ind_codes) {
-        norm_col <- paste0(code, "_norm")
-        if (norm_col %in% all_cols) {
-          if (all(is.na(df[[norm_col]]))) all_na <- c(all_na, code)
-        } else if (code %in% all_cols) {
-          if (all(is.na(df[[code]]))) all_na <- c(all_na, code)
+      # Check in pairs: short code + long-form name
+      for (i in seq_along(family_config$indicators)) {
+        code <- family_config$indicators[i]
+        long_name <- if (!is.null(family_config$column_names) &&
+                         i <= length(family_config$column_names)) {
+          family_config$column_names[i]
         } else {
+          NULL
+        }
+        # Check if any form exists
+        found_col <- NULL
+        for (col in c(paste0(code, "_norm"), code,
+                      if (!is.null(long_name)) c(paste0(long_name, "_norm"), long_name))) {
+          if (col %in% all_cols) { found_col <- col; break }
+        }
+        if (is.null(found_col)) {
           missing <- c(missing, code)
+        } else if (all(is.na(df[[found_col]]))) {
+          all_na <- c(all_na, code)
         }
       }
 
@@ -253,10 +280,27 @@ get_indicator_cols <- function(data) {
 clean_indicator_label <- function(col_name, i18n) {
   # Strip _norm suffix for display
   base <- sub("_norm$", "", col_name)
-  # Try i18n key first
+
+  # Try matching long-form name against INDICATOR_FAMILIES config first
+  # (maps column_names -> short codes -> i18n keys with richer labels)
+  for (fam in INDICATOR_FAMILIES) {
+    if (!is.null(fam$column_names) && base %in% fam$column_names) {
+      idx <- which(fam$column_names == base)
+      if (idx <= length(fam$indicators)) {
+        short_key <- paste0("indicator_", fam$indicators[idx])
+        if (i18n$has(short_key)) {
+          return(i18n$t(short_key))
+        }
+      }
+    }
+  }
+
+  # Try i18n key directly (works for short codes like C1, B2)
   key <- paste0("indicator_", base)
   if (i18n$has(key)) {
     return(i18n$t(key))
   }
-  base
+
+  # Fallback: humanize the column name
+  gsub("_", " ", base)
 }

@@ -150,7 +150,6 @@ app_server <- function(input, output, session) {
 
     # Only allow synthesis and family tabs when completed
     if (status != "completed") {
-      # Hide/disable tabs (handled via UI conditional)
       shiny::updateNavbarPage(session, "main_nav", selected = "selection")
     }
   })

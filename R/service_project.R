@@ -205,7 +205,8 @@ update_project <- function(project_id, name, description = "", owner = "", parce
     id = project_id,
     path = project_path,
     metadata = metadata,
-    parcels = if (!is.null(parcels)) parcels else load_parcels(project_id)
+    parcels = if (!is.null(parcels)) parcels else load_parcels(project_id),
+    indicators = load_indicators(project_id)
   )
 }
 

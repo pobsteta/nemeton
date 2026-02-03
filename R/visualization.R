@@ -295,8 +295,11 @@ add_color_scale <- function(p, palette, direction, breaks, labels, legend_title)
 #' @keywords internal
 #' @noRd
 clean_indicator_name <- function(names) {
+  # Family indices: family_C -> C, family_B -> B, etc.
+  cleaned <- gsub("^family_([A-Z])$", "\\1", names)
+
   # Remove common suffixes
-  cleaned <- gsub("_norm$", " (Normalized)", names)
+  cleaned <- gsub("_norm$", " (Normalized)", cleaned)
   cleaned <- gsub("_inv$", " (Inverted)", cleaned)
 
   # Capitalize first letter

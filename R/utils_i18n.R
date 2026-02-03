@@ -193,6 +193,7 @@ TRANSLATIONS <- list(
   summary_table_title = list(fr = "R\u00e9capitulatif par famille", en = "Summary by Family"),
   download_pdf = list(fr = "T\u00e9l\u00e9charger le rapport PDF", en = "Download PDF Report"),
   download_gpkg = list(fr = "T\u00e9l\u00e9charger le GeoPackage", en = "Download GeoPackage"),
+  global_score = list(fr = "Score global", en = "Global Score"),
   no_project = list(fr = "Aucun projet charg\u00e9", en = "No project loaded"),
   no_data = list(fr = "Pas de donn\u00e9es", en = "No data"),
 

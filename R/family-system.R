@@ -86,21 +86,36 @@ create_family_index <- function(data,
     is.numeric(data[[col]]) && !col %in% c("geometry", "geom")
   }, logical(1))]
 
+  # Build column-to-family mapping from INDICATOR_FAMILIES config
+  col_fam_map <- get_column_family_map()
+
   # Group indicators by family
   family_groups <- list()
 
   for (fam in family_codes) {
-    # Match columns starting with family code + digit (e.g., C1, C2, W1)
+    # Strategy 1: Match short codes (C1, C2, W1, etc.)
     pattern <- paste0("^", fam, "[0-9]")
     fam_indicators <- grep(pattern, indicator_cols, value = TRUE)
 
+    # Strategy 2: Match long-form column names from INDICATOR_FAMILIES config
+    if (length(fam_indicators) == 0) {
+      config_cols <- INDICATOR_FAMILIES[[fam]]$column_names
+      if (!is.null(config_cols)) {
+        fam_indicators <- intersect(config_cols, indicator_cols)
+      }
+    }
+
+    # Strategy 3: Use column_family_map for any remaining matches
+    if (length(fam_indicators) == 0) {
+      mapped <- names(col_fam_map)[col_fam_map == fam]
+      fam_indicators <- intersect(mapped, indicator_cols)
+    }
+
     if (length(fam_indicators) > 0) {
       # Prefer normalized indicators (_norm suffix) when both raw and normalized exist
-      # Extract base indicator names (without _norm)
       base_names <- sub("_norm$", "", fam_indicators)
       unique_bases <- unique(base_names)
 
-      # For each unique base, prefer the _norm version if it exists
       preferred_indicators <- character(0)
       for (base in unique_bases) {
         norm_version <- paste0(base, "_norm")
@@ -117,7 +132,7 @@ create_family_index <- function(data,
 
   # Check if any families were detected
   if (length(family_groups) == 0) {
-    stop("No family indicators found. Indicators must have family prefix (C1, W1, F1, etc.)",
+    stop("No family indicators found. Expected columns like C1, carbon_biomass, etc.",
       call. = FALSE
     )
   }
@@ -257,9 +272,17 @@ create_family_index <- function(data,
 #'
 #' @keywords internal
 detect_indicator_family <- function(indicator_name) {
-  # Match pattern: family letter + digit
+  # Match pattern: family letter + digit (e.g., C1, B2)
   if (grepl("^[A-Z][0-9]", indicator_name)) {
     return(substr(indicator_name, 1, 1))
+  }
+
+  # Match long-form column names via INDICATOR_FAMILIES config
+  col_map <- get_column_family_map()
+  # Strip _norm suffix for matching
+  base_name <- sub("_norm$", "", indicator_name)
+  if (base_name %in% names(col_map)) {
+    return(col_map[[base_name]])
   }
 
   NA_character_

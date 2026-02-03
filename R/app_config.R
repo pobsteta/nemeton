@@ -74,6 +74,7 @@ INDICATOR_FAMILIES <- list(
     icon = "tree-fill",
     color = "#228B22",
     indicators = c("C1", "C2"),
+    column_names = c("carbon_biomass", "carbon_ndvi"),
     indicator_labels = list(
       C1 = list(fr = "Biomasse carbone (tC/ha)", en = "Carbon Biomass (tC/ha)"),
       C2 = list(fr = "NDVI - Vitalit\u00e9", en = "NDVI - Vitality")
@@ -86,6 +87,7 @@ INDICATOR_FAMILIES <- list(
     icon = "bug-fill",
     color = "#9932CC",
     indicators = c("B1", "B2", "B3"),
+    column_names = c("biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity"),
     indicator_labels = list(
       B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
       B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
@@ -99,6 +101,7 @@ INDICATOR_FAMILIES <- list(
     icon = "droplet-fill",
     color = "#1E90FF",
     indicators = c("W1", "W2", "W3"),
+    column_names = c("water_network", "water_wetlands", "water_twi"),
     indicator_labels = list(
       W1 = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
       W2 = list(fr = "Zones humides", en = "Wetlands"),
@@ -112,6 +115,7 @@ INDICATOR_FAMILIES <- list(
     icon = "wind",
     color = "#87CEEB",
     indicators = c("A1", "A2"),
+    column_names = c("air_forest_buffer", "air_quality"),
     indicator_labels = list(
       A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
       A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality")
@@ -124,6 +128,7 @@ INDICATOR_FAMILIES <- list(
     icon = "globe-americas",
     color = "#8B4513",
     indicators = c("F1", "F2"),
+    column_names = c("fertility_soil", "fertility_erosion"),
     indicator_labels = list(
       F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
       F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk")
@@ -136,6 +141,7 @@ INDICATOR_FAMILIES <- list(
     icon = "image-fill",
     color = "#32CD32",
     indicators = c("L1", "L2"),
+    column_names = c("landscape_fragmentation", "landscape_edge_ratio"),
     indicator_labels = list(
       L1 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
       L2 = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio")
@@ -148,6 +154,7 @@ INDICATOR_FAMILIES <- list(
     icon = "clock-fill",
     color = "#FFD700",
     indicators = c("T1", "T2"),
+    column_names = c("temporal_age", "temporal_change"),
     indicator_labels = list(
       T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
       T2 = list(fr = "Taux de changement", en = "Change Rate")
@@ -160,6 +167,7 @@ INDICATOR_FAMILIES <- list(
     icon = "exclamation-triangle-fill",
     color = "#DC143C",
     indicators = c("R1", "R2", "R3", "R4"),
+    column_names = c("risk_fire", "risk_storm", "risk_drought", "risk_browsing"),
     indicator_labels = list(
       R1 = list(fr = "Risque incendie", en = "Fire Risk"),
       R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
@@ -174,6 +182,7 @@ INDICATOR_FAMILIES <- list(
     icon = "people-fill",
     color = "#FF69B4",
     indicators = c("S1", "S2", "S3"),
+    column_names = c("social_trails", "social_accessibility", "social_population"),
     indicator_labels = list(
       S1 = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
       S2 = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
@@ -187,6 +196,7 @@ INDICATOR_FAMILIES <- list(
     icon = "box-seam-fill",
     color = "#006400",
     indicators = c("P1", "P2", "P3"),
+    column_names = c("production_volume", "production_productivity", "production_quality"),
     indicator_labels = list(
       P1 = list(fr = "Volume de bois (m\u00b3/ha)", en = "Timber Volume (m\u00b3/ha)"),
       P2 = list(fr = "Productivit\u00e9", en = "Productivity"),
@@ -200,6 +210,7 @@ INDICATOR_FAMILIES <- list(
     icon = "lightning-fill",
     color = "#FF8C00",
     indicators = c("E1", "E2"),
+    column_names = c("energy_wood", "energy_co2"),
     indicator_labels = list(
       E1 = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
       E2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance")
@@ -212,6 +223,7 @@ INDICATOR_FAMILIES <- list(
     icon = "flower1",
     color = "#2E8B57",
     indicators = c("N1", "N2", "N3"),
+    column_names = c("naturalness_distance", "naturalness_continuity", "naturalness_score"),
     indicator_labels = list(
       N1 = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
       N2 = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
@@ -246,6 +258,41 @@ get_family_config <- function(code) {
 #' @noRd
 get_all_indicator_codes <- function() {
   unlist(lapply(INDICATOR_FAMILIES, function(f) f$indicators), use.names = FALSE)
+}
+
+
+#' Get all indicator column names
+#'
+#' @return Character vector of all long-form column names
+#' @noRd
+get_all_column_names <- function() {
+  unlist(lapply(INDICATOR_FAMILIES, function(f) f$column_names), use.names = FALSE)
+}
+
+
+#' Get column-to-family mapping
+#'
+#' @description
+#' Returns a named character vector mapping column names to family codes.
+#' Supports both short codes (C1, B2) and long-form names (carbon_biomass).
+#'
+#' @return Named character vector (names = column names, values = family codes)
+#' @noRd
+get_column_family_map <- function() {
+  result <- character(0)
+  for (fam in INDICATOR_FAMILIES) {
+    # Map long-form column_names to family code
+    if (!is.null(fam$column_names)) {
+      names_vec <- rep(fam$code, length(fam$column_names))
+      names(names_vec) <- fam$column_names
+      result <- c(result, names_vec)
+    }
+    # Map short indicators to family code
+    names_vec2 <- rep(fam$code, length(fam$indicators))
+    names(names_vec2) <- fam$indicators
+    result <- c(result, names_vec2)
+  }
+  result
 }
 
 
