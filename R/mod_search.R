@@ -102,6 +102,7 @@ mod_search_server <- function(id, app_state) {
       commune_geometry = NULL,
       is_loading = FALSE,
       is_restoring = FALSE,
+      restore_gen = 0L,  # Generation counter: incremented on each new restore
       department_changed = NULL  # Signal when department changes (timestamp)
     )
 
@@ -307,8 +308,13 @@ mod_search_server <- function(id, app_state) {
       # (triggered by the updateSelectInput roundtrip that hasn't arrived
       # yet) still sees is_restoring = TRUE and skips dept_task$invoke().
       if (rv$is_restoring) {
+        # Capture current generation so stale callbacks from a previous
+        # restore don't clear is_restoring during a newer restore.
+        gen_snapshot <- rv$restore_gen
         later::later(function() {
-          rv$is_restoring <- FALSE
+          if (shiny::isolate(rv$restore_gen) == gen_snapshot) {
+            rv$is_restoring <- FALSE
+          }
         }, delay = 1)
         return()
       }
@@ -389,7 +395,13 @@ mod_search_server <- function(id, app_state) {
       dept_code <- restore$department_code
       commune_code <- restore$commune_code
 
-      cli::cli_alert_info("Restoring location: dept={dept_code}, commune={commune_code}")
+      # Increment generation counter. All later::later callbacks and
+      # result handlers snapshot this value and compare before acting,
+      # ensuring stale callbacks from a previous restore are no-ops.
+      rv$restore_gen <- shiny::isolate(rv$restore_gen) + 1L
+      gen_snapshot <- rv$restore_gen
+
+      cli::cli_alert_info("Restoring location: dept={dept_code}, commune={commune_code} (gen={gen_snapshot})")
 
       # Flag to prevent department observer from making redundant API calls
       rv$is_restoring <- TRUE
@@ -398,27 +410,37 @@ mod_search_server <- function(id, app_state) {
       shiny::updateSelectInput(session, "departement", selected = dept_code)
 
       # Fetch communes asynchronously via ExtendedTask.
-      # tryCatch guards against invoke() failing if the task is already
-      # running (e.g., rapid project switching). Without this, the error
-      # is swallowed by Shiny but rv$is_restoring stays TRUE forever
-      # (until the 30s safety timeout), blocking commune updates.
+      # If the task is already running (rapid project switching), invoke()
+      # throws. Don't clear flags — the running task's result handler will
+      # detect the generation mismatch and re-invoke for the current project.
       tryCatch(
         restore_task$invoke(dept_code, commune_code),
         error = function(e) {
-          cli::cli_warn("restore_task$invoke() failed: {e$message}")
-          rv$is_restoring <- FALSE
+          cli::cli_warn("restore_task busy (gen={gen_snapshot}): {e$message}")
+          # Schedule a retry after a short delay. The running task should
+          # complete soon; when it does, its result handler re-invokes.
+          # This is a fallback in case the result handler doesn't fire.
           later::later(function() {
-            app_state$restore_in_progress <- FALSE
-          }, delay = 0)
+            if (shiny::isolate(rv$restore_gen) != gen_snapshot) return()
+            current <- shiny::isolate(app_state$restore_project)
+            if (is.null(current)) return()
+            tryCatch(
+              restore_task$invoke(current$department_code, current$commune_code),
+              error = function(e2) {
+                cli::cli_warn("restore_task retry also failed (gen={gen_snapshot}): {e2$message}")
+              }
+            )
+          }, delay = 3)
         }
       )
 
       # Safety timeout: if restore_task never completes (worker crash, etc.),
       # clear flags after 30 seconds so the spinner doesn't spin forever.
-      # isolate() is required because later::later runs outside reactive context.
       later::later(function() {
+        # Only clear if this is still the same restore generation
+        if (shiny::isolate(rv$restore_gen) != gen_snapshot) return()
         if (isTRUE(shiny::isolate(rv$is_restoring))) {
-          cli::cli_warn("Restore safety timeout — clearing stale flags")
+          cli::cli_warn("Restore safety timeout (gen={gen_snapshot}) — clearing stale flags")
           rv$is_restoring <- FALSE
         }
         if (isTRUE(shiny::isolate(app_state$restore_in_progress))) {
@@ -432,7 +454,6 @@ mod_search_server <- function(id, app_state) {
       result <- tryCatch(restore_task$result(), error = function(e) {
         cli::cli_alert_danger("Error restoring location: {e$message}")
         rv$is_restoring <- FALSE
-        # Clear restore flag so spinner is hidden (mod_map watches this)
         later::later(function() {
           app_state$restore_in_progress <- FALSE
         }, delay = 0)
@@ -440,6 +461,32 @@ mod_search_server <- function(id, app_state) {
       })
 
       if (is.null(result)) return()
+
+      # Check if this result is still relevant. If the user switched
+      # projects while restore_task was running, app_state$restore_project
+      # now points to a different commune. Discard stale result and
+      # re-invoke for the current project.
+      current_restore <- shiny::isolate(app_state$restore_project)
+      if (!is.null(current_restore) &&
+          !identical(result$commune_code, current_restore$commune_code)) {
+        cli::cli_alert_info(
+          "Discarding stale restore result for {result$commune_code}, current target is {current_restore$commune_code}"
+        )
+        tryCatch(
+          restore_task$invoke(
+            current_restore$department_code,
+            current_restore$commune_code
+          ),
+          error = function(e) {
+            cli::cli_warn("Re-invoke for current project failed: {e$message}")
+            rv$is_restoring <- FALSE
+            later::later(function() {
+              app_state$restore_in_progress <- FALSE
+            }, delay = 0)
+          }
+        )
+        return()
+      }
 
       communes <- result$communes
       commune_code <- result$commune_code
@@ -465,6 +512,7 @@ mod_search_server <- function(id, app_state) {
         later::later(function() {
           app_state$restore_in_progress <- FALSE
         }, delay = 0)
+        return()
       }
 
       if (!is.null(communes) && nrow(communes) > 0) {
@@ -487,7 +535,11 @@ mod_search_server <- function(id, app_state) {
       # The mod_home selected_commune observer runs in the SAME flush;
       # it must see TRUE to skip reset_project_state(). Using delay = 0
       # defers the write to the NEXT event loop iteration.
+      # Use generation check so a stale callback from a previous restore
+      # doesn't clear flags during a newer restore.
+      gen_snapshot <- rv$restore_gen
       later::later(function() {
+        if (shiny::isolate(rv$restore_gen) != gen_snapshot) return()
         app_state$restore_in_progress <- FALSE
       }, delay = 0)
 
