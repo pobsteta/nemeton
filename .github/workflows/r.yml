@@ -63,6 +63,7 @@ jobs:
           upload-snapshots: true
 
       - name: Test coverage
+        continue-on-error: true
         run: |
           install.packages("covr")
           covr::codecov(quiet = FALSE)

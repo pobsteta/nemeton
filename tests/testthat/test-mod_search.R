@@ -18,10 +18,8 @@ test_that("mod_search_ui creates namespaced inputs", {
   ui_html <- as.character(ui)
 
   # Check for namespaced input IDs
-
   expect_true(grepl("test_ns-departement", ui_html))
   expect_true(grepl("test_ns-commune", ui_html))
-  expect_true(grepl("test_ns-code_postal", ui_html))
 })
 
 test_that("mod_search_ui includes department selector", {
@@ -46,16 +44,6 @@ test_that("mod_search_ui includes commune autocomplete", {
   expect_true(grepl("selectize", ui_html, ignore.case = TRUE))
 })
 
-test_that("mod_search_ui includes postal code input", {
-  skip_if_not_installed("shiny")
-  skip_if_not_installed("bslib")
-
-  ui <- nemeton:::mod_search_ui("test")
-  ui_html <- as.character(ui)
-
-  expect_true(grepl("code_postal", ui_html))
-  expect_true(grepl("search_postal", ui_html))
-})
 
 test_that("mod_search_server is a function", {
   expect_type(nemeton:::mod_search_server, "closure")

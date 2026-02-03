@@ -152,29 +152,6 @@ mod_home_server <- function(id, app_state) {
         # Check if this is the currently loaded project
         is_active <- !is.null(current_id) && identical(proj$id, current_id)
 
-        # Determine status badge color
-        status_class <- switch(
-          proj$status,
-          "completed" = "bg-success",
-          "computing" = "bg-warning",
-          "downloading" = "bg-info",
-          "error" = "bg-danger",
-          "bg-secondary"
-        )
-
-        # Corrupted project styling
-        card_class <- if (proj$is_corrupted) {
-          "border-danger"
-        } else if (is_active) {
-          "border-primary bg-light"
-        } else {
-          "border-light"
-        }
-
-        icon <- if (proj$is_corrupted) {
-          bsicons::bs_icon("exclamation-triangle", class = "text-danger me-1")
-        } else if (is_active) {
-          bsicons::bs_icon("folder-fill", class = "text-primary me-1")
         } else {
           bsicons::bs_icon("folder", class = "text-muted me-1")
         }
@@ -248,30 +225,6 @@ mod_home_server <- function(id, app_state) {
       if (!is.null(app_state$project_id) && identical(app_state$project_id, project_id)) {
         return()
       }
-
-      project <- load_project(project_id)
-
-      if (is.null(project)) {
-        shiny::showNotification(
-          i18n$t("project_not_found"),
-          type = "error"
-        )
-        return()
-      }
-
-      # Show map loading overlay IMMEDIATELY, before any app_state change.
-      session$sendCustomMessage("showMapLoading", list(
-        loadingId = ns("map-map_loading_overlay"),
-        show = TRUE
-      ))
-
-      # Collapse search and project info sections in sidebar
-      session$sendCustomMessage("collapseElement", list(
-        id = ns("search_collapse")
-      ))
-      session$sendCustomMessage("collapseElement", list(
-        id = ns("project-project_collapse")
-      ))
 
       # Update app state with loaded project
       app_state$current_project <- project

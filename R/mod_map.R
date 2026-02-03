@@ -346,13 +346,6 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (sum(polygon_idx) == 0) {
         cli::cli_warn("Commune geometry is not a polygon, skipping display")
         show_map_loading(FALSE)
-        return()
-      }
-      if (sum(!polygon_idx) > 0) {
-        geom <- geom[polygon_idx, ]
-      }
-
-      bbox_commune <- sf::st_bbox(geom)
 
       leaflet::leafletProxy(ns("map")) |>
         leaflet::clearGroup("commune") |>
@@ -617,6 +610,60 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       invisible(TRUE)
     }
+
+
+    # ========================================
+    # Restore Project Selection
+    # ========================================
+
+    # Capture restore request
+    shiny::observeEvent(app_state$restore_project, {
+      restore <- app_state$restore_project
+      if (!is.null(restore) && !is.null(restore$selected_ids)) {
+        rv$pending_restore <- restore
+        cli::cli_alert_info("Restoration pending for {length(restore$selected_ids)} parcels")
+      }
+    }, ignoreInit = TRUE)
+
+    # Apply restoration when parcels are loaded
+    shiny::observe({
+      restore <- rv$pending_restore
+      if (is.null(restore)) return()
+
+      parcel_data <- parcels()
+      if (is.null(parcel_data) || nrow(parcel_data) == 0) return()
+
+      # Find matching parcel IDs
+      matching_ids <- intersect(restore$selected_ids, parcel_data$id)
+
+      if (length(matching_ids) > 0) {
+        # Set selected IDs
+        rv$selected_ids <- matching_ids
+
+        # Update styles for selected parcels
+        for (pid in matching_ids) {
+          update_parcel_style(pid, selected = TRUE)
+        }
+
+        # Zoom to selected parcels extent
+        selected_parcels <- parcel_data[parcel_data$id %in% matching_ids, ]
+        if (nrow(selected_parcels) > 0) {
+          bbox <- sf::st_bbox(selected_parcels)
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = as.numeric(bbox[["xmin"]]),
+              lat1 = as.numeric(bbox[["ymin"]]),
+              lng2 = as.numeric(bbox[["xmax"]]),
+              lat2 = as.numeric(bbox[["ymax"]])
+            )
+        }
+
+        cli::cli_alert_success("Restored {length(matching_ids)} selected parcels")
+      }
+
+      # Clear pending restore
+      rv$pending_restore <- NULL
+    })
 
 
     # ========================================

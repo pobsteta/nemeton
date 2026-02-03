@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.7.0
+Version: 0.8.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -37,6 +37,7 @@ Suggests:
     knitr,
     rmarkdown,
     covr,
+    withr,
     units,
     here,
     dplyr (>= 1.1.0),
@@ -62,6 +63,8 @@ Suggests:
     RSQLite,
     leaflet (>= 2.1.0),
     leaflet.extras (>= 1.0.0),
+    shinyjs (>= 2.1.0),
+    htmlwidgets (>= 1.6.0),
     rappdirs,
     rsconnect,
     nasapower (>= 4.0.0),

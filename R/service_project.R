@@ -696,15 +696,6 @@ update_project_status <- function(project_id, status, project_path = NULL) {
 #' @param project_id Character. Project ID.
 #' @param updates List. Fields to update.
 #' @param project_path Character. Optional project path (for async mode).
-#'
-#' @return Logical. TRUE if successful.
-#'
-#' @noRd
-update_project_metadata <- function(project_id, updates, project_path = NULL) {
-  if (is.null(project_path)) {
-    project_path <- get_project_path(project_id)
-  }
-  if (is.null(project_path) || !dir.exists(project_path)) {
     cli::cli_abort("Project not found: {project_id}")
   }
 

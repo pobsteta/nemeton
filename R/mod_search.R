@@ -292,7 +292,7 @@ mod_search_server <- function(id, app_state) {
           session, "commune",
           choices = character(0), selected = "", server = FALSE
         )
-      }
+      })
 
       rv$is_loading <- FALSE
     })
@@ -381,39 +381,6 @@ mod_search_server <- function(id, app_state) {
     })
 
 
-    # ========================================
-    # Search Info Output
-    # ========================================
-
-    output$search_info <- shiny::renderUI({
-      i18n <- get_i18n(get_lang())
-
-      if (is.null(rv$commune_info)) {
-        return(NULL)
-      }
-
-      htmltools::div(
-        class = "alert alert-info py-2 px-3 mb-3",
-        htmltools::tags$small(
-          htmltools::strong(rv$commune_info$nom),
-          htmltools::br(),
-          sprintf("INSEE: %s", rv$commune_info$code_insee),
-          if (!is.null(rv$commune_info$code_postal)) {
-            htmltools::span(
-              class = "ms-2",
-              sprintf("| CP: %s", rv$commune_info$code_postal)
-            )
-          }
-        )
-      )
-    })
-
-
-    # ========================================
-    # Restore Project Location
-    # ========================================
-
-    # Step 1: invoke restore task (non-blocking)
     shiny::observeEvent(app_state$restore_project, {
       restore <- app_state$restore_project
       if (is.null(restore) || is.null(restore$commune_code)) return()
