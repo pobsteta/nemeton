@@ -14,6 +14,23 @@
 app_server <- function(input, output, session) {
 
   # ============================================================
+  # ASYNC COMPUTATION SETUP
+  # ============================================================
+
+  # Ensure future::multisession is active for ExtendedTask async computation.
+  # run_app() already sets this, but if the app is started via shiny::runApp()
+  # or devtools::load_all(), the default plan is "sequential" which blocks the
+  # Shiny main loop during computation (no UI updates, no progress polling).
+  if (requireNamespace("future", quietly = TRUE)) {
+    plan_classes <- class(future::plan())
+    is_parallel <- any(c("multisession", "multicore", "cluster") %in% plan_classes)
+    if (!is_parallel) {
+      future::plan("multisession")
+      cli::cli_alert_info("Switched to future::multisession for async computation")
+    }
+  }
+
+  # ============================================================
   # REACTIVE VALUES - Application State
   # ============================================================
 
@@ -60,22 +77,8 @@ app_server <- function(input, output, session) {
 
 
   # ============================================================
-  # GUIDED TOUR
+  # GUIDED TOUR (now handled in mod_home)
   # ============================================================
-
-  # Show tour on first visit
-  shiny::observeEvent(session$clientData$url_protocol, {
-    # Check if user has seen tour before
-    tour_seen <- get_tour_preference()
-
-    if (!tour_seen && requireNamespace("cicerone", quietly = TRUE)) {
-      # Delay to let UI render
-      shiny::observe({
-        shiny::invalidateLater(1000)
-        show_app_tour(session)
-      })
-    }
-  }, once = TRUE)
 
   # Manual tour trigger
   shiny::observeEvent(input$show_help, {
@@ -128,9 +131,12 @@ app_server <- function(input, output, session) {
   # Restart tour from help modal
   shiny::observeEvent(input$restart_tour, {
     shiny::removeModal()
-    if (requireNamespace("cicerone", quietly = TRUE)) {
-      show_app_tour(session)
-    }
+    # Reset localStorage flag so tour can restart
+    session$sendCustomMessage("resetTourSeen", list())
+    # Delay to let modal close before starting tour
+    later::later(function() {
+      app_state$restart_tour <- Sys.time()
+    }, delay = 0.5)
   })
 
 
@@ -366,39 +372,4 @@ get_tour_preference <- function() {
 }
 
 
-#' Show guided tour
-#' @noRd
-show_app_tour <- function(session) {
-  if (!requireNamespace("cicerone", quietly = TRUE)) {
-    return(invisible(NULL))
-  }
-
-  i18n <- get_i18n(get_app_options()$language)
-
-  tour <- cicerone::Cicerone$new()$
-    step(
-      el = "home-departement",
-      title = i18n$t("tour_search_title"),
-      description = i18n$t("tour_search_desc")
-    )$
-    step(
-      el = "home-map_container",
-      title = i18n$t("tour_map_title"),
-      description = i18n$t("tour_map_desc")
-    )$
-    step(
-      el = "home-project_name",
-      title = i18n$t("tour_project_title"),
-      description = i18n$t("tour_project_desc")
-    )$
-    step(
-      el = "home-btn_compute",
-      title = i18n$t("tour_compute_title"),
-      description = i18n$t("tour_compute_desc")
-    )
-
-  tour$init()$start()
-
-  # Mark tour as seen
-  options(nemeton.tour_seen = TRUE)
-}
+# Tour is now handled in mod_home_server

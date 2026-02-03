@@ -49,31 +49,44 @@ indicator_carbon_biomass <- function(units,
     stop("units must be an sf object", call. = FALSE)
   }
 
-  # Check required columns
-  if (!species_col %in% names(units)) {
-    msg_error("carbon_species_missing", species_col)
+  has_inventory <- species_col %in% names(units) &&
+                   age_col %in% names(units) &&
+                   density_col %in% names(units)
+
+  if (has_inventory) {
+    # Full allometric model when forest inventory data is available
+    species <- units[[species_col]]
+    age <- units[[age_col]]
+    density <- units[[density_col]]
+
+    biomass <- calculate_allometric_biomass(species, age, density)
+    msg_info("indicator_carbon_biomass")
+    return(biomass)
   }
 
-  if (!age_col %in% names(units)) {
-    msg_error("carbon_age_missing", age_col)
+  # Fallback: estimate carbon stock from NDVI when inventory columns are missing
+  # (cadastral parcels typically lack species/age/density)
+  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+      "ndvi" %in% names(layers$rasters)) {
+    cli::cli_alert_info("No forest inventory columns; estimating C1 from NDVI")
+    ndvi_raster <- layers$rasters[["ndvi"]]
+    ndvi_mean <- exactextractr::exact_extract(
+      ndvi_raster,
+      as_pure_sf(units),
+      fun = "mean",
+      progress = FALSE
+    )
+    # NDVI-to-biomass proxy: scale NDVI (0-1) to approximate carbon stock
+    # (tC/ha). Typical temperate forest: ~80-150 tC/ha at high NDVI.
+    biomass <- pmax(0, ndvi_mean, na.rm = FALSE) * 150
+    return(biomass)
   }
 
-  if (!density_col %in% names(units)) {
-    msg_error("carbon_density_missing", density_col)
-  }
-
-  # Extract attributes
-  species <- units[[species_col]]
-  age <- units[[age_col]]
-  density <- units[[density_col]]
-
-  # Calculate biomass using allometric equations
-  biomass <- calculate_allometric_biomass(species, age, density)
-
-  # Log which equations were used (info message)
-  msg_info("indicator_carbon_biomass")
-
-  biomass
+  # Last resort: return NA
+  cli::cli_alert_warning(
+    "C1: no inventory data and no NDVI layer; returning NA"
+  )
+  rep(NA_real_, nrow(units))
 }
 
 #' NDVI Mean and Trend Analysis (C2)
@@ -119,7 +132,7 @@ indicator_carbon_ndvi <- function(units,
   }
 
   # Get NDVI raster
-  ndvi_raster <- layers$rasters[[ndvi_layer]]$object
+  ndvi_raster <- layers$rasters[[ndvi_layer]]
 
   # Extract mean NDVI for each unit
   ndvi_mean <- exactextractr::exact_extract(
@@ -168,7 +181,7 @@ indicator_carbon_ndvi <- function(units,
 #' }
 indicator_water_network <- function(units,
                                     layers,
-                                    watercourse_layer = "watercourses",
+                                    watercourse_layer = "water_network",
                                     buffer = 0) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -185,8 +198,7 @@ indicator_water_network <- function(units,
   }
 
   # Get watercourse vector layer
-  watercourses <- layers$vectors[[watercourse_layer]]$object
-
+  watercourses <- layers$vectors[[watercourse_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(watercourses)) {
     watercourses <- sf::st_read(layers$vectors[[watercourse_layer]]$path, quiet = TRUE)
@@ -253,7 +265,7 @@ indicator_water_network <- function(units,
 #' }
 indicator_water_wetlands <- function(units,
                                      layers,
-                                     wetland_layer = "landcover",
+                                     wetland_layer = "wetlands",
                                      wetland_values = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -264,62 +276,93 @@ indicator_water_wetlands <- function(units,
     stop("layers must be a nemeton_layers object", call. = FALSE)
   }
 
-  # Check wetland layer exists (before checking wetland_values)
-  if (!wetland_layer %in% names(layers$rasters)) {
-    stop(sprintf("Wetland layer '%s' not found in layers", wetland_layer), call. = FALSE)
-  }
-
-  # Check wetland_values is provided
-  if (is.null(wetland_values)) {
-    stop("wetland_values is required - must specify which landcover codes represent wetlands", call. = FALSE)
-  }
-
-  # Get wetland raster
-  wetland_raster <- layers$rasters[[wetland_layer]]$object
-
-  # If not loaded (lazy loading), load it
-  if (is.null(wetland_raster)) {
-    wetland_raster <- terra::rast(layers$rasters[[wetland_layer]]$path)
-  }
-
-  # Calculate wetland coverage for each unit
-  # Extract landcover values and calculate % matching wetland codes
   coverage <- numeric(nrow(units))
 
-  for (i in seq_len(nrow(units))) {
-    unit_geom <- units[i, ]
+  # Strategy 1: Use vector wetlands layer (ZNIEFF zones humides) if available
+  if ("wetlands" %in% names(layers$vectors) && !is.null(layers$vectors[["wetlands"]])) {
+    cli::cli_alert_info("W2: Computing wetland coverage from vector layer")
+    wetlands_sf <- layers$vectors[["wetlands"]]
 
-    # Extract all landcover values within unit
-    lc_values <- exactextractr::exact_extract(
-      wetland_raster,
-      as_pure_sf(unit_geom),
-      fun = NULL, # Return all values with coverage fractions
-      progress = FALSE
-    )[[1]]
-
-    # lc_values is a data.frame with columns: value, coverage_fraction
-    if (nrow(lc_values) == 0) {
-      coverage[i] <- 0
-      next
+    # Ensure CRS match
+    if (!sf::st_crs(units) == sf::st_crs(wetlands_sf)) {
+      wetlands_sf <- sf::st_transform(wetlands_sf, sf::st_crs(units))
     }
 
-    # Calculate area-weighted percentage of wetland
-    # coverage_fraction is the proportion of the cell that overlaps the polygon
-    wetland_mask <- lc_values$value %in% wetland_values
-    wetland_fraction <- sum(lc_values$coverage_fraction[wetland_mask], na.rm = TRUE)
-    total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
+    for (i in seq_len(nrow(units))) {
+      unit_geom <- units[i, ]
+      parcel_area <- as.numeric(sf::st_area(unit_geom))
 
-    if (total_fraction > 0) {
-      coverage[i] <- (wetland_fraction / total_fraction) * 100
-    } else {
-      coverage[i] <- 0
+      intersected <- tryCatch(
+        suppressWarnings(sf::st_intersection(wetlands_sf, unit_geom)),
+        error = function(e) NULL
+      )
+
+      if (!is.null(intersected) && nrow(intersected) > 0) {
+        wetland_area <- sum(as.numeric(sf::st_area(intersected)))
+        coverage[i] <- (wetland_area / parcel_area) * 100
+      }
     }
+
+    msg_info("indicator_water_wetlands")
+    return(pmin(coverage, 100))
   }
 
-  # Log calculation
-  msg_info("indicator_water_wetlands")
+  # Strategy 2: Use TWI threshold (TWI > 12 = potential wetland) from DEM
+  dem <- get_dem_raster(layers)
+  if (!is.null(dem)) {
+    cli::cli_alert_info("W2: Estimating wetlands from TWI (threshold > 12)")
+    twi_raster <- calculate_twi_terra(dem)
 
-  coverage
+    for (i in seq_len(nrow(units))) {
+      twi_vals <- exactextractr::exact_extract(
+        twi_raster,
+        as_pure_sf(units[i, ]),
+        fun = NULL,
+        progress = FALSE
+      )[[1]]
+
+      if (nrow(twi_vals) > 0) {
+        wetland_frac <- sum(twi_vals$coverage_fraction[twi_vals$value > 12], na.rm = TRUE)
+        total_frac <- sum(twi_vals$coverage_fraction, na.rm = TRUE)
+        if (total_frac > 0) {
+          coverage[i] <- (wetland_frac / total_frac) * 100
+        }
+      }
+    }
+
+    msg_info("indicator_water_wetlands")
+    return(pmin(coverage, 100))
+  }
+
+  # Strategy 3: Use raster landcover if available with wetland codes
+  if (!is.null(wetland_values) && "forest_cover" %in% names(layers$rasters)) {
+    cli::cli_alert_info("W2: Computing wetland coverage from OSO landcover codes")
+    lc_raster <- layers$rasters[["forest_cover"]]
+
+    for (i in seq_len(nrow(units))) {
+      lc_values <- exactextractr::exact_extract(
+        lc_raster,
+        as_pure_sf(units[i, ]),
+        fun = NULL,
+        progress = FALSE
+      )[[1]]
+
+      if (nrow(lc_values) > 0) {
+        wetland_mask <- lc_values$value %in% wetland_values
+        wetland_fraction <- sum(lc_values$coverage_fraction[wetland_mask], na.rm = TRUE)
+        total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
+        if (total_fraction > 0) {
+          coverage[i] <- (wetland_fraction / total_fraction) * 100
+        }
+      }
+    }
+
+    msg_info("indicator_water_wetlands")
+    return(pmin(coverage, 100))
+  }
+
+  cli::cli_alert_warning("W2: No wetland data available (no vectors, DEM, or landcover)")
+  rep(NA_real_, nrow(units))
 }
 
 #' Topographic Wetness Index (W3)
@@ -357,17 +400,13 @@ indicator_water_twi <- function(units,
   # Match and validate method
   method <- match.arg(method)
 
-  # Check DEM layer exists
-  if (!dem_layer %in% names(layers$rasters)) {
-    stop(sprintf("DEM layer '%s' not found in layers", dem_layer), call. = FALSE)
+  # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
+  dem <- get_dem_raster(layers)
+  if (is.null(dem) && dem_layer %in% names(layers$rasters)) {
+    dem <- layers$rasters[[dem_layer]]
   }
-
-  # Get DEM raster
-  dem <- layers$rasters[[dem_layer]]$object
-
-  # If not loaded (lazy loading), load it
   if (is.null(dem)) {
-    dem <- terra::rast(layers$rasters[[dem_layer]]$path)
+    stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
 
   # Determine which method to use
@@ -528,8 +567,7 @@ indicator_soil_fertility <- function(units,
 #' @noRd
 extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_col) {
   # Get soil raster
-  soil_raster <- layers$rasters[[soil_layer]]$object
-
+  soil_raster <- layers$rasters[[soil_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(soil_raster)) {
     soil_raster <- terra::rast(layers$rasters[[soil_layer]]$path)
@@ -565,8 +603,7 @@ extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_c
 #' @noRd
 extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_col) {
   # Get soil vector layer
-  soil_vector <- layers$vectors[[soil_layer]]$object
-
+  soil_vector <- layers$vectors[[soil_layer]]
   # If not loaded (lazy loading), load it
   if (is.null(soil_vector)) {
     soil_vector <- sf::st_read(layers$vectors[[soil_layer]]$path, quiet = TRUE)
@@ -636,8 +673,8 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
 indicator_soil_erosion <- function(units,
                                    layers,
                                    dem_layer = "dem",
-                                   landcover_layer = "landcover",
-                                   forest_values = c(1, 2, 3)) {
+                                   landcover_layer = "forest_cover",
+                                   forest_values = seq(1, 6)) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -647,43 +684,35 @@ indicator_soil_erosion <- function(units,
     stop("layers must be a nemeton_layers object", call. = FALSE)
   }
 
-  # Check DEM layer exists
-  if (!dem_layer %in% names(layers$rasters)) {
-    stop(sprintf("DEM layer '%s' not found in layers", dem_layer), call. = FALSE)
+  # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
+  dem <- get_dem_raster(layers)
+  if (is.null(dem) && dem_layer %in% names(layers$rasters)) {
+    dem <- layers$rasters[[dem_layer]]
   }
-
-  # Check landcover layer exists
-  if (!landcover_layer %in% names(layers$rasters)) {
-    stop(sprintf("Landcover layer '%s' not found in layers", landcover_layer), call. = FALSE)
-  }
-
-  # Get DEM raster
-  dem <- layers$rasters[[dem_layer]]$object
   if (is.null(dem)) {
-    dem <- terra::rast(layers$rasters[[dem_layer]]$path)
-  }
-
-  # Get landcover raster
-  landcover <- layers$rasters[[landcover_layer]]$object
-  if (is.null(landcover)) {
-    landcover <- terra::rast(layers$rasters[[landcover_layer]]$path)
+    stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
 
   # Calculate slope from DEM (in degrees)
   slope <- terra::terrain(dem, v = "slope", unit = "degrees")
 
-  # Calculate forest cover protection factor (0-1)
-  # 1 = full forest protection, 0 = no forest protection
-  # Check if each landcover value is in forest_values
-  is_forest <- function(x) {
-    as.numeric(x %in% forest_values)
-  }
-  protection <- terra::app(landcover, is_forest)
+  # Check landcover layer exists for protection factor
+  has_landcover <- landcover_layer %in% names(layers$rasters) &&
+    !is.null(layers$rasters[[landcover_layer]])
 
-  # Erosion risk = slope × (1 - protection)
-  # High slope + no protection = high erosion
-  # High slope + full protection = low erosion
-  erosion_raster <- slope * (1 - protection)
+  if (has_landcover) {
+    landcover <- layers$rasters[[landcover_layer]]
+    # Calculate forest cover protection factor (0-1)
+    is_forest <- function(x) {
+      as.numeric(x %in% forest_values)
+    }
+    protection <- terra::app(landcover, is_forest)
+    erosion_raster <- slope * (1 - protection)
+  } else {
+    # No landcover: use slope only (assume moderate protection from forest)
+    cli::cli_alert_info("F2: No landcover layer, computing erosion from slope only")
+    erosion_raster <- slope * 0.5  # Assume 50% forest protection
+  }
 
   # Extract mean erosion risk for each unit
   erosion_mean <- exactextractr::exact_extract(
@@ -738,8 +767,8 @@ indicator_soil_erosion <- function(units,
 #' }
 indicator_landscape_fragmentation <- function(units,
                                               layers,
-                                              landcover_layer = "landcover",
-                                              forest_values = c(1, 2, 3),
+                                              landcover_layer = "forest_cover",
+                                              forest_values = seq(1, 6),
                                               buffer = 1000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
@@ -750,12 +779,14 @@ indicator_landscape_fragmentation <- function(units,
   }
 
   # Check landcover layer exists
-  if (!landcover_layer %in% names(layers$rasters)) {
-    stop(sprintf("Landcover layer '%s' not found in layers", landcover_layer), call. = FALSE)
+  if (!landcover_layer %in% names(layers$rasters) ||
+      is.null(layers$rasters[[landcover_layer]])) {
+    cli::cli_alert_warning("L1: Landcover layer '{landcover_layer}' not available, returning NA")
+    return(rep(NA_real_, nrow(units)))
   }
 
   # Load landcover raster
-  landcover <- layers$rasters[[landcover_layer]]$object
+  landcover <- layers$rasters[[landcover_layer]]
   if (is.null(landcover)) {
     landcover <- terra::rast(layers$rasters[[landcover_layer]]$path)
   }
@@ -843,4 +874,220 @@ indicator_landscape_edge <- function(units) {
 
   msg_info("indicator_landscape_edge")
   edge_density
+}
+
+# ==============================================================================
+# ALIAS FUNCTIONS
+# Map indicator names from list_available_indicators() to existing functions.
+# These are required because compute_single_indicator dispatches to
+# indicator_<name> but some functions have different naming conventions.
+# ==============================================================================
+
+#' @noRd
+indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
+  # A1: Forest coverage buffer - delegates to indicator_air_coverage
+  # Requires forest_cover raster from layers
+  lc <- NULL
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    lc <- layers$rasters[["forest_cover"]]
+  }
+  if (is.null(lc)) {
+    # Fallback: estimate from NDVI (high NDVI = forested)
+    ndvi <- if (!is.null(layers)) layers$rasters[["ndvi"]] else NULL
+    if (!is.null(ndvi)) {
+      cli::cli_alert_info("A1: No forest_cover layer, estimating from NDVI")
+      buffers <- sf::st_buffer(units, dist = 1000)
+      coverage <- exactextractr::exact_extract(ndvi, as_pure_sf(buffers),
+        fun = "mean", progress = FALSE
+      )
+      # NDVI > 0.4 is typically forested; scale to 0-100
+      result <- units
+      result$A1 <- pmin(pmax(coverage / 0.8, 0), 1) * 100
+      return(result)
+    }
+    cli::cli_alert_warning("A1: No forest_cover or NDVI layer available")
+    result <- units
+    result$A1 <- rep(NA_real_, nrow(units))
+    return(result)
+  }
+  # OSO forest codes: 1-6 are various forest types
+  indicator_air_coverage(units, land_cover = lc,
+    forest_classes = seq(1, 6), buffer_radius = 1000)
+}
+
+#' @noRd
+indicator_fertility_soil <- function(units, layers = NULL, ...) {
+  # F1: Soil fertility - no dedicated soil layer available
+
+  # Proxy: use NDVI as vegetation productivity indicator
+  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+      "ndvi" %in% names(layers$rasters)) {
+    cli::cli_alert_info("F1: Estimating soil fertility from NDVI productivity")
+    ndvi_raster <- layers$rasters[["ndvi"]]
+    fertility <- exactextractr::exact_extract(ndvi_raster,
+      as_pure_sf(units), fun = "mean", progress = FALSE
+    )
+    # Scale NDVI (0-1) to fertility score (0-100)
+    return(pmin(pmax(fertility / 0.8, 0), 1) * 100)
+  }
+  cli::cli_alert_warning("F1: No data available for soil fertility, returning NA")
+  rep(NA_real_, nrow(units))
+}
+
+#' @noRd
+indicator_fertility_erosion <- function(units, layers = NULL, ...) {
+  # F2: Erosion risk - uses DEM slope and forest cover
+  dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
+  if (!is.null(dem)) {
+    lc_layer <- if ("forest_cover" %in% names(layers$rasters)) "forest_cover" else NULL
+    if (!is.null(lc_layer)) {
+      return(indicator_soil_erosion(units, layers,
+        dem_layer = "dem", landcover_layer = lc_layer,
+        forest_values = seq(1, 6)))
+    }
+    # DEM only: compute slope-based erosion risk
+    cli::cli_alert_info("F2: Computing erosion from slope only (no landcover)")
+    slope <- terra::terrain(dem, v = "slope", unit = "degrees")
+    slope_mean <- exactextractr::exact_extract(slope,
+      as_pure_sf(units), fun = "mean", progress = FALSE
+    )
+    # Normalize: 0° = 0, 45° = 100
+    return(pmin(slope_mean / 45, 1) * 100)
+  }
+  cli::cli_alert_warning("F2: No DEM available for erosion, returning NA")
+  rep(NA_real_, nrow(units))
+}
+
+#' @noRd
+indicator_landscape_edge_ratio <- function(units, ...) {
+  # L2: Edge-to-area ratio - delegates to indicator_landscape_edge
+  indicator_landscape_edge(units)
+}
+
+#' @noRd
+indicator_social_population <- function(units, ...) {
+  # S3: Population proximity - delegates to indicator_social_proximity
+  indicator_social_proximity(units, method = "proxy")
+}
+
+#' @noRd
+indicator_energy_wood <- function(units, layers = NULL, ...) {
+  # E1: Fuelwood potential - estimate from NDVI-based biomass
+  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+      "ndvi" %in% names(layers$rasters)) {
+    cli::cli_alert_info("E1: Estimating fuelwood potential from NDVI")
+    ndvi_raster <- layers$rasters[["ndvi"]]
+    ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+      as_pure_sf(units), fun = "mean", progress = FALSE
+    )
+    # NDVI -> volume proxy -> fuelwood potential
+    # Approximate: NDVI 0.8 -> ~200 m3/ha volume -> 2% harvest -> 0.3 residue
+    volume_proxy <- pmax(0, ndvi_mean) * 250  # m3/ha
+    fuelwood <- volume_proxy * 0.02 * 0.3 * 550 / 1000 * 0.5  # tonnes DM/yr
+    return(fuelwood)
+  }
+  cli::cli_alert_warning("E1: No NDVI available for fuelwood estimate")
+  rep(NA_real_, nrow(units))
+}
+
+#' @noRd
+indicator_energy_co2 <- function(units, layers = NULL, ...) {
+  # E2: CO2 emission avoidance - estimate from E1
+  e1 <- indicator_energy_wood(units, layers = layers)
+  if (all(is.na(e1))) return(e1)
+  # Convert fuelwood (tonnes DM/yr) to CO2 avoided (tCO2eq/yr)
+  # 1 tonne DM = 4500 kWh, emission factor ~0.222 kgCO2eq/kWh for gas substitution
+  e1 * 4500 * 0.222 / 1000
+}
+
+#' @noRd
+indicator_naturalness_score <- function(units, ...) {
+  # N3: Composite naturalness - simplified without dependent indicators
+  # Use a proxy based on area and shape
+  result <- units
+  area_ha <- as.numeric(sf::st_area(units)) / 10000
+  # Larger continuous areas = higher naturalness
+  n3 <- pmin(log1p(area_ha) / log1p(100), 1) * 100
+  result$N3 <- n3
+  result
+}
+
+#' @noRd
+indicator_production_volume <- function(units, layers = NULL, ...) {
+  # P1: Timber volume - prefer LiDAR MNH, fallback to NDVI
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    # Strategy 1: Use LiDAR MNH (Canopy Height Model) for volume estimation
+    # V = f(H) using allometric relationships: V ~ 0.5 * H * BA
+    # Simplified: mean height -> volume via European temperate forest models
+    if ("lidar_mnh" %in% names(layers$rasters)) {
+      cli::cli_alert_info("P1: Estimating timber volume from LiDAR MNH")
+      mnh_raster <- layers$rasters[["lidar_mnh"]]
+      units_sf <- as_pure_sf(units)
+      mnh_mean <- exactextractr::exact_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      # Height-to-volume relationship (temperate forests, approximate)
+      # Typical: H=10m -> ~100 m3/ha, H=20m -> ~300 m3/ha, H=30m -> ~500 m3/ha
+      # Using: V = 0.55 * H^1.8 (simplified power model)
+      volume <- 0.55 * pmax(0, mnh_mean)^1.8
+      return(volume)
+    }
+
+    # Strategy 2: Fallback to NDVI
+    if ("ndvi" %in% names(layers$rasters)) {
+      cli::cli_alert_info("P1: Estimating timber volume from NDVI")
+      ndvi_raster <- layers$rasters[["ndvi"]]
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE
+      )
+      # NDVI -> volume proxy: NDVI 0.8 ~ 200 m3/ha for mature temperate forest
+      return(pmax(0, ndvi_mean) * 250)
+    }
+  }
+  rep(NA_real_, nrow(units))
+}
+
+#' @noRd
+indicator_production_productivity <- function(units, layers = NULL, ...) {
+  # P2: Productivity - estimate from NDVI as proxy for NPP
+  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+      "ndvi" %in% names(layers$rasters)) {
+    cli::cli_alert_info("P2: Estimating productivity from NDVI")
+    ndvi_raster <- layers$rasters[["ndvi"]]
+    ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+      as_pure_sf(units), fun = "mean", progress = FALSE
+    )
+    # NDVI as proxy: scale to m3/ha/yr (typical range 3-15)
+    return(pmax(0, ndvi_mean) * 15)
+  }
+  rep(NA_real_, nrow(units))
+}
+
+#' @noRd
+indicator_production_quality <- function(units, layers = NULL, ...) {
+  # P3: Timber quality - proxy from slope and NDVI
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    scores <- rep(50, nrow(units))  # Base neutral score
+    # Lower slope = better access = higher quality management
+    dem <- get_dem_raster(layers)
+    if (!is.null(dem)) {
+      slope <- terra::terrain(dem, v = "slope", unit = "degrees")
+      slope_mean <- exactextractr::exact_extract(slope,
+        as_pure_sf(units), fun = "mean", progress = FALSE
+      )
+      # Gentle slopes (< 15°) favor quality forestry
+      slope_score <- pmax(0, 1 - slope_mean / 30) * 50
+      scores <- scores + slope_score - 25
+    }
+    # Higher NDVI = healthier trees = better quality
+    if ("ndvi" %in% names(layers$rasters)) {
+      ndvi_raster <- layers$rasters[["ndvi"]]
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE
+      )
+      ndvi_score <- pmax(0, ndvi_mean / 0.8) * 50
+      scores <- scores + ndvi_score - 25
+    }
+    return(pmin(pmax(scores, 0), 100))
+  }
+  rep(NA_real_, nrow(units))
 }

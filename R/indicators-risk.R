@@ -61,70 +61,79 @@ NULL
 #' summary(result$R1)
 #' }
 indicator_risk_fire <- function(units,
-                                dem,
+                                dem = NULL,
+                                layers = NULL,
                                 species_field = "species",
                                 climate = NULL,
                                 weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3)) {
   # Validate inputs
   validate_sf(units)
-  if (!inherits(dem, "SpatRaster")) {
-    stop("dem must be a SpatRaster object", call. = FALSE)
+
+  # Extract DEM from layers if not provided directly (prefer LiDAR HD MNT)
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- get_dem_raster(layers)
   }
 
-  if (!species_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", species_field), call. = FALSE)
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) {
+    cli::cli_alert_warning("R1: No DEM available for fire risk, returning NA")
+    units$R1 <- rep(NA_real_, nrow(units))
+    return(units)
   }
 
   # Normalize weights
   weights <- weights / sum(weights)
 
   # Component 1: Slope factor
-  # Calculate slope from DEM
   slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
-
-  # Extract slope for each parcel (mean)
-  slope_values <- terra::extract(slope_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-
-  # Normalize: 0° = 0, 30°+ = 100
+  slope_values <- exactextractr::exact_extract(slope_raster,
+    as_pure_sf(units), fun = "mean", progress = FALSE)
   slope_factor <- pmin(slope_values / 30, 1) * 100
 
-  # Component 2: Species flammability
-  species <- units[[species_field]]
-  species_factor <- get_species_flammability(species)
+  # Component 2: Species flammability (or NDVI-based proxy)
+  if (species_field %in% names(units)) {
+    species <- units[[species_field]]
+    species_factor <- get_species_flammability(species)
+  } else {
+    # Fallback: use NDVI. Low NDVI = dry vegetation = higher flammability
+    if (!is.null(layers) && "ndvi" %in% names(layers$rasters)) {
+      ndvi_mean <- exactextractr::exact_extract(layers$rasters[["ndvi"]],
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      # Low NDVI = dry = flammable. Invert: NDVI 0.2->80, NDVI 0.8->20
+      species_factor <- pmax(0, pmin(100, 100 - ndvi_mean * 100))
+    } else {
+      species_factor <- rep(50, nrow(units))
+    }
+    # Redistribute species weight if no data
+    weights["slope"] <- weights["slope"] + weights["species"] / 2
+    weights["climate"] <- weights["climate"] + weights["species"] / 2
+    weights["species"] <- 0
+  }
 
   # Component 3: Climate dryness (if available)
   if (!is.null(climate) && all(c("temperature", "precipitation") %in% names(climate))) {
-    # Extract temperature and precipitation
     temp_values <- terra::extract(climate$temperature, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
     precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-
-    # Dryness: high temp + low precip = high dryness
-    # Normalize temperature: 8°C=0, 16°C=100
     temp_norm <- pmin(pmax((temp_values - 8) / 8, 0), 1) * 100
-
-    # Normalize precipitation (inverse): 1400mm=0, 500mm=100
     precip_norm <- pmin(pmax((1400 - precip_values) / 900, 0), 1) * 100
-
-    # Climate dryness: average of temp and inverse precip
     climate_factor <- (temp_norm + precip_norm) / 2
   } else {
-    # No climate data: use slope and species only, reweight
-    climate_factor <- rep(50, nrow(units))  # Neutral value
+    climate_factor <- rep(50, nrow(units))
     weights["slope"] <- weights["slope"] + weights["climate"] / 2
     weights["species"] <- weights["species"] + weights["climate"] / 2
     weights["climate"] <- 0
   }
+
+  # Renormalize weights
+  total_w <- sum(weights)
+  if (total_w > 0) weights <- weights / total_w
 
   # Composite R1
   units$R1 <- weights["slope"] * slope_factor +
     weights["species"] * species_factor +
     weights["climate"] * climate_factor
 
-  # Cap at 0-100
   units$R1 <- pmin(pmax(units$R1, 0), 100)
-
   msg_info("indicator_risk_fire")
-
   units
 }
 
@@ -176,46 +185,60 @@ indicator_risk_fire <- function(units,
 #' summary(result$R2)
 #' }
 indicator_risk_storm <- function(units,
-                                 dem,
+                                 dem = NULL,
+                                 layers = NULL,
                                  height_field = "height",
                                  density_field = "density",
                                  weights = c(height = 1 / 3, density = 1 / 3, exposure = 1 / 3)) {
   # Validate inputs
   validate_sf(units)
-  if (!inherits(dem, "SpatRaster")) {
-    stop("dem must be a SpatRaster object", call. = FALSE)
+
+  # Extract DEM from layers if not provided directly (prefer LiDAR HD MNT)
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- get_dem_raster(layers)
   }
 
-  if (!height_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", height_field), call. = FALSE)
-  }
-
-  if (!density_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", density_field), call. = FALSE)
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) {
+    cli::cli_alert_warning("R2: No DEM available for storm risk, returning NA")
+    units$R2 <- rep(NA_real_, nrow(units))
+    return(units)
   }
 
   # Normalize weights
   weights <- weights / sum(weights)
 
-  # Component 1: Height factor
-  # Normalize: 10m=0, 35m+=100
-  height_values <- units[[height_field]]
-  height_factor <- pmin(pmax((height_values - 10) / 25, 0), 1) * 100
+  # Component 1: Height factor (prefer LiDAR MNH, then field, then NDVI)
+  if (!is.null(layers) && "lidar_mnh" %in% names(layers$rasters)) {
+    cli::cli_alert_info("R2: Using LiDAR MNH for canopy height")
+    mnh_mean <- exactextractr::exact_extract(layers$rasters[["lidar_mnh"]],
+      as_pure_sf(units), fun = "mean", progress = FALSE)
+    height_factor <- pmin(pmax((mnh_mean - 10) / 25, 0), 1) * 100
+  } else if (height_field %in% names(units)) {
+    height_values <- units[[height_field]]
+    height_factor <- pmin(pmax((height_values - 10) / 25, 0), 1) * 100
+  } else {
+    # Proxy: use NDVI as proxy for canopy height
+    if (!is.null(layers) && "ndvi" %in% names(layers$rasters)) {
+      ndvi_mean <- exactextractr::exact_extract(layers$rasters[["ndvi"]],
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      height_factor <- pmin(pmax(ndvi_mean / 0.8, 0), 1) * 100
+    } else {
+      height_factor <- rep(50, nrow(units))
+    }
+  }
 
-  # Component 2: Density factor
-  # Normalize: 0.5=0, 1.0=100
-  density_values <- units[[density_field]]
-  density_factor <- pmin(pmax((density_values - 0.5) / 0.5, 0), 1) * 100
+  # Component 2: Density factor (or neutral proxy)
+  if (density_field %in% names(units)) {
+    density_values <- units[[density_field]]
+    density_factor <- pmin(pmax((density_values - 0.5) / 0.5, 0), 1) * 100
+  } else {
+    density_factor <- rep(50, nrow(units))  # Neutral
+  }
 
-  # Component 3: Topographic exposure (TPI-like)
-  # Calculate TPI (Topographic Position Index): high = ridges = exposed
+  # Component 3: Topographic exposure (TPI)
   tpi_raster <- terra::terrain(dem, v = "TPI")
-
-  # Extract TPI for each parcel
-  tpi_values <- terra::extract(tpi_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-
-  # Normalize TPI: negative (valleys) = 0, positive (ridges) = 100
-  # Typical TPI range: -50 to +50
+  tpi_values <- exactextractr::exact_extract(tpi_raster,
+    as_pure_sf(units), fun = "mean", progress = FALSE)
   exposure_factor <- pmin(pmax((tpi_values + 50) / 100, 0), 1) * 100
 
   # Composite R2
@@ -223,11 +246,8 @@ indicator_risk_storm <- function(units,
     weights["density"] * density_factor +
     weights["exposure"] * exposure_factor
 
-  # Cap at 0-100
   units$R2 <- pmin(pmax(units$R2, 0), 100)
-
   msg_info("indicator_risk_storm")
-
   units
 }
 
@@ -283,6 +303,7 @@ indicator_risk_storm <- function(units,
 #' summary(result$R3)
 #' }
 indicator_risk_drought <- function(units,
+                                   layers = NULL,
                                    twi_field = "W3",
                                    climate = NULL,
                                    species_field = "species",
@@ -290,19 +311,26 @@ indicator_risk_drought <- function(units,
   # Validate inputs
   validate_sf(units)
 
-  if (!twi_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units. Run indicator_water_twi() first to compute W3.", twi_field), call. = FALSE)
-  }
-
-  if (!species_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", species_field), call. = FALSE)
-  }
-
   # Normalize weights
   weights <- weights / sum(weights)
 
   # Component 1: Inverse TWI (low TWI = dry sites = high stress)
-  twi_values <- units[[twi_field]]
+  if (twi_field %in% names(units)) {
+    twi_values <- units[[twi_field]]
+  } else {
+    # Compute TWI from DEM if available (prefer LiDAR HD MNT)
+    dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
+    if (!is.null(dem)) {
+      cli::cli_alert_info("R3: Computing TWI from DEM for drought assessment")
+      twi_raster <- calculate_twi_terra(dem)
+      twi_values <- exactextractr::exact_extract(twi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+    } else {
+      cli::cli_alert_warning("R3: No TWI or DEM available for drought risk")
+      units$R3 <- rep(NA_real_, nrow(units))
+      return(units)
+    }
+  }
 
   # Normalize TWI: 5=100 (dry), 15=0 (wet)
   twi_factor <- pmin(pmax((15 - twi_values) / 10, 0), 1) * 100
@@ -310,30 +338,35 @@ indicator_risk_drought <- function(units,
   # Component 2: Precipitation deficit (if available)
   if (!is.null(climate) && "precipitation" %in% names(climate)) {
     precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-
-    # Normalize precipitation (inverse): 1200mm+=0, 600mm-=100
     precip_factor <- pmin(pmax((1200 - precip_values) / 600, 0), 1) * 100
   } else {
-    # No climate data: use TWI only, reweight
-    precip_factor <- rep(50, nrow(units))  # Neutral value
+    precip_factor <- rep(50, nrow(units))
     weights["twi"] <- weights["twi"] + weights["precip"]
     weights["precip"] <- 0
   }
 
-  # Component 3: Species sensitivity
-  species <- units[[species_field]]
-  species_factor <- get_species_drought_sensitivity(species)
+  # Component 3: Species sensitivity (or neutral if not available)
+  if (species_field %in% names(units)) {
+    species <- units[[species_field]]
+    species_factor <- get_species_drought_sensitivity(species)
+  } else {
+    species_factor <- rep(50, nrow(units))
+    weights["twi"] <- weights["twi"] + weights["species"] / 2
+    weights["precip"] <- weights["precip"] + weights["species"] / 2
+    weights["species"] <- 0
+  }
+
+  # Renormalize weights
+  total_w <- sum(weights)
+  if (total_w > 0) weights <- weights / total_w
 
   # Composite R3
   units$R3 <- weights["twi"] * twi_factor +
     weights["precip"] * precip_factor +
     weights["species"] * species_factor
 
-  # Cap at 0-100
   units$R3 <- pmin(pmax(units$R3, 0), 100)
-
   msg_info("indicator_risk_drought")
-
   units
 }
 
@@ -413,20 +446,22 @@ indicator_risk_browsing <- function(units,
 
   validate_sf(units)
 
-  if (!species_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", species_field), call. = FALSE)
-  }
-
   # Normalize weights
   weights <- weights / sum(weights)
 
   n_units <- nrow(units)
 
   # ==========================================================================
-  # Component 1: Species palatability
+  # Component 1: Species palatability (or neutral if no species data)
   # ==========================================================================
-  species <- units[[species_field]]
-  palatability_factor <- get_species_palatability(species)
+  if (species_field %in% names(units)) {
+    species <- units[[species_field]]
+    palatability_factor <- get_species_palatability(species)
+  } else {
+    # No species data - use moderate palatability (broadleaf default)
+    cli::cli_alert_info("R4: No species data, using moderate palatability estimate")
+    palatability_factor <- rep(60, n_units)
+  }
   units$R4_palatability <- palatability_factor
 
   # ==========================================================================

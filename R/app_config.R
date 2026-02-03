@@ -13,10 +13,10 @@ NULL
 #' @noRd
 APP_CONFIG <- list(
   # App metadata
-  app_name = "nemetonApp",
-  app_version = "0.8.0",
-  app_title_fr = "nemetonApp - Diagnostic Forestier",
-  app_title_en = "nemetonApp - Forest Diagnostic",
+  app_name = "N\u00e9m\u00e9ton",
+  app_version = "0.7.0",
+  app_title_fr = "N\u00e9m\u00e9ton - Diagnostic Forestier",
+  app_title_en = "N\u00e9m\u00e9ton - Forest Diagnostic",
 
   # Limits
   max_parcels = 20L,
@@ -216,9 +216,9 @@ DATA_SOURCES <- list(
     fallback = "local_cache",
     required = FALSE
   ),
-  corine = list(
-    name = "corine",
-    primary = "copernicus",
+  oso = list(
+    name = "oso",
+    primary = "recherche_data_gouv",
     fallback = "local_cache",
     required = FALSE
   ),

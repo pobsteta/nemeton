@@ -88,7 +88,10 @@ indicator_biodiversity_protection <- function(units,
     }
   } else {
     if (is.null(protected_areas)) {
-      stop("protected_areas must be provided when source='local'", call. = FALSE)
+      # No protected areas data - return 0% coverage (no protection)
+      cli::cli_alert_info("B1: No protected areas data provided, setting coverage to 0%")
+      units$B1 <- rep(0, nrow(units))
+      return(units)
     }
   }
 
@@ -200,6 +203,7 @@ indicator_biodiversity_protection <- function(units,
 #' hist(result$B2, main = "Structural Diversity Distribution")
 #' }
 indicator_biodiversity_structure <- function(units,
+                                             layers = NULL,
                                              strata_field = "strata",
                                              age_class_field = "age_class",
                                              species_field = NULL,
@@ -209,17 +213,50 @@ indicator_biodiversity_structure <- function(units,
   # Validate inputs
   validate_sf(units)
 
-  # Check fields exist
-  if (!strata_field %in% names(units)) {
-    if (use_height_cv) {
-      stop("Height CV fallback not yet implemented", call. = FALSE)
-    } else {
-      stop(sprintf("Column '%s' not found in units", strata_field), call. = FALSE)
-    }
-  }
+  # Check fields exist - if missing, use NDVI std dev as proxy for structural diversity
+  has_strata <- strata_field %in% names(units)
+  has_age <- age_class_field %in% names(units)
 
-  if (!age_class_field %in% names(units)) {
-    stop(sprintf("Column '%s' not found in units", age_class_field), call. = FALSE)
+  if (!has_strata || !has_age) {
+    # Fallback 1: use LiDAR MNH (Canopy Height Model) for structural diversity
+    # Height variability (std dev) is a direct measure of vertical structure
+    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+        "lidar_mnh" %in% names(layers$rasters)) {
+      cli::cli_alert_info("B2: Using LiDAR MNH for structural diversity")
+      mnh_raster <- layers$rasters[["lidar_mnh"]]
+      units_sf <- as_pure_sf(units)
+      mnh_sd <- exactextractr::exact_extract(mnh_raster, units_sf,
+        fun = "stdev", progress = FALSE)
+      mnh_mean <- exactextractr::exact_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      # Height standard deviation as structural diversity:
+      # Mature mixed forest: sd ~ 8-12m (high diversity)
+      # Even-aged plantation: sd ~ 2-4m (low diversity)
+      # Scale: sd 0m -> 0, sd 10m -> 100
+      units$B2 <- pmin(mnh_sd / 10, 1) * 100
+      return(units)
+    }
+
+    # Fallback 2: use NDVI standard deviation as proxy for structural diversity
+    # Higher NDVI variance within a parcel = more structural heterogeneity
+    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+        "ndvi" %in% names(layers$rasters)) {
+      cli::cli_alert_info("B2: No strata/age/MNH; estimating structure from NDVI variability")
+      ndvi_raster <- layers$rasters[["ndvi"]]
+      units_sf <- as_pure_sf(units)
+      ndvi_sd <- exactextractr::exact_extract(ndvi_raster, units_sf,
+        fun = "stdev", progress = FALSE)
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      # CV of NDVI as diversity proxy: typical range 0-0.5
+      cv <- ifelse(ndvi_mean > 0, ndvi_sd / ndvi_mean, 0)
+      # Scale CV (0-0.5) to B2 score (0-100)
+      units$B2 <- pmin(cv / 0.4, 1) * 100
+    } else {
+      cli::cli_alert_warning("B2: No strata/age/MNH/NDVI data available")
+      units$B2 <- rep(NA_real_, nrow(units))
+    }
+    return(units)
   }
 
   # Species field is optional

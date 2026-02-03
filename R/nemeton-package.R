@@ -1,6 +1,7 @@
 #' @keywords internal
 #' @importFrom stats sd
 #' @importFrom glue glue
+#' @importFrom promises %...>% %...!%
 "_PACKAGE"
 
 #' nemeton: Systemic Forest Analysis Using the Nemeton Method

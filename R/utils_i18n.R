@@ -20,8 +20,8 @@ TRANSLATIONS <- list(
   # Application
   # ============================================================
   app_title = list(
-    fr = "nemetonApp - Diagnostic Forestier",
-    en = "nemetonApp - Forest Diagnostic"
+    fr = "N\u00e9m\u00e9ton - Diagnostic Forestier",
+    en = "N\u00e9m\u00e9ton - Forest Diagnostic"
   ),
 
   # ============================================================
@@ -48,7 +48,11 @@ TRANSLATIONS <- list(
   basemap_osm = list(fr = "OSM", en = "OSM"),
   basemap_satellite = list(fr = "Satellite", en = "Satellite"),
   loading_parcels = list(fr = "Chargement des parcelles...", en = "Loading parcels..."),
+  rendering_parcels = list(fr = "Affichage des parcelles sur la carte...", en = "Rendering parcels on map..."),
   loading_commune = list(fr = "Chargement de la commune...", en = "Loading commune..."),
+  connecting_api = list(fr = "Connexion \u00e0 l'API...", en = "Connecting to API..."),
+  downloading_data = list(fr = "T\u00e9l\u00e9chargement des donn\u00e9es...", en = "Downloading data..."),
+  processing_data = list(fr = "Traitement des donn\u00e9es...", en = "Processing data..."),
   click_to_select = list(fr = "Cliquez pour s\u00e9lectionner", en = "Click to select"),
 
   # ============================================================
@@ -80,6 +84,8 @@ TRANSLATIONS <- list(
   created_at = list(fr = "Cr\u00e9\u00e9 le", en = "Created on"),
   auto_generated = list(fr = "G\u00e9n\u00e9r\u00e9 automatiquement", en = "Auto-generated"),
   create_project = list(fr = "Cr\u00e9er le projet", en = "Create project"),
+  update_project = list(fr = "Mettre \u00e0 jour", en = "Update"),
+  project_updated = list(fr = "Projet mis \u00e0 jour", en = "Project updated"),
   field_required = list(fr = "Ce champ est obligatoire", en = "This field is required"),
   max_chars = list(fr = "Maximum", en = "Maximum"),
   characters = list(fr = "caract\u00e8res", en = "characters"),
@@ -104,6 +110,7 @@ TRANSLATIONS <- list(
   status_completed = list(fr = "Termin\u00e9", en = "Completed"),
   status_error = list(fr = "Erreur", en = "Error"),
   status_unknown = list(fr = "Inconnu", en = "Unknown"),
+  active = list(fr = "Actif", en = "Active"),
   corrupted = list(fr = "Corrompu", en = "Corrupted"),
 
   # Delete corrupted projects
@@ -133,7 +140,50 @@ TRANSLATIONS <- list(
     en = "Computing indicator {indicator}..."
   ),
   computation_complete = list(fr = "Calculs termin\u00e9s", en = "Calculations complete"),
+  computation_cancelled = list(fr = "Calculs annul\u00e9s", en = "Calculations cancelled"),
   computation_error = list(fr = "Erreur lors du calcul", en = "Computation error"),
+
+  # Progress module
+  progress_overall = list(fr = "Progression globale", en = "Overall progress"),
+  completed = list(fr = "termin\u00e9s", en = "completed"),
+  failed = list(fr = "\u00e9chou\u00e9s", en = "failed"),
+  pending = list(fr = "en attente", en = "pending"),
+  phase_init = list(fr = "Initialisation...", en = "Initializing..."),
+  phase_downloading = list(fr = "T\u00e9l\u00e9chargement des donn\u00e9es...", en = "Downloading data..."),
+  phase_computing = list(fr = "Calcul des indicateurs...", en = "Computing indicators..."),
+  phase_complete = list(fr = "Termin\u00e9", en = "Complete"),
+  task_download_start = list(fr = "D\u00e9marrage du t\u00e9l\u00e9chargement", en = "Starting download"),
+  task_compute_start = list(fr = "D\u00e9marrage des calculs", en = "Starting calculations"),
+  task_complete = list(fr = "Traitement termin\u00e9", en = "Processing complete"),
+  task_error = list(fr = "Erreur de traitement", en = "Processing error"),
+  task_resuming = list(fr = "Reprise des calculs...", en = "Resuming calculations..."),
+  elapsed_time = list(fr = "Temps \u00e9coul\u00e9", en = "Elapsed time"),
+  errors_title = list(fr = "Erreurs rencontr\u00e9es :", en = "Errors encountered:"),
+  computation_summary = list(
+    fr = "%d indicateur(s) calcul\u00e9(s) sur %d",
+    en = "%d indicator(s) computed out of %d"
+  ),
+  computation_failed = list(
+    fr = "%d en \u00e9chec",
+    en = "%d failed"
+  ),
+  unknown_error = list(fr = "Erreur inconnue", en = "Unknown error"),
+  and_n_more_errors = list(fr = "Et %d autre(s) erreur(s)...", en = "And %d more error(s)..."),
+  retry = list(fr = "R\u00e9essayer", en = "Retry"),
+  view_results = list(fr = "Voir les r\u00e9sultats", en = "View results"),
+  resuming_computation = list(
+    fr = "Reprise du calcul - %d indicateur(s) d\u00e9j\u00e0 calcul\u00e9(s)",
+    en = "Resuming computation - %d indicator(s) already computed"
+  ),
+  skipped_indicators = list(
+    fr = "%d indicateur(s) saut\u00e9(s) (d\u00e9j\u00e0 calcul\u00e9s)",
+    en = "%d indicator(s) skipped (already computed)"
+  ),
+  indicator_column = list(fr = "Indicateur", en = "Indicator"),
+  status_column = list(fr = "Statut", en = "Status"),
+  status_ok = list(fr = "Calcul\u00e9", en = "Computed"),
+  status_error = list(fr = "Erreur", en = "Error"),
+  status_not_computed = list(fr = "Non calcul\u00e9", en = "Not computed"),
 
   # ============================================================
   # Synthesis
@@ -237,8 +287,8 @@ TRANSLATIONS <- list(
   help = list(fr = "Aide", en = "Help"),
   help_title = list(fr = "Guide d'utilisation", en = "User Guide"),
   help_intro = list(
-    fr = "nemetonApp vous permet d'analyser des parcelles foresti\u00e8res selon 12 familles d'indicateurs.",
-    en = "nemetonApp allows you to analyze forest parcels across 12 indicator families."
+    fr = "N\u00e9m\u00e9ton vous permet d'analyser des parcelles foresti\u00e8res selon 12 familles d'indicateurs.",
+    en = "N\u00e9m\u00e9ton allows you to analyze forest parcels across 12 indicator families."
   ),
   help_steps_title = list(fr = "\u00c9tapes d'utilisation", en = "Usage Steps"),
   help_step1 = list(
@@ -279,10 +329,25 @@ TRANSLATIONS <- list(
     fr = "Cliquez sur les parcelles cadastrales pour les s\u00e9lectionner. Un second clic les d\u00e9s\u00e9lectionne. Maximum 20 parcelles.",
     en = "Click on cadastral parcels to select them. A second click deselects them. Maximum 20 parcels."
   ),
-  tour_project_title = list(fr = "Informations projet", en = "Project Information"),
+  tour_project_title = list(fr = "Nom du projet", en = "Project Name"),
   tour_project_desc = list(
-    fr = "Donnez un nom \u00e0 votre projet. La description et le propri\u00e9taire sont optionnels.",
-    en = "Give your project a name. Description and owner are optional."
+    fr = "Donnez un nom \u00e0 votre projet. Ce champ est obligatoire.",
+    en = "Give your project a name. This field is required."
+  ),
+  tour_description_title = list(fr = "Description", en = "Description"),
+  tour_description_desc = list(
+    fr = "Ajoutez une description optionnelle pour mieux identifier votre projet.",
+    en = "Add an optional description to better identify your project."
+  ),
+  tour_owner_title = list(fr = "Propri\u00e9taire", en = "Owner"),
+  tour_owner_desc = list(
+    fr = "Indiquez le nom du propri\u00e9taire ou gestionnaire (optionnel).",
+    en = "Enter the name of the owner or manager (optional)."
+  ),
+  tour_create_title = list(fr = "Cr\u00e9er le projet", en = "Create Project"),
+  tour_create_desc = list(
+    fr = "Cliquez sur ce bouton pour cr\u00e9er votre projet et passer \u00e0 l'\u00e9tape suivante.",
+    en = "Click this button to create your project and proceed to the next step."
   ),
   tour_compute_title = list(fr = "Lancement des calculs", en = "Start Calculations"),
   tour_compute_desc = list(
@@ -317,6 +382,14 @@ TRANSLATIONS <- list(
     fr = "Erreur lors du calcul des indicateurs",
     en = "Error computing indicators"
   ),
+  error_no_internet = list(
+    fr = "Pas de connexion internet. V\u00e9rifiez votre connexion et r\u00e9essayez.",
+    en = "No internet connection. Check your connection and try again."
+  ),
+  error_loading_communes = list(
+    fr = "Erreur lors du chargement des communes : ",
+    en = "Error loading municipalities: "
+  ),
 
   # ============================================================
   # Corrupted Projects
@@ -327,7 +400,80 @@ TRANSLATIONS <- list(
     en = "This project is corrupted or incomplete. Do you want to delete it?"
   ),
   delete = list(fr = "Supprimer", en = "Delete"),
-  cancel = list(fr = "Annuler", en = "Cancel")
+  delete_project = list(fr = "Supprimer le projet", en = "Delete project"),
+  confirm_delete_project = list(
+    fr = "Voulez-vous vraiment supprimer le projet",
+    en = "Are you sure you want to delete the project"
+  ),
+  delete_project_warning = list(
+    fr = "Cette action est irr\u00e9versible. Toutes les donn\u00e9es du projet seront perdues.",
+    en = "This action cannot be undone. All project data will be lost."
+  ),
+  cancel = list(fr = "Annuler", en = "Cancel"),
+
+  # ============================================================
+  # Progress Messages - Data Sources
+  # ============================================================
+  downloading_source = list(
+    fr = "T\u00e9l\u00e9chargement : {source}",
+    en = "Downloading: {source}"
+  ),
+  computing_indicator_name = list(
+    fr = "Calcul de l'indicateur : {indicator}",
+    en = "Computing indicator: {indicator}"
+  ),
+  download_complete = list(
+    fr = "T\u00e9l\u00e9chargement termin\u00e9",
+    en = "Download complete"
+  ),
+
+  # Data source names
+  source_ndvi = list(fr = "NDVI (IRC IGN)", en = "NDVI (IGN IRC)"),
+  source_dem = list(fr = "Mod\u00e8le Num\u00e9rique de Terrain", en = "Digital Elevation Model"),
+  source_forest_cover = list(fr = "Occupation du sol (OSO Theia/CESBIO)", en = "Land Cover (OSO Theia/CESBIO)"),
+  source_protected_areas = list(fr = "Aires prot\u00e9g\u00e9es (INPN)", en = "Protected Areas (INPN)"),
+  source_water_network = list(fr = "R\u00e9seau hydrographique (IGN)", en = "Water Network (IGN)"),
+  source_wetlands = list(fr = "Zones humides (ZNIEFF)", en = "Wetlands (ZNIEFF)"),
+  source_roads = list(fr = "R\u00e9seau routier (IGN)", en = "Road Network (IGN)"),
+  source_bdforet = list(fr = "BD For\u00eat V2 - Formations v\u00e9g\u00e9tales (IGN)", en = "BD For\u00eat V2 - Vegetation Formations (IGN)"),
+  source_lidar_mnh = list(fr = "Hauteur de canop\u00e9e LiDAR HD (IGN)", en = "Canopy Height Model LiDAR HD (IGN)"),
+  source_lidar_mnt = list(fr = "Mod\u00e8le Num\u00e9rique de Terrain LiDAR HD (IGN)", en = "Digital Terrain Model LiDAR HD (IGN)"),
+  source_lidar_copc = list(fr = "Nuages de points LiDAR HD (IGN)", en = "LiDAR HD Point Clouds (IGN)"),
+
+  # ============================================================
+  # Progress Messages - Indicator Names
+  # ============================================================
+  indicator_carbon_biomass = list(fr = "Biomasse carbone", en = "Carbon Biomass"),
+  indicator_carbon_ndvi = list(fr = "NDVI - Vitalit\u00e9 v\u00e9g\u00e9tation", en = "NDVI - Vegetation Vitality"),
+  indicator_biodiversity_protection = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+  indicator_biodiversity_structure = list(fr = "Structure biodiversit\u00e9", en = "Biodiversity Structure"),
+  indicator_biodiversity_connectivity = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+  indicator_water_network = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+  indicator_water_wetlands = list(fr = "Zones humides", en = "Wetlands"),
+  indicator_water_twi = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+  indicator_air_forest_buffer = list(fr = "Tampon forestier", en = "Forest Buffer"),
+  indicator_air_quality = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+  indicator_fertility_soil = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
+  indicator_fertility_erosion = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
+  indicator_landscape_fragmentation = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+  indicator_landscape_edge_ratio = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio"),
+  indicator_temporal_age = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+  indicator_temporal_change = list(fr = "Taux de changement", en = "Change Rate"),
+  indicator_risk_fire = list(fr = "Risque incendie", en = "Fire Risk"),
+  indicator_risk_storm = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+  indicator_risk_drought = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+  indicator_risk_browsing = list(fr = "Risque abroutissement", en = "Browsing Risk"),
+  indicator_social_trails = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+  indicator_social_accessibility = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+  indicator_social_population = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
+  indicator_production_volume = list(fr = "Volume de bois", en = "Timber Volume"),
+  indicator_production_productivity = list(fr = "Productivit\u00e9", en = "Productivity"),
+  indicator_production_quality = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+  indicator_energy_wood = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+  indicator_energy_co2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
+  indicator_naturalness_distance = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+  indicator_naturalness_continuity = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+  indicator_naturalness_score = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score")
 )
 
 
@@ -443,4 +589,50 @@ export_translations_json <- function(output_dir = "inst/app/i18n") {
   }
 
   invisible(NULL)
+}
+
+
+#' Translate task message for progress display
+#'
+#' @description
+#' Translates a task message from the computation progress callback.
+#' Handles the special format "download:source_key" and "compute:indicator_key".
+#'
+#' @param task Character. The task identifier from progress callback.
+#' @param i18n The i18n translator object.
+#'
+#' @return Character. The translated message.
+#'
+#' @noRd
+translate_task_message <- function(task, i18n) {
+  if (is.null(task) || task == "") {
+    return("")
+  }
+
+  # Handle special task keywords
+  if (task %in% c("download_start", "compute_start", "complete", "error", "resuming")) {
+    return(i18n$t(paste0("task_", task)))
+  }
+
+  # Handle download_complete
+  if (task == "download_complete") {
+    return(i18n$t("download_complete"))
+  }
+
+  # Handle new format: "download:source_key"
+  if (grepl("^download:", task)) {
+    source_key <- sub("^download:", "", task)
+    source_name <- i18n$t(source_key)
+    return(i18n$t("downloading_source", source = source_name))
+  }
+
+  # Handle new format: "compute:indicator_key"
+  if (grepl("^compute:", task)) {
+    indicator_key <- sub("^compute:", "", task)
+    indicator_name <- i18n$t(indicator_key)
+    return(i18n$t("computing_indicator_name", indicator = indicator_name))
+  }
+
+  # Fallback: return task as-is
+  task
 }

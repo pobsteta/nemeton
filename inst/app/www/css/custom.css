@@ -3,6 +3,11 @@
  * WCAG 2.1 AA Compliant
  */
 
+/* Page background: light gray so browser freeze frames don't appear white */
+html, body {
+  background-color: #f0f0f0 !important;
+}
+
 /* ============================================================
    CSS Variables
    ============================================================ */
@@ -18,7 +23,7 @@
   --nemeton-danger: #B01030;
 
   /* Neutral colors */
-  --nemeton-bg: #FAFAFA;
+  --nemeton-bg: #f0f0f0;
   --nemeton-fg: #2C3E50;
   --nemeton-muted: #6C757D;
   --nemeton-border: rgba(0, 0, 0, 0.125);
@@ -101,6 +106,7 @@
 .navbar-brand {
   font-weight: 700;
   letter-spacing: -0.5px;
+  margin-right: 4rem !important;
 }
 
 .navbar-brand img {
@@ -145,6 +151,7 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   overflow: hidden;
+  background-color: #ffffff;
 }
 
 .card-header {
@@ -224,6 +231,29 @@
   color: white;
 }
 
+/* Basemap toggle buttons — override Bootstrap 5 CSS custom properties
+   that .btn uses internally for background-color, color, and border-color */
+.basemap-btn {
+  --bs-btn-bg: white;
+  --bs-btn-color: #6B3710;
+  --bs-btn-border-color: #6B3710;
+  --bs-btn-hover-bg: rgba(107, 55, 16, 0.1);
+  --bs-btn-hover-color: #6B3710;
+  --bs-btn-hover-border-color: #6B3710;
+  --bs-btn-active-bg: #6B3710;
+  --bs-btn-active-color: white;
+  --bs-btn-active-border-color: #6B3710;
+}
+
+.basemap-btn.basemap-btn-active {
+  --bs-btn-bg: #6B3710;
+  --bs-btn-color: white;
+  --bs-btn-border-color: #6B3710;
+  --bs-btn-hover-bg: #5a2e0d;
+  --bs-btn-hover-color: white;
+  --bs-btn-hover-border-color: #5a2e0d;
+}
+
 /* Disabled state */
 .btn:disabled,
 .btn.disabled {
@@ -235,10 +265,19 @@
 /* ============================================================
    Map Container
    ============================================================ */
+/* Map loading: the in-map overlay (semi-transparent + spinner)
+   sits on top of the map. The map stays visible beneath at all times. */
+
 #map_container,
+[id$="-map_container"] {
+  border-radius: 0 0 8px 8px;
+  min-height: 400px;
+  background: #e8e8e8 !important;
+}
 .leaflet-container {
   border-radius: 0 0 8px 8px;
   min-height: 400px;
+  background: #e8e8e8 !important;
 }
 
 .leaflet-control-zoom a {
@@ -352,28 +391,101 @@
 
 
 /* ============================================================
-   Loading States
+   Busy Indicator Suppression
+
+   Shiny/bslib busy indicators are disabled because:
+   1. R option shiny.busy_indicators = FALSE (set in run_app.R)
+   2. useBusyIndicators(FALSE, FALSE) called in app_ui.R
+   3. CSS below as a safety net to hide any residual indicators
    ============================================================ */
-.shiny-busy {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--nemeton-primary),
-    var(--nemeton-primary-light),
-    var(--nemeton-primary)
-  );
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  z-index: 9999;
+
+/* Hide Shiny built-in busy indicators */
+.shiny-busy,
+.shiny-busy-panel-wrapper,
+.bslib-page-spinner,
+.bslib-busy-indicator-pulse,
+[data-busy-spinner],
+.shiny-busy-indicator {
+  display: none !important;
 }
 
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+/* Prevent bslib from activating busy overlay via data attributes */
+html[data-shiny-busy] .bslib-page-fill::after,
+html[data-shiny-busy] .html-fill-container::after,
+html.shiny-busy .bslib-page-fill::after,
+[data-shiny-busy="busy"]::after,
+[data-bs-busy]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Force ALL layout containers to stay visible during Shiny busy state */
+.bslib-page-fill,
+.bslib-page-navbar,
+.html-fill-container,
+.html-fill-item,
+.tab-content,
+.tab-pane,
+.tab-pane.active,
+.bslib-sidebar-layout,
+.bslib-sidebar-layout > .main,
+.bslib-sidebar-layout > .sidebar,
+.card,
+.bslib-card,
+.card-body,
+.card-header,
+.card-footer,
+.shiny-bound-output,
+.shiny-bound-output.recalculating,
+.recalculating {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Kill bslib busy-indicator pulse overlay on page-level containers.
+   bslib 0.6+ injects ::after pseudo-elements with white/semi-transparent
+   backgrounds on these containers during Shiny busy state. These cover
+   the entire viewport and appear as a white screen. */
+.bslib-page-fill::after,
+.bslib-page-fill::before,
+.bslib-page-navbar::after,
+.bslib-page-navbar::before,
+.html-fill-container::after,
+.html-fill-container::before,
+.html-fill-item::after,
+.html-fill-item::before,
+.tab-content::after,
+.tab-content::before,
+.tab-pane::after,
+.tab-pane::before,
+.bslib-sidebar-layout::after,
+.bslib-sidebar-layout::before,
+.bslib-sidebar-layout > .main::after,
+.bslib-sidebar-layout > .main::before,
+.card::after,
+.card::before,
+.bslib-card::after,
+.bslib-card::before,
+.card-body::after,
+.card-body::before,
+.recalculating::after,
+.recalculating::before {
+  content: none !important;
+  display: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Match bslib's own selectors with equal specificity to override them */
+html[data-shiny-busy] .bslib-page-fill::after,
+html[data-shiny-busy] .html-fill-container::after,
+html[data-shiny-busy] .bslib-page-navbar::after,
+html[data-shiny-busy] .card::after,
+html[data-shiny-busy] .bslib-card::after {
+  content: none !important;
+  display: none !important;
 }
 
 .spinner {
@@ -457,6 +569,50 @@
   .d-grid.gap-2 .btn {
     margin-bottom: 8px;
   }
+}
+
+
+/* ============================================================
+   Navigation Tabs
+   ============================================================ */
+.nav-tabs .nav-link,
+.nav-pills .nav-link {
+  color: var(--nemeton-fg);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.nav-tabs .nav-link:hover,
+.nav-pills .nav-link:hover {
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nav-tabs .nav-link.active,
+.nav-pills .nav-link.active,
+.nav-tabs .nav-link[aria-selected="true"],
+.nav-pills .nav-link[aria-selected="true"] {
+  color: #000000 !important;
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Navbar tabs - keep white text with underline on active */
+.navbar-nav .nav-link {
+  color: white !important;
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+  color: white !important;
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar-nav .nav-link.active {
+  color: white !important;
+  font-weight: 600;
+  border-bottom-color: white;
 }
 
 

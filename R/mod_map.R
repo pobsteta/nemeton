@@ -40,20 +40,24 @@ mod_map_ui <- function(id) {
       htmltools::div(
         class = "d-flex gap-2 align-items-center",
 
-        # Basemap toggle
+        # Basemap toggle (use tags$button to avoid Shiny's btn-default class)
         htmltools::div(
           class = "btn-group btn-group-sm",
           role = "group",
           `aria-label` = "Basemap selection",
-          shiny::actionButton(
-            ns("basemap_osm"),
-            "OSM",
-            class = "btn btn-outline-secondary active"
+          htmltools::tags$button(
+            id = ns("basemap_osm"),
+            type = "button",
+            class = "btn action-button basemap-btn basemap-btn-active",
+            `data-val` = 0,
+            "OSM"
           ),
-          shiny::actionButton(
-            ns("basemap_satellite"),
-            "Satellite",
-            class = "btn btn-outline-secondary"
+          htmltools::tags$button(
+            id = ns("basemap_satellite"),
+            type = "button",
+            class = "btn action-button basemap-btn",
+            `data-val` = 0,
+            "Satellite"
           )
         ),
 
@@ -72,10 +76,28 @@ mod_map_ui <- function(id) {
       padding = 0,
       class = "p-0",
 
-      # Map container
+      # Map container with loading overlay
       htmltools::div(
         id = ns("map_container"),
-        style = "height: 100%; min-height: 500px;",
+        style = "height: 100%; min-height: 500px; position: relative;",
+
+        # Loading overlay (semi-transparent over map, hidden by default)
+        htmltools::div(
+          id = ns("map_loading_overlay"),
+          class = "position-absolute top-0 start-0 w-100 h-100 d-none",
+          style = "background: rgba(255,255,255,0.7); z-index: 99999; display: none; align-items: center; justify-content: center;",
+          htmltools::div(
+            class = "text-center",
+            htmltools::div(
+              class = "spinner-border text-success mb-2",
+              role = "status"
+            ),
+            htmltools::div(
+              class = "text-muted",
+              i18n$t("rendering_parcels")
+            )
+          )
+        ),
 
         # Leaflet output
         leaflet::leafletOutput(ns("map"), height = "100%")
@@ -85,8 +107,14 @@ mod_map_ui <- function(id) {
     bslib::card_footer(
       class = "py-2",
 
-      # Selection summary
-      shiny::uiOutput(ns("selection_summary"))
+      # Selection summary — static HTML updated via JS (no renderUI)
+      # to avoid Shiny busy state on each parcel click
+      htmltools::div(
+        id = ns("selection_summary"),
+        class = "text-muted",
+        htmltools::span(id = ns("selection_text"), i18n$t("click_to_select")),
+        htmltools::span(id = ns("selection_area"), class = "text-muted ms-2")
+      )
     )
   )
 }
@@ -154,8 +182,23 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       selected_ids = character(0),
       basemap = "osm",
       parcels_zoomed = FALSE,  # Flag to zoom only once per commune
-      pending_restore = NULL   # Pending restoration data
+      last_restore_timestamp = NULL  # Track last processed restore request
     )
+
+
+    # ========================================
+    # Map Loading Overlay
+    # ========================================
+
+    # Helper to show/hide map loading overlay via direct JS message
+    # (avoids renderUI round-trip delay that caused green flash)
+    #
+    show_map_loading <- function(show, ...) {
+      session$sendCustomMessage("showMapLoading", list(
+        loadingId = ns("map_loading_overlay"),
+        show = show
+      ))
+    }
 
 
     # ========================================
@@ -166,26 +209,16 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       leaflet::leaflet() |>
         # Set default view (France)
         leaflet::setView(lng = 2.5, lat = 46.5, zoom = 6) |>
-        # Add OSM tiles (default)
+        # Add OSM tiles (default basemap)
         leaflet::addProviderTiles(
           leaflet::providers$OpenStreetMap,
-          group = "OSM",
+          group = "basemap",
+          layerId = "basemap_tiles",
           options = leaflet::providerTileOptions(
             updateWhenZooming = FALSE,
             updateWhenIdle = TRUE
           )
         ) |>
-        # Add satellite tiles
-        leaflet::addProviderTiles(
-          leaflet::providers$Esri.WorldImagery,
-          group = "Satellite",
-          options = leaflet::providerTileOptions(
-            updateWhenZooming = FALSE,
-            updateWhenIdle = TRUE
-          )
-        ) |>
-        # Layers control (hidden, controlled by buttons)
-        leaflet::hideGroup("Satellite") |>
         # Scale bar
         leaflet::addScaleBar(
           position = "bottomleft",
@@ -214,63 +247,110 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
     shiny::observeEvent(input$basemap_osm, {
       rv$basemap <- "osm"
+      cli::cli_alert_info("Switching to OSM basemap")
 
       leaflet::leafletProxy(ns("map")) |>
-        leaflet::showGroup("OSM") |>
-        leaflet::hideGroup("Satellite")
+        leaflet::clearGroup("basemap") |>
+        leaflet::addProviderTiles(
+          leaflet::providers$OpenStreetMap,
+          group = "basemap",
+          layerId = "basemap_tiles"
+        )
 
-      # Update button states
-      shiny::updateActionButton(session, "basemap_osm",
-                                class = "btn btn-outline-secondary active")
-      shiny::updateActionButton(session, "basemap_satellite",
-                                class = "btn btn-outline-secondary")
+      session$sendCustomMessage("toggleBasemapButtons", list(
+        osmId = ns("basemap_osm"),
+        satId = ns("basemap_satellite"),
+        active = "osm"
+      ))
     })
 
     shiny::observeEvent(input$basemap_satellite, {
       rv$basemap <- "satellite"
+      cli::cli_alert_info("Switching to Satellite basemap")
 
       leaflet::leafletProxy(ns("map")) |>
-        leaflet::hideGroup("OSM") |>
-        leaflet::showGroup("Satellite")
+        leaflet::clearGroup("basemap") |>
+        leaflet::addProviderTiles(
+          leaflet::providers$Esri.WorldImagery,
+          group = "basemap",
+          layerId = "basemap_tiles"
+        )
 
-      # Update button states
-      shiny::updateActionButton(session, "basemap_osm",
-                                class = "btn btn-outline-secondary")
-      shiny::updateActionButton(session, "basemap_satellite",
-                                class = "btn btn-outline-secondary active")
+      session$sendCustomMessage("toggleBasemapButtons", list(
+        osmId = ns("basemap_osm"),
+        satId = ns("basemap_satellite"),
+        active = "satellite"
+      ))
     })
 
 
     # ========================================
-    # Zoom to Commune
+    # Show loading when commune changes (before parcels arrive)
     # ========================================
 
     shiny::observe({
       geom <- commune_geometry()
+      parcel_data <- parcels()
+      if (!is.null(geom)) {
+        rv$parcels_zoomed <- FALSE
+        # Only show loading if parcels aren't available yet.
+        # During project restore, parcels are set directly BEFORE
+        # commune_geometry arrives, so loading is already visible
+        # (shown by mod_home) and the combined observer will render
+        # immediately — no need to re-show here.
+        if (is.null(parcel_data) || nrow(parcel_data) == 0) {
+          show_map_loading(TRUE)
+        }
+      }
+    })
 
-      if (is.null(geom)) return()
 
-      # Reset parcels zoom flag for new commune
-      rv$parcels_zoomed <- FALSE
+    # ========================================
+    # Single combined observer: render map when both
+    # commune_geometry AND parcels are ready
+    # ========================================
 
-      # Verify geometry is polygon type
+    shiny::observe({
+      parcel_data <- parcels()
+      geom <- commune_geometry()
+
+      # Both cleared (commune deselected): clear map and hide overlay
+      if ((is.null(parcel_data) || nrow(parcel_data) == 0) && is.null(geom)) {
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("commune") |>
+          leaflet::clearGroup("parcels") |>
+          leaflet::clearGroup("selection")
+        show_map_loading(FALSE)
+        return()
+      }
+
+      # Wait for both commune geometry AND parcels before rendering.
+      # While parcels are loading (geom set, parcels NULL), the loading
+      # overlay stays visible — no map clearing or flashing.
+      if (is.null(geom) || is.null(parcel_data) || nrow(parcel_data) == 0) {
+        return()
+      }
+
+      # During commune transitions, the new geometry may arrive before stale
+      # parcels are cleared (observer execution order is non-deterministic).
+      # Skip rendering to prevent a flash of old parcels with new boundary.
+      if (isTRUE(shiny::isolate(app_state$commune_transitioning))) {
+        return()
+      }
+
+      # --- Both commune geometry and parcels are ready: render everything ---
+
+      # 1. Validate and add commune boundary
       geom_types <- sf::st_geometry_type(geom)
       polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
       if (sum(polygon_idx) == 0) {
         cli::cli_warn("Commune geometry is not a polygon, skipping display")
-        return()
-      }
-      if (sum(!polygon_idx) > 0) {
-        geom <- geom[polygon_idx, ]
-      }
-
-      # Get bounding box
-      bbox <- sf::st_bbox(geom)
+        show_map_loading(FALSE)
 
       leaflet::leafletProxy(ns("map")) |>
-        # Clear previous commune boundary
         leaflet::clearGroup("commune") |>
-        # Add new boundary
+        leaflet::clearGroup("parcels") |>
+        leaflet::clearGroup("selection") |>
         leaflet::addPolygons(
           data = geom,
           group = "commune",
@@ -278,91 +358,72 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
           weight = STYLE$commune$weight,
           fill = STYLE$commune$fill,
           dashArray = STYLE$commune$dashArray
-        ) |>
-        # Zoom to bounds
-        leaflet::fitBounds(
-          lng1 = as.numeric(bbox[["xmin"]]),
-          lat1 = as.numeric(bbox[["ymin"]]),
-          lng2 = as.numeric(bbox[["xmax"]]),
-          lat2 = as.numeric(bbox[["ymax"]])
-        )
-    })
-
-
-    # ========================================
-    # Display Parcels
-    # ========================================
-
-    shiny::observe({
-      parcel_data <- parcels()
-
-      if (is.null(parcel_data) || nrow(parcel_data) == 0) {
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels")
-        return()
-      }
-
-      # Filter to keep only polygon geometries (defensive check)
-      geom_types <- sf::st_geometry_type(parcel_data)
-      polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
-      if (sum(polygon_idx) == 0) {
-        cli::cli_warn("No polygon geometries in parcel data")
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::clearGroup("parcels")
-        return()
-      }
-      if (sum(!polygon_idx) > 0) {
-        parcel_data <- parcel_data[polygon_idx, ]
-      }
-
-      # Ensure WGS84
-      if (sf::st_crs(parcel_data)$epsg != 4326) {
-        parcel_data <- sf::st_transform(parcel_data, 4326)
-      }
-
-      # Create popups
-      popups <- sapply(seq_len(nrow(parcel_data)), function(i) {
-        create_parcel_popup(parcel_data[i, ])
-      })
-
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::clearGroup("parcels") |>
-        leaflet::addPolygons(
-          data = parcel_data,
-          layerId = parcel_data$id,
-          group = "parcels",
-          color = STYLE$parcel_default$color,
-          weight = STYLE$parcel_default$weight,
-          fillColor = STYLE$parcel_default$fillColor,
-          fillOpacity = STYLE$parcel_default$fillOpacity,
-          popup = popups,
-          highlightOptions = leaflet::highlightOptions(
-            weight = STYLE$parcel_hover$weight,
-            fillOpacity = STYLE$parcel_hover$fillOpacity,
-            bringToFront = TRUE
-          ),
-          options = leaflet::pathOptions(
-            className = "parcel-polygon"
-          )
         )
 
-      # Zoom to parcels extent only on first load (not on selection updates)
-      if (!rv$parcels_zoomed) {
-        bbox <- sf::st_bbox(parcel_data)
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::fitBounds(
-            lng1 = as.numeric(bbox[["xmin"]]),
-            lat1 = as.numeric(bbox[["ymin"]]),
-            lng2 = as.numeric(bbox[["xmax"]]),
-            lat2 = as.numeric(bbox[["ymax"]])
-          )
-        rv$parcels_zoomed <- TRUE
+      # 2. Render parcels
+      render_parcels_to_map(parcel_data)
+
+      # 3. Handle project restore (apply saved selection)
+      restore <- shiny::isolate(app_state$restore_project)
+      if (!is.null(restore) && !is.null(restore$selected_ids) &&
+          (is.null(rv$last_restore_timestamp) ||
+           !identical(rv$last_restore_timestamp, restore$timestamp))) {
+
+        matching_ids <- intersect(restore$selected_ids, parcel_data$id)
+        if (length(matching_ids) > 0) {
+          rv$last_restore_timestamp <- restore$timestamp
+          rv$selected_ids <- matching_ids
+          cli::cli_alert_info("Restoring {length(matching_ids)} parcels")
+
+          # Apply selection styles
+          for (pid in matching_ids) {
+            update_parcel_style(pid, selected = TRUE)
+          }
+
+          # Zoom to selected parcels
+          selected_sf <- parcel_data[parcel_data$id %in% matching_ids, ]
+          bbox_sel <- sf::st_bbox(selected_sf)
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = as.numeric(bbox_sel[["xmin"]]),
+              lat1 = as.numeric(bbox_sel[["ymin"]]),
+              lng2 = as.numeric(bbox_sel[["xmax"]]),
+              lat2 = as.numeric(bbox_sel[["ymax"]])
+            )
+          rv$parcels_zoomed <- TRUE
+
+          # NOTE: Do NOT clear restore_in_progress here. This observer
+          # can fire BEFORE restore_task completes (if parcels_data was set
+          # while commune_geometry still holds the PREVIOUS commune's geom).
+          # Clearing here would cause the selected_commune observer in
+          # mod_home to call reset_project_state(), wiping the selection.
+          # restore_in_progress is cleared by mod_search.R's restore_task
+          # result handler, after the commune geometry is actually updated.
+          cli::cli_alert_success("Parcels selection restored on map")
+        }
+
+      } else {
+        # Normal navigation: zoom to parcels on first load
+        if (!rv$parcels_zoomed) {
+          cli::cli_alert_info("Zooming to all parcels")
+          bbox_p <- sf::st_bbox(parcel_data)
+          leaflet::leafletProxy(ns("map")) |>
+            leaflet::fitBounds(
+              lng1 = as.numeric(bbox_p[["xmin"]]),
+              lat1 = as.numeric(bbox_p[["ymin"]]),
+              lng2 = as.numeric(bbox_p[["xmax"]]),
+              lat2 = as.numeric(bbox_p[["ymax"]])
+            )
+          rv$parcels_zoomed <- TRUE
+        }
+
+        # Re-apply selection styling if needed
+        if (length(shiny::isolate(rv$selected_ids)) > 0) {
+          update_parcel_styles(shiny::isolate(rv$selected_ids))
+        }
       }
 
-      # Re-apply selection styling if needed
-      if (length(rv$selected_ids) > 0) {
-        update_parcel_styles(rv$selected_ids)
-      }
+      show_map_loading(FALSE)
     })
 
 
@@ -426,17 +487,9 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     shiny::observeEvent(input$clear_selection, {
       if (length(rv$selected_ids) == 0) return()
 
-      # Reset all parcel styles
-      parcel_data <- parcels()
-      if (!is.null(parcel_data) && nrow(parcel_data) > 0) {
-        leaflet::leafletProxy(ns("map")) |>
-          leaflet::removeShape(rv$selected_ids)
-
-        # Re-add with default style
-        for (pid in rv$selected_ids) {
-          update_parcel_style(pid, selected = FALSE)
-        }
-      }
+      # Clear the selection overlay group
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("selection")
 
       rv$selected_ids <- character(0)
 
@@ -445,6 +498,118 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         type = "message"
       )
     })
+
+    # Clear selection when triggered externally (e.g., project deletion)
+    shiny::observeEvent(app_state$clear_map_selection, {
+      if (length(rv$selected_ids) == 0) return()
+
+      # Clear the selection overlay group
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("selection")
+
+      rv$selected_ids <- character(0)
+      rv$parcels_zoomed <- FALSE
+    }, ignoreInit = TRUE)
+
+
+    # ========================================
+    # Restore Project: show loading overlay immediately
+    # ========================================
+
+    shiny::observeEvent(app_state$restore_project, {
+      restore <- app_state$restore_project
+      if (!is.null(restore) && !is.null(restore$selected_ids)) {
+        show_map_loading(TRUE)
+
+        # Reset restore tracking so the combined observer re-enters
+        # the restore block when it fires with the correct geometry.
+        # Without this, if the combined observer fires first with stale
+        # geometry (before restore_task completes), it sets
+        # last_restore_timestamp. The second firing (with correct geometry)
+        # skips the restore block because the timestamp already matches.
+        rv$last_restore_timestamp <- NULL
+        rv$parcels_zoomed <- FALSE
+      }
+    }, ignoreInit = TRUE)
+
+    # Safety net: when restore_in_progress goes FALSE (from success in the
+    # combined observer, or from failure in mod_search), ensure the spinner
+    # is hidden. On success, the combined observer already called
+    # show_map_loading(FALSE), so this is a no-op. On failure (e.g.
+    # commune_geometry never arrived), this ensures the spinner stops.
+    shiny::observeEvent(app_state$restore_in_progress, {
+      if (identical(app_state$restore_in_progress, FALSE)) {
+        show_map_loading(FALSE)
+      }
+    }, ignoreInit = TRUE)
+
+
+    # ========================================
+    # Render Parcels Helper
+    # ========================================
+
+    # Renders base parcel polygons to the map.
+    render_parcels_to_map <- function(parcel_data) {
+      # Filter to keep only polygon geometries (defensive check)
+      geom_types <- sf::st_geometry_type(parcel_data)
+      polygon_idx <- geom_types %in% c("POLYGON", "MULTIPOLYGON")
+      if (sum(polygon_idx) == 0) {
+        cli::cli_warn("No polygon geometries in parcel data")
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::clearGroup("parcels")
+        return(invisible(FALSE))
+      }
+      if (sum(!polygon_idx) > 0) {
+        parcel_data <- parcel_data[polygon_idx, ]
+      }
+
+      # Ensure WGS84
+      crs_epsg <- tryCatch(sf::st_crs(parcel_data)$epsg, error = function(e) NULL)
+      if (!is.null(crs_epsg) && !is.na(crs_epsg) && crs_epsg != 4326) {
+        parcel_data <- sf::st_transform(parcel_data, 4326)
+      }
+
+      # Create labels for hover display
+      labels <- sapply(seq_len(nrow(parcel_data)), function(i) {
+        create_parcel_label(parcel_data[i, ])
+      })
+
+      leaflet::leafletProxy(ns("map")) |>
+        leaflet::clearGroup("parcels") |>
+        leaflet::addPolygons(
+          data = parcel_data,
+          layerId = parcel_data$id,
+          group = "parcels",
+          color = STYLE$parcel_default$color,
+          weight = STYLE$parcel_default$weight,
+          fillColor = STYLE$parcel_default$fillColor,
+          fillOpacity = STYLE$parcel_default$fillOpacity,
+          label = lapply(labels, htmltools::HTML),
+          labelOptions = leaflet::labelOptions(
+            style = list(
+              "font-size" = "12px",
+              "font-weight" = "normal",
+              "padding" = "6px 10px",
+              "background-color" = "white",
+              "border" = "1px solid #ccc",
+              "border-radius" = "4px",
+              "box-shadow" = "0 2px 4px rgba(0,0,0,0.2)"
+            ),
+            direction = "auto",
+            offset = c(0, -5)
+          ),
+          highlightOptions = leaflet::highlightOptions(
+            weight = STYLE$parcel_hover$weight,
+            fillOpacity = STYLE$parcel_hover$fillOpacity,
+            bringToFront = TRUE
+          ),
+          options = leaflet::pathOptions(
+            className = "parcel-polygon"
+          )
+        )
+
+      invisible(TRUE)
+    }
 
 
     # ========================================
@@ -506,33 +671,34 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
     # ========================================
 
     update_parcel_style <- function(parcel_id, selected) {
-      parcel_data <- shiny::isolate(parcels())
-      if (is.null(parcel_data)) return()
+      if (selected) {
+        # Add parcel to selection overlay
+        parcel_data <- shiny::isolate(parcels())
+        if (is.null(parcel_data)) return()
 
-      parcel <- parcel_data[parcel_data$id == parcel_id, ]
-      if (nrow(parcel) == 0) return()
+        parcel <- parcel_data[parcel_data$id == parcel_id, ]
+        if (nrow(parcel) == 0) return()
 
-      style <- if (selected) STYLE$parcel_selected else STYLE$parcel_default
-      popup <- create_parcel_popup(parcel)
+        style <- STYLE$parcel_selected
 
-      # Replace polygon with updated style (layerId ensures replacement)
-      leaflet::leafletProxy(ns("map")) |>
-        leaflet::removeShape(parcel_id) |>
-        leaflet::addPolygons(
-          data = parcel,
-          layerId = parcel_id,
-          group = "parcels",
-          color = style$color,
-          weight = style$weight,
-          fillColor = style$fillColor,
-          fillOpacity = style$fillOpacity,
-          popup = popup,
-          highlightOptions = leaflet::highlightOptions(
-            weight = STYLE$parcel_hover$weight,
-            fillOpacity = STYLE$parcel_hover$fillOpacity,
-            bringToFront = TRUE
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::addPolygons(
+            data = parcel,
+            layerId = paste0("sel_", parcel_id),
+            group = "selection",
+            color = style$color,
+            weight = style$weight,
+            fillColor = style$fillColor,
+            fillOpacity = style$fillOpacity,
+            options = leaflet::pathOptions(
+              interactive = FALSE
+            )
           )
-        )
+      } else {
+        # Remove from selection overlay
+        leaflet::leafletProxy(ns("map")) |>
+          leaflet::removeShape(paste0("sel_", parcel_id))
+      }
     }
 
     update_parcel_styles <- function(selected_ids) {
@@ -543,51 +709,38 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
-    # Selection Summary
+    # Selection Summary (JS-driven, no renderUI)
+    #
+    # Using sendCustomMessage instead of renderUI avoids triggering
+    # Shiny's busy state on every parcel click, which caused the
+    # white overlay flash between selections.
     # ========================================
 
-    output$selection_summary <- shiny::renderUI({
+    shiny::observe({
       i18n <- get_i18n(app_state$language)
       n <- length(rv$selected_ids)
-
       parcel_data <- parcels()
 
-      if (n == 0) {
-        return(htmltools::div(
-          class = "text-muted",
-          bsicons::bs_icon("cursor-fill", class = "me-1"),
-          i18n$t("click_to_select")
-        ))
-      }
-
-      # Calculate total area
-      if (!is.null(parcel_data)) {
+      area_text <- ""
+      if (n > 0 && !is.null(parcel_data)) {
         selected <- parcel_data[parcel_data$id %in% rv$selected_ids, ]
         stats <- calculate_parcel_stats(selected)
-        area_text <- sprintf("%.2f ha", stats$total_area_ha)
-      } else {
-        area_text <- ""
+        area_text <- sprintf("| %.2f ha", stats$total_area_ha)
       }
 
       at_limit <- n >= MAX_PARCELS
 
-      htmltools::div(
-        class = paste("d-flex justify-content-between align-items-center",
-                      if (at_limit) "text-warning" else "text-success"),
-
-        htmltools::span(
-          bsicons::bs_icon(if (at_limit) "exclamation-triangle" else "check-circle",
-                           class = "me-1"),
-          sprintf("%d / %d %s", n, MAX_PARCELS, i18n$t("parcels_selected"))
-        ),
-
-        if (area_text != "") {
-          htmltools::span(
-            class = "text-muted",
-            sprintf("| %s", area_text)
-          )
-        }
-      )
+      session$sendCustomMessage("updateSelectionSummary", list(
+        containerId = ns("selection_summary"),
+        textId = ns("selection_text"),
+        areaId = ns("selection_area"),
+        count = n,
+        max = MAX_PARCELS,
+        atLimit = at_limit,
+        areaText = area_text,
+        emptyLabel = i18n$t("click_to_select"),
+        selectedLabel = i18n$t("parcels_selected")
+      ))
     })
 
 

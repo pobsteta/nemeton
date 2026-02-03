@@ -49,7 +49,8 @@ nemeton_theme <- function() {
     danger = "#B01030",
 
     # Background and foreground
-    bg = "#FAFAFA",
+    # Page bg is light gray so browser freeze doesn't show as white screen
+    bg = "#f0f0f0",
     fg = "#2C3E50",
 
     # Typography
@@ -142,6 +143,15 @@ nemeton_theme <- function() {
 
     .progress-bar {
       font-weight: 600;
+    }
+
+    /* Cards stay white for clean content appearance */
+    .card {
+      background-color: #ffffff;
+    }
+
+    .card-body {
+      background-color: #ffffff;
     }
   ")
 
@@ -314,7 +324,7 @@ theme_nemeton_accessible <- function() {
       panel.grid.major = ggplot2::element_line(color = "#EEEEEE"),
 
       # Background
-      panel.background = ggplot2::element_rect(fill = "#FAFAFA", color = NA),
+      panel.background = ggplot2::element_rect(fill = "#f0f0f0", color = NA),
       plot.background = ggplot2::element_rect(fill = "#FFFFFF", color = NA),
 
       # Strip (facets)

@@ -99,9 +99,12 @@ indicator_naturalness_continuity <- function(units,
 
   result <- units
 
+  # Repair invalid geometries (duplicate vertices, degenerate edges)
+  units_valid <- sf::st_make_valid(units)
+
   # Simplified: assume units are forest patches
   # Production version would extract forest from land cover, buffer, and dissolve
-  buffered <- sf::st_buffer(units, dist = connectivity_distance)
+  buffered <- sf::st_buffer(units_valid, dist = connectivity_distance)
   dissolved <- sf::st_union(buffered)
   patches <- sf::st_cast(dissolved, "POLYGON")
 

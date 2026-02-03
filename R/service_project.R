@@ -131,10 +131,91 @@ create_project <- function(name, description = "", owner = "", parcels = NULL) {
 }
 
 
+#' Update an existing project
+#'
+#' @description
+#' Updates project metadata (name, description, owner) and optionally parcels.
+#'
+#' @param project_id Character. Project ID.
+#' @param name Character. New project name.
+#' @param description Character. New description.
+#' @param owner Character. New owner.
+#' @param parcels sf object. New parcels (optional).
+#'
+#' @return List with project info (id, path, metadata, parcels).
+#'
+#' @noRd
+update_project <- function(project_id, name, description = "", owner = "", parcels = NULL) {
+  # Check project exists
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) {
+    cli::cli_abort("Project not found: {project_id}")
+  }
+
+  # Validate name
+  if (missing(name) || is.null(name) || nchar(trimws(name)) == 0) {
+    cli::cli_abort("Project name is required")
+  }
+
+  name <- trimws(name)
+  if (nchar(name) > 100) {
+    cli::cli_abort("Project name must be 100 characters or less")
+  }
+
+  # Validate description
+  if (nchar(description) > 500) {
+    cli::cli_abort("Description must be 500 characters or less")
+  }
+
+  # Validate owner
+  if (nchar(owner) > 100) {
+    cli::cli_abort("Owner must be 100 characters or less")
+  }
+
+  # Load existing metadata
+  metadata <- load_project_metadata(project_id)
+  if (is.null(metadata)) {
+    cli::cli_abort("Could not load project metadata")
+  }
+
+  # Update metadata fields
+  metadata$name <- name
+  metadata$description <- description
+  metadata$owner <- owner
+  metadata$updated_at <- Sys.time()
+
+  # Update parcels if provided
+  if (!is.null(parcels) && inherits(parcels, "sf") && nrow(parcels) > 0) {
+    save_parcels(project_id, parcels)
+    metadata$parcels_count <- nrow(parcels)
+  }
+
+  # Save updated metadata
+  metadata_path <- file.path(project_path, "metadata.json")
+  jsonlite::write_json(
+    metadata,
+    metadata_path,
+    auto_unbox = TRUE,
+    pretty = TRUE
+  )
+
+  cli::cli_alert_success("Project updated: {.val {name}}")
+
+  list(
+    id = project_id,
+    path = project_path,
+    metadata = metadata,
+    parcels = if (!is.null(parcels)) parcels else load_parcels(project_id)
+  )
+}
+
+
 #' Save parcels to project
 #'
 #' @description
-#' Saves selected parcels to project in GeoParquet format.
+#' Saves selected parcels to project. Primary format is GeoPackage (.gpkg)
+#' which is universally compatible with QGIS and other GIS tools.
+#' Also saves as Parquet for fast loading within the app.
 #'
 #' @param project_id Character. Project ID.
 #' @param parcels sf object. Parcels to save.
@@ -152,31 +233,33 @@ save_parcels <- function(project_id, parcels) {
     cli::cli_abort("Project not found: {project_id}")
   }
 
-  # Save as GeoParquet
-  parcels_path <- file.path(project_path, "data", "parcels.parquet")
+  # File paths
+  gpkg_path <- file.path(project_path, "data", "parcels.gpkg")
+  parquet_path <- file.path(project_path, "data", "parcels.parquet")
 
   tryCatch({
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'arrow' is required for GeoParquet support")
+    # Ensure valid CRS before saving (default to WGS84)
+    if (is.na(sf::st_crs(parcels))) {
+      parcels <- sf::st_set_crs(parcels, 4326)
     }
 
-    # Convert sf to data.frame with WKT geometry for arrow
-    parcels_df <- parcels
-    parcels_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(parcels))
-    parcels_df <- sf::st_drop_geometry(parcels_df)
+    cli::cli_alert_info("Saving {nrow(parcels)} parcels")
 
-    arrow::write_parquet(parcels_df, parcels_path)
+    # 1. Save as GeoPackage (primary format, QGIS-compatible)
+    # Delete existing file first (sf::st_write doesn't overwrite by default)
+    if (file.exists(gpkg_path)) {
+      unlink(gpkg_path)
+    }
+    sf::st_write(parcels, gpkg_path, driver = "GPKG", quiet = TRUE)
+    cli::cli_alert_success("Saved GeoPackage: {basename(gpkg_path)}")
 
-    # Also save CRS info
-    crs_path <- file.path(project_path, "data", "parcels_crs.json")
-    jsonlite::write_json(
-      list(
-        epsg = sf::st_crs(parcels)$epsg,
-        wkt = sf::st_crs(parcels)$wkt
-      ),
-      crs_path,
-      auto_unbox = TRUE
-    )
+    # 2. Also save as Parquet for fast internal loading
+    if (requireNamespace("geoarrow", quietly = TRUE) &&
+        requireNamespace("arrow", quietly = TRUE)) {
+      # geoarrow enables arrow to handle sf geometry
+      arrow::write_parquet(parcels, parquet_path)
+      cli::cli_alert_success("Saved Parquet: {basename(parquet_path)}")
+    }
 
     # Update metadata
     update_project_metadata(project_id, list(
@@ -196,7 +279,8 @@ save_parcels <- function(project_id, parcels) {
 #' Load parcels from project
 #'
 #' @description
-#' Loads parcels from project GeoParquet file.
+#' Loads parcels from project. Tries Parquet first (faster), falls back to
+#' GeoPackage if Parquet is unavailable or fails.
 #'
 #' @param project_id Character. Project ID.
 #'
@@ -209,46 +293,59 @@ load_parcels <- function(project_id) {
     return(NULL)
   }
 
-  parcels_path <- file.path(project_path, "data", "parcels.parquet")
-  crs_path <- file.path(project_path, "data", "parcels_crs.json")
+  # File paths
+  parquet_path <- file.path(project_path, "data", "parcels.parquet")
+  gpkg_path <- file.path(project_path, "data", "parcels.gpkg")
 
-  if (!file.exists(parcels_path)) {
+  parcels_sf <- NULL
+
+ # Try Parquet first (faster loading)
+  if (file.exists(parquet_path) &&
+      requireNamespace("geoarrow", quietly = TRUE) &&
+      requireNamespace("arrow", quietly = TRUE)) {
+    parcels_sf <- tryCatch({
+      # geoarrow enables arrow to read sf geometry
+      parcels_arrow <- arrow::read_parquet(parquet_path, as_data_frame = FALSE)
+      sf::st_as_sf(parcels_arrow)
+    }, error = function(e) {
+      cli::cli_warn("Failed to load Parquet, trying GeoPackage: {e$message}")
+      NULL
+    })
+  }
+
+  # Fall back to GeoPackage
+  if (is.null(parcels_sf) && file.exists(gpkg_path)) {
+    parcels_sf <- tryCatch({
+      sf::st_read(gpkg_path, quiet = TRUE)
+    }, error = function(e) {
+      cli::cli_warn("Failed to load GeoPackage: {e$message}")
+      NULL
+    })
+  }
+
+  # No parcels found
+  if (is.null(parcels_sf)) {
     return(NULL)
   }
 
-  tryCatch({
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'arrow' is required")
-    }
+  # Verify it's an sf object with geometry
+  if (!inherits(parcels_sf, "sf")) {
+    cli::cli_warn("Failed to load parcels as sf object")
+    return(NULL)
+  }
 
-    # Read parquet
-    parcels_df <- arrow::read_parquet(parcels_path)
+  geom <- sf::st_geometry(parcels_sf)
+  if (is.null(geom) || length(geom) == 0) {
+    cli::cli_warn("Parcels file has no valid geometry")
+    return(NULL)
+  }
 
-    # Get CRS
-    crs <- 4326  # Default
-    if (file.exists(crs_path)) {
-      crs_info <- jsonlite::read_json(crs_path)
-      if (!is.null(crs_info$epsg)) {
-        crs <- crs_info$epsg
-      }
-    }
+  # Get CRS for logging
+  crs_info <- sf::st_crs(parcels_sf)$epsg
+  if (is.null(crs_info) || is.na(crs_info)) crs_info <- "unknown"
 
-    # Convert back to sf
-    parcels_sf <- sf::st_as_sf(
-      parcels_df,
-      wkt = "geometry_wkt",
-      crs = crs
-    )
-
-    # Remove WKT column
-    parcels_sf$geometry_wkt <- NULL
-
-    parcels_sf
-
-  }, error = function(e) {
-    cli::cli_warn("Failed to load parcels: {e$message}")
-    NULL
-  })
+  cli::cli_alert_success("Loaded {nrow(parcels_sf)} parcels (CRS: {crs_info})")
+  parcels_sf
 }
 
 
@@ -577,7 +674,7 @@ delete_project <- function(project_id) {
 #' @return Logical. TRUE if successful.
 #'
 #' @noRd
-update_project_status <- function(project_id, status) {
+update_project_status <- function(project_id, status, project_path = NULL) {
   valid_statuses <- c("draft", "downloading", "computing", "completed", "error")
 
   if (!status %in% valid_statuses) {
@@ -598,13 +695,7 @@ update_project_status <- function(project_id, status) {
 #'
 #' @param project_id Character. Project ID.
 #' @param updates List. Fields to update.
-#'
-#' @return Logical. TRUE if successful.
-#'
-#' @noRd
-update_project_metadata <- function(project_id, updates) {
-  project_path <- get_project_path(project_id)
-  if (is.null(project_path)) {
+#' @param project_path Character. Optional project path (for async mode).
     cli::cli_abort("Project not found: {project_id}")
   }
 

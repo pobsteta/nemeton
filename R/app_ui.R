@@ -16,22 +16,29 @@ app_ui <- function(request) {
   # Get translations
   i18n <- get_i18n(lang)
 
+  # Disable Shiny 1.8+ / bslib 0.6+ busy indicators (white overlays)
+  busy_indicator_tag <- tryCatch(
+    shiny::useBusyIndicators(spinners = FALSE, pulse = FALSE),
+    error = function(e) NULL
+  )
+
   htmltools::tagList(
     # Add external resources (CSS, JS)
     app_add_external_resources(),
 
+    # Disable busy indicators (safe — returns NULL if function doesn't exist)
+    busy_indicator_tag,
+
+    # Cicerone for guided tours
+    if (requireNamespace("cicerone", quietly = TRUE)) cicerone::use_cicerone(),
+
     # Main page with navbar
     bslib::page_navbar(
       id = "main_nav",
-      title = htmltools::div(
-        class = "d-flex align-items-center",
-        htmltools::img(
-          src = "www/img/logo.svg",
-          height = "36px",
-          class = "me-2",
-          alt = "nemeton logo"
-        ),
-        htmltools::span("nemetonApp", class = "fw-bold")
+      title = htmltools::img(
+        src = "www/img/logo.svg",
+        height = "80px",
+        alt = "N\u00e9m\u00e9ton logo"
       ),
       window_title = i18n$t("app_title"),
       theme = nemeton_theme(),
@@ -167,11 +174,22 @@ app_add_external_resources <- function() {
   htmltools::tagList(
     # Add CSS
     htmltools::tags$head(
-      # Custom CSS
+      # Critical inline CSS: loads BEFORE external stylesheets to prevent
+      # flash of white background while custom.css is being fetched.
+      htmltools::tags$style(htmltools::HTML("
+        html, body { background-color: #f0f0f0 !important; }
+        .bslib-page-fill, .html-fill-container { background-color: #f0f0f0 !important; }
+        .card, .bslib-card { background-color: #ffffff !important; }
+        .bslib-page-fill::after, .bslib-page-fill::before,
+        .html-fill-container::after, .html-fill-container::before {
+          content: none !important; display: none !important;
+        }
+      ")),
+      # Custom CSS (cache-busting to ensure latest version)
       htmltools::tags$link(
         rel = "stylesheet",
         type = "text/css",
-        href = "www/css/custom.css"
+        href = paste0("www/css/custom.css?v=", as.integer(Sys.time()))
       ),
       # Favicon
       htmltools::tags$link(
@@ -190,30 +208,9 @@ app_add_external_resources <- function() {
       )
     ),
 
-    # Add JS
+    # Custom JS (cache-busting query string forces browser to reload on each app start)
     htmltools::tags$script(
-      src = "www/js/custom.js"
-    ),
-
-    # Shiny busy indicator
-    shiny::tags$style(
-      htmltools::HTML("
-        .shiny-busy {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, #1B6B1B, #32CD32, #1B6B1B);
-          background-size: 200% 100%;
-          animation: loading 1.5s infinite;
-          z-index: 9999;
-        }
-        @keyframes loading {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      ")
+      src = paste0("www/js/custom.js?v=", as.integer(Sys.time()))
     )
   )
 }
