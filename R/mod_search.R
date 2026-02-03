@@ -235,7 +235,9 @@ mod_search_server <- function(id, app_state) {
       # Safety net: if a restore is still in progress, the dept_task was
       # triggered by a stale department change. Don't overwrite the commune
       # dropdown that restore_task already populated.
-      if (rv$is_restoring) return()
+      # isolate() prevents is_restoring from becoming a reactive dependency
+      # of this observe (it's just a guard, not a trigger).
+      if (shiny::isolate(rv$is_restoring)) return()
 
       i18n <- get_i18n(get_lang())
 
@@ -366,7 +368,8 @@ mod_search_server <- function(id, app_state) {
         }
       }
 
-      if (rv$is_restoring) {
+      # isolate() prevents is_restoring from becoming a reactive dependency
+      if (shiny::isolate(rv$is_restoring)) {
         rv$is_restoring <- FALSE
       }
       rv$is_loading <- FALSE
@@ -418,6 +421,17 @@ mod_search_server <- function(id, app_state) {
       # ensuring stale callbacks from a previous restore are no-ops.
       rv$restore_gen <- shiny::isolate(rv$restore_gen) + 1L
       gen_snapshot <- rv$restore_gen
+
+      # Clear stale commune geometry from previous commune/project.
+      # Without this, the combined observer in mod_map fires with new
+      # parcels (set by load_project handler) + OLD geometry, rendering
+      # everything prematurely. When restore_task completes and sets the
+      # correct geometry, the combined observer fires AGAIN — clearGroup
+      # wipes the map (white flash) then re-renders. By nullifying the
+      # geometry here, the combined observer sees NULL geometry on its
+      # first firing and returns early (line 330), avoiding the double-
+      # render entirely.
+      rv$commune_geometry <- NULL
 
       cli::cli_alert_info("Restoring location: dept={dept_code}, commune={commune_code} (gen={gen_snapshot})")
 
@@ -577,7 +591,7 @@ mod_search_server <- function(id, app_state) {
       # defers the write to the NEXT event loop iteration.
       # Use generation check so a stale callback from a previous restore
       # doesn't clear flags during a newer restore.
-      gen_snapshot <- rv$restore_gen
+      gen_snapshot <- shiny::isolate(rv$restore_gen)
       later::later(function() {
         if (shiny::isolate(rv$restore_gen) != gen_snapshot) return()
         app_state$restore_in_progress <- FALSE
