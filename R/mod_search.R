@@ -220,6 +220,11 @@ mod_search_server <- function(id, app_state) {
 
     # Step 2: handle the result when the task completes
     shiny::observeEvent(dept_task$result(), {
+      # Safety net: if a restore is still in progress, the dept_task was
+      # triggered by a stale department change. Don't overwrite the commune
+      # dropdown that restore_task already populated.
+      if (rv$is_restoring) return()
+
       i18n <- get_i18n(get_lang())
       communes <- tryCatch(dept_task$result(), error = function(e) {
         cli::cli_alert_danger("Error loading communes: {e$message}")
@@ -298,9 +303,13 @@ mod_search_server <- function(id, app_state) {
 
       # During restore, geometry + selected_commune are set directly by
       # restore_task result handler — skip redundant commune_task call.
-      # Clear is_restoring now that the final input$commune value arrived.
+      # Delay clearing is_restoring so the department observer
+      # (triggered by the updateSelectInput roundtrip that hasn't arrived
+      # yet) still sees is_restoring = TRUE and skips dept_task$invoke().
       if (rv$is_restoring) {
-        rv$is_restoring <- FALSE
+        later::later(function() {
+          rv$is_restoring <- FALSE
+        }, delay = 1)
         return()
       }
 
