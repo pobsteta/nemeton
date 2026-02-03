@@ -14,7 +14,7 @@ NULL
 APP_CONFIG <- list(
   # App metadata
   app_name = "N\u00e9m\u00e9ton",
-  app_version = "0.7.0",
+  app_version = "0.9.0",
   app_title_fr = "N\u00e9m\u00e9ton - Diagnostic Forestier",
   app_title_en = "N\u00e9m\u00e9ton - Forest Diagnostic",
 
