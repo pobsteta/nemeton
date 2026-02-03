@@ -478,15 +478,25 @@ mod_progress_server <- function(id, compute_state, app_state) {
           ))
           completed <- state$indicators_completed %||% 0L
           total <- state$indicators_total %||% 0L
+          failed <- state$indicators_failed %||% 0L
           if (length(completed) != 1 || is.na(completed)) completed <- 0L
           if (length(total) != 1 || is.na(total)) total <- 0L
+          if (length(failed) != 1 || is.na(failed)) failed <- 0L
+          summary_text <- sprintf(
+            i18n$t("computation_summary"),
+            completed,
+            total
+          )
+          if (failed > 0) {
+            summary_text <- paste0(
+              summary_text, " (",
+              sprintf(i18n$t("computation_failed"), failed),
+              ")"
+            )
+          }
           session$sendCustomMessage("updateText", list(
             id = ns("completion_message_text"),
-            text = sprintf(
-              i18n$t("computation_summary"),
-              completed,
-              total
-            )
+            text = summary_text
           ))
 
           # Build indicator status table

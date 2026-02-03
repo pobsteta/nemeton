@@ -163,6 +163,10 @@ TRANSLATIONS <- list(
     fr = "%d indicateur(s) calcul\u00e9(s) sur %d",
     en = "%d indicator(s) computed out of %d"
   ),
+  computation_failed = list(
+    fr = "%d en \u00e9chec",
+    en = "%d failed"
+  ),
   unknown_error = list(fr = "Erreur inconnue", en = "Unknown error"),
   and_n_more_errors = list(fr = "Et %d autre(s) erreur(s)...", en = "And %d more error(s)..."),
   retry = list(fr = "R\u00e9essayer", en = "Retry"),
