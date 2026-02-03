@@ -152,6 +152,29 @@ mod_home_server <- function(id, app_state) {
         # Check if this is the currently loaded project
         is_active <- !is.null(current_id) && identical(proj$id, current_id)
 
+        # Determine status badge color
+        status_class <- switch(
+          proj$status,
+          "completed" = "bg-success",
+          "computing" = "bg-warning",
+          "downloading" = "bg-info",
+          "error" = "bg-danger",
+          "bg-secondary"
+        )
+
+        # Corrupted project styling
+        card_class <- if (proj$is_corrupted) {
+          "border-danger"
+        } else if (is_active) {
+          "border-primary bg-light"
+        } else {
+          "border-light"
+        }
+
+        icon <- if (proj$is_corrupted) {
+          bsicons::bs_icon("exclamation-triangle", class = "text-danger me-1")
+        } else if (is_active) {
+          bsicons::bs_icon("folder-fill", class = "text-primary me-1")
         } else {
           bsicons::bs_icon("folder", class = "text-muted me-1")
         }

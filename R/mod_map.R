@@ -346,6 +346,13 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       if (sum(polygon_idx) == 0) {
         cli::cli_warn("Commune geometry is not a polygon, skipping display")
         show_map_loading(FALSE)
+        return()
+      }
+      if (sum(!polygon_idx) > 0) {
+        geom <- geom[polygon_idx, ]
+      }
+
+      bbox_commune <- sf::st_bbox(geom)
 
       leaflet::leafletProxy(ns("map")) |>
         leaflet::clearGroup("commune") |>

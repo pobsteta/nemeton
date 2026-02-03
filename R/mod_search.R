@@ -292,7 +292,7 @@ mod_search_server <- function(id, app_state) {
           session, "commune",
           choices = character(0), selected = "", server = FALSE
         )
-      })
+      }
 
       rv$is_loading <- FALSE
     })
