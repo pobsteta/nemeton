@@ -430,6 +430,11 @@ html.shiny-busy .bslib-page-fill::after,
 .bslib-sidebar-layout,
 .bslib-sidebar-layout > .main,
 .bslib-sidebar-layout > .sidebar,
+.card,
+.bslib-card,
+.card-body,
+.card-header,
+.card-footer,
 .shiny-bound-output,
 .shiny-bound-output.recalculating,
 .recalculating {
@@ -455,6 +460,14 @@ html.shiny-busy .bslib-page-fill::after,
 .tab-pane::before,
 .bslib-sidebar-layout::after,
 .bslib-sidebar-layout::before,
+.bslib-sidebar-layout > .main::after,
+.bslib-sidebar-layout > .main::before,
+.card::after,
+.card::before,
+.bslib-card::after,
+.bslib-card::before,
+.card-body::after,
+.card-body::before,
 .recalculating::after,
 .recalculating::before {
   content: none !important;
@@ -463,6 +476,16 @@ html.shiny-busy .bslib-page-fill::after,
   opacity: 0 !important;
   width: 0 !important;
   height: 0 !important;
+}
+
+/* Match bslib's own selectors with equal specificity to override them */
+html[data-shiny-busy] .bslib-page-fill::after,
+html[data-shiny-busy] .html-fill-container::after,
+html[data-shiny-busy] .bslib-page-navbar::after,
+html[data-shiny-busy] .card::after,
+html[data-shiny-busy] .bslib-card::after {
+  content: none !important;
+  display: none !important;
 }
 
 .spinner {

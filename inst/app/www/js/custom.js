@@ -502,26 +502,46 @@
   // ============================================================
 
   function initBusyVisibility() {
-    // Block data-shiny-busy from ever being set on any element.
-    // This is the root trigger for bslib's pulse overlay (::after
-    // pseudo-elements on page containers). The MutationObserver approach
-    // fires AFTER the browser paints, leaving a one-frame window where
-    // the overlay is visible. By intercepting setAttribute, the attribute
-    // is never set and the CSS overlay never activates — zero frames.
+    // === Layer 1: Block setAttribute('data-shiny-busy', ...) ===
+    // Older Shiny/bslib versions set the attribute via setAttribute.
     var origSetAttribute = Element.prototype.setAttribute;
     Element.prototype.setAttribute = function(name, value) {
       if (name === 'data-shiny-busy') return;
       return origSetAttribute.call(this, name, value);
     };
 
-    // Force visibility on recalculating outputs (Shiny adds opacity: 0.5)
-    $(document).on('shiny:busy', function() {
+    // === Layer 2: Block dataset.shinyBusy on <html> ===
+    // bslib 0.6+ uses document.documentElement.dataset.shinyBusy = 'busy'
+    // which bypasses setAttribute. Intercept at the property level.
+    try {
+      Object.defineProperty(document.documentElement.dataset, 'shinyBusy', {
+        set: function() { /* block */ },
+        get: function() { return undefined; },
+        configurable: true
+      });
+    } catch (e) { /* fallback below */ }
+
+    // === Layer 3: MutationObserver fallback ===
+    // If the attribute gets set by any other means, remove it immediately.
+    var htmlEl = document.documentElement;
+    new MutationObserver(function() {
+      if (htmlEl.hasAttribute('data-shiny-busy')) {
+        htmlEl.removeAttribute('data-shiny-busy');
+      }
+    }).observe(htmlEl, { attributes: true, attributeFilter: ['data-shiny-busy'] });
+
+    // === Layer 4: Force visibility on recalculating outputs ===
+    // Shiny adds .recalculating class (opacity: 0.3) on outputs being
+    // re-rendered. Override on both shiny:busy and shiny:outputinvalidated
+    // to catch all timing scenarios.
+    function forceRecalcVisible() {
       var recalc = document.querySelectorAll('.recalculating');
       for (var j = 0; j < recalc.length; j++) {
         recalc[j].style.setProperty('opacity', '1', 'important');
         recalc[j].style.setProperty('visibility', 'visible', 'important');
       }
-    });
+    }
+    $(document).on('shiny:busy shiny:outputinvalidated shiny:recalculating', forceRecalcVisible);
   }
 
 
