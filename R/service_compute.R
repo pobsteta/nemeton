@@ -451,15 +451,19 @@ download_layers_for_parcels <- function(parcels,
     dir.create(cache_dir, recursive = TRUE)
   }
 
-  # Get bounding box with buffer
-  bbox <- sf::st_bbox(parcels)
-  buffer_m <- 200  # 200m buffer
-  bbox_buffered <- c(
-    xmin = bbox["xmin"] - buffer_m,
-    ymin = bbox["ymin"] - buffer_m,
-    xmax = bbox["xmax"] + buffer_m,
-    ymax = bbox["ymax"] + buffer_m
-  )
+  # Get bounding box with 200m buffer
+
+  # Buffer in a projected CRS (Lambert-93) to ensure meters, then convert
+
+  # back to WGS84 for WFS queries. Applying a numeric offset directly to
+
+  # WGS84 coordinates would treat the value as degrees instead of metres,
+  # producing a bbox that covers most of the globe.
+  buffer_m <- 200
+  parcels_proj <- sf::st_transform(parcels, 2154)
+  parcels_buffered <- sf::st_buffer(parcels_proj, buffer_m)
+  parcels_buffered_wgs84 <- sf::st_transform(parcels_buffered, 4326)
+  bbox_buffered <- as.numeric(sf::st_bbox(parcels_buffered_wgs84))
 
   # Initialize layers structure
   rasters <- list()
