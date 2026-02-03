@@ -9,7 +9,7 @@ indicator_soil_erosion(
   layers,
   dem_layer = "dem",
   landcover_layer = "landcover",
-  forest_values = c(1, 2, 3)
+  forest_values = seq(1, 6)
 )
 }
 \arguments{

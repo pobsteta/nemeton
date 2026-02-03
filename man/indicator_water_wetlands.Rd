@@ -7,7 +7,7 @@
 indicator_water_wetlands(
   units,
   layers,
-  wetland_layer = "landcover",
+  wetland_layer = "wetlands",
   wetland_values = NULL
 )
 }
