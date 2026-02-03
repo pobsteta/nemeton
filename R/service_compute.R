@@ -65,6 +65,13 @@ DATA_SOURCES <- list(
       source = "ign_lidar_hd",
       product = "mnh",
       required_for = c("biodiversity_structure", "production_volume", "risk_storm")
+    ),
+    lidar_mnt = list(
+      name = "Digital Terrain Model (LiDAR HD)",
+      type = "raster",
+      source = "ign_lidar_hd",
+      product = "mnt",
+      required_for = c("water_twi", "risk_erosion", "risk_fire", "risk_storm", "risk_drought")
     )
   ),
   # Vector sources
@@ -1980,7 +1987,7 @@ compute_single_indicator <- function(indicator, parcels, layers) {
     # Extract specific layers from nemeton_layers structure
     # Rasters are in layers$rasters, vectors in layers$vectors
     if ("dem" %in% func_args) {
-      dem <- layers$rasters[["dem"]]
+      dem <- get_dem_raster(layers)
       if (!is.null(dem)) args$dem <- dem
     }
     if ("ndvi" %in% func_args) {

@@ -419,6 +419,28 @@ as_pure_sf <- function(x) {
   x_sf
 }
 
+#' Get best available DEM raster from layers
+#'
+#' Returns the LiDAR HD MNT (1m resolution) if available, otherwise falls back
+#' to the BD ALTI DEM (25m resolution).
+#'
+#' @param layers A nemeton_layers object.
+#' @return A SpatRaster or NULL if no DEM is available.
+#' @keywords internal
+#' @noRd
+get_dem_raster <- function(layers) {
+  if (!inherits(layers, "nemeton_layers")) return(NULL)
+  # Prefer LiDAR HD MNT (1m) over BD ALTI DEM (25m)
+  dem <- layers$rasters[["lidar_mnt"]]
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) {
+    dem <- layers$rasters[["dem"]]
+  }
+  if (!is.null(dem) && !inherits(dem, "SpatRaster")) {
+    return(NULL)
+  }
+  dem
+}
+
 # ==============================================================================
 # v0.2.0 HELPERS - Allometric Models & Family Management
 # ==============================================================================

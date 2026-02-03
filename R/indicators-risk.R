@@ -69,9 +69,9 @@ indicator_risk_fire <- function(units,
   # Validate inputs
   validate_sf(units)
 
-  # Extract DEM from layers if not provided directly
-  if (is.null(dem) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
-    dem <- layers$rasters[["dem"]]
+  # Extract DEM from layers if not provided directly (prefer LiDAR HD MNT)
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- get_dem_raster(layers)
   }
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
@@ -193,9 +193,9 @@ indicator_risk_storm <- function(units,
   # Validate inputs
   validate_sf(units)
 
-  # Extract DEM from layers if not provided directly
-  if (is.null(dem) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
-    dem <- layers$rasters[["dem"]]
+  # Extract DEM from layers if not provided directly (prefer LiDAR HD MNT)
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- get_dem_raster(layers)
   }
 
   if (is.null(dem) || !inherits(dem, "SpatRaster")) {
@@ -318,11 +318,10 @@ indicator_risk_drought <- function(units,
   if (twi_field %in% names(units)) {
     twi_values <- units[[twi_field]]
   } else {
-    # Compute TWI from DEM if available
-    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-        "dem" %in% names(layers$rasters)) {
+    # Compute TWI from DEM if available (prefer LiDAR HD MNT)
+    dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
+    if (!is.null(dem)) {
       cli::cli_alert_info("R3: Computing TWI from DEM for drought assessment")
-      dem <- layers$rasters[["dem"]]
       twi_raster <- calculate_twi_terra(dem)
       twi_values <- exactextractr::exact_extract(twi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)

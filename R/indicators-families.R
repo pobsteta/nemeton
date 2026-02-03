@@ -308,9 +308,9 @@ indicator_water_wetlands <- function(units,
   }
 
   # Strategy 2: Use TWI threshold (TWI > 12 = potential wetland) from DEM
-  if ("dem" %in% names(layers$rasters) && !is.null(layers$rasters[["dem"]])) {
+  dem <- get_dem_raster(layers)
+  if (!is.null(dem)) {
     cli::cli_alert_info("W2: Estimating wetlands from TWI (threshold > 12)")
-    dem <- layers$rasters[["dem"]]
     twi_raster <- calculate_twi_terra(dem)
 
     for (i in seq_len(nrow(units))) {
@@ -400,16 +400,13 @@ indicator_water_twi <- function(units,
   # Match and validate method
   method <- match.arg(method)
 
-  # Check DEM layer exists
-  if (!dem_layer %in% names(layers$rasters)) {
-    stop(sprintf("DEM layer '%s' not found in layers", dem_layer), call. = FALSE)
+  # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
+  dem <- get_dem_raster(layers)
+  if (is.null(dem) && dem_layer %in% names(layers$rasters)) {
+    dem <- layers$rasters[[dem_layer]]
   }
-
-  # Get DEM raster
-  dem <- layers$rasters[[dem_layer]]
-  # If not loaded (lazy loading), load it
   if (is.null(dem)) {
-    dem <- terra::rast(layers$rasters[[dem_layer]]$path)
+    stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
 
   # Determine which method to use
@@ -687,15 +684,13 @@ indicator_soil_erosion <- function(units,
     stop("layers must be a nemeton_layers object", call. = FALSE)
   }
 
-  # Check DEM layer exists
-  if (!dem_layer %in% names(layers$rasters)) {
-    stop(sprintf("DEM layer '%s' not found in layers", dem_layer), call. = FALSE)
+  # Get best available DEM (prefer LiDAR HD MNT over BD ALTI)
+  dem <- get_dem_raster(layers)
+  if (is.null(dem) && dem_layer %in% names(layers$rasters)) {
+    dem <- layers$rasters[[dem_layer]]
   }
-
-  # Get DEM raster
-  dem <- layers$rasters[[dem_layer]]
   if (is.null(dem)) {
-    dem <- terra::rast(layers$rasters[[dem_layer]]$path)
+    stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
 
   # Calculate slope from DEM (in degrees)
@@ -942,18 +937,16 @@ indicator_fertility_soil <- function(units, layers = NULL, ...) {
 #' @noRd
 indicator_fertility_erosion <- function(units, layers = NULL, ...) {
   # F2: Erosion risk - uses DEM slope and forest cover
-  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-      "dem" %in% names(layers$rasters)) {
-    dem_layer <- "dem"
+  dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
+  if (!is.null(dem)) {
     lc_layer <- if ("forest_cover" %in% names(layers$rasters)) "forest_cover" else NULL
     if (!is.null(lc_layer)) {
       return(indicator_soil_erosion(units, layers,
-        dem_layer = dem_layer, landcover_layer = lc_layer,
+        dem_layer = "dem", landcover_layer = lc_layer,
         forest_values = seq(1, 6)))
     }
     # DEM only: compute slope-based erosion risk
     cli::cli_alert_info("F2: Computing erosion from slope only (no landcover)")
-    dem <- layers$rasters[["dem"]]
     slope <- terra::terrain(dem, v = "slope", unit = "degrees")
     slope_mean <- exactextractr::exact_extract(slope,
       as_pure_sf(units), fun = "mean", progress = FALSE
@@ -1075,8 +1068,8 @@ indicator_production_quality <- function(units, layers = NULL, ...) {
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
     scores <- rep(50, nrow(units))  # Base neutral score
     # Lower slope = better access = higher quality management
-    if ("dem" %in% names(layers$rasters)) {
-      dem <- layers$rasters[["dem"]]
+    dem <- get_dem_raster(layers)
+    if (!is.null(dem)) {
       slope <- terra::terrain(dem, v = "slope", unit = "degrees")
       slope_mean <- exactextractr::exact_extract(slope,
         as_pure_sf(units), fun = "mean", progress = FALSE
