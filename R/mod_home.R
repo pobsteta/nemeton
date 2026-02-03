@@ -295,10 +295,14 @@ mod_home_server <- function(id, app_state) {
           # Cleared by mod_search.R's restore_task result handler
           app_state$restore_in_progress <- TRUE
 
-          # Clear old map selection from previous project before setting
-          # new parcels. Without this, rv$selected_ids in mod_map retains
-          # the old project's IDs during the transition.
-          app_state$clear_map_selection <- Sys.time()
+          # NOTE: Do NOT set app_state$clear_map_selection here.
+          # It runs in the same expression as parcels_data() and
+          # restore_project, so all downstream observers fire in
+          # the same flush in non-deterministic order. If the
+          # clear_map_selection observer fires AFTER the combined
+          # observer restores selection, it wipes rv$selected_ids.
+          # The combined observer already calls clearGroup("selection")
+          # every time it re-renders, so cleanup is handled there.
 
           # Set parcels directly from stored project data — no API call needed.
           # This makes parcels() available immediately for mod_map.R's restore

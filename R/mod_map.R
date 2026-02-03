@@ -520,6 +520,15 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
       restore <- app_state$restore_project
       if (!is.null(restore) && !is.null(restore$selected_ids)) {
         show_map_loading(TRUE)
+
+        # Reset restore tracking so the combined observer re-enters
+        # the restore block when it fires with the correct geometry.
+        # Without this, if the combined observer fires first with stale
+        # geometry (before restore_task completes), it sets
+        # last_restore_timestamp. The second firing (with correct geometry)
+        # skips the restore block because the timestamp already matches.
+        rv$last_restore_timestamp <- NULL
+        rv$parcels_zoomed <- FALSE
       }
     }, ignoreInit = TRUE)
 

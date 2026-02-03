@@ -397,8 +397,21 @@ mod_search_server <- function(id, app_state) {
       # Update department dropdown
       shiny::updateSelectInput(session, "departement", selected = dept_code)
 
-      # Fetch communes asynchronously via ExtendedTask
-      restore_task$invoke(dept_code, commune_code)
+      # Fetch communes asynchronously via ExtendedTask.
+      # tryCatch guards against invoke() failing if the task is already
+      # running (e.g., rapid project switching). Without this, the error
+      # is swallowed by Shiny but rv$is_restoring stays TRUE forever
+      # (until the 30s safety timeout), blocking commune updates.
+      tryCatch(
+        restore_task$invoke(dept_code, commune_code),
+        error = function(e) {
+          cli::cli_warn("restore_task$invoke() failed: {e$message}")
+          rv$is_restoring <- FALSE
+          later::later(function() {
+            app_state$restore_in_progress <- FALSE
+          }, delay = 0)
+        }
+      )
 
       # Safety timeout: if restore_task never completes (worker crash, etc.),
       # clear flags after 30 seconds so the spinner doesn't spin forever.
