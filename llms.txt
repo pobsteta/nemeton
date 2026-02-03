@@ -119,7 +119,7 @@ MIT - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
 ## Citation
 
     Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-    R package version 0.8.0. https://github.com/pobsteta/nemeton
+    R package version 0.9.0. https://github.com/pobsteta/nemeton
 
 ------------------------------------------------------------------------
 

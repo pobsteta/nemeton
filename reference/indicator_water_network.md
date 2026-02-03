@@ -9,7 +9,7 @@ parcels. Higher values indicate greater hydrological connectivity.
 indicator_water_network(
   units,
   layers,
-  watercourse_layer = "watercourses",
+  watercourse_layer = "water_network",
   buffer = 0
 )
 ```
