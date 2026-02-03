@@ -8,7 +8,8 @@ topographic exposure.
 ``` r
 indicator_risk_storm(
   units,
-  dem,
+  dem = NULL,
+  layers = NULL,
   height_field = "height",
   density_field = "density",
   weights = c(height = 1/3, density = 1/3, exposure = 1/3)
@@ -24,6 +25,11 @@ indicator_risk_storm(
 - dem:
 
   A SpatRaster with digital elevation model (meters).
+
+- layers:
+
+  A nemeton_layers object. Used to extract DEM and LiDAR MNH if `dem` is
+  NULL.
 
 - height_field:
 

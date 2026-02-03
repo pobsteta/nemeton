@@ -9,6 +9,7 @@ areas).
 ``` r
 indicator_air_quality(
   units,
+  layers = NULL,
   atmo_data = NULL,
   roads = NULL,
   urban_areas = NULL,
@@ -21,6 +22,11 @@ indicator_air_quality(
 - units:
 
   An sf object with forest parcels.
+
+- layers:
+
+  A nemeton_layers object. If provided, roads are extracted from the
+  "roads" vector layer when the \`roads\` parameter is NULL.
 
 - atmo_data:
 

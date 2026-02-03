@@ -8,6 +8,7 @@ precipitation deficit, and species sensitivity.
 ``` r
 indicator_risk_drought(
   units,
+  layers = NULL,
   twi_field = "W3",
   climate = NULL,
   species_field = "species",
@@ -20,6 +21,11 @@ indicator_risk_drought(
 - units:
 
   An sf object with forest parcels.
+
+- layers:
+
+  A nemeton_layers object. Used to extract DEM for TWI computation when
+  `twi_field` is not present in `units`.
 
 - twi_field:
 

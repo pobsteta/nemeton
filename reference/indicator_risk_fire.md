@@ -8,7 +8,8 @@ climate dryness.
 ``` r
 indicator_risk_fire(
   units,
-  dem,
+  dem = NULL,
+  layers = NULL,
   species_field = "species",
   climate = NULL,
   weights = c(slope = 1/3, species = 1/3, climate = 1/3)
@@ -24,6 +25,11 @@ indicator_risk_fire(
 - dem:
 
   A SpatRaster with digital elevation model (meters).
+
+- layers:
+
+  A nemeton_layers object. Used to extract DEM and NDVI if `dem` is
+  NULL.
 
 - species_field:
 

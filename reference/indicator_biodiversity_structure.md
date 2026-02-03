@@ -8,6 +8,7 @@ applied to canopy strata and age class distributions.
 ``` r
 indicator_biodiversity_structure(
   units,
+  layers = NULL,
   strata_field = "strata",
   age_class_field = "age_class",
   species_field = NULL,
@@ -22,6 +23,11 @@ indicator_biodiversity_structure(
 - units:
 
   An sf object with forest parcels.
+
+- layers:
+
+  A nemeton_layers object. Used as fallback for structural diversity
+  estimation via LiDAR MNH or NDVI when strata/age fields are missing.
 
 - strata_field:
 
