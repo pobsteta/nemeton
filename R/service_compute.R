@@ -606,6 +606,18 @@ download_layers_for_parcels <- function(parcels,
 
       if (!is.null(vector_data)) {
         vectors[[source_name]] <- vector_data
+      } else {
+        translation_key <- source_translation_keys[[source_name]] %||% source_name
+        download_warnings <- c(download_warnings, list(list(
+          type = "info",
+          source = source$name,
+          message = paste0(
+            "Aucune donn\u00e9e trouv\u00e9e pour ", source$name,
+            " dans cette zone. Les indicateurs concern\u00e9s utiliseront ",
+            "des donn\u00e9es alternatives ou retourneront NA."
+          ),
+          time = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+        )))
       }
     }, error = function(e) {
       cli::cli_warn("Failed to download {source$name}: {e$message}")
