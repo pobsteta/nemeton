@@ -864,7 +864,8 @@ mod_home_server <- function(id, app_state) {
 
           shiny::showNotification(
             i18n$t("computation_complete"),
-            type = "message"
+            type = "message",
+            session = session
           )
 
           computing_project_id(NULL)
@@ -889,7 +890,8 @@ mod_home_server <- function(id, app_state) {
           shiny::showNotification(
             paste(i18n$t("computation_error"), error_msg),
             type = "error",
-            duration = 10
+            duration = 10,
+            session = session
           )
 
           computing_project_id(NULL)
@@ -902,7 +904,8 @@ mod_home_server <- function(id, app_state) {
 
           shiny::showNotification(
             i18n$t("computation_cancelled"),
-            type = "warning"
+            type = "warning",
+            session = session
           )
 
           computing_project_id(NULL)
