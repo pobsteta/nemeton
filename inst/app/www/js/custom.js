@@ -211,6 +211,31 @@
     window.announceToScreenReader(count + ' parcelles sélectionnées sur ' + max);
   });
 
+  /**
+   * Update selection summary directly in the DOM (no renderUI round-trip).
+   * This avoids Shiny busy state on every parcel click.
+   */
+  Shiny.addCustomMessageHandler('updateSelectionSummary', function(data) {
+    var container = document.getElementById(data.containerId);
+    var textEl = document.getElementById(data.textId);
+    var areaEl = document.getElementById(data.areaId);
+    if (!container || !textEl) return;
+
+    if (data.count === 0) {
+      container.className = 'text-muted';
+      textEl.textContent = data.emptyLabel;
+      if (areaEl) areaEl.textContent = '';
+    } else {
+      var cls = data.atLimit ? 'text-warning' : 'text-success';
+      container.className = 'd-flex justify-content-between align-items-center ' + cls;
+      var icon = data.atLimit ? '\u26A0' : '\u2714';
+      textEl.textContent = icon + ' ' + data.count + ' / ' + data.max + ' ' + data.selectedLabel;
+      if (areaEl) {
+        areaEl.textContent = data.areaText;
+      }
+    }
+  });
+
 
   // ============================================================
   // Progress Updates

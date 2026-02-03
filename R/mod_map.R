@@ -107,8 +107,14 @@ mod_map_ui <- function(id) {
     bslib::card_footer(
       class = "py-2",
 
-      # Selection summary
-      shiny::uiOutput(ns("selection_summary"))
+      # Selection summary — static HTML updated via JS (no renderUI)
+      # to avoid Shiny busy state on each parcel click
+      htmltools::div(
+        id = ns("selection_summary"),
+        class = "text-muted",
+        htmltools::span(id = ns("selection_text"), i18n$t("click_to_select")),
+        htmltools::span(id = ns("selection_area"), class = "text-muted ms-2")
+      )
     )
   )
 }
@@ -639,51 +645,38 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
 
     # ========================================
-    # Selection Summary
+    # Selection Summary (JS-driven, no renderUI)
+    #
+    # Using sendCustomMessage instead of renderUI avoids triggering
+    # Shiny's busy state on every parcel click, which caused the
+    # white overlay flash between selections.
     # ========================================
 
-    output$selection_summary <- shiny::renderUI({
+    shiny::observe({
       i18n <- get_i18n(app_state$language)
       n <- length(rv$selected_ids)
-
       parcel_data <- parcels()
 
-      if (n == 0) {
-        return(htmltools::div(
-          class = "text-muted",
-          bsicons::bs_icon("cursor-fill", class = "me-1"),
-          i18n$t("click_to_select")
-        ))
-      }
-
-      # Calculate total area
-      if (!is.null(parcel_data)) {
+      area_text <- ""
+      if (n > 0 && !is.null(parcel_data)) {
         selected <- parcel_data[parcel_data$id %in% rv$selected_ids, ]
         stats <- calculate_parcel_stats(selected)
-        area_text <- sprintf("%.2f ha", stats$total_area_ha)
-      } else {
-        area_text <- ""
+        area_text <- sprintf("| %.2f ha", stats$total_area_ha)
       }
 
       at_limit <- n >= MAX_PARCELS
 
-      htmltools::div(
-        class = paste("d-flex justify-content-between align-items-center",
-                      if (at_limit) "text-warning" else "text-success"),
-
-        htmltools::span(
-          bsicons::bs_icon(if (at_limit) "exclamation-triangle" else "check-circle",
-                           class = "me-1"),
-          sprintf("%d / %d %s", n, MAX_PARCELS, i18n$t("parcels_selected"))
-        ),
-
-        if (area_text != "") {
-          htmltools::span(
-            class = "text-muted",
-            sprintf("| %s", area_text)
-          )
-        }
-      )
+      session$sendCustomMessage("updateSelectionSummary", list(
+        containerId = ns("selection_summary"),
+        textId = ns("selection_text"),
+        areaId = ns("selection_area"),
+        count = n,
+        max = MAX_PARCELS,
+        atLimit = at_limit,
+        areaText = area_text,
+        emptyLabel = i18n$t("click_to_select"),
+        selectedLabel = i18n$t("parcels_selected")
+      ))
     })
 
 
