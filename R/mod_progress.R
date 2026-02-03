@@ -229,12 +229,17 @@ mod_progress_server <- function(id, compute_state, app_state) {
     rv <- shiny::reactiveValues(
       show_progress = FALSE,
       show_complete = FALSE,
-      show_error = FALSE,
-      start_time = NULL,
-      last_task = "",
-      last_notif_id = NULL,
-      last_error_count = 0
+      show_error = FALSE
     )
+
+    # Plain environment for tracking state across polling calls.
+    # Using a non-reactive env so send_running_update() can be called
+    # from later::later without triggering reactive flush / busy state.
+    tracking <- new.env(parent = emptyenv())
+    tracking$start_time <- NULL
+    tracking$last_task <- ""
+    tracking$last_notif_id <- NULL
+    tracking$last_error_count <- 0
 
     # ========================================
     # Visibility outputs (removed - unused, caused unnecessary reactivity)
@@ -318,141 +323,142 @@ mod_progress_server <- function(id, compute_state, app_state) {
       )
     }
 
+    # ========================================
+    # send_running_update(): push progress to UI via sendCustomMessage.
+    # Called from later::later polling loop in mod_home.R — runs OUTSIDE
+    # the reactive system so it does NOT trigger Shiny busy state.
+    # ========================================
+    send_running_update <- function(state) {
+      # First call: initialize elapsed timer
+      if (is.null(tracking$start_time)) {
+        tracking$start_time <- Sys.time()
+        tracking$last_task <- ""
+        tracking$last_notif_id <- NULL
+        tracking$last_error_count <- 0
+        session$sendCustomMessage("startElapsedTimer", list(
+          id = ns("elapsed_time"),
+          label = paste0(i18n$t("elapsed_time"), ": ")
+        ))
+      }
+
+      # Sidebar: global progress bar + counters (via JavaScript)
+      progress <- state$progress %||% 0
+      progress_max <- state$progress_max %||% 1
+      if (length(progress) != 1 || is.na(progress)) progress <- 0
+      if (length(progress_max) != 1 || is.na(progress_max) || progress_max == 0) progress_max <- 1
+      progress_pct <- round(progress / progress_max * 100)
+
+      session$sendCustomMessage("updateProgressBar", list(
+        barId = ns("progress_bar"),
+        percentId = ns("progress_percent"),
+        percent = progress_pct
+      ))
+
+      # Phase text (sidebar)
+      session$sendCustomMessage("updateText", list(
+        id = ns("phase_text"),
+        text = translate_phase(state$phase)
+      ))
+
+      # Counters (sidebar)
+      n_completed <- state$indicators_completed %||% 0
+      n_failed <- state$indicators_failed %||% 0
+      n_total <- state$indicators_total %||% 0
+      if (length(n_completed) != 1 || is.na(n_completed)) n_completed <- 0
+      if (length(n_failed) != 1 || is.na(n_failed)) n_failed <- 0
+      if (length(n_total) != 1 || is.na(n_total)) n_total <- 0
+
+      session$sendCustomMessage("updateText", list(
+        id = ns("completed_count"),
+        text = as.character(n_completed)
+      ))
+      session$sendCustomMessage("updateText", list(
+        id = ns("failed_count"),
+        text = as.character(n_failed)
+      ))
+
+      pending <- n_total - n_completed - n_failed
+      session$sendCustomMessage("updateText", list(
+        id = ns("pending_count"),
+        text = as.character(pending)
+      ))
+
+      # Fixed toast notification (bottom-right) for task changes
+      current_task <- state$current_task %||% ""
+      if (length(current_task) != 1 || is.na(current_task)) current_task <- ""
+      if (current_task != "" && current_task != tracking$last_task) {
+        tracking$last_task <- current_task
+        task_text <- translate_task(current_task)
+
+        toast_type <- if (grepl("^download", current_task)) "info" else "info"
+        toast_duration <- if (grepl("download_oso_progress", current_task)) 8000 else 4000
+
+        session$sendCustomMessage("updateTaskToast", list(
+          wrapperId = ns("task_toast"),
+          innerId = ns("task_toast_inner"),
+          textId = ns("task_toast_text"),
+          iconId = ns("task_toast_icon"),
+          visible = TRUE,
+          text = task_text,
+          type = toast_type,
+          duration = toast_duration
+        ))
+      }
+
+      # Error toast: show errors in the same fixed toast (warning style)
+      n_errors <- length(state$errors)
+      if (n_errors > tracking$last_error_count) {
+        last_err <- state$errors[[n_errors]]
+        prefix <- if (!is.null(last_err$indicator)) {
+          paste0(last_err$indicator, ": ")
+        } else {
+          ""
+        }
+        session$sendCustomMessage("updateTaskToast", list(
+          wrapperId = ns("task_toast"),
+          innerId = ns("task_toast_inner"),
+          textId = ns("task_toast_text"),
+          iconId = ns("task_toast_icon"),
+          visible = TRUE,
+          text = paste0(prefix, last_err$message),
+          type = "warning",
+          duration = 8000
+        ))
+        tracking$last_error_count <- n_errors
+      }
+    }
+
+    # Reset tracking state for a new computation
+    reset_tracking <- function() {
+      tracking$start_time <- NULL
+      tracking$last_task <- ""
+      tracking$last_notif_id <- NULL
+      tracking$last_error_count <- 0
+    }
+
+    # ========================================
+    # Observer for terminal states only (completed, error).
+    # These are one-time events so a single reactive flush is acceptable.
+    # Running-state updates are handled by send_running_update() above.
+    # ========================================
     shiny::observe({
-      # Only reactive dependency: compute_state()
-      # All rv reads use isolate() to prevent self-invalidation loops
       state <- compute_state()
       shiny::req(state)
 
-      # Guard: status can be NA or length-zero when progress file is partially written
       status <- state$status
       if (is.null(status) || length(status) != 1 || is.na(status)) return()
 
-      # Update visibility flags only when they actually change
-      new_show_progress <- status %in% c(
-        COMPUTE_STATUS$PENDING,
-        COMPUTE_STATUS$DOWNLOADING,
-        COMPUTE_STATUS$COMPUTING
-      )
       new_show_complete <- identical(status, COMPUTE_STATUS$COMPLETED)
       new_show_error <- identical(status, COMPUTE_STATUS$ERROR)
 
+      # Skip running states — handled by send_running_update via later::later
+      if (!new_show_complete && !new_show_error) return()
+
       shiny::isolate({
-        if (!identical(rv$show_progress, new_show_progress)) {
-          rv$show_progress <- new_show_progress
-        }
-        if (!identical(rv$show_complete, new_show_complete)) {
-          rv$show_complete <- new_show_complete
-        }
-        if (!identical(rv$show_error, new_show_error)) {
-          rv$show_error <- new_show_error
-        }
+        if (new_show_complete && !identical(rv$show_complete, TRUE)) {
+          rv$show_complete <- TRUE
+          rv$show_progress <- FALSE
 
-        if (new_show_progress) {
-          # Track start time and reset notification state for new computation
-          if (is.null(rv$start_time)) {
-            rv$start_time <- Sys.time()
-            rv$last_task <- ""
-            rv$last_notif_id <- NULL
-            rv$last_error_count <- 0
-            # Start client-side elapsed timer (avoids server-side invalidateLater flicker)
-            session$sendCustomMessage("startElapsedTimer", list(
-              id = ns("elapsed_time"),
-              label = paste0(i18n$t("elapsed_time"), ": ")
-            ))
-          }
-
-          # Sidebar: global progress bar + counters (via JavaScript)
-          progress <- state$progress %||% 0
-          progress_max <- state$progress_max %||% 1
-          if (length(progress) != 1 || is.na(progress)) progress <- 0
-          if (length(progress_max) != 1 || is.na(progress_max) || progress_max == 0) progress_max <- 1
-          progress_pct <- round(progress / progress_max * 100)
-
-          session$sendCustomMessage("updateProgressBar", list(
-            barId = ns("progress_bar"),
-            percentId = ns("progress_percent"),
-            percent = progress_pct
-          ))
-
-          # Phase text (sidebar)
-          session$sendCustomMessage("updateText", list(
-            id = ns("phase_text"),
-            text = translate_phase(state$phase)
-          ))
-
-          # Counters (sidebar)
-          n_completed <- state$indicators_completed %||% 0
-          n_failed <- state$indicators_failed %||% 0
-          n_total <- state$indicators_total %||% 0
-          if (length(n_completed) != 1 || is.na(n_completed)) n_completed <- 0
-          if (length(n_failed) != 1 || is.na(n_failed)) n_failed <- 0
-          if (length(n_total) != 1 || is.na(n_total)) n_total <- 0
-
-          session$sendCustomMessage("updateText", list(
-            id = ns("completed_count"),
-            text = as.character(n_completed)
-          ))
-          session$sendCustomMessage("updateText", list(
-            id = ns("failed_count"),
-            text = as.character(n_failed)
-          ))
-
-          pending <- n_total - n_completed - n_failed
-          session$sendCustomMessage("updateText", list(
-            id = ns("pending_count"),
-            text = as.character(pending)
-          ))
-
-          # Fixed toast notification (bottom-right) for task changes
-          # Uses JavaScript-only DOM update - no showNotification to avoid flickering
-          current_task <- state$current_task %||% ""
-          if (length(current_task) != 1 || is.na(current_task)) current_task <- ""
-          if (current_task != "" && current_task != rv$last_task) {
-            rv$last_task <- current_task
-            task_text <- translate_task(current_task)
-
-            # Determine toast type and duration
-            toast_type <- if (grepl("^download", current_task)) "info" else "info"
-            toast_duration <- if (grepl("download_oso_progress", current_task)) 8000 else 4000
-
-            session$sendCustomMessage("updateTaskToast", list(
-              wrapperId = ns("task_toast"),
-              innerId = ns("task_toast_inner"),
-              textId = ns("task_toast_text"),
-              iconId = ns("task_toast_icon"),
-              visible = TRUE,
-              text = task_text,
-              type = toast_type,
-              duration = toast_duration
-            ))
-          }
-
-          # Error toast: show errors in the same fixed toast (warning style)
-          n_errors <- length(state$errors)
-          if (n_errors > rv$last_error_count) {
-            last_err <- state$errors[[n_errors]]
-            prefix <- if (!is.null(last_err$indicator)) {
-              paste0(last_err$indicator, ": ")
-            } else {
-              ""
-            }
-            session$sendCustomMessage("updateTaskToast", list(
-              wrapperId = ns("task_toast"),
-              innerId = ns("task_toast_inner"),
-              textId = ns("task_toast_text"),
-              iconId = ns("task_toast_icon"),
-              visible = TRUE,
-              text = paste0(prefix, last_err$message),
-              type = "warning",
-              duration = 8000
-            ))
-            rv$last_error_count <- n_errors
-          }
-        }
-
-        # Completion message (only set once at the end)
-        if (new_show_complete) {
           # Hide task toast
           session$sendCustomMessage("updateTaskToast", list(
             wrapperId = ns("task_toast"),
@@ -474,7 +480,6 @@ mod_progress_server <- function(id, compute_state, app_state) {
           # Build indicator status table
           ind_status <- state$indicators_status
           if (!is.null(ind_status) && length(ind_status) > 0) {
-            # Convert named list/vector to array of {name, status}
             ind_names <- names(ind_status)
             indicators_list <- lapply(ind_names, function(nm) {
               s <- ind_status[[nm]]
@@ -497,13 +502,15 @@ mod_progress_server <- function(id, compute_state, app_state) {
             ))
           }
 
-          # Reset start time for next computation
-          rv$start_time <- NULL
+          # Reset tracking for next computation
+          reset_tracking()
           session$sendCustomMessage("stopElapsedTimer", list())
         }
 
-        # Error message (only set once at the end)
-        if (new_show_error) {
+        if (new_show_error && !identical(rv$show_error, TRUE)) {
+          rv$show_error <- TRUE
+          rv$show_progress <- FALSE
+
           # Hide task toast
           session$sendCustomMessage("updateTaskToast", list(
             wrapperId = ns("task_toast"),
@@ -526,6 +533,8 @@ mod_progress_server <- function(id, compute_state, app_state) {
             html = paste0('<p class="text-danger">',
                           htmltools::htmlEscape(error_msg), '</p>', extra)
           ))
+
+          reset_tracking()
         }
       })
     })
@@ -547,7 +556,7 @@ mod_progress_server <- function(id, compute_state, app_state) {
     # Retry button
     shiny::observeEvent(input$retry, {
       rv$show_error <- FALSE
-      rv$start_time <- NULL
+      reset_tracking()
       session$sendCustomMessage("stopElapsedTimer", list())
       app_state$retry_computation <- Sys.time()
     })
@@ -559,7 +568,10 @@ mod_progress_server <- function(id, compute_state, app_state) {
     list(
       show_progress = shiny::reactive(rv$show_progress),
       show_complete = shiny::reactive(rv$show_complete),
-      show_error = shiny::reactive(rv$show_error)
+      show_error = shiny::reactive(rv$show_error),
+      # Called from later::later polling loop (outside reactive context)
+      send_running_update = send_running_update,
+      reset_tracking = reset_tracking
     )
   })
 }

@@ -523,9 +523,6 @@ mod_home_server <- function(id, app_state) {
     # Track active computation project
     computing_project_id <- shiny::reactiveVal(NULL)
 
-    # Track last progress state to avoid unnecessary updates
-    last_progress_key <- shiny::reactiveVal("")
-
     # Progress module server
     progress_result <- mod_progress_server(
       "progress",
@@ -543,10 +540,12 @@ mod_home_server <- function(id, app_state) {
       app_state$current_project <- NULL
       app_state$project_id <- NULL
 
-      # Reset computation state
+      # Reset computation state (setting computing_project_id to NULL
+      # also stops the later::later polling loop)
       compute_state(NULL)
       computing_project_id(NULL)
-      last_progress_key("")
+      poll_last_key <<- ""
+      progress_result$reset_tracking()
 
       # Stop elapsed timer and computing mode
       session$sendCustomMessage("stopElapsedTimer", list())
@@ -642,11 +641,13 @@ mod_home_server <- function(id, app_state) {
 
         cli::cli_alert_info("Resuming progress tracking for project {project$id}")
 
-        # Set computing project ID to trigger polling
+        # Set computing project ID and start non-reactive polling
         computing_project_id(project$id)
+        progress_result$reset_tracking()
+        start_progress_polling(project$id)
 
-        # Update compute state from file
-        compute_state(progress_state)
+        # Push initial state to UI directly (no reactive flush)
+        progress_result$send_running_update(progress_state)
 
         # Suppress busy bar flicker during computation
         session$sendCustomMessage("setComputingMode", list(active = TRUE))
@@ -684,11 +685,10 @@ mod_home_server <- function(id, app_state) {
       # and immediately stops polling, preventing any UI updates.
       save_progress_state(project$id, state)
 
-      # Reset progress tracking key for new computation
-      last_progress_key("")
-
-      # Store project ID for polling
+      # Store project ID and start non-reactive polling
       computing_project_id(project$id)
+      progress_result$reset_tracking()
+      start_progress_polling(project$id)
 
       # Suppress busy bar flicker during computation
       session$sendCustomMessage("setComputingMode", list(active = TRUE))
@@ -763,140 +763,143 @@ mod_home_server <- function(id, app_state) {
       }
     })
 
-    # Poll progress file while computation is running
-    # Works both for new computations (ExtendedTask) and resumed tracking
-    shiny::observe({
-      project_id <- computing_project_id()
-      shiny::req(project_id)
+    # ========================================
+    # Progress polling via later::later (non-reactive)
+    #
+    # Uses later::later instead of invalidateLater to avoid triggering
+    # Shiny's reactive flush cycle every 2 seconds. The flush sets
+    # data-shiny-busy on <html>, which activates bslib's white overlay
+    # despite CSS/JS suppression (timing gap in MutationObserver).
+    #
+    # Running-state updates go directly through sendCustomMessage via
+    # progress_result$send_running_update() — no reactive values change,
+    # no busy state, no white flash.
+    #
+    # Terminal states (completed, error, cancelled) update compute_state()
+    # for a single reactive flush, which is acceptable for one-time events.
+    # ========================================
 
-      # Read progress from file
-      progress_state <- read_progress_state(project_id)
+    # Non-reactive variable for change detection in the polling loop
+    poll_last_key <- ""
 
-      if (is.null(progress_state)) {
-        # No progress file - computation may have finished or never started
-        shiny::invalidateLater(2000)
-        return()
-      }
+    start_progress_polling <- function(project_id) {
+      # Reset key for new computation
+      poll_last_key <<- ""
 
-      # Check if computation is still running or starting (from file status)
-      is_running <- progress_state$status %in% c("pending", "downloading", "computing")
+      poll_fn <- function() {
+        # Check if still computing (isolate — we're outside reactive context)
+        current_id <- shiny::isolate(computing_project_id())
+        if (is.null(current_id) || current_id != project_id) return()
 
-      if (is_running) {
-        # Create a key based on important state values to detect changes
-        progress_pct <- round(
-          (progress_state$progress %||% 0) /
-          (progress_state$progress_max %||% 1) * 100
-        )
-        current_key <- paste(
-          progress_state$status,
-          progress_pct,
-          progress_state$indicators_completed %||% 0,
-          progress_state$indicators_failed %||% 0,
-          progress_state$current_task %||% "",
-          sep = "|"
-        )
+        # Read progress from file
+        progress_state <- read_progress_state(project_id)
 
-        # Only update reactive state if something changed
-        # This prevents unnecessary re-renders of the entire UI
-        # The mod_progress observer handles all JavaScript UI updates
-        # Use isolate() to read last_progress_key without creating a
-        # self-dependency that would cause the observer to re-run immediately
-        if (current_key != shiny::isolate(last_progress_key())) {
-          last_progress_key(current_key)
+        if (is.null(progress_state)) {
+          # No progress file yet — schedule next poll
+          later::later(poll_fn, delay = 2)
+          return()
+        }
+
+        is_running <- progress_state$status %in% c("pending", "downloading", "computing")
+
+        if (is_running) {
+          # Create a key based on important state values to detect changes
+          progress_pct <- round(
+            (progress_state$progress %||% 0) /
+            (progress_state$progress_max %||% 1) * 100
+          )
+          current_key <- paste(
+            progress_state$status,
+            progress_pct,
+            progress_state$indicators_completed %||% 0,
+            progress_state$indicators_failed %||% 0,
+            progress_state$current_task %||% "",
+            sep = "|"
+          )
+
+          # Only push UI update if something changed
+          if (current_key != poll_last_key) {
+            poll_last_key <<- current_key
+            # Direct JS update — no reactive flush, no busy state
+            progress_result$send_running_update(progress_state)
+          }
+
+          # Schedule next poll
+          later::later(poll_fn, delay = 2)
+
+        } else if (progress_state$status == "completed") {
+          # Terminal: update compute_state for mod_progress completion handler
           compute_state(progress_state)
-        }
 
-        # Continue polling every 2 seconds (reduce DOM updates)
-        shiny::invalidateLater(2000)
+          session$sendCustomMessage("setComputingMode", list(active = FALSE))
+          session$sendCustomMessage("hideElement", list(
+            id = ns("progress-progress_card_wrapper")
+          ))
+          session$sendCustomMessage("showElement", list(
+            id = ns("progress-complete_card_wrapper")
+          ))
 
-      } else if (progress_state$status == "completed") {
-        # Computation completed successfully
-        # Update compute_state so mod_progress populates the completion summary
-        compute_state(progress_state)
+          app_state$current_project <- load_project(project_id)
+          app_state$refresh_projects <- Sys.time()
 
-        session$sendCustomMessage("setComputingMode", list(active = FALSE))
+          shiny::showNotification(
+            i18n$t("computation_complete"),
+            type = "message"
+          )
 
-        # Hide progress card
-        session$sendCustomMessage("hideElement", list(
-          id = ns("progress-progress_card_wrapper")
-        ))
+          computing_project_id(NULL)
 
-        # Show completion card
-        session$sendCustomMessage("showElement", list(
-          id = ns("progress-complete_card_wrapper")
-        ))
+        } else if (progress_state$status == "error") {
+          compute_state(progress_state)
 
-        # Reload project to get updated metadata
-        app_state$current_project <- load_project(project_id)
-        app_state$refresh_projects <- Sys.time()
+          session$sendCustomMessage("setComputingMode", list(active = FALSE))
+          session$sendCustomMessage("hideElement", list(
+            id = ns("progress-progress_card_wrapper")
+          ))
+          session$sendCustomMessage("showElement", list(
+            id = ns("progress-error_card_wrapper")
+          ))
 
-        shiny::showNotification(
-          i18n$t("computation_complete"),
-          type = "message"
-        )
+          error_msg <- if (length(progress_state$errors) > 0) {
+            progress_state$errors[[length(progress_state$errors)]]$message
+          } else {
+            "Unknown error"
+          }
 
-        # Reset computing state
-        computing_project_id(NULL)
+          shiny::showNotification(
+            paste(i18n$t("computation_error"), error_msg),
+            type = "error",
+            duration = 10
+          )
 
-      } else if (progress_state$status == "error") {
-        # Computation failed with error
-        # Update compute_state so mod_progress populates the error details
-        compute_state(progress_state)
+          computing_project_id(NULL)
 
-        session$sendCustomMessage("setComputingMode", list(active = FALSE))
+        } else if (progress_state$status == "cancelled") {
+          session$sendCustomMessage("setComputingMode", list(active = FALSE))
+          session$sendCustomMessage("hideElement", list(
+            id = ns("progress-progress_card_wrapper")
+          ))
 
-        # Hide progress card
-        session$sendCustomMessage("hideElement", list(
-          id = ns("progress-progress_card_wrapper")
-        ))
+          shiny::showNotification(
+            i18n$t("computation_cancelled"),
+            type = "warning"
+          )
 
-        # Show error card
-        session$sendCustomMessage("showElement", list(
-          id = ns("progress-error_card_wrapper")
-        ))
+          computing_project_id(NULL)
 
-        error_msg <- if (length(progress_state$errors) > 0) {
-          progress_state$errors[[length(progress_state$errors)]]$message
         } else {
-          "Unknown error"
+          session$sendCustomMessage("setComputingMode", list(active = FALSE))
+          cli::cli_warn("Unknown computation status: {progress_state$status}")
+          session$sendCustomMessage("hideElement", list(
+            id = ns("progress-progress_card_wrapper")
+          ))
+          computing_project_id(NULL)
         }
-
-        shiny::showNotification(
-          paste(i18n$t("computation_error"), error_msg),
-          type = "error",
-          duration = 10
-        )
-
-        # Reset computing state
-        computing_project_id(NULL)
-
-      } else if (progress_state$status == "cancelled") {
-        # Computation was cancelled
-        session$sendCustomMessage("setComputingMode", list(active = FALSE))
-
-        # Hide progress card
-        session$sendCustomMessage("hideElement", list(
-          id = ns("progress-progress_card_wrapper")
-        ))
-
-        shiny::showNotification(
-          i18n$t("computation_cancelled"),
-          type = "warning"
-        )
-
-        # Reset computing state
-        computing_project_id(NULL)
-
-      } else {
-        # Unknown status - log and reset to avoid infinite loop
-        session$sendCustomMessage("setComputingMode", list(active = FALSE))
-        cli::cli_warn("Unknown computation status: {progress_state$status}")
-        session$sendCustomMessage("hideElement", list(
-          id = ns("progress-progress_card_wrapper")
-        ))
-        computing_project_id(NULL)
       }
-    })
+
+      # Start polling after a short delay
+      later::later(poll_fn, delay = 0.5)
+    }
 
     # Note: ExtendedTask completion is handled by the polling observer above
     # which detects status changes from the progress_state.json file
@@ -973,8 +976,10 @@ mod_home_server <- function(id, app_state) {
       state <- init_compute_state(project$id)
       compute_state(state)
 
-      # Store project ID for polling
+      # Store project ID and start non-reactive polling
       computing_project_id(project$id)
+      progress_result$reset_tracking()
+      start_progress_polling(project$id)
 
       # Suppress busy bar flicker during computation
       session$sendCustomMessage("setComputingMode", list(active = TRUE))
