@@ -2239,6 +2239,28 @@ Vous avez complété le **Tutorial 10 : Classification d'Essences au Niveau Cour
 | `feature_cols.rds` | Liste des 18 features | 5.2 |
 | `spatial_folds.rds` | Folds de validation blockCV | 6.1 |
 | `rf_model.rds` | Modèle Random Forest entraîné | 7.1 |
+| `crowns_classified.gpkg` | Couronnes classifiées (GeoPackage) | 8.1 |
+
+### Formats de sortie
+
+| Format | Extension | Usage | Contenu |
+|--------|-----------|-------|---------|
+| **RDS** | `.rds` | Checkpoints R internes | Objets R serialises (sf, data.frame, ranger) |
+| **GeoTIFF** | `.tif` | Rasters georeferences | Orthophoto IRC (3 bandes), NDVI (1 bande) |
+| **GeoPackage** | `.gpkg` | Vecteurs georeferences | Couronnes classifiees avec attributs |
+
+**Detail des colonnes du GeoPackage final** (`crowns_classified.gpkg`) :
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `geometry` | POLYGON | Emprise de la couronne |
+| `tree_id` | integer | Identifiant unique de l'arbre |
+| `z_mean`, `z_sd`, `z_p25`... | numeric | Metriques LiDAR de hauteur |
+| `area_m2`, `compactness` | numeric | Metriques geometriques |
+| `ndvi_mean`, `nir_mean`... | numeric | Features spectrales IRC |
+| `predicted_class` | character | Essence predite (PIAB, ABAL, FASY, TABA) |
+| `predicted_prob` | numeric | Probabilite de la classe predite (0-1) |
+| `uncertain` | logical | `TRUE` si `predicted_prob < prob_threshold` |
 
 ### Lien avec les indicateurs nemeton
 

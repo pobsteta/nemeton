@@ -158,17 +158,17 @@
 - [x] Exercice 7.2: Entraîner XGBoost
 - [x] Exercice 8.1: Cartographier prédictions
 
-## Phase 9: Documentation (Priorité Basse)
+## Phase 9: Documentation (Priorité Basse) ✓
 
-### T9.1 Synthèse du tutoriel
+### T9.1 Synthèse du tutoriel ✓
 - [x] Workflow complet documenté dans le tutoriel
-- [ ] Tableau des produits générés
-- [ ] Lien avec indicateurs nemeton
-- [ ] Recommandations "aller plus loin"
+- [x] Tableau des produits générés
+- [x] Lien avec indicateurs nemeton
+- [x] Recommandations "aller plus loin"
 
-### T9.2 Documentation technique
+### T9.2 Documentation technique ✓
 - [x] Documenter les paramètres par défaut (config)
-- [ ] Documenter les formats de sortie
+- [x] Documenter les formats de sortie
 
 ## Phase 10: Tests et Validation (Priorité Haute) ✓
 
@@ -177,8 +177,8 @@
 - [x] Vérifier tous les checkpoints
 - [x] Vérifier les exports
 
-### T10.2 Tests de régression
-- [ ] Créer `tests/testthat/test-tutorial-10.R`
+### T10.2 Tests de régression ✓
+- [x] Créer `tests/testthat/test-tutorial-10.R`
 
 ### T10.3 Validation utilisateur
 - [x] Test avec utilisateur (confirmé fonctionnel)
@@ -197,7 +197,7 @@
 | 6. Modélisation | ✓ Terminé | RF + XGBoost fonctionnels |
 | 7. Cartographie | ✓ Terminé | Prédiction toutes couronnes |
 | 8. Quiz/Exercices | ✓ Terminé | 12 exercices, 7 quiz |
-| 9. Documentation | Partiel | À compléter |
+| 9. Documentation | ✓ Terminé | Formats de sortie documentés |
 | 10. Tests | ✓ Terminé | Validé utilisateur |
 
 **Statut global: FONCTIONNEL** - Tutorial 10 opérationnel de bout en bout.
