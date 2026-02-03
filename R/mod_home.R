@@ -432,8 +432,11 @@ mod_home_server <- function(id, app_state) {
       commune_geom <- search_result$commune_geometry()
       shiny::req(commune_geom)
 
-      # Clear stale parcels while loading new ones
+      # Clear stale parcels while loading new ones.
+      # Also clear the transitioning flag so the combined observer in mod_map
+      # can render once fresh parcels arrive.
       parcels_data(NULL)
+      app_state$commune_transitioning <- FALSE
       parcels_task$invoke(commune, commune_geom)
     }, ignoreInit = TRUE)
 

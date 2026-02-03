@@ -356,6 +356,11 @@ mod_search_server <- function(id, app_state) {
       )
 
       if (!is.null(result) && !is.null(result$geometry)) {
+        # Signal that commune is transitioning — prevents the combined observer
+        # in mod_map from rendering stale parcels with the new geometry during
+        # the flush cycle (observer execution order is non-deterministic).
+        app_state$commune_transitioning <- TRUE
+
         rv$selected_commune <- result$code
         rv$commune_geometry <- result$geometry
 

@@ -331,6 +331,13 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
         return()
       }
 
+      # During commune transitions, the new geometry may arrive before stale
+      # parcels are cleared (observer execution order is non-deterministic).
+      # Skip rendering to prevent a flash of old parcels with new boundary.
+      if (isTRUE(shiny::isolate(app_state$commune_transitioning))) {
+        return()
+      }
+
       # --- Both commune geometry and parcels are ready: render everything ---
 
       # 1. Validate and add commune boundary
