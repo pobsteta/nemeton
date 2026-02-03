@@ -218,11 +218,30 @@ indicator_biodiversity_structure <- function(units,
   has_age <- age_class_field %in% names(units)
 
   if (!has_strata || !has_age) {
-    # Fallback: use NDVI standard deviation as proxy for structural diversity
+    # Fallback 1: use LiDAR MNH (Canopy Height Model) for structural diversity
+    # Height variability (std dev) is a direct measure of vertical structure
+    if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+        "lidar_mnh" %in% names(layers$rasters)) {
+      cli::cli_alert_info("B2: Using LiDAR MNH for structural diversity")
+      mnh_raster <- layers$rasters[["lidar_mnh"]]
+      units_sf <- as_pure_sf(units)
+      mnh_sd <- exactextractr::exact_extract(mnh_raster, units_sf,
+        fun = "stdev", progress = FALSE)
+      mnh_mean <- exactextractr::exact_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      # Height standard deviation as structural diversity:
+      # Mature mixed forest: sd ~ 8-12m (high diversity)
+      # Even-aged plantation: sd ~ 2-4m (low diversity)
+      # Scale: sd 0m -> 0, sd 10m -> 100
+      units$B2 <- pmin(mnh_sd / 10, 1) * 100
+      return(units)
+    }
+
+    # Fallback 2: use NDVI standard deviation as proxy for structural diversity
     # Higher NDVI variance within a parcel = more structural heterogeneity
     if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
         "ndvi" %in% names(layers$rasters)) {
-      cli::cli_alert_info("B2: No strata/age columns; estimating structure from NDVI variability")
+      cli::cli_alert_info("B2: No strata/age/MNH; estimating structure from NDVI variability")
       ndvi_raster <- layers$rasters[["ndvi"]]
       units_sf <- as_pure_sf(units)
       ndvi_sd <- exactextractr::exact_extract(ndvi_raster, units_sf,
@@ -234,7 +253,7 @@ indicator_biodiversity_structure <- function(units,
       # Scale CV (0-0.5) to B2 score (0-100)
       units$B2 <- pmin(cv / 0.4, 1) * 100
     } else {
-      cli::cli_alert_warning("B2: No strata/age/NDVI data available")
+      cli::cli_alert_warning("B2: No strata/age/MNH/NDVI data available")
       units$B2 <- rep(NA_real_, nrow(units))
     }
     return(units)

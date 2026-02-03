@@ -35,6 +35,13 @@ DATA_SOURCES <- list(
       type = "raster",
       source = "oso",
       required_for = c("carbon_biomass", "landscape_fragmentation", "temporal_change")
+    ),
+    lidar_mnh = list(
+      name = "Canopy Height Model (LiDAR HD)",
+      type = "raster",
+      source = "ign_lidar_hd",
+      product = "mnh",
+      required_for = c("biodiversity_structure", "production_volume", "risk_storm")
     )
   ),
   # Vector sources
@@ -62,6 +69,16 @@ DATA_SOURCES <- list(
       type = "vector",
       source = "ign_bd_topo",
       required_for = c("naturalness_distance", "social_accessibility")
+    )
+  ),
+  # Point cloud sources (not loaded as raster/vector but cached as files)
+  point_clouds = list(
+    lidar_copc = list(
+      name = "LiDAR HD Point Clouds (COPC)",
+      type = "point_cloud",
+      source = "ign_lidar_hd",
+      product = "nuage",
+      required_for = c("biodiversity_structure")
     )
   )
 )
@@ -434,6 +451,7 @@ download_layers_for_parcels <- function(parcels,
     ndvi = "source_ndvi",
     dem = "source_dem",
     forest_cover = "source_forest_cover",
+    lidar_mnh = "source_lidar_mnh",
     protected_areas = "source_protected_areas",
     water_network = "source_water_network",
     wetlands = "source_wetlands",
@@ -536,10 +554,48 @@ download_layers_for_parcels <- function(parcels,
     completed <- completed + 1
   }
 
+  # Download point cloud sources (LiDAR COPC tiles)
+  point_clouds <- list()
+  pc_sources <- DATA_SOURCES$point_clouds %||% list()
+
+  for (source_name in names(pc_sources)) {
+    source <- pc_sources[[source_name]]
+
+    translation_key <- source_translation_keys[[source_name]] %||% source_name
+    translated_name <- paste0("download:", translation_key)
+
+    if (!is.null(progress_callback)) {
+      progress_callback(list(
+        completed = completed,
+        total = total_sources + length(pc_sources),
+        current = translated_name,
+        source_key = translation_key
+      ))
+    }
+
+    tryCatch({
+      if (source$source == "ign_lidar_hd") {
+        pc_files <- download_ign_lidar_hd(
+          bbox = bbox_buffered,
+          cache_dir = cache_dir,
+          product = source$product %||% "nuage",
+          progress_callback = progress_callback
+        )
+        if (!is.null(pc_files)) {
+          point_clouds[[source_name]] <- pc_files
+        }
+      }
+    }, error = function(e) {
+      cli::cli_warn("Failed to download {source$name}: {e$message}")
+    })
+
+    completed <- completed + 1
+  }
+
   if (!is.null(progress_callback)) {
     progress_callback(list(
-      completed = total_sources,
-      total = total_sources,
+      completed = total_sources + length(pc_sources),
+      total = total_sources + length(pc_sources),
       current = "download_complete",
       source_key = NULL
     ))
@@ -550,6 +606,7 @@ download_layers_for_parcels <- function(parcels,
     list(
       rasters = rasters,
       vectors = vectors,
+      point_clouds = point_clouds,
       bbox = bbox_buffered,
       crs = sf::st_crs(parcels),
       warnings = download_warnings  # Include download warnings for UI display
@@ -582,6 +639,12 @@ download_raster_source <- function(source_name,
     "ign_irc" = download_ign_irc_ndvi(bbox, cache_file),
     "ign_bd_alti" = download_ign_dem(bbox, cache_file),
     "oso" = download_oso(bbox, cache_file, progress_callback = progress_callback),
+    "ign_lidar_hd" = download_ign_lidar_hd(
+      bbox = bbox,
+      cache_dir = dirname(cache_file),
+      product = source_config$product %||% "mnh",
+      progress_callback = progress_callback
+    ),
     {
       cli::cli_warn("Unknown raster source: {source_config$source}")
       NULL
@@ -1330,7 +1393,355 @@ create_synthetic_ndvi <- function(bbox, cache_file) {
 }
 
 
-#' Compute all indicators
+# ==============================================================================
+# IGN LiDAR HD Download
+# ==============================================================================
+
+#' Download IGN LiDAR HD tiles (MNH canopy height model)
+#'
+#' @description
+#' Downloads LiDAR HD derived products (MNH = Modèle Numérique de Hauteur,
+#' i.e. Canopy Height Model) from the IGN Géoplateforme.
+#'
+#' The workflow:
+#' 1. Query the WFS `IGNF_MNH-LIDAR-HD:dalle` to find tiles covering the bbox
+#' 2. Download each tile (1km x 1km GeoTIFF at 1m resolution)
+#' 3. Mosaic tiles into a single raster
+#' 4. Cache the result for future use
+#'
+#' Also supports downloading raw COPC point cloud tiles via
+#' `IGNF_NUAGES-DE-POINTS-LIDAR-HD:dalle`.
+#'
+#' @param bbox Numeric vector or sf bbox. Bounding box in WGS84.
+#' @param cache_dir Character. Directory to cache downloaded tiles.
+#' @param product Character. Product to download:
+#'   "mnh" (Canopy Height Model, default), "mnt" (DTM), "mns" (DSM),
+#'   or "nuage" (raw COPC point clouds).
+#' @param progress_callback Function. Optional progress callback.
+#'
+#' @return SpatRaster (for mnh/mnt/mns) or character vector of .copc.laz
+#'   file paths (for nuage), or NULL if no tiles available.
+#'
+#' @noRd
+download_ign_lidar_hd <- function(bbox,
+                                  cache_dir,
+                                  product = c("mnh", "mnt", "mns", "nuage"),
+                                  progress_callback = NULL) {
+  product <- match.arg(product)
+
+  # WFS layer names for each product
+  wfs_layers <- list(
+    mnh = "IGNF_MNH-LIDAR-HD:dalle",
+    mnt = "IGNF_MNT-LIDAR-HD:dalle",
+    mns = "IGNF_MNS-LIDAR-HD:dalle",
+    nuage = "IGNF_NUAGES-DE-POINTS-LIDAR-HD:dalle"
+  )
+
+  wfs_layer <- wfs_layers[[product]]
+
+  # File extension depends on product
+  file_ext <- if (product == "nuage") ".copc.laz" else ".tif"
+  cache_subdir <- file.path(cache_dir, paste0("lidar_", product))
+  if (!dir.exists(cache_subdir)) {
+    dir.create(cache_subdir, recursive = TRUE)
+  }
+
+  # Check for cached mosaic (raster products only)
+  mosaic_cache <- file.path(cache_dir, paste0("lidar_", product, "_mosaic.tif"))
+  if (product != "nuage" && file.exists(mosaic_cache)) {
+    cli::cli_alert_success("Using cached LiDAR {toupper(product)} mosaic")
+    return(terra::rast(mosaic_cache))
+  }
+
+  # For raw point clouds, check if we already have cached tiles
+  if (product == "nuage") {
+    cached_tiles <- list.files(cache_subdir, pattern = "\\.copc\\.laz$",
+      full.names = TRUE)
+    if (length(cached_tiles) > 0) {
+      cli::cli_alert_success("Using {length(cached_tiles)} cached LiDAR COPC tiles")
+      return(cached_tiles)
+    }
+  }
+
+  # Ensure bbox is numeric
+  if (inherits(bbox, "bbox")) {
+    bbox <- as.numeric(bbox)
+  }
+
+  cli::cli_alert_info("Querying IGN WFS for LiDAR HD {toupper(product)} tiles...")
+
+  # ---- Step 1: Query WFS to find tiles covering bbox ----
+  tiles_sf <- query_lidar_wfs(wfs_layer, bbox)
+
+  if (is.null(tiles_sf) || nrow(tiles_sf) == 0) {
+    cli::cli_alert_warning(
+      "No LiDAR HD {toupper(product)} tiles found for this area (coverage may be incomplete)"
+    )
+    return(NULL)
+  }
+
+  cli::cli_alert_info("Found {nrow(tiles_sf)} LiDAR HD {toupper(product)} tiles")
+
+  # ---- Step 2: Extract download URLs and download tiles ----
+  # The WFS response should contain a download URL attribute
+  url_col <- find_url_column(tiles_sf)
+  if (is.null(url_col)) {
+    cli::cli_alert_warning("LiDAR WFS response has no download URL column")
+    return(NULL)
+  }
+
+  download_urls <- tiles_sf[[url_col]]
+
+  # Extract tile names for caching
+  tile_names <- extract_tile_names(download_urls, file_ext)
+
+  downloaded_files <- character(0)
+  n_tiles <- length(download_urls)
+
+  for (i in seq_along(download_urls)) {
+    url <- download_urls[i]
+    tile_file <- file.path(cache_subdir, tile_names[i])
+
+    if (!is.null(progress_callback)) {
+      progress_callback(list(
+        current = paste0("LiDAR ", toupper(product), " ", i, "/", n_tiles),
+        completed = i - 1,
+        total = n_tiles
+      ))
+    }
+
+    # Skip if already cached
+    if (file.exists(tile_file) && file.size(tile_file) > 100) {
+      cli::cli_alert_success("  Tile {i}/{n_tiles}: cached")
+      downloaded_files <- c(downloaded_files, tile_file)
+      next
+    }
+
+    # Download tile
+    result <- download_lidar_tile(url, tile_file)
+    if (!is.null(result)) {
+      downloaded_files <- c(downloaded_files, result)
+      cli::cli_alert_success("  Tile {i}/{n_tiles}: downloaded")
+    } else {
+      cli::cli_alert_warning("  Tile {i}/{n_tiles}: failed")
+    }
+  }
+
+  if (length(downloaded_files) == 0) {
+    cli::cli_alert_warning("No LiDAR HD tiles were successfully downloaded")
+    return(NULL)
+  }
+
+  # ---- Step 3: For raster products, mosaic tiles ----
+  if (product != "nuage") {
+    result <- mosaic_lidar_tiles(downloaded_files, mosaic_cache)
+    return(result)
+  }
+
+  # For COPC, return file paths
+  downloaded_files
+}
+
+
+#' Query IGN WFS for LiDAR HD tiles covering a bounding box
+#'
+#' @param wfs_layer Character. WFS typename.
+#' @param bbox Numeric vector. Bounding box (xmin, ymin, xmax, ymax) in WGS84.
+#'
+#' @return sf object with tile features, or NULL on failure.
+#' @noRd
+query_lidar_wfs <- function(wfs_layer, bbox) {
+  base_url <- "https://data.geopf.fr/wfs/ows"
+
+  bbox_str <- paste(bbox[c(1, 2, 3, 4)], collapse = ",")
+
+  wfs_url <- paste0(
+    base_url,
+    "?SERVICE=WFS",
+    "&VERSION=2.0.0",
+    "&REQUEST=GetFeature",
+    "&TYPENAMES=", wfs_layer,
+    "&BBOX=", bbox_str, ",EPSG:4326",
+    "&SRSNAME=EPSG:4326",
+    "&OUTPUTFORMAT=application/json",
+    "&COUNT=500"
+  )
+
+  tryCatch({
+    resp <- httr2::request(wfs_url) |>
+      httr2::req_timeout(120) |>
+      httr2::req_error(is_error = function(resp) FALSE) |>
+      httr2::req_perform()
+
+    if (httr2::resp_status(resp) != 200) {
+      cli::cli_warn("IGN LiDAR WFS returned status {httr2::resp_status(resp)}")
+      return(NULL)
+    }
+
+    geojson <- httr2::resp_body_string(resp)
+
+    if (nchar(geojson) < 50) {
+      return(NULL)
+    }
+
+    tiles <- sf::st_read(geojson, quiet = TRUE)
+
+    if (nrow(tiles) == 0) {
+      return(NULL)
+    }
+
+    tiles
+  }, error = function(e) {
+    cli::cli_warn("LiDAR WFS query failed: {e$message}")
+    NULL
+  })
+}
+
+
+#' Find the download URL column in WFS response
+#'
+#' @param tiles_sf sf object from WFS response.
+#' @return Column name containing download URLs, or NULL.
+#' @noRd
+find_url_column <- function(tiles_sf) {
+  # Possible column names for the download URL
+  url_candidates <- c(
+    "url_telechargement", "lien_telechargement",
+    "url", "lien", "download_url", "href",
+    "nom_pkk", "url_fichier"
+  )
+
+  cols <- names(tiles_sf)
+
+  # Try exact match first
+
+  for (candidate in url_candidates) {
+    if (candidate %in% cols) {
+      return(candidate)
+    }
+  }
+
+  # Try case-insensitive match
+  cols_lower <- tolower(cols)
+  for (candidate in url_candidates) {
+    idx <- which(cols_lower == candidate)
+    if (length(idx) > 0) {
+      return(cols[idx[1]])
+    }
+  }
+
+  # Try partial match on "url" or "lien" or "telechargement"
+  url_cols <- cols[grepl("url|lien|telecharg|download|href", cols, ignore.case = TRUE)]
+  if (length(url_cols) > 0) {
+    return(url_cols[1])
+  }
+
+  NULL
+}
+
+
+#' Extract tile filenames from download URLs
+#'
+#' @param urls Character vector of download URLs.
+#' @param file_ext Character. Expected file extension.
+#' @return Character vector of filenames.
+#' @noRd
+extract_tile_names <- function(urls, file_ext) {
+  # Extract filename from URL
+  basenames <- basename(urls)
+
+  # If basenames don't have the right extension, generate names
+  has_ext <- grepl(gsub("\\.", "\\\\.", file_ext), basenames)
+  for (i in which(!has_ext)) {
+    basenames[i] <- paste0("tile_", i, file_ext)
+  }
+
+  basenames
+}
+
+
+#' Download a single LiDAR tile with retry
+#'
+#' @param url Character. Download URL.
+#' @param dest_file Character. Destination file path.
+#' @return dest_file on success, NULL on failure.
+#' @noRd
+download_lidar_tile <- function(url, dest_file) {
+  max_retries <- 3
+
+  for (attempt in seq_len(max_retries)) {
+    tryCatch({
+      resp <- httr2::request(url) |>
+        httr2::req_timeout(300) |>
+        httr2::req_error(is_error = function(resp) FALSE) |>
+        httr2::req_perform(path = dest_file)
+
+      if (httr2::resp_status(resp) == 200 && file.exists(dest_file) &&
+          file.size(dest_file) > 100) {
+        return(dest_file)
+      }
+
+      # Clean up failed download
+      if (file.exists(dest_file)) unlink(dest_file)
+
+      if (attempt < max_retries) {
+        Sys.sleep(2^attempt)  # Exponential backoff
+      }
+    }, error = function(e) {
+      if (file.exists(dest_file)) unlink(dest_file)
+      if (attempt < max_retries) {
+        Sys.sleep(2^attempt)
+      }
+    })
+  }
+
+  NULL
+}
+
+
+#' Mosaic multiple LiDAR raster tiles into one
+#'
+#' @param tile_files Character vector of tile file paths.
+#' @param output_file Character. Path for the mosaic output.
+#' @return SpatRaster, or NULL on failure.
+#' @noRd
+mosaic_lidar_tiles <- function(tile_files, output_file) {
+  tryCatch({
+    if (length(tile_files) == 1) {
+      # Single tile - just copy/load
+      rast <- terra::rast(tile_files[1])
+      terra::writeRaster(rast, output_file, overwrite = TRUE)
+      return(terra::rast(output_file))
+    }
+
+    # Load all tiles
+    rast_list <- lapply(tile_files, function(f) {
+      tryCatch(terra::rast(f), error = function(e) NULL)
+    })
+    rast_list <- Filter(Negate(is.null), rast_list)
+
+    if (length(rast_list) == 0) {
+      return(NULL)
+    }
+
+    if (length(rast_list) == 1) {
+      rast <- rast_list[[1]]
+    } else {
+      # Create a SpatRasterCollection and mosaic
+      src <- terra::sprc(rast_list)
+      rast <- terra::mosaic(src, fun = "mean")
+    }
+
+    terra::writeRaster(rast, output_file, overwrite = TRUE)
+    cli::cli_alert_success("Created LiDAR mosaic ({length(tile_files)} tiles)")
+    terra::rast(output_file)
+
+  }, error = function(e) {
+    cli::cli_warn("Failed to mosaic LiDAR tiles: {e$message}")
+    # Try returning just the first tile
+    tryCatch(terra::rast(tile_files[1]), error = function(e2) NULL)
+  })
+}
 #'
 #' @description
 #' Computes all requested indicators on the parcels.

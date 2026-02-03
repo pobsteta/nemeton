@@ -207,8 +207,13 @@ indicator_risk_storm <- function(units,
   # Normalize weights
   weights <- weights / sum(weights)
 
-  # Component 1: Height factor (or NDVI proxy)
-  if (height_field %in% names(units)) {
+  # Component 1: Height factor (prefer LiDAR MNH, then field, then NDVI)
+  if (!is.null(layers) && "lidar_mnh" %in% names(layers$rasters)) {
+    cli::cli_alert_info("R2: Using LiDAR MNH for canopy height")
+    mnh_mean <- exactextractr::exact_extract(layers$rasters[["lidar_mnh"]],
+      as_pure_sf(units), fun = "mean", progress = FALSE)
+    height_factor <- pmin(pmax((mnh_mean - 10) / 25, 0), 1) * 100
+  } else if (height_field %in% names(units)) {
     height_values <- units[[height_field]]
     height_factor <- pmin(pmax((height_values - 10) / 25, 0), 1) * 100
   } else {
@@ -216,7 +221,6 @@ indicator_risk_storm <- function(units,
     if (!is.null(layers) && "ndvi" %in% names(layers$rasters)) {
       ndvi_mean <- exactextractr::exact_extract(layers$rasters[["ndvi"]],
         as_pure_sf(units), fun = "mean", progress = FALSE)
-      # High NDVI = taller trees = more vulnerable
       height_factor <- pmin(pmax(ndvi_mean / 0.8, 0), 1) * 100
     } else {
       height_factor <- rep(50, nrow(units))

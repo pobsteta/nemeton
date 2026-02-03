@@ -1021,16 +1021,34 @@ indicator_naturalness_score <- function(units, ...) {
 
 #' @noRd
 indicator_production_volume <- function(units, layers = NULL, ...) {
-  # P1: Timber volume - estimate from NDVI
-  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
-      "ndvi" %in% names(layers$rasters)) {
-    cli::cli_alert_info("P1: Estimating timber volume from NDVI")
-    ndvi_raster <- layers$rasters[["ndvi"]]
-    ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
-      as_pure_sf(units), fun = "mean", progress = FALSE
-    )
-    # NDVI -> volume proxy: NDVI 0.8 ~ 200 m3/ha for mature temperate forest
-    return(pmax(0, ndvi_mean) * 250)
+  # P1: Timber volume - prefer LiDAR MNH, fallback to NDVI
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    # Strategy 1: Use LiDAR MNH (Canopy Height Model) for volume estimation
+    # V = f(H) using allometric relationships: V ~ 0.5 * H * BA
+    # Simplified: mean height -> volume via European temperate forest models
+    if ("lidar_mnh" %in% names(layers$rasters)) {
+      cli::cli_alert_info("P1: Estimating timber volume from LiDAR MNH")
+      mnh_raster <- layers$rasters[["lidar_mnh"]]
+      units_sf <- as_pure_sf(units)
+      mnh_mean <- exactextractr::exact_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      # Height-to-volume relationship (temperate forests, approximate)
+      # Typical: H=10m -> ~100 m3/ha, H=20m -> ~300 m3/ha, H=30m -> ~500 m3/ha
+      # Using: V = 0.55 * H^1.8 (simplified power model)
+      volume <- 0.55 * pmax(0, mnh_mean)^1.8
+      return(volume)
+    }
+
+    # Strategy 2: Fallback to NDVI
+    if ("ndvi" %in% names(layers$rasters)) {
+      cli::cli_alert_info("P1: Estimating timber volume from NDVI")
+      ndvi_raster <- layers$rasters[["ndvi"]]
+      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE
+      )
+      # NDVI -> volume proxy: NDVI 0.8 ~ 200 m3/ha for mature temperate forest
+      return(pmax(0, ndvi_mean) * 250)
+    }
   }
   rep(NA_real_, nrow(units))
 }
