@@ -438,14 +438,22 @@ mod_home_server <- function(id, app_state) {
     }, ignoreInit = TRUE)
 
     # Handle parcels task result
-    shiny::observeEvent(parcels_task$result(), {
-      result <- tryCatch(parcels_task$result(), error = function(e) {
-        shiny::showNotification(
-          sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
-          type = "error"
-        )
-        NULL
-      })
+    # Use observe() + tryCatch for proper ExtendedTask error handling.
+    # observeEvent(result()) silently swallows task errors because result()
+    # re-raises the error in the event expression, preventing the handler
+    # from ever executing.
+    shiny::observe({
+      result <- tryCatch(
+        parcels_task$result(),
+        error = function(e) {
+          if (inherits(e, "shiny.silent.error")) stop(e)
+          shiny::showNotification(
+            sprintf("%s: %s", i18n$t("error_loading_parcels"), e$message),
+            type = "error"
+          )
+          NULL
+        }
+      )
       parcels_data(result)
       is_restoring <- isTRUE(shiny::isolate(app_state$restore_in_progress))
       if (!is.null(result) && nrow(result) > 0 && !is_restoring) {

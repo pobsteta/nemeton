@@ -220,22 +220,35 @@ mod_search_server <- function(id, app_state) {
     }, ignoreInit = TRUE)
 
     # Step 2: handle the result when the task completes
-    shiny::observeEvent(dept_task$result(), {
+    #
+    # Use observe() + tryCatch instead of observeEvent(result()) to properly
+    # handle ExtendedTask errors. See restore_task handler for full explanation.
+    shiny::observe({
+      communes <- tryCatch(
+        dept_task$result(),
+        error = function(e) {
+          if (inherits(e, "shiny.silent.error")) stop(e)
+          e
+        }
+      )
+
       # Safety net: if a restore is still in progress, the dept_task was
       # triggered by a stale department change. Don't overwrite the commune
       # dropdown that restore_task already populated.
       if (rv$is_restoring) return()
 
       i18n <- get_i18n(get_lang())
-      communes <- tryCatch(dept_task$result(), error = function(e) {
-        cli::cli_alert_danger("Error loading communes: {e$message}")
+
+      # Handle task error
+      if (inherits(communes, "error")) {
+        cli::cli_alert_danger("Error loading communes: {communes$message}")
         shiny::showNotification(
-          paste(i18n$t("error_loading_communes"), e$message),
+          paste(i18n$t("error_loading_communes"), communes$message),
           type = "error",
           duration = 8
         )
-        NULL
-      })
+        communes <- NULL
+      }
 
       if (is.null(communes)) {
         shiny::updateSelectizeInput(
@@ -329,11 +342,16 @@ mod_search_server <- function(id, app_state) {
     }, ignoreInit = TRUE)
 
     # Step 2: handle the result when the task completes
-    shiny::observeEvent(commune_task$result(), {
-      result <- tryCatch(commune_task$result(), error = function(e) {
-        cli::cli_alert_danger("Error loading commune: {e$message}")
-        NULL
-      })
+    # Use observe() + tryCatch for proper ExtendedTask error handling.
+    shiny::observe({
+      result <- tryCatch(
+        commune_task$result(),
+        error = function(e) {
+          if (inherits(e, "shiny.silent.error")) stop(e)
+          cli::cli_alert_danger("Error loading commune: {e$message}")
+          NULL
+        }
+      )
 
       if (!is.null(result) && !is.null(result$geometry)) {
         rv$selected_commune <- result$code
@@ -450,17 +468,39 @@ mod_search_server <- function(id, app_state) {
     }, ignoreInit = TRUE)
 
     # Step 2: handle restore task result
-    shiny::observeEvent(restore_task$result(), {
-      result <- tryCatch(restore_task$result(), error = function(e) {
-        cli::cli_alert_danger("Error restoring location: {e$message}")
+    #
+    # IMPORTANT: We use observe() + tryCatch instead of observeEvent(result()).
+    # When an ExtendedTask fails, result() re-raises the error. observeEvent
+    # sees this error in the event expression and NEVER fires the handler.
+    # The tryCatch inside the handler is useless because the handler code
+    # never executes. This left flags stuck and the spinner spinning forever.
+    #
+    # With observe(), we catch the error ourselves and handle it properly.
+    # - "shiny.silent.error" (from req()) = task not ready → re-raise to suspend
+    # - Regular error = task failed → handle and clear flags
+    # - Normal value = task succeeded → process result
+    shiny::observe({
+      result <- tryCatch(
+        restore_task$result(),
+        error = function(e) {
+          if (inherits(e, "shiny.silent.error")) {
+            # Task not yet invoked or still running — re-raise to suspend
+            stop(e)
+          }
+          # Task error — return error object for handling below
+          e
+        }
+      )
+
+      # Handle task error
+      if (inherits(result, "error")) {
+        cli::cli_alert_danger("Error restoring location: {result$message}")
         rv$is_restoring <- FALSE
         later::later(function() {
           app_state$restore_in_progress <- FALSE
         }, delay = 0)
-        NULL
-      })
-
-      if (is.null(result)) return()
+        return()
+      }
 
       # Check if this result is still relevant. If the user switched
       # projects while restore_task was running, app_state$restore_project
@@ -550,7 +590,7 @@ mod_search_server <- function(id, app_state) {
       # is_restoring is cleared by the commune observer when the final
       # input$commune value arrives.
       rv$is_loading <- FALSE
-    }, ignoreInit = TRUE)
+    })
 
 
     # ========================================
