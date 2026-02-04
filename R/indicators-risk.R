@@ -223,29 +223,8 @@ indicator_risk_storm <- function(units,
     return(units)
   }
 
-  # --- Get dominant wind direction ---
-  wind_dir <- 270  # Default: west (typical France)
-
-  if (requireNamespace("nasapower", quietly = TRUE)) {
-    tryCatch({
-      centroid <- suppressWarnings(sf::st_centroid(sf::st_union(units)))
-      coords <- sf::st_coordinates(sf::st_transform(centroid, 4326))
-      wind_data <- nasapower::get_power(
-        community = "ag",
-        lonlat = c(coords[1, 1], coords[1, 2]),
-        pars = c("WD10M", "WS10M"),
-        temporal_api = "climatology"
-      )
-      wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
-      ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
-      if (length(wd_values) == 12 && length(ws_values) == 12 &&
-          !all(is.na(wd_values)) && !all(is.na(ws_values))) {
-        wind_dir <- round(stats::weighted.mean(wd_values, ws_values, na.rm = TRUE))
-      }
-    }, error = function(e) {
-      cli::cli_alert_info("R2: nasapower unavailable, using default wind direction 270\u00b0")
-    })
-  }
+  # --- Get dominant wind direction (cached) ---
+  wind_dir <- get_nasapower_wind(units, default_dir = 270)
 
   # --- Primary method: microclima::windcoef ---
   if (suppressWarnings(requireNamespace("microclima", quietly = TRUE))) {

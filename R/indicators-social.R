@@ -244,7 +244,7 @@ indicator_social_accessibility <- function(units,
   # Full implementation would integrate transit and cycling data
 
   # Calculate centroids
-  centroids <- sf::st_centroid(units)
+  centroids <- suppressWarnings(sf::st_centroid(units))
 
   # For now, use a simplified proxy based on unit area and location
   # (In production, would query actual road/transit data)

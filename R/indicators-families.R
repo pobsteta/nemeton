@@ -13,6 +13,91 @@ NULL
 # Package-level TWI cache (avoids recomputing for W2, W3, F2, R3)
 .twi_cache <- new.env(parent = emptyenv())
 
+# Package-level nasapower wind cache (avoids re-downloading for L1, R2)
+.wind_cache <- new.env(parent = emptyenv())
+
+#' Get wind climatology from NASA POWER with caching
+#'
+#' Downloads monthly wind direction (WD10M) and speed (WS10M) climatology from
+#' NASA POWER, with both in-memory and file-based caching. Returns the
+#' speed-weighted mean wind direction in degrees.
+#'
+#' @param units An sf object (used to compute centroid location)
+#' @param default_dir Numeric. Default wind direction (degrees) if unavailable.
+#' @return Numeric. Dominant wind direction in degrees.
+#' @keywords internal
+#' @noRd
+get_nasapower_wind <- function(units, default_dir = 270) {
+
+  # Compute centroid in WGS84
+  centroid <- suppressWarnings(sf::st_centroid(sf::st_union(units)))
+  coords <- sf::st_coordinates(sf::st_transform(centroid, 4326))
+  lon <- round(coords[1, 1], 2)
+  lat <- round(coords[1, 2], 2)
+
+  # In-memory cache key (rounded to ~1km grid)
+
+  cache_key <- paste0("wind_", lon, "_", lat)
+
+  if (exists(cache_key, envir = .wind_cache)) {
+    wind_dir <- get(cache_key, envir = .wind_cache)
+    cli::cli_alert_info("Wind: Using cached direction {wind_dir}\u00b0")
+    return(wind_dir)
+  }
+
+  # File-based cache in global nemeton cache dir
+  cache_dir <- file.path(get_global_cache_dir(), "nasapower")
+
+  cache_file <- file.path(cache_dir, paste0("wind_", lon, "_", lat, ".rds"))
+
+  if (file.exists(cache_file)) {
+    tryCatch({
+      cached <- readRDS(cache_file)
+      assign(cache_key, cached, envir = .wind_cache)
+      cli::cli_alert_info("Wind: Loaded from file cache ({cached}\u00b0)")
+      return(cached)
+    }, error = function(e) NULL)
+  }
+
+  # Download from NASA POWER
+  if (!requireNamespace("nasapower", quietly = TRUE)) {
+    cli::cli_alert_info("Wind: nasapower not installed, using default {default_dir}\u00b0")
+    return(default_dir)
+  }
+
+  wind_dir <- tryCatch({
+    wind_data <- nasapower::get_power(
+      community = "ag",
+      lonlat = c(lon, lat),
+      pars = c("WD10M", "WS10M"),
+      temporal_api = "climatology"
+    )
+    wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
+    ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
+
+    if (length(wd_values) == 12 && length(ws_values) == 12 &&
+        !all(is.na(wd_values)) && !all(is.na(ws_values))) {
+      result <- round(stats::weighted.mean(wd_values, ws_values, na.rm = TRUE))
+
+      # Save to file cache
+      if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+      tryCatch(saveRDS(result, cache_file), error = function(e) NULL)
+
+      # Save to memory cache
+      assign(cache_key, result, envir = .wind_cache)
+      cli::cli_alert_info("Wind: Downloaded from NASA POWER ({result}\u00b0), cached")
+      result
+    } else {
+      default_dir
+    }
+  }, error = function(e) {
+    cli::cli_alert_info("Wind: NASA POWER unavailable, using default {default_dir}\u00b0")
+    default_dir
+  })
+
+  wind_dir
+}
+
 #' Get or compute TWI raster with caching
 #'
 #' Returns a cached TWI raster if one exists for the given DEM fingerprint,
@@ -933,34 +1018,8 @@ indicator_landscape_fragmentation <- function(units,
 
   # --- Component 3: Exposure (30%) ---
   # Wind (60%) + Sun (40%)
-  # Default wind direction: 225 degrees (SW, typical France)
-  wind_dir_deg <- 225
-
-  # Try nasapower for dominant wind direction (one call for all parcels)
-  # Weighted mean of monthly WD10M by WS10M (as in tuto 04)
-  if (requireNamespace("nasapower", quietly = TRUE)) {
-    tryCatch({
-      centroid <- sf::st_centroid(sf::st_union(units))
-      coords <- sf::st_coordinates(
-        sf::st_transform(centroid, 4326)
-      )
-      wind_data <- nasapower::get_power(
-        community = "ag",
-        lonlat = c(coords[1, 1], coords[1, 2]),
-        pars = c("WD10M", "WS10M"),
-        temporal_api = "climatology"
-      )
-      # Weighted mean of monthly directions by wind speed
-      wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
-      ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
-      if (length(wd_values) == 12 && length(ws_values) == 12 &&
-          !all(is.na(wd_values)) && !all(is.na(ws_values))) {
-        wind_dir_deg <- round(stats::weighted.mean(wd_values, ws_values, na.rm = TRUE))
-      }
-    }, error = function(e) {
-      cli::cli_alert_info("L1: nasapower unavailable, using default wind direction 225\u00b0")
-    })
-  }
+  # Get dominant wind direction (cached, default 225° SW for France)
+  wind_dir_deg <- get_nasapower_wind(units, default_dir = 225)
 
   l1_exposition <- numeric(nrow(units))
 

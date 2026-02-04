@@ -132,7 +132,7 @@ mod_family_server <- function(id, family_code, app_state) {
       }
 
       # Build one col per indicator using plain Bootstrap grid
-      col_class <- if (n == 1) "col-12" else if (n == 2) "col-6" else "col-4"
+      col_class <- if (n == 1) "col-12" else if (n == 2) "col-6" else if (n >= 4) "col-3" else "col-4"
 
       map_cols <- lapply(seq_len(n), function(i) {
         map_id <- paste0("map", i)
@@ -244,7 +244,7 @@ mod_family_server <- function(id, family_code, app_state) {
 
       # Compute popup content and centroid
       i18n <- get_i18n(app_state$language)
-      centroid <- sf::st_coordinates(sf::st_centroid(selected_wgs84))
+      centroid <- sf::st_coordinates(suppressWarnings(sf::st_centroid(selected_wgs84)))
       popup_lng <- centroid[1, 1]
       popup_lat <- centroid[1, 2]
 

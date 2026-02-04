@@ -39,7 +39,7 @@ indicator_naturalness_distance <- function(units,
   method <- match.arg(method)
 
   result <- units
-  centroids <- sf::st_centroid(units)
+  centroids <- suppressWarnings(sf::st_centroid(units))
 
   # Initialize distance columns
   n1_roads <- rep(NA_real_, nrow(units))

@@ -83,11 +83,7 @@ download_hunting_data <- function(species = "all",
   # Set cache directory
 
   if (is.null(cache_dir)) {
-    if (requireNamespace("rappdirs", quietly = TRUE)) {
-      cache_dir <- file.path(rappdirs::user_cache_dir("nemeton"), "hunting_data")
-    } else {
-      cache_dir <- file.path(tempdir(), "nemeton_hunting_data")
-    }
+    cache_dir <- file.path(get_global_cache_dir(), "hunting_data")
   }
 
   if (!dir.exists(cache_dir)) {
