@@ -58,7 +58,7 @@ DATA_SOURCES <- list(
       name = "Forest Cover (OSO)",
       type = "raster",
       source = "oso",
-      required_for = c("carbon_biomass", "landscape_fragmentation", "temporal_change")
+      required_for = c("carbon_biomass", "landscape_fragmentation")
     ),
     lidar_mnh = list(
       name = "Canopy Height Model (LiDAR HD)",
@@ -112,7 +112,8 @@ DATA_SOURCES <- list(
       type = "vector",
       source = "ign_bdforet",
       required_for = c("carbon_biomass", "production_volume", "production_site",
-                        "biodiversity_structure", "biodiversity_connectivity")
+                        "biodiversity_structure", "biodiversity_connectivity",
+                        "temporal_age")
     )
   ),
   # Point cloud sources (not loaded as raster/vector but cached as files)
@@ -2232,7 +2233,6 @@ compute_single_indicator <- function(indicator, parcels, layers) {
         "biodiversity_connectivity" = "B3",
         "air_forest_buffer" = "A1",
         "air_quality" = "A2",
-        "temporal_change" = "T2_norm",
         "risk_fire" = "R1",
         "risk_storm" = "R2",
         "risk_drought" = "R3",

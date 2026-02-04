@@ -572,6 +572,11 @@ calculate_twi_grass <- function(dem) {
   tryCatch({
     cli::cli_alert_info("W3: Computing TWI with fasterRaster/GRASS ({basename(grass_dir)})")
 
+    # fasterRaster requires terra/sf/data.table attached before initialization
+    requireNamespace("terra", quietly = TRUE)
+    requireNamespace("sf", quietly = TRUE)
+    requireNamespace("data.table", quietly = TRUE)
+
     # Initialize GRASS session
     fasterRaster::faster(grassDir = grass_dir)
 
@@ -1074,10 +1079,10 @@ indicator_landscape_edge <- function(units, layers = NULL,
         forest_raster <- terra::app(lc_masked, is_forest)
 
         # Calculate landscape metrics
-        metrics <- landscapemetrics::calculate_lsm(
+        metrics <- suppressWarnings(landscapemetrics::calculate_lsm(
           terra::as.int(forest_raster),
           what = c("lsm_l_cohesion", "lsm_l_ai")
-        )
+        ))
 
         cohesion <- metrics$value[metrics$metric == "cohesion"]
         ai <- metrics$value[metrics$metric == "ai"]

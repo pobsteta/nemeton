@@ -241,7 +241,7 @@ indicator_air_quality <- function(units,
 
     # For each parcel, interpolate pollution from nearest stations (simple IDW)
     a2_scores <- numeric(nrow(units))
-    parcel_centroids <- sf::st_centroid(units)
+    parcel_centroids <- suppressWarnings(sf::st_centroid(units))
 
     for (i in seq_len(nrow(units))) {
       # Calculate distances to all stations
@@ -313,7 +313,7 @@ indicator_air_quality <- function(units,
       road_w <- rep(0.5, nrow(roads))
     }
 
-    parcel_centroids <- sf::st_centroid(units)
+    parcel_centroids <- suppressWarnings(sf::st_centroid(units))
 
     # Compute pollution score per parcel
     pollution_scores <- numeric(nrow(units))

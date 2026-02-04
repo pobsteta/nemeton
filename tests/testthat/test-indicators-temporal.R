@@ -1,41 +1,44 @@
 # test-indicators-temporal.R
-# Unit and integration tests for Temporal Dynamics Family (T) Indicators
-# MVP v0.3.0 - Following TDD: Tests written BEFORE implementation
+# Tests for Temporal Dynamics Family (T) Indicators
+# Aligned with tuto 04 methodology
 
 library(testthat)
 library(sf)
-library(terra)
 
 # ==============================================================================
-# T038: Unit Tests for indicator_temporal_age() (T1)
+# T1: Stand Age (BD Forêt TFV method)
 # ==============================================================================
 
-test_that("indicator_temporal_age calculates age from age field", {
-  skip_if_not_installed("nemeton")
-
-  # Load demo data
+test_that("indicator_temporal_age returns numeric vector 0-150 range", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
+  units$age <- NULL  # Remove pre-existing age field
 
-  # Add age attribute
+  # Without BD Forêt or age field, should fall back to default 50
+  result <- indicator_temporal_age(units, age_field = NULL)
+
+  expect_type(result, "double")
+  expect_length(result, 5)
+  expect_true(all(!is.na(result)))
+  expect_true(all(result >= 0))
+})
+
+test_that("indicator_temporal_age uses direct age field as fallback", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:5, ]
   units$age <- c(25, 75, 150, 200, 300)
 
   result <- indicator_temporal_age(units, age_field = "age")
 
-  # Result is a numeric vector (normalized T1 score 0-100)
   expect_type(result, "double")
   expect_length(result, 5)
-
-  # Normalization: log scale, ancient forests score high
-  expect_true(result[5] > result[1]) # 300yr > 25yr
-  expect_true(all(result >= 0 & result <= 100))
+  # Should return raw age values (no normalization)
+  expect_equal(result, c(25, 75, 150, 200, 300))
 })
 
-test_that("indicator_temporal_age calculates age from establishment year", {
+test_that("indicator_temporal_age calculates from establishment year", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
-
-  # Add establishment year
   units$planted <- c(1850, 1950, 2000)
 
   result <- indicator_temporal_age(
@@ -45,38 +48,60 @@ test_that("indicator_temporal_age calculates age from establishment year", {
     current_year = 2025
   )
 
-  # Result is a numeric vector (normalized T1 score 0-100)
   expect_type(result, "double")
   expect_length(result, 3)
-  expect_true(all(result >= 0 & result <= 100))
-  expect_true(result[1] > result[3]) # 175yr > 25yr
+  expect_equal(result, c(175, 75, 25))
 })
 
-test_that("indicator_temporal_age uses default current year", {
+test_that("indicator_temporal_age with BD Forêt data", {
   data(massif_demo_units, package = "nemeton")
-  units <- massif_demo_units[1:2, ]
+  units <- massif_demo_units[1:3, ]
 
-  units$planted <- c(1900, 1980)
+  # Create mock BD Forêt with TFV field
+  bdforet <- sf::st_sf(
+    TFV = c("Forêt fermée de feuillus purs", "Peupleraie", "Forêt ouverte de conifères"),
+    geometry = sf::st_geometry(sf::st_buffer(units, 100))
+  )
+  sf::st_crs(bdforet) <- sf::st_crs(units)
 
-  # Should use Sys.Date() year if current_year not specified
-  result <- indicator_temporal_age(units, age_field = NULL, establishment_year_field = "planted")
+  result <- indicator_temporal_age(units, bdforet = bdforet)
 
-  # Result is a numeric vector (normalized T1 score 0-100)
   expect_type(result, "double")
-  expect_length(result, 2)
-  # Older forest should have higher score
-  expect_true(result[1] > result[2])
+  expect_length(result, 3)
+  # feuillus fermé = 100, peuplier = 20, ouvert = 45
+  expect_true(result[1] > result[2])  # feuillus > peuplier
 })
 
-test_that("indicator_temporal_age handles NA values", {
+test_that("indicator_temporal_age BD Forêt uses area-weighted average", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1, ]
+
+  # Create two overlapping BD Forêt polygons
+  geom <- sf::st_geometry(units)
+  buf1 <- sf::st_buffer(geom, 50)
+  buf2 <- sf::st_buffer(geom, 200)
+
+  bdforet <- sf::st_sf(
+    TFV = c("Forêt fermée de feuillus purs", "Peupleraie"),
+    geometry = c(buf1, buf2)
+  )
+  sf::st_crs(bdforet) <- sf::st_crs(units)
+
+  result <- indicator_temporal_age(units, bdforet = bdforet)
+
+  expect_type(result, "double")
+  expect_length(result, 1)
+  # Should be between 20 (peuplier) and 100 (feuillus fermé)
+  expect_true(result[1] > 20 && result[1] < 100)
+})
+
+test_that("indicator_temporal_age handles NA values in age field", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:4, ]
-
   units$age <- c(50, NA, 100, NA)
 
   result <- indicator_temporal_age(units, age_field = "age")
 
-  # Result is a numeric vector (normalized T1 score 0-100)
   expect_type(result, "double")
   expect_length(result, 4)
   expect_true(is.na(result[2]))
@@ -85,99 +110,149 @@ test_that("indicator_temporal_age handles NA values", {
   expect_false(is.na(result[3]))
 })
 
+test_that("indicator_temporal_age validates inputs", {
+  expect_error(
+    indicator_temporal_age(data.frame(x = 1:3)),
+    "must be.*sf"
+  )
+})
+
+test_that("indicator_temporal_age NDVI fallback with layers", {
+  data(massif_demo_units, package = "nemeton")
+  layers <- massif_demo_layers()
+  units <- massif_demo_units[1:3, ]
+  units$age <- NULL  # Remove pre-existing age field
+
+  # layers has no bdforet, no age field -> falls to NDVI if available
+  # Demo layers have no ndvi either, so should get default 50
+
+  result <- indicator_temporal_age(units, layers = layers, age_field = NULL)
+
+  expect_type(result, "double")
+  expect_length(result, 3)
+  expect_true(all(!is.na(result)))
+})
+
 # ==============================================================================
-# T039: Unit Tests for indicator_temporal_change() (T2)
+# T2: Stability / Change Rate
 # ==============================================================================
 
-test_that("indicator_temporal_change calculates change rate correctly", {
-  skip_if_not_installed("nemeton")
-
+test_that("indicator_temporal_change returns numeric vector 0-100", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
-  # Load test fixtures
-  lc_1990 <- terra::rast(test_path("fixtures/land_cover/land_cover_1990.tif"))
-  lc_2020 <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
+  # No N2 or T1 -> default 50
+  result <- indicator_temporal_change(units)
 
-  result <- indicator_temporal_change(
-    units,
-    land_cover_early = lc_1990,
-    land_cover_late = lc_2020,
-    years_elapsed = 30,
-    interpretation = "stability"
-  )
-
-  # Tests
-  expect_s3_class(result, "sf")
-  expect_true("T2" %in% names(result))
-  expect_true("T2_norm" %in% names(result))
-  expect_type(result$T2, "double")
-
-  # T2 should be annualized rate (%/year)
-  expect_true(all(result$T2 >= 0, na.rm = TRUE))
-
-  # T2_norm with "stability" interpretation: low change = high score
-  expect_true(all(result$T2_norm >= 0 & result$T2_norm <= 100, na.rm = TRUE))
+  expect_type(result, "double")
+  expect_length(result, 5)
+  expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicator_temporal_change supports dynamism interpretation", {
+test_that("indicator_temporal_change uses N2 column as proxy", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:5, ]
+  units$N2 <- c(10, 30, 50, 70, 90)
+
+  result <- indicator_temporal_change(units)
+
+  expect_type(result, "double")
+  expect_length(result, 5)
+  expect_equal(result, c(10, 30, 50, 70, 90))
+})
+
+test_that("indicator_temporal_change uses N2_anciennete column", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
+  units$N2_anciennete <- c(20, 60, 95)
 
-  lc_1990 <- terra::rast(test_path("fixtures/land_cover/land_cover_1990.tif"))
-  lc_2020 <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
+  result <- indicator_temporal_change(units)
 
-  result_stability <- indicator_temporal_change(
-    units,
-    land_cover_early = lc_1990,
-    land_cover_late = lc_2020,
-    years_elapsed = 30,
-    interpretation = "stability"
-  )
-
-  result_dynamism <- indicator_temporal_change(
-    units,
-    land_cover_early = lc_1990,
-    land_cover_late = lc_2020,
-    years_elapsed = 30,
-    interpretation = "dynamism"
-  )
-
-  # Same T2 raw values
-  expect_equal(result_stability$T2, result_dynamism$T2)
-
-  # Opposite T2_norm (stability inverts, dynamism does not)
-  # If T2 is high, stability_norm should be low, dynamism_norm should be high
-  if (any(result_stability$T2 > 1, na.rm = TRUE)) {
-    high_change_idx <- which(result_stability$T2 > 1)[1]
-    expect_true(
-      result_dynamism$T2_norm[high_change_idx] > result_stability$T2_norm[high_change_idx]
-    )
-  }
+  expect_equal(result, c(20, 60, 95))
 })
 
-test_that("indicator_temporal_change uses terra and exactextractr", {
+test_that("indicator_temporal_change falls back to T1 capped at 100", {
   data(massif_demo_units, package = "nemeton")
-  units <- massif_demo_units[1:2, ]
+  units <- massif_demo_units[1:4, ]
+  # Remove N2 columns so T1 fallback is used
+  units$N2 <- NULL
+  units$N2_anciennete <- NULL
+  units$N2_norm <- NULL
+  units$T1 <- NULL
 
-  lc_1990 <- terra::rast(test_path("fixtures/land_cover/land_cover_1990.tif"))
-  lc_2020 <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
+  # Pass T1 values directly
+  t1 <- c(25, 80, 150, 200)
+  result <- indicator_temporal_change(units, t1_values = t1)
 
-  # Should work with SpatRaster inputs
-  expect_s4_class(lc_1990, "SpatRaster")
-  expect_s4_class(lc_2020, "SpatRaster")
+  expect_type(result, "double")
+  expect_length(result, 4)
+  # Capped at 100
+  expect_equal(result, c(25, 80, 100, 100))
+})
 
-  result <- indicator_temporal_change(
-    units,
-    land_cover_early = lc_1990,
-    land_cover_late = lc_2020,
-    years_elapsed = 30
+test_that("indicator_temporal_change uses T1 column from units", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+  # Remove N2 so T1 fallback is used
+  units$N2 <- NULL
+  units$N2_anciennete <- NULL
+  units$N2_norm <- NULL
+  units$T1 <- c(40, 120, NA)
+
+  result <- indicator_temporal_change(units)
+
+  expect_equal(result, c(40, 100, 50))  # NA -> 50 default
+})
+
+test_that("indicator_temporal_change validates inputs", {
+  expect_error(
+    indicator_temporal_change(data.frame(x = 1:3)),
+    "must be.*sf"
   )
-
-  expect_true("T2" %in% names(result))
 })
 
 # ==============================================================================
-# T040: Integration Test for T Family Workflow
-# Note: Pipe workflow test removed - use nemeton_compute() instead
-# Note: Regression fixture test removed - will be added when fixtures are created
+# Integration: T1 + T2 together
+# ==============================================================================
+
+test_that("T1 and T2 work together", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:5, ]
+
+  # T1 with age field
+  units$age <- c(30, 50, 80, 120, 200)
+  t1 <- indicator_temporal_age(units, age_field = "age")
+
+  # T2 from T1
+  t2 <- indicator_temporal_change(units, t1_values = t1)
+
+  expect_length(t1, 5)
+  expect_length(t2, 5)
+  expect_true(all(!is.na(t1)))
+  expect_true(all(!is.na(t2)))
+  expect_true(all(t2 <= 100))
+})
+
+test_that(".estimate_age_tfv maps vegetation types correctly", {
+  tfv <- c(
+    "Forêt fermée de feuillus purs",
+    "Futaie de conifères",
+    "Forêt ouverte de feuillus",
+    "Peupleraie",
+    "Jeune peuplement",
+    "Lande boisée",
+    "Taillis",
+    "Unknown type"
+  )
+
+  ages <- nemeton:::.estimate_age_tfv(tfv)
+
+  expect_equal(ages[1], 100)  # fermé + feuill
+  expect_equal(ages[2], 80)   # futaie + conif
+  expect_equal(ages[3], 45)   # ouvert
+  expect_equal(ages[4], 20)   # peupler
+  expect_equal(ages[5], 15)   # jeune
+  expect_equal(ages[6], 15)   # lande bois
+  expect_equal(ages[7], 45)   # taillis
+  expect_equal(ages[8], 50)   # unknown -> default
+})
