@@ -94,93 +94,74 @@ mod_family_server <- function(id, family_code, app_state) {
     })
 
     # ================================================================
-    # OUTPUT: Map 1 - Leaflet map of first indicator
+    # OUTPUT: Dynamic maps row - adapts to number of indicators
     # ================================================================
-    output$map1 <- leaflet::renderLeaflet({
-      i18n <- get_i18n(app_state$language)
-      sf_data <- indicators_sf()
-
-      if (is.null(sf_data)) {
-        return(leaflet::leaflet() |>
-          leaflet::addTiles() |>
-          leaflet::setView(lng = 2.5, lat = 46.5, zoom = 6))
-      }
-
-      ind_cols <- get_indicator_cols(sf_data)
-      if (length(ind_cols) == 0) {
-        return(leaflet::leaflet() |>
-          leaflet::addTiles() |>
-          leaflet::setView(lng = 2.5, lat = 46.5, zoom = 6))
-      }
-
-      make_indicator_leaflet(sf_data, ind_cols[1],
-                             clean_indicator_label(ind_cols[1], i18n))
-    })
-
-    # ================================================================
-    # OUTPUT: Plot 2 UI - Leaflet map or barplot depending on indicators
-    # ================================================================
-    output$plot2_ui <- shiny::renderUI({
+    output$maps_row <- shiny::renderUI({
       ns <- session$ns
       i18n <- get_i18n(app_state$language)
       sf_data <- indicators_sf()
 
       if (is.null(sf_data)) {
-        return(htmltools::div(
-          class = "text-muted text-center p-4",
-          i18n$t("no_data")
+        return(bslib::layout_columns(
+          col_widths = c(12),
+          bslib::card(
+            bslib::card_body(
+              htmltools::div(
+                class = "text-muted text-center p-4",
+                i18n$t("no_data")
+              )
+            )
+          )
         ))
       }
 
       ind_cols <- get_indicator_cols(sf_data)
-      if (length(ind_cols) == 0) {
-        return(htmltools::div(
-          class = "text-muted text-center p-4",
-          i18n$t("no_data")
+      n <- length(ind_cols)
+      if (n == 0) {
+        return(bslib::layout_columns(
+          col_widths = c(12),
+          bslib::card(
+            bslib::card_body(
+              htmltools::div(
+                class = "text-muted text-center p-4",
+                i18n$t("no_data")
+              )
+            )
+          )
         ))
       }
 
-      if (length(ind_cols) >= 2) {
-        leaflet::leafletOutput(ns("map2"), height = "450px")
-      } else {
-        shiny::plotOutput(ns("barplot1"), height = "450px")
-      }
+      # Build one card per indicator
+      map_cards <- lapply(seq_len(n), function(i) {
+        map_id <- paste0("map", i)
+        bslib::card(
+          bslib::card_body(
+            leaflet::leafletOutput(ns(map_id), height = "400px")
+          )
+        )
+      })
+
+      # Column widths: equal split
+      col_w <- if (n == 1) c(12) else if (n == 2) c(6, 6) else rep(4, n)
+
+      do.call(bslib::layout_columns, c(list(col_widths = col_w), map_cards))
     })
 
-    # Leaflet map for second indicator
-    output$map2 <- leaflet::renderLeaflet({
-      i18n <- get_i18n(app_state$language)
+    # Render maps dynamically
+    shiny::observe({
       sf_data <- indicators_sf()
-      if (is.null(sf_data)) return(NULL)
+      if (is.null(sf_data)) return()
 
-      ind_cols <- get_indicator_cols(sf_data)
-      if (length(ind_cols) < 2) return(NULL)
-
-      make_indicator_leaflet(sf_data, ind_cols[2],
-                             clean_indicator_label(ind_cols[2], i18n))
-    })
-
-    # Barplot fallback when only one indicator
-    output$barplot1 <- shiny::renderPlot({
       i18n <- get_i18n(app_state$language)
-      sf_data <- indicators_sf()
-      if (is.null(sf_data)) return(NULL)
-
       ind_cols <- get_indicator_cols(sf_data)
-      if (length(ind_cols) != 1) return(NULL)
 
-      vals <- sf::st_drop_geometry(sf_data)
-      id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(vals))
-      labels <- if (length(id_col) > 0) vals[[id_col[1]]] else seq_len(nrow(vals))
-      barplot(
-        vals[[ind_cols[1]]],
-        names.arg = labels,
-        col = family_config$color,
-        main = clean_indicator_label(ind_cols[1], i18n),
-        ylab = ind_cols[1],
-        las = 2,
-        border = NA
-      )
+      lapply(seq_along(ind_cols), function(i) {
+        map_id <- paste0("map", i)
+        output[[map_id]] <- leaflet::renderLeaflet({
+          make_indicator_leaflet(sf_data, ind_cols[i],
+                                 clean_indicator_label(ind_cols[i], i18n))
+        })
+      })
     })
 
     # ================================================================
@@ -204,6 +185,10 @@ mod_family_server <- function(id, family_code, app_state) {
                      options = list(
                        pageLength = 10,
                        scrollX = TRUE,
+                       autoWidth = FALSE,
+                       columnDefs = list(
+                         list(width = "80px", targets = "_all")
+                       ),
                        language = list(
                          url = if (identical(app_state$language, "fr"))
                            "//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json"
@@ -240,15 +225,34 @@ mod_family_server <- function(id, family_code, app_state) {
       lng2 <- bbox[["xmax"]] + dx
       lat2 <- bbox[["ymax"]] + dy
 
-      # Zoom map1
-      leaflet::leafletProxy("map1", session) |>
-        leaflet::fitBounds(lng1 = lng1, lat1 = lat1, lng2 = lng2, lat2 = lat2)
+      # Compute popup content and centroid
+      i18n <- get_i18n(app_state$language)
+      centroid <- sf::st_coordinates(sf::st_centroid(selected_wgs84))
+      popup_lng <- centroid[1, 1]
+      popup_lat <- centroid[1, 2]
 
-      # Zoom map2 if it exists (when there are >= 2 indicators)
       ind_cols <- get_indicator_cols(sf_data)
-      if (length(ind_cols) >= 2) {
-        leaflet::leafletProxy("map2", session) |>
-          leaflet::fitBounds(lng1 = lng1, lat1 = lat1, lng2 = lng2, lat2 = lat2)
+      id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(sf_data))
+      parcel_id <- if (length(id_col) > 0) selected_wgs84[[id_col[1]]] else row_idx
+      dropped <- sf::st_drop_geometry(selected_wgs84)
+
+      popup_lines <- vapply(ind_cols, function(col) {
+        label <- clean_indicator_label(col, i18n)
+        val <- dropped[[col]]
+        sprintf("%s: %s", label, if (is.na(val)) "NA" else round(val, 3))
+      }, character(1))
+      popup_html <- paste0("<strong>", parcel_id, "</strong><br/>",
+                           paste(popup_lines, collapse = "<br/>"))
+
+      # Zoom all maps and show popup
+      for (i in seq_along(ind_cols)) {
+        local({
+          map_id <- paste0("map", i)
+          leaflet::leafletProxy(map_id, session) |>
+            leaflet::fitBounds(lng1 = lng1, lat1 = lat1, lng2 = lng2, lat2 = lat2) |>
+            leaflet::clearPopups() |>
+            leaflet::addPopups(lng = popup_lng, lat = popup_lat, popup = popup_html)
+        })
       }
     })
 

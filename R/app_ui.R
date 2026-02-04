@@ -430,20 +430,8 @@ mod_family_ui <- function(id, family_code) {
       )
     ),
 
-    # Maps (half page)
-    bslib::layout_columns(
-      col_widths = c(6, 6),
-      bslib::card(
-        bslib::card_body(
-          leaflet::leafletOutput(ns("map1"), height = "450px")
-        )
-      ),
-      bslib::card(
-        bslib::card_body(
-          shiny::uiOutput(ns("plot2_ui"))
-        )
-      )
-    ),
+    # Maps (dynamic: adapts to number of indicators)
+    shiny::uiOutput(ns("maps_row")),
 
     # Data table + Statistics + Comments (3 columns)
     bslib::layout_columns(
@@ -494,7 +482,7 @@ mod_family_ui <- function(id, family_code) {
             ns("analysis_comments"),
             label = NULL,
             placeholder = i18n$t("analysis_comments_placeholder"),
-            rows = 5,
+            rows = 12,
             width = "100%"
           )
         )
