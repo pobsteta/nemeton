@@ -280,6 +280,20 @@ html, body {
   background: #e8e8e8 !important;
 }
 
+/* Contain leaflet maps inside cards */
+.card:has(.leaflet-container) {
+  overflow: hidden;
+}
+.card:has(.leaflet-container) > .card-body {
+  overflow: hidden;
+}
+
+/* Ensure the leaflet legend has enough space and isn't clipped */
+.leaflet-control.info.legend {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 .leaflet-control-zoom a {
   min-width: var(--min-touch-target);
   min-height: var(--min-touch-target);
@@ -399,14 +413,32 @@ html, body {
    3. CSS below as a safety net to hide any residual indicators
    ============================================================ */
 
-/* Hide Shiny built-in busy indicators */
-.shiny-busy,
+/* Hide Shiny built-in busy indicators.
+   IMPORTANT: Do NOT target .shiny-busy alone — Shiny 1.12+ adds this class
+   to <html>, so display:none would hide the entire page. */
 .shiny-busy-panel-wrapper,
 .bslib-page-spinner,
 .bslib-busy-indicator-pulse,
 [data-busy-spinner],
 .shiny-busy-indicator {
   display: none !important;
+}
+
+/* Prevent Shiny busy pulse bar and spinner overlays */
+html.shiny-busy::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Prevent recalculating outputs from fading or hiding children */
+.recalculating > * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: none !important;
+}
+
+.recalculating.html-widget-output > * {
+  visibility: visible !important;
 }
 
 /* Prevent bslib from activating busy overlay via data attributes */
@@ -594,6 +626,28 @@ html[data-shiny-busy] .bslib-card::after {
   color: #000000 !important;
   font-weight: 600;
   background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Navbar dropdown menu */
+.navbar .dropdown-menu {
+  background-color: var(--nemeton-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.navbar .dropdown-menu .dropdown-item {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.navbar .dropdown-menu .dropdown-item:hover,
+.navbar .dropdown-menu .dropdown-item:focus {
+  color: white;
+  background-color: var(--nemeton-primary-light);
+}
+
+.navbar .dropdown-menu .dropdown-item.active {
+  color: white;
+  font-weight: 600;
+  background-color: var(--nemeton-primary-light);
 }
 
 /* Navbar tabs - keep white text with underline on active */
