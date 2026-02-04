@@ -116,8 +116,9 @@ indicator_social_trails <- function(units,
           cli::cli_warn("No trails found in OSM for specified types")
           trails <- sf::st_sfc(crs = sf::st_crs(units)) # Empty geometry
         } else {
-          # Combine all trail types
-          trails <- do.call(rbind, trails_list)
+          # Combine all trail types (keep only geometry, columns may differ)
+          trails <- do.call(c, lapply(trails_list, sf::st_geometry))
+          trails <- sf::st_sf(geometry = trails, crs = sf::st_crs(trails_list[[1]]))
           trails <- sf::st_transform(trails, crs = sf::st_crs(units))
           msg_info("social_osm_fetched", nrow(trails))
         }

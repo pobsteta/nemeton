@@ -618,7 +618,9 @@ indicator_risk_browsing <- function(units,
     tryCatch({
       game_raster <- get_game_pressure_raster(units)
       if (!is.null(game_raster) && inherits(game_raster, "SpatRaster")) {
-        density_values <- terra::extract(game_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+        # Match CRS to avoid terra extract warning
+        units_ext <- sf::st_transform(units, terra::crs(game_raster))
+        density_values <- terra::extract(game_raster, units_ext, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
         density_values[is.na(density_values) | is.nan(density_values)] <- 50
         density_factor <- pmin(pmax(density_values, 0), 100)
         cli::cli_alert_info("R4: Game density computed from hunting data (data.gouv.fr)")
