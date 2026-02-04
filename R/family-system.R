@@ -147,6 +147,13 @@ create_family_index <- function(data,
     # Get indicator values
     indicator_data <- as.matrix(sf::st_drop_geometry(data[, indicators, drop = FALSE]))
 
+    # Normalize each indicator to 0-100 before aggregation
+    # Raw metrics (tC/ha, m³/ha, etc.) must be scaled to a common range
+    for (j in seq_len(ncol(indicator_data))) {
+      col_name <- indicators[j]
+      indicator_data[, j] <- normalize_indicator(col_name, indicator_data[, j])
+    }
+
     # Determine weights for this family
     if (!is.null(weights) && fam %in% names(weights)) {
       fam_weights <- weights[[fam]]

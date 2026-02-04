@@ -413,11 +413,41 @@ generate_ids <- function(n, prefix = "unit_") {
 #' @return Pure sf object without nemeton_units class
 #' @keywords internal
 #' @noRd
-as_pure_sf <- function(x) {
+as_pure_sf <- function(x, raster = NULL) {
   x_sf <- sf::st_as_sf(x)
   class(x_sf) <- setdiff(class(x_sf), "nemeton_units")
+  # If a raster is provided, reproject polygons to match its CRS
+  # to avoid "Polygons transformed to raster CRS" warnings from exact_extract
+  if (!is.null(raster) && inherits(raster, "SpatRaster")) {
+    raster_crs <- sf::st_crs(terra::crs(raster))
+    if (!is.na(raster_crs) && sf::st_crs(x_sf) != raster_crs) {
+      x_sf <- sf::st_transform(x_sf, raster_crs)
+    }
+  }
   x_sf
 }
+
+
+#' Extract raster values for polygons with automatic CRS alignment
+#'
+#' Wrapper around exactextractr::exact_extract that transforms polygons
+#' to the raster CRS to avoid "Polygons transformed to raster CRS" warnings.
+#'
+#' @param raster SpatRaster.
+#' @param polygons sf object.
+#' @param ... Additional arguments passed to exact_extract.
+#' @return Result of exact_extract.
+#' @keywords internal
+#' @noRd
+safe_extract <- function(raster, polygons, ...) {
+  poly_sf <- as_pure_sf(polygons)
+  raster_crs <- sf::st_crs(terra::crs(raster))
+  if (!is.na(raster_crs) && sf::st_crs(poly_sf) != raster_crs) {
+    poly_sf <- sf::st_transform(poly_sf, raster_crs)
+  }
+  exactextractr::exact_extract(raster, poly_sf, ...)
+}
+
 
 #' Resolve a raster layer from a nemeton_layers object
 #'
@@ -1032,4 +1062,120 @@ lookup_ademe_factor <- function(material_type, scenario = NULL) {
 
   # Not found
   return(NULL)
+}
+
+# ==============================================================================
+# BD Forêt V2 Enrichment
+# ==============================================================================
+
+#' Enrich Parcels with BD Forêt V2 Data
+#'
+#' Performs spatial intersection between parcels and BD Forêt V2 polygons
+#' to extract dominant species, then maps IGN essence codes to allometric
+#' model species names.
+#'
+#' @param parcels sf object. Parcel geometries to enrich.
+#' @param bdforet_sf sf object. BD Forêt V2 formation_vegetale layer.
+#'
+#' @return A data.frame with columns `species`, `age`, `density` (one row
+#'   per parcel). Parcels with no BD Forêt coverage get NA values.
+#' @keywords internal
+#' @noRd
+enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
+  # Identify the essence column in BD Forêt data
+  essence_col <- intersect(
+    c("essence", "tfv", "lib_fv", "libelle"),
+    tolower(names(bdforet_sf))
+  )
+  if (length(essence_col) == 0) {
+    cli::cli_alert_warning(
+      "BD For\u00eat layer has no recognizable essence column; skipping enrichment"
+    )
+    return(data.frame(
+      species = rep(NA_character_, nrow(parcels)),
+      age     = rep(NA_real_, nrow(parcels)),
+      density = rep(NA_real_, nrow(parcels))
+    ))
+  }
+  # Use the original-case column name
+  essence_col_orig <- names(bdforet_sf)[tolower(names(bdforet_sf)) == essence_col[1]]
+
+  # Ensure matching CRS
+  if (sf::st_crs(parcels) != sf::st_crs(bdforet_sf)) {
+    bdforet_sf <- sf::st_transform(bdforet_sf, sf::st_crs(parcels))
+  }
+
+  # Add parcel id for aggregation
+  parcels$..parcel_id.. <- seq_len(nrow(parcels))
+
+  # Spatial intersection
+  inter <- tryCatch(
+    suppressWarnings(sf::st_intersection(bdforet_sf, parcels["..parcel_id.."])),
+    error = function(e) {
+      cli::cli_alert_warning("BD For\u00eat intersection failed: {e$message}")
+      return(NULL)
+    }
+  )
+
+  # Default result: all NA
+  result <- data.frame(
+    ..parcel_id.. = seq_len(nrow(parcels)),
+    species       = rep(NA_character_, nrow(parcels)),
+    age           = rep(NA_real_, nrow(parcels)),
+    density       = rep(NA_real_, nrow(parcels))
+  )
+
+  if (is.null(inter) || nrow(inter) == 0) {
+    return(result[, c("species", "age", "density")])
+  }
+
+  # Compute area of each intersection fragment
+  inter$..area.. <- as.numeric(sf::st_area(inter))
+
+  # Aggregate: pick dominant essence (largest area) per parcel
+  inter_df <- sf::st_drop_geometry(inter)
+  inter_df$essence_raw <- inter_df[[essence_col_orig]]
+
+  dominant <- do.call(rbind, lapply(
+    split(inter_df, inter_df$..parcel_id..),
+    function(df) {
+      idx <- which.max(df$..area..)
+      data.frame(
+        ..parcel_id.. = df$..parcel_id..[1],
+        essence_raw   = df$essence_raw[idx],
+        stringsAsFactors = FALSE
+      )
+    }
+  ))
+
+  # Map IGN essence codes to allometric model names
+  dominant$species <- map_essence_to_species(dominant$essence_raw)
+
+  # Default age and density for temperate forest
+  dominant$age     <- 60
+  dominant$density <- 0.7
+
+  # Merge back to full parcel set
+  result$species[match(dominant$..parcel_id.., result$..parcel_id..)] <- dominant$species
+  result$age[match(dominant$..parcel_id.., result$..parcel_id..)]     <- dominant$age
+  result$density[match(dominant$..parcel_id.., result$..parcel_id..)] <- dominant$density
+
+  result[, c("species", "age", "density")]
+}
+
+#' Map IGN BD Forêt Essence Codes to Allometric Species Names
+#'
+#' @param essence Character vector of raw essence labels from BD Forêt V2.
+#' @return Character vector of allometric model species names.
+#' @keywords internal
+#' @noRd
+map_essence_to_species <- function(essence) {
+  essence_lower <- tolower(essence)
+  species <- rep("Generic", length(essence))
+  species[grepl("ch\u00eane|chene|ch\\u00eane", essence_lower)] <- "Quercus"
+  species[grepl("h\u00eatre|hetre|h\\u00eatre", essence_lower)] <- "Fagus"
+  species[grepl("pin|\\u00e9pic\\u00e9a|epicea", essence_lower)] <- "Pinus"
+  species[grepl("sapin|douglas", essence_lower)]                 <- "Abies"
+  species[is.na(essence)] <- NA_character_
+  species
 }

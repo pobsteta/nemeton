@@ -416,9 +416,7 @@ mod_family_ui <- function(id, family_code) {
 
   family_name <- if (opts$language == "fr") family$name_fr else family$name_en
 
-  bslib::layout_columns(
-    col_widths = c(12),
-
+  htmltools::tagList(
     # Family header
     htmltools::div(
       class = "d-flex align-items-center mb-3",

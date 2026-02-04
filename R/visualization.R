@@ -219,7 +219,9 @@ plot_indicators_map <- function(data,
     ggplot2::theme_minimal(base_size = base_size) +
     ggplot2::theme(
       plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
-      axis.text = ggplot2::element_text(size = ggplot2::rel(0.8)),
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
+      axis.title = ggplot2::element_blank(),
       legend.position = "right",
       panel.grid = ggplot2::element_blank()
     ) +

@@ -84,7 +84,7 @@ indicator_air_coverage <- function(units,
     # Use exactextractr for efficient zonal statistics
     for (i in seq_len(nrow(units))) {
       # Extract land cover values for this buffer
-      lc_values <- exactextractr::exact_extract(land_cover, buffers[i, ], progress = FALSE)[[1]]$value
+      lc_values <- safe_extract(land_cover, buffers[i, ], progress = FALSE)[[1]]$value
 
       if (length(lc_values) > 0) {
         # Count forest pixels

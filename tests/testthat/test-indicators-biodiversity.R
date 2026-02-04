@@ -108,27 +108,34 @@ test_that("indicator_biodiversity_structure handles monoculture", {
 # T016: Unit Tests for indicator_biodiversity_connectivity() (B3)
 # ==============================================================================
 
-test_that("indicator_biodiversity_connectivity calculates distances correctly", {
+test_that("indicator_biodiversity_connectivity calculates with bdforet data", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
-  # Create synthetic corridor (line through center)
+  # Create synthetic forest polygons near parcels
   bbox <- st_bbox(units)
-  corridor <- st_sf(
-    corridor_id = "TVB_001",
-    geometry = st_sfc(
-      st_linestring(cbind(
-        c(bbox["xmin"], bbox["xmax"]),
-        c((bbox["ymin"] + bbox["ymax"]) / 2, (bbox["ymin"] + bbox["ymax"]) / 2)
-      )),
-      crs = st_crs(units)
-    )
+  forest1 <- st_polygon(list(matrix(c(
+    bbox["xmin"], bbox["ymin"],
+    bbox["xmin"] + 200, bbox["ymin"],
+    bbox["xmin"] + 200, bbox["ymin"] + 200,
+    bbox["xmin"], bbox["ymin"] + 200,
+    bbox["xmin"], bbox["ymin"]
+  ), ncol = 2, byrow = TRUE)))
+  forest2 <- st_polygon(list(matrix(c(
+    bbox["xmax"] - 300, bbox["ymax"] - 300,
+    bbox["xmax"], bbox["ymax"] - 300,
+    bbox["xmax"], bbox["ymax"],
+    bbox["xmax"] - 300, bbox["ymax"],
+    bbox["xmax"] - 300, bbox["ymax"] - 300
+  ), ncol = 2, byrow = TRUE)))
+  bdforet <- st_sf(
+    code = c("FF1", "FF2"),
+    geometry = st_sfc(forest1, forest2, crs = st_crs(units))
   )
 
   result <- indicator_biodiversity_connectivity(
     units,
-    corridors = corridor,
-    distance_method = "edge",
+    bdforet = bdforet,
     max_distance = 3000
   )
 
@@ -136,30 +143,21 @@ test_that("indicator_biodiversity_connectivity calculates distances correctly", 
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
   expect_type(result$B3, "double")
-  expect_true(all(result$B3 >= 0, na.rm = TRUE))
+  expect_true(all(result$B3 >= 0 & result$B3 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_biodiversity_connectivity handles max_distance cap", {
+test_that("indicator_biodiversity_connectivity returns fallback when no bdforet", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  # Corridor far away
-  far_corridor <- st_sf(
-    corridor_id = "TVB_FAR",
-    geometry = st_sfc(
-      st_point(c(800000, 6600000)), # Very far from units
-      crs = st_crs(units)
-    )
+  expect_warning(
+    result <- indicator_biodiversity_connectivity(units, bdforet = NULL),
+    "BD"
   )
 
-  result <- indicator_biodiversity_connectivity(
-    units,
-    corridors = far_corridor,
-    max_distance = 5000
-  )
-
-  # Distances beyond max should be capped
-  expect_true(all(result$B3 >= 5000, na.rm = TRUE) || all(is.na(result$B3)))
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
+  expect_true(all(result$B3 == 50))
 })
 
 # ==============================================================================
@@ -182,17 +180,18 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
   )
   units$age_classes <- sample(c("Young", "Intermediate", "Mature", "Old"), 10, replace = TRUE)
 
-  # Create corridor
+  # Create synthetic forest polygons
   bbox <- st_bbox(units)
-  corridor <- st_sf(
-    corridor_id = "TVB",
-    geometry = st_sfc(
-      st_point(c(
-        mean(c(bbox["xmin"], bbox["xmax"])),
-        mean(c(bbox["ymin"], bbox["ymax"]))
-      )),
-      crs = st_crs(units)
-    )
+  forest_poly <- st_polygon(list(matrix(c(
+    bbox["xmin"], bbox["ymin"],
+    bbox["xmin"] + 500, bbox["ymin"],
+    bbox["xmin"] + 500, bbox["ymin"] + 500,
+    bbox["xmin"], bbox["ymin"] + 500,
+    bbox["xmin"], bbox["ymin"]
+  ), ncol = 2, byrow = TRUE)))
+  bdforet <- st_sf(
+    code = "FF1",
+    geometry = st_sfc(forest_poly, crs = st_crs(units))
   )
 
   # Full workflow
@@ -202,7 +201,7 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
       strata_field = "strata_classes",
       age_class_field = "age_classes"
     ) %>%
-    indicator_biodiversity_connectivity(corridors = corridor) %>%
+    indicator_biodiversity_connectivity(bdforet = bdforet) %>%
     normalize_indicators(indicators = c("B1", "B2", "B3")) %>%
     create_family_index(family_codes = "B")
 
@@ -327,44 +326,46 @@ test_that("indicator_biodiversity_connectivity validates input", {
   )
 })
 
-test_that("indicator_biodiversity_connectivity handles empty corridors", {
+test_that("indicator_biodiversity_connectivity handles empty bdforet", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  empty_corridors <- sf::st_sf(
-    corridor_id = character(0),
+  empty_bdforet <- sf::st_sf(
+    code = character(0),
     geometry = sf::st_sfc(crs = sf::st_crs(units))
   )
 
-  result <- indicator_biodiversity_connectivity(
-    units,
-    corridors = empty_corridors
+  expect_warning(
+    result <- indicator_biodiversity_connectivity(units, bdforet = empty_bdforet),
+    "BD"
   )
 
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
+  expect_true(all(result$B3 == 50))
 })
 
-test_that("indicator_biodiversity_connectivity uses centroid method", {
+test_that("indicator_biodiversity_connectivity scores vary with forest proximity", {
   data(massif_demo_units, package = "nemeton")
-  units <- massif_demo_units[1:3, ]
+  units <- massif_demo_units[1:5, ]
 
-  # Create corridor
+  # Create forest polygons overlapping some parcels
   bbox <- sf::st_bbox(units)
-  corridor <- sf::st_sf(
-    corridor_id = "C1",
-    geometry = sf::st_sfc(
-      sf::st_point(c(mean(c(bbox["xmin"], bbox["xmax"])), mean(c(bbox["ymin"], bbox["ymax"])))),
-      crs = sf::st_crs(units)
-    )
+  forest_poly <- sf::st_polygon(list(matrix(c(
+    bbox["xmin"], bbox["ymin"],
+    bbox["xmin"] + 1000, bbox["ymin"],
+    bbox["xmin"] + 1000, bbox["ymin"] + 1000,
+    bbox["xmin"], bbox["ymin"] + 1000,
+    bbox["xmin"], bbox["ymin"]
+  ), ncol = 2, byrow = TRUE)))
+  bdforet <- sf::st_sf(
+    code = "FF1",
+    geometry = sf::st_sfc(forest_poly, crs = sf::st_crs(units))
   )
 
-  result <- indicator_biodiversity_connectivity(
-    units,
-    corridors = corridor,
-    distance_method = "centroid"
-  )
+  result <- indicator_biodiversity_connectivity(units, bdforet = bdforet)
 
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
+  expect_true(all(result$B3 >= 0 & result$B3 <= 100, na.rm = TRUE))
 })

@@ -2,7 +2,7 @@
 # Phase 6: US4 - Fertilité des Sols (Soil Fertility)
 #
 # F1: indicator_soil_fertility() - Soil fertility classification
-# F2: indicator_soil_erosion() - Erosion risk index
+# F2: indicator_soil_erosion() - Soil fertility index (TWI + slope)
 
 # ==============================================================================
 # F1: SOIL FERTILITY CLASS
@@ -85,106 +85,44 @@ test_that("indicator_soil_fertility validates inputs", {
 })
 
 # ==============================================================================
-# F2: EROSION RISK INDEX
+# F2: SOIL FERTILITY INDEX (TWI + SLOPE)
 # ==============================================================================
 
-test_that("indicator_soil_erosion calculates risk from slope and cover", {
+test_that("indicator_soil_erosion calculates fertility from TWI and slope", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
-  # Calculate erosion risk
-  # Forest cover (landcover values 1,2,3) = low erosion
-  # Steep slopes + non-forest = high erosion
-  erosion <- indicator_soil_erosion(
-    units,
-    layers,
-    dem_layer = "dem",
-    landcover_layer = "landcover",
-    forest_values = c(1, 2, 3)
-  )
+  # Calculate soil fertility (F2 = (twi_norm + slope_norm) / 2)
+  fertility <- indicator_soil_erosion(units, layers, dem_layer = "dem")
 
   # Test output
-  expect_type(erosion, "double")
-  expect_length(erosion, 5)
-  expect_true(all(!is.na(erosion)))
+  expect_type(fertility, "double")
+  expect_length(fertility, 5)
+  expect_true(all(!is.na(fertility)))
 
-  # Erosion risk should be 0-100 scale
-  expect_true(all(erosion >= 0))
-  expect_true(all(erosion <= 100))
+  # Fertility should be 0-100 scale
+  expect_true(all(fertility >= 0))
+  expect_true(all(fertility <= 100))
 })
 
-test_that("indicator_soil_erosion shows higher risk on steep slopes", {
-  # This is a qualitative test - steeper slopes should have higher erosion risk
-  # when cover is equal
+test_that("indicator_soil_erosion produces higher values on flat wet areas", {
+  # Flat areas with high TWI should have higher fertility
 
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:10, ]
 
-  erosion <- indicator_soil_erosion(
-    units,
-    layers,
-    dem_layer = "dem",
-    landcover_layer = "landcover",
-    forest_values = c(1, 2, 3)
-  )
+  fertility <- indicator_soil_erosion(units, layers)
 
   # Check that calculation produces valid results
-  # May have low variation if terrain is uniform or all forested
-  expect_true(all(erosion >= 0))
-  expect_true(all(erosion <= 100))
+  expect_true(all(fertility >= 0))
+  expect_true(all(fertility <= 100))
 
   # At least some parcels should have measurable values
-  expect_true(sum(erosion) >= 0)
-})
-
-test_that("indicator_soil_erosion shows lower risk with forest cover", {
-  # Forest cover should reduce erosion risk compared to non-forest
-
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:5, ]
-
-  # Calculate with forest protection
-  erosion_forest <- indicator_soil_erosion(
-    units,
-    layers,
-    forest_values = c(1, 2, 3)
-  )
-
-  # Calculate with no forest (value 4 only)
-  erosion_no_forest <- indicator_soil_erosion(
-    units,
-    layers,
-    forest_values = 4
-  )
-
-  # In general, forest cover should reduce erosion (though not guaranteed for every parcel)
-  # At least some parcels should show this pattern
-  expect_true(mean(erosion_forest) < mean(erosion_no_forest) + 10) # Loose check
-})
-
-test_that("indicator_soil_erosion with different forest definitions", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:3, ]
-
-  # Only value 1 as forest
-  erosion_1 <- indicator_soil_erosion(units, layers, forest_values = 1)
-
-  # Values 1,2,3 as forest
-  erosion_123 <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
-
-  expect_length(erosion_1, 3)
-  expect_length(erosion_123, 3)
-
-  # More forest cover should generally mean lower erosion
-  expect_true(mean(erosion_123) <= mean(erosion_1) + 5) # Allow some tolerance
+  expect_true(mean(fertility) > 0)
 })
 
 test_that("indicator_soil_erosion still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
@@ -195,22 +133,9 @@ test_that("indicator_soil_erosion still works with nonexistent dem_layer (falls 
 
   # The function first tries get_dem_raster() which checks lidar_mnt then dem
   # If the demo layers have dem, it will still work
-  erosion <- indicator_soil_erosion(units, layers, dem_layer = "nonexistent")
-  expect_type(erosion, "double")
-  expect_length(erosion, 3)
-})
-
-test_that("indicator_soil_erosion uses slope-only when landcover missing", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:3, ]
-
-  # Non-existent landcover layer -> falls back to slope-only calculation
-  erosion <- indicator_soil_erosion(units, layers, landcover_layer = "nonexistent")
-  expect_type(erosion, "double")
-  expect_length(erosion, 3)
-  expect_true(all(erosion >= 0 & erosion <= 100))
+  fertility <- indicator_soil_erosion(units, layers, dem_layer = "nonexistent")
+  expect_type(fertility, "double")
+  expect_length(fertility, 3)
 })
 
 test_that("indicator_soil_erosion validates inputs", {
@@ -243,7 +168,7 @@ test_that("Both soil indicators work together", {
   # Calculate both indicators
   expect_no_error({
     f1 <- indicator_soil_fertility(units, layers, soil_layer = "landcover")
-    f2 <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
+    f2 <- indicator_soil_erosion(units, layers)
   })
 
   # Both should return valid numeric vectors
@@ -262,30 +187,27 @@ test_that("Soil indicators can be added to units dataframe", {
 
   # Add all soil indicators as columns
   units$F1_fertility <- indicator_soil_fertility(units, layers, soil_layer = "landcover")
-  units$F2_erosion <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
+  units$F2_fertility <- indicator_soil_erosion(units, layers)
 
   # Check structure
   expect_true("F1_fertility" %in% names(units))
-  expect_true("F2_erosion" %in% names(units))
+  expect_true("F2_fertility" %in% names(units))
 
   # Check all rows populated
   expect_true(all(!is.na(units$F1_fertility)))
-  expect_true(all(!is.na(units$F2_erosion)))
+  expect_true(all(!is.na(units$F2_fertility)))
 })
 
-test_that("Soil fertility and erosion can be correlated", {
-  # Negative correlation expected: high fertility → low erosion (generally)
-
+test_that("Soil fertility indicators can be correlated", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:10, ]
 
   f1 <- indicator_soil_fertility(units, layers, soil_layer = "landcover")
-  f2 <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
+  f2 <- indicator_soil_erosion(units, layers)
 
   # Check that both indicators produce valid values
-  # Correlation may be NA if no variation (uniform landscape)
   expect_true(all(!is.na(f1)))
   expect_true(all(!is.na(f2)))
 

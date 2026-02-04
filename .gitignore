@@ -4,6 +4,7 @@
 .RData
 .Ruserdata
 .Rprofile
+.Renviron
 *.Rproj
 
 # Spec-kit (development artifacts)

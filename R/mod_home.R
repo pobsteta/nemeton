@@ -909,6 +909,9 @@ mod_home_server <- function(id, app_state) {
       project <- app_state$current_project
       shiny::req(project)
 
+      # Clear indicator cache to force full recomputation
+      clear_computation_cache(project$id)
+
       # Reset status to allow recomputation
       update_project_status(project$id, "draft")
       app_state$current_project <- load_project(project$id)
@@ -968,6 +971,9 @@ mod_home_server <- function(id, app_state) {
 
       # Get project path for async mode
       project_path <- get_project_path(project$id)
+
+      # Clear indicator cache to force full recomputation
+      clear_computation_cache(project$id)
 
       # Reset status to allow recomputation
       update_project_status(project$id, "draft")

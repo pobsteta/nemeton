@@ -15,6 +15,7 @@ NULL
 #' List of data sources required for indicator calculations.
 #'
 #' @noRd
+NULL
 
 #' Get global shared cache directory
 #'
@@ -105,7 +106,7 @@ DATA_SOURCES <- list(
       type = "vector",
       source = "ign_bdforet",
       required_for = c("carbon_biomass", "production_volume", "production_site",
-                        "biodiversity_structure")
+                        "biodiversity_structure", "biodiversity_connectivity")
     )
   ),
   # Point cloud sources (not loaded as raster/vector but cached as files)
@@ -796,90 +797,74 @@ NULL
 #'
 #' @noRd
 download_inpn_wfs <- function(layer_name, bbox, cache_file) {
-  # INPN WFS base URL for metropolitan France
-  base_url <- "https://ws.carmencarto.fr/WFS/119/fxx_inpn"
+  # Use happign to download protection zones from INPN/patrinat WFS
+  # with a 2km buffer around the area (like tutorial 04 section 2)
 
+  if (!requireNamespace("happign", quietly = TRUE)) {
+    cli::cli_warn("Package {.pkg happign} required for INPN WFS download")
+    return(NULL)
+  }
 
-  # Map layer names to INPN WFS typenames
-  # Multiple layers are combined for comprehensive coverage
-  layer_mapping <- list(
-    protected_areas = c(
-      "RNN",      # Réserves Naturelles Nationales
-      "RNR",      # Réserves Naturelles Régionales
-      "PN",       # Parcs Nationaux (coeur)
-      "PNR",      # Parcs Naturels Régionaux
-      "APB",      # Arrêtés de Protection de Biotope
-      "RB",       # Réserves Biologiques
-      "RNCFS",    # Réserves Nationales de Chasse et Faune Sauvage
-      "SIC",      # Sites d'Importance Communautaire (Natura 2000)
-      "ZPS"       # Zones de Protection Spéciale (Natura 2000)
-    ),
-    wetlands = c(
-      "Znieff1",  # ZNIEFF type 1 (often includes wetlands)
-      "Znieff2"   # ZNIEFF type 2
-      # Note: Specific wetland layers (RAMSAR, etc.) may need separate handling
-    )
+  cli::cli_alert_info("Downloading INPN data for {layer_name} via happign...")
+
+  # Create sf shape from bbox with 2km buffer in projected CRS
+  if (inherits(bbox, "bbox")) {
+    bbox <- as.numeric(bbox)
+  }
+  bbox_poly <- sf::st_as_sfc(sf::st_bbox(c(
+    xmin = bbox[1], ymin = bbox[2], xmax = bbox[3], ymax = bbox[4]
+  ), crs = sf::st_crs(4326)))
+  # Project to Lambert-93 for metric buffer, add 2km, back to WGS84
+  shape <- sf::st_transform(bbox_poly, 2154)
+  shape <- sf::st_buffer(shape, 2000)
+  shape <- sf::st_transform(shape, 4326)
+
+  # Get patrinat layers from happign WFS catalog
+  wfs_layers <- tryCatch(
+    happign::get_layers_metadata("wfs"),
+    error = function(e) {
+      cli::cli_warn("Failed to get WFS layer metadata: {e$message}")
+      return(NULL)
+    }
   )
+  if (is.null(wfs_layers)) return(NULL)
 
-  typenames <- layer_mapping[[layer_name]]
-  if (is.null(typenames)) {
+  # Filter layers based on requested layer_name
+  if (layer_name == "protected_areas") {
+    target_layers <- wfs_layers$Name[grepl("patrinat", wfs_layers$Name,
+                                           ignore.case = TRUE)]
+  } else if (layer_name == "wetlands") {
+    target_layers <- wfs_layers$Name[grepl(
+      "patrinat.*(ramsar|znieff|zone_humide)",
+      wfs_layers$Name, ignore.case = TRUE
+    )]
+  } else {
     cli::cli_warn("Unknown INPN layer: {layer_name}")
     return(NULL)
   }
 
-  # Ensure bbox is numeric vector in WGS84
-  if (inherits(bbox, "bbox")) {
-    bbox <- as.numeric(bbox)
+  if (length(target_layers) == 0) {
+    cli::cli_alert_warning("No patrinat layers found in WFS catalog")
+    return(NULL)
   }
 
-  # Format bbox for WFS (minx,miny,maxx,maxy)
-  bbox_str <- paste(bbox[c(1, 2, 3, 4)], collapse = ",")
+  cli::cli_alert_info("Found {length(target_layers)} patrinat layers to query")
 
-  cli::cli_alert_info("Downloading INPN data for {layer_name}...")
-
-  # Download each typename and combine
+  # Download each layer
   all_features <- list()
 
-  for (typename in typenames) {
+  for (layer in target_layers) {
     tryCatch({
-      # Build WFS GetFeature URL
-      wfs_url <- paste0(
-        base_url,
-        "?SERVICE=WFS",
-        "&VERSION=2.0.0",
-        "&REQUEST=GetFeature",
-        "&TYPENAME=", typename,
-        "&BBOX=", bbox_str, ",EPSG:4326",
-        "&SRSNAME=EPSG:4326",
-        "&OUTPUTFORMAT=application/json"
-      )
-
-      cli::cli_alert_info("  Fetching {typename}...")
-
-      # Make request with timeout
-      resp <- httr2::request(wfs_url) |>
-        httr2::req_timeout(60) |>
-        httr2::req_error(is_error = function(resp) FALSE) |>
-        httr2::req_perform()
-
-      if (httr2::resp_status(resp) == 200) {
-        # Try to parse as GeoJSON
-        geojson <- httr2::resp_body_string(resp)
-
-        if (nchar(geojson) > 50) {  # Check it's not empty
-          features <- tryCatch({
-            sf::st_read(geojson, quiet = TRUE)
-          }, error = function(e) NULL)
-
-          if (!is.null(features) && nrow(features) > 0) {
-            features$source_layer <- typename
-            all_features[[typename]] <- features
-            cli::cli_alert_success("    Found {nrow(features)} features")
-          }
-        }
+      z <- happign::get_wfs(shape, layer)
+      if (!is.null(z) && nrow(z) > 0) {
+        z$type_protection <- layer
+        all_features[[layer]] <- z
+        cli::cli_alert_success("  {layer}: {nrow(z)} features")
       }
     }, error = function(e) {
-      cli::cli_alert_warning("  Failed to fetch {typename}: {e$message}")
+      # Silently skip layers that fail (many patrinat layers may not
+      # have data in the area or may return errors)
+      NULL
     })
   }
 
@@ -889,21 +874,41 @@ download_inpn_wfs <- function(layer_name, bbox, cache_file) {
     return(NULL)
   }
 
-  # Bind rows (handling different schemas)
+  # Standardize columns: zone_id, zone_name, zone_type, geometry
   result <- tryCatch({
-    # Keep only common columns + geometry
-    common_cols <- Reduce(intersect, lapply(all_features, names))
-    common_cols <- union(common_cols, c("source_layer", "geometry"))
+    standardized <- lapply(all_features, function(x) {
+      # Find name-like column
+      name_candidates <- c("nom_site", "NOM", "nom", "SITENAME", "NAME",
+                           "nomsit", "nom_s2", "nom_z2", "nom_z1")
+      name_col <- intersect(names(x), name_candidates)
+      zone_name <- if (length(name_col) > 0) {
+        as.character(x[[name_col[1]]])
+      } else {
+        rep(NA_character_, nrow(x))
+      }
 
-    combined <- do.call(rbind, lapply(all_features, function(x) {
-      # Select available columns
-      cols <- intersect(names(x), common_cols)
-      x[, cols, drop = FALSE]
-    }))
+      # Find id-like column
+      id_candidates <- c("ID_MNHN", "id_mnhn", "SITECODE", "sitecode",
+                          "id_sic", "id_zps", "gml_id", "id")
+      id_col <- intersect(names(x), id_candidates)
+      zone_id <- if (length(id_col) > 0) {
+        as.character(x[[id_col[1]]])
+      } else {
+        rep(NA_character_, nrow(x))
+      }
 
-    combined
+      sf::st_sf(
+        zone_id = zone_id,
+        zone_name = zone_name,
+        zone_type = x$type_protection,
+        geometry = sf::st_geometry(x)
+      )
+    })
+
+    do.call(rbind, standardized)
   }, error = function(e) {
-    # If rbind fails, just use the first non-empty result
+    cli::cli_warn("Failed to standardize features: {e$message}")
+    # Fallback: just use the first non-empty result
     all_features[[1]]
   })
 
@@ -1467,36 +1472,44 @@ download_ign_irc_ndvi <- function(bbox, cache_file) {
       "&FORMAT=image/geotiff"
     )
 
-    # Download to temp file
-    temp_file <- tempfile(fileext = ".tif")
+    # IRC cache file: save alongside ndvi.tif as irc.tif
+    irc_cache_file <- file.path(dirname(cache_file), "irc.tif")
 
-    cli::cli_alert_info("  Requesting {width}x{height} pixels...")
+    # Use cached IRC if available, otherwise download
+    if (file.exists(irc_cache_file) && file.size(irc_cache_file) > 1000) {
+      cli::cli_alert_success("Using cached IRC orthophoto")
+      irc <- terra::rast(irc_cache_file)
+    } else {
+      cli::cli_alert_info("  Requesting {width}x{height} pixels...")
+      temp_file <- tempfile(fileext = ".tif")
 
-    resp <- httr2::request(wms_url) |>
-      httr2::req_timeout(300) |>  # 5 minutes for large images
-      httr2::req_error(is_error = function(resp) FALSE) |>
-      httr2::req_perform(path = temp_file)
+      resp <- httr2::request(wms_url) |>
+        httr2::req_timeout(300) |>  # 5 minutes for large images
+        httr2::req_error(is_error = function(resp) FALSE) |>
+        httr2::req_perform(path = temp_file)
 
-    if (httr2::resp_status(resp) != 200) {
-      cli::cli_warn("IGN WMS returned status {httr2::resp_status(resp)}")
+      if (httr2::resp_status(resp) != 200) {
+        cli::cli_warn("IGN WMS returned status {httr2::resp_status(resp)}")
+        unlink(temp_file)
+        return(create_synthetic_ndvi(bbox, cache_file))
+      }
+
+      if (!file.exists(temp_file) || file.size(temp_file) < 1000) {
+        cli::cli_warn("Invalid or empty IRC response")
+        unlink(temp_file)
+        return(create_synthetic_ndvi(bbox, cache_file))
+      }
+
+      # Save IRC to project cache
+      file.copy(temp_file, irc_cache_file, overwrite = TRUE)
       unlink(temp_file)
-      return(create_synthetic_ndvi(bbox, cache_file))
+      cli::cli_alert_success("Saved IRC orthophoto to cache")
+      irc <- terra::rast(irc_cache_file)
     }
-
-    # Check if valid file
-    if (!file.exists(temp_file) || file.size(temp_file) < 1000) {
-      cli::cli_warn("Invalid or empty IRC response")
-      unlink(temp_file)
-      return(create_synthetic_ndvi(bbox, cache_file))
-    }
-
-    # Load IRC raster
-    irc <- terra::rast(temp_file)
 
     # Check we have at least 3 bands
     if (terra::nlyr(irc) < 3) {
       cli::cli_warn("IRC image has insufficient bands ({terra::nlyr(irc)})")
-      unlink(temp_file)
       return(create_synthetic_ndvi(bbox, cache_file))
     }
 
@@ -1510,9 +1523,9 @@ download_ign_irc_ndvi <- function(bbox, cache_file) {
     # Handle division by zero by setting those pixels to 0
     ndvi <- (nir - red) / (nir + red)
 
-    # Replace NaN/Inf with 0
-    ndvi[is.nan(terra::values(ndvi))] <- 0
-    ndvi[is.infinite(terra::values(ndvi))] <- 0
+    # Replace NaN/Inf with NA (not 0, to avoid false biomass = 0)
+    ndvi[is.nan(terra::values(ndvi))] <- NA
+    ndvi[is.infinite(terra::values(ndvi))] <- NA
 
     # Ensure NDVI is in valid range [-1, 1]
     ndvi <- terra::clamp(ndvi, lower = -1, upper = 1)
@@ -1522,7 +1535,6 @@ download_ign_irc_ndvi <- function(bbox, cache_file) {
 
     # Save to cache
     terra::writeRaster(ndvi, cache_file, overwrite = TRUE)
-    unlink(temp_file)
 
     cli::cli_alert_success("Computed NDVI from IGN IRC ({width}x{height} pixels)")
 
@@ -1922,6 +1934,83 @@ mosaic_lidar_tiles <- function(tile_files, output_file) {
     tryCatch(terra::rast(tile_files[1]), error = function(e2) NULL)
   })
 }
+
+
+#' Normalize indicator values to 0-100 scale
+#'
+#' @description
+#' Converts raw indicator metrics to a standardized 0-100 score.
+#' Indicators that already return 0-100 scores pass through unchanged.
+#' Raw metrics (m³/ha, tC/ha, km/ha, etc.) are scaled using ecologically
+#' meaningful reference values for temperate forests.
+#'
+#' @param indicator Character. Indicator name.
+#' @param values Numeric vector. Raw indicator values.
+#'
+#' @return Numeric vector of normalized values in [0, 100].
+#'
+#' @noRd
+normalize_indicator <- function(indicator, values) {
+  # Reference maxima for indicators that return raw metrics
+  # Values beyond ref_max are capped at 100
+  ref_max <- switch(indicator,
+    # Carbon: biomass in tC/ha, typical temperate forest max ~150 tC/ha
+    "carbon_biomass" = 150,
+    # Carbon: NDVI in 0-1 scale
+    "carbon_ndvi" = 1,
+    # Water: hydrographic network density in km/ha
+    "water_network" = 2,
+    # Water: TWI (Topographic Wetness Index) — needs rescaling from ~5-15
+    "water_twi" = NULL,  # special handling below
+    # Landscape: patch count (fragmentation)
+    "landscape_fragmentation" = 20,
+    # Landscape: edge density in m/ha
+    "landscape_edge_ratio" = 500,
+    # Social: trail density in km/ha
+    "social_trails" = 5,
+    # Social: population within 5km buffer
+    "social_population" = 10000,
+    # Energy: fuelwood potential in tonnes DM/yr
+    "energy_wood" = 50,
+    # Energy: CO2 avoidance in tCO2eq/yr
+    "energy_co2" = 15,
+    # Naturalness: distance to infrastructure in meters
+    "naturalness_distance" = 500,
+    # Naturalness: continuous forest area in hectares
+    "naturalness_continuity" = 1000,
+    # Production: standing volume in m³/ha
+    "production_volume" = 400,
+    # Production: annual increment in m³/ha/yr
+    "production_productivity" = 15,
+    # Already normalized indicators → NULL (no transformation)
+    NULL
+  )
+
+  if (indicator == "water_twi") {
+    # TWI: rescale from [5, 15] to [0, 100]
+    # Higher TWI = wetter = more water service
+    values <- pmin(100, pmax(0, (values - 5) / 10 * 100))
+    return(values)
+  }
+
+  if (indicator == "carbon_ndvi") {
+    # NDVI: scale 0-1 to 0-100
+    values <- pmin(100, pmax(0, values * 100))
+    return(values)
+  }
+
+  if (!is.null(ref_max)) {
+    # Linear normalization: value / ref_max * 100, clamped to [0, 100]
+    values <- pmin(100, pmax(0, values / ref_max * 100))
+  } else {
+    # Already 0-100 indicators: just clamp to be safe
+    values <- pmin(100, pmax(0, values))
+  }
+
+  values
+}
+
+
 #'
 #' @description
 #' Computes all requested indicators on the parcels.
@@ -1949,11 +2038,19 @@ compute_all_indicators <- function(parcels,
   if (!is.null(project_id)) {
     existing_results <- load_indicators(project_id)
     if (!is.null(existing_results)) {
-      # Find which indicators are already computed (non-NA values)
+      # Find which indicators are already computed
+      # Skip indicators that are all NA or all zero (likely failed previous computation)
       available_cols <- intersect(names(existing_results), indicators)
       for (col in available_cols) {
-        if (!all(is.na(existing_results[[col]]))) {
+        vals <- existing_results[[col]]
+        has_data <- !all(is.na(vals))
+        all_zero <- has_data && all(vals == 0, na.rm = TRUE)
+        if (has_data && !all_zero) {
           computed_indicators <- c(computed_indicators, col)
+        } else if (all_zero) {
+          cli::cli_alert_info(
+            "Indicator {col} has all-zero values, will recompute"
+          )
         }
       }
 
@@ -2028,7 +2125,7 @@ compute_all_indicators <- function(parcels,
       # Compute indicator
       values <- compute_single_indicator(ind, parcels, layers)
 
-      # Add to results
+      # Add to results (raw values — normalization happens at family aggregation)
       results[[ind]] <- values
       status[ind] <- "completed"
       completed <- completed + 1
@@ -2128,6 +2225,10 @@ compute_single_indicator <- function(indicator, parcels, layers) {
     if ("roads" %in% func_args) {
       roads <- resolve_vector_layer(layers, "roads")
       if (!is.null(roads)) args$roads <- roads
+    }
+    if ("bdforet" %in% func_args) {
+      bd <- resolve_vector_layer(layers, "bdforet")
+      if (!is.null(bd)) args$bdforet <- bd
     }
 
     # Call function with appropriate arguments
@@ -2428,6 +2529,40 @@ read_progress_state <- function(project_id) {
 #' @return List with computed indicators and last save time.
 #'
 #' @noRd
+#' Clear computation cache for a project
+#'
+#' @description
+#' Removes cached indicator results and progress tracking files,
+#' forcing a full recomputation on next run.
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @return Logical. TRUE if cache was cleared successfully.
+#'
+#' @noRd
+clear_computation_cache <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) return(FALSE)
+
+  files_to_remove <- c(
+    file.path(project_path, "data", "indicators.parquet"),
+    file.path(project_path, "data", "compute_progress.json"),
+    file.path(project_path, "data", "progress_state.json")
+  )
+
+  removed <- vapply(files_to_remove, function(f) {
+    if (file.exists(f)) {
+      unlink(f) == 0
+    } else {
+      TRUE
+    }
+  }, logical(1))
+
+  cli::cli_alert_info("Cleared computation cache for project {project_id}")
+  all(removed)
+}
+
+
 get_computation_progress <- function(project_id) {
   project_path <- get_project_path(project_id)
   if (is.null(project_path)) {

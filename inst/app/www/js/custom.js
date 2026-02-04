@@ -547,13 +547,17 @@
     } catch (e) { /* fallback below */ }
 
     // === Layer 3: MutationObserver fallback ===
-    // If the attribute gets set by any other means, remove it immediately.
+    // If the attribute or class gets set by any other means, remove it immediately.
     var htmlEl = document.documentElement;
-    new MutationObserver(function() {
+    new MutationObserver(function(mutations) {
       if (htmlEl.hasAttribute('data-shiny-busy')) {
         htmlEl.removeAttribute('data-shiny-busy');
       }
-    }).observe(htmlEl, { attributes: true, attributeFilter: ['data-shiny-busy'] });
+      // Shiny 1.12+ adds .shiny-busy class to <html>
+      if (htmlEl.classList.contains('shiny-busy')) {
+        htmlEl.classList.remove('shiny-busy');
+      }
+    }).observe(htmlEl, { attributes: true, attributeFilter: ['data-shiny-busy', 'class'] });
 
     // === Layer 4: Force visibility on recalculating outputs ===
     // Shiny adds .recalculating class (opacity: 0.3) on outputs being
@@ -564,6 +568,12 @@
       for (var j = 0; j < recalc.length; j++) {
         recalc[j].style.setProperty('opacity', '1', 'important');
         recalc[j].style.setProperty('visibility', 'visible', 'important');
+      }
+      // Also force children of recalculating widgets to stay visible
+      var widgetChildren = document.querySelectorAll('.recalculating > *');
+      for (var k = 0; k < widgetChildren.length; k++) {
+        widgetChildren[k].style.setProperty('opacity', '1', 'important');
+        widgetChildren[k].style.setProperty('visibility', 'visible', 'important');
       }
     }
     $(document).on('shiny:busy shiny:outputinvalidated shiny:recalculating', forceRecalcVisible);

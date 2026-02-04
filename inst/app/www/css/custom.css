@@ -279,16 +279,14 @@ html, body {
   background: #e8e8e8 !important;
 }
 
-/* Contain family indicator maps */
+/* Contain family indicator maps — plain div, no bslib fill */
 .family-map-wrapper {
   height: 400px;
   overflow: hidden;
+  position: relative;
   border-radius: 8px;
   border: 1px solid var(--nemeton-border);
   background: #fff;
-}
-.family-map-wrapper .leaflet-container {
-  min-height: 0 !important;
 }
 
 /* Main parcel map: fill all available space */

@@ -238,6 +238,8 @@ msg_error <- function(key, ...) {
     biodiversity_wfs_fetched = "Retrieved %d protected area features",
     biodiversity_wfs_failed = "WFS fetch failed, using local data fallback",
     biodiversity_shannon_calculated = "Calculated Shannon diversity H=%0.2f",
+    biodiversity_no_bdforet = "No BD Foret data available, using fallback connectivity score (50)",
+    biodiversity_b3_components = "B3 components: structural=%d, cost=%d, graph=%d, kernel=%d",
     biodiversity_corridor_distance = "Minimum corridor distance: %0.0f m",
 
     # v0.3.0 - Family R: Risk & Resilience/Flexible
@@ -459,6 +461,8 @@ msg_error <- function(key, ...) {
     biodiversity_wfs_fetched = "%d entit\u00e9s de zones prot\u00e9g\u00e9es r\u00e9cup\u00e9r\u00e9es",
     biodiversity_wfs_failed = "\u00c9chec WFS, utilisation des donn\u00e9es locales",
     biodiversity_shannon_calculated = "Diversit\u00e9 Shannon calcul\u00e9e H=%0.2f",
+    biodiversity_no_bdforet = "Pas de donn\u00e9es BD For\u00eat disponibles, score de connectivit\u00e9 par d\u00e9faut (50)",
+    biodiversity_b3_components = "Composantes B3 : structurelle=%d, co\u00fbt=%d, graphe=%d, kernel=%d",
     biodiversity_corridor_distance = "Distance minimale au corridor : %0.0f m",
 
     # v0.3.0 - Famille R : R\u00e9silience/Flexible

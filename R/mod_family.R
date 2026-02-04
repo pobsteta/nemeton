@@ -131,19 +131,24 @@ mod_family_server <- function(id, family_code, app_state) {
         ))
       }
 
-      # Build one card per indicator inside a fixed-height wrapper
-      map_cards <- lapply(seq_len(n), function(i) {
+      # Build one col per indicator using plain Bootstrap grid
+      col_class <- if (n == 1) "col-12" else if (n == 2) "col-6" else "col-4"
+
+      map_cols <- lapply(seq_len(n), function(i) {
         map_id <- paste0("map", i)
         htmltools::div(
-          class = "family-map-wrapper",
-          leaflet::leafletOutput(ns(map_id), height = "400px")
+          class = col_class,
+          htmltools::div(
+            class = "family-map-wrapper",
+            leaflet::leafletOutput(ns(map_id), height = "400px")
+          )
         )
       })
 
-      # Column widths: equal split
-      col_w <- if (n == 1) c(12) else if (n == 2) c(6, 6) else rep(4, n)
-
-      do.call(bslib::layout_columns, c(list(col_widths = col_w), map_cards))
+      htmltools::div(
+        class = "row mb-3",
+        map_cols
+      )
     })
 
     # Render maps dynamically
@@ -178,6 +183,19 @@ mod_family_server <- function(id, family_code, app_state) {
       # Round numeric columns
       num_cols <- vapply(ind_data, is.numeric, logical(1))
       ind_data[num_cols] <- lapply(ind_data[num_cols], round, digits = 3)
+
+      # Clean column names: use short codes (B1, B2, C1, etc.)
+      clean_names <- vapply(names(ind_data), function(col) {
+        base <- sub("_norm$", "", col)
+        for (fam in INDICATOR_FAMILIES) {
+          if (!is.null(fam$column_names) && base %in% fam$column_names) {
+            idx <- which(fam$column_names == base)
+            if (idx <= length(fam$indicators)) return(fam$indicators[idx])
+          }
+        }
+        base
+      }, character(1))
+      names(ind_data) <- clean_names
 
       DT::datatable(ind_data,
                      selection = "single",
@@ -545,7 +563,16 @@ make_indicator_leaflet <- function(sf_data, ind_col, title) {
       leaflet::addPolygons(color = "#999", weight = 1, fillOpacity = 0.3))
   }
 
-  pal <- leaflet::colorNumeric("viridis", domain = vals, na.color = "#cccccc")
+  # Auto-scale domain to actual data range for family detail view
+  # When all values are identical (or nearly so), expand domain to avoid
+  # colorNumeric producing erratic colors from a zero-width range
+  val_range <- range(vals, na.rm = TRUE)
+  if (isTRUE(val_range[2] - val_range[1] < 1e-6)) {
+    # All values identical: center the domain around the value
+    mid <- val_range[1]
+    val_range <- c(max(0, mid - 1), mid + 1)
+  }
+  pal <- leaflet::colorNumeric("viridis", domain = val_range, na.color = "#cccccc")
 
   # Build hover labels
   id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(sf_wgs84))
@@ -606,9 +633,10 @@ clean_indicator_label <- function(col_name, i18n) {
     if (!is.null(fam$column_names) && base %in% fam$column_names) {
       idx <- which(fam$column_names == base)
       if (idx <= length(fam$indicators)) {
-        short_key <- paste0("indicator_", fam$indicators[idx])
+        code <- fam$indicators[idx]
+        short_key <- paste0("indicator_", code)
         if (i18n$has(short_key)) {
-          return(i18n$t(short_key))
+          return(paste0(code, " - ", i18n$t(short_key)))
         }
       }
     }
@@ -617,7 +645,7 @@ clean_indicator_label <- function(col_name, i18n) {
   # Try i18n key directly (works for short codes like C1, B2)
   key <- paste0("indicator_", base)
   if (i18n$has(key)) {
-    return(i18n$t(key))
+    return(paste0(base, " - ", i18n$t(key)))
   }
 
   # Fallback: humanize the column name

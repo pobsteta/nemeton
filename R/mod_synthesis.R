@@ -190,7 +190,8 @@ mod_synthesis_server <- function(id, app_state) {
         return()
       }
 
-      nemeton_radar(sf_data, mode = "family", title = i18n$t("radar_title"))
+      nemeton_radar(sf_data, mode = "family", normalize = FALSE,
+                    title = i18n$t("radar_title"))
     })
 
     # ================================================================

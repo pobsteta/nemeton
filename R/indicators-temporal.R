@@ -85,7 +85,7 @@ indicator_temporal_age <- function(units,
     ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("T1: No age data; estimating maturity from NDVI")
-      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+      ndvi_mean <- safe_extract(ndvi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       # NDVI 0.2 ~ young (20yr), NDVI 0.8 ~ mature (120yr)
       age_values <- 20 + pmax(0, ndvi_mean - 0.2) / 0.6 * 100
@@ -184,7 +184,7 @@ indicator_temporal_change <- function(units,
     ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("T2: No multi-date rasters; estimating stability from NDVI")
-      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+      ndvi_mean <- safe_extract(ndvi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       # High NDVI = likely stable forest = high stability score
       units$T2 <- rep(0, nrow(units))  # Assume 0% change rate
@@ -210,16 +210,16 @@ indicator_temporal_change <- function(units,
   # For each parcel, count pixels with different land cover classes
   if (requireNamespace("exactextractr", quietly = TRUE)) {
     # Extract land cover values for each parcel
-    lc_early_values <- exactextractr::exact_extract(land_cover_early, units, fun = "mode", progress = FALSE)
-    lc_late_values <- exactextractr::exact_extract(land_cover_late, units, fun = "mode", progress = FALSE)
+    lc_early_values <- safe_extract(land_cover_early, units, fun = "mode", progress = FALSE)
+    lc_late_values <- safe_extract(land_cover_late, units, fun = "mode", progress = FALSE)
 
     # For more detailed change detection, extract all values and calculate change percentage
     change_rates <- numeric(nrow(units))
 
     for (i in seq_len(nrow(units))) {
       # Extract all pixel values for this parcel
-      early_vals <- exactextractr::exact_extract(land_cover_early, units[i, ], progress = FALSE)[[1]]$value
-      late_vals <- exactextractr::exact_extract(land_cover_late, units[i, ], progress = FALSE)[[1]]$value
+      early_vals <- safe_extract(land_cover_early, units[i, ], progress = FALSE)[[1]]$value
+      late_vals <- safe_extract(land_cover_late, units[i, ], progress = FALSE)[[1]]$value
 
       if (length(early_vals) > 0 && length(late_vals) > 0) {
         # Calculate percentage of pixels that changed
