@@ -95,39 +95,50 @@ indicator_social_trails <- function(units,
       osm_bbox <- get_osm_bbox(units, buffer_m = 1000)
     }
 
-    # Query OSM for trails
-    tryCatch(
-      {
-        osm_query <- osmdata::opq(bbox = osm_bbox)
+    # Query OSM for trails (with retry on timeout)
+    fetch_osm_trails <- function(osm_bbox, trail_types, attempt = 1, max_attempts = 2) {
+      tryCatch(
+        {
+          osm_query <- osmdata::opq(bbox = osm_bbox, timeout = 120)
 
-        # Query each trail type and combine
-        trails_list <- list()
-        for (trail_type in trail_types) {
-          osm_result <- osm_query |>
-            osmdata::add_osm_feature(key = "highway", value = trail_type) |>
-            osmdata::osmdata_sf()
+          # Query each trail type and combine
+          trails_list <- list()
+          for (trail_type in trail_types) {
+            osm_result <- osm_query |>
+              osmdata::add_osm_feature(key = "highway", value = trail_type) |>
+              osmdata::osmdata_sf()
 
-          if (!is.null(osm_result$osm_lines) && nrow(osm_result$osm_lines) > 0) {
-            trails_list[[trail_type]] <- osm_result$osm_lines
+            if (!is.null(osm_result$osm_lines) && nrow(osm_result$osm_lines) > 0) {
+              trails_list[[trail_type]] <- osm_result$osm_lines
+            }
           }
-        }
 
-        if (length(trails_list) == 0) {
-          cli::cli_warn("No trails found in OSM for specified types")
-          trails <- sf::st_sfc(crs = sf::st_crs(units)) # Empty geometry
-        } else {
+          if (length(trails_list) == 0) {
+            cli::cli_warn("No trails found in OSM for specified types")
+            return(sf::st_sfc(crs = sf::st_crs(units)))
+          }
+
           # Combine all trail types (keep only geometry, columns may differ)
-          trails <- do.call(c, lapply(trails_list, sf::st_geometry))
-          trails <- sf::st_sf(geometry = trails, crs = sf::st_crs(trails_list[[1]]))
-          trails <- sf::st_transform(trails, crs = sf::st_crs(units))
-          msg_info("social_osm_fetched", nrow(trails))
+          combined <- do.call(c, lapply(trails_list, sf::st_geometry))
+          combined <- sf::st_sf(geometry = combined, crs = sf::st_crs(trails_list[[1]]))
+          sf::st_transform(combined, crs = sf::st_crs(units))
+        },
+        error = function(e) {
+          if (attempt < max_attempts && grepl("timeout|504|429", e$message, ignore.case = TRUE)) {
+            cli::cli_alert_info("S1: OSM timeout, retrying ({attempt + 1}/{max_attempts})...")
+            Sys.sleep(5)
+            return(fetch_osm_trails(osm_bbox, trail_types, attempt + 1, max_attempts))
+          }
+          cli::cli_warn(c("OSM query failed: {e$message}", "i" = "Setting S1 = NA"))
+          return(NULL)
         }
-      },
-      error = function(e) {
-        cli::cli_warn(c("OSM query failed: {e$message}", "i" = "Setting S1 = NA"))
-        trails <- NULL
-      }
-    )
+      )
+    }
+
+    trails <- fetch_osm_trails(osm_bbox, trail_types)
+    if (!is.null(trails) && inherits(trails, "sf") && nrow(trails) > 0) {
+      msg_info("social_osm_fetched", nrow(trails))
+    }
   } else if (method == "local") {
     if (is.null(trails)) {
       stop("trails parameter required for method='local'", call. = FALSE)
