@@ -255,6 +255,8 @@
   "indicator_naturalness_continuity": "Continuité forestière",
   "indicator_naturalness_score": "Score de naturalité",
   "analysis": "Analyse",
+  "statistics_title": "Statistiques",
+  "comments_title": "Commentaires",
   "analysis_stats": "Statistiques descriptives",
   "analysis_comments": "Observations et critiques",
   "analysis_comments_placeholder": "Saisissez vos observations sur les résultats...",

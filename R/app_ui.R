@@ -434,26 +434,56 @@ mod_family_ui <- function(id, family_code) {
       )
     ),
 
-    # Plots (2 columns)
+    # Maps (half page)
     bslib::layout_columns(
       col_widths = c(6, 6),
       bslib::card(
         bslib::card_body(
-          shiny::plotOutput(ns("plot1"), height = "300px")
+          leaflet::leafletOutput(ns("map1"), height = "650px")
         )
       ),
       bslib::card(
         bslib::card_body(
-          shiny::plotOutput(ns("plot2"), height = "300px")
+          shiny::uiOutput(ns("plot2_ui"))
         )
       )
     ),
 
-    # Data table
-    bslib::card(
-      bslib::card_header(i18n$t("data_table")),
-      bslib::card_body(
-        shiny::tableOutput(ns("indicator_table"))
+    # Data table + Statistics + Comments (3 columns)
+    bslib::layout_columns(
+      col_widths = c(4, 4, 4),
+      bslib::card(
+        bslib::card_header(i18n$t("data_table")),
+        bslib::card_body(
+          shiny::tableOutput(ns("indicator_table"))
+        )
+      ),
+      bslib::card(
+        bslib::card_header(i18n$t("statistics_title")),
+        bslib::card_body(
+          shiny::uiOutput(ns("analysis_stats"))
+        )
+      ),
+      bslib::card(
+        bslib::card_header(
+          class = "d-flex justify-content-between align-items-center",
+          i18n$t("comments_title"),
+          shiny::actionButton(
+            ns("ai_generate"),
+            label = i18n$t("ai_generate"),
+            icon = shiny::icon("robot"),
+            class = "btn-outline-primary btn-sm"
+          )
+        ),
+        bslib::card_body(
+          shiny::textAreaInput(
+            ns("analysis_comments"),
+            label = NULL,
+            placeholder = i18n$t("analysis_comments_placeholder"),
+            rows = 5,
+            width = "100%"
+          )
+        )
       )
     ),
 
