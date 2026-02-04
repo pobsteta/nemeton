@@ -250,6 +250,65 @@ mod_synthesis_server <- function(id, app_state) {
     }, striped = TRUE, hover = TRUE, bordered = TRUE)
 
     # ================================================================
+    # AI ANALYSIS: Generate synthesis analysis via ellmer
+    # ================================================================
+    shiny::observeEvent(input$ai_generate, {
+      i18n <- get_i18n(app_state$language)
+
+      # Check API key for providers that require one
+      provider <- get_app_config("llm_provider", "anthropic")
+      key_var <- get_llm_api_key_var(provider)
+      if (!is.null(key_var) && nchar(Sys.getenv(key_var)) == 0) {
+        msg <- gsub("\\{key_var\\}", key_var, i18n$t("ai_no_api_key"))
+        shiny::showNotification(msg, type = "warning", duration = 8)
+        return()
+      }
+
+      sf_data <- family_scores()
+      if (is.null(sf_data)) return()
+
+      # Disable button during call
+      shiny::updateActionButton(session, "ai_generate",
+                                label = i18n$t("ai_generating"),
+                                icon = shiny::icon("spinner", class = "fa-spin"))
+
+      # Show notification while AI is thinking
+      notif_id <- shiny::showNotification(
+        htmltools::div(
+          shiny::icon("spinner", class = "fa-spin me-2"),
+          i18n$t("ai_generating")
+        ),
+        type = "message",
+        duration = NULL
+      )
+
+      language <- if (identical(app_state$language, "fr")) "fran\u00e7ais" else "English"
+      prompt <- build_synthesis_prompt(sf_data, language)
+      expert <- input$expert_profile %||% "generalist"
+      system_prompt <- build_system_prompt(language, expert = expert)
+
+      tryCatch({
+        chat <- create_llm_chat(system_prompt)
+        response <- chat$chat(prompt, echo = FALSE)
+
+        shiny::updateTextAreaInput(session, "synthesis_comments", value = response)
+        shiny::removeNotification(notif_id)
+      }, error = function(e) {
+        shiny::removeNotification(notif_id)
+        shiny::showNotification(
+          paste(i18n$t("ai_error"), ":", conditionMessage(e)),
+          type = "error",
+          duration = 8
+        )
+      })
+
+      # Restore button
+      shiny::updateActionButton(session, "ai_generate",
+                                label = i18n$t("ai_generate"),
+                                icon = shiny::icon("robot"))
+    })
+
+    # ================================================================
     # DOWNLOAD: GeoPackage export
     # ================================================================
     output$download_gpkg <- shiny::downloadHandler(

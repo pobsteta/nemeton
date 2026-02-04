@@ -319,6 +319,10 @@ TRANSLATIONS <- list(
     fr = "Saisissez vos observations sur les r\u00e9sultats...",
     en = "Enter your observations on the results..."
   ),
+  synthesis_comments_placeholder = list(
+    fr = "Saisissez vos observations sur la synth\u00e8se globale du projet...",
+    en = "Enter your observations on the overall project synthesis..."
+  ),
   stat_min = list(fr = "Min", en = "Min"),
   stat_max = list(fr = "Max", en = "Max"),
   stat_mean = list(fr = "Moyenne", en = "Mean"),

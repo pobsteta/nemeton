@@ -183,3 +183,64 @@ build_analysis_prompt <- function(family_config, ind_data, language) {
     paste(stats_lines, collapse = "\n")
   )
 }
+
+
+#' Build synthesis prompt for AI generation (all 12 families)
+#'
+#' @param family_scores_df data.frame. Family scores (family_C, family_B, ...).
+#' @param language Character. "fran\u00e7ais" or "English".
+#' @return Character string prompt.
+#' @noRd
+build_synthesis_prompt <- function(family_scores_df, language) {
+  if (inherits(family_scores_df, "sf")) {
+    family_scores_df <- sf::st_drop_geometry(family_scores_df)
+  }
+
+  n_parcels <- nrow(family_scores_df)
+  family_cols <- grep("^family_[A-Z]$", names(family_scores_df), value = TRUE)
+
+  # Build per-family stats summary
+  stats_lines <- vapply(family_cols, function(col) {
+    code <- sub("^family_", "", col)
+    fam <- INDICATOR_FAMILIES[[code]]
+    if (is.null(fam)) return(paste0("- ", col, ": unknown family"))
+    fam_name <- if (language == "fran\u00e7ais") fam$name_fr else fam$name_en
+
+    vals <- family_scores_df[[col]]
+    vals_clean <- vals[!is.na(vals)]
+    n <- length(vals_clean)
+    if (n == 0) return(paste0("- ", fam_name, " (", code, "): no data"))
+    mn <- round(min(vals_clean), 1)
+    mx <- round(max(vals_clean), 1)
+    avg <- round(mean(vals_clean), 1)
+    paste0("- ", fam_name, " (", code, "): mean=", avg,
+           ", min=", mn, ", max=", mx, " (n=", n, ")")
+  }, character(1))
+
+  # Global score
+  family_means <- vapply(family_cols, function(col) {
+    mean(family_scores_df[[col]], na.rm = TRUE)
+  }, numeric(1))
+  global <- round(mean(family_means, na.rm = TRUE), 1)
+
+  paste0(
+    if (language == "fran\u00e7ais") {
+      paste0("Analyse la synth\u00e8se globale du diagnostic N\u00e9m\u00e9ton pour ",
+             n_parcels, " parcelles.\n\n",
+             "Score global : ", global, "/100\n\n",
+             "Scores par famille :\n")
+    } else {
+      paste0("Analyze the overall N\u00e9m\u00e9ton diagnostic synthesis for ",
+             n_parcels, " parcels.\n\n",
+             "Global score: ", global, "/100\n\n",
+             "Scores by family:\n")
+    },
+    paste(stats_lines, collapse = "\n"),
+    "\n\n",
+    if (language == "fran\u00e7ais") {
+      "Identifie les points forts, faiblesses, antagonismes entre familles, et recommandations prioritaires."
+    } else {
+      "Identify strengths, weaknesses, antagonisms between families, and priority recommendations."
+    }
+  )
+}
