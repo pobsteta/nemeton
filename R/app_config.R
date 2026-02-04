@@ -42,7 +42,18 @@ APP_CONFIG <- list(
   project_states = c("draft", "downloading", "computing", "completed", "error"),
 
   # CRS
-  default_crs = 2154L  # Lambert 93
+  default_crs = 2154L,  # Lambert 93
+
+  # LLM settings
+  llm_provider = "anthropic",
+  llm_models = list(
+    anthropic = "claude-sonnet-4-5-20250929",
+    mistral = "mistral-large-latest",
+    openai = "gpt-4o",
+    google = "gemini-2.0-flash",
+    deepseek = "deepseek-chat",
+    ollama = "llama3.1"
+  )
 )
 
 

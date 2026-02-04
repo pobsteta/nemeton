@@ -94,79 +94,93 @@ mod_family_server <- function(id, family_code, app_state) {
     })
 
     # ================================================================
-    # OUTPUT: Plot 1 - Map of first indicator
+    # OUTPUT: Map 1 - Leaflet map of first indicator
     # ================================================================
-    output$plot1 <- shiny::renderPlot({
+    output$map1 <- leaflet::renderLeaflet({
       i18n <- get_i18n(app_state$language)
       sf_data <- indicators_sf()
 
       if (is.null(sf_data)) {
-        plot.new()
-        text(0.5, 0.5, i18n$t("no_data"), cex = 1.5, col = "gray50")
-        return()
+        return(leaflet::leaflet() |>
+          leaflet::addTiles() |>
+          leaflet::setView(lng = 2.5, lat = 46.5, zoom = 6))
       }
 
-      # Get first indicator column (skip id columns)
       ind_cols <- get_indicator_cols(sf_data)
       if (length(ind_cols) == 0) {
-        plot.new()
-        text(0.5, 0.5, i18n$t("no_data"), cex = 1.5, col = "gray50")
-        return()
+        return(leaflet::leaflet() |>
+          leaflet::addTiles() |>
+          leaflet::setView(lng = 2.5, lat = 46.5, zoom = 6))
       }
 
-      plot_indicators_map(
-        sf_data,
-        indicators = ind_cols[1],
-        palette = "viridis",
-        title = clean_indicator_label(ind_cols[1], i18n),
-        facet = FALSE
-      )
+      make_indicator_leaflet(sf_data, ind_cols[1],
+                             clean_indicator_label(ind_cols[1], i18n))
     })
 
     # ================================================================
-    # OUTPUT: Plot 2 - Map of 2nd indicator or barplot if only 1
+    # OUTPUT: Plot 2 UI - Leaflet map or barplot depending on indicators
     # ================================================================
-    output$plot2 <- shiny::renderPlot({
+    output$plot2_ui <- shiny::renderUI({
+      ns <- session$ns
       i18n <- get_i18n(app_state$language)
       sf_data <- indicators_sf()
 
       if (is.null(sf_data)) {
-        plot.new()
-        text(0.5, 0.5, i18n$t("no_data"), cex = 1.5, col = "gray50")
-        return()
+        return(htmltools::div(
+          class = "text-muted text-center p-4",
+          i18n$t("no_data")
+        ))
       }
 
       ind_cols <- get_indicator_cols(sf_data)
       if (length(ind_cols) == 0) {
-        plot.new()
-        text(0.5, 0.5, i18n$t("no_data"), cex = 1.5, col = "gray50")
-        return()
+        return(htmltools::div(
+          class = "text-muted text-center p-4",
+          i18n$t("no_data")
+        ))
       }
 
       if (length(ind_cols) >= 2) {
-        # Map of second indicator
-        plot_indicators_map(
-          sf_data,
-          indicators = ind_cols[2],
-          palette = "viridis",
-          title = clean_indicator_label(ind_cols[2], i18n),
-          facet = FALSE
-        )
+        leaflet::leafletOutput(ns("map2"), height = "650px")
       } else {
-        # Barplot of first indicator when only one exists
-        vals <- sf::st_drop_geometry(sf_data)
-        id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(vals))
-        labels <- if (length(id_col) > 0) vals[[id_col[1]]] else seq_len(nrow(vals))
-        barplot(
-          vals[[ind_cols[1]]],
-          names.arg = labels,
-          col = family_config$color,
-          main = clean_indicator_label(ind_cols[1], i18n),
-          ylab = ind_cols[1],
-          las = 2,
-          border = NA
-        )
+        shiny::plotOutput(ns("barplot1"), height = "650px")
       }
+    })
+
+    # Leaflet map for second indicator
+    output$map2 <- leaflet::renderLeaflet({
+      i18n <- get_i18n(app_state$language)
+      sf_data <- indicators_sf()
+      if (is.null(sf_data)) return(NULL)
+
+      ind_cols <- get_indicator_cols(sf_data)
+      if (length(ind_cols) < 2) return(NULL)
+
+      make_indicator_leaflet(sf_data, ind_cols[2],
+                             clean_indicator_label(ind_cols[2], i18n))
+    })
+
+    # Barplot fallback when only one indicator
+    output$barplot1 <- shiny::renderPlot({
+      i18n <- get_i18n(app_state$language)
+      sf_data <- indicators_sf()
+      if (is.null(sf_data)) return(NULL)
+
+      ind_cols <- get_indicator_cols(sf_data)
+      if (length(ind_cols) != 1) return(NULL)
+
+      vals <- sf::st_drop_geometry(sf_data)
+      id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(vals))
+      labels <- if (length(id_col) > 0) vals[[id_col[1]]] else seq_len(nrow(vals))
+      barplot(
+        vals[[ind_cols[1]]],
+        names.arg = labels,
+        col = family_config$color,
+        main = clean_indicator_label(ind_cols[1], i18n),
+        ylab = ind_cols[1],
+        las = 2,
+        border = NA
+      )
     })
 
     # ================================================================
@@ -187,6 +201,155 @@ mod_family_server <- function(id, family_code, app_state) {
 
       ind_data
     }, striped = TRUE, hover = TRUE, bordered = TRUE)
+
+    # ================================================================
+    # OUTPUT: Analysis - descriptive statistics + alerts
+    # ================================================================
+    output$analysis_stats <- shiny::renderUI({
+      i18n <- get_i18n(app_state$language)
+      ind_data <- indicators_data()
+      if (is.null(ind_data)) return(NULL)
+
+      if (inherits(ind_data, "sf")) {
+        ind_data <- sf::st_drop_geometry(ind_data)
+      }
+
+      ind_cols <- get_indicator_cols(ind_data)
+      if (length(ind_cols) == 0) return(NULL)
+
+      # Build stats table for each indicator
+      stats_rows <- lapply(ind_cols, function(col) {
+        vals <- ind_data[[col]]
+        n_total <- length(vals)
+        n_na <- sum(is.na(vals))
+        vals_clean <- vals[!is.na(vals)]
+        n <- length(vals_clean)
+
+        if (n == 0) return(NULL)
+
+        mn <- min(vals_clean)
+        mx <- max(vals_clean)
+        avg <- mean(vals_clean)
+        med <- stats::median(vals_clean)
+        sd_val <- if (n > 1) stats::sd(vals_clean) else 0
+        cv <- if (avg != 0) abs(sd_val / avg) * 100 else 0
+
+        label <- clean_indicator_label(col, i18n)
+
+        # Alerts
+        alerts <- list()
+        if (cv > 50) {
+          alerts <- c(alerts, list(htmltools::div(
+            class = "text-warning small",
+            shiny::icon("exclamation-triangle"),
+            " ", i18n$t("alert_high_variability")
+          )))
+        }
+        if (n_na > 0) {
+          msg <- gsub("\\{n\\}", n_na, gsub("\\{total\\}", n_total,
+                       i18n$t("alert_many_na")))
+          alerts <- c(alerts, list(htmltools::div(
+            class = "text-danger small",
+            shiny::icon("exclamation-circle"),
+            " ", msg
+          )))
+        }
+
+        htmltools::div(
+          class = "mb-3",
+          htmltools::tags$strong(label),
+          htmltools::tags$table(
+            class = "table table-sm table-borderless mb-1",
+            style = "font-size: 0.85em;",
+            htmltools::tags$tbody(
+              htmltools::tags$tr(
+                htmltools::tags$td(i18n$t("stat_n")),
+                htmltools::tags$td(class = "text-end", n),
+                htmltools::tags$td(i18n$t("stat_min")),
+                htmltools::tags$td(class = "text-end", round(mn, 3))
+              ),
+              htmltools::tags$tr(
+                htmltools::tags$td(i18n$t("stat_max")),
+                htmltools::tags$td(class = "text-end", round(mx, 3)),
+                htmltools::tags$td(i18n$t("stat_mean")),
+                htmltools::tags$td(class = "text-end", round(avg, 3))
+              ),
+              htmltools::tags$tr(
+                htmltools::tags$td(i18n$t("stat_median")),
+                htmltools::tags$td(class = "text-end", round(med, 3)),
+                htmltools::tags$td(i18n$t("stat_sd")),
+                htmltools::tags$td(class = "text-end", round(sd_val, 3))
+              )
+            )
+          ),
+          if (length(alerts) > 0) htmltools::tagList(alerts)
+        )
+      })
+
+      htmltools::div(
+        htmltools::tags$h6(
+          class = "text-muted mb-2",
+          shiny::icon("chart-bar"), " ", i18n$t("analysis_stats")
+        ),
+        htmltools::tagList(stats_rows)
+      )
+    })
+
+    # ================================================================
+    # AI ANALYSIS: Generate analysis via ellmer/Claude
+    # ================================================================
+    shiny::observeEvent(input$ai_generate, {
+      i18n <- get_i18n(app_state$language)
+
+      # Check API key for providers that require one
+      provider <- get_app_config("llm_provider", "anthropic")
+      key_var <- get_llm_api_key_var(provider)
+      if (!is.null(key_var) && nchar(Sys.getenv(key_var)) == 0) {
+        msg <- gsub("\\{key_var\\}", key_var, i18n$t("ai_no_api_key"))
+        shiny::showNotification(
+          msg,
+          type = "warning",
+          duration = 8
+        )
+        return()
+      }
+
+      ind_data <- indicators_data()
+      if (is.null(ind_data)) return()
+
+      # Disable button during call
+      shiny::updateActionButton(session, "ai_generate",
+                                label = i18n$t("ai_generating"),
+                                icon = shiny::icon("spinner", class = "fa-spin"))
+
+      language <- if (identical(app_state$language, "fr")) "fran\u00e7ais" else "English"
+      prompt <- build_analysis_prompt(family_config, ind_data, language)
+
+      system_prompt <- paste0(
+        "Tu es un expert en diagnostic forestier multifonctionnel (approche N\u00e9m\u00e9ton). ",
+        "N\u00e9m\u00e9ton \u00e9value 12 familles de services \u00e9cosyst\u00e9miques forestiers \u00e0 l'\u00e9chelle parcellaire. ",
+        "Fournis une analyse critique concise (3-5 phrases) : points forts, faiblesses, ",
+        "h\u00e9t\u00e9rog\u00e9n\u00e9it\u00e9 spatiale, recommandations de gestion. R\u00e9ponds en ", language, "."
+      )
+
+      tryCatch({
+        chat <- create_llm_chat(system_prompt)
+        response <- chat$chat(prompt, echo = FALSE)
+
+        shiny::updateTextAreaInput(session, "analysis_comments", value = response)
+      }, error = function(e) {
+        shiny::showNotification(
+          paste(i18n$t("ai_error"), ":", conditionMessage(e)),
+          type = "error",
+          duration = 8
+        )
+      })
+
+      # Restore button
+      shiny::updateActionButton(session, "ai_generate",
+                                label = i18n$t("ai_generate"),
+                                icon = shiny::icon("robot"))
+    })
 
     # ================================================================
     # OUTPUT: Missing indicators warning
@@ -266,6 +429,101 @@ mod_family_server <- function(id, family_code, app_state) {
 # HELPER FUNCTIONS
 # ================================================================
 
+#' Create an LLM chat object based on configured provider
+#'
+#' @description
+#' Factory function that reads `llm_provider` from app config and dispatches
+#' to the appropriate `ellmer::chat_*()` constructor.
+#'
+#' @param system_prompt Character. System prompt for the chat.
+#' @return An ellmer chat object.
+#' @noRd
+create_llm_chat <- function(system_prompt) {
+  provider <- get_app_config("llm_provider", "anthropic")
+  models <- get_app_config("llm_models", list())
+  model <- models[[provider]]
+
+  switch(provider,
+    anthropic = ellmer::chat_anthropic(system_prompt = system_prompt, model = model),
+    mistral = ellmer::chat_mistral(system_prompt = system_prompt, model = model),
+    openai = ellmer::chat_openai(system_prompt = system_prompt, model = model),
+    google = ellmer::chat_google_gemini(system_prompt = system_prompt, model = model),
+    deepseek = ellmer::chat_deepseek(system_prompt = system_prompt, model = model),
+    ollama = ellmer::chat_ollama(system_prompt = system_prompt, model = model),
+    stop(sprintf("Unknown LLM provider: '%s'", provider))
+  )
+}
+
+#' Get the environment variable name for an LLM provider's API key
+#'
+#' @param provider Character. Provider name.
+#' @return Character. Environment variable name, or NULL for providers without keys.
+#' @noRd
+get_llm_api_key_var <- function(provider) {
+  key_map <- list(
+    anthropic = "ANTHROPIC_API_KEY",
+    mistral = "MISTRAL_API_KEY",
+    openai = "OPENAI_API_KEY",
+    google = "GOOGLE_API_KEY",
+    deepseek = "DEEPSEEK_API_KEY"
+  )
+  key_map[[provider]]
+}
+
+#' Create a Leaflet choropleth map for an indicator column
+#' @param sf_data An sf object with indicator data and geometries.
+#' @param ind_col Character. Column name of the indicator to map.
+#' @param title Character. Title for the legend.
+#' @return A leaflet map object.
+#' @noRd
+make_indicator_leaflet <- function(sf_data, ind_col, title) {
+  # Transform to WGS84 for Leaflet
+  sf_wgs84 <- sf::st_transform(sf_data, 4326)
+
+  vals <- sf_wgs84[[ind_col]]
+
+  # Handle case where all values are NA
+  if (all(is.na(vals))) {
+    return(leaflet::leaflet(sf_wgs84) |>
+      leaflet::addTiles() |>
+      leaflet::addPolygons(color = "#999", weight = 1, fillOpacity = 0.3))
+  }
+
+  pal <- leaflet::colorNumeric("viridis", domain = vals, na.color = "#cccccc")
+
+  # Build hover labels
+  id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(sf_wgs84))
+  ids <- if (length(id_col) > 0) sf_wgs84[[id_col[1]]] else seq_len(nrow(sf_wgs84))
+  labels <- sprintf("<strong>%s</strong><br/>%s: %s",
+                    ids, title, round(vals, 3)) |>
+    lapply(htmltools::HTML)
+
+  leaflet::leaflet(sf_wgs84) |>
+    leaflet::addTiles() |>
+    leaflet::addPolygons(
+      fillColor = ~pal(vals),
+      weight = 1,
+      color = "#333",
+      fillOpacity = 0.7,
+      highlightOptions = leaflet::highlightOptions(
+        weight = 2, color = "#000", fillOpacity = 0.9, bringToFront = TRUE
+      ),
+      label = labels,
+      labelOptions = leaflet::labelOptions(
+        style = list("font-size" = "12px", "padding" = "4px 8px"),
+        textsize = "12px",
+        direction = "auto"
+      )
+    ) |>
+    leaflet::addLegend(
+      position = "bottomright",
+      pal = pal,
+      values = vals,
+      title = title,
+      opacity = 0.7
+    )
+}
+
 #' Get indicator columns from an sf/data.frame (exclude id/geometry cols)
 #' @noRd
 get_indicator_cols <- function(data) {
@@ -274,6 +532,46 @@ get_indicator_cols <- function(data) {
                 "nomcommune", "codecommune", "area", "surface_geo")
   setdiff(all_cols, exclude)
 }
+
+#' Build analysis prompt for AI generation
+#'
+#' @param family_config List. Family configuration from INDICATOR_FAMILIES.
+#' @param ind_data data.frame. Indicator data for the family.
+#' @param language Character. "français" or "English".
+#' @return Character string prompt.
+#' @noRd
+build_analysis_prompt <- function(family_config, ind_data, language) {
+  if (inherits(ind_data, "sf")) {
+    ind_data <- sf::st_drop_geometry(ind_data)
+  }
+
+  family_name <- if (language == "fran\u00e7ais") family_config$name_fr else family_config$name_en
+  ind_cols <- get_indicator_cols(ind_data)
+  n_parcels <- nrow(ind_data)
+
+  # Build per-indicator stats summary
+  stats_lines <- vapply(ind_cols, function(col) {
+    vals <- ind_data[[col]]
+    vals_clean <- vals[!is.na(vals)]
+    n <- length(vals_clean)
+    if (n == 0) return(paste0("- ", col, ": no data"))
+    mn <- round(min(vals_clean), 3)
+    mx <- round(max(vals_clean), 3)
+    avg <- round(mean(vals_clean), 3)
+    sd_val <- if (n > 1) round(stats::sd(vals_clean), 3) else 0
+    cv <- if (avg != 0) round(abs(sd_val / avg) * 100, 1) else 0
+    paste0("- ", col, ": n=", n, ", min=", mn, ", max=", mx,
+           ", mean=", avg, ", sd=", sd_val, ", CV=", cv, "%")
+  }, character(1))
+
+  paste0(
+    "Analyse les r\u00e9sultats de la famille ", family_name,
+    " (code: ", family_config$code, ") pour ", n_parcels, " parcelles.\n\n",
+    "Statistiques des indicateurs :\n",
+    paste(stats_lines, collapse = "\n")
+  )
+}
+
 
 #' Clean indicator label for display
 #' @noRd

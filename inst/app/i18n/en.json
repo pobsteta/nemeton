@@ -253,5 +253,22 @@
   "indicator_energy_co2": "CO2 Avoidance",
   "indicator_naturalness_distance": "Infrastructure Distance",
   "indicator_naturalness_continuity": "Forest Continuity",
-  "indicator_naturalness_score": "Naturalness Score"
+  "indicator_naturalness_score": "Naturalness Score",
+  "analysis": "Analysis",
+  "analysis_stats": "Descriptive Statistics",
+  "analysis_comments": "Observations and Critiques",
+  "analysis_comments_placeholder": "Enter your observations on the results...",
+  "stat_min": "Min",
+  "stat_max": "Max",
+  "stat_mean": "Mean",
+  "stat_median": "Median",
+  "stat_sd": "Std Dev",
+  "stat_n": "Parcels",
+  "stat_na": "Missing values",
+  "alert_high_variability": "High variability detected (CV > 50%)",
+  "alert_many_na": "Warning: {n} missing values out of {total}",
+  "ai_generate": "Generate AI Analysis",
+  "ai_generating": "Analyzing...",
+  "ai_error": "AI analysis error",
+  "ai_no_api_key": "API key not configured. Set the {key_var} environment variable."
 }
