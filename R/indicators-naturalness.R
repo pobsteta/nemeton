@@ -99,27 +99,35 @@ indicator_naturalness_continuity <- function(units,
 
   result <- units
 
+  # Project to metric CRS for buffer (connectivity_distance is in metres)
+  orig_crs <- sf::st_crs(units)
+  if (sf::st_is_longlat(units)) {
+    units_m <- sf::st_transform(units, 2154)
+  } else {
+    units_m <- units
+  }
+
   # Repair invalid geometries (duplicate vertices, degenerate edges)
-  units_valid <- sf::st_make_valid(units)
+  units_m <- sf::st_make_valid(units_m)
 
   # Simplified: assume units are forest patches
   # Production version would extract forest from land cover, buffer, and dissolve
-  buffered <- sf::st_buffer(units_valid, dist = connectivity_distance)
+  buffered <- sf::st_make_valid(sf::st_buffer(units_m, dist = connectivity_distance))
   dissolved <- sf::st_union(buffered)
   patches <- sf::st_cast(dissolved, "POLYGON")
 
-  # Assign each unit to its patch
+  # Assign each unit to its patch (use metric geometries)
   patch_areas <- numeric(nrow(units))
-  for (i in seq_len(nrow(units))) {
+  for (i in seq_len(nrow(units_m))) {
     # Find which patch contains this unit
-    intersects <- sf::st_intersects(units[i, ], patches, sparse = FALSE)
+    intersects <- sf::st_intersects(units_m[i, ], patches, sparse = FALSE)
     if (any(intersects)) {
       patch_idx <- which(intersects)[1]
       patch_area_m2 <- as.numeric(sf::st_area(patches[patch_idx]))
       patch_areas[i] <- patch_area_m2 / 10000 # Convert to hectares
     } else {
       # Isolated unit
-      patch_areas[i] <- as.numeric(sf::st_area(units[i, ])) / 10000
+      patch_areas[i] <- as.numeric(sf::st_area(units_m[i, ])) / 10000
     }
   }
 
