@@ -483,7 +483,7 @@ indicator_biodiversity_connectivity <- function(units,
   study_bbox <- sf::st_bbox(units)
   study_buffer <- sf::st_buffer(sf::st_as_sfc(study_bbox), 2000)
   bdforet_local <- tryCatch(
-    sf::st_intersection(bdforet, study_buffer),
+    suppressWarnings(sf::st_intersection(bdforet, study_buffer)),
     error = function(e) bdforet
   )
   # Remove empty geometries

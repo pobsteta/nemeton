@@ -759,7 +759,10 @@ download_vector_source <- function(source_name,
 
   # Return cached if exists
   if (file.exists(cache_file)) {
-    return(sf::st_read(cache_file, quiet = TRUE))
+    cached <- sf::st_read(cache_file, quiet = TRUE)
+    # Drop Z/M coordinates (BD TOPO 3D data causes s2 warnings)
+    cached <- sf::st_zm(cached, drop = TRUE, what = "ZM")
+    return(cached)
   }
 
   # Download based on source type
@@ -983,6 +986,9 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
       cli::cli_alert_warning("No IGN BD TOPO features found for {layer_name}")
       return(NULL)
     }
+
+    # Drop Z/M coordinates (BD TOPO is 3D, s2 engine only supports 2D)
+    result <- sf::st_zm(result, drop = TRUE, what = "ZM")
 
     # Project to Lambert-93
     result <- sf::st_transform(result, 2154)

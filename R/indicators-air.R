@@ -201,6 +201,18 @@ indicator_air_quality <- function(units,
     roads <- resolve_vector_layer(layers, "roads")
   }
 
+  # Harmonize CRS: project roads and atmo_data to same CRS as units
+  if (!is.null(roads) && inherits(roads, "sf")) {
+    if (!identical(sf::st_crs(roads), sf::st_crs(units))) {
+      roads <- sf::st_transform(roads, sf::st_crs(units))
+    }
+  }
+  if (!is.null(atmo_data) && inherits(atmo_data, "sf")) {
+    if (!identical(sf::st_crs(atmo_data), sf::st_crs(units))) {
+      atmo_data <- sf::st_transform(atmo_data, sf::st_crs(units))
+    }
+  }
+
   # Auto-detect method
   if (method == "auto") {
     if (!is.null(atmo_data) && inherits(atmo_data, "sf")) {
