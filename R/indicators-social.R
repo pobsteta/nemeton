@@ -1,8 +1,8 @@
 #' Social & Recreational Services Indicators (Family S)
 #'
 #' Functions for calculating social and recreational use indicators:
-#' - S1: Trail density (recreational infrastructure)
-#' - S2: Multimodal accessibility (public access potential)
+#' - S1: Distance to roads (accessibility via road network)
+#' - S2: Distance to buildings (proximity to built areas)
 #' - S3: Population proximity (visitor pressure potential)
 #'
 #' @name indicators-social
@@ -10,63 +10,45 @@
 #' @family indicators
 NULL
 
-#' S1: Trail Density Indicator
+#' S1: Distance to Roads Indicator
 #'
-#' Calculates the density of recreational trails (pedestrian, cycling, equestrian)
-#' within or near spatial units using OpenStreetMap or local trail datasets.
+#' Calculates the mean distance (in metres) from each spatial unit to the
+#' nearest road, using rasterized road data and \code{terra::distance()}.
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
-#' @param trails sf object (LINESTRING) of trail network. If NULL and method="osm", fetches from OSM.
-#' @param method Character. Data source: "osm" (OpenStreetMap) or "local". Default "osm".
-#' @param osm_bbox Numeric vector (xmin, ymin, xmax, ymax) for OSM query. Auto-detected if NULL.
-#' @param trail_types Character vector. OSM highway tags: c("path", "footway", "cycleway", "bridleway"). Default all.
-#' @param buffer_m Numeric. Buffer distance (m) around units to include nearby trails. Default 0 (within units only).
+#' @param roads sf object (LINESTRING) of road network. If NULL, resolved from layers.
+#' @param dem SpatRaster. Digital elevation model used as reference grid.
+#'   If NULL, resolved from layers.
+#' @param layers A nemeton_layers object (optional). Used to resolve roads/dem
+#'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S1".
 #' @param lang Character. Message language ("en" or "fr"). Default "en".
 #'
-#' @return sf object with added column: S1 (trail density in km/ha)
+#' @return sf object with added column: S1 (mean distance to nearest road in metres)
 #'
 #' @details
-#' **Calculation**:
+#' **Calculation** (tuto 03 method):
 #' \itemize{
-#'   \item Extract or fetch trail network (OSM or local)
-#'   \item Clip trails to unit boundaries (+ optional buffer)
-#'   \item Calculate total trail length within each unit
-#'   \item Normalize by unit area: \code{S1 = trail_length_km / area_ha}
+#'   \item Rasterize road geometries onto the DEM grid
+#'   \item Compute distance raster via \code{terra::distance()}
+#'   \item Extract mean distance per spatial unit
 #' }
 #'
-#' **Trail Types** (OSM highway tags):
-#' \itemize{
-#'   \item path: Unpaved footpaths
-#'   \item footway: Paved pedestrian paths
-#'   \item cycleway: Dedicated bike paths
-#'   \item bridleway: Equestrian trails
-#' }
+#' Returns NA when DEM or roads are unavailable.
 #'
 #' @export
 #' @examples
 #' \dontrun{
-#' # Using OpenStreetMap
-#' result <- indicator_social_trails(
-#'   units = massif_demo_units,
-#'   method = "osm",
-#'   trail_types = c("path", "footway", "cycleway")
-#' )
-#'
-#' # Using local trail data with buffer
 #' result <- indicator_social_trails(
 #'   units = parcels,
-#'   trails = local_trails_sf,
-#'   method = "local",
-#'   buffer_m = 100
+#'   roads = roads_sf,
+#'   dem = dem_raster
 #' )
 #' }
 indicator_social_trails <- function(units,
-                                    trails = NULL,
-                                    method = c("osm", "local"),
-                                    osm_bbox = NULL,
-                                    trail_types = c("path", "footway", "cycleway", "bridleway"),
-                                    buffer_m = 0,
+                                    roads = NULL,
+                                    dem = NULL,
+                                    layers = NULL,
                                     column_name = "S1",
                                     lang = "en") {
   # Validate inputs
@@ -74,175 +56,82 @@ indicator_social_trails <- function(units,
     stop("units must be an sf object", call. = FALSE)
   }
 
-  method <- match.arg(method)
-
-  # Check dependencies
-  if (method == "osm") {
-    if (!requireNamespace("osmdata", quietly = TRUE)) {
-      cli::cli_alert_warning("S1: osmdata package not available, returning 0")
-      result <- units
-      result[[column_name]] <- rep(0, nrow(units))
-      return(result)
-    }
+  # Resolve roads from layers if not provided
+ if (is.null(roads) && !is.null(layers)) {
+    roads <- resolve_vector_layer(layers, "roads")
   }
 
-  # Acquire trail data
-  if (method == "osm") {
-    msg_info("social_osm_fetching")
-
-    # Auto-detect bbox if not provided
-    if (is.null(osm_bbox)) {
-      osm_bbox <- get_osm_bbox(units, buffer_m = 1000)
-    }
-
-    # Query OSM for trails (with retry on timeout)
-    fetch_osm_trails <- function(osm_bbox, trail_types, attempt = 1, max_attempts = 2) {
-      tryCatch(
-        {
-          osm_query <- osmdata::opq(bbox = osm_bbox, timeout = 120)
-
-          # Query each trail type and combine
-          trails_list <- list()
-          for (trail_type in trail_types) {
-            osm_result <- osm_query |>
-              osmdata::add_osm_feature(key = "highway", value = trail_type) |>
-              osmdata::osmdata_sf()
-
-            if (!is.null(osm_result$osm_lines) && nrow(osm_result$osm_lines) > 0) {
-              trails_list[[trail_type]] <- osm_result$osm_lines
-            }
-          }
-
-          if (length(trails_list) == 0) {
-            cli::cli_warn("No trails found in OSM for specified types")
-            return(sf::st_sfc(crs = sf::st_crs(units)))
-          }
-
-          # Combine all trail types (keep only geometry, columns may differ)
-          combined <- do.call(c, lapply(trails_list, sf::st_geometry))
-          combined <- sf::st_sf(geometry = combined, crs = sf::st_crs(trails_list[[1]]))
-          sf::st_transform(combined, crs = sf::st_crs(units))
-        },
-        error = function(e) {
-          if (attempt < max_attempts && grepl("timeout|504|429", e$message, ignore.case = TRUE)) {
-            cli::cli_alert_info("S1: OSM timeout, retrying ({attempt + 1}/{max_attempts})...")
-            Sys.sleep(5)
-            return(fetch_osm_trails(osm_bbox, trail_types, attempt + 1, max_attempts))
-          }
-          cli::cli_warn(c("OSM query failed: {e$message}", "i" = "Setting S1 = NA"))
-          return(NULL)
-        }
-      )
-    }
-
-    trails <- fetch_osm_trails(osm_bbox, trail_types)
-    if (!is.null(trails) && inherits(trails, "sf") && nrow(trails) > 0) {
-      msg_info("social_osm_fetched", nrow(trails))
-    }
-  } else if (method == "local") {
-    if (is.null(trails)) {
-      stop("trails parameter required for method='local'", call. = FALSE)
-    }
-
-    if (!inherits(trails, "sf")) {
-      stop("trails must be an sf object (LINESTRING)", call. = FALSE)
-    }
-
-    # Transform to match units CRS
-    trails <- sf::st_transform(trails, crs = sf::st_crs(units))
+  # Resolve DEM from layers if not provided
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- resolve_raster_layer(layers, "dem")
+    if (is.null(dem)) dem <- resolve_raster_layer(layers, "lidar_mnt")
   }
 
-  # Calculate S1 for each unit
   result <- units
-  s1_values <- numeric(nrow(units))
 
-  if (is.null(trails) || nrow(trails) == 0) {
-    # No trails data - set to NA or 0
-    s1_values <- rep(0, nrow(units))
-  } else {
-    # Apply buffer if specified
-    if (buffer_m > 0) {
-      units_buffered <- sf::st_buffer(units, dist = buffer_m)
-    } else {
-      units_buffered <- units
-    }
-
-    # Calculate trail length within each unit
-    for (i in seq_len(nrow(units))) {
-      unit_geom <- units_buffered[i, ]
-
-      # Clip trails to unit
-      trails_in_unit <- suppressWarnings(sf::st_intersection(trails, unit_geom))
-
-      if (nrow(trails_in_unit) > 0) {
-        # Calculate total trail length (in meters)
-        trail_length_m <- sum(sf::st_length(trails_in_unit), na.rm = TRUE)
-        trail_length_km <- as.numeric(trail_length_m) / 1000
-
-        # Calculate unit area (in hectares)
-        unit_area_m2 <- as.numeric(sf::st_area(units[i, ]))
-        unit_area_ha <- unit_area_m2 / 10000
-
-        # S1 = km of trails per hectare
-        s1_values[i] <- trail_length_km / unit_area_ha
-
-        msg_info("social_trails_detected", trail_length_km, s1_values[i])
-      } else {
-        s1_values[i] <- 0
-      }
-    }
+  # Fallback: no DEM or no roads → NA
+  if (is.null(dem) || is.null(roads) || nrow(roads) == 0) {
+    cli::cli_alert_warning("S1: DEM or roads unavailable, returning NA")
+    result[[column_name]] <- rep(NA_real_, nrow(units))
+    return(result)
   }
 
-  # Add to result
-  result[[column_name]] <- s1_values
+  # Rasterize roads onto DEM grid
+  roads_vect <- terra::vect(sf::st_transform(roads, terra::crs(dem)))
+  roads_rast <- terra::rasterize(roads_vect, dem, field = 1, background = NA)
 
-  cli::cli_alert_success("Calculated {column_name}: Trail density (km/ha)")
+  # Compute distance to nearest road (metres)
+  s1_raster <- terra::distance(roads_rast)
+
+  # Extract mean distance per unit
+  s1_values <- safe_extract(s1_raster, units, fun = "mean", progress = FALSE)
+
+  result[[column_name]] <- as.numeric(s1_values)
+
+  cli::cli_alert_success("Calculated {column_name}: Distance to roads (m)")
 
   return(result)
 }
 
-#' S2: Multimodal Accessibility Indicator
+#' S2: Distance to Buildings Indicator
 #'
-#' Calculates an accessibility score based on proximity to roads, public transport,
-#' and cycling infrastructure. Higher scores indicate better public access potential.
+#' Calculates the mean distance (in metres) from each spatial unit to the
+#' nearest building, using rasterized building data and \code{terra::distance()}.
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
-#' @param roads sf object (LINESTRING) of road network. If NULL and method="osm", fetches from OSM.
-#' @param transit_stops sf object (POINT) of public transport stops. Optional.
-#' @param method Character. Data source: "osm" (OpenStreetMap) or "local". Default "osm".
-#' @param osm_bbox Numeric vector for OSM query. Auto-detected if NULL.
-#' @param road_types Character vector. OSM highway tags: c("primary", "secondary", "tertiary"). Default all.
-#' @param weights Named numeric vector. Weights for components: c(road = 0.5, transit = 0.3, cycling = 0.2). Default balanced.
+#' @param buildings sf object (POLYGON) of buildings. If NULL, resolved from layers.
+#' @param dem SpatRaster. Digital elevation model used as reference grid.
+#'   If NULL, resolved from layers.
+#' @param layers A nemeton_layers object (optional). Used to resolve buildings/dem
+#'   when not provided directly.
 #' @param column_name Character. Name for output column. Default "S2".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added column: S2 (accessibility score 0-100)
+#' @return sf object with added column: S2 (mean distance to nearest building in metres)
 #'
 #' @details
-#' **Calculation**:
+#' **Calculation** (tuto 03 method):
 #' \itemize{
-#'   \item Road accessibility: Inverse distance to nearest road (closer = higher)
-#'   \item Transit accessibility: Count of transit stops within 1km buffer
-#'   \item Cycling accessibility: Presence of cycling infrastructure
-#'   \item Weighted composite: \code{S2 = (w1×road + w2×transit + w3×cycling)}
+#'   \item Rasterize building geometries onto the DEM grid
+#'   \item Compute distance raster via \code{terra::distance()}
+#'   \item Extract mean distance per spatial unit
 #' }
+#'
+#' Returns NA when DEM or buildings are unavailable.
 #'
 #' @export
 #' @examples
 #' \dontrun{
 #' result <- indicator_social_accessibility(
-#'   units = massif_demo_units,
-#'   method = "osm",
-#'   weights = c(road = 0.6, transit = 0.2, cycling = 0.2)
+#'   units = parcels,
+#'   buildings = buildings_sf,
+#'   dem = dem_raster
 #' )
 #' }
 indicator_social_accessibility <- function(units,
-                                           roads = NULL,
-                                           transit_stops = NULL,
-                                           method = c("osm", "local"),
-                                           osm_bbox = NULL,
-                                           road_types = c("primary", "secondary", "tertiary", "unclassified"),
-                                           weights = c(road = 0.5, transit = 0.3, cycling = 0.2),
+                                           buildings = NULL,
+                                           dem = NULL,
+                                           layers = NULL,
                                            column_name = "S2",
                                            lang = "en") {
   # Validate inputs
@@ -250,30 +139,39 @@ indicator_social_accessibility <- function(units,
     stop("units must be an sf object", call. = FALSE)
   }
 
-  method <- match.arg(method)
+  # Resolve buildings from layers if not provided
+  if (is.null(buildings) && !is.null(layers)) {
+    buildings <- resolve_vector_layer(layers, "buildings")
+  }
 
-  # Simplified accessibility calculation (road distance proxy)
-  # Full implementation would integrate transit and cycling data
+  # Resolve DEM from layers if not provided
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- resolve_raster_layer(layers, "dem")
+    if (is.null(dem)) dem <- resolve_raster_layer(layers, "lidar_mnt")
+  }
 
-  # Calculate centroids
-  centroids <- suppressWarnings(sf::st_centroid(units))
-
-  # For now, use a simplified proxy based on unit area and location
-  # (In production, would query actual road/transit data)
   result <- units
 
-  # Placeholder calculation - score based on area (smaller = more accessible)
-  unit_areas <- as.numeric(sf::st_area(units)) / 10000 # hectares
-  accessibility_scores <- pmin(100, 100 * exp(-unit_areas / 100))
+  # Fallback: no DEM or no buildings → NA
+  if (is.null(dem) || is.null(buildings) || nrow(buildings) == 0) {
+    cli::cli_alert_warning("S2: DEM or buildings unavailable, returning NA")
+    result[[column_name]] <- rep(NA_real_, nrow(units))
+    return(result)
+  }
 
-  result[[column_name]] <- accessibility_scores
+  # Rasterize buildings onto DEM grid
+  bat_vect <- terra::vect(sf::st_transform(buildings, terra::crs(dem)))
+  bat_rast <- terra::rasterize(bat_vect, dem, field = 1, background = NA)
 
-  msg_info(
-    "social_accessibility_scored", mean(accessibility_scores, na.rm = TRUE),
-    mean(accessibility_scores, na.rm = TRUE), mean(accessibility_scores, na.rm = TRUE)
-  )
+  # Compute distance to nearest building (metres)
+  s2_raster <- terra::distance(bat_rast)
 
-  cli::cli_alert_success("Calculated {column_name}: Multimodal accessibility (0-100)")
+  # Extract mean distance per unit
+  s2_values <- safe_extract(s2_raster, units, fun = "mean", progress = FALSE)
+
+  result[[column_name]] <- as.numeric(s2_values)
+
+  cli::cli_alert_success("Calculated {column_name}: Distance to buildings (m)")
 
   return(result)
 }

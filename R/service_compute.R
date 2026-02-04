@@ -105,7 +105,13 @@ DATA_SOURCES <- list(
       name = "Roads",
       type = "vector",
       source = "ign_bd_topo",
-      required_for = c("naturalness_distance", "social_accessibility")
+      required_for = c("naturalness_distance", "social_trails")
+    ),
+    buildings = list(
+      name = "Buildings",
+      type = "vector",
+      source = "ign_bd_topo",
+      required_for = c("social_accessibility")
     ),
     bdforet = list(
       name = "BD For\u00eat V2 (IGN)",
@@ -507,6 +513,7 @@ download_layers_for_parcels <- function(parcels,
     water_surfaces = "source_water_surfaces",
     wetlands = "source_wetlands",
     roads = "source_roads",
+    buildings = "source_buildings",
     bdforet = "source_bdforet"
   )
 
@@ -938,13 +945,13 @@ download_inpn_wfs <- function(layer_name, bbox, cache_file) {
 }
 
 
-#' Download IGN BD TOPO data (roads, water network)
+#' Download IGN BD TOPO data (roads, water network, buildings)
 #'
 #' @description
 #' Downloads vector data from IGN Geoplateforme WFS service.
 #'
 #' @param layer_name Character. Name of the layer to download.
-#'   Supported: "roads", "water_network"
+#'   Supported: "roads", "water_network", "buildings"
 #' @param bbox Numeric vector or sf bbox. Bounding box in WGS84.
 #' @param cache_file Character. Path to save the downloaded data.
 #'
@@ -962,7 +969,8 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
   layer_mapping <- list(
     roads = "BDTOPO_V3:troncon_de_route",
     water_network = "BDTOPO_V3:troncon_hydrographique",
-    water_surfaces = "BDTOPO_V3:surface_hydrographique"
+    water_surfaces = "BDTOPO_V3:surface_hydrographique",
+    buildings = "BDTOPO_V3:batiment"
   )
 
   typename <- layer_mapping[[layer_name]]
@@ -2215,6 +2223,10 @@ compute_single_indicator <- function(indicator, parcels, layers) {
     if ("roads" %in% func_args) {
       roads <- resolve_vector_layer(layers, "roads")
       if (!is.null(roads)) args$roads <- roads
+    }
+    if ("buildings" %in% func_args) {
+      buildings <- resolve_vector_layer(layers, "buildings")
+      if (!is.null(buildings)) args$buildings <- buildings
     }
     if ("bdforet" %in% func_args) {
       bd <- resolve_vector_layer(layers, "bdforet")

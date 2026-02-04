@@ -280,13 +280,9 @@ msg_error <- function(key, ...) {
     correlation_matrix_plotting = "Creating correlation matrix heatmap",
 
     # v0.4.0 - Family S: Social & Recreational/Usages r\u00e9cr\u00e9atifs
-    indicator_social_trails = "Trail density (S: Social & Recreational)",
-    indicator_social_accessibility = "Multimodal accessibility (S: Social & Recreational)",
+    indicator_social_trails = "Distance to roads (S: Social & Recreational)",
+    indicator_social_accessibility = "Distance to buildings (S: Social & Recreational)",
     indicator_social_proximity = "Population proximity (S: Social & Recreational)",
-    social_trails_detected = "Detected %0.1f km of trails (density: %0.2f km/ha)",
-    social_osm_fetching = "Fetching trail data from OpenStreetMap...",
-    social_osm_fetched = "Retrieved %d trail features",
-    social_accessibility_scored = "Accessibility score: %0.1f/100 (road=%0.1f, transit=%0.1f)",
     social_population_calculated = "Population within buffers: 5km=%d, 10km=%d, 20km=%d",
 
     # v0.4.0 - Family P: Productive & Economic/Productif
@@ -503,13 +499,9 @@ msg_error <- function(key, ...) {
     correlation_matrix_plotting = "Cr\u00e9ation heatmap matrice de corr\u00e9lation",
 
     # v0.4.0 - Famille S : Social & Usages r\u00e9cr\u00e9atifs
-    indicator_social_trails = "Densit\u00e9 de sentiers (S : Social & Usages r\u00e9cr\u00e9atifs)",
-    indicator_social_accessibility = "Accessibilit\u00e9 multimodale (S : Social & Usages r\u00e9cr\u00e9atifs)",
+    indicator_social_trails = "Distance aux routes (S : Social & Usages r\u00e9cr\u00e9atifs)",
+    indicator_social_accessibility = "Distance aux b\u00e2timents (S : Social & Usages r\u00e9cr\u00e9atifs)",
     indicator_social_proximity = "Proximit\u00e9 de population (S : Social & Usages r\u00e9cr\u00e9atifs)",
-    social_trails_detected = "%0.1f km de sentiers d\u00e9tect\u00e9s (densit\u00e9 : %0.2f km/ha)",
-    social_osm_fetching = "R\u00e9cup\u00e9ration donn\u00e9es sentiers OpenStreetMap...",
-    social_osm_fetched = "%d entit\u00e9s sentiers r\u00e9cup\u00e9r\u00e9es",
-    social_accessibility_scored = "Score accessibilit\u00e9 : %0.1f/100 (route=%0.1f, transports=%0.1f)",
     social_population_calculated = "Population dans les buffers : 5km=%d, 10km=%d, 20km=%d",
 
     # v0.4.0 - Famille P : Productif & \u00c9conomie foresti\u00e8re

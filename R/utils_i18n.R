@@ -521,6 +521,7 @@ TRANSLATIONS <- list(
   source_water_surfaces = list(fr = "Surfaces hydrographiques (IGN)", en = "Water Surfaces (IGN)"),
   source_wetlands = list(fr = "Zones humides (ZNIEFF)", en = "Wetlands (ZNIEFF)"),
   source_roads = list(fr = "R\u00e9seau routier (IGN)", en = "Road Network (IGN)"),
+  source_buildings = list(fr = "B\u00e2timents (BD TOPO)", en = "Buildings (BD TOPO)"),
   source_bdforet = list(fr = "BD For\u00eat V2 - Formations v\u00e9g\u00e9tales (IGN)", en = "BD For\u00eat V2 - Vegetation Formations (IGN)"),
   source_lidar_mnh = list(fr = "Hauteur de canop\u00e9e LiDAR HD (IGN)", en = "Canopy Height Model LiDAR HD (IGN)"),
   source_lidar_mnt = list(fr = "Mod\u00e8le Num\u00e9rique de Terrain LiDAR HD (IGN)", en = "Digital Terrain Model LiDAR HD (IGN)"),

@@ -1434,30 +1434,31 @@ indicator_naturalness_score <- function(units, ...) {
 
 #' @noRd
 indicator_production_volume <- function(units, layers = NULL, ...) {
-  # P1: Timber volume - prefer LiDAR MNH, fallback to NDVI
+  # P1: Standing timber volume (m3/ha) — tutorial 02 formula
+  # P1 = k_volume * (pzabove2/100) * zmean * sqrt(zmax)
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
-    # Strategy 1: Use LiDAR MNH (Canopy Height Model) for volume estimation
     mnh_raster <- resolve_raster_layer(layers, "lidar_mnh")
     if (!is.null(mnh_raster)) {
-      cli::cli_alert_info("P1: Estimating timber volume from LiDAR MNH")
+      cli::cli_alert_info("P1: Estimating volume from LiDAR MNH (tuto 02)")
       units_sf <- as_pure_sf(units)
-      mnh_mean <- safe_extract(mnh_raster, units_sf,
+      zmean <- safe_extract(mnh_raster, units_sf,
         fun = "mean", progress = FALSE)
-      # Height-to-volume relationship (temperate forests, approximate)
-      # Typical: H=10m -> ~100 m3/ha, H=20m -> ~300 m3/ha, H=30m -> ~500 m3/ha
-      # Using: V = 0.55 * H^1.8 (simplified power model)
-      volume <- 0.55 * pmax(0, mnh_mean)^1.8
-      return(volume)
+      zmax <- safe_extract(mnh_raster, units_sf,
+        fun = "max", progress = FALSE)
+      mnh_above2 <- mnh_raster > 2
+      pzabove2 <- safe_extract(mnh_above2, units_sf,
+        fun = "mean", progress = FALSE) * 100
+      k_volume <- 15
+      volume <- k_volume * (pzabove2 / 100) * pmax(0, zmean) * sqrt(pmax(0, zmax))
+      return(as.numeric(volume))
     }
 
-    # Strategy 2: Fallback to NDVI
+    # Fallback: NDVI proxy
     ndvi_raster <- resolve_raster_layer(layers, "ndvi")
     if (!is.null(ndvi_raster)) {
-      cli::cli_alert_info("P1: Estimating timber volume from NDVI")
+      cli::cli_alert_info("P1: Estimating timber volume from NDVI (fallback)")
       ndvi_mean <- safe_extract(ndvi_raster,
-        as_pure_sf(units), fun = "mean", progress = FALSE
-      )
-      # NDVI -> volume proxy: NDVI 0.8 ~ 200 m3/ha for mature temperate forest
+        as_pure_sf(units), fun = "mean", progress = FALSE)
       return(pmax(0, ndvi_mean) * 250)
     }
   }
@@ -1466,45 +1467,105 @@ indicator_production_volume <- function(units, layers = NULL, ...) {
 
 #' @noRd
 indicator_production_productivity <- function(units, layers = NULL, ...) {
-  # P2: Productivity - estimate from NDVI as proxy for NPP
-  ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
-  if (!is.null(ndvi_raster)) {
-    cli::cli_alert_info("P2: Estimating productivity from NDVI")
-    ndvi_mean <- safe_extract(ndvi_raster,
-      as_pure_sf(units), fun = "mean", progress = FALSE
-    )
-    # NDVI as proxy: scale to m3/ha/yr (typical range 3-15)
-    return(pmax(0, ndvi_mean) * 15)
+  # P2: Forest productivity (m3/ha/yr) — tutorial 02 formula
+  # vigueur = clamp((zq95 - zq25) / zmean, 0.1, 2)
+  # P2 = k_prod * zmean * (pzabove2/100) * (1 + vigueur)
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    mnh_raster <- resolve_raster_layer(layers, "lidar_mnh")
+    if (!is.null(mnh_raster)) {
+      cli::cli_alert_info("P2: Estimating productivity from LiDAR MNH (tuto 02)")
+      units_sf <- as_pure_sf(units)
+      zmean <- safe_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      mnh_above2 <- mnh_raster > 2
+      pzabove2 <- safe_extract(mnh_above2, units_sf,
+        fun = "mean", progress = FALSE) * 100
+      zq95 <- safe_extract(mnh_raster, units_sf,
+        fun = "quantile", quantiles = 0.95, progress = FALSE)
+      zq25 <- safe_extract(mnh_raster, units_sf,
+        fun = "quantile", quantiles = 0.25, progress = FALSE)
+      # Vigor index: height distribution spread
+      vigueur <- ifelse(zmean > 0, (zq95 - zq25) / zmean, 0)
+      vigueur <- pmax(0.1, pmin(2, vigueur))
+      k_prod <- 0.3
+      prod <- k_prod * pmax(0, zmean) * (pzabove2 / 100) * (1 + vigueur)
+      return(as.numeric(prod))
+    }
+
+    # Fallback: NDVI proxy
+    ndvi_raster <- resolve_raster_layer(layers, "ndvi")
+    if (!is.null(ndvi_raster)) {
+      cli::cli_alert_info("P2: Estimating productivity from NDVI (fallback)")
+      ndvi_mean <- safe_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      return(pmax(0, ndvi_mean) * 15)
+    }
   }
   rep(NA_real_, nrow(units))
 }
 
 #' @noRd
 indicator_production_quality <- function(units, layers = NULL, ...) {
-  # P3: Timber quality - proxy from slope and NDVI
+  # P3: Structural quality (score 0-100) — tutorial 02 formula
+  # entropy_norm = clamp((zentropy - 0.5) / 0.5, 0, 1)
+  # cv_norm = min(1, (zsd / zmean) / 0.5)
+  # P3 = clamp(100 * (1 - 0.5*entropy_norm - 0.5*cv_norm), 0, 100)
+  # High P3 = regular/homogeneous stand
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
-    scores <- rep(50, nrow(units))  # Base neutral score
-    # Lower slope = better access = higher quality management
+    mnh_raster <- resolve_raster_layer(layers, "lidar_mnh")
+    if (!is.null(mnh_raster)) {
+      cli::cli_alert_info("P3: Estimating structural quality from LiDAR MNH (tuto 02)")
+      units_sf <- as_pure_sf(units)
+      zmean <- safe_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      zsd <- safe_extract(mnh_raster, units_sf,
+        fun = "stdev", progress = FALSE)
+
+      # Compute zentropy per parcel: Shannon entropy of height distribution
+      # Bin heights into 1m classes and compute entropy
+      zentropy <- vapply(seq_len(nrow(units_sf)), function(i) {
+        vals <- safe_extract(mnh_raster, as_pure_sf(units_sf[i, ]),
+          progress = FALSE)[[1]]$value
+        vals <- vals[!is.na(vals) & vals >= 0]
+        if (length(vals) < 2) return(NA_real_)
+        # Bin into 1m classes
+        bins <- floor(vals)
+        freq <- tabulate(bins + 1L)
+        freq <- freq[freq > 0]
+        p <- freq / sum(freq)
+        # Shannon entropy, normalized to [0, 1] by log(n_bins)
+        H <- -sum(p * log(p))
+        n_bins <- length(freq)
+        if (n_bins > 1) H / log(n_bins) else 0
+      }, numeric(1))
+
+      # Tutorial 02 formula
+      entropy_norm <- pmax(0, pmin(1, (zentropy - 0.5) / 0.5))
+      cv_norm <- ifelse(zmean > 0, pmin(1, (zsd / zmean) / 0.5), 0)
+      p3 <- 100 * (1 - 0.5 * entropy_norm - 0.5 * cv_norm)
+      return(as.numeric(pmax(0, pmin(100, p3))))
+    }
+
+    # Fallback: slope + NDVI proxy
+    scores <- rep(50, nrow(units))
     dem <- get_dem_raster(layers)
     if (!is.null(dem)) {
       slope <- terra::terrain(dem, v = "slope", unit = "degrees")
       slope_mean <- safe_extract(slope,
-        as_pure_sf(units), fun = "mean", progress = FALSE
-      )
-      # Gentle slopes (< 15°) favor quality forestry
+        as_pure_sf(units), fun = "mean", progress = FALSE)
       slope_score <- pmax(0, 1 - slope_mean / 30) * 50
       scores <- scores + slope_score - 25
     }
-    # Higher NDVI = healthier trees = better quality
     ndvi_raster <- resolve_raster_layer(layers, "ndvi")
     if (!is.null(ndvi_raster)) {
       ndvi_mean <- safe_extract(ndvi_raster,
-        as_pure_sf(units), fun = "mean", progress = FALSE
-      )
+        as_pure_sf(units), fun = "mean", progress = FALSE)
       ndvi_score <- pmax(0, ndvi_mean / 0.8) * 50
       scores <- scores + ndvi_score - 25
     }
-    return(pmin(pmax(scores, 0), 100))
+    if (!is.null(dem) || !is.null(ndvi_raster)) {
+      return(pmin(pmax(scores, 0), 100))
+    }
   }
   rep(NA_real_, nrow(units))
 }

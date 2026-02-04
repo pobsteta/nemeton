@@ -1,47 +1,72 @@
 # Test Suite for Social & Recreational Indicators (Family S)
-# US1: S1 (trails), S2 (accessibility), S3 (population proximity)
+# S1: Distance to roads, S2: Distance to buildings, S3: Population proximity
 
-test_that("indicator_social_trails (S1) works with local data", {
+# ==============================================================================
+# S1: Distance to Roads
+# ==============================================================================
+
+test_that("indicator_social_trails (S1) works with DEM + roads", {
   skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
 
-  # Create minimal test data
+  # Create a small DEM raster (100x100, 25m resolution in Lambert-93)
+  dem <- terra::rast(
+    xmin = 600000, xmax = 602500, ymin = 6600000, ymax = 6602500,
+    resolution = 25, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 100 # flat terrain
+
+  # Create road lines crossing the area
+  roads <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_linestring(matrix(c(601000, 6600000, 601000, 6602500), ncol = 2, byrow = TRUE)),
+      crs = 2154
+    )
+  )
+
+  # Create test units: one near the road, one far from it
   test_units <- sf::st_sf(
     id = 1:2,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-      sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(
+        602000, 6601000,
+        602200, 6601000,
+        602200, 6601200,
+        602000, 6601200,
+        602000, 6601000
+      ), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
 
-  test_trails <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_linestring(matrix(c(0.5, 0, 0.5, 1), ncol = 2, byrow = TRUE)),
-      crs = 2154
-    )
-  )
-
-  # Test function
   result <- indicator_social_trails(
     units = test_units,
-    trails = test_trails,
-    method = "local",
-    buffer_m = 0
+    roads = roads,
+    dem = dem
   )
 
-  # Assertions
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_type(result$S1, "double")
+
+  # Both should have values (distance in metres)
+  expect_true(all(!is.na(result$S1)))
   expect_true(all(result$S1 >= 0))
 
-  # First unit should have trails, second should not
-  expect_true(result$S1[1] > 0)
-  expect_equal(result$S1[2], 0)
+  # Unit near road should have smaller distance than unit far from road
+  expect_true(result$S1[1] < result$S1[2])
 })
 
-test_that("indicator_social_trails (S1) handles empty trail data", {
+test_that("indicator_social_trails (S1) returns NA without DEM", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -52,47 +77,205 @@ test_that("indicator_social_trails (S1) handles empty trail data", {
     )
   )
 
-  # Empty trails
-  test_trails <- sf::st_sf(
-    id = integer(0),
-    geometry = sf::st_sfc(crs = 2154)
+  result <- indicator_social_trails(units = test_units)
+
+  expect_s3_class(result, "sf")
+  expect_true("S1" %in% names(result))
+  expect_true(is.na(result$S1[1]))
+})
+
+test_that("indicator_social_trails (S1) returns NA without roads", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  dem <- terra::rast(
+    xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+    resolution = 10, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 50
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_social_trails(units = test_units, dem = dem)
+
+  expect_true(is.na(result$S1[1]))
+})
+
+test_that("indicator_social_trails validates input types", {
+  expect_error(
+    indicator_social_trails(data.frame(x = 1:3)),
+    "must be an sf object"
+  )
+})
+
+test_that("indicator_social_trails uses custom column name", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
   )
 
   result <- indicator_social_trails(
     units = test_units,
-    trails = test_trails,
-    method = "local"
+    column_name = "road_distance"
   )
 
-  expect_equal(result$S1[1], 0)
+  expect_true("road_distance" %in% names(result))
+  expect_false("S1" %in% names(result))
 })
 
-test_that("indicator_social_accessibility (S2) calculates scores", {
-  skip_if_not_installed("sf")
+# ==============================================================================
+# S2: Distance to Buildings
+# ==============================================================================
 
-  test_units <- sf::st_sf(
-    id = 1:3,
+test_that("indicator_social_accessibility (S2) works with DEM + buildings", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  # Create a small DEM raster
+  dem <- terra::rast(
+    xmin = 600000, xmax = 602500, ymin = 6600000, ymax = 6602500,
+    resolution = 25, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 100
+
+  # Create building polygons
+  buildings <- sf::st_sf(
+    id = 1,
     geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-      sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
-      sf::st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(
+        601000, 6601000,
+        601050, 6601000,
+        601050, 6601050,
+        601000, 6601050,
+        601000, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Create test units: one near building, one far
+  test_units <- sf::st_sf(
+    id = 1:2,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(
+        602000, 6601000,
+        602200, 6601000,
+        602200, 6601200,
+        602000, 6601200,
+        602000, 6601000
+      ), ncol = 2, byrow = TRUE))),
       crs = 2154
     )
   )
 
   result <- indicator_social_accessibility(
     units = test_units,
-    method = "osm" # Will use proxy calculation in test
+    buildings = buildings,
+    dem = dem
   )
 
-  # Assertions
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_type(result$S2, "double")
 
-  # Scores should be in 0-100 range
-  expect_true(all(result$S2 >= 0 & result$S2 <= 100))
+  # Both should have values (distance in metres)
+  expect_true(all(!is.na(result$S2)))
+  expect_true(all(result$S2 >= 0))
+
+  # Unit near building should have smaller distance than unit far from building
+  expect_true(result$S2[1] < result$S2[2])
 })
+
+test_that("indicator_social_accessibility (S2) returns NA without DEM", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_social_accessibility(units = test_units)
+
+  expect_s3_class(result, "sf")
+  expect_true("S2" %in% names(result))
+  expect_true(is.na(result$S2[1]))
+})
+
+test_that("indicator_social_accessibility (S2) returns NA without buildings", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  dem <- terra::rast(
+    xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+    resolution = 10, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 50
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_social_accessibility(units = test_units, dem = dem)
+
+  expect_true(is.na(result$S2[1]))
+})
+
+test_that("indicator_social_accessibility validates input", {
+  expect_error(
+    indicator_social_accessibility(data.frame(x = 1:3)),
+    "must be an sf object"
+  )
+})
+
+test_that("indicator_social_accessibility uses custom column name", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- indicator_social_accessibility(
+    units = test_units,
+    column_name = "building_distance"
+  )
+
+  expect_true("building_distance" %in% names(result))
+  expect_false("S2" %in% names(result))
+})
+
+# ==============================================================================
+# S3: Population Proximity (unchanged)
+# ==============================================================================
 
 test_that("indicator_social_proximity (S3) calculates population buffers", {
   skip_if_not_installed("sf")
@@ -125,189 +308,6 @@ test_that("indicator_social_proximity (S3) calculates population buffers", {
   expect_true(all(result$S3_20km >= result$S3_10km))
 })
 
-test_that("Social family indicators handle NA values correctly", {
-  skip_if_not_installed("sf")
-
-  test_units <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  # S1 with no trails should return 0 (not NA)
-  empty_trails <- sf::st_sf(
-    geometry = sf::st_sfc(crs = 2154)
-  )
-
-  result_s1 <- indicator_social_trails(test_units, trails = empty_trails, method = "local")
-  expect_false(is.na(result_s1$S1[1]))
-
-  # S2 and S3 should always return valid scores
-  result_s2 <- indicator_social_accessibility(test_units, method = "osm")
-  result_s3 <- indicator_social_proximity(test_units, method = "proxy")
-
-  expect_false(any(is.na(result_s2$S2)))
-  expect_false(any(is.na(result_s3$S3)))
-})
-
-test_that("Social indicators integrate with family system", {
-  skip_if_not_installed("sf")
-
-  test_units <- sf::st_sf(
-    id = 1:2,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
-      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  # Calculate all S indicators
-  empty_trails <- sf::st_sf(geometry = sf::st_sfc(crs = 2154))
-
-  result <- test_units %>%
-    indicator_social_trails(trails = empty_trails, method = "local") %>%
-    indicator_social_accessibility(method = "osm") %>%
-    indicator_social_proximity(method = "proxy")
-
-  # Check all indicators present
-  expect_true(all(c("S1", "S2", "S3") %in% names(result)))
-
-  # Create family composite
-  result_family <- create_family_index(result, family_codes = "S")
-
-  expect_true("family_S" %in% names(result_family))
-  expect_type(result_family$family_S, "double")
-  expect_true(all(result_family$family_S >= 0))
-})
-
-# ==============================================================================
-# Additional tests for better coverage
-# ==============================================================================
-
-test_that("indicator_social_trails validates input types", {
-  expect_error(
-    indicator_social_trails(data.frame(x = 1:3), trails = NULL, method = "local"),
-    "must be an sf object"
-  )
-})
-
-test_that("indicator_social_trails requires trails for local method", {
-  test_units <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  expect_error(
-    indicator_social_trails(test_units, trails = NULL, method = "local"),
-    "trails parameter required"
-  )
-})
-
-test_that("indicator_social_trails validates trails type for local method", {
-  test_units <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  expect_error(
-    indicator_social_trails(test_units, trails = data.frame(x = 1:3), method = "local"),
-    "must be an sf object"
-  )
-})
-
-test_that("indicator_social_trails uses buffer correctly", {
-  skip_if_not_installed("sf")
-
-  test_units <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  # Trail outside but within buffer
-  test_trails <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_linestring(matrix(c(150, 0, 150, 100), ncol = 2, byrow = TRUE)),
-      crs = 2154
-    )
-  )
-
-  # Without buffer - should have 0 trails
-  result_no_buffer <- indicator_social_trails(
-    test_units, trails = test_trails, method = "local", buffer_m = 0
-  )
-  expect_equal(result_no_buffer$S1[1], 0)
-
-  # With buffer - should include the trail
-  result_with_buffer <- indicator_social_trails(
-    test_units, trails = test_trails, method = "local", buffer_m = 100
-  )
-  expect_true(result_with_buffer$S1[1] > 0)
-})
-
-test_that("indicator_social_trails uses custom column name", {
-  skip_if_not_installed("sf")
-
-  test_units <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  empty_trails <- sf::st_sf(geometry = sf::st_sfc(crs = 2154))
-
-  result <- indicator_social_trails(
-    test_units,
-    trails = empty_trails,
-    method = "local",
-    column_name = "trail_density"
-  )
-
-  expect_true("trail_density" %in% names(result))
-  expect_false("S1" %in% names(result))
-})
-
-test_that("indicator_social_accessibility validates input", {
-  expect_error(
-    indicator_social_accessibility(data.frame(x = 1:3)),
-    "must be an sf object"
-  )
-})
-
-test_that("indicator_social_accessibility uses custom column name", {
-  skip_if_not_installed("sf")
-
-  test_units <- sf::st_sf(
-    id = 1,
-    geometry = sf::st_sfc(
-      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
-      crs = 2154
-    )
-  )
-
-  result <- indicator_social_accessibility(
-    test_units,
-    method = "osm",
-    column_name = "accessibility_score"
-  )
-
-  expect_true("accessibility_score" %in% names(result))
-})
-
 test_that("indicator_social_proximity validates input", {
   expect_error(
     indicator_social_proximity(data.frame(x = 1:3)),
@@ -321,8 +321,6 @@ test_that("indicator_social_proximity uses buffer_radii parameter", {
   # Use properly sized units with real coordinates
   test_units <- create_test_units(n_features = 1)
 
-  # Note: Column names are currently hardcoded as S3_5km, S3_10km, S3_20km
-  # regardless of buffer_radii values, so we test the default behavior
   result <- indicator_social_proximity(
     test_units,
     method = "proxy",
@@ -353,4 +351,30 @@ test_that("indicator_social_proximity uses custom column name", {
   )
 
   expect_true("pop_score" %in% names(result))
+})
+
+# ==============================================================================
+# Integration
+# ==============================================================================
+
+test_that("Social indicators integrate with family system", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1:2,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(2000, 0, 3000, 0, 3000, 1000, 2000, 1000, 2000, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # S1 and S2 return NA without DEM/roads/buildings — that's expected
+  result <- test_units |>
+    indicator_social_trails() |>
+    indicator_social_accessibility() |>
+    indicator_social_proximity(method = "proxy")
+
+  # Check all indicators present
+  expect_true(all(c("S1", "S2", "S3") %in% names(result)))
 })
