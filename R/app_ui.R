@@ -472,9 +472,10 @@ mod_family_ui <- function(id, family_code) {
                 ns("expert_profile"),
                 label = NULL,
                 choices = stats::setNames(
-                  c("generalist", "owner", "engineer", "politician", "economist", "citizen"),
-                  c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_engineer"),
-                    i18n$t("expert_politician"), i18n$t("expert_economist"), i18n$t("expert_citizen"))
+                  c("generalist", "owner", "manager", "politician", "producer", "citizen", "hunter"),
+                  c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_manager"),
+                    i18n$t("expert_politician"), i18n$t("expert_producer"), i18n$t("expert_citizen"),
+                    i18n$t("expert_hunter"))
                 ),
                 selected = "generalist",
                 width = "auto"
