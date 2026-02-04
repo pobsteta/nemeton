@@ -111,7 +111,7 @@ DATA_SOURCES <- list(
       name = "Buildings",
       type = "vector",
       source = "ign_bd_topo",
-      required_for = c("social_accessibility")
+      required_for = c("social_accessibility", "naturalness_distance")
     ),
     bdforet = list(
       name = "BD For\u00eat V2 (IGN)",
@@ -119,7 +119,8 @@ DATA_SOURCES <- list(
       source = "ign_bdforet",
       required_for = c("carbon_biomass", "production_volume", "production_site",
                         "biodiversity_structure", "biodiversity_connectivity",
-                        "temporal_age", "risk_fire", "risk_browsing")
+                        "temporal_age", "risk_fire", "risk_browsing",
+                        "naturalness_continuity")
     )
   ),
   # Point cloud sources (not loaded as raster/vector but cached as files)
@@ -1972,10 +1973,7 @@ normalize_indicator <- function(indicator, values) {
     "energy_wood" = 0.3,
     # Energy: CO2 avoidance in tCO2/ha/yr (tuto 02: E1 * 2.5 * 0.85)
     "energy_co2" = 0.65,
-    # Naturalness: distance to infrastructure in meters
-    "naturalness_distance" = 500,
-    # Naturalness: continuous forest area in hectares
-    "naturalness_continuity" = 1000,
+    # Naturalness: N1 and N2 are already 0-100 scores (tuto 04)
     # Production: standing volume in m³/ha
     "production_volume" = 400,
     # Production: annual increment in m³/ha/yr

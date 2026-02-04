@@ -305,9 +305,6 @@ msg_error <- function(key, ...) {
     indicator_naturalness_distance = "Infrastructure distance (N: Naturalness & Wilderness)",
     indicator_naturalness_continuity = "Forest continuity (N: Naturalness & Wilderness)",
     indicator_naturalness_composite = "Wilderness composite index (N: Naturalness & Wilderness)",
-    naturalness_distance_calculated = "Min distance to infrastructure: %0.0f m (roads=%0.0f, buildings=%0.0f)",
-    naturalness_continuity_calculated = "Continuous forest patch: %0.1f ha (connectivity=%dm)",
-    naturalness_composite_score = "Wilderness score: %0.1f/100 (distance=%0.1f, continuity=%0.1f, age=%0.1f)",
 
     # v0.4.0 - Advanced Analysis (US7)
     # Pareto analysis
@@ -524,9 +521,6 @@ msg_error <- function(key, ...) {
     indicator_naturalness_distance = "Distance infrastructures (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
     indicator_naturalness_continuity = "Continuit\u00e9 foresti\u00e8re (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
     indicator_naturalness_composite = "Indice composite wilderness (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
-    naturalness_distance_calculated = "Distance min infrastructures : %0.0f m (routes=%0.0f, b\u00e2timents=%0.0f)",
-    naturalness_continuity_calculated = "Patch for\u00eat continue : %0.1f ha (connectivit\u00e9=%dm)",
-    naturalness_composite_score = "Score wilderness : %0.1f/100 (distance=%0.1f, continuit\u00e9=%0.1f, \u00e2ge=%0.1f)",
 
     # v0.4.0 - Analyse Avanc\u00e9e (US7)
     # Analyse Pareto

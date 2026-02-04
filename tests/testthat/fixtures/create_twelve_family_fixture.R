@@ -65,17 +65,10 @@ twelve_family_units <- st_sf(
   E2_energy = c(7.5, 4.6, 10.2, 6.1, 8.4),
   E2_material = c(0.7, 0.5, 1.1, 0.7, 0.9),
 
-  # Family N - Naturalness & Wilderness (NEW)
-  N1 = c(850, 320, 1450, 680, 920), # Infrastructure distance (m)
-  N1_roads = c(850, 320, 1450, 680, 920),
-  N1_buildings = c(1200, 480, 2100, 950, 1350),
-  N1_power = c(2400, 1200, 3800, 1900, 2650),
-  N2 = c(450, 180, 820, 320, 520), # Forest continuity (ha)
-  N3 = c(68, 42, 82, 55, 71), # Wilderness composite (0-100)
-  N3_N1_norm = c(0.65, 0.35, 0.88, 0.52, 0.70),
-  N3_N2_norm = c(0.68, 0.40, 0.85, 0.48, 0.72),
-  N3_T1_norm = c(0.72, 0.38, 0.92, 0.58, 0.65),
-  N3_B1_norm = c(0.67, 0.33, 0.75, 0.50, 0.67),
+  # Family N - Naturalness & Wilderness (NEW — tuto 04 scores 0-100)
+  N1 = c(65, 35, 88, 52, 70), # Infrastructure distance score (0-100)
+  N2 = c(75, 45, 95, 55, 68), # Forest continuity score (0-100)
+  N3 = c(68, 42, 82, 55, 71), # Composite naturalness (0-100)
 
   # Additional metadata
   species = c("FASY", "PIAB", "QUPE", "ABAL", "PISY"),

@@ -1437,14 +1437,10 @@ indicator_energy_co2 <- function(units, layers = NULL, ...) {
 
 #' @noRd
 indicator_naturalness_score <- function(units, ...) {
-  # N3: Composite naturalness - simplified without dependent indicators
-  # Use a proxy based on area and shape
-  result <- units
-  area_ha <- as.numeric(sf::st_area(units)) / 10000
-  # Larger continuous areas = higher naturalness
-  n3 <- pmin(log1p(area_ha) / log1p(100), 1) * 100
-  result$N3 <- n3
-  result
+  # N3: Composite naturalness — tuto 04 formula
+  # N3 = 0.35*N1 + 0.35*N2 + 0.15*(100-L1) + 0.15*B3
+  # Fallback to 50 when components are missing
+  indicator_naturalness_composite(units, column_name = "N3")
 }
 
 #' @noRd

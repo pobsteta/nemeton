@@ -12,224 +12,201 @@ NULL
 
 #' N1: Infrastructure Distance Indicator
 #'
-#' Calculates minimum distance to infrastructure (roads, buildings, power lines)
-#' as a proxy for remoteness from human influence.
+#' Calculates distance to infrastructure (roads, buildings, urban zones)
+#' as a measure of remoteness from human influence. Follows tuto 04 methodology:
+#' distances from parcel centroids to roads (BD TOPO) and buildings, normalized
+#' to 0-100 and combined with weights (40% roads, 35% buildings, 25% urban).
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
-#' @param infrastructure sf object or list. Infrastructure datasets. If NULL and method="osm", fetches from OSM.
-#' @param method Character. Data source: "osm" or "local". Default "osm".
-#' @param osm_bbox Numeric vector for OSM query. Auto-detected if NULL.
-#' @param infra_types Character vector. Infrastructure categories: c("roads", "buildings", "power"). Default all.
-#' @param osm_road_tags Character vector. OSM highway tags for roads. Default c("motorway", "trunk", "primary", "secondary", "tertiary").
+#' @param roads sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL = default 1000m.
+#' @param buildings sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.
+#' @param layers nemeton_layers object. Used to resolve roads/buildings if not provided directly.
 #' @param column_name Character. Name for output column. Default "N1".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added columns: N1 (min distance m), N1_roads, N1_buildings, N1_power
+#' @return sf object with added column N1 (score 0-100, 100 = very remote)
 #'
 #' @export
 indicator_naturalness_distance <- function(units,
-                                           infrastructure = NULL,
-                                           method = c("osm", "local"),
-                                           osm_bbox = NULL,
-                                           infra_types = c("roads", "buildings", "power"),
-                                           osm_road_tags = c("motorway", "trunk", "primary", "secondary", "tertiary"),
+                                           roads = NULL,
+                                           buildings = NULL,
+                                           layers = NULL,
                                            column_name = "N1",
                                            lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
-  method <- match.arg(method)
 
   result <- units
   centroids <- suppressWarnings(sf::st_centroid(units))
 
-  # Initialize distance columns
-  n1_roads <- rep(NA_real_, nrow(units))
-  n1_buildings <- rep(NA_real_, nrow(units))
-  n1_power <- rep(NA_real_, nrow(units))
-
-  # Simplified implementation (production would query actual OSM/local data)
-  # For now, use distance-based proxy
-  for (i in seq_len(nrow(units))) {
-    # Proxy: larger/more remote areas have higher distances
-    area_ha <- as.numeric(sf::st_area(units[i, ])) / 10000
-    base_distance <- sqrt(area_ha) * 100 # Rough approximation
-
-    n1_roads[i] <- base_distance * 1.0
-    n1_buildings[i] <- base_distance * 1.5
-    n1_power[i] <- base_distance * 2.0
+  # Resolve from layers if not provided directly
+  if (is.null(roads) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
+    roads <- resolve_vector_layer(layers, "roads")
+  }
+  if (is.null(buildings) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
+    buildings <- resolve_vector_layer(layers, "buildings")
   }
 
-  result$N1_roads <- n1_roads
-  result$N1_buildings <- n1_buildings
-  result$N1_power <- n1_power
-  result[[column_name]] <- pmin(n1_roads, n1_buildings, n1_power, na.rm = TRUE)
+  # Distance to roads (BD TOPO)
+  if (!is.null(roads) && inherits(roads, "sf") && nrow(roads) > 0) {
+    roads <- sf::st_transform(roads, sf::st_crs(units))
+    roads <- sf::st_make_valid(roads)
+    dist_routes <- as.numeric(sf::st_distance(centroids, sf::st_union(roads)))
+  } else {
+    dist_routes <- rep(1000, nrow(units)) # default like tuto 04
+  }
 
-  msg_info(
-    "naturalness_distance_calculated", median(result[[column_name]], na.rm = TRUE),
-    median(n1_roads, na.rm = TRUE), median(n1_buildings, na.rm = TRUE)
-  )
+  # Distance to buildings
+  if (!is.null(buildings) && inherits(buildings, "sf") && nrow(buildings) > 0) {
+    buildings <- sf::st_transform(buildings, sf::st_crs(units))
+    buildings <- sf::st_make_valid(buildings)
+    dist_batiments <- as.numeric(sf::st_distance(centroids, sf::st_union(buildings)))
+  } else {
+    dist_batiments <- rep(500, nrow(units)) # default like tuto 04
+  }
 
-  cli::cli_alert_success("Calculated {column_name}: Infrastructure distance (m)")
+  # Distance to urban zones (no dedicated layer, use default)
+  dist_urbain <- rep(2000, nrow(units))
+
+  # Normalize: 0m = score 0, 2000m+ = score 100
+  N1_routes <- pmin(100, dist_routes / 20)
+  N1_batiments <- pmin(100, dist_batiments / 20)
+  N1_urbain <- pmin(100, dist_urbain / 20)
+
+  # Composite: 40% routes, 35% buildings, 25% urban (tuto 04)
+  result[[column_name]] <- 0.40 * N1_routes + 0.35 * N1_batiments + 0.25 * N1_urbain
+
+  cli::cli_alert_success("Calculated {column_name}: Infrastructure distance (0-100)")
   return(result)
 }
 
 #' N2: Forest Continuity Indicator
 #'
-#' Calculates continuous forest patch area via buffering and dissolving.
+#' Calculates forest continuity using BD Foret (current forest cover) and
+#' optionally BD Foret Anciennes (historical forest from ~1850). Follows tuto 04:
+#' - Ancient forest (>0% on 1850 map): score = 60 + 40 * taux_anciennete
+#' - Recent forest (current cover but not ancient): score = 30 + 30 * taux_boisement
+#' - No forest: score = 15
 #'
 #' @param units sf object (POLYGON) of spatial units to assess
-#' @param land_cover sf or SpatRaster. Land cover layer. If NULL, uses unit boundaries as forest.
-#' @param forest_classes Character vector. Land cover classes for forest. Default c("forest", "woodland").
-#' @param connectivity_distance Numeric. Maximum gap (m) to maintain connectivity. Default 100m.
-#' @param method Character. Land cover source: "local", "corine", "osm". Default "local".
+#' @param bdforet sf object. Current forest cover (BD Foret V2). NULL = default score 50.
+#' @param foret_ancienne sf object. Historical forest cover (~1850). NULL = only use bdforet.
+#' @param layers nemeton_layers object. Used to resolve bdforet if not provided directly.
 #' @param column_name Character. Name for output column. Default "N2".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added columns: N2 (continuous patch area ha), N2_patch_id
+#' @return sf object with added column N2 (score 0-100)
 #'
 #' @export
 indicator_naturalness_continuity <- function(units,
-                                             land_cover = NULL,
-                                             forest_classes = c("forest", "woodland"),
-                                             connectivity_distance = 100,
-                                             method = c("local", "corine", "osm"),
+                                             bdforet = NULL,
+                                             foret_ancienne = NULL,
+                                             layers = NULL,
                                              column_name = "N2",
                                              lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
-  method <- match.arg(method)
 
   result <- units
 
-  # Project to metric CRS for buffer (connectivity_distance is in metres)
-  orig_crs <- sf::st_crs(units)
-  if (sf::st_is_longlat(units)) {
-    units_m <- sf::st_transform(units, 2154)
-  } else {
-    units_m <- units
+  # Resolve from layers if not provided directly
+  if (is.null(bdforet) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
+    bdforet <- resolve_vector_layer(layers, "bdforet")
   }
 
-  # Repair invalid geometries (duplicate vertices, degenerate edges)
-  units_m <- sf::st_make_valid(units_m)
+  # If no forest data at all, return default score 50
+  if (is.null(bdforet) && is.null(foret_ancienne)) {
+    result[[column_name]] <- rep(50, nrow(units))
+    cli::cli_alert_success("Calculated {column_name}: Forest continuity (default 50, no data)")
+    return(result)
+  }
 
-  # Simplified: assume units are forest patches
-  # Production version would extract forest from land cover, buffer, and dissolve
-  buffered <- sf::st_make_valid(sf::st_buffer(units_m, dist = connectivity_distance))
-  dissolved <- sf::st_union(buffered)
-  patches <- sf::st_cast(dissolved, "POLYGON")
+  # Ensure matching CRS
+  if (!is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
+    bdforet <- sf::st_transform(bdforet, sf::st_crs(units))
+    bdforet <- sf::st_make_valid(bdforet)
+  } else {
+    bdforet <- NULL
+  }
+  if (!is.null(foret_ancienne) && inherits(foret_ancienne, "sf") && nrow(foret_ancienne) > 0) {
+    foret_ancienne <- sf::st_transform(foret_ancienne, sf::st_crs(units))
+    foret_ancienne <- sf::st_make_valid(foret_ancienne)
+  } else {
+    foret_ancienne <- NULL
+  }
 
-  # Assign each unit to its patch (use metric geometries)
-  patch_areas <- numeric(nrow(units))
-  for (i in seq_len(nrow(units_m))) {
-    # Find which patch contains this unit
-    intersects <- sf::st_intersects(units_m[i, ], patches, sparse = FALSE)
-    if (any(intersects)) {
-      patch_idx <- which(intersects)[1]
-      patch_area_m2 <- as.numeric(sf::st_area(patches[patch_idx]))
-      patch_areas[i] <- patch_area_m2 / 10000 # Convert to hectares
+  n2_scores <- numeric(nrow(units))
+
+  for (i in seq_len(nrow(units))) {
+    parcelle_area <- as.numeric(sf::st_area(units[i, ]))
+
+    # Current forest coverage (taux_boisement)
+    taux_boisement <- 0
+    if (!is.null(bdforet)) {
+      inter_foret <- suppressWarnings(
+        tryCatch(sf::st_intersection(bdforet, sf::st_geometry(units[i, ])),
+                 error = function(e) NULL)
+      )
+      if (!is.null(inter_foret) && nrow(inter_foret) > 0) {
+        forest_area <- sum(as.numeric(sf::st_area(inter_foret)))
+        taux_boisement <- min(1, forest_area / parcelle_area)
+      }
+    }
+
+    # Ancient forest coverage (taux_anciennete)
+    taux_ancienne <- 0
+    if (!is.null(foret_ancienne)) {
+      inter_ancienne <- suppressWarnings(
+        tryCatch(sf::st_intersection(foret_ancienne, sf::st_geometry(units[i, ])),
+                 error = function(e) NULL)
+      )
+      if (!is.null(inter_ancienne) && nrow(inter_ancienne) > 0) {
+        ancienne_area <- sum(as.numeric(sf::st_area(inter_ancienne)))
+        taux_ancienne <- min(1, ancienne_area / parcelle_area)
+      }
+    }
+
+    # Score per tuto 04
+    if (taux_ancienne > 0) {
+      n2_scores[i] <- 60 + taux_ancienne * 40
+    } else if (taux_boisement > 0) {
+      n2_scores[i] <- 30 + taux_boisement * 30
     } else {
-      # Isolated unit
-      patch_areas[i] <- as.numeric(sf::st_area(units_m[i, ])) / 10000
+      n2_scores[i] <- 15
     }
   }
 
-  result[[column_name]] <- patch_areas
-  msg_info("naturalness_continuity_calculated", median(patch_areas, na.rm = TRUE), connectivity_distance)
-
-  cli::cli_alert_success("Calculated {column_name}: Forest continuity (ha)")
+  result[[column_name]] <- n2_scores
+  cli::cli_alert_success("Calculated {column_name}: Forest continuity (0-100)")
   return(result)
 }
 
 #' N3: Composite Naturalness Index
 #'
-#' Calculates a composite wilderness index integrating infrastructure distance (N1),
-#' forest continuity (N2), ancientness (T1), and protection (B1).
+#' Calculates a composite naturalness index following tuto 04:
+#' N3 = 0.35 * N1 + 0.35 * N2 + 0.15 * (100 - L1) + 0.15 * B3
+#' Falls back to 50 when L1 or B3 are unavailable.
 #'
-#' @param units sf object with N1, N2, T1, B1 indicators
-#' @param n1_field Character. Column for infrastructure distance. Default "N1".
-#' @param n2_field Character. Column for forest continuity. Default "N2".
-#' @param t1_field Character. Column for ancientness. Default "T1".
-#' @param b1_field Character. Column for protection status. Default "B1".
-#' @param aggregation Character. Method: "multiplicative" or "weighted". Default "multiplicative".
-#' @param weights Named numeric vector. Component weights (for weighted method). Default equal.
-#' @param normalization Character. Normalization method: "quantile", "minmax", "zscore". Default "quantile".
-#' @param quantiles Numeric(2). Quantile bounds for normalization. Default c(0.1, 0.9).
+#' @param units sf object with N1 and N2 columns (optionally L1, B3)
 #' @param column_name Character. Name for output column. Default "N3".
 #' @param lang Character. Message language. Default "en".
 #'
-#' @return sf object with added columns: N3 (composite 0-100), N3_*_norm (normalized components)
+#' @return sf object with added column N3 (score 0-100)
 #'
-#' @importFrom stats quantile
 #' @export
 indicator_naturalness_composite <- function(units,
-                                            n1_field = "N1",
-                                            n2_field = "N2",
-                                            t1_field = "T1",
-                                            b1_field = "B1",
-                                            aggregation = c("multiplicative", "weighted"),
-                                            weights = c(N1 = 0.25, N2 = 0.25, T1 = 0.25, B1 = 0.25),
-                                            normalization = "quantile",
-                                            quantiles = c(0.1, 0.9),
                                             column_name = "N3",
                                             lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
-  aggregation <- match.arg(aggregation)
-
-  # Check required fields
-  required <- c(n1_field, n2_field, t1_field, b1_field)
-  missing <- setdiff(required, names(units))
-  if (length(missing) > 0) {
-    stop(paste("Required fields missing:", paste(missing, collapse = ", ")), call. = FALSE)
-  }
 
   result <- units
 
-  # Normalize each component to 0-1 scale
-  normalize_component <- function(x, q_low, q_high) {
-    x_norm <- (x - q_low) / (q_high - q_low)
-    pmax(0, pmin(1, x_norm)) # Clip to [0,1]
-  }
+  # Use existing columns or fallback to 50
+  n1 <- if ("N1" %in% names(units)) units$N1 else rep(50, nrow(units))
+  n2 <- if ("N2" %in% names(units)) units$N2 else rep(50, nrow(units))
+  anti_frag <- if ("L1" %in% names(units)) 100 - units$L1 else rep(50, nrow(units))
+  connectivite <- if ("B3" %in% names(units)) units$B3 else rep(50, nrow(units))
 
-  components <- list(
-    N1 = units[[n1_field]],
-    N2 = units[[n2_field]],
-    T1 = units[[t1_field]],
-    B1 = units[[b1_field]]
-  )
-
-  normalized <- list()
-  for (comp_name in names(components)) {
-    comp_values <- components[[comp_name]]
-    if (normalization == "quantile") {
-      q_low <- quantile(comp_values, quantiles[1], na.rm = TRUE)
-      q_high <- quantile(comp_values, quantiles[2], na.rm = TRUE)
-      normalized[[comp_name]] <- normalize_component(comp_values, q_low, q_high)
-    } else if (normalization == "minmax") {
-      min_val <- min(comp_values, na.rm = TRUE)
-      max_val <- max(comp_values, na.rm = TRUE)
-      normalized[[comp_name]] <- normalize_component(comp_values, min_val, max_val)
-    }
-
-    result[[paste0(column_name, "_", comp_name, "_norm")]] <- normalized[[comp_name]]
-  }
-
-  # Aggregate
-  if (aggregation == "multiplicative") {
-    # Geometric mean scaled to 0-100
-    n3_values <- (normalized$N1 * normalized$N2 * normalized$T1 * normalized$B1)^0.25 * 100
-  } else {
-    # Weighted average
-    n3_values <- (weights["N1"] * normalized$N1 +
-      weights["N2"] * normalized$N2 +
-      weights["T1"] * normalized$T1 +
-      weights["B1"] * normalized$B1) * 100
-  }
-
-  result[[column_name]] <- n3_values
-  msg_info(
-    "naturalness_composite_score", median(n3_values, na.rm = TRUE),
-    median(normalized$N1, na.rm = TRUE),
-    median(normalized$N2, na.rm = TRUE),
-    median(normalized$T1, na.rm = TRUE)
-  )
+  # Tuto 04: 35% N1 + 35% N2 + 15% anti-fragmentation + 15% connectivity
+  result[[column_name]] <- 0.35 * n1 + 0.35 * n2 + 0.15 * anti_frag + 0.15 * connectivite
 
   cli::cli_alert_success("Calculated {column_name}: Composite naturalness (0-100)")
   return(result)
