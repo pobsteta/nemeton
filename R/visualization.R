@@ -136,8 +136,8 @@ plot_indicators_map <- function(data,
     }
   }
 
-  # Auto-select YlOrRd palette for risk indicators (R1-R4, family_R)
-  if (!user_palette && all(grepl("^R[1-4]|^family_R|^R[1-4]_norm", indicators))) {
+  # Auto-select YlOrRd palette for risk indicators
+  if (!user_palette && all(grepl("^R[1-4]|^family_R|^R[1-4]_norm|^risk_", indicators))) {
     palette <- "YlOrRd"
   }
 

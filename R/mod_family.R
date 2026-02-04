@@ -572,8 +572,9 @@ make_indicator_leaflet <- function(sf_data, ind_col, title) {
     mid <- val_range[1]
     val_range <- c(max(0, mid - 1), mid + 1)
   }
-  # Use YlOrRd palette for risk indicators (R1-R4, family_R), viridis otherwise
-  pal_name <- if (grepl("^R[1-4]|^family_R", ind_col)) "YlOrRd" else "viridis"
+  # Use YlOrRd palette for risk indicators, viridis otherwise
+  is_risk <- grepl("^R[1-4]|^family_R|^risk_", ind_col)
+  pal_name <- if (is_risk) "YlOrRd" else "viridis"
   pal <- leaflet::colorNumeric(pal_name, domain = val_range, na.color = "#cccccc")
 
   # Build hover labels
