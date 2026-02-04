@@ -382,10 +382,16 @@ indicator_risk_drought <- function(units,
       }
 
       # Compute PET with Hargreaves
-      pet <- suppressMessages(SPEI::hargreaves(Tmin = tmin, Tmax = tmax, lat = lat_mean))
+      utils::capture.output(
+        pet <- SPEI::hargreaves(Tmin = tmin, Tmax = tmax, lat = lat_mean),
+        type = "output"
+      )
       # SPEI-3
       bal <- precip - as.numeric(pet)
-      spei_result <- suppressMessages(SPEI::spei(ts(bal, frequency = 12), scale = 3))
+      utils::capture.output(
+        spei_result <- SPEI::spei(ts(bal, frequency = 12), scale = 3),
+        type = "output"
+      )
       spei_vals <- as.numeric(spei_result$fitted)
       # Use most recent valid SPEI value
       valid_spei <- spei_vals[!is.na(spei_vals) & is.finite(spei_vals)]
