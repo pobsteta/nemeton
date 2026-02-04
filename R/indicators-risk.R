@@ -610,6 +610,7 @@ indicator_risk_browsing <- function(units,
   if (!is.null(game_density) && inherits(game_density, "SpatRaster")) {
     # Use provided raster
     density_values <- terra::extract(game_density, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+    density_values[is.na(density_values) | is.nan(density_values)] <- 50
     density_factor <- pmin(pmax(density_values, 0), 100)
     cli::cli_alert_info("R4: Using provided game density raster")
   } else {
@@ -618,6 +619,7 @@ indicator_risk_browsing <- function(units,
       game_raster <- get_game_pressure_raster(units)
       if (!is.null(game_raster) && inherits(game_raster, "SpatRaster")) {
         density_values <- terra::extract(game_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+        density_values[is.na(density_values) | is.nan(density_values)] <- 50
         density_factor <- pmin(pmax(density_values, 0), 100)
         cli::cli_alert_info("R4: Game density computed from hunting data (data.gouv.fr)")
       }

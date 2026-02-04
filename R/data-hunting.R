@@ -521,20 +521,24 @@ get_game_pressure_raster <- function(units,
   median_pressure <- median(pressure_data$pressure_index, na.rm = TRUE)
   dept_boundaries$pressure_index[is.na(dept_boundaries$pressure_index)] <- median_pressure
 
-  # Create raster template
-  bbox <- sf::st_bbox(units)
-  # 100m resolution
+  # Project to metric CRS for rasterization (100m resolution)
+  metric_crs <- 2154  # Lambert-93
+  units_m <- sf::st_transform(units, metric_crs)
+  dept_m <- sf::st_transform(dept_boundaries, metric_crs)
+
+  # Create raster template (100m resolution in metres)
+  bbox <- sf::st_bbox(units_m)
 
   template <- terra::rast(
     xmin = bbox["xmin"], xmax = bbox["xmax"],
     ymin = bbox["ymin"], ymax = bbox["ymax"],
     resolution = 100,
-    crs = sf::st_crs(units)$wkt
+    crs = paste0("EPSG:", metric_crs)
   )
 
   # Rasterize
   pressure_raster <- terra::rasterize(
-    terra::vect(dept_boundaries),
+    terra::vect(dept_m),
     template,
     field = "pressure_index"
   )
