@@ -368,6 +368,16 @@ mod_family_server <- function(id, family_code, app_state) {
                                 label = i18n$t("ai_generating"),
                                 icon = shiny::icon("spinner", class = "fa-spin"))
 
+      # Show notification while AI is thinking
+      notif_id <- shiny::showNotification(
+        htmltools::div(
+          shiny::icon("spinner", class = "fa-spin me-2"),
+          i18n$t("ai_generating")
+        ),
+        type = "message",
+        duration = NULL
+      )
+
       language <- if (identical(app_state$language, "fr")) "fran\u00e7ais" else "English"
       prompt <- build_analysis_prompt(family_config, ind_data, language)
       expert <- input$expert_profile %||% "generalist"
@@ -378,7 +388,9 @@ mod_family_server <- function(id, family_code, app_state) {
         response <- chat$chat(prompt, echo = FALSE)
 
         shiny::updateTextAreaInput(session, "analysis_comments", value = response)
+        shiny::removeNotification(notif_id)
       }, error = function(e) {
+        shiny::removeNotification(notif_id)
         shiny::showNotification(
           paste(i18n$t("ai_error"), ":", conditionMessage(e)),
           type = "error",
