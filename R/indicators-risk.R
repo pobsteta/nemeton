@@ -494,10 +494,16 @@ indicator_risk_browsing <- function(units,
   # Component 3: Edge exposure
   # ==========================================================================
   # Calculate proportion of parcel within buffer distance of edge
+  # Project to metric CRS if needed (st_buffer requires meters, not degrees)
+  units_proj <- units
+  if (sf::st_is_longlat(units)) {
+    units_proj <- sf::st_transform(units, 2154)
+  }
+
   edge_factor <- numeric(n_units)
 
   for (i in seq_len(n_units)) {
-    geom <- sf::st_geometry(units)[i]
+    geom <- sf::st_geometry(units_proj)[i]
     area_total <- as.numeric(sf::st_area(geom))
 
     if (area_total > 0) {
