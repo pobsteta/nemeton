@@ -113,19 +113,41 @@ get_or_compute_twi <- function(dem) {
                terra::crs(dem, describe = TRUE)$code,
                sep = "|")
 
+  # 1. Memory cache (instant)
   if (exists(key, envir = .twi_cache)) {
-    cli::cli_alert_info("TWI: Using cached raster")
+    cli::cli_alert_info("TWI: Using cached raster (memory)")
     return(get(key, envir = .twi_cache))
   }
 
-  # Compute: prefer GRASS, fallback terra D8
+  # 2. File cache (persists between sessions)
+  cache_dir <- file.path(get_global_cache_dir(), "twi")
+  cache_key <- substr(gsub("[^a-zA-Z0-9]", "", key), 1, 40)
+  cache_file <- file.path(cache_dir, paste0("twi_", cache_key, ".tif"))
+
+  if (file.exists(cache_file)) {
+    tryCatch({
+      twi_raster <- terra::rast(cache_file)
+      assign(key, twi_raster, envir = .twi_cache)
+      cli::cli_alert_info("TWI: Loaded from file cache")
+      return(twi_raster)
+    }, error = function(e) NULL)
+  }
+
+  # 3. Compute: prefer GRASS, fallback terra D8
   if (requireNamespace("fasterRaster", quietly = TRUE)) {
     twi_raster <- calculate_twi_grass(dem)
   } else {
     twi_raster <- calculate_twi_terra(dem)
   }
 
+  # Save to both caches
   assign(key, twi_raster, envir = .twi_cache)
+  tryCatch({
+    if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+    terra::writeRaster(twi_raster, cache_file, overwrite = TRUE)
+    cli::cli_alert_info("TWI: Saved to file cache")
+  }, error = function(e) NULL)
+
   twi_raster
 }
 
@@ -657,13 +679,20 @@ calculate_twi_grass <- function(dem) {
   tryCatch({
     cli::cli_alert_info("W3: Computing TWI with fasterRaster/GRASS ({basename(grass_dir)})")
 
-    # fasterRaster requires terra/sf/data.table attached before initialization
+    # fasterRaster needs terra/sf/data.table loaded, and its namespace fully attached
+    # to find internal .fasterRaster object (fails in Shiny without this)
     requireNamespace("terra", quietly = TRUE)
     requireNamespace("sf", quietly = TRUE)
     requireNamespace("data.table", quietly = TRUE)
+    loadNamespace("fasterRaster")
 
     # Initialize GRASS session
     fasterRaster::faster(grassDir = grass_dir)
+
+    # GRASS TWI requires projected CRS (not lon/lat)
+    if (terra::is.lonlat(dem)) {
+      dem <- terra::project(dem, "EPSG:2154")
+    }
 
     # Convert terra raster to GRaster
     elev <- fasterRaster::fast(dem)
