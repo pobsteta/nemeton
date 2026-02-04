@@ -139,10 +139,10 @@ INDICATOR_FAMILIES <- list(
     icon = "globe-americas",
     color = "#8B4513",
     indicators = c("F1", "F2"),
-    column_names = c("fertility_soil", "fertility_erosion"),
+    column_names = c("fertility_erosion", "fertility_soil"),
     indicator_labels = list(
-      F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
-      F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk")
+      F1 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
+      F2 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility")
     )
   ),
   L = list(
@@ -154,8 +154,8 @@ INDICATOR_FAMILIES <- list(
     indicators = c("L1", "L2"),
     column_names = c("landscape_fragmentation", "landscape_edge_ratio"),
     indicator_labels = list(
-      L1 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
-      L2 = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio")
+      L1 = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
+      L2 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation")
     )
   ),
   T = list(

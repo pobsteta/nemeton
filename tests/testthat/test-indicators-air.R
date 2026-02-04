@@ -279,3 +279,63 @@ test_that("indicator_air_quality handles empty ATMO data", {
   # Either returns NULL (error) or a valid sf with A2 column
   expect_true(is.null(result) || (inherits(result, "sf") && "A2" %in% names(result)))
 })
+
+# ==============================================================================
+# A2: Road field name fallback
+# ==============================================================================
+
+test_that("indicator_air_quality handles road_type field name fallback", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:3, ]
+
+  # Mock road data using "road_type" instead of "nature" (demo data format)
+  bbox <- st_bbox(units)
+  roads <- st_sf(
+    road_id = c("R1", "R2"),
+    road_type = c("Route \u00e0 1 chauss\u00e9e", "Chemin"),
+    geometry = st_sfc(
+      st_linestring(matrix(c(bbox["xmin"], bbox["xmax"], bbox["ymin"], bbox["ymax"]), ncol = 2)),
+      st_linestring(matrix(c(bbox["xmin"], bbox["xmin"] + 100, bbox["ymin"] + 50, bbox["ymax"]), ncol = 2)),
+      crs = st_crs(units)
+    )
+  )
+
+  result <- indicator_air_quality(
+    units,
+    atmo_data = NULL,
+    roads = roads,
+    method = "proxy"
+  )
+
+  # Should still produce valid results via fallback field detection
+  expect_s3_class(result, "sf")
+  expect_true("A2" %in% names(result))
+  expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_air_quality handles unknown road field name gracefully", {
+  data(massif_demo_units, package = "nemeton")
+  units <- massif_demo_units[1:2, ]
+
+  # Roads with no recognized type field - should use default weight 0.5
+  bbox <- st_bbox(units)
+  roads <- st_sf(
+    road_id = "R1",
+    custom_field = "motorway",
+    geometry = st_sfc(
+      st_linestring(matrix(c(bbox["xmin"], bbox["xmax"], bbox["ymin"], bbox["ymax"]), ncol = 2)),
+      crs = st_crs(units)
+    )
+  )
+
+  result <- indicator_air_quality(
+    units,
+    atmo_data = NULL,
+    roads = roads,
+    method = "proxy"
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("A2" %in% names(result))
+  expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
+})

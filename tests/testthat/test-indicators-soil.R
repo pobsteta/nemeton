@@ -1,8 +1,12 @@
 # Tests for Soil Family Indicators (Famille F)
 # Phase 6: US4 - Fertilité des Sols (Soil Fertility)
 #
-# F1: indicator_soil_fertility() - Soil fertility classification
-# F2: indicator_soil_erosion() - Soil fertility index (TWI + slope)
+# F1: indicator_fertility_erosion() - Erosion risk (RUSLE: LS × C_factor)
+# F2: indicator_fertility_soil() - Soil fertility index (TWI + slope)
+#
+# Core functions:
+# indicator_soil_fertility() - Soil fertility classification (BD Sol)
+# indicator_soil_erosion() - Soil fertility index (TWI + slope)
 
 # ==============================================================================
 # F1: SOIL FERTILITY CLASS
@@ -179,33 +183,89 @@ test_that("Both soil indicators work together", {
   expect_true(all(!is.na(f2)))
 })
 
+# ==============================================================================
+# ALIAS FUNCTIONS (dispatch from app_config)
+# F1 -> indicator_fertility_erosion (RUSLE)
+# F2 -> indicator_fertility_soil (TWI + slope)
+# ==============================================================================
+
+test_that("indicator_fertility_erosion computes RUSLE erosion risk (F1)", {
+  data(massif_demo_units)
+  layers <- massif_demo_layers()
+
+  units <- massif_demo_units[1:5, ]
+
+  erosion <- indicator_fertility_erosion(units, layers)
+
+  expect_type(erosion, "double")
+  expect_length(erosion, 5)
+
+  # RUSLE erosion should be 0-100 scale
+  expect_true(all(erosion >= 0, na.rm = TRUE))
+  expect_true(all(erosion <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_fertility_erosion returns NA without layers", {
+  data(massif_demo_units)
+  units <- massif_demo_units[1:3, ]
+
+  result <- indicator_fertility_erosion(units, layers = NULL)
+  expect_length(result, 3)
+  expect_true(all(is.na(result)))
+})
+
+test_that("indicator_fertility_soil delegates to TWI+slope (F2)", {
+  data(massif_demo_units)
+  layers <- massif_demo_layers()
+
+  units <- massif_demo_units[1:5, ]
+
+  fertility <- indicator_fertility_soil(units, layers)
+
+  expect_type(fertility, "double")
+  expect_length(fertility, 5)
+
+  # Should match indicator_soil_erosion output
+  direct <- indicator_soil_erosion(units, layers)
+  expect_equal(fertility, direct)
+})
+
+test_that("indicator_fertility_soil returns NA without layers", {
+  data(massif_demo_units)
+  units <- massif_demo_units[1:3, ]
+
+  result <- indicator_fertility_soil(units, layers = NULL)
+  expect_length(result, 3)
+  expect_true(all(is.na(result)))
+})
+
 test_that("Soil indicators can be added to units dataframe", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  # Add all soil indicators as columns
-  units$F1_fertility <- indicator_soil_fertility(units, layers, soil_layer = "landcover")
-  units$F2_fertility <- indicator_soil_erosion(units, layers)
+  # Add all soil indicators as columns (F1=erosion RUSLE, F2=fertility TWI+slope)
+  units$F1_erosion <- indicator_fertility_erosion(units, layers)
+  units$F2_fertility <- indicator_fertility_soil(units, layers)
 
   # Check structure
-  expect_true("F1_fertility" %in% names(units))
+  expect_true("F1_erosion" %in% names(units))
   expect_true("F2_fertility" %in% names(units))
 
   # Check all rows populated
-  expect_true(all(!is.na(units$F1_fertility)))
+  expect_true(all(!is.na(units$F1_erosion)))
   expect_true(all(!is.na(units$F2_fertility)))
 })
 
-test_that("Soil fertility indicators can be correlated", {
+test_that("F1 erosion and F2 fertility can be correlated", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:10, ]
 
-  f1 <- indicator_soil_fertility(units, layers, soil_layer = "landcover")
-  f2 <- indicator_soil_erosion(units, layers)
+  f1 <- indicator_fertility_erosion(units, layers)
+  f2 <- indicator_fertility_soil(units, layers)
 
   # Check that both indicators produce valid values
   expect_true(all(!is.na(f1)))

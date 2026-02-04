@@ -281,9 +281,17 @@ indicator_air_quality <- function(units,
       "escalier"           = 0.02
     )
 
-    # Assign weight to each road segment based on `nature` field
-    if ("nature" %in% names(roads)) {
-      road_nature <- tolower(roads$nature)
+    # Assign weight to each road segment based on road type field
+    # Try multiple possible field names (BD TOPO v3: "nature", demo data: "road_type", etc.)
+    nature_field <- NULL
+    for (field in c("nature", "NATURE", "classe", "importance", "type", "road_type")) {
+      if (field %in% names(roads)) {
+        nature_field <- field
+        break
+      }
+    }
+    if (!is.null(nature_field)) {
+      road_nature <- tolower(roads[[nature_field]])
       road_w <- rep(0.5, nrow(roads))  # default weight
       for (j in seq_along(pollution_weights)) {
         matched <- grepl(names(pollution_weights)[j], road_nature, ignore.case = TRUE)

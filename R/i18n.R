@@ -214,14 +214,14 @@ msg_error <- function(key, ...) {
     water_wetland_detected = "Detected %d wetland pixels",
 
     # v0.2.0 - Family F: Fertilit\u00e9/Riche
-    indicator_soil_fertility = "Soil fertility (F: Fertilit\u00e9/Riche)",
-    indicator_soil_erosion = "Erosion risk index (F: Fertilit\u00e9/Riche)",
+    indicator_soil_fertility = "Soil fertility class (F: Fertilit\u00e9/Riche)",
+    indicator_soil_erosion = "Soil fertility index TWI+slope (F: Fertilit\u00e9/Riche)",
     soil_fertility_extracted = "Extracted fertility data for %d parcels",
     soil_erosion_calculated = "Calculated erosion risk (slope \u00d7 land cover)",
 
     # v0.2.0 - Family L: Landscape/Esth\u00e9tique
-    indicator_landscape_fragmentation = "Landscape fragmentation (L: Landscape/Esth\u00e9tique)",
-    indicator_landscape_edge = "Edge-to-area ratio (L: Landscape/Esth\u00e9tique)",
+    indicator_landscape_fragmentation = "Sylvosphere - edge effect (L: Landscape/Esth\u00e9tique)",
+    indicator_landscape_edge = "Landscape fragmentation (L: Landscape/Esth\u00e9tique)",
     landscape_patches_detected = "Detected %d forest patches in buffer zone",
     landscape_edge_calculated = "Calculated edge density for %d parcels",
 
@@ -437,14 +437,14 @@ msg_error <- function(key, ...) {
     water_wetland_detected = "%d pixels de zones humides d\u00e9tect\u00e9s",
 
     # v0.2.0 - Famille F : Fertilit\u00e9/Riche
-    indicator_soil_fertility = "Fertilit\u00e9 du sol (F: Fertilit\u00e9/Riche)",
-    indicator_soil_erosion = "Indice de risque d'\u00e9rosion (F: Fertilit\u00e9/Riche)",
+    indicator_soil_fertility = "Classe de fertilit\u00e9 du sol (F: Fertilit\u00e9/Riche)",
+    indicator_soil_erosion = "Indice fertilit\u00e9 TWI+pente (F: Fertilit\u00e9/Riche)",
     soil_fertility_extracted = "Donn\u00e9es de fertilit\u00e9 extraites pour %d parcelles",
     soil_erosion_calculated = "Risque d'\u00e9rosion calcul\u00e9 (pente \u00d7 couvert)",
 
     # v0.2.0 - Famille L : Landscape/Esth\u00e9tique
-    indicator_landscape_fragmentation = "Fragmentation du paysage (L: Landscape/Esth\u00e9tique)",
-    indicator_landscape_edge = "Ratio lisi\u00e8re-surface (L: Landscape/Esth\u00e9tique)",
+    indicator_landscape_fragmentation = "Sylvosph\u00e8re - effet lisi\u00e8re (L: Landscape/Esth\u00e9tique)",
+    indicator_landscape_edge = "Fragmentation paysag\u00e8re (L: Landscape/Esth\u00e9tique)",
     landscape_patches_detected = "%d taches foresti\u00e8res d\u00e9tect\u00e9es dans la zone tampon",
     landscape_edge_calculated = "Densit\u00e9 de lisi\u00e8re calcul\u00e9e pour %d parcelles",
 

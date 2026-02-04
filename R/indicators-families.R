@@ -811,18 +811,20 @@ indicator_soil_erosion <- function(units,
 # Qualité paysagère, composition, diversité des structures, harmonies
 # ==============================================================================
 
-#' Landscape Fragmentation (L1)
+#' Sylvosphere - Edge Effect (L1)
 #'
-#' Calculates forest patch metrics within buffer zone: patch count and mean size.
-#' Higher fragmentation = more patches with smaller mean size.
+#' Composite indicator (0-100) with 3 components:
+#' - Geometry (30%): shape index measuring parcel irregularity
+#' - Matrix contrast (40%): land use contrast in buffer zone (OSO classes)
+#' - Exposure (30%): wind (60%) and sun (40%) exposure based on boundary orientation
 #'
 #' @param units nemeton_units object
-#' @param layers nemeton_layers object containing land cover
+#' @param layers nemeton_layers object containing land cover (optional)
 #' @param landcover_layer Character. Name of land cover layer
 #' @param forest_values Numeric vector. Land cover codes for forest
-#' @param buffer Numeric. Analysis buffer distance (meters). Default 1000 (1 km).
+#' @param buffer Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 #'
-#' @return Numeric vector of fragmentation index (patch count / mean size)
+#' @return Numeric vector of sylvosphere scores (0-100)
 #'
 #' @export
 #' @examples
@@ -830,85 +832,205 @@ indicator_soil_erosion <- function(units,
 #' layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
 #' results <- indicator_landscape_fragmentation(
 #'   units, layers,
-#'   forest_values = c(1, 2, 3), buffer = 1000
+#'   forest_values = c(1, 2, 3), buffer = 50
 #' )
 #' }
 indicator_landscape_fragmentation <- function(units,
-                                              layers,
+                                              layers = NULL,
                                               landcover_layer = "landcover",
                                               forest_values = seq(1, 6),
-                                              buffer = 1000) {
+                                              buffer = 50) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
   }
-  if (!inherits(layers, "nemeton_layers")) {
-    stop("layers must be a nemeton_layers object", call. = FALSE)
-  }
 
-  # Resolve landcover raster (handle lazy-load)
-  landcover <- resolve_raster_layer(layers, landcover_layer)
-  if (is.null(landcover)) {
-    cli::cli_alert_warning("L1: Landcover layer '{landcover_layer}' not available, returning NA")
-    return(rep(NA_real_, nrow(units)))
-  }
-
-  # Calculate fragmentation for each unit
-  fragmentation <- numeric(nrow(units))
+  # --- Component 1: Geometry (30%) ---
+  # Shape index: SI = perimeter / (2 * sqrt(pi * area))
+  l1_geometrie <- numeric(nrow(units))
+  perimeters <- numeric(nrow(units))
+  areas <- numeric(nrow(units))
 
   for (i in seq_len(nrow(units))) {
-    # Create buffer zone
-    if (buffer > 0) {
-      buffer_zone <- sf::st_buffer(units[i, ], dist = buffer)
-    } else {
-      buffer_zone <- units[i, ]
-    }
-
-    # Crop landcover to buffer zone
-    lc_cropped <- terra::crop(landcover, terra::vect(buffer_zone), snap = "out")
-    lc_masked <- terra::mask(lc_cropped, terra::vect(buffer_zone))
-
-    # Create forest mask (1 = forest, NA = non-forest)
-    is_forest <- function(x) {
-      ifelse(x %in% forest_values, 1, NA)
-    }
-    forest_mask <- terra::app(lc_masked, is_forest)
-
-    # Count connected forest patches using terra::patches()
-    if (!terra::global(forest_mask, "notNA", na.rm = TRUE)[1, 1] == 0) {
-      # There are forest pixels
-      patches <- terra::patches(forest_mask, directions = 8, zeroAsNA = TRUE)
-
-      # Count unique patch IDs
-      patch_ids <- terra::values(patches, mat = FALSE, na.rm = TRUE)
-      num_patches <- length(unique(patch_ids))
-    } else {
-      # No forest pixels in buffer
-      num_patches <- 0
-    }
-
-    fragmentation[i] <- num_patches
+    boundary <- sf::st_cast(units[i, ], "MULTILINESTRING")
+    perimeters[i] <- as.numeric(sf::st_length(boundary))
+    areas[i] <- as.numeric(sf::st_area(units[i, ]))
+    si <- perimeters[i] / (2 * sqrt(pi * areas[i]))
+    l1_geometrie[i] <- pmin(100, (si - 1) * 25)
   }
 
+  # --- Component 2: Matrix contrast (40%) ---
+  # OSO contrast table
+  oso_contrast <- c(
+    "16" = 0, "17" = 0, "18" = 0,    # Forest (conif, broadleaf, mixed)
+    "19" = 15,                         # Landes
+    "20" = 20,                         # Prairies
+    "21" = 50, "22" = 50, "23" = 50,  # Cultures
+    "24" = 45,                         # Vignes
+    "25" = 90, "26" = 90, "27" = 90, "28" = 90,  # Built-up
+    "29" = 75,                         # Roads
+    "30" = 30                          # Water
+  )
+
+  l1_contraste <- numeric(nrow(units))
+  has_landcover <- FALSE
+
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    landcover <- resolve_raster_layer(layers, landcover_layer)
+    if (is.null(landcover)) landcover <- resolve_raster_layer(layers, "forest_cover")
+    if (!is.null(landcover)) has_landcover <- TRUE
+  }
+
+  if (has_landcover) {
+    for (i in seq_len(nrow(units))) {
+      # Buffer around parcel, subtract parcel = edge zone
+      edge_zone <- tryCatch({
+        geom_i <- sf::st_geometry(units[i, ])
+        buf <- sf::st_buffer(geom_i, dist = buffer)
+        sf::st_sf(geometry = sf::st_difference(buf, geom_i))
+      }, error = function(e) NULL)
+
+      if (is.null(edge_zone) || as.numeric(sf::st_area(edge_zone)) < 1) {
+        l1_contraste[i] <- 50  # neutral fallback
+        next
+      }
+
+      # Extract landcover values in edge zone
+      lc_values <- tryCatch({
+        safe_extract(landcover, as_pure_sf(edge_zone), progress = FALSE)[[1]]$value
+      }, error = function(e) NULL)
+
+      if (is.null(lc_values) || length(lc_values) == 0) {
+        l1_contraste[i] <- 50
+        next
+      }
+
+      lc_values <- lc_values[!is.na(lc_values)]
+      if (length(lc_values) == 0) {
+        l1_contraste[i] <- 50
+        next
+      }
+
+      # Weighted contrast by pixel count
+      lc_tab <- table(as.character(lc_values))
+      total_pixels <- sum(lc_tab)
+      weighted_contrast <- 0
+      for (cls in names(lc_tab)) {
+        weight <- if (cls %in% names(oso_contrast)) oso_contrast[cls] else 50
+        weighted_contrast <- weighted_contrast + (as.numeric(weight) * lc_tab[cls])
+      }
+      l1_contraste[i] <- weighted_contrast / total_pixels
+    }
+  } else {
+    # No landcover: neutral contrast
+    l1_contraste <- rep(50, nrow(units))
+  }
+
+  # --- Component 3: Exposure (30%) ---
+  # Wind (60%) + Sun (40%)
+  # Default wind direction: 225 degrees (SW, typical France)
+  wind_dir_deg <- 225
+
+  # Try nasapower for dominant wind direction (one call for all parcels)
+  if (requireNamespace("nasapower", quietly = TRUE)) {
+    tryCatch({
+      centroid <- sf::st_centroid(sf::st_union(units))
+      coords <- sf::st_coordinates(
+        sf::st_transform(centroid, 4326)
+      )
+      wind_data <- nasapower::get_power(
+        community = "ag",
+        lonlat = c(coords[1, 1], coords[1, 2]),
+        pars = "WD10M",
+        temporal_api = "climatology"
+      )
+      # Get annual mean wind direction
+      if ("ANN" %in% names(wind_data)) {
+        wind_dir_deg <- wind_data$ANN[1]
+      }
+    }, error = function(e) {
+      cli::cli_alert_info("L1: nasapower unavailable, using default wind direction 225\u00b0")
+    })
+  }
+
+  wind_rad <- wind_dir_deg * pi / 180
+  sun_rad <- 180 * pi / 180  # South azimuth
+
+  l1_exposition <- numeric(nrow(units))
+
+  for (i in seq_len(nrow(units))) {
+    # Get boundary coordinates for segment analysis
+    boundary <- sf::st_boundary(sf::st_geometry(units[i, ]))
+    coords <- sf::st_coordinates(boundary)
+
+    if (nrow(coords) < 2) {
+      l1_exposition[i] <- 50
+      next
+    }
+
+    # Calculate perpendicularity of each segment to wind and sun
+    wind_score <- 0
+    sun_score <- 0
+    total_length <- 0
+
+    for (j in seq_len(nrow(coords) - 1)) {
+      dx <- coords[j + 1, 1] - coords[j, 1]
+      dy <- coords[j + 1, 2] - coords[j, 2]
+      seg_length <- sqrt(dx^2 + dy^2)
+      if (seg_length < 0.01) next
+
+      seg_angle <- atan2(dy, dx)
+
+      # Perpendicularity = |sin(segment_angle - direction)|
+      wind_perp <- abs(sin(seg_angle - wind_rad))
+      sun_perp <- abs(sin(seg_angle - sun_rad))
+
+      wind_score <- wind_score + wind_perp * seg_length
+      sun_score <- sun_score + sun_perp * seg_length
+      total_length <- total_length + seg_length
+    }
+
+    if (total_length > 0) {
+      wind_score <- (wind_score / total_length) * 100
+      sun_score <- (sun_score / total_length) * 100
+    } else {
+      wind_score <- 50
+      sun_score <- 50
+    }
+
+    l1_exposition[i] <- 0.6 * wind_score + 0.4 * sun_score
+  }
+
+  # --- Synthesis ---
+  l1 <- 0.30 * l1_geometrie + 0.40 * l1_contraste + 0.30 * l1_exposition
+  l1 <- pmin(pmax(round(l1, 1), 0), 100)
+
   msg_info("indicator_landscape_fragmentation")
-  fragmentation
+  l1
 }
 
-#' Edge-to-Area Ratio (L2)
+#' Landscape Fragmentation (L2)
 #'
-#' Calculates perimeter-to-area ratio for forest parcels. Higher values
-#' indicate greater edge effect and fragmentation.
+#' Calculates landscape fragmentation using landscapemetrics (COHESION + AI)
+#' when available, or shape index fallback. Returns a score 0-100.
 #'
 #' @param units nemeton_units object
+#' @param layers nemeton_layers object (optional, for raster-based metrics)
+#' @param landcover_layer Character. Name of landcover layer in layers.
+#' @param forest_values Numeric vector. Values representing forest in landcover.
+#' @param buffer Numeric. Buffer distance in meters around union of parcels.
 #'
-#' @return Numeric vector of edge density (m/ha)
+#' @return Numeric vector of fragmentation scores (0-100)
 #'
 #' @export
 #' @examples
 #' \dontrun{
-#' results <- indicator_landscape_edge(units)
+#' results <- indicator_landscape_edge(units, layers, buffer = 1000)
 #' }
-indicator_landscape_edge <- function(units) {
+indicator_landscape_edge <- function(units, layers = NULL,
+                                     landcover_layer = "landcover",
+                                     forest_values = seq(1, 6),
+                                     buffer = 1000) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -918,24 +1040,66 @@ indicator_landscape_edge <- function(units) {
     stop("units is empty (no features)", call. = FALSE)
   }
 
-  # Calculate perimeter (m) and area (ha) for each parcel
-  edge_density <- numeric(nrow(units))
+  # Try landscapemetrics approach if layers available
+  if (!is.null(layers) && inherits(layers, "nemeton_layers") &&
+      requireNamespace("landscapemetrics", quietly = TRUE)) {
 
+    landcover <- resolve_raster_layer(layers, landcover_layer)
+    if (is.null(landcover)) landcover <- resolve_raster_layer(layers, "forest_cover")
+
+    if (!is.null(landcover)) {
+      tryCatch({
+        # Buffer 1km around union of parcels
+        union_geom <- sf::st_union(units)
+        buffer_zone <- sf::st_buffer(union_geom, dist = buffer)
+
+        # Crop landcover to buffer zone
+        lc_cropped <- terra::crop(landcover, terra::vect(buffer_zone), snap = "out")
+        lc_masked <- terra::mask(lc_cropped, terra::vect(buffer_zone))
+
+        # Create forest mask (1 = forest, 0 = non-forest)
+        is_forest <- function(x) {
+          ifelse(x %in% forest_values, 1, 0)
+        }
+        forest_raster <- terra::app(lc_masked, is_forest)
+
+        # Calculate landscape metrics
+        metrics <- landscapemetrics::calculate_lsm(
+          terra::as.int(forest_raster),
+          what = c("lsm_l_cohesion", "lsm_l_ai")
+        )
+
+        cohesion <- metrics$value[metrics$metric == "cohesion"]
+        ai <- metrics$value[metrics$metric == "ai"]
+
+        if (length(cohesion) > 0 && length(ai) > 0 &&
+            !is.na(cohesion[1]) && !is.na(ai[1])) {
+          # L2 = (COHESION + AI) / 2 — same value for all parcels
+          l2_score <- (cohesion[1] + ai[1]) / 2
+          l2_score <- pmin(pmax(round(l2_score, 1), 0), 100)
+
+          msg_info("indicator_landscape_edge")
+          return(rep(l2_score, nrow(units)))
+        }
+      }, error = function(e) {
+        cli::cli_alert_warning("L2: landscapemetrics failed ({e$message}), using shape index fallback")
+      })
+    }
+  }
+
+  # Fallback: shape index per parcel
+  scores <- numeric(nrow(units))
   for (i in seq_len(nrow(units))) {
-    # Get perimeter in meters
-    # Convert to LINESTRING/MULTILINESTRING to get boundary length
     boundary <- sf::st_cast(units[i, ], "MULTILINESTRING")
-    perimeter_m <- as.numeric(sf::st_length(boundary))
+    perimeter <- as.numeric(sf::st_length(boundary))
+    area <- as.numeric(sf::st_area(units[i, ]))
 
-    # Get area in hectares
-    area_ha <- as.numeric(sf::st_area(units[i, ])) / 10000
-
-    # Edge density (m/ha)
-    edge_density[i] <- perimeter_m / area_ha
+    shape_index <- perimeter / (2 * sqrt(pi * area))
+    scores[i] <- pmin(round(100 / shape_index, 1), 100)
   }
 
   msg_info("indicator_landscape_edge")
-  edge_density
+  scores
 }
 
 # ==============================================================================
@@ -1029,36 +1193,89 @@ indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
 
 #' @noRd
 indicator_fertility_soil <- function(units, layers = NULL, ...) {
-  # F1: Soil fertility - no dedicated soil layer available
-
-  # Proxy: use NDVI as vegetation productivity indicator
-  ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
-  if (!is.null(ndvi_raster)) {
-    cli::cli_alert_info("F1: Estimating soil fertility from NDVI productivity")
-    fertility <- safe_extract(ndvi_raster,
-      as_pure_sf(units), fun = "mean", progress = FALSE
-    )
-    # Scale NDVI (0-1) to fertility score (0-100)
-    return(pmin(pmax(fertility / 0.8, 0), 1) * 100)
+  # F2: Soil fertility (TWI + slope) - delegates to indicator_soil_erosion
+  # Follows tuto 03: F2 = (twi_norm + slope_norm) / 2
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    return(indicator_soil_erosion(units, layers))
   }
-  cli::cli_alert_warning("F1: No data available for soil fertility, returning NA")
+  cli::cli_alert_warning("F2: No layers available for soil fertility, returning NA")
   rep(NA_real_, nrow(units))
 }
 
 #' @noRd
 indicator_fertility_erosion <- function(units, layers = NULL, ...) {
-  # F2: Soil fertility (TWI + slope) - delegates to indicator_soil_erosion
-  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
-    return(indicator_soil_erosion(units, layers))
+  # F1: Erosion risk (RUSLE simplified: LS × C_factor, normalised 0-100)
+  # Follows tuto 03, exercice 1.2
+  if (is.null(layers) || !inherits(layers, "nemeton_layers")) {
+    cli::cli_alert_warning("F1: No layers available for erosion risk (RUSLE), returning NA")
+    return(rep(NA_real_, nrow(units)))
   }
-  cli::cli_alert_warning("F2: No layers available for fertility, returning NA")
-  rep(NA_real_, nrow(units))
+
+  dem <- get_dem_raster(layers)
+  if (is.null(dem)) {
+    cli::cli_alert_warning("F1: No DEM available for RUSLE, returning NA")
+    return(rep(NA_real_, nrow(units)))
+  }
+
+  cli::cli_alert_info("F1: Computing erosion risk (RUSLE simplifi\u00e9: LS \u00d7 C_factor)")
+  units_sf <- as_pure_sf(units)
+
+  # 1. Slope in degrees and radians
+  slope_deg <- terra::terrain(dem, v = "slope", unit = "degrees")
+  slope_rad <- slope_deg * pi / 180
+
+  # 2. LS factor (tuto 03): piecewise formula
+  ls_raster <- terra::ifel(
+    slope_deg < 5,
+    (slope_deg / 5)^1.2,
+    (sin(slope_rad) / 0.0896)^1.3
+  )
+  # Clamp LS to [0, 20]
+  ls_raster <- terra::clamp(ls_raster, lower = 0, upper = 20)
+
+  # 3. C_factor: if BD Foret available, rasterise (forest=0.01, non-forest=0.5)
+  bdforet_sf <- resolve_vector_layer(layers, "bdforet")
+  if (!is.null(bdforet_sf) && nrow(bdforet_sf) > 0) {
+    cli::cli_alert_info("F1: Using BD For\u00eat for C_factor (for\u00eat=0.01, hors-for\u00eat=0.5)")
+    # Create a template raster matching DEM
+    c_raster <- terra::rast(dem)
+    terra::values(c_raster) <- 0.5  # default: non-forest
+    # Rasterize BD Foret polygons as forest (C=0.01)
+    if (!sf::st_crs(bdforet_sf) == terra::crs(dem)) {
+      bdforet_sf <- sf::st_transform(bdforet_sf, terra::crs(dem))
+    }
+    bdforet_vect <- terra::vect(bdforet_sf)
+    c_raster <- terra::rasterize(bdforet_vect, c_raster, field = 1, background = 0.5, update = TRUE)
+    # Where rasterized value is 1 (forest), set C=0.01
+    c_raster <- terra::ifel(c_raster == 1, 0.01, 0.5)
+  } else {
+    cli::cli_alert_info("F1: No BD For\u00eat, using uniform C_factor = 0.05")
+    c_raster <- dem * 0 + 0.05
+  }
+
+  # 4. F1_raster = LS × C_factor
+  f1_raster <- ls_raster * c_raster
+
+  # 5. Normalise: divide by global max, clamp [0, 1], then scale to 0-100
+  f1_max <- terra::global(f1_raster, "max", na.rm = TRUE)[1, 1]
+  if (!is.na(f1_max) && f1_max > 0) {
+    f1_raster <- f1_raster / f1_max
+  }
+  f1_raster <- terra::clamp(f1_raster, lower = 0, upper = 1)
+
+  # 6. Extract mean per parcel
+  erosion <- safe_extract(f1_raster, units_sf, fun = "mean", progress = FALSE)
+
+  # 7. Scale to 0-100
+  erosion <- erosion * 100
+
+  erosion
 }
 
 #' @noRd
-indicator_landscape_edge_ratio <- function(units, ...) {
-  # L2: Edge-to-area ratio - delegates to indicator_landscape_edge
-  indicator_landscape_edge(units)
+indicator_landscape_edge_ratio <- function(units, layers = NULL, ...) {
+  # L2: Landscape fragmentation - delegates to indicator_landscape_edge
+  indicator_landscape_edge(units, layers = layers, ...)
 }
 
 #' @noRd

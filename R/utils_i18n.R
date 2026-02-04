@@ -235,8 +235,8 @@ TRANSLATIONS <- list(
     en = "Soil classes and erosion risk"
   ),
   family_L_desc = list(
-    fr = "Fragmentation paysag\u00e8re et ratio bordure/surface",
-    en = "Landscape fragmentation and edge-to-area ratio"
+    fr = "Sylvosph\u00e8re (effet lisi\u00e8re) et fragmentation paysag\u00e8re",
+    en = "Sylvosphere (edge effect) and landscape fragmentation"
   ),
   family_T_desc = list(
     fr = "Anciennet\u00e9 foresti\u00e8re et taux de changement",
@@ -278,8 +278,8 @@ TRANSLATIONS <- list(
   indicator_A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
   indicator_F1 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
   indicator_F2 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
-  indicator_L1 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
-  indicator_L2 = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio"),
+  indicator_L1 = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
+  indicator_L2 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
   indicator_T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
   indicator_T2 = list(fr = "Taux de changement", en = "Change Rate"),
   indicator_R1 = list(fr = "Risque incendie", en = "Fire Risk"),
@@ -539,10 +539,10 @@ TRANSLATIONS <- list(
   indicator_water_twi = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
   indicator_air_forest_buffer = list(fr = "Tampon forestier", en = "Forest Buffer"),
   indicator_air_quality = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
-  indicator_fertility_soil = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility"),
-  indicator_fertility_erosion = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
-  indicator_landscape_fragmentation = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
-  indicator_landscape_edge_ratio = list(fr = "Ratio bordure/surface", en = "Edge-to-Area Ratio"),
+  indicator_fertility_erosion = list(fr = "Risque d'\u00e9rosion (RUSLE)", en = "Erosion Risk (RUSLE)"),
+  indicator_fertility_soil = list(fr = "Fertilit\u00e9 des sols (TWI+pente)", en = "Soil Fertility (TWI+slope)"),
+  indicator_landscape_fragmentation = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
+  indicator_landscape_edge_ratio = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
   indicator_temporal_age = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
   indicator_temporal_change = list(fr = "Taux de changement", en = "Change Rate"),
   indicator_risk_fire = list(fr = "Risque incendie", en = "Fire Risk"),

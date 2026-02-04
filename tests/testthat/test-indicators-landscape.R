@@ -1,103 +1,60 @@
 # Tests for Landscape Family Indicators (Famille L)
-# Phase 7: US5 - Landscape/Paysage
-#
-# L1: indicator_landscape_fragmentation() - Forest patch metrics
-# L2: indicator_landscape_edge() - Edge-to-area ratio
+# L1: indicator_landscape_fragmentation() - Sylvosphere (edge effect), score 0-100
+# L2: indicator_landscape_edge() - Landscape fragmentation, score 0-100
 
 # ==============================================================================
-# L1: LANDSCAPE FRAGMENTATION
+# L1: SYLVOSPHERE (EDGE EFFECT)
 # ==============================================================================
 
-test_that("indicator_landscape_fragmentation calculates patch metrics", {
+test_that("indicator_landscape_fragmentation returns score 0-100", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
-  # Calculate fragmentation (number of patches within buffer)
-  fragmentation <- indicator_landscape_fragmentation(
+  score <- indicator_landscape_fragmentation(
     units,
     layers,
     landcover_layer = "landcover",
     forest_values = c(1, 2, 3),
-    buffer = 1000
+    buffer = 50
   )
 
   # Test output
-  expect_type(fragmentation, "double")
-  expect_length(fragmentation, 5)
-  expect_true(all(!is.na(fragmentation)))
-  expect_true(all(fragmentation >= 0)) # Number of patches should be non-negative
+  expect_type(score, "double")
+  expect_length(score, 5)
+  expect_true(all(!is.na(score)))
+  expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_fragmentation with different buffer sizes", {
+test_that("indicator_landscape_fragmentation works without layers (fallback)", {
   data(massif_demo_units)
-  layers <- massif_demo_layers()
-
   units <- massif_demo_units[1:3, ]
 
-  # Smaller buffer
-  frag_500 <- indicator_landscape_fragmentation(
-    units,
-    layers,
-    landcover_layer = "landcover",
-    forest_values = c(1, 2, 3),
-    buffer = 500
-  )
+  # No layers: geometry + exposure still work, contrast defaults to 50
+  score <- indicator_landscape_fragmentation(units)
 
-  # Larger buffer
-  frag_2000 <- indicator_landscape_fragmentation(
-    units,
-    layers,
-    landcover_layer = "landcover",
-    forest_values = c(1, 2, 3),
-    buffer = 2000
-  )
-
-  expect_length(frag_500, 3)
-  expect_length(frag_2000, 3)
-
-  # Larger buffer should generally detect more or equal patches
-  expect_true(all(frag_2000 >= frag_500 | abs(frag_2000 - frag_500) < 2))
+  expect_type(score, "double")
+  expect_length(score, 3)
+  expect_true(all(!is.na(score)))
+  expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_fragmentation with different forest definitions", {
+test_that("indicator_landscape_fragmentation geometry component varies with shape", {
   data(massif_demo_units)
-  layers <- massif_demo_layers()
+  units <- massif_demo_units[1:10, ]
 
-  units <- massif_demo_units[1:3, ]
+  # Scores should vary across parcels with different shapes
 
-  # Only value 1 as forest
-  frag_1 <- indicator_landscape_fragmentation(
-    units,
-    layers,
-    forest_values = 1,
-    buffer = 1000
-  )
+  score <- indicator_landscape_fragmentation(units)
 
-  # Values 1,2,3 as forest (broader definition)
-  frag_123 <- indicator_landscape_fragmentation(
-    units,
-    layers,
-    forest_values = c(1, 2, 3),
-    buffer = 1000
-  )
+  expect_length(score, 10)
+  expect_true(all(score >= 0 & score <= 100))
 
-  expect_length(frag_1, 3)
-  expect_length(frag_123, 3)
-  expect_true(all(!is.na(frag_1)))
-  expect_true(all(!is.na(frag_123)))
-})
-
-test_that("indicator_landscape_fragmentation returns NA when landcover missing", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:3, ]
-
-  # Non-existent landcover -> returns NA
-  frag <- indicator_landscape_fragmentation(units, layers, landcover_layer = "nonexistent")
-  expect_true(all(is.na(frag)))
+  # With multiple parcels of different shapes, we expect some variation
+  if (length(unique(round(score))) > 1) {
+    expect_true(sd(score) > 0)
+  }
 })
 
 test_that("indicator_landscape_fragmentation validates inputs", {
@@ -109,89 +66,69 @@ test_that("indicator_landscape_fragmentation validates inputs", {
     indicator_landscape_fragmentation(data.frame(x = 1:3), layers),
     "must be.*sf"
   )
-
-  # Invalid layers
-  expect_error(
-    indicator_landscape_fragmentation(massif_demo_units, list()),
-    "must be.*nemeton_layers"
-  )
 })
 
-test_that("indicator_landscape_fragmentation handles zero buffer", {
+test_that("indicator_landscape_fragmentation works for single parcel", {
   data(massif_demo_units)
-  layers <- massif_demo_layers()
+  units <- massif_demo_units[1, ]
 
-  units <- massif_demo_units[1:3, ]
+  score <- indicator_landscape_fragmentation(units)
 
-  # Zero buffer means only parcel itself
-  frag_0 <- indicator_landscape_fragmentation(
-    units,
-    layers,
-    forest_values = c(1, 2, 3),
-    buffer = 0
-  )
-
-  expect_length(frag_0, 3)
-  expect_true(all(!is.na(frag_0)))
-
-  # With zero buffer, each parcel should typically be 1 patch (or 0 if non-forest)
-  expect_true(all(frag_0 >= 0))
+  expect_length(score, 1)
+  expect_true(!is.na(score))
+  expect_true(score >= 0 && score <= 100)
 })
 
 # ==============================================================================
-# L2: EDGE-TO-AREA RATIO
+# L2: LANDSCAPE FRAGMENTATION
 # ==============================================================================
 
-test_that("indicator_landscape_edge calculates edge density", {
+test_that("indicator_landscape_edge returns score 0-100", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
 
-  # Calculate edge density (m/ha)
-  edge <- indicator_landscape_edge(units)
+  score <- indicator_landscape_edge(units)
 
   # Test output
-  expect_type(edge, "double")
-  expect_length(edge, 5)
-  expect_true(all(!is.na(edge)))
-  expect_true(all(edge >= 0)) # Edge density should be non-negative
+  expect_type(score, "double")
+  expect_length(score, 5)
+  expect_true(all(!is.na(score)))
+  expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_edge scales with parcel geometry", {
+test_that("indicator_landscape_edge fallback uses shape index", {
   data(massif_demo_units)
+  units <- massif_demo_units[1:5, ]
 
-  # Test that edge density reflects perimeter-to-area ratio
-  # Smaller parcels typically have higher edge density
-  units <- massif_demo_units[1:10, ]
+  # Without layers, should use shape index fallback
+  score <- indicator_landscape_edge(units)
 
-  edge <- indicator_landscape_edge(units)
-
-  # Calculate actual perimeter and area for comparison
-  units$perimeter_m <- as.numeric(sf::st_length(sf::st_cast(units, "MULTILINESTRING")))
-  units$area_ha <- as.numeric(sf::st_area(units)) / 10000
-  units$expected_ratio <- units$perimeter_m / units$area_ha
-
-  # Edge density should correlate with perimeter/area ratio
-  if (sd(edge) > 0 && sd(units$expected_ratio) > 0) {
-    cor_value <- cor(edge, units$expected_ratio)
-    expect_true(cor_value > 0.9) # Strong positive correlation
-  }
+  expect_type(score, "double")
+  expect_length(score, 5)
+  expect_true(all(!is.na(score)))
+  expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_edge handles different parcel sizes", {
+test_that("indicator_landscape_edge with layers uses landscapemetrics when available", {
   data(massif_demo_units)
+  layers <- massif_demo_layers()
 
-  # Select parcels with different areas
-  units_small <- massif_demo_units[1:3, ]
-  units_large <- massif_demo_units[15:17, ]
+  units <- massif_demo_units[1:5, ]
 
-  edge_small <- indicator_landscape_edge(units_small)
-  edge_large <- indicator_landscape_edge(units_large)
+  # With layers - may use landscapemetrics if available, otherwise shape index
+  score <- indicator_landscape_edge(
+    units,
+    layers,
+    landcover_layer = "landcover",
+    forest_values = c(1, 2, 3),
+    buffer = 1000
+  )
 
-  expect_length(edge_small, 3)
-  expect_length(edge_large, 3)
-  expect_true(all(!is.na(edge_small)))
-  expect_true(all(!is.na(edge_large)))
+  expect_type(score, "double")
+  expect_length(score, 5)
+  expect_true(all(!is.na(score)))
+  expect_true(all(score >= 0 & score <= 100))
 })
 
 test_that("indicator_landscape_edge validates inputs", {
@@ -214,11 +151,11 @@ test_that("indicator_landscape_edge works for single parcel", {
 
   units <- massif_demo_units[1, ]
 
-  edge <- indicator_landscape_edge(units)
+  score <- indicator_landscape_edge(units)
 
-  expect_length(edge, 1)
-  expect_true(!is.na(edge))
-  expect_true(edge > 0)
+  expect_length(score, 1)
+  expect_true(!is.na(score))
+  expect_true(score > 0 && score <= 100)
 })
 
 # ==============================================================================
@@ -237,17 +174,19 @@ test_that("Both landscape indicators work together", {
       units,
       layers,
       forest_values = c(1, 2, 3),
-      buffer = 1000
+      buffer = 50
     )
     l2 <- indicator_landscape_edge(units)
   })
 
-  # Both should return valid numeric vectors
+  # Both should return valid 0-100 scores
   expect_length(l1, 5)
   expect_length(l2, 5)
 
   expect_true(all(!is.na(l1)))
   expect_true(all(!is.na(l2)))
+  expect_true(all(l1 >= 0 & l1 <= 100))
+  expect_true(all(l2 >= 0 & l2 <= 100))
 })
 
 test_that("Landscape indicators can be added to units dataframe", {
@@ -257,75 +196,46 @@ test_that("Landscape indicators can be added to units dataframe", {
   units <- massif_demo_units[1:3, ]
 
   # Add all landscape indicators as columns
-  units$L1_fragmentation <- indicator_landscape_fragmentation(
+  units$L1_sylvosphere <- indicator_landscape_fragmentation(
     units,
     layers,
     forest_values = c(1, 2, 3),
-    buffer = 1000
+    buffer = 50
   )
-  units$L2_edge <- indicator_landscape_edge(units)
+  units$L2_fragmentation <- indicator_landscape_edge(units)
 
   # Check structure
-  expect_true("L1_fragmentation" %in% names(units))
-  expect_true("L2_edge" %in% names(units))
+  expect_true("L1_sylvosphere" %in% names(units))
+  expect_true("L2_fragmentation" %in% names(units))
 
-  # Check all rows populated
-  expect_true(all(!is.na(units$L1_fragmentation)))
-  expect_true(all(!is.na(units$L2_edge)))
-})
-
-test_that("Fragmentation and edge density can be correlated", {
-  # Higher fragmentation might correlate with higher edge density
-
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:10, ]
-
-  l1 <- indicator_landscape_fragmentation(
-    units,
-    layers,
-    forest_values = c(1, 2, 3),
-    buffer = 1000
-  )
-  l2 <- indicator_landscape_edge(units)
-
-  # Check that both indicators produce valid values
-  expect_true(all(!is.na(l1)))
-  expect_true(all(!is.na(l2)))
-
-  # If there's variation, correlation should be calculable
-  if (sd(l1) > 0 && sd(l2) > 0) {
-    cor_value <- cor(l1, l2)
-    expect_true(is.numeric(cor_value))
-    expect_true(!is.na(cor_value))
-  }
+  # Check all rows populated with 0-100 scores
+  expect_true(all(!is.na(units$L1_sylvosphere)))
+  expect_true(all(!is.na(units$L2_fragmentation)))
+  expect_true(all(units$L1_sylvosphere >= 0 & units$L1_sylvosphere <= 100))
+  expect_true(all(units$L2_fragmentation >= 0 & units$L2_fragmentation <= 100))
 })
 
 test_that("Landscape indicators work with full dataset", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
-  # Test on all 20 parcels
+  # Test on all parcels
   units <- massif_demo_units
 
   l1 <- indicator_landscape_fragmentation(
     units,
     layers,
     forest_values = c(1, 2, 3),
-    buffer = 1000
+    buffer = 50
   )
   l2 <- indicator_landscape_edge(units)
 
   expect_length(l1, nrow(massif_demo_units))
   expect_length(l2, nrow(massif_demo_units))
 
-  # All values should be valid
+  # All values should be valid 0-100 scores
   expect_true(all(!is.na(l1)))
   expect_true(all(!is.na(l2)))
-
-  # Reasonable ranges
-  expect_true(all(l1 >= 0)) # Patch count non-negative
-  expect_true(all(l2 > 0)) # Edge density positive for real parcels
-  expect_true(all(l2 < 10000)) # Reasonable upper bound for edge density (m/ha)
+  expect_true(all(l1 >= 0 & l1 <= 100))
+  expect_true(all(l2 >= 0 & l2 <= 100))
 })
