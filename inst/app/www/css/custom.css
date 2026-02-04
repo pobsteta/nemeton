@@ -271,27 +271,34 @@ html, body {
 #map_container,
 [id$="-map_container"] {
   border-radius: 0 0 8px 8px;
-  min-height: 400px;
+  min-height: 500px;
   background: #e8e8e8 !important;
 }
 .leaflet-container {
   border-radius: 0 0 8px 8px;
-  min-height: 400px;
   background: #e8e8e8 !important;
 }
 
-/* Contain leaflet maps inside cards */
+/* Contain family indicator leaflet maps inside cards */
 .card:has(.leaflet-container) {
   overflow: hidden;
 }
 .card:has(.leaflet-container) > .card-body {
   overflow: hidden;
+  max-height: 420px;
+}
+
+/* Main parcel map should fill available space */
+#map_container .leaflet-container,
+[id$="-map_container"] .leaflet-container {
+  min-height: 500px;
 }
 
 /* Ensure the leaflet legend has enough space and isn't clipped */
 .leaflet-control.info.legend {
-  max-height: 200px;
+  max-height: 150px;
   overflow-y: auto;
+  font-size: 0.8em;
 }
 
 .leaflet-control-zoom a {

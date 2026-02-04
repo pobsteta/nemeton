@@ -136,7 +136,7 @@ mod_family_server <- function(id, family_code, app_state) {
         map_id <- paste0("map", i)
         bslib::card(
           bslib::card_body(
-            leaflet::leafletOutput(ns(map_id), height = "400px")
+            leaflet::leafletOutput(ns(map_id), height = "380px")
           )
         )
       })
