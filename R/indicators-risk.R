@@ -1,10 +1,10 @@
 # indicators-risk.R
 # Risk & Resilience Family (R) Indicators
-# MVP v0.3.0 - Multi-Family Indicator Extension
+# Aligned with tuto 03 methodology (fireexposuR, microclima, SPEI)
 
-#' @importFrom terra terrain extract
-#' @importFrom sf st_centroid st_distance
-#' @importFrom stats median
+#' @importFrom terra terrain extract rasterize global clamp
+#' @importFrom sf st_centroid st_distance st_transform st_coordinates
+#' @importFrom stats median weighted.mean ts
 #' @keywords internal
 NULL
 
@@ -14,16 +14,18 @@ NULL
 
 #' Calculate Fire Risk Index (R1)
 #'
-#' Computes fire risk based on topographic slope, species flammability, and
-#' climate dryness.
+#' Computes fire risk using fire exposure analysis from BD Foret fuel mapping
+#' (via \pkg{fireexposuR}). Falls back to slope + species + climate method
+#' when \pkg{fireexposuR} or BD Foret data is unavailable.
 #'
 #' @param units An sf object with forest parcels.
 #' @param dem A SpatRaster with digital elevation model (meters).
-#' @param layers A nemeton_layers object. Used to extract DEM and NDVI if
-#'   \code{dem} is NULL.
-#' @param species_field Character. Column name with species names.
-#' @param climate List with 'temperature' and 'precipitation' SpatRasters, or NULL.
-#' @param weights Named numeric vector. Weights for components:
+#' @param layers A nemeton_layers object. Used to extract DEM and BD Foret.
+#' @param bdforet An sf object with BD Foret V2 polygons, or NULL.
+#' @param species_field Character. Column name with species names (fallback only).
+#' @param climate List with 'temperature' and 'precipitation' SpatRasters,
+#'   or NULL (fallback only).
+#' @param weights Named numeric vector. Weights for fallback components:
 #'   c(slope, species, climate). Default c(1/3, 1/3, 1/3).
 #'
 #' @return The input sf object with added column:
@@ -32,14 +34,11 @@ NULL
 #'   }
 #'
 #' @details
-#' **Formula**: R1 = w1×slope_factor + w2×species_flammability + w3×climate_dryness
+#' **Primary method** (requires \pkg{fireexposuR} + BD Foret):
+#' Rasterizes BD Foret as a hazard layer, then computes fire exposure
+#' with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
 #'
-#' **Components**:
-#' \itemize{
-#'   \item slope_factor: Slope from DEM, normalized to 0-100 (>30° = max risk)
-#'   \item species_flammability: Lookup from internal table (Pinus=80, Quercus=50, Fagus=20)
-#'   \item climate_dryness: Low precipitation + high temperature = high dryness
-#' }
+#' **Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
 #'
 #' @family risk-indicators
 #' @export
@@ -51,20 +50,15 @@ NULL
 #'
 #' data(massif_demo_units)
 #' units <- massif_demo_units
-#' units$species <- sample(c("Pinus", "Quercus", "Fagus"), nrow(units), replace = TRUE)
 #'
 #' dem <- rast("path/to/dem.tif")
-#' climate <- list(
-#'   temperature = rast("path/to/temp.tif"),
-#'   precipitation = rast("path/to/precip.tif")
-#' )
-#'
-#' result <- indicator_risk_fire(units, dem = dem, species_field = "species", climate = climate)
+#' result <- indicator_risk_fire(units, dem = dem)
 #' summary(result$R1)
 #' }
 indicator_risk_fire <- function(units,
                                 dem = NULL,
                                 layers = NULL,
+                                bdforet = NULL,
                                 species_field = "species",
                                 climate = NULL,
                                 weights = c(slope = 1 / 3, species = 1 / 3, climate = 1 / 3)) {
@@ -82,6 +76,36 @@ indicator_risk_fire <- function(units,
     return(units)
   }
 
+  # Resolve BD Foret from layers if not provided directly
+  if (is.null(bdforet) && !is.null(layers)) {
+    bdforet <- resolve_vector_layer(layers, "bdforet")
+  }
+
+  # --- Primary method: fireexposuR + BD Foret ---
+  has_fireexposur <- requireNamespace("fireexposuR", quietly = TRUE)
+  if (has_fireexposur && !is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
+    tryCatch({
+      cli::cli_alert_info("R1: Using fireexposuR with BD For\u00eat hazard layer")
+      # Rasterize BD Foret onto DEM grid: forest = 1 (fuel), non-forest = 0
+      hazard <- terra::rasterize(terra::vect(bdforet), dem, field = 1, background = 0)
+      # Fire exposure with 500m transmission distance
+      exposure <- fireexposuR::fire_exp(hazard, t_dist = 500)
+      # Extract mean exposure per parcel (0-1 scale)
+      exposure_mean <- safe_extract(exposure,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      units$R1 <- pmin(pmax(exposure_mean * 100, 0), 100)
+      msg_info("indicator_risk_fire")
+      return(units)
+    }, error = function(e) {
+      cli::cli_alert_warning("R1: fireexposuR failed ({e$message}), using fallback")
+    })
+  }
+
+  # --- Fallback method: slope + species + climate ---
+  if (!has_fireexposur || is.null(bdforet)) {
+    cli::cli_alert_info("R1: Using fallback method (slope + species + climate)")
+  }
+
   # Normalize weights
   weights <- weights / sum(weights)
 
@@ -96,17 +120,14 @@ indicator_risk_fire <- function(units,
     species <- units[[species_field]]
     species_factor <- get_species_flammability(species)
   } else {
-    # Fallback: use NDVI. Low NDVI = dry vegetation = higher flammability
     ndvi_raster_r1 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster_r1)) {
       ndvi_mean <- safe_extract(ndvi_raster_r1,
         as_pure_sf(units), fun = "mean", progress = FALSE)
-      # Low NDVI = dry = flammable. Invert: NDVI 0.2->80, NDVI 0.8->20
       species_factor <- pmax(0, pmin(100, 100 - ndvi_mean * 100))
     } else {
       species_factor <- rep(50, nrow(units))
     }
-    # Redistribute species weight if no data
     weights["slope"] <- weights["slope"] + weights["species"] / 2
     weights["climate"] <- weights["climate"] + weights["species"] / 2
     weights["species"] <- 0
@@ -146,16 +167,14 @@ indicator_risk_fire <- function(units,
 
 #' Calculate Storm Vulnerability Index (R2)
 #'
-#' Computes storm vulnerability based on stand height, density, and topographic exposure.
+#' Computes storm vulnerability using wind shelter coefficient from
+#' \pkg{microclima}. Falls back to DEM-derived terrain exposure when
+#' \pkg{microclima} is unavailable.
 #'
 #' @param units An sf object with forest parcels.
 #' @param dem A SpatRaster with digital elevation model (meters).
-#' @param layers A nemeton_layers object. Used to extract DEM and LiDAR MNH
-#'   if \code{dem} is NULL.
-#' @param height_field Character. Column name with stand height (meters).
-#' @param density_field Character. Column name with stand density (0-1 scale).
-#' @param weights Named numeric vector. Weights for components:
-#'   c(height, density, exposure). Default c(1/3, 1/3, 1/3).
+#' @param layers A nemeton_layers object. Used to extract DEM if
+#'   \code{dem} is NULL.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -163,14 +182,15 @@ indicator_risk_fire <- function(units,
 #'   }
 #'
 #' @details
-#' **Formula**: R2 = w1×height_factor + w2×density_factor + w3×exposure_factor
+#' **Primary method** (requires \pkg{microclima}):
+#' Uses \code{microclima::windcoef()} to compute wind shelter coefficient
+#' from the DEM. Dominant wind direction is obtained from NASA POWER
+#' climatology (\pkg{nasapower}), defaulting to 270 degrees (west) for France.
+#' R2 = (1 - shelter_coef) * 100.
 #'
-#' **Components**:
-#' \itemize{
-#'   \item height_factor: Taller stands (>30m) are more vulnerable
-#'   \item density_factor: Dense stands (>0.8) have higher wind load
-#'   \item exposure_factor: Topographic Position Index from DEM (ridges = exposed)
-#' }
+#' **Fallback method** (DEM terrain derivatives):
+#' Combines aspect-wind alignment, slope, and terrain ruggedness (TRI):
+#' R2 = wind_exposure * (0.6 * slope_norm + 0.4 * TRI_norm) * 100.
 #'
 #' @family risk-indicators
 #' @export
@@ -181,20 +201,14 @@ indicator_risk_fire <- function(units,
 #'
 #' data(massif_demo_units)
 #' units <- massif_demo_units
-#' units$height <- runif(nrow(units), 10, 35)
-#' units$density <- runif(nrow(units), 0.5, 1.0)
-#'
 #' dem <- rast("path/to/dem.tif")
 #'
-#' result <- indicator_risk_storm(units, dem = dem, height_field = "height", density_field = "density")
+#' result <- indicator_risk_storm(units, dem = dem)
 #' summary(result$R2)
 #' }
 indicator_risk_storm <- function(units,
                                  dem = NULL,
-                                 layers = NULL,
-                                 height_field = "height",
-                                 density_field = "density",
-                                 weights = c(height = 1 / 3, density = 1 / 3, exposure = 1 / 3)) {
+                                 layers = NULL) {
   # Validate inputs
   validate_sf(units)
 
@@ -209,51 +223,78 @@ indicator_risk_storm <- function(units,
     return(units)
   }
 
-  # Normalize weights
-  weights <- weights / sum(weights)
+  # --- Get dominant wind direction ---
+  wind_dir <- 270  # Default: west (typical France)
 
-  # Component 1: Height factor (prefer LiDAR MNH, then field, then NDVI)
-  mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
-  if (!is.null(mnh_raster)) {
-    cli::cli_alert_info("R2: Using LiDAR MNH for canopy height")
-    mnh_mean <- safe_extract(mnh_raster,
-      as_pure_sf(units), fun = "mean", progress = FALSE)
-    height_factor <- pmin(pmax((mnh_mean - 10) / 25, 0), 1) * 100
-  } else if (height_field %in% names(units)) {
-    height_values <- units[[height_field]]
-    height_factor <- pmin(pmax((height_values - 10) / 25, 0), 1) * 100
-  } else {
-    # Proxy: use NDVI as proxy for canopy height
-    ndvi_r2 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
-    if (!is.null(ndvi_r2)) {
-      ndvi_mean <- safe_extract(ndvi_r2,
+  if (requireNamespace("nasapower", quietly = TRUE)) {
+    tryCatch({
+      centroid <- suppressWarnings(sf::st_centroid(sf::st_union(units)))
+      coords <- sf::st_coordinates(sf::st_transform(centroid, 4326))
+      wind_data <- nasapower::get_power(
+        community = "ag",
+        lonlat = c(coords[1, 1], coords[1, 2]),
+        pars = c("WD10M", "WS10M"),
+        temporal_api = "climatology"
+      )
+      wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
+      ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
+      if (length(wd_values) == 12 && length(ws_values) == 12 &&
+          !all(is.na(wd_values)) && !all(is.na(ws_values))) {
+        wind_dir <- round(stats::weighted.mean(wd_values, ws_values, na.rm = TRUE))
+      }
+    }, error = function(e) {
+      cli::cli_alert_info("R2: nasapower unavailable, using default wind direction 270\u00b0")
+    })
+  }
+
+  # --- Primary method: microclima::windcoef ---
+  if (suppressWarnings(requireNamespace("microclima", quietly = TRUE))) {
+    tryCatch({
+      cli::cli_alert_info("R2: Using microclima::windcoef (wind direction = {wind_dir}\u00b0)")
+      shelter_coef <- microclima::windcoef(
+        dsm = dem,
+        direction = wind_dir,
+        hgt = 10,
+        reso = terra::res(dem)[1]
+      )
+      # Vulnerability = 1 - shelter (exposed sites have low shelter)
+      r2_raster <- 1 - shelter_coef
+      r2_mean <- safe_extract(r2_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
-      height_factor <- pmin(pmax(ndvi_mean / 0.8, 0), 1) * 100
-    } else {
-      height_factor <- rep(50, nrow(units))
-    }
+      units$R2 <- pmin(pmax(r2_mean * 100, 0), 100)
+      msg_info("indicator_risk_storm")
+      return(units)
+    }, error = function(e) {
+      cli::cli_alert_warning("R2: microclima failed ({e$message}), using terrain fallback")
+    })
   }
 
-  # Component 2: Density factor (or neutral proxy)
-  if (density_field %in% names(units)) {
-    density_values <- units[[density_field]]
-    density_factor <- pmin(pmax((density_values - 0.5) / 0.5, 0), 1) * 100
-  } else {
-    density_factor <- rep(50, nrow(units))  # Neutral
-  }
+  # --- Fallback method: DEM terrain derivatives ---
+  cli::cli_alert_info("R2: Using terrain fallback (aspect + slope + TRI)")
 
-  # Component 3: Topographic exposure (TPI)
-  tpi_raster <- terra::terrain(dem, v = "TPI")
-  tpi_values <- safe_extract(tpi_raster,
+  aspect <- terra::terrain(dem, v = "aspect", unit = "degrees")
+  pente <- terra::terrain(dem, v = "slope", unit = "degrees")
+  tri <- terra::terrain(dem, v = "TRI")
+
+  # Wind exposure: max when aspect is aligned with wind direction
+  diff_angle <- abs(aspect - wind_dir)
+  diff_angle <- terra::app(terra::sds(diff_angle, 360 - diff_angle), fun = "min")
+  expo_vent <- 1 - (diff_angle / 180)
+
+  # Normalize slope: 0-45 degrees -> 0-1
+  pente_norm <- terra::clamp(pente / 45, lower = 0, upper = 1)
+
+  # Normalize TRI
+  tri_max <- terra::global(tri, "max", na.rm = TRUE)$max
+  if (is.na(tri_max) || tri_max == 0) tri_max <- 1
+  tri_norm <- terra::clamp(tri / tri_max, lower = 0, upper = 1)
+
+  # Composite: wind exposure modulated by terrain steepness/roughness
+  r2_raster <- expo_vent * (0.6 * pente_norm + 0.4 * tri_norm)
+
+  r2_mean <- safe_extract(r2_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
-  exposure_factor <- pmin(pmax((tpi_values + 50) / 100, 0), 1) * 100
-
-  # Composite R2
-  units$R2 <- weights["height"] * height_factor +
-    weights["density"] * density_factor +
-    weights["exposure"] * exposure_factor
-
-  units$R2 <- pmin(pmax(units$R2, 0), 100)
+  units$R2 <- pmin(pmax(r2_mean * 100, 0), 100)
   msg_info("indicator_risk_storm")
   units
 }
@@ -264,18 +305,16 @@ indicator_risk_storm <- function(units,
 
 #' Calculate Drought Stress Index (R3)
 #'
-#' Computes drought stress based on topographic wetness (inverse TWI),
-#' precipitation deficit, and species sensitivity.
+#' Computes drought stress combining a climate component (SPEI-3 index)
+#' and a topographic modulation (aspect, slope, TWI). Falls back to
+#' topographic-only assessment when \pkg{SPEI} is unavailable.
 #'
 #' @param units An sf object with forest parcels.
-#' @param layers A nemeton_layers object. Used to extract DEM for TWI
-#'   computation when \code{twi_field} is not present in \code{units}.
-#' @param twi_field Character. Column name with Topographic Wetness Index (TWI).
-#'   Can reuse W3 from v0.2.0.
-#' @param climate List with 'precipitation' SpatRaster, or NULL.
-#' @param species_field Character. Column name with species names.
-#' @param weights Named numeric vector. Weights for components:
-#'   c(twi, precip, species). Default c(0.4, 0.4, 0.2).
+#' @param layers A nemeton_layers object. Used to extract DEM.
+#' @param dem A SpatRaster with digital elevation model (meters).
+#' @param climate_data Optional list with \code{precip} (monthly precipitation
+#'   vector in mm) and \code{temp} (list with \code{tmin} and \code{tmax}
+#'   monthly vectors in degrees C). If NULL, uses simulated data.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -283,14 +322,21 @@ indicator_risk_storm <- function(units,
 #'   }
 #'
 #' @details
-#' **Formula**: R3 = w1×(100-TWI_norm) + w2×precip_deficit + w3×species_sensitivity
+#' **Climate component** (weight 0.6):
+#' Uses SPEI-3 (Standardised Precipitation-Evapotranspiration Index at 3-month
+#' scale) via \pkg{SPEI}. PET is computed with the Hargreaves method.
+#' R3_climat = (-SPEI_recent + 2) / 4, clamped to 0-1.
+#' Falls back to 0.5 without \pkg{SPEI}.
 #'
-#' **Components**:
+#' **Topographic component** (weight 0.4):
 #' \itemize{
-#'   \item Inverse TWI: Low TWI (dry sites) = high drought stress
-#'   \item Precipitation deficit: Low annual precip = high stress
-#'   \item Species sensitivity: Fagus (80), Quercus (50), Pinus (50), others (50)
+#'   \item aspect_risk: south-facing = max risk
+#'   \item slope_risk: steep slopes = runoff = dry
+#'   \item twi_risk: low TWI = dry
 #' }
+#' topo_risk = 0.4*aspect_risk + 0.3*slope_risk + 0.3*twi_risk
+#'
+#' R3 = (0.6 * climate + 0.4 * topo) * 100
 #'
 #' @family risk-indicators
 #' @export
@@ -301,80 +347,110 @@ indicator_risk_storm <- function(units,
 #'
 #' data(massif_demo_units)
 #' units <- massif_demo_units
+#' dem <- rast("path/to/dem.tif")
 #'
-#' # Reuse W3 (TWI) from v0.2.0
-#' units$W3 <- runif(nrow(units), 5, 15)
-#' units$species <- sample(c("Fagus", "Quercus", "Pinus"), nrow(units), replace = TRUE)
-#'
-#' climate <- list(precipitation = rast("path/to/precip.tif"))
-#'
-#' result <- indicator_risk_drought(units, twi_field = "W3", climate = climate, species_field = "species")
+#' result <- indicator_risk_drought(units, dem = dem)
 #' summary(result$R3)
 #' }
 indicator_risk_drought <- function(units,
                                    layers = NULL,
-                                   twi_field = "W3",
-                                   climate = NULL,
-                                   species_field = "species",
-                                   weights = c(twi = 0.4, precip = 0.4, species = 0.2)) {
+                                   dem = NULL,
+                                   climate_data = NULL) {
   # Validate inputs
   validate_sf(units)
 
-  # Normalize weights
-  weights <- weights / sum(weights)
-
-  # Component 1: Inverse TWI (low TWI = dry sites = high stress)
-  if (twi_field %in% names(units)) {
-    twi_values <- units[[twi_field]]
-  } else {
-    # Compute TWI from DEM if available (prefer GRASS, fallback terra D8)
-    dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
-    if (!is.null(dem)) {
-      cli::cli_alert_info("R3: Computing TWI from DEM for drought assessment")
-      twi_raster <- get_or_compute_twi(dem)
-      twi_values <- safe_extract(twi_raster,
-        as_pure_sf(units), fun = "mean", progress = FALSE)
-    } else {
-      cli::cli_alert_warning("R3: No TWI or DEM available for drought risk")
-      units$R3 <- rep(NA_real_, nrow(units))
-      return(units)
-    }
+  # Extract DEM from layers if not provided directly
+  if (is.null(dem) && !is.null(layers)) {
+    dem <- get_dem_raster(layers)
   }
 
-  # Normalize TWI: 5=100 (dry), 15=0 (wet)
-  twi_factor <- pmin(pmax((15 - twi_values) / 10, 0), 1) * 100
-
-  # Component 2: Precipitation deficit (if available)
-  if (!is.null(climate) && "precipitation" %in% names(climate)) {
-    precip_values <- terra::extract(climate$precipitation, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
-    precip_factor <- pmin(pmax((1200 - precip_values) / 600, 0), 1) * 100
-  } else {
-    precip_factor <- rep(50, nrow(units))
-    weights["twi"] <- weights["twi"] + weights["precip"]
-    weights["precip"] <- 0
+  if (is.null(dem) || !inherits(dem, "SpatRaster")) {
+    cli::cli_alert_warning("R3: No DEM available for drought risk, returning NA")
+    units$R3 <- rep(NA_real_, nrow(units))
+    return(units)
   }
 
-  # Component 3: Species sensitivity (or neutral if not available)
-  if (species_field %in% names(units)) {
-    species <- units[[species_field]]
-    species_factor <- get_species_drought_sensitivity(species)
+  # --- Component 1: Climate SPEI (weight 0.6) ---
+  r3_climat <- 0.5  # Default scalar fallback
+
+  if (requireNamespace("SPEI", quietly = TRUE)) {
+    tryCatch({
+      # Get latitude for Hargreaves PET
+      centroid <- suppressWarnings(sf::st_centroid(sf::st_union(units)))
+      coords <- sf::st_coordinates(sf::st_transform(centroid, 4326))
+      lat_mean <- coords[1, 2]
+
+      if (!is.null(climate_data) &&
+          !is.null(climate_data$precip) &&
+          !is.null(climate_data$temp)) {
+        # Use provided monthly data
+        precip <- climate_data$precip
+        tmin <- climate_data$temp$tmin
+        tmax <- climate_data$temp$tmax
+      } else {
+        # Simulated data (same as tuto 03) - representative Mediterranean/continental
+        cli::cli_alert_info("R3: Using simulated climate data for SPEI")
+        set.seed(42)
+        n_months <- 60  # 5 years
+        # Monthly precipitation pattern (dry summers)
+        base_precip <- rep(c(60, 55, 50, 45, 50, 30, 20, 25, 40, 55, 65, 70), length.out = n_months)
+        precip <- pmax(0, base_precip + stats::rnorm(n_months, 0, 15))
+        # Temperature pattern
+        base_tmax <- rep(c(8, 10, 14, 18, 22, 27, 30, 29, 24, 18, 12, 8), length.out = n_months)
+        base_tmin <- rep(c(0, 1, 4, 7, 11, 15, 18, 17, 13, 8, 4, 1), length.out = n_months)
+        tmax <- base_tmax + stats::rnorm(n_months, 0, 2)
+        tmin <- base_tmin + stats::rnorm(n_months, 0, 2)
+      }
+
+      # Compute PET with Hargreaves
+      pet <- SPEI::hargreaves(Tmin = tmin, Tmax = tmax, lat = lat_mean)
+      # SPEI-3
+      bal <- precip - as.numeric(pet)
+      spei_result <- SPEI::spei(ts(bal, frequency = 12), scale = 3)
+      spei_vals <- as.numeric(spei_result$fitted)
+      # Use most recent valid SPEI value
+      valid_spei <- spei_vals[!is.na(spei_vals) & is.finite(spei_vals)]
+      if (length(valid_spei) > 0) {
+        spei_recent <- utils::tail(valid_spei, 1)
+        # Convert SPEI to risk: SPEI -2 = max risk (1), SPEI +2 = no risk (0)
+        r3_climat <- max(0, min(1, (-spei_recent + 2) / 4))
+        cli::cli_alert_info("R3: SPEI-3 = {round(spei_recent, 2)}, climate risk = {round(r3_climat, 2)}")
+      }
+    }, error = function(e) {
+      cli::cli_alert_warning("R3: SPEI computation failed ({e$message}), using default 0.5")
+    })
   } else {
-    species_factor <- rep(50, nrow(units))
-    weights["twi"] <- weights["twi"] + weights["species"] / 2
-    weights["precip"] <- weights["precip"] + weights["species"] / 2
-    weights["species"] <- 0
+    cli::cli_alert_info("R3: SPEI package not available, using default climate risk 0.5")
   }
 
-  # Renormalize weights
-  total_w <- sum(weights)
-  if (total_w > 0) weights <- weights / total_w
+  # --- Component 2: Topographic modulation (weight 0.4) ---
+  aspect <- terra::terrain(dem, v = "aspect", unit = "degrees")
+  pente <- terra::terrain(dem, v = "slope", unit = "degrees")
 
-  # Composite R3
-  units$R3 <- weights["twi"] * twi_factor +
-    weights["precip"] * precip_factor +
-    weights["species"] * species_factor
+  # Aspect risk: south-facing (180°) = max drought risk
+  aspect_risk <- (1 + cos((aspect - 180) * pi / 180)) / 2
 
-  units$R3 <- pmin(pmax(units$R3, 0), 100)
+  # Slope risk: steep slopes = more runoff = drier
+  pente_risk <- terra::clamp(pente / 30, lower = 0, upper = 1)
+
+  # TWI risk: low TWI = dry
+  twi_raster <- get_or_compute_twi(dem)
+  twi_max <- terra::global(twi_raster, "max", na.rm = TRUE)$max
+  if (is.na(twi_max) || twi_max == 0) twi_max <- 1
+  twi_norm <- terra::clamp(twi_raster / twi_max, lower = 0, upper = 1)
+  twi_risk <- 1 - twi_norm
+
+  # Composite topographic risk
+  topo_risk <- 0.4 * aspect_risk + 0.3 * pente_risk + 0.3 * twi_risk
+
+  # --- Final R3: climate (0.6) + topo (0.4) ---
+  # r3_climat is a scalar, topo_risk is a raster
+  r3_raster <- 0.6 * r3_climat + 0.4 * topo_risk
+
+  r3_mean <- safe_extract(r3_raster,
+    as_pure_sf(units), fun = "mean", progress = FALSE)
+  units$R3 <- pmin(pmax(r3_mean * 100, 0), 100)
+
   msg_info("indicator_risk_drought")
   units
 }
@@ -386,16 +462,19 @@ indicator_risk_drought <- function(units,
 #' Calculate Game Browsing Pressure Index (R4)
 #'
 #' Computes browsing pressure risk from ungulates (deer, wild boar) based on
-#' species palatability, stand vulnerability, edge exposure, and local game density.
+#' species palatability from BD Foret, stand vulnerability from LiDAR,
+#' edge exposure, and local game density from hunting statistics.
+#'
+#' Aligned with tuto 03 methodology: BD Foret intersection for palatability,
+#' LiDAR MNH for vulnerability, hunting data (data.gouv.fr) for density.
 #'
 #' @param units An sf object with forest parcels.
-#' @param species_field Character. Column name with species names.
-#' @param height_field Character. Column name with stand height (meters). Optional.
-#' @param age_field Character. Column name with stand age (years). Optional.
-#' @param game_density SpatRaster with game density index (0-100), or NULL.
-#' @param edge_buffer Numeric. Buffer distance (m) for edge effect calculation. Default 50.
-#' @param weights Named numeric vector. Weights for components:
-#'   c(palatability, vulnerability, edge, density). Default c(0.35, 0.30, 0.20, 0.15).
+#' @param layers A nemeton_layers object. Used to extract BD Foret and LiDAR MNH.
+#' @param bdforet An sf object with BD Foret V2 polygons, or NULL (resolved from layers).
+#' @param game_density SpatRaster with game density index (0-100), or NULL
+#'   (auto-computed from hunting data if available).
+#' @param edge_buffer Numeric. Buffer distance (m) for edge effect calculation.
+#'   Default 50.
 #'
 #' @return The input sf object with added columns:
 #'   \itemize{
@@ -405,21 +484,17 @@ indicator_risk_drought <- function(units,
 #'   }
 #'
 #' @details
-#' **Formula**: R4 = w1*palatability + w2*vulnerability + w3*edge_exposure + w4*game_density
+#' **Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density
 #'
 #' **Components**:
 #' \itemize{
-#'   \item palatability: Species attractiveness to browsers (Quercus=90, Abies=85, Fagus=70, Pinus=30)
-#'   \item vulnerability: Young/short stands more vulnerable (<2m = 100, >10m = 0)
-#'   \item edge_exposure: Proportion of parcel within buffer of forest edge
-#'   \item game_density: Local ungulate population index if available
-#' }
-#'
-#' **Data sources for game density**:
-#' \itemize{
-#'   \item ONF/CNPF: Consumption indices from field surveys
-#'   \item Hunting federations: Harvest statistics by commune
-#'   \item ONCFS/OFB: Wildlife monitoring data
+#'   \item palatability: From BD Foret species intersection (pattern matching on
+#'     essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30.
+#'   \item vulnerability: From LiDAR MNH mean height per parcel.
+#'     <2m = 100, 2-10m = decreasing, >10m = 0.
+#'   \item edge_exposure: Proportion of parcel within buffer of forest edge.
+#'   \item game_density: From departmental hunting harvest statistics
+#'     (data.gouv.fr, OFB). Auto-fetched via \code{\link{get_game_pressure_raster}}.
 #' }
 #'
 #' @family risk-indicators
@@ -431,69 +506,93 @@ indicator_risk_drought <- function(units,
 #'
 #' data(massif_demo_units)
 #' units <- massif_demo_units
-#' units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), nrow(units), replace = TRUE
-#' units$height <- runif(nrow(units), 1, 25)
-#' units$age <- runif(nrow(units), 5, 80)
 #'
-#' # Without game density data
-#' result <- indicator_risk_browsing(units, species_field = "species", height_field = "height")
+#' result <- indicator_risk_browsing(units)
 #' summary(result$R4)
-#'
-#' # With game density raster
-#' game_raster <- rast("path/to/game_density.tif")
-#' result <- indicator_risk_browsing(units, species_field = "species", game_density = game_raster)
 #' }
 indicator_risk_browsing <- function(units,
-                                    species_field = "species",
-                                    height_field = NULL,
-                                    age_field = NULL,
+                                    layers = NULL,
+                                    bdforet = NULL,
                                     game_density = NULL,
-                                    edge_buffer = 50,
-                                    weights = c(palatability = 0.35, vulnerability = 0.30,
-                                                edge = 0.20, density = 0.15)) {
+                                    edge_buffer = 50) {
   # Validate inputs
-
   validate_sf(units)
 
-  # Normalize weights
-  weights <- weights / sum(weights)
+  # Fixed weights from tuto 03
+  w_palatability <- 0.35
+  w_vulnerability <- 0.30
+  w_edge <- 0.20
+  w_density <- 0.15
 
   n_units <- nrow(units)
 
+  # Resolve BD Foret from layers if not provided
+  if (is.null(bdforet) && !is.null(layers)) {
+    bdforet <- resolve_vector_layer(layers, "bdforet")
+  }
+
   # ==========================================================================
-  # Component 1: Species palatability (or neutral if no species data)
+  # Component 1: Palatability from BD Foret intersection (tuto 03 method)
   # ==========================================================================
-  if (species_field %in% names(units)) {
-    species <- units[[species_field]]
-    palatability_factor <- get_species_palatability(species)
+  palatability_factor <- rep(50, n_units)  # Default
+
+  if (!is.null(bdforet) && inherits(bdforet, "sf") && nrow(bdforet) > 0) {
+    cli::cli_alert_info("R4: Computing palatability from BD For\u00eat intersection")
+
+    # Find species/essence column in BD Foret
+    essence_col <- NULL
+    for (col in c("essence", "tfv", "libelle", "code_tfv",
+                  "TFV", "ESSENCE", "LIB_FV", "LIBELLE")) {
+      if (col %in% names(bdforet)) {
+        essence_col <- col
+        break
+      }
+    }
+
+    if (!is.null(essence_col)) {
+      bdforet_proj <- sf::st_transform(bdforet, sf::st_crs(units))
+
+      for (i in seq_len(n_units)) {
+        inter <- tryCatch({
+          suppressWarnings(sf::st_intersection(bdforet_proj, sf::st_geometry(units)[i]))
+        }, error = function(e) NULL)
+
+        if (!is.null(inter) && nrow(inter) > 0) {
+          essence <- tolower(as.character(inter[[essence_col]][1]))
+          # Use get_species_palatability for pattern matching
+          score <- get_species_palatability(essence)
+          if (!is.na(score)) {
+            palatability_factor[i] <- score
+          }
+        }
+      }
+    }
   } else {
-    # No species data - use moderate palatability (broadleaf default)
-    cli::cli_alert_info("R4: No species data, using moderate palatability estimate")
-    palatability_factor <- rep(60, n_units)
+    cli::cli_alert_info("R4: No BD For\u00eat data, using default palatability 50")
   }
   units$R4_palatability <- palatability_factor
 
   # ==========================================================================
-  # Component 2: Stand vulnerability (young/short stands more vulnerable)
+  # Component 2: Vulnerability from LiDAR MNH (tuto 03 method)
   # ==========================================================================
-  if (!is.null(height_field) && height_field %in% names(units)) {
-    height_values <- units[[height_field]]
-    # Vulnerability: <2m = 100, 2-10m = decreasing, >10m = 0
-    vulnerability_factor <- pmax(0, pmin(100, (10 - height_values) / 8 * 100))
-  } else if (!is.null(age_field) && age_field %in% names(units)) {
-    age_values <- units[[age_field]]
-    # Vulnerability: <10 years = 100, 10-40 years = decreasing, >40 years = 0
-    vulnerability_factor <- pmax(0, pmin(100, (40 - age_values) / 30 * 100))
+  vulnerability_factor <- rep(50, n_units)  # Default
+
+  mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
+
+  if (!is.null(mnh_raster)) {
+    cli::cli_alert_info("R4: Computing vulnerability from LiDAR MNH")
+    mnh_mean <- safe_extract(mnh_raster,
+      as_pure_sf(units), fun = "mean", progress = FALSE)
+    # Tuto formula: (10 - zmean) / 8 * 100
+    vulnerability_factor <- pmax(0, pmin(100, (10 - mnh_mean) / 8 * 100))
   } else {
-    # Default: moderate vulnerability
-    vulnerability_factor <- rep(50, n_units)
+    cli::cli_alert_info("R4: No LiDAR MNH, using default vulnerability 50")
   }
   units$R4_vulnerability <- vulnerability_factor
 
   # ==========================================================================
-  # Component 3: Edge exposure
+  # Component 3: Edge exposure (same as tuto 03)
   # ==========================================================================
-  # Calculate proportion of parcel within buffer distance of edge
   # Project to metric CRS if needed (st_buffer requires meters, not degrees)
   units_proj <- units
   if (sf::st_is_longlat(units)) {
@@ -507,48 +606,54 @@ indicator_risk_browsing <- function(units,
     area_total <- as.numeric(sf::st_area(geom))
 
     if (area_total > 0) {
-      # Create inner buffer (negative buffer)
       inner <- tryCatch({
         sf::st_buffer(geom, -edge_buffer)
       }, error = function(e) NULL)
 
       if (!is.null(inner) && !sf::st_is_empty(inner)) {
         area_inner <- as.numeric(sf::st_area(inner))
-        # Edge proportion: area in edge zone / total area
         edge_proportion <- (area_total - area_inner) / area_total
       } else {
-        # Small parcel entirely in edge zone
         edge_proportion <- 1
       }
 
       edge_factor[i] <- edge_proportion * 100
     } else {
-      edge_factor[i] <- 50
+      edge_factor[i] <- 100
     }
   }
 
   # ==========================================================================
-  # Component 4: Game density (if available)
+  # Component 4: Game density (tuto 03: hunting data from data.gouv.fr)
   # ==========================================================================
+  density_factor <- rep(50, n_units)  # Default
+
   if (!is.null(game_density) && inherits(game_density, "SpatRaster")) {
+    # Use provided raster
     density_values <- terra::extract(game_density, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
     density_factor <- pmin(pmax(density_values, 0), 100)
+    cli::cli_alert_info("R4: Using provided game density raster")
   } else {
-    # No game density data: use neutral value and redistribute weight
-    density_factor <- rep(50, n_units)
-    weights["palatability"] <- weights["palatability"] + weights["density"] / 3
-    weights["vulnerability"] <- weights["vulnerability"] + weights["density"] / 3
-    weights["edge"] <- weights["edge"] + weights["density"] / 3
-    weights["density"] <- 0
+    # Try auto-fetch from hunting data (tuto 03 method)
+    tryCatch({
+      game_raster <- get_game_pressure_raster(units)
+      if (!is.null(game_raster) && inherits(game_raster, "SpatRaster")) {
+        density_values <- terra::extract(game_raster, units, fun = mean, na.rm = TRUE, ID = FALSE)[, 1]
+        density_factor <- pmin(pmax(density_values, 0), 100)
+        cli::cli_alert_info("R4: Game density computed from hunting data (data.gouv.fr)")
+      }
+    }, error = function(e) {
+      cli::cli_alert_info("R4: Could not fetch hunting data ({e$message}), using default density 50")
+    })
   }
 
   # ==========================================================================
-  # Composite R4
+  # Composite R4 (fixed weights from tuto 03)
   # ==========================================================================
-  units$R4 <- weights["palatability"] * palatability_factor +
-    weights["vulnerability"] * vulnerability_factor +
-    weights["edge"] * edge_factor +
-    weights["density"] * density_factor
+  units$R4 <- w_palatability * palatability_factor +
+    w_vulnerability * vulnerability_factor +
+    w_edge * edge_factor +
+    w_density * density_factor
 
   # Cap at 0-100
   units$R4 <- pmin(pmax(units$R4, 0), 100)

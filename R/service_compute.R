@@ -113,7 +113,7 @@ DATA_SOURCES <- list(
       source = "ign_bdforet",
       required_for = c("carbon_biomass", "production_volume", "production_site",
                         "biodiversity_structure", "biodiversity_connectivity",
-                        "temporal_age")
+                        "temporal_age", "risk_fire", "risk_browsing")
     )
   ),
   # Point cloud sources (not loaded as raster/vector but cached as files)

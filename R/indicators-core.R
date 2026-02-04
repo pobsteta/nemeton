@@ -209,7 +209,24 @@ compute_indicator <- function(indicator, units, layers, ...) {
 
   # Call the indicator function dynamically
   func <- get(func_name, mode = "function")
-  do.call(func, list(units = units, layers = layers, ...))
+  result <- do.call(func, list(units = units, layers = layers, ...))
+
+  # Risk indicator functions return sf objects with added columns (R1, R2, R3, R4)
+  # Extract the indicator column as a numeric vector
+  if (inherits(result, "sf")) {
+    col_map <- c(
+      risk_fire = "R1", risk_storm = "R2",
+      risk_drought = "R3", risk_browsing = "R4"
+    )
+    col_name <- col_map[indicator]
+    if (!is.na(col_name) && col_name %in% names(result)) {
+      return(result[[col_name]])
+    }
+    stop("Indicator function '", func_name, "' returned sf but column '",
+         col_name, "' not found", call. = FALSE)
+  }
+
+  result
 }
 
 #' List available indicators

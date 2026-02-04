@@ -92,7 +92,10 @@ Suggests:
     bsicons (>= 0.1.0),
     quarto (>= 1.3),
     shinytest2 (>= 0.3.0),
-    golem (>= 0.4.0)
+    golem (>= 0.4.0),
+    fireexposuR (>= 0.1.0),
+    microclima,
+    SPEI (>= 1.7.0)
 Remotes:
     rstudio/gradethis,
     r-lidar/lasR

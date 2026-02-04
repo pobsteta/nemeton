@@ -88,7 +88,8 @@ plot_indicators_map <- function(data,
     msg_error("viz_not_sf")
   }
 
-  # Match palette
+  # Match palette (store whether user explicitly chose one)
+  user_palette <- !missing(palette)
   palette <- match.arg(palette)
 
   # Auto-detect indicators if not specified
@@ -133,6 +134,11 @@ plot_indicators_map <- function(data,
       ind_list <- paste(indicators, collapse = ", ")
       msg_info("viz_detected", n_ind, ind_list)
     }
+  }
+
+  # Auto-select YlOrRd palette for risk indicators (R1-R4, family_R)
+  if (!user_palette && all(grepl("^R[1-4]|^family_R|^R[1-4]_norm", indicators))) {
+    palette <- "YlOrRd"
   }
 
   # Validate indicators exist
