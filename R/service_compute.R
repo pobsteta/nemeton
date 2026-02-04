@@ -89,6 +89,12 @@ DATA_SOURCES <- list(
       source = "ign_bd_topo",
       required_for = c("water_network")
     ),
+    water_surfaces = list(
+      name = "Water Surfaces",
+      type = "vector",
+      source = "ign_bd_topo",
+      required_for = c("water_wetlands")
+    ),
     wetlands = list(
       name = "Wetlands",
       type = "vector",
@@ -497,6 +503,7 @@ download_layers_for_parcels <- function(parcels,
     lidar_mnt = "source_lidar_mnt",
     protected_areas = "source_protected_areas",
     water_network = "source_water_network",
+    water_surfaces = "source_water_surfaces",
     wetlands = "source_wetlands",
     roads = "source_roads",
     bdforet = "source_bdforet"
@@ -946,7 +953,8 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
   # Map layer names to BD TOPO V3 typenames
   layer_mapping <- list(
     roads = "BDTOPO_V3:troncon_de_route",
-    water_network = "BDTOPO_V3:troncon_hydrographique"
+    water_network = "BDTOPO_V3:troncon_hydrographique",
+    water_surfaces = "BDTOPO_V3:surface_hydrographique"
   )
 
   typename <- layer_mapping[[layer_name]]

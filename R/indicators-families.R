@@ -333,14 +333,13 @@ indicator_water_wetlands <- function(units,
 
   coverage <- numeric(nrow(units))
 
-  # Strategy 1: Use vector wetlands layer (ZNIEFF zones humides) if available
-  wetlands_sf <- resolve_vector_layer(layers, wetland_layer)
-  if (!is.null(wetlands_sf)) {
-    cli::cli_alert_info("W2: Computing wetland coverage from vector layer")
+  # Strategy 1: Use BD TOPO water surfaces (mares, retenues, étangs)
+  water_surfaces_sf <- resolve_vector_layer(layers, "water_surfaces")
+  if (!is.null(water_surfaces_sf) && nrow(water_surfaces_sf) > 0) {
+    cli::cli_alert_info("W2: Computing wetland coverage from BD TOPO water surfaces")
 
-    # Ensure CRS match
-    if (!sf::st_crs(units) == sf::st_crs(wetlands_sf)) {
-      wetlands_sf <- sf::st_transform(wetlands_sf, sf::st_crs(units))
+    if (!sf::st_crs(units) == sf::st_crs(water_surfaces_sf)) {
+      water_surfaces_sf <- sf::st_transform(water_surfaces_sf, sf::st_crs(units))
     }
 
     for (i in seq_len(nrow(units))) {
@@ -348,7 +347,7 @@ indicator_water_wetlands <- function(units,
       parcel_area <- as.numeric(sf::st_area(unit_geom))
 
       intersected <- tryCatch(
-        suppressWarnings(sf::st_intersection(wetlands_sf, unit_geom)),
+        suppressWarnings(sf::st_intersection(water_surfaces_sf, unit_geom)),
         error = function(e) NULL
       )
 
