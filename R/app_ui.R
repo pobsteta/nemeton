@@ -451,7 +451,7 @@ mod_family_ui <- function(id, family_code) {
       bslib::card(
         bslib::card_header(i18n$t("data_table")),
         bslib::card_body(
-          shiny::tableOutput(ns("indicator_table"))
+          DT::dataTableOutput(ns("indicator_table"))
         )
       ),
       bslib::card(
@@ -472,6 +472,17 @@ mod_family_ui <- function(id, family_code) {
           )
         ),
         bslib::card_body(
+          shiny::selectInput(
+            ns("expert_profile"),
+            label = i18n$t("expert_label"),
+            choices = stats::setNames(
+              c("generalist", "owner", "engineer", "politician", "economist", "citizen"),
+              c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_engineer"),
+                i18n$t("expert_politician"), i18n$t("expert_economist"), i18n$t("expert_citizen"))
+            ),
+            selected = "generalist",
+            width = "100%"
+          ),
           shiny::textAreaInput(
             ns("analysis_comments"),
             label = NULL,

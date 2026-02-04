@@ -342,6 +342,15 @@ TRANSLATIONS <- list(
     en = "API key not configured. Set the {key_var} environment variable."
   ),
 
+  # Expert profiles
+  expert_label = list(fr = "Point de vue", en = "Perspective"),
+  expert_generalist = list(fr = "G\u00e9n\u00e9raliste", en = "Generalist"),
+  expert_owner = list(fr = "Propri\u00e9taire forestier", en = "Forest Owner"),
+  expert_engineer = list(fr = "Ing\u00e9nieur forestier", en = "Forest Engineer"),
+  expert_politician = list(fr = "Politique", en = "Politician"),
+  expert_economist = list(fr = "Producteur \u00e9conomiste", en = "Economic Producer"),
+  expert_citizen = list(fr = "Citoyen naturaliste", en = "Citizen Naturalist"),
+
   # ============================================================
   # Missing Indicators
   # ============================================================

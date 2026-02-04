@@ -186,7 +186,7 @@ mod_family_server <- function(id, family_code, app_state) {
     # ================================================================
     # OUTPUT: Indicator data table
     # ================================================================
-    output$indicator_table <- shiny::renderTable({
+    output$indicator_table <- DT::renderDataTable({
       ind_data <- indicators_data()
       if (is.null(ind_data)) return(NULL)
 
@@ -199,8 +199,58 @@ mod_family_server <- function(id, family_code, app_state) {
       num_cols <- vapply(ind_data, is.numeric, logical(1))
       ind_data[num_cols] <- lapply(ind_data[num_cols], round, digits = 3)
 
-      ind_data
-    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+      DT::datatable(ind_data,
+                     selection = "single",
+                     options = list(
+                       pageLength = 10,
+                       scrollX = TRUE,
+                       language = list(
+                         url = if (identical(app_state$language, "fr"))
+                           "//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json"
+                         else ""
+                       )
+                     ),
+                     class = "table table-striped table-hover table-bordered")
+    })
+
+    # ================================================================
+    # OBSERVER: Click on table row → zoom to parcel on maps
+    # ================================================================
+    shiny::observeEvent(input$indicator_table_rows_selected, {
+      row_idx <- input$indicator_table_rows_selected
+      if (is.null(row_idx) || length(row_idx) == 0) return()
+
+      sf_data <- indicators_sf()
+      if (is.null(sf_data) || row_idx > nrow(sf_data)) return()
+
+      # Get the selected parcel geometry and compute bbox with padding
+      selected <- sf_data[row_idx, ]
+      selected_wgs84 <- sf::st_transform(selected, 4326)
+      bbox <- sf::st_bbox(selected_wgs84)
+
+      # Expand bbox by 20% in each direction for comfortable view
+      dx <- (bbox[["xmax"]] - bbox[["xmin"]]) * 0.2
+      dy <- (bbox[["ymax"]] - bbox[["ymin"]]) * 0.2
+      # Ensure a minimum padding for very small parcels
+      dx <- max(dx, 0.001)
+      dy <- max(dy, 0.001)
+
+      lng1 <- bbox[["xmin"]] - dx
+      lat1 <- bbox[["ymin"]] - dy
+      lng2 <- bbox[["xmax"]] + dx
+      lat2 <- bbox[["ymax"]] + dy
+
+      # Zoom map1
+      leaflet::leafletProxy("map1", session) |>
+        leaflet::fitBounds(lng1 = lng1, lat1 = lat1, lng2 = lng2, lat2 = lat2)
+
+      # Zoom map2 if it exists (when there are >= 2 indicators)
+      ind_cols <- get_indicator_cols(sf_data)
+      if (length(ind_cols) >= 2) {
+        leaflet::leafletProxy("map2", session) |>
+          leaflet::fitBounds(lng1 = lng1, lat1 = lat1, lng2 = lng2, lat2 = lat2)
+      }
+    })
 
     # ================================================================
     # OUTPUT: Analysis - descriptive statistics + alerts
@@ -287,10 +337,6 @@ mod_family_server <- function(id, family_code, app_state) {
       })
 
       htmltools::div(
-        htmltools::tags$h6(
-          class = "text-muted mb-2",
-          shiny::icon("chart-bar"), " ", i18n$t("analysis_stats")
-        ),
         htmltools::tagList(stats_rows)
       )
     })
@@ -324,7 +370,8 @@ mod_family_server <- function(id, family_code, app_state) {
 
       language <- if (identical(app_state$language, "fr")) "fran\u00e7ais" else "English"
       prompt <- build_analysis_prompt(family_config, ind_data, language)
-      system_prompt <- build_system_prompt(language)
+      expert <- input$expert_profile %||% "generalist"
+      system_prompt <- build_system_prompt(language, expert = expert)
 
       tryCatch({
         chat <- create_llm_chat(system_prompt)
@@ -492,6 +539,9 @@ make_indicator_leaflet <- function(sf_data, ind_col, title) {
                     ids, title, round(vals, 3)) |>
     lapply(htmltools::HTML)
 
+  # Build layerId from parcel identifier
+  layer_ids <- as.character(ids)
+
   leaflet::leaflet(sf_wgs84) |>
     leaflet::addTiles() |>
     leaflet::addPolygons(
@@ -499,6 +549,7 @@ make_indicator_leaflet <- function(sf_data, ind_col, title) {
       weight = 1,
       color = "#333",
       fillOpacity = 0.7,
+      layerId = layer_ids,
       highlightOptions = leaflet::highlightOptions(
         weight = 2, color = "#000", fillOpacity = 0.9, bringToFront = TRUE
       ),
