@@ -110,20 +110,14 @@ test_that("indicator_air_quality uses proxy method when ATMO data unavailable", 
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  # Mock road and urban data
+  # Mock road data with BD TOPO nature field
   bbox <- st_bbox(units)
   roads <- st_sf(
-    road_id = "R1",
+    road_id = c("R1", "R2"),
+    nature = c("Route à 1 chaussée", "Chemin"),
     geometry = st_sfc(
       st_linestring(matrix(c(bbox["xmin"], bbox["xmax"], bbox["ymin"], bbox["ymax"]), ncol = 2)),
-      crs = st_crs(units)
-    )
-  )
-
-  urban_areas <- st_sf(
-    urban_id = "U1",
-    geometry = st_sfc(
-      st_point(c(mean(c(bbox["xmin"], bbox["xmax"])), mean(c(bbox["ymin"], bbox["ymax"])))),
+      st_linestring(matrix(c(bbox["xmin"], bbox["xmin"] + 100, bbox["ymin"] + 50, bbox["ymax"]), ncol = 2)),
       crs = st_crs(units)
     )
   )
@@ -132,7 +126,6 @@ test_that("indicator_air_quality uses proxy method when ATMO data unavailable", 
     units,
     atmo_data = NULL,
     roads = roads,
-    urban_areas = urban_areas,
     method = "proxy"
   )
 
@@ -142,9 +135,6 @@ test_that("indicator_air_quality uses proxy method when ATMO data unavailable", 
   expect_true("A2_method" %in% names(result))
   expect_equal(unique(result$A2_method), "proxy")
   expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
-
-  # Parcels farther from roads/urban should have better air quality
-  # (This is a simplification for testing)
 })
 
 test_that("indicator_air_quality auto-detects method", {
@@ -176,10 +166,10 @@ test_that("indicator_air_quality handles missing data gracefully", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
-  # No ATMO, no roads, no urban → should fail or use defaults
+  # No roads → should fail for proxy method
   expect_error(
-    indicator_air_quality(units, atmo_data = NULL, roads = NULL, urban_areas = NULL, method = "proxy"),
-    "roads" # Should error about missing proxy data
+    indicator_air_quality(units, atmo_data = NULL, roads = NULL, method = "proxy"),
+    "roads"
   )
 })
 
@@ -196,20 +186,13 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
   # Load fixtures
   land_cover <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
 
-  # Mock roads and urban for proxy method
+  # Mock roads for proxy method with BD TOPO nature field
   bbox <- st_bbox(units)
   roads <- st_sf(
     road_id = "R1",
+    nature = "Route à 1 chaussée",
     geometry = st_sfc(
       st_linestring(matrix(c(bbox["xmin"], bbox["xmax"], bbox["ymin"], bbox["ymax"]), ncol = 2)),
-      crs = st_crs(units)
-    )
-  )
-
-  urban_areas <- st_sf(
-    urban_id = "U1",
-    geometry = st_sfc(
-      st_point(c(mean(c(bbox["xmin"], bbox["xmax"])), mean(c(bbox["ymin"], bbox["ymax"])))),
       crs = st_crs(units)
     )
   )
@@ -217,7 +200,7 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
   # Full workflow
   result <- units %>%
     indicator_air_coverage(land_cover = land_cover, buffer_radius = 1000) %>%
-    indicator_air_quality(atmo_data = NULL, roads = roads, urban_areas = urban_areas, method = "proxy") %>%
+    indicator_air_quality(atmo_data = NULL, roads = roads, method = "proxy") %>%
     normalize_indicators(indicators = c("A1", "A2")) %>%
     create_family_index(family_codes = "A")
 

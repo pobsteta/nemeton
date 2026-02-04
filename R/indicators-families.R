@@ -947,23 +947,26 @@ indicator_landscape_edge <- function(units) {
 
 #' @noRd
 indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
-  # A1: Forest coverage buffer - delegates to indicator_air_coverage
-  # Requires forest_cover or landcover raster from layers
+  # A1: Forest coverage on the parcel (tuto 02, exercice 7.5)
+  # OSO forest classes: 16 = coniferous, 17 = broadleaf, 18 = mixed
+  forest_classes <- c(16, 17, 18)
+
+  # Resolve land cover raster
+
   lc <- NULL
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
     lc <- resolve_raster_layer(layers, "forest_cover")
     if (is.null(lc)) lc <- resolve_raster_layer(layers, "landcover")
   }
+
   if (is.null(lc)) {
     # Fallback: estimate from NDVI (high NDVI = forested)
     ndvi <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi)) {
       cli::cli_alert_info("A1: No forest_cover layer, estimating from NDVI")
-      buffers <- sf::st_buffer(units, dist = 1000)
-      coverage <- safe_extract(ndvi, as_pure_sf(buffers),
+      coverage <- safe_extract(ndvi, as_pure_sf(units),
         fun = "mean", progress = FALSE
       )
-      # NDVI > 0.4 is typically forested; scale to 0-100
       result <- units
       result$A1 <- pmin(pmax(coverage / 0.8, 0), 1) * 100
       return(result)
@@ -973,9 +976,55 @@ indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
     result$A1 <- rep(NA_real_, nrow(units))
     return(result)
   }
-  # OSO forest codes: 1-6 are various forest types
-  indicator_air_coverage(units, land_cover = lc,
-    forest_classes = seq(1, 6), buffer_radius = 1000)
+
+  # Compute OSO forest percentage on the parcel itself (not buffer)
+  oso_forest_pct <- numeric(nrow(units))
+  for (i in seq_len(nrow(units))) {
+    lc_values <- safe_extract(lc, as_pure_sf(units[i, ]), progress = FALSE)[[1]]$value
+    if (length(lc_values) > 0) {
+      forest_pixels <- sum(lc_values %in% forest_classes, na.rm = TRUE)
+      total_pixels <- sum(!is.na(lc_values))
+      if (total_pixels > 0) {
+        oso_forest_pct[i] <- (forest_pixels / total_pixels) * 100
+      } else {
+        oso_forest_pct[i] <- NA_real_
+      }
+    } else {
+      oso_forest_pct[i] <- NA_real_
+    }
+  }
+
+  # Check for LiDAR MNH (canopy height model) layer
+  mnh <- if (!is.null(layers)) resolve_raster_layer(layers, "mnh") else NULL
+
+  if (!is.null(mnh)) {
+    # Compute pzabove2: proportion of MNH pixels > 2m, scaled to 0-100
+    cli::cli_alert_info("A1: Using LiDAR MNH for canopy height component")
+    pzabove2 <- numeric(nrow(units))
+    for (i in seq_len(nrow(units))) {
+      mnh_values <- safe_extract(mnh, as_pure_sf(units[i, ]),
+        progress = FALSE)[[1]]$value
+      if (length(mnh_values) > 0) {
+        valid <- !is.na(mnh_values)
+        if (sum(valid) > 0) {
+          pzabove2[i] <- (sum(mnh_values[valid] > 2) / sum(valid)) * 100
+        } else {
+          pzabove2[i] <- NA_real_
+        }
+      } else {
+        pzabove2[i] <- NA_real_
+      }
+    }
+    # A1 = 0.7 * oso_forest_pct + 0.3 * pzabove2
+    result <- units
+    result$A1 <- 0.7 * oso_forest_pct + 0.3 * pzabove2
+  } else {
+    # No LiDAR: A1 = oso_forest_pct
+    result <- units
+    result$A1 <- oso_forest_pct
+  }
+
+  result
 }
 
 #' @noRd

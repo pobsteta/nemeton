@@ -20,7 +20,8 @@ NULL
 #' @param units An sf object with forest parcels.
 #' @param land_cover A SpatRaster with land cover classification.
 #' @param forest_classes Numeric vector. Land cover class codes for forests
-#'   (e.g., Corine codes 311, 312, 313). Default c(311, 312, 313).
+#'   (OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
+#'   Default c(16, 17, 18).
 #' @param buffer_radius Numeric. Buffer radius in meters. Default 1000.
 #'
 #' @return The input sf object with added column:
@@ -61,7 +62,7 @@ NULL
 #' }
 indicator_air_coverage <- function(units,
                                    land_cover,
-                                   forest_classes = c(311, 312, 313),
+                                   forest_classes = c(16, 17, 18),
                                    buffer_radius = 1000) {
   # Validate inputs
   validate_sf(units)
@@ -204,7 +205,7 @@ indicator_air_quality <- function(units,
   if (method == "auto") {
     if (!is.null(atmo_data) && inherits(atmo_data, "sf")) {
       method <- "direct"
-    } else if (!is.null(roads) || !is.null(urban_areas)) {
+    } else if (!is.null(roads)) {
       method <- "proxy"
     } else {
       # No data available at all - return neutral score
@@ -259,42 +260,67 @@ indicator_air_quality <- function(units,
     units$A2 <- a2_scores
     units$A2_method <- "direct"
   } else if (method == "proxy") {
-    # Proxy method: distance to pollution sources
-    if (is.null(roads) && is.null(urban_areas)) {
-      stop("Either roads or urban_areas must be provided for proxy method", call. = FALSE)
+    # Proxy method: weighted pollution from roads (tuto 02, exercice 9.2)
+    if (is.null(roads)) {
+      stop("roads must be provided for proxy method", call. = FALSE)
+    }
+
+    # Pollution weights by BD TOPO v3 `nature` field
+    pollution_weights <- c(
+      "autoroute"          = 1.0,
+      "type autoroutier"   = 1.0,
+      "quasi-autoroute"    = 0.9,
+      "route.*2 chauss"    = 0.8,
+      "bretelle"           = 0.7,
+      "route.*1 chauss"    = 0.6,
+      "rond-point"         = 0.5,
+      "route empierr"      = 0.3,
+      "chemin"             = 0.1,
+      "piste cyclable"     = 0.05,
+      "sentier"            = 0.02,
+      "escalier"           = 0.02
+    )
+
+    # Assign weight to each road segment based on `nature` field
+    if ("nature" %in% names(roads)) {
+      road_nature <- tolower(roads$nature)
+      road_w <- rep(0.5, nrow(roads))  # default weight
+      for (j in seq_along(pollution_weights)) {
+        matched <- grepl(names(pollution_weights)[j], road_nature, ignore.case = TRUE)
+        road_w[matched] <- pollution_weights[j]
+      }
+    } else {
+      road_w <- rep(0.5, nrow(roads))
     }
 
     parcel_centroids <- sf::st_centroid(units)
-    a2_scores <- numeric(nrow(units))
+
+    # Compute pollution score per parcel
+    pollution_scores <- numeric(nrow(units))
 
     for (i in seq_len(nrow(units))) {
-      scores <- numeric(0)
-
-      # Distance to nearest road
-      if (!is.null(roads) && inherits(roads, "sf")) {
-        road_dist <- min(sf::st_distance(parcel_centroids[i, ], roads))
-        # Normalize: 0m=0, 5000m+=100
-        road_score <- pmin(as.numeric(road_dist) / 5000, 1) * 100
-        scores <- c(scores, road_score)
-      }
-
-      # Distance to nearest urban area
-      if (!is.null(urban_areas) && inherits(urban_areas, "sf")) {
-        urban_dist <- min(sf::st_distance(parcel_centroids[i, ], urban_areas))
-        # Normalize: 0m=0, 10000m+=100
-        urban_score <- pmin(as.numeric(urban_dist) / 10000, 1) * 100
-        scores <- c(scores, urban_score)
-      }
-
-      # Average of available distance scores
-      if (length(scores) > 0) {
-        a2_scores[i] <- mean(scores)
+      dists <- as.numeric(sf::st_distance(parcel_centroids[i, ], roads))
+      # Keep roads within 2000m
+      within <- dists <= 2000
+      if (any(within)) {
+        d <- pmax(dists[within], 10)  # minimum 10m to avoid extreme values
+        w <- road_w[within]
+        pollution_scores[i] <- sum(w / (d / 100)^2)
       } else {
-        a2_scores[i] <- 50 # Neutral default
+        pollution_scores[i] <- 0
       }
     }
 
-    units$A2 <- a2_scores
+    # Normalize across all parcels using log transform
+    max_score <- max(pollution_scores, na.rm = TRUE)
+    if (max_score > 0) {
+      pollution_norm <- log1p(pollution_scores) / log1p(max_score)
+    } else {
+      pollution_norm <- rep(0, nrow(units))
+    }
+
+    # A2: higher = better air quality (invert pollution)
+    units$A2 <- round(pmin(pmax((1 - pollution_norm) * 100, 0), 100), 1)
     units$A2_method <- "proxy"
   } else {
     stop("method must be 'auto', 'direct', or 'proxy'", call. = FALSE)
