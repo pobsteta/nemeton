@@ -1952,47 +1952,53 @@ mosaic_lidar_tiles <- function(tile_files, output_file) {
 normalize_indicator <- function(indicator, values) {
   # Reference maxima for indicators that return raw metrics
   # Values beyond ref_max are capped at 100
+  #
+  # Indicators already returning 0-100 scores → NULL (just clamp):
+  #   biodiversity (B1-B3), air (A1-A2), fertility (F1-F2),
+  #   landscape (L1-L2), temporal (T1-T2), risks (R1-R4),
+  #   naturalness (N1-N3), production_quality (P3)
   ref_max <- switch(indicator,
     # Carbon: biomass in tC/ha, typical temperate forest max ~150 tC/ha
     "carbon_biomass" = 150,
-    # Carbon: NDVI in 0-1 scale
-    "carbon_ndvi" = 1,
-    # Water: hydrographic network density in m/ha
-    "water_network" = 2000,
-    # Water: TWI (Topographic Wetness Index) — needs rescaling from ~5-15
-    "water_twi" = NULL,  # special handling below
-    # Landscape: patch count (fragmentation)
-    "landscape_fragmentation" = 20,
-    # Landscape: edge density in m/ha
-    "landscape_edge_ratio" = 500,
-    # Social: trail density in km/ha
-    "social_trails" = 5,
-    # Social: population within 5km buffer
+    # Carbon: NDVI in 0-1 scale — special handling below
+    "carbon_ndvi" = NULL,
+    # Water: hydrographic network density in m/ha (typical range 10-200)
+    "water_network" = 200,
+    # Water: TWI — special handling below
+    "water_twi" = NULL,
+    # Social: distance to roads (m) — special inverse handling below
+    "social_trails" = NULL,
+    # Social: distance to buildings (m) — special inverse handling below
+    "social_accessibility" = NULL,
+    # Social: population within buffers
     "social_population" = 10000,
-    # Energy: fuelwood potential in tep/ha/yr (tuto 02: ~0.3 for mature forest)
-    "energy_wood" = 0.3,
-    # Energy: CO2 avoidance in tCO2/ha/yr (tuto 02: E1 * 2.5 * 0.85)
-    "energy_co2" = 0.65,
-    # Naturalness: N1 and N2 are already 0-100 scores (tuto 04)
-    # Production: standing volume in m³/ha
-    "production_volume" = 400,
+    # Production: standing volume in m³/ha (tuto 02 formula range ~100-800)
+    "production_volume" = 800,
     # Production: annual increment in m³/ha/yr
     "production_productivity" = 15,
-    # Already normalized indicators → NULL (no transformation)
+    # Energy: fuelwood potential in tep/ha/yr
+    "energy_wood" = 0.3,
+    # Energy: CO2 avoidance in tCO2/ha/yr (E1 * 2.5 * 0.85)
+    "energy_co2" = 0.75,
+    # All other indicators already return 0-100 scores → NULL
     NULL
   )
 
+  # Special handling: TWI rescale [5, 15] → [0, 100]
   if (indicator == "water_twi") {
-    # TWI: rescale from [5, 15] to [0, 100]
     # Higher TWI = wetter = more water service
-    values <- pmin(100, pmax(0, (values - 5) / 10 * 100))
-    return(values)
+    return(pmin(100, pmax(0, (values - 5) / 10 * 100)))
   }
 
+  # Special handling: NDVI scale 0-1 → 0-100
   if (indicator == "carbon_ndvi") {
-    # NDVI: scale 0-1 to 0-100
-    values <- pmin(100, pmax(0, values * 100))
-    return(values)
+    return(pmin(100, pmax(0, values * 100)))
+  }
+
+  # Special handling: distance indicators (inverse — closer = higher social value)
+  # 0m → score 100 (very accessible), 2000m+ → score 0 (very remote)
+  if (indicator %in% c("social_trails", "social_accessibility")) {
+    return(pmin(100, pmax(0, 100 * (1 - values / 2000))))
   }
 
   if (!is.null(ref_max)) {

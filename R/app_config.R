@@ -195,8 +195,8 @@ INDICATOR_FAMILIES <- list(
     indicators = c("S1", "S2", "S3"),
     column_names = c("social_trails", "social_accessibility", "social_population"),
     indicator_labels = list(
-      S1 = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
-      S2 = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+      S1 = list(fr = "Distance aux routes", en = "Road Distance"),
+      S2 = list(fr = "Distance aux b\u00e2timents", en = "Building Distance"),
       S3 = list(fr = "Proximit\u00e9 population", en = "Population Proximity")
     )
   ),
