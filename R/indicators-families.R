@@ -10,6 +10,40 @@
 #' @keywords internal
 NULL
 
+# Package-level TWI cache (avoids recomputing for W2, W3, F2, R3)
+.twi_cache <- new.env(parent = emptyenv())
+
+#' Get or compute TWI raster with caching
+#'
+#' Returns a cached TWI raster if one exists for the given DEM fingerprint,
+#' otherwise computes it (GRASS preferred, terra D8 fallback) and caches.
+#' @param dem A SpatRaster DEM
+#' @return A SpatRaster with TWI values
+#' @keywords internal
+#' @noRd
+get_or_compute_twi <- function(dem) {
+  # Key = DEM fingerprint (dimensions + extent + CRS)
+  key <- paste(nrow(dem), ncol(dem),
+               paste(as.vector(terra::ext(dem)), collapse = ","),
+               terra::crs(dem, describe = TRUE)$code,
+               sep = "|")
+
+  if (exists(key, envir = .twi_cache)) {
+    cli::cli_alert_info("TWI: Using cached raster")
+    return(get(key, envir = .twi_cache))
+  }
+
+  # Compute: prefer GRASS, fallback terra D8
+  if (requireNamespace("fasterRaster", quietly = TRUE)) {
+    twi_raster <- calculate_twi_grass(dem)
+  } else {
+    twi_raster <- calculate_twi_terra(dem)
+  }
+
+  assign(key, twi_raster, envir = .twi_cache)
+  twi_raster
+}
+
 # ==============================================================================
 # FAMILY C: CARBONE / ÉNERGÉTIQUE
 # Stock de carbone aérien et souterrain, dynamique de stockage
@@ -53,8 +87,8 @@ indicator_carbon_biomass <- function(units,
                    age_col %in% names(units) &&
                    density_col %in% names(units)
 
+  # --- Path 1: Full inventory data (species/age/density columns) ---
   if (has_inventory) {
-    # Full allometric model when forest inventory data is available
     species <- units[[species_col]]
     age <- units[[age_col]]
     density <- units[[density_col]]
@@ -64,16 +98,47 @@ indicator_carbon_biomass <- function(units,
     return(biomass)
   }
 
-  # Fallback: estimate carbon stock from NDVI when inventory columns are missing
-  # (cadastral parcels typically lack species/age/density)
+  units_sf <- as_pure_sf(units)
+
+  # --- Path 2: LiDAR MNH available → tutorial 02 allometric model ---
+  mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
+  if (!is.null(mnh_raster)) {
+    cli::cli_alert_info("Estimating C1 from LiDAR MNH (canopy height model)")
+    zmean <- safe_extract(
+      mnh_raster, units_sf, fun = "mean", progress = FALSE
+    )
+    # pzabove2: proportion of MNH pixels > 2m (canopy cover %)
+    mnh_above2 <- mnh_raster > 2
+    pzabove2 <- safe_extract(
+      mnh_above2, units_sf, fun = "mean", progress = FALSE
+    ) * 100
+    # AGB = k * (pzabove2/100) * zmean^1.5  (tutorial 02 model)
+    k_biomasse <- 2.5
+    fraction_carbone <- 0.47
+    agb <- k_biomasse * (pzabove2 / 100) * (pmax(0, zmean, na.rm = FALSE)^1.5)
+    biomass <- agb * fraction_carbone
+    return(biomass)
+  }
+
+  # --- Path 3: BD Forêt V2 → enrich parcels then allometric model ---
+  bdforet_sf <- if (!is.null(layers)) resolve_vector_layer(layers, "bdforet") else NULL
+  if (!is.null(bdforet_sf) && nrow(bdforet_sf) > 0) {
+    cli::cli_alert_info("Enriching parcels with BD For\u00eat data for C1")
+    enriched <- enrich_parcels_bdforet(units_sf, bdforet_sf)
+    if (any(!is.na(enriched$species))) {
+      biomass <- calculate_allometric_biomass(
+        enriched$species, enriched$age, enriched$density
+      )
+      return(biomass)
+    }
+  }
+
+  # --- Path 4: NDVI fallback ---
   ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
   if (!is.null(ndvi_raster)) {
-    cli::cli_alert_info("No forest inventory columns; estimating C1 from NDVI")
-    ndvi_mean <- exactextractr::exact_extract(
-      ndvi_raster,
-      as_pure_sf(units),
-      fun = "mean",
-      progress = FALSE
+    cli::cli_alert_info("No LiDAR/BD For\u00eat; estimating C1 from NDVI")
+    ndvi_mean <- safe_extract(
+      ndvi_raster, units_sf, fun = "mean", progress = FALSE
     )
     # NDVI-to-biomass proxy: scale NDVI (0-1) to approximate carbon stock
     # (tC/ha). Typical temperate forest: ~80-150 tC/ha at high NDVI.
@@ -83,7 +148,7 @@ indicator_carbon_biomass <- function(units,
 
   # Last resort: return NA
   cli::cli_alert_warning(
-    "C1: no inventory data and no NDVI layer; returning NA"
+    "C1: no inventory, LiDAR, BD For\u00eat, or NDVI data; returning NA"
   )
   rep(NA_real_, nrow(units))
 }
@@ -132,7 +197,7 @@ indicator_carbon_ndvi <- function(units,
   }
 
   # Extract mean NDVI for each unit
-  ndvi_mean <- exactextractr::exact_extract(
+  ndvi_mean <- safe_extract(
     ndvi_raster,
     as_pure_sf(units),
     fun = "mean",
@@ -299,13 +364,14 @@ indicator_water_wetlands <- function(units,
   }
 
   # Strategy 2: Use TWI threshold (TWI > 12 = potential wetland) from DEM
+  # Prefer GRASS TWI (same as W3) for consistency, fallback to terra D8
   dem <- get_dem_raster(layers)
   if (!is.null(dem)) {
     cli::cli_alert_info("W2: Estimating wetlands from TWI (threshold > 12)")
-    twi_raster <- calculate_twi_terra(dem)
+    twi_raster <- get_or_compute_twi(dem)
 
     for (i in seq_len(nrow(units))) {
-      twi_vals <- exactextractr::exact_extract(
+      twi_vals <- safe_extract(
         twi_raster,
         as_pure_sf(units[i, ]),
         fun = NULL,
@@ -333,7 +399,7 @@ indicator_water_wetlands <- function(units,
     cli::cli_alert_info("W2: Computing wetland coverage from OSO landcover codes")
 
     for (i in seq_len(nrow(units))) {
-      lc_values <- exactextractr::exact_extract(
+      lc_values <- safe_extract(
         lc_raster,
         as_pure_sf(units[i, ]),
         fun = NULL,
@@ -360,14 +426,18 @@ indicator_water_wetlands <- function(units,
 
 #' Topographic Wetness Index (W3)
 #'
-#' Calculates TWI using whitebox (D-infinity algorithm) or terra fallback (D8).
+#' Calculates TWI using fasterRaster/GRASS GIS (preferred) or terra fallback (D8).
 #' Higher values indicate areas with greater water accumulation potential.
+#'
+#' The GRASS method (via fasterRaster) performs proper hydrological conditioning:
+#' depression filling, flow direction, flow accumulation, then TWI = ln(SCA / tan(slope)).
+#' The terra D8 method is a simpler approximation used as fallback.
 #'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing DEM raster
 #' @param dem_layer Character. Name of DEM layer in layers object
-#' @param method Character. TWI calculation method: "auto" (prefer whitebox),
-#'   "dinf" (whitebox D-infinity), or "d8" (terra D8). Default "auto".
+#' @param method Character. TWI calculation method: "auto" (prefer GRASS),
+#'   "grass" (fasterRaster/GRASS GIS), or "d8" (terra D8). Default "auto".
 #'
 #' @return Numeric vector of TWI mean values
 #'
@@ -380,7 +450,7 @@ indicator_water_wetlands <- function(units,
 indicator_water_twi <- function(units,
                                 layers,
                                 dem_layer = "dem",
-                                method = c("auto", "dinf", "d8")) {
+                                method = c("auto", "grass", "d8")) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -402,34 +472,15 @@ indicator_water_twi <- function(units,
     stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
 
-  # Determine which method to use
-  use_whitebox <- FALSE
-  if (method == "dinf") {
-    # Check if whitebox is available
-    if (!requireNamespace("whitebox", quietly = TRUE)) {
-      warning("whitebox package not available, falling back to terra D8 method", call. = FALSE)
-      method <- "d8"
-    } else {
-      use_whitebox <- TRUE
-    }
-  } else if (method == "auto") {
-    # Prefer whitebox if available
-    if (requireNamespace("whitebox", quietly = TRUE)) {
-      use_whitebox <- TRUE
-    } else {
-      method <- "d8"
-    }
-  }
-
-  # Calculate TWI using selected method
-  if (use_whitebox) {
-    twi_raster <- calculate_twi_whitebox(dem)
-  } else {
+  # Calculate TWI (cached across W2, W3, F2, R3)
+  if (method == "d8") {
     twi_raster <- calculate_twi_terra(dem)
+  } else {
+    twi_raster <- get_or_compute_twi(dem)
   }
 
   # Extract mean TWI for each unit
-  twi_mean <- exactextractr::exact_extract(
+  twi_mean <- safe_extract(
     twi_raster,
     as_pure_sf(units),
     fun = "mean",
@@ -488,14 +539,68 @@ calculate_twi_terra <- function(dem) {
   twi
 }
 
-#' Calculate TWI using whitebox (D-infinity algorithm)
+#' Calculate TWI using fasterRaster/GRASS GIS
+#'
+#' Uses GRASS GIS via fasterRaster for proper hydrological TWI computation:
+#' depression filling, flow direction/accumulation via wetness().
 #' @keywords internal
 #' @noRd
-calculate_twi_whitebox <- function(dem) {
-  # Placeholder for whitebox implementation (v0.3.0+)
-  # For now, fall back to terra
-  warning("whitebox TWI not yet fully implemented, using terra D8", call. = FALSE)
-  calculate_twi_terra(dem)
+calculate_twi_grass <- function(dem) {
+  if (!requireNamespace("fasterRaster", quietly = TRUE)) {
+    stop("fasterRaster package required for GRASS TWI calculation", call. = FALSE)
+  }
+
+  # Detect GRASS installation
+  grass_dir <- Sys.getenv("GRASS_DIR", unset = "")
+  if (grass_dir == "") {
+    # Common GRASS paths on Linux
+    candidates <- c(
+      "/usr/lib/grass84", "/usr/lib/grass83", "/usr/lib/grass82",
+      "/usr/lib/grass", "/usr/local/grass"
+    )
+    for (path in candidates) {
+      if (dir.exists(path)) {
+        grass_dir <- path
+        break
+      }
+    }
+  }
+
+  if (grass_dir == "" || !dir.exists(grass_dir)) {
+    warning("GRASS GIS not found, falling back to terra D8", call. = FALSE)
+    return(calculate_twi_terra(dem))
+  }
+
+  tryCatch({
+    cli::cli_alert_info("W3: Computing TWI with fasterRaster/GRASS ({basename(grass_dir)})")
+
+    # Initialize GRASS session
+    fasterRaster::faster(grassDir = grass_dir)
+
+    # Convert terra raster to GRaster
+    elev <- fasterRaster::fast(dem)
+
+    # Compute TWI using GRASS r.topidx (handles depression filling internally)
+    twi_grass <- fasterRaster::wetness(elev)
+
+    # Convert back to terra raster
+    twi_terra <- terra::rast(twi_grass)
+
+    # Sanitize output
+    twi_terra[is.infinite(twi_terra)] <- NA
+    twi_terra[is.nan(twi_terra)] <- NA
+    twi_terra[twi_terra < 0] <- 0
+    twi_terra[twi_terra > 50] <- NA
+
+    cli::cli_alert_success("W3: GRASS TWI computed successfully")
+    twi_terra
+  }, error = function(e) {
+    warning(
+      sprintf("GRASS TWI failed (%s), falling back to terra D8", conditionMessage(e)),
+      call. = FALSE
+    )
+    calculate_twi_terra(dem)
+  })
 }
 
 # ==============================================================================
@@ -563,7 +668,7 @@ extract_fertility_from_raster <- function(units, layers, soil_layer, fertility_c
   soil_raster <- resolve_raster_layer(layers, soil_layer)
 
   # Extract mean soil values for each unit
-  soil_values <- exactextractr::exact_extract(
+  soil_values <- safe_extract(
     soil_raster,
     as_pure_sf(units),
     fun = "mean",
@@ -634,32 +739,30 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
   fertility
 }
 
-#' Erosion Risk Index (F2)
+#' Soil Fertility Index (F2)
 #'
-#' Calculates erosion risk by combining slope (from DEM) with land cover protection.
-#' Higher values indicate greater erosion risk.
+#' Calculates soil fertility potential by combining TWI (water/nutrient
+#' accumulation) and slope (erosion risk). Follows the tuto 03 methodology:
+#' F2 = (twi_norm + slope_norm) / 2
+#'
+#' TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+#' Higher values indicate more fertile soil conditions.
 #'
 #' @param units nemeton_units object
-#' @param layers nemeton_layers object containing DEM and land cover
+#' @param layers nemeton_layers object containing DEM raster
 #' @param dem_layer Character. Name of DEM layer
-#' @param landcover_layer Character. Name of land cover layer
-#' @param forest_values Numeric vector. Land cover codes for forest (protective cover)
 #'
-#' @return Numeric vector of erosion risk scores (0-100, higher = more risk)
+#' @return Numeric vector of fertility scores (0-100, higher = more fertile)
 #'
 #' @export
 #' @examples
 #' \dontrun{
-#' layers <- nemeton_layers(
-#'   rasters = list(dem = "dem.tif", landcover = "landcover.tif")
-#' )
-#' results <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
+#' layers <- nemeton_layers(rasters = list(dem = "dem.tif"))
+#' results <- indicator_soil_erosion(units, layers)
 #' }
 indicator_soil_erosion <- function(units,
                                    layers,
-                                   dem_layer = "dem",
-                                   landcover_layer = "landcover",
-                                   forest_values = seq(1, 6)) {
+                                   dem_layer = "dem") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -678,48 +781,31 @@ indicator_soil_erosion <- function(units,
     stop(sprintf("No DEM layer available (tried lidar_mnt, %s)", dem_layer), call. = FALSE)
   }
 
-  # Calculate slope from DEM (in degrees)
-  slope <- terra::terrain(dem, v = "slope", unit = "degrees")
+  units_sf <- as_pure_sf(units)
 
-  # Check landcover layer exists for protection factor
-  landcover <- resolve_raster_layer(layers, landcover_layer)
-  has_landcover <- !is.null(landcover)
+  # 1. Compute TWI (cached across W2, W3, F2, R3)
+  cli::cli_alert_info("F2: Computing fertility from TWI + slope")
+  twi_raster <- get_or_compute_twi(dem)
 
-  if (has_landcover) {
-    # Calculate forest cover protection factor (0-1)
-    is_forest <- function(x) {
-      as.numeric(x %in% forest_values)
-    }
-    protection <- terra::app(landcover, is_forest)
-    erosion_raster <- slope * (1 - protection)
-  } else {
-    # No landcover: use slope only (assume moderate protection from forest)
-    cli::cli_alert_info("F2: No landcover layer, computing erosion from slope only")
-    erosion_raster <- slope * 0.5  # Assume 50% forest protection
-  }
+  twi_mean <- safe_extract(twi_raster, units_sf, fun = "mean", progress = FALSE)
 
-  # Extract mean erosion risk for each unit
-  erosion_mean <- exactextractr::exact_extract(
-    erosion_raster,
-    as_pure_sf(units),
-    fun = "mean",
-    progress = FALSE
-  )
+  # 2. Compute slope (degrees)
+  slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
+  slope_mean <- safe_extract(slope_raster, units_sf, fun = "mean", progress = FALSE)
 
-  # Normalize to 0-100 scale
-  # Slope can be 0-90 degrees, erosion_raster is 0-90
-  # Scale to 0-100 for consistency
-  max_possible <- 90 # Maximum slope in degrees
-  erosion_risk <- (erosion_mean / max_possible) * 100
+  # 3. Normalize TWI: [5, 15] -> [0, 100] (higher TWI = more fertile)
+  twi_norm <- pmax(pmin((twi_mean - 5) / 10 * 100, 100), 0)
 
-  # Ensure within bounds
-  erosion_risk <- pmin(erosion_risk, 100)
-  erosion_risk <- pmax(erosion_risk, 0)
+  # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = more fertile)
+  slope_norm <- pmax(pmin(100 - (slope_mean / 45) * 100, 100), 0)
+
+  # 5. F2 = average of TWI and slope components
+  fertility <- round((twi_norm + slope_norm) / 2, 1)
 
   # Log calculation
   msg_info("indicator_soil_erosion")
 
-  erosion_risk
+  fertility
 }
 
 # ==============================================================================
@@ -876,7 +962,7 @@ indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
     if (!is.null(ndvi)) {
       cli::cli_alert_info("A1: No forest_cover layer, estimating from NDVI")
       buffers <- sf::st_buffer(units, dist = 1000)
-      coverage <- exactextractr::exact_extract(ndvi, as_pure_sf(buffers),
+      coverage <- safe_extract(ndvi, as_pure_sf(buffers),
         fun = "mean", progress = FALSE
       )
       # NDVI > 0.4 is typically forested; scale to 0-100
@@ -902,7 +988,7 @@ indicator_fertility_soil <- function(units, layers = NULL, ...) {
   ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
   if (!is.null(ndvi_raster)) {
     cli::cli_alert_info("F1: Estimating soil fertility from NDVI productivity")
-    fertility <- exactextractr::exact_extract(ndvi_raster,
+    fertility <- safe_extract(ndvi_raster,
       as_pure_sf(units), fun = "mean", progress = FALSE
     )
     # Scale NDVI (0-1) to fertility score (0-100)
@@ -914,27 +1000,11 @@ indicator_fertility_soil <- function(units, layers = NULL, ...) {
 
 #' @noRd
 indicator_fertility_erosion <- function(units, layers = NULL, ...) {
-  # F2: Erosion risk - uses DEM slope and forest cover
-  dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
-  if (!is.null(dem)) {
-    lc_layer <- if (!is.null(resolve_raster_layer(layers, "landcover"))) "landcover"
-      else if (!is.null(resolve_raster_layer(layers, "forest_cover"))) "forest_cover"
-      else NULL
-    if (!is.null(lc_layer)) {
-      return(indicator_soil_erosion(units, layers,
-        dem_layer = "dem", landcover_layer = lc_layer,
-        forest_values = seq(1, 6)))
-    }
-    # DEM only: compute slope-based erosion risk
-    cli::cli_alert_info("F2: Computing erosion from slope only (no landcover)")
-    slope <- terra::terrain(dem, v = "slope", unit = "degrees")
-    slope_mean <- exactextractr::exact_extract(slope,
-      as_pure_sf(units), fun = "mean", progress = FALSE
-    )
-    # Normalize: 0° = 0, 45° = 100
-    return(pmin(slope_mean / 45, 1) * 100)
+  # F2: Soil fertility (TWI + slope) - delegates to indicator_soil_erosion
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    return(indicator_soil_erosion(units, layers))
   }
-  cli::cli_alert_warning("F2: No DEM available for erosion, returning NA")
+  cli::cli_alert_warning("F2: No layers available for fertility, returning NA")
   rep(NA_real_, nrow(units))
 }
 
@@ -956,7 +1026,7 @@ indicator_energy_wood <- function(units, layers = NULL, ...) {
   ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
   if (!is.null(ndvi_raster)) {
     cli::cli_alert_info("E1: Estimating fuelwood potential from NDVI")
-    ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+    ndvi_mean <- safe_extract(ndvi_raster,
       as_pure_sf(units), fun = "mean", progress = FALSE
     )
     # NDVI -> volume proxy -> fuelwood potential
@@ -1000,7 +1070,7 @@ indicator_production_volume <- function(units, layers = NULL, ...) {
     if (!is.null(mnh_raster)) {
       cli::cli_alert_info("P1: Estimating timber volume from LiDAR MNH")
       units_sf <- as_pure_sf(units)
-      mnh_mean <- exactextractr::exact_extract(mnh_raster, units_sf,
+      mnh_mean <- safe_extract(mnh_raster, units_sf,
         fun = "mean", progress = FALSE)
       # Height-to-volume relationship (temperate forests, approximate)
       # Typical: H=10m -> ~100 m3/ha, H=20m -> ~300 m3/ha, H=30m -> ~500 m3/ha
@@ -1013,7 +1083,7 @@ indicator_production_volume <- function(units, layers = NULL, ...) {
     ndvi_raster <- resolve_raster_layer(layers, "ndvi")
     if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("P1: Estimating timber volume from NDVI")
-      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+      ndvi_mean <- safe_extract(ndvi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE
       )
       # NDVI -> volume proxy: NDVI 0.8 ~ 200 m3/ha for mature temperate forest
@@ -1029,7 +1099,7 @@ indicator_production_productivity <- function(units, layers = NULL, ...) {
   ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
   if (!is.null(ndvi_raster)) {
     cli::cli_alert_info("P2: Estimating productivity from NDVI")
-    ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+    ndvi_mean <- safe_extract(ndvi_raster,
       as_pure_sf(units), fun = "mean", progress = FALSE
     )
     # NDVI as proxy: scale to m3/ha/yr (typical range 3-15)
@@ -1047,7 +1117,7 @@ indicator_production_quality <- function(units, layers = NULL, ...) {
     dem <- get_dem_raster(layers)
     if (!is.null(dem)) {
       slope <- terra::terrain(dem, v = "slope", unit = "degrees")
-      slope_mean <- exactextractr::exact_extract(slope,
+      slope_mean <- safe_extract(slope,
         as_pure_sf(units), fun = "mean", progress = FALSE
       )
       # Gentle slopes (< 15°) favor quality forestry
@@ -1057,7 +1127,7 @@ indicator_production_quality <- function(units, layers = NULL, ...) {
     # Higher NDVI = healthier trees = better quality
     ndvi_raster <- resolve_raster_layer(layers, "ndvi")
     if (!is.null(ndvi_raster)) {
-      ndvi_mean <- exactextractr::exact_extract(ndvi_raster,
+      ndvi_mean <- safe_extract(ndvi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE
       )
       ndvi_score <- pmax(0, ndvi_mean / 0.8) * 50

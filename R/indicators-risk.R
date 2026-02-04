@@ -87,7 +87,7 @@ indicator_risk_fire <- function(units,
 
   # Component 1: Slope factor
   slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
-  slope_values <- exactextractr::exact_extract(slope_raster,
+  slope_values <- safe_extract(slope_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
   slope_factor <- pmin(slope_values / 30, 1) * 100
 
@@ -99,7 +99,7 @@ indicator_risk_fire <- function(units,
     # Fallback: use NDVI. Low NDVI = dry vegetation = higher flammability
     ndvi_raster_r1 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster_r1)) {
-      ndvi_mean <- exactextractr::exact_extract(ndvi_raster_r1,
+      ndvi_mean <- safe_extract(ndvi_raster_r1,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       # Low NDVI = dry = flammable. Invert: NDVI 0.2->80, NDVI 0.8->20
       species_factor <- pmax(0, pmin(100, 100 - ndvi_mean * 100))
@@ -216,7 +216,7 @@ indicator_risk_storm <- function(units,
   mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
   if (!is.null(mnh_raster)) {
     cli::cli_alert_info("R2: Using LiDAR MNH for canopy height")
-    mnh_mean <- exactextractr::exact_extract(mnh_raster,
+    mnh_mean <- safe_extract(mnh_raster,
       as_pure_sf(units), fun = "mean", progress = FALSE)
     height_factor <- pmin(pmax((mnh_mean - 10) / 25, 0), 1) * 100
   } else if (height_field %in% names(units)) {
@@ -226,7 +226,7 @@ indicator_risk_storm <- function(units,
     # Proxy: use NDVI as proxy for canopy height
     ndvi_r2 <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_r2)) {
-      ndvi_mean <- exactextractr::exact_extract(ndvi_r2,
+      ndvi_mean <- safe_extract(ndvi_r2,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       height_factor <- pmin(pmax(ndvi_mean / 0.8, 0), 1) * 100
     } else {
@@ -244,7 +244,7 @@ indicator_risk_storm <- function(units,
 
   # Component 3: Topographic exposure (TPI)
   tpi_raster <- terra::terrain(dem, v = "TPI")
-  tpi_values <- exactextractr::exact_extract(tpi_raster,
+  tpi_values <- safe_extract(tpi_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
   exposure_factor <- pmin(pmax((tpi_values + 50) / 100, 0), 1) * 100
 
@@ -327,12 +327,12 @@ indicator_risk_drought <- function(units,
   if (twi_field %in% names(units)) {
     twi_values <- units[[twi_field]]
   } else {
-    # Compute TWI from DEM if available (prefer LiDAR HD MNT)
+    # Compute TWI from DEM if available (prefer GRASS, fallback terra D8)
     dem <- if (!is.null(layers)) get_dem_raster(layers) else NULL
     if (!is.null(dem)) {
       cli::cli_alert_info("R3: Computing TWI from DEM for drought assessment")
-      twi_raster <- calculate_twi_terra(dem)
-      twi_values <- exactextractr::exact_extract(twi_raster,
+      twi_raster <- get_or_compute_twi(dem)
+      twi_values <- safe_extract(twi_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
     } else {
       cli::cli_alert_warning("R3: No TWI or DEM available for drought risk")
