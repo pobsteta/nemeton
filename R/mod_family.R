@@ -223,10 +223,22 @@ mod_family_server <- function(id, family_code, app_state) {
       if (is.null(row_idx) || length(row_idx) == 0) return()
 
       sf_data <- indicators_sf()
-      if (is.null(sf_data) || row_idx > nrow(sf_data)) return()
+      if (is.null(sf_data)) return()
 
-      # Get the selected parcel geometry and compute bbox with padding
-      selected <- sf_data[row_idx, ]
+      # Resolve selected parcel via ID (not row index, which changes after sort)
+      ind_data <- indicators_data()
+      if (is.null(ind_data) || row_idx > nrow(ind_data)) return()
+
+      id_cols <- intersect(c("nemeton_id", "id", "geo_parcelle"), names(ind_data))
+      if (length(id_cols) > 0) {
+        selected_id <- ind_data[[id_cols[1]]][row_idx]
+        sf_match <- which(sf_data[[id_cols[1]]] == selected_id)
+        if (length(sf_match) == 0) return()
+        selected <- sf_data[sf_match[1], ]
+      } else {
+        if (row_idx > nrow(sf_data)) return()
+        selected <- sf_data[row_idx, ]
+      }
       selected_wgs84 <- sf::st_transform(selected, 4326)
       bbox <- sf::st_bbox(selected_wgs84)
 
