@@ -131,13 +131,12 @@ mod_family_server <- function(id, family_code, app_state) {
         ))
       }
 
-      # Build one card per indicator
+      # Build one card per indicator inside a fixed-height wrapper
       map_cards <- lapply(seq_len(n), function(i) {
         map_id <- paste0("map", i)
-        bslib::card(
-          bslib::card_body(
-            leaflet::leafletOutput(ns(map_id), height = "380px")
-          )
+        htmltools::div(
+          class = "family-map-wrapper",
+          leaflet::leafletOutput(ns(map_id), height = "400px")
         )
       })
 

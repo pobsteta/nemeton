@@ -279,16 +279,19 @@ html, body {
   background: #e8e8e8 !important;
 }
 
-/* Contain family indicator leaflet maps inside cards */
-.card:has(.leaflet-container) {
+/* Contain family indicator maps */
+.family-map-wrapper {
+  height: 400px;
   overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--nemeton-border);
+  background: #fff;
 }
-.card:has(.leaflet-container) > .card-body {
-  overflow: hidden;
-  max-height: 420px;
+.family-map-wrapper .leaflet-container {
+  min-height: 0 !important;
 }
 
-/* Main parcel map should fill available space */
+/* Main parcel map: fill all available space */
 #map_container .leaflet-container,
 [id$="-map_container"] .leaflet-container {
   min-height: 500px;
