@@ -714,7 +714,7 @@ download_raster_source <- function(source_name,
   # Return cached if exists
 
   if (file.exists(cache_file)) {
-    return(terra::rast(cache_file))
+    return(suppressWarnings(terra::rast(cache_file)))
   }
 
   # Download based on source type
@@ -1378,8 +1378,9 @@ download_ign_dem <- function(bbox, cache_file) {
 
     # Check if valid GeoTIFF
     if (file.exists(temp_file) && file.size(temp_file) > 1000) {
-      # Copy to cache location
-      file.copy(temp_file, cache_file, overwrite = TRUE)
+      # Re-write through terra to fix malformed GeoTIFF tags from WMS
+      rast <- suppressWarnings(terra::rast(temp_file))
+      terra::writeRaster(rast, cache_file, overwrite = TRUE)
       unlink(temp_file)
 
       rast <- terra::rast(cache_file)
