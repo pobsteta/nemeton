@@ -932,6 +932,7 @@ indicator_landscape_fragmentation <- function(units,
   wind_dir_deg <- 225
 
   # Try nasapower for dominant wind direction (one call for all parcels)
+  # Weighted mean of monthly WD10M by WS10M (as in tuto 04)
   if (requireNamespace("nasapower", quietly = TRUE)) {
     tryCatch({
       centroid <- sf::st_centroid(sf::st_union(units))
@@ -941,20 +942,20 @@ indicator_landscape_fragmentation <- function(units,
       wind_data <- nasapower::get_power(
         community = "ag",
         lonlat = c(coords[1, 1], coords[1, 2]),
-        pars = "WD10M",
+        pars = c("WD10M", "WS10M"),
         temporal_api = "climatology"
       )
-      # Get annual mean wind direction
-      if ("ANN" %in% names(wind_data)) {
-        wind_dir_deg <- wind_data$ANN[1]
+      # Weighted mean of monthly directions by wind speed
+      wd_values <- as.numeric(wind_data[wind_data$PARAMETER == "WD10M", 4:15])
+      ws_values <- as.numeric(wind_data[wind_data$PARAMETER == "WS10M", 4:15])
+      if (length(wd_values) == 12 && length(ws_values) == 12 &&
+          !all(is.na(wd_values)) && !all(is.na(ws_values))) {
+        wind_dir_deg <- round(stats::weighted.mean(wd_values, ws_values, na.rm = TRUE))
       }
     }, error = function(e) {
       cli::cli_alert_info("L1: nasapower unavailable, using default wind direction 225\u00b0")
     })
   }
-
-  wind_rad <- wind_dir_deg * pi / 180
-  sun_rad <- 180 * pi / 180  # South azimuth
 
   l1_exposition <- numeric(nrow(units))
 
@@ -963,36 +964,45 @@ indicator_landscape_fragmentation <- function(units,
     boundary <- sf::st_boundary(sf::st_geometry(units[i, ]))
     coords <- sf::st_coordinates(boundary)
 
-    if (nrow(coords) < 2) {
+    if (nrow(coords) < 3) {
       l1_exposition[i] <- 50
       next
     }
 
-    # Calculate perpendicularity of each segment to wind and sun
-    wind_score <- 0
-    sun_score <- 0
-    total_length <- 0
+    # Geographic azimuth per segment: atan2(dx, dy) -> 0°=North, clockwise
+    n_seg <- nrow(coords) - 1
+    azimuths <- numeric(n_seg)
+    seg_lengths <- numeric(n_seg)
 
-    for (j in seq_len(nrow(coords) - 1)) {
+    for (j in seq_len(n_seg)) {
       dx <- coords[j + 1, 1] - coords[j, 1]
       dy <- coords[j + 1, 2] - coords[j, 2]
-      seg_length <- sqrt(dx^2 + dy^2)
-      if (seg_length < 0.01) next
-
-      seg_angle <- atan2(dy, dx)
-
-      # Perpendicularity = |sin(segment_angle - direction)|
-      wind_perp <- abs(sin(seg_angle - wind_rad))
-      sun_perp <- abs(sin(seg_angle - sun_rad))
-
-      wind_score <- wind_score + wind_perp * seg_length
-      sun_score <- sun_score + sun_perp * seg_length
-      total_length <- total_length + seg_length
+      azimuths[j] <- (atan2(dx, dy) * 180 / pi + 360) %% 360
+      seg_lengths[j] <- sqrt(dx^2 + dy^2)
     }
 
-    if (total_length > 0) {
-      wind_score <- (wind_score / total_length) * 100
-      sun_score <- (sun_score / total_length) * 100
+    # Wind exposure: max when edge normal is aligned with wind direction
+    vent_exposure <- vapply(azimuths, function(az) {
+      normale <- (az + 90) %% 360
+      diff_angle <- abs(normale - wind_dir_deg)
+      if (diff_angle > 180) diff_angle <- 360 - diff_angle
+      cos(diff_angle * pi / 180)
+    }, numeric(1))
+
+    # Sun exposure: max when edge normal points South (180°)
+    soleil_exposure <- vapply(azimuths, function(az) {
+      normale <- (az + 90) %% 360
+      diff_angle <- abs(normale - 180)
+      if (diff_angle > 180) diff_angle <- 360 - diff_angle
+      cos(diff_angle * pi / 180)
+    }, numeric(1))
+
+    total_len <- sum(seg_lengths)
+    if (total_len > 0) {
+      # Wind: absolute value (exposure regardless of face direction)
+      wind_score <- sum(abs(vent_exposure) * seg_lengths) / total_len * 100
+      # Sun: only positive (south-facing edges count)
+      sun_score <- sum(pmax(0, soleil_exposure) * seg_lengths) / total_len * 100
     } else {
       wind_score <- 50
       sun_score <- 50
