@@ -172,7 +172,7 @@ indicator_social_trails <- function(units,
       unit_geom <- units_buffered[i, ]
 
       # Clip trails to unit
-      trails_in_unit <- sf::st_intersection(trails, unit_geom)
+      trails_in_unit <- suppressWarnings(sf::st_intersection(trails, unit_geom))
 
       if (nrow(trails_in_unit) > 0) {
         # Calculate total trail length (in meters)
