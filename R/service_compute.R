@@ -1958,8 +1958,8 @@ normalize_indicator <- function(indicator, values) {
     "carbon_biomass" = 150,
     # Carbon: NDVI in 0-1 scale
     "carbon_ndvi" = 1,
-    # Water: hydrographic network density in km/ha
-    "water_network" = 2,
+    # Water: hydrographic network density in m/ha
+    "water_network" = 2000,
     # Water: TWI (Topographic Wetness Index) — needs rescaling from ~5-15
     "water_twi" = NULL,  # special handling below
     # Landscape: patch count (fragmentation)

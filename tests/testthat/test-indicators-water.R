@@ -24,9 +24,9 @@ test_that("indicator_water_network calculates stream density within parcels", {
   expect_true(all(!is.na(density)))
   expect_true(all(density >= 0)) # Density should be non-negative
 
-  # Reasonable range check (km/ha should be small values)
-  # Dense network: ~0.5-2 km/ha, sparse: 0-0.1 km/ha
-  expect_true(all(density < 5)) # Upper bound check
+  # Reasonable range check (m/ha)
+  # Dense network: ~500-2000 m/ha, sparse: 0-100 m/ha
+  expect_true(all(density < 5000)) # Upper bound check
 })
 
 test_that("indicator_water_network with buffer expands search area", {

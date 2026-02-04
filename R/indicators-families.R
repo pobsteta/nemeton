@@ -233,7 +233,7 @@ indicator_carbon_ndvi <- function(units,
 #' @param watercourse_layer Character. Name of watercourse layer in layers object
 #' @param buffer Numeric. Buffer distance (meters) for proximity analysis. Default 0.
 #'
-#' @return Numeric vector of network density (km/ha)
+#' @return Numeric vector of network density (m/ha)
 #'
 #' @export
 #' @examples
@@ -279,20 +279,19 @@ indicator_water_network <- function(units,
     # Intersect watercourses with unit
     intersected <- suppressWarnings(sf::st_intersection(watercourses, unit_geom))
 
-    # Calculate total length of watercourses (in km)
+    # Calculate total length of watercourses (in meters)
     if (nrow(intersected) > 0) {
-      total_length_m <- sum(sf::st_length(intersected))
-      total_length_km <- as.numeric(total_length_m) / 1000
+      total_length_m <- as.numeric(sum(sf::st_length(intersected)))
     } else {
-      total_length_km <- 0
+      total_length_m <- 0
     }
 
     # Calculate unit area (in ha)
     area_m2 <- as.numeric(sf::st_area(unit_geom))
     area_ha <- area_m2 / 10000
 
-    # Density = km / ha
-    density[i] <- total_length_km / area_ha
+    # Density = m / ha (consistent with tuto 03)
+    density[i] <- total_length_m / area_ha
   }
 
   # Log calculation
