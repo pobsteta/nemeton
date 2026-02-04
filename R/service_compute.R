@@ -702,6 +702,7 @@ download_layers_for_parcels <- function(parcels,
       point_clouds = point_clouds,
       bbox = bbox_buffered,
       crs = sf::st_crs(parcels),
+      cache_dir = cache_dir,
       warnings = download_warnings  # Include download warnings for UI display
     ),
     class = "nemeton_layers"

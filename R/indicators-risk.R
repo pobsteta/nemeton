@@ -224,7 +224,9 @@ indicator_risk_storm <- function(units,
   }
 
   # --- Get dominant wind direction (cached) ---
-  wind_dir <- get_nasapower_wind(units, default_dir = 270)
+
+  wind_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
+  wind_dir <- get_nasapower_wind(units, default_dir = 270, cache_dir = wind_cache_dir)
 
   # --- Primary method: microclima::windcoef ---
   if (suppressWarnings(requireNamespace("microclima", quietly = TRUE))) {
@@ -419,7 +421,8 @@ indicator_risk_drought <- function(units,
   pente_risk <- terra::clamp(pente / 30, lower = 0, upper = 1)
 
   # TWI risk: low TWI = dry
-  twi_raster <- get_or_compute_twi(dem)
+  twi_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
+  twi_raster <- get_or_compute_twi(dem, cache_dir = twi_cache_dir)
   twi_max <- terra::global(twi_raster, "max", na.rm = TRUE)$max
   if (is.na(twi_max) || twi_max == 0) twi_max <- 1
   twi_norm <- terra::clamp(twi_raster / twi_max, lower = 0, upper = 1)

@@ -27,7 +27,7 @@ NULL
 #' @return Numeric. Dominant wind direction in degrees.
 #' @keywords internal
 #' @noRd
-get_nasapower_wind <- function(units, default_dir = 270) {
+get_nasapower_wind <- function(units, default_dir = 270, cache_dir = NULL) {
 
   # Compute centroid in WGS84
   centroid <- suppressWarnings(sf::st_centroid(sf::st_union(units)))
@@ -45,10 +45,11 @@ get_nasapower_wind <- function(units, default_dir = 270) {
     return(wind_dir)
   }
 
-  # File-based cache in global nemeton cache dir
-  cache_dir <- file.path(get_global_cache_dir(), "nasapower")
-
-  cache_file <- file.path(cache_dir, paste0("wind_", lon, "_", lat, ".rds"))
+  # File-based cache — per-project or global fallback
+  if (is.null(cache_dir)) {
+    cache_dir <- file.path(get_global_cache_dir(), "nasapower")
+  }
+  cache_file <- file.path(cache_dir, "nasapower_wind.rds")
 
   if (file.exists(cache_file)) {
     tryCatch({
@@ -103,10 +104,12 @@ get_nasapower_wind <- function(units, default_dir = 270) {
 #' Returns a cached TWI raster if one exists for the given DEM fingerprint,
 #' otherwise computes it (GRASS preferred, terra D8 fallback) and caches.
 #' @param dem A SpatRaster DEM
+#' @param cache_dir Character. Directory for file cache (per-project).
+#'   If NULL, falls back to global nemeton cache.
 #' @return A SpatRaster with TWI values
 #' @keywords internal
 #' @noRd
-get_or_compute_twi <- function(dem) {
+get_or_compute_twi <- function(dem, cache_dir = NULL) {
   # Key = DEM fingerprint (dimensions + extent + CRS)
   key <- paste(nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
@@ -119,10 +122,11 @@ get_or_compute_twi <- function(dem) {
     return(get(key, envir = .twi_cache))
   }
 
-  # 2. File cache (persists between sessions)
-  cache_dir <- file.path(get_global_cache_dir(), "twi")
-  cache_key <- substr(gsub("[^a-zA-Z0-9]", "", key), 1, 40)
-  cache_file <- file.path(cache_dir, paste0("twi_", cache_key, ".tif"))
+  # 2. File cache (persists between sessions) — per-project or global fallback
+  if (is.null(cache_dir)) {
+    cache_dir <- file.path(get_global_cache_dir(), "twi")
+  }
+  cache_file <- file.path(cache_dir, "twi.tif")
 
   if (file.exists(cache_file)) {
     tryCatch({
@@ -473,7 +477,7 @@ indicator_water_wetlands <- function(units,
   dem <- get_dem_raster(layers)
   if (!is.null(dem)) {
     cli::cli_alert_info("W2: Estimating wetlands from TWI (threshold > 12)")
-    twi_raster <- get_or_compute_twi(dem)
+    twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
 
     for (i in seq_len(nrow(units))) {
       twi_vals <- safe_extract(
@@ -581,7 +585,7 @@ indicator_water_twi <- function(units,
   if (method == "d8") {
     twi_raster <- calculate_twi_terra(dem)
   } else {
-    twi_raster <- get_or_compute_twi(dem)
+    twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
   }
 
   # Extract mean TWI for each unit
@@ -902,7 +906,7 @@ indicator_soil_erosion <- function(units,
 
   # 1. Compute TWI (cached across W2, W3, F2, R3)
   cli::cli_alert_info("F2: Computing fertility from TWI + slope")
-  twi_raster <- get_or_compute_twi(dem)
+  twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
 
   twi_mean <- safe_extract(twi_raster, units_sf, fun = "mean", progress = FALSE)
 
@@ -1048,7 +1052,7 @@ indicator_landscape_fragmentation <- function(units,
   # --- Component 3: Exposure (30%) ---
   # Wind (60%) + Sun (40%)
   # Get dominant wind direction (cached, default 225° SW for France)
-  wind_dir_deg <- get_nasapower_wind(units, default_dir = 225)
+  wind_dir_deg <- get_nasapower_wind(units, default_dir = 225, cache_dir = if (!is.null(layers)) layers$cache_dir)
 
   l1_exposition <- numeric(nrow(units))
 
