@@ -947,8 +947,11 @@ download_inpn_wfs <- function(layer_name, bbox, cache_file) {
 #'
 #' @noRd
 download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
-  # IGN Geoplateforme WFS URL
-  base_url <- "https://data.geopf.fr/wfs/ows"
+
+  if (!requireNamespace("happign", quietly = TRUE)) {
+    cli::cli_warn("Package {.pkg happign} required for IGN BD TOPO download")
+    return(NULL)
+  }
 
   # Map layer names to BD TOPO V3 typenames
   layer_mapping <- list(
@@ -963,55 +966,26 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
     return(NULL)
   }
 
-  # Ensure bbox is numeric vector
-  if (inherits(bbox, "bbox")) {
-    bbox <- as.numeric(bbox)
-  }
-
-  # Format bbox for WFS
-  bbox_str <- paste(bbox[c(1, 2, 3, 4)], collapse = ",")
-
-  cli::cli_alert_info("Downloading IGN BD TOPO {layer_name}...")
+  cli::cli_alert_info("Downloading IGN BD TOPO {layer_name} via happign...")
 
   tryCatch({
-    # Build WFS GetFeature URL
-    wfs_url <- paste0(
-      base_url,
-      "?SERVICE=WFS",
-      "&VERSION=2.0.0",
-      "&REQUEST=GetFeature",
-      "&TYPENAME=", typename,
-      "&BBOX=", bbox_str, ",EPSG:4326",
-      "&SRSNAME=EPSG:4326",
-      "&OUTPUTFORMAT=application/json",
-      "&COUNT=10000"  # Limit to avoid memory issues
-    )
-
-    # Make request
-    resp <- httr2::request(wfs_url) |>
-      httr2::req_timeout(120) |>
-      httr2::req_error(is_error = function(resp) FALSE) |>
-      httr2::req_perform()
-
-    if (httr2::resp_status(resp) != 200) {
-      cli::cli_warn("IGN WFS returned status {httr2::resp_status(resp)}")
-      return(NULL)
+    # Build sf shape from bbox for happign::get_wfs()
+    if (inherits(bbox, "bbox")) {
+      bbox <- as.numeric(bbox)
     }
+    shape <- sf::st_as_sfc(sf::st_bbox(c(
+      xmin = bbox[1], ymin = bbox[2], xmax = bbox[3], ymax = bbox[4]
+    ), crs = sf::st_crs(4326)))
 
-    # Parse GeoJSON
-    geojson <- httr2::resp_body_string(resp)
+    result <- happign::get_wfs(x = shape, layer = typename)
 
-    if (nchar(geojson) < 50) {
+    if (is.null(result) || nrow(result) == 0) {
       cli::cli_alert_warning("No IGN BD TOPO features found for {layer_name}")
       return(NULL)
     }
 
-    result <- sf::st_read(geojson, quiet = TRUE)
-
-    if (nrow(result) == 0) {
-      cli::cli_alert_warning("No IGN BD TOPO features found for {layer_name}")
-      return(NULL)
-    }
+    # Project to Lambert-93
+    result <- sf::st_transform(result, 2154)
 
     # Save to cache
     sf::st_write(result, cache_file, quiet = TRUE, delete_dsn = TRUE)
