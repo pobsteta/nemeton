@@ -308,6 +308,39 @@ TRANSLATIONS <- list(
   # Data Table
   # ============================================================
   data_table = list(fr = "Tableau des donn\u00e9es", en = "Data Table"),
+  statistics_title = list(fr = "Statistiques", en = "Statistics"),
+  comments_title = list(fr = "Commentaires", en = "Comments"),
+
+  # Analysis
+  analysis = list(fr = "Analyse", en = "Analysis"),
+  analysis_stats = list(fr = "Statistiques descriptives", en = "Descriptive Statistics"),
+  analysis_comments = list(fr = "Observations et critiques", en = "Observations and Critiques"),
+  analysis_comments_placeholder = list(
+    fr = "Saisissez vos observations sur les r\u00e9sultats...",
+    en = "Enter your observations on the results..."
+  ),
+  stat_min = list(fr = "Min", en = "Min"),
+  stat_max = list(fr = "Max", en = "Max"),
+  stat_mean = list(fr = "Moyenne", en = "Mean"),
+  stat_median = list(fr = "M\u00e9diane", en = "Median"),
+  stat_sd = list(fr = "\u00c9cart-type", en = "Std Dev"),
+  stat_n = list(fr = "Parcelles", en = "Parcels"),
+  stat_na = list(fr = "Valeurs manquantes", en = "Missing values"),
+  alert_high_variability = list(
+    fr = "Forte variabilit\u00e9 d\u00e9tect\u00e9e (CV > 50%)",
+    en = "High variability detected (CV > 50%)"
+  ),
+  alert_many_na = list(
+    fr = "Attention : {n} valeurs manquantes sur {total}",
+    en = "Warning: {n} missing values out of {total}"
+  ),
+  ai_generate = list(fr = "G\u00e9n\u00e9rer l'analyse IA", en = "Generate AI Analysis"),
+  ai_generating = list(fr = "Analyse en cours...", en = "Analyzing..."),
+  ai_error = list(fr = "Erreur lors de l'analyse IA", en = "AI analysis error"),
+  ai_no_api_key = list(
+    fr = "Cl\u00e9 API non configur\u00e9e. D\u00e9finissez la variable d'environnement {key_var}.",
+    en = "API key not configured. Set the {key_var} environment variable."
+  ),
 
   # ============================================================
   # Missing Indicators

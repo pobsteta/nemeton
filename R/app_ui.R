@@ -420,17 +420,13 @@ mod_family_ui <- function(id, family_code) {
     col_widths = c(12),
 
     # Family header
-    bslib::card(
-      bslib::card_header(
-        class = "d-flex align-items-center",
-        bsicons::bs_icon(family$icon, class = "me-2"),
-        htmltools::span(family_name, class = "fw-bold")
-      ),
-      bslib::card_body(
-        shiny::p(
-          class = "text-muted",
-          i18n$t(paste0("family_", family_code, "_desc"))
-        )
+    htmltools::div(
+      class = "d-flex align-items-center mb-3",
+      bsicons::bs_icon(family$icon, class = "me-2"),
+      htmltools::span(family_name, class = "fw-bold me-2"),
+      htmltools::span(
+        class = "text-muted",
+        paste0("\u2014 ", i18n$t(paste0("family_", family_code, "_desc")))
       )
     ),
 
@@ -439,7 +435,7 @@ mod_family_ui <- function(id, family_code) {
       col_widths = c(6, 6),
       bslib::card(
         bslib::card_body(
-          leaflet::leafletOutput(ns("map1"), height = "650px")
+          leaflet::leafletOutput(ns("map1"), height = "450px")
         )
       ),
       bslib::card(

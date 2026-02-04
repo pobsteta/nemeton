@@ -141,9 +141,9 @@ mod_family_server <- function(id, family_code, app_state) {
       }
 
       if (length(ind_cols) >= 2) {
-        leaflet::leafletOutput(ns("map2"), height = "650px")
+        leaflet::leafletOutput(ns("map2"), height = "450px")
       } else {
-        shiny::plotOutput(ns("barplot1"), height = "650px")
+        shiny::plotOutput(ns("barplot1"), height = "450px")
       }
     })
 
