@@ -462,27 +462,33 @@ mod_family_ui <- function(id, family_code) {
       ),
       bslib::card(
         bslib::card_header(
-          class = "d-flex justify-content-between align-items-center",
+          class = "d-flex justify-content-between align-items-center flex-wrap gap-2",
           i18n$t("comments_title"),
-          shiny::actionButton(
-            ns("ai_generate"),
-            label = i18n$t("ai_generate"),
-            icon = shiny::icon("robot"),
-            class = "btn-outline-primary btn-sm"
+          htmltools::div(
+            class = "d-flex align-items-center gap-2",
+            htmltools::div(
+              class = "expert-select-inline",
+              shiny::selectInput(
+                ns("expert_profile"),
+                label = NULL,
+                choices = stats::setNames(
+                  c("generalist", "owner", "engineer", "politician", "economist", "citizen"),
+                  c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_engineer"),
+                    i18n$t("expert_politician"), i18n$t("expert_economist"), i18n$t("expert_citizen"))
+                ),
+                selected = "generalist",
+                width = "auto"
+              )
+            ),
+            shiny::actionButton(
+              ns("ai_generate"),
+              label = i18n$t("ai_generate"),
+              icon = shiny::icon("robot"),
+              class = "btn-outline-primary btn-sm"
+            )
           )
         ),
         bslib::card_body(
-          shiny::selectInput(
-            ns("expert_profile"),
-            label = i18n$t("expert_label"),
-            choices = stats::setNames(
-              c("generalist", "owner", "engineer", "politician", "economist", "citizen"),
-              c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_engineer"),
-                i18n$t("expert_politician"), i18n$t("expert_economist"), i18n$t("expert_citizen"))
-            ),
-            selected = "generalist",
-            width = "100%"
-          ),
           shiny::textAreaInput(
             ns("analysis_comments"),
             label = NULL,

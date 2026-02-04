@@ -566,6 +566,22 @@ html[data-shiny-busy] .bslib-card::after {
 
 
 /* ============================================================
+   Expert Profile Inline Select
+   ============================================================ */
+.expert-select-inline {
+  margin-bottom: 0;
+}
+.expert-select-inline .form-group {
+  margin-bottom: 0;
+}
+.expert-select-inline .form-select,
+.expert-select-inline select {
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 0.85em;
+}
+
+/* ============================================================
    Responsive Design
    ============================================================ */
 
