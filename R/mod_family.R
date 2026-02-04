@@ -561,7 +561,7 @@ make_indicator_leaflet <- function(sf_data, ind_col, title) {
       )
     ) |>
     leaflet::addLegend(
-      position = "bottomright",
+      position = "topright",
       pal = pal,
       values = vals,
       title = title,
