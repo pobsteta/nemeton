@@ -81,14 +81,13 @@ indicator_biodiversity_protection <- function(units,
       # TODO: Implement WFS fetch from INPN
       # For now, warn and use empty dataset
       msg_warn("biodiversity_wfs_failed")
-      protected_areas <- st_sf(
+      protected_areas <- sf::st_sf(
         zone_id = character(0),
-        geometry = st_sfc(crs = st_crs(units))
+        geometry = sf::st_sfc(crs = sf::st_crs(units))
       )
     }
   } else {
     if (is.null(protected_areas)) {
-      # No protected areas data - return 0% coverage (no protection)
       cli::cli_alert_info("B1: No protected areas data provided, setting coverage to 0%")
       units$B1 <- rep(0, nrow(units))
       return(units)
@@ -96,42 +95,119 @@ indicator_biodiversity_protection <- function(units,
   }
 
   # Preprocess: harmonize CRS
-  if (preprocess && !st_crs(units) == st_crs(protected_areas)) {
-    protected_areas <- st_transform(protected_areas, st_crs(units))
+  if (preprocess && !sf::st_crs(units) == sf::st_crs(protected_areas)) {
+    protected_areas <- sf::st_transform(protected_areas, sf::st_crs(units))
   }
 
-  # Calculate overlap
+  # Initialize columns
   units$B1 <- numeric(nrow(units))
 
-  if (nrow(protected_areas) > 0) {
-    for (i in seq_len(nrow(units))) {
-      parcel <- units[i, ]
-      parcel_area <- as.numeric(st_area(parcel))
+  if (nrow(protected_areas) == 0) {
+    msg_info("indicator_biodiversity_protection")
+    return(units)
+  }
 
-      # Find intersecting protected areas
-      intersects_idx <- st_intersects(parcel, protected_areas, sparse = FALSE)[1, ]
+  # Detect protection type column (tutorial uses type_protection, fixture uses zone_type)
+  type_col <- NULL
+  for (candidate in c("type_protection", "zone_type", "type", "statut")) {
+    if (candidate %in% names(protected_areas)) {
+      type_col <- candidate
+      break
+    }
+  }
 
-      if (any(intersects_idx)) {
-        pa_subset <- protected_areas[intersects_idx, ]
+  # Protection level weights — stronger protections count more
+  # Level 3 (strong): reserves, national park cores, APB
+  # Level 2 (medium): Natura 2000, ZNIEFF1
+  # Level 1 (weak/informational): PNR, Ramsar, ZNIEFF2
+  protection_weights <- c(
+    # Strong protection (weight 1.0)
+    "rnn" = 1.0, "rnr" = 1.0, "apb" = 1.0, "rb" = 1.0, "rncfs" = 1.0,
+    "pn" = 1.0, "coeur" = 1.0,
+    # Medium protection (weight 0.6)
+    "sic" = 0.6, "zps" = 0.6, "zsc" = 0.6, "natura" = 0.6,
+    "znieff1" = 0.6,
+    # Weak/informational (weight 0.3)
+    "pnr" = 0.3, "ramsar" = 0.3, "pnm" = 0.3,
+    "znieff2" = 0.3
+  )
 
-        # Calculate intersection area
-        intersection <- st_intersection(parcel, pa_subset)
-        if (nrow(intersection) > 0) {
-          protected_area <- sum(as.numeric(st_area(intersection)))
-          units$B1[i] <- (protected_area / parcel_area) * 100
-        } else {
-          units$B1[i] <- 0
-        }
-      } else {
-        units$B1[i] <- 0
+  # Function to get weight for a zone type string
+  get_protection_weight <- function(type_str) {
+    type_lower <- tolower(type_str)
+    for (key in names(protection_weights)) {
+      if (grepl(key, type_lower, fixed = TRUE)) {
+        return(protection_weights[[key]])
       }
     }
+    0.5  # default for unknown types
+  }
+
+  pa_valid <- sf::st_make_valid(protected_areas)
+
+  for (i in seq_len(nrow(units))) {
+    parcel <- sf::st_make_valid(units[i, ])
+    parcel_area <- as.numeric(sf::st_area(parcel))
+
+    if (is.null(type_col)) {
+      # No type column: simple coverage with default weight
+      pa_union <- tryCatch(sf::st_union(pa_valid), error = function(e) sf::st_geometry(pa_valid))
+      inter <- tryCatch(sf::st_intersection(pa_union, sf::st_geometry(parcel)), error = function(e) NULL)
+      pct <- 0
+      if (!is.null(inter) && length(inter) > 0 && !all(sf::st_is_empty(inter))) {
+        pct <- min(100, as.numeric(sum(sf::st_area(inter))) / parcel_area * 100)
+      }
+      units$B1[i] <- pct * 0.5
+      units$B1_pct[i] <- pct
+      units$B1_nb[i] <- 0L
+      next
+    }
+
+    # Compute weighted coverage per protection type
+    types <- unique(pa_valid[[type_col]])
+    weighted_score <- 0
+    weight_sum <- 0
+    nb_types <- 0
+
+    for (tp in types) {
+      zones_tp <- pa_valid[pa_valid[[type_col]] == tp, ]
+      zones_union <- tryCatch(sf::st_union(sf::st_make_valid(zones_tp)),
+                              error = function(e) sf::st_geometry(zones_tp))
+      inter <- tryCatch(sf::st_intersection(zones_union, sf::st_geometry(parcel)),
+                        error = function(e) NULL)
+
+      if (!is.null(inter) && length(inter) > 0 && !all(sf::st_is_empty(inter))) {
+        coverage <- min(1, as.numeric(sum(sf::st_area(inter))) / parcel_area)
+        weight <- get_protection_weight(tp)
+        weighted_score <- weighted_score + coverage * weight
+        weight_sum <- weight_sum + weight
+        nb_types <- nb_types + 1
+      }
+    }
+
+    # B1_pct: weighted average coverage (normalized by sum of weights)
+    # A parcel 100% covered by one strong protection (w=1.0) scores 100
+    # A parcel 100% covered by one weak protection (w=0.3) scores 100
+    # A parcel 50% covered by one strong protection scores 50
+    units$B1_pct[i] <- if (weight_sum > 0) {
+      min(100, weighted_score / weight_sum * 100)
+    } else {
+      0
+    }
+    units$B1_nb[i] <- as.integer(nb_types)
+  }
+
+  # Combined score: 70% weighted coverage + 30% number of statuses (normalized)
+  max_statuts <- max(units$B1_nb, na.rm = TRUE)
+  if (max_statuts > 0) {
+    units$B1 <- 0.7 * units$B1_pct + 0.3 * (units$B1_nb / max_statuts * 100)
+  } else {
+    units$B1 <- units$B1_pct
   }
 
   # Cap at 100%
   units$B1 <- pmin(units$B1, 100)
 
-  # Log summary
   msg_info("indicator_biodiversity_protection")
 
   units
@@ -226,9 +302,9 @@ indicator_biodiversity_structure <- function(units,
     if (!is.null(mnh_raster)) {
       cli::cli_alert_info("B2: Using LiDAR MNH for structural diversity")
       units_sf <- as_pure_sf(units)
-      mnh_sd <- exactextractr::exact_extract(mnh_raster, units_sf,
+      mnh_sd <- safe_extract(mnh_raster, units_sf,
         fun = "stdev", progress = FALSE)
-      mnh_mean <- exactextractr::exact_extract(mnh_raster, units_sf,
+      mnh_mean <- safe_extract(mnh_raster, units_sf,
         fun = "mean", progress = FALSE)
       # Height standard deviation as structural diversity:
       # Mature mixed forest: sd ~ 8-12m (high diversity)
@@ -244,9 +320,9 @@ indicator_biodiversity_structure <- function(units,
     if (!is.null(ndvi_raster)) {
       cli::cli_alert_info("B2: No strata/age/MNH; estimating structure from NDVI variability")
       units_sf <- as_pure_sf(units)
-      ndvi_sd <- exactextractr::exact_extract(ndvi_raster, units_sf,
+      ndvi_sd <- safe_extract(ndvi_raster, units_sf,
         fun = "stdev", progress = FALSE)
-      ndvi_mean <- exactextractr::exact_extract(ndvi_raster, units_sf,
+      ndvi_mean <- safe_extract(ndvi_raster, units_sf,
         fun = "mean", progress = FALSE)
       # CV of NDVI as diversity proxy: typical range 0-0.5
       cv <- ifelse(ndvi_mean > 0, ndvi_sd / ndvi_mean, 0)
@@ -341,110 +417,339 @@ indicator_biodiversity_structure <- function(units,
 }
 
 # ==============================================================================
-# T021: B3 - Ecological Connectivity
+# T021: B3 - Ecological Connectivity (multi-method approach)
 # ==============================================================================
 
 #' Calculate Ecological Connectivity (B3)
 #'
-#' Computes distance from each forest parcel to the nearest ecological corridor
-#' (Trame Verte et Bleue).
+#' Computes ecological connectivity using a multi-method approach combining
+#' structural metrics, cost distance, graph theory, and kernel dispersal,
+#' as described in tutorial 04.
+#' Uses BD Foret data and DEM when available.
 #'
 #' @param units An sf object with forest parcels.
-#' @param corridors An sf object with ecological corridors (lines or polygons).
-#'   If NULL, uses fallback scoring (default medium score of 50). Default NULL.
-#' @param distance_method Character. Method for distance calculation:
-#'   "edge" (edge-to-edge), "centroid" (centroid-to-centroid). Default "edge".
-#' @param max_distance Numeric. Maximum distance threshold (meters). Distances
-#'   beyond this are capped. Default 5000.
+#' @param bdforet An sf object with BD Foret V2 polygons. If NULL, returns
+#'   fallback score of 50 for all parcels. Default NULL.
+#' @param dem A SpatRaster with digital elevation model. Used for cost distance
+#'   refinement. Default NULL.
+#' @param max_distance Numeric. Maximum distance threshold (meters) for local
+#'   connectivity scoring. Default 5000.
 #'
-#' @return The input sf object with added columns:
-#'   \itemize{
-#'     \item B3: Distance to nearest corridor (meters). Lower = better connectivity.
-#'     \item B3_norm: Normalized connectivity score (0-100). Higher = better (inverse distance).
-#'   }
+#' @return The input sf object with added column B3 (0-100 score, higher = better).
 #'
 #' @details
-#' **Calculation**: B3 = min distance to any corridor
-#'
-#' **Normalization**: B3_norm = 100 × (1 - min(B3, max_distance) / max_distance)
-#'
-#' **Interpretation**:
-#' \itemize{
-#'   \item 0-500m: Excellent connectivity (B3_norm > 90)
-#'   \item 500-1500m: Good connectivity (B3_norm 70-90)
-#'   \item 1500-3000m: Fair connectivity (B3_norm 40-70)
-#'   \item >3000m: Poor connectivity (B3_norm < 40)
+#' Four components are combined (25% each):
+#' \enumerate{
+#'   \item **Structural** (landscapemetrics): cohesion, nearest-neighbour distance,
+#'     aggregation index of forest patches.
+#'   \item **Cost distance** (terra): resistance-weighted distance from parcels
+#'     to nearest forest patch.
+#'   \item **Graph** (igraph): proportion of forest patches in the largest
+#'     connected component (threshold 500m).
+#'   \item **Kernel dispersal** (adehabitatHR): kernel density estimation of
+#'     forest parcel centroids, ratio of 95% home range area to parcel area
+#'     as proxy for functional connectivity.
 #' }
+#'
+#' Final score: B3 = 0.7 * B3_global + 0.3 * local_connectivity
+#' where local_connectivity is distance-based (sf) per-parcel adjustment.
 #'
 #' @family biodiversity-indicators
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' library(nemeton)
-#' library(sf)
-#'
-#' data(massif_demo_units)
-#'
-#' # Load ecological corridors (Trame Verte et Bleue)
-#' corridors <- st_read("trame_verte.gpkg")
-#'
-#' result <- indicator_biodiversity_connectivity(
-#'   massif_demo_units,
-#'   corridors = corridors,
-#'   distance_method = "edge",
-#'   max_distance = 3000
-#' )
-#'
-#' # Highly connected parcels
-#' well_connected <- result[result$B3 < 500, ]
-#' }
 indicator_biodiversity_connectivity <- function(units,
-                                                corridors = NULL,
-                                                distance_method = c("edge", "centroid"),
+                                                bdforet = NULL,
+                                                dem = NULL,
                                                 max_distance = 5000) {
   # Validate inputs
   validate_sf(units)
 
-  # Handle NULL corridors (use fallback scoring)
-  if (is.null(corridors)) {
-    msg_warn("biodiversity_no_corridors")
-    # Assign default medium score (50) when no corridor data available
+  # Handle NULL bdforet (use fallback scoring)
+  if (is.null(bdforet)) {
+    msg_warn("biodiversity_no_bdforet")
     units$B3 <- rep(50, nrow(units))
     return(units)
   }
 
-  if (!inherits(corridors, "sf")) {
-    stop("corridors must be an sf object when provided", call. = FALSE)
+  if (!inherits(bdforet, "sf")) {
+    stop("bdforet must be an sf object when provided", call. = FALSE)
   }
-
-  distance_method <- match.arg(distance_method)
 
   # Ensure same CRS
-  if (!st_crs(units) == st_crs(corridors)) {
-    corridors <- st_transform(corridors, st_crs(units))
+  if (!sf::st_crs(units) == sf::st_crs(bdforet)) {
+    bdforet <- sf::st_transform(bdforet, sf::st_crs(units))
   }
 
-  # Calculate distances
-  if (distance_method == "edge") {
-    # Edge-to-edge distance (minimum distance between geometries)
-    distances <- st_distance(units, corridors)
-    units$B3 <- apply(distances, 1, min)
-  } else {
-    # Centroid-to-centroid distance
-    units_centroids <- st_centroid(units)
-    corridors_centroids <- st_centroid(corridors)
-    distances <- st_distance(units_centroids, corridors_centroids)
-    units$B3 <- apply(distances, 1, min)
+  # Crop bdforet to study area with buffer (2km like tutorial)
+  study_bbox <- sf::st_bbox(units)
+  study_buffer <- sf::st_buffer(sf::st_as_sfc(study_bbox), 2000)
+  bdforet_local <- tryCatch(
+    sf::st_intersection(bdforet, study_buffer),
+    error = function(e) bdforet
+  )
+  # Remove empty geometries
+  bdforet_local <- bdforet_local[!sf::st_is_empty(bdforet_local), ]
+
+  if (nrow(bdforet_local) == 0) {
+    msg_warn("biodiversity_no_bdforet")
+    units$B3 <- rep(50, nrow(units))
+    return(units)
   }
 
-  # Convert units object distance to numeric meters
-  units$B3 <- as.numeric(units$B3)
+  n_parcels <- nrow(units)
 
-  # Log summary
+  # --------------------------------------------------------------------------
+  # Component 1: Structural connectivity (landscapemetrics) — 25%
+  # --------------------------------------------------------------------------
+  structural_score <- tryCatch({
+    if (!requireNamespace("landscapemetrics", quietly = TRUE)) {
+      50
+    } else {
+      .b3_structural(bdforet_local, units)
+    }
+  }, error = function(e) 50)
+
+  # --------------------------------------------------------------------------
+  # Component 2: Cost distance (terra) — 25%
+  # --------------------------------------------------------------------------
+  cost_score <- tryCatch({
+    .b3_cost_distance(bdforet_local, units, dem)
+  }, error = function(e) 50)
+
+  # --------------------------------------------------------------------------
+  # Component 3: Graph connectivity (igraph) — 25%
+  # --------------------------------------------------------------------------
+  graph_score <- tryCatch({
+    if (!requireNamespace("igraph", quietly = TRUE)) {
+      50
+    } else {
+      .b3_graph(bdforet_local, units, threshold = 500)
+    }
+  }, error = function(e) 50)
+
+  # --------------------------------------------------------------------------
+  # Component 4: Kernel dispersal (adehabitatHR) — 25%
+  # --------------------------------------------------------------------------
+  kernel_score <- tryCatch({
+    if (!requireNamespace("adehabitatHR", quietly = TRUE) ||
+        !requireNamespace("sp", quietly = TRUE)) {
+      50
+    } else {
+      .b3_kernel(bdforet_local, units)
+    }
+  }, error = function(e) 50)
+
+  # --------------------------------------------------------------------------
+  # Local connectivity (sf distance) — per-parcel adjustment
+  # --------------------------------------------------------------------------
+  local_connectivity <- tryCatch({
+    .b3_local(bdforet_local, units, max_distance)
+  }, error = function(e) rep(50, n_parcels))
+
+  # --------------------------------------------------------------------------
+  # B3 global = 25% per component (landscape-level scores)
+  # --------------------------------------------------------------------------
+  B3_global <- 0.25 * structural_score + 0.25 * cost_score +
+               0.25 * graph_score + 0.25 * kernel_score
+
+  # B3 per parcel = 70% global + 30% local (like tutorial)
+  units$B3 <- pmin(100, pmax(0, 0.7 * B3_global + 0.3 * local_connectivity))
+
   msg_info("indicator_biodiversity_connectivity")
-  median_dist <- median(units$B3, na.rm = TRUE)
-  msg_info("biodiversity_corridor_distance", median_dist)
+  msg_info("biodiversity_b3_components",
+           round(mean(structural_score)), round(mean(cost_score)),
+           round(mean(graph_score)), round(mean(kernel_score)))
 
   units
+}
+
+# --- B3 sub-components (internal) ---
+
+#' Structural connectivity via landscapemetrics
+#' @noRd
+.b3_structural <- function(bdforet, units) {
+  # Create binary forest raster at 25m resolution
+  bbox <- sf::st_bbox(sf::st_buffer(sf::st_as_sfc(sf::st_bbox(units)), 1000))
+  template <- terra::rast(
+    xmin = bbox["xmin"], xmax = bbox["xmax"],
+    ymin = bbox["ymin"], ymax = bbox["ymax"],
+    res = 25, crs = sf::st_crs(units)$wkt
+  )
+  terra::values(template) <- 0L
+
+  # Rasterize forest polygons
+  forest_rast <- tryCatch(
+    terra::rasterize(terra::vect(bdforet), template, field = 1, background = 0),
+    error = function(e) template
+  )
+
+  # Cohesion (0-100)
+  cohesion_val <- tryCatch({
+    res <- landscapemetrics::lsm_c_cohesion(forest_rast)
+    res <- res[res$class == 1, ]
+    val <- if (nrow(res) > 0) res$value[1] else 50
+    if (is.na(val) || is.nan(val)) 50 else val
+  }, error = function(e) 50)
+
+  # ENN mean (Euclidean nearest-neighbour distance)
+  # NaN when only 1 patch exists (no neighbour)
+  enn_norm <- tryCatch({
+    res <- landscapemetrics::lsm_c_enn_mn(forest_rast)
+    res <- res[res$class == 1, ]
+    if (nrow(res) > 0 && !is.na(res$value[1]) && !is.nan(res$value[1])) {
+      pmax(0, 100 - res$value[1] / 10)
+    } else 50
+  }, error = function(e) 50)
+
+  # Aggregation index (0-100)
+  ai_val <- tryCatch({
+    res <- landscapemetrics::lsm_c_ai(forest_rast)
+    res <- res[res$class == 1, ]
+    val <- if (nrow(res) > 0) res$value[1] else 50
+    if (is.na(val) || is.nan(val)) 50 else val
+  }, error = function(e) 50)
+
+  # Number of patches (1 patch -> 100, 50+ -> 0)
+  np_norm <- tryCatch({
+    res <- landscapemetrics::lsm_c_np(forest_rast)
+    res <- res[res$class == 1, ]
+    if (nrow(res) > 0 && !is.na(res$value[1])) {
+      pmax(0, 100 - (res$value[1] - 1) * 2)
+    } else 50
+  }, error = function(e) 50)
+
+  # Combined structural score (landscape-level, same for all parcels)
+  score <- 0.4 * cohesion_val + 0.3 * enn_norm + 0.2 * ai_val + 0.1 * np_norm
+  if (is.na(score) || is.nan(score)) return(50)
+  pmin(100, pmax(0, score))
+}
+
+#' Cost distance connectivity via terra
+#' @noRd
+.b3_cost_distance <- function(bdforet, units, dem = NULL) {
+  # Create resistance raster: forest=1, non-forest=10
+  bbox <- sf::st_bbox(sf::st_buffer(sf::st_as_sfc(sf::st_bbox(units)), 1000))
+  template <- terra::rast(
+    xmin = bbox["xmin"], xmax = bbox["xmax"],
+    ymin = bbox["ymin"], ymax = bbox["ymax"],
+    res = 25, crs = sf::st_crs(units)$wkt
+  )
+  terra::values(template) <- 10L
+
+  resistance <- terra::rasterize(terra::vect(bdforet), template, field = 1, background = 10)
+
+  # Source raster: forest cells as targets
+  forest_source <- resistance
+  terra::values(forest_source) <- ifelse(terra::values(resistance) == 1, 1, NA)
+
+  cost_dist <- tryCatch(
+    terra::costDist(resistance, target = forest_source),
+    error = function(e) NULL
+  )
+
+  if (is.null(cost_dist)) return(50)
+
+  # Extract cost at parcel centroids
+  centroids <- suppressWarnings(sf::st_centroid(units))
+  costs <- terra::extract(cost_dist, terra::vect(centroids))
+  mean_cost <- if (ncol(costs) >= 2) mean(costs[[2]], na.rm = TRUE) else 0
+  if (is.na(mean_cost)) mean_cost <- 0
+
+  # Normalize: low cost = high connectivity (landscape-level)
+  pmin(100, pmax(0, 100 - mean_cost / 10))
+}
+
+#' Graph-based connectivity via igraph
+#' @noRd
+.b3_graph <- function(bdforet, units, threshold = 500) {
+  # Dissolve overlapping forest polygons
+  patches <- tryCatch({
+    merged <- sf::st_union(bdforet)
+    cast <- sf::st_cast(merged, "POLYGON")
+    sf::st_sf(patch_id = seq_along(cast), geometry = cast)
+  }, error = function(e) {
+    sf::st_sf(patch_id = seq_len(nrow(bdforet)), geometry = sf::st_geometry(bdforet))
+  })
+
+  n_patches <- nrow(patches)
+  if (n_patches < 2) return(100)
+
+  centroids <- suppressWarnings(sf::st_centroid(patches))
+  dist_mat <- as.numeric(sf::st_distance(centroids))
+  dim(dist_mat) <- c(n_patches, n_patches)
+
+  # Adjacency: connected if distance < threshold
+  adj_mat <- dist_mat < threshold
+  diag(adj_mat) <- FALSE
+
+  g <- igraph::graph_from_adjacency_matrix(adj_mat, mode = "undirected")
+  comp <- igraph::components(g)
+
+  # Connectivity = % of nodes in largest component
+  (max(comp$csize) / n_patches) * 100
+}
+
+#' Kernel dispersal connectivity via adehabitatHR
+#' @noRd
+.b3_kernel <- function(bdforet, units, h_dispersion = 300) {
+  # Find forest parcels (parcels intersecting bdforet)
+  forest_idx <- lengths(sf::st_intersects(units, bdforet)) > 0
+  parcelles_forest <- units[forest_idx, ]
+
+  if (nrow(parcelles_forest) < 5) return(50)
+
+  # Reproject to metric CRS if needed (adehabitatHR needs meters)
+  centroids_sf <- suppressWarnings(sf::st_centroid(parcelles_forest))
+  if (sf::st_is_longlat(centroids_sf)) {
+    centroids_sf <- sf::st_transform(centroids_sf, 2154)  # Lambert 93
+    parcelles_metric <- sf::st_transform(parcelles_forest, 2154)
+  } else {
+    parcelles_metric <- parcelles_forest
+  }
+
+  # Convert to sp SpatialPoints (only coords, drop attributes)
+  coords <- sf::st_coordinates(centroids_sf)
+  centroids_sp <- sp::SpatialPoints(
+    coords,
+    proj4string = sp::CRS(sf::st_crs(centroids_sf)$proj4string)
+  )
+
+  # Kernel density estimation with larger extent for robust estimation
+  kde <- adehabitatHR::kernelUD(centroids_sp, h = h_dispersion,
+                                 grid = 100, extent = 2)
+
+  # 95% home range area
+  hr95 <- tryCatch(
+    adehabitatHR::kernel.area(kde, percent = 95),
+    warning = function(w) {
+      # Grid too small: retry with larger extent
+      kde2 <- adehabitatHR::kernelUD(centroids_sp, h = h_dispersion,
+                                      grid = 200, extent = 5)
+      suppressWarnings(adehabitatHR::kernel.area(kde2, percent = 95))
+    }
+  )
+  kernel_area <- hr95[[1]]  # in hectares
+
+  # Ratio kernel area / parcel area (spread index)
+  total_parcel_area <- as.numeric(sum(sf::st_area(parcelles_metric))) / 10000
+  kernel_ratio <- kernel_area / total_parcel_area
+
+  # Normalize 0-100: ratio > 2 = 100
+  pmin(100, kernel_ratio * 50)
+}
+
+#' Local connectivity via sf distance (per-parcel)
+#' @noRd
+.b3_local <- function(bdforet, units, max_distance = 5000) {
+  # Distance from each parcel centroid to nearest forest polygon
+  centroids <- suppressWarnings(sf::st_centroid(units))
+  dist_to_forest <- sf::st_distance(centroids, bdforet)
+  min_dist <- apply(dist_to_forest, 1, function(x) {
+    pos <- x[x > 0]
+    if (length(pos) > 0) min(pos) else 0
+  })
+  min_dist <- as.numeric(min_dist)
+  min_dist[is.infinite(min_dist)] <- 0
+
+  # Normalize: 0m -> 100, like tutorial: 100 - (min_dist / 20)
+  pmax(0, 100 - min_dist / 20)
 }
