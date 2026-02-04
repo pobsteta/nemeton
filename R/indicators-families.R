@@ -1393,31 +1393,46 @@ indicator_social_population <- function(units, ...) {
 
 #' @noRd
 indicator_energy_wood <- function(units, layers = NULL, ...) {
-  # E1: Fuelwood potential - estimate from NDVI-based biomass
-  ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
-  if (!is.null(ndvi_raster)) {
-    cli::cli_alert_info("E1: Estimating fuelwood potential from NDVI")
-    ndvi_mean <- safe_extract(ndvi_raster,
-      as_pure_sf(units), fun = "mean", progress = FALSE
-    )
-    # NDVI -> volume proxy -> fuelwood potential
-    # Approximate: NDVI 0.8 -> ~200 m3/ha volume -> 2% harvest -> 0.3 residue
-    volume_proxy <- pmax(0, ndvi_mean) * 250  # m3/ha
-    fuelwood <- volume_proxy * 0.02 * 0.3 * 550 / 1000 * 0.5  # tonnes DM/yr
-    return(fuelwood)
+  # E1: Fuelwood potential (tep/ha/an) — tutorial 02 formula
+  # E1 = (pzabove2/100) * zmean * k_conversion
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    mnh_raster <- resolve_raster_layer(layers, "lidar_mnh")
+    if (!is.null(mnh_raster)) {
+      cli::cli_alert_info("E1: Estimating fuelwood potential from LiDAR MNH (tuto 02)")
+      units_sf <- as_pure_sf(units)
+      zmean <- safe_extract(mnh_raster, units_sf,
+        fun = "mean", progress = FALSE)
+      mnh_above2 <- mnh_raster > 2
+      pzabove2 <- safe_extract(mnh_above2, units_sf,
+        fun = "mean", progress = FALSE) * 100
+      k_conversion <- 0.015  # tep/m/ha/an
+      e1 <- (pzabove2 / 100) * pmax(0, zmean) * k_conversion
+      return(as.numeric(e1))
+    }
+
+    # Fallback: NDVI proxy
+    ndvi_raster <- resolve_raster_layer(layers, "ndvi")
+    if (!is.null(ndvi_raster)) {
+      cli::cli_alert_info("E1: Estimating fuelwood potential from NDVI (fallback)")
+      ndvi_mean <- safe_extract(ndvi_raster,
+        as_pure_sf(units), fun = "mean", progress = FALSE)
+      # NDVI 0.8 ~ mature forest ~ 0.18 tep/ha/an
+      return(pmax(0, ndvi_mean) * 0.225)
+    }
   }
-  cli::cli_alert_warning("E1: No NDVI available for fuelwood estimate")
+  cli::cli_alert_warning("E1: No LiDAR/NDVI available for fuelwood estimate")
   rep(NA_real_, nrow(units))
 }
 
 #' @noRd
 indicator_energy_co2 <- function(units, layers = NULL, ...) {
-  # E2: CO2 emission avoidance - estimate from E1
+  # E2: CO2 emission avoidance (tCO2/ha/an) — tutorial 02 formula
+  # E2 = E1 * f_substitution * eta_conversion
   e1 <- indicator_energy_wood(units, layers = layers)
   if (all(is.na(e1))) return(e1)
-  # Convert fuelwood (tonnes DM/yr) to CO2 avoided (tCO2eq/yr)
-  # 1 tonne DM = 4500 kWh, emission factor ~0.222 kgCO2eq/kWh for gas substitution
-  e1 * 4500 * 0.222 / 1000
+  facteur_substitution <- 2.5  # tCO2 avoided per tep of wood energy
+  rendement_conversion <- 0.85 # average wood boiler efficiency
+  as.numeric(e1 * facteur_substitution * rendement_conversion)
 }
 
 #' @noRd

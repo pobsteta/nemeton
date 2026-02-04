@@ -1968,10 +1968,10 @@ normalize_indicator <- function(indicator, values) {
     "social_trails" = 5,
     # Social: population within 5km buffer
     "social_population" = 10000,
-    # Energy: fuelwood potential in tonnes DM/yr
-    "energy_wood" = 50,
-    # Energy: CO2 avoidance in tCO2eq/yr
-    "energy_co2" = 15,
+    # Energy: fuelwood potential in tep/ha/yr (tuto 02: ~0.3 for mature forest)
+    "energy_wood" = 0.3,
+    # Energy: CO2 avoidance in tCO2/ha/yr (tuto 02: E1 * 2.5 * 0.85)
+    "energy_co2" = 0.65,
     # Naturalness: distance to infrastructure in meters
     "naturalness_distance" = 500,
     # Naturalness: continuous forest area in hectares
