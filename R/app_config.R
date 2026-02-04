@@ -45,7 +45,7 @@ APP_CONFIG <- list(
   default_crs = 2154L,  # Lambert 93
 
   # LLM settings
-  llm_provider = "anthropic",
+  llm_provider = "mistral",
   llm_models = list(
     anthropic = "claude-sonnet-4-5-20250929",
     mistral = "mistral-large-latest",
