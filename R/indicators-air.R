@@ -301,7 +301,7 @@ indicator_air_quality <- function(units,
     for (i in seq_len(nrow(units))) {
       dists <- as.numeric(sf::st_distance(parcel_centroids[i, ], roads))
       # Keep roads within 2000m
-      within <- dists <= 2000
+      within <- dists < 2000
       if (any(within)) {
         d <- pmax(dists[within], 10)  # minimum 10m to avoid extreme values
         w <- road_w[within]
