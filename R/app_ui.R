@@ -185,11 +185,11 @@ app_add_external_resources <- function() {
           content: none !important; display: none !important;
         }
       ")),
-      # Custom CSS (cache-busting to ensure latest version)
+      # Custom CSS - minified for performance (cache-busting to ensure latest version)
       htmltools::tags$link(
         rel = "stylesheet",
         type = "text/css",
-        href = paste0("www/css/custom.css?v=", as.integer(Sys.time()))
+        href = paste0("www/css/custom.min.css?v=", as.integer(Sys.time()))
       ),
       # Favicon
       htmltools::tags$link(
@@ -208,9 +208,9 @@ app_add_external_resources <- function() {
       )
     ),
 
-    # Custom JS (cache-busting query string forces browser to reload on each app start)
+    # Custom JS - minified for performance (cache-busting query string forces browser to reload on each app start)
     htmltools::tags$script(
-      src = paste0("www/js/custom.js?v=", as.integer(Sys.time()))
+      src = paste0("www/js/custom.min.js?v=", as.integer(Sys.time()))
     )
   )
 }

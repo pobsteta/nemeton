@@ -179,9 +179,30 @@ app_server <- function(input, output, session) {
   # Synthesis module
   mod_synthesis_server("synthesis", app_state)
 
-  # Family modules (one generic module per family)
-  lapply(get_family_codes(), function(code) {
-    mod_family_server(paste0("family_", code), code, app_state)
+  # ============================================================
+  # LAZY LOADING: Family modules initialized on-demand
+  # ============================================================
+
+  # Track which family modules have been initialized
+  initialized_families <- shiny::reactiveVal(character(0))
+
+  # Initialize family module only when user navigates to its tab
+  shiny::observeEvent(input$main_nav, {
+    tab <- input$main_nav
+    if (is.null(tab)) return()
+
+    # Check if this is a family tab (format: "family_X")
+    if (grepl("^family_", tab)) {
+      family_code <- sub("^family_", "", tab)
+      already_init <- initialized_families()
+
+      # Initialize only if not already done
+      if (!(family_code %in% already_init)) {
+        cli::cli_alert_info("Lazy loading family module: {family_code}")
+        mod_family_server(paste0("family_", family_code), family_code, app_state)
+        initialized_families(c(already_init, family_code))
+      }
+    }
   })
 
   # Note: Selection info, map, and compute button are now handled by mod_home
