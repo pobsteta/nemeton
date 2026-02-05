@@ -1,9 +1,9 @@
 # Tâches d'Implémentation : nemetonApp v0.7.0
 
 **Version** : 1.0.0
-**Date** : 2026-01-25
+**Date** : 2026-02-05
 **Total estimé** : 217 tâches
-**Progression** : ~177/217 (82%)
+**Progression** : ~207/217 (95%)
 
 ---
 
@@ -345,13 +345,13 @@
 - [x] T184 [US15] Adapter navigation onglets pour petit écran
 - [x] T185 [US15] Rendre carte tactile (zoom, pan) — Leaflet natif + viewport meta
 - [x] T186 [US15] Augmenter taille boutons (min 44px)
-- [ ] T187 [US15] Tester sur tablette 10"
+- [x] T187 [US15] Tester sur tablette 10"
 
 ### 8.2 Optimisation Performance
 
-- [ ] T188 Optimiser chargement initial < 3 secondes
-- [ ] T189 Lazy loading des onglets familles
-- [ ] T190 Compression assets CSS/JS
+- [x] T188 Optimiser chargement initial < 3 secondes
+- [x] T189 Lazy loading des onglets familles
+- [x] T190 Compression assets CSS/JS
 
 ---
 
@@ -367,8 +367,8 @@
 ### 9.2 Tests Finaux
 
 - [x] T195 Tests d'intégration complets shinytest2 — tests unitaires mod_family, mod_synthesis, etc.
-- [ ] T196 Tests de performance (20 parcelles < 5 min)
-- [ ] T197 Tests responsive sur différents appareils
+- [x] T196 Tests de performance (20 parcelles < 5 min)
+- [x] T197 Tests responsive sur différents appareils
 - [x] T198 Tests i18n (fr/en complet) — `test-utils_i18n.R`
 
 ### 9.3 Release
@@ -429,10 +429,10 @@ graph TD
 | 5. Analyses Familles | T091-T157 (67) | 67 | 0 | US7, US8 |
 | 6. Exports + Quarto Auto | T158-T171 (15) | 15 | 0 | US9, US10 |
 | 7. Tour et Aide | T172-T182 (11) | 10 | 1 | US13, US14 |
-| 8. Responsive | T183-T190 (8) | 4 | 4 | US15 |
-| 9. Finalisation | T191-T202 (12) | 10 | 2 | - |
+| 8. Responsive | T183-T190 (8) | 8 | 0 | US15 |
+| 9. Finalisation | T191-T202 (12) | 12 | 0 | - |
 
-**Total : 217 tâches — ~201 faites (93%), ~16 restantes (7%)**
+**Total : 217 tâches — ~207 faites (95%), ~10 restantes (5%)**
 
 ## Nouvelles fonctionnalités ajoutées (Clarifications)
 
