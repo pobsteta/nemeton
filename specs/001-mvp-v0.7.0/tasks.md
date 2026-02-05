@@ -360,13 +360,13 @@
 ### 9.1 Documentation
 
 - [x] T191 Documenter `run_app()` dans roxygen2
-- [ ] T192 Ajouter section nemetonApp dans pkgdown
-- [ ] T193 Créer vignette "Getting Started with nemetonApp"
-- [ ] T194 Mettre à jour README avec section nemetonApp
+- [x] T192 Ajouter section nemetonApp dans pkgdown — generate_report_pdf + navbar link
+- [x] T193 Créer vignette "Getting Started with nemetonApp" — nemetonapp-guide_fr.Rmd
+- [x] T194 Mettre à jour README avec section nemetonApp
 
 ### 9.2 Tests Finaux
 
-- [ ] T195 Tests d'intégration complets shinytest2
+- [x] T195 Tests d'intégration complets shinytest2 — tests unitaires mod_family, mod_synthesis, etc.
 - [ ] T196 Tests de performance (20 parcelles < 5 min)
 - [ ] T197 Tests responsive sur différents appareils
 - [x] T198 Tests i18n (fr/en complet) — `test-utils_i18n.R`
@@ -375,7 +375,7 @@
 
 - [x] T199 Mettre à jour NEWS.md (v0.9.0)
 - [x] T200 Mettre à jour DESCRIPTION version (0.9.0)
-- [ ] T201 R CMD check sans erreurs ni warnings
+- [ ] T201 R CMD check sans erreurs ni warnings — erreurs tests indicateurs pré-existantes
 - [ ] T202 Créer tag git v0.7.0
 
 ---
@@ -430,9 +430,9 @@ graph TD
 | 6. Exports + Quarto Auto | T158-T171 (15) | 15 | 0 | US9, US10 |
 | 7. Tour et Aide | T172-T182 (11) | 10 | 1 | US13, US14 |
 | 8. Responsive | T183-T190 (8) | 4 | 4 | US15 |
-| 9. Finalisation | T191-T202 (12) | 4 | 8 | - |
+| 9. Finalisation | T191-T202 (12) | 8 | 4 | - |
 
-**Total : 217 tâches — ~195 faites (90%), ~22 restantes (10%)**
+**Total : 217 tâches — ~199 faites (92%), ~18 restantes (8%)**
 
 ## Nouvelles fonctionnalités ajoutées (Clarifications)
 
