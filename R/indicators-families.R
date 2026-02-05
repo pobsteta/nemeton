@@ -443,11 +443,13 @@ indicator_water_wetlands <- function(units,
   }
 
   coverage <- numeric(nrow(units))
+  has_any_source <- FALSE
 
-  # Strategy 1: Use BD TOPO water surfaces (mares, retenues, étangs)
+  # Source 1: BD TOPO water surfaces (mares, retenues, étangs)
   water_surfaces_sf <- resolve_vector_layer(layers, "water_surfaces")
   if (!is.null(water_surfaces_sf) && nrow(water_surfaces_sf) > 0) {
-    cli::cli_alert_info("W2: Computing wetland coverage from BD TOPO water surfaces")
+    cli::cli_alert_info("W2: Adding BD TOPO water surfaces coverage")
+    has_any_source <- TRUE
 
     if (!sf::st_crs(units) == sf::st_crs(water_surfaces_sf)) {
       water_surfaces_sf <- sf::st_transform(water_surfaces_sf, sf::st_crs(units))
@@ -464,19 +466,16 @@ indicator_water_wetlands <- function(units,
 
       if (!is.null(intersected) && nrow(intersected) > 0) {
         wetland_area <- sum(as.numeric(sf::st_area(intersected)))
-        coverage[i] <- (wetland_area / parcel_area) * 100
+        coverage[i] <- coverage[i] + (wetland_area / parcel_area) * 100
       }
     }
-
-    msg_info("indicator_water_wetlands")
-    return(pmin(coverage, 100))
   }
 
-  # Strategy 2: Use TWI threshold (TWI > 12 = potential wetland) from DEM
-  # Prefer GRASS TWI (same as W3) for consistency, fallback to terra D8
+  # Source 2: TWI threshold (TWI > 12 = potential wetland zones)
   dem <- get_dem_raster(layers)
   if (!is.null(dem)) {
-    cli::cli_alert_info("W2: Estimating wetlands from TWI (threshold > 12)")
+    cli::cli_alert_info("W2: Adding TWI-based wetland zones (threshold > 12)")
+    has_any_source <- TRUE
     twi_raster <- get_or_compute_twi(dem, cache_dir = layers$cache_dir)
 
     for (i in seq_len(nrow(units))) {
@@ -491,21 +490,19 @@ indicator_water_wetlands <- function(units,
         wetland_frac <- sum(twi_vals$coverage_fraction[twi_vals$value > 12], na.rm = TRUE)
         total_frac <- sum(twi_vals$coverage_fraction, na.rm = TRUE)
         if (total_frac > 0) {
-          coverage[i] <- (wetland_frac / total_frac) * 100
+          coverage[i] <- coverage[i] + (wetland_frac / total_frac) * 100
         }
       }
     }
-
-    msg_info("indicator_water_wetlands")
-    return(pmin(coverage, 100))
   }
 
-  # Strategy 3: Use raster landcover if available with wetland codes
+  # Source 3: OSO landcover wetland codes (if provided)
   lc_raster <- resolve_raster_layer(layers, wetland_layer)
   if (is.null(lc_raster)) lc_raster <- resolve_raster_layer(layers, "landcover")
   if (is.null(lc_raster)) lc_raster <- resolve_raster_layer(layers, "forest_cover")
   if (!is.null(wetland_values) && !is.null(lc_raster)) {
-    cli::cli_alert_info("W2: Computing wetland coverage from OSO landcover codes")
+    cli::cli_alert_info("W2: Adding OSO landcover wetland coverage")
+    has_any_source <- TRUE
 
     for (i in seq_len(nrow(units))) {
       lc_values <- safe_extract(
@@ -520,17 +517,19 @@ indicator_water_wetlands <- function(units,
         wetland_fraction <- sum(lc_values$coverage_fraction[wetland_mask], na.rm = TRUE)
         total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
         if (total_fraction > 0) {
-          coverage[i] <- (wetland_fraction / total_fraction) * 100
+          coverage[i] <- coverage[i] + (wetland_fraction / total_fraction) * 100
         }
       }
     }
-
-    msg_info("indicator_water_wetlands")
-    return(pmin(coverage, 100))
   }
 
-  cli::cli_alert_warning("W2: No wetland data available (no vectors, DEM, or landcover)")
-  rep(NA_real_, nrow(units))
+  if (!has_any_source) {
+    cli::cli_alert_warning("W2: No wetland data available (no vectors, DEM, or landcover)")
+    return(rep(NA_real_, nrow(units)))
+  }
+
+  msg_info("indicator_water_wetlands")
+  pmin(coverage, 100)
 }
 
 #' Topographic Wetness Index (W3)
