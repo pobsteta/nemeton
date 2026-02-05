@@ -334,7 +334,7 @@ mod_synthesis_server <- function(id, app_state) {
     )
 
     # ================================================================
-    # DOWNLOAD: PDF report (placeholder - Phase 6)
+    # DOWNLOAD: PDF report
     # ================================================================
     output$download_pdf <- shiny::downloadHandler(
       filename = function() {
@@ -348,13 +348,60 @@ mod_synthesis_server <- function(id, app_state) {
       },
       content = function(file) {
         i18n <- get_i18n(app_state$language)
-        # Phase 6 will implement full Quarto report generation
-        shiny::showNotification(
-          "PDF report generation will be available in a future version.",
-          type = "warning"
+        sf_data <- family_scores()
+        project <- app_state$current_project
+
+        if (is.null(sf_data) || is.null(project)) {
+          shiny::showNotification(
+            i18n$t("no_data"),
+            type = "warning"
+          )
+          writeLines("No data available", file)
+          return()
+        }
+
+        # Show progress notification
+        notif_id <- shiny::showNotification(
+          htmltools::div(
+            shiny::icon("spinner", class = "fa-spin me-2"),
+            if (app_state$language == "fr") "Generation du rapport PDF..." else "Generating PDF report..."
+          ),
+          type = "message",
+          duration = NULL
         )
-        # Create a minimal placeholder file
-        writeLines("PDF report - Coming soon (Phase 6)", file)
+
+        tryCatch({
+          # Get synthesis comments if available
+          comments <- input$synthesis_comments
+          if (!is.null(comments) && nchar(trimws(comments)) == 0) {
+            comments <- NULL
+          }
+
+          # Generate PDF
+          generate_report_pdf(
+            project = project,
+            family_scores = sf_data,
+            output_file = file,
+            language = app_state$language,
+            synthesis_comments = comments,
+            use_quarto = TRUE
+          )
+
+          shiny::removeNotification(notif_id)
+          shiny::showNotification(
+            if (app_state$language == "fr") "Rapport PDF genere avec succes" else "PDF report generated successfully",
+            type = "message",
+            duration = 3
+          )
+        }, error = function(e) {
+          shiny::removeNotification(notif_id)
+          shiny::showNotification(
+            paste(i18n$t("error"), ":", conditionMessage(e)),
+            type = "error",
+            duration = 8
+          )
+          writeLines(paste("Error generating report:", conditionMessage(e)), file)
+        })
       }
     )
 
