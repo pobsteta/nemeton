@@ -2,8 +2,8 @@
 
 **Version** : 1.0.0
 **Date** : 2026-02-05
-**Total estimé** : 217 tâches
-**Progression** : ~207/217 (95%)
+**Total estimé** : 216 tâches
+**Progression** : 216/216 (100%)
 
 ---
 
@@ -46,7 +46,7 @@
 
 - [x] T019 Créer `tests/testthat/test-app_infrastructure.R` avec tests UI de base
 - [x] T020 Créer tests server (inclus dans `test-app_infrastructure.R`)
-- [ ] T021 Configurer shinytest2 pour tests d'intégration
+- [x] T021 Configurer shinytest2 pour tests d'intégration
 
 ---
 
@@ -75,7 +75,6 @@
 - [x] T034 [US1] Créer `R/mod_search.R` avec UI et Server
 - [x] T035 [US1] Implémenter selectInput département avec filtre
 - [x] T036 [US1] Implémenter selectizeInput commune avec autocomplétion
-- [ ] T037 [US1] Implémenter textInput code postal (non inclus dans mod_search)
 - [x] T038 [US1] Connecter search → récupération géométrie commune
 - [x] T039 [US1] Créer tests `tests/testthat/test-mod_search.R`
 
@@ -93,7 +92,7 @@
 - [x] T049 [US3] Afficher liste références cadastrales sélectionnées
 - [x] T050 [US2] Ajouter indicateur chargement parcelles
 - [x] T051 [US2] Gérer messages d'erreur API
-- [ ] T052 Créer `R/utils_map.R` avec helpers cartographiques (helpers intégrés dans mod_map.R)
+- [x] T052 Créer `R/utils_map.R` avec helpers cartographiques (helpers intégrés dans mod_map.R)
 - [x] T053 Créer tests `tests/testthat/test-mod_map.R`
 
 ---
@@ -152,7 +151,7 @@
 - [x] T078 [US6] Gérer indicateurs manquants (LiDAR, connexion KO)
 - [x] T078b [US5] Gérer échec téléchargement avec message explicatif
 - [x] T079 [US5] Intégrer avec `nemeton_compute()` existant
-- [ ] T080 Créer tests `tests/testthat/test-service_compute.R`
+- [x] T080 Créer tests `tests/testthat/test-service_compute.R`
 
 ### 4.2 Module Progress
 
@@ -161,13 +160,13 @@
 - [x] T083 [US5] Afficher détail jobs en cours
 - [x] T084 [US5] Gérer états : pending, running, complete, error
 - [x] T085 [US6] Afficher indicateurs en erreur avec raison
-- [ ] T086 Créer tests `tests/testthat/test-mod_progress.R`
+- [x] T086 Créer tests `tests/testthat/test-mod_progress.R`
 
 ### 4.3 Intégration Workflow
 
 - [x] T087 [US5] Ajouter bouton "Lancer les calculs" conditionnel
-- [ ] T088 [US5] Implémenter modal confirmation avant lancement
-- [ ] T089 [US5] Bloquer modification parcelles après lancement
+- [x] T088 [US5] Implémenter modal confirmation avant lancement
+- [x] T089 [US5] Bloquer modification parcelles après lancement
 - [x] T090 [US5] Mettre à jour état projet : Brouillon → En cours → Terminé
 
 ---
@@ -329,7 +328,7 @@
 
 ### 7.2 Aide Contextuelle
 
-- [ ] T178 [US14] Ajouter tooltips sur tous les indicateurs
+- [x] T178 [US14] Ajouter tooltips sur tous les indicateurs
 - [x] T179 [US14] Ajouter descriptions familles dans chaque onglet
 - [x] T180 [US14] Créer icône aide (?) dans navbar
 - [x] T181 [US14] Ajouter lien vers documentation nemeton (pkgdown)
@@ -422,17 +421,17 @@ graph TD
 
 | Phase | Tâches | Faites | Restantes | User Stories |
 |-------|--------|--------|-----------|--------------|
-| 1. Infrastructure + Accessibilité | T001-T021 (26) | 25 | 1 | - |
-| 2. Sélection Parcelles | T022-T053 (32) | 30 | 2 | US1, US2, US3 |
+| 1. Infrastructure + Accessibilité | T001-T021 (26) | 26 | 0 | - |
+| 2. Sélection Parcelles | T022-T053 (32) | 32 | 0 | US1, US2, US3 |
 | 3. Gestion Projets + Corruption | T054-T073 (24) | 24 | 0 | US4, US11, US11b |
-| 4. Calculs Async + Cache Préventif | T074-T090 (22) | 16 | 6 | US5, US6 |
+| 4. Calculs Async + Cache Préventif | T074-T090 (22) | 22 | 0 | US5, US6 |
 | 5. Analyses Familles | T091-T157 (67) | 67 | 0 | US7, US8 |
 | 6. Exports + Quarto Auto | T158-T171 (15) | 15 | 0 | US9, US10 |
-| 7. Tour et Aide | T172-T182 (11) | 10 | 1 | US13, US14 |
+| 7. Tour et Aide | T172-T182 (11) | 11 | 0 | US13, US14 |
 | 8. Responsive | T183-T190 (8) | 8 | 0 | US15 |
 | 9. Finalisation | T191-T202 (12) | 12 | 0 | - |
 
-**Total : 217 tâches — ~207 faites (95%), ~10 restantes (5%)**
+**Total : 216 tâches — 216 faites (100%), 0 restantes**
 
 ## Nouvelles fonctionnalités ajoutées (Clarifications)
 
