@@ -376,7 +376,7 @@
 - [x] T199 Mettre à jour NEWS.md (v0.9.0)
 - [x] T200 Mettre à jour DESCRIPTION version (0.9.0)
 - [x] T201 R CMD check sans erreurs — tests corrigés (0 failures, 3447 passing)
-- [ ] T202 Créer tag git v0.7.0
+- [x] T202 Créer tag git v0.7.0 — release créée
 
 ---
 
@@ -430,9 +430,9 @@ graph TD
 | 6. Exports + Quarto Auto | T158-T171 (15) | 15 | 0 | US9, US10 |
 | 7. Tour et Aide | T172-T182 (11) | 10 | 1 | US13, US14 |
 | 8. Responsive | T183-T190 (8) | 4 | 4 | US15 |
-| 9. Finalisation | T191-T202 (12) | 8 | 4 | - |
+| 9. Finalisation | T191-T202 (12) | 10 | 2 | - |
 
-**Total : 217 tâches — ~199 faites (92%), ~18 restantes (8%)**
+**Total : 217 tâches — ~201 faites (93%), ~16 restantes (7%)**
 
 ## Nouvelles fonctionnalités ajoutées (Clarifications)
 
