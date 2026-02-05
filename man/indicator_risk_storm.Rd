@@ -4,29 +4,15 @@
 \alias{indicator_risk_storm}
 \title{Calculate Storm Vulnerability Index (R2)}
 \usage{
-indicator_risk_storm(
-  units,
-  dem = NULL,
-  layers = NULL,
-  height_field = "height",
-  density_field = "density",
-  weights = c(height = 1/3, density = 1/3, exposure = 1/3)
-)
+indicator_risk_storm(units, dem = NULL, layers = NULL)
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
 \item{dem}{A SpatRaster with digital elevation model (meters).}
 
-\item{layers}{A nemeton_layers object. Used to extract DEM and LiDAR MNH
-if \code{dem} is NULL.}
-
-\item{height_field}{Character. Column name with stand height (meters).}
-
-\item{density_field}{Character. Column name with stand density (0-1 scale).}
-
-\item{weights}{Named numeric vector. Weights for components:
-c(height, density, exposure). Default c(1/3, 1/3, 1/3).}
+\item{layers}{A nemeton_layers object. Used to extract DEM if
+\code{dem} is NULL.}
 }
 \value{
 The input sf object with added column:
@@ -35,17 +21,20 @@ The input sf object with added column:
   }
 }
 \description{
-Computes storm vulnerability based on stand height, density, and topographic exposure.
+Computes storm vulnerability using wind shelter coefficient from
+\pkg{microclima}. Falls back to DEM-derived terrain exposure when
+\pkg{microclima} is unavailable.
 }
 \details{
-**Formula**: R2 = w1×height_factor + w2×density_factor + w3×exposure_factor
+**Primary method** (requires \pkg{microclima}):
+Uses \code{microclima::windcoef()} to compute wind shelter coefficient
+from the DEM. Dominant wind direction is obtained from NASA POWER
+climatology (\pkg{nasapower}), defaulting to 270 degrees (west) for France.
+R2 = (1 - shelter_coef) * 100.
 
-**Components**:
-\itemize{
-  \item height_factor: Taller stands (>30m) are more vulnerable
-  \item density_factor: Dense stands (>0.8) have higher wind load
-  \item exposure_factor: Topographic Position Index from DEM (ridges = exposed)
-}
+**Fallback method** (DEM terrain derivatives):
+Combines aspect-wind alignment, slope, and terrain ruggedness (TRI):
+R2 = wind_exposure * (0.6 * slope_norm + 0.4 * TRI_norm) * 100.
 }
 \examples{
 \dontrun{
@@ -53,12 +42,9 @@ library(nemeton)
 
 data(massif_demo_units)
 units <- massif_demo_units
-units$height <- runif(nrow(units), 10, 35)
-units$density <- runif(nrow(units), 0.5, 1.0)
-
 dem <- rast("path/to/dem.tif")
 
-result <- indicator_risk_storm(units, dem = dem, height_field = "height", density_field = "density")
+result <- indicator_risk_storm(units, dem = dem)
 summary(result$R2)
 }
 }

@@ -71,6 +71,24 @@ plot_tradeoff(pareto, x = "family_C", y = "family_B", pareto_frontier = TRUE)
 
 <img src="man/figures/readme-tradeoff.png" width="100%" />
 
+## Application Interactive (nemetonApp)
+
+Pour une utilisation sans code, lancez l'application Shiny :
+
+```r
+library(nemeton)
+run_app()
+```
+
+L'application permet de :
+
+- Rechercher et sélectionner des parcelles cadastrales par commune
+- Calculer automatiquement les 29 indicateurs (12 familles)
+- Visualiser les résultats (radar, cartes, histogrammes)
+- Exporter en PDF ou GeoPackage
+
+<img src="man/figures/readme-app.png" width="100%" />
+
 ## Workflow avec vos données
 
 ```r
@@ -107,14 +125,15 @@ plot_indicators_map(health, indicators = "ecosystem_health", palette = "RdYlGn")
 
 ```r
 # Vignettes
-vignette("getting-started", package = "nemeton")
-vignette("temporal-analysis", package = "nemeton")
-vignette("indicator-families", package = "nemeton")
+vignette("getting-started_fr", package = "nemeton")
+vignette("nemetonapp-guide_fr", package = "nemeton")
+vignette("indicator-families_fr", package = "nemeton")
+vignette("temporal-analysis_fr", package = "nemeton")
 
 # Aide
 ?nemeton_compute
 ?create_family_index
-?nemeton_radar
+?run_app
 ```
 
 ## Licence

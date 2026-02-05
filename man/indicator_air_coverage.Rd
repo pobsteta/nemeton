@@ -7,7 +7,7 @@
 indicator_air_coverage(
   units,
   land_cover,
-  forest_classes = c(311, 312, 313),
+  forest_classes = c(16, 17, 18),
   buffer_radius = 1000
 )
 }
@@ -17,7 +17,8 @@ indicator_air_coverage(
 \item{land_cover}{A SpatRaster with land cover classification.}
 
 \item{forest_classes}{Numeric vector. Land cover class codes for forests
-(e.g., Corine codes 311, 312, 313). Default c(311, 312, 313).}
+(OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
+Default c(16, 17, 18).}
 
 \item{buffer_radius}{Numeric. Buffer radius in meters. Default 1000.}
 }

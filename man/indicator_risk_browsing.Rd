@@ -6,29 +6,24 @@
 \usage{
 indicator_risk_browsing(
   units,
-  species_field = "species",
-  height_field = NULL,
-  age_field = NULL,
+  layers = NULL,
+  bdforet = NULL,
   game_density = NULL,
-  edge_buffer = 50,
-  weights = c(palatability = 0.35, vulnerability = 0.3, edge = 0.2, density = 0.15)
+  edge_buffer = 50
 )
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
-\item{species_field}{Character. Column name with species names.}
+\item{layers}{A nemeton_layers object. Used to extract BD Foret and LiDAR MNH.}
 
-\item{height_field}{Character. Column name with stand height (meters). Optional.}
+\item{bdforet}{An sf object with BD Foret V2 polygons, or NULL (resolved from layers).}
 
-\item{age_field}{Character. Column name with stand age (years). Optional.}
+\item{game_density}{SpatRaster with game density index (0-100), or NULL
+(auto-computed from hunting data if available).}
 
-\item{game_density}{SpatRaster with game density index (0-100), or NULL.}
-
-\item{edge_buffer}{Numeric. Buffer distance (m) for edge effect calculation. Default 50.}
-
-\item{weights}{Named numeric vector. Weights for components:
-c(palatability, vulnerability, edge, density). Default c(0.35, 0.30, 0.20, 0.15).}
+\item{edge_buffer}{Numeric. Buffer distance (m) for edge effect calculation.
+Default 50.}
 }
 \value{
 The input sf object with added columns:
@@ -40,24 +35,25 @@ The input sf object with added columns:
 }
 \description{
 Computes browsing pressure risk from ungulates (deer, wild boar) based on
-species palatability, stand vulnerability, edge exposure, and local game density.
+species palatability from BD Foret, stand vulnerability from LiDAR,
+edge exposure, and local game density from hunting statistics.
 }
 \details{
-**Formula**: R4 = w1*palatability + w2*vulnerability + w3*edge_exposure + w4*game_density
+Aligned with tuto 03 methodology: BD Foret intersection for palatability,
+LiDAR MNH for vulnerability, hunting data (data.gouv.fr) for density.
+
+
+**Formula**: R4 = 0.35*palatability + 0.30*vulnerability + 0.20*edge + 0.15*density
 
 **Components**:
 \itemize{
-  \item palatability: Species attractiveness to browsers (Quercus=90, Abies=85, Fagus=70, Pinus=30)
-  \item vulnerability: Young/short stands more vulnerable (<2m = 100, >10m = 0)
-  \item edge_exposure: Proportion of parcel within buffer of forest edge
-  \item game_density: Local ungulate population index if available
-}
-
-**Data sources for game density**:
-\itemize{
-  \item ONF/CNPF: Consumption indices from field surveys
-  \item Hunting federations: Harvest statistics by commune
-  \item ONCFS/OFB: Wildlife monitoring data
+  \item palatability: From BD Foret species intersection (pattern matching on
+    essence names). Quercus=90, Abies=85, Fagus=70, Pinus=30.
+  \item vulnerability: From LiDAR MNH mean height per parcel.
+    <2m = 100, 2-10m = decreasing, >10m = 0.
+  \item edge_exposure: Proportion of parcel within buffer of forest edge.
+  \item game_density: From departmental hunting harvest statistics
+    (data.gouv.fr, OFB). Auto-fetched via \code{\link{get_game_pressure_raster}}.
 }
 }
 \examples{
@@ -66,17 +62,9 @@ library(nemeton)
 
 data(massif_demo_units)
 units <- massif_demo_units
-units$species <- sample(c("Quercus", "Fagus", "Pinus", "Abies"), nrow(units), replace = TRUE
-units$height <- runif(nrow(units), 1, 25)
-units$age <- runif(nrow(units), 5, 80)
 
-# Without game density data
-result <- indicator_risk_browsing(units, species_field = "species", height_field = "height")
+result <- indicator_risk_browsing(units)
 summary(result$R4)
-
-# With game density raster
-game_raster <- rast("path/to/game_density.tif")
-result <- indicator_risk_browsing(units, species_field = "species", game_density = game_raster)
 }
 }
 \seealso{

@@ -2,71 +2,46 @@
 % Please edit documentation in R/indicators-temporal.R
 \name{indicator_temporal_change}
 \alias{indicator_temporal_change}
-\title{Calculate Land Cover Change Rate Index (T2)}
+\title{Calculate Stability / Change Rate Index (T2)}
 \usage{
-indicator_temporal_change(
-  units,
-  layers = NULL,
-  land_cover_early = NULL,
-  land_cover_late = NULL,
-  years_elapsed = NULL,
-  interpretation = "stability"
-)
+indicator_temporal_change(units, layers = NULL, t1_values = NULL)
 }
 \arguments{
-\item{units}{An sf object with forest parcels.}
+\item{units}{An sf object with forest parcels. May contain pre-computed
+columns: N2 (forest continuity) or T1 (stand age).}
 
-\item{layers}{A nemeton_layers object (optional, not used in this indicator).}
+\item{layers}{A nemeton_layers object (optional). Not directly used but
+kept for interface consistency.}
 
-\item{land_cover_early}{A SpatRaster with early land cover classification.}
-
-\item{land_cover_late}{A SpatRaster with late land cover classification.}
-
-\item{years_elapsed}{Numeric. Number of years between the two land cover dates.}
-
-\item{interpretation}{Character. How to interpret change:
-\itemize{
-  \item "stability" (default): Low change = high score (conservation)
-  \item "dynamism": High change = high score (ecological dynamism)
-}}
+\item{t1_values}{Numeric vector. Pre-computed T1 age values (same length
+as nrow(units)). If NULL and units has no T1 column, T2 defaults to 50.}
 }
 \value{
-The input sf object with added columns:
-  \itemize{
-    \item T2: Annualized change rate (\%/year)
-    \item T2_norm: Normalized score (0-100). Depends on interpretation.
-  }
+Numeric vector of stability scores (0-100).
+  100 = very stable (ancient forest), 0 = recent change.
 }
 \description{
-Computes annualized land cover change rate from multi-date rasters
-(e.g., Corine Land Cover).
+Measures forest stability using N2 (forest continuity/antiquity) as proxy,
+following tuto 04 methodology. Falls back to T1 age capped at 100.
 }
 \details{
-**Formula**: T2 = (changed_pixels / total_pixels) / years_elapsed × 100
+**Primary method**: Use N2 (forest continuity/antiquity) column if present
+in units. N2 measures continuous forest cover duration, serving as a direct
+proxy for temporal stability.
 
-**Normalization**:
-\itemize{
-  \item stability: 0\% change/yr = 100, 5\%+ change/yr = 0
-  \item dynamism: 0\% change/yr = 0, 5\%+ change/yr = 100
-}
+**Fallback**: Use T1 stand age capped at 100. Older forests are assumed
+more stable.
 }
 \examples{
 \dontrun{
 library(nemeton)
-library(terra)
 
 data(massif_demo_units)
 units <- massif_demo_units[1:10, ]
 
-lc_1990 <- rast("path/to/corine_1990.tif")
-lc_2020 <- rast("path/to/corine_2020.tif")
-
-# Stability interpretation (conservation)
-result <- indicator_temporal_change(units, lc_1990, lc_2020, years_elapsed = 30, interpretation = "stability")
-summary(result$T2)
-
-# Dynamism interpretation (ecological change)
-result <- indicator_temporal_change(units, lc_1990, lc_2020, years_elapsed = 30, interpretation = "dynamism")
+# Compute T1 first, then T2
+t1 <- indicator_temporal_age(units, layers = massif_demo_layers())
+t2 <- indicator_temporal_change(units, t1_values = t1)
 }
 }
 \seealso{

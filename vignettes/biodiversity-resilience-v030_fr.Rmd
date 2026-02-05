@@ -119,10 +119,11 @@ summary(result$B2)
 L'indicateur **B3** évalue la proximité aux corridors écologiques.
 
 ```{r}
+# B3 utilise la BD Forêt pour calculer la connectivité
+# Sans données réelles, la fonction retourne une valeur par défaut
 result <- indicator_biodiversity_connectivity(
   result,
-  corridors = corridor,
-  distance_method = "edge",
+  bdforet = NULL,  # En production: charger depuis layers
   max_distance = 3000
 )
 

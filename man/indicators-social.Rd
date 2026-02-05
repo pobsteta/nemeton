@@ -5,8 +5,8 @@
 \title{Social & Recreational Services Indicators (Family S)}
 \description{
 Functions for calculating social and recreational use indicators:
-- S1: Trail density (recreational infrastructure)
-- S2: Multimodal accessibility (public access potential)
+- S1: Distance to roads (accessibility via road network)
+- S2: Distance to buildings (proximity to built areas)
 - S3: Population proximity (visitor pressure potential)
 }
 \seealso{

@@ -2,40 +2,42 @@
 % Please edit documentation in R/indicators-families.R
 \name{indicator_landscape_fragmentation}
 \alias{indicator_landscape_fragmentation}
-\title{Landscape Fragmentation (L1)}
+\title{Sylvosphere - Edge Effect (L1)}
 \usage{
 indicator_landscape_fragmentation(
   units,
-  layers,
+  layers = NULL,
   landcover_layer = "landcover",
   forest_values = seq(1, 6),
-  buffer = 1000
+  buffer = 50
 )
 }
 \arguments{
 \item{units}{nemeton_units object}
 
-\item{layers}{nemeton_layers object containing land cover}
+\item{layers}{nemeton_layers object containing land cover (optional)}
 
 \item{landcover_layer}{Character. Name of land cover layer}
 
 \item{forest_values}{Numeric vector. Land cover codes for forest}
 
-\item{buffer}{Numeric. Analysis buffer distance (meters). Default 1000 (1 km).}
+\item{buffer}{Numeric. Buffer distance (meters) for contrast analysis. Default 50m.}
 }
 \value{
-Numeric vector of fragmentation index (patch count / mean size)
+Numeric vector of sylvosphere scores (0-100)
 }
 \description{
-Calculates forest patch metrics within buffer zone: patch count and mean size.
-Higher fragmentation = more patches with smaller mean size.
+Composite indicator (0-100) with 3 components:
+- Geometry (30%): shape index measuring parcel irregularity
+- Matrix contrast (40%): land use contrast in buffer zone (OSO classes)
+- Exposure (30%): wind (60%) and sun (40%) exposure based on boundary orientation
 }
 \examples{
 \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
 results <- indicator_landscape_fragmentation(
   units, layers,
-  forest_values = c(1, 2, 3), buffer = 1000
+  forest_values = c(1, 2, 3), buffer = 50
 )
 }
 }

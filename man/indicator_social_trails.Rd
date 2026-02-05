@@ -2,15 +2,13 @@
 % Please edit documentation in R/indicators-social.R
 \name{indicator_social_trails}
 \alias{indicator_social_trails}
-\title{S1: Trail Density Indicator}
+\title{S1: Distance to Roads Indicator}
 \usage{
 indicator_social_trails(
   units,
-  trails = NULL,
-  method = c("osm", "local"),
-  osm_bbox = NULL,
-  trail_types = c("path", "footway", "cycleway", "bridleway"),
-  buffer_m = 0,
+  roads = NULL,
+  dem = NULL,
+  layers = NULL,
   column_name = "S1",
   lang = "en"
 )
@@ -18,59 +16,41 @@ indicator_social_trails(
 \arguments{
 \item{units}{sf object (POLYGON) of spatial units to assess}
 
-\item{trails}{sf object (LINESTRING) of trail network. If NULL and method="osm", fetches from OSM.}
+\item{roads}{sf object (LINESTRING) of road network. If NULL, resolved from layers.}
 
-\item{method}{Character. Data source: "osm" (OpenStreetMap) or "local". Default "osm".}
+\item{dem}{SpatRaster. Digital elevation model used as reference grid.
+If NULL, resolved from layers.}
 
-\item{osm_bbox}{Numeric vector (xmin, ymin, xmax, ymax) for OSM query. Auto-detected if NULL.}
-
-\item{trail_types}{Character vector. OSM highway tags: c("path", "footway", "cycleway", "bridleway"). Default all.}
-
-\item{buffer_m}{Numeric. Buffer distance (m) around units to include nearby trails. Default 0 (within units only).}
+\item{layers}{A nemeton_layers object (optional). Used to resolve roads/dem
+when not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "S1".}
 
 \item{lang}{Character. Message language ("en" or "fr"). Default "en".}
 }
 \value{
-sf object with added column: S1 (trail density in km/ha)
+sf object with added column: S1 (mean distance to nearest road in metres)
 }
 \description{
-Calculates the density of recreational trails (pedestrian, cycling, equestrian)
-within or near spatial units using OpenStreetMap or local trail datasets.
+Calculates the mean distance (in metres) from each spatial unit to the
+nearest road, using rasterized road data and \code{terra::distance()}.
 }
 \details{
-**Calculation**:
+**Calculation** (tuto 03 method):
 \itemize{
-  \item Extract or fetch trail network (OSM or local)
-  \item Clip trails to unit boundaries (+ optional buffer)
-  \item Calculate total trail length within each unit
-  \item Normalize by unit area: \code{S1 = trail_length_km / area_ha}
+  \item Rasterize road geometries onto the DEM grid
+  \item Compute distance raster via \code{terra::distance()}
+  \item Extract mean distance per spatial unit
 }
 
-**Trail Types** (OSM highway tags):
-\itemize{
-  \item path: Unpaved footpaths
-  \item footway: Paved pedestrian paths
-  \item cycleway: Dedicated bike paths
-  \item bridleway: Equestrian trails
-}
+Returns NA when DEM or roads are unavailable.
 }
 \examples{
 \dontrun{
-# Using OpenStreetMap
-result <- indicator_social_trails(
-  units = massif_demo_units,
-  method = "osm",
-  trail_types = c("path", "footway", "cycleway")
-)
-
-# Using local trail data with buffer
 result <- indicator_social_trails(
   units = parcels,
-  trails = local_trails_sf,
-  method = "local",
-  buffer_m = 100
+  roads = roads_sf,
+  dem = dem_raster
 )
 }
 }

@@ -6,11 +6,9 @@
 \usage{
 indicator_naturalness_distance(
   units,
-  infrastructure = NULL,
-  method = c("osm", "local"),
-  osm_bbox = NULL,
-  infra_types = c("roads", "buildings", "power"),
-  osm_road_tags = c("motorway", "trunk", "primary", "secondary", "tertiary"),
+  roads = NULL,
+  buildings = NULL,
+  layers = NULL,
   column_name = "N1",
   lang = "en"
 )
@@ -18,24 +16,22 @@ indicator_naturalness_distance(
 \arguments{
 \item{units}{sf object (POLYGON) of spatial units to assess}
 
-\item{infrastructure}{sf object or list. Infrastructure datasets. If NULL and method="osm", fetches from OSM.}
+\item{roads}{sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL = default 1000m.}
 
-\item{method}{Character. Data source: "osm" or "local". Default "osm".}
+\item{buildings}{sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.}
 
-\item{osm_bbox}{Numeric vector for OSM query. Auto-detected if NULL.}
-
-\item{infra_types}{Character vector. Infrastructure categories: c("roads", "buildings", "power"). Default all.}
-
-\item{osm_road_tags}{Character vector. OSM highway tags for roads. Default c("motorway", "trunk", "primary", "secondary", "tertiary").}
+\item{layers}{nemeton_layers object. Used to resolve roads/buildings if not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "N1".}
 
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added columns: N1 (min distance m), N1_roads, N1_buildings, N1_power
+sf object with added column N1 (score 0-100, 100 = very remote)
 }
 \description{
-Calculates minimum distance to infrastructure (roads, buildings, power lines)
-as a proxy for remoteness from human influence.
+Calculates distance to infrastructure (roads, buildings, urban zones)
+as a measure of remoteness from human influence. Follows tuto 04 methodology:
+distances from parcel centroids to roads (BD TOPO) and buildings, normalized
+to 0-100 and combined with weights (40% roads, 35% buildings, 25% urban).
 }

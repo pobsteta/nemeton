@@ -8,6 +8,7 @@ indicator_risk_fire(
   units,
   dem = NULL,
   layers = NULL,
+  bdforet = NULL,
   species_field = "species",
   climate = NULL,
   weights = c(slope = 1/3, species = 1/3, climate = 1/3)
@@ -18,14 +19,16 @@ indicator_risk_fire(
 
 \item{dem}{A SpatRaster with digital elevation model (meters).}
 
-\item{layers}{A nemeton_layers object. Used to extract DEM and NDVI if
-\code{dem} is NULL.}
+\item{layers}{A nemeton_layers object. Used to extract DEM and BD Foret.}
 
-\item{species_field}{Character. Column name with species names.}
+\item{bdforet}{An sf object with BD Foret V2 polygons, or NULL.}
 
-\item{climate}{List with 'temperature' and 'precipitation' SpatRasters, or NULL.}
+\item{species_field}{Character. Column name with species names (fallback only).}
 
-\item{weights}{Named numeric vector. Weights for components:
+\item{climate}{List with 'temperature' and 'precipitation' SpatRasters,
+or NULL (fallback only).}
+
+\item{weights}{Named numeric vector. Weights for fallback components:
 c(slope, species, climate). Default c(1/3, 1/3, 1/3).}
 }
 \value{
@@ -35,18 +38,16 @@ The input sf object with added column:
   }
 }
 \description{
-Computes fire risk based on topographic slope, species flammability, and
-climate dryness.
+Computes fire risk using fire exposure analysis from BD Foret fuel mapping
+(via \pkg{fireexposuR}). Falls back to slope + species + climate method
+when \pkg{fireexposuR} or BD Foret data is unavailable.
 }
 \details{
-**Formula**: R1 = w1×slope_factor + w2×species_flammability + w3×climate_dryness
+**Primary method** (requires \pkg{fireexposuR} + BD Foret):
+Rasterizes BD Foret as a hazard layer, then computes fire exposure
+with a 500m transmission distance. The 0-1 exposure is scaled to 0-100.
 
-**Components**:
-\itemize{
-  \item slope_factor: Slope from DEM, normalized to 0-100 (>30° = max risk)
-  \item species_flammability: Lookup from internal table (Pinus=80, Quercus=50, Fagus=20)
-  \item climate_dryness: Low precipitation + high temperature = high dryness
-}
+**Fallback method**: R1 = w1*slope + w2*species_flammability + w3*climate_dryness
 }
 \examples{
 \dontrun{
@@ -55,15 +56,9 @@ library(terra)
 
 data(massif_demo_units)
 units <- massif_demo_units
-units$species <- sample(c("Pinus", "Quercus", "Fagus"), nrow(units), replace = TRUE)
 
 dem <- rast("path/to/dem.tif")
-climate <- list(
-  temperature = rast("path/to/temp.tif"),
-  precipitation = rast("path/to/precip.tif")
-)
-
-result <- indicator_risk_fire(units, dem = dem, species_field = "species", climate = climate)
+result <- indicator_risk_fire(units, dem = dem)
 summary(result$R1)
 }
 }

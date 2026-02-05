@@ -4,30 +4,18 @@
 \alias{indicator_risk_drought}
 \title{Calculate Drought Stress Index (R3)}
 \usage{
-indicator_risk_drought(
-  units,
-  layers = NULL,
-  twi_field = "W3",
-  climate = NULL,
-  species_field = "species",
-  weights = c(twi = 0.4, precip = 0.4, species = 0.2)
-)
+indicator_risk_drought(units, layers = NULL, dem = NULL, climate_data = NULL)
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
-\item{layers}{A nemeton_layers object. Used to extract DEM for TWI
-computation when \code{twi_field} is not present in \code{units}.}
+\item{layers}{A nemeton_layers object. Used to extract DEM.}
 
-\item{twi_field}{Character. Column name with Topographic Wetness Index (TWI).
-Can reuse W3 from v0.2.0.}
+\item{dem}{A SpatRaster with digital elevation model (meters).}
 
-\item{climate}{List with 'precipitation' SpatRaster, or NULL.}
-
-\item{species_field}{Character. Column name with species names.}
-
-\item{weights}{Named numeric vector. Weights for components:
-c(twi, precip, species). Default c(0.4, 0.4, 0.2).}
+\item{climate_data}{Optional list with \code{precip} (monthly precipitation
+vector in mm) and \code{temp} (list with \code{tmin} and \code{tmax}
+monthly vectors in degrees C). If NULL, uses simulated data.}
 }
 \value{
 The input sf object with added column:
@@ -36,18 +24,26 @@ The input sf object with added column:
   }
 }
 \description{
-Computes drought stress based on topographic wetness (inverse TWI),
-precipitation deficit, and species sensitivity.
+Computes drought stress combining a climate component (SPEI-3 index)
+and a topographic modulation (aspect, slope, TWI). Falls back to
+topographic-only assessment when \pkg{SPEI} is unavailable.
 }
 \details{
-**Formula**: R3 = w1×(100-TWI_norm) + w2×precip_deficit + w3×species_sensitivity
+**Climate component** (weight 0.6):
+Uses SPEI-3 (Standardised Precipitation-Evapotranspiration Index at 3-month
+scale) via \pkg{SPEI}. PET is computed with the Hargreaves method.
+R3_climat = (-SPEI_recent + 2) / 4, clamped to 0-1.
+Falls back to 0.5 without \pkg{SPEI}.
 
-**Components**:
+**Topographic component** (weight 0.4):
 \itemize{
-  \item Inverse TWI: Low TWI (dry sites) = high drought stress
-  \item Precipitation deficit: Low annual precip = high stress
-  \item Species sensitivity: Fagus (80), Quercus (50), Pinus (50), others (50)
+  \item aspect_risk: south-facing = max risk
+  \item slope_risk: steep slopes = runoff = dry
+  \item twi_risk: low TWI = dry
 }
+topo_risk = 0.4*aspect_risk + 0.3*slope_risk + 0.3*twi_risk
+
+R3 = (0.6 * climate + 0.4 * topo) * 100
 }
 \examples{
 \dontrun{
@@ -55,14 +51,9 @@ library(nemeton)
 
 data(massif_demo_units)
 units <- massif_demo_units
+dem <- rast("path/to/dem.tif")
 
-# Reuse W3 (TWI) from v0.2.0
-units$W3 <- runif(nrow(units), 5, 15)
-units$species <- sample(c("Fagus", "Quercus", "Pinus"), nrow(units), replace = TRUE)
-
-climate <- list(precipitation = rast("path/to/precip.tif"))
-
-result <- indicator_risk_drought(units, twi_field = "W3", climate = climate, species_field = "species")
+result <- indicator_risk_drought(units, dem = dem)
 summary(result$R3)
 }
 }

@@ -8,7 +8,7 @@ indicator_water_twi(
   units,
   layers,
   dem_layer = "dem",
-  method = c("auto", "dinf", "d8")
+  method = c("auto", "grass", "d8")
 )
 }
 \arguments{
@@ -18,15 +18,20 @@ indicator_water_twi(
 
 \item{dem_layer}{Character. Name of DEM layer in layers object}
 
-\item{method}{Character. TWI calculation method: "auto" (prefer whitebox),
-"dinf" (whitebox D-infinity), or "d8" (terra D8). Default "auto".}
+\item{method}{Character. TWI calculation method: "auto" (prefer GRASS),
+"grass" (fasterRaster/GRASS GIS), or "d8" (terra D8). Default "auto".}
 }
 \value{
 Numeric vector of TWI mean values
 }
 \description{
-Calculates TWI using whitebox (D-infinity algorithm) or terra fallback (D8).
+Calculates TWI using fasterRaster/GRASS GIS (preferred) or terra fallback (D8).
 Higher values indicate areas with greater water accumulation potential.
+}
+\details{
+The GRASS method (via fasterRaster) performs proper hydrological conditioning:
+depression filling, flow direction, flow accumulation, then TWI = ln(SCA / tan(slope)).
+The terra D8 method is a simpler approximation used as fallback.
 }
 \examples{
 \dontrun{

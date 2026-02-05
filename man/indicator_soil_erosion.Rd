@@ -2,39 +2,32 @@
 % Please edit documentation in R/indicators-families.R
 \name{indicator_soil_erosion}
 \alias{indicator_soil_erosion}
-\title{Erosion Risk Index (F2)}
+\title{Soil Fertility Index (F2)}
 \usage{
-indicator_soil_erosion(
-  units,
-  layers,
-  dem_layer = "dem",
-  landcover_layer = "landcover",
-  forest_values = seq(1, 6)
-)
+indicator_soil_erosion(units, layers, dem_layer = "dem")
 }
 \arguments{
 \item{units}{nemeton_units object}
 
-\item{layers}{nemeton_layers object containing DEM and land cover}
+\item{layers}{nemeton_layers object containing DEM raster}
 
 \item{dem_layer}{Character. Name of DEM layer}
-
-\item{landcover_layer}{Character. Name of land cover layer}
-
-\item{forest_values}{Numeric vector. Land cover codes for forest (protective cover)}
 }
 \value{
-Numeric vector of erosion risk scores (0-100, higher = more risk)
+Numeric vector of fertility scores (0-100, higher = more fertile)
 }
 \description{
-Calculates erosion risk by combining slope (from DEM) with land cover protection.
-Higher values indicate greater erosion risk.
+Calculates soil fertility potential by combining TWI (water/nutrient
+accumulation) and slope (erosion risk). Follows the tuto 03 methodology:
+F2 = (twi_norm + slope_norm) / 2
+}
+\details{
+TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
+Higher values indicate more fertile soil conditions.
 }
 \examples{
 \dontrun{
-layers <- nemeton_layers(
-  rasters = list(dem = "dem.tif", landcover = "landcover.tif")
-)
-results <- indicator_soil_erosion(units, layers, forest_values = c(1, 2, 3))
+layers <- nemeton_layers(rasters = list(dem = "dem.tif"))
+results <- indicator_soil_erosion(units, layers)
 }
 }

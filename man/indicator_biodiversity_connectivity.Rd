@@ -6,67 +6,48 @@
 \usage{
 indicator_biodiversity_connectivity(
   units,
-  corridors = NULL,
-  distance_method = c("edge", "centroid"),
+  bdforet = NULL,
+  dem = NULL,
   max_distance = 5000
 )
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
-\item{corridors}{An sf object with ecological corridors (lines or polygons).
-If NULL, uses fallback scoring (default medium score of 50). Default NULL.}
+\item{bdforet}{An sf object with BD Foret V2 polygons. If NULL, returns
+fallback score of 50 for all parcels. Default NULL.}
 
-\item{distance_method}{Character. Method for distance calculation:
-"edge" (edge-to-edge), "centroid" (centroid-to-centroid). Default "edge".}
+\item{dem}{A SpatRaster with digital elevation model. Used for cost distance
+refinement. Default NULL.}
 
-\item{max_distance}{Numeric. Maximum distance threshold (meters). Distances
-beyond this are capped. Default 5000.}
+\item{max_distance}{Numeric. Maximum distance threshold (meters) for local
+connectivity scoring. Default 5000.}
 }
 \value{
-The input sf object with added columns:
-  \itemize{
-    \item B3: Distance to nearest corridor (meters). Lower = better connectivity.
-    \item B3_norm: Normalized connectivity score (0-100). Higher = better (inverse distance).
-  }
+The input sf object with added column B3 (0-100 score, higher = better).
 }
 \description{
-Computes distance from each forest parcel to the nearest ecological corridor
-(Trame Verte et Bleue).
+Computes ecological connectivity using a multi-method approach combining
+structural metrics, cost distance, graph theory, and kernel dispersal,
+as described in tutorial 04.
+Uses BD Foret data and DEM when available.
 }
 \details{
-**Calculation**: B3 = min distance to any corridor
-
-**Normalization**: B3_norm = 100 × (1 - min(B3, max_distance) / max_distance)
-
-**Interpretation**:
-\itemize{
-  \item 0-500m: Excellent connectivity (B3_norm > 90)
-  \item 500-1500m: Good connectivity (B3_norm 70-90)
-  \item 1500-3000m: Fair connectivity (B3_norm 40-70)
-  \item >3000m: Poor connectivity (B3_norm < 40)
+Four components are combined (25% each):
+\enumerate{
+  \item **Structural** (landscapemetrics): cohesion, nearest-neighbour distance,
+    aggregation index of forest patches.
+  \item **Cost distance** (terra): resistance-weighted distance from parcels
+    to nearest forest patch.
+  \item **Graph** (igraph): proportion of forest patches in the largest
+    connected component (threshold 500m).
+  \item **Kernel dispersal** (adehabitatHR): kernel density estimation of
+    forest parcel centroids, ratio of 95% home range area to parcel area
+    as proxy for functional connectivity.
 }
-}
-\examples{
-\dontrun{
-library(nemeton)
-library(sf)
 
-data(massif_demo_units)
-
-# Load ecological corridors (Trame Verte et Bleue)
-corridors <- st_read("trame_verte.gpkg")
-
-result <- indicator_biodiversity_connectivity(
-  massif_demo_units,
-  corridors = corridors,
-  distance_method = "edge",
-  max_distance = 3000
-)
-
-# Highly connected parcels
-well_connected <- result[result$B3 < 500, ]
-}
+Final score: B3 = 0.7 * B3_global + 0.3 * local_connectivity
+where local_connectivity is distance-based (sf) per-parcel adjustment.
 }
 \seealso{
 Other biodiversity-indicators: 

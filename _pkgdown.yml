@@ -40,6 +40,8 @@ navbar:
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
       - text: "---"
+      - text: Application nemetonApp
+        href: articles/nemetonapp-guide_fr.html
       - text: Internationalisation (i18n)
         href: articles/internationalization.html
 
@@ -197,6 +199,7 @@ reference:
     desc: "Interface interactive nemetonApp"
     contents:
     - run_app
+    - generate_report_pdf
 
   - title: "Documentation du package"
     contents:

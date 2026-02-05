@@ -2,16 +2,13 @@
 % Please edit documentation in R/indicators-social.R
 \name{indicator_social_accessibility}
 \alias{indicator_social_accessibility}
-\title{S2: Multimodal Accessibility Indicator}
+\title{S2: Distance to Buildings Indicator}
 \usage{
 indicator_social_accessibility(
   units,
-  roads = NULL,
-  transit_stops = NULL,
-  method = c("osm", "local"),
-  osm_bbox = NULL,
-  road_types = c("primary", "secondary", "tertiary", "unclassified"),
-  weights = c(road = 0.5, transit = 0.3, cycling = 0.2),
+  buildings = NULL,
+  dem = NULL,
+  layers = NULL,
   column_name = "S2",
   lang = "en"
 )
@@ -19,44 +16,41 @@ indicator_social_accessibility(
 \arguments{
 \item{units}{sf object (POLYGON) of spatial units to assess}
 
-\item{roads}{sf object (LINESTRING) of road network. If NULL and method="osm", fetches from OSM.}
+\item{buildings}{sf object (POLYGON) of buildings. If NULL, resolved from layers.}
 
-\item{transit_stops}{sf object (POINT) of public transport stops. Optional.}
+\item{dem}{SpatRaster. Digital elevation model used as reference grid.
+If NULL, resolved from layers.}
 
-\item{method}{Character. Data source: "osm" (OpenStreetMap) or "local". Default "osm".}
-
-\item{osm_bbox}{Numeric vector for OSM query. Auto-detected if NULL.}
-
-\item{road_types}{Character vector. OSM highway tags: c("primary", "secondary", "tertiary"). Default all.}
-
-\item{weights}{Named numeric vector. Weights for components: c(road = 0.5, transit = 0.3, cycling = 0.2). Default balanced.}
+\item{layers}{A nemeton_layers object (optional). Used to resolve buildings/dem
+when not provided directly.}
 
 \item{column_name}{Character. Name for output column. Default "S2".}
 
 \item{lang}{Character. Message language. Default "en".}
 }
 \value{
-sf object with added column: S2 (accessibility score 0-100)
+sf object with added column: S2 (mean distance to nearest building in metres)
 }
 \description{
-Calculates an accessibility score based on proximity to roads, public transport,
-and cycling infrastructure. Higher scores indicate better public access potential.
+Calculates the mean distance (in metres) from each spatial unit to the
+nearest building, using rasterized building data and \code{terra::distance()}.
 }
 \details{
-**Calculation**:
+**Calculation** (tuto 03 method):
 \itemize{
-  \item Road accessibility: Inverse distance to nearest road (closer = higher)
-  \item Transit accessibility: Count of transit stops within 1km buffer
-  \item Cycling accessibility: Presence of cycling infrastructure
-  \item Weighted composite: \code{S2 = (w1×road + w2×transit + w3×cycling)}
+  \item Rasterize building geometries onto the DEM grid
+  \item Compute distance raster via \code{terra::distance()}
+  \item Extract mean distance per spatial unit
 }
+
+Returns NA when DEM or buildings are unavailable.
 }
 \examples{
 \dontrun{
 result <- indicator_social_accessibility(
-  units = massif_demo_units,
-  method = "osm",
-  weights = c(road = 0.6, transit = 0.2, cycling = 0.2)
+  units = parcels,
+  buildings = buildings_sf,
+  dem = dem_raster
 )
 }
 }

@@ -2538,6 +2538,7 @@ read_progress_state <- function(project_id) {
 #' @return List with computed indicators and last save time.
 #'
 #' @noRd
+
 #' Clear computation cache for a project
 #'
 #' @description
