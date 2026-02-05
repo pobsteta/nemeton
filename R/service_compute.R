@@ -1962,10 +1962,10 @@ normalize_indicator <- function(indicator, values) {
     "carbon_biomass" = 150,
     # Carbon: NDVI in 0-1 scale — special handling below
     "carbon_ndvi" = NULL,
-    # Water: hydrographic network density in m/ha (100 m/ha = 1km stream per 100ha)
-    "water_network" = 100,
-    # Water: wetland/water surface coverage (%) — 10% coverage = max score
-    "water_wetlands" = 10,
+    # Water: hydrographic network density in m/ha (50 m/ha = well-watered forest)
+    "water_network" = 50,
+    # Water: wetland/water surface coverage (%) — 5% coverage = max score
+    "water_wetlands" = 5,
     # Water: TWI — special handling below
     "water_twi" = NULL,
     # Social: distance to roads (m) — special inverse handling below
