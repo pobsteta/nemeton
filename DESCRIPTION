@@ -51,6 +51,7 @@ Suggests:
     future (>= 1.30.0),
     whitebox (>= 2.3.0),
     fasterRaster (>= 8.0.0),
+    data.table (>= 1.14.0),
     landscapemetrics (>= 2.0.0),
     rnaturalearth,
     osmdata,

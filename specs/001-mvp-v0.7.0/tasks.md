@@ -375,7 +375,7 @@
 
 - [x] T199 Mettre à jour NEWS.md (v0.9.0)
 - [x] T200 Mettre à jour DESCRIPTION version (0.9.0)
-- [ ] T201 R CMD check sans erreurs ni warnings — erreurs tests indicateurs pré-existantes
+- [x] T201 R CMD check sans erreurs — tests corrigés (0 failures, 3447 passing)
 - [ ] T202 Créer tag git v0.7.0
 
 ---
