@@ -378,9 +378,9 @@ mod_synthesis_ui <- function(id) {
       )
     ),
 
-    # Radar plot + Summary table side by side
+    # Radar + Summary table + Comments (3 columns)
     bslib::layout_columns(
-      col_widths = c(7, 5),
+      col_widths = c(4, 4, 4),
       bslib::card(
         bslib::card_header(i18n$t("radar_title")),
         bslib::card_body(
@@ -392,46 +392,44 @@ mod_synthesis_ui <- function(id) {
         bslib::card_body(
           shiny::tableOutput(ns("summary_table"))
         )
-      )
-    ),
-
-    # Comments card with AI generation
-    bslib::card(
-      bslib::card_header(
-        class = "d-flex justify-content-between align-items-center flex-wrap gap-2",
-        i18n$t("comments_title"),
-        htmltools::div(
-          class = "d-flex align-items-center gap-2",
-          htmltools::div(
-            class = "expert-select-inline",
-            shiny::selectInput(
-              ns("expert_profile"),
-              label = NULL,
-              choices = stats::setNames(
-                c("generalist", "owner", "manager", "politician", "producer", "citizen", "hunter"),
-                c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_manager"),
-                  i18n$t("expert_politician"), i18n$t("expert_producer"), i18n$t("expert_citizen"),
-                  i18n$t("expert_hunter"))
-              ),
-              selected = "generalist",
-              width = "auto"
-            )
-          ),
-          shiny::actionButton(
-            ns("ai_generate"),
-            label = i18n$t("ai_generate"),
-            icon = shiny::icon("robot"),
-            class = "btn-outline-primary btn-sm"
-          )
-        )
       ),
-      bslib::card_body(
-        shiny::textAreaInput(
-          ns("synthesis_comments"),
-          label = NULL,
-          placeholder = i18n$t("synthesis_comments_placeholder"),
-          rows = 12,
-          width = "100%"
+      bslib::card(
+        bslib::card_header(
+          class = "d-flex justify-content-between align-items-center flex-wrap gap-2",
+          i18n$t("comments_title"),
+          htmltools::div(
+            class = "d-flex align-items-center gap-2",
+            htmltools::div(
+              class = "expert-select-inline",
+              shiny::selectInput(
+                ns("expert_profile"),
+                label = NULL,
+                choices = stats::setNames(
+                  c("generalist", "owner", "manager", "politician", "producer", "citizen", "hunter"),
+                  c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_manager"),
+                    i18n$t("expert_politician"), i18n$t("expert_producer"), i18n$t("expert_citizen"),
+                    i18n$t("expert_hunter"))
+                ),
+                selected = "generalist",
+                width = "auto"
+              )
+            ),
+            shiny::actionButton(
+              ns("ai_generate"),
+              label = i18n$t("ai_generate"),
+              icon = shiny::icon("robot"),
+              class = "btn-outline-primary btn-sm"
+            )
+          )
+        ),
+        bslib::card_body(
+          shiny::textAreaInput(
+            ns("synthesis_comments"),
+            label = NULL,
+            placeholder = i18n$t("synthesis_comments_placeholder"),
+            rows = 12,
+            width = "100%"
+          )
         )
       )
     )
