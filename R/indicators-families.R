@@ -935,8 +935,9 @@ indicator_soil_erosion <- function(units,
   slope_raster <- terra::terrain(dem, v = "slope", unit = "degrees")
   slope_mean <- safe_extract(slope_raster, units_sf, fun = "mean", progress = FALSE)
 
-  # 3. Normalize TWI: [5, 15] -> [0, 100] (higher TWI = more fertile)
-  twi_norm <- pmax(pmin((twi_mean - 5) / 10 * 100, 100), 0)
+  # 3. Normalize TWI: [2.5, 10] -> [0, 100] (higher TWI = more fertile)
+  # Window adjusted to match typical TWI values (2.5-10 range covers most landscapes)
+  twi_norm <- pmax(pmin((twi_mean - 2.5) / 7.5 * 100, 100), 0)
 
   # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = more fertile)
   slope_norm <- pmax(pmin(100 - (slope_mean / 45) * 100, 100), 0)

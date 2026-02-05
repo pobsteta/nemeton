@@ -423,6 +423,12 @@ indicator_risk_drought <- function(units,
   # TWI risk: low TWI = dry
   twi_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
   twi_raster <- get_or_compute_twi(dem, cache_dir = twi_cache_dir)
+
+  # Ensure TWI has same extent as DEM-derived rasters (cache may have different extent)
+  if (!terra::compareGeom(twi_raster, aspect, stopOnError = FALSE)) {
+    twi_raster <- terra::resample(twi_raster, aspect, method = "bilinear")
+  }
+
   twi_max <- terra::global(twi_raster, "max", na.rm = TRUE)$max
   if (is.na(twi_max) || twi_max == 0) twi_max <- 1
   twi_norm <- terra::clamp(twi_raster / twi_max, lower = 0, upper = 1)
