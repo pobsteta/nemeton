@@ -28,3 +28,4 @@
 ^\.Rhistory$
 ^\.Rprofile$
 ^Rplots\.pdf$
+^LICENSE\.md$

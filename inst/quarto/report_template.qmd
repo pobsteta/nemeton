@@ -14,13 +14,13 @@ format:
       - right=20mm
     colorlinks: true
     linkcolor: "ForestGreen"
-    toc: true
-    toc-depth: 2
+    toc: false
     number-sections: true
     fig-pos: "H"
 params:
   data_file: ""
   radar_file: ""
+  family_maps_dir: ""
   language: "fr"
   title: "Diagnostic Forestier Nemeton"
   subtitle: "Rapport de synthese"
@@ -43,10 +43,14 @@ tr <- function(key) {
 
 # Color formatting helper
 score_color <- function(score) {
+  if (is.na(score)) return("gray")
   if (score >= 60) "ForestGreen"
   else if (score >= 40) "Orange"
   else "Red"
 }
+
+# Family order
+family_order <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 ```
 
 # `r tr("project_info")`
@@ -118,21 +122,89 @@ knitr::kable(table_data,
 
 \vspace{1cm}
 
-## Interpretation des scores
+## `r if (params$language == "fr") "Interpr\u00e9tation des scores" else "Score interpretation"`
 
-| Score | Interpretation |
+| Score | `r if (params$language == "fr") "Interpr\u00e9tation" else "Interpretation"` |
 |-------|----------------|
-| 80-100 | `r if (params$language == "fr") "Excellent - Service ecosystemique tres performant" else "Excellent - Very high ecosystem service performance"` |
-| 60-79 | `r if (params$language == "fr") "Bon - Service ecosystemique performant" else "Good - High ecosystem service performance"` |
-| 40-59 | `r if (params$language == "fr") "Moyen - Service ecosystemique moyen" else "Average - Moderate ecosystem service performance"` |
-| 20-39 | `r if (params$language == "fr") "Faible - Service ecosystemique limite" else "Low - Limited ecosystem service performance"` |
-| 0-19 | `r if (params$language == "fr") "Tres faible - Service ecosystemique deficient" else "Very low - Deficient ecosystem service performance"` |
+| 80-100 | `r if (params$language == "fr") "Excellent - Service \u00e9cosyst\u00e9mique tr\u00e8s performant" else "Excellent - Very high ecosystem service performance"` |
+| 60-79 | `r if (params$language == "fr") "Bon - Service \u00e9cosyst\u00e9mique performant" else "Good - High ecosystem service performance"` |
+| 40-59 | `r if (params$language == "fr") "Moyen - Service \u00e9cosyst\u00e9mique moyen" else "Average - Moderate ecosystem service performance"` |
+| 20-39 | `r if (params$language == "fr") "Faible - Service \u00e9cosyst\u00e9mique limit\u00e9" else "Low - Limited ecosystem service performance"` |
+| 0-19 | `r if (params$language == "fr") "Tr\u00e8s faible - Service \u00e9cosyst\u00e9mique d\u00e9ficient" else "Very low - Deficient ecosystem service performance"` |
 
 `r if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) "\\newpage"`
 
 `r if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) paste0("# ", tr("comments_title"))`
 
-`r if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) report_data$synthesis_comments`
+```{r synthesis-comments, results='asis'}
+#| eval: !expr !is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0
+
+# Render markdown comments
+cat(report_data$synthesis_comments)
+```
+
+\newpage
+
+# `r if (params$language == "fr") "Table des mati\u00e8res" else "Table of Contents"`
+
+```{r toc, results='asis'}
+# Generate custom TOC
+cat("\\tableofcontents\n")
+```
+
+\newpage
+
+# `r if (params$language == "fr") "D\u00e9tail par famille d'indicateurs" else "Detail by indicator family"`
+
+```{r family-sections, results='asis'}
+for (code in family_order) {
+  if (!code %in% names(report_data$family_stats)) next
+
+  fam <- report_data$family_stats[[code]]
+
+  # Section header
+  cat("\n\n## ", fam$name, " (", code, ")\n\n", sep = "")
+
+  # Family description
+  if (!is.null(report_data$family_descriptions[[code]])) {
+    cat(report_data$family_descriptions[[code]], "\n\n")
+  }
+
+  # Score summary
+  score_label <- if (params$language == "fr") "Score moyen" else "Mean score"
+  cat("**", score_label, ":** ", sprintf("%.1f", fam$mean), " / 100", sep = "")
+  cat(" (Min: ", sprintf("%.1f", fam$min), ", Max: ", sprintf("%.1f", fam$max), ")\n\n", sep = "")
+
+  # Map image if available
+  map_file <- file.path(params$family_maps_dir, paste0("family_", code, "_map.png"))
+  if (file.exists(map_file)) {
+    cat("### ", if (params$language == "fr") "Carte" else "Map", "\n\n", sep = "")
+    cat("![](", map_file, "){width=90%}\n\n", sep = "")
+  }
+
+  # Indicator details table
+  if (!is.null(report_data$indicator_stats[[code]])) {
+    cat("### ", if (params$language == "fr") "Indicateurs" else "Indicators", "\n\n", sep = "")
+
+    ind_data <- report_data$indicator_stats[[code]]
+    if (nrow(ind_data) > 0) {
+      print(knitr::kable(ind_data,
+                         align = c("l", "c", "c", "c"),
+                         booktabs = TRUE))
+      cat("\n\n")
+    }
+  }
+
+  # Family comments (markdown)
+  if (!is.null(report_data$family_comments[[code]]) &&
+      nchar(report_data$family_comments[[code]]) > 0) {
+    cat("### ", if (params$language == "fr") "Analyse" else "Analysis", "\n\n", sep = "")
+    cat(report_data$family_comments[[code]], "\n\n")
+  }
+
+  cat("\n\\newpage\n")
+}
+```
 
 \vfill
 

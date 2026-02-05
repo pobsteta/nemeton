@@ -369,6 +369,31 @@ mod_synthesis_ui <- function(id) {
               label = i18n$t("download_gpkg"),
               icon = shiny::icon("database"),
               class = "btn-primary btn-lg"
+            ),
+            # Cover image upload for PDF
+            htmltools::div(
+              class = "mt-2",
+              htmltools::div(
+                class = "d-flex align-items-center gap-2",
+                htmltools::div(
+                  style = "flex: 1;",
+                  shiny::fileInput(
+                    ns("cover_image"),
+                    label = NULL,
+                    accept = c("image/png", "image/jpeg", "image/jpg"),
+                    buttonLabel = htmltools::tagList(
+                      shiny::icon("image"),
+                      if (i18n$language == "fr") " Image de couverture" else " Cover image"
+                    ),
+                    placeholder = if (i18n$language == "fr") "Aucune image" else "No image"
+                  )
+                ),
+                htmltools::span(
+                  class = "text-muted small",
+                  style = "white-space: nowrap;",
+                  if (i18n$language == "fr") "Taille image Max 5 Mo, PNG/JPG" else "Max 5 MB, PNG/JPG"
+                )
+              )
             )
           ),
 

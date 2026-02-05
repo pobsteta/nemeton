@@ -334,6 +334,15 @@ mod_synthesis_server <- function(id, app_state) {
     )
 
     # ================================================================
+    # REACTIVE: Cover image path
+    # ================================================================
+    cover_image_path <- shiny::reactive({
+      img <- input$cover_image
+      if (is.null(img)) return(NULL)
+      img$datapath
+    })
+
+    # ================================================================
     # DOWNLOAD: PDF report
     # ================================================================
     output$download_pdf <- shiny::downloadHandler(
@@ -377,6 +386,21 @@ mod_synthesis_server <- function(id, app_state) {
             comments <- NULL
           }
 
+          # Get cover image if uploaded
+          cover_img <- cover_image_path()
+
+          # Collect family comments from app_state
+          fam_comments <- app_state$family_comments
+          if (!is.null(fam_comments)) {
+            # Clean empty comments
+            fam_comments <- lapply(fam_comments, function(x) {
+              if (is.null(x) || nchar(trimws(x)) == 0) NULL else x
+            })
+            # Remove NULL entries
+            fam_comments <- fam_comments[!vapply(fam_comments, is.null, logical(1))]
+            if (length(fam_comments) == 0) fam_comments <- NULL
+          }
+
           # Generate PDF
           generate_report_pdf(
             project = project,
@@ -384,6 +408,8 @@ mod_synthesis_server <- function(id, app_state) {
             output_file = file,
             language = app_state$language,
             synthesis_comments = comments,
+            family_comments = fam_comments,
+            cover_image = cover_img,
             use_quarto = TRUE
           )
 

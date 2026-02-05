@@ -2528,17 +2528,6 @@ read_progress_state <- function(project_id) {
 }
 
 
-#' Get computation progress
-#'
-#' @description
-#' Returns the list of already computed indicators for a project.
-#'
-#' @param project_id Character. Project ID.
-#'
-#' @return List with computed indicators and last save time.
-#'
-#' @noRd
-
 #' Clear computation cache for a project
 #'
 #' @description

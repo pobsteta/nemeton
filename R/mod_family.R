@@ -507,6 +507,34 @@ mod_family_server <- function(id, family_code, app_state) {
       )
     })
 
+    # ================================================================
+    # OBSERVER: Save comments to app_state when changed
+    # ================================================================
+    shiny::observeEvent(input$analysis_comments, {
+      # Initialize family_comments list if not exists
+      if (is.null(app_state$family_comments)) {
+        app_state$family_comments <- list()
+      }
+      # Save comment for this family
+      app_state$family_comments[[family_code]] <- input$analysis_comments
+    }, ignoreInit = TRUE)
+
+    # ================================================================
+    # OBSERVER: Load saved comments when module initializes
+    # ================================================================
+    shiny::observe({
+      # Only run once when module is first accessed
+      shiny::isolate({
+        if (!is.null(app_state$family_comments) &&
+            !is.null(app_state$family_comments[[family_code]])) {
+          saved_comment <- app_state$family_comments[[family_code]]
+          if (nchar(saved_comment) > 0) {
+            shiny::updateTextAreaInput(session, "analysis_comments", value = saved_comment)
+          }
+        }
+      })
+    }) |> shiny::bindEvent(app_state$current_project, once = TRUE)
+
   })
 }
 

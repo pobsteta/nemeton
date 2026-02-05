@@ -96,7 +96,10 @@ Suggests:
     golem (>= 0.4.0),
     fireexposuR (>= 0.1.0),
     microclima,
-    SPEI (>= 1.7.0)
+    SPEI (>= 1.7.0),
+    maptiles (>= 0.6.0),
+    png,
+    jpeg
 Remotes:
     rstudio/gradethis,
     r-lidar/lasR

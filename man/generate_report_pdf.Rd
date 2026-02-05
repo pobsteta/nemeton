@@ -10,6 +10,8 @@ generate_report_pdf(
   output_file,
   language = "fr",
   synthesis_comments = NULL,
+  family_comments = NULL,
+  cover_image = NULL,
   use_quarto = TRUE
 )
 }
@@ -22,7 +24,11 @@ generate_report_pdf(
 
 \item{language}{Character. Language code.}
 
-\item{synthesis_comments}{Character. Optional comments.}
+\item{synthesis_comments}{Character. Optional synthesis comments (supports markdown).}
+
+\item{family_comments}{Named list. Optional comments per family (keyed by family code, supports markdown).}
+
+\item{cover_image}{Character. Optional path to cover image for first page.}
 
 \item{use_quarto}{Logical. Whether to try Quarto first. Default TRUE.}
 }
