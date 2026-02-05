@@ -292,27 +292,27 @@
 
 ### 6.1 Service Export
 
-- [ ] T158 [US9] Créer `R/service_export.R` avec fonctions export
-- [ ] T158b [US9] Implémenter `ensure_quarto_installed()` - installation auto Quarto
-- [ ] T159 [US9] Implémenter `generate_pdf_report()` avec Quarto
-- [ ] T160 [US10] Implémenter `export_geopackage()` avec sf::st_write
-- [ ] T161 Créer tests `tests/testthat/test-service_export.R`
+- [x] T158 [US9] Créer `R/service_export.R` avec fonctions export
+- [x] T158b [US9] Implémenter `ensure_quarto_installed()` - installation auto Quarto
+- [x] T159 [US9] Implémenter `generate_pdf_report()` avec Quarto
+- [x] T160 [US10] Implémenter `export_geopackage()` avec sf::st_write
+- [x] T161 Créer tests `tests/testthat/test-service_export.R`
 
 ### 6.2 Template Quarto
 
-- [ ] T162 [US9] Créer `inst/quarto/report_template.qmd`
-- [ ] T163 [US9] Implémenter section métadonnées projet
-- [ ] T164 [US9] Implémenter section synthèse (radar, tableau)
-- [ ] T165 [US9] Implémenter 12 sections familles d'indicateurs
-- [ ] T166 [US9] Configurer cartes statiques (non interactives)
-- [ ] T167 [US9] Configurer graphiques vectoriels qualité impression
-- [ ] T168 [US12] Ajouter support multilingue (fr/en)
+- [x] T162 [US9] Créer `inst/quarto/report_template.qmd`
+- [x] T163 [US9] Implémenter section métadonnées projet
+- [x] T164 [US9] Implémenter section synthèse (radar, tableau)
+- [x] T165 [US9] Implémenter 12 sections familles d'indicateurs — via family_stats loop
+- [x] T166 [US9] Configurer cartes statiques (non interactives) — radar PNG
+- [x] T167 [US9] Configurer graphiques vectoriels qualité impression
+- [x] T168 [US12] Ajouter support multilingue (fr/en)
 
 ### 6.3 Intégration UI Export
 
-- [ ] T169 [US9] Ajouter indicateur progression génération PDF
-- [ ] T170 [US9] Implémenter téléchargement automatique PDF
-- [ ] T171 [US10] Implémenter téléchargement GeoPackage
+- [x] T169 [US9] Ajouter indicateur progression génération PDF — notification spinner
+- [x] T170 [US9] Implémenter téléchargement automatique PDF — downloadHandler
+- [x] T171 [US10] Implémenter téléchargement GeoPackage — downloadHandler
 
 ---
 
@@ -426,13 +426,13 @@ graph TD
 | 2. Sélection Parcelles | T022-T053 (32) | 30 | 2 | US1, US2, US3 |
 | 3. Gestion Projets + Corruption | T054-T073 (24) | 24 | 0 | US4, US11, US11b |
 | 4. Calculs Async + Cache Préventif | T074-T090 (22) | 16 | 6 | US5, US6 |
-| 5. Analyses Familles | T091-T157 (67) | 0 | 67 | US7, US8 |
-| 6. Exports + Quarto Auto | T158-T171 (15) | 0 | 15 | US9, US10 |
+| 5. Analyses Familles | T091-T157 (67) | 67 | 0 | US7, US8 |
+| 6. Exports + Quarto Auto | T158-T171 (15) | 15 | 0 | US9, US10 |
 | 7. Tour et Aide | T172-T182 (11) | 10 | 1 | US13, US14 |
 | 8. Responsive | T183-T190 (8) | 4 | 4 | US15 |
 | 9. Finalisation | T191-T202 (12) | 4 | 8 | - |
 
-**Total : 217 tâches — ~113 faites (52%), ~104 restantes (48%)**
+**Total : 217 tâches — ~195 faites (90%), ~22 restantes (10%)**
 
 ## Nouvelles fonctionnalités ajoutées (Clarifications)
 
