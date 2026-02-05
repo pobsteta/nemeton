@@ -205,15 +205,15 @@ test_that("list_recent_projects returns projects sorted by date", {
   with_mocked_bindings(
     get_app_options = function() list(project_dir = temp_dir),
     {
-      # Create projects with slight delay
+      # Create projects with delay (1 second to ensure different timestamps)
       p1 <- nemeton:::create_project(name = "First")
-      Sys.sleep(0.1)
+      Sys.sleep(1.1)
       p2 <- nemeton:::create_project(name = "Second")
 
       projects <- nemeton:::list_recent_projects()
 
       expect_equal(nrow(projects), 2)
-      # Most recent first
+      # Most recent first (sorted by updated_at descending)
       expect_equal(projects$name[1], "Second")
       expect_equal(projects$name[2], "First")
     }

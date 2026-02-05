@@ -11,7 +11,8 @@ test_that("mod_family_ui returns valid Shiny UI for each family", {
     {
       for (code in nemeton:::get_family_codes()) {
         ui <- nemeton:::mod_family_ui(paste0("family_", code), code)
-        expect_s3_class(ui, "shiny.tag")
+        # UI returns tagList which is shiny.tag.list
+        expect_true(inherits(ui, "shiny.tag.list") || inherits(ui, "shiny.tag"))
       }
     }
   )
@@ -28,15 +29,14 @@ test_that("mod_family_ui contains expected output elements", {
       ui <- nemeton:::mod_family_ui("family_C", "C")
       ui_html <- as.character(ui)
 
-      # Should contain map/plot outputs
-      expect_true(grepl("family_C-map1", ui_html))
-      expect_true(grepl("family_C-plot2_ui", ui_html))
+      # Should contain dynamic map output (rendered via renderUI)
+      expect_true(grepl("family_C-maps_row", ui_html))
 
       # Should contain table output
       expect_true(grepl("family_C-indicator_table", ui_html))
 
-      # Should contain missing warning output
-      expect_true(grepl("family_C-missing_warning", ui_html))
+      # Should contain statistics output
+      expect_true(grepl("family_C-analysis_stats", ui_html))
     }
   )
 })
@@ -77,8 +77,8 @@ test_that("clean_indicator_label strips _norm suffix", {
     {
       i18n <- nemeton:::get_i18n("fr")
       label <- nemeton:::clean_indicator_label("C1_norm", i18n)
-      # Should match indicator_C1 translation
-      expect_equal(label, "Biomasse carbone (tC/ha)")
+      # Should match indicator_C1 translation with code prefix
+      expect_equal(label, "C1 - Biomasse carbone (tC/ha)")
     }
   )
 })
@@ -100,10 +100,10 @@ test_that("clean_indicator_label resolves long-form column names", {
     {
       i18n <- nemeton:::get_i18n("fr")
       label <- nemeton:::clean_indicator_label("carbon_biomass", i18n)
-      expect_equal(label, "Biomasse carbone (tC/ha)")
+      expect_equal(label, "C1 - Biomasse carbone (tC/ha)")
 
       label_en <- nemeton:::clean_indicator_label("water_twi", nemeton:::get_i18n("en"))
-      expect_equal(label_en, "Topographic Wetness Index")
+      expect_equal(label_en, "W3 - Topographic Wetness Index")
     }
   )
 })
