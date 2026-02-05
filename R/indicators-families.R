@@ -346,7 +346,7 @@ indicator_carbon_ndvi <- function(units,
 #' @param watercourse_layer Character. Name of watercourse layer in layers object
 #' @param buffer Numeric. Buffer distance (meters) for proximity analysis. Default 0.
 #' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
-#' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 30.
+#' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
 #'
 #' @return Numeric vector of network density (m/ha)
 #'
