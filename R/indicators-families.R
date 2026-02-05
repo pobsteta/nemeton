@@ -337,12 +337,16 @@ indicator_carbon_ndvi <- function(units,
 #' Hydrographic Network Density (W1)
 #'
 #' Calculates stream/river network length density within or near forest parcels.
-#' Higher values indicate greater hydrological connectivity.
+#' Includes a proximity bonus for parcels near watercourses (within 500m)
+#' that are not directly crossed, reflecting the hydrological influence of
+#' nearby streams on water table and microclimate.
 #'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing watercourse vector layer
 #' @param watercourse_layer Character. Name of watercourse layer in layers object
 #' @param buffer Numeric. Buffer distance (meters) for proximity analysis. Default 0.
+#' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
+#' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 30.
 #'
 #' @return Numeric vector of network density (m/ha)
 #'
@@ -355,7 +359,9 @@ indicator_carbon_ndvi <- function(units,
 indicator_water_network <- function(units,
                                     layers,
                                     watercourse_layer = "water_network",
-                                    buffer = 0) {
+                                    buffer = 0,
+                                    proximity_m = 500,
+                                    proximity_ref = 50) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -398,11 +404,27 @@ indicator_water_network <- function(units,
     }
 
     # Calculate unit area (in ha)
-    area_m2 <- as.numeric(sf::st_area(unit_geom))
+    area_m2 <- as.numeric(sf::st_area(units[i, ]))
     area_ha <- area_m2 / 10000
 
-    # Density = m / ha (consistent with tuto 03)
-    density[i] <- total_length_m / area_ha
+    # Direct density = m / ha (consistent with tuto 03)
+    direct_density <- total_length_m / area_ha
+
+    # Proximity bonus: parcels near watercourses benefit from water table influence
+    # Decreases linearly from proximity_ref at 0m to 0 at proximity_m
+    if (total_length_m == 0 && proximity_m > 0) {
+      min_dist <- as.numeric(min(sf::st_distance(units[i, ], watercourses)))
+      if (min_dist < proximity_m) {
+        proximity_bonus <- (1 - min_dist / proximity_m) * proximity_ref
+      } else {
+        proximity_bonus <- 0
+      }
+    } else {
+      # Parcel already crossed by watercourse: full proximity bonus
+      proximity_bonus <- proximity_ref
+    }
+
+    density[i] <- direct_density + proximity_bonus
   }
 
   # Log calculation

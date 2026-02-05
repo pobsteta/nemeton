@@ -1986,10 +1986,12 @@ normalize_indicator <- function(indicator, values) {
     NULL
   )
 
-  # Special handling: TWI rescale [5, 15] → [0, 100]
+  # Special handling: TWI rescale [2.5, 4.5] → [0, 100]
+  # Calibrated on typical temperate forest TWI range (sandy/draining substrates ~3,
+  # clay/alluvial ~4-5). Tighter window gives meaningful differentiation.
   if (indicator == "water_twi") {
     # Higher TWI = wetter = more water service
-    return(pmin(100, pmax(0, (values - 5) / 10 * 100)))
+    return(pmin(100, pmax(0, (values - 2.5) / 2 * 100)))
   }
 
   # Special handling: NDVI scale 0-1 → 0-100
