@@ -573,42 +573,72 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
         n_cols <- length(header_cells)
 
         if (n_cols > 0) {
-          # Calculate column layout
-          table_width <- 0.85  # available width
-          col_width <- table_width / n_cols
-          col_starts <- x + (seq_len(n_cols) - 1) * col_width
+          # Calculate column layout: estimate widths based on content
+          table_width <- 0.90  # available width
+          all_cells <- lapply(data_lines, parse_row)
+          # Compute max character count per column
+          max_chars <- rep(1L, n_cols)
+          for (row_cells in all_cells) {
+            for (ci in seq_along(row_cells)) {
+              if (ci <= n_cols) {
+                max_chars[ci] <- max(max_chars[ci], nchar(row_cells[ci]))
+              }
+            }
+          }
+          # Proportional widths with a minimum
+          col_widths <- pmax(max_chars, 5)
+          col_widths <- col_widths / sum(col_widths) * table_width
+          col_starts <- x + c(0, cumsum(col_widths[-n_cols]))
+          # Estimate wrap width (chars) per column
+          avg_char_width <- graphics::strwidth("M", cex = cex)
+          col_wrap <- pmax(floor(col_widths / avg_char_width), 8)
+
+          # Helper: render a table row, wrapping cells, returns new y
+          render_table_row <- function(cells, y, font_val) {
+            # Wrap each cell and find max lines needed
+            wrapped_cells <- vector("list", n_cols)
+            max_lines <- 1L
+            for (ci in seq_len(n_cols)) {
+              cell_text <- if (ci <= length(cells)) {
+                strip_markdown_for_display(cells[ci])
+              } else ""
+              wrapped <- strwrap(cell_text, width = col_wrap[ci])
+              if (length(wrapped) == 0) wrapped <- ""
+              wrapped_cells[[ci]] <- wrapped
+              max_lines <- max(max_lines, length(wrapped))
+            }
+            # Render line by line
+            for (li in seq_len(max_lines)) {
+              if (y < 0.05) {
+                plot.new()
+                y <- 0.92
+              }
+              for (ci in seq_len(n_cols)) {
+                txt <- if (li <= length(wrapped_cells[[ci]])) wrapped_cells[[ci]][li] else ""
+                graphics::text(col_starts[ci], y, txt,
+                               cex = cex, col = col, adj = c(0, 0.5), font = font_val)
+              }
+              y <- y - line_height
+            }
+            y
+          }
 
           # Render header row (bold)
           if (y < 0.05) {
             plot.new()
             y <- 0.92
           }
-          for (ci in seq_along(header_cells)) {
-            cell_text <- strip_markdown_for_display(header_cells[ci])
-            graphics::text(col_starts[ci], y, cell_text,
-                           cex = cex, col = col, adj = c(0, 0.5), font = 2)
-          }
+          y <- render_table_row(header_cells, y, font_val = 2)
           # Draw line under header
-          y <- y - line_height * 0.6
+          y <- y + line_height * 0.4
           graphics::segments(x, y, x + table_width, y, col = "gray60", lwd = 0.5)
           y <- y - line_height * 0.4
 
           # Render body rows
           if (length(data_lines) > 1) {
             for (row_line in data_lines[-1]) {
-              if (y < 0.05) {
-                plot.new()
-                y <- 0.92
-              }
               row_cells <- parse_row(row_line)
-              for (ci in seq_along(row_cells)) {
-                if (ci <= n_cols) {
-                  cell_text <- strip_markdown_for_display(row_cells[ci])
-                  graphics::text(col_starts[ci], y, cell_text,
-                                 cex = cex, col = col, adj = c(0, 0.5), font = 1)
-                }
-              }
-              y <- y - line_height
+              y <- render_table_row(row_cells, y, font_val = 1)
             }
           }
 
@@ -697,10 +727,16 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
 
     # Regular paragraph line - wrap and render with formatting
     wrapped <- strwrap(line, width = width)
-    for (wline in wrapped) {
+    n_wrapped <- length(wrapped)
+    for (wi in seq_along(wrapped)) {
       if (y < 0.05) {
         plot.new()
         y <- 0.92
+      }
+      wline <- wrapped[wi]
+      # Justify all lines except the last line of the paragraph
+      if (wi < n_wrapped) {
+        wline <- justify_text_line(wline, width)
       }
       render_formatted_line(wline, x, y, cex, col, width)
       y <- y - line_height
@@ -723,6 +759,35 @@ text <- gsub("(?<!\\*)\\*([^*]+)\\*(?!\\*)", "\\1", text, perl = TRUE)  # Italic
   text <- gsub("`([^`]+)`", "\\1", text)    # Inline code
   text <- gsub("\\[([^]]+)\\]\\([^)]+\\)", "\\1", text)  # Links
   text
+}
+
+
+#' Justify a text line by distributing extra spaces between words
+#' @param line Character. The line to justify.
+#' @param target_width Integer. Target character width.
+#' @return Character. Justified line with extra spaces.
+#' @noRd
+justify_text_line <- function(line, target_width) {
+  words <- strsplit(line, " ")[[1]]
+  words <- words[nzchar(words)]
+  if (length(words) <= 1) return(line)
+
+  current_len <- sum(nchar(words)) + length(words) - 1
+  deficit <- target_width - current_len
+  if (deficit <= 0) return(line)
+
+  # Distribute extra spaces evenly between word gaps
+  n_gaps <- length(words) - 1
+  base_extra <- deficit %/% n_gaps
+  remainder <- deficit %% n_gaps
+
+  parts <- character(0)
+  for (gi in seq_len(n_gaps)) {
+    extra <- base_extra + if (gi <= remainder) 1 else 0
+    parts <- c(parts, words[gi], strrep(" ", 1 + extra))
+  }
+  parts <- c(parts, words[length(words)])
+  paste0(parts, collapse = "")
 }
 
 
@@ -813,8 +878,13 @@ render_formatted_line <- function(line, x, y, cex, col, width) {
       # Draw with monospace-like appearance (gray background simulation)
       graphics::text(current_x, y, content, cex = cex * 0.9, col = "#c7254e", adj = c(0, 0.5),
                      family = "mono")
-      current_x <- current_x + graphics::strwidth(content, cex = cex * 0.9)
+      current_x <- current_x + graphics::strwidth(content, cex = cex * 0.9, family = "mono")
       remaining <- sub("^`[^`]+`", "", remaining)
+      # Add explicit space after code if next char is not whitespace
+      if (nchar(remaining) > 0 && !grepl("^[[:space:]]", remaining)) {
+        graphics::text(current_x, y, " ", cex = cex, col = col, adj = c(0, 0.5), font = 1)
+        current_x <- current_x + graphics::strwidth(" ", cex = cex)
+      }
 
     } else if (marker_type == "link" && grepl("^\\[([^]]+)\\]\\(([^)]+)\\)", remaining)) {
       link_text <- gsub("^\\[([^]]+)\\]\\(([^)]+)\\).*", "\\1", remaining)
