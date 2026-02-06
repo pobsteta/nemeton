@@ -125,6 +125,7 @@ TRANSLATIONS <- list(
   ),
 
   # Parcels
+  parcel = list(fr = "parcelle", en = "parcel"),
   parcels = list(fr = "parcelles", en = "parcels"),
   created = list(fr = "Cr\u00e9\u00e9", en = "Created"),
   parcels_loaded = list(fr = "parcelles charg\u00e9es", en = "parcels loaded"),

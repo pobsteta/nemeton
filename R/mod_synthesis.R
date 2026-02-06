@@ -112,7 +112,8 @@ mod_synthesis_server <- function(id, app_state) {
         ),
         shiny::p(
           class = "small",
-          sprintf("%d %s", nb_parcels, i18n$t("parcels"))
+          sprintf("%d %s", nb_parcels,
+                  if (nb_parcels <= 1) i18n$t("parcel") else i18n$t("parcels"))
         ),
         shiny::tags$span(
           class = paste0("badge bg-", if (meta$status == "completed") "success" else "secondary"),
