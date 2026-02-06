@@ -365,13 +365,13 @@ mod_synthesis_server <- function(id, app_state) {
       expert <- input$expert_profile %||% "generalist"
       system_prompt <- build_system_prompt(language, expert = expert)
 
-      synthesis_response <- NULL
-      tryCatch({
+      synthesis_response <- tryCatch({
         chat <- create_llm_chat(system_prompt)
-        synthesis_response <- chat$chat(prompt, echo = FALSE)
+        resp <- chat$chat(prompt, echo = FALSE)
 
-        shiny::updateTextAreaInput(session, "synthesis_comments", value = synthesis_response)
+        shiny::updateTextAreaInput(session, "synthesis_comments", value = resp)
         shiny::removeNotification(notif_id)
+        resp
       }, error = function(e) {
         shiny::removeNotification(notif_id)
         shiny::showNotification(
@@ -379,6 +379,7 @@ mod_synthesis_server <- function(id, app_state) {
           type = "error",
           duration = 8
         )
+        NULL
       })
 
       # Fill all family comments if switch is checked
@@ -417,14 +418,17 @@ mod_synthesis_server <- function(id, app_state) {
 
             # Generate LLM comment
             fam_prompt <- build_analysis_prompt(fam_config, fam_ind_data, language)
-            tryCatch({
+            fam_response <- tryCatch({
               fam_chat <- create_llm_chat(system_prompt)
-              fam_response <- fam_chat$chat(fam_prompt, echo = FALSE)
-              family_comments_local[[fc]] <- fam_response
-              app_state$family_comments[[fc]] <- fam_response
+              fam_chat$chat(fam_prompt, echo = FALSE)
             }, error = function(e) {
               cli::cli_warn("Failed to generate comment for family {fc}: {conditionMessage(e)}")
+              NULL
             })
+            if (!is.null(fam_response)) {
+              family_comments_local[[fc]] <- fam_response
+              app_state$family_comments[[fc]] <- fam_response
+            }
           }
           shiny::removeNotification(notif_id)
           # Signal family modules to reload comments
