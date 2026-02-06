@@ -509,6 +509,12 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
   # Clean Unicode
   text <- clean_text_for_pdf(text)
 
+  # Pre-process: add space after closing bold/italic markers if followed by non-space
+  # This fixes text like "**bold**text" -> "**bold** text"
+  # Also handles "**bold**:text" -> "**bold**: text" and "**bold:text" stays as-is
+  text <- gsub("\\*\\*([^*]+)\\*\\*([^[:space:]])", "**\\1** \\2", text)
+  text <- gsub("(?<!\\*)\\*([^*]+)\\*([^*[:space:]])", "*\\1* \\2", text, perl = TRUE)
+
   # Split into lines first
   lines <- strsplit(text, "\n")[[1]]
 
@@ -687,14 +693,24 @@ render_formatted_line <- function(line, x, y, cex, col, width) {
     if (marker_type == "bold" && grepl("^\\*\\*([^*]+)\\*\\*", remaining)) {
       content <- gsub("^\\*\\*([^*]+)\\*\\*.*", "\\1", remaining)
       graphics::text(current_x, y, content, cex = cex, col = col, adj = c(0, 0.5), font = 2)
-      current_x <- current_x + graphics::strwidth(content, cex = cex)
+      current_x <- current_x + graphics::strwidth(content, cex = cex, font = 2)
       remaining <- sub("^\\*\\*[^*]+\\*\\*", "", remaining)
+      # Always add explicit space after bold if next char is not whitespace
+      if (nchar(remaining) > 0 && !grepl("^[[:space:]]", remaining)) {
+        graphics::text(current_x, y, " ", cex = cex, col = col, adj = c(0, 0.5), font = 1)
+        current_x <- current_x + graphics::strwidth(" ", cex = cex)
+      }
 
     } else if (marker_type == "italic" && grepl("^\\*([^*]+)\\*", remaining)) {
       content <- gsub("^\\*([^*]+)\\*.*", "\\1", remaining)
       graphics::text(current_x, y, content, cex = cex, col = col, adj = c(0, 0.5), font = 3)
-      current_x <- current_x + graphics::strwidth(content, cex = cex)
+      current_x <- current_x + graphics::strwidth(content, cex = cex, font = 3)
       remaining <- sub("^\\*[^*]+\\*", "", remaining)
+      # Always add explicit space after italic if next char is not whitespace
+      if (nchar(remaining) > 0 && !grepl("^[[:space:]]", remaining)) {
+        graphics::text(current_x, y, " ", cex = cex, col = col, adj = c(0, 0.5), font = 1)
+        current_x <- current_x + graphics::strwidth(" ", cex = cex)
+      }
 
     } else if (marker_type == "strike" && grepl("^~~([^~]+)~~", remaining)) {
       content <- gsub("^~~([^~]+)~~.*", "\\1", remaining)
