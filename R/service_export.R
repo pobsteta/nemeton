@@ -509,6 +509,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
   # Clean Unicode
   text <- clean_text_for_pdf(text)
 
+  # Clean HTML tags that LLMs sometimes generate
+  text <- gsub("<br\\s*/?>", "\n", text, ignore.case = TRUE)
+  text <- gsub("-->", " ", text)
+
   # Pre-process: add space after closing bold/italic markers if followed by non-space
   # This fixes text like "**bold**text" -> "**bold** text"
   # Also handles "**bold**:text" -> "**bold**: text" and "**bold:text" stays as-is
@@ -562,6 +566,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
       if (length(data_lines) > 0) {
         # Parse cells from each line
         parse_row <- function(row_line) {
+          # Clean HTML tags: <br>, <br/>, <br />, and --> arrows
+          row_line <- gsub("<br\\s*/?>", " ", row_line, ignore.case = TRUE)
+          row_line <- gsub("-->", " ", row_line)
+          row_line <- gsub("->", " ", row_line)
           cells <- strsplit(row_line, "\\|")[[1]]
           cells <- trimws(cells)
           # Remove empty first/last elements from leading/trailing |
@@ -668,8 +676,38 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
           }
           col_wrap <- vapply(seq_len(n_cols), find_wrap_width, integer(1))
 
-          # Helper: render a table row, wrapping cells, returns new y
-          render_table_row <- function(cells, y, font_val) {
+          # Helper: render table header row with underline, returns new y
+          table_end <- col_starts[n_cols] + col_widths[n_cols]
+          render_table_header <- function(y) {
+            wrapped_cells <- vector("list", n_cols)
+            max_lines <- 1L
+            for (ci in seq_len(n_cols)) {
+              cell_text <- if (ci <= length(header_cells)) {
+                strip_markdown_for_display(header_cells[ci])
+              } else ""
+              wrapped <- strwrap(cell_text, width = col_wrap[ci])
+              if (length(wrapped) == 0) wrapped <- ""
+              wrapped_cells[[ci]] <- wrapped
+              max_lines <- max(max_lines, length(wrapped))
+            }
+            for (li in seq_len(max_lines)) {
+              for (ci in seq_len(n_cols)) {
+                txt <- if (li <= length(wrapped_cells[[ci]])) wrapped_cells[[ci]][li] else ""
+                graphics::text(col_starts[ci], y, txt,
+                               cex = cex, col = col, adj = c(0, 0.5), font = 2)
+              }
+              y <- y - line_height
+            }
+            # Draw line under header
+            y <- y + line_height * 0.4
+            graphics::segments(x, y, table_end, y, col = "gray60", lwd = 0.5)
+            y <- y - line_height * 0.4
+            y
+          }
+
+          # Helper: render a body table row, returns new y
+          # Repeats header if a page break occurs
+          render_table_row <- function(cells, y) {
             # Wrap each cell and find max lines needed
             wrapped_cells <- vector("list", n_cols)
             max_lines <- 1L
@@ -687,11 +725,13 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
               if (y < 0.05) {
                 plot.new()
                 y <- 0.92
+                # Repeat header on new page
+                y <- render_table_header(y)
               }
               for (ci in seq_len(n_cols)) {
                 txt <- if (li <= length(wrapped_cells[[ci]])) wrapped_cells[[ci]][li] else ""
                 graphics::text(col_starts[ci], y, txt,
-                               cex = cex, col = col, adj = c(0, 0.5), font = font_val)
+                               cex = cex, col = col, adj = c(0, 0.5), font = 1)
               }
               y <- y - line_height
             }
@@ -703,18 +743,13 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
             plot.new()
             y <- 0.92
           }
-          y <- render_table_row(header_cells, y, font_val = 2)
-          # Draw line under header
-          table_end <- col_starts[n_cols] + col_widths[n_cols]
-          y <- y + line_height * 0.4
-          graphics::segments(x, y, table_end, y, col = "gray60", lwd = 0.5)
-          y <- y - line_height * 0.4
+          y <- render_table_header(y)
 
           # Render body rows
           if (length(data_lines) > 1) {
             for (row_line in data_lines[-1]) {
               row_cells <- parse_row(row_line)
-              y <- render_table_row(row_cells, y, font_val = 1)
+              y <- render_table_row(row_cells, y)
             }
           }
 
