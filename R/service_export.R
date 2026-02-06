@@ -578,32 +578,49 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
           col_gap <- 0.02      # gap between columns
           all_cells <- lapply(data_lines, parse_row)
 
-          # Compute max rendered width per column (using strwidth)
-          max_widths <- rep(0, n_cols)
+          # Compute minimum width per column = widest single word (bold)
+          # This ensures no word is forced to overflow its column
+          min_widths <- rep(0, n_cols)
           for (row_cells in all_cells) {
             for (ci in seq_along(row_cells)) {
               if (ci <= n_cols) {
                 cell_text <- strip_markdown_for_display(row_cells[ci])
-                w <- graphics::strwidth(cell_text, cex = cex, font = 2)
-                max_widths[ci] <- max(max_widths[ci], w)
+                words <- strsplit(cell_text, "\\s+")[[1]]
+                for (w in words) {
+                  ww <- graphics::strwidth(w, cex = cex, font = 2)
+                  min_widths[ci] <- max(min_widths[ci], ww)
+                }
               }
             }
           }
+          # Add small padding to minimum widths
+          min_widths <- min_widths + 0.005
 
           # Available width after gaps
           total_gaps <- col_gap * (n_cols - 1)
           usable_width <- table_width - total_gaps
 
-          # If content fits naturally, use natural widths; otherwise scale down
-          total_content <- sum(max_widths)
-          if (total_content <= usable_width) {
-            col_widths <- max_widths
-          } else {
-            # Proportional scaling to fit
-            col_widths <- max_widths / total_content * usable_width
+          # Start with minimum widths, distribute remaining space proportionally
+          # based on average content length (character count)
+          col_widths <- min_widths
+          remaining <- usable_width - sum(min_widths)
+          if (remaining > 0) {
+            # Weight by average character count per column
+            avg_chars <- rep(1, n_cols)
+            for (row_cells in all_cells) {
+              for (ci in seq_along(row_cells)) {
+                if (ci <= n_cols) {
+                  avg_chars[ci] <- max(avg_chars[ci], nchar(row_cells[ci]))
+                }
+              }
+            }
+            extra <- avg_chars / sum(avg_chars) * remaining
+            col_widths <- col_widths + extra
+          } else if (remaining < 0) {
+            # Proportional shrink but keep minimum viable
+            col_widths <- min_widths / sum(min_widths) * usable_width
           }
-          # Ensure minimum column width
-          col_widths <- pmax(col_widths, 0.06)
+          col_widths <- pmax(col_widths, 0.05)
 
           col_starts <- numeric(n_cols)
           col_starts[1] <- x
@@ -613,9 +630,43 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
             }
           }
 
-          # Estimate wrap width (chars) per column using average char width
-          avg_char_width <- graphics::strwidth("n", cex = cex)
-          col_wrap <- pmax(floor(col_widths / avg_char_width), 6)
+          # Helper: find wrap width (chars) that fits column using strwidth
+          find_wrap_width <- function(col_idx) {
+            target_w <- col_widths[col_idx]
+            # Binary search for the right character count
+            lo <- 4L
+            hi <- 120L
+            best <- lo
+            # Gather all cell texts for this column
+            texts <- character(0)
+            for (row_cells in all_cells) {
+              if (col_idx <= length(row_cells)) {
+                texts <- c(texts, strip_markdown_for_display(row_cells[col_idx]))
+              }
+            }
+            while (lo <= hi) {
+              mid <- (lo + hi) %/% 2L
+              ok <- TRUE
+              for (txt in texts) {
+                wrapped <- strwrap(txt, width = mid)
+                for (wl in wrapped) {
+                  if (graphics::strwidth(wl, cex = cex, font = 2) > target_w) {
+                    ok <- FALSE
+                    break
+                  }
+                }
+                if (!ok) break
+              }
+              if (ok) {
+                best <- mid
+                lo <- mid + 1L
+              } else {
+                hi <- mid - 1L
+              }
+            }
+            best
+          }
+          col_wrap <- vapply(seq_len(n_cols), find_wrap_width, integer(1))
 
           # Helper: render a table row, wrapping cells, returns new y
           render_table_row <- function(cells, y, font_val) {
