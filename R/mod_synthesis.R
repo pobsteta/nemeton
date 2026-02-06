@@ -302,11 +302,105 @@ mod_synthesis_server <- function(id, app_state) {
         )
       })
 
+      # Fill all family comments if switch is checked
+      if (isTRUE(input$fill_all_comments)) {
+        all_indicators <- project_indicators()
+        if (!is.null(all_indicators)) {
+          if (is.null(app_state$family_comments)) app_state$family_comments <- list()
+          family_codes <- get_family_codes()
+
+          for (i in seq_along(family_codes)) {
+            fc <- family_codes[i]
+            fam_config <- get_family_config(fc)
+
+            # Notification with progress
+            shiny::removeNotification(notif_id)
+            fam_name <- if (identical(app_state$language, "fr")) fam_config$name_fr else fam_config$name_en
+            notif_id <- shiny::showNotification(
+              htmltools::div(shiny::icon("spinner", class = "fa-spin me-2"),
+                             sprintf("%s (%d/%d)...", fam_name, i, length(family_codes))),
+              type = "message", duration = NULL)
+
+            # Extract family indicator data (same logic as mod_family.R)
+            all_cols <- names(all_indicators)
+            candidates <- c(fam_config$indicators, fam_config$column_names)
+            matched <- character(0)
+            for (col in candidates) {
+              norm_col <- paste0(col, "_norm")
+              if (norm_col %in% all_cols) matched <- c(matched, norm_col)
+              else if (col %in% all_cols) matched <- c(matched, col)
+            }
+            matched <- unique(matched)
+            if (length(matched) == 0) next
+
+            id_col <- intersect(c("nemeton_id", "id", "geo_parcelle"), all_cols)
+            fam_ind_data <- all_indicators[, c(id_col, matched), drop = FALSE]
+
+            # Generate LLM comment
+            fam_prompt <- build_analysis_prompt(fam_config, fam_ind_data, language)
+            tryCatch({
+              fam_chat <- create_llm_chat(system_prompt)
+              fam_response <- fam_chat$chat(fam_prompt, echo = FALSE)
+              app_state$family_comments[[fc]] <- fam_response
+            }, error = function(e) {
+              cli::cli_warn("Failed to generate comment for family {fc}: {conditionMessage(e)}")
+            })
+          }
+          shiny::removeNotification(notif_id)
+          # Signal family modules to reload comments
+          app_state$refresh_family_comments <- Sys.time()
+        }
+      }
+
+      # Save comments to disk
+      project_id <- app_state$project_id
+      if (!is.null(project_id)) {
+        save_comments(project_id,
+                      synthesis = input$synthesis_comments,
+                      families = app_state$family_comments)
+      }
+
       # Restore button
       shiny::updateActionButton(session, "ai_generate",
                                 label = i18n$t("ai_generate"),
                                 icon = shiny::icon("robot"))
     })
+
+    # ================================================================
+    # OBSERVER: Save synthesis comment on manual edit (debounced)
+    # ================================================================
+    shiny::observeEvent(input$synthesis_comments, {
+      project_id <- app_state$project_id
+      if (!is.null(project_id)) {
+        save_comments(project_id,
+                      synthesis = input$synthesis_comments,
+                      families = app_state$family_comments)
+      }
+    }, ignoreInit = TRUE)
+
+    # ================================================================
+    # OBSERVER: Restore comments when project loads
+    # ================================================================
+    shiny::observeEvent(app_state$current_project, {
+      project <- app_state$current_project
+      if (!is.null(project$comments)) {
+        if (!is.null(project$comments$synthesis) &&
+            nchar(project$comments$synthesis) > 0) {
+          shiny::updateTextAreaInput(session, "synthesis_comments",
+                                     value = project$comments$synthesis)
+        }
+        if (is.list(project$comments$families)) {
+          app_state$family_comments <- project$comments$families
+        }
+      }
+    }, ignoreInit = TRUE)
+
+    # ================================================================
+    # OBSERVER: Clear comments when commune/department changes
+    # ================================================================
+    shiny::observeEvent(app_state$clear_all_comments, {
+      shiny::updateTextAreaInput(session, "synthesis_comments", value = "")
+    }, ignoreInit = TRUE)
 
     # ================================================================
     # DOWNLOAD: GeoPackage export
