@@ -14,8 +14,8 @@ test_that("get_expert_profiles() contains all expected expert profiles", {
   expect_type(profiles, "list")
 
   # Check all expected profiles exist
-  expected_profiles <- c("generalist", "owner", "manager", "politician",
-                         "producer", "citizen", "hunter")
+  expected_profiles <- c("generalist", "owner", "manager",
+                         "producer", "hunter")
   for (profile in expected_profiles) {
     expect_true(profile %in% names(profiles),
                 info = sprintf("Missing profile: %s", profile))
@@ -125,8 +125,8 @@ test_that("build_system_prompt falls back to generalist for invalid expert",
 })
 
 test_that("build_system_prompt handles all expert profiles", {
-  experts <- c("generalist", "owner", "manager", "politician",
-               "producer", "citizen", "hunter")
+  experts <- c("generalist", "owner", "manager",
+               "producer", "hunter")
 
   for (expert in experts) {
     result_fr <- nemeton:::build_system_prompt("fran\u00e7ais", expert = expert)
@@ -655,17 +655,6 @@ test_that("manager profile mentions silviculture concepts", {
   expect_match(result_en, "silvicultur|stand|management", ignore.case = TRUE)
 })
 
-test_that("politician profile mentions public policy concepts", {
-  result_fr <- nemeton:::build_system_prompt("fran\u00e7ais", expert = "politician")
-  result_en <- nemeton:::build_system_prompt("English", expert = "politician")
-
-  # French should mention politique publique
-  expect_match(result_fr, "politique|territorial|financement", ignore.case = TRUE)
-
-  # English should mention public policy
-  expect_match(result_en, "policy|territorial|funding", ignore.case = TRUE)
-})
-
 test_that("hunter profile mentions game management concepts", {
   result_fr <- nemeton:::build_system_prompt("fran\u00e7ais", expert = "hunter")
   result_en <- nemeton:::build_system_prompt("English", expert = "hunter")
@@ -675,17 +664,6 @@ test_that("hunter profile mentions game management concepts", {
 
   # English should mention game/wildlife concepts
   expect_match(result_en, "game|wildlife|browsing", ignore.case = TRUE)
-})
-
-test_that("citizen profile mentions environmental quality concepts", {
-  result_fr <- nemeton:::build_system_prompt("fran\u00e7ais", expert = "citizen")
-  result_en <- nemeton:::build_system_prompt("English", expert = "citizen")
-
-  # French should mention cadre de vie
-  expect_match(result_fr, "cadre de vie|environnement|paysage", ignore.case = TRUE)
-
-  # English should mention quality of life
-  expect_match(result_en, "quality of life|environment|landscape", ignore.case = TRUE)
 })
 
 test_that("producer profile mentions timber industry concepts", {

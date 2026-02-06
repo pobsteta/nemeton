@@ -12,7 +12,7 @@ NULL
 #'
 #' @description
 #' Reads `.yml` files from `inst/experts/` (package profiles) and from
-#' the user directory (default `~/.nemeton/experts/`). User profiles
+#' the user directory (default `~/.local/share/nemeton/experts/`). User profiles
 #' override package profiles when filenames match.
 #'
 #' @return Named list of expert profiles, each with `label` and `prompt` sublists.
@@ -34,7 +34,21 @@ load_expert_profiles <- function() {
   }
 
   # 2. User profiles (override package ones)
-  user_dir <- getOption("nemeton.experts_dir", path.expand("~/.nemeton/experts"))
+  default_base <- if (requireNamespace("rappdirs", quietly = TRUE)) {
+    rappdirs::user_data_dir("nemeton", "nemeton")
+  } else {
+    file.path(Sys.getenv("HOME"), ".nemeton")
+  }
+  user_dir <- getOption("nemeton.experts_dir", file.path(default_base, "experts"))
+  if (!dir.exists(user_dir)) {
+    dir.create(user_dir, recursive = TRUE, showWarnings = FALSE)
+    # Copy example template if freshly created
+    example_src <- system.file("experts", "_example.yml.template", package = "nemeton")
+    if (example_src != "") {
+      file.copy(example_src, file.path(user_dir, "_example.yml.template"),
+                overwrite = FALSE)
+    }
+  }
   if (dir.exists(user_dir)) {
     user_files <- list.files(user_dir, pattern = "\\.ya?ml$", full.names = TRUE)
     for (f in user_files) {
