@@ -507,6 +507,18 @@ mod_synthesis_server <- function(id, app_state) {
             use_quarto = TRUE
           )
 
+          # Also save a copy in the project's exports/ directory
+          project_path <- project$path
+          if (!is.null(project_path) && dir.exists(project_path)) {
+            exports_dir <- file.path(project_path, "exports")
+            if (!dir.exists(exports_dir)) {
+              dir.create(exports_dir, showWarnings = FALSE)
+            }
+            export_name <- gsub("[^a-zA-Z0-9_-]", "_", project$metadata$name %||% "nemeton_report")
+            export_file <- file.path(exports_dir, paste0(export_name, "_report.pdf"))
+            file.copy(file, export_file, overwrite = TRUE)
+          }
+
           shiny::removeNotification(notif_id)
           shiny::showNotification(
             if (app_state$language == "fr") "Rapport PDF genere avec succes" else "PDF report generated successfully",
