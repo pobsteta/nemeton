@@ -53,7 +53,13 @@ load_expert_profiles <- function() {
     user_files <- list.files(user_dir, pattern = "\\.ya?ml$", full.names = TRUE)
     for (f in user_files) {
       key <- tools::file_path_sans_ext(basename(f))
-      prof <- yaml::read_yaml(f)
+      prof <- tryCatch(
+        yaml::read_yaml(f),
+        error = function(e) {
+          warning(sprintf("Skipping invalid expert profile '%s': %s", f, e$message))
+          NULL
+        }
+      )
       if (is.list(prof) && all(c("label", "prompt") %in% names(prof))) {
         profiles[[key]] <- prof
       }
