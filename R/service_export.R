@@ -520,7 +520,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
 
   i <- 1
   while (i <= length(lines)) {
-    if (y < 0.05) break
+    if (y < 0.05) {
+      plot.new()
+      y <- 0.92
+    }
 
     line <- lines[i]
 
@@ -532,14 +535,86 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
     }
 
     # Check for markdown headers (# ## ###)
-    if (grepl("^#{1,3}\\s+", line)) {
+    if (grepl("^#{1,3}\\s*", line) && grepl("^#{1,3}[^#]", line)) {
       level <- nchar(gsub("^(#{1,3}).*", "\\1", line))
-      header_text <- gsub("^#{1,3}\\s+", "", line)
+      header_text <- gsub("^#{1,3}\\s*", "", line)
       header_text <- strip_markdown_for_display(header_text)
       header_cex <- cex * (1.3 - level * 0.1)
       graphics::text(x, y, header_text, cex = header_cex, col = col, adj = adj, font = 2)
       y <- y - line_height * 1.5
       i <- i + 1
+      next
+    }
+
+    # Check for markdown table (lines starting with |)
+    if (grepl("^\\|", line)) {
+      # Collect all consecutive table lines
+      table_lines <- character(0)
+      while (i <= length(lines) && grepl("^\\|", lines[i])) {
+        table_lines <- c(table_lines, lines[i])
+        i <- i + 1
+      }
+
+      # Filter out separator lines (|---|---|, | :--- | ---: |, etc.)
+      is_separator <- grepl("^\\|[\\s:|-]+\\|\\s*$", table_lines, perl = TRUE)
+      data_lines <- table_lines[!is_separator]
+
+      if (length(data_lines) > 0) {
+        # Parse cells from each line
+        parse_row <- function(row_line) {
+          cells <- strsplit(row_line, "\\|")[[1]]
+          cells <- trimws(cells)
+          # Remove empty first/last elements from leading/trailing |
+          cells <- cells[nzchar(cells)]
+          cells
+        }
+
+        header_cells <- parse_row(data_lines[1])
+        n_cols <- length(header_cells)
+
+        if (n_cols > 0) {
+          # Calculate column layout
+          table_width <- 0.85  # available width
+          col_width <- table_width / n_cols
+          col_starts <- x + (seq_len(n_cols) - 1) * col_width
+
+          # Render header row (bold)
+          if (y < 0.05) {
+            plot.new()
+            y <- 0.92
+          }
+          for (ci in seq_along(header_cells)) {
+            cell_text <- strip_markdown_for_display(header_cells[ci])
+            graphics::text(col_starts[ci], y, cell_text,
+                           cex = cex, col = col, adj = c(0, 0.5), font = 2)
+          }
+          # Draw line under header
+          y <- y - line_height * 0.6
+          graphics::segments(x, y, x + table_width, y, col = "gray60", lwd = 0.5)
+          y <- y - line_height * 0.4
+
+          # Render body rows
+          if (length(data_lines) > 1) {
+            for (row_line in data_lines[-1]) {
+              if (y < 0.05) {
+                plot.new()
+                y <- 0.92
+              }
+              row_cells <- parse_row(row_line)
+              for (ci in seq_along(row_cells)) {
+                if (ci <= n_cols) {
+                  cell_text <- strip_markdown_for_display(row_cells[ci])
+                  graphics::text(col_starts[ci], y, cell_text,
+                                 cex = cex, col = col, adj = c(0, 0.5), font = 1)
+                }
+              }
+              y <- y - line_height
+            }
+          }
+
+          y <- y - line_height * 0.5  # spacing after table
+        }
+      }
       next
     }
 
@@ -552,7 +627,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
                          col = "gray60", lwd = 2)
       wrapped <- strwrap(quote_text, width = width - 5)
       for (wline in wrapped) {
-        if (y < 0.05) break
+        if (y < 0.05) {
+          plot.new()
+          y <- 0.92
+        }
         graphics::text(x + 0.02, y, wline, cex = cex, col = "gray40", adj = adj, font = 3)
         y <- y - line_height
       }
@@ -576,7 +654,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
       # Render continuation lines (indented)
       if (length(wrapped) > 1) {
         for (wline in wrapped[-1]) {
-          if (y < 0.05) break
+          if (y < 0.05) {
+            plot.new()
+            y <- 0.92
+          }
           graphics::text(x + 0.03, y, wline, cex = cex, col = col, adj = c(0, 0.5))
           y <- y - line_height
         }
@@ -602,7 +683,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
       # Render continuation lines (indented)
       if (length(wrapped) > 1) {
         for (wline in wrapped[-1]) {
-          if (y < 0.05) break
+          if (y < 0.05) {
+            plot.new()
+            y <- 0.92
+          }
           graphics::text(x + 0.04, y, wline, cex = cex, col = col, adj = c(0, 0.5))
           y <- y - line_height
         }
@@ -614,7 +698,10 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
     # Regular paragraph line - wrap and render with formatting
     wrapped <- strwrap(line, width = width)
     for (wline in wrapped) {
-      if (y < 0.05) break
+      if (y < 0.05) {
+        plot.new()
+        y <- 0.92
+      }
       render_formatted_line(wline, x, y, cex, col, width)
       y <- y - line_height
     }
