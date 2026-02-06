@@ -69,7 +69,7 @@ html[data-shiny-busy] .bslib-page-fill::after,html[data-shiny-busy] .html-fill-c
 .family-icon{ width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-right:8px;}
 .expert-select-inline{ margin-bottom:0;}
 .expert-select-inline .form-group{ margin-bottom:0;}
-.expert-select-inline .form-select,.expert-select-inline select{ min-height:32px; padding:4px 8px; font-size:0.85em;}
+.expert-select-inline .form-select,.expert-select-inline select{ min-height:32px; min-width:160px; padding:4px 8px; font-size:0.85em;}
 @media (max-width:991.98px){ .sidebar{ width:100% !important; border-right:none; border-bottom:1px solid var(--nemeton-border);}
  .navbar-brand span{ font-size:14px;}
  .card-body{ padding:12px;}

@@ -643,3 +643,379 @@ test_that("normalize_indicators handles mixed v0.2.0 and v0.3.0 families", {
   expect_equal(normalized$B1_norm[1], 0)
   expect_equal(normalized$B1_norm[5], 100)
 })
+
+# ==============================================================================
+# Coverage expansion: uncovered paths in normalization.R
+# ==============================================================================
+
+# --- normalize_vector (internal) ---
+
+test_that("normalize_vector quantile method returns percentile ranks", {
+  result <- nemeton:::normalize_vector(c(10, 20, 30, 40, 50), method = "quantile")
+  # Each value's percentile rank
+  expect_equal(result[1], 20)  # 1/5 = 0.2 * 100
+  expect_equal(result[5], 100) # 5/5 = 1.0 * 100
+  expect_length(result, 5)
+})
+
+test_that("normalize_vector quantile method handles NAs in input", {
+  result <- nemeton:::normalize_vector(c(10, NA, 30, 40, 50), method = "quantile")
+  expect_true(is.na(result[2]))
+  expect_false(is.na(result[1]))
+  expect_false(is.na(result[5]))
+})
+
+test_that("normalize_vector quantile method with separate reference", {
+  # Reference has different range than input
+  ref <- c(0, 25, 50, 75, 100)
+  result <- nemeton:::normalize_vector(c(50, 100), method = "quantile", reference = ref)
+  # 50 is <= by 3 of 5 ref values -> 60
+  expect_equal(result[1], 60)
+  # 100 is <= by all 5 ref values -> 100
+  expect_equal(result[2], 100)
+})
+
+test_that("normalize_vector quantile method with all-NA reference returns NAs", {
+  result <- nemeton:::normalize_vector(c(10, 20), method = "quantile", reference = c(NA, NA, NA))
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector minmax with all-NA reference returns NAs", {
+  result <- nemeton:::normalize_vector(c(10, 20), method = "minmax", reference = c(NA_real_, NA_real_))
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector zscore with zero sd returns zeros", {
+  expect_warning(
+    result <- nemeton:::normalize_vector(c(50, 50, 50), method = "zscore"),
+    "0|zero"
+  )
+  expect_true(all(result == 0))
+})
+
+# --- normalize_indicators: by_family=TRUE path ---
+
+test_that("normalize_indicators with by_family=TRUE normalizes in-place", {
+  test_data <- data.frame(
+    id = 1:5,
+    C1 = c(10, 20, 30, 40, 50),
+    C2 = c(100, 200, 300, 400, 500)
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = c("C1", "C2"),
+    method = "minmax",
+    by_family = TRUE
+  )
+
+  # When by_family=TRUE with default suffix, suffix becomes "" and keep_original=FALSE
+
+  # So values are replaced in-place
+  expect_true("C1" %in% names(normalized))
+  expect_true("C2" %in% names(normalized))
+  # Values should now be normalized 0-100
+  expect_equal(min(normalized$C1), 0)
+  expect_equal(max(normalized$C1), 100)
+  expect_equal(min(normalized$C2), 0)
+  expect_equal(max(normalized$C2), 100)
+})
+
+test_that("normalize_indicators by_family=TRUE with explicit suffix uses that suffix", {
+  test_data <- data.frame(
+    id = 1:3,
+    C1 = c(10, 20, 30)
+  )
+
+  normalized <- normalize_indicators(
+    test_data,
+    indicators = "C1",
+    method = "minmax",
+    by_family = TRUE,
+    suffix = "_scaled"
+  )
+
+  # Explicit suffix overrides the default "_norm" -> "" behavior
+  expect_true("C1_scaled" %in% names(normalized))
+})
+
+# --- normalize_indicators: reference_data with missing indicator ---
+
+test_that("normalize_indicators warns when reference_data missing an indicator", {
+  reference <- data.frame(
+    C1 = c(0, 25, 50, 75, 100)
+  )
+
+  new_data <- data.frame(
+    id = 1:3,
+    C1 = c(10, 50, 90),
+    W1 = c(5, 15, 25)
+  )
+
+  # W1 is missing from reference_data, should produce a warning
+  expect_warning(
+    normalized <- normalize_indicators(
+      new_data,
+      indicators = c("C1", "W1"),
+      reference_data = reference,
+      method = "minmax"
+    ),
+    "missing|manquant"
+  )
+
+  # Should still produce normalized columns
+  expect_true("C1_norm" %in% names(normalized))
+  expect_true("W1_norm" %in% names(normalized))
+})
+
+# --- normalize_indicators: auto-detect with no indicators found ---
+
+test_that("normalize_indicators errors when auto-detect finds no indicators", {
+  test_data <- data.frame(
+    id = 1:3,
+    name = c("a", "b", "c"),
+    score = c(10, 20, 30)  # Not matching any known indicator pattern
+  )
+
+  expect_error(
+    normalize_indicators(test_data, method = "minmax"),
+    "indicator|indicateur"
+  )
+})
+
+# --- normalize_indicators: preserves nemeton_units metadata ---
+
+test_that("normalize_indicators preserves and updates nemeton_units metadata", {
+  units <- nemeton_units(create_test_units())
+  units$C1 <- c(10, 20, 30)
+
+  normalized <- normalize_indicators(units, indicators = "C1", method = "minmax")
+
+  # Check metadata was updated
+  meta <- attr(normalized, "metadata")
+  expect_true("normalized_at" %in% names(meta))
+  expect_equal(meta$normalization_method, "minmax")
+  expect_equal(meta$normalized_indicators, "C1")
+  expect_s3_class(normalized, "nemeton_units")
+})
+
+# --- create_composite_index: geometric_mean with different values ---
+
+test_that("create_composite_index geometric_mean with different indicator values", {
+  test_data <- data.frame(
+    id = 1:3,
+    ind1 = c(16, 25, 100),
+    ind2 = c(4, 100, 100)
+  )
+
+  result <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2"),
+    aggregation = "geometric_mean"
+  )
+
+  # Geometric mean of (16, 4) with equal weights: exp(0.5*log(16) + 0.5*log(4)) = exp(0.5*2.77 + 0.5*1.39) = exp(2.08) = 8
+  expect_equal(result$composite_index[1], sqrt(16 * 4), tolerance = 0.01)
+  # Geometric mean of (25, 100): sqrt(25*100) = sqrt(2500) = 50
+  expect_equal(result$composite_index[2], 50, tolerance = 0.01)
+  # Geometric mean of (100, 100) = 100
+  expect_equal(result$composite_index[3], 100, tolerance = 0.01)
+})
+
+test_that("create_composite_index geometric_mean with NA values", {
+  test_data <- data.frame(
+    id = 1:3,
+    ind1 = c(25, NA, 50),
+    ind2 = c(25, 50, NA)
+  )
+
+  result <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2"),
+    aggregation = "geometric_mean",
+    na.rm = TRUE
+  )
+
+  # Row 2: NA removed, only ind2=50 -> result should be based on remaining
+  expect_false(is.na(result$composite_index[1]))
+})
+
+# --- create_composite_index: with sf data ---
+
+test_that("create_composite_index works with sf data", {
+  units <- create_test_units()
+  units$ind1_norm <- c(40, 60, 80)
+  units$ind2_norm <- c(60, 40, 20)
+
+  result <- create_composite_index(
+    units,
+    indicators = c("ind1_norm", "ind2_norm")
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("composite_index" %in% names(result))
+  # Equal weights: (40+60)/2=50, (60+40)/2=50, (80+20)/2=50
+  expect_equal(result$composite_index, c(50, 50, 50))
+})
+
+# --- create_composite_index: with nemeton_units preserving metadata ---
+
+test_that("create_composite_index preserves nemeton_units metadata", {
+  units <- nemeton_units(create_test_units())
+  units$C1_norm <- c(40, 60, 80)
+  units$W1_norm <- c(60, 40, 20)
+
+  result <- create_composite_index(
+    units,
+    indicators = c("C1_norm", "W1_norm"),
+    name = "forest_health"
+  )
+
+  expect_s3_class(result, "nemeton_units")
+  meta <- attr(result, "metadata")
+  expect_true("composite_index_created_at" %in% names(meta))
+  expect_equal(meta$composite_index_name, "forest_health")
+  expect_equal(meta$composite_index_method, "weighted_mean")
+  expect_equal(meta$composite_index_indicators, c("C1_norm", "W1_norm"))
+})
+
+# --- create_composite_index: scale_to_100 with non-weighted_mean ---
+
+test_that("create_composite_index scale_to_100 works with min aggregation", {
+  test_data <- data.frame(
+    id = 1:4,
+    ind1 = c(20, 40, 60, 80),
+    ind2 = c(30, 50, 70, 90)
+  )
+
+  result <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2"),
+    aggregation = "min",
+    scale_to_100 = TRUE
+  )
+
+  # Min values: 20, 40, 60, 80
+  # Scaled to 0-100: (20-20)/(80-20)*100=0, (40-20)/60*100=33.33, (60-20)/60*100=66.67, (80-20)/60*100=100
+  expect_equal(result$composite_index[1], 0, tolerance = 0.01)
+  expect_equal(result$composite_index[4], 100, tolerance = 0.01)
+})
+
+test_that("create_composite_index scale_to_100 works with max aggregation", {
+  test_data <- data.frame(
+    id = 1:4,
+    ind1 = c(20, 40, 60, 80),
+    ind2 = c(10, 30, 50, 90)
+  )
+
+  result <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2"),
+    aggregation = "max",
+    scale_to_100 = TRUE
+  )
+
+  # Max values: 20, 40, 60, 90
+  # Scaled to 0-100: min=20, max=90, range=70
+  expect_equal(result$composite_index[1], 0, tolerance = 0.01)
+  expect_equal(result$composite_index[4], 100, tolerance = 0.01)
+})
+
+test_that("create_composite_index scale_to_100 works with geometric_mean aggregation", {
+  test_data <- data.frame(
+    id = 1:3,
+    ind1 = c(10, 50, 100),
+    ind2 = c(10, 50, 100)
+  )
+
+  result <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2"),
+    aggregation = "geometric_mean",
+    scale_to_100 = TRUE
+  )
+
+  # Geometric means: 10, 50, 100 (same values)
+  # Scaled to 0-100
+  expect_equal(result$composite_index[1], 0, tolerance = 0.01)
+  expect_equal(result$composite_index[3], 100, tolerance = 0.01)
+})
+
+test_that("create_composite_index default scale_to_100 is FALSE for non-weighted_mean", {
+  test_data <- data.frame(
+    id = 1:3,
+    ind1 = c(20, 50, 80),
+    ind2 = c(30, 60, 70)
+  )
+
+  # Default scale_to_100 for min should be FALSE
+  result <- create_composite_index(
+    test_data,
+    indicators = c("ind1", "ind2"),
+    aggregation = "min"
+  )
+
+  # Min values: 20, 50, 70 (not scaled to 0-100)
+  expect_equal(result$composite_index[1], 20)
+  expect_equal(result$composite_index[2], 50)
+  expect_equal(result$composite_index[3], 70)
+})
+
+# --- invert_indicator: missing indicators error ---
+
+test_that("invert_indicator errors on missing indicators", {
+  test_data <- data.frame(
+    id = 1:3,
+    C1_norm = c(0, 50, 100)
+  )
+
+  expect_error(
+    invert_indicator(test_data, indicators = "nonexistent_column"),
+    "missing|manquant|Indicators"
+  )
+})
+
+# --- invert_indicator: keep_original=TRUE preserves originals ---
+
+test_that("invert_indicator keep_original=TRUE preserves original columns", {
+  test_data <- data.frame(
+    id = 1:3,
+    social_norm = c(10, 50, 90)
+  )
+
+  inverted <- invert_indicator(
+    test_data,
+    indicators = "social_norm",
+    scale = 100,
+    keep_original = TRUE
+  )
+
+  # Both original and inverted should be present
+  expect_true("social_norm" %in% names(inverted))
+  expect_true("social_norm_inv" %in% names(inverted))
+  # Inverted values
+  expect_equal(inverted$social_norm_inv, c(90, 50, 10))
+  # Original preserved
+  expect_equal(inverted$social_norm, c(10, 50, 90))
+})
+
+# --- invert_indicator: multiple indicators at once ---
+
+test_that("invert_indicator inverts multiple indicators", {
+  test_data <- data.frame(
+    id = 1:3,
+    A1_norm = c(0, 50, 100),
+    A2_norm = c(20, 60, 80)
+  )
+
+  inverted <- invert_indicator(
+    test_data,
+    indicators = c("A1_norm", "A2_norm"),
+    scale = 100
+  )
+
+  expect_true("A1_norm_inv" %in% names(inverted))
+  expect_true("A2_norm_inv" %in% names(inverted))
+  expect_equal(inverted$A1_norm_inv, c(100, 50, 0))
+  expect_equal(inverted$A2_norm_inv, c(80, 40, 20))
+})

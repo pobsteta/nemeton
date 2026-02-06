@@ -353,3 +353,355 @@ test_that("Functions work with tibble sf objects", {
 
   expect_s3_class(result, "sf")
 })
+
+# ==============================================================================
+# Additional coverage tests for uncovered lines
+# ==============================================================================
+
+# --- compute_family_correlations: specific families parameter ---
+
+test_that("compute_family_correlations works with explicit families parameter", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+  units$family_W <- runif(10, 35, 80)
+
+  result <- compute_family_correlations(
+    units,
+    families = c("family_C", "family_B")
+  )
+
+  expect_true(is.matrix(result))
+  expect_equal(nrow(result), 2)
+  expect_equal(ncol(result), 2)
+  expect_true(all(c("family_C", "family_B") %in% colnames(result)))
+  # family_W should NOT be included
+
+  expect_false("family_W" %in% colnames(result))
+})
+
+# --- compute_family_correlations: spearman and kendall methods ---
+
+test_that("compute_family_correlations works with spearman method", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  result <- compute_family_correlations(units, method = "spearman")
+
+  expect_true(is.matrix(result))
+  expect_equal(attr(result, "method"), "spearman")
+})
+
+test_that("compute_family_correlations works with kendall method", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  result <- compute_family_correlations(units, method = "kendall")
+
+  expect_true(is.matrix(result))
+  expect_equal(attr(result, "method"), "kendall")
+})
+
+# --- compute_family_correlations: missing families error ---
+
+test_that("compute_family_correlations errors on missing families", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+
+  expect_error(
+    compute_family_correlations(units, families = c("family_C", "family_MISSING")),
+    "Families not found in data"
+  )
+})
+
+# --- compute_family_correlations: non-numeric columns error ---
+
+test_that("compute_family_correlations errors on non-numeric family columns", {
+  units <- create_test_units(n_features = 5)
+  units$family_C <- c("a", "b", "c", "d", "e")  # character, not numeric
+  units$family_B <- runif(5, 30, 85)
+
+  expect_error(
+    compute_family_correlations(units, families = c("family_C", "family_B")),
+    "All family columns must be numeric"
+  )
+})
+
+# --- identify_hotspots: auto-detect families (no families parameter) ---
+
+test_that("identify_hotspots auto-detects family columns", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+  units$other_col <- runif(10)  # should be ignored
+
+  result <- identify_hotspots(units, threshold = 80, min_families = 1)
+
+  expect_s3_class(result, "sf")
+  expect_true("is_hotspot" %in% names(result))
+  # other_col should not affect hotspot analysis
+})
+
+# --- identify_hotspots: threshold=100 (strict >) ---
+
+test_that("identify_hotspots with threshold=100 uses strict greater-than", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  result <- identify_hotspots(
+    units,
+    families = c("family_C", "family_B"),
+    threshold = 100,
+    min_families = 1
+  )
+
+  expect_true("is_hotspot" %in% names(result))
+  # With strict > at 100th percentile, no value can exceed the max
+  expect_true(all(!result$is_hotspot))
+  expect_true(all(result$hotspot_count == 0))
+})
+
+# --- identify_hotspots: all NA family values ---
+
+test_that("identify_hotspots handles all-NA family values", {
+  units <- create_test_units(n_features = 5)
+  units$family_C <- rep(NA_real_, 5)
+  units$family_B <- runif(5, 30, 85)
+
+  result <- identify_hotspots(
+    units,
+    families = c("family_C", "family_B"),
+    threshold = 80,
+    min_families = 1
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("is_hotspot" %in% names(result))
+  # All-NA family should produce NA thresholds; no parcels above NA threshold
+})
+
+# --- identify_hotspots: specific families parameter ---
+
+test_that("identify_hotspots works with specific families parameter", {
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+  units$family_W <- runif(10, 35, 80)
+
+  # Only analyze C and B, not W
+  result <- identify_hotspots(
+    units,
+    families = c("family_C", "family_B"),
+    threshold = 70,
+    min_families = 1
+  )
+
+  expect_s3_class(result, "sf")
+  # hotspot_families should never mention family_W
+  expect_false(any(grepl("family_W", result$hotspot_families)))
+})
+
+# --- identify_hotspots: error on missing families ---
+
+test_that("identify_hotspots errors on missing families", {
+  units <- create_test_units(n_features = 5)
+  units$family_C <- runif(5, 40, 90)
+
+  expect_error(
+    identify_hotspots(units, families = c("family_C", "family_NONEXISTENT")),
+    "Families not found in data"
+  )
+})
+
+# --- identify_hotspots: error when no family_ columns exist ---
+
+test_that("identify_hotspots errors when no family columns found for auto-detect", {
+  units <- create_test_units(n_features = 5)
+  # No family_ columns at all
+
+  expect_error(
+    identify_hotspots(units),
+    "No family indices found"
+  )
+})
+
+# --- plot_correlation_matrix: method="number" ---
+
+test_that("plot_correlation_matrix works with method='number'", {
+  skip_if_not_installed("ggplot2")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  p <- plot_correlation_matrix(cm, method = "number")
+
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_correlation_matrix: method="square" ---
+
+test_that("plot_correlation_matrix works with method='square'", {
+  skip_if_not_installed("ggplot2")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  p <- plot_correlation_matrix(cm, method = "square")
+
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_correlation_matrix: method="color" ---
+
+test_that("plot_correlation_matrix works with method='color'", {
+  skip_if_not_installed("ggplot2")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  p <- plot_correlation_matrix(cm, method = "color")
+
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_correlation_matrix: palette="viridis" ---
+
+test_that("plot_correlation_matrix works with viridis palette", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("viridisLite")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  p <- plot_correlation_matrix(cm, palette = "viridis")
+
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_correlation_matrix: auto-generated title with method attribute ---
+
+test_that("plot_correlation_matrix generates title from method attribute", {
+  skip_if_not_installed("ggplot2")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, method = "spearman")
+  p <- plot_correlation_matrix(cm, title = NULL)
+
+  expect_s3_class(p, "ggplot")
+  # Title should contain "Spearman"
+  expect_true(grepl("Spearman", p$labels$title, ignore.case = TRUE))
+})
+
+# --- plot_correlation_matrix: custom title ---
+
+test_that("plot_correlation_matrix uses custom title when provided", {
+  skip_if_not_installed("ggplot2")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  p <- plot_correlation_matrix(cm, title = "My Custom Title")
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(p$labels$title, "My Custom Title")
+})
+
+# --- plot_correlation_matrix: matrix without method attribute ---
+
+test_that("plot_correlation_matrix handles matrix without method attribute", {
+  skip_if_not_installed("ggplot2")
+
+  # Create a plain matrix without the method attribute
+  m <- matrix(c(1, 0.5, 0.5, 1), nrow = 2)
+  colnames(m) <- c("family_C", "family_B")
+  rownames(m) <- c("family_C", "family_B")
+
+  p <- plot_correlation_matrix(m, title = NULL)
+
+  expect_s3_class(p, "ggplot")
+  # Should fallback to "pearson" as default
+  expect_true(grepl("Pearson", p$labels$title, ignore.case = TRUE))
+})
+
+# --- plot_correlation_matrix: all methods via loop ---
+
+test_that("plot_correlation_matrix supports all four display methods", {
+  skip_if_not_installed("ggplot2")
+
+  units <- create_test_units(n_features = 10)
+  units$family_C <- runif(10, 40, 90)
+  units$family_B <- runif(10, 30, 85)
+
+  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+
+  for (m in c("circle", "square", "number", "color")) {
+    p <- plot_correlation_matrix(cm, method = m)
+    expect_s3_class(p, "ggplot")
+  }
+})
+
+# --- plot_correlation_matrix: invalid method error ---
+
+test_that("plot_correlation_matrix errors on invalid method", {
+  m <- matrix(c(1, 0.5, 0.5, 1), nrow = 2)
+  colnames(m) <- c("A", "B")
+  rownames(m) <- c("A", "B")
+
+  expect_error(
+    plot_correlation_matrix(m, method = "invalid"),
+    "method must be one of"
+  )
+})
+
+# --- compute_family_correlations: no family columns error ---
+
+test_that("compute_family_correlations errors when no family columns auto-detected", {
+  units <- create_test_units(n_features = 5)
+  # No family_ columns
+
+  expect_error(
+    compute_family_correlations(units),
+    "No family indices found"
+  )
+})
+
+# --- compute_family_correlations: invalid method error ---
+
+test_that("compute_family_correlations errors on invalid method", {
+  units <- create_test_units(n_features = 5)
+  units$family_C <- runif(5)
+
+  expect_error(
+    compute_family_correlations(units, method = "invalid"),
+    "method must be one of"
+  )
+})
+
+# --- compute_family_correlations: n_obs attribute ---
+
+test_that("compute_family_correlations stores n_obs attribute", {
+  units <- create_test_units(n_features = 8)
+  units$family_C <- runif(8, 40, 90)
+  units$family_B <- runif(8, 30, 85)
+
+  result <- compute_family_correlations(units)
+
+  expect_equal(attr(result, "n_obs"), 8)
+  expect_equal(attr(result, "method"), "pearson")
+})

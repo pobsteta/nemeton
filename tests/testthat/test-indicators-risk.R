@@ -377,3 +377,245 @@ test_that("R indicators validate sf input", {
     "must be an.*sf.*object"
   )
 })
+
+# ==============================================================================
+# Coverage-focused tests for uncovered code paths
+# ==============================================================================
+
+# --- R1: indicator_risk_fire additional coverage ---
+
+test_that("indicator_risk_fire fallback path without species field", {
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster()
+
+  # No species column present, should use species_factor=50 fallback
+  result <- indicator_risk_fire(units, dem = dem, species_field = "nonexistent_species")
+
+  expect_s3_class(result, "sf")
+  expect_true("R1" %in% names(result))
+  expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_fire with DEM but no bdforet exercises fallback method", {
+  units <- create_test_units(n_features = 3)
+  units$species <- c("Pinus", "Quercus", "Fagus")
+  dem <- create_test_raster()
+
+  # DEM provided, no bdforet -> should use fallback method (slope + species + climate)
+  result <- indicator_risk_fire(
+    units,
+    dem = dem,
+    bdforet = NULL,
+    species_field = "species",
+    climate = NULL
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("R1" %in% names(result))
+  expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_fire weight redistribution when no climate", {
+  units <- create_test_units(n_features = 2)
+  units$species <- c("Pinus", "Quercus")
+  dem <- create_test_raster()
+
+  # Explicit weights, no climate -> weights should be redistributed
+  result <- indicator_risk_fire(
+    units,
+    dem = dem,
+    species_field = "species",
+    climate = NULL,
+    weights = c(slope = 0.4, species = 0.3, climate = 0.3)
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("R1" %in% names(result))
+  expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
+})
+
+# --- R2: indicator_risk_storm additional coverage ---
+
+test_that("indicator_risk_storm exercises terrain fallback (no microclima)", {
+  # This test exercises the fallback branch with aspect, slope, TRI
+  units <- create_test_units(n_features = 4)
+
+  # Create DEM with varying elevation for meaningful terrain derivatives
+  dem <- terra::rast(
+    extent = terra::ext(566400, 567000, 6615100, 6615500),
+    resolution = 10,
+    crs = "EPSG:2154"
+  )
+  # Gradient from low to high elevation
+  vals <- rep(seq(100, 500, length.out = terra::ncol(dem)), terra::nrow(dem))
+  terra::values(dem) <- vals
+
+  result <- indicator_risk_storm(units, dem = dem)
+
+  expect_s3_class(result, "sf")
+  expect_true("R2" %in% names(result))
+  expect_type(result$R2, "double")
+  expect_true(all(result$R2 >= 0 & result$R2 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_storm with constant DEM (TRI max = 0 edge case)", {
+  units <- create_test_units(n_features = 2)
+
+  # Flat DEM -> TRI max will be 0 or very small
+  dem <- create_test_raster(values = "constant")
+
+  result <- indicator_risk_storm(units, dem = dem)
+
+  expect_s3_class(result, "sf")
+  expect_true("R2" %in% names(result))
+  expect_true(all(result$R2 >= 0 & result$R2 <= 100, na.rm = TRUE))
+})
+
+# --- R3: indicator_risk_drought additional coverage ---
+
+test_that("indicator_risk_drought with SPEI package exercises climate component", {
+  skip_if_not_installed("SPEI")
+
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster()
+
+  # With SPEI installed and no climate_data, uses simulated data
+
+  result <- indicator_risk_drought(units, dem = dem, climate_data = NULL)
+
+  expect_s3_class(result, "sf")
+  expect_true("R3" %in% names(result))
+  expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_drought with provided climate_data and SPEI", {
+  skip_if_not_installed("SPEI")
+
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster()
+
+  n_months <- 60
+  set.seed(123)
+  climate_data <- list(
+    precip = pmax(0, rep(c(60, 55, 50, 45, 50, 30, 20, 25, 40, 55, 65, 70),
+                         length.out = n_months) + rnorm(n_months, 0, 10)),
+    temp = list(
+      tmin = rep(c(0, 1, 4, 7, 11, 15, 18, 17, 13, 8, 4, 1),
+                 length.out = n_months) + rnorm(n_months, 0, 1),
+      tmax = rep(c(8, 10, 14, 18, 22, 27, 30, 29, 24, 18, 12, 8),
+                 length.out = n_months) + rnorm(n_months, 0, 1)
+    )
+  )
+
+  result <- indicator_risk_drought(
+    units,
+    dem = dem,
+    climate_data = climate_data
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("R3" %in% names(result))
+  expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
+})
+
+test_that("indicator_risk_drought topographic component with varied DEM", {
+  units <- create_test_units(n_features = 3)
+
+  # Create DEM with varying terrain for aspect/slope/TWI variation
+  dem <- terra::rast(
+    extent = terra::ext(566400, 567000, 6615100, 6615500),
+    resolution = 10,
+    crs = "EPSG:2154"
+  )
+  # Diagonal gradient for slope and aspect variation
+  nr <- terra::nrow(dem)
+  nc <- terra::ncol(dem)
+  vals <- matrix(0, nrow = nr, ncol = nc)
+  for (i in seq_len(nr)) {
+    for (j in seq_len(nc)) {
+      vals[i, j] <- 200 + i * 5 + j * 3
+    }
+  }
+  terra::values(dem) <- as.vector(t(vals))
+
+  result <- indicator_risk_drought(units, dem = dem)
+
+  expect_s3_class(result, "sf")
+  expect_true("R3" %in% names(result))
+  expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
+})
+
+# --- R4: indicator_risk_browsing additional coverage ---
+
+test_that("indicator_risk_browsing exercises all default components", {
+  units <- create_test_units(n_features = 5)
+
+  # No bdforet, no layers, no game_density -> all defaults
+  result <- indicator_risk_browsing(units)
+
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+  expect_true("R4_palatability" %in% names(result))
+  expect_true("R4_vulnerability" %in% names(result))
+  # All components use defaults
+  expect_true(all(result$R4_palatability == 50))
+  expect_true(all(result$R4_vulnerability == 50))
+  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+})
+
+test_that("indicator_risk_browsing with bdforet lacking essence column", {
+  units <- create_test_units(n_features = 3)
+
+  # BD Foret without any recognized essence column
+  bdforet_geom <- c(
+    sf::st_buffer(sf::st_geometry(units)[1], 80),
+    sf::st_buffer(sf::st_geometry(units)[2], 80),
+    sf::st_buffer(sf::st_geometry(units)[3], 80)
+  )
+  bdforet <- sf::st_sf(
+    code_tfv_unused = c("A", "B", "C"),
+    geometry = bdforet_geom
+  )
+
+  # Should use default palatability (50) since no recognized essence column
+  result <- indicator_risk_browsing(units, bdforet = bdforet)
+
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+  expect_true(all(result$R4_palatability == 50))
+})
+
+test_that("indicator_risk_browsing edge exposure with small polygons", {
+  # Very small polygons where buffer might collapse entirely
+  units <- create_test_units(n_features = 2)
+
+  # With edge_buffer larger than polygon -> inner should collapse, edge_proportion = 1
+  result <- indicator_risk_browsing(units, edge_buffer = 200)
+
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+  expect_true(all(result$R4 >= 0 & result$R4 <= 100))
+})
+
+test_that("indicator_risk_browsing with bdforet and valid essence column", {
+  units <- create_test_units(n_features = 3)
+
+  # BD Foret with recognized 'essence' column
+  bdforet_geom <- c(
+    sf::st_buffer(sf::st_geometry(units)[1], 100),
+    sf::st_buffer(sf::st_geometry(units)[2], 100),
+    sf::st_buffer(sf::st_geometry(units)[3], 100)
+  )
+  bdforet <- sf::st_sf(
+    essence = c("chene sessile", "pin maritime", "hetre commun"),
+    geometry = bdforet_geom
+  )
+
+  result <- indicator_risk_browsing(units, bdforet = bdforet)
+
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+  expect_true("R4_palatability" %in% names(result))
+  # The palatability should differ per species (at least some non-50)
+  expect_true(any(result$R4_palatability != 50))
+})

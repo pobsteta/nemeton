@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Guide de l’Application nemetonApp</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Guide de l’Application nemetonApp</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p><strong>nemetonApp</strong> est l’interface graphique interactive du
+package <code>nemeton</code>. Elle permet d’analyser des territoires
+forestiers sans écrire de code R, directement depuis un navigateur
+web.</p>
+</div>
+<div id="lancement-de-lapplication" class="section level2">
+<h2>Lancement de l’application</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(nemeton)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">run_app</span>()</span></code></pre></div>
+<p>L’application s’ouvre dans votre navigateur par défaut.</p>
+</div>
+<div id="fonctionnalités-principales" class="section level2">
+<h2>Fonctionnalités principales</h2>
+<div id="recherche-de-parcelles" class="section level3">
+<h3>1. Recherche de parcelles</h3>
+<ul>
+<li><strong>Recherche par commune</strong> : Tapez le nom d’une commune
+française pour afficher ses parcelles cadastrales</li>
+<li><strong>Sélection interactive</strong> : Cliquez sur les parcelles
+sur la carte pour les sélectionner</li>
+<li><strong>Import GeoPackage</strong> : Importez vos propres fichiers
+.gpkg</li>
+</ul>
+</div>
+<div id="gestion-de-projets" class="section level3">
+<h3>2. Gestion de projets</h3>
+<ul>
+<li><strong>Création</strong> : Donnez un nom et une description à votre
+projet</li>
+<li><strong>Sauvegarde</strong> : Les projets sont automatiquement
+sauvegardés localement</li>
+<li><strong>Reprise</strong> : Retrouvez vos projets précédents au
+prochain lancement</li>
+</ul>
+</div>
+<div id="calcul-des-indicateurs" class="section level3">
+<h3>3. Calcul des indicateurs</h3>
+<p>Une fois les parcelles sélectionnées :</p>
+<ol style="list-style-type: decimal">
+<li>Cliquez sur <strong>“Calculer les indicateurs”</strong></li>
+<li>L’application télécharge automatiquement les données nécessaires
+(IGN BD TOPO, Corine Land Cover, etc.)</li>
+<li>Les 29 indicateurs des 12 familles sont calculés</li>
+<li>Une barre de progression indique l’avancement</li>
+</ol>
+</div>
+<div id="visualisation-des-résultats" class="section level3">
+<h3>4. Visualisation des résultats</h3>
+<div id="onglet-synthèse" class="section level4">
+<h4>Onglet Synthèse</h4>
+<ul>
+<li><strong>Score global</strong> : Note sur 100 représentant la
+performance écosystémique moyenne</li>
+<li><strong>Radar 12 axes</strong> : Visualisation des scores par
+famille d’indicateurs</li>
+<li><strong>Tableau récapitulatif</strong> : Scores moyens, min, max par
+famille</li>
+<li><strong>Analyse IA</strong> : Génération automatique d’une synthèse
+par intelligence artificielle (nécessite une clé API)</li>
+</ul>
+</div>
+<div id="onglets-familles-12" class="section level4">
+<h4>Onglets Familles (12)</h4>
+<p>Chaque famille d’indicateurs dispose d’un onglet dédié avec :</p>
+<ul>
+<li>Description de la famille et de ses indicateurs</li>
+<li>Carte interactive des valeurs par parcelle</li>
+<li>Histogramme de distribution</li>
+<li>Statistiques descriptives</li>
+</ul>
+</div>
+</div>
+<div id="export-des-résultats" class="section level3">
+<h3>5. Export des résultats</h3>
+<div id="rapport-pdf" class="section level4">
+<h4>Rapport PDF</h4>
+<p>Génère un rapport complet incluant :</p>
+<ul>
+<li>Informations du projet</li>
+<li>Score global et radar</li>
+<li>Tableau des scores par famille</li>
+<li>Commentaires de synthèse (si renseignés)</li>
+</ul>
+<p>Le rapport utilise Quarto si disponible, sinon un PDF simplifié est
+généré.</p>
+</div>
+<div id="geopackage" class="section level4">
+<h4>GeoPackage</h4>
+<p>Export des résultats au format GeoPackage (.gpkg) pour utilisation
+dans un SIG (QGIS, ArcGIS).</p>
+</div>
+</div>
+</div>
+<div id="configuration" class="section level2">
+<h2>Configuration</h2>
+<div id="langue" class="section level3">
+<h3>Langue</h3>
+<p>L’application est disponible en français et anglais. Utilisez le
+sélecteur de langue dans la barre de navigation.</p>
+</div>
+<div id="analyse-ia" class="section level3">
+<h3>Analyse IA</h3>
+<p>Pour utiliser l’analyse IA, configurez une clé API :</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Anthropic (Claude)</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">Sys.setenv</span>(<span class="at">ANTHROPIC_API_KEY =</span> <span class="st">&quot;votre-clé&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># OpenAI</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">Sys.setenv</span>(<span class="at">OPENAI_API_KEY =</span> <span class="st">&quot;votre-clé&quot;</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># Ollama (local, pas de clé requise)</span></span></code></pre></div>
+</div>
+<div id="thème" class="section level3">
+<h3>Thème</h3>
+<p>L’application utilise un thème sombre adapté à la cartographie
+forestière avec des couleurs accessibles (palette viridis).</p>
+</div>
+</div>
+<div id="raccourcis-clavier" class="section level2">
+<h2>Raccourcis clavier</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Action</th>
+<th>Raccourci</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sélectionner toutes les parcelles</td>
+<td><code>Ctrl + A</code></td>
+</tr>
+<tr class="even">
+<td>Désélectionner</td>
+<td><code>Ctrl + D</code></td>
+</tr>
+<tr class="odd">
+<td>Calculer</td>
+<td><code>Ctrl + Enter</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="résolution-des-problèmes" class="section level2">
+<h2>Résolution des problèmes</h2>
+<div id="lapplication-ne-démarre-pas" class="section level3">
+<h3>L’application ne démarre pas</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Vérifier les dépendances</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;shiny&quot;</span>, <span class="st">&quot;bslib&quot;</span>, <span class="st">&quot;leaflet&quot;</span>, <span class="st">&quot;sf&quot;</span>))</span></code></pre></div>
+</div>
+<div id="les-données-ne-se-téléchargent-pas" class="section level3">
+<h3>Les données ne se téléchargent pas</h3>
+<p>Vérifiez votre connexion internet. Les données proviennent de
+services WFS de l’IGN et de l’INPN.</p>
+</div>
+<div id="le-pdf-ne-se-génère-pas" class="section level3">
+<h3>Le PDF ne se génère pas</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Installer Quarto pour des rapports de qualité</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># https://quarto.org/docs/get-started/</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Ou utiliser le fallback sans Quarto</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">generate_report_pdf</span>(..., <span class="at">use_quarto =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="voir-aussi" class="section level2">
+<h2>Voir aussi</h2>
+<ul>
+<li><code>?run_app</code> - Documentation de la fonction de
+lancement</li>
+<li><code>?generate_report_pdf</code> - Documentation de l’export
+PDF</li>
+<li><a href="https://pobsteta.github.io/nemeton/">Site pkgdown</a> -
+Documentation complète</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

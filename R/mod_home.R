@@ -536,6 +536,10 @@ mod_home_server <- function(id, app_state) {
       app_state$current_project <- NULL
       app_state$project_id <- NULL
 
+      # Clear all comments (synthesis + families)
+      app_state$family_comments <- list()
+      app_state$clear_all_comments <- Sys.time()
+
       # Reset computation state (setting computing_project_id to NULL
       # also stops the later::later polling loop)
       compute_state(NULL)
@@ -663,10 +667,58 @@ mod_home_server <- function(id, app_state) {
       }
     }, ignoreInit = TRUE)
 
-    # Start computation handler
+    # Start computation handler - show confirmation modal (T088)
     shiny::observeEvent(input$start_compute, {
       project <- app_state$current_project
       shiny::req(project)
+
+      # Get parcel count for confirmation message
+      n_parcels <- if (!is.null(project$parcels)) nrow(project$parcels) else 0
+
+      # Show confirmation modal
+      shiny::showModal(shiny::modalDialog(
+        title = i18n$t("confirm_computation_title"),
+        htmltools::div(
+          htmltools::p(i18n$t("confirm_computation_message")),
+          htmltools::tags$ul(
+            htmltools::tags$li(
+              htmltools::strong(i18n$t("project_name"), ": "),
+              project$metadata$name %||% project$id
+            ),
+            htmltools::tags$li(
+              htmltools::strong(i18n$t("parcels_count"), ": "),
+              n_parcels
+            )
+          ),
+          htmltools::p(
+            class = "text-warning",
+            bsicons::bs_icon("exclamation-triangle", class = "me-1"),
+            i18n$t("confirm_computation_warning")
+          )
+        ),
+        footer = htmltools::tagList(
+          shiny::modalButton(i18n$t("cancel")),
+          shiny::actionButton(
+            ns("confirm_compute"),
+            label = i18n$t("start_computation"),
+            class = "btn-primary",
+            icon = bsicons::bs_icon("cpu")
+          )
+        ),
+        size = "m",
+        easyClose = TRUE
+      ))
+    })
+
+    # Confirmed computation handler
+    shiny::observeEvent(input$confirm_compute, {
+      shiny::removeModal()
+
+      project <- app_state$current_project
+      shiny::req(project)
+
+      # Block parcel modification (T089)
+      app_state$computation_running <- TRUE
 
       # Get project path for async mode
       project_path <- get_project_path(project$id)
@@ -725,6 +777,9 @@ mod_home_server <- function(id, app_state) {
         if (!is.null(progress_state)) {
           compute_state(progress_state)
         }
+
+        # Unblock parcel modification (T089)
+        app_state$computation_running <- FALSE
 
         # End computing mode, hide progress card, show error card
         session$sendCustomMessage("setComputingMode", list(active = FALSE))
@@ -835,6 +890,9 @@ mod_home_server <- function(id, app_state) {
             id = ns("progress-complete_card_wrapper")
           ))
 
+          # Unblock parcel modification (T089)
+          app_state$computation_running <- FALSE
+
           app_state$current_project <- load_project(project_id)
           app_state$project_status <- "completed"
           app_state$refresh_projects <- Sys.time()
@@ -858,6 +916,9 @@ mod_home_server <- function(id, app_state) {
             id = ns("progress-error_card_wrapper")
           ))
 
+          # Unblock parcel modification (T089)
+          app_state$computation_running <- FALSE
+
           error_msg <- if (length(progress_state$errors) > 0) {
             progress_state$errors[[length(progress_state$errors)]]$message
           } else {
@@ -878,6 +939,9 @@ mod_home_server <- function(id, app_state) {
           session$sendCustomMessage("hideElement", list(
             id = ns("progress-progress_card_wrapper")
           ))
+
+          # Unblock parcel modification (T089)
+          app_state$computation_running <- FALSE
 
           shiny::showNotification(
             i18n$t("computation_cancelled"),

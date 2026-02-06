@@ -54,10 +54,11 @@ demo_data$L2 <- runif(n, 0.05, 0.35)  # Ratio lisière
 demo_data$T1 <- demo_data$age         # Ancienneté (années)
 demo_data$T2 <- runif(n, 0, 5)        # Taux changement (%/an)
 
-# Famille R - Risques
-demo_data$R1 <- sample(1:5, n, replace = TRUE, prob = c(0.3, 0.3, 0.2, 0.15, 0.05))
-demo_data$R2 <- sample(1:5, n, replace = TRUE, prob = c(0.2, 0.3, 0.3, 0.15, 0.05))
-demo_data$R3 <- runif(n, 0, 1)        # Stress hydrique
+# Famille R - Risques (échelle 0-100)
+demo_data$R1 <- runif(n, 5, 80)       # Risque incendie
+demo_data$R2 <- runif(n, 10, 70)      # Risque tempête
+demo_data$R3 <- runif(n, 15, 75)      # Stress hydrique
+demo_data$R4 <- runif(n, 10, 65)      # Risque abroutissement
 
 # Famille S - Social & Usages
 demo_data$S1 <- runif(n, 0, 5)        # Densité sentiers (km/ha)
@@ -127,19 +128,16 @@ ggplot(demo_data) +
 ## ----fig.height=5-------------------------------------------------------------
 demo_data |>
   st_drop_geometry() |>
-  select(parcel_id, R1, R2, R3) |>
-  mutate(
-    R1_cat = cut(R1, breaks = c(0, 2, 3, 5), labels = c("Faible", "Moyen", "Élevé")),
-    R2_cat = cut(R2, breaks = c(0, 2, 3, 5), labels = c("Faible", "Moyen", "Élevé"))
-  ) |>
-  ggplot(aes(x = R1_cat, fill = R2_cat)) +
-  geom_bar(position = "dodge", alpha = 0.8) +
-  scale_fill_manual(values = c(Faible = "#4CAF50", Moyen = "#FFC107", "Élevé" = "#F44336")) +
+  select(parcel_id, R1, R2, R3, R4) |>
+  tidyr::pivot_longer(cols = c(R1, R2, R3, R4), names_to = "indicator", values_to = "value") |>
+  ggplot(aes(x = indicator, y = value, fill = indicator)) +
+  geom_boxplot(alpha = 0.8) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(
     title = "Famille R - Distribution des risques",
-    x = "R1: Risque incendie",
-    y = "Nombre de parcelles",
-    fill = "R2: Risque tempête"
+    x = "Indicateur",
+    y = "Score (0-100)",
+    fill = "Indicateur"
   ) +
   theme_minimal()
 
@@ -172,10 +170,11 @@ for (ind in inv_indicators) {
 # F1: 1 (très fertile) = 100, 5 (très pauvre) = 20
 demo_norm$F1_norm <- (6 - demo_norm$F1) / 4 * 80 + 20
 
-# R1, R2: 1 (faible) = 100, 5 (élevé) = 20
-demo_norm$R1_norm <- (6 - demo_norm$R1) / 4 * 80 + 20
-demo_norm$R2_norm <- (6 - demo_norm$R2) / 4 * 80 + 20
-demo_norm$R3_norm <- (1 - demo_norm$R3) * 100
+# R1-R4: déjà en 0-100, inverser (faible risque = meilleur score)
+demo_norm$R1_norm <- 100 - demo_norm$R1
+demo_norm$R2_norm <- 100 - demo_norm$R2
+demo_norm$R3_norm <- 100 - demo_norm$R3
+demo_norm$R4_norm <- 100 - demo_norm$R4
 
 # B1: 0 = 0, 3 = 100
 demo_norm$B1_norm <- demo_norm$B1 / 3 * 100
@@ -194,7 +193,7 @@ demo_norm$family_A <- (demo_norm$A1_norm + demo_norm$A2_norm) / 2
 demo_norm$family_F <- (demo_norm$F1_norm + demo_norm$F2_norm) / 2
 demo_norm$family_L <- (demo_norm$L1_norm + demo_norm$L2_norm) / 2
 demo_norm$family_T <- (demo_norm$T1_norm + demo_norm$T2_norm) / 2
-demo_norm$family_R <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm) / 3
+demo_norm$family_R <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm + demo_norm$R4_norm) / 4
 demo_norm$family_S <- (demo_norm$S1_norm + demo_norm$S2_norm) / 2
 demo_norm$family_P <- (demo_norm$P1_norm + demo_norm$P2_norm + demo_norm$P3_norm) / 3
 demo_norm$family_E <- (demo_norm$E1_norm + demo_norm$E2_norm) / 2

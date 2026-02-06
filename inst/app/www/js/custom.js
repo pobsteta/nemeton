@@ -608,6 +608,37 @@
   // Re-initialize after Shiny updates
   $(document).on('shiny:value', function() {
     initFormValidation();
+    // Re-initialize bslib tooltips after dynamic content updates
+    initBslibTooltips();
   });
+
+
+  // ============================================================
+  // bslib Tooltip Reinitialization
+  // ============================================================
+
+  /**
+   * Force bslib web components to reconnect after dynamic rendering.
+   * bslib tooltips use custom elements that may not auto-initialize
+   * when inserted via Shiny renderUI.
+   */
+  function initBslibTooltips() {
+    // Find all bslib-tooltip elements
+    var tooltips = document.querySelectorAll('bslib-tooltip');
+    tooltips.forEach(function(tooltip) {
+      // Force reconnection by briefly removing and re-adding to DOM
+      if (!tooltip._initialized) {
+        var parent = tooltip.parentNode;
+        var next = tooltip.nextSibling;
+        parent.removeChild(tooltip);
+        if (next) {
+          parent.insertBefore(tooltip, next);
+        } else {
+          parent.appendChild(tooltip);
+        }
+        tooltip._initialized = true;
+      }
+    });
+  }
 
 })();

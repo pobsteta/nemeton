@@ -44,11 +44,11 @@ test_that("correlation coefficient calculation is correct", {
   r_neg <- cor(x, y_neg)
   expect_true(r_neg < -0.99)
 
-  # Test no correlation
-  set.seed(123)
-  y_rand <- runif(5)
-  r_rand <- cor(x, y_rand)
-  expect_true(abs(r_rand) < 0.9)  # Weaker correlation
+  # Test weak correlation with deterministic values
+  # Using values that have low correlation with x = c(1,2,3,4,5)
+  y_weak <- c(3, 1, 4, 2, 3)  # Scrambled values with weak correlation
+  r_weak <- cor(x, y_weak)
+  expect_true(abs(r_weak) < 0.9)  # Weaker correlation
 })
 
 test_that("offset search grid is correctly generated", {

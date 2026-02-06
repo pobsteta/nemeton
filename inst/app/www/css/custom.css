@@ -585,6 +585,7 @@ html[data-shiny-busy] .bslib-card::after {
 .expert-select-inline .form-select,
 .expert-select-inline select {
   min-height: 32px;
+  min-width: 160px;
   padding: 4px 8px;
   font-size: 0.85em;
 }

@@ -457,8 +457,74 @@ load_project <- function(project_id) {
     path = project_path,
     metadata = metadata,
     parcels = load_parcels(project_id),
-    indicators = load_indicators(project_id)
+    indicators = load_indicators(project_id),
+    comments = load_comments(project_id)
   )
+}
+
+
+#' Save comments to project
+#'
+#' @description
+#' Persists synthesis and family comments as a JSON file in the project directory.
+#'
+#' @param project_id Character. Project ID.
+#' @param synthesis Character or NULL. Synthesis comment.
+#' @param families Named list. Family comments keyed by family code.
+#'
+#' @return Logical. TRUE if successful, FALSE otherwise.
+#'
+#' @noRd
+save_comments <- function(project_id, synthesis = NULL, families = NULL) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) return(FALSE)
+
+  comments_path <- file.path(project_path, "data", "comments.json")
+
+  # Merge with existing data to avoid overwriting fields not provided
+  existing <- NULL
+  if (file.exists(comments_path)) {
+    existing <- tryCatch(jsonlite::read_json(comments_path), error = function(e) NULL)
+  }
+
+  data <- list(
+    synthesis = if (!is.null(synthesis)) synthesis else existing$synthesis,
+    families = if (!is.null(families)) families else existing$families
+  )
+
+  tryCatch({
+    jsonlite::write_json(data, comments_path, auto_unbox = TRUE, pretty = TRUE)
+    TRUE
+  }, error = function(e) {
+    cli::cli_warn("Failed to save comments: {e$message}")
+    FALSE
+  })
+}
+
+
+#' Load comments from project
+#'
+#' @description
+#' Loads saved comments from the project directory.
+#'
+#' @param project_id Character. Project ID.
+#'
+#' @return List with synthesis and families, or NULL if not found.
+#'
+#' @noRd
+load_comments <- function(project_id) {
+  project_path <- get_project_path(project_id)
+  if (is.null(project_path)) return(NULL)
+
+  comments_path <- file.path(project_path, "data", "comments.json")
+  if (!file.exists(comments_path)) return(NULL)
+
+  tryCatch({
+    jsonlite::read_json(comments_path)
+  }, error = function(e) {
+    cli::cli_warn("Failed to load comments: {e$message}")
+    NULL
+  })
 }
 
 

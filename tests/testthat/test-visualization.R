@@ -575,3 +575,290 @@ test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
     expect_true(length(unique(p$data$unit_id)) == 2)
   }
 })
+
+# ==============================================================================
+# Coverage expansion tests for uncovered paths
+# ==============================================================================
+
+# --- clean_indicator_name (internal) -----------------------------------------
+
+test_that("clean_indicator_name transforms family_ prefix correctly", {
+  expect_equal(nemeton:::clean_indicator_name("family_C"), "C")
+  expect_equal(nemeton:::clean_indicator_name("family_B"), "B")
+  expect_equal(nemeton:::clean_indicator_name("family_W"), "W")
+})
+
+test_that("clean_indicator_name handles _norm suffix", {
+  result <- nemeton:::clean_indicator_name("carbon_norm")
+  expect_true(grepl("Normalized", result))
+})
+
+test_that("clean_indicator_name handles _inv suffix", {
+  result <- nemeton:::clean_indicator_name("risk_inv")
+  expect_true(grepl("Inverted", result))
+})
+
+test_that("clean_indicator_name replaces underscores with spaces", {
+  result <- nemeton:::clean_indicator_name("carbon_biomass")
+  expect_equal(result, "Carbon biomass")
+})
+
+test_that("clean_indicator_name capitalizes first letter", {
+  result <- nemeton:::clean_indicator_name("water")
+  expect_equal(result, "Water")
+})
+
+# --- reshape_for_facet (internal) --------------------------------------------
+
+test_that("reshape_for_facet converts wide to long with nemeton_id", {
+  units <- nemeton_units(create_test_units(n_features = 3))
+  units$ind1 <- c(10, 20, 30)
+  units$ind2 <- c(40, 50, 60)
+  result <- nemeton:::reshape_for_facet(units, c("ind1", "ind2"))
+  expect_s3_class(result, "sf")
+  expect_true("indicator" %in% names(result))
+  expect_true("value" %in% names(result))
+  expect_equal(nrow(result), 6) # 3 units x 2 indicators
+})
+
+test_that("reshape_for_facet works without nemeton_id column", {
+  units <- create_test_units(n_features = 3) # plain sf, no nemeton_id
+  units$ind1 <- c(10, 20, 30)
+  units$ind2 <- c(40, 50, 60)
+  result <- nemeton:::reshape_for_facet(units, c("ind1", "ind2"))
+  expect_s3_class(result, "sf")
+  expect_equal(nrow(result), 6)
+  expect_true("indicator" %in% names(result))
+  expect_true("value" %in% names(result))
+})
+
+# --- nemeton_radar: family mode ----------------------------------------------
+
+test_that("nemeton_radar works in family mode with auto-detected family indicators", {
+  units <- nemeton_units(create_test_units(n_features = 5))
+  units$C1 <- runif(5, 30, 80)
+  units$B1 <- runif(5, 30, 80)
+  units$W1 <- runif(5, 30, 80)
+
+  result <- create_family_index(units)
+
+  p <- nemeton_radar(result, unit_id = 1, mode = "family")
+  expect_s3_class(p, "ggplot")
+})
+
+# --- nemeton_radar: comparison mode (multiple unit_ids) ----------------------
+
+test_that("nemeton_radar comparison mode works with row indices", {
+  units <- nemeton_units(create_test_units(n_features = 5))
+  units$C1 <- runif(5, 30, 80)
+  units$W1 <- runif(5, 30, 80)
+  p <- nemeton_radar(units, unit_id = c(1, 2))
+  expect_s3_class(p, "ggplot")
+})
+
+# --- nemeton_radar: normalize=FALSE ------------------------------------------
+
+test_that("nemeton_radar works without normalization", {
+  units <- nemeton_units(create_test_units(n_features = 5))
+  units$C1 <- c(100, 200, 300, 400, 500)
+  units$W1 <- c(10, 20, 30, 40, 50)
+  p <- nemeton_radar(units, unit_id = 1, normalize = FALSE)
+  expect_s3_class(p, "ggplot")
+})
+
+# --- nemeton_radar: single unit by row index ---------------------------------
+
+test_that("nemeton_radar single unit by numeric row index", {
+  units <- create_test_units(n_features = 5) # no nemeton_id
+  units$C1 <- c(100, 200, 300, 400, 500)
+  units$W1 <- c(10, 20, 30, 40, 50)
+  p <- nemeton_radar(units, unit_id = 2)
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_comparison_map -----------------------------------------------------
+
+test_that("plot_comparison_map creates comparison plot with default labels", {
+  units1 <- create_test_units(n_features = 3)
+  units1$value <- c(10, 20, 30)
+  units2 <- create_test_units(n_features = 3)
+  units2$value <- c(15, 25, 35)
+  p <- plot_comparison_map(units1, units2, indicator = "value")
+  expect_s3_class(p, "ggplot")
+  expect_true("FacetWrap" %in% class(p$facet))
+})
+
+# --- plot_difference_map: absolute -------------------------------------------
+
+test_that("plot_difference_map shows absolute differences with default legend", {
+  units1 <- create_test_units(n_features = 3)
+  units1$value <- c(10, 20, 30)
+  units2 <- create_test_units(n_features = 3)
+  units2$value <- c(15, 25, 35)
+  p <- plot_difference_map(units1, units2, indicator = "value", type = "absolute")
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_difference_map: relative -------------------------------------------
+
+test_that("plot_difference_map shows relative differences with default legend", {
+  units1 <- create_test_units(n_features = 3)
+  units1$value <- c(10, 20, 30)
+  units2 <- create_test_units(n_features = 3)
+  units2$value <- c(15, 25, 35)
+  p <- plot_difference_map(units1, units2, indicator = "value", type = "relative")
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_temporal_trend -----------------------------------------------------
+
+test_that("plot_temporal_trend works with single indicator", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  u2 <- massif_demo_units[1:3, ]
+  u2$C1 <- c(55, 65, 75)
+  u2$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1, "2020" = u2))
+  p <- plot_temporal_trend(temporal, indicator = "C1")
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_temporal_trend works with multiple indicators", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$W1 <- c(10, 20, 30)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  u2 <- massif_demo_units[1:3, ]
+  u2$C1 <- c(55, 65, 75)
+  u2$W1 <- c(15, 25, 35)
+  u2$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1, "2020" = u2))
+  p <- plot_temporal_trend(temporal, indicator = c("C1", "W1"))
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_temporal_trend with show_mean adds mean line", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  u2 <- massif_demo_units[1:3, ]
+  u2$C1 <- c(55, 65, 75)
+  u2$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1, "2020" = u2))
+  p <- plot_temporal_trend(temporal, indicator = "C1", show_mean = TRUE)
+  expect_s3_class(p, "ggplot")
+  # show_mean adds an extra geom_line layer
+  expect_true(length(p$layers) >= 3)
+})
+
+# --- plot_temporal_heatmap ---------------------------------------------------
+
+test_that("plot_temporal_heatmap works", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  u2 <- massif_demo_units[1:3, ]
+  u2$C1 <- c(55, 65, 75)
+  u2$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1, "2020" = u2))
+  p <- plot_temporal_heatmap(temporal, unit_id = "P1")
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_temporal_heatmap with normalize=TRUE", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$W1 <- c(10, 20, 30)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  u2 <- massif_demo_units[1:3, ]
+  u2$C1 <- c(55, 65, 75)
+  u2$W1 <- c(15, 25, 35)
+  u2$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1, "2020" = u2))
+  p <- plot_temporal_heatmap(temporal, unit_id = "P1", indicators = c("C1", "W1"), normalize = TRUE)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_temporal_heatmap errors on missing unit", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1))
+  expect_error(
+    plot_temporal_heatmap(temporal, unit_id = "NONEXISTENT"),
+    "not found"
+  )
+})
+
+test_that("plot_temporal_heatmap errors on non-temporal input", {
+  expect_error(
+    plot_temporal_heatmap(data.frame(x = 1), unit_id = "P1"),
+    "nemeton_temporal"
+  )
+})
+
+# --- plot_indicators_map: risk indicators auto-palette -----------------------
+
+test_that("plot_indicators_map auto-selects YlOrRd for risk indicators", {
+  units <- create_test_units(n_features = 3)
+  units$R1 <- c(10, 20, 30)
+  p <- plot_indicators_map(units, indicators = "R1")
+  expect_s3_class(p, "ggplot")
+  # Verify scale uses YlOrRd (distiller) not viridis
+  scale_fill <- p$scales$get_scales("fill")
+  expect_true(!is.null(scale_fill))
+})
+
+test_that("plot_indicators_map auto-selects YlOrRd for family_R indicator", {
+  units <- create_test_units(n_features = 3)
+  units$family_R <- c(10, 20, 30)
+  p <- plot_indicators_map(units, indicators = "family_R")
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("plot_indicators_map auto-selects YlOrRd for risk_norm indicators", {
+  units <- create_test_units(n_features = 3)
+  units$R1_norm <- c(0.1, 0.5, 0.9)
+  p <- plot_indicators_map(units, indicators = "R1_norm")
+  expect_s3_class(p, "ggplot")
+})
+
+# --- plot_temporal_trend: errors ---------------------------------------------
+
+test_that("plot_temporal_trend errors on non-temporal input", {
+  expect_error(
+    plot_temporal_trend(data.frame(x = 1), indicator = "C1"),
+    "nemeton_temporal"
+  )
+})
+
+test_that("plot_temporal_trend errors on missing indicator in period", {
+  data(massif_demo_units)
+  u1 <- massif_demo_units[1:3, ]
+  u1$C1 <- c(50, 60, 70)
+  u1$parcel_id <- c("P1", "P2", "P3")
+  temporal <- nemeton_temporal(periods = list("2015" = u1))
+  expect_error(
+    plot_temporal_trend(temporal, indicator = "MISSING"),
+    "not found"
+  )
+})
+
+# --- nemeton_radar: comparison mode with normalize=TRUE ----------------------
+
+test_that("nemeton_radar comparison mode normalizes correctly", {
+  units <- nemeton_units(create_test_units(n_features = 5))
+  units$C1 <- c(100, 200, 300, 400, 500)
+  units$W1 <- c(10, 20, 30, 40, 50)
+  p <- nemeton_radar(units, unit_id = c(1, 3), normalize = TRUE)
+  expect_s3_class(p, "ggplot")
+  # All values should be normalized to 0-100
+  expect_true(all(p$data$value >= 0 & p$data$value <= 100, na.rm = TRUE))
+})

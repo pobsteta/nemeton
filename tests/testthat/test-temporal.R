@@ -335,3 +335,333 @@ test_that("calculate_change_rate type parameter works correctly", {
   expect_true("C1_rate_abs" %in% names(rates_both))
   expect_true("C1_rate_rel" %in% names(rates_both))
 })
+
+# ==============================================================================
+# Coverage expansion: uncovered paths in temporal.R
+# ==============================================================================
+
+# --- calculate_change_rate: year parsing from period names (no dates) ---
+
+test_that("calculate_change_rate parses years from period names when no dates", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:3, ]
+  units_2015$parcel_id <- paste0("P", 1:3)
+  units_2015$C1 <- c(50, 60, 55)
+
+  units_2020 <- massif_demo_units[1:3, ]
+  units_2020$parcel_id <- paste0("P", 1:3)
+  units_2020$C1 <- c(60, 70, 65)
+
+  # Create without dates - period names are "2015" and "2020" (year format)
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    id_column = "parcel_id"
+  )
+
+  # The dates should be auto-parsed from names "2015" and "2020"
+  # But calculate_change_rate also has a fallback path: when dates exist but
+  # are auto-generated, it uses difftime. Let's test the year-parsing path
+  # by removing dates from metadata.
+  temporal$metadata$dates <- NULL
+
+  rates <- calculate_change_rate(temporal, indicators = "C1", type = "absolute")
+
+  # Time diff = 2020 - 2015 = 5 years
+  # Absolute rate for unit 1: (60-50)/5 = 2
+  expect_equal(rates$C1_rate_abs[1], 2, tolerance = 0.01)
+  expect_equal(rates$C1_rate_abs[2], 2, tolerance = 0.01)
+})
+
+test_that("calculate_change_rate warns when period names are not years and no dates", {
+  data(massif_demo_units)
+
+  units_a <- massif_demo_units[1:2, ]
+  units_a$parcel_id <- paste0("P", 1:2)
+  units_a$C1 <- c(50, 60)
+
+  units_b <- massif_demo_units[1:2, ]
+  units_b$parcel_id <- paste0("P", 1:2)
+  units_b$C1 <- c(60, 70)
+
+  temporal <- nemeton_temporal(
+    periods = list("baseline" = units_a, "current" = units_b),
+    id_column = "parcel_id"
+  )
+
+  # Remove auto-generated dates (period names aren't year-like so dates=NULL)
+  temporal$metadata$dates <- NULL
+
+  # Should warn about assuming 1 year
+  expect_warning(
+    rates <- calculate_change_rate(temporal, indicators = "C1", type = "absolute"),
+    "Cannot determine time difference|1 year"
+  )
+
+  # With time_diff=1, rate = (60-50)/1 = 10
+  expect_equal(rates$C1_rate_abs[1], 10, tolerance = 0.01)
+})
+
+# --- calculate_change_rate: relative-only type ---
+
+test_that("calculate_change_rate relative type computes only relative rates", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:3, ]
+  units_2015$parcel_id <- paste0("P", 1:3)
+  units_2015$C1 <- c(50, 100, 200)
+
+  units_2020 <- massif_demo_units[1:3, ]
+  units_2020$parcel_id <- paste0("P", 1:3)
+  units_2020$C1 <- c(60, 120, 220)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    dates = c("2015-01-01", "2020-01-01"),
+    id_column = "parcel_id"
+  )
+
+  rates <- calculate_change_rate(temporal, indicators = "C1", type = "relative")
+
+  # Only relative columns
+  expect_true("C1_rate_rel" %in% names(rates))
+  expect_false("C1_rate_abs" %in% names(rates))
+
+  # Relative rate for unit 1: ((60/50) - 1) * 100 / time_diff
+  time_diff <- as.numeric(difftime(as.Date("2020-01-01"), as.Date("2015-01-01"), units = "days")) / 365.25
+  expected_rel <- ((60 / 50) - 1) * 100 / time_diff
+  expect_equal(rates$C1_rate_rel[1], expected_rel, tolerance = 0.01)
+})
+
+# --- calculate_change_rate: indicator missing in one period ---
+
+test_that("calculate_change_rate warns when indicator missing in one period", {
+  data(massif_demo_units)
+
+  # Use minimal columns - drop everything except geometry and parcel_id
+  units_2015 <- massif_demo_units[1:2, "geometry"]
+  units_2015$parcel_id <- paste0("P", 1:2)
+  units_2015$C1 <- c(50, 60)
+
+  units_2020 <- massif_demo_units[1:2, "geometry"]
+  units_2020$parcel_id <- paste0("P", 1:2)
+  units_2020$C1 <- c(55, 65)
+  units_2020$custom_metric <- c(10, 15)  # Only in 2020
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    dates = c("2015-01-01", "2020-01-01"),
+    id_column = "parcel_id"
+  )
+
+  # custom_metric is not in 2015, should warn and skip
+  expect_warning(
+    rates <- calculate_change_rate(temporal, indicators = c("C1", "custom_metric"), type = "absolute"),
+    "not found in both periods"
+  )
+
+  # C1 should still have rates
+  expect_true("C1_rate_abs" %in% names(rates))
+  # custom_metric should not have rates (skipped)
+  expect_false("custom_metric_rate_abs" %in% names(rates))
+})
+
+# --- calculate_change_rate: "all" indicators auto-detect (already partially tested above) ---
+
+test_that("calculate_change_rate 'all' auto-detects common numeric indicators", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:2, ]
+  units_2015$parcel_id <- paste0("P", 1:2)
+  units_2015$C1 <- c(50, 60)
+  units_2015$W1 <- c(10, 15)
+
+  units_2020 <- massif_demo_units[1:2, ]
+  units_2020$parcel_id <- paste0("P", 1:2)
+  units_2020$C1 <- c(55, 65)
+  units_2020$W1 <- c(12, 17)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    dates = c("2015-01-01", "2020-01-01"),
+    id_column = "parcel_id"
+  )
+
+  rates <- calculate_change_rate(temporal, indicators = "all", type = "both")
+
+  # Both C1 and W1 should be auto-detected
+  expect_true("C1_rate_abs" %in% names(rates))
+  expect_true("C1_rate_rel" %in% names(rates))
+  expect_true("W1_rate_abs" %in% names(rates))
+  expect_true("W1_rate_rel" %in% names(rates))
+})
+
+# --- print.nemeton_temporal: dates and incomplete units ---
+
+test_that("print.nemeton_temporal shows dates when available", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:3, ]
+  units_2015$C1 <- c(50, 60, 70)
+
+  units_2020 <- massif_demo_units[1:3, ]
+  units_2020$C1 <- c(55, 65, 75)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    dates = c("2015-01-01", "2020-01-01"),
+    labels = c("Baseline", "Current")
+  )
+
+  output <- capture.output(print(temporal))
+
+  # Should contain date range
+  expect_true(any(grepl("Date range", output)))
+  expect_true(any(grepl("2015", output)))
+  expect_true(any(grepl("2020", output)))
+})
+
+test_that("print.nemeton_temporal shows incomplete units warning", {
+  data(massif_demo_units)
+
+  # Period 1: units 1-5
+  units_2015 <- massif_demo_units[1:5, ]
+  units_2015$parcel_id <- paste0("P", 1:5)
+  units_2015$C1 <- c(50, 60, 55, 65, 70)
+
+  # Period 2: units 3-7 (partial overlap)
+  units_2020 <- massif_demo_units[3:7, ]
+  units_2020$parcel_id <- paste0("P", 3:7)
+  units_2020$C1 <- c(60, 70, 75, 80, 85)
+
+  expect_warning(
+    temporal <- nemeton_temporal(
+      periods = list("2015" = units_2015, "2020" = units_2020),
+      id_column = "parcel_id"
+    ),
+    "units not present in all periods"
+  )
+
+  output <- capture.output(print(temporal))
+
+  # Should contain warning about incomplete units
+  expect_true(any(grepl("not present in all periods|units tracked", output)))
+})
+
+test_that("print.nemeton_temporal lists indicators from first period", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:3, ]
+  units_2015$C1 <- c(50, 60, 70)
+  units_2015$W1 <- c(10, 15, 20)
+
+  units_2020 <- massif_demo_units[1:3, ]
+  units_2020$C1 <- c(55, 65, 75)
+  units_2020$W1 <- c(12, 17, 22)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020)
+  )
+
+  output <- capture.output(print(temporal))
+
+  # Should list indicators
+  expect_true(any(grepl("Indicators", output)))
+  expect_true(any(grepl("C1", output)))
+  expect_true(any(grepl("W1", output)))
+})
+
+# --- summary.nemeton_temporal: detailed statistics ---
+
+test_that("summary.nemeton_temporal shows period summaries with indicator ranges", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:5, ]
+  units_2015$C1 <- c(50, 60, 55, 65, 70)
+  units_2015$W1 <- c(10, 15, 12, 18, 20)
+
+  units_2020 <- massif_demo_units[1:5, ]
+  units_2020$C1 <- c(55, 65, 60, 70, 75)
+  units_2020$W1 <- c(12, 16, 14, 19, 21)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    labels = c("Baseline", "Current")
+  )
+
+  output <- capture.output(summary(temporal))
+
+  # Should contain nemeton_temporal header from print
+  expect_true(any(grepl("nemeton_temporal", output)))
+  # Should contain period summaries
+  expect_true(any(grepl("Period summaries", output)))
+  expect_true(any(grepl("Baseline", output)))
+  expect_true(any(grepl("Current", output)))
+  # Should contain indicator ranges with mean
+  expect_true(any(grepl("Indicator ranges", output)))
+  expect_true(any(grepl("C1", output)))
+  expect_true(any(grepl("W1", output)))
+  expect_true(any(grepl("mean", output)))
+  # Should contain unit counts per period
+  expect_true(any(grepl("Units: 5", output)))
+  # Should have multiple lines of output
+  expect_gt(length(output), 10)
+})
+
+test_that("summary.nemeton_temporal returns invisible object", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:3, ]
+  units_2015$C1 <- c(50, 60, 70)
+
+  units_2020 <- massif_demo_units[1:3, ]
+  units_2020$C1 <- c(55, 65, 75)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020),
+    labels = c("Baseline", "Current")
+  )
+
+  result <- capture.output(ret <- summary(temporal))
+
+  # Should return the original object invisibly
+  expect_s3_class(ret, "nemeton_temporal")
+})
+
+# --- nemeton_temporal: labels default to period names ---
+
+test_that("nemeton_temporal uses period names as default labels", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:2, ]
+  units_2015$C1 <- c(50, 60)
+
+  units_2020 <- massif_demo_units[1:2, ]
+  units_2020$C1 <- c(55, 65)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020)
+  )
+
+  expect_equal(temporal$metadata$period_labels, c("2015", "2020"))
+})
+
+# --- nemeton_temporal: auto-parse dates from year-like period names ---
+
+test_that("nemeton_temporal auto-parses dates from year-like period names", {
+  data(massif_demo_units)
+
+  units_2015 <- massif_demo_units[1:2, ]
+  units_2015$C1 <- c(50, 60)
+
+  units_2020 <- massif_demo_units[1:2, ]
+  units_2020$C1 <- c(55, 65)
+
+  temporal <- nemeton_temporal(
+    periods = list("2015" = units_2015, "2020" = units_2020)
+    # No dates provided - should auto-parse from "2015", "2020"
+  )
+
+  expect_false(is.null(temporal$metadata$dates))
+  expect_equal(temporal$metadata$dates, as.Date(c("2015-01-01", "2020-01-01")))
+})

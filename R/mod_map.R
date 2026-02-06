@@ -443,8 +443,18 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
       if (is.null(click) || is.null(click$id)) return()
 
-      parcel_id <- click$id
       i18n <- get_i18n(app_state$language)
+
+      # Block parcel modification during computation (T089)
+      if (isTRUE(app_state$computation_running)) {
+        shiny::showNotification(
+          i18n$t("selection_blocked_during_computation"),
+          type = "warning"
+        )
+        return()
+      }
+
+      parcel_id <- click$id
 
       # Check if already selected
       if (parcel_id %in% rv$selected_ids) {
@@ -493,6 +503,15 @@ mod_map_server <- function(id, app_state, commune_geometry, parcels) {
 
     shiny::observeEvent(input$clear_selection, {
       if (length(rv$selected_ids) == 0) return()
+
+      # Block during computation (T089)
+      if (isTRUE(app_state$computation_running)) {
+        shiny::showNotification(
+          get_i18n(app_state$language)$t("selection_blocked_during_computation"),
+          type = "warning"
+        )
+        return()
+      }
 
       # Clear the selection overlay group
       leaflet::leafletProxy(ns("map")) |>

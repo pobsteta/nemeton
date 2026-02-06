@@ -318,6 +318,7 @@ mod_family_server <- function(id, family_code, app_state) {
         cv <- if (avg != 0) abs(sd_val / avg) * 100 else 0
 
         label <- clean_indicator_label(col, i18n)
+        tooltip_text <- get_indicator_tooltip(col, app_state$language)
 
         # Alerts
         alerts <- list()
@@ -338,9 +339,26 @@ mod_family_server <- function(id, family_code, app_state) {
           )))
         }
 
+        # Build label with tooltip if available
+        label_element <- if (!is.null(tooltip_text)) {
+          htmltools::tagList(
+            htmltools::tags$strong(label),
+            bslib::tooltip(
+              htmltools::tags$span(
+                class = "ms-1 text-info",
+                style = "cursor: help;",
+                shiny::icon("circle-info", class = "fa-sm")
+              ),
+              tooltip_text
+            )
+          )
+        } else {
+          htmltools::tags$strong(label)
+        }
+
         htmltools::div(
           class = "mb-3",
-          htmltools::tags$strong(label),
+          label_element,
           htmltools::tags$table(
             class = "table table-sm table-borderless mb-1",
             style = "font-size: 0.85em;",
@@ -517,6 +535,14 @@ mod_family_server <- function(id, family_code, app_state) {
       }
       # Save comment for this family
       app_state$family_comments[[family_code]] <- input$analysis_comments
+
+      # Persist to disk
+      project_id <- app_state$project_id
+      if (!is.null(project_id)) {
+        save_comments(project_id,
+                      synthesis = NULL,
+                      families = app_state$family_comments)
+      }
     }, ignoreInit = TRUE)
 
     # ================================================================
@@ -534,6 +560,23 @@ mod_family_server <- function(id, family_code, app_state) {
         }
       })
     }) |> shiny::bindEvent(app_state$current_project, once = TRUE)
+
+    # ================================================================
+    # OBSERVER: Reload comment from app_state (after fill-all from synthesis)
+    # ================================================================
+    shiny::observeEvent(app_state$refresh_family_comments, {
+      if (!is.null(app_state$family_comments[[family_code]])) {
+        shiny::updateTextAreaInput(session, "analysis_comments",
+                                   value = app_state$family_comments[[family_code]])
+      }
+    }, ignoreInit = TRUE)
+
+    # ================================================================
+    # OBSERVER: Clear comment when commune/department changes
+    # ================================================================
+    shiny::observeEvent(app_state$clear_all_comments, {
+      shiny::updateTextAreaInput(session, "analysis_comments", value = "")
+    }, ignoreInit = TRUE)
 
   })
 }
@@ -693,4 +736,39 @@ clean_indicator_label <- function(col_name, i18n) {
 
   # Fallback: humanize the column name
   gsub("_", " ", base)
+}
+
+
+#' Get indicator tooltip for display (T178)
+#' @noRd
+get_indicator_tooltip <- function(col_name, lang = "fr") {
+  # Strip _norm suffix
+  base <- sub("_norm$", "", col_name)
+
+  # Search in INDICATOR_FAMILIES config
+ for (fam in INDICATOR_FAMILIES) {
+    if (!is.null(fam$column_names) && base %in% fam$column_names) {
+      idx <- which(fam$column_names == base)
+      if (idx <= length(fam$indicators)) {
+        code <- fam$indicators[idx]
+        if (!is.null(fam$indicator_tooltips) && !is.null(fam$indicator_tooltips[[code]])) {
+          tooltip <- fam$indicator_tooltips[[code]][[lang]]
+          if (!is.null(tooltip)) return(tooltip)
+          # Fallback to English
+          return(fam$indicator_tooltips[[code]][["en"]])
+        }
+      }
+    }
+    # Also check short codes directly
+    if (base %in% fam$indicators) {
+      if (!is.null(fam$indicator_tooltips) && !is.null(fam$indicator_tooltips[[base]])) {
+        tooltip <- fam$indicator_tooltips[[base]][[lang]]
+        if (!is.null(tooltip)) return(tooltip)
+        return(fam$indicator_tooltips[[base]][["en"]])
+      }
+    }
+  }
+
+  # No tooltip found
+  NULL
 }

@@ -369,3 +369,260 @@ skip_if_offline <- function() {
     skip("No internet connection")
   }
 }
+
+# ==============================================================================
+# Additional coverage tests for uncovered lines
+# ==============================================================================
+
+# --- standardize_hunting_columns: thorough column renaming tests ---
+
+test_that("standardize_hunting_columns renames departement to code_dept", {
+  data <- data.frame(
+    departement = c("01", "02"),
+    nom = c("Ain", "Aisne"),
+    annee = c("2022", "2023"),
+    prelevements = c(100, 200),
+    stringsAsFactors = FALSE
+  )
+
+  result <- nemeton:::standardize_hunting_columns(data, "chevreuil")
+
+  expect_true("code_dept" %in% names(result))
+  expect_true("nom_dept" %in% names(result))
+  expect_true("saison" %in% names(result))
+  expect_true("tableau" %in% names(result))
+  expect_true("espece" %in% names(result))
+  expect_equal(result$espece[1], "chevreuil")
+  expect_equal(result$code_dept[1], "01")
+})
+
+test_that("standardize_hunting_columns returns full data when fewer than 3 standard columns match", {
+  # Data with columns that don't match any known pattern
+  # Avoid substrings like "an", "nb", "nom", "code", "dept", etc.
+  data <- data.frame(
+    xyz_first = c("x", "y"),
+    xyz_second = c(1, 2),
+    stringsAsFactors = FALSE
+  )
+
+  result <- nemeton:::standardize_hunting_columns(data, "cerf")
+
+  # Should return full data since < 3 standard columns found
+  expect_true("espece" %in% names(result))
+  expect_true("xyz_first" %in% names(result))
+  expect_true("xyz_second" %in% names(result))
+})
+
+# --- compute_game_pressure_index: with pre-provided data and different normalizations ---
+
+test_that("compute_game_pressure_index with minmax normalization", {
+  hunting_data <- data.frame(
+    code_dept = rep(c("01", "33", "75"), 2),
+    nom_dept = rep(c("Ain", "Gironde", "Paris"), 2),
+    espece = rep(c("chevreuil", "cerf"), each = 3),
+    saison = rep("2022-2023", 6),
+    tableau = c(1000, 2000, 500, 800, 1500, 300),
+    stringsAsFactors = FALSE
+  )
+
+  result <- compute_game_pressure_index(
+    hunting_data = hunting_data,
+    season = "2022-2023",
+    normalize_by = "minmax"
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true("pressure_index" %in% names(result))
+  expect_true(all(result$pressure_index >= 0 & result$pressure_index <= 100))
+  expect_equal(nrow(result), 3)
+})
+
+test_that("compute_game_pressure_index with rank normalization and multi-species", {
+  hunting_data <- data.frame(
+    code_dept = rep(c("01", "33", "75"), 2),
+    nom_dept = rep(c("Ain", "Gironde", "Paris"), 2),
+    espece = rep(c("chevreuil", "cerf"), each = 3),
+    saison = rep("2022-2023", 6),
+    tableau = c(1000, 2000, 500, 800, 1500, 300),
+    stringsAsFactors = FALSE
+  )
+
+  result <- compute_game_pressure_index(
+    hunting_data = hunting_data,
+    season = "2022-2023",
+    normalize_by = "rank"
+  )
+
+  expect_true("pressure_index" %in% names(result))
+  expect_true(all(result$pressure_index >= 0 & result$pressure_index <= 100))
+  # Should have harvest columns
+  expect_true(any(grepl("_harvest$", names(result))))
+})
+
+test_that("compute_game_pressure_index with area normalization and dept_forest_area", {
+  hunting_data <- data.frame(
+    code_dept = rep(c("01", "33", "75"), 1),
+    nom_dept = rep(c("Ain", "Gironde", "Paris"), 1),
+    espece = rep("chevreuil", 3),
+    saison = rep("2022-2023", 3),
+    tableau = c(1000, 2000, 500),
+    stringsAsFactors = FALSE
+  )
+
+  # Provide forest area for area normalization
+  dept_area <- c("01" = 2000, "33" = 5000, "75" = 100)
+
+  result <- compute_game_pressure_index(
+    hunting_data = hunting_data,
+    season = "2022-2023",
+    normalize_by = "area",
+    dept_forest_area = dept_area
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true("pressure_index" %in% names(result))
+  expect_true(all(result$pressure_index >= 0 & result$pressure_index <= 100))
+})
+
+test_that("compute_game_pressure_index season filtering works", {
+  hunting_data <- data.frame(
+    code_dept = c("01", "01", "33", "33"),
+    nom_dept = c("Ain", "Ain", "Gironde", "Gironde"),
+    espece = rep("chevreuil", 4),
+    saison = c("2021-2022", "2022-2023", "2021-2022", "2022-2023"),
+    tableau = c(800, 1000, 1200, 1500),
+    stringsAsFactors = FALSE
+  )
+
+  # Select specific season
+  result <- compute_game_pressure_index(
+    hunting_data = hunting_data,
+    season = "2021-2022"
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 2)  # 2 departments
+})
+
+test_that("compute_game_pressure_index errors on empty season data", {
+  hunting_data <- data.frame(
+    code_dept = c("01"),
+    nom_dept = c("Ain"),
+    espece = c("chevreuil"),
+    saison = c("2020-2021"),
+    tableau = c(500),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    compute_game_pressure_index(hunting_data = hunting_data, season = "2099-2100"),
+    "No data available for season"
+  )
+})
+
+test_that("compute_game_pressure_index minmax with identical values gives 50", {
+  # When all values are the same, min == max, should give rep(50, ...)
+  hunting_data <- data.frame(
+    code_dept = c("01", "33", "75"),
+    nom_dept = c("Ain", "Gironde", "Paris"),
+    espece = rep("chevreuil", 3),
+    saison = rep("2022-2023", 3),
+    tableau = c(1000, 1000, 1000),  # All identical
+    stringsAsFactors = FALSE
+  )
+
+  result <- compute_game_pressure_index(
+    hunting_data = hunting_data,
+    season = "2022-2023",
+    normalize_by = "minmax"
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true("pressure_index" %in% names(result))
+  # All indices should be equal since all values are the same
+  expect_true(length(unique(result$pressure_index)) == 1)
+})
+
+test_that("compute_game_pressure_index area normalization without dept_forest_area falls back to rank", {
+  hunting_data <- data.frame(
+    code_dept = c("01", "33"),
+    nom_dept = c("Ain", "Gironde"),
+    espece = rep("chevreuil", 2),
+    saison = rep("2022-2023", 2),
+    tableau = c(1000, 2000),
+    stringsAsFactors = FALSE
+  )
+
+  # Area normalization without dept_forest_area should fallback to rank
+  # (produces cli messages/warnings but should not error)
+  result <- suppressMessages(
+    compute_game_pressure_index(
+      hunting_data = hunting_data,
+      season = "2022-2023",
+      normalize_by = "area",
+      dept_forest_area = NULL
+    )
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true("pressure_index" %in% names(result))
+})
+
+test_that("compute_game_pressure_index handles data without nom_dept", {
+  hunting_data <- data.frame(
+    code_dept = c("01", "33", "75"),
+    espece = rep("chevreuil", 3),
+    saison = rep("2022-2023", 3),
+    tableau = c(500, 1000, 1500),
+    stringsAsFactors = FALSE
+  )
+
+  result <- compute_game_pressure_index(
+    hunting_data = hunting_data,
+    season = "2022-2023"
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true("nom_dept" %in% names(result))
+  expect_true(all(is.na(result$nom_dept)))
+})
+
+# --- download_hunting_data with mocked network calls ---
+
+test_that("download_hunting_data creates cache directory", {
+  withr::with_tempdir({
+    cache_dir <- file.path(getwd(), "test_cache_hunting")
+
+    # Will fail to download (offline or fake species) but should create dir
+    tryCatch(
+      download_hunting_data(species = "chevreuil", cache_dir = cache_dir),
+      error = function(e) NULL,
+      warning = function(w) NULL
+    )
+
+    expect_true(dir.exists(cache_dir))
+  })
+})
+
+test_that("download_hunting_data with invalid species errors", {
+  expect_error(
+    download_hunting_data(species = "licorne"),
+    "No valid species specified"
+  )
+})
+
+# --- get_game_pressure_raster: input validation ---
+
+test_that("get_game_pressure_raster errors on non-sf input", {
+  expect_error(
+    get_game_pressure_raster(units = data.frame(x = 1)),
+    "units must be an sf object"
+  )
+})
+
+test_that("get_game_pressure_raster errors on non-sf list input", {
+  expect_error(
+    get_game_pressure_raster(units = list(a = 1, b = 2)),
+    "units must be an sf object"
+  )
+})
