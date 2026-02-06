@@ -214,7 +214,8 @@ mod_home_server <- function(id, app_state) {
                 ),
                 htmltools::div(
                   class = "text-muted smaller",
-                  sprintf("%d %s", proj$parcels_count, i18n$t("parcels"))
+                  sprintf("%d %s", proj$parcels_count,
+                    if (proj$parcels_count <= 1) i18n$t("parcel") else i18n$t("parcels"))
                 )
               ),
               if (is_active) {

@@ -368,7 +368,7 @@ mod_synthesis_server <- function(id, app_state) {
 
       synthesis_response <- tryCatch({
         chat <- create_llm_chat(system_prompt)
-        resp <- chat$chat(prompt, echo = FALSE)
+        resp <- as.character(chat$chat(prompt, echo = FALSE))
 
         shiny::updateTextAreaInput(session, "synthesis_comments", value = resp)
         shiny::removeNotification(notif_id)
@@ -421,7 +421,7 @@ mod_synthesis_server <- function(id, app_state) {
             fam_prompt <- build_analysis_prompt(fam_config, fam_ind_data, language)
             fam_response <- tryCatch({
               fam_chat <- create_llm_chat(system_prompt)
-              fam_chat$chat(fam_prompt, echo = FALSE)
+              as.character(fam_chat$chat(fam_prompt, echo = FALSE))
             }, error = function(e) {
               cli::cli_warn("Failed to generate comment for family {fc}: {conditionMessage(e)}")
               NULL

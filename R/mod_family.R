@@ -436,7 +436,7 @@ mod_family_server <- function(id, family_code, app_state) {
 
       tryCatch({
         chat <- create_llm_chat(system_prompt)
-        response <- chat$chat(prompt, echo = FALSE)
+        response <- as.character(chat$chat(prompt, echo = FALSE))
 
         shiny::updateTextAreaInput(session, "analysis_comments", value = response)
         shiny::removeNotification(notif_id)
