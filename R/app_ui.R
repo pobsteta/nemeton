@@ -421,7 +421,21 @@ mod_synthesis_ui <- function(id) {
       bslib::card(
         bslib::card_header(
           class = "d-flex justify-content-between align-items-center flex-wrap gap-2",
-          i18n$t("comments_title"),
+          htmltools::div(
+            class = "d-flex align-items-center gap-2",
+            i18n$t("comments_title"),
+            bslib::tooltip(
+              shiny::tags$div(
+                class = "form-check form-switch mb-0 ms-1",
+                shiny::tags$input(type = "checkbox", class = "form-check-input",
+                                  id = ns("fill_all_comments"), role = "switch"),
+                shiny::tags$label(class = "form-check-label small text-muted",
+                                  `for` = ns("fill_all_comments"),
+                                  i18n$t("fill_all_label"))
+              ),
+              i18n$t("fill_all_tooltip")
+            )
+          ),
           htmltools::div(
             class = "d-flex align-items-center gap-2",
             htmltools::div(
@@ -429,12 +443,7 @@ mod_synthesis_ui <- function(id) {
               shiny::selectInput(
                 ns("expert_profile"),
                 label = NULL,
-                choices = stats::setNames(
-                  c("generalist", "owner", "manager", "politician", "producer", "citizen", "hunter"),
-                  c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_manager"),
-                    i18n$t("expert_politician"), i18n$t("expert_producer"), i18n$t("expert_citizen"),
-                    i18n$t("expert_hunter"))
-                ),
+                choices = get_expert_choices(opts$language),
                 selected = "generalist",
                 width = "auto"
               )
@@ -521,12 +530,7 @@ mod_family_ui <- function(id, family_code) {
               shiny::selectInput(
                 ns("expert_profile"),
                 label = NULL,
-                choices = stats::setNames(
-                  c("generalist", "owner", "manager", "politician", "producer", "citizen", "hunter"),
-                  c(i18n$t("expert_generalist"), i18n$t("expert_owner"), i18n$t("expert_manager"),
-                    i18n$t("expert_politician"), i18n$t("expert_producer"), i18n$t("expert_citizen"),
-                    i18n$t("expert_hunter"))
-                ),
+                choices = get_expert_choices(opts$language),
                 selected = "generalist",
                 width = "auto"
               )

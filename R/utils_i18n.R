@@ -66,6 +66,10 @@ TRANSLATIONS <- list(
     en = "Maximum 20 parcels reached"
   ),
   clear_selection = list(fr = "Tout d\u00e9s\u00e9lectionner", en = "Clear selection"),
+  selection_blocked_during_computation = list(
+    fr = "La s\u00e9lection des parcelles est bloqu\u00e9e pendant les calculs",
+    en = "Parcel selection is blocked during computation"
+  ),
 
   # ============================================================
   # Project
@@ -133,6 +137,20 @@ TRANSLATIONS <- list(
   # Computation
   # ============================================================
   compute_button = list(fr = "Lancer les calculs", en = "Start Calculations"),
+  confirm_computation_title = list(
+    fr = "Confirmer le lancement des calculs",
+    en = "Confirm Calculation Start"
+  ),
+  confirm_computation_message = list(
+    fr = "Vous \u00eates sur le point de lancer le calcul des indicateurs pour ce projet :",
+    en = "You are about to start indicator calculations for this project:"
+  ),
+  confirm_computation_warning = list(
+    fr = "Une fois les calculs lanc\u00e9s, vous ne pourrez plus modifier la s\u00e9lection des parcelles.",
+    en = "Once calculations start, you will not be able to modify the parcel selection."
+  ),
+  start_computation = list(fr = "D\u00e9marrer les calculs", en = "Start Calculations"),
+  parcels_count = list(fr = "Nombre de parcelles", en = "Number of parcels"),
   computing = list(fr = "Calcul en cours...", en = "Computing..."),
   downloading_data = list(fr = "T\u00e9l\u00e9chargement des donn\u00e9es...", en = "Downloading data..."),
   computing_indicator = list(
@@ -326,6 +344,14 @@ TRANSLATIONS <- list(
     fr = "Saisissez vos observations sur la synth\u00e8se globale du projet...",
     en = "Enter your observations on the overall project synthesis..."
   ),
+  fill_all_label = list(fr = "Tout", en = "All"),
+  fill_all_tooltip = list(
+    fr = "Cocher pour g\u00e9n\u00e9rer aussi les commentaires des 12 familles d'indicateurs",
+    en = "Check to also generate comments for all 12 indicator families"
+  ),
+  ai_generating_families = list(
+    fr = "G\u00e9n\u00e9ration commentaires famille", en = "Generating family comments"
+  ),
   stat_min = list(fr = "Min", en = "Min"),
   stat_max = list(fr = "Max", en = "Max"),
   stat_mean = list(fr = "Moyenne", en = "Mean"),
@@ -351,13 +377,6 @@ TRANSLATIONS <- list(
 
   # Expert profiles
   expert_label = list(fr = "Point de vue", en = "Perspective"),
-  expert_generalist = list(fr = "G\u00e9n\u00e9raliste", en = "Generalist"),
-  expert_owner = list(fr = "Propri\u00e9taire", en = "Owner"),
-  expert_manager = list(fr = "Gestionnaire", en = "Manager"),
-  expert_politician = list(fr = "Politique", en = "Politician"),
-  expert_producer = list(fr = "Producteur", en = "Producer"),
-  expert_citizen = list(fr = "Citoyen", en = "Citizen"),
-  expert_hunter = list(fr = "Chasseur", en = "Hunter"),
 
   # ============================================================
   # Missing Indicators
