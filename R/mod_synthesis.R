@@ -153,7 +153,85 @@ mod_synthesis_server <- function(id, app_state) {
 
       htmltools::div(
         class = "text-center py-3",
-        shiny::p(class = "text-muted mb-1", "Score global"),
+        htmltools::div(
+          class = "d-flex align-items-center justify-content-center gap-2 mb-1",
+          shiny::p(class = "text-muted mb-0", i18n$t("global_score")),
+          bslib::popover(
+            htmltools::tags$span(
+              class = "text-info",
+              style = "cursor: help;",
+              shiny::icon("circle-info", class = "fa-sm")
+            ),
+            htmltools::div(
+              style = "max-height: 450px; overflow-y: auto; font-size: 0.85rem; line-height: 1.5;",
+              # Title
+              htmltools::div(
+                style = "border-left: 4px solid #4a7c3f; padding: 10px 12px; background: #f4f8f2; margin-bottom: 10px;",
+                htmltools::tags$div(
+                  style = "font-weight: bold; font-size: 1rem; color: #3a6330; margin-bottom: 2px;",
+                  htmltools::HTML("&#9670; "), i18n$t("score_tip_title")
+                ),
+                htmltools::tags$em(style = "color: #555;", i18n$t("score_tip_subtitle"))
+              ),
+              # Score display
+              htmltools::div(
+                class = "text-center",
+                style = "margin: 10px 0;",
+                htmltools::tags$span(
+                  style = paste0("font-size: 2.5rem; font-weight: bold; color: ", score_color, ";"),
+                  global
+                ),
+                htmltools::tags$span(
+                  style = "font-size: 1.2rem; color: #888;",
+                  "/ 100"
+                ),
+                htmltools::div(
+                  style = "font-size: 0.8rem; color: #888;",
+                  i18n$t("score_tip_index_label")
+                )
+              ),
+              # Intro
+              htmltools::p(
+                style = "margin: 8px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("score_tip_intro"))
+              ),
+              # Section: Ce que l'indice ne dit pas
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#10006; &nbsp;"), i18n$t("score_tip_not_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 8px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("score_tip_not_text"))
+              ),
+              # Section: Ce que l'indice dit
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#10004; &nbsp;"), i18n$t("score_tip_yes_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 8px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("score_tip_yes_text"))
+              ),
+              # Section: Comment l'utiliser
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#9658; &nbsp;"), i18n$t("score_tip_how_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 10px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("score_tip_how_text"))
+              ),
+              # Conclusion
+              htmltools::tags$p(
+                style = "font-style: italic; color: #555; margin: 10px 0 0 0; padding-top: 8px; border-top: 1px solid #ddd; text-align: justify;",
+                htmltools::HTML(i18n$t("score_tip_conclusion"))
+              )
+            ),
+            options = list(customClass = "popover-lg"),
+            title = NULL
+          )
+        ),
         htmltools::div(
           style = paste0(
             "font-size: 4rem; font-weight: bold; color: ", score_color,

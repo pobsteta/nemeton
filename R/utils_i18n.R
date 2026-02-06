@@ -302,6 +302,103 @@ TRANSLATIONS <- list(
       "a compass to accompany the forest in its direction."
     )
   ),
+  score_tip_title = list(
+    fr = "LIRE L\u2019INDICE G\u00c9N\u00c9RAL N\u00c9M\u00c9TON",
+    en = "READING THE N\u00c9M\u00c9TON GENERAL INDEX"
+  ),
+  score_tip_subtitle = list(
+    fr = "Un rep\u00e8re, pas une note",
+    en = "A benchmark, not a grade"
+  ),
+  score_tip_intro = list(
+    fr = paste0(
+      "L\u2019indice g\u00e9n\u00e9ral N\u00e9m\u00e9ton synth\u00e9tise les 12 familles d\u2019indicateurs ",
+      "en une valeur unique sur 100. Il repr\u00e9sente la <strong>moyenne ",
+      "pond\u00e9r\u00e9e</strong> de l\u2019ensemble des axes du radar. Mais cette valeur ",
+      "appelle une lecture prudente."
+    ),
+    en = paste0(
+      "The N\u00e9m\u00e9ton general index synthesises the 12 indicator families into ",
+      "a single value out of 100. It represents the <strong>weighted mean</strong> ",
+      "of all radar axes. But this value calls for a cautious reading."
+    )
+  ),
+  score_tip_not_title = list(
+    fr = "Ce que l\u2019indice ne dit pas",
+    en = "What the index does NOT say"
+  ),
+  score_tip_not_text = list(
+    fr = paste0(
+      "Qu\u2019une for\u00eat \u00e0 65 est en meilleure sant\u00e9 qu\u2019une for\u00eat \u00e0 41. ",
+      "Deux for\u00eats de contextes diff\u00e9rents \u2014 essences, sols, climat, altitude, ",
+      "historique de gestion \u2014 peuvent afficher des indices tr\u00e8s diff\u00e9rents ",
+      "tout en \u00e9tant chacune dans un \u00e9tat coh\u00e9rent avec leur milieu. ",
+      "<strong>L\u2019indice n\u2019est pas un outil de classement entre for\u00eats.</strong>"
+    ),
+    en = paste0(
+      "That a forest at 65 is healthier than one at 41. Two forests with ",
+      "different contexts \u2014 species, soils, climate, altitude, management ",
+      "history \u2014 may display very different indices while each being in a ",
+      "state consistent with their environment. ",
+      "<strong>The index is not a tool for ranking forests.</strong>"
+    )
+  ),
+  score_tip_yes_title = list(
+    fr = "Ce que l\u2019indice dit",
+    en = "What the index DOES say"
+  ),
+  score_tip_yes_text = list(
+    fr = paste0(
+      "Il donne un <strong>rep\u00e8re synth\u00e9tique</strong> de la situation d\u2019une ",
+      "for\u00eat \u00e0 un instant donn\u00e9. C\u2019est un <strong>point de d\u00e9part</strong> qui ",
+      "invite \u00e0 regarder le d\u00e9tail du radar pour comprendre quels axes tirent ",
+      "la valeur vers le haut ou vers le bas. Seul, il est un signal ; ",
+      "associ\u00e9 au radar, il devient une information."
+    ),
+    en = paste0(
+      "It provides a <strong>synthetic benchmark</strong> of a forest\u2019s situation ",
+      "at a given point in time. It is a <strong>starting point</strong> that invites ",
+      "looking at the radar detail to understand which axes pull the value up or ",
+      "down. Alone, it is a signal; combined with the radar, it becomes information."
+    )
+  ),
+  score_tip_how_title = list(
+    fr = "Comment l\u2019utiliser",
+    en = "How to use it"
+  ),
+  score_tip_how_text = list(
+    fr = paste0(
+      "La vraie puissance de l\u2019indice g\u00e9n\u00e9ral est <strong>diachronique</strong> : ",
+      "c\u2019est en suivant son \u00e9volution pour une m\u00eame for\u00eat au fil du temps qu\u2019il ",
+      "prend tout son sens. Un indice qui passe de 41 \u00e0 52 en cinq ans signale ",
+      "une dynamique positive. Un indice stable peut refl\u00e9ter un \u00e9quilibre ",
+      "atteint \u2014 ou une stagnation qu\u2019il convient d\u2019interroger en consultant ",
+      "le d\u00e9tail des 12 familles."
+    ),
+    en = paste0(
+      "The true power of the general index is <strong>diachronic</strong>: it is by ",
+      "tracking its evolution for the same forest over time that it becomes most ",
+      "meaningful. An index rising from 41 to 52 in five years signals a positive ",
+      "dynamic. A stable index may reflect an achieved balance \u2014 or a stagnation ",
+      "worth investigating by consulting the detail of the 12 families."
+    )
+  ),
+  score_tip_conclusion = list(
+    fr = paste0(
+      "L\u2019indice g\u00e9n\u00e9ral N\u00e9m\u00e9ton est un thermom\u00e8tre, pas un diagnostic. ",
+      "Il indique une temp\u00e9rature ; c\u2019est le radar qui r\u00e9v\u00e8le o\u00f9 se situe ",
+      "la fi\u00e8vre ou la vitalit\u00e9."
+    ),
+    en = paste0(
+      "The N\u00e9m\u00e9ton general index is a thermometer, not a diagnosis. ",
+      "It indicates a temperature; it is the radar that reveals where the ",
+      "fever or vitality lies."
+    )
+  ),
+  score_tip_index_label = list(
+    fr = "Indice g\u00e9n\u00e9ral N\u00e9m\u00e9ton",
+    en = "N\u00e9m\u00e9ton General Index"
+  ),
   summary_table_title = list(fr = "R\u00e9capitulatif par famille", en = "Summary by Family"),
   download_pdf = list(fr = "T\u00e9l\u00e9charger le rapport PDF", en = "Download PDF Report"),
   download_gpkg = list(fr = "T\u00e9l\u00e9charger le GeoPackage", en = "Download GeoPackage"),
