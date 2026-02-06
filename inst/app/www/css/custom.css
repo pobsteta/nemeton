@@ -715,3 +715,9 @@ html[data-shiny-busy] .bslib-card::after {
     font-size: 12pt;
   }
 }
+
+/* Wide popover for radar tooltip */
+.popover.bs-popover-auto.popover-lg,
+.popover.popover-lg {
+  max-width: 450px;
+}

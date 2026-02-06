@@ -416,11 +416,57 @@ mod_synthesis_ui <- function(id) {
               style = "cursor: help;",
               shiny::icon("circle-info", class = "fa-sm")
             ),
-            htmltools::p(
-              style = "white-space: pre-line; max-height: 400px; overflow-y: auto; margin: 0;",
-              i18n$t("radar_tooltip")
+            htmltools::div(
+              style = "max-height: 450px; overflow-y: auto; font-size: 0.85rem; line-height: 1.5;",
+              # Title
+              htmltools::div(
+                style = "border-left: 4px solid #4a7c3f; padding: 10px 12px; background: #f4f8f2; margin-bottom: 10px;",
+                htmltools::tags$div(
+                  style = "font-weight: bold; font-size: 1rem; color: #3a6330; margin-bottom: 2px;",
+                  htmltools::HTML("&#9670; "), i18n$t("radar_tip_title")
+                ),
+                htmltools::tags$em(style = "color: #555;", i18n$t("radar_tip_subtitle"))
+              ),
+              # Intro
+              htmltools::p(
+                style = "margin: 8px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("radar_tip_intro"))
+              ),
+              # Section: Ce que le radar ne dit pas
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#10006; &nbsp;"), i18n$t("radar_tip_not_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 8px 0; text-align: justify;",
+                i18n$t("radar_tip_not_text")
+              ),
+              # Section: Ce que le radar dit
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#10004; &nbsp;"), i18n$t("radar_tip_yes_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 8px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("radar_tip_yes_text"))
+              ),
+              # Section: Comment l'utiliser
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#9658; &nbsp;"), i18n$t("radar_tip_how_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 10px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("radar_tip_how_text"))
+              ),
+              # Conclusion
+              htmltools::tags$p(
+                style = "font-style: italic; color: #555; margin: 10px 0 0 0; padding-top: 8px; border-top: 1px solid #ddd; text-align: justify;",
+                htmltools::HTML(i18n$t("radar_tip_conclusion"))
+              )
             ),
-            title = i18n$t("radar_title")
+            options = list(customClass = "popover-lg"),
+            title = NULL
           )
         ),
         bslib::card_body(

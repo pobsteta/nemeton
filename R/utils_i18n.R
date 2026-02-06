@@ -208,56 +208,98 @@ TRANSLATIONS <- list(
   # ============================================================
   synthesis_title = list(fr = "Synth\u00e8se du projet", en = "Project Synthesis"),
   radar_title = list(fr = "Radar des 12 familles", en = "12 Families Radar"),
-  radar_tooltip = list(
+  radar_tip_title = list(
+    fr = "LIRE LE RADAR N\u00c9M\u00c9TON",
+    en = "READING THE N\u00c9M\u00c9TON RADAR"
+  ),
+  radar_tip_subtitle = list(
+    fr = "Une boussole foresti\u00e8re, pas un classement",
+    en = "A forest compass, not a ranking"
+  ),
+  radar_tip_intro = list(
     fr = paste0(
-      "Le Radar N\u00e9m\u00e9ton : une boussole foresti\u00e8re, pas un classement\n\n",
-      "Le graphique radar N\u00e9m\u00e9ton repr\u00e9sente les 12 familles d\u2019indicateurs ",
-      "forestiers, chacune exprim\u00e9e sur une \u00e9chelle de 0 \u00e0 100. Mais cette ",
-      "repr\u00e9sentation ne doit pas \u00eatre lue comme un bulletin de notes.\n\n",
-      "Ce que le radar ne dit pas : qu\u2019une for\u00eat \u00e0 75 est \u00ab meilleure \u00bb ",
-      "qu\u2019une for\u00eat \u00e0 45 sur un indicateur donn\u00e9. Deux for\u00eats aux contextes ",
-      "diff\u00e9rents \u2014 essence, sol, climat, altitude, histoire sylvicole \u2014 ne ",
-      "peuvent pas \u00eatre compar\u00e9es sur la seule base de ces valeurs num\u00e9riques. ",
-      "Un score de 40 en diversit\u00e9 structurale dans une ch\u00eanaie de plaine et un ",
-      "score de 80 dans une h\u00eatraie de montagne ne racontent pas la m\u00eame histoire ",
-      "et ne s\u2019inscrivent pas dans la m\u00eame logique \u00e9cologique.\n\n",
-      "Ce que le radar dit : il r\u00e9v\u00e8le le profil d\u2019une for\u00eat, sa physionomie ",
-      "syst\u00e9mique. Comme une rose des vents, il indique des directions \u2014 les axes ",
-      "vers lesquels la for\u00eat \u00ab tire \u00bb, ceux o\u00f9 elle semble en retrait. La forme ",
-      "du polygone qui se dessine est plus parlante que chaque valeur prise ",
-      "isol\u00e9ment. Un radar \u00e9tir\u00e9 vers le nord-est et aplati au sud-ouest raconte ",
-      "une dynamique, un d\u00e9s\u00e9quilibre, une orientation que le gestionnaire peut ",
-      "interpr\u00e9ter.\n\n",
-      "L\u2019int\u00e9r\u00eat du radar est donc diachronique plut\u00f4t que comparatif : c\u2019est en ",
-      "observant l\u2019\u00e9volution du profil d\u2019une m\u00eame for\u00eat dans le temps qu\u2019il prend ",
-      "tout son sens. D\u2019un passage \u00e0 l\u2019autre, le polygone se d\u00e9forme, se ",
-      "r\u00e9\u00e9quilibre, se d\u00e9ploie \u2014 et c\u2019est cette trajectoire qui guide le forestier ",
-      "dans ses choix de gestion patrimoniale.\n\n",
-      "En somme, le radar N\u00e9m\u00e9ton ne mesure pas la \u00ab qualit\u00e9 \u00bb d\u2019une for\u00eat sur ",
+      "Le graphique radar N\u00e9m\u00e9ton repr\u00e9sente les ",
+      "<strong>12 familles d\u2019indicateurs forestiers</strong>, ",
+      "chacune exprim\u00e9e sur une \u00e9chelle de 0 \u00e0 100. Mais cette ",
+      "repr\u00e9sentation ne doit pas \u00eatre lue comme un bulletin de notes."
+    ),
+    en = paste0(
+      "The N\u00e9m\u00e9ton radar chart represents the ",
+      "<strong>12 families of forest indicators</strong>, ",
+      "each expressed on a scale from 0 to 100. But this representation ",
+      "should not be read as a report card."
+    )
+  ),
+  radar_tip_not_title = list(
+    fr = "Ce que le radar ne dit pas",
+    en = "What the radar does NOT say"
+  ),
+  radar_tip_not_text = list(
+    fr = paste0(
+      "Qu\u2019une for\u00eat \u00e0 75 est \u00ab meilleure \u00bb qu\u2019une for\u00eat \u00e0 45 sur un ",
+      "indicateur donn\u00e9. Deux for\u00eats aux contextes diff\u00e9rents \u2014 essence, ",
+      "sol, climat, altitude, histoire sylvicole \u2014 ne peuvent pas \u00eatre ",
+      "compar\u00e9es sur la seule base de ces valeurs num\u00e9riques. Un score de ",
+      "40 en diversit\u00e9 structurale dans une ch\u00eanaie de plaine et un score ",
+      "de 80 dans une h\u00eatraie de montagne ne racontent pas la m\u00eame histoire."
+    ),
+    en = paste0(
+      "That a forest scoring 75 is \u2018better\u2019 than one scoring 45 on a given ",
+      "indicator. Two forests with different contexts \u2014 species, soil, climate, ",
+      "altitude, silvicultural history \u2014 cannot be compared solely on these ",
+      "numerical values."
+    )
+  ),
+  radar_tip_yes_title = list(
+    fr = "Ce que le radar dit",
+    en = "What the radar DOES say"
+  ),
+  radar_tip_yes_text = list(
+    fr = paste0(
+      "Il r\u00e9v\u00e8le le <strong>profil</strong> d\u2019une for\u00eat, sa physionomie ",
+      "syst\u00e9mique. Comme une <strong>rose des vents</strong>, il indique des ",
+      "directions \u2014 les axes vers lesquels la for\u00eat \u00ab tire \u00bb, ceux o\u00f9 elle ",
+      "semble en retrait. La <strong>forme du polygone</strong> qui se dessine ",
+      "est plus parlante que chaque valeur prise isol\u00e9ment."
+    ),
+    en = paste0(
+      "It reveals a forest\u2019s <strong>profile</strong>, its systemic physiognomy. ",
+      "Like a <strong>compass rose</strong>, it shows directions \u2014 the axes toward ",
+      "which the forest \u2018pulls\u2019, those where it seems to retreat. The ",
+      "<strong>shape of the polygon</strong> is more meaningful than any single value."
+    )
+  ),
+  radar_tip_how_title = list(
+    fr = "Comment l\u2019utiliser",
+    en = "How to use it"
+  ),
+  radar_tip_how_text = list(
+    fr = paste0(
+      "L\u2019int\u00e9r\u00eat du radar est <strong>diachronique</strong> plut\u00f4t que ",
+      "comparatif : c\u2019est en observant l\u2019\u00e9volution du profil d\u2019une m\u00eame ",
+      "for\u00eat dans le temps qu\u2019il prend tout son sens. D\u2019un passage \u00e0 ",
+      "l\u2019autre, le polygone se d\u00e9forme, se r\u00e9\u00e9quilibre, se d\u00e9ploie \u2014 ",
+      "et c\u2019est cette <strong>trajectoire</strong> qui guide le forestier ",
+      "dans ses choix de gestion patrimoniale."
+    ),
+    en = paste0(
+      "The radar\u2019s value is <strong>diachronic</strong> rather than comparative: ",
+      "it is by observing the evolution of the same forest\u2019s profile over time ",
+      "that it becomes most meaningful. From one survey to the next, the polygon ",
+      "shifts, rebalances, expands \u2014 and this <strong>trajectory</strong> guides ",
+      "the forester in heritage management choices."
+    )
+  ),
+  radar_tip_conclusion = list(
+    fr = paste0(
+      "Le radar N\u00e9m\u00e9ton ne mesure pas la \u00ab qualit\u00e9 \u00bb d\u2019une for\u00eat sur ",
       "une \u00e9chelle universelle. Il en dessine le temp\u00e9rament, et offre au ",
       "gestionnaire une boussole pour accompagner la for\u00eat dans sa direction."
     ),
     en = paste0(
-      "The N\u00e9m\u00e9ton Radar: a forest compass, not a ranking\n\n",
-      "The N\u00e9m\u00e9ton radar chart represents the 12 families of forest indicators, ",
-      "each expressed on a scale from 0 to 100. But this representation should ",
-      "not be read as a report card.\n\n",
-      "What the radar does NOT say: that a forest scoring 75 is 'better' than ",
-      "one scoring 45 on a given indicator. Two forests with different contexts ",
-      "\u2014 species, soil, climate, altitude, silvicultural history \u2014 cannot be ",
-      "compared solely on these numerical values.\n\n",
-      "What the radar DOES say: it reveals a forest's profile, its systemic ",
-      "physiognomy. Like a compass rose, it shows directions \u2014 the axes toward ",
-      "which the forest 'pulls', those where it seems to retreat. The shape of ",
-      "the polygon is more meaningful than any single value.\n\n",
-      "The radar's value is diachronic rather than comparative: it is by ",
-      "observing the evolution of the same forest's profile over time that it ",
-      "becomes most meaningful. From one survey to the next, the polygon shifts, ",
-      "rebalances, expands \u2014 and this trajectory guides the forester in ",
-      "heritage management choices.\n\n",
-      "In short, the N\u00e9m\u00e9ton radar does not measure a forest's 'quality' on a ",
-      "universal scale. It sketches its temperament, offering the manager a ",
-      "compass to accompany the forest in its direction."
+      "The N\u00e9m\u00e9ton radar does not measure a forest\u2019s \u2018quality\u2019 on a ",
+      "universal scale. It sketches its temperament, offering the manager ",
+      "a compass to accompany the forest in its direction."
     )
   ),
   summary_table_title = list(fr = "R\u00e9capitulatif par famille", en = "Summary by Family"),
