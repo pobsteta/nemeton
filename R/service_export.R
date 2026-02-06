@@ -573,25 +573,49 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
         n_cols <- length(header_cells)
 
         if (n_cols > 0) {
-          # Calculate column layout: estimate widths based on content
+          # Calculate column layout using actual rendered text widths
           table_width <- 0.90  # available width
+          col_gap <- 0.02      # gap between columns
           all_cells <- lapply(data_lines, parse_row)
-          # Compute max character count per column
-          max_chars <- rep(1L, n_cols)
+
+          # Compute max rendered width per column (using strwidth)
+          max_widths <- rep(0, n_cols)
           for (row_cells in all_cells) {
             for (ci in seq_along(row_cells)) {
               if (ci <= n_cols) {
-                max_chars[ci] <- max(max_chars[ci], nchar(row_cells[ci]))
+                cell_text <- strip_markdown_for_display(row_cells[ci])
+                w <- graphics::strwidth(cell_text, cex = cex, font = 2)
+                max_widths[ci] <- max(max_widths[ci], w)
               }
             }
           }
-          # Proportional widths with a minimum
-          col_widths <- pmax(max_chars, 5)
-          col_widths <- col_widths / sum(col_widths) * table_width
-          col_starts <- x + c(0, cumsum(col_widths[-n_cols]))
-          # Estimate wrap width (chars) per column
-          avg_char_width <- graphics::strwidth("M", cex = cex)
-          col_wrap <- pmax(floor(col_widths / avg_char_width), 8)
+
+          # Available width after gaps
+          total_gaps <- col_gap * (n_cols - 1)
+          usable_width <- table_width - total_gaps
+
+          # If content fits naturally, use natural widths; otherwise scale down
+          total_content <- sum(max_widths)
+          if (total_content <= usable_width) {
+            col_widths <- max_widths
+          } else {
+            # Proportional scaling to fit
+            col_widths <- max_widths / total_content * usable_width
+          }
+          # Ensure minimum column width
+          col_widths <- pmax(col_widths, 0.06)
+
+          col_starts <- numeric(n_cols)
+          col_starts[1] <- x
+          if (n_cols > 1) {
+            for (ci in 2:n_cols) {
+              col_starts[ci] <- col_starts[ci - 1] + col_widths[ci - 1] + col_gap
+            }
+          }
+
+          # Estimate wrap width (chars) per column using average char width
+          avg_char_width <- graphics::strwidth("n", cex = cex)
+          col_wrap <- pmax(floor(col_widths / avg_char_width), 6)
 
           # Helper: render a table row, wrapping cells, returns new y
           render_table_row <- function(cells, y, font_val) {
@@ -630,8 +654,9 @@ render_markdown_text <- function(text, x, y, cex = 0.7, col = "black",
           }
           y <- render_table_row(header_cells, y, font_val = 2)
           # Draw line under header
+          table_end <- col_starts[n_cols] + col_widths[n_cols]
           y <- y + line_height * 0.4
-          graphics::segments(x, y, x + table_width, y, col = "gray60", lwd = 0.5)
+          graphics::segments(x, y, table_end, y, col = "gray60", lwd = 0.5)
           y <- y - line_height * 0.4
 
           # Render body rows
