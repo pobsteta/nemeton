@@ -477,9 +477,16 @@ load_project <- function(project_id) {
 #' @noRd
 save_comments <- function(project_id, synthesis = NULL, families = NULL) {
   project_path <- get_project_path(project_id)
-  if (is.null(project_path)) return(FALSE)
+  if (is.null(project_path)) {
+    cli::cli_warn("save_comments: project_path is NULL for id={project_id}")
+    return(FALSE)
+  }
 
-  comments_path <- file.path(project_path, "data", "comments.json")
+  data_dir <- file.path(project_path, "data")
+  if (!dir.exists(data_dir)) {
+    dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  comments_path <- file.path(data_dir, "comments.json")
 
   # Merge with existing data to avoid overwriting fields not provided
   existing <- NULL
@@ -487,13 +494,16 @@ save_comments <- function(project_id, synthesis = NULL, families = NULL) {
     existing <- tryCatch(jsonlite::read_json(comments_path), error = function(e) NULL)
   }
 
-  data <- list(
-    synthesis = if (!is.null(synthesis)) synthesis else existing$synthesis,
-    families = if (!is.null(families)) families else existing$families
-  )
+  # Build data: use provided values, fall back to existing
+  syn <- if (!is.null(synthesis)) synthesis else existing$synthesis
+  fam <- if (!is.null(families) && length(families) > 0) families else existing$families
+
+  data <- list(synthesis = syn, families = fam)
 
   tryCatch({
     jsonlite::write_json(data, comments_path, auto_unbox = TRUE, pretty = TRUE)
+    n_fam <- if (is.list(fam)) length(fam) else 0L
+    cli::cli_inform("Comments saved: synthesis={!is.null(syn)}, families={n_fam}")
     TRUE
   }, error = function(e) {
     cli::cli_warn("Failed to save comments: {e$message}")

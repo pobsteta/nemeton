@@ -439,10 +439,15 @@ mod_synthesis_server <- function(id, app_state) {
       # Save comments to disk using local variables (not reactive values)
       # to avoid async issues with Shiny's reactive system
       project_id <- app_state$project_id
+      n_fam <- length(family_comments_local)
+      has_syn <- !is.null(synthesis_response)
+      cli::cli_inform("Saving comments: project_id={project_id}, synthesis={has_syn}, families={n_fam}")
       if (!is.null(project_id)) {
         save_comments(project_id,
                       synthesis = synthesis_response,
                       families = family_comments_local)
+      } else {
+        cli::cli_warn("Cannot save comments: project_id is NULL")
       }
 
       # Restore button
