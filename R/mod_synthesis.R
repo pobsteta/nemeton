@@ -287,11 +287,12 @@ mod_synthesis_server <- function(id, app_state) {
       expert <- input$expert_profile %||% "generalist"
       system_prompt <- build_system_prompt(language, expert = expert)
 
+      synthesis_response <- NULL
       tryCatch({
         chat <- create_llm_chat(system_prompt)
-        response <- chat$chat(prompt, echo = FALSE)
+        synthesis_response <- chat$chat(prompt, echo = FALSE)
 
-        shiny::updateTextAreaInput(session, "synthesis_comments", value = response)
+        shiny::updateTextAreaInput(session, "synthesis_comments", value = synthesis_response)
         shiny::removeNotification(notif_id)
       }, error = function(e) {
         shiny::removeNotification(notif_id)
@@ -352,11 +353,12 @@ mod_synthesis_server <- function(id, app_state) {
         }
       }
 
-      # Save comments to disk
+      # Save comments to disk (use synthesis_response directly because
+      # updateTextAreaInput does not update input$ synchronously)
       project_id <- app_state$project_id
-      if (!is.null(project_id)) {
+      if (!is.null(project_id) && !is.null(synthesis_response)) {
         save_comments(project_id,
-                      synthesis = input$synthesis_comments,
+                      synthesis = synthesis_response,
                       families = app_state$family_comments)
       }
 
