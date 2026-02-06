@@ -407,7 +407,22 @@ mod_synthesis_ui <- function(id) {
     bslib::layout_columns(
       col_widths = c(4, 4, 4),
       bslib::card(
-        bslib::card_header(i18n$t("radar_title")),
+        bslib::card_header(
+          class = "d-flex align-items-center gap-2",
+          i18n$t("radar_title"),
+          bslib::popover(
+            htmltools::tags$span(
+              class = "text-info",
+              style = "cursor: help;",
+              shiny::icon("circle-info", class = "fa-sm")
+            ),
+            htmltools::p(
+              style = "white-space: pre-line; max-height: 400px; overflow-y: auto; margin: 0;",
+              i18n$t("radar_tooltip")
+            ),
+            title = i18n$t("radar_title")
+          )
+        ),
         bslib::card_body(
           shiny::plotOutput(ns("radar_plot"), height = "500px")
         )
