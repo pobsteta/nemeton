@@ -382,10 +382,10 @@ mod_synthesis_server <- function(id, app_state) {
       })
 
       # Fill all family comments if switch is checked
+      family_comments_local <- as.list(shiny::isolate(app_state$family_comments))
       if (isTRUE(input$fill_all_comments)) {
         all_indicators <- project_indicators()
         if (!is.null(all_indicators)) {
-          if (is.null(app_state$family_comments)) app_state$family_comments <- list()
           family_codes <- get_family_codes()
 
           for (i in seq_along(family_codes)) {
@@ -420,6 +420,7 @@ mod_synthesis_server <- function(id, app_state) {
             tryCatch({
               fam_chat <- create_llm_chat(system_prompt)
               fam_response <- fam_chat$chat(fam_prompt, echo = FALSE)
+              family_comments_local[[fc]] <- fam_response
               app_state$family_comments[[fc]] <- fam_response
             }, error = function(e) {
               cli::cli_warn("Failed to generate comment for family {fc}: {conditionMessage(e)}")
@@ -431,13 +432,13 @@ mod_synthesis_server <- function(id, app_state) {
         }
       }
 
-      # Save comments to disk (use synthesis_response directly because
-      # updateTextAreaInput does not update input$ synchronously)
+      # Save comments to disk using local variables (not reactive values)
+      # to avoid async issues with Shiny's reactive system
       project_id <- app_state$project_id
-      if (!is.null(project_id) && !is.null(synthesis_response)) {
+      if (!is.null(project_id)) {
         save_comments(project_id,
                       synthesis = synthesis_response,
-                      families = app_state$family_comments)
+                      families = family_comments_local)
       }
 
       # Restore button
