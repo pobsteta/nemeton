@@ -468,6 +468,12 @@ mod_synthesis_server <- function(id, app_state) {
     # ================================================================
     shiny::observeEvent(app_state$current_project, {
       project <- app_state$current_project
+
+      # Always reset comments first to avoid stale data from previous project
+      shiny::updateTextAreaInput(session, "synthesis_comments", value = "")
+      app_state$family_comments <- list()
+
+      # Then restore from new project if available
       if (!is.null(project$comments)) {
         if (!is.null(project$comments$synthesis) &&
             nchar(project$comments$synthesis) > 0) {
@@ -478,6 +484,9 @@ mod_synthesis_server <- function(id, app_state) {
           app_state$family_comments <- project$comments$families
         }
       }
+
+      # Signal family modules to reload (cleared or restored)
+      app_state$refresh_family_comments <- Sys.time()
     }, ignoreInit = TRUE)
 
     # ================================================================

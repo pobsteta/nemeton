@@ -565,10 +565,9 @@ mod_family_server <- function(id, family_code, app_state) {
     # OBSERVER: Reload comment from app_state (after fill-all from synthesis)
     # ================================================================
     shiny::observeEvent(app_state$refresh_family_comments, {
-      if (!is.null(app_state$family_comments[[family_code]])) {
-        shiny::updateTextAreaInput(session, "analysis_comments",
-                                   value = app_state$family_comments[[family_code]])
-      }
+      comment <- app_state$family_comments[[family_code]]
+      shiny::updateTextAreaInput(session, "analysis_comments",
+                                 value = if (!is.null(comment)) comment else "")
     }, ignoreInit = TRUE)
 
     # ================================================================
