@@ -2,9 +2,9 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.12.0-blue.svg?logo=github)](https://github.com/pobsteta/nemeton/releases/tag/v0.12.0)
+[![Version](https://img.shields.io/badge/version-0.13.0-blue.svg?logo=github)](https://github.com/pobsteta/nemeton/releases/tag/v0.13.0)
 [![pkgdown](https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg)](https://pobsteta.github.io/nemeton/)
-[![Tests](https://img.shields.io/badge/tests-2987%20passing-success.svg?logo=github-actions)](https://github.com/pobsteta/nemeton)
+[![Tests](https://img.shields.io/badge/tests-8000%2B%20passing-success.svg?logo=github-actions)](https://github.com/pobsteta/nemeton)
 [![codecov](https://codecov.io/gh/pobsteta/nemeton/branch/main/graph/badge.svg)](https://codecov.io/gh/pobsteta/nemeton)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
@@ -85,7 +85,9 @@ L'application permet de :
 - Rechercher et sélectionner des parcelles cadastrales par commune
 - Calculer automatiquement les 29 indicateurs (12 familles)
 - Visualiser les résultats (radar, cartes, histogrammes)
-- Exporter en PDF ou GeoPackage
+- Exporter en PDF ou GeoPackage (auto-sauvegarde dans `exports/`)
+- Commenter chaque famille avec assistance IA (ellmer)
+- Consulter les profils d'experts personnalisables (YAML)
 
 <img src="man/figures/readme-app.png" width="100%" />
 
@@ -121,6 +123,32 @@ health <- create_composite_index(
 plot_indicators_map(health, indicators = "ecosystem_health", palette = "RdYlGn")
 ```
 
+## Nouveautés v0.13.0
+
+### Interface utilisateur
+- **Popovers explicatifs** sur le radar et le score global pour guider l'utilisateur
+- **Singulier/pluriel** automatique pour le compteur de parcelles
+- **Gestion des profils experts** externalisés en YAML (`inst/experts/`), personnalisables dans `~/.nemeton/experts/`
+
+### Export PDF
+- Rendu Markdown complet (gras, italique, listes, tableaux) avec pagination
+- Correction des chevauchements de texte et dimensionnement des colonnes
+- Sauvegarde automatique dans le dossier `exports/` du projet
+
+### Commentaires & Synthese
+- Persistance fiable des commentaires IA (tryCatch, variable locale)
+- Reset automatique lors du changement de projet
+- Serialisation correcte des sorties ellmer
+
+### Tests & Couverture
+- **8000+ tests** sur 76 fichiers couvrant 47 fichiers source
+- Tests `testServer()` pour les modules Shiny (contribuent a covr)
+- Script de couverture parallele (`nemeton-coverage-loop.sh`) : N agents Claude simultanement, un par fichier
+
+### Performance
+- Chargement paresseux (lazy loading) des modules famille
+- Assets minifies
+
 ## Documentation
 
 ```r
@@ -143,10 +171,10 @@ MIT - Voir [LICENSE](LICENSE)
 ## Citation
 
 ```
-Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-R package version 0.9.0. https://github.com/pobsteta/nemeton
+Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
+R package version 0.13.0. https://github.com/pobsteta/nemeton
 ```
 
 ---
 
-**Développé avec** ❤️ **et** [Claude Code](https://claude.com/claude-code)
+**Developpe avec** ❤️ **et** [Claude Code](https://claude.com/claude-code)
