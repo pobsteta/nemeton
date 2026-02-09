@@ -7,7 +7,7 @@
 # Projet : Package R + Shiny — Analyse systémique de territoires forestiers
 # Stack  : testthat (ed. 3) + shinytest2 (E2E Shiny) + covr
 # Repo   : https://github.com/pobsteta/nemeton
-# Version: 1.0.0 — agents parallèles
+# Version: 1.1.0 — agents parallèles + retry/lock/model
 #══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -25,6 +25,7 @@ AGENT_LOG_DIR="coverage-agent-logs"
 BRANCH_NAME="feat/auto-coverage-boost"
 STAGNATION_COUNT=0          # Compteur de stagnation
 MAX_STAGNATION=3            # Relance avec stratégie différente après N stagnations
+LOCK_DIR="coverage-locks"   # Verrous pour éviter les conflits entre agents
 
 #──────────────────────────────────────────────────────────────────────────────
 # COULEURS
@@ -87,6 +88,10 @@ fi
 
 # Répertoire de logs des agents
 mkdir -p "$AGENT_LOG_DIR"
+
+# Répertoire de verrous (évite les conflits entre agents sur le même fichier de test)
+mkdir -p "$LOCK_DIR"
+rm -f "$LOCK_DIR"/*.lock 2>/dev/null
 
 #──────────────────────────────────────────────────────────────────────────────
 # INSTALLATION DES DÉPENDANCES DE TEST
@@ -382,11 +387,35 @@ PROMPT_EOF
 launch_agent() {
     local agent_id="$1"
     local prompt="$2"
+    local model="${3:-sonnet}"
+    local test_basename="${4:-}"
     local agent_log="${AGENT_LOG_DIR}/agent-${agent_id}.log"
+    local session_id="nemeton-cov-${agent_id}"
+    local lock_file=""
 
-    echo -e "  ${MAGENTA}🤖 Agent #${agent_id}${NC} lancé → log: ${agent_log}"
+    # Verrouillage par fichier de test (skip si déjà verrouillé par un autre agent)
+    if [ -n "$test_basename" ]; then
+        lock_file="${LOCK_DIR}/${test_basename}.lock"
+        if [ -f "$lock_file" ]; then
+            echo -e "  ${YELLOW}🔒 Agent #${agent_id} skip — ${test_basename} déjà verrouillé${NC}"
+            return 0
+        fi
+        echo "$$" > "$lock_file"
+    fi
+
+    # Libérer le verrou en fin d'exécution (même en cas d'erreur)
+    cleanup_lock() {
+        if [ -n "$lock_file" ] && [ -f "$lock_file" ]; then
+            rm -f "$lock_file"
+        fi
+    }
+    trap cleanup_lock RETURN
+
+    echo -e "  ${MAGENTA}🤖 Agent #${agent_id}${NC} [${model}] lancé → log: ${agent_log}"
 
     claude -p "$prompt" \
+        --model "$model" \
+        --session-id "$session_id" \
         --dangerously-skip-permissions \
         --max-turns "$MAX_TURNS_PER_AGENT" \
         --output-format json \
@@ -396,7 +425,21 @@ launch_agent() {
     if [ $exit_code -eq 0 ]; then
         echo -e "  ${GREEN}🤖 Agent #${agent_id} terminé avec succès${NC}"
     else
-        echo -e "  ${RED}🤖 Agent #${agent_id} terminé avec erreur (code ${exit_code})${NC}"
+        echo -e "  ${YELLOW}🔄 Agent #${agent_id} échoué (code ${exit_code}) — retry avec --resume...${NC}"
+        claude --resume "$session_id" \
+            -p "L'exécution précédente a échoué. Continue la mission : corrige les erreurs dans les tests et assure-toi qu'ils passent tous." \
+            --model "$model" \
+            --dangerously-skip-permissions \
+            --max-turns "$MAX_TURNS_PER_AGENT" \
+            --output-format json \
+            >> "$agent_log" 2>&1
+
+        exit_code=$?
+        if [ $exit_code -eq 0 ]; then
+            echo -e "  ${GREEN}🤖 Agent #${agent_id} réussi après retry${NC}"
+        else
+            echo -e "  ${RED}🤖 Agent #${agent_id} échoué même après retry (code ${exit_code})${NC}"
+        fi
     fi
     return $exit_code
 }
@@ -485,11 +528,18 @@ while (( $(echo "$current < $TARGET_COVERAGE" | bc -l) )); do
         # Déterminer si c'est un fichier Shiny
         shiny_status=$(is_shiny_file "$fname")
 
+        # Sélection du modèle : sonnet pour Shiny (complexe), haiku pour R pur
+        if [ "$shiny_status" = "yes" ]; then
+            agent_model="sonnet"
+        else
+            agent_model="haiku"
+        fi
+
         # Construire le prompt spécialisé
         prompt=$(build_agent_prompt "$fname" "$local_basename" "$fpct" "$funcov" "$shiny_status" "$current" "$details")
 
         # Lancer l'agent en background
-        launch_agent "${iteration}-${agent_idx}-${local_basename}" "$prompt" &
+        launch_agent "${iteration}-${agent_idx}-${local_basename}" "$prompt" "$agent_model" "$local_basename" &
         AGENT_PIDS+=($!)
         AGENT_FILES+=("$fname")
 
@@ -546,6 +596,7 @@ Rscript -e 'devtools::test()'
 REPAIR_EOF
 )
         claude -p "$REPAIR_PROMPT" \
+            --model sonnet \
             --dangerously-skip-permissions \
             --max-turns 30 \
             --output-format json \
