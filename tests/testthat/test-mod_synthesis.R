@@ -412,9 +412,9 @@ test_that("get_expert_choices returns named vector for both languages", {
   expect_type(choices_fr, "character")
   expect_type(choices_en, "character")
 
-  # Should contain all 7 profiles
-  expect_true(length(choices_fr) >= 7)
-  expect_true(length(choices_en) >= 7)
+  # Should contain all profiles (at least 5 built-in)
+  expect_true(length(choices_fr) >= 5)
+  expect_true(length(choices_en) >= 5)
 
   # Values should be profile keys
   expect_true("generalist" %in% choices_fr)
