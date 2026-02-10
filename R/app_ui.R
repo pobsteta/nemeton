@@ -555,18 +555,16 @@ mod_synthesis_ui <- function(id) {
               htmltools::HTML(i18n$t("comments_markdown_tooltip")),
               title = i18n$t("comments_markdown_tooltip_title")
             ),
-            bslib::popover(
+            bslib::tooltip(
               shiny::tags$div(
                 class = "form-check form-switch mb-0 ms-1",
-                style = "cursor: help;",
                 shiny::tags$input(type = "checkbox", class = "form-check-input",
                                   id = ns("fill_all_comments"), role = "switch"),
                 shiny::tags$label(class = "form-check-label small text-muted",
                                   `for` = ns("fill_all_comments"),
                                   i18n$t("fill_all_label"))
               ),
-              i18n$t("fill_all_tooltip"),
-              title = NULL
+              i18n$t("fill_all_tooltip")
             )
           ),
           htmltools::div(
