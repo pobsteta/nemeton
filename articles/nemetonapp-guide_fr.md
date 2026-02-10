@@ -99,6 +99,9 @@ Sys.setenv(ANTHROPIC_API_KEY = "votre-clé")
 # OpenAI
 Sys.setenv(OPENAI_API_KEY = "votre-clé")
 
+# Mistral
+Sys.setenv(MISTRAL_API_KEY = "votre-clé")
+
 # Ollama (local, pas de clé requise)
 ```
 
