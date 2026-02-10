@@ -405,7 +405,7 @@ mod_synthesis_ui <- function(id) {
 
     # Radar + Summary table + Comments (3 columns)
     bslib::layout_columns(
-      col_widths = c(4, 4, 4),
+      col_widths = c(6, 3, 3),
       bslib::card(
         bslib::card_header(
           class = "d-flex align-items-center gap-2",
@@ -470,7 +470,7 @@ mod_synthesis_ui <- function(id) {
           )
         ),
         bslib::card_body(
-          shiny::plotOutput(ns("radar_plot"), height = "500px")
+          shiny::plotOutput(ns("radar_plot"), height = "600px")
         )
       ),
       bslib::card(
