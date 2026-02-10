@@ -266,8 +266,6 @@ if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comm
 
 \newpage
 
-# `r if (params$language == "fr") "Table des mati\u00e8res" else "Table of Contents"`
-
 ```{r toc}
 #| results: asis
 cat("\\tableofcontents\n")

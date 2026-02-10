@@ -371,8 +371,9 @@ generate_radar_image <- function(family_scores, output_file, language) {
   i18n <- get_i18n(language)
 
   tryCatch({
-    nemeton_radar(family_scores, mode = "family", normalize = FALSE,
-                  title = i18n$t("radar_title"))
+    p <- nemeton_radar(family_scores, mode = "family", normalize = FALSE,
+                       title = i18n$t("radar_title"))
+    print(p)
   }, error = function(e) {
     # Fallback: empty plot with message
     plot.new()
