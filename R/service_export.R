@@ -296,7 +296,7 @@ prepare_report_data <- function(project, family_scores, language,
       project_name = if (language == "fr") "Nom du projet" else "Project name",
       owner = if (language == "fr") "Propri\u00e9taire" else "Owner",
       global_score_label = i18n$t("global_score"),
-      parcels = i18n$t("parcels"),
+      parcels = if (n_parcels > 1) i18n$t("parcels") else i18n$t("parcel"),
       created_at = i18n$t("created_at"),
       family_scores = if (language == "fr") "Scores par famille" else "Scores by family",
       radar_title = i18n$t("radar_title"),
@@ -1325,7 +1325,11 @@ generate_simple_pdf_report <- function(project,
 
         # Parcels count
         graphics::text(0.5, 0.10, sprintf("%d %s", report_data$n_parcels,
-                                          if (language == "fr") "parcelles" else "parcels"),
+                                          if (report_data$n_parcels > 1) {
+                                            if (language == "fr") "parcelles" else "parcels"
+                                          } else {
+                                            if (language == "fr") "parcelle" else "parcel"
+                                          }),
                        cex = 1, col = "gray50")
 
         # Footer
