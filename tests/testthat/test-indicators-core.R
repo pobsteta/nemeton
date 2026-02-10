@@ -183,7 +183,7 @@ test_that("list_indicators return_type uses match.arg", {
   # Invalid return_type should error via match.arg
   expect_error(
     list_indicators(return_type = "invalid"),
-    "should be one of"
+    "should be one of|doit \u00eatre un de"
   )
 })
 
