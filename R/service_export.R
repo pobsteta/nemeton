@@ -404,6 +404,25 @@ generate_family_maps <- function(family_scores, output_dir, language) {
   # Get family columns present in data
   family_cols <- grep("^family_[A-Z]$", names(family_scores), value = TRUE)
 
+  has_maptiles <- requireNamespace("maptiles", quietly = TRUE)
+
+  # Pre-download OSM tiles once (shared across all family maps)
+  tiles <- NULL
+  data_proj <- NULL
+  if (has_maptiles) {
+    tryCatch({
+      data_wgs84 <- sf::st_transform(family_scores, 4326)
+      bbox <- sf::st_bbox(data_wgs84)
+      extent_size <- max(bbox["xmax"] - bbox["xmin"], bbox["ymax"] - bbox["ymin"])
+      auto_zoom <- min(17, max(13, round(17 - log2(extent_size * 100))))
+      tiles <- maptiles::get_tiles(data_wgs84, provider = "OpenTopoMap",
+                                   zoom = auto_zoom, crop = TRUE, cachedir = tempdir())
+      data_proj <- sf::st_transform(family_scores, sf::st_crs(tiles))
+    }, error = function(e) {
+      cli::cli_warn("Failed to download OSM tiles: {conditionMessage(e)}")
+    })
+  }
+
   for (col in family_cols) {
     code <- sub("^family_", "", col)
     fam <- INDICATOR_FAMILIES[[code]]
@@ -418,11 +437,11 @@ generate_family_maps <- function(family_scores, output_dir, language) {
       # Get family info
       family_name <- if (language == "fr") fam$name_fr else fam$name_en
       family_color <- fam$color
+      map_title <- paste0(family_name, " (", code, ")")
 
       # Create color palette from white to family color
       vals <- family_scores[[col]]
       if (all(is.na(vals))) {
-        # No data - show empty plot
         plot.new()
         graphics::text(0.5, 0.5,
                        if (language == "fr") "Donn\u00e9es non disponibles" else "Data not available",
@@ -431,35 +450,67 @@ generate_family_maps <- function(family_scores, output_dir, language) {
         next
       }
 
-      # Create color breaks
       n_breaks <- 5
       breaks <- seq(0, 100, length.out = n_breaks + 1)
+      legend_labels <- paste0(utils::head(breaks, -1), "-", utils::tail(breaks, -1))
 
-      # Color ramp from light gray to family color
-      colors <- grDevices::colorRampPalette(c("#f0f0f0", family_color))(n_breaks)
+      if (!is.null(tiles)) {
+        # OSM background map
+        graphics::par(mar = c(4, 4, 3, 2))
+        maptiles::plot_tiles(tiles)
 
-      # Classify values
-      val_class <- cut(vals, breaks = breaks, include.lowest = TRUE, labels = FALSE)
-      fill_colors <- colors[val_class]
-      fill_colors[is.na(fill_colors)] <- "#cccccc"
+        colors_transparent <- grDevices::colorRampPalette(c(
+          grDevices::adjustcolor("#f0f0f0", alpha.f = 0.75),
+          grDevices::adjustcolor(family_color, alpha.f = 0.85)
+        ))(n_breaks)
 
-      # Plot with sf
-      plot(sf::st_geometry(family_scores),
-           col = fill_colors,
-           border = "gray40",
-           lwd = 0.5,
-           main = paste0(family_name, " (", code, ")"))
+        val_class <- cut(vals, breaks = breaks, include.lowest = TRUE, labels = FALSE)
+        fill_colors <- colors_transparent[val_class]
+        fill_colors[is.na(fill_colors)] <- grDevices::adjustcolor("#cccccc", alpha.f = 0.7)
 
-      # Add legend
-      legend_labels <- paste0(
-        utils::head(breaks, -1), "-", utils::tail(breaks, -1)
-      )
-      graphics::legend("bottomright",
-                       legend = legend_labels,
-                       fill = colors,
-                       title = "Score",
-                       cex = 0.7,
-                       bty = "n")
+        plot(sf::st_geometry(data_proj), col = fill_colors, border = "gray20",
+             lwd = 1.2, add = TRUE)
+
+        add_parcel_labels(data_proj)
+        graphics::title(main = map_title, cex.main = 1.2, font.main = 2)
+
+        # Legend
+        colors_opaque <- grDevices::colorRampPalette(c("#f0f0f0", family_color))(n_breaks)
+        old_par <- graphics::par(no.readonly = TRUE)
+        graphics::par(fig = c(0, 0.25, 0, 0.35), new = TRUE, mar = c(0, 0, 0, 0))
+        plot.new()
+        graphics::legend("center",
+                         legend = legend_labels,
+                         fill = colors_opaque,
+                         title = "Score",
+                         cex = 0.8,
+                         bty = "o",
+                         bg = "white",
+                         box.col = "gray40")
+        graphics::par(fig = old_par$fig, new = FALSE, mar = old_par$mar)
+
+        graphics::mtext("(c) OpenTopoMap", side = 1, line = 2, adj = 1, cex = 0.5, col = "gray50")
+        graphics::par(mar = c(5.1, 4.1, 4.1, 2.1))
+      } else {
+        # Fallback: simple sf plot
+        colors <- grDevices::colorRampPalette(c("#f0f0f0", family_color))(n_breaks)
+        val_class <- cut(vals, breaks = breaks, include.lowest = TRUE, labels = FALSE)
+        fill_colors <- colors[val_class]
+        fill_colors[is.na(fill_colors)] <- "#cccccc"
+
+        plot(sf::st_geometry(family_scores),
+             col = fill_colors,
+             border = "gray40",
+             lwd = 0.5,
+             main = map_title)
+
+        graphics::legend("bottomright",
+                         legend = legend_labels,
+                         fill = colors,
+                         title = "Score",
+                         cex = 0.7,
+                         bty = "n")
+      }
 
       grDevices::dev.off()
 
