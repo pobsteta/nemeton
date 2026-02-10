@@ -401,6 +401,86 @@ TRANSLATIONS <- list(
     en = "N\u00e9m\u00e9ton General Index"
   ),
   summary_table_title = list(fr = "R\u00e9capitulatif par famille", en = "Summary by Family"),
+  summary_tip_title = list(
+    fr = "Les 12 dimensions de N\u00e9m\u00e9ton",
+    en = "The 12 dimensions of N\u00e9m\u00e9ton"
+  ),
+  summary_tip_subtitle = list(
+    fr = "Traduire la for\u00eat en signes \u2014 Chapitre 17",
+    en = "Translating the forest into signs \u2014 Chapter 17"
+  ),
+  summary_tip_intro = list(
+    fr = paste0(
+      "Les 12 dimensions organisent la complexit\u00e9 de la for\u00eat sans la mutiler. ",
+      "Elles se r\u00e9partissent en trois cercles autour du triangle <b>Produire \u2013 Prot\u00e9ger \u2013 Partager</b>."
+    ),
+    en = paste0(
+      "The 12 dimensions organize the complexity of the forest without diminishing it. ",
+      "They are arranged in three circles around the triangle <b>Produce \u2013 Protect \u2013 Share</b>."
+    )
+  ),
+  summary_tip_base_title = list(
+    fr = "Carr\u00e9 de base : C, B, W, A",
+    en = "Core square: C, B, W, A"
+  ),
+  summary_tip_base_text = list(
+    fr = "<b>C</b>arbone \u00b7 <b>B</b>iodiversit\u00e9 \u00b7 <b>W</b>ater (eau) \u00b7 <b>A</b>ir (microclimat)",
+    en = "<b>C</b>arbon \u00b7 <b>B</b>iodiversity \u00b7 <b>W</b>ater \u00b7 <b>A</b>ir (microclimate)"
+  ),
+  summary_tip_support_title = list(
+    fr = "Supports du vivant : F, L, T, R",
+    en = "Life supports: F, L, T, R"
+  ),
+  summary_tip_support_text = list(
+    fr = "<b>F</b>ertilit\u00e9 des sols \u00b7 <b>L</b>andscape (paysage) \u00b7 <b>T</b>rame \u00e9cologique \u00b7 <b>R</b>\u00e9silience",
+    en = "<b>F</b>ertility \u00b7 <b>L</b>andscape \u00b7 Ecological <b>T</b>rame \u00b7 <b>R</b>esilience"
+  ),
+  summary_tip_human_title = list(
+    fr = "Dimensions humaines : S, P, E, N",
+    en = "Human dimensions: S, P, E, N"
+  ),
+  summary_tip_human_text = list(
+    fr = "<b>S</b>ant\u00e9 \u00b7 <b>P</b>atrimoine \u00b7 <b>E</b>ducation \u00b7 <b>N</b>uit",
+    en = "<b>S</b>(health) \u00b7 <b>P</b>atrimony \u00b7 <b>E</b>ducation \u00b7 <b>N</b>ight"
+  ),
+  summary_tip_acrostic_title = list(
+    fr = "L'acrostiche VIVREENFORET",
+    en = "The VIVREENFORET acrostic"
+  ),
+  summary_tip_acrostic = list(
+    fr = paste0(
+      "<b>V</b> comme <i>Vaporeuse</i> : la brume qui s'\u00e9l\u00e8ve au petit matin<br>",
+      "<b>I</b> comme <i>Infiltrante</i> : l'eau qui dispara\u00eet nourrissant les nappes<br>",
+      "<b>V</b> comme <i>Vivante</i> : bact\u00e9ries, champignons, insectes que nul inventaire ne pourra \u00e9puiser<br>",
+      "<b>R</b> comme <i>Racinaire</i> : le r\u00e9seau souterrain qui tient la pente et \u00e9change<br>",
+      "<b>E</b> comme <i>\u00c9ponge</i> : absorber les chocs, les pluies, les vents, les exc\u00e8s<br>",
+      "<b>E</b> comme <i>\u00c9missive</i> : oxyg\u00e8ne, odeurs de r\u00e9sine, particules qui ensemencent les nuages<br>",
+      "<b>N</b> comme <i>Nocturne</i> : le ciel qui r\u00e9appara\u00eet entre les cimes<br>",
+      "<b>F</b> comme <i>Foresti\u00e8re</i> : ce sentiment d'\u00eatre \u00ab en for\u00eat \u00bb, entour\u00e9, prot\u00e9g\u00e9<br>",
+      "<b>O</b> comme <i>Oscillante</i> : les cycles, les chablis, les renaissances<br>",
+      "<b>R</b> comme <i>R\u00e9sonnante</i> : la for\u00eat r\u00e9pond \u00e0 ce qu'on lui fait<br>",
+      "<b>E</b> comme <i>\u00c9toil\u00e9e</i> : chaque feuille capte une lumi\u00e8re venue de l'infini<br>",
+      "<b>T</b> comme <i>Tellurique</i> : l'ancrage dans la roche et le sol profond"
+    ),
+    en = paste0(
+      "<b>V</b> for <i>Vaporous</i>: the mist rising at dawn as the soil returns moisture to the air<br>",
+      "<b>I</b> for <i>Infiltrating</i>: water silently seeping down to feed invisible aquifers<br>",
+      "<b>V</b> for <i>Vivid</i>: bacteria, fungi, insects that no inventory can exhaust<br>",
+      "<b>R</b> for <i>Root-bound</i>: the underground network holding slopes, exchanging<br>",
+      "<b>E</b> for <i>absorbEnt</i>: absorbing shocks, rains, winds, excesses<br>",
+      "<b>E</b> for <i>Emissive</i>: oxygen, resin scents, particles seeding the clouds<br>",
+      "<b>N</b> for <i>Nocturnal</i>: the sky reappearing between canopy tops<br>",
+      "<b>F</b> for <i>Forested</i>: the simple feeling of being 'in the forest', surrounded<br>",
+      "<b>O</b> for <i>Oscillating</i>: cycles, windthrows, rebirths<br>",
+      "<b>R</b> for <i>Resonant</i>: the forest responds to what we do to it<br>",
+      "<b>E</b> for <i>starlit (Etoil\u00e9e)</i>: each leaf captures light from infinitely far<br>",
+      "<b>T</b> for <i>Telluric</i>: anchored in rock and deep soil"
+    )
+  ),
+  summary_tip_conclusion = list(
+    fr = "Un contrepoint po\u00e9tique \u00e0 la rigueur de la m\u00e9thode : derri\u00e8re chaque score, il y a une for\u00eat vaporeuse, infiltrante, vivante, racinaire, \u00e9ponge, \u00e9missive, nocturne, foresti\u00e8re, oscillante, r\u00e9sonnante, \u00e9toil\u00e9e, tellurique.",
+    en = "A poetic counterpoint to the rigor of the method: behind each score lies a vaporous, infiltrating, vivid, root-bound, absorbent, emissive, nocturnal, forested, oscillating, resonant, starlit, telluric forest."
+  ),
   download_pdf = list(fr = "T\u00e9l\u00e9charger le rapport PDF", en = "Download PDF Report"),
   download_gpkg = list(fr = "T\u00e9l\u00e9charger le GeoPackage", en = "Download GeoPackage"),
   generating_pdf = list(fr = "G\u00e9n\u00e9ration du rapport PDF...", en = "Generating PDF report..."),

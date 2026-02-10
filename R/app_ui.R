@@ -474,7 +474,68 @@ mod_synthesis_ui <- function(id) {
         )
       ),
       bslib::card(
-        bslib::card_header(i18n$t("summary_table_title")),
+        bslib::card_header(
+          class = "d-flex align-items-center gap-2",
+          i18n$t("summary_table_title"),
+          bslib::popover(
+            htmltools::tags$span(
+              class = "text-info",
+              style = "cursor: help;",
+              shiny::icon("circle-info", class = "fa-sm")
+            ),
+            htmltools::div(
+              style = "max-height: 450px; overflow-y: auto; font-size: 0.85rem; line-height: 1.5;",
+              # Title
+              htmltools::div(
+                style = "border-left: 4px solid #4a7c3f; padding: 10px 12px; background: #f4f8f2; margin-bottom: 10px;",
+                htmltools::tags$div(
+                  style = "font-weight: bold; font-size: 1rem; color: #3a6330; margin-bottom: 2px;",
+                  htmltools::HTML("&#9670; "), i18n$t("summary_tip_title")
+                ),
+                htmltools::tags$em(style = "color: #555;", i18n$t("summary_tip_subtitle"))
+              ),
+              # Intro
+              htmltools::p(
+                style = "margin: 8px 0; text-align: justify;",
+                htmltools::HTML(i18n$t("summary_tip_intro"))
+              ),
+              # Section: Carre de base
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 4px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                i18n$t("summary_tip_base_title")
+              ),
+              htmltools::p(style = "margin: 0 0 4px 0;", htmltools::HTML(i18n$t("summary_tip_base_text"))),
+              # Section: Supports du vivant
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 6px 0 4px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                i18n$t("summary_tip_support_title")
+              ),
+              htmltools::p(style = "margin: 0 0 4px 0;", htmltools::HTML(i18n$t("summary_tip_support_text"))),
+              # Section: Dimensions humaines
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 6px 0 4px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                i18n$t("summary_tip_human_title")
+              ),
+              htmltools::p(style = "margin: 0 0 8px 0;", htmltools::HTML(i18n$t("summary_tip_human_text"))),
+              # Section: Acrostiche VIVREENFORET
+              htmltools::div(
+                style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                htmltools::HTML("&#9733; &nbsp;"), i18n$t("summary_tip_acrostic_title")
+              ),
+              htmltools::p(
+                style = "margin: 0 0 10px 0; line-height: 1.7;",
+                htmltools::HTML(i18n$t("summary_tip_acrostic"))
+              ),
+              # Conclusion
+              htmltools::tags$p(
+                style = "font-style: italic; color: #555; margin: 10px 0 0 0; padding-top: 8px; border-top: 1px solid #ddd; text-align: justify;",
+                i18n$t("summary_tip_conclusion")
+              )
+            ),
+            options = list(customClass = "popover-lg"),
+            title = NULL
+          )
+        ),
         bslib::card_body(
           shiny::tableOutput(ns("summary_table"))
         )
