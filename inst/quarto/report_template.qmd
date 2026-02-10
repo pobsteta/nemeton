@@ -136,8 +136,8 @@ if (has_cover) {
   # Semi-transparent white overlay at top
   cat("  \\fill[white, opacity=0.88] (current page.north west) rectangle ",
       "([yshift=-6.5cm]current page.north east);\n")
-  # Semi-transparent white overlay at bottom
-  cat("  \\fill[white, opacity=0.88] ([yshift=5.5cm]current page.south west) rectangle ",
+  # Semi-transparent white overlay at bottom (covers score + parcels + footer)
+  cat("  \\fill[white, opacity=0.88] ([yshift=16cm]current page.south west) rectangle ",
       "(current page.south east);\n")
   cat("\\end{tikzpicture}\n\n")
 }
