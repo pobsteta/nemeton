@@ -1056,6 +1056,21 @@ test_that("retry computation re-initializes and invokes task", {
   skip_if_not_installed("bslib")
   skip_if_not_installed("leaflet")
 
+  # Prevent the ExtendedTask from spawning real multisession workers.
+  # compute_task$invoke() calls future::plan("multisession") and
+  # promises::future_promise(), which pollute global state and block
+  # subsequent testServer() calls in other test files.
+  local_mocked_bindings(
+    future_promise = function(...) promises::promise_resolve(NULL),
+    .package = "promises"
+  )
+
+  # Restore original future plan on exit (compute_task sets multisession)
+  if (requireNamespace("future", quietly = TRUE)) {
+    old_plan <- future::plan()
+    withr::defer(future::plan(old_plan))
+  }
+
   cache_cleared <- FALSE
   status_updated <- NULL
 
@@ -1085,7 +1100,11 @@ test_that("retry computation re-initializes and invokes task", {
       )
     },
     save_progress_state = function(project_id, state, ...) invisible(NULL),
-    read_progress_state = function(project_id) NULL,
+    # Return a terminal state so the later::later polling loop in
+    # start_progress_polling exits cleanly (NULL keeps it alive forever)
+    read_progress_state = function(project_id) {
+      list(project_id = project_id, status = "cancelled")
+    },
     mod_search_server = mock_search_server,
     mod_map_server = mock_map_server,
     mod_project_server = mock_project_server,
@@ -1096,20 +1115,20 @@ test_that("retry computation re-initializes and invokes task", {
         project_id = "proj_retry"
       ))
 
-      shiny::testServer(
+      suppressWarnings(shiny::testServer(
         nemeton:::mod_home_server,
         args = list(app_state = as),
         {
           # ignoreInit = TRUE — set twice to trigger
           as$retry_computation <- Sys.time() - 1
-          session$flushReact()
+          suppressWarnings(session$flushReact())
           as$retry_computation <- Sys.time()
-          session$flushReact()
+          suppressWarnings(session$flushReact())
 
           expect_true(cache_cleared)
           expect_equal(status_updated, "draft")
         }
-      )
+      ))
     }
   )
 })
@@ -1236,17 +1255,17 @@ test_that("resume does not interfere when project has no ongoing computation", {
     },
     {
       as <- make_app_state()
-      shiny::testServer(
+      suppressWarnings(shiny::testServer(
         nemeton:::mod_home_server,
         args = list(app_state = as),
         {
           as$current_project <- mock_project
-          session$flushReact()
+          suppressWarnings(session$flushReact())
 
           # Should NOT send running update for completed project
           expect_false(send_update_called)
         }
-      )
+      ))
     }
   )
 })
