@@ -94,9 +94,12 @@ test_that("save_comments returns FALSE for nonexistent project", {
     with_mocked_bindings(.package = "nemeton",
       get_app_options = function() list(project_dir = temp_root),
       {
-        result <- nemeton:::save_comments(
-          "nonexistent_project_xyz",
-          synthesis = "test"
+        result <- expect_warning(
+          nemeton:::save_comments(
+            "nonexistent_project_xyz",
+            synthesis = "test"
+          ),
+          "project_path is NULL"
         )
         expect_false(result)
       }

@@ -41,13 +41,19 @@ test_that("normalize_vector handles all-NA reference", {
 
 test_that("normalize_vector handles identical values (minmax)", {
   x <- c(5, 5, 5)
-  result <- nemeton:::normalize_vector(x, method = "minmax")
+  expect_warning(
+    result <- nemeton:::normalize_vector(x, method = "minmax"),
+    "All values are identical"
+  )
   expect_equal(result, c(50, 50, 50))
 })
 
 test_that("normalize_vector handles identical values (zscore)", {
   x <- c(5, 5, 5)
-  result <- nemeton:::normalize_vector(x, method = "zscore")
+  expect_warning(
+    result <- nemeton:::normalize_vector(x, method = "zscore"),
+    "Standard deviation is 0"
+  )
   expect_equal(result, c(0, 0, 0))
 })
 

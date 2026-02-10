@@ -883,13 +883,19 @@ test_that("get_indicator_cols excludes known non-indicator columns", {
 # ============================================================
 
 test_that("normalize_vector handles single value", {
-  result <- nemeton:::normalize_vector(c(5), method = "minmax")
+  expect_warning(
+    result <- nemeton:::normalize_vector(c(5), method = "minmax"),
+    "All values are identical"
+  )
   # Single value normalization - should be 0 or NA since range is 0
   expect_length(result, 1)
 })
 
 test_that("normalize_vector handles all-same values", {
-  result <- nemeton:::normalize_vector(c(5, 5, 5), method = "minmax")
+  expect_warning(
+    result <- nemeton:::normalize_vector(c(5, 5, 5), method = "minmax"),
+    "All values are identical"
+  )
   # All same values -> range is 0
   expect_length(result, 3)
 })

@@ -469,7 +469,7 @@ test_that("mod_synthesis_server family_scores handles create_family_index error"
         args = list(app_state = mock_app_state),
         {
           # Should handle error gracefully, showing no_data
-          output$global_score
+          expect_warning(output$global_score, "Failed to compute family index")
           output$radar_plot
           expect_true(TRUE)
         }
