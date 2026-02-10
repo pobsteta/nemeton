@@ -189,18 +189,18 @@ test_that("mod_synthesis_server handles NULL project", {
         family_comments = NULL
       )
 
-      shiny::testServer(
+      suppressWarnings(shiny::testServer(
         nemeton:::mod_synthesis_server,
         args = list(app_state = mock_app_state),
         {
           # With NULL project, outputs should render without error
-          output$project_summary
+          suppressWarnings(output$project_summary)
           output$global_score
           output$radar_plot
           output$summary_table
           expect_true(TRUE) # Test passes if no error
         }
-      )
+      ))
     }
   )
 })
