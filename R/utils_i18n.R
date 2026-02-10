@@ -523,6 +523,10 @@ TRANSLATIONS <- list(
   data_table = list(fr = "Tableau des donn\u00e9es", en = "Data Table"),
   statistics_title = list(fr = "Statistiques", en = "Statistics"),
   comments_title = list(fr = "Commentaires", en = "Comments"),
+  comments_markdown_tooltip = list(
+    fr = "Texte libre au format Markdown Quarto : **gras**, *italique*, # titres, - listes, [lien](url). Rendu automatiquement dans le PDF.",
+    en = "Free text in Quarto Markdown format: **bold**, *italic*, # headings, - lists, [link](url). Automatically rendered in the PDF."
+  ),
 
   # Analysis
   analysis = list(fr = "Analyse", en = "Analysis"),

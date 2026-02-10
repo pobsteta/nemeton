@@ -486,6 +486,10 @@ mod_synthesis_ui <- function(id) {
             class = "d-flex align-items-center gap-2",
             i18n$t("comments_title"),
             bslib::tooltip(
+              shiny::icon("circle-info", class = "text-muted"),
+              i18n$t("comments_markdown_tooltip")
+            ),
+            bslib::tooltip(
               shiny::tags$div(
                 class = "form-check form-switch mb-0 ms-1",
                 shiny::tags$input(type = "checkbox", class = "form-check-input",
