@@ -93,6 +93,16 @@ generate_pdf_report <- function(project,
   report_qmd <- file.path(temp_dir, "report.qmd")
   file.copy(template_path, report_qmd)
 
+  # Set title/subtitle in the copied qmd (inline R in YAML not supported in Quarto 1.8+)
+  qmd_content <- readLines(report_qmd, encoding = "UTF-8")
+  report_title <- if (language == "fr") "Diagnostic Forestier N\u00e9meton" else "N\u00e9meton Forest Diagnostic"
+  report_subtitle <- if (language == "fr") "Rapport de synth\u00e8se" else "Synthesis Report"
+  qmd_content <- gsub('^title: "Diagnostic Forestier Nemeton"$',
+                       sprintf('title: "%s"', report_title), qmd_content)
+  qmd_content <- gsub('^subtitle: "Rapport de synthese"$',
+                       sprintf('subtitle: "%s"', report_subtitle), qmd_content)
+  writeLines(qmd_content, report_qmd, useBytes = TRUE)
+
   # Create directory for family maps
   family_maps_dir <- file.path(temp_dir, "family_maps")
   dir.create(family_maps_dir, recursive = TRUE)
@@ -123,7 +133,7 @@ generate_pdf_report <- function(project,
         family_maps_dir = family_maps_dir,
         language = language
       ),
-      quiet = TRUE
+      quiet = FALSE
     )
 
     # Find and copy output file

@@ -1,7 +1,7 @@
 ---
-title: "`r params$title`"
-subtitle: "`r params$subtitle`"
-date: "`r Sys.Date()`"
+title: "Diagnostic Forestier Nemeton"
+subtitle: "Rapport de synthese"
+date: today
 format:
   pdf:
     documentclass: article
@@ -22,8 +22,6 @@ params:
   radar_file: ""
   family_maps_dir: ""
   language: "fr"
-  title: "Diagnostic Forestier Nemeton"
-  subtitle: "Rapport de synthese"
 execute:
   echo: false
   warning: false
@@ -51,6 +49,15 @@ score_color <- function(score) {
 
 # Family order
 family_order <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
+
+# Sanitize markdown text to prevent YAML parse issues
+# Replace --- (YAML separator) with horizontal rule using asterisks
+sanitize_md <- function(text) {
+  if (is.null(text) || nchar(text) == 0) return(text)
+  text <- gsub("\n---\n", "\n***\n", text)
+  text <- gsub("^---$", "***", text)
+  text
+}
 ```
 
 # `r tr("project_info")`
@@ -132,17 +139,16 @@ knitr::kable(table_data,
 | 20-39 | `r if (params$language == "fr") "Faible - Service \u00e9cosyst\u00e9mique limit\u00e9" else "Low - Limited ecosystem service performance"` |
 | 0-19 | `r if (params$language == "fr") "Tr\u00e8s faible - Service \u00e9cosyst\u00e9mique d\u00e9ficient" else "Very low - Deficient ecosystem service performance"` |
 
-`r if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) "\\newpage"`
-
-`r if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) paste0("# ", tr("comments_title"))`
-
 ```{r}
 #| label: synthesis-comments
 #| results: asis
 
-# Render markdown comments if available
+# Render synthesis comments if available
 if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) {
-  cat(report_data$synthesis_comments)
+  cat("\n\\newpage\n\n")
+  cat("# ", tr("comments_title"), "\n\n", sep = "")
+  cat(sanitize_md(report_data$synthesis_comments))
+  cat("\n\n")
 }
 ```
 
@@ -150,8 +156,8 @@ if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comm
 
 # `r if (params$language == "fr") "Table des mati\u00e8res" else "Table of Contents"`
 
-```{r toc, results='asis'}
-# Generate custom TOC
+```{r toc}
+#| results: asis
 cat("\\tableofcontents\n")
 ```
 
@@ -159,7 +165,9 @@ cat("\\tableofcontents\n")
 
 # `r if (params$language == "fr") "D\u00e9tail par famille d'indicateurs" else "Detail by indicator family"`
 
-```{r family-sections, results='asis'}
+```{r family-sections}
+#| results: asis
+
 for (code in family_order) {
   if (!code %in% names(report_data$family_stats)) next
 
@@ -200,11 +208,11 @@ for (code in family_order) {
     }
   }
 
-  # Family comments (markdown)
+  # Family comments (markdown, sanitized)
   if (!is.null(report_data$family_comments[[code]]) &&
       nchar(report_data$family_comments[[code]]) > 0) {
     cat("### ", if (params$language == "fr") "Analyse" else "Analysis", "\n\n", sep = "")
-    cat(report_data$family_comments[[code]], "\n\n")
+    cat(sanitize_md(report_data$family_comments[[code]]), "\n\n")
   }
 
   cat("\n\\newpage\n")
@@ -212,7 +220,5 @@ for (code in family_order) {
 ```
 
 \vfill
-
----
 
 *`r tr("generated_by")` v`r packageVersion("nemeton")` - `r Sys.Date()`*
