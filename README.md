@@ -2,9 +2,9 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.13.0-blue.svg?logo=github)](https://github.com/pobsteta/nemeton/releases/tag/v0.13.0)
+[![Version](https://img.shields.io/badge/version-0.14.0-blue.svg?logo=github)](https://github.com/pobsteta/nemeton/releases/tag/v0.14.0)
 [![pkgdown](https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg)](https://pobsteta.github.io/nemeton/)
-[![Tests](https://img.shields.io/badge/tests-8000%2B%20passing-success.svg?logo=github-actions)](https://github.com/pobsteta/nemeton)
+[![Tests](https://img.shields.io/badge/tests-9000%2B%20passing-success.svg?logo=github-actions)](https://github.com/pobsteta/nemeton)
 [![codecov](https://codecov.io/gh/pobsteta/nemeton/branch/main/graph/badge.svg)](https://codecov.io/gh/pobsteta/nemeton)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
