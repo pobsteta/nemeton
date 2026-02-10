@@ -136,7 +136,7 @@ mod_home_server <- function(id, app_state) {
       app_state$refresh_projects
       current_id <- app_state$project_id
 
-      projects <- list_recent_projects(limit = 5)
+      projects <- list_recent_projects(limit = 50)
 
       if (nrow(projects) == 0) {
         return(htmltools::div(
@@ -234,7 +234,10 @@ mod_home_server <- function(id, app_state) {
         )
       })
 
-      htmltools::tagList(project_items)
+      htmltools::div(
+        style = "max-height: 240px; overflow-y: auto;",
+        project_items
+      )
     })
 
     # ========================================
