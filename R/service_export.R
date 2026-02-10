@@ -1811,6 +1811,7 @@ generate_report_pdf <- function(project,
                                 cover_image = NULL,
                                 use_quarto = TRUE) {
   if (use_quarto && is_quarto_installed()) {
+    cli::cli_inform("Generating PDF with Quarto...")
     result <- tryCatch(
       generate_pdf_report(project, family_scores, output_file, language,
                           synthesis_comments, family_comments, cover_image),
@@ -1820,9 +1821,12 @@ generate_report_pdf <- function(project,
       }
     )
     if (!is.null(result)) return(result)
+  } else {
+    cli::cli_inform("Quarto not available, using simple PDF renderer.")
   }
 
   # Fallback to simple PDF
+  cli::cli_inform("Generating PDF with base R graphics (fallback)...")
   generate_simple_pdf_report(project, family_scores, output_file, language,
                              synthesis_comments, family_comments, cover_image)
 }
