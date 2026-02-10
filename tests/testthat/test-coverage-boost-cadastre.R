@@ -55,7 +55,10 @@ test_that("get_cadastral_parcels falls back to happign when API fails", {
     fetch_api_cadastre = function(code_insee) stop("API down"),
     fetch_happign_cadastre = function(code_insee, commune_geometry) mock_parcels,
     {
-      result <- nemeton:::get_cadastral_parcels("01001")
+      result <- expect_warning(
+        nemeton:::get_cadastral_parcels("01001"),
+        "API Cadastre failed"
+      )
 
       expect_s3_class(result, "sf")
       expect_true(nrow(result) > 0)
@@ -69,7 +72,10 @@ test_that("get_cadastral_parcels errors when both sources fail", {
     fetch_happign_cadastre = function(code_insee, commune_geometry) stop("WFS down"),
     {
       expect_error(
-        nemeton:::get_cadastral_parcels("01001"),
+        expect_warning(
+          nemeton:::get_cadastral_parcels("01001"),
+          "API Cadastre failed"
+        ),
         "Unable to fetch|WFS down"
       )
     }
