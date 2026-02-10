@@ -55,12 +55,12 @@ test_that("nemeton_set_language sets language correctly", {
 test_that("nemeton_set_language validates input", {
   expect_error(
     nemeton_set_language("de"),  # German not supported
-    "should be one of"
+    "should be one of|doit \u00eatre un de"
   )
 
   expect_error(
     nemeton_set_language("spanish"),
-    "should be one of"
+    "should be one of|doit \u00eatre un de"
   )
 })
 
