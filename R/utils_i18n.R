@@ -523,9 +523,33 @@ TRANSLATIONS <- list(
   data_table = list(fr = "Tableau des donn\u00e9es", en = "Data Table"),
   statistics_title = list(fr = "Statistiques", en = "Statistics"),
   comments_title = list(fr = "Commentaires", en = "Comments"),
+  comments_markdown_tooltip_title = list(
+    fr = "Format Markdown Quarto",
+    en = "Quarto Markdown Format"
+  ),
   comments_markdown_tooltip = list(
-    fr = "Texte libre au format Markdown Quarto : **gras**, *italique*, # titres, - listes, [lien](url). Rendu automatiquement dans le PDF.",
-    en = "Free text in Quarto Markdown format: **bold**, *italic*, # headings, - lists, [link](url). Automatically rendered in the PDF."
+    fr = paste0(
+      "Le texte saisi est au format <b>Markdown Quarto</b> et sera int\u00e9gr\u00e9 tel quel dans le rapport PDF.<br><br>",
+      "<b>Syntaxe disponible :</b><br>",
+      "\u2022 <code>**gras**</code> \u2192 <b>gras</b><br>",
+      "\u2022 <code>*italique*</code> \u2192 <i>italique</i><br>",
+      "\u2022 <code># Titre</code>, <code>## Sous-titre</code><br>",
+      "\u2022 <code>- liste</code> pour les listes \u00e0 puces<br>",
+      "\u2022 <code>1. liste</code> pour les listes num\u00e9rot\u00e9es<br>",
+      "\u2022 <code>[texte](url)</code> pour les liens<br><br>",
+      "<b>Astuce :</b> utilisez les titres pour structurer votre analyse par th\u00e8me (ex. biodiversit\u00e9, production, risques)."
+    ),
+    en = paste0(
+      "Text is in <b>Quarto Markdown</b> format and will be included as-is in the PDF report.<br><br>",
+      "<b>Available syntax:</b><br>",
+      "\u2022 <code>**bold**</code> \u2192 <b>bold</b><br>",
+      "\u2022 <code>*italic*</code> \u2192 <i>italic</i><br>",
+      "\u2022 <code># Heading</code>, <code>## Subheading</code><br>",
+      "\u2022 <code>- item</code> for bullet lists<br>",
+      "\u2022 <code>1. item</code> for numbered lists<br>",
+      "\u2022 <code>[text](url)</code> for links<br><br>",
+      "<b>Tip:</b> use headings to structure your analysis by theme (e.g. biodiversity, production, risks)."
+    )
   ),
 
   # Analysis
@@ -563,7 +587,7 @@ TRANSLATIONS <- list(
     fr = "Attention : {n} valeurs manquantes sur {total}",
     en = "Warning: {n} missing values out of {total}"
   ),
-  ai_generate = list(fr = "G\u00e9n\u00e9rer l'analyse IA", en = "Generate AI Analysis"),
+  ai_generate = list(fr = "G\u00e9n\u00e9rer par IA", en = "Generate by AI"),
   ai_generating = list(fr = "Analyse en cours...", en = "Analyzing..."),
   ai_error = list(fr = "Erreur lors de l'analyse IA", en = "AI analysis error"),
   ai_no_api_key = list(

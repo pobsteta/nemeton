@@ -485,20 +485,27 @@ mod_synthesis_ui <- function(id) {
           htmltools::div(
             class = "d-flex align-items-center gap-2",
             i18n$t("comments_title"),
-            bslib::tooltip(
-              shiny::icon("circle-info", class = "text-muted"),
-              i18n$t("comments_markdown_tooltip")
+            bslib::popover(
+              htmltools::tags$span(
+                class = "text-info",
+                style = "cursor: help;",
+                shiny::icon("circle-info", class = "fa-sm")
+              ),
+              htmltools::HTML(i18n$t("comments_markdown_tooltip")),
+              title = i18n$t("comments_markdown_tooltip_title")
             ),
-            bslib::tooltip(
+            bslib::popover(
               shiny::tags$div(
                 class = "form-check form-switch mb-0 ms-1",
+                style = "cursor: help;",
                 shiny::tags$input(type = "checkbox", class = "form-check-input",
                                   id = ns("fill_all_comments"), role = "switch"),
                 shiny::tags$label(class = "form-check-label small text-muted",
                                   `for` = ns("fill_all_comments"),
                                   i18n$t("fill_all_label"))
               ),
-              i18n$t("fill_all_tooltip")
+              i18n$t("fill_all_tooltip"),
+              title = NULL
             )
           ),
           htmltools::div(
