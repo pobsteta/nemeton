@@ -103,7 +103,8 @@ Suggests:
     jpeg
 Remotes:
     rstudio/gradethis,
-    r-lidar/lasR
+    r-lidar/lasR,
+    ilyamaclean/microclima
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pascalobstetar/nemeton
