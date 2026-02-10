@@ -158,7 +158,10 @@ test_that("normalize_indicators can normalize by family", {
   units$C2 <- c(700, 750, 725) # Range: 700-750 (different scale)
 
   # Normalize within each family separately
-  result <- normalize_indicators(units, method = "minmax", by_family = TRUE)
+  # (some demo columns may have identical values on 3 rows)
+  result <- suppressWarnings(
+    normalize_indicators(units, method = "minmax", by_family = TRUE)
+  )
 
   # Both should be normalized to 0-100 independently
   expect_true(all(result$C1 >= 0 & result$C1 <= 100))
@@ -178,7 +181,10 @@ test_that("normalize_indicators maintains backward compatibility", {
   units$water_twi <- c(10, 15, 12)
 
   # Should work without family detection
-  result <- normalize_indicators(units, method = "minmax")
+  # (some demo columns may have identical values on 3 rows)
+  result <- suppressWarnings(
+    normalize_indicators(units, method = "minmax")
+  )
 
   expect_s3_class(result, "sf")
   expect_true("carbon_biomass" %in% names(result))
@@ -236,7 +242,10 @@ test_that("nemeton_radar maintains backward compatibility with indicator mode", 
   # v0.1.0 style workflow
   units <- massif_demo_units[1:3, ]
   results <- nemeton_compute(units, layers, indicators = c("carbon_biomass", "water_twi"))
-  normalized <- normalize_indicators(results, method = "minmax")
+  # (some computed columns may have identical values on 3 rows)
+  normalized <- suppressWarnings(
+    normalize_indicators(results, method = "minmax")
+  )
 
   # Should work without family mode
   p <- nemeton_radar(normalized, unit_id = 1)
