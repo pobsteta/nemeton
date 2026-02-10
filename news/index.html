@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,6 +44,43 @@
       <small>Source: <a href="https://github.com/pascalobstetar/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.14.0" id="nemeton-0140">nemeton 0.14.0<a class="anchor" aria-label="anchor" href="#nemeton-0140"></a></h2>
+<p><strong>Date</strong>: 2026-02-10</p>
+<div class="section level4">
+<h4 id="test-suite-stabilization-0-14-0">Test Suite Stabilization<a class="anchor" aria-label="anchor" href="#test-suite-stabilization-0-14-0"></a></h4>
+<div class="section level5">
+<h5 id="bug-fixes-0-14-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-14-0"></a></h5>
+<ul><li>Fixed ExtendedTask global state leak in mod_home retry test that blocked mod_project testServer calls when running the full test suite
+<ul><li>Mock <code><a href="https://rstudio.github.io/promises/reference/future_promise.html" class="external-link">promises::future_promise</a></code> to prevent multisession worker spawning</li>
+<li>Return terminal state from <code>read_progress_state</code> to stop <code><a href="https://later.r-lib.org/reference/later.html" class="external-link">later::later</a></code> polling loop</li>
+<li>Restore <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan</a></code> on exit via <code><a href="https://withr.r-lib.org/reference/defer.html" class="external-link">withr::defer</a></code>
+</li>
+</ul></li>
+<li>Suppressed expected warnings in test-workflow, test-visualization, test-mod_map, and test-mod_synthesis</li>
+<li>Renamed test files with z/zz prefix for stable execution ordering</li>
+</ul></div>
+<div class="section level5">
+<h5 id="documentation-0-14-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-14-0"></a></h5>
+<ul><li>Added Mistral API key example in nemetonApp guide vignette</li>
+</ul></div>
+<div class="section level5">
+<h5 id="tests-0-14-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-14-0"></a></h5>
+<ul><li>All 9272 tests passing (0 warnings)</li>
+<li>R CMD check: 0 errors, 0 warnings</li>
+</ul><hr></div>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.13.0" id="nemeton-0130">nemeton 0.13.0<a class="anchor" aria-label="anchor" href="#nemeton-0130"></a></h2>
+<p><strong>Date</strong>: 2026-02-08</p>
+<div class="section level4">
+<h4 id="cicd-optimization-0-13-0">CI/CD Optimization<a class="anchor" aria-label="anchor" href="#cicd-optimization-0-13-0"></a></h4>
+<ul><li>Optimized CI workflow with timeout, split check and coverage jobs</li>
+<li>Suppressed expected warnings in test suite (normalize, locale patterns)</li>
+<li>Fixed French locale support in match.arg error patterns</li>
+</ul><hr></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.12.0" id="nemeton-0120">nemeton 0.12.0<a class="anchor" aria-label="anchor" href="#nemeton-0120"></a></h2>
 <p><strong>Date</strong>: 2026-02-05</p>

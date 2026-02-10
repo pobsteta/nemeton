@@ -602,7 +602,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.2  nemeton_0.13.0
+#> [1] ggplot2_4.0.2  nemeton_0.14.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6         xfun_0.56            bslib_0.10.0        

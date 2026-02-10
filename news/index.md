@@ -1,5 +1,53 @@
 # Changelog
 
+## nemeton 0.14.0
+
+**Date**: 2026-02-10
+
+#### Test Suite Stabilization
+
+##### Bug Fixes
+
+- Fixed ExtendedTask global state leak in mod_home retry test that
+  blocked mod_project testServer calls when running the full test suite
+  - Mock
+    [`promises::future_promise`](https://rstudio.github.io/promises/reference/future_promise.html)
+    to prevent multisession worker spawning
+  - Return terminal state from `read_progress_state` to stop
+    [`later::later`](https://later.r-lib.org/reference/later.html)
+    polling loop
+  - Restore
+    [`future::plan`](https://future.futureverse.org/reference/plan.html)
+    on exit via
+    [`withr::defer`](https://withr.r-lib.org/reference/defer.html)
+- Suppressed expected warnings in test-workflow, test-visualization,
+  test-mod_map, and test-mod_synthesis
+- Renamed test files with z/zz prefix for stable execution ordering
+
+##### Documentation
+
+- Added Mistral API key example in nemetonApp guide vignette
+
+##### Tests
+
+- All 9272 tests passing (0 warnings)
+- R CMD check: 0 errors, 0 warnings
+
+------------------------------------------------------------------------
+
+## nemeton 0.13.0
+
+**Date**: 2026-02-08
+
+#### CI/CD Optimization
+
+- Optimized CI workflow with timeout, split check and coverage jobs
+- Suppressed expected warnings in test suite (normalize, locale
+  patterns)
+- Fixed French locale support in match.arg error patterns
+
+------------------------------------------------------------------------
+
 ## nemeton 0.12.0
 
 **Date**: 2026-02-05
