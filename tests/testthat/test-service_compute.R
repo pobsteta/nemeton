@@ -549,13 +549,13 @@ test_that("compute_all_indicators handles indicator computation errors", {
     },
     save_indicators_incremental = function(...) TRUE,
     {
-      result <- nemeton:::compute_all_indicators(
+      result <- suppressWarnings(nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
         indicators = c("carbon_biomass", "carbon_ndvi"),
         progress_callback = NULL,
         project_id = NULL
-      )
+      ))
 
       # Failed indicator should have NA values
       expect_true(all(is.na(result$carbon_biomass)))
@@ -1695,10 +1695,10 @@ test_that("mosaic_lidar_tiles handles invalid file paths gracefully", {
   output_file <- file.path(temp_dir, "mosaic.tif")
 
   # Pass non-existent files - should return NULL or first tile attempt
-  result <- nemeton:::mosaic_lidar_tiles(
+  result <- suppressWarnings(nemeton:::mosaic_lidar_tiles(
     c("nonexistent1.tif", "nonexistent2.tif"),
     output_file
-  )
+  ))
 
   # Function should handle errors gracefully - returns NULL or attempts fallback
   # (exact behavior depends on error handling)
@@ -1867,11 +1867,11 @@ test_that("save_indicators_incremental handles data.frame without geometry", {
     get_project_path = function(id) project_dir,
     {
       # Should warn but not error
-      result <- nemeton:::save_indicators_incremental(
+      result <- suppressWarnings(nemeton:::save_indicators_incremental(
         "test_project",
         mock_results,
         "carbon_biomass"
-      )
+      ))
       # The function should handle data.frame and return FALSE due to missing geometry_wkt
       # or succeed after warning
       expect_type(result, "logical")
@@ -2972,7 +2972,7 @@ test_that("download_ign_dem handles numeric bbox input", {
       resp_status = function(resp) 500L,
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_dem(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_dem(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -2995,7 +2995,7 @@ test_that("download_ign_dem handles sf bbox input", {
       },
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_dem(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_dem(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3017,7 +3017,7 @@ test_that("download_ign_dem calculates image dimensions correctly", {
       },
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_dem(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_dem(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3042,7 +3042,7 @@ test_that("download_ign_irc_ndvi falls back to synthetic NDVI on HTTP error", {
       },
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_irc_ndvi(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_irc_ndvi(bbox, cache_file))
         # Should fall back to synthetic NDVI
         expect_true(inherits(result, "SpatRaster"))
         expect_equal(names(result), "ndvi")
@@ -3066,7 +3066,7 @@ test_that("download_ign_irc_ndvi handles sf bbox input", {
       },
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_irc_ndvi(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_irc_ndvi(bbox, cache_file))
         # Should fall back to synthetic NDVI
         expect_true(inherits(result, "SpatRaster"))
       }
@@ -3117,7 +3117,7 @@ test_that("download_ign_irc_ndvi handles large bbox with dimension limiting", {
       },
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_irc_ndvi(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_irc_ndvi(bbox, cache_file))
         expect_true(inherits(result, "SpatRaster"))
       }
     )
@@ -3144,7 +3144,7 @@ test_that("download_inpn_wfs returns NULL when happign not available", {
       },
       .package = "happign",
       {
-        result <- nemeton:::download_inpn_wfs("protected_areas", bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_inpn_wfs("protected_areas", bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3190,7 +3190,7 @@ test_that("download_inpn_wfs returns NULL when WFS metadata fails", {
       },
       .package = "happign",
       {
-        result <- nemeton:::download_inpn_wfs("protected_areas", bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_inpn_wfs("protected_areas", bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3328,7 +3328,7 @@ test_that("download_ign_bdtopo returns NULL when happign errors", {
       },
       .package = "happign",
       {
-        result <- nemeton:::download_ign_bdtopo("roads", bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_bdtopo("roads", bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3419,7 +3419,7 @@ test_that("download_ign_bdtopo handles HTTP error gracefully", {
       },
       .package = "happign",
       {
-        result <- nemeton:::download_ign_bdtopo("water_network", bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_bdtopo("water_network", bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3448,7 +3448,7 @@ test_that("download_ign_bdforet handles non-200 HTTP status", {
       resp_status = function(resp) 503L,
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_bdforet(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_bdforet(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3496,7 +3496,7 @@ test_that("download_ign_bdforet handles sf bbox input", {
       },
       .package = "httr2",
       {
-        result <- nemeton:::download_ign_bdforet(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_ign_bdforet(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3574,7 +3574,7 @@ test_that("download_oso returns NULL when oso_path missing after download", {
         invisible(NULL)
       },
       {
-        result <- nemeton:::download_oso(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_oso(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3596,7 +3596,7 @@ test_that("download_oso handles sf bbox input", {
         invisible(NULL)
       },
       {
-        result <- nemeton:::download_oso(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_oso(bbox, cache_file))
         expect_null(result)
       }
     )
@@ -3628,7 +3628,7 @@ test_that("download_oso crops existing global OSO to bbox", {
     with_mocked_bindings(
       get_global_cache_dir = function() getwd(),
       {
-        result <- nemeton:::download_oso(bbox, cache_file)
+        result <- suppressWarnings(nemeton:::download_oso(bbox, cache_file))
         # The crop may fail if bbox does not overlap with mock extent
         # but the function should handle this gracefully
         expect_true(is.null(result) || inherits(result, "SpatRaster"))
@@ -3658,7 +3658,7 @@ test_that("download_oso_global detects existing tar archive", {
       },
       .package = "curl",
       {
-        result <- nemeton:::download_oso_global(oso_path, global_cache)
+        result <- suppressWarnings(nemeton:::download_oso_global(oso_path, global_cache))
         expect_null(result)
         expect_false(file.exists(oso_path))
       }
@@ -3679,7 +3679,7 @@ test_that("download_oso_global handles curl download failure", {
       },
       .package = "curl",
       {
-        result <- nemeton:::download_oso_global(oso_path, global_cache)
+        result <- suppressWarnings(nemeton:::download_oso_global(oso_path, global_cache))
         expect_null(result)
         expect_false(file.exists(oso_path))
       }
@@ -3900,7 +3900,7 @@ test_that("query_lidar_wfs returns NULL on non-200 status", {
     resp_status = function(resp) 500L,
     .package = "httr2",
     {
-      result <- nemeton:::query_lidar_wfs("IGNF_MNH-LIDAR-HD:dalle", bbox)
+      result <- suppressWarnings(nemeton:::query_lidar_wfs("IGNF_MNH-LIDAR-HD:dalle", bbox))
       expect_null(result)
     }
   )
@@ -3941,7 +3941,7 @@ test_that("query_lidar_wfs handles HTTP error gracefully", {
     },
     .package = "httr2",
     {
-      result <- nemeton:::query_lidar_wfs("IGNF_MNH-LIDAR-HD:dalle", bbox)
+      result <- suppressWarnings(nemeton:::query_lidar_wfs("IGNF_MNH-LIDAR-HD:dalle", bbox))
       expect_null(result)
     }
   )
@@ -4533,11 +4533,11 @@ test_that("save_indicators_incremental handles write error gracefully", {
     write_parquet = function(...) stop("Mocked write failure"),
     .package = "arrow",
     {
-      result <- nemeton:::save_indicators_incremental(
+      result <- suppressWarnings(nemeton:::save_indicators_incremental(
         "test_project",
         mock_results,
         "carbon_biomass"
-      )
+      ))
       expect_false(result)
     }
   )

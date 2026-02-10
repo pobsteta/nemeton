@@ -290,7 +290,7 @@ test_that("delete_project returns FALSE for nonexistent project", {
   with_mocked_bindings(
     get_app_options = function() list(project_dir = tempdir()),
     {
-      result <- nemeton:::delete_project("nonexistent_id")
+      result <- suppressWarnings(nemeton:::delete_project("nonexistent_id"))
       expect_false(result)
     }
   )
@@ -796,7 +796,7 @@ test_that("load_project returns NULL for nonexistent project", {
     with_mocked_bindings(
       get_app_options = function() list(project_dir = temp_root),
       {
-        result <- nemeton:::load_project("nonexistent_id")
+        result <- suppressWarnings(nemeton:::load_project("nonexistent_id"))
         expect_null(result)
       }
     )
@@ -1182,7 +1182,7 @@ test_that("load_project_metadata returns NULL for corrupted JSON", {
         # Write invalid JSON
         writeLines("{{bad json}}", file.path(project$path, "metadata.json"))
 
-        result <- nemeton:::load_project_metadata(project$id)
+        result <- suppressWarnings(nemeton:::load_project_metadata(project$id))
         expect_null(result)
       }
     )
