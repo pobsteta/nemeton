@@ -136,11 +136,14 @@ knitr::kable(table_data,
 
 `r if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) paste0("# ", tr("comments_title"))`
 
-```{r synthesis-comments, results='asis'}
-#| eval: !expr !is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0
+```{r}
+#| label: synthesis-comments
+#| results: asis
 
-# Render markdown comments
-cat(report_data$synthesis_comments)
+# Render markdown comments if available
+if (!is.null(report_data$synthesis_comments) && nchar(report_data$synthesis_comments) > 0) {
+  cat(report_data$synthesis_comments)
+}
 ```
 
 \newpage
@@ -179,7 +182,9 @@ for (code in family_order) {
   map_file <- file.path(params$family_maps_dir, paste0("family_", code, "_map.png"))
   if (file.exists(map_file)) {
     cat("### ", if (params$language == "fr") "Carte" else "Map", "\n\n", sep = "")
-    cat("![](", map_file, "){width=90%}\n\n", sep = "")
+    # Use relative path from qmd location
+    rel_path <- file.path("family_maps", paste0("family_", code, "_map.png"))
+    cat("![](", rel_path, "){width=90%}\n\n", sep = "")
   }
 
   # Indicator details table
