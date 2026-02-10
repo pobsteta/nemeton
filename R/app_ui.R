@@ -489,7 +489,7 @@ mod_synthesis_ui <- function(id) {
               htmltools::div(
                 style = "border-left: 4px solid #4a7c3f; padding: 10px 12px; background: #f4f8f2; margin-bottom: 10px;",
                 htmltools::tags$div(
-                  style = "font-weight: bold; font-size: 1rem; color: #3a6330; margin-bottom: 2px;",
+                  style = "font-weight: bold; font-size: 1rem; color: #3a6330; margin-bottom: 2px; text-transform: uppercase;",
                   htmltools::HTML("&#9670; "), i18n$t("summary_tip_title")
                 ),
                 htmltools::tags$em(style = "color: #555;", i18n$t("summary_tip_subtitle"))
