@@ -191,8 +191,7 @@ cat("\\newpage\n")
 \vspace{0.3cm}
 
 ```{r radar}
-#| fig-width: 6
-#| fig-height: 6
+#| out-width: "95%"
 #| fig-align: center
 
 if (file.exists(params$radar_file)) {

@@ -365,7 +365,7 @@ prepare_report_data <- function(project, family_scores, language,
 #' @return Invisible NULL.
 #' @noRd
 generate_radar_image <- function(family_scores, output_file, language) {
-  grDevices::png(output_file, width = 800, height = 800, res = 150)
+  grDevices::png(output_file, width = 1600, height = 1600, res = 150)
   on.exit(grDevices::dev.off(), add = TRUE)
 
   i18n <- get_i18n(language)
