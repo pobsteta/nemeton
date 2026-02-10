@@ -66,6 +66,26 @@ plot_tradeoff(pareto, x = "family_C", y = "family_B", pareto_frontier = TRUE)
 
 ![](reference/figures/readme-tradeoff.png)
 
+## Application Interactive (nemetonApp)
+
+Pour une utilisation sans code, lancez l’application Shiny :
+
+``` r
+library(nemeton)
+run_app()
+```
+
+L’application permet de :
+
+- Rechercher et sélectionner des parcelles cadastrales par commune
+- Calculer automatiquement les 29 indicateurs (12 familles)
+- Visualiser les résultats (radar, cartes, histogrammes)
+- Exporter en PDF ou GeoPackage (auto-sauvegarde dans `exports/`)
+- Commenter chaque famille avec assistance IA (ellmer)
+- Consulter les profils d’experts personnalisables (YAML)
+
+![](reference/figures/readme-app.png)
+
 ## Workflow avec vos données
 
 ``` r
@@ -98,18 +118,54 @@ health <- create_composite_index(
 plot_indicators_map(health, indicators = "ecosystem_health", palette = "RdYlGn")
 ```
 
+## Nouveautés v0.13.0
+
+### Interface utilisateur
+
+- **Popovers explicatifs** sur le radar et le score global pour guider
+  l’utilisateur
+- **Singulier/pluriel** automatique pour le compteur de parcelles
+- **Gestion des profils experts** externalisés en YAML
+  (`inst/experts/`), personnalisables dans `~/.nemeton/experts/`
+
+### Export PDF
+
+- Rendu Markdown complet (gras, italique, listes, tableaux) avec
+  pagination
+- Correction des chevauchements de texte et dimensionnement des colonnes
+- Sauvegarde automatique dans le dossier `exports/` du projet
+
+### Commentaires & Synthese
+
+- Persistance fiable des commentaires IA (tryCatch, variable locale)
+- Reset automatique lors du changement de projet
+- Serialisation correcte des sorties ellmer
+
+### Tests & Couverture
+
+- **8000+ tests** sur 76 fichiers couvrant 47 fichiers source
+- Tests `testServer()` pour les modules Shiny (contribuent a covr)
+- Script de couverture parallele (`nemeton-coverage-loop.sh`) : N agents
+  Claude simultanement, un par fichier
+
+### Performance
+
+- Chargement paresseux (lazy loading) des modules famille
+- Assets minifies
+
 ## Documentation
 
 ``` r
 # Vignettes
-vignette("getting-started", package = "nemeton")
-vignette("temporal-analysis", package = "nemeton")
-vignette("indicator-families", package = "nemeton")
+vignette("getting-started_fr", package = "nemeton")
+vignette("nemetonapp-guide_fr", package = "nemeton")
+vignette("indicator-families_fr", package = "nemeton")
+vignette("temporal-analysis_fr", package = "nemeton")
 
 # Aide
 ?nemeton_compute
 ?create_family_index
-?nemeton_radar
+?run_app
 ```
 
 ## Licence
@@ -118,10 +174,10 @@ MIT - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
 
 ## Citation
 
-    Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-    R package version 0.9.0. https://github.com/pobsteta/nemeton
+    Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
+    R package version 0.13.0. https://github.com/pobsteta/nemeton
 
 ------------------------------------------------------------------------
 
-**Développé avec** ❤️ **et** [Claude
+**Developpe avec** ❤️ **et** [Claude
 Code](https://claude.com/claude-code)

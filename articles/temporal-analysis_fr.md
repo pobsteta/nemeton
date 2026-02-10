@@ -435,14 +435,14 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] sf_1.0-24     dplyr_1.1.4   ggplot2_4.0.1 nemeton_0.9.0
+#> [1] sf_1.0-24      dplyr_1.2.0    ggplot2_4.0.2  nemeton_0.13.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         tidyr_1.3.2        sass_0.4.10        generics_0.1.4    
 #>  [5] class_7.3-23       KernSmooth_2.23-26 digest_0.6.39      magrittr_2.0.4    
 #>  [9] evaluate_1.0.5     grid_4.5.2         RColorBrewer_1.1-3 fastmap_1.2.0     
 #> [13] jsonlite_2.0.0     e1071_1.7-17       DBI_1.2.3          promises_1.5.0    
-#> [17] purrr_1.2.1        viridisLite_0.4.2  scales_1.4.0       codetools_0.2-20  
+#> [17] purrr_1.2.1        viridisLite_0.4.3  scales_1.4.0       codetools_0.2-20  
 #> [21] textshaping_1.0.4  jquerylib_0.1.4    cli_3.6.5          rlang_1.1.7       
 #> [25] units_1.0-0        withr_3.0.2        cachem_1.1.0       yaml_2.3.12       
 #> [29] otel_0.2.0         tools_4.5.2        vctrs_0.7.1        R6_2.6.1          

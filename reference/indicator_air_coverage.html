@@ -9,7 +9,7 @@ to assess local air quality and microclimate regulation potential."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,7 @@ to assess local air quality and microclimate regulation potential."><meta proper
     <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -56,7 +57,7 @@ to assess local air quality and microclimate regulation potential.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">indicator_air_coverage</span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
 <span>  <span class="va">land_cover</span>,</span>
-<span>  forest_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">311</span>, <span class="fl">312</span>, <span class="fl">313</span><span class="op">)</span>,</span>
+<span>  forest_classes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">16</span>, <span class="fl">17</span>, <span class="fl">18</span><span class="op">)</span>,</span>
 <span>  buffer_radius <span class="op">=</span> <span class="fl">1000</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -75,7 +76,8 @@ to assess local air quality and microclimate regulation potential.</p>
 
 <dt id="arg-forest-classes">forest_classes<a class="anchor" aria-label="anchor" href="#arg-forest-classes"></a></dt>
 <dd><p>Numeric vector. Land cover class codes for forests
-(e.g., Corine codes 311, 312, 313). Default c(311, 312, 313).</p></dd>
+(OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
+Default c(16, 17, 18).</p></dd>
 
 
 <dt id="arg-buffer-radius">buffer_radius<a class="anchor" aria-label="anchor" href="#arg-buffer-radius"></a></dt>

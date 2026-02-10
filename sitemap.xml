@@ -1,16 +1,19 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://pobsteta.github.io/nemeton/404.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/CLAUDE-tests-addendum.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/CLAUDE.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/LICENSE-text.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/LICENSE.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/README-coverage.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/TUTORIAL_INSTALL.html</loc></url>
-<url><loc>https://pobsteta.github.io/nemeton/articles/biodiversity-resilience-v030_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/biodiversity-resilience_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/complete-referential_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/getting-started_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/indicator-families_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/internationalization.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/multi-criteria-optimization_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/nemetonapp-guide_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/tutorial-guide.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/authors.html</loc></url>
@@ -27,6 +30,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/download_functions.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/download_hunting_data.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/family-system.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/generate_report_pdf.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_family_name.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_game_pressure_raster.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_hotspots.html</loc></url>
@@ -70,6 +74,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicators-social.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/invert_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/list_indicators.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/llm_prompts.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/massif_demo_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/massif_demo_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/mod_home.html</loc></url>
@@ -99,6 +104,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/service_cadastre.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/service_communes.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/service_compute.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/service_export.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/service_project.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/smart_map.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/smart_map_sf.html</loc></url>

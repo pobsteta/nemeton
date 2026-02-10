@@ -1,16 +1,18 @@
 # N2: Forest Continuity Indicator
 
-Calculates continuous forest patch area via buffering and dissolving.
+Calculates forest continuity using BD Foret (current forest cover) and
+optionally BD Foret Anciennes (historical forest from ~1850). Follows
+tuto 04: - Ancient forest (\>0 - Recent forest (current cover but not
+ancient): score = 30 + 30 \* taux_boisement - No forest: score = 15
 
 ## Usage
 
 ``` r
 indicator_naturalness_continuity(
   units,
-  land_cover = NULL,
-  forest_classes = c("forest", "woodland"),
-  connectivity_distance = 100,
-  method = c("local", "corine", "osm"),
+  bdforet = NULL,
+  foret_ancienne = NULL,
+  layers = NULL,
   column_name = "N2",
   lang = "en"
 )
@@ -22,24 +24,19 @@ indicator_naturalness_continuity(
 
   sf object (POLYGON) of spatial units to assess
 
-- land_cover:
+- bdforet:
 
-  sf or SpatRaster. Land cover layer. If NULL, uses unit boundaries as
-  forest.
+  sf object. Current forest cover (BD Foret V2). NULL = default score
+  50.
 
-- forest_classes:
+- foret_ancienne:
 
-  Character vector. Land cover classes for forest. Default c("forest",
-  "woodland").
+  sf object. Historical forest cover (~1850). NULL = only use bdforet.
 
-- connectivity_distance:
+- layers:
 
-  Numeric. Maximum gap (m) to maintain connectivity. Default 100m.
-
-- method:
-
-  Character. Land cover source: "local", "corine", "osm". Default
-  "local".
+  nemeton_layers object. Used to resolve bdforet if not provided
+  directly.
 
 - column_name:
 
@@ -51,4 +48,4 @@ indicator_naturalness_continuity(
 
 ## Value
 
-sf object with added columns: N2 (continuous patch area ha), N2_patch_id
+sf object with added column N2 (score 0-100)

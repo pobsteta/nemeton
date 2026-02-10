@@ -1,17 +1,17 @@
-# Landscape Fragmentation (L1)
+# Sylvosphere - Edge Effect (L1)
 
-Calculates forest patch metrics within buffer zone: patch count and mean
-size. Higher fragmentation = more patches with smaller mean size.
+Composite indicator (0-100) with 3 components: - Geometry (30 - Matrix
+contrast (40 - Exposure (30
 
 ## Usage
 
 ``` r
 indicator_landscape_fragmentation(
   units,
-  layers,
+  layers = NULL,
   landcover_layer = "landcover",
   forest_values = seq(1, 6),
-  buffer = 1000
+  buffer = 50
 )
 ```
 
@@ -23,7 +23,7 @@ indicator_landscape_fragmentation(
 
 - layers:
 
-  nemeton_layers object containing land cover
+  nemeton_layers object containing land cover (optional)
 
 - landcover_layer:
 
@@ -35,11 +35,11 @@ indicator_landscape_fragmentation(
 
 - buffer:
 
-  Numeric. Analysis buffer distance (meters). Default 1000 (1 km).
+  Numeric. Buffer distance (meters) for contrast analysis. Default 50m.
 
 ## Value
 
-Numeric vector of fragmentation index (patch count / mean size)
+Numeric vector of sylvosphere scores (0-100)
 
 ## Examples
 
@@ -48,7 +48,7 @@ if (FALSE) { # \dontrun{
 layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
 results <- indicator_landscape_fragmentation(
   units, layers,
-  forest_values = c(1, 2, 3), buffer = 1000
+  forest_values = c(1, 2, 3), buffer = 50
 )
 } # }
 ```

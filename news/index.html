@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,7 @@
     <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -43,6 +44,53 @@
       <small>Source: <a href="https://github.com/pascalobstetar/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.12.0" id="nemeton-0120">nemeton 0.12.0<a class="anchor" aria-label="anchor" href="#nemeton-0120"></a></h2>
+<p><strong>Date</strong>: 2026-02-05</p>
+<div class="section level4">
+<h4 id="phase-finalization---mvp-complete-0-12-0">Phase 9 Finalization - MVP 0.7.0 Complete<a class="anchor" aria-label="anchor" href="#phase-finalization---mvp-complete-0-12-0"></a></h4>
+<div class="section level5">
+<h5 id="new-features-0-12-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-12-0"></a></h5>
+<ul><li>
+<strong>PDF Report Generation</strong> (<code><a href="../reference/generate_report_pdf.html">generate_report_pdf()</a></code>)
+<ul><li>Quarto-based reports with professional layout</li>
+<li>Fallback to base R graphics when Quarto unavailable</li>
+<li>Automatic Quarto installation via <code>ensure_quarto_installed()</code>
+</li>
+<li>Bilingual support (French/English)</li>
+</ul></li>
+<li>
+<strong>GeoPackage Export</strong> (<code>export_geopackage()</code>)
+<ul><li>Export family scores with geometry for GIS analysis</li>
+<li>Full spatial data preservation</li>
+</ul></li>
+<li>
+<strong>nemetonApp Synthesis Tab</strong>
+<ul><li>AI-generated analysis with expert profiles</li>
+<li>Integrated comment editor</li>
+<li>Real-time PDF generation with progress indicator</li>
+</ul></li>
+</ul></div>
+<div class="section level5">
+<h5 id="documentation-0-12-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-12-0"></a></h5>
+<ul><li>New vignette: “Guide de l’Application nemetonApp”</li>
+<li>Updated README with nemetonApp section</li>
+<li>Enhanced pkgdown reference for Shiny functions</li>
+</ul></div>
+<div class="section level5">
+<h5 id="bug-fixes-0-12-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-12-0"></a></h5>
+<ul><li>Fixed TWI normalization windows for F2 soil fertility ([2.5, 10] range)</li>
+<li>Fixed R3 drought risk raster extent mismatch</li>
+<li>Fixed non-ASCII characters in service_export.R</li>
+<li>Added data.table to Suggests for fasterRaster compatibility</li>
+</ul></div>
+<div class="section level5">
+<h5 id="tests-0-12-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-12-0"></a></h5>
+<ul><li>All 3447 tests passing</li>
+<li>R CMD check: 0 errors, 0 warnings, 2 notes</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="nemeton-080">nemeton 0.8.0<a class="anchor" aria-label="anchor" href="#nemeton-080"></a></h2>
 <p><strong>Date</strong>: 2026-01-25</p>
@@ -1329,7 +1377,7 @@
 <div class="section level3">
 <h3 id="roadmap-to-v010-0-1-0">Roadmap to v0.1.0<a class="anchor" aria-label="anchor" href="#roadmap-to-v010-0-1-0"></a></h3>
 <ul class="task-list"><li><label><input type="checkbox">Fix test fixtures</label></li>
-<li><label><input type="checkbox">Verify <code>devtools::check()</code> passes</label></li>
+<li><label><input type="checkbox">Verify <code><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">devtools::check()</a></code> passes</label></li>
 <li><label><input type="checkbox">Measure test coverage (target: ≥70%)</label></li>
 <li><label><input type="checkbox">Optional: Implement <code><a href="../reference/nemeton_radar.html">nemeton_radar()</a></code> (P3)</label></li>
 </ul></div>

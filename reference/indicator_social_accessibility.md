@@ -1,20 +1,17 @@
-# S2: Multimodal Accessibility Indicator
+# S2: Distance to Buildings Indicator
 
-Calculates an accessibility score based on proximity to roads, public
-transport, and cycling infrastructure. Higher scores indicate better
-public access potential.
+Calculates the mean distance (in metres) from each spatial unit to the
+nearest building, using rasterized building data and
+[`terra::distance()`](https://rspatial.github.io/terra/reference/distance.html).
 
 ## Usage
 
 ``` r
 indicator_social_accessibility(
   units,
-  roads = NULL,
-  transit_stops = NULL,
-  method = c("osm", "local"),
-  osm_bbox = NULL,
-  road_types = c("primary", "secondary", "tertiary", "unclassified"),
-  weights = c(road = 0.5, transit = 0.3, cycling = 0.2),
+  buildings = NULL,
+  dem = NULL,
+  layers = NULL,
   column_name = "S2",
   lang = "en"
 )
@@ -26,33 +23,19 @@ indicator_social_accessibility(
 
   sf object (POLYGON) of spatial units to assess
 
-- roads:
+- buildings:
 
-  sf object (LINESTRING) of road network. If NULL and method="osm",
-  fetches from OSM.
+  sf object (POLYGON) of buildings. If NULL, resolved from layers.
 
-- transit_stops:
+- dem:
 
-  sf object (POINT) of public transport stops. Optional.
+  SpatRaster. Digital elevation model used as reference grid. If NULL,
+  resolved from layers.
 
-- method:
+- layers:
 
-  Character. Data source: "osm" (OpenStreetMap) or "local". Default
-  "osm".
-
-- osm_bbox:
-
-  Numeric vector for OSM query. Auto-detected if NULL.
-
-- road_types:
-
-  Character vector. OSM highway tags: c("primary", "secondary",
-  "tertiary"). Default all.
-
-- weights:
-
-  Named numeric vector. Weights for components: c(road = 0.5, transit =
-  0.3, cycling = 0.2). Default balanced.
+  A nemeton_layers object (optional). Used to resolve buildings/dem when
+  not provided directly.
 
 - column_name:
 
@@ -64,28 +47,30 @@ indicator_social_accessibility(
 
 ## Value
 
-sf object with added column: S2 (accessibility score 0-100)
+sf object with added column: S2 (mean distance to nearest building in
+metres)
 
 ## Details
 
-\*\*Calculation\*\*:
+\*\*Calculation\*\* (tuto 03 method):
 
-- Road accessibility: Inverse distance to nearest road (closer = higher)
+- Rasterize building geometries onto the DEM grid
 
-- Transit accessibility: Count of transit stops within 1km buffer
+- Compute distance raster via
+  [`terra::distance()`](https://rspatial.github.io/terra/reference/distance.html)
 
-- Cycling accessibility: Presence of cycling infrastructure
+- Extract mean distance per spatial unit
 
-- Weighted composite: `S2 = (w1×road + w2×transit + w3×cycling)`
+Returns NA when DEM or buildings are unavailable.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 result <- indicator_social_accessibility(
-  units = massif_demo_units,
-  method = "osm",
-  weights = c(road = 0.6, transit = 0.2, cycling = 0.2)
+  units = parcels,
+  buildings = buildings_sf,
+  dem = dem_raster
 )
 } # }
 ```

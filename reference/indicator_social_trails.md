@@ -1,19 +1,17 @@
-# S1: Trail Density Indicator
+# S1: Distance to Roads Indicator
 
-Calculates the density of recreational trails (pedestrian, cycling,
-equestrian) within or near spatial units using OpenStreetMap or local
-trail datasets.
+Calculates the mean distance (in metres) from each spatial unit to the
+nearest road, using rasterized road data and
+[`terra::distance()`](https://rspatial.github.io/terra/reference/distance.html).
 
 ## Usage
 
 ``` r
 indicator_social_trails(
   units,
-  trails = NULL,
-  method = c("osm", "local"),
-  osm_bbox = NULL,
-  trail_types = c("path", "footway", "cycleway", "bridleway"),
-  buffer_m = 0,
+  roads = NULL,
+  dem = NULL,
+  layers = NULL,
   column_name = "S1",
   lang = "en"
 )
@@ -25,30 +23,19 @@ indicator_social_trails(
 
   sf object (POLYGON) of spatial units to assess
 
-- trails:
+- roads:
 
-  sf object (LINESTRING) of trail network. If NULL and method="osm",
-  fetches from OSM.
+  sf object (LINESTRING) of road network. If NULL, resolved from layers.
 
-- method:
+- dem:
 
-  Character. Data source: "osm" (OpenStreetMap) or "local". Default
-  "osm".
+  SpatRaster. Digital elevation model used as reference grid. If NULL,
+  resolved from layers.
 
-- osm_bbox:
+- layers:
 
-  Numeric vector (xmin, ymin, xmax, ymax) for OSM query. Auto-detected
-  if NULL.
-
-- trail_types:
-
-  Character vector. OSM highway tags: c("path", "footway", "cycleway",
-  "bridleway"). Default all.
-
-- buffer_m:
-
-  Numeric. Buffer distance (m) around units to include nearby trails.
-  Default 0 (within units only).
+  A nemeton_layers object (optional). Used to resolve roads/dem when not
+  provided directly.
 
 - column_name:
 
@@ -60,47 +47,30 @@ indicator_social_trails(
 
 ## Value
 
-sf object with added column: S1 (trail density in km/ha)
+sf object with added column: S1 (mean distance to nearest road in
+metres)
 
 ## Details
 
-\*\*Calculation\*\*:
+\*\*Calculation\*\* (tuto 03 method):
 
-- Extract or fetch trail network (OSM or local)
+- Rasterize road geometries onto the DEM grid
 
-- Clip trails to unit boundaries (+ optional buffer)
+- Compute distance raster via
+  [`terra::distance()`](https://rspatial.github.io/terra/reference/distance.html)
 
-- Calculate total trail length within each unit
+- Extract mean distance per spatial unit
 
-- Normalize by unit area: `S1 = trail_length_km / area_ha`
-
-\*\*Trail Types\*\* (OSM highway tags):
-
-- path: Unpaved footpaths
-
-- footway: Paved pedestrian paths
-
-- cycleway: Dedicated bike paths
-
-- bridleway: Equestrian trails
+Returns NA when DEM or roads are unavailable.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-# Using OpenStreetMap
-result <- indicator_social_trails(
-  units = massif_demo_units,
-  method = "osm",
-  trail_types = c("path", "footway", "cycleway")
-)
-
-# Using local trail data with buffer
 result <- indicator_social_trails(
   units = parcels,
-  trails = local_trails_sf,
-  method = "local",
-  buffer_m = 100
+  roads = roads_sf,
+  dem = dem_raster
 )
 } # }
 ```
