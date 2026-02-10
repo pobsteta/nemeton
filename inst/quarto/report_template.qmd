@@ -135,9 +135,9 @@ if (has_cover) {
   cat("  };\n")
   # Semi-transparent white overlay at top
   cat("  \\fill[white, opacity=0.88] (current page.north west) rectangle ",
-      "([yshift=-8cm]current page.north east);\n")
+      "([yshift=-7cm]current page.north east);\n")
   # Semi-transparent white overlay at bottom
-  cat("  \\fill[white, opacity=0.88] ([yshift=5cm]current page.south west) rectangle ",
+  cat("  \\fill[white, opacity=0.88] ([yshift=6cm]current page.south west) rectangle ",
       "(current page.south east);\n")
   cat("\\end{tikzpicture}\n\n")
 }
