@@ -101,6 +101,8 @@ generate_pdf_report <- function(project,
                        sprintf('title: "%s"', report_title), qmd_content)
   qmd_content <- gsub('^subtitle: "Rapport de synthese"$',
                        sprintf('subtitle: "%s"', report_subtitle), qmd_content)
+  report_lang <- if (language == "fr") "fr" else "en"
+  qmd_content <- gsub('^lang: en$', sprintf('lang: %s', report_lang), qmd_content)
   writeLines(qmd_content, report_qmd, useBytes = TRUE)
 
   # Create directory for family maps
@@ -122,6 +124,15 @@ generate_pdf_report <- function(project,
   radar_file <- file.path(temp_dir, "radar_plot.png")
   generate_radar_image(family_scores, radar_file, language)
 
+  # Handle cover image: copy to temp_dir so relative path works
+  cover_image_param <- ""
+  if (!is.null(cover_image) && file.exists(cover_image)) {
+    ext <- tolower(tools::file_ext(cover_image))
+    cover_dest <- file.path(temp_dir, paste0("cover_image.", ext))
+    file.copy(cover_image, cover_dest, overwrite = TRUE)
+    cover_image_param <- cover_dest
+  }
+
   # Render with Quarto
   tryCatch({
     quarto::quarto_render(
@@ -131,7 +142,8 @@ generate_pdf_report <- function(project,
         data_file = data_file,
         radar_file = radar_file,
         family_maps_dir = family_maps_dir,
-        language = language
+        language = language,
+        cover_image = cover_image_param
       ),
       quiet = FALSE
     )
@@ -275,6 +287,31 @@ prepare_report_data <- function(project, family_scores, language,
     )
   }
 
+  # Build family colors mapping for template
+  family_colors <- vapply(names(INDICATOR_FAMILIES), function(code) {
+    INDICATOR_FAMILIES[[code]]$color
+  }, character(1))
+
+  # Build per-parcel score data for detailed tables
+  parcel_scores <- list()
+  for (code in names(INDICATOR_FAMILIES)) {
+    fam_col <- paste0("family_", code)
+    if (fam_col %in% names(scores_df)) {
+      parcel_ids <- if ("id" %in% names(scores_df)) {
+        as.character(scores_df[["id"]])
+      } else {
+        as.character(seq_len(nrow(scores_df)))
+      }
+      # Use last 6 chars of ID for display
+      short_ids <- substr(parcel_ids, pmax(1, nchar(parcel_ids) - 5), nchar(parcel_ids))
+      parcel_scores[[code]] <- data.frame(
+        id = short_ids,
+        score = round(scores_df[[fam_col]], 1),
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+
   list(
     # Metadata
     project_name = meta$name,
@@ -286,6 +323,8 @@ prepare_report_data <- function(project, family_scores, language,
     # Scores
     global_score = global_score,
     family_stats = family_stats,
+    family_colors = family_colors,
+    parcel_scores = parcel_scores,
 
     # Family details for extended report
     family_descriptions = family_descriptions,
