@@ -359,12 +359,12 @@ test_that("mod_map_server handles parcel deselection", {
 
           # Select a parcel
           session$setInputs(map_shape_click = list(id = "parcel_001"))
-          session$flushReact()
+          suppressWarnings(session$flushReact())
           expect_equal(result$selection_count(), 1)
 
           # Click same parcel again to deselect
           session$setInputs(map_shape_click = list(id = "parcel_001"))
-          session$flushReact()
+          suppressWarnings(session$flushReact())
           expect_equal(result$selection_count(), 0)
           expect_false("parcel_001" %in% result$selected_ids())
         }
