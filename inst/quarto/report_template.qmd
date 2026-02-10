@@ -135,14 +135,14 @@ if (has_cover) {
   cat("  };\n")
   # Semi-transparent white overlay at top
   cat("  \\fill[white, opacity=0.88] (current page.north west) rectangle ",
-      "([yshift=-6.5cm]current page.north east);\n")
-  # Semi-transparent white overlay at bottom (covers score + parcels + footer)
-  cat("  \\fill[white, opacity=0.88] ([yshift=16cm]current page.south west) rectangle ",
+      "([yshift=-8cm]current page.north east);\n")
+  # Semi-transparent white overlay at bottom
+  cat("  \\fill[white, opacity=0.88] ([yshift=5cm]current page.south west) rectangle ",
       "(current page.south east);\n")
   cat("\\end{tikzpicture}\n\n")
 }
 
-# Title block
+# Title block at top
 cat("\\vspace*{1cm}\n")
 cat("\\begin{center}\n")
 cat("{\\fontsize{28}{34}\\selectfont\\textcolor[HTML]{2E7D32}{\\textbf{",
@@ -150,22 +150,13 @@ cat("{\\fontsize{28}{34}\\selectfont\\textcolor[HTML]{2E7D32}{\\textbf{",
 cat("\\vspace{0.3cm}\n")
 cat("{\\Large\\textcolor{gray}{",
     escape_latex(tr("subtitle")), "}}\n\n", sep = "")
-cat("\\vspace{1.5cm}\n")
+cat("\\vspace{1cm}\n")
 cat("{\\LARGE\\textbf{", escape_latex(report_data$project_name), "}}\n\n", sep = "")
+cat("\\end{center}\n\n")
 
-if (!is.null(report_data$project_description) && nchar(report_data$project_description) > 0) {
-  cat("\\vspace{0.3cm}\n")
-  cat("{\\large ", escape_latex(report_data$project_description), "}\n\n", sep = "")
-}
-
-if (!is.null(report_data$project_owner) && nchar(report_data$project_owner) > 0) {
-  cat("\\vspace{0.2cm}\n")
-  cat("{\\normalsize\\textcolor{gray}{", escape_latex(report_data$project_owner), "}}\n\n", sep = "")
-}
-
-cat("\\vspace{2cm}\n")
-
-# Global score with color
+# Score block at bottom
+cat("\\vfill\n")
+cat("\\begin{center}\n")
 score_col <- quality_color_hex(report_data$global_score)
 cat("\\textcolor[HTML]{", score_col, "}{\\fontsize{48}{58}\\selectfont\\textbf{",
     sprintf("%.1f", report_data$global_score), "}}\n\n", sep = "")
@@ -173,11 +164,7 @@ cat("{\\Large / 100}\n\n")
 cat("\\vspace{0.5cm}\n")
 cat("{\\large ", report_data$n_parcels, " ",
     escape_latex(tr("parcels")), "}\n\n", sep = "")
-cat("\\end{center}\n\n")
-
-# Footer at bottom
-cat("\\vfill\n")
-cat("\\begin{center}\n")
+cat("\\vspace{0.8cm}\n")
 cat("{\\small\\textcolor{gray}{", escape_latex(tr("generated_by")),
     " v", as.character(packageVersion("nemeton")),
     " --- ", as.character(Sys.Date()), "}}\n", sep = "")
@@ -197,21 +184,15 @@ cat("\\newpage\n")
 - **`r tr("parcels")`:** `r report_data$n_parcels`
 - **`r tr("created_at")`:** `r report_data$created_at`
 
-\newpage
-
-# `r tr("global_score_label")`
-
 \begin{center}
-\textcolor{`r score_color(report_data$global_score)`}{\Huge\textbf{`r sprintf("%.1f", report_data$global_score)` / 100}}
+\textcolor{`r score_color(report_data$global_score)`}{\LARGE\textbf{`r tr("global_score_label")` : `r sprintf("%.1f", report_data$global_score)` / 100}}
 \end{center}
 
-\vspace{1cm}
-
-## `r tr("radar_title")`
+\vspace{0.3cm}
 
 ```{r radar}
-#| fig-width: 7
-#| fig-height: 7
+#| fig-width: 6
+#| fig-height: 6
 #| fig-align: center
 
 if (file.exists(params$radar_file)) {
