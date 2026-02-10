@@ -334,7 +334,10 @@ test_that("nemeton_compute expands 'all' to full indicator list", {
   )
 
   # indicators = "all" should attempt all 31 indicators
-  result <- nemeton_compute(units, layers, indicators = "all", preprocess = FALSE)
+  # Many will fail with mock data, producing expected "Indicator X calculation failed" warnings
+  result <- suppressWarnings(
+    nemeton_compute(units, layers, indicators = "all", preprocess = FALSE)
+  )
 
   expect_s3_class(result, "sf")
   # All 31 indicator columns should exist (even if NA from failures)
@@ -399,11 +402,14 @@ test_that("nemeton_compute computes multiple indicators at once", {
     )
   )
 
-  result <- nemeton_compute(
-    units, layers,
-    indicators = c("carbon_biomass", "landscape_fragmentation"),
-    preprocess = FALSE,
-    forest_values = c(1, 2, 3)
+  # carbon_biomass may fail with mock data
+  result <- suppressWarnings(
+    nemeton_compute(
+      units, layers,
+      indicators = c("carbon_biomass", "landscape_fragmentation"),
+      preprocess = FALSE,
+      forest_values = c(1, 2, 3)
+    )
   )
 
   expect_true("carbon_biomass" %in% names(result))

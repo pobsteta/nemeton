@@ -84,6 +84,7 @@ test_that("indicator_air_quality uses direct method when ATMO data available", {
 
   # Mock ATMO station data
   # Get centroids of first two units for station locations
+  sf::st_agr(units) <- "constant"
   unit_centroids <- st_coordinates(st_centroid(units[1:2, ]))
 
   atmo_data <- st_as_sf(
@@ -145,6 +146,7 @@ test_that("indicator_air_quality auto-detects method", {
 
   # With ATMO data: should use direct
   # Get centroid of first unit for station location
+  sf::st_agr(units) <- "constant"
   unit_centroid <- st_coordinates(st_centroid(units[1, ]))
 
   atmo_data <- st_as_sf(
@@ -199,12 +201,15 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
     )
   )
 
-  # Full workflow
-  result <- units %>%
-    indicator_air_coverage(land_cover = land_cover, buffer_radius = 1000) %>%
-    indicator_air_quality(atmo_data = NULL, roads = roads, method = "proxy") %>%
-    normalize_indicators(indicators = c("A1", "A2")) %>%
-    create_family_index(family_codes = "A")
+  # Full workflow (normalize_indicators warns when all values are identical)
+  expect_warning(
+    result <- units %>%
+      indicator_air_coverage(land_cover = land_cover, buffer_radius = 1000) %>%
+      indicator_air_quality(atmo_data = NULL, roads = roads, method = "proxy") %>%
+      normalize_indicators(indicators = c("A1", "A2")) %>%
+      create_family_index(family_codes = "A"),
+    "All values are identical"
+  )
 
   # Verify complete workflow
   expect_true(all(c("A1", "A2") %in% names(result)))

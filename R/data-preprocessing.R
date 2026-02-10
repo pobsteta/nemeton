@@ -115,8 +115,9 @@ crop_to_units <- function(layers, units, buffer = 0) {
       layer$loaded <- TRUE
     }
 
-    # Crop
+    # Crop (set agr to avoid "attribute variables assumed spatially constant" warning)
     bbox_sf <- sf::st_as_sfc(bbox)
+    sf::st_agr(layer$object) <- "constant"
     layer$object <- sf::st_crop(layer$object, bbox_sf)
 
     layers$vectors[[name]] <- layer
