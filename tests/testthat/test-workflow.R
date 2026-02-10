@@ -63,7 +63,7 @@ test_that("v0.3.0 workflow handles partial indicator sets gracefully", {
   units$T2 <- c(0.5, 1.0, 2.0)
 
   # Should still work with partial indicators
-  normalized <- normalize_indicators(units, method = "minmax")
+  normalized <- suppressWarnings(normalize_indicators(units, method = "minmax"))
   families <- create_family_index(normalized)
 
   # Should create families from available indicators
