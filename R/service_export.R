@@ -135,7 +135,7 @@ generate_pdf_report <- function(project,
       stop("PDF file was not generated")
     }
   }, error = function(e) {
-    # Silently fall back to simple PDF
+    message("Quarto render error: ", conditionMessage(e))
     NULL
   })
 }
@@ -1816,7 +1816,7 @@ generate_report_pdf <- function(project,
       generate_pdf_report(project, family_scores, output_file, language,
                           synthesis_comments, family_comments, cover_image),
       error = function(e) {
-        cli::cli_warn("Quarto report failed, falling back to simple PDF: {conditionMessage(e)}")
+        message("Quarto report failed, falling back to simple PDF: ", conditionMessage(e))
         NULL
       }
     )
