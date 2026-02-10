@@ -358,11 +358,11 @@ test_that("plots can be saved to file", {
 test_that("nemeton_radar creates a ggplot object for average", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
-  normalized <- normalize_indicators(results)
+  results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
+  normalized <- suppressWarnings(normalize_indicators(results))
 
   # Average radar
-  p <- nemeton_radar(normalized)
+  p <- suppressWarnings(nemeton_radar(normalized))
 
   expect_s3_class(p, "ggplot")
 })
@@ -370,11 +370,11 @@ test_that("nemeton_radar creates a ggplot object for average", {
 test_that("nemeton_radar creates a ggplot object for specific unit", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
-  normalized <- normalize_indicators(results)
+  results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
+  normalized <- suppressWarnings(normalize_indicators(results))
 
   # Specific unit
-  p <- nemeton_radar(normalized, unit_id = "P01")
+  p <- suppressWarnings(nemeton_radar(normalized, unit_id = "P01"))
 
   expect_s3_class(p, "ggplot")
 })
@@ -382,16 +382,16 @@ test_that("nemeton_radar creates a ggplot object for specific unit", {
 test_that("nemeton_radar works with explicit indicators", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
-  normalized <- normalize_indicators(results)
+  results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
+  normalized <- suppressWarnings(normalize_indicators(results))
 
   # Explicit indicators
-  p <- nemeton_radar(
+  p <- suppressWarnings(nemeton_radar(
     normalized,
     unit_id = "P05",
     indicators = c("carbon_biomass_norm", "biodiversity_protection_norm", "water_twi_norm"),
     normalize = FALSE
-  )
+  ))
 
   expect_s3_class(p, "ggplot")
 })
@@ -416,8 +416,8 @@ test_that("nemeton_radar errors on missing indicators", {
 test_that("nemeton_radar errors on invalid unit_id", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
-  results <- nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3))
-  normalized <- normalize_indicators(results)
+  results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
+  normalized <- suppressWarnings(normalize_indicators(results))
 
   expect_error(
     nemeton_radar(normalized, unit_id = "INVALID_ID"),
