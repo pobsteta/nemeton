@@ -43,7 +43,7 @@ test_that("mod_progress_server translate_task handles download tasks", {
           result$send_running_update(state)
 
           # Test with download:<source> task
-          state$current_task <- "download:source_oso"
+          state$current_task <- "download:source_forest_cover"
           result$send_running_update(state)
 
           # Test with download_complete task
@@ -88,7 +88,7 @@ test_that("mod_progress_server translate_task handles compute tasks", {
             indicators_completed = 5,
             indicators_failed = 0,
             indicators_total = 10,
-            current_task = "compute:carbon_biomass",
+            current_task = "compute:indicator_carbon_biomass",
             errors = list()
           )
           result$send_running_update(state)
@@ -285,7 +285,7 @@ test_that("mod_progress_server send_running_update tracks errors", {
             indicators_completed = 2,
             indicators_failed = 0,
             indicators_total = 10,
-            current_task = "compute:carbon_biomass",
+            current_task = "compute:indicator_carbon_biomass",
             errors = list()
           )
           result$send_running_update(state1)
@@ -293,7 +293,7 @@ test_that("mod_progress_server send_running_update tracks errors", {
           # Second update with an error
           state2 <- state1
           state2$indicators_failed <- 1
-          state2$current_task <- "compute:carbon_ndvi"
+          state2$current_task <- "compute:indicator_carbon_ndvi"
           state2$errors <- list(
             list(indicator = "carbon_biomass", message = "Raster not found")
           )
@@ -304,7 +304,7 @@ test_that("mod_progress_server send_running_update tracks errors", {
           state3$errors <- c(state2$errors, list(
             list(source = "IGN WFS", message = "Connection timeout")
           ))
-          state3$current_task <- "compute:water_network"
+          state3$current_task <- "compute:indicator_water_network"
           result$send_running_update(state3)
 
           expect_true(TRUE)
@@ -435,7 +435,7 @@ test_that("mod_progress_server reset_tracking resets state", {
             indicators_completed = 5,
             indicators_failed = 0,
             indicators_total = 10,
-            current_task = "compute:test",
+            current_task = "compute:indicator_risk_fire",
             errors = list()
           )
           result$send_running_update(state)
@@ -723,12 +723,12 @@ test_that("mod_progress_server translate_phase all branches", {
 
           # Test downloading phase
           base_state$phase <- "downloading"
-          base_state$current_task <- "download:oso"
+          base_state$current_task <- "download:source_ndvi"
           result$send_running_update(base_state)
 
           # Test computing phase
           base_state$phase <- "computing"
-          base_state$current_task <- "compute:test"
+          base_state$current_task <- "compute:indicator_temporal_age"
           result$send_running_update(base_state)
 
           # Test complete phase
