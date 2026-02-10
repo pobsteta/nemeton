@@ -60,13 +60,13 @@ jobs:
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
         with:
-          args: 'c("--no-manual", "--no-vignettes", "--no-build-vignettes", "--as-cran")'
+          args: 'c("--no-manual", "--no-vignettes", "--no-build-vignettes", "--no-tests", "--as-cran")'
           error-on: '"error"'
           upload-snapshots: true
 
-  coverage:
+  test-coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     needs: R-CMD-check
 
     env:
