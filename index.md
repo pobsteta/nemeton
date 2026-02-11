@@ -9,7 +9,7 @@ biophysiques multi-famille** pour la gestion forestière durable.
 
 ## Fonctionnalités
 
-**12 familles d’indicateurs** avec 29 sous-indicateurs :
+**12 familles d’indicateurs** avec 31 sous-indicateurs :
 
 | Famille | Description           | Indicateurs |
 |---------|-----------------------|-------------|
@@ -78,7 +78,7 @@ run_app()
 L’application permet de :
 
 - Rechercher et sélectionner des parcelles cadastrales par commune
-- Calculer automatiquement les 29 indicateurs (12 familles)
+- Calculer automatiquement les 31 indicateurs (12 familles)
 - Visualiser les résultats (radar, cartes, histogrammes)
 - Exporter en PDF ou GeoPackage (auto-sauvegarde dans `exports/`)
 - Commenter chaque famille avec assistance IA (ellmer)
@@ -117,41 +117,6 @@ health <- create_composite_index(
 # 6. Visualiser
 plot_indicators_map(health, indicators = "ecosystem_health", palette = "RdYlGn")
 ```
-
-## Nouveautés v0.13.0
-
-### Interface utilisateur
-
-- **Popovers explicatifs** sur le radar et le score global pour guider
-  l’utilisateur
-- **Singulier/pluriel** automatique pour le compteur de parcelles
-- **Gestion des profils experts** externalisés en YAML
-  (`inst/experts/`), personnalisables dans `~/.nemeton/experts/`
-
-### Export PDF
-
-- Rendu Markdown complet (gras, italique, listes, tableaux) avec
-  pagination
-- Correction des chevauchements de texte et dimensionnement des colonnes
-- Sauvegarde automatique dans le dossier `exports/` du projet
-
-### Commentaires & Synthese
-
-- Persistance fiable des commentaires IA (tryCatch, variable locale)
-- Reset automatique lors du changement de projet
-- Serialisation correcte des sorties ellmer
-
-### Tests & Couverture
-
-- **8000+ tests** sur 76 fichiers couvrant 47 fichiers source
-- Tests `testServer()` pour les modules Shiny (contribuent a covr)
-- Script de couverture parallele (`nemeton-coverage-loop.sh`) : N agents
-  Claude simultanement, un par fichier
-
-### Performance
-
-- Chargement paresseux (lazy loading) des modules famille
-- Assets minifies
 
 ## Documentation
 

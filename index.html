@@ -83,7 +83,7 @@
 <div class="section level2">
 <h2 id="fonctionnalités">Fonctionnalités<a class="anchor" aria-label="anchor" href="#fonctionnalit%C3%A9s"></a>
 </h2>
-<p><strong>12 familles d’indicateurs</strong> avec 29 sous-indicateurs :</p>
+<p><strong>12 familles d’indicateurs</strong> avec 31 sous-indicateurs :</p>
 <table class="table">
 <thead><tr class="header">
 <th>Famille</th>
@@ -197,7 +197,7 @@
 <p>L’application permet de :</p>
 <ul>
 <li>Rechercher et sélectionner des parcelles cadastrales par commune</li>
-<li>Calculer automatiquement les 29 indicateurs (12 familles)</li>
+<li>Calculer automatiquement les 31 indicateurs (12 familles)</li>
 <li>Visualiser les résultats (radar, cartes, histogrammes)</li>
 <li>Exporter en PDF ou GeoPackage (auto-sauvegarde dans <code>exports/</code>)</li>
 <li>Commenter chaque famille avec assistance IA (ellmer)</li>
@@ -236,59 +236,6 @@
 <span></span>
 <span><span class="co"># 6. Visualiser</span></span>
 <span><span class="fu"><a href="reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">health</span>, indicators <span class="op">=</span> <span class="st">"ecosystem_health"</span>, palette <span class="op">=</span> <span class="st">"RdYlGn"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="nouveautés-v0130">Nouveautés v0.13.0<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-v0130"></a>
-</h2>
-<div class="section level3">
-<h3 id="interface-utilisateur">Interface utilisateur<a class="anchor" aria-label="anchor" href="#interface-utilisateur"></a>
-</h3>
-<ul>
-<li>
-<strong>Popovers explicatifs</strong> sur le radar et le score global pour guider l’utilisateur</li>
-<li>
-<strong>Singulier/pluriel</strong> automatique pour le compteur de parcelles</li>
-<li>
-<strong>Gestion des profils experts</strong> externalisés en YAML (<code>inst/experts/</code>), personnalisables dans <code>~/.nemeton/experts/</code>
-</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="export-pdf">Export PDF<a class="anchor" aria-label="anchor" href="#export-pdf"></a>
-</h3>
-<ul>
-<li>Rendu Markdown complet (gras, italique, listes, tableaux) avec pagination</li>
-<li>Correction des chevauchements de texte et dimensionnement des colonnes</li>
-<li>Sauvegarde automatique dans le dossier <code>exports/</code> du projet</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="commentaires--synthese">Commentaires &amp; Synthese<a class="anchor" aria-label="anchor" href="#commentaires--synthese"></a>
-</h3>
-<ul>
-<li>Persistance fiable des commentaires IA (tryCatch, variable locale)</li>
-<li>Reset automatique lors du changement de projet</li>
-<li>Serialisation correcte des sorties ellmer</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="tests--couverture">Tests &amp; Couverture<a class="anchor" aria-label="anchor" href="#tests--couverture"></a>
-</h3>
-<ul>
-<li>
-<strong>8000+ tests</strong> sur 76 fichiers couvrant 47 fichiers source</li>
-<li>Tests <code>testServer()</code> pour les modules Shiny (contribuent a covr)</li>
-<li>Script de couverture parallele (<code>nemeton-coverage-loop.sh</code>) : N agents Claude simultanement, un par fichier</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
-</h3>
-<ul>
-<li>Chargement paresseux (lazy loading) des modules famille</li>
-<li>Assets minifies</li>
-</ul>
-</div>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
@@ -358,7 +305,7 @@ R package version 0.13.0. https://github.com/pobsteta/nemeton</code></pre>
 <li><a href="https://github.com/pobsteta/nemeton/actions/workflows/r.yml" class="external-link"><img src="https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://github.com/pobsteta/nemeton/releases/tag/v0.14.0" class="external-link"><img src="https://img.shields.io/badge/version-0.14.0-blue.svg?logo=github" alt="Version"></a></li>
 <li><a href="https://pobsteta.github.io/nemeton/"><img src="https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
-<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/tests-9000%2B%20passing-success.svg?logo=github-actions" alt="Tests"></a></li>
+<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/tests-10000%2B%20passing-success.svg?logo=github-actions" alt="Tests"></a></li>
 <li><a href="https://app.codecov.io/gh/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/codecov-60%25-yellow.svg?logo=codecov" alt="codecov"></a></li>
 <li><a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative" alt="License: MIT"></a></li>
 </ul>
