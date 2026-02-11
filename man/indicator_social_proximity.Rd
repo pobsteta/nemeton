@@ -50,6 +50,7 @@ visitor pressure potential and recreational use intensity.
 }
 \examples{
 \dontrun{
+data(massif_demo_units)
 result <- indicator_social_proximity(
   units = massif_demo_units,
   method = "proxy",

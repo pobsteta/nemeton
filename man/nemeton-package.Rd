@@ -195,8 +195,8 @@ developed by \emph{Vivre en Forêt}, organizing ecosystem services into
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/pascalobstetar/nemeton}
-  \item Report bugs at \url{https://github.com/pascalobstetar/nemeton/issues}
+  \item \url{https://github.com/pobsteta/nemeton}
+  \item Report bugs at \url{https://github.com/pobsteta/nemeton/issues}
 }
 
 

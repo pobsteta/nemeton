@@ -1,0 +1,14 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "nemeton: Systemic Forest Analysis Using the Nemeton Method",
+  author   = person("Pascal", "Obst\u00e9tar"),
+  year     = "2026",
+  note     = "R package version 0.14.0",
+  url      = "https://github.com/pobsteta/nemeton",
+  textVersion = paste(
+    "Obstetar, P. (2026).",
+    "nemeton: Systemic Forest Analysis Using the Nemeton Method.",
+    "R package version 0.14.0.",
+    "https://github.com/pobsteta/nemeton"
+  )
+)

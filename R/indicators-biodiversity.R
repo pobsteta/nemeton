@@ -78,8 +78,7 @@ indicator_biodiversity_protection <- function(units,
   if (source == "wfs") {
     if (is.null(protected_areas)) {
       msg_info("biodiversity_wfs_fetching")
-      # TODO: Implement WFS fetch from INPN
-      # For now, warn and use empty dataset
+      # WFS fetch from INPN not yet available — use empty dataset
       msg_warn("biodiversity_wfs_failed")
       protected_areas <- sf::st_sf(
         zone_id = character(0),

@@ -29,3 +29,10 @@
 ^\.Rprofile$
 ^Rplots\.pdf$
 ^LICENSE\.md$
+^CLAUDE-tests-addendum\.md$
+^README-coverage\.md$
+^coverage-loop\.log$
+^nemeton-coverage-loop\.sh$
+^cran-comments\.md$
+^inst/extdata/aba\.model$
+^inst/extdata/coregistration$

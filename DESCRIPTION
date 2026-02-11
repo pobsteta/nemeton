@@ -34,7 +34,6 @@ Imports:
     htmltools (>= 0.5.7),
     promises (>= 1.2.0),
     later (>= 1.3.0),
-    ellmer (>= 0.1.0),
     DT (>= 0.30),
     yaml (>= 2.3.0)
 Suggests:
@@ -60,10 +59,8 @@ Suggests:
     viridisLite,
     happign (>= 0.2.0),
     lidR (>= 4.0.0),
-    lasR,
     lidaRtRee,
     learnr (>= 0.11.0),
-    gradethis (>= 0.2.0),
     fmsb,
     corrplot,
     DBI,
@@ -100,12 +97,9 @@ Suggests:
     SPEI (>= 1.7.0),
     maptiles (>= 0.6.0),
     png,
-    jpeg
-Remotes:
-    rstudio/gradethis,
-    r-lidar/lasR,
-    ilyamaclean/microclima
+    jpeg,
+    ellmer (>= 0.1.0)
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
-URL: https://github.com/pascalobstetar/nemeton
-BugReports: https://github.com/pascalobstetar/nemeton/issues
+URL: https://github.com/pobsteta/nemeton
+BugReports: https://github.com/pobsteta/nemeton/issues

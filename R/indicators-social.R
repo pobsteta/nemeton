@@ -208,6 +208,7 @@ indicator_social_accessibility <- function(units,
 #' @export
 #' @examples
 #' \dontrun{
+#' data(massif_demo_units)
 #' result <- indicator_social_proximity(
 #'   units = massif_demo_units,
 #'   method = "proxy",

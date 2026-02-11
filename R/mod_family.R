@@ -595,6 +595,11 @@ mod_family_server <- function(id, family_code, app_state) {
 #' @return An ellmer chat object.
 #' @noRd
 create_llm_chat <- function(system_prompt) {
+  if (!requireNamespace("ellmer", quietly = TRUE)) {
+    stop("Package 'ellmer' is required for AI analysis. Install it with: install.packages('ellmer')",
+         call. = FALSE)
+  }
+
   provider <- get_app_config("llm_provider", "anthropic")
   models <- get_app_config("llm_models", list())
   model <- models[[provider]]
