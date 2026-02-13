@@ -89,7 +89,7 @@ L'application permet de :
 - Commenter chaque famille avec assistance IA (ellmer)
 - Consulter les profils d'experts personnalisables (YAML)
 
-<img src="man/figures/readme-app.png" width="100%" />
+<img src="man/figures/nemeton-app.gif" width="100%" />
 
 ## Workflow avec vos données
 

@@ -70,6 +70,10 @@ TRANSLATIONS <- list(
     fr = "La s\u00e9lection des parcelles est bloqu\u00e9e pendant les calculs",
     en = "Parcel selection is blocked during computation"
   ),
+  selection_cleared = list(
+    fr = "S\u00e9lection effac\u00e9e",
+    en = "Selection cleared"
+  ),
 
   # ============================================================
   # Project
