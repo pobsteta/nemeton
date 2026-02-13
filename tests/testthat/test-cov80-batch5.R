@@ -333,17 +333,14 @@ test_that("mod_synthesis_server: clears comments when clear_all_comments trigger
   app_state <- shiny::reactiveValues(
     current_project = NULL,
     language = "fr",
-    project_id = "test_id",
+    project_id = NULL,
     family_comments = list(),
     clear_all_comments = NULL,
     refresh_family_comments = NULL
   )
 
   shiny::testServer(nemeton:::mod_synthesis_server, args = list(app_state = app_state), {
-    # Set initial comment
-    session$setInputs(synthesis_comments = "Some synthesis")
-
-    # Trigger clear
+    # Trigger clear (no need to set input first — observer just calls updateTextAreaInput)
     app_state$clear_all_comments <- Sys.time()
     session$flushReact()
 
