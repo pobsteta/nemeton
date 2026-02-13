@@ -3,6 +3,9 @@
 # Target: UI, server init, click handlers, basemap toggle, clear selection,
 #         restore project, render_parcels_to_map, selection summary, return values
 
+# Free memory from previous testServer sessions (avoids slow flushReact in full suite)
+gc()
+
 # ==============================================================================
 # mod_map_ui
 # ==============================================================================

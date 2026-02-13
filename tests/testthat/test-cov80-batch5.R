@@ -2,6 +2,9 @@
 # Coverage boost for R/mod_synthesis.R
 # Target: reactive computation paths, observers, download handlers
 
+# Free memory from previous testServer sessions (avoids slow flushReact in full suite)
+gc()
+
 # ==============================================================================
 # mod_synthesis_ui
 # ==============================================================================
