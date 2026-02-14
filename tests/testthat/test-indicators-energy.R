@@ -135,10 +135,9 @@ test_that("indicator_energy_fuelwood uses default density 550 when lookup return
     species = "FASY"
   ))
 
-  # Mock lookup_species_threshold to always return NA so the fallback density 550 is used
+  # Mock lookup to return NA so the fallback density 550 is used
   local_mocked_bindings(
-    lookup_species_threshold = function(species_code, parameter, table_name) NA_real_,
-    .package = "nemeton"
+    lookup_species_threshold = function(species_code, parameter, table_name) NA_real_
   )
 
   result <- indicator_energy_fuelwood(

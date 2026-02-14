@@ -31,13 +31,13 @@ test_that("get_language uses cached value after first call", {
 })
 
 # ==============================================================================
-# Tests for nemeton_set_language()
+# Tests for nemeton::nemeton_set_language()
 # ==============================================================================
 
 test_that("nemeton_set_language sets language correctly", {
   # Set to French
   expect_message(
-    result <- nemeton_set_language("fr"),
+    result <- nemeton::nemeton_set_language("fr"),
     "fr"
   )
   expect_equal(result, "fr")
@@ -45,7 +45,7 @@ test_that("nemeton_set_language sets language correctly", {
 
   # Set back to English
   expect_message(
-    result <- nemeton_set_language("en"),
+    result <- nemeton::nemeton_set_language("en"),
     "en"
   )
   expect_equal(result, "en")
@@ -54,18 +54,18 @@ test_that("nemeton_set_language sets language correctly", {
 
 test_that("nemeton_set_language validates input", {
   expect_error(
-    nemeton_set_language("de"),  # German not supported
+    nemeton::nemeton_set_language("de"),  # German not supported
     "should be one of|doit \u00eatre un de"
   )
 
   expect_error(
-    nemeton_set_language("spanish"),
+    nemeton::nemeton_set_language("spanish"),
     "should be one of|doit \u00eatre un de"
   )
 })
 
 test_that("nemeton_set_language returns language invisibly", {
-  result <- nemeton_set_language("en")
+  result <- nemeton::nemeton_set_language("en")
   expect_equal(result, "en")
 })
 
@@ -74,7 +74,7 @@ test_that("nemeton_set_language returns language invisibly", {
 # ==============================================================================
 
 test_that("msg retrieves translated messages in English", {
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 
   # Test known message key
   result <- nemeton:::msg("units_created", 10, "EPSG:2154")
@@ -83,17 +83,17 @@ test_that("msg retrieves translated messages in English", {
 })
 
 test_that("msg retrieves translated messages in French", {
-  nemeton_set_language("fr")
+  nemeton::nemeton_set_language("fr")
 
   result <- nemeton:::msg("units_created", 10, "EPSG:2154")
   expect_match(result, "Unit.*nemeton")
 
   # Reset to English for other tests
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 })
 
 test_that("msg falls back to English for missing French translation", {
-  nemeton_set_language("fr")
+  nemeton::nemeton_set_language("fr")
 
   # If a key exists in English but not French, should fallback
   # Test with a key that might only be in English
@@ -102,7 +102,7 @@ test_that("msg falls back to English for missing French translation", {
   # Should return something (either French or English fallback)
   expect_true(nchar(result) > 0)
 
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 })
 
 test_that("msg returns key if translation not found", {
@@ -112,7 +112,7 @@ test_that("msg returns key if translation not found", {
 })
 
 test_that("msg interpolates variables correctly", {
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 
   # Test with multiple variables
   result <- nemeton:::msg("layers_created", 5, 3)
@@ -125,7 +125,7 @@ test_that("msg interpolates variables correctly", {
 # ==============================================================================
 
 test_that("msg_info displays info message", {
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 
   expect_message(
     nemeton:::msg_info("preprocess_start"),
@@ -138,7 +138,7 @@ test_that("msg_info displays info message", {
 # ==============================================================================
 
 test_that("msg_success displays success message", {
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 
   expect_message(
     nemeton:::msg_success("language_set", "en"),
@@ -151,7 +151,7 @@ test_that("msg_success displays success message", {
 # ==============================================================================
 
 test_that("msg_warn issues warning", {
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 
   expect_warning(
     nemeton:::msg_warn("layers_file_missing", "/path/to/file.tif"),
@@ -164,7 +164,7 @@ test_that("msg_warn issues warning", {
 # ==============================================================================
 
 test_that("msg_error throws error", {
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 
   expect_error(
     nemeton:::msg_error("units_not_sf"),
@@ -245,4 +245,4 @@ test_that("Error messages exist in both languages", {
 })
 
 # Reset language to English at end of tests
-nemeton_set_language("en")
+nemeton::nemeton_set_language("en")
