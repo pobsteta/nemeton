@@ -135,11 +135,13 @@ test_that("indicator_energy_fuelwood uses default density 550 when lookup return
     species = "FASY"
   ))
 
-  # Mock lookup to return NA so the fallback density 550 is used
-  local_mocked_bindings(
-    lookup_species_threshold = function(species_code, parameter, table_name) NA_real_,
-    .package = "nemeton"
-  )
+  # Directly mock in the package namespace so the fallback density 550 is used
+  orig_fn <- nemeton:::lookup_species_threshold
+  assignInNamespace("lookup_species_threshold",
+    function(species_code, parameter, table_name) NA_real_,
+    ns = "nemeton")
+  on.exit(assignInNamespace("lookup_species_threshold", orig_fn, ns = "nemeton"),
+    add = TRUE)
 
   result <- indicator_energy_fuelwood(
     test_units,
