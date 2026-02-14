@@ -775,7 +775,9 @@ test_that("generate_family_maps creates map files for family columns", {
   dir.create(temp_dir, showWarnings = FALSE)
   on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
 
-  expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "fr"))
+  suppressWarnings(
+    expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "fr"))
+  )
 
   # Check that map files were created
   expect_true(file.exists(file.path(temp_dir, "family_C_map.png")))
@@ -799,7 +801,9 @@ test_that("generate_family_maps handles all NA values", {
   dir.create(temp_dir, showWarnings = FALSE)
   on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
 
-  expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "en"))
+  suppressWarnings(
+    expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "en"))
+  )
 })
 
 # ==============================================================================
@@ -2019,7 +2023,9 @@ test_that("generate_family_maps creates maps for all 12 family columns", {
   dir.create(temp_dir, showWarnings = FALSE)
   on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
 
-  expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "fr"))
+  suppressWarnings(
+    expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "fr"))
+  )
 
   # Verify maps for all families are created
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
@@ -2038,7 +2044,9 @@ test_that("generate_family_maps works with English language", {
   dir.create(temp_dir, showWarnings = FALSE)
   on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
 
-  expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "en"))
+  suppressWarnings(
+    expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "en"))
+  )
 
   expect_true(file.exists(file.path(temp_dir, "family_C_map.png")))
 })
@@ -2479,11 +2487,11 @@ test_that("generate_report_pdf with use_quarto=TRUE falls back when Quarto unava
   on.exit(unlink(temp_file), add = TRUE)
 
   # With use_quarto = TRUE, it will try Quarto first then fall back
-  result <- nemeton:::generate_report_pdf(
+  result <- suppressWarnings(nemeton:::generate_report_pdf(
     project, family_scores, temp_file,
     language = "fr",
     use_quarto = TRUE
-  )
+  ))
 
   # Should always produce a PDF (either via Quarto or fallback)
   expect_true(file.exists(result))
