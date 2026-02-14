@@ -785,15 +785,15 @@ test_that("msg_info dispatches correctly", {
 
 test_that("nemeton_set_language to fr works", {
   old_lang <- nemeton:::get_language()
-  on.exit(nemeton_set_language(old_lang), add = TRUE)
-  nemeton_set_language("fr")
+  on.exit(nemeton::nemeton_set_language(old_lang), add = TRUE)
+  nemeton::nemeton_set_language("fr")
   expect_equal(nemeton:::get_language(), "fr")
 })
 
 test_that("msg works in French", {
   old_lang <- nemeton:::get_language()
-  on.exit(nemeton_set_language(old_lang), add = TRUE)
-  nemeton_set_language("fr")
+  on.exit(nemeton::nemeton_set_language(old_lang), add = TRUE)
+  nemeton::nemeton_set_language("fr")
   result <- nemeton:::msg("language_set")
   # French message should contain something recognizable
   expect_true(nchar(result) > 0)
@@ -814,7 +814,7 @@ test_that("get_language auto-detects from locale", {
     expect_equal(lang, "fr")
   })
   # Restore English
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 })
 
 test_that("get_language defaults to en for unknown locale", {
@@ -828,13 +828,13 @@ test_that("get_language defaults to en for unknown locale", {
     lang <- nemeton:::get_language()
     expect_equal(lang, "en")
   })
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
 })
 
 test_that("msg falls back to English when key missing in French", {
   old_lang <- nemeton:::get_language()
-  on.exit(nemeton_set_language(old_lang), add = TRUE)
-  nemeton_set_language("fr")
+  on.exit(nemeton::nemeton_set_language(old_lang), add = TRUE)
+  nemeton::nemeton_set_language("fr")
   # Test a key that exists in both languages
   result <- nemeton:::msg("language_set")
   expect_true(nchar(result) > 0)
