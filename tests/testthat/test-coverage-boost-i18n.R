@@ -146,9 +146,9 @@ test_that("nemeton_set_language returns value invisibly", {
 })
 
 test_that("nemeton_set_language updates .nemeton_env", {
-  nemeton_set_language("fr")
+  nemeton::nemeton_set_language("fr")
   expect_equal(nemeton:::.nemeton_env$language, "fr")
-  nemeton_set_language("en")
+  nemeton::nemeton_set_language("en")
   expect_equal(nemeton:::.nemeton_env$language, "en")
 })
 
