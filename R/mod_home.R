@@ -38,19 +38,36 @@ mod_home_ui <- function(id) {
       width = 350,
       open = TRUE,
 
-      # Recent Projects Section
-      htmltools::div(
+      # Recent Projects Section (collapsible)
+      htmltools::tags$div(
         id = ns("recent_projects_section"),
-        class = "mb-4",
-        htmltools::h6(
-          class = "text-muted mb-2 d-flex align-items-center",
-          bsicons::bs_icon("clock-history", class = "me-2"),
-          i18n$t("recent_projects")
+        class = "card mb-3",
+        htmltools::tags$div(
+          class = "card-header bg-secondary text-white py-2",
+          style = "cursor: pointer;",
+          `data-bs-toggle` = "collapse",
+          `data-bs-target` = paste0("#", ns("recent_collapse")),
+          `aria-expanded` = "true",
+          `aria-controls` = ns("recent_collapse"),
+          htmltools::div(
+            class = "d-flex align-items-center justify-content-between",
+            htmltools::div(
+              class = "d-flex align-items-center",
+              bsicons::bs_icon("clock-history", class = "me-2"),
+              i18n$t("recent_projects")
+            ),
+            bsicons::bs_icon("chevron-down", class = "collapse-icon")
+          )
         ),
-        shiny::uiOutput(ns("recent_projects_list"))
+        htmltools::tags$div(
+          id = ns("recent_collapse"),
+          class = "collapse show",
+          htmltools::tags$div(
+            class = "card-body p-2",
+            shiny::uiOutput(ns("recent_projects_list"))
+          )
+        )
       ),
-
-      htmltools::hr(class = "my-3"),
 
       # Search Section (collapsible)
       htmltools::tags$div(
