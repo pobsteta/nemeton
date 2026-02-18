@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,7 +56,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/pascalobstetar/nemeton/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/pobsteta/nemeton/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -73,9 +73,9 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-02-11</h4>
+            <h4 data-toc-skip class="date">2026-02-18</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/pascalobstetar/nemeton/blob/main/vignettes/indicator-families_fr.Rmd" class="external-link"><code>vignettes/indicator-families_fr.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/indicator-families_fr.Rmd" class="external-link"><code>vignettes/indicator-families_fr.Rmd</code></a></small>
       <div class="d-none name"><code>indicator-families_fr.Rmd</code></div>
     </div>
 
@@ -90,7 +90,7 @@ d’indicateurs</strong> couvrant les dimensions biophysiques, écologiques
 et socio-économiques. Cette vignette présente le référentiel complet et
 démontre l’utilisation du système de familles.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pascalobstetar/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span></code></pre></div>
@@ -794,7 +794,8 @@ gestion</li>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] tidyr_1.3.2    sf_1.0-24      dplyr_1.2.0    ggplot2_4.0.2  nemeton_0.14.0</span></span>
+<span><span class="co">#&gt; [1] tidyr_1.3.2         sf_1.0-24           dplyr_1.2.0        </span></span>
+<span><span class="co">#&gt; [4] ggplot2_4.0.2       nemeton_0.14.1.9000</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      </span></span>
@@ -808,7 +809,7 @@ gestion</li>
 <span><span class="co">#&gt; [33] tools_4.5.2        vctrs_0.7.1        R6_2.6.1           proxy_0.4-29      </span></span>
 <span><span class="co">#&gt; [37] lifecycle_1.0.5    classInt_0.4-11    fs_1.6.6           htmlwidgets_1.6.4 </span></span>
 <span><span class="co">#&gt; [41] ragg_1.5.0         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0     </span></span>
-<span><span class="co">#&gt; [45] terra_1.8-93       bslib_0.10.0       pillar_1.11.1      later_1.4.5       </span></span>
+<span><span class="co">#&gt; [45] terra_1.8-93       bslib_0.10.0       pillar_1.11.1      later_1.4.6       </span></span>
 <span><span class="co">#&gt; [49] gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1         systemfonts_1.3.1 </span></span>
 <span><span class="co">#&gt; [53] xfun_0.56          tibble_3.3.1       tidyselect_1.2.1   knitr_1.51        </span></span>
 <span><span class="co">#&gt; [57] farver_2.1.2       nlme_3.1-168       htmltools_0.5.9    labeling_0.4.3    </span></span>

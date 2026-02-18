@@ -267,7 +267,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] nemeton_0.14.0
+#> [1] nemeton_0.14.1.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] terra_1.8-93       cli_3.6.5          knitr_1.51         rlang_1.1.7       
@@ -277,7 +277,7 @@ sessionInfo()
 #> [17] sass_0.4.10        rmarkdown_2.30     grid_4.5.2         classInt_0.4-11   
 #> [21] evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0      yaml_2.3.12       
 #> [25] lifecycle_1.0.5    compiler_4.5.2     codetools_0.2-20   fs_1.6.6          
-#> [29] Rcpp_1.1.1         htmlwidgets_1.6.4  later_1.4.5        systemfonts_1.3.1 
+#> [29] Rcpp_1.1.1         htmlwidgets_1.6.4  later_1.4.6        systemfonts_1.3.1 
 #> [33] digest_0.6.39      R6_2.6.1           class_7.3-23       magrittr_2.0.4    
 #> [37] bslib_0.10.0       proxy_0.4-29       tools_4.5.2        units_1.0-0       
 #> [41] pkgdown_2.2.0      cachem_1.1.0       desc_1.4.3

@@ -8,16 +8,15 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/pascalobstetar/nemeton/blob/main/DESCRIPTION)
+[`inst/CITATION`](https://github.com/pobsteta/nemeton/blob/main/inst/CITATION)
 
-Obstétar P (2026). *nemeton: Systemic Forest Analysis Using the Nemeton
-Method*. R package version 0.14.0,
-<https://github.com/pascalobstetar/nemeton>.
+Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton
+Method. R package version 0.14.0. https://github.com/pobsteta/nemeton
 
     @Manual{,
       title = {nemeton: Systemic Forest Analysis Using the Nemeton Method},
       author = {Pascal Obstétar},
       year = {2026},
       note = {R package version 0.14.0},
-      url = {https://github.com/pascalobstetar/nemeton},
+      url = {https://github.com/pobsteta/nemeton},
     }

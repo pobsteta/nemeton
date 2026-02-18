@@ -226,9 +226,9 @@ families representing key dimensions of forest functioning.
 
 Useful links:
 
-- <https://github.com/pascalobstetar/nemeton>
+- <https://github.com/pobsteta/nemeton>
 
-- Report bugs at <https://github.com/pascalobstetar/nemeton/issues>
+- Report bugs at <https://github.com/pobsteta/nemeton/issues>
 
 **Vignettes:**
 

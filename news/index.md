@@ -1,5 +1,30 @@
 # Changelog
 
+## nemeton 0.14.1
+
+**Date**: 2026-02-18
+
+#### UI Improvements
+
+- Made the recent projects section collapsible using the same Bootstrap
+  5 collapse pattern as the commune search and project form sections
+
+#### Bug Fixes
+
+- Fixed namespace issues in i18n and energy indicator tests
+- Fixed mock bindings for `lookup_species_threshold` using
+  `unlockBinding`
+- Suppressed expected OSM tile download warnings in export tests
+- Fixed various test stability issues (memory, timeouts, namespace
+  prefixes)
+
+#### Documentation
+
+- Updated README with app screenshot and badge updates
+- Prepared package for CRAN submission
+
+------------------------------------------------------------------------
+
 ## nemeton 0.14.0
 
 **Date**: 2026-02-10

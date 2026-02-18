@@ -71,6 +71,7 @@ S3_5km, S3_10km, S3_20km
 
 ``` r
 if (FALSE) { # \dontrun{
+data(massif_demo_units)
 result <- indicator_social_proximity(
   units = massif_demo_units,
   method = "proxy",

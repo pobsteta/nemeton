@@ -602,7 +602,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.2  nemeton_0.14.0
+#> [1] ggplot2_4.0.2       nemeton_0.14.1.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6         xfun_0.56            bslib_0.10.0        
@@ -616,7 +616,7 @@ sessionInfo()
 #> [25] textshaping_1.0.4    terra_1.8-93         nasapower_4.2.5     
 #> [28] codetools_0.2-20     htmltools_0.5.9      class_7.3-23        
 #> [31] sass_0.4.10          yaml_2.3.12          tidyr_1.3.2         
-#> [34] crayon_1.5.3         later_1.4.5          pillar_1.11.1       
+#> [34] crayon_1.5.3         later_1.4.6          pillar_1.11.1       
 #> [37] pkgdown_2.2.0        exactextractr_0.10.1 jquerylib_0.1.4     
 #> [40] classInt_0.4-11      cachem_1.1.0         tidyselect_1.2.1    
 #> [43] digest_0.6.39        purrr_1.2.1          sf_1.0-24           
@@ -625,7 +625,7 @@ sessionInfo()
 #> [52] omnibus_1.2.15       triebeard_0.4.1      crul_1.6.0          
 #> [55] e1071_1.7-17         readr_2.1.6          withr_3.0.2         
 #> [58] scales_1.4.0         promises_1.5.0       rappdirs_0.3.4      
-#> [61] bit64_4.6.0-1        sp_2.2-0             rmarkdown_2.30      
+#> [61] bit64_4.6.0-1        sp_2.2-1             rmarkdown_2.30      
 #> [64] bit_4.6.0            otel_0.2.0           hms_1.1.4           
 #> [67] ragg_1.5.0           evaluate_1.0.5       knitr_1.51          
 #> [70] viridisLite_0.4.3    rlang_1.1.7          urltools_1.7.3.1    
