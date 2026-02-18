@@ -49,13 +49,9 @@ jobs:
             libtiff5-dev \
             libjpeg-dev
 
-      - name: Install microclima from GitHub
-        run: |
-          Rscript -e 'install.packages("remotes"); remotes::install_github("ilyamaclean/microclima", dependencies = FALSE)'
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: any::pkgdown, local::., github::ilyamaclean/microclima
           needs: website
 
       - name: Build site
