@@ -99,6 +99,8 @@ Suggests:
     png,
     jpeg,
     ellmer (>= 0.1.0)
+Remotes:
+    ilyamaclean/microclima
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 URL: https://github.com/pobsteta/nemeton
