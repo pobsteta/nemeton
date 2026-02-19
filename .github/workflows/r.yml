@@ -55,7 +55,6 @@ jobs:
           extra-packages: |
             any::rcmdcheck
             any::remotes
-            github::ilyamaclean/microclima
           needs: check
 
       - name: Check package

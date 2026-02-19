@@ -5,6 +5,7 @@
 #' @importFrom terra terrain extract rasterize global clamp
 #' @importFrom sf st_centroid st_distance st_transform st_coordinates
 #' @importFrom stats median weighted.mean ts
+#' @importFrom utils getFromNamespace
 #' @keywords internal
 NULL
 
@@ -228,11 +229,13 @@ indicator_risk_storm <- function(units,
   wind_cache_dir <- if (!is.null(layers)) layers$cache_dir else NULL
   wind_dir <- get_nasapower_wind(units, default_dir = 270, cache_dir = wind_cache_dir)
 
-  # --- Primary method: microclima::windcoef ---
-  if (suppressWarnings(requireNamespace("microclima", quietly = TRUE))) {
+  # --- Primary method: microclima windcoef (optional, not on CRAN) ---
+  has_microclima <- nzchar(suppressWarnings(system.file(package = "microclima")))
+  if (has_microclima) {
     tryCatch({
-      cli::cli_alert_info("R2: Using microclima::windcoef (wind direction = {wind_dir}\u00b0)")
-      shelter_coef <- microclima::windcoef(
+      cli::cli_alert_info("R2: Using microclima windcoef (wind direction = {wind_dir}\u00b0)")
+      windcoef_fn <- getFromNamespace("windcoef", "microclima")
+      shelter_coef <- windcoef_fn(
         dsm = dem,
         direction = wind_dir,
         hgt = 10,

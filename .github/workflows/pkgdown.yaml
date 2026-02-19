@@ -51,7 +51,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::., github::ilyamaclean/microclima
+          extra-packages: any::pkgdown, local::.
           needs: website
 
       - name: Build site
