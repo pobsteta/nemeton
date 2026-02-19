@@ -135,14 +135,40 @@ test_that("indicator_energy_fuelwood uses default density 550 when lookup return
     species = "FASY"
   ))
 
-  # Replace lookup in the sealed package namespace so the fallback density 550 is used
+  # Mock lookup_species_threshold to return NA so fallback density 550 is used
+  # Must patch both the namespace AND the function's environment (which may differ
+  # under pkgload after local_mocked_bindings is used in earlier tests)
+  fn_env <- environment(indicator_energy_fuelwood)
   ns <- asNamespace("nemeton")
-  orig_fn <- ns[["lookup_species_threshold"]]
-  unlockBinding("lookup_species_threshold", ns)
-  ns[["lookup_species_threshold"]] <- function(species_code, parameter, table_name) NA_real_
+  mock_fn <- function(species_code, parameter, table_name) NA_real_
+
+  envs_to_patch <- list()
+  for (env in list(ns, fn_env)) {
+    if (exists("lookup_species_threshold", envir = env, inherits = FALSE)) {
+      envs_to_patch <- c(envs_to_patch, list(env))
+    }
+  }
+
+  orig_fns <- list()
+  for (env in envs_to_patch) {
+    tryCatch({
+      orig_fns <- c(orig_fns, list(list(env = env, fn = get("lookup_species_threshold", envir = env))))
+      if (bindingIsLocked("lookup_species_threshold", env)) {
+        unlockBinding("lookup_species_threshold", env)
+      }
+      assign("lookup_species_threshold", mock_fn, envir = env)
+    }, error = function(e) NULL)
+  }
   on.exit({
-    ns[["lookup_species_threshold"]] <- orig_fn
-    lockBinding("lookup_species_threshold", ns)
+    for (item in orig_fns) {
+      tryCatch({
+        if (bindingIsLocked("lookup_species_threshold", item$env)) {
+          unlockBinding("lookup_species_threshold", item$env)
+        }
+        assign("lookup_species_threshold", item$fn, envir = item$env)
+        lockBinding("lookup_species_threshold", item$env)
+      }, error = function(e) NULL)
+    }
   }, add = TRUE)
 
   result <- indicator_energy_fuelwood(

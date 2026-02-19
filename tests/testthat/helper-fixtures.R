@@ -4,6 +4,19 @@
 # Force English language for consistent test messages
 nemeton::nemeton_set_language("en")
 
+# Patch shiny::testServer to drain later callbacks after each call.
+# Without this, accumulated async state from many testServer sessions
+# causes subsequent test_file() calls to hang.
+.original_testServer <- shiny::testServer
+.patched_testServer <- function(...) {
+  on.exit(later::run_now(0), add = TRUE)
+  .original_testServer(...)
+}
+suppressWarnings({
+  unlockBinding("testServer", asNamespace("shiny"))
+  assign("testServer", .patched_testServer, envir = asNamespace("shiny"))
+})
+
 #' Create a test sf object (simple square polygon)
 #'
 #' @param crs CRS for the test object (default: EPSG:2154 - Lambert 93)
