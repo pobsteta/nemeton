@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,7 @@
     <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
     <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -230,7 +231,7 @@
           <code><a href="indicator_soil_erosion.html">indicator_soil_erosion()</a></code>
 
         </dt>
-        <dd>Erosion Risk Index (F2)</dd>
+        <dd>Soil Fertility Index (F2)</dd>
       </dl></div><div class="section level2">
       <h2 id="famille-l-paysage">Famille L : Paysage<a class="anchor" aria-label="anchor" href="#famille-l-paysage"></a></h2>
 
@@ -246,14 +247,14 @@
           <code><a href="indicator_landscape_fragmentation.html">indicator_landscape_fragmentation()</a></code>
 
         </dt>
-        <dd>Landscape Fragmentation (L1)</dd>
+        <dd>Sylvosphere - Edge Effect (L1)</dd>
 
         <dt>
 
           <code><a href="indicator_landscape_edge.html">indicator_landscape_edge()</a></code>
 
         </dt>
-        <dd>Edge-to-Area Ratio (L2)</dd>
+        <dd>Landscape Fragmentation (L2)</dd>
       </dl></div><div class="section level2">
       <h2 id="famille-t-dynamique-temporelle">Famille T : Dynamique temporelle<a class="anchor" aria-label="anchor" href="#famille-t-dynamique-temporelle"></a></h2>
 
@@ -276,7 +277,7 @@
           <code><a href="indicator_temporal_change.html">indicator_temporal_change()</a></code>
 
         </dt>
-        <dd>Calculate Land Cover Change Rate Index (T2)</dd>
+        <dd>Calculate Stability / Change Rate Index (T2)</dd>
       </dl></div><div class="section level2">
       <h2 id="famille-r-risques-r-silience">Famille R : Risques &amp; Résilience<a class="anchor" aria-label="anchor" href="#famille-r-risques-r-silience"></a></h2>
 
@@ -350,14 +351,14 @@
           <code><a href="indicator_social_trails.html">indicator_social_trails()</a></code>
 
         </dt>
-        <dd>S1: Trail Density Indicator</dd>
+        <dd>S1: Distance to Roads Indicator</dd>
 
         <dt>
 
           <code><a href="indicator_social_accessibility.html">indicator_social_accessibility()</a></code>
 
         </dt>
-        <dd>S2: Multimodal Accessibility Indicator</dd>
+        <dd>S2: Distance to Buildings Indicator</dd>
 
         <dt>
 
@@ -686,6 +687,29 @@
 
         </dt>
         <dd>Summary Method for nemeton_temporal Objects</dd>
+      </dl></div><div class="section level2">
+      <h2 id="application-shiny">Application Shiny<a class="anchor" aria-label="anchor" href="#application-shiny"></a></h2>
+
+      <div class="section-desc"><p>Interface interactive nemetonApp</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="run_app.html">run_app()</a></code>
+
+        </dt>
+        <dd>Launch the nemetonApp Shiny Application</dd>
+
+        <dt>
+
+          <code><a href="generate_report_pdf.html">generate_report_pdf()</a></code>
+
+        </dt>
+        <dd>Generate PDF report (main entry point)</dd>
       </dl></div><div class="section level2">
       <h2 id="documentation-du-package">Documentation du package<a class="anchor" aria-label="anchor" href="#documentation-du-package"></a></h2>
 

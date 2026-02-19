@@ -1,18 +1,13 @@
 # Calculate Drought Stress Index (R3)
 
-Computes drought stress based on topographic wetness (inverse TWI),
-precipitation deficit, and species sensitivity.
+Computes drought stress combining a climate component (SPEI-3 index) and
+a topographic modulation (aspect, slope, TWI). Falls back to
+topographic-only assessment when SPEI is unavailable.
 
 ## Usage
 
 ``` r
-indicator_risk_drought(
-  units,
-  twi_field = "W3",
-  climate = NULL,
-  species_field = "species",
-  weights = c(twi = 0.4, precip = 0.4, species = 0.2)
-)
+indicator_risk_drought(units, layers = NULL, dem = NULL, climate_data = NULL)
 ```
 
 ## Arguments
@@ -21,23 +16,19 @@ indicator_risk_drought(
 
   An sf object with forest parcels.
 
-- twi_field:
+- layers:
 
-  Character. Column name with Topographic Wetness Index (TWI). Can reuse
-  W3 from v0.2.0.
+  A nemeton_layers object. Used to extract DEM.
 
-- climate:
+- dem:
 
-  List with 'precipitation' SpatRaster, or NULL.
+  A SpatRaster with digital elevation model (meters).
 
-- species_field:
+- climate_data:
 
-  Character. Column name with species names.
-
-- weights:
-
-  Named numeric vector. Weights for components: c(twi, precip, species).
-  Default c(0.4, 0.4, 0.2).
+  Optional list with `precip` (monthly precipitation vector in mm) and
+  `temp` (list with `tmin` and `tmax` monthly vectors in degrees C). If
+  NULL, uses simulated data.
 
 ## Value
 
@@ -47,16 +38,22 @@ The input sf object with added column:
 
 ## Details
 
-\*\*Formula\*\*: R3 = w1×(100-TWI_norm) + w2×precip_deficit +
-w3×species_sensitivity
+\*\*Climate component\*\* (weight 0.6): Uses SPEI-3 (Standardised
+Precipitation-Evapotranspiration Index at 3-month scale) via SPEI. PET
+is computed with the Hargreaves method. R3_climat = (-SPEI_recent + 2) /
+4, clamped to 0-1. Falls back to 0.5 without SPEI.
 
-\*\*Components\*\*:
+\*\*Topographic component\*\* (weight 0.4):
 
-- Inverse TWI: Low TWI (dry sites) = high drought stress
+- aspect_risk: south-facing = max risk
 
-- Precipitation deficit: Low annual precip = high stress
+- slope_risk: steep slopes = runoff = dry
 
-- Species sensitivity: Fagus (80), Quercus (50), Pinus (50), others (50)
+- twi_risk: low TWI = dry
+
+topo_risk = 0.4\*aspect_risk + 0.3\*slope_risk + 0.3\*twi_risk
+
+R3 = (0.6 \* climate + 0.4 \* topo) \* 100
 
 ## See also
 
@@ -73,14 +70,9 @@ library(nemeton)
 
 data(massif_demo_units)
 units <- massif_demo_units
+dem <- rast("path/to/dem.tif")
 
-# Reuse W3 (TWI) from v0.2.0
-units$W3 <- runif(nrow(units), 5, 15)
-units$species <- sample(c("Fagus", "Quercus", "Pinus"), nrow(units), replace = TRUE)
-
-climate <- list(precipitation = rast("path/to/precip.tif"))
-
-result <- indicator_risk_drought(units, twi_field = "W3", climate = climate, species_field = "species")
+result <- indicator_risk_drought(units, dem = dem)
 summary(result$R3)
 } # }
 ```

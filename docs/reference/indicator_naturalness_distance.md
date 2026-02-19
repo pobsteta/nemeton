@@ -1,18 +1,18 @@
 # N1: Infrastructure Distance Indicator
 
-Calculates minimum distance to infrastructure (roads, buildings, power
-lines) as a proxy for remoteness from human influence.
+Calculates distance to infrastructure (roads, buildings, urban zones) as
+a measure of remoteness from human influence. Follows tuto 04
+methodology: distances from parcel centroids to roads (BD TOPO) and
+buildings, normalized to 0-100 and combined with weights (40
 
 ## Usage
 
 ``` r
 indicator_naturalness_distance(
   units,
-  infrastructure = NULL,
-  method = c("osm", "local"),
-  osm_bbox = NULL,
-  infra_types = c("roads", "buildings", "power"),
-  osm_road_tags = c("motorway", "trunk", "primary", "secondary", "tertiary"),
+  roads = NULL,
+  buildings = NULL,
+  layers = NULL,
   column_name = "N1",
   lang = "en"
 )
@@ -24,28 +24,19 @@ indicator_naturalness_distance(
 
   sf object (POLYGON) of spatial units to assess
 
-- infrastructure:
+- roads:
 
-  sf object or list. Infrastructure datasets. If NULL and method="osm",
-  fetches from OSM.
+  sf object (LINESTRING/MULTILINESTRING). Road network (BD TOPO). NULL =
+  default 1000m.
 
-- method:
+- buildings:
 
-  Character. Data source: "osm" or "local". Default "osm".
+  sf object (POLYGON/MULTIPOLYGON). Buildings. NULL = default 500m.
 
-- osm_bbox:
+- layers:
 
-  Numeric vector for OSM query. Auto-detected if NULL.
-
-- infra_types:
-
-  Character vector. Infrastructure categories: c("roads", "buildings",
-  "power"). Default all.
-
-- osm_road_tags:
-
-  Character vector. OSM highway tags for roads. Default c("motorway",
-  "trunk", "primary", "secondary", "tertiary").
+  nemeton_layers object. Used to resolve roads/buildings if not provided
+  directly.
 
 - column_name:
 
@@ -57,5 +48,4 @@ indicator_naturalness_distance(
 
 ## Value
 
-sf object with added columns: N1 (min distance m), N1_roads,
-N1_buildings, N1_power
+sf object with added column N1 (score 0-100, 100 = very remote)

@@ -1,18 +1,13 @@
 # Calculate Storm Vulnerability Index (R2)
 
-Computes storm vulnerability based on stand height, density, and
-topographic exposure.
+Computes storm vulnerability using wind shelter coefficient from
+microclima. Falls back to DEM-derived terrain exposure when microclima
+is unavailable.
 
 ## Usage
 
 ``` r
-indicator_risk_storm(
-  units,
-  dem,
-  height_field = "height",
-  density_field = "density",
-  weights = c(height = 1/3, density = 1/3, exposure = 1/3)
-)
+indicator_risk_storm(units, dem = NULL, layers = NULL)
 ```
 
 ## Arguments
@@ -25,18 +20,9 @@ indicator_risk_storm(
 
   A SpatRaster with digital elevation model (meters).
 
-- height_field:
+- layers:
 
-  Character. Column name with stand height (meters).
-
-- density_field:
-
-  Character. Column name with stand density (0-1 scale).
-
-- weights:
-
-  Named numeric vector. Weights for components: c(height, density,
-  exposure). Default c(1/3, 1/3, 1/3).
+  A nemeton_layers object. Used to extract DEM if `dem` is NULL.
 
 ## Value
 
@@ -46,17 +32,16 @@ The input sf object with added column:
 
 ## Details
 
-\*\*Formula\*\*: R2 = w1×height_factor + w2×density_factor +
-w3×exposure_factor
+\*\*Primary method\*\* (requires microclima): Uses
+[`microclima::windcoef()`](https://rdrr.io/pkg/microclima/man/windcoef.html)
+to compute wind shelter coefficient from the DEM. Dominant wind
+direction is obtained from NASA POWER climatology (nasapower),
+defaulting to 270 degrees (west) for France. R2 = (1 - shelter_coef) \*
+100.
 
-\*\*Components\*\*:
-
-- height_factor: Taller stands (\>30m) are more vulnerable
-
-- density_factor: Dense stands (\>0.8) have higher wind load
-
-- exposure_factor: Topographic Position Index from DEM (ridges =
-  exposed)
+\*\*Fallback method\*\* (DEM terrain derivatives): Combines aspect-wind
+alignment, slope, and terrain ruggedness (TRI): R2 = wind_exposure \*
+(0.6 \* slope_norm + 0.4 \* TRI_norm) \* 100.
 
 ## See also
 
@@ -73,12 +58,9 @@ library(nemeton)
 
 data(massif_demo_units)
 units <- massif_demo_units
-units$height <- runif(nrow(units), 10, 35)
-units$density <- runif(nrow(units), 0.5, 1.0)
-
 dem <- rast("path/to/dem.tif")
 
-result <- indicator_risk_storm(units, dem = dem, height_field = "height", density_field = "density")
+result <- indicator_risk_storm(units, dem = dem)
 summary(result$R2)
 } # }
 ```

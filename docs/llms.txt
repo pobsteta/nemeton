@@ -48,29 +48,43 @@ data(massif_demo_units)
 
 # Visualiser le profil radar d'une parcelle
 nemeton_radar(massif_demo_units, unit_id = 1, mode = "family")
+```
 
+![](reference/figures/readme-radar.png)
+
+``` r
 # Identifier les parcelles Pareto-optimales
 pareto <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "family_P"),
-  maximize = c(TRUE, TRUE, TRUE)
-)
-
-# Clustering automatique
-clusters <- cluster_parcels(
-  massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
-  k = NULL  # Auto-détermination
+  objectives = c("family_C", "family_B"),
+  maximize = c(TRUE, TRUE)
 )
 
 # Trade-offs avec frontière de Pareto
-plot_tradeoff(
-  pareto,
-  x = "family_C",
-  y = "family_B",
-  pareto_frontier = TRUE
-)
+plot_tradeoff(pareto, x = "family_C", y = "family_B", pareto_frontier = TRUE)
 ```
+
+![](reference/figures/readme-tradeoff.png)
+
+## Application Interactive (nemetonApp)
+
+Pour une utilisation sans code, lancez l’application Shiny :
+
+``` r
+library(nemeton)
+run_app()
+```
+
+L’application permet de :
+
+- Rechercher et sélectionner des parcelles cadastrales par commune
+- Calculer automatiquement les 29 indicateurs (12 familles)
+- Visualiser les résultats (radar, cartes, histogrammes)
+- Exporter en PDF ou GeoPackage (auto-sauvegarde dans `exports/`)
+- Commenter chaque famille avec assistance IA (ellmer)
+- Consulter les profils d’experts personnalisables (YAML)
+
+![](reference/figures/readme-app.png)
 
 ## Workflow avec vos données
 
@@ -104,18 +118,54 @@ health <- create_composite_index(
 plot_indicators_map(health, indicators = "ecosystem_health", palette = "RdYlGn")
 ```
 
+## Nouveautés v0.13.0
+
+### Interface utilisateur
+
+- **Popovers explicatifs** sur le radar et le score global pour guider
+  l’utilisateur
+- **Singulier/pluriel** automatique pour le compteur de parcelles
+- **Gestion des profils experts** externalisés en YAML
+  (`inst/experts/`), personnalisables dans `~/.nemeton/experts/`
+
+### Export PDF
+
+- Rendu Markdown complet (gras, italique, listes, tableaux) avec
+  pagination
+- Correction des chevauchements de texte et dimensionnement des colonnes
+- Sauvegarde automatique dans le dossier `exports/` du projet
+
+### Commentaires & Synthese
+
+- Persistance fiable des commentaires IA (tryCatch, variable locale)
+- Reset automatique lors du changement de projet
+- Serialisation correcte des sorties ellmer
+
+### Tests & Couverture
+
+- **8000+ tests** sur 76 fichiers couvrant 47 fichiers source
+- Tests `testServer()` pour les modules Shiny (contribuent a covr)
+- Script de couverture parallele (`nemeton-coverage-loop.sh`) : N agents
+  Claude simultanement, un par fichier
+
+### Performance
+
+- Chargement paresseux (lazy loading) des modules famille
+- Assets minifies
+
 ## Documentation
 
 ``` r
 # Vignettes
-vignette("getting-started", package = "nemeton")
-vignette("temporal-analysis", package = "nemeton")
-vignette("indicator-families", package = "nemeton")
+vignette("getting-started_fr", package = "nemeton")
+vignette("nemetonapp-guide_fr", package = "nemeton")
+vignette("indicator-families_fr", package = "nemeton")
+vignette("temporal-analysis_fr", package = "nemeton")
 
 # Aide
 ?nemeton_compute
 ?create_family_index
-?nemeton_radar
+?run_app
 ```
 
 ## Licence
@@ -124,12 +174,12 @@ MIT - Voir [LICENSE](https://pobsteta.github.io/nemeton/LICENSE)
 
 ## Citation
 
-    Obstétar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-    R package version 0.6.2. https://github.com/pobsteta/nemeton
+    Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
+    R package version 0.13.0. https://github.com/pobsteta/nemeton
 
 ------------------------------------------------------------------------
 
-**Développé avec** ❤️ **et** [Claude
+**Developpe avec** ❤️ **et** [Claude
 Code](https://claude.com/claude-code)
 
 # Package index
@@ -203,16 +253,16 @@ Qualité du sol et risque d’érosion
 - [`indicator_soil_fertility()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_fertility.md)
   : Soil Fertility Class (F1)
 - [`indicator_soil_erosion()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_erosion.md)
-  : Erosion Risk Index (F2)
+  : Soil Fertility Index (F2)
 
 ## Famille L : Paysage
 
 Structure du paysage et connectivité
 
 - [`indicator_landscape_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md)
-  : Landscape Fragmentation (L1)
+  : Sylvosphere - Edge Effect (L1)
 - [`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)
-  : Edge-to-Area Ratio (L2)
+  : Landscape Fragmentation (L2)
 
 ## Famille T : Dynamique temporelle
 
@@ -221,7 +271,7 @@ Ancienneté des peuplements et changements d’occupation
 - [`indicator_temporal_age()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.md)
   : Calculate Stand Age Index (T1)
 - [`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)
-  : Calculate Land Cover Change Rate Index (T2)
+  : Calculate Stability / Change Rate Index (T2)
 
 ## Famille R : Risques & Résilience
 
@@ -247,9 +297,9 @@ Vulnérabilité aux incendies, tempêtes et sécheresse
 Densité de sentiers, accessibilité et proximité population
 
 - [`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)
-  : S1: Trail Density Indicator
+  : S1: Distance to Roads Indicator
 - [`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)
-  : S2: Multimodal Accessibility Indicator
+  : S2: Distance to Buildings Indicator
 - [`indicator_social_proximity()`](https://pobsteta.github.io/nemeton/reference/indicator_social_proximity.md)
   : S3: Population Proximity Indicator
 
@@ -368,6 +418,15 @@ Méthodes print et summary pour les objets nemeton
   : Summary method for nemeton_layers
 - [`summary(`*`<nemeton_temporal>`*`)`](https://pobsteta.github.io/nemeton/reference/summary.nemeton_temporal.md)
   : Summary Method for nemeton_temporal Objects
+
+## Application Shiny
+
+Interface interactive nemetonApp
+
+- [`run_app()`](https://pobsteta.github.io/nemeton/reference/run_app.md)
+  : Launch the nemetonApp Shiny Application
+- [`generate_report_pdf()`](https://pobsteta.github.io/nemeton/reference/generate_report_pdf.md)
+  : Generate PDF report (main entry point)
 
 ## Documentation du package
 

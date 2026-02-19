@@ -1,8 +1,8 @@
 # Topographic Wetness Index (W3)
 
-Calculates TWI using whitebox (D-infinity algorithm) or terra fallback
-(D8). Higher values indicate areas with greater water accumulation
-potential.
+Calculates TWI using fasterRaster/GRASS GIS (preferred) or terra
+fallback (D8). Higher values indicate areas with greater water
+accumulation potential.
 
 ## Usage
 
@@ -11,7 +11,7 @@ indicator_water_twi(
   units,
   layers,
   dem_layer = "dem",
-  method = c("auto", "dinf", "d8")
+  method = c("auto", "grass", "d8")
 )
 ```
 
@@ -31,12 +31,19 @@ indicator_water_twi(
 
 - method:
 
-  Character. TWI calculation method: "auto" (prefer whitebox), "dinf"
-  (whitebox D-infinity), or "d8" (terra D8). Default "auto".
+  Character. TWI calculation method: "auto" (prefer GRASS), "grass"
+  (fasterRaster/GRASS GIS), or "d8" (terra D8). Default "auto".
 
 ## Value
 
 Numeric vector of TWI mean values
+
+## Details
+
+The GRASS method (via fasterRaster) performs proper hydrological
+conditioning: depression filling, flow direction, flow accumulation,
+then TWI = ln(SCA / tan(slope)). The terra D8 method is a simpler
+approximation used as fallback.
 
 ## Examples
 

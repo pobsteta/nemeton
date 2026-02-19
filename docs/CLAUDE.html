@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.13.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,7 @@
     <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
     <li><a class="dropdown-item" href="articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -76,6 +77,232 @@ tests/</code></pre>
 <li>001-mvp-v0.4.0: Added R &gt;= 4.0.0 (targeting R 4.1.0+ for compatibility with existing codebase)</li>
 <li>001-mvp-v0-3-0: Added R &gt;= 4.0.0 (v0.2.0 uses R 4.5.2)</li>
 </ul><!-- MANUAL ADDITIONS START --><!-- MANUAL ADDITIONS END --></div>
+</div>
+<div class="section level1">
+<h1 id="claudemd--addendum-tests--couverture-pour-nemeton">CLAUDE.md — Addendum Tests &amp; Couverture pour nemeton<a class="anchor" aria-label="anchor" href="#claudemd--addendum-tests--couverture-pour-nemeton"></a></h1>
+</div>
+<div class="section level1">
+<h1 id="ce-fichier-complète-le-claudemd-existant-avec-les-conventions-de-test-spécifiques">Ce fichier complète le CLAUDE.md existant avec les conventions de test spécifiques.<a class="anchor" aria-label="anchor" href="#ce-fichier-compl%C3%A8te-le-claudemd-existant-avec-les-conventions-de-test-sp%C3%A9cifiques"></a></h1>
+</div>
+<div class="section level1">
+<h1 id="si-un-claudemd-existe-déjà-fusionner-ce-contenu-avec-lexistant">Si un CLAUDE.md existe déjà, fusionner ce contenu avec l’existant.<a class="anchor" aria-label="anchor" href="#si-un-claudemd-existe-d%C3%A9j%C3%A0-fusionner-ce-contenu-avec-lexistant"></a></h1>
+<div class="section level2">
+<h2 id="stack-de-test">Stack de test<a class="anchor" aria-label="anchor" href="#stack-de-test"></a></h2>
+<ul><li>
+<strong>Framework</strong> : testthat (edition 3)</li>
+<li>
+<strong>Tests Shiny</strong> : shinytest2 (E2E via chromote headless) + testServer() (unitaire)</li>
+<li>
+<strong>Couverture</strong> : covr → codecov</li>
+<li>
+<strong>R &gt;= 4.1.0</strong>, dépendances : sf, terra, ggplot2, shiny</li>
+</ul></div>
+<div class="section level2">
+<h2 id="commandes-de-référence">Commandes de référence<a class="anchor" aria-label="anchor" href="#commandes-de-r%C3%A9f%C3%A9rence"></a></h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Lancer tous les tests</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Lancer un fichier de test spécifique</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'testthat::test_file("tests/testthat/test-mon_fichier.R")'</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># Couverture globale (pourcentage)</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co"># Couverture par fichier</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'print(as.data.frame(covr::tally_coverage(covr::package_coverage(quiet=TRUE), by="file")))'</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co"># Lignes non couvertes</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'print(covr::zero_coverage(covr::package_coverage(quiet=TRUE)))'</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co"># Rapport HTML interactif</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'covr::report(covr::package_coverage())'</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="conventions-de-nommage-des-tests">Conventions de nommage des tests<a class="anchor" aria-label="anchor" href="#conventions-de-nommage-des-tests"></a></h2>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Fichier source</th>
+<th>Fichier de test (unitaire)</th>
+<th>Fichier de test (E2E Shiny)</th>
+</tr></thead><tbody><tr class="odd"><td><code>R/indicators.R</code></td>
+<td><code>tests/testthat/test-indicators.R</code></td>
+<td>—</td>
+</tr><tr class="even"><td><code>R/mod_radar.R</code></td>
+<td><code>tests/testthat/test-mod_radar-server.R</code></td>
+<td><code>tests/testthat/test-mod_radar-e2e.R</code></td>
+</tr><tr class="odd"><td><code>R/app_server.R</code></td>
+<td><code>tests/testthat/test-app_server.R</code></td>
+<td><code>tests/testthat/test-app-e2e.R</code></td>
+</tr></tbody></table></div>
+<div class="section level2">
+<h2 id="stratégie-de-test-par-type-de-code">Stratégie de test par type de code<a class="anchor" aria-label="anchor" href="#strat%C3%A9gie-de-test-par-type-de-code"></a></h2>
+<div class="section level3">
+<h3 id="fonctions-r-pures-indicateurs-calculs-normalisation">Fonctions R pures (indicateurs, calculs, normalisation)<a class="anchor" aria-label="anchor" href="#fonctions-r-pures-indicateurs-calculs-normalisation"></a></h3>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">test_that</span><span class="op">(</span><span class="st">"calculate_carbon_index() retourne les bonnes valeurs"</span>, <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
+<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">calculate_carbon_index</span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_true</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">is.numeric</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_true</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="va">result</span> <span class="op">&gt;=</span> <span class="fl">0</span> <span class="op">&amp;</span> <span class="va">result</span> <span class="op">&lt;=</span> <span class="fl">100</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">test_that</span><span class="op">(</span><span class="st">"calculate_carbon_index() gère les NA"</span>, <span class="op">{</span></span>
+<span>  <span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="cn">NA</span>, <span class="fl">300</span><span class="op">)</span>, area <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">calculate_carbon_index</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_true</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">test_that</span><span class="op">(</span><span class="st">"calculate_carbon_index() refuse les entrées invalides"</span>, <span class="op">{</span></span>
+<span>  <span class="fu">expect_error</span><span class="op">(</span><span class="fu">calculate_carbon_index</span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_error</span><span class="op">(</span><span class="fu">calculate_carbon_index</span><span class="op">(</span><span class="st">"pas un dataframe"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="fonctions-spatiales-sf-terra">Fonctions spatiales (sf, terra)<a class="anchor" aria-label="anchor" href="#fonctions-spatiales-sf-terra"></a></h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">test_that</span><span class="op">(</span><span class="st">"nemeton_units() crée des unités spatiales"</span>, <span class="op">{</span></span>
+<span>  <span class="fu">withr</span><span class="fu">::</span><span class="fu"><a href="https://withr.r-lib.org/reference/with_tempfile.html" class="external-link">with_tempdir</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="co"># Créer un geopackage minimal pour le test</span></span>
+<span>    <span class="va">test_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
+<span>      id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
+<span>      name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"parcelle_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>,</span>
+<span>      area_ha <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">50</span><span class="op">)</span>,</span>
+<span>      geometry <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_polygon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">i</span>, <span class="fl">0</span>, <span class="va">i</span><span class="op">+</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="va">i</span><span class="op">+</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">i</span>, <span class="fl">1</span>, <span class="va">i</span>, <span class="fl">0</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>        <span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>      <span class="op">}</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>      crs <span class="op">=</span> <span class="fl">4326</span></span>
+<span>    <span class="op">)</span></span>
+<span>    <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_write.html" class="external-link">st_write</a></span><span class="op">(</span><span class="va">test_sf</span>, <span class="st">"test.gpkg"</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>    <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_units.html">nemeton_units</a></span><span class="op">(</span><span class="st">"test.gpkg"</span><span class="op">)</span></span>
+<span>    <span class="fu">expect_s3_class</span><span class="op">(</span><span class="va">result</span>, <span class="st">"sf"</span><span class="op">)</span></span>
+<span>    <span class="fu">expect_equal</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="modules-shiny--testserver-prioritaire-pour-covr">Modules Shiny — testServer() (PRIORITAIRE pour covr)<a class="anchor" aria-label="anchor" href="#modules-shiny--testserver-prioritaire-pour-covr"></a></h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># testServer() exécute le code serveur du module dans le même processus R</span></span>
+<span><span class="co"># → le code EST instrumenté par covr → CONTRIBUE à la couverture</span></span>
+<span></span>
+<span><span class="fu">test_that</span><span class="op">(</span><span class="st">"mod_radar_server retourne un plot"</span>, <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="fu">testServer</span><span class="op">(</span><span class="va">mod_radar_server</span>, args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span>,</span>
+<span>    selected_unit <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>, <span class="op">{</span></span>
+<span>    <span class="va">session</span><span class="op">$</span><span class="fu">setInputs</span><span class="op">(</span>mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span>
+<span>    <span class="co"># Vérifier que le plot est généré</span></span>
+<span>    <span class="fu">expect_true</span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">output</span><span class="op">$</span><span class="va">radar_plot</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">test_that</span><span class="op">(</span><span class="st">"mod_radar_server gère les données vides"</span>, <span class="op">{</span></span>
+<span>  <span class="fu">testServer</span><span class="op">(</span><span class="va">mod_radar_server</span>, args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    selected_unit <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>, <span class="op">{</span></span>
+<span>    <span class="co"># Vérifier que ça ne plante pas</span></span>
+<span>    <span class="fu">expect_silent</span><span class="op">(</span><span class="va">session</span><span class="op">$</span><span class="fu">flushReact</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="modules-shiny--shinytest2-appdriver-e2e-complémentaire">Modules Shiny — shinytest2 AppDriver (E2E, complémentaire)<a class="anchor" aria-label="anchor" href="#modules-shiny--shinytest2-appdriver-e2e-compl%C3%A9mentaire"></a></h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># AppDriver lance l'app dans un processus R SÉPARÉ</span></span>
+<span><span class="co"># → le code n'est PAS instrumenté par covr (ne contribue PAS directement à la couverture)</span></span>
+<span><span class="co"># → MAIS teste l'intégration UI + Server + interactions utilisateur</span></span>
+<span><span class="co"># → UTILE pour détecter les bugs d'intégration, les erreurs JS, etc.</span></span>
+<span></span>
+<span><span class="fu">test_that</span><span class="op">(</span><span class="st">"mod_radar E2E : l'utilisateur peut changer de mode"</span>, <span class="op">{</span></span>
+<span>  <span class="fu">skip_on_cran</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu">skip_if_not_installed</span><span class="op">(</span><span class="st">"shinytest2"</span><span class="op">)</span></span>
+<span>  <span class="fu">skip_if_not</span><span class="op">(</span><span class="fu">shinytest2</span><span class="fu">::</span><span class="fu">has_chromote</span><span class="op">(</span><span class="op">)</span>, <span class="st">"Chrome/Chromium requis"</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="va">app</span> <span class="op">&lt;-</span> <span class="fu">shinytest2</span><span class="fu">::</span><span class="va"><a href="https://rstudio.github.io/shinytest2/reference/AppDriver.html" class="external-link">AppDriver</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>    <span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html" class="external-link">shinyApp</a></span><span class="op">(</span></span>
+<span>      ui <span class="op">=</span> <span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/fluidPage.html" class="external-link">fluidPage</a></span><span class="op">(</span><span class="fu">mod_radar_ui</span><span class="op">(</span><span class="st">"test"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>      server <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span>, <span class="va">session</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="fu">mod_radar_server</span><span class="op">(</span><span class="st">"test"</span>,</span>
+<span>          data <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span>,</span>
+<span>          selected_unit <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span>        <span class="op">)</span></span>
+<span>      <span class="op">}</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    name <span class="op">=</span> <span class="st">"mod-radar-e2e"</span>,</span>
+<span>    height <span class="op">=</span> <span class="fl">800</span>, width <span class="op">=</span> <span class="fl">1200</span>,</span>
+<span>    load_timeout <span class="op">=</span> <span class="fl">20000</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit</a></span><span class="op">(</span><span class="va">app</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="co"># Vérifier que l'app charge</span></span>
+<span>  <span class="va">vals</span> <span class="op">&lt;-</span> <span class="va">app</span><span class="op">$</span><span class="fu">get_values</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_true</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vals</span><span class="op">$</span><span class="va">output</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="co"># Changer de mode</span></span>
+<span>  <span class="va">app</span><span class="op">$</span><span class="fu">set_inputs</span><span class="op">(</span>`test-mode` <span class="op">=</span> <span class="st">"indicator"</span><span class="op">)</span></span>
+<span>  <span class="va">app</span><span class="op">$</span><span class="fu">wait_for_idle</span><span class="op">(</span>timeout <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="va">new_vals</span> <span class="op">&lt;-</span> <span class="va">app</span><span class="op">$</span><span class="fu">get_values</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="co"># L'output devrait avoir changé</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="app-complète">App complète<a class="anchor" aria-label="anchor" href="#app-compl%C3%A8te"></a></h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">test_that</span><span class="op">(</span><span class="st">"L'app nemeton démarre et affiche les contrôles"</span>, <span class="op">{</span></span>
+<span>  <span class="fu">skip_on_cran</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu">skip_if_not_installed</span><span class="op">(</span><span class="st">"shinytest2"</span><span class="op">)</span></span>
+<span>  <span class="fu">skip_if_not</span><span class="op">(</span><span class="fu">shinytest2</span><span class="fu">::</span><span class="fu">has_chromote</span><span class="op">(</span><span class="op">)</span>, <span class="st">"Chrome/Chromium requis"</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="va">app</span> <span class="op">&lt;-</span> <span class="fu">shinytest2</span><span class="fu">::</span><span class="va"><a href="https://rstudio.github.io/shinytest2/reference/AppDriver.html" class="external-link">AppDriver</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>    <span class="fu">nemeton</span><span class="fu">::</span><span class="fu"><a href="reference/run_app.html">run_app</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    name <span class="op">=</span> <span class="st">"nemeton-app"</span>,</span>
+<span>    load_timeout <span class="op">=</span> <span class="fl">30000</span>,</span>
+<span>    timeout <span class="op">=</span> <span class="fl">15000</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit</a></span><span class="op">(</span><span class="va">app</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="va">vals</span> <span class="op">&lt;-</span> <span class="va">app</span><span class="op">$</span><span class="fu">get_values</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_true</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vals</span><span class="op">$</span><span class="va">input</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span> <span class="op">||</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vals</span><span class="op">$</span><span class="va">output</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="point-critique--covr-et-shinytest2">Point critique : covr et shinytest2<a class="anchor" aria-label="anchor" href="#point-critique--covr-et-shinytest2"></a></h2>
+<blockquote>
+<p><strong>testServer() contribue à covr</strong> car le code tourne dans le même processus R. <strong>AppDriver (shinytest2) ne contribue PAS à covr</strong> car l’app tourne dans un processus séparé.</p>
+<p>Pour MAXIMISER la couverture : écrire TOUJOURS des tests testServer() en premier, puis ajouter des tests AppDriver pour les scénarios E2E.</p>
+</blockquote>
+</div>
+<div class="section level2">
+<h2 id="données-de-test-disponibles">Données de test disponibles<a class="anchor" aria-label="anchor" href="#donn%C3%A9es-de-test-disponibles"></a></h2>
+<ul><li>
+<code>data(massif_demo_units)</code> : 20 unités forestières, 12 familles d’indicateurs</li>
+<li>Créer des sf minimaux pour les tests spatiaux (voir exemples ci-dessus)</li>
+<li>
+<code><a href="https://withr.r-lib.org/reference/with_tempfile.html" class="external-link">withr::with_tempdir()</a></code> pour les fichiers temporaires</li>
+<li>
+<code><a href="https://testthat.r-lib.org/reference/local_mocked_bindings.html" class="external-link">testthat::local_mocked_bindings()</a></code> pour mocker les dépendances</li>
+</ul></div>
+<div class="section level2">
+<h2 id="règles-strictes">Règles strictes<a class="anchor" aria-label="anchor" href="#r%C3%A8gles-strictes"></a></h2>
+<ol style="list-style-type: decimal"><li>
+<strong>NE JAMAIS modifier</strong> R/, inst/, man/, data/, src/, NAMESPACE</li>
+<li>
+<strong>DESCRIPTION</strong> : modifiable uniquement pour Suggests</li>
+<li>
+<strong>Pas de tests triviaux</strong> — chaque test vérifie un comportement réel</li>
+<li>**on.exit(app<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>s</mi><mi>t</mi><mi>o</mi><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">)</mo><mo>*</mo><mo>*</mo><mi>o</mi><mi>b</mi><mi>l</mi><mi>i</mi><mi>g</mi><mi>a</mi><mi>t</mi><mi>o</mi><mi>i</mi><mi>r</mi><mi>e</mi><mi>a</mi><mi>p</mi><mi>r</mi><mi>è</mi><mi>s</mi><mi>c</mi><mi>h</mi><mi>a</mi><mi>q</mi><mi>u</mi><mi>e</mi><mi>A</mi><mi>p</mi><mi>p</mi><mi>D</mi><mi>r</mi><mi>i</mi><mi>v</mi><mi>e</mi><mi>r</mi></mrow><annotation encoding="application/x-tex">stop())** obligatoire après chaque AppDriver</annotation></semantics></math>new()</li>
+<li>
+<strong>skip_on_cran()</strong> obligatoire avant tout test shinytest2</li>
+<li>
+<strong>Vérifier que les 2987+ tests existants passent</strong> avant de commiter</li>
+</ol></div>
 </div>
 
 

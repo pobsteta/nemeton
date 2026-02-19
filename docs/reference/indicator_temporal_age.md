@@ -1,7 +1,8 @@
 # Calculate Stand Age Index (T1)
 
-Computes stand age from direct age field or establishment year, with
-log-scale normalization favoring ancient forests.
+Estimates stand age from BD Forêt TFV (Type de Formation Végétale) field
+using area-weighted spatial intersection, following tuto 04 methodology.
+Falls back to direct age field, establishment year, or NDVI proxy.
 
 ## Usage
 
@@ -9,6 +10,7 @@ log-scale normalization favoring ancient forests.
 indicator_temporal_age(
   units,
   layers = NULL,
+  bdforet = NULL,
   age_field = "age",
   establishment_year_field = NULL,
   current_year = NULL
@@ -23,16 +25,22 @@ indicator_temporal_age(
 
 - layers:
 
-  A nemeton_layers object (optional, not used in this indicator).
+  A nemeton_layers object (optional). Used to resolve bdforet.
+
+- bdforet:
+
+  An sf object with BD Forêt V2 polygons. If NULL and layers provided,
+  resolved from layers.
 
 - age_field:
 
-  Character. Column name with stand age (years). Default "age".
+  Character. Column name with stand age (years). Default "age". Used as
+  fallback if BD Forêt not available.
 
 - establishment_year_field:
 
-  Character. Column name with establishment year. Used if age_field is
-  NULL.
+  Character. Column name with establishment year. Used as fallback if
+  age_field not found.
 
 - current_year:
 
@@ -41,26 +49,30 @@ indicator_temporal_age(
 
 ## Value
 
-The input sf object with added columns:
-
-- T1: Stand age (years)
-
-- T1_norm: Normalized age score (0-100). Log scale, ancient forests
-  score high.
+Numeric vector of estimated age in years (one per parcel). Default value
+is 50 when no data available.
 
 ## Details
 
-\*\*Formula\*\*: T1 = age (direct) OR current_year - establishment_year
+\*\*Primary method\*\* (BD Forêt TFV):
 
-\*\*Normalization\*\*: Log scale to favor ancient forests
+- Spatial intersection of parcels with BD Forêt polygons
 
-- 0-30 years: Young forest (0-30 score)
+- Age estimated from vegetation type (TFV field): - Forêt fermée
+  feuillus / Futaie feuillus: 100 years - Forêt fermée conifères /
+  Futaie conifères: 80 years - Forêt ouverte / Taillis: 45 years -
+  Peupleraie: 20 years - Jeune peuplement / Lande boisée: 15 years -
+  Other: 50 years (default)
 
-- 30-100 years: Mature forest (30-60 score)
+- Area-weighted average across overlapping polygons
 
-- 100-200 years: Old forest (60-80 score)
+\*\*Fallback methods\*\* (in order):
 
-- 200+ years: Ancient forest (80-100 score)
+1.  Direct age column in units
+
+2.  Establishment year column
+
+3.  NDVI-based maturity estimate
 
 ## See also
 
@@ -74,15 +86,15 @@ if (FALSE) { # \dontrun{
 library(nemeton)
 
 data(massif_demo_units)
+layers <- massif_demo_layers()
+
+# Primary method: BD Forêt
+result <- indicator_temporal_age(massif_demo_units, layers = layers)
+summary(result)
+
+# Direct age field
 units <- massif_demo_units
 units$age <- runif(nrow(units), 20, 250)
-
 result <- indicator_temporal_age(units, age_field = "age")
-summary(result$T1)
-summary(result$T1_norm)
-
-# Using establishment year
-units$planted <- sample(1850:2000, nrow(units), replace = TRUE)
-result <- indicator_temporal_age(units, age_field = NULL, establishment_year_field = "planted", current_year = 2025)
 } # }
 ```

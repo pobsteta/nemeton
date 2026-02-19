@@ -79,10 +79,11 @@ demo_data$L2 <- runif(n, 0.05, 0.35)  # Ratio lisière
 demo_data$T1 <- demo_data$age         # Ancienneté (années)
 demo_data$T2 <- runif(n, 0, 5)        # Taux changement (%/an)
 
-# Famille R - Risques
-demo_data$R1 <- sample(1:5, n, replace = TRUE, prob = c(0.3, 0.3, 0.2, 0.15, 0.05))
-demo_data$R2 <- sample(1:5, n, replace = TRUE, prob = c(0.2, 0.3, 0.3, 0.15, 0.05))
-demo_data$R3 <- runif(n, 0, 1)        # Stress hydrique
+# Famille R - Risques (échelle 0-100)
+demo_data$R1 <- runif(n, 5, 80)       # Risque incendie
+demo_data$R2 <- runif(n, 10, 70)      # Risque tempête
+demo_data$R3 <- runif(n, 15, 75)      # Stress hydrique
+demo_data$R4 <- runif(n, 10, 65)      # Risque abroutissement
 
 # Famille S - Social & Usages
 demo_data$S1 <- runif(n, 0, 5)        # Densité sentiers (km/ha)
@@ -180,28 +181,24 @@ ggplot(demo_data) +
 ``` r
 demo_data |>
   st_drop_geometry() |>
-  select(parcel_id, R1, R2, R3) |>
-  mutate(
-    R1_cat = cut(R1, breaks = c(0, 2, 3, 5), labels = c("Faible", "Moyen", "Élevé")),
-    R2_cat = cut(R2, breaks = c(0, 2, 3, 5), labels = c("Faible", "Moyen", "Élevé"))
-  ) |>
-  ggplot(aes(x = R1_cat, fill = R2_cat)) +
-  geom_bar(position = "dodge", alpha = 0.8) +
-  scale_fill_manual(values = c(Faible = "#4CAF50", Moyen = "#FFC107", "Élevé" = "#F44336")) +
+  select(parcel_id, R1, R2, R3, R4) |>
+  tidyr::pivot_longer(cols = c(R1, R2, R3, R4), names_to = "indicator", values_to = "value") |>
+  ggplot(aes(x = indicator, y = value, fill = indicator)) +
+  geom_boxplot(alpha = 0.8) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(
     title = "Famille R - Distribution des risques",
-    x = "R1: Risque incendie",
-    y = "Nombre de parcelles",
-    fill = "R2: Risque tempête"
+    x = "Indicateur",
+    y = "Score (0-100)",
+    fill = "Indicateur"
   ) +
   theme_minimal()
 ```
 
 ![](indicator-families_fr_files/figure-html/unnamed-chunk-6-1.png)
 
-**Interprétation** : - R1, R2, R3 \> 3 ou \> 60% : Vulnérabilité
-élevée - Risques cumulés (≥2 indicateurs élevés) : Priorité gestion
-préventive
+**Interprétation** : - R1, R2, R3, R4 \> 60 : Vulnérabilité élevée -
+Risques cumulés (≥2 indicateurs élevés) : Priorité gestion préventive
 
 ## Normalisation des indicateurs
 
@@ -236,10 +233,11 @@ for (ind in inv_indicators) {
 # F1: 1 (très fertile) = 100, 5 (très pauvre) = 20
 demo_norm$F1_norm <- (6 - demo_norm$F1) / 4 * 80 + 20
 
-# R1, R2: 1 (faible) = 100, 5 (élevé) = 20
-demo_norm$R1_norm <- (6 - demo_norm$R1) / 4 * 80 + 20
-demo_norm$R2_norm <- (6 - demo_norm$R2) / 4 * 80 + 20
-demo_norm$R3_norm <- (1 - demo_norm$R3) * 100
+# R1-R4: déjà en 0-100, inverser (faible risque = meilleur score)
+demo_norm$R1_norm <- 100 - demo_norm$R1
+demo_norm$R2_norm <- 100 - demo_norm$R2
+demo_norm$R3_norm <- 100 - demo_norm$R3
+demo_norm$R4_norm <- 100 - demo_norm$R4
 
 # B1: 0 = 0, 3 = 100
 demo_norm$B1_norm <- demo_norm$B1 / 3 * 100
@@ -264,7 +262,7 @@ demo_norm$family_A <- (demo_norm$A1_norm + demo_norm$A2_norm) / 2
 demo_norm$family_F <- (demo_norm$F1_norm + demo_norm$F2_norm) / 2
 demo_norm$family_L <- (demo_norm$L1_norm + demo_norm$L2_norm) / 2
 demo_norm$family_T <- (demo_norm$T1_norm + demo_norm$T2_norm) / 2
-demo_norm$family_R <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm) / 3
+demo_norm$family_R <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm + demo_norm$R4_norm) / 4
 demo_norm$family_S <- (demo_norm$S1_norm + demo_norm$S2_norm) / 2
 demo_norm$family_P <- (demo_norm$P1_norm + demo_norm$P2_norm + demo_norm$P3_norm) / 3
 demo_norm$family_E <- (demo_norm$E1_norm + demo_norm$E2_norm) / 2
@@ -282,62 +280,54 @@ family_means
 #> # A tibble: 12 × 2
 #>    family mean_score
 #>    <chr>       <dbl>
-#>  1 R            76.6
-#>  2 F            75.3
-#>  3 T            70.8
+#>  1 F            75.3
+#>  2 T            70.8
+#>  3 R            58.8
 #>  4 L            57.6
 #>  5 C            57.4
 #>  6 W            55.2
 #>  7 B            51.2
-#>  8 S            49.2
-#>  9 E            47.2
-#> 10 A            46.6
-#> 11 N            46.4
-#> 12 P            42.4
+#>  8 N            47.2
+#>  9 A            46.6
+#> 10 P            44.4
+#> 11 S            44.1
+#> 12 E            40.9
 ```
 
 ## Visualisation multi-famille
 
 ### Radar chart 12 familles
 
+La fonction
+[`nemeton_radar()`](https://pobsteta.github.io/nemeton/reference/nemeton_radar.md)
+avec `mode = "family"` permet de visualiser le profil complet d’une
+parcelle sur les 12 familles :
+
 ``` r
-# Préparer les données pour le radar
-radar_data <- demo_norm |>
-  st_drop_geometry() |>
-  filter(parcel_id %in% c("P01", "P05", "P10")) |>
-  select(parcel_id, starts_with("family_")) |>
-  pivot_longer(
-    cols = starts_with("family_"),
-    names_to = "family",
-    values_to = "score"
-  ) |>
-  mutate(family = gsub("family_", "", family))
-
-# Ordonner les familles
-family_order <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
-radar_data$family <- factor(radar_data$family, levels = family_order)
-
-# Radar plot
-ggplot(radar_data, aes(x = family, y = score, group = parcel_id, color = parcel_id)) +
-  geom_polygon(fill = NA, linewidth = 1.2) +
-  geom_point(size = 3) +
-  coord_polar() +
-  scale_y_continuous(limits = c(0, 100)) +
-  scale_color_viridis_d(option = "D", end = 0.8) +
-  labs(
-    title = "Profil radar 12 familles",
-    subtitle = "Comparaison de 3 parcelles",
-    color = "Parcelle"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.y = element_blank(),
-    axis.title = element_blank(),
-    legend.position = "bottom"
-  )
+# Radar pour une parcelle (mode famille)
+nemeton_radar(
+  demo_norm,
+  unit_id = "P01",
+  mode = "family",
+  title = "Profil écosystémique - Parcelle P01"
+)
 ```
 
 ![](indicator-families_fr_files/figure-html/unnamed-chunk-9-1.png)
+
+### Comparaison de plusieurs parcelles
+
+``` r
+# Comparer plusieurs parcelles sur le même radar
+nemeton_radar(
+  demo_norm,
+  unit_id = c("P01", "P05", "P10"),
+  mode = "family",
+  title = "Comparaison de 3 parcelles - 12 familles"
+)
+```
+
+![](indicator-families_fr_files/figure-html/unnamed-chunk-10-1.png)
 
 ### Cartes des scores de famille
 
@@ -373,7 +363,7 @@ ggplot(map_data) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-10-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-11-1.png)
 
 ## Analyse croisée inter-familles
 
@@ -417,7 +407,7 @@ ggplot(cor_data, aes(x = Family1, y = Family2, fill = Correlation)) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-11-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-12-1.png)
 
 **Interprétation** : - **Corrélation positive (rouge)** : Synergies (ex:
 Carbone × Production) - **Corrélation négative (bleu)** :
@@ -440,7 +430,7 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = family_C, y = family_B)) +
   theme_minimal()
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-12-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-13-1.png)
 
 ## Identification de hotspots multi-services
 
@@ -479,7 +469,7 @@ ggplot(demo_norm) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-13-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-14-1.png)
 
 ### Statistiques des hotspots
 
@@ -500,10 +490,10 @@ hotspot_stats
 #> # A tibble: 4 × 6
 #>   hotspot_count n_parcelles surface_totale C_mean B_mean P_mean
 #>           <int>       <int>          <dbl>  <dbl>  <dbl>  <dbl>
-#> 1             0           1            4.2   50.2   34.3   49.7
-#> 2             1           8           78.6   54.4   36.4   40.1
-#> 3             2           9           44.5   57.6   64     42.7
-#> 4             3           2            8.7   72.2   61.5   46.3
+#> 1             0           3           26.9   54.6   40.6   47.9
+#> 2             1           6           64.8   59     39.1   34.8
+#> 3             2           5           24.1   42.1   60.9   43.8
+#> 4             3           6           20.3   69.9   60.5   52.7
 ```
 
 ## Indice global multi-famille
@@ -546,7 +536,7 @@ ggplot(demo_norm) +
   )
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-15-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-16-1.png)
 
 ### Distribution de l’indice global
 
@@ -570,7 +560,7 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = ecosystem_index)) +
   theme_minimal()
 ```
 
-![](indicator-families_fr_files/figure-html/unnamed-chunk-16-1.png)
+![](indicator-families_fr_files/figure-html/unnamed-chunk-17-1.png)
 
 ## Bonnes pratiques
 
@@ -630,23 +620,23 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] tidyr_1.3.2   sf_1.0-23     dplyr_1.1.4   ggplot2_4.0.1 nemeton_0.6.2
+#> [1] tidyr_1.3.2    sf_1.0-24      dplyr_1.2.0    ggplot2_4.0.2  nemeton_0.13.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      
 #>  [5] KernSmooth_2.23-26 lattice_0.22-7     digest_0.6.39      magrittr_2.0.4    
 #>  [9] evaluate_1.0.5     grid_4.5.2         RColorBrewer_1.1-3 fastmap_1.2.0     
 #> [13] Matrix_1.7-4       jsonlite_2.0.0     e1071_1.7-17       DBI_1.2.3         
-#> [17] mgcv_1.9-4         purrr_1.2.1        viridisLite_0.4.2  scales_1.4.0      
-#> [21] codetools_0.2-20   textshaping_1.0.4  jquerylib_0.1.4    cli_3.6.5         
-#> [25] rlang_1.1.7        units_1.0-0        splines_4.5.2      withr_3.0.2       
-#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.5.2       
-#> [33] vctrs_0.6.5        R6_2.6.1           proxy_0.4-29       lifecycle_1.0.5   
-#> [37] classInt_0.4-11    fs_1.6.6           htmlwidgets_1.6.4  ragg_1.5.0        
-#> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0      terra_1.8-93      
-#> [45] bslib_0.9.0        pillar_1.11.1      gtable_0.3.6       glue_1.8.0        
-#> [49] Rcpp_1.1.1         systemfonts_1.3.1  xfun_0.55          tibble_3.3.1      
-#> [53] tidyselect_1.2.1   knitr_1.51         dichromat_2.0-0.1  farver_2.1.2      
-#> [57] nlme_3.1-168       htmltools_0.5.9    rmarkdown_2.30     labeling_0.4.3    
-#> [61] compiler_4.5.2     S7_0.2.1
+#> [17] promises_1.5.0     mgcv_1.9-4         purrr_1.2.1        viridisLite_0.4.3 
+#> [21] scales_1.4.0       codetools_0.2-20   textshaping_1.0.4  jquerylib_0.1.4   
+#> [25] cli_3.6.5          rlang_1.1.7        units_1.0-0        splines_4.5.2     
+#> [29] withr_3.0.2        cachem_1.1.0       yaml_2.3.12        otel_0.2.0        
+#> [33] tools_4.5.2        vctrs_0.7.1        R6_2.6.1           proxy_0.4-29      
+#> [37] lifecycle_1.0.5    classInt_0.4-11    fs_1.6.6           htmlwidgets_1.6.4 
+#> [41] ragg_1.5.0         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0     
+#> [45] terra_1.8-93       bslib_0.10.0       pillar_1.11.1      later_1.4.5       
+#> [49] gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1         systemfonts_1.3.1 
+#> [53] xfun_0.56          tibble_3.3.1       tidyselect_1.2.1   knitr_1.51        
+#> [57] dichromat_2.0-0.1  farver_2.1.2       nlme_3.1-168       htmltools_0.5.9   
+#> [61] labeling_0.4.3     rmarkdown_2.30     compiler_4.5.2     S7_0.2.1
 ```

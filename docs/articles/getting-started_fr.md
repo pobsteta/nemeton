@@ -288,13 +288,13 @@ results <- nemeton_compute(
 # Vue d'ensemble
 summary(results[, c("carbon_ndvi", "water_twi", "landscape_fragmentation")])
 #>   carbon_ndvi    water_twi     landscape_fragmentation          geometry 
-#>  Min.   : NA   Min.   :4.551   Min.   :1               POLYGON      :20  
-#>  1st Qu.: NA   1st Qu.:4.698   1st Qu.:1               epsg:2154    : 0  
-#>  Median : NA   Median :4.766   Median :1               +proj=lcc ...: 0  
-#>  Mean   :NaN   Mean   :4.745   Mean   :1                                 
-#>  3rd Qu.: NA   3rd Qu.:4.798   3rd Qu.:1                                 
-#>  Max.   : NA   Max.   :4.887   Max.   :1                                 
-#>  NA's   :20
+#>  Min.   : NA   Min.   :3.118   Min.   :34.30           POLYGON      :20  
+#>  1st Qu.: NA   1st Qu.:3.294   1st Qu.:34.67           epsg:2154    : 0  
+#>  Median : NA   Median :3.474   Median :35.50           +proj=lcc ...: 0  
+#>  Mean   :NaN   Mean   :3.501   Mean   :35.66                             
+#>  3rd Qu.: NA   3rd Qu.:3.642   3rd Qu.:36.42                             
+#>  Max.   : NA   Max.   :4.224   Max.   :37.80                             
+#>  NA's   :20    NA's   :8
 ```
 
 ## Normalisation
@@ -363,12 +363,12 @@ head(composite[, c("parcel_id", "forest_type", "ecosystem_health")])
 #> Bounding box:  xmin: 698041.8 ymin: 6499388 xmax: 702507.7 ymax: 6504159
 #> Projected CRS: RGF93 v1 / Lambert-93
 #>   parcel_id      forest_type ecosystem_health                       geometry
-#> 1       P01     Futaie mixte         47.12649 POLYGON ((698299.9 6499928,...
-#> 2       P02 Futaie résineuse         33.06346 POLYGON ((701702.2 6500418,...
-#> 3       P03  Futaie feuillue         68.84665 POLYGON ((702240.4 6500270,...
-#> 4       P04  Futaie feuillue         47.45315 POLYGON ((700641.3 6504129,...
-#> 5       P05 Futaie résineuse         57.39094 POLYGON ((699268.2 6500307,...
-#> 6       P06 Futaie résineuse         33.35533 POLYGON ((699943.5 6499421,...
+#> 1       P01     Futaie mixte        30.042166 POLYGON ((698299.9 6499928,...
+#> 2       P02 Futaie résineuse         9.909873 POLYGON ((701702.2 6500418,...
+#> 3       P03  Futaie feuillue        68.999055 POLYGON ((702240.4 6500270,...
+#> 4       P04  Futaie feuillue        68.571429 POLYGON ((700641.3 6504129,...
+#> 5       P05 Futaie résineuse        50.480305 POLYGON ((699268.2 6500307,...
+#> 6       P06 Futaie résineuse         8.571429 POLYGON ((699943.5 6499421,...
 ```
 
 ### Agrégation pondérée
@@ -602,29 +602,29 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.1 nemeton_0.6.2
+#> [1] ggplot2_4.0.2  nemeton_0.13.0
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] tidyr_1.3.2          sass_0.4.10          generics_0.1.4      
-#>  [4] class_7.3-23         KernSmooth_2.23-26   lattice_0.22-7      
-#>  [7] digest_0.6.39        magrittr_2.0.4       evaluate_1.0.5      
-#> [10] grid_4.5.2           RColorBrewer_1.1-3   fastmap_1.2.0       
-#> [13] jsonlite_2.0.0       e1071_1.7-17         DBI_1.2.3           
-#> [16] purrr_1.2.1          viridisLite_0.4.2    scales_1.4.0        
-#> [19] codetools_0.2-20     textshaping_1.0.4    jquerylib_0.1.4     
-#> [22] cli_3.6.5            rlang_1.1.7          units_1.0-0         
-#> [25] withr_3.0.2          cachem_1.1.0         yaml_2.3.12         
-#> [28] otel_0.2.0           raster_3.6-32        tools_4.5.2         
-#> [31] dplyr_1.1.4          exactextractr_0.10.1 vctrs_0.6.5         
-#> [34] R6_2.6.1             proxy_0.4-29         lifecycle_1.0.5     
-#> [37] classInt_0.4-11      fs_1.6.6             htmlwidgets_1.6.4   
-#> [40] ragg_1.5.0           pkgconfig_2.0.3      desc_1.4.3          
-#> [43] pkgdown_2.2.0        terra_1.8-93         bslib_0.9.0         
-#> [46] pillar_1.11.1        gtable_0.3.6         glue_1.8.0          
-#> [49] Rcpp_1.1.1           sf_1.0-23            systemfonts_1.3.1   
-#> [52] xfun_0.55            tibble_3.3.1         tidyselect_1.2.1    
-#> [55] knitr_1.51           dichromat_2.0-0.1    farver_2.1.2        
-#> [58] htmltools_0.5.9      whitebox_2.4.3       labeling_0.4.3      
-#> [61] rmarkdown_2.30       compiler_4.5.2       S7_0.2.1            
-#> [64] sp_2.2-0
+#>  [1] tidyr_1.3.2          rappdirs_0.3.4       sass_0.4.10         
+#>  [4] generics_0.1.4       class_7.3-23         KernSmooth_2.23-26  
+#>  [7] lattice_0.22-7       digest_0.6.39        magrittr_2.0.4      
+#> [10] evaluate_1.0.5       grid_4.5.2           RColorBrewer_1.1-3  
+#> [13] fastmap_1.2.0        jsonlite_2.0.0       e1071_1.7-17        
+#> [16] DBI_1.2.3            promises_1.5.0       purrr_1.2.1         
+#> [19] viridisLite_0.4.3    scales_1.4.0         codetools_0.2-20    
+#> [22] textshaping_1.0.4    jquerylib_0.1.4      cli_3.6.5           
+#> [25] rlang_1.1.7          units_1.0-0          withr_3.0.2         
+#> [28] cachem_1.1.0         yaml_2.3.12          otel_0.2.0          
+#> [31] raster_3.6-32        tools_4.5.2          dplyr_1.2.0         
+#> [34] exactextractr_0.10.1 vctrs_0.7.1          R6_2.6.1            
+#> [37] proxy_0.4-29         lifecycle_1.0.5      classInt_0.4-11     
+#> [40] fs_1.6.6             htmlwidgets_1.6.4    ragg_1.5.0          
+#> [43] pkgconfig_2.0.3      desc_1.4.3           pkgdown_2.2.0       
+#> [46] terra_1.8-93         bslib_0.10.0         pillar_1.11.1       
+#> [49] later_1.4.5          gtable_0.3.6         glue_1.8.0          
+#> [52] Rcpp_1.1.1           sf_1.0-24            systemfonts_1.3.1   
+#> [55] xfun_0.56            tibble_3.3.1         tidyselect_1.2.1    
+#> [58] knitr_1.51           dichromat_2.0-0.1    farver_2.1.2        
+#> [61] htmltools_0.5.9      labeling_0.4.3       rmarkdown_2.30      
+#> [64] compiler_4.5.2       S7_0.2.1             sp_2.2-0
 ```

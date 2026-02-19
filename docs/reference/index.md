@@ -69,16 +69,16 @@ Qualité du sol et risque d’érosion
 - [`indicator_soil_fertility()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_fertility.md)
   : Soil Fertility Class (F1)
 - [`indicator_soil_erosion()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_erosion.md)
-  : Erosion Risk Index (F2)
+  : Soil Fertility Index (F2)
 
 ## Famille L : Paysage
 
 Structure du paysage et connectivité
 
 - [`indicator_landscape_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md)
-  : Landscape Fragmentation (L1)
+  : Sylvosphere - Edge Effect (L1)
 - [`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)
-  : Edge-to-Area Ratio (L2)
+  : Landscape Fragmentation (L2)
 
 ## Famille T : Dynamique temporelle
 
@@ -87,7 +87,7 @@ Ancienneté des peuplements et changements d’occupation
 - [`indicator_temporal_age()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.md)
   : Calculate Stand Age Index (T1)
 - [`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)
-  : Calculate Land Cover Change Rate Index (T2)
+  : Calculate Stability / Change Rate Index (T2)
 
 ## Famille R : Risques & Résilience
 
@@ -113,9 +113,9 @@ Vulnérabilité aux incendies, tempêtes et sécheresse
 Densité de sentiers, accessibilité et proximité population
 
 - [`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)
-  : S1: Trail Density Indicator
+  : S1: Distance to Roads Indicator
 - [`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)
-  : S2: Multimodal Accessibility Indicator
+  : S2: Distance to Buildings Indicator
 - [`indicator_social_proximity()`](https://pobsteta.github.io/nemeton/reference/indicator_social_proximity.md)
   : S3: Population Proximity Indicator
 
@@ -234,6 +234,15 @@ Méthodes print et summary pour les objets nemeton
   : Summary method for nemeton_layers
 - [`summary(`*`<nemeton_temporal>`*`)`](https://pobsteta.github.io/nemeton/reference/summary.nemeton_temporal.md)
   : Summary Method for nemeton_temporal Objects
+
+## Application Shiny
+
+Interface interactive nemetonApp
+
+- [`run_app()`](https://pobsteta.github.io/nemeton/reference/run_app.md)
+  : Launch the nemetonApp Shiny Application
+- [`generate_report_pdf()`](https://pobsteta.github.io/nemeton/reference/generate_report_pdf.md)
+  : Generate PDF report (main entry point)
 
 ## Documentation du package
 

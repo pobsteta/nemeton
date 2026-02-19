@@ -1,7 +1,9 @@
 # Hydrographic Network Density (W1)
 
 Calculates stream/river network length density within or near forest
-parcels. Higher values indicate greater hydrological connectivity.
+parcels. Includes a proximity bonus for parcels near watercourses
+(within 500m) that are not directly crossed, reflecting the hydrological
+influence of nearby streams on water table and microclimate.
 
 ## Usage
 
@@ -9,8 +11,10 @@ parcels. Higher values indicate greater hydrological connectivity.
 indicator_water_network(
   units,
   layers,
-  watercourse_layer = "watercourses",
-  buffer = 0
+  watercourse_layer = "water_network",
+  buffer = 0,
+  proximity_m = 500,
+  proximity_ref = 50
 )
 ```
 
@@ -32,9 +36,17 @@ indicator_water_network(
 
   Numeric. Buffer distance (meters) for proximity analysis. Default 0.
 
+- proximity_m:
+
+  Numeric. Maximum distance (m) for proximity bonus. Default 500.
+
+- proximity_ref:
+
+  Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
+
 ## Value
 
-Numeric vector of network density (km/ha)
+Numeric vector of network density (m/ha)
 
 ## Examples
 
