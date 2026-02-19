@@ -1,7 +1,7 @@
 # Tests for mod_search_server — comprehensive coverage
-# Focuses on testServer() which contributes to covr coverage
+# Focuses on shiny::testServer() which contributes to covr coverage
 #
-# Key challenge: ExtendedTask + future_promise does not resolve in testServer(),
+# Key challenge: ExtendedTask + future_promise does not resolve in shiny::testServer(),
 # so we focus on testing the synchronous code paths and observer triggers.
 
 # ==============================================================================
@@ -1167,3 +1167,6 @@ test_that("language change during operation doesn't crash", {
     }
   )
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)

@@ -896,3 +896,6 @@ test_that("returned list has exactly 5 elements", {
     expect_true(all(expected_names %in% names(ret)))
   })
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)

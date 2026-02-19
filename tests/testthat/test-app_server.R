@@ -944,3 +944,6 @@ test_that("app_server uses get_i18n for translations", {
   expect_true(i18n_en$has("help_title"))
   expect_true(i18n_en$has("language_changed"))
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)

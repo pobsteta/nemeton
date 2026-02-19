@@ -1127,3 +1127,6 @@ test_that("ensure_future_plan is defined in mod_search server context", {
   plan_class <- class(future::plan())
   expect_true(is.character(plan_class))
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)

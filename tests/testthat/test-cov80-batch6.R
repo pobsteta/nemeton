@@ -550,3 +550,6 @@ test_that("mod_map_server: selected_parcels returns selected sf", {
     }
   )
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)

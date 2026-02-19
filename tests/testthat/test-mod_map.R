@@ -1174,3 +1174,6 @@ test_that("mod_map_server handles multiple rapid selections", {
     }
   )
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)

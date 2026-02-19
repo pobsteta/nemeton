@@ -1,4 +1,4 @@
-# Coverage boost tests for R/mod_progress.R — testServer() tests
+# Coverage boost tests for R/mod_progress.R — shiny::testServer() tests
 # Targets uncovered paths: translate_task(), translate_indicator_name(),
 # translate_phase(), send_running_update(), terminal state observer
 
@@ -846,3 +846,6 @@ test_that("mod_progress_server ignores pending state in observer", {
     }
   )
 })
+
+# Drain async callbacks to prevent testServer session accumulation
+later::run_now(0)
