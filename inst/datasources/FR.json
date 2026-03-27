@@ -1,0 +1,141 @@
+{
+  "country": "FR",
+  "country_name": {
+    "fr": "France",
+    "en": "France",
+    "de": "Frankreich"
+  },
+  "crs_national": 2154,
+  "crs_name": "RGF93 / Lambert-93",
+
+  "services": {
+    "ign_wfs": {
+      "url": "https://data.geopf.fr/wfs/ows",
+      "version": "2.0.0",
+      "provider": "IGN Géoplateforme"
+    },
+    "ign_wms": {
+      "url": "https://data.geopf.fr/wms-r/wms",
+      "version": "1.3.0",
+      "provider": "IGN Géoplateforme"
+    },
+    "cadastre_api": {
+      "url": "https://cadastre.data.gouv.fr/bundler/cadastre-etalab/communes/{code_commune}/geojson/parcelles",
+      "provider": "Etalab"
+    },
+    "communes_api": {
+      "url": "https://geo.api.gouv.fr",
+      "provider": "Etalab"
+    }
+  },
+
+  "layers": {
+    "dem": {
+      "service": "ign_wms",
+      "layer": "ELEVATION.ELEVATIONGRIDCOVERAGE",
+      "description": "Modèle Numérique de Terrain (MNT)",
+      "resolution_m": 5
+    },
+    "ortho_irc": {
+      "service": "ign_wms",
+      "layer": "ORTHOIMAGERY.ORTHOPHOTOS.IRC",
+      "description": "Orthophotographie Infrarouge Couleur",
+      "resolution_m": 0.2
+    },
+    "bdforet": {
+      "service": "ign_wfs",
+      "typename": "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale",
+      "description": "BD Forêt V2 - Formations végétales"
+    },
+    "roads": {
+      "service": "ign_wfs",
+      "typename": "BDTOPO_V3:troncon_de_route",
+      "description": "BD TOPO - Réseau routier"
+    },
+    "water_network": {
+      "service": "ign_wfs",
+      "typename": "BDTOPO_V3:troncon_hydrographique",
+      "description": "BD TOPO - Réseau hydrographique"
+    },
+    "water_surfaces": {
+      "service": "ign_wfs",
+      "typename": "BDTOPO_V3:surface_hydrographique",
+      "description": "BD TOPO - Surfaces hydrographiques"
+    },
+    "buildings": {
+      "service": "ign_wfs",
+      "typename": "BDTOPO_V3:batiment",
+      "description": "BD TOPO - Bâtiments"
+    },
+    "departments": {
+      "service": "ign_wfs",
+      "typename": "ADMINEXPRESS-COG-CARTO.LATEST:departement",
+      "description": "Limites départementales"
+    },
+    "protected_areas": {
+      "provider": "happign",
+      "source": "inpn_wfs",
+      "description": "Inventaire National du Patrimoine Naturel"
+    },
+    "lidar_mnh": {
+      "provider": "happign",
+      "product": "mnh",
+      "happign_layer": "IGNF_MNH-LIDAR-HD:dalle",
+      "description": "LiDAR HD - Modèle Numérique de Hauteur",
+      "resolution_m": 1
+    },
+    "lidar_mnt": {
+      "provider": "happign",
+      "product": "mnt",
+      "happign_layer": "IGNF_MNT-LIDAR-HD:dalle",
+      "description": "LiDAR HD - Modèle Numérique de Terrain",
+      "resolution_m": 1
+    },
+    "lidar_mns": {
+      "provider": "happign",
+      "product": "mns",
+      "happign_layer": "IGNF_MNS-LIDAR-HD:dalle",
+      "description": "LiDAR HD - Modèle Numérique de Surface",
+      "resolution_m": 1
+    },
+    "lidar_copc": {
+      "provider": "happign",
+      "product": "nuage",
+      "happign_layer": "IGNF_NUAGES-DE-POINTS-LIDAR-HD:dalle",
+      "description": "LiDAR HD - Nuages de points COPC"
+    }
+  },
+
+  "datasets": {
+    "oso": {
+      "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",
+      "description": "OSO - Occupation du Sol (Theia/CESBIO)",
+      "resolution_m": 10,
+      "forest_classes": {
+        "17": "deciduous",
+        "18": "coniferous",
+        "19": "mixed"
+      }
+    },
+    "hunting": {
+      "provider": "OFB / data.gouv.fr",
+      "description": "Tableaux de chasse départementaux du grand gibier",
+      "species": {
+        "chevreuil": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
+        "cerf": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
+        "sanglier": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
+        "chamois": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
+        "isard": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
+        "mouflon": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
+        "daim": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
+        "cerf_sika": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
+      }
+    }
+  },
+
+  "communes": {
+    "search_url": "https://geo.api.gouv.fr/communes",
+    "geometry_url": "https://geo.api.gouv.fr/communes/{code_commune}",
+    "department_url": "https://geo.api.gouv.fr/departements/{code_departement}/communes"
+  }
+}
