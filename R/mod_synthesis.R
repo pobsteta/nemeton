@@ -142,12 +142,13 @@ mod_synthesis_server <- function(id, app_state) {
         return(htmltools::div(class = "text-muted", i18n$t("no_data")))
       }
 
-      # Compute global score: mean of family means across all parcels
+      # Compute global score: Fibonacci-weighted via NDP system
       df <- sf::st_drop_geometry(sf_data)
       family_means <- vapply(family_cols, function(col) {
         mean(df[[col]], na.rm = TRUE)
       }, numeric(1))
-      global <- round(mean(family_means, na.rm = TRUE), 1)
+      ndp_result <- compute_general_index(family_means, ndp = 0L)
+      global <- ndp_result$score
 
       # Color based on score
       score_color <- if (global >= 60) "#228B22" else if (global >= 40) "#FF8C00" else "#DC143C"
@@ -244,6 +245,12 @@ mod_synthesis_server <- function(id, app_state) {
           class = "text-muted mt-1 mb-0",
           sprintf("/ 100 (%d %s)", length(family_cols),
                   if (i18n$language == "fr") "familles" else "families")
+        ),
+        # NDP badge et barre de confiance
+        htmltools::div(
+          class = "mt-2",
+          ndp_badge(ndp_result$ndp, lang = i18n$language),
+          ndp_progress_bar(ndp_result$ndp, lang = i18n$language)
         )
       )
     })

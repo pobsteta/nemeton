@@ -1,0 +1,231 @@
+# tests/testthat/test-ndp.R
+# Tests pour le systeme NDP (Niveau De Precision)
+
+test_that("NDP_LEVELS has 5 levels", {
+  expect_length(NDP_LEVELS, 5)
+})
+
+test_that("NDP_LEVELS Fibonacci weights follow sequence 1,1,2,3,5", {
+  fibs <- vapply(NDP_LEVELS, `[[`, integer(1), "fibonacci")
+  expect_equal(fibs, c(1L, 1L, 2L, 3L, 5L))
+})
+
+test_that("NDP_LEVELS confidence values are cumulative Fibonacci / 12", {
+  confs <- vapply(NDP_LEVELS, `[[`, numeric(1), "confidence")
+  expect_equal(confs, c(1/12, 2/12, 4/12, 7/12, 12/12))
+})
+
+test_that("NDP_LEVELS keys follow NMT convention", {
+  keys <- vapply(NDP_LEVELS, `[[`, character(1), "key")
+  expect_equal(keys, c("ndp_decouverte", "ndp_observation", "ndp_exploration",
+                        "ndp_diagnostic", "ndp_jumeau"))
+})
+
+# ---- Accessor functions ----
+
+test_that("get_ndp_level returns correct level", {
+  level0 <- get_ndp_level(0)
+  expect_equal(level0$ndp, 0L)
+  expect_equal(level0$key, "ndp_decouverte")
+  expect_equal(level0$fibonacci, 1L)
+
+  level4 <- get_ndp_level(4)
+  expect_equal(level4$ndp, 4L)
+  expect_equal(level4$key, "ndp_jumeau")
+  expect_equal(level4$fibonacci, 5L)
+})
+
+test_that("get_ndp_level rejects invalid input", {
+  expect_error(get_ndp_level(-1))
+  expect_error(get_ndp_level(5))
+  expect_error(get_ndp_level(NA))
+  expect_error(get_ndp_level(c(0, 1)))
+})
+
+test_that("get_ndp_name returns French names", {
+  expect_match(get_ndp_name(0), "couverte")
+  expect_equal(get_ndp_name(1), "Observation")
+  expect_equal(get_ndp_name(2), "Exploration")
+  expect_equal(get_ndp_name(3), "Diagnostic")
+  expect_equal(get_ndp_name(4), "Jumeau")
+})
+
+test_that("get_ndp_weight returns Fibonacci values", {
+  expect_equal(get_ndp_weight(0), 1L)
+  expect_equal(get_ndp_weight(1), 1L)
+  expect_equal(get_ndp_weight(2), 2L)
+  expect_equal(get_ndp_weight(3), 3L)
+  expect_equal(get_ndp_weight(4), 5L)
+})
+
+test_that("get_ndp_confidence returns correct ratios", {
+  expect_equal(get_ndp_confidence(0), 1/12)
+  expect_equal(get_ndp_confidence(4), 1.0)
+})
+
+# ---- ndp_table ----
+
+test_that("ndp_table returns correct data.frame", {
+  tbl <- ndp_table()
+  expect_s3_class(tbl, "data.frame")
+  expect_equal(nrow(tbl), 5)
+  expect_equal(names(tbl), c("ndp", "key", "name", "fibonacci", "confidence"))
+  expect_equal(tbl$ndp, 0:4)
+  expect_equal(tbl$fibonacci, c(1L, 1L, 2L, 3L, 5L))
+})
+
+# ---- detect_ndp ----
+
+test_that("detect_ndp returns 0 for plain data", {
+  df <- data.frame(x = 1:3)
+  expect_equal(detect_ndp(df), 0L)
+})
+
+test_that("detect_ndp returns 0 for NULL", {
+  expect_equal(detect_ndp(NULL), 0L)
+})
+
+test_that("detect_ndp detects NDP 1 with LiDAR HD", {
+  df <- data.frame(x = 1)
+  attr(df, "has_lidar_hd") <- TRUE
+  expect_equal(detect_ndp(df), 1L)
+})
+
+test_that("detect_ndp detects NDP 2 with drone", {
+  df <- data.frame(x = 1)
+  attr(df, "has_lidar_hd") <- TRUE
+  attr(df, "has_drone_rgb") <- TRUE
+  expect_equal(detect_ndp(df), 2L)
+})
+
+test_that("detect_ndp detects NDP 3 with terrain inventory", {
+  df <- data.frame(x = 1)
+  attr(df, "has_lidar_hd") <- TRUE
+  attr(df, "has_drone_rgb") <- TRUE
+  attr(df, "has_inventaire_terrain") <- TRUE
+  expect_equal(detect_ndp(df), 3L)
+})
+
+test_that("detect_ndp detects NDP 4 with scanner", {
+  df <- data.frame(x = 1)
+  attr(df, "has_lidar_hd") <- TRUE
+  attr(df, "has_drone_rgb") <- TRUE
+  attr(df, "has_inventaire_terrain") <- TRUE
+  attr(df, "has_scanner_terrestre") <- TRUE
+  expect_equal(detect_ndp(df), 4L)
+})
+
+test_that("detect_ndp requires cumulative sources (no skip)", {
+  # Drone without LiDAR should still be NDP 0
+  df <- data.frame(x = 1)
+  attr(df, "has_drone_rgb") <- TRUE
+  expect_equal(detect_ndp(df), 0L)
+})
+
+# ---- compute_general_index ----
+
+test_that("compute_general_index returns correct structure", {
+  scores <- c(C = 50, B = 60, W = 70)
+  result <- compute_general_index(scores, ndp = 0)
+  expect_type(result, "list")
+  expect_named(result, c("score", "ndp", "confidence", "weight", "n_families"))
+  expect_equal(result$ndp, 0L)
+  expect_equal(result$weight, 1L)
+  expect_equal(result$confidence, 1/12)
+  expect_equal(result$n_families, 3L)
+})
+
+test_that("compute_general_index computes correct score", {
+  scores <- c(C = 40, B = 60)
+  result <- compute_general_index(scores, ndp = 0)
+  expect_equal(result$score, 50.0)
+})
+
+test_that("compute_general_index handles family_ prefix", {
+  scores <- c(family_C = 40, family_B = 60)
+  result <- compute_general_index(scores, ndp = 0)
+  expect_equal(result$score, 50.0)
+})
+
+test_that("compute_general_index handles all NA", {
+  scores <- c(C = NA_real_, B = NA_real_)
+  result <- compute_general_index(scores, ndp = 0)
+  expect_true(is.na(result$score))
+  expect_equal(result$n_families, 0L)
+})
+
+test_that("compute_general_index handles partial NA", {
+  scores <- c(C = 80, B = NA_real_, W = 60)
+  result <- compute_general_index(scores, ndp = 0)
+  expect_equal(result$score, 70.0)
+  expect_equal(result$n_families, 2L)
+})
+
+test_that("compute_general_index works with different NDP levels", {
+  scores <- c(C = 50, B = 50)
+  for (ndp in 0:4) {
+    result <- compute_general_index(scores, ndp = ndp)
+    expect_equal(result$score, 50.0)
+    expect_equal(result$ndp, ndp)
+    expect_equal(result$weight, get_ndp_weight(ndp))
+    expect_equal(result$confidence, get_ndp_confidence(ndp))
+  }
+})
+
+# ---- compute_general_index_mixed ----
+
+test_that("compute_general_index_mixed weights by Fibonacci", {
+  # C at NDP 2 (weight 2), B at NDP 0 (weight 1)
+  scores <- c(C = 100, B = 0)
+  ndps <- c(C = 2L, B = 0L)
+  result <- compute_general_index_mixed(scores, ndps)
+  # Weighted: (100*2 + 0*1) / (2+1) = 200/3 = 66.7
+  expect_equal(result$score, 66.7)
+  expect_equal(result$n_families, 2L)
+})
+
+test_that("compute_general_index_mixed handles no common families", {
+  scores <- c(C = 50)
+  ndps <- c(B = 0L)
+  result <- compute_general_index_mixed(scores, ndps)
+  expect_true(is.na(result$score))
+  expect_equal(result$n_families, 0L)
+})
+
+test_that("compute_general_index_mixed handles family_ prefix", {
+  scores <- c(family_C = 80, family_B = 40)
+  ndps <- c(family_C = 1L, family_B = 1L)
+  result <- compute_general_index_mixed(scores, ndps)
+  expect_equal(result$score, 60.0)
+})
+
+# ---- Widgets HTML ----
+
+test_that("ndp_badge returns htmltools tag", {
+  badge <- ndp_badge(0)
+  expect_s3_class(badge, "shiny.tag")
+  rendered <- as.character(badge)
+  expect_match(rendered, "NDP 0")
+  expect_match(rendered, "badge")
+})
+
+test_that("ndp_badge supports English", {
+  badge <- ndp_badge(4, lang = "en")
+  rendered <- as.character(badge)
+  expect_match(rendered, "Digital Twin")
+})
+
+test_that("ndp_progress_bar returns htmltools tag", {
+  bar <- ndp_progress_bar(0)
+  expect_s3_class(bar, "shiny.tag")
+  rendered <- as.character(bar)
+  expect_match(rendered, "progress")
+  expect_match(rendered, "Confiance")
+})
+
+test_that("ndp_progress_bar supports English", {
+  bar <- ndp_progress_bar(4, lang = "en")
+  rendered <- as.character(bar)
+  expect_match(rendered, "Confidence")
+  expect_match(rendered, "100")
+})

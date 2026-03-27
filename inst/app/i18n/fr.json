@@ -272,5 +272,12 @@
   "ai_generate": "Générer l'analyse IA",
   "ai_generating": "Analyse en cours...",
   "ai_error": "Erreur lors de l'analyse IA",
-  "ai_no_api_key": "Clé API non configurée. Définissez la variable d'environnement {key_var}."
+  "ai_no_api_key": "Clé API non configurée. Définissez la variable d'environnement {key_var}.",
+  "ndp_label": "Niveau de Précision",
+  "ndp_confidence": "Confiance φ",
+  "ndp_decouverte": "Découverte",
+  "ndp_observation": "Observation",
+  "ndp_exploration": "Exploration",
+  "ndp_diagnostic": "Diagnostic",
+  "ndp_jumeau": "Jumeau numérique"
 }
