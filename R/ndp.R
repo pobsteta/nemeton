@@ -346,11 +346,11 @@ detect_ndp_from_cache <- function(project_path) {
   cache_dir <- file.path(project_path, "cache", "layers")
   if (!dir.exists(cache_dir)) return(0L)
 
-  # Lister les fichiers dans le cache
-  cached_files <- list.files(cache_dir, recursive = TRUE)
-
-  # NDP 1 : LiDAR HD present (fichiers lidar_mnh ou lidar_mnt)
-  has_lidar_hd <- any(grepl("lidar_mn[ht]", cached_files, ignore.case = TRUE))
+  # NDP 1 : LiDAR HD present (repertoires ou fichiers lidar_mnh / lidar_mnt / lidar_nuage)
+  has_lidar_hd <- dir.exists(file.path(cache_dir, "lidar_mnh")) ||
+                  dir.exists(file.path(cache_dir, "lidar_mnt")) ||
+                  dir.exists(file.path(cache_dir, "lidar_nuage")) ||
+                  any(grepl("lidar_mn[ht]", list.files(cache_dir), ignore.case = TRUE))
 
   if (!has_lidar_hd) return(0L)
 

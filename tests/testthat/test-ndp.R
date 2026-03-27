@@ -317,18 +317,31 @@ test_that("detect_ndp_from_cache returns 0 when no LiDAR files", {
   })
 })
 
-test_that("detect_ndp_from_cache returns 1 when LiDAR MNH present", {
+test_that("detect_ndp_from_cache returns 1 when LiDAR MNH directory present", {
   withr::with_tempdir({
-    dir.create(file.path("cache", "layers"), recursive = TRUE)
-    file.create(file.path("cache", "layers", "lidar_mnh.tif"))
+    dir.create(file.path("cache", "layers", "lidar_mnh"), recursive = TRUE)
     expect_equal(detect_ndp_from_cache(getwd()), 1L)
   })
 })
 
-test_that("detect_ndp_from_cache returns 1 when LiDAR MNT present", {
+test_that("detect_ndp_from_cache returns 1 when LiDAR MNT directory present", {
+  withr::with_tempdir({
+    dir.create(file.path("cache", "layers", "lidar_mnt"), recursive = TRUE)
+    expect_equal(detect_ndp_from_cache(getwd()), 1L)
+  })
+})
+
+test_that("detect_ndp_from_cache returns 1 when lidar_nuage directory present", {
+  withr::with_tempdir({
+    dir.create(file.path("cache", "layers", "lidar_nuage"), recursive = TRUE)
+    expect_equal(detect_ndp_from_cache(getwd()), 1L)
+  })
+})
+
+test_that("detect_ndp_from_cache returns 1 when LiDAR file present", {
   withr::with_tempdir({
     dir.create(file.path("cache", "layers"), recursive = TRUE)
-    file.create(file.path("cache", "layers", "lidar_mnt.tif"))
+    file.create(file.path("cache", "layers", "lidar_mnh.tif"))
     expect_equal(detect_ndp_from_cache(getwd()), 1L)
   })
 })
