@@ -890,7 +890,55 @@ TRANSLATIONS <- list(
   indicator_energy_co2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
   indicator_naturalness_distance = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
   indicator_naturalness_continuity = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
-  indicator_naturalness_score = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score")
+  indicator_naturalness_score = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
+
+  # ============================================================
+  # NDP (Niveau De Precision)
+  # ============================================================
+  ndp_label = list(fr = "Niveau de Pr\u00e9cision", en = "Precision Level"),
+  ndp_confidence = list(fr = "Confiance \u03c6", en = "Confidence \u03c6"),
+  ndp_decouverte = list(fr = "D\u00e9couverte", en = "Discovery"),
+  ndp_observation = list(fr = "Observation", en = "Observation"),
+  ndp_exploration = list(fr = "Exploration", en = "Exploration"),
+  ndp_diagnostic = list(fr = "Diagnostic", en = "Diagnostic"),
+  ndp_jumeau = list(fr = "Jumeau num\u00e9rique", en = "Digital Twin"),
+  ndp_tip_title = list(
+    fr = "Niveau De Pr\u00e9cision (NDP)",
+    en = "Precision Level (NDP)"
+  ),
+  ndp_tip_subtitle = list(
+    fr = "Mesure la qualit\u00e9 des donn\u00e9es d'entr\u00e9e, pas la compl\u00e9tude de l'analyse",
+    en = "Measures input data quality, not analysis completeness"
+  ),
+  ndp_tip_intro = list(
+    fr = "Le NDP \u00e9value la fiabilit\u00e9 des donn\u00e9es utilis\u00e9es pour calculer les 31 indicateurs. Les 12 familles sont <strong>toujours</strong> calcul\u00e9es, mais avec une pr\u00e9cision croissante selon les sources disponibles.",
+    en = "The NDP evaluates the reliability of data used to compute the 31 indicators. All 12 families are <strong>always</strong> calculated, but with increasing precision as better data sources become available."
+  ),
+  ndp_tip_levels_title = list(fr = "Les 5 niveaux", en = "The 5 levels"),
+  ndp_tip_levels = list(
+    fr = "<table style='width:100%; border-collapse:collapse; margin:6px 0; font-size:0.82rem;'><tr style='background:#e8f0e4;'><th style='padding:4px 6px; text-align:left;'>NDP</th><th style='padding:4px 6px; text-align:left;'>Nom</th><th style='padding:4px 6px; text-align:center;'>Poids</th><th style='padding:4px 6px; text-align:center;'>\u03c6</th></tr><tr><td style='padding:3px 6px;'><strong>0</strong></td><td>D\u00e9couverte</td><td style='text-align:center;'>1</td><td style='text-align:center;'>8.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>1</strong></td><td>Observation</td><td style='text-align:center;'>1</td><td style='text-align:center;'>16.7%</td></tr><tr><td style='padding:3px 6px;'><strong>2</strong></td><td>Exploration</td><td style='text-align:center;'>2</td><td style='text-align:center;'>33.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>3</strong></td><td>Diagnostic</td><td style='text-align:center;'>3</td><td style='text-align:center;'>58.3%</td></tr><tr><td style='padding:3px 6px;'><strong>4</strong></td><td>Jumeau</td><td style='text-align:center;'>5</td><td style='text-align:center;'>100%</td></tr></table>",
+    en = "<table style='width:100%; border-collapse:collapse; margin:6px 0; font-size:0.82rem;'><tr style='background:#e8f0e4;'><th style='padding:4px 6px; text-align:left;'>NDP</th><th style='padding:4px 6px; text-align:left;'>Name</th><th style='padding:4px 6px; text-align:center;'>Weight</th><th style='padding:4px 6px; text-align:center;'>\u03c6</th></tr><tr><td style='padding:3px 6px;'><strong>0</strong></td><td>Discovery</td><td style='text-align:center;'>1</td><td style='text-align:center;'>8.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>1</strong></td><td>Observation</td><td style='text-align:center;'>1</td><td style='text-align:center;'>16.7%</td></tr><tr><td style='padding:3px 6px;'><strong>2</strong></td><td>Exploration</td><td style='text-align:center;'>2</td><td style='text-align:center;'>33.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>3</strong></td><td>Diagnostic</td><td style='text-align:center;'>3</td><td style='text-align:center;'>58.3%</td></tr><tr><td style='padding:3px 6px;'><strong>4</strong></td><td>Digital Twin</td><td style='text-align:center;'>5</td><td style='text-align:center;'>100%</td></tr></table>"
+  ),
+  ndp_tip_fibonacci_title = list(
+    fr = "Pond\u00e9ration Fibonacci",
+    en = "Fibonacci Weighting"
+  ),
+  ndp_tip_fibonacci_text = list(
+    fr = "L'indice g\u00e9n\u00e9ral est une moyenne pond\u00e9r\u00e9e par les poids de Fibonacci (1, 1, 2, 3, 5). Plus le NDP est \u00e9lev\u00e9, plus les indicateurs p\u00e8sent dans le score final. La suite de Fibonacci refl\u00e8te la croissance naturelle \u2014 chaque niveau apporte autant que les deux pr\u00e9c\u00e9dents combin\u00e9s.",
+    en = "The general index is a weighted mean using Fibonacci weights (1, 1, 2, 3, 5). The higher the NDP, the more weight indicators carry in the final score. The Fibonacci sequence reflects natural growth \u2014 each level contributes as much as the two previous levels combined."
+  ),
+  ndp_tip_confidence_title = list(
+    fr = "Confiance \u03c6 (nombre d'or)",
+    en = "Confidence \u03c6 (golden ratio)"
+  ),
+  ndp_tip_confidence_text = list(
+    fr = "Le ratio \u03c6 exprime la confiance cumul\u00e9e : rapport du poids Fibonacci cumul\u00e9 sur le total (12). \u00c0 NDP 0 : 8.3% de confiance \u2014 \u00e0 NDP 4 : 100%. Ce ratio est affich\u00e9 sous le score global dans la barre de progression.",
+    en = "The \u03c6 ratio expresses cumulative confidence: the ratio of cumulative Fibonacci weight to the total (12). At NDP 0: 8.3% confidence \u2014 at NDP 4: 100%. This ratio is displayed below the global score in the progress bar."
+  ),
+  ndp_tip_conclusion = list(
+    fr = "L'application utilise des donn\u00e9es publiques (Sentinel-2, BD TOPO, LiDAR HD IGN). Le NDP augmente automatiquement lorsque des sources de meilleure r\u00e9solution sont disponibles (drone, inventaire terrain, scanner 3D).",
+    en = "The application uses public data (Sentinel-2, BD TOPO, IGN LiDAR HD). The NDP increases automatically when higher-resolution data sources become available (drone, field inventory, 3D scanner)."
+  )
 )
 
 
