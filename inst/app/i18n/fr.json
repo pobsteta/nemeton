@@ -279,5 +279,15 @@
   "ndp_observation": "Observation",
   "ndp_exploration": "Exploration",
   "ndp_diagnostic": "Diagnostic",
-  "ndp_jumeau": "Jumeau numérique"
+  "ndp_jumeau": "Jumeau numérique",
+  "ndp_tip_title": "Niveau De Précision (NDP)",
+  "ndp_tip_subtitle": "Mesure la qualité des données d'entrée, pas la complétude de l'analyse",
+  "ndp_tip_intro": "Le NDP évalue la fiabilité des données utilisées pour calculer les 31 indicateurs. Les 12 familles sont <strong>toujours</strong> calculées, mais avec une précision croissante selon les sources disponibles.",
+  "ndp_tip_levels_title": "Les 5 niveaux",
+  "ndp_tip_levels": "<table style='width:100%; border-collapse:collapse; margin:6px 0; font-size:0.82rem;'><tr style='background:#e8f0e4;'><th style='padding:4px 6px; text-align:left;'>NDP</th><th style='padding:4px 6px; text-align:left;'>Nom</th><th style='padding:4px 6px; text-align:center;'>Poids</th><th style='padding:4px 6px; text-align:center;'>φ</th></tr><tr><td style='padding:3px 6px;'><strong>0</strong></td><td>Découverte</td><td style='text-align:center;'>1</td><td style='text-align:center;'>8.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>1</strong></td><td>Observation</td><td style='text-align:center;'>1</td><td style='text-align:center;'>16.7%</td></tr><tr><td style='padding:3px 6px;'><strong>2</strong></td><td>Exploration</td><td style='text-align:center;'>2</td><td style='text-align:center;'>33.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>3</strong></td><td>Diagnostic</td><td style='text-align:center;'>3</td><td style='text-align:center;'>58.3%</td></tr><tr><td style='padding:3px 6px;'><strong>4</strong></td><td>Jumeau</td><td style='text-align:center;'>5</td><td style='text-align:center;'>100%</td></tr></table>",
+  "ndp_tip_fibonacci_title": "Pondération Fibonacci",
+  "ndp_tip_fibonacci_text": "L'indice général est une moyenne pondérée par les poids de Fibonacci (1, 1, 2, 3, 5). Plus le NDP est élevé, plus les indicateurs pèsent dans le score final. La suite de Fibonacci reflète la croissance naturelle — chaque niveau apporte autant que les deux précédents combinés.",
+  "ndp_tip_confidence_title": "Confiance φ (nombre d'or)",
+  "ndp_tip_confidence_text": "Le ratio φ exprime la confiance cumulée : rapport du poids Fibonacci cumulé sur le total (12). À NDP 0 : 8.3% de confiance — à NDP 4 : 100%. Ce ratio est affiché sous le score global dans la barre de progression.",
+  "ndp_tip_conclusion": "L'application utilise des données publiques (Sentinel-2, BD TOPO, LiDAR HD IGN). Le NDP augmente automatiquement lorsque des sources de meilleure résolution sont disponibles (drone, inventaire terrain, scanner 3D)."
 }

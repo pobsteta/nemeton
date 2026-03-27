@@ -248,10 +248,68 @@ mod_synthesis_server <- function(id, app_state) {
           sprintf("/ 100 (%d %s)", length(family_cols),
                   if (i18n$language == "fr") "familles" else "families")
         ),
-        # NDP badge et barre de confiance
+        # NDP badge + popover info + barre de confiance
         htmltools::div(
           class = "mt-2",
-          ndp_badge(ndp_result$ndp, lang = i18n$language),
+          htmltools::div(
+            class = "d-flex align-items-center justify-content-center gap-2",
+            ndp_badge(ndp_result$ndp, lang = i18n$language),
+            bslib::popover(
+              htmltools::tags$span(
+                class = "text-info",
+                style = "cursor: help;",
+                shiny::icon("circle-info", class = "fa-sm")
+              ),
+              htmltools::div(
+                style = "max-height: 450px; overflow-y: auto; font-size: 0.85rem; line-height: 1.5;",
+                # Titre
+                htmltools::div(
+                  style = "border-left: 4px solid #4a7c3f; padding: 10px 12px; background: #f4f8f2; margin-bottom: 10px;",
+                  htmltools::tags$div(
+                    style = "font-weight: bold; font-size: 1rem; color: #3a6330; margin-bottom: 2px;",
+                    htmltools::HTML("&#9670; "), i18n$t("ndp_tip_title")
+                  ),
+                  htmltools::tags$em(style = "color: #555;", i18n$t("ndp_tip_subtitle"))
+                ),
+                # Introduction
+                htmltools::p(
+                  style = "margin: 8px 0; text-align: justify;",
+                  htmltools::HTML(i18n$t("ndp_tip_intro"))
+                ),
+                # Section : Les 5 niveaux
+                htmltools::div(
+                  style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                  i18n$t("ndp_tip_levels_title")
+                ),
+                htmltools::HTML(i18n$t("ndp_tip_levels")),
+                # Section : Ponderation Fibonacci
+                htmltools::div(
+                  style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                  htmltools::HTML("&#9733; &nbsp;"), i18n$t("ndp_tip_fibonacci_title")
+                ),
+                htmltools::p(
+                  style = "margin: 0 0 8px 0; text-align: justify;",
+                  i18n$t("ndp_tip_fibonacci_text")
+                ),
+                # Section : Confiance phi
+                htmltools::div(
+                  style = "background: #eaf1e6; padding: 5px 10px; margin: 10px 0 6px 0; border-radius: 3px; font-weight: bold; color: #3a6330;",
+                  htmltools::HTML("&#966; &nbsp;"), i18n$t("ndp_tip_confidence_title")
+                ),
+                htmltools::p(
+                  style = "margin: 0 0 8px 0; text-align: justify;",
+                  i18n$t("ndp_tip_confidence_text")
+                ),
+                # Conclusion
+                htmltools::tags$p(
+                  style = "font-style: italic; color: #555; margin: 10px 0 0 0; padding-top: 8px; border-top: 1px solid #ddd; text-align: justify;",
+                  i18n$t("ndp_tip_conclusion")
+                )
+              ),
+              options = list(customClass = "popover-lg"),
+              title = NULL
+            )
+          ),
           ndp_progress_bar(ndp_result$ndp, lang = i18n$language)
         )
       )
