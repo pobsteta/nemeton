@@ -384,7 +384,11 @@ save_indicators <- function(project_id, indicators) {
     arrow::write_parquet(indicators_df, indicators_path)
 
     # Update metadata (avec NDP detecte)
+    # Essayer d'abord via les attributs, puis fallback sur le cache disque
     ndp_level <- detect_ndp(indicators)
+    if (ndp_level == 0L) {
+      ndp_level <- detect_ndp_from_cache(project_path)
+    }
     update_project_metadata(project_id, list(
       indicators_computed = TRUE,
       ndp_level = ndp_level,

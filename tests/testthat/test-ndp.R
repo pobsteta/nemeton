@@ -300,3 +300,35 @@ test_that("restore_ndp_attributes handles NULL ndp_level", {
   restored <- restore_ndp_attributes(df, NULL)
   expect_equal(detect_ndp(restored), 0L)
 })
+
+# ---- detect_ndp_from_cache ----
+
+test_that("detect_ndp_from_cache returns 0 for missing dir", {
+  expect_equal(detect_ndp_from_cache(NULL), 0L)
+  expect_equal(detect_ndp_from_cache("/nonexistent/path"), 0L)
+})
+
+test_that("detect_ndp_from_cache returns 0 when no LiDAR files", {
+  withr::with_tempdir({
+    dir.create(file.path("cache", "layers"), recursive = TRUE)
+    file.create(file.path("cache", "layers", "ndvi.tif"))
+    file.create(file.path("cache", "layers", "dem.tif"))
+    expect_equal(detect_ndp_from_cache(getwd()), 0L)
+  })
+})
+
+test_that("detect_ndp_from_cache returns 1 when LiDAR MNH present", {
+  withr::with_tempdir({
+    dir.create(file.path("cache", "layers"), recursive = TRUE)
+    file.create(file.path("cache", "layers", "lidar_mnh.tif"))
+    expect_equal(detect_ndp_from_cache(getwd()), 1L)
+  })
+})
+
+test_that("detect_ndp_from_cache returns 1 when LiDAR MNT present", {
+  withr::with_tempdir({
+    dir.create(file.path("cache", "layers"), recursive = TRUE)
+    file.create(file.path("cache", "layers", "lidar_mnt.tif"))
+    expect_equal(detect_ndp_from_cache(getwd()), 1L)
+  })
+})

@@ -328,6 +328,37 @@ restore_ndp_attributes <- function(data, ndp_level) {
 }
 
 
+#' Detect NDP level from project cache directory
+#'
+#' Inspects the project's cache/layers directory for actual data files
+#' to determine the NDP level. This is more robust than attribute-based
+#' detection because attributes can be lost during serialization.
+#'
+#' @param project_path Character. Path to the project directory.
+#'
+#' @return Integer. Detected NDP level (0-4).
+#'
+#' @keywords internal
+#' @noRd
+detect_ndp_from_cache <- function(project_path) {
+  if (is.null(project_path) || !dir.exists(project_path)) return(0L)
+
+  cache_dir <- file.path(project_path, "cache", "layers")
+  if (!dir.exists(cache_dir)) return(0L)
+
+  # Lister les fichiers dans le cache
+  cached_files <- list.files(cache_dir, recursive = TRUE)
+
+  # NDP 1 : LiDAR HD present (fichiers lidar_mnh ou lidar_mnt)
+  has_lidar_hd <- any(grepl("lidar_mn[ht]", cached_files, ignore.case = TRUE))
+
+  if (!has_lidar_hd) return(0L)
+
+  # NDP 2+ : pas encore dans le pipeline
+  1L
+}
+
+
 # ================================================================
 # compute_general_index
 # ================================================================
