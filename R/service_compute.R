@@ -2168,6 +2168,9 @@ compute_all_indicators <- function(parcels,
     ))
   }
 
+  # Marquer les sources de donnees disponibles pour detect_ndp()
+  results <- set_ndp_attributes(results, layers)
+
   results
 }
 
@@ -2624,10 +2627,12 @@ save_indicators <- function(project_id, results, project_path = NULL) {
 
     arrow::write_parquet(results_df, results_path)
 
-    # Update metadata
+    # Update metadata (avec NDP detecte)
+    ndp_level <- detect_ndp(results)
     update_project_metadata(project_id, list(
       indicators_computed = TRUE,
       indicators_computed_at = Sys.time(),
+      ndp_level = ndp_level,
       updated_at = Sys.time()
     ))
 
@@ -2687,6 +2692,12 @@ load_indicators <- function(project_id) {
       crs = crs
     )
     results_sf$geometry_wkt <- NULL
+
+    # Restaurer les attributs NDP depuis les metadonnees projet
+    meta <- load_project_metadata(project_id)
+    if (!is.null(meta$ndp_level)) {
+      results_sf <- restore_ndp_attributes(results_sf, meta$ndp_level)
+    }
 
     results_sf
 

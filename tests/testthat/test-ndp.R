@@ -229,3 +229,74 @@ test_that("ndp_progress_bar supports English", {
   expect_match(rendered, "Confidence")
   expect_match(rendered, "100")
 })
+
+# ---- detect_ndp_from_layers ----
+
+test_that("detect_ndp_from_layers returns 0 for non-nemeton_layers", {
+  expect_equal(detect_ndp_from_layers(list()), 0L)
+  expect_equal(detect_ndp_from_layers(NULL), 0L)
+})
+
+test_that("detect_ndp_from_layers returns 0 when no LiDAR", {
+  layers <- structure(
+    list(rasters = list(ndvi = "fake", dem = "fake"),
+         vectors = list(), point_clouds = list()),
+    class = "nemeton_layers"
+  )
+  expect_equal(detect_ndp_from_layers(layers), 0L)
+})
+
+test_that("detect_ndp_from_layers returns 1 when LiDAR MNH present", {
+  layers <- structure(
+    list(rasters = list(lidar_mnh = "fake"),
+         vectors = list(), point_clouds = list()),
+    class = "nemeton_layers"
+  )
+  expect_equal(detect_ndp_from_layers(layers), 1L)
+})
+
+test_that("detect_ndp_from_layers returns 1 when point clouds present", {
+  layers <- structure(
+    list(rasters = list(),
+         vectors = list(), point_clouds = list(tile1 = "fake.copc")),
+    class = "nemeton_layers"
+  )
+  expect_equal(detect_ndp_from_layers(layers), 1L)
+})
+
+# ---- set_ndp_attributes / restore_ndp_attributes ----
+
+test_that("set_ndp_attributes sets correct attributes from layers", {
+  df <- data.frame(x = 1)
+  layers <- structure(
+    list(rasters = list(lidar_mnh = "fake"),
+         vectors = list(), point_clouds = list()),
+    class = "nemeton_layers"
+  )
+  result <- set_ndp_attributes(df, layers)
+  expect_true(attr(result, "has_lidar_hd"))
+  expect_false(attr(result, "has_drone_rgb"))
+  expect_equal(attr(result, "ndp_detected"), 1L)
+  expect_equal(detect_ndp(result), 1L)
+})
+
+test_that("set_ndp_attributes without layers defaults to NDP 0", {
+  df <- data.frame(x = 1)
+  result <- set_ndp_attributes(df, NULL)
+  expect_false(attr(result, "has_lidar_hd"))
+  expect_equal(detect_ndp(result), 0L)
+})
+
+test_that("restore_ndp_attributes round-trips correctly", {
+  df <- data.frame(x = 1)
+  restored <- restore_ndp_attributes(df, 1L)
+  expect_true(attr(restored, "has_lidar_hd"))
+  expect_false(attr(restored, "has_drone_rgb"))
+  expect_equal(detect_ndp(restored), 1L)
+})
+
+test_that("restore_ndp_attributes handles NULL ndp_level", {
+  df <- data.frame(x = 1)
+  restored <- restore_ndp_attributes(df, NULL)
+  expect_equal(detect_ndp(restored), 0L)
+})

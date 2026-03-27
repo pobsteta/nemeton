@@ -147,7 +147,7 @@ mod_synthesis_server <- function(id, app_state) {
       family_means <- vapply(family_cols, function(col) {
         mean(df[[col]], na.rm = TRUE)
       }, numeric(1))
-      ndp_result <- compute_general_index(family_means, ndp = 0L)
+      ndp_result <- compute_general_index(family_means, ndp = detect_ndp(sf_data))
       global <- ndp_result$score
 
       # Color based on score
