@@ -938,7 +938,15 @@ TRANSLATIONS <- list(
   ndp_tip_conclusion = list(
     fr = "L'application utilise des donn\u00e9es publiques (Sentinel-2, BD TOPO, LiDAR HD IGN). Le NDP augmente automatiquement lorsque des sources de meilleure r\u00e9solution sont disponibles (drone, inventaire terrain, scanner 3D).",
     en = "The application uses public data (Sentinel-2, BD TOPO, IGN LiDAR HD). The NDP increases automatically when higher-resolution data sources become available (drone, field inventory, 3D scanner)."
-  )
+  ),
+
+  # ============================================================
+  # Authentication
+  # ============================================================
+  auth_anonymous = list(fr = "Anonyme", en = "Anonymous"),
+  auth_login = list(fr = "Se connecter", en = "Sign in"),
+  auth_logout = list(fr = "Se d\u00e9connecter", en = "Sign out"),
+  auth_logged_as = list(fr = "Connect\u00e9 en tant que", en = "Signed in as")
 )
 
 
