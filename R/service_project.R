@@ -383,9 +383,11 @@ save_indicators <- function(project_id, indicators) {
 
     arrow::write_parquet(indicators_df, indicators_path)
 
-    # Update metadata
+    # Update metadata (avec NDP detecte)
+    ndp_level <- detect_ndp(indicators)
     update_project_metadata(project_id, list(
       indicators_computed = TRUE,
+      ndp_level = ndp_level,
       updated_at = Sys.time(),
       status = "completed"
     ))
@@ -422,7 +424,15 @@ load_indicators <- function(project_id) {
   }
 
   tryCatch({
-    arrow::read_parquet(indicators_path)
+    results <- arrow::read_parquet(indicators_path)
+
+    # Restaurer les attributs NDP depuis les metadonnees projet
+    meta <- load_project_metadata(project_id)
+    if (!is.null(meta$ndp_level)) {
+      results <- restore_ndp_attributes(results, meta$ndp_level)
+    }
+
+    results
   }, error = function(e) {
     cli::cli_warn("Failed to load indicators: {e$message}")
     NULL
