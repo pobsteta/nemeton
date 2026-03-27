@@ -272,5 +272,12 @@
   "ai_generate": "Generate AI Analysis",
   "ai_generating": "Analyzing...",
   "ai_error": "AI analysis error",
-  "ai_no_api_key": "API key not configured. Set the {key_var} environment variable."
+  "ai_no_api_key": "API key not configured. Set the {key_var} environment variable.",
+  "ndp_label": "Precision Level",
+  "ndp_confidence": "Confidence φ",
+  "ndp_decouverte": "Discovery",
+  "ndp_observation": "Observation",
+  "ndp_exploration": "Exploration",
+  "ndp_diagnostic": "Diagnostic",
+  "ndp_jumeau": "Digital Twin"
 }
