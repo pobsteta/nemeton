@@ -276,8 +276,22 @@ mod_synthesis_server <- function(id, app_state) {
         return()
       }
 
-      nemeton_radar(sf_data, mode = "family", normalize = FALSE,
-                    title = i18n$t("radar_title"))
+      ndp_level <- detect_ndp(sf_data)
+      ndp_info <- get_ndp_level(ndp_level)
+      confidence_pct <- round(ndp_info$confidence * 100, 1)
+      ndp_subtitle <- sprintf("NDP %d \u2013 %s | %s : %s%%",
+                               ndp_level, ndp_info$name,
+                               i18n$t("ndp_confidence"), confidence_pct)
+
+      p <- nemeton_radar(sf_data, mode = "family", normalize = FALSE,
+                         title = i18n$t("radar_title"))
+      p + ggplot2::labs(subtitle = ndp_subtitle) +
+        ggplot2::theme(
+          plot.subtitle = ggplot2::element_text(
+            hjust = 0.5, size = 11, color = "gray40",
+            margin = ggplot2::margin(b = 10)
+          )
+        )
     })
 
     # ================================================================
@@ -310,6 +324,7 @@ mod_synthesis_server <- function(id, app_state) {
           Family = fam_name,
           Code = code,
           Score = round(score, 2),
+          NDP = 0L,
           Indicators = length(fam$indicators),
           stringsAsFactors = FALSE
         )
@@ -329,6 +344,7 @@ mod_synthesis_server <- function(id, app_state) {
         if (lang == "fr") "Famille" else "Family",
         "Code",
         "Score",
+        "NDP",
         if (lang == "fr") "Nb indicateurs" else "Nb indicators"
       )
 
