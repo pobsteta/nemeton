@@ -147,7 +147,9 @@ mod_synthesis_server <- function(id, app_state) {
       family_means <- vapply(family_cols, function(col) {
         mean(df[[col]], na.rm = TRUE)
       }, numeric(1))
-      ndp_result <- compute_general_index(family_means, ndp = detect_ndp(sf_data))
+      # NDP depuis les metadonnees du projet (les attributs sf sont perdus par merge)
+      ndp_level <- as.integer(app_state$current_project$metadata$ndp_level %||% 0L)
+      ndp_result <- compute_general_index(family_means, ndp = ndp_level)
       global <- ndp_result$score
 
       # Color based on score
@@ -276,7 +278,7 @@ mod_synthesis_server <- function(id, app_state) {
         return()
       }
 
-      ndp_level <- detect_ndp(sf_data)
+      ndp_level <- as.integer(app_state$current_project$metadata$ndp_level %||% 0L)
       ndp_info <- get_ndp_level(ndp_level)
       confidence_pct <- round(ndp_info$confidence * 100, 1)
       ndp_subtitle <- sprintf("NDP %d \u2013 %s | %s : %s%%",
@@ -324,7 +326,7 @@ mod_synthesis_server <- function(id, app_state) {
           Family = fam_name,
           Code = code,
           Score = round(score, 2),
-          NDP = 0L,
+          NDP = as.integer(app_state$current_project$metadata$ndp_level %||% 0L),
           Indicators = length(fam$indicators),
           stringsAsFactors = FALSE
         )

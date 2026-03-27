@@ -122,7 +122,8 @@ generate_pdf_report <- function(project,
 
   # Generate radar plot as static image
   radar_file <- file.path(temp_dir, "radar_plot.png")
-  generate_radar_image(family_scores, radar_file, language)
+  generate_radar_image(family_scores, radar_file, language,
+                       ndp_level = report_data$ndp_level)
 
   # Handle cover image: copy to temp_dir so relative path works
   cover_image_param <- ""
@@ -380,14 +381,15 @@ prepare_report_data <- function(project, family_scores, language,
 #'
 #' @return Invisible NULL.
 #' @noRd
-generate_radar_image <- function(family_scores, output_file, language) {
+generate_radar_image <- function(family_scores, output_file, language,
+                                 ndp_level = 0L) {
   grDevices::png(output_file, width = 1600, height = 1600, res = 150)
   on.exit(grDevices::dev.off(), add = TRUE)
 
   i18n <- get_i18n(language)
 
-  # Detecter le NDP et construire le sous-titre
-  ndp_level <- detect_ndp(family_scores)
+  # Construire le sous-titre NDP
+  ndp_level <- as.integer(ndp_level %||% 0L)
   ndp_info <- get_ndp_level(ndp_level)
   confidence_pct <- round(ndp_info$confidence * 100, 1)
   ndp_subtitle <- sprintf("NDP %d \u2013 %s | Confiance \u03c6 : %s%%",
