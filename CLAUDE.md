@@ -1,243 +1,230 @@
-# nemeton Development Guidelines
+# CLAUDE.md — Néméton Development Reference
 
-Auto-generated from all feature plans. Last updated: 2026-01-05
+## Identité du projet
 
-## Active Technologies
-- R >= 4.0.0 (v0.2.0 uses R 4.5.2) (001-mvp-v0-3-0)
-- R package data structures (.rda in data/), external data sources (INPN WFS, IGN BD Forêt, Corine Land Cover rasters) (001-mvp-v0-3-0)
-- R >= 4.0.0 (targeting R 4.1.0+ for compatibility with existing codebase) (001-mvp-v0.4.0)
-- R >= 4.0.0 (compatible avec nemeton v0.4.0) (001-learnr-tutorial)
+Néméton est une plateforme d'analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule 31 indicateurs organisés en 12 familles, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d'acteurs de la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
 
-- R >= 4.1.0 (constitution minimum 4.1.0, recommend 4.3.0+ for performance) (001-mvp-v0.2.0)
+Le package R `nemeton` (v0.14.1.9000) est le cœur du projet. Il contient à la fois la logique métier (indicateurs, familles, radar) et l'application Shiny/golem (nemetonApp).
 
-## Project Structure
+## Convention NMT (Néméton Naming Convention)
 
-```text
-src/
-tests/
+Toutes les clés techniques du projet suivent cette norme :
+
+- **snake_case français sans accent** : `famille_biodiversite`, `ndp_decouverte`
+- **Translittération** : é→e, è→e, ê→e, à→a, ô→o, î→i, ù→u, ç→c
+- **Codes courts en majuscules** : B, C, W, A, F, L, T, R, S, P, E, N, B1, C2
+- **Maximum 30 caractères** par clé
+- **Pas d'abréviation** sauf codes établis
+
+Cette convention s'applique aux nouveaux fichiers et fonctions. Le code existant (noms anglais comme `create_family_index`, `indicator_carbon_biomass`) reste en l'état — on ne renomme pas ce qui fonctionne.
+
+## Architecture (4 packages, ADR-009)
+
+```
+nemeton (ce repo)          → Package cœur + app Shiny. 31 indicateurs, 12 familles, radar, i18n, LLM. MIT.
+tree_sat_nemeton            → Classification d'essences par Sentinel-1/2. NDP 0. MIT.
+maestro_nemeton             → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
+platform_nemeton            → Documentation plateforme, ADR, glossaire. EUPL v1.2.
 ```
 
-## Commands
+Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse.
 
-# Add commands for R >= 4.1.0 (constitution minimum 4.1.0, recommend 4.3.0+ for performance)
+## Les 12 familles d'indicateurs
 
-## Code Style
+| Code | Famille | Indicateurs |
+|------|---------|-------------|
+| B | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité) |
+| C | Carbone & Vitalité | C1 (biomasse), C2 (NDVI) |
+| W | Eau & Régulation | W1 (réseau hydro), W2 (zones humides), W3 (TWI) |
+| A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air) |
+| F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
+| L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
+| T | Dynamique temporelle | T1 (ancienneté), T2 (changement) |
+| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement) |
+| S | Social & Usages | S1 (routes), S2 (bâti), S3 (population) |
+| P | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois) |
+| E | Énergie & Climat | E1 (bois-énergie), E2 (évitement carbone) |
+| N | Naturalité | N1 (distance infra), N2 (continuité), N3 (composite) |
 
-R >= 4.1.0 (constitution minimum 4.1.0, recommend 4.3.0+ for performance): Follow standard conventions
+## Système NDP (Niveau De Précision) — ADR-011
 
-## Recent Changes
-- 001-learnr-tutorial: Added R >= 4.0.0 (compatible avec nemeton v0.4.0)
-- 001-mvp-v0.4.0: Added R >= 4.0.0 (targeting R 4.1.0+ for compatibility with existing codebase)
-- 001-mvp-v0-3-0: Added R >= 4.0.0 (v0.2.0 uses R 4.5.2)
+Le NDP mesure la QUALITÉ des données d'entrée, PAS le nombre de familles calculées. Les 12 familles sont toujours calculées, mais avec une précision croissante.
 
+| NDP | Clé | Nom | Fibonacci | Confiance φ | Sources |
+|-----|-----|-----|-----------|-------------|---------|
+| 0 | ndp_decouverte | Découverte | 1 | 8.3% | Sentinel-2, WorldClim, BD TOPO, MNT 25m |
+| 1 | ndp_observation | Observation | 1 | 16.7% | + IGN RGE ALTI, BD ORTHO, LiDAR HD |
+| 2 | ndp_exploration | Exploration | 2 | 33.3% | + Drone RGB, LiDAR drone |
+| 3 | ndp_diagnostic | Diagnostic | 3 | 58.3% | + Inventaire terrain complet |
+| 4 | ndp_jumeau | Jumeau | 5 | 100% | + Scanner terrestre, modèle 3D |
 
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
-# CLAUDE.md — Addendum Tests & Couverture pour nemeton
-# Ce fichier complète le CLAUDE.md existant avec les conventions de test spécifiques.
-# Si un CLAUDE.md existe déjà, fusionner ce contenu avec l'existant.
+**Pondération Fibonacci** : l'indice général est une moyenne pondérée des familles, où le poids est le nombre de Fibonacci associé au NDP. Plus le NDP est élevé, plus les indicateurs comptent dans l'indice.
 
-## Stack de test
+**Confiance φ** : ratio du poids cumulé sur le poids total Fibonacci. Affichée dans l'interface sous le score global.
 
-- **Framework** : testthat (edition 3)
-- **Tests Shiny** : shinytest2 (E2E via chromote headless) + testServer() (unitaire)
-- **Couverture** : covr → codecov
-- **R >= 4.1.0**, dépendances : sf, terra, ggplot2, shiny
+**Détection automatique** : le NDP est déterminé par les sources de données présentes (attributs du jeu de données), pas par le nombre d'indicateurs calculés. L'app actuelle est toujours en NDP 0 (données publiques uniquement).
+
+### Implémentation NDP
+
+Le fichier `R/ndp.R` contient :
+- `NDP_LEVELS` : configuration des 5 niveaux
+- `get_ndp_level()`, `get_ndp_name()`, `get_ndp_weight()`, `get_ndp_confidence()` : accesseurs
+- `ndp_table()` : data.frame des 5 niveaux
+- `detect_ndp()` : détection du NDP depuis les données
+- `compute_general_index()` : indice pondéré Fibonacci
+- `compute_general_index_mixed()` : indice avec NDP mixte par indicateur
+- `ndp_badge()`, `ndp_progress_bar()` : widgets HTML pour Shiny
+
+Le score global dans `mod_synthesis.R` utilise `compute_general_index()` au lieu d'un simple `mean()`.
+
+## Les 15 profils d'acteurs
+
+| Profil | Clé | Familles prioritaires |
+|--------|-----|----------------------|
+| Propriétaire privé | profil_proprietaire_prive | P, E, R |
+| Propriétaire public | profil_proprietaire_public | B, N, S |
+| Gestionnaire ONF | profil_gestionnaire_onf | P, B, C, R |
+| Gestionnaire coopérative | profil_gestionnaire_coop | P, E, L |
+| Gestionnaire expert | profil_gestionnaire_expert | Toutes |
+| Technicien terrain | profil_technicien | C, W, F, B |
+| Naturaliste | profil_naturaliste | B, N, W, R |
+| Élu local | profil_elu_local | S, L, R |
+| Élu régional | profil_elu_regional | P, E, C, S |
+| Chasseur | profil_chasseur | R4, B, N |
+| Industrie bois | profil_industrie_bois | P, E |
+| Bûcheron / ETF | profil_bucheron | P, S, F |
+| Chercheur | profil_chercheur | Toutes |
+| Citoyen | profil_citoyen | S, L, A |
+| Investisseur | profil_investisseur | C, P, E |
+
+Les profils experts sont définis dans `inst/experts/*.yml` avec des prompts bilingues FR/EN.
+
+## 6 Bounded Contexts (DDD)
+
+1. **Inventaire** (contexte_inventaire) : collecte et validation des données terrain et satellite
+2. **Analyse systémique** (contexte_analyse) : calcul des 31 indicateurs, 12 familles, radar, Fibonacci
+3. **Cartographie** (contexte_cartographie) : classification d'essences, cartes, LiDAR, satellite
+4. **Aide à la décision** (contexte_aide_decision) : perspectives IA, interprétation par profil
+5. **Utilisateurs** (contexte_utilisateurs) : authentification, profils, droits, partage
+6. **Interopérabilité** (contexte_interoperabilite) : export IFN, GroundForest, QField, OGC
+
+## ADR (Architecture Decision Records)
+
+11 ADR documentés dans `platform_nemeton/docs/ADR-001-010_Nemeton_i18n.odt` :
+
+| ADR | Décision |
+|-----|----------|
+| 001 | R/Shiny (golem), migration Plumber+Vue.js si >50 users simultanés |
+| 002 | GeoPackage (terrain) + PostGIS (plateforme) + S3 (rasters/LiDAR en COPC) |
+| 003 | OVHcloud (principal) + Scaleway GPU L4 (ponctuel) |
+| 004 | Mistral API (souveraineté FR), migration self-hosted possible |
+| 005 | OAuth2/OIDC via AgentConnect → Keycloak fédéré pour l'Europe |
+| 006 | EUPL v1.2 (plateforme) + MIT (packages R) + CC-BY 4.0 (données) |
+| 007 | Pipeline NDP : TreeSatAI (NDP 0) → PureForest (NDP 1) → local (NDP 2+) |
+| 008 | OGC, ETRS89/EPSG:3035 paneuropéen, INSPIRE, sources par pays |
+| 009 | 4 packages (nemeton, tree_sat, maestro, nemeton.app) |
+| 010 | Docker Compose + GitHub Actions CI/CD, 12-factor app |
+| 011 | Nombre d'or : pondération Fibonacci, confiance φ, suite 1-1-2-3-5 |
+
+## Walking Skeleton — Épaississements
+
+Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout). L'état actuel est entre l'épaississement 2 et 3 :
+
+```
+✅ Squelette initial     : CSV/cadastre → indicateurs → radar → perspective IA
+✅ Épaississement 1      : 12 familles complètes, 31 indicateurs
+✅ Épaississement 2      : Cartographie (Leaflet, parcelles cadastrales)
+⬜ Épaississement 3      : Multi-acteurs (5+ profils, perspectives différenciées)
+⬜ Épaississement 4      : Authentification (OAuth2/OIDC, ADR-005)
+⬜ Épaississement 5      : Intégrations et NDP (tree_sat, maestro, QField)
+```
+
+## Internationalisation (i18n)
+
+- L'interface utilise `shiny.i18n` via le système `get_i18n(lang)` / `i18n$t("clé")`
+- Fichiers de traduction : `inst/app/i18n/fr.json` (274+ clés) et `en.json`
+- Les textes affichés passent TOUJOURS par i18n, jamais en littéral français
+- Les prompts LLM sont bilingues (inst/experts/*.yml contiennent FR et EN)
+- Prévu pour l'extension européenne : DE, ES, IT à ajouter ultérieurement
+
+## Stack technique
+
+- **R >= 4.1.0** avec golem pour la structuration Shiny
+- **bslib** (Bootstrap 5) pour le layout
+- **leaflet** pour la cartographie
+- **plotly** (optionnel) / **fmsb** pour le radar
+- **ellmer** pour l'intégration LLM multi-provider (Anthropic, Mistral, OpenAI)
+- **sf**, **terra** pour les données spatiales
+- **shiny.i18n** pour l'internationalisation
+- **testthat** (edition 3) + **shinytest2** pour les tests
 
 ## Commandes de référence
 
 ```bash
+# Lancer l'application
+Rscript -e 'nemeton::run_app()'
+
 # Lancer tous les tests
 Rscript -e 'devtools::test()'
 
-# Lancer un fichier de test spécifique
-Rscript -e 'testthat::test_file("tests/testthat/test-mon_fichier.R")'
+# Lancer un test spécifique
+Rscript -e 'testthat::test_file("tests/testthat/test-ndp.R")'
 
-# Couverture globale (pourcentage)
+# Regénérer la documentation
+Rscript -e 'devtools::document()'
+
+# Vérifier le package
+Rscript -e 'devtools::check()'
+
+# Couverture de code
 Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
-
-# Couverture par fichier
-Rscript -e 'print(as.data.frame(covr::tally_coverage(covr::package_coverage(quiet=TRUE), by="file")))'
-
-# Lignes non couvertes
-Rscript -e 'print(covr::zero_coverage(covr::package_coverage(quiet=TRUE)))'
-
-# Rapport HTML interactif
-Rscript -e 'covr::report(covr::package_coverage())'
 ```
 
-## Conventions de nommage des tests
+## Conventions de code
 
-| Fichier source | Fichier de test (unitaire) | Fichier de test (E2E Shiny) |
-|---|---|---|
-| `R/indicators.R` | `tests/testthat/test-indicators.R` | — |
-| `R/mod_radar.R` | `tests/testthat/test-mod_radar-server.R` | `tests/testthat/test-mod_radar-e2e.R` |
-| `R/app_server.R` | `tests/testthat/test-app_server.R` | `tests/testthat/test-app-e2e.R` |
+### Fonctions R
+- Nouvelles fonctions : snake_case NMT (`calculer_famille`, `afficher_radar`)
+- Fonctions existantes : garder le nom actuel (ne pas renommer `create_family_index`)
+- Documentation roxygen : en anglais (cohérence avec l'existant)
+- Commentaires inline : en français
 
-## Stratégie de test par type de code
+### Tests
+- Framework : testthat edition 3
+- Nommage : `test-{module}.R`
+- `testServer()` pour les modules Shiny (contribue à covr)
+- `shinytest2::AppDriver` pour les tests E2E (ne contribue pas à covr)
+- `on.exit(app$stop())` obligatoire après chaque AppDriver$new()
 
-### Fonctions R pures (indicateurs, calculs, normalisation)
-
-```r
-test_that("calculate_carbon_index() retourne les bonnes valeurs", {
-  data(massif_demo_units, package = "nemeton")
-  result <- calculate_carbon_index(massif_demo_units)
-  expect_true(is.numeric(result))
-  expect_true(all(result >= 0 & result <= 100, na.rm = TRUE))
-})
-
-test_that("calculate_carbon_index() gère les NA", {
-  df <- data.frame(biomass = c(100, NA, 300), area = c(10, 20, 30))
-  result <- calculate_carbon_index(df)
-  expect_true(any(is.na(result)))
-})
-
-test_that("calculate_carbon_index() refuse les entrées invalides", {
-  expect_error(calculate_carbon_index(NULL))
-  expect_error(calculate_carbon_index("pas un dataframe"))
-})
-```
-
-### Fonctions spatiales (sf, terra)
-
-```r
-test_that("nemeton_units() crée des unités spatiales", {
-  withr::with_tempdir({
-    # Créer un geopackage minimal pour le test
-    test_sf <- sf::st_sf(
-      id = 1:5,
-      name = paste0("parcelle_", 1:5),
-      area_ha = c(10, 20, 30, 40, 50),
-      geometry = sf::st_sfc(lapply(1:5, function(i) {
-        sf::st_polygon(list(matrix(
-          c(i, 0, i+1, 0, i+1, 1, i, 1, i, 0), ncol = 2, byrow = TRUE
-        )))
-      })),
-      crs = 4326
-    )
-    sf::st_write(test_sf, "test.gpkg", quiet = TRUE)
-    result <- nemeton_units("test.gpkg")
-    expect_s3_class(result, "sf")
-    expect_equal(nrow(result), 5)
-  })
-})
-```
-
-### Modules Shiny — testServer() (PRIORITAIRE pour covr)
-
-```r
-# testServer() exécute le code serveur du module dans le même processus R
-# → le code EST instrumenté par covr → CONTRIBUE à la couverture
-
-test_that("mod_radar_server retourne un plot", {
-  data(massif_demo_units, package = "nemeton")
-
-  testServer(mod_radar_server, args = list(
-    data = reactive(massif_demo_units),
-    selected_unit = reactive(1)
-  ), {
-    session$setInputs(mode = "family")
-    # Vérifier que le plot est généré
-    expect_true(!is.null(output$radar_plot))
-  })
-})
-
-test_that("mod_radar_server gère les données vides", {
-  testServer(mod_radar_server, args = list(
-    data = reactive(data.frame()),
-    selected_unit = reactive(NULL)
-  ), {
-    # Vérifier que ça ne plante pas
-    expect_silent(session$flushReact())
-  })
-})
-```
-
-### Modules Shiny — shinytest2 AppDriver (E2E, complémentaire)
-
-```r
-# AppDriver lance l'app dans un processus R SÉPARÉ
-# → le code n'est PAS instrumenté par covr (ne contribue PAS directement à la couverture)
-# → MAIS teste l'intégration UI + Server + interactions utilisateur
-# → UTILE pour détecter les bugs d'intégration, les erreurs JS, etc.
-
-test_that("mod_radar E2E : l'utilisateur peut changer de mode", {
-  skip_on_cran()
-  skip_if_not_installed("shinytest2")
-  skip_if_not(shinytest2::has_chromote(), "Chrome/Chromium requis")
-
-  data(massif_demo_units, package = "nemeton")
-
-  app <- shinytest2::AppDriver$new(
-    shiny::shinyApp(
-      ui = shiny::fluidPage(mod_radar_ui("test")),
-      server = function(input, output, session) {
-        mod_radar_server("test",
-          data = reactive(massif_demo_units),
-          selected_unit = reactive(1)
-        )
-      }
-    ),
-    name = "mod-radar-e2e",
-    height = 800, width = 1200,
-    load_timeout = 20000
-  )
-  on.exit(app$stop(), add = TRUE)
-
-  # Vérifier que l'app charge
-  vals <- app$get_values()
-  expect_true(length(vals$output) > 0)
-
-  # Changer de mode
-  app$set_inputs(`test-mode` = "indicator")
-  app$wait_for_idle(timeout = 5000)
-
-  new_vals <- app$get_values()
-  # L'output devrait avoir changé
-})
-```
-
-### App complète
-
-```r
-test_that("L'app nemeton démarre et affiche les contrôles", {
-  skip_on_cran()
-  skip_if_not_installed("shinytest2")
-  skip_if_not(shinytest2::has_chromote(), "Chrome/Chromium requis")
-
-  app <- shinytest2::AppDriver$new(
-    nemeton::run_app(),
-    name = "nemeton-app",
-    load_timeout = 30000,
-    timeout = 15000
-  )
-  on.exit(app$stop(), add = TRUE)
-
-  vals <- app$get_values()
-  expect_true(length(vals$input) > 0 || length(vals$output) > 0)
-})
-```
-
-## Point critique : covr et shinytest2
-
-> **testServer() contribue à covr** car le code tourne dans le même processus R.
-> **AppDriver (shinytest2) ne contribue PAS à covr** car l'app tourne dans un processus séparé.
->
-> Pour MAXIMISER la couverture : écrire TOUJOURS des tests testServer() en premier,
-> puis ajouter des tests AppDriver pour les scénarios E2E.
-
-## Données de test disponibles
-
-- `data(massif_demo_units)` : 20 unités forestières, 12 familles d'indicateurs
-- Créer des sf minimaux pour les tests spatiaux (voir exemples ci-dessus)
+### Données de test
+- `data(massif_demo_units)` : 20 unités forestières avec 12 familles
 - `withr::with_tempdir()` pour les fichiers temporaires
 - `testthat::local_mocked_bindings()` pour mocker les dépendances
 
+## Fichiers clés
+
+```
+R/ndp.R                   → Système NDP, Fibonacci, confiance φ
+R/family-system.R         → Agrégation des indicateurs en familles
+R/mod_synthesis.R         → Synthèse : score global, radar, AI
+R/mod_home.R              → Sélection cadastrale, carte
+R/mod_family.R            → Vue détaillée par famille
+R/indicators-*.R          → Calcul des 31 indicateurs
+R/service_compute.R       → Calcul asynchrone (ExtendedTask + future)
+R/llm_prompts.R           → Gestion des profils experts et prompts LLM
+R/i18n.R + R/utils_i18n.R → Système d'internationalisation
+R/app_ui.R                → UI principale (page_navbar bslib)
+R/app_server.R            → Server principal
+R/run_app.R               → Point d'entrée de l'application
+inst/experts/*.yml        → Profils experts pour les perspectives IA
+inst/app/i18n/*.json      → Traductions FR/EN
+```
+
 ## Règles strictes
 
-1. **NE JAMAIS modifier** R/, inst/, man/, data/, src/, NAMESPACE
-2. **DESCRIPTION** : modifiable uniquement pour Suggests
-3. **Pas de tests triviaux** — chaque test vérifie un comportement réel
-4. **on.exit(app$stop())** obligatoire après chaque AppDriver$new()
-5. **skip_on_cran()** obligatoire avant tout test shinytest2
-6. **Vérifier que les 2987+ tests existants passent** avant de commiter
+1. Le code métier (indicateurs, familles, NDP) est dans les fichiers R du package, JAMAIS dans les modules Shiny
+2. Les modules Shiny (mod_*.R) sont de la présentation : ils appellent les fonctions du package
+3. Aucune logique métier dans server.R ou ui.R
+4. Les textes passent par i18n$t("clé"), jamais en littéral
+5. Chaque nouvelle fonction exportée a un test dans tests/testthat/
+6. Les rasters et le LiDAR ne sont JAMAIS stockés dans PostgreSQL (ADR-002)
+7. Le NDP mesure la qualité des données, pas la complétude de l'analyse
