@@ -125,6 +125,7 @@ Les profils experts sont définis dans `inst/experts/*.yml` avec des prompts bil
 | 009 | 4 packages (nemeton, tree_sat, maestro, nemeton.app) |
 | 010 | Docker Compose + GitHub Actions CI/CD, 12-factor app |
 | 011 | Nombre d'or : pondération Fibonacci, confiance φ, suite 1-1-2-3-5 |
+| 012 | Extensions PG futures : TimescaleDB (monitoring continu) + pgvector (RAG perspectives IA) |
 
 ## Walking Skeleton — Épaississements
 
@@ -137,6 +138,8 @@ Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout). L'ét
 ⬜ Épaississement 3      : Multi-acteurs (5+ profils, perspectives différenciées)
 ⬜ Épaississement 4      : Authentification (OAuth2/OIDC, ADR-005)
 ⬜ Épaississement 5      : Intégrations et NDP (tree_sat, maestro, QField)
+⬜ Épaississement 6      : Monitoring forestier continu (TimescaleDB + alertes Sentinel-2, ADR-012)
+⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)
 ```
 
 ## Internationalisation (i18n)
