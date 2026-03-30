@@ -237,6 +237,128 @@ detect_ndp <- function(data) {
 }
 
 
+#' Detect NDP level from nemeton_layers object
+#'
+#' Inspects a \code{nemeton_layers} object returned by the download pipeline
+#' to determine which data sources were actually available.
+#'
+#' @param layers A \code{nemeton_layers} object from \code{download_layers_for_parcels()}.
+#'
+#' @return Integer. Detected NDP level (0-4).
+#'
+#' @keywords internal
+#' @noRd
+detect_ndp_from_layers <- function(layers) {
+  if (!inherits(layers, "nemeton_layers")) return(0L)
+
+  # NDP 1 : LiDAR HD present (MNH ou MNT ou nuages de points)
+  has_lidar_hd <- !is.null(layers$rasters$lidar_mnh) ||
+                  !is.null(layers$rasters$lidar_mnt) ||
+                  length(layers$point_clouds) > 0
+
+  if (!has_lidar_hd) return(0L)
+
+  # NDP 2+ : drone, inventaire terrain, scanner — pas encore dans le pipeline
+  # La detection sera etendue quand ces sources seront integrees
+  1L
+}
+
+
+#' Set NDP source attributes on a data object
+#'
+#' Marks which data sources were available during computation.
+#' These attributes are read by \code{\link{detect_ndp}}.
+#'
+#' @param data An sf object or data.frame.
+#' @param layers A \code{nemeton_layers} object, or NULL.
+#'
+#' @return The data object with NDP attributes set.
+#'
+#' @keywords internal
+#' @noRd
+set_ndp_attributes <- function(data, layers = NULL) {
+  if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
+    attr(data, "has_lidar_hd") <- !is.null(layers$rasters$lidar_mnh) ||
+                                   !is.null(layers$rasters$lidar_mnt) ||
+                                   length(layers$point_clouds) > 0
+  } else {
+    attr(data, "has_lidar_hd") <- FALSE
+  }
+
+  # Sources NDP 2+ : pas encore dans le pipeline
+
+  attr(data, "has_drone_rgb") <- FALSE
+  attr(data, "has_lidar_drone") <- FALSE
+  attr(data, "has_inventaire_terrain") <- FALSE
+  attr(data, "has_scanner_terrestre") <- FALSE
+  attr(data, "has_modele_3d") <- FALSE
+
+  # Stocker le NDP detecte
+  attr(data, "ndp_detected") <- detect_ndp(data)
+
+  data
+}
+
+
+#' Restore NDP attributes from project metadata
+#'
+#' After loading indicators from parquet (which strips attributes),
+#' restores the NDP attributes from the persisted metadata.
+#'
+#' @param data An sf object.
+#' @param ndp_level Integer. The NDP level from project metadata.
+#'
+#' @return The data object with NDP attributes restored.
+#'
+#' @keywords internal
+#' @noRd
+restore_ndp_attributes <- function(data, ndp_level) {
+  ndp_level <- as.integer(ndp_level %||% 0L)
+  if (is.na(ndp_level)) ndp_level <- 0L
+
+  attr(data, "has_lidar_hd") <- ndp_level >= 1L
+  attr(data, "has_drone_rgb") <- ndp_level >= 2L
+  attr(data, "has_lidar_drone") <- ndp_level >= 2L
+  attr(data, "has_inventaire_terrain") <- ndp_level >= 3L
+  attr(data, "has_scanner_terrestre") <- ndp_level >= 4L
+  attr(data, "has_modele_3d") <- ndp_level >= 4L
+  attr(data, "ndp_detected") <- ndp_level
+
+  data
+}
+
+
+#' Detect NDP level from project cache directory
+#'
+#' Inspects the project's cache/layers directory for actual data files
+#' to determine the NDP level. This is more robust than attribute-based
+#' detection because attributes can be lost during serialization.
+#'
+#' @param project_path Character. Path to the project directory.
+#'
+#' @return Integer. Detected NDP level (0-4).
+#'
+#' @keywords internal
+#' @noRd
+detect_ndp_from_cache <- function(project_path) {
+  if (is.null(project_path) || !dir.exists(project_path)) return(0L)
+
+  cache_dir <- file.path(project_path, "cache", "layers")
+  if (!dir.exists(cache_dir)) return(0L)
+
+  # NDP 1 : LiDAR HD present (repertoires ou fichiers lidar_mnh / lidar_mnt / lidar_nuage)
+  has_lidar_hd <- dir.exists(file.path(cache_dir, "lidar_mnh")) ||
+                  dir.exists(file.path(cache_dir, "lidar_mnt")) ||
+                  dir.exists(file.path(cache_dir, "lidar_nuage")) ||
+                  any(grepl("lidar_mn[ht]", list.files(cache_dir), ignore.case = TRUE))
+
+  if (!has_lidar_hd) return(0L)
+
+  # NDP 2+ : pas encore dans le pipeline
+  1L
+}
+
+
 # ================================================================
 # compute_general_index
 # ================================================================

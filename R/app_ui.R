@@ -32,6 +32,10 @@ app_ui <- function(request) {
     # Cicerone for guided tours
     if (requireNamespace("cicerone", quietly = TRUE)) cicerone::use_cicerone(),
 
+    # shinyOAuth (si configure)
+    if (is_oauth_configured() && requireNamespace("shinyOAuth", quietly = TRUE))
+      shinyOAuth::use_shinyOAuth(),
+
     # Main page with navbar
     bslib::page_navbar(
       id = "main_nav",

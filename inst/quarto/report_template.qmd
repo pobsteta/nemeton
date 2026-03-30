@@ -161,7 +161,17 @@ score_col <- quality_color_hex(report_data$global_score)
 cat("\\textcolor[HTML]{", score_col, "}{\\fontsize{48}{58}\\selectfont\\textbf{",
     sprintf("%.1f", report_data$global_score), "}}\n\n", sep = "")
 cat("{\\Large / 100}\n\n")
-cat("\\vspace{0.5cm}\n")
+cat("\\vspace{0.3cm}\n")
+# NDP badge sur la page de couverture
+ndp_col <- switch(as.character(report_data$ndp_level),
+  "0" = "6c757d", "1" = "17a2b8", "2" = "28a745",
+  "3" = "ffc107", "4" = "fd7e14", "6c757d")
+confidence_pct <- round(report_data$ndp_confidence * 100, 1)
+cat("\\colorbox[HTML]{", ndp_col, "}{\\textcolor{white}{\\small\\textbf{ NDP ",
+    report_data$ndp_level, " -- ", escape_latex(report_data$ndp_name), " }}}\n\n", sep = "")
+cat("{\\small ", escape_latex(tr("ndp_confidence_label")),
+    " : ", confidence_pct, "\\%}\n\n", sep = "")
+cat("\\vspace{0.3cm}\n")
 cat("{\\large ", report_data$n_parcels, " ",
     escape_latex(tr("parcels")), "}\n\n", sep = "")
 cat("\\vspace{0.8cm}\n")
@@ -186,6 +196,9 @@ cat("\\newpage\n")
 
 \begin{center}
 \textcolor{`r score_color(report_data$global_score)`}{\LARGE\textbf{`r tr("global_score_label")` : `r sprintf("%.1f", report_data$global_score)` / 100}}
+
+\vspace{0.2cm}
+{\small `r tr("ndp_label")` : \textbf{NDP `r report_data$ndp_level` -- `r report_data$ndp_name`} \quad | \quad `r tr("ndp_confidence_label")` : `r sprintf("%.1f", report_data$ndp_confidence * 100)`\%}
 \end{center}
 
 \vspace{0.3cm}

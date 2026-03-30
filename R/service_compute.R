@@ -2168,6 +2168,9 @@ compute_all_indicators <- function(parcels,
     ))
   }
 
+  # Marquer les sources de donnees disponibles pour detect_ndp()
+  results <- set_ndp_attributes(results, layers)
+
   results
 }
 
@@ -2590,109 +2593,7 @@ get_computation_progress <- function(project_id) {
 }
 
 
-#' Save indicators to project
-#'
-#' @description
-#' Saves computed indicators to project (final save).
-#'
-#' @param project_id Character. Project ID.
-#' @param results sf object. Computed results.
-#'
-#' @return Logical. TRUE if successful.
-#'
-#' @noRd
-save_indicators <- function(project_id, results, project_path = NULL) {
-  if (is.null(project_path)) {
-    project_path <- get_project_path(project_id)
-  }
-  if (is.null(project_path) || !dir.exists(project_path)) {
-    cli::cli_abort("Project not found: {project_id}")
-  }
-
-  # Save as GeoParquet
-  results_path <- file.path(project_path, "data", "indicators.parquet")
-
-  tryCatch({
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'arrow' is required")
-    }
-
-    # Convert sf to data.frame with WKT geometry
-    results_df <- results
-    results_df$geometry_wkt <- sf::st_as_text(sf::st_geometry(results))
-    results_df <- sf::st_drop_geometry(results_df)
-
-    arrow::write_parquet(results_df, results_path)
-
-    # Update metadata
-    update_project_metadata(project_id, list(
-      indicators_computed = TRUE,
-      indicators_computed_at = Sys.time(),
-      updated_at = Sys.time()
-    ))
-
-    cli::cli_alert_success("Saved indicators for {nrow(results)} parcels")
-    TRUE
-
-  }, error = function(e) {
-    cli::cli_abort("Failed to save indicators: {e$message}")
-  })
-}
-
-
-#' Load indicators from project
-#'
-#' @description
-#' Loads computed indicators from project.
-#'
-#' @param project_id Character. Project ID.
-#'
-#' @return sf object with indicators, or NULL if not found.
-#'
-#' @noRd
-load_indicators <- function(project_id) {
-  project_path <- get_project_path(project_id)
-  if (is.null(project_path)) {
-    return(NULL)
-  }
-
-  results_path <- file.path(project_path, "data", "indicators.parquet")
-  crs_path <- file.path(project_path, "data", "parcels_crs.json")
-
-  if (!file.exists(results_path)) {
-    return(NULL)
-  }
-
-  tryCatch({
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_abort("Package 'arrow' is required")
-    }
-
-    # Read parquet
-    results_df <- arrow::read_parquet(results_path)
-
-    # Get CRS
-    crs <- 4326
-    if (file.exists(crs_path)) {
-      crs_info <- jsonlite::read_json(crs_path)
-      if (!is.null(crs_info$epsg)) {
-        crs <- crs_info$epsg
-      }
-    }
-
-    # Convert back to sf
-    results_sf <- sf::st_as_sf(
-      results_df,
-      wkt = "geometry_wkt",
-      crs = crs
-    )
-    results_sf$geometry_wkt <- NULL
-
-    results_sf
-
-  }, error = function(e) {
-    cli::cli_warn("Failed to load indicators: {e$message}")
-    NULL
-  })
-}
+# NOTE: save_indicators() et load_indicators() sont definis dans
+# R/service_project.R (version canonique avec NDP).
+# Ne pas les redefinir ici pour eviter les conflits de masquage.
 

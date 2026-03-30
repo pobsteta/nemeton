@@ -1,0 +1,49 @@
+{
+  "country": "EU",
+  "country_name": {
+    "fr": "Europe (données paneuropéennes)",
+    "en": "Europe (pan-European data)",
+    "de": "Europa (paneuropäische Daten)"
+  },
+  "crs_national": 3035,
+  "crs_name": "ETRS89 / LAEA",
+
+  "services": {
+    "copernicus_wms": {
+      "url": "https://sh.dataspace.copernicus.eu/ogc/wms",
+      "provider": "Copernicus Data Space"
+    }
+  },
+
+  "layers": {
+    "dem": {
+      "url": "https://land.copernicus.eu/imagery-in-situ/eu-dem/eu-dem-v1.1",
+      "description": "EU-DEM v1.1 - Modèle numérique d'élévation européen",
+      "resolution_m": 25
+    }
+  },
+
+  "datasets": {
+    "sentinel2": {
+      "stac_url": "https://catalogue.dataspace.copernicus.eu/stac",
+      "collection": "sentinel-2-l2a",
+      "description": "Sentinel-2 Level-2A (surface reflectance)",
+      "resolution_m": 10,
+      "revisit_days": 5
+    },
+    "worldclim": {
+      "url": "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/",
+      "description": "WorldClim 2.1 - Variables bioclimatiques",
+      "resolution_arcsec": 30
+    },
+    "corine": {
+      "url": "https://land.copernicus.eu/pan-european/corine-land-cover/clc2018",
+      "description": "CORINE Land Cover 2018",
+      "resolution_m": 100
+    },
+    "bioregions": {
+      "url": "https://www.eea.europa.eu/data-and-maps/data/biogeographical-regions-europe-3",
+      "description": "Régions biogéographiques européennes (EEA)"
+    }
+  }
+}
