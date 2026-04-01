@@ -966,15 +966,20 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
     return(NULL)
   }
 
-  # Map layer names to BD TOPO V3 typenames
-  layer_mapping <- list(
-    roads = "BDTOPO_V3:troncon_de_route",
-    water_network = "BDTOPO_V3:troncon_hydrographique",
-    water_surfaces = "BDTOPO_V3:surface_hydrographique",
-    buildings = "BDTOPO_V3:batiment"
-  )
+  # Map layer names to BD TOPO V3 typenames (source: inst/datasources/FR.json)
+  layer_cfg <- get_data_source(layer_name, "FR")
+  typename <- layer_cfg$typename
 
-  typename <- layer_mapping[[layer_name]]
+  # Fallback sur les noms en dur si la config n'est pas trouvee
+  if (is.null(typename)) {
+    layer_mapping <- list(
+      roads = "BDTOPO_V3:troncon_de_route",
+      water_network = "BDTOPO_V3:troncon_hydrographique",
+      water_surfaces = "BDTOPO_V3:surface_hydrographique",
+      buildings = "BDTOPO_V3:batiment"
+    )
+    typename <- layer_mapping[[layer_name]]
+  }
   if (is.null(typename)) {
     cli::cli_warn("Unknown BD TOPO layer: {layer_name}")
     return(NULL)
@@ -1030,8 +1035,10 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
 #' @return sf object with BD Forêt features, or NULL if download fails.
 #' @noRd
 download_ign_bdforet <- function(bbox, cache_file) {
-  base_url <- "https://data.geopf.fr/wfs/ows"
-  typename <- "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale"
+  # BD Foret V2 via WFS (source: inst/datasources/FR.json)
+  bdforet_cfg <- get_layer_service("bdforet", "FR")
+  base_url <- bdforet_cfg$url %||% "https://data.geopf.fr/wfs/ows"
+  typename <- bdforet_cfg$typename %||% "LANDCOVER.FORESTINVENTORY.V2:formation_vegetale"
 
   if (inherits(bbox, "bbox")) {
     bbox <- as.numeric(bbox)
@@ -1178,7 +1185,9 @@ download_oso_global <- function(oso_path, global_cache, progress_callback = NULL
   cli::cli_alert_info("Downloading OSO from Recherche Data Gouv to global cache...")
   cli::cli_alert_info("  Global cache: {global_cache}")
 
-  oso_url <- "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
+  # URL from datasource config (source: inst/datasources/FR.json)
+  oso_cfg <- get_data_source("oso", "FR")
+  oso_url <- oso_cfg$url %||% "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1"
 
   # Check for existing archive
   oso_tar_files <- list.files(global_cache, pattern = "^OSO_.*\\.tar\\.gz$", full.names = TRUE)
@@ -1322,8 +1331,9 @@ download_oso_global <- function(oso_path, global_cache, progress_callback = NULL
 #'
 #' @noRd
 download_ign_dem <- function(bbox, cache_file) {
-  # IGN Geoplateforme WMS for elevation
-  base_url <- "https://data.geopf.fr/wms-r/wms"
+  # IGN Geoplateforme WMS for elevation (source: inst/datasources/FR.json)
+  dem_cfg <- get_layer_service("dem", "FR")
+  base_url <- dem_cfg$url %||% "https://data.geopf.fr/wms-r/wms"
 
   # Ensure bbox is numeric
   if (inherits(bbox, "bbox")) {
@@ -1423,8 +1433,9 @@ download_ign_dem <- function(bbox, cache_file) {
 #'
 #' @noRd
 download_ign_irc_ndvi <- function(bbox, cache_file) {
-  # IGN Geoplateforme WMS for IRC orthophotos
-  base_url <- "https://data.geopf.fr/wms-r/wms"
+  # IGN Geoplateforme WMS for IRC orthophotos (source: inst/datasources/FR.json)
+  irc_cfg <- get_layer_service("ortho_irc", "FR")
+  base_url <- irc_cfg$url %||% "https://data.geopf.fr/wms-r/wms"
 
   # Ensure bbox is numeric
   if (inherits(bbox, "bbox")) {
@@ -1617,13 +1628,20 @@ download_ign_lidar_hd <- function(bbox,
                                   progress_callback = NULL) {
   product <- match.arg(product)
 
-  # WFS layer names for each product
-  wfs_layers <- list(
+  # WFS layer names for each product (source: inst/datasources/FR.json)
+  wfs_layers_default <- list(
     mnh = "IGNF_MNH-LIDAR-HD:dalle",
     mnt = "IGNF_MNT-LIDAR-HD:dalle",
     mns = "IGNF_MNS-LIDAR-HD:dalle",
     nuage = "IGNF_NUAGES-DE-POINTS-LIDAR-HD:dalle"
   )
+  # Charger depuis la config si disponible
+  lidar_key <- paste0("lidar_", product)
+  lidar_cfg <- get_data_source(lidar_key, "FR")
+  wfs_layers <- wfs_layers_default
+  if (!is.null(lidar_cfg$happign_layer)) {
+    wfs_layers[[product]] <- lidar_cfg$happign_layer
+  }
 
   wfs_layer <- wfs_layers[[product]]
 
@@ -1739,7 +1757,9 @@ download_ign_lidar_hd <- function(bbox,
 #' @return sf object with tile features, or NULL on failure.
 #' @noRd
 query_lidar_wfs <- function(wfs_layer, bbox) {
-  base_url <- "https://data.geopf.fr/wfs/ows"
+  # WFS URL from datasource config (source: inst/datasources/FR.json)
+  wfs_cfg <- get_data_source("ign_wfs", "FR")
+  base_url <- wfs_cfg$url %||% "https://data.geopf.fr/wfs/ows"
 
   bbox_str <- paste(bbox[c(1, 2, 3, 4)], collapse = ",")
 

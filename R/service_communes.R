@@ -163,8 +163,9 @@ search_communes <- function(query, department = NULL, limit = 20L) {
     ))
   }
 
-  # Build API URL
-  base_url <- "https://geo.api.gouv.fr/communes"
+  # Build API URL (source: inst/datasources/FR.json)
+  communes_cfg <- get_data_source("communes_api", "FR")
+  base_url <- paste0(communes_cfg$url %||% "https://geo.api.gouv.fr", "/communes")
 
   params <- list(
     nom = query,
@@ -250,7 +251,8 @@ search_by_postal_code <- function(postal_code) {
     ))
   }
 
-  base_url <- "https://geo.api.gouv.fr/communes"
+  communes_cfg <- get_data_source("communes_api", "FR")
+  base_url <- paste0(communes_cfg$url %||% "https://geo.api.gouv.fr", "/communes")
 
   result <- tryCatch({
     if (!requireNamespace("httr2", quietly = TRUE)) {
@@ -326,11 +328,10 @@ get_commune_geometry <- function(code_insee) {
       cli::cli_abort("Package 'httr2' is required for API calls")
     }
 
-    # Request contour field (without format=geojson to get raw JSON)
-    url <- sprintf(
-      "https://geo.api.gouv.fr/communes/%s?fields=nom,code,contour",
-      code_insee
-    )
+    # Request contour field (source: inst/datasources/FR.json)
+    communes_cfg <- get_data_source("communes_api", "FR")
+    communes_base <- communes_cfg$url %||% "https://geo.api.gouv.fr"
+    url <- sprintf("%s/communes/%s?fields=nom,code,contour", communes_base, code_insee)
 
     resp <- httr2::request(url) |>
       httr2::req_timeout(15) |>
@@ -419,10 +420,9 @@ get_commune_centroid <- function(code_insee) {
       cli::cli_abort("Package 'httr2' is required")
     }
 
-    url <- sprintf(
-      "https://geo.api.gouv.fr/communes/%s?fields=centre",
-      code_insee
-    )
+    communes_cfg <- get_data_source("communes_api", "FR")
+    communes_base <- communes_cfg$url %||% "https://geo.api.gouv.fr"
+    url <- sprintf("%s/communes/%s?fields=centre", communes_base, code_insee)
 
     resp <- httr2::request(url) |>
       httr2::req_timeout(10) |>
@@ -475,7 +475,8 @@ get_communes_in_department <- function(department_code) {
       cli::cli_abort("Package 'httr2' is required")
     }
 
-    url <- "https://geo.api.gouv.fr/departements"
+    communes_cfg <- get_data_source("communes_api", "FR")
+    url <- paste0(communes_cfg$url %||% "https://geo.api.gouv.fr", "/departements")
 
     resp <- httr2::request(url) |>
       httr2::req_url_path_append(department_code, "communes") |>

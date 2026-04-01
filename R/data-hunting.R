@@ -10,27 +10,31 @@ NULL
 # Data source URLs (data.gouv.fr - OFB/ONCFS)
 # ==============================================================================
 
-#' URLs for hunting statistics datasets (data.gouv.fr - OFB)
-#' Updated 2025-06-05 with all 8 large game species
+#' Get hunting data URLs from datasource config (ADR-002)
+#'
+#' Sources are loaded from inst/datasources/FR.json when available,
+#' with fallback to hardcoded URLs for backward compatibility.
 #' @noRd
-HUNTING_DATA_URLS <- list(
-  # Principal browsers - high impact on forest regeneration
-  chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
-  cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
-  sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
+get_hunting_data_urls <- function(country = "FR") {
+  hunting_cfg <- get_data_source("hunting", country)
+  if (!is.null(hunting_cfg$species)) {
+    return(hunting_cfg$species)
+  }
+  # Fallback
+  list(
+    chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
+    cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
+    sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
+    chamois = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
+    isard = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
+    mouflon = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
+    daim = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
+    cerf_sika = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
+  )
+}
 
-
-  # Mountain ungulates - localized impact
-
-  chamois = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
-  isard = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
-  mouflon = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
-
-  # Other deer species
-
-  daim = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
-  cerf_sika = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
-)
+# Compatibilite avec le code existant qui reference HUNTING_DATA_URLS
+HUNTING_DATA_URLS <- get_hunting_data_urls()
 
 # ==============================================================================
 # Download and Process Hunting Data
