@@ -238,11 +238,19 @@ db_save_parcels <- function(con, project_id, parcels) {
   # Convertir en MultiPolygon
   parcels <- sf::st_cast(parcels, "MULTIPOLYGON")
 
-  # Inserer via sf::st_write
+  # Inserer via sf::st_write — ne garder que les colonnes du schema
   parcels_db <- parcels
   parcels_db$project_id <- proj_uuid
-  parcels_db$nemeton_id <- parcels_db$nemeton_id %||% parcels_db$id
-  parcels_db$geo_parcelle <- parcels_db$geo_parcelle %||% NA_character_
+  if (is.null(parcels_db$nemeton_id)) parcels_db$nemeton_id <- parcels_db$id
+  if (is.null(parcels_db$geo_parcelle)) parcels_db$geo_parcelle <- NA_character_
+
+  # Colonnes du schema nemeton.parcels (sans id et created_at, generes par la DB)
+  schema_cols <- c("project_id", "nemeton_id", "geo_parcelle", "section",
+                   "numero", "contenance")
+  keep_cols <- intersect(names(parcels_db), schema_cols)
+  # Garder aussi la colonne geometrie
+  geom_col <- attr(parcels_db, "sf_column") %||% "geometry"
+  parcels_db <- parcels_db[, c(keep_cols, geom_col)]
 
   sf::st_write(parcels_db, con,
     DBI::Id(schema = "nemeton", table = "parcels"),
