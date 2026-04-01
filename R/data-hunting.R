@@ -16,25 +16,34 @@ NULL
 #' with fallback to hardcoded URLs for backward compatibility.
 #' @noRd
 get_hunting_data_urls <- function(country = "FR") {
-  hunting_cfg <- get_data_source("hunting", country)
+  # Essayer de charger depuis la configuration par pays
+  hunting_cfg <- tryCatch(
+    get_data_source("hunting", country),
+    error = function(e) NULL
+  )
   if (!is.null(hunting_cfg$species)) {
     return(hunting_cfg$species)
   }
-  # Fallback
-  list(
-    chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
-    cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
-    sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
-    chamois = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
-    isard = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
-    mouflon = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
-    daim = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
-    cerf_sika = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
-  )
+  # Fallback : URLs statiques
+  .HUNTING_DATA_URLS_DEFAULT
 }
 
+# URLs statiques (fallback et valeur au chargement du package)
+# Ne pas appeler get_data_source() ici car datasources.R n'est
+# pas encore charge (ordre alphabetique : data < datasources)
+.HUNTING_DATA_URLS_DEFAULT <- list(
+  chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
+  cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
+  sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
+  chamois = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
+  isard = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
+  mouflon = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
+  daim = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
+  cerf_sika = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
+)
+
 # Compatibilite avec le code existant qui reference HUNTING_DATA_URLS
-HUNTING_DATA_URLS <- get_hunting_data_urls()
+HUNTING_DATA_URLS <- .HUNTING_DATA_URLS_DEFAULT
 
 # ==============================================================================
 # Download and Process Hunting Data
