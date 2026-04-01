@@ -7,8 +7,8 @@ test_that("get_species_config loads BFC config", {
   config <- get_species_config("BFC")
   expect_type(config, "list")
   expect_equal(config$region, "BFC")
-  expect_equal(config$n_classes, 10)
-  expect_length(config$classes, 10)
+  expect_equal(config$n_classes, 11)
+  expect_length(config$classes, 11)
 })
 
 test_that("get_species_config loads EU fallback", {
@@ -37,10 +37,10 @@ test_that("list_species_regions returns available regions", {
 
 # ---- list_species_classes ----
 
-test_that("list_species_classes returns 10 classes for BFC", {
+test_that("list_species_classes returns 11 classes for BFC", {
   classes <- list_species_classes("BFC", lang = "fr")
   expect_s3_class(classes, "data.frame")
-  expect_equal(nrow(classes), 10)
+  expect_equal(nrow(classes), 11)
   expect_true("code" %in% names(classes))
   expect_true("label" %in% names(classes))
   expect_true("allometric_key" %in% names(classes))

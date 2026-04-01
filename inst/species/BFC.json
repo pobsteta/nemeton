@@ -9,7 +9,7 @@
     "en": "Forest region of eastern France, semi-continental to montane climate"
   },
   "ndp_level": 0,
-  "n_classes": 10,
+  "n_classes": 11,
   "classes": [
     {
       "code": "essence_chenaie",
@@ -41,11 +41,20 @@
     {
       "code": "essence_feuillus_pionniers",
       "label": { "fr": "Feuillus pionniers", "en": "Pioneer broadleaves" },
-      "species": ["Betula pendula", "Carpinus betulus", "Fraxinus excelsior", "Acer pseudoplatanus", "Populus tremula", "Robinia pseudoacacia"],
+      "species": ["Betula pendula", "Carpinus betulus", "Fraxinus excelsior", "Acer pseudoplatanus", "Robinia pseudoacacia"],
       "allometric_key": "Generic",
       "oso_classes": [17],
       "color": "#90EE90",
       "sentinel_signature": "deciduous_pioneer"
+    },
+    {
+      "code": "essence_peupleraie",
+      "label": { "fr": "Peupleraie", "en": "Poplar plantation" },
+      "species": ["Populus nigra", "Populus x canadensis", "Populus tremula", "Populus alba"],
+      "allometric_key": "Generic",
+      "oso_classes": [17],
+      "color": "#BDB76B",
+      "sentinel_signature": "deciduous_riparian"
     },
     {
       "code": "essence_pessiere_sapiniere",
@@ -105,7 +114,7 @@
   ],
 
   "oso_mapping": {
-    "17": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_chene_vert"],
+    "17": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_peupleraie", "essence_chene_vert"],
     "18": ["essence_pessiere_sapiniere", "essence_douglasaie", "essence_pinede", "essence_melezin"],
     "19": ["essence_mixte"]
   },
@@ -121,6 +130,8 @@
     "Pin noir": "essence_pinede",
     "Mélèze": "essence_melezin",
     "Chêne vert": "essence_chene_vert",
+    "Peuplier": "essence_peupleraie",
+    "Peupleraie": "essence_peupleraie",
     "NC": "essence_mixte"
   }
 }

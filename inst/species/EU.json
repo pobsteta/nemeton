@@ -9,7 +9,7 @@
     "en": "Pan-European baseline 10-class classification, usable as fallback for any country"
   },
   "ndp_level": 0,
-  "n_classes": 10,
+  "n_classes": 11,
   "classes": [
     {
       "code": "essence_chenaie",
@@ -38,10 +38,18 @@
     {
       "code": "essence_feuillus_pionniers",
       "label": { "fr": "Feuillus pionniers", "en": "Pioneer broadleaves", "de": "Pionierlaubhölzer" },
-      "species": ["Betula pendula", "Carpinus betulus", "Fraxinus excelsior", "Acer pseudoplatanus", "Populus tremula"],
+      "species": ["Betula pendula", "Carpinus betulus", "Fraxinus excelsior", "Acer pseudoplatanus"],
       "allometric_key": "Generic",
       "corine_classes": [311],
       "color": "#90EE90"
+    },
+    {
+      "code": "essence_peupleraie",
+      "label": { "fr": "Peupleraie", "en": "Poplar plantation", "de": "Pappelplantage" },
+      "species": ["Populus nigra", "Populus x canadensis", "Populus tremula", "Populus alba"],
+      "allometric_key": "Generic",
+      "corine_classes": [311],
+      "color": "#BDB76B"
     },
     {
       "code": "essence_pessiere_sapiniere",
@@ -94,7 +102,7 @@
   ],
 
   "corine_mapping": {
-    "311": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_chene_vert"],
+    "311": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_peupleraie", "essence_chene_vert"],
     "312": ["essence_pessiere_sapiniere", "essence_douglasaie", "essence_pinede", "essence_melezin"],
     "313": ["essence_mixte"]
   }
