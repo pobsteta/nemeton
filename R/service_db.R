@@ -287,13 +287,32 @@ db_save_indicators <- function(con, project_id, indicators) {
     as.data.frame(indicators)
   }
 
-  ind_df$project_id <- proj_uuid
-  ind_df$id <- vapply(seq_len(nrow(ind_df)), function(i) {
-    uuid::UUIDgenerate()
-  }, character(1))
+  # Mapping noms locaux → noms schema DB
+  # Les noms locaux (service_compute.R) different parfois du schema
+  rename_map <- c(
+    air_forest_buffer        = "air_coverage",
+    fertility_soil           = "soil_fertility",
+    fertility_erosion        = "soil_erosion",
+    landscape_edge_ratio     = "landscape_edge",
+    social_population        = "social_proximity",
+    production_volume        = "productive_volume",
+    production_productivity  = "productive_station",
+    production_quality       = "productive_quality",
+    energy_wood              = "energy_fuelwood",
+    energy_co2               = "energy_avoidance",
+    naturalness_score        = "naturalness_composite"
+  )
 
-  # Mapper les noms de colonnes vers le schema DB
-  col_map <- c(
+  for (old_name in names(rename_map)) {
+    if (old_name %in% names(ind_df)) {
+      names(ind_df)[names(ind_df) == old_name] <- rename_map[[old_name]]
+    }
+  }
+
+  ind_df$project_id <- proj_uuid
+
+  # Colonnes du schema DB (indicateurs + familles)
+  db_cols <- c(
     "carbon_biomass", "carbon_ndvi",
     "biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity",
     "water_network", "water_wetlands", "water_twi",
@@ -311,8 +330,8 @@ db_save_indicators <- function(con, project_id, indicators) {
   )
 
   # Ne garder que les colonnes presentes dans les donnees ET dans le schema
-  available_cols <- intersect(names(ind_df), col_map)
-  insert_cols <- c("id", "project_id", available_cols)
+  available_cols <- intersect(names(ind_df), db_cols)
+  insert_cols <- c("project_id", available_cols)
   insert_df <- ind_df[, intersect(names(ind_df), insert_cols), drop = FALSE]
 
   DBI::dbWriteTable(con, DBI::Id(schema = "nemeton", table = "indicators"),
