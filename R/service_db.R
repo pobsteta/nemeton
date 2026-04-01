@@ -287,20 +287,64 @@ db_save_indicators <- function(con, project_id, indicators) {
     as.data.frame(indicators)
   }
 
-  # Mapping noms locaux → noms schema DB
-  # Les noms locaux (service_compute.R) different parfois du schema
+  # Mapping noms locaux (service_compute.R) → cles NMT du glossaire BMAD (schema DB)
   rename_map <- c(
-    air_forest_buffer        = "air_coverage",
-    fertility_soil           = "soil_fertility",
-    fertility_erosion        = "soil_erosion",
-    landscape_edge_ratio     = "landscape_edge",
-    social_population        = "social_proximity",
-    production_volume        = "productive_volume",
-    production_productivity  = "productive_station",
-    production_quality       = "productive_quality",
-    energy_wood              = "energy_fuelwood",
-    energy_co2               = "energy_avoidance",
-    naturalness_score        = "naturalness_composite"
+    # B - Biodiversite
+    biodiversity_protection   = "indicateur_b1_protection",
+    biodiversity_structure    = "indicateur_b2_structure",
+    biodiversity_connectivity = "indicateur_b3_connectivite",
+    # C - Carbone
+    carbon_biomass            = "indicateur_c1_biomasse",
+    carbon_ndvi               = "indicateur_c2_ndvi",
+    # W - Eau
+    water_network             = "indicateur_w1_reseau",
+    water_wetlands            = "indicateur_w2_zones_humides",
+    water_twi                 = "indicateur_w3_humidite",
+    # A - Air
+    air_forest_buffer         = "indicateur_a1_couverture",
+    air_quality               = "indicateur_a2_qualite_air",
+    # F - Fertilite
+    fertility_soil            = "indicateur_f1_fertilite",
+    fertility_erosion         = "indicateur_f2_erosion",
+    # L - Paysage
+    landscape_edge_ratio      = "indicateur_l1_sylvosphere",
+    landscape_fragmentation   = "indicateur_l2_fragmentation",
+    # T - Temporel
+    temporal_age              = "indicateur_t1_anciennete",
+    temporal_change           = "indicateur_t2_changement",
+    # R - Risques
+    risk_fire                 = "indicateur_r1_feu",
+    risk_storm                = "indicateur_r2_tempete",
+    risk_drought              = "indicateur_r3_secheresse",
+    risk_browsing             = "indicateur_r4_abroutissement",
+    # S - Social
+    social_trails             = "indicateur_s1_routes",
+    social_accessibility      = "indicateur_s2_bati",
+    social_population         = "indicateur_s3_population",
+    # P - Production
+    production_volume         = "indicateur_p1_volume",
+    production_productivity   = "indicateur_p2_station",
+    production_quality        = "indicateur_p3_qualite_bois",
+    # E - Energie
+    energy_wood               = "indicateur_e1_bois_energie",
+    energy_co2                = "indicateur_e2_evitement",
+    # N - Naturalite
+    naturalness_distance      = "indicateur_n1_distance",
+    naturalness_continuity    = "indicateur_n2_continuite",
+    naturalness_score         = "indicateur_n3_naturalite",
+    # Familles
+    family_B                  = "famille_biodiversite",
+    family_C                  = "famille_carbone",
+    family_W                  = "famille_eau",
+    family_A                  = "famille_air",
+    family_F                  = "famille_sol",
+    family_L                  = "famille_paysage",
+    family_T                  = "famille_temporel",
+    family_R                  = "famille_risque",
+    family_S                  = "famille_social",
+    family_P                  = "famille_production",
+    family_E                  = "famille_energie",
+    family_N                  = "famille_naturalite"
   )
 
   for (old_name in names(rename_map)) {
@@ -311,22 +355,25 @@ db_save_indicators <- function(con, project_id, indicators) {
 
   ind_df$project_id <- proj_uuid
 
-  # Colonnes du schema DB (indicateurs + familles)
+  # Colonnes du schema DB (cles NMT glossaire BMAD)
   db_cols <- c(
-    "carbon_biomass", "carbon_ndvi",
-    "biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity",
-    "water_network", "water_wetlands", "water_twi",
-    "air_coverage", "air_quality",
-    "soil_fertility", "soil_erosion",
-    "landscape_edge", "landscape_fragmentation",
-    "temporal_age", "temporal_change",
-    "risk_fire", "risk_storm", "risk_drought", "risk_browsing",
-    "social_accessibility", "social_proximity", "social_trails",
-    "productive_volume", "productive_station", "productive_quality",
-    "energy_fuelwood", "energy_avoidance",
-    "naturalness_distance", "naturalness_continuity", "naturalness_composite",
-    "family_B", "family_C", "family_W", "family_A", "family_F", "family_L",
-    "family_T", "family_R", "family_S", "family_P", "family_E", "family_N"
+    # 31 indicateurs
+    "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
+    "indicateur_c1_biomasse", "indicateur_c2_ndvi",
+    "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
+    "indicateur_a1_couverture", "indicateur_a2_qualite_air",
+    "indicateur_f1_fertilite", "indicateur_f2_erosion",
+    "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
+    "indicateur_t1_anciennete", "indicateur_t2_changement",
+    "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
+    "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
+    "indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois",
+    "indicateur_e1_bois_energie", "indicateur_e2_evitement",
+    "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite",
+    # 12 familles
+    "famille_biodiversite", "famille_carbone", "famille_eau", "famille_air",
+    "famille_sol", "famille_paysage", "famille_temporel", "famille_risque",
+    "famille_social", "famille_production", "famille_energie", "famille_naturalite"
   )
 
   # Ne garder que les colonnes presentes dans les donnees ET dans le schema
