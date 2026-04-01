@@ -270,9 +270,22 @@ mod_home_server <- function(id, app_state) {
         return()
       }
 
-      # Load the project from disk
+      # Load the project from disk (sync PostGIS si configure)
       project <- load_project(project_id)
       shiny::req(project)
+
+      # Notification sync PostGIS au chargement
+      if (is_db_configured() && isTRUE(project$metadata$indicators_computed)) {
+        db_msg <- if (i18n$language == "fr") {
+          "Projet synchronis\u00e9 avec la base PostGIS"
+        } else {
+          "Project synced to PostGIS database"
+        }
+        shiny::showNotification(
+          htmltools::tagList(shiny::icon("database", class = "me-1"), db_msg),
+          type = "message", duration = 5, session = session
+        )
+      }
 
       # Update app state with loaded project
       app_state$current_project <- project
@@ -923,6 +936,19 @@ mod_home_server <- function(id, app_state) {
             type = "message",
             session = session
           )
+
+          # Notification sync PostGIS
+          if (is_db_configured()) {
+            db_msg <- if (i18n$language == "fr") {
+              "Projet synchronis\u00e9 avec la base PostGIS"
+            } else {
+              "Project synced to PostGIS database"
+            }
+            shiny::showNotification(
+              htmltools::tagList(shiny::icon("database", class = "me-1"), db_msg),
+              type = "message", duration = 5, session = session
+            )
+          }
 
           computing_project_id(NULL)
 
