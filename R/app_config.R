@@ -41,8 +41,11 @@ APP_CONFIG <- list(
   # Project states
   project_states = c("draft", "downloading", "computing", "completed", "error"),
 
-  # CRS
-  default_crs = 2154L,  # Lambert 93
+  # CRS (ADR-008)
+  # Stockage interne : ETRS89/LAEA paneuropeen
+  storage_crs = 3035L,  # EPSG:3035 ETRS89/LAEA (paneuropeen)
+  # Calculs metriques : reprojection automatique en CRS national
+  default_crs = 2154L,  # EPSG:2154 Lambert-93 (France, fallback)
 
   # LLM settings
   llm_provider = "mistral",

@@ -230,9 +230,10 @@ db_save_parcels <- function(con, project_id, parcels) {
     params = list(proj_uuid)
   )
 
-  # Reprojeter en Lambert-93 si necessaire
-  if (sf::st_crs(parcels)$epsg != 2154) {
-    parcels <- sf::st_transform(parcels, 2154)
+  # Reprojeter en CRS de stockage paneuropeen (ADR-008)
+  storage_crs <- get_storage_crs()
+  if (sf::st_crs(parcels)$epsg != storage_crs) {
+    parcels <- sf::st_transform(parcels, storage_crs)
   }
 
   # Convertir en MultiPolygon

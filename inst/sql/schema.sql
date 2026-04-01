@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS nemeton.parcels (
   section TEXT,
   numero TEXT,
   contenance NUMERIC,
-  geometry GEOMETRY(MultiPolygon, 2154),  -- Lambert-93
+  geometry GEOMETRY(MultiPolygon, 3035),  -- ETRS89/LAEA paneuropeen (ADR-008)
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
