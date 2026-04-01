@@ -1,0 +1,126 @@
+{
+  "region": "BFC",
+  "region_name": {
+    "fr": "Bourgogne-Franche-Comté",
+    "en": "Burgundy-Franche-Comté"
+  },
+  "description": {
+    "fr": "Région forestière de l'est de la France, climat semi-continental à montagnard",
+    "en": "Forest region of eastern France, semi-continental to montane climate"
+  },
+  "ndp_level": 0,
+  "n_classes": 10,
+  "classes": [
+    {
+      "code": "essence_chenaie",
+      "label": { "fr": "Chênaie", "en": "Oak forest" },
+      "species": ["Quercus robur", "Quercus petraea", "Quercus pubescens"],
+      "allometric_key": "Quercus",
+      "oso_classes": [17],
+      "color": "#8B6914",
+      "sentinel_signature": "deciduous_mesophilic"
+    },
+    {
+      "code": "essence_hetraie",
+      "label": { "fr": "Hêtraie", "en": "Beech forest" },
+      "species": ["Fagus sylvatica"],
+      "allometric_key": "Fagus",
+      "oso_classes": [17],
+      "color": "#228B22",
+      "sentinel_signature": "deciduous_mesophilic"
+    },
+    {
+      "code": "essence_chataigneraie",
+      "label": { "fr": "Châtaigneraie", "en": "Chestnut forest" },
+      "species": ["Castanea sativa"],
+      "allometric_key": "Quercus",
+      "oso_classes": [17],
+      "color": "#A0522D",
+      "sentinel_signature": "deciduous_thermophilic"
+    },
+    {
+      "code": "essence_feuillus_pionniers",
+      "label": { "fr": "Feuillus pionniers", "en": "Pioneer broadleaves" },
+      "species": ["Betula pendula", "Carpinus betulus", "Fraxinus excelsior", "Acer pseudoplatanus", "Populus tremula", "Robinia pseudoacacia"],
+      "allometric_key": "Generic",
+      "oso_classes": [17],
+      "color": "#90EE90",
+      "sentinel_signature": "deciduous_pioneer"
+    },
+    {
+      "code": "essence_pessiere_sapiniere",
+      "label": { "fr": "Pessière-Sapinière", "en": "Spruce-Fir forest" },
+      "species": ["Picea abies", "Abies alba"],
+      "allometric_key": "Abies",
+      "oso_classes": [18],
+      "color": "#006400",
+      "sentinel_signature": "coniferous_montane"
+    },
+    {
+      "code": "essence_douglasaie",
+      "label": { "fr": "Douglasaie", "en": "Douglas fir plantation" },
+      "species": ["Pseudotsuga menziesii"],
+      "allometric_key": "Abies",
+      "oso_classes": [18],
+      "color": "#2E8B57",
+      "sentinel_signature": "coniferous_plantation"
+    },
+    {
+      "code": "essence_pinede",
+      "label": { "fr": "Pinède", "en": "Pine forest" },
+      "species": ["Pinus sylvestris", "Pinus nigra", "Pinus pinaster"],
+      "allometric_key": "Pinus",
+      "oso_classes": [18],
+      "color": "#556B2F",
+      "sentinel_signature": "coniferous_xeric"
+    },
+    {
+      "code": "essence_melezin",
+      "label": { "fr": "Mélézin", "en": "Larch forest" },
+      "species": ["Larix decidua"],
+      "allometric_key": "Pinus",
+      "oso_classes": [18],
+      "color": "#9ACD32",
+      "sentinel_signature": "coniferous_deciduous"
+    },
+    {
+      "code": "essence_chene_vert",
+      "label": { "fr": "Chêne vert", "en": "Holm oak" },
+      "species": ["Quercus ilex"],
+      "allometric_key": "Quercus",
+      "oso_classes": [17],
+      "color": "#6B8E23",
+      "sentinel_signature": "evergreen_sclerophyll",
+      "note": "Rare en BFC, présent en bordure sud"
+    },
+    {
+      "code": "essence_mixte",
+      "label": { "fr": "Forêt mixte", "en": "Mixed forest" },
+      "species": [],
+      "allometric_key": "Generic",
+      "oso_classes": [19],
+      "color": "#3CB371",
+      "sentinel_signature": "mixed"
+    }
+  ],
+
+  "oso_mapping": {
+    "17": ["essence_chenaie", "essence_hetraie", "essence_chataigneraie", "essence_feuillus_pionniers", "essence_chene_vert"],
+    "18": ["essence_pessiere_sapiniere", "essence_douglasaie", "essence_pinede", "essence_melezin"],
+    "19": ["essence_mixte"]
+  },
+
+  "bdforet_mapping": {
+    "Chênes décidus": "essence_chenaie",
+    "Hêtre": "essence_hetraie",
+    "Châtaignier": "essence_chataigneraie",
+    "Feuillus": "essence_feuillus_pionniers",
+    "Conifères": "essence_pessiere_sapiniere",
+    "Douglas": "essence_douglasaie",
+    "Pin sylvestre": "essence_pinede",
+    "Pin noir": "essence_pinede",
+    "Mélèze": "essence_melezin",
+    "Chêne vert": "essence_chene_vert",
+    "NC": "essence_mixte"
+  }
+}
