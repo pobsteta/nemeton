@@ -374,7 +374,8 @@ indicateur_w1_reseau <- function(units,
   # Get watercourse vector layer (resolve lazy-load)
   watercourses <- resolve_vector_layer(layers, watercourse_layer)
   if (is.null(watercourses)) {
-    stop(sprintf("Watercourse layer '%s' not found in layers", watercourse_layer), call. = FALSE)
+    cli::cli_warn("W1: No watercourse data available for this area. Returning 0.")
+    return(rep(0, nrow(units)))
   }
 
   # Ensure CRS match

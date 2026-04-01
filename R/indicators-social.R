@@ -255,7 +255,7 @@ indicateur_s3_population <- function(units,
   result$S3_20km <- pop_20km
   result[[column_name]] <- pop_5km # Primary indicator is 5km buffer
 
-  msg_info("social_population_calculated", median(pop_5km), median(pop_10km), median(pop_20km))
+  msg_info("social_population_calculated", as.integer(median(pop_5km)), as.integer(median(pop_10km)), as.integer(median(pop_20km)))
 
   cli::cli_alert_success("Calculated {column_name}: Population proximity (5/10/20km buffers)")
 
