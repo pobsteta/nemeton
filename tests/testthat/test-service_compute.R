@@ -31,7 +31,7 @@ test_that("DATA_SOURCES contains required vector sources", {
 
   vectors <- ds$vectors
   expect_true("protected_areas" %in% names(vectors))
-  expect_true("water_network" %in% names(vectors))
+  expect_true("indicateur_w1_reseau" %in% names(vectors))
   expect_true("water_surfaces" %in% names(vectors))
   expect_true("wetlands" %in% names(vectors))
   expect_true("roads" %in% names(vectors))
@@ -102,16 +102,16 @@ test_that("list_available_indicators returns all indicator names", {
   expect_true(length(indicators) > 0)
 
   # Check some expected indicators from each family
-  expect_true("carbon_biomass" %in% indicators)
-  expect_true("carbon_ndvi" %in% indicators)
-  expect_true("biodiversity_protection" %in% indicators)
-  expect_true("water_network" %in% indicators)
-  expect_true("water_twi" %in% indicators)
-  expect_true("air_forest_buffer" %in% indicators)
-  expect_true("risk_fire" %in% indicators)
-  expect_true("social_trails" %in% indicators)
-  expect_true("production_volume" %in% indicators)
-  expect_true("naturalness_distance" %in% indicators)
+  expect_true("indicateur_c1_biomasse" %in% indicators)
+  expect_true("indicateur_c2_ndvi" %in% indicators)
+  expect_true("indicateur_b1_protection" %in% indicators)
+  expect_true("indicateur_w1_reseau" %in% indicators)
+  expect_true("indicateur_w3_humidite" %in% indicators)
+  expect_true("indicateur_a1_couverture" %in% indicators)
+  expect_true("indicateur_r1_feu" %in% indicators)
+  expect_true("indicateur_s1_routes" %in% indicators)
+  expect_true("indicateur_p1_volume" %in% indicators)
+  expect_true("indicateur_n1_distance" %in% indicators)
 })
 
 test_that("list_available_indicators returns no duplicates", {
@@ -133,7 +133,7 @@ test_that("init_compute_state creates proper state structure", {
     get_project_path = function(id) NULL,
     get_computation_progress = function(id) list(computed_indicators = character(0)),
     {
-      state <- nemeton:::init_compute_state("test_project", c("carbon_biomass", "carbon_ndvi"))
+      state <- nemeton:::init_compute_state("test_project", c("indicateur_c1_biomasse", "indicateur_c2_ndvi"))
 
       expect_type(state, "list")
       expect_equal(state$project_id, "test_project")
@@ -171,23 +171,23 @@ test_that("init_compute_state handles resume with existing progress", {
     get_project_path = function(id) NULL,
     get_computation_progress = function(id) {
       list(
-        computed_indicators = c("carbon_biomass", "carbon_ndvi"),
+        computed_indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         last_saved_at = "2026-01-01 12:00:00"
       )
     },
     {
       state <- nemeton:::init_compute_state(
         "test_project",
-        c("carbon_biomass", "carbon_ndvi", "water_network")
+        c("indicateur_c1_biomasse", "indicateur_c2_ndvi", "indicateur_w1_reseau")
       )
 
       expect_equal(state$indicators_completed, 2)
       expect_equal(state$indicators_skipped, 2)
       expect_true(state$is_resume)
       # Use unname() for comparison since named vectors have different attributes
-      expect_equal(unname(state$indicators_status["carbon_biomass"]), "completed")
-      expect_equal(unname(state$indicators_status["carbon_ndvi"]), "completed")
-      expect_equal(unname(state$indicators_status["water_network"]), "pending")
+      expect_equal(unname(state$indicators_status["indicateur_c1_biomasse"]), "completed")
+      expect_equal(unname(state$indicators_status["indicateur_c2_ndvi"]), "completed")
+      expect_equal(unname(state$indicators_status["indicateur_w1_reseau"]), "pending")
     }
   )
 })
@@ -196,10 +196,10 @@ test_that("init_compute_state handles resume with existing progress", {
 # normalize_indicator tests
 # ==============================================================================
 
-test_that("normalize_indicator scales carbon_biomass correctly", {
-  # carbon_biomass has ref_max = 150 tC/ha
+test_that("normalize_indicator scales indicateur_c1_biomasse correctly", {
+  # indicateur_c1_biomasse has ref_max = 150 tC/ha
   values <- c(0, 75, 150, 200)
-  normalized <- nemeton:::normalize_indicator("carbon_biomass", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_c1_biomasse", values)
 
   expect_equal(normalized[1], 0)
 
@@ -209,9 +209,9 @@ test_that("normalize_indicator scales carbon_biomass correctly", {
 })
 
 test_that("normalize_indicator handles NDVI special case", {
-  # carbon_ndvi: 0-1 scale -> 0-100
+  # indicateur_c2_ndvi: 0-1 scale -> 0-100
   values <- c(0, 0.5, 1, 1.5)
-  normalized <- nemeton:::normalize_indicator("carbon_ndvi", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_c2_ndvi", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -220,9 +220,9 @@ test_that("normalize_indicator handles NDVI special case", {
 })
 
 test_that("normalize_indicator handles TWI special case", {
-  # water_twi: [2.5, 4.5] -> [0, 100]
+  # indicateur_w3_humidite: [2.5, 4.5] -> [0, 100]
   values <- c(2.5, 3.5, 4.5, 5.5)
-  normalized <- nemeton:::normalize_indicator("water_twi", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_w3_humidite", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -231,9 +231,9 @@ test_that("normalize_indicator handles TWI special case", {
 })
 
 test_that("normalize_indicator handles distance indicators (inverse)", {
-  # social_trails: 0m -> 100, 2000m -> 0
+  # indicateur_s1_routes: 0m -> 100, 2000m -> 0
   values <- c(0, 1000, 2000, 3000)
-  normalized <- nemeton:::normalize_indicator("social_trails", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_s1_routes", values)
 
   expect_equal(normalized[1], 100)
   expect_equal(normalized[2], 50)
@@ -244,7 +244,7 @@ test_that("normalize_indicator handles distance indicators (inverse)", {
 test_that("normalize_indicator clamps 0-100 indicators", {
   # Indicators already 0-100 should just be clamped
   values <- c(-10, 50, 110)
-  normalized <- nemeton:::normalize_indicator("biodiversity_protection", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_b1_protection", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -281,7 +281,7 @@ test_that("start_computation fails for project without parcels", {
     get_computation_progress = function(id) list(computed_indicators = character(0)),
     update_project_status = function(id, status) invisible(NULL),
     {
-      result <- nemeton:::start_computation("test_project", indicators = "carbon_biomass")
+      result <- nemeton:::start_computation("test_project", indicators = "indicateur_c1_biomasse")
 
       expect_false(result$success)
       expect_equal(result$state$status, "error")
@@ -335,16 +335,16 @@ test_that("start_computation calls progress_callback", {
     compute_all_indicators = function(parcels, layers, indicators, progress_callback, project_id) {
       if (!is.null(progress_callback)) {
         progress_callback(list(completed = 1, failed = 0, current = "test_compute",
-                               status = c(carbon_biomass = "completed"), errors = list()))
+                               status = c(indicateur_c1_biomasse = "completed"), errors = list()))
       }
-      parcels$carbon_biomass <- 50
+      parcels$indicateur_c1_biomasse <- 50
       parcels
     },
     save_indicators = function(project_id, results) TRUE,
     {
       result <- nemeton:::start_computation(
         "test_project",
-        indicators = "carbon_biomass",
+        indicators = "indicateur_c1_biomasse",
         progress_callback = progress_cb
       )
 
@@ -508,7 +508,7 @@ test_that("compute_all_indicators tracks progress correctly", {
       result <- nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass", "carbon_ndvi"),
+        indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         progress_callback = progress_cb,
         project_id = "test"
       )
@@ -542,7 +542,7 @@ test_that("compute_all_indicators handles indicator computation errors", {
     load_indicators = function(id) NULL,
     is_cancelled = function(id) FALSE,
     compute_single_indicator = function(indicator, parcels, layers) {
-      if (indicator == "carbon_biomass") {
+      if (indicator == "indicateur_c1_biomasse") {
         stop("Test error")
       }
       rep(50, nrow(parcels))
@@ -552,15 +552,15 @@ test_that("compute_all_indicators handles indicator computation errors", {
       result <- suppressWarnings(nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass", "carbon_ndvi"),
+        indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         progress_callback = NULL,
         project_id = NULL
       ))
 
       # Failed indicator should have NA values
-      expect_true(all(is.na(result$carbon_biomass)))
+      expect_true(all(is.na(result$indicateur_c1_biomasse)))
       # Successful indicator should have values
-      expect_false(all(is.na(result$carbon_ndvi)))
+      expect_false(all(is.na(result$indicateur_c2_ndvi)))
     }
   )
 })
@@ -596,14 +596,14 @@ test_that("compute_all_indicators respects cancellation", {
       result <- nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass", "carbon_ndvi", "water_network"),
+        indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi", "indicateur_w1_reseau"),
         progress_callback = NULL,
         project_id = "test"
       )
 
       # Should have stopped early due to cancellation
       # Only first indicator should be computed
-      expect_true("carbon_biomass" %in% names(result))
+      expect_true("indicateur_c1_biomasse" %in% names(result))
     }
   )
 })
@@ -626,8 +626,8 @@ test_that("save_indicators creates parquet file", {
   # (it converts sf to WKT in service_compute.R's version)
   mock_results <- data.frame(
     id = "p1",
-    carbon_biomass = 75.5,
-    carbon_ndvi = 0.65
+    indicateur_c1_biomasse = 75.5,
+    indicateur_c2_ndvi = 0.65
   )
 
   with_mocked_bindings(
@@ -675,8 +675,8 @@ test_that("save_indicators and load_indicators roundtrip works", {
   # Use plain data.frame for roundtrip test
   mock_results <- data.frame(
     id = c("p1", "p2"),
-    carbon_biomass = c(75.5, 82.3),
-    carbon_ndvi = c(0.65, 0.72)
+    indicateur_c1_biomasse = c(75.5, 82.3),
+    indicateur_c2_ndvi = c(0.65, 0.72)
   )
 
   with_mocked_bindings(
@@ -688,9 +688,9 @@ test_that("save_indicators and load_indicators roundtrip works", {
 
       expect_s3_class(loaded, "data.frame")
       expect_equal(nrow(loaded), 2)
-      expect_true("carbon_biomass" %in% names(loaded))
-      expect_true("carbon_ndvi" %in% names(loaded))
-      expect_equal(loaded$carbon_biomass, c(75.5, 82.3))
+      expect_true("indicateur_c1_biomasse" %in% names(loaded))
+      expect_true("indicateur_c2_ndvi" %in% names(loaded))
+      expect_equal(loaded$indicateur_c1_biomasse, c(75.5, 82.3))
     }
   )
 
@@ -790,7 +790,7 @@ test_that("save_progress_state creates JSON file", {
     indicators_total = 30,
     indicators_completed = 0,
     indicators_failed = 0,
-    indicators_status = list(carbon_biomass = "pending"),
+    indicators_status = list(indicateur_c1_biomasse = "pending"),
     errors = list(),
     started_at = Sys.time(),
     completed_at = NULL
@@ -936,8 +936,8 @@ test_that("get_computation_progress reads existing progress", {
   dir.create(data_dir, recursive = TRUE)
 
   progress <- list(
-    computed_indicators = c("carbon_biomass", "carbon_ndvi"),
-    last_indicator = "carbon_ndvi",
+    computed_indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
+    last_indicator = "indicateur_c2_ndvi",
     last_saved_at = "2026-01-01 12:00:00"
   )
   jsonlite::write_json(
@@ -951,7 +951,7 @@ test_that("get_computation_progress reads existing progress", {
     {
       result <- nemeton:::get_computation_progress("test_project")
 
-      expect_equal(result$last_indicator, "carbon_ndvi")
+      expect_equal(result$last_indicator, "indicateur_c2_ndvi")
       expect_equal(result$last_saved_at, "2026-01-01 12:00:00")
     }
   )
@@ -1391,7 +1391,7 @@ test_that("compute_single_indicator returns placeholder for non-existent functio
 
 test_that("normalize_indicator handles NA values", {
   values <- c(0, NA, 75, 150)
-  normalized <- nemeton:::normalize_indicator("carbon_biomass", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_c1_biomasse", values)
 
   expect_equal(normalized[1], 0)
   expect_true(is.na(normalized[2]))
@@ -1401,17 +1401,17 @@ test_that("normalize_indicator handles NA values", {
 
 test_that("normalize_indicator handles negative values", {
   values <- c(-50, 0, 50, 100)
-  normalized <- nemeton:::normalize_indicator("carbon_biomass", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_c1_biomasse", values)
 
   # Negative values should be clamped to 0
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 0)
 })
 
-test_that("normalize_indicator handles water_network correctly", {
-  # water_network: ref_max = 50 m/ha
+test_that("normalize_indicator handles indicateur_w1_reseau correctly", {
+  # indicateur_w1_reseau: ref_max = 50 m/ha
   values <- c(0, 25, 50, 100)
-  normalized <- nemeton:::normalize_indicator("water_network", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_w1_reseau", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -1419,10 +1419,10 @@ test_that("normalize_indicator handles water_network correctly", {
   expect_equal(normalized[4], 100)  # Capped
 })
 
-test_that("normalize_indicator handles water_wetlands correctly", {
-  # water_wetlands: ref_max = 5%
+test_that("normalize_indicator handles indicateur_w2_zones_humides correctly", {
+  # indicateur_w2_zones_humides: ref_max = 5%
   values <- c(0, 2.5, 5, 10)
-  normalized <- nemeton:::normalize_indicator("water_wetlands", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_w2_zones_humides", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -1430,10 +1430,10 @@ test_that("normalize_indicator handles water_wetlands correctly", {
   expect_equal(normalized[4], 100)  # Capped
 })
 
-test_that("normalize_indicator handles social_accessibility inverse", {
-  # social_accessibility: 0m -> 100, 2000m -> 0
+test_that("normalize_indicator handles indicateur_s2_bati inverse", {
+  # indicateur_s2_bati: 0m -> 100, 2000m -> 0
   values <- c(0, 500, 1000, 2000, 4000)
-  normalized <- nemeton:::normalize_indicator("social_accessibility", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_s2_bati", values)
 
   expect_equal(normalized[1], 100)
   expect_equal(normalized[2], 75)
@@ -1442,10 +1442,10 @@ test_that("normalize_indicator handles social_accessibility inverse", {
   expect_equal(normalized[5], 0)  # Clamped at 0
 })
 
-test_that("normalize_indicator handles production_volume correctly", {
-  # production_volume: ref_max = 800 m3/ha
+test_that("normalize_indicator handles indicateur_p1_volume correctly", {
+  # indicateur_p1_volume: ref_max = 800 m3/ha
   values <- c(0, 400, 800, 1200)
-  normalized <- nemeton:::normalize_indicator("production_volume", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_p1_volume", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -1453,10 +1453,10 @@ test_that("normalize_indicator handles production_volume correctly", {
   expect_equal(normalized[4], 100)  # Capped
 })
 
-test_that("normalize_indicator handles energy_wood correctly", {
-  # energy_wood: ref_max = 0.3 tep/ha/yr
+test_that("normalize_indicator handles indicateur_e1_bois_energie correctly", {
+  # indicateur_e1_bois_energie: ref_max = 0.3 tep/ha/yr
   values <- c(0, 0.15, 0.3, 0.6)
-  normalized <- nemeton:::normalize_indicator("energy_wood", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_e1_bois_energie", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -1464,10 +1464,10 @@ test_that("normalize_indicator handles energy_wood correctly", {
   expect_equal(normalized[4], 100)  # Capped
 })
 
-test_that("normalize_indicator handles energy_co2 correctly", {
-  # energy_co2: ref_max = 0.75 tCO2/ha/yr
+test_that("normalize_indicator handles indicateur_e2_evitement correctly", {
+  # indicateur_e2_evitement: ref_max = 0.75 tCO2/ha/yr
   values <- c(0, 0.375, 0.75, 1.5)
-  normalized <- nemeton:::normalize_indicator("energy_co2", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_e2_evitement", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 50)
@@ -1476,9 +1476,9 @@ test_that("normalize_indicator handles energy_co2 correctly", {
 })
 
 test_that("normalize_indicator passes through 0-100 indicators with clamping", {
-  # biodiversity_protection already returns 0-100, just clamp
+  # indicateur_b1_protection already returns 0-100, just clamp
   values <- c(-20, 0, 50, 100, 150)
-  normalized <- nemeton:::normalize_indicator("biodiversity_protection", values)
+  normalized <- nemeton:::normalize_indicator("indicateur_b1_protection", values)
 
   expect_equal(normalized[1], 0)
   expect_equal(normalized[2], 0)
@@ -1772,14 +1772,14 @@ test_that("init_compute_state handles list input for computed_indicators", {
     get_computation_progress = function(id) {
       # Simulate JSON read returning a list instead of character vector
       list(
-        computed_indicators = list("carbon_biomass", "carbon_ndvi"),
+        computed_indicators = list("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         last_saved_at = "2026-01-01 12:00:00"
       )
     },
     {
       state <- nemeton:::init_compute_state(
         "test_project",
-        c("carbon_biomass", "carbon_ndvi", "water_network")
+        c("indicateur_c1_biomasse", "indicateur_c2_ndvi", "indicateur_w1_reseau")
       )
 
       expect_equal(state$indicators_completed, 2)
@@ -1800,7 +1800,7 @@ test_that("init_compute_state handles empty list for computed_indicators", {
     {
       state <- nemeton:::init_compute_state(
         "test_project",
-        c("carbon_biomass", "carbon_ndvi")
+        c("indicateur_c1_biomasse", "indicateur_c2_ndvi")
       )
 
       expect_equal(state$indicators_completed, 0)
@@ -1822,7 +1822,7 @@ test_that("init_compute_state handles NULL computed_indicators", {
     {
       state <- nemeton:::init_compute_state(
         "test_project",
-        c("carbon_biomass", "carbon_ndvi")
+        c("indicateur_c1_biomasse", "indicateur_c2_ndvi")
       )
 
       expect_equal(state$indicators_completed, 0)
@@ -1842,7 +1842,7 @@ test_that("save_indicators_incremental returns FALSE for missing project", {
       result <- nemeton:::save_indicators_incremental(
         "nonexistent",
         data.frame(id = 1),
-        "carbon_biomass"
+        "indicateur_c1_biomasse"
       )
       expect_false(result)
     }
@@ -1860,7 +1860,7 @@ test_that("save_indicators_incremental handles data.frame without geometry", {
 
   mock_results <- data.frame(
     id = c("p1", "p2"),
-    carbon_biomass = c(50, 75)
+    indicateur_c1_biomasse = c(50, 75)
   )
 
   with_mocked_bindings(
@@ -1870,7 +1870,7 @@ test_that("save_indicators_incremental handles data.frame without geometry", {
       result <- suppressWarnings(nemeton:::save_indicators_incremental(
         "test_project",
         mock_results,
-        "carbon_biomass"
+        "indicateur_c1_biomasse"
       ))
       # The function should handle data.frame and return FALSE due to missing geometry_wkt
       # or succeed after warning
@@ -1895,7 +1895,7 @@ test_that("save_indicators_incremental handles sf object correctly", {
     sf::st_polygon(list(matrix(c(0,0, 1,0, 1,1, 0,1, 0,0), ncol = 2, byrow = TRUE))),
     crs = 4326
   )
-  mock_results <- sf::st_sf(id = "p1", carbon_biomass = 50, geometry = mock_geom)
+  mock_results <- sf::st_sf(id = "p1", indicateur_c1_biomasse = 50, geometry = mock_geom)
 
   with_mocked_bindings(
     get_project_path = function(id) project_dir,
@@ -1903,7 +1903,7 @@ test_that("save_indicators_incremental handles sf object correctly", {
       result <- nemeton:::save_indicators_incremental(
         "test_project",
         mock_results,
-        "carbon_biomass"
+        "indicateur_c1_biomasse"
       )
       expect_true(result)
       expect_true(file.exists(file.path(data_dir, "indicators.parquet")))
@@ -2001,7 +2001,7 @@ test_that("start_computation handles empty parcels file", {
     get_computation_progress = function(id) list(computed_indicators = character(0)),
     update_project_status = function(id, status) invisible(NULL),
     {
-      result <- nemeton:::start_computation("test_project", indicators = "carbon_biomass")
+      result <- nemeton:::start_computation("test_project", indicators = "indicateur_c1_biomasse")
 
       expect_false(result$success)
       expect_equal(result$state$status, "error")
@@ -2046,7 +2046,7 @@ test_that("start_computation handles cancellation during download phase", {
     },
     is_cancelled = function(id) TRUE,  # Always cancelled
     {
-      result <- nemeton:::start_computation("test_project", indicators = "carbon_biomass")
+      result <- nemeton:::start_computation("test_project", indicators = "indicateur_c1_biomasse")
 
       expect_false(result$success)
       expect_equal(result$state$status, "cancelled")
@@ -2117,7 +2117,7 @@ test_that("compute_all_indicators skips already computed indicators with values"
 
   # Create existing results with one computed indicator
   existing_results <- mock_parcels
-  existing_results$carbon_biomass <- 75  # Already computed
+  existing_results$indicateur_c1_biomasse <- 75  # Already computed
 
   mock_layers <- structure(
     list(rasters = list(), vectors = list(), point_clouds = list(),
@@ -2140,14 +2140,14 @@ test_that("compute_all_indicators skips already computed indicators with values"
       result <- nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass", "carbon_ndvi"),
+        indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         progress_callback = NULL,
         project_id = "test"
       )
 
-      # carbon_biomass should be skipped, only carbon_ndvi computed
+      # indicateur_c1_biomasse should be skipped, only indicateur_c2_ndvi computed
       expect_equal(compute_calls, 1)
-      expect_equal(result$carbon_biomass, 75)  # Original value preserved
+      expect_equal(result$indicateur_c1_biomasse, 75)  # Original value preserved
     }
   )
 })
@@ -2163,7 +2163,7 @@ test_that("compute_all_indicators recomputes all-zero indicators", {
 
   # Create existing results with an all-zero indicator
   existing_results <- mock_parcels
-  existing_results$carbon_biomass <- 0  # All zero - should recompute
+  existing_results$indicateur_c1_biomasse <- 0  # All zero - should recompute
 
   mock_layers <- structure(
     list(rasters = list(), vectors = list(), point_clouds = list(),
@@ -2186,14 +2186,14 @@ test_that("compute_all_indicators recomputes all-zero indicators", {
       result <- nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass"),
+        indicators = c("indicateur_c1_biomasse"),
         progress_callback = NULL,
         project_id = "test"
       )
 
-      # carbon_biomass was all-zero so should be recomputed
+      # indicateur_c1_biomasse was all-zero so should be recomputed
       expect_equal(compute_calls, 1)
-      expect_equal(result$carbon_biomass, 50)  # New computed value
+      expect_equal(result$indicateur_c1_biomasse, 50)  # New computed value
     }
   )
 })
@@ -2243,66 +2243,66 @@ test_that("get_global_cache_dir uses fallback without rappdirs", {
 # normalize_indicator Tests
 # ==============================================================================
 
-test_that("normalize_indicator scales carbon_biomass correctly", {
+test_that("normalize_indicator scales indicateur_c1_biomasse correctly", {
   # ref_max = 150: 75 tC/ha -> 50%
-  result <- nemeton:::normalize_indicator("carbon_biomass", c(0, 75, 150, 300))
+  result <- nemeton:::normalize_indicator("indicateur_c1_biomasse", c(0, 75, 150, 300))
   expect_equal(result, c(0, 50, 100, 100))
 })
 
-test_that("normalize_indicator scales carbon_ndvi 0-1 to 0-100", {
-  result <- nemeton:::normalize_indicator("carbon_ndvi", c(0, 0.5, 1.0))
+test_that("normalize_indicator scales indicateur_c2_ndvi 0-1 to 0-100", {
+  result <- nemeton:::normalize_indicator("indicateur_c2_ndvi", c(0, 0.5, 1.0))
   expect_equal(result, c(0, 50, 100))
 })
 
-test_that("normalize_indicator scales water_twi with offset", {
+test_that("normalize_indicator scales indicateur_w3_humidite with offset", {
   # TWI: (values - 2.5) / 2 * 100
-  result <- nemeton:::normalize_indicator("water_twi", c(2.5, 3.5, 4.5))
+  result <- nemeton:::normalize_indicator("indicateur_w3_humidite", c(2.5, 3.5, 4.5))
   expect_equal(result, c(0, 50, 100))
 })
 
-test_that("normalize_indicator inverts social_trails distance", {
+test_that("normalize_indicator inverts indicateur_s1_routes distance", {
   # 0m -> 100, 2000m -> 0
-  result <- nemeton:::normalize_indicator("social_trails", c(0, 1000, 2000))
+  result <- nemeton:::normalize_indicator("indicateur_s1_routes", c(0, 1000, 2000))
   expect_equal(result, c(100, 50, 0))
 })
 
-test_that("normalize_indicator inverts social_accessibility distance", {
-  result <- nemeton:::normalize_indicator("social_accessibility", c(0, 1000, 2000))
+test_that("normalize_indicator inverts indicateur_s2_bati distance", {
+  result <- nemeton:::normalize_indicator("indicateur_s2_bati", c(0, 1000, 2000))
   expect_equal(result, c(100, 50, 0))
 })
 
 test_that("normalize_indicator clamps already-normalized indicators", {
   # biodiversity indicators return 0-100, just clamped
-  result <- nemeton:::normalize_indicator("biodiversity_protection", c(-10, 50, 110))
+  result <- nemeton:::normalize_indicator("indicateur_b1_protection", c(-10, 50, 110))
   expect_equal(result, c(0, 50, 100))
 })
 
-test_that("normalize_indicator scales water_network correctly", {
+test_that("normalize_indicator scales indicateur_w1_reseau correctly", {
   # ref_max = 50: 25 m/ha -> 50
-  result <- nemeton:::normalize_indicator("water_network", c(0, 25, 50, 100))
+  result <- nemeton:::normalize_indicator("indicateur_w1_reseau", c(0, 25, 50, 100))
   expect_equal(result, c(0, 50, 100, 100))
 })
 
-test_that("normalize_indicator scales production_volume correctly", {
+test_that("normalize_indicator scales indicateur_p1_volume correctly", {
   # ref_max = 800: 400 m3/ha -> 50
-  result <- nemeton:::normalize_indicator("production_volume", c(0, 400, 800))
+  result <- nemeton:::normalize_indicator("indicateur_p1_volume", c(0, 400, 800))
   expect_equal(result, c(0, 50, 100))
 })
 
 test_that("normalize_indicator handles NA values", {
-  result <- nemeton:::normalize_indicator("carbon_biomass", c(NA, 75, NA))
+  result <- nemeton:::normalize_indicator("indicateur_c1_biomasse", c(NA, 75, NA))
   expect_true(is.na(result[1]))
   expect_equal(result[2], 50)
   expect_true(is.na(result[3]))
 })
 
 test_that("normalize_indicator scales energy indicators", {
-  # energy_wood ref_max = 0.3
-  result <- nemeton:::normalize_indicator("energy_wood", c(0, 0.15, 0.3))
+  # indicateur_e1_bois_energie ref_max = 0.3
+  result <- nemeton:::normalize_indicator("indicateur_e1_bois_energie", c(0, 0.15, 0.3))
   expect_equal(result, c(0, 50, 100))
 
-  # energy_co2 ref_max = 0.75
-  result2 <- nemeton:::normalize_indicator("energy_co2", c(0, 0.375, 0.75))
+  # indicateur_e2_evitement ref_max = 0.75
+  result2 <- nemeton:::normalize_indicator("indicateur_e2_evitement", c(0, 0.375, 0.75))
   expect_equal(result2, c(0, 50, 100))
 })
 
@@ -2312,13 +2312,13 @@ test_that("normalize_indicator scales energy indicators", {
 
 test_that("compute_single_indicator dispatches to correct function", {
   # Test that the function lookup works for a few indicators
-  expect_true(exists("indicator_carbon_biomass", mode = "function", envir = asNamespace("nemeton")))
-  expect_true(exists("indicator_carbon_ndvi", mode = "function", envir = asNamespace("nemeton")))
-  expect_true(exists("indicator_water_network", mode = "function", envir = asNamespace("nemeton")))
-  expect_true(exists("indicator_landscape_fragmentation", mode = "function", envir = asNamespace("nemeton")))
-  expect_true(exists("indicator_fertility_erosion", mode = "function", envir = asNamespace("nemeton")))
-  expect_true(exists("indicator_energy_wood", mode = "function", envir = asNamespace("nemeton")))
-  expect_true(exists("indicator_social_population", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_c1_biomasse", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_c2_ndvi", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_w1_reseau", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_l2_fragmentation", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_f2_erosion", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_e1_bois_energie", mode = "function", envir = asNamespace("nemeton")))
+  expect_true(exists("indicateur_s3_population", mode = "function", envir = asNamespace("nemeton")))
 })
 
 # ==============================================================================
@@ -2434,12 +2434,12 @@ test_that("save_progress_state and read_progress_state roundtrip", {
       phase = "indicators",
       progress = 5,
       progress_max = 41,
-      current_task = "carbon_biomass",
+      current_task = "indicateur_c1_biomasse",
       indicators_total = 31,
       indicators_completed = 5,
       indicators_skipped = 0L,
       indicators_failed = 0L,
-      indicators_status = list(carbon_biomass = "completed"),
+      indicators_status = list(indicateur_c1_biomasse = "completed"),
       errors = list(),
       started_at = Sys.time(),
       completed_at = NULL
@@ -2591,8 +2591,8 @@ test_that("get_computation_progress reads saved progress", {
 
     # Write progress JSON directly
     progress <- list(
-      computed_indicators = list("carbon_biomass", "water_twi"),
-      last_indicator = "water_twi",
+      computed_indicators = list("indicateur_c1_biomasse", "indicateur_w3_humidite"),
+      last_indicator = "indicateur_w3_humidite",
       last_saved_at = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
     )
     jsonlite::write_json(progress, file.path(data_dir, "compute_progress.json"),
@@ -3419,7 +3419,7 @@ test_that("download_ign_bdtopo handles HTTP error gracefully", {
       },
       .package = "happign",
       {
-        result <- suppressWarnings(nemeton:::download_ign_bdtopo("water_network", bbox, cache_file))
+        result <- suppressWarnings(nemeton:::download_ign_bdtopo("indicateur_w1_reseau", bbox, cache_file))
         expect_null(result)
       }
     )
@@ -4134,7 +4134,7 @@ test_that("compute_single_indicator dispatches to existing function", {
 
   # Test that a known indicator can be dispatched (even with no data)
   result <- tryCatch(
-    nemeton:::compute_single_indicator("carbon_biomass", mock_parcels, mock_layers),
+    nemeton:::compute_single_indicator("indicateur_c1_biomasse", mock_parcels, mock_layers),
     error = function(e) NULL
   )
 
@@ -4212,7 +4212,7 @@ test_that("start_computation succeeds with all mocked functions", {
     },
     is_cancelled = function(id) FALSE,
     compute_all_indicators = function(parcels, layers, indicators, progress_callback, project_id) {
-      parcels$carbon_biomass <- 75.5
+      parcels$indicateur_c1_biomasse <- 75.5
       parcels
     },
     save_indicators = function(project_id, results) TRUE,
@@ -4220,13 +4220,13 @@ test_that("start_computation succeeds with all mocked functions", {
     {
       result <- nemeton:::start_computation(
         "test_project",
-        indicators = "carbon_biomass"
+        indicators = "indicateur_c1_biomasse"
       )
 
       expect_true(result$success)
       expect_equal(result$state$status, "completed")
       expect_equal(result$state$phase, "complete")
-      expect_true("carbon_biomass" %in% names(result$results))
+      expect_true("indicateur_c1_biomasse" %in% names(result$results))
     }
   )
 
@@ -4264,7 +4264,7 @@ test_that("start_computation uses provided project_path", {
     },
     is_cancelled = function(id) FALSE,
     compute_all_indicators = function(parcels, layers, indicators, progress_callback, project_id) {
-      parcels$carbon_biomass <- 80
+      parcels$indicateur_c1_biomasse <- 80
       parcels
     },
     save_indicators = function(project_id, results) TRUE,
@@ -4272,7 +4272,7 @@ test_that("start_computation uses provided project_path", {
     {
       result <- nemeton:::start_computation(
         "test_project",
-        indicators = "carbon_biomass",
+        indicators = "indicateur_c1_biomasse",
         project_path = project_dir
       )
 
@@ -4324,7 +4324,7 @@ test_that("start_computation propagates download warnings", {
     },
     is_cancelled = function(id) FALSE,
     compute_all_indicators = function(parcels, layers, indicators, progress_callback, project_id) {
-      parcels$carbon_biomass <- 60
+      parcels$indicateur_c1_biomasse <- 60
       parcels
     },
     save_indicators = function(project_id, results) TRUE,
@@ -4332,7 +4332,7 @@ test_that("start_computation propagates download warnings", {
     {
       result <- nemeton:::start_computation(
         "test_project",
-        indicators = "carbon_biomass",
+        indicators = "indicateur_c1_biomasse",
         progress_callback = progress_cb
       )
 
@@ -4384,13 +4384,13 @@ test_that("start_computation handles cancellation after compute phase", {
       cancel_count > 1
     },
     compute_all_indicators = function(parcels, layers, indicators, progress_callback, project_id) {
-      parcels$carbon_biomass <- 60
+      parcels$indicateur_c1_biomasse <- 60
       parcels
     },
     {
       result <- nemeton:::start_computation(
         "test_project",
-        indicators = "carbon_biomass"
+        indicators = "indicateur_c1_biomasse"
       )
 
       expect_false(result$success)
@@ -4435,7 +4435,7 @@ test_that("start_computation with use_file_progress writes progress file", {
     },
     is_cancelled = function(id) FALSE,
     compute_all_indicators = function(parcels, layers, indicators, progress_callback, project_id) {
-      parcels$carbon_biomass <- 55
+      parcels$indicateur_c1_biomasse <- 55
       parcels
     },
     save_indicators = function(project_id, results) TRUE,
@@ -4443,7 +4443,7 @@ test_that("start_computation with use_file_progress writes progress file", {
     {
       result <- nemeton:::start_computation(
         "test_project",
-        indicators = "carbon_biomass",
+        indicators = "indicateur_c1_biomasse",
         use_file_progress = TRUE
       )
 
@@ -4478,8 +4478,8 @@ test_that("save_indicators_incremental tracks computed indicators in progress", 
   )
   mock_results <- sf::st_sf(
     id = "p1",
-    carbon_biomass = 75.0,
-    carbon_ndvi = 0.65,
+    indicateur_c1_biomasse = 75.0,
+    indicateur_c2_ndvi = 0.65,
     geometry = mock_geom
   )
 
@@ -4489,7 +4489,7 @@ test_that("save_indicators_incremental tracks computed indicators in progress", 
       result <- nemeton:::save_indicators_incremental(
         "test_project",
         mock_results,
-        "carbon_ndvi"
+        "indicateur_c2_ndvi"
       )
       expect_true(result)
 
@@ -4497,9 +4497,9 @@ test_that("save_indicators_incremental tracks computed indicators in progress", 
       progress_path <- file.path(data_dir, "compute_progress.json")
       expect_true(file.exists(progress_path))
       progress <- jsonlite::read_json(progress_path)
-      expect_equal(progress$last_indicator, "carbon_ndvi")
-      expect_true("carbon_biomass" %in% unlist(progress$computed_indicators))
-      expect_true("carbon_ndvi" %in% unlist(progress$computed_indicators))
+      expect_equal(progress$last_indicator, "indicateur_c2_ndvi")
+      expect_true("indicateur_c1_biomasse" %in% unlist(progress$computed_indicators))
+      expect_true("indicateur_c2_ndvi" %in% unlist(progress$computed_indicators))
     }
   )
 
@@ -4521,7 +4521,7 @@ test_that("save_indicators_incremental handles write error gracefully", {
                                ncol = 2, byrow = TRUE))),
     crs = 4326
   )
-  mock_results <- sf::st_sf(id = "p1", carbon_biomass = 50, geometry = mock_geom)
+  mock_results <- sf::st_sf(id = "p1", indicateur_c1_biomasse = 50, geometry = mock_geom)
 
   # Use local_mocked_bindings for nemeton package, then separately mock arrow
   local_mocked_bindings(
@@ -4536,7 +4536,7 @@ test_that("save_indicators_incremental handles write error gracefully", {
       result <- suppressWarnings(nemeton:::save_indicators_incremental(
         "test_project",
         mock_results,
-        "carbon_biomass"
+        "indicateur_c1_biomasse"
       ))
       expect_false(result)
     }
@@ -4564,7 +4564,7 @@ test_that("compute_all_indicators handles NULL existing results with mismatched 
   # Existing results with different row count
   existing_results <- sf::st_sf(
     id = "p1",
-    carbon_biomass = 50,
+    indicateur_c1_biomasse = 50,
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
                                  ncol = 2, byrow = TRUE))),
@@ -4590,7 +4590,7 @@ test_that("compute_all_indicators handles NULL existing results with mismatched 
       result <- nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass"),
+        indicators = c("indicateur_c1_biomasse"),
         progress_callback = NULL,
         project_id = "test"
       )
@@ -4612,7 +4612,7 @@ test_that("compute_all_indicators reports skipped indicators in progress", {
   mock_parcels <- sf::st_sf(id = "p1", geometry = mock_geom)
 
   existing_results <- mock_parcels
-  existing_results$carbon_biomass <- 75
+  existing_results$indicateur_c1_biomasse <- 75
 
   mock_layers <- structure(
     list(rasters = list(), vectors = list(), point_clouds = list(),
@@ -4637,7 +4637,7 @@ test_that("compute_all_indicators reports skipped indicators in progress", {
       result <- nemeton:::compute_all_indicators(
         parcels = mock_parcels,
         layers = mock_layers,
-        indicators = c("carbon_biomass", "carbon_ndvi"),
+        indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         progress_callback = progress_cb,
         project_id = "test"
       )

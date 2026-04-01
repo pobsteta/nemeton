@@ -27,7 +27,7 @@ NULL
 #' @return sf object with added column N1 (score 0-100, 100 = very remote)
 #'
 #' @export
-indicator_naturalness_distance <- function(units,
+indicateur_n1_distance <- function(units,
                                            roads = NULL,
                                            buildings = NULL,
                                            layers = NULL,
@@ -97,7 +97,7 @@ indicator_naturalness_distance <- function(units,
 #' @return sf object with added column N2 (score 0-100)
 #'
 #' @export
-indicator_naturalness_continuity <- function(units,
+indicateur_n2_continuite <- function(units,
                                              bdforet = NULL,
                                              foret_ancienne = NULL,
                                              layers = NULL,
@@ -192,7 +192,7 @@ indicator_naturalness_continuity <- function(units,
 #' @return sf object with added column N3 (score 0-100)
 #'
 #' @export
-indicator_naturalness_composite <- function(units,
+indicateur_n3_naturalite <- function(units,
                                             column_name = "N3",
                                             lang = "en") {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)

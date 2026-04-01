@@ -141,35 +141,35 @@ test_that("Carbon family has correct indicators and column_names", {
   c_fam <- nemeton:::INDICATOR_FAMILIES[["C"]]
   expect_equal(c_fam$code, "C")
   expect_equal(c_fam$indicators, c("C1", "C2"))
-  expect_equal(c_fam$column_names, c("carbon_biomass", "carbon_ndvi"))
+  expect_equal(c_fam$column_names, c("indicateur_c1_biomasse", "indicateur_c2_ndvi"))
 })
 
 test_that("Biodiversity family has 3 indicators", {
   b_fam <- nemeton:::INDICATOR_FAMILIES[["B"]]
   expect_equal(length(b_fam$indicators), 3)
   expect_equal(b_fam$indicators, c("B1", "B2", "B3"))
-  expect_equal(b_fam$column_names, c("biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity"))
+  expect_equal(b_fam$column_names, c("indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite"))
 })
 
 test_that("Risk family has 4 indicators", {
   r_fam <- nemeton:::INDICATOR_FAMILIES[["R"]]
   expect_equal(length(r_fam$indicators), 4)
   expect_equal(r_fam$indicators, c("R1", "R2", "R3", "R4"))
-  expect_equal(r_fam$column_names, c("risk_fire", "risk_storm", "risk_drought", "risk_browsing"))
+  expect_equal(r_fam$column_names, c("indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement"))
 })
 
 test_that("Water family has 3 indicators", {
   w_fam <- nemeton:::INDICATOR_FAMILIES[["W"]]
   expect_equal(length(w_fam$indicators), 3)
   expect_equal(w_fam$indicators, c("W1", "W2", "W3"))
-  expect_equal(w_fam$column_names, c("water_network", "water_wetlands", "water_twi"))
+  expect_equal(w_fam$column_names, c("indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite"))
 })
 
 test_that("Naturalness family has 3 indicators", {
   n_fam <- nemeton:::INDICATOR_FAMILIES[["N"]]
   expect_equal(length(n_fam$indicators), 3)
   expect_equal(n_fam$indicators, c("N1", "N2", "N3"))
-  expect_equal(n_fam$column_names, c("naturalness_distance", "naturalness_continuity", "naturalness_score"))
+  expect_equal(n_fam$column_names, c("indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"))
 })
 
 test_that("each family has indicator_labels for all its indicators", {
@@ -291,11 +291,11 @@ test_that("get_all_indicator_codes returns all indicator codes", {
 test_that("get_all_column_names returns all column names", {
   cols <- nemeton:::get_all_column_names()
   expect_true(length(cols) >= 29)
-  expect_true("carbon_biomass" %in% cols)
-  expect_true("carbon_ndvi" %in% cols)
-  expect_true("risk_browsing" %in% cols)
-  expect_true("naturalness_score" %in% cols)
-  expect_true("water_twi" %in% cols)
+  expect_true("indicateur_c1_biomasse" %in% cols)
+  expect_true("indicateur_c2_ndvi" %in% cols)
+  expect_true("indicateur_r4_abroutissement" %in% cols)
+  expect_true("indicateur_n3_naturalite" %in% cols)
+  expect_true("indicateur_w3_humidite" %in% cols)
 })
 
 # ===========================================================================
@@ -305,13 +305,13 @@ test_that("get_all_column_names returns all column names", {
 test_that("get_column_family_map maps long-form column names to families", {
   map <- nemeton:::get_column_family_map()
   expect_type(map, "character")
-  expect_equal(map[["carbon_biomass"]], "C")
-  expect_equal(map[["carbon_ndvi"]], "C")
-  expect_equal(map[["risk_fire"]], "R")
-  expect_equal(map[["risk_storm"]], "R")
-  expect_equal(map[["naturalness_score"]], "N")
-  expect_equal(map[["water_network"]], "W")
-  expect_equal(map[["landscape_fragmentation"]], "L")
+  expect_equal(map[["indicateur_c1_biomasse"]], "C")
+  expect_equal(map[["indicateur_c2_ndvi"]], "C")
+  expect_equal(map[["indicateur_r1_feu"]], "R")
+  expect_equal(map[["indicateur_r2_tempete"]], "R")
+  expect_equal(map[["indicateur_n3_naturalite"]], "N")
+  expect_equal(map[["indicateur_w1_reseau"]], "W")
+  expect_equal(map[["indicateur_l2_fragmentation"]], "L")
 })
 
 test_that("get_column_family_map maps short indicator codes to families", {
@@ -366,7 +366,7 @@ test_that("DATA_SOURCES vectors has expected entries", {
   vectors <- nemeton:::DATA_SOURCES$vectors
   expect_type(vectors, "list")
   expect_true("protected_areas" %in% names(vectors))
-  expect_true("water_network" %in% names(vectors))
+  expect_true("indicateur_w1_reseau" %in% names(vectors))
   expect_true("bdforet" %in% names(vectors))
   expect_true("roads" %in% names(vectors))
   expect_true("buildings" %in% names(vectors))

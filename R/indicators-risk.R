@@ -53,10 +53,10 @@ NULL
 #' units <- massif_demo_units
 #'
 #' dem <- rast("path/to/dem.tif")
-#' result <- indicator_risk_fire(units, dem = dem)
+#' result <- indicateur_r1_feu(units, dem = dem)
 #' summary(result$R1)
 #' }
-indicator_risk_fire <- function(units,
+indicateur_r1_feu <- function(units,
                                 dem = NULL,
                                 layers = NULL,
                                 bdforet = NULL,
@@ -95,7 +95,7 @@ indicator_risk_fire <- function(units,
       exposure_mean <- safe_extract(exposure,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       units$R1 <- pmin(pmax(exposure_mean * 100, 0), 100)
-      msg_info("indicator_risk_fire")
+      msg_info("indicateur_r1_feu")
       return(units)
     }, error = function(e) {
       cli::cli_alert_warning("R1: fireexposuR failed ({e$message}), using fallback")
@@ -158,7 +158,7 @@ indicator_risk_fire <- function(units,
     weights["climate"] * climate_factor
 
   units$R1 <- pmin(pmax(units$R1, 0), 100)
-  msg_info("indicator_risk_fire")
+  msg_info("indicateur_r1_feu")
   units
 }
 
@@ -204,10 +204,10 @@ indicator_risk_fire <- function(units,
 #' units <- massif_demo_units
 #' dem <- rast("path/to/dem.tif")
 #'
-#' result <- indicator_risk_storm(units, dem = dem)
+#' result <- indicateur_r2_tempete(units, dem = dem)
 #' summary(result$R2)
 #' }
-indicator_risk_storm <- function(units,
+indicateur_r2_tempete <- function(units,
                                  dem = NULL,
                                  layers = NULL) {
   # Validate inputs
@@ -246,7 +246,7 @@ indicator_risk_storm <- function(units,
       r2_mean <- safe_extract(r2_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
       units$R2 <- pmin(pmax(r2_mean * 100, 0), 100)
-      msg_info("indicator_risk_storm")
+      msg_info("indicateur_r2_tempete")
       return(units)
     }, error = function(e) {
       cli::cli_alert_warning("R2: microclima failed ({e$message}), using terrain fallback")
@@ -279,7 +279,7 @@ indicator_risk_storm <- function(units,
   r2_mean <- safe_extract(r2_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
   units$R2 <- pmin(pmax(r2_mean * 100, 0), 100)
-  msg_info("indicator_risk_storm")
+  msg_info("indicateur_r2_tempete")
   units
 }
 
@@ -333,10 +333,10 @@ indicator_risk_storm <- function(units,
 #' units <- massif_demo_units
 #' dem <- rast("path/to/dem.tif")
 #'
-#' result <- indicator_risk_drought(units, dem = dem)
+#' result <- indicateur_r3_secheresse(units, dem = dem)
 #' summary(result$R3)
 #' }
-indicator_risk_drought <- function(units,
+indicateur_r3_secheresse <- function(units,
                                    layers = NULL,
                                    dem = NULL,
                                    climate_data = NULL) {
@@ -448,7 +448,7 @@ indicator_risk_drought <- function(units,
     as_pure_sf(units), fun = "mean", progress = FALSE)
   units$R3 <- pmin(pmax(r3_mean * 100, 0), 100)
 
-  msg_info("indicator_risk_drought")
+  msg_info("indicateur_r3_secheresse")
   units
 }
 
@@ -504,10 +504,10 @@ indicator_risk_drought <- function(units,
 #' data(massif_demo_units)
 #' units <- massif_demo_units
 #'
-#' result <- indicator_risk_browsing(units)
+#' result <- indicateur_r4_abroutissement(units)
 #' summary(result$R4)
 #' }
-indicator_risk_browsing <- function(units,
+indicateur_r4_abroutissement <- function(units,
                                     layers = NULL,
                                     bdforet = NULL,
                                     game_density = NULL,
@@ -659,7 +659,7 @@ indicator_risk_browsing <- function(units,
   # Cap at 0-100
   units$R4 <- pmin(pmax(units$R4, 0), 100)
 
-  msg_info("indicator_risk_browsing")
+  msg_info("indicateur_r4_abroutissement")
 
   units
 }

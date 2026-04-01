@@ -13,7 +13,7 @@
 # indicators-temporal.R
 # ==============================================================================
 
-test_that("indicator_temporal_age handles CODE_TFV field", {
+test_that("indicateur_t1_anciennete handles CODE_TFV field", {
   units <- create_test_units(n_features = 2)
   bdforet <- sf::st_sf(
     CODE_TFV = c(
@@ -23,12 +23,12 @@ test_that("indicator_temporal_age handles CODE_TFV field", {
     geometry = sf::st_geometry(sf::st_buffer(units, 200))
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
-  result <- indicator_temporal_age(units, bdforet = bdforet)
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet)
   expect_type(result, "double")
   expect_length(result, 2)
 })
 
-test_that("indicator_temporal_age handles CRS mismatch with bdforet", {
+test_that("indicateur_t1_anciennete handles CRS mismatch with bdforet", {
   units <- create_test_units(n_features = 2)
   bdforet <- sf::st_sf(
     TFV = c(
@@ -41,12 +41,12 @@ test_that("indicator_temporal_age handles CRS mismatch with bdforet", {
     )
   )
   sf::st_crs(bdforet) <- sf::st_crs(4326)
-  result <- indicator_temporal_age(units, bdforet = bdforet)
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet)
   expect_type(result, "double")
   expect_length(result, 2)
 })
 
-test_that("indicator_temporal_age falls through when bdforet has no TFV field", {
+test_that("indicateur_t1_anciennete falls through when bdforet has no TFV field", {
   units <- create_test_units(n_features = 2)
   units$age <- c(30, 60)
   bdforet <- sf::st_sf(
@@ -54,24 +54,24 @@ test_that("indicator_temporal_age falls through when bdforet has no TFV field", 
     geometry = sf::st_geometry(sf::st_buffer(units, 200))
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
-  result <- indicator_temporal_age(units, bdforet = bdforet, age_field = "age")
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet, age_field = "age")
   expect_equal(result, c(30, 60))
 })
 
-test_that("indicator_temporal_age handles empty bdforet", {
+test_that("indicateur_t1_anciennete handles empty bdforet", {
   units <- create_test_units(n_features = 2)
   units$age <- c(30, 60)
   bdforet <- sf::st_sf(
     TFV = character(0),
     geometry = sf::st_sfc(crs = 2154)
   )
-  result <- indicator_temporal_age(units, bdforet = bdforet, age_field = "age")
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet, age_field = "age")
   expect_equal(result, c(30, 60))
 })
 
-test_that("indicator_temporal_age defaults to 50 when no data", {
+test_that("indicateur_t1_anciennete defaults to 50 when no data", {
   units <- create_test_units(n_features = 3)
-  result <- indicator_temporal_age(
+  result <- indicateur_t1_anciennete(
     units,
     age_field = NULL,
     establishment_year_field = NULL
@@ -79,10 +79,10 @@ test_that("indicator_temporal_age defaults to 50 when no data", {
   expect_equal(result, rep(50.0, 3))
 })
 
-test_that("indicator_temporal_age establishment year uses system year when current_year is NULL", {
+test_that("indicateur_t1_anciennete establishment year uses system year when current_year is NULL", {
   units <- create_test_units(n_features = 2)
   units$planted <- c(2000, 2010)
-  result <- indicator_temporal_age(
+  result <- indicateur_t1_anciennete(
     units,
     age_field = NULL,
     establishment_year_field = "planted"
@@ -91,7 +91,7 @@ test_that("indicator_temporal_age establishment year uses system year when curre
   expect_equal(result, c(current_year - 2000, current_year - 2010))
 })
 
-test_that("indicator_temporal_age uses NDVI proxy when available", {
+test_that("indicateur_t1_anciennete uses NDVI proxy when available", {
   units <- create_test_units(n_features = 2)
   ndvi_raster <- create_test_raster(values = "constant")
   terra::values(ndvi_raster) <- 0.5
@@ -109,7 +109,7 @@ test_that("indicator_temporal_age uses NDVI proxy when available", {
     .package = "nemeton"
   )
 
-  result <- indicator_temporal_age(units, layers = layers, age_field = NULL)
+  result <- indicateur_t1_anciennete(units, layers = layers, age_field = NULL)
   expect_type(result, "double")
   expect_length(result, 2)
   expect_true(all(result > 0))
@@ -132,43 +132,43 @@ test_that(".estimate_age_tfv maps TFV codes to ages correctly", {
   expect_equal(result, c(100, 100, 80, 80, 45, 45, 20, 15, 15, 50))
 })
 
-test_that("indicator_temporal_change uses N2 column when present", {
+test_that("indicateur_t2_changement uses N2 column when present", {
   units <- create_test_units(n_features = 3)
   units$N2 <- c(80, 50, 20)
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
   expect_equal(result, c(80, 50, 20))
 })
 
-test_that("indicator_temporal_change uses N2_anciennete column", {
+test_that("indicateur_t2_changement uses N2_anciennete column", {
   units <- create_test_units(n_features = 3)
   units$N2_anciennete <- c(90, 60, 30)
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
   expect_equal(result, c(90, 60, 30))
 })
 
-test_that("indicator_temporal_change caps N2 values to 0-100", {
+test_that("indicateur_t2_changement caps N2 values to 0-100", {
   units <- create_test_units(n_features = 3)
   units$N2 <- c(150, -10, 50)
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
   expect_equal(result, c(100, 0, 50))
 })
 
-test_that("indicator_temporal_change replaces NA t1_values with 50", {
+test_that("indicateur_t2_changement replaces NA t1_values with 50", {
   units <- create_test_units(n_features = 3)
-  result <- indicator_temporal_change(units, t1_values = c(80, NA, 120))
+  result <- indicateur_t2_changement(units, t1_values = c(80, NA, 120))
   expect_equal(result, c(80, 50, 100))
 })
 
-test_that("indicator_temporal_change uses T1 column from units", {
+test_that("indicateur_t2_changement uses T1 column from units", {
   units <- create_test_units(n_features = 3)
   units$T1 <- c(75, NA, 150)
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
   expect_equal(result, c(75, 50, 100))
 })
 
-test_that("indicator_temporal_change defaults to 50 when no data", {
+test_that("indicateur_t2_changement defaults to 50 when no data", {
   units <- create_test_units(n_features = 3)
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
   expect_equal(result, rep(50.0, 3))
 })
 
@@ -710,25 +710,25 @@ test_that("get_commune_geometry returns NULL for short code", {
 # indicators-social.R
 # ==============================================================================
 
-test_that("indicator_social_trails returns NA column without roads", {
+test_that("indicateur_s1_routes returns NA column without roads", {
   units <- create_test_units(n_features = 2)
-  result <- indicator_social_trails(units)
+  result <- indicateur_s1_routes(units)
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_true(all(is.na(result$S1)))
 })
 
-test_that("indicator_social_accessibility returns NA column without buildings", {
+test_that("indicateur_s2_bati returns NA column without buildings", {
   units <- create_test_units(n_features = 2)
-  result <- indicator_social_accessibility(units)
+  result <- indicateur_s2_bati(units)
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_true(all(is.na(result$S2)))
 })
 
-test_that("indicator_social_proximity computes buffer-based proximity", {
+test_that("indicateur_s3_population computes buffer-based proximity", {
   units <- create_test_units(n_features = 3)
-  result <- indicator_social_proximity(units)
+  result <- indicateur_s3_population(units)
 
   expect_s3_class(result, "sf")
   expect_true("S3" %in% names(result))
@@ -741,9 +741,9 @@ test_that("indicator_social_proximity computes buffer-based proximity", {
   expect_true(all(result$S3_10km >= result$S3_5km))
 })
 
-test_that("indicator_social_proximity respects custom buffer radii", {
+test_that("indicateur_s3_population respects custom buffer radii", {
   units <- create_test_units(n_features = 2)
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     units,
     buffer_radii = c(1000, 2000, 5000)
   )
@@ -752,7 +752,7 @@ test_that("indicator_social_proximity respects custom buffer radii", {
   expect_true(all(result$S3 > 0))
 })
 
-test_that("indicator_social_trails resolves roads from layers", {
+test_that("indicateur_s1_routes resolves roads from layers", {
   units <- create_test_units(n_features = 2)
   dem <- create_test_raster(values = "constant")
   roads <- create_test_vector(type = "lines")
@@ -774,57 +774,57 @@ test_that("indicator_social_trails resolves roads from layers", {
     .package = "nemeton"
   )
 
-  result <- indicator_social_trails(units, layers = layers)
+  result <- indicateur_s1_routes(units, layers = layers)
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   # With roads and DEM available, values should not all be NA
   expect_true(!all(is.na(result$S1)))
 })
 
-test_that("indicator_social_trails respects custom column_name", {
+test_that("indicateur_s1_routes respects custom column_name", {
   units <- create_test_units(n_features = 2)
-  result <- indicator_social_trails(units, column_name = "road_dist")
+  result <- indicateur_s1_routes(units, column_name = "road_dist")
   expect_true("road_dist" %in% names(result))
   expect_false("S1" %in% names(result))
 })
 
-test_that("indicator_social_accessibility respects custom column_name", {
+test_that("indicateur_s2_bati respects custom column_name", {
   units <- create_test_units(n_features = 2)
-  result <- indicator_social_accessibility(units, column_name = "bldg_dist")
+  result <- indicateur_s2_bati(units, column_name = "bldg_dist")
   expect_true("bldg_dist" %in% names(result))
   expect_false("S2" %in% names(result))
 })
 
-test_that("indicator_social_trails errors on non-sf input", {
+test_that("indicateur_s1_routes errors on non-sf input", {
   expect_error(
-    indicator_social_trails(data.frame(x = 1:3)),
+    indicateur_s1_routes(data.frame(x = 1:3)),
     "sf"
   )
 })
 
-test_that("indicator_social_accessibility errors on non-sf input", {
+test_that("indicateur_s2_bati errors on non-sf input", {
   expect_error(
-    indicator_social_accessibility(data.frame(x = 1:3)),
+    indicateur_s2_bati(data.frame(x = 1:3)),
     "sf"
   )
 })
 
-test_that("indicator_social_proximity errors on non-sf input", {
+test_that("indicateur_s3_population errors on non-sf input", {
   expect_error(
-    indicator_social_proximity(data.frame(x = 1:3)),
+    indicateur_s3_population(data.frame(x = 1:3)),
     "sf"
   )
 })
 
-test_that("indicator_social_proximity matches method argument", {
+test_that("indicateur_s3_population matches method argument", {
   units <- create_test_units(n_features = 2)
   # proxy is default, should work
-  result_proxy <- indicator_social_proximity(units, method = "proxy")
+  result_proxy <- indicateur_s3_population(units, method = "proxy")
   expect_s3_class(result_proxy, "sf")
 
   # invalid method should error
   expect_error(
-    indicator_social_proximity(units, method = "invalid_method")
+    indicateur_s3_population(units, method = "invalid_method")
   )
 })
 

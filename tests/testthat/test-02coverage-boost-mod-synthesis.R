@@ -29,18 +29,18 @@ test_that("mod_synthesis_server summary_table renders with valid data", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass", "carbon_ndvi"),
+    get_all_column_names = function() c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(75, 80, 65)
-      data$family_B <- c(50, 55, 60)
+      data$famille_carbone <- c(75, 80, 65)
+      data$famille_biodiversite <- c(50, 55, 60)
       data
     },
     {
       parcels <- make_synth_parcels(3)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2", "p3"),
-        carbon_biomass = c(50, 60, 70),
-        carbon_ndvi = c(0.7, 0.8, 0.6)
+        indicateur_c1_biomasse = c(50, 60, 70),
+        indicateur_c2_ndvi = c(0.7, 0.8, 0.6)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -77,17 +77,17 @@ test_that("mod_synthesis_server summary_table in French", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "fr"),
-    get_all_column_names = function() c("carbon_biomass", "carbon_ndvi"),
+    get_all_column_names = function() c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(70, 80)
+      data$famille_carbone <- c(70, 80)
       data
     },
     {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60),
-        carbon_ndvi = c(0.7, 0.8)
+        indicateur_c1_biomasse = c(50, 60),
+        indicateur_c2_ndvi = c(0.7, 0.8)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -128,16 +128,16 @@ test_that("mod_synthesis_server global_score green (score >= 60)", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(80, 90)
+      data$famille_carbone <- c(80, 90)
       data
     },
     {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(80, 90)
+        indicateur_c1_biomasse = c(80, 90)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -169,16 +169,16 @@ test_that("mod_synthesis_server global_score orange (40 <= score < 60)", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(45, 50)
+      data$famille_carbone <- c(45, 50)
       data
     },
     {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(45, 50)
+        indicateur_c1_biomasse = c(45, 50)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -210,16 +210,16 @@ test_that("mod_synthesis_server global_score red (score < 40)", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "fr"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(10, 20)
+      data$famille_carbone <- c(10, 20)
       data
     },
     {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(10, 20)
+        indicateur_c1_biomasse = c(10, 20)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -255,13 +255,13 @@ test_that("mod_synthesis_server global_score no family columns", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) data,  # No family_ columns added
     {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -297,9 +297,9 @@ test_that("mod_synthesis_server radar_plot renders with valid data", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(75, 80)
+      data$famille_carbone <- c(75, 80)
       data
     },
     nemeton_radar = function(data, mode, normalize, title) {
@@ -310,7 +310,7 @@ test_that("mod_synthesis_server radar_plot renders with valid data", {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -346,9 +346,9 @@ test_that("mod_synthesis_server project_indicators drops geometry from sf", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- 75
+      data$famille_carbone <- 75
       data
     },
     {
@@ -356,7 +356,7 @@ test_that("mod_synthesis_server project_indicators drops geometry from sf", {
       # Indicators as sf
       indicators <- sf::st_sf(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60),
+        indicateur_c1_biomasse = c(50, 60),
         geometry = parcels$geometry
       )
 
@@ -395,9 +395,9 @@ test_that("mod_synthesis_server family_scores joins on id column", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- 60
+      data$famille_carbone <- 60
       data
     },
     {
@@ -412,7 +412,7 @@ test_that("mod_synthesis_server family_scores joins on id column", {
       )
       indicators <- data.frame(
         id = c("a", "b"),
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -445,13 +445,13 @@ test_that("mod_synthesis_server family_scores handles create_family_index error"
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) stop("index computation failed"),
     {
       parcels <- make_synth_parcels(2)
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -695,9 +695,9 @@ test_that("mod_synthesis_server family_scores handles _norm columns", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass", "carbon_ndvi"),
+    get_all_column_names = function() c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
     create_family_index = function(data, ...) {
-      data$family_C <- c(70, 80)
+      data$famille_carbone <- c(70, 80)
       data
     },
     {
@@ -743,13 +743,13 @@ test_that("mod_synthesis_server family_scores handles empty merge", {
 
   with_mocked_bindings(.package = "nemeton",
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     {
       parcels <- make_synth_parcels(2)
       # Indicators with non-matching IDs
       indicators <- data.frame(
         nemeton_id = c("x1", "x2"),
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(

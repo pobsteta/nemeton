@@ -38,7 +38,7 @@ test_that("massif_demo_units has all 12 family composites in valid range", {
 
   data("massif_demo_units", package = "nemeton")
 
-  required_families <- paste0("family_", c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"))
+  required_families <- unname(nemeton:::FAMILLE_NMT_MAP[c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")])
 
   missing_families <- setdiff(required_families, names(massif_demo_units))
   expect_length(missing_families, 0)
@@ -193,7 +193,7 @@ test_that("massif_demo_layers works with nemeton_compute", {
   result <- nemeton_compute(
     massif_demo_units[1:3, ],
     layers,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     preprocess = TRUE
   )
 

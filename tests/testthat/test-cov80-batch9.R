@@ -10,7 +10,7 @@ library(testthat)
 # SOCIAL INDICATORS — additional coverage
 # ==============================================================================
 
-# --- S1: indicator_social_trails ---
+# --- S1: indicateur_s1_routes ---
 
 test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
   skip_if_not_installed("sf")
@@ -56,7 +56,7 @@ test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
     class = "nemeton_layers"
   )
 
-  result <- nemeton::indicator_social_trails(units = test_units, layers = layers)
+  result <- nemeton::indicateur_s1_routes(units = test_units, layers = layers)
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_false(is.na(result$S1[1]))
@@ -67,7 +67,7 @@ test_that("S1 with lang = 'fr' produces a valid result", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicator_social_trails(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_s1_routes(units = test_units, lang = "fr")
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   # Without DEM/roads -> NA
@@ -109,13 +109,13 @@ test_that("S1 with roads in different CRS triggers transform", {
     )
   )
 
-  result <- nemeton::indicator_social_trails(units = test_units, roads = roads_4326, dem = dem)
+  result <- nemeton::indicateur_s1_routes(units = test_units, roads = roads_4326, dem = dem)
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_false(is.na(result$S1[1]))
 })
 
-# --- S2: indicator_social_accessibility ---
+# --- S2: indicateur_s2_bati ---
 
 test_that("S2 with layers having lidar_mnt only and buildings", {
   skip_if_not_installed("sf")
@@ -165,7 +165,7 @@ test_that("S2 with layers having lidar_mnt only and buildings", {
     class = "nemeton_layers"
   )
 
-  result <- nemeton::indicator_social_accessibility(units = test_units, layers = layers)
+  result <- nemeton::indicateur_s2_bati(units = test_units, layers = layers)
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_false(is.na(result$S2[1]))
@@ -175,7 +175,7 @@ test_that("S2 with lang = 'fr' returns valid result (NA case)", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicator_social_accessibility(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_s2_bati(units = test_units, lang = "fr")
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_true(is.na(result$S2[1]))
@@ -221,7 +221,7 @@ test_that("S2 with buildings in different CRS triggers transform", {
     )
   )
 
-  result <- nemeton::indicator_social_accessibility(
+  result <- nemeton::indicateur_s2_bati(
     units = test_units,
     buildings = buildings_4326,
     dem = dem
@@ -231,7 +231,7 @@ test_that("S2 with buildings in different CRS triggers transform", {
   expect_false(is.na(result$S2[1]))
 })
 
-# --- S3: indicator_social_proximity ---
+# --- S3: indicateur_s3_population ---
 
 test_that("S3 buffer area calculation with different sized units", {
   skip_if_not_installed("sf")
@@ -254,8 +254,8 @@ test_that("S3 buffer area calculation with different sized units", {
     )
   )
 
-  res_small <- nemeton::indicator_social_proximity(small_unit, method = "proxy")
-  res_large <- nemeton::indicator_social_proximity(large_unit, method = "proxy")
+  res_small <- nemeton::indicateur_s3_population(small_unit, method = "proxy")
+  res_large <- nemeton::indicateur_s3_population(large_unit, method = "proxy")
 
   # Both should have valid results
   expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(res_small)))
@@ -269,7 +269,7 @@ test_that("S3 with very small buffer_radii still works", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicator_social_proximity(
+  result <- nemeton::indicateur_s3_population(
     test_units,
     method = "proxy",
     buffer_radii = c(100, 500, 1000)
@@ -286,7 +286,7 @@ test_that("S3 with single feature returns scalar S3", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicator_social_proximity(test_units, method = "proxy")
+  result <- nemeton::indicateur_s3_population(test_units, method = "proxy")
 
   expect_equal(nrow(result), 1)
   expect_equal(length(result$S3), 1)
@@ -298,7 +298,7 @@ test_that("S3 with custom column_name uses that name for primary indicator", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicator_social_proximity(
+  result <- nemeton::indicateur_s3_population(
     test_units,
     method = "proxy",
     column_name = "pop_pressure"
@@ -315,7 +315,7 @@ test_that("S3 msg_info is called with correct median values", {
   # Just make sure the function completes without error when msg_info is called
   test_units <- create_test_units(n_features = 3)
   expect_no_error(
-    nemeton::indicator_social_proximity(test_units, method = "proxy")
+    nemeton::indicateur_s3_population(test_units, method = "proxy")
   )
 })
 
@@ -324,7 +324,7 @@ test_that("S3 msg_info is called with correct median values", {
 # NATURALNESS INDICATORS — additional coverage
 # ==============================================================================
 
-# --- N1: indicator_naturalness_distance ---
+# --- N1: indicateur_n1_distance ---
 
 test_that("N1 with layers that have no roads or buildings keys returns defaults", {
   skip_if_not_installed("sf")
@@ -344,7 +344,7 @@ test_that("N1 with layers that have no roads or buildings keys returns defaults"
   )
   class(mock_layers) <- "nemeton_layers"
 
-  result <- nemeton::indicator_naturalness_distance(
+  result <- nemeton::indicateur_n1_distance(
     units = test_units,
     layers = mock_layers
   )
@@ -377,7 +377,7 @@ test_that("N1 layers argument ignored when not nemeton_layers class", {
     ))
   )
 
-  result <- nemeton::indicator_naturalness_distance(
+  result <- nemeton::indicateur_n1_distance(
     units = test_units,
     layers = fake_layers
   )
@@ -391,7 +391,7 @@ test_that("N1 with lang = 'fr' works correctly", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
-  result <- nemeton::indicator_naturalness_distance(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_n1_distance(units = test_units, lang = "fr")
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
   expect_true(all(!is.na(result$N1)))
@@ -429,7 +429,7 @@ test_that("N1 correctly transforms buildings in different CRS", {
   )
   buildings_4326 <- sf::st_transform(buildings_2154, 4326)
 
-  result <- nemeton::indicator_naturalness_distance(
+  result <- nemeton::indicateur_n1_distance(
     units = test_units,
     buildings = buildings_4326
   )
@@ -440,7 +440,7 @@ test_that("N1 correctly transforms buildings in different CRS", {
   expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
 })
 
-# --- N2: indicator_naturalness_continuity ---
+# --- N2: indicateur_n2_continuite ---
 
 test_that("N2 intersection error handling: tryCatch returns NULL on error", {
   skip_if_not_installed("sf")
@@ -469,7 +469,7 @@ test_that("N2 intersection error handling: tryCatch returns NULL on error", {
     .package = "sf"
   )
 
-  result <- nemeton::indicator_naturalness_continuity(
+  result <- nemeton::indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet
   )
@@ -498,7 +498,7 @@ test_that("N2 with foret_ancienne in different CRS", {
   )
   foret_ancienne_4326 <- sf::st_transform(foret_ancienne_2154, 4326)
 
-  result <- nemeton::indicator_naturalness_continuity(
+  result <- nemeton::indicateur_n2_continuite(
     units = test_units,
     foret_ancienne = foret_ancienne_4326
   )
@@ -530,7 +530,7 @@ test_that("N2 with non-overlapping bdforet returns score 15", {
     )
   )
 
-  result <- nemeton::indicator_naturalness_continuity(
+  result <- nemeton::indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet_far
   )
@@ -570,7 +570,7 @@ test_that("N2 with non-overlapping foret_ancienne but overlapping bdforet", {
     )
   )
 
-  result <- nemeton::indicator_naturalness_continuity(
+  result <- nemeton::indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet,
     foret_ancienne = foret_ancienne_far
@@ -610,7 +610,7 @@ test_that("N2 with both bdforet and foret_ancienne having multiple features", {
     )
   )
 
-  result <- nemeton::indicator_naturalness_continuity(
+  result <- nemeton::indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet,
     foret_ancienne = foret_ancienne
@@ -625,12 +625,12 @@ test_that("N2 lang = 'fr' works correctly", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
-  result <- nemeton::indicator_naturalness_continuity(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_n2_continuite(units = test_units, lang = "fr")
   # No data -> default 50
   expect_equal(result$N2[1], 50)
 })
 
-# --- N3: indicator_naturalness_composite ---
+# --- N3: indicateur_n3_naturalite ---
 
 test_that("N3 with pre-computed N1, N2, L1, and B3 columns", {
   skip_if_not_installed("sf")
@@ -649,7 +649,7 @@ test_that("N3 with pre-computed N1, N2, L1, and B3 columns", {
     )
   )
 
-  result <- nemeton::indicator_naturalness_composite(units = test_units)
+  result <- nemeton::indicateur_n3_naturalite(units = test_units)
 
   # Unit 1: 0.35*70 + 0.35*80 + 0.15*(100-10) + 0.15*60 = 24.5+28+13.5+9 = 75
   expect_equal(result$N3[1], 0.35 * 70 + 0.35 * 80 + 0.15 * 90 + 0.15 * 60)
@@ -672,7 +672,7 @@ test_that("N3 lang = 'fr' works correctly", {
     )
   )
 
-  result <- nemeton::indicator_naturalness_composite(units = test_units, lang = "fr")
+  result <- nemeton::indicateur_n3_naturalite(units = test_units, lang = "fr")
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
   expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 50 + 0.15 * 50
@@ -694,7 +694,7 @@ test_that("N3 preserves original columns", {
     )
   )
 
-  result <- nemeton::indicator_naturalness_composite(units = test_units)
+  result <- nemeton::indicateur_n3_naturalite(units = test_units)
 
   expect_true("id" %in% names(result))
   expect_true("name" %in% names(result))
@@ -771,13 +771,13 @@ test_that(".estimate_age_tfv handles single-element vector", {
   expect_equal(nemeton:::.estimate_age_tfv("xyz"), 50)
 })
 
-# --- T1: indicator_temporal_age ---
+# --- T1: indicateur_t1_anciennete ---
 
 test_that("T1 with establishment_year and auto current_year", {
   test_units <- create_test_units(n_features = 2)
   test_units$planting_year <- c(1900, 2000)
 
-  result <- nemeton::indicator_temporal_age(
+  result <- nemeton::indicateur_t1_anciennete(
     test_units,
     age_field = NULL,
     establishment_year_field = "planting_year"
@@ -795,7 +795,7 @@ test_that("T1 with explicit current_year for establishment_year", {
   test_units <- create_test_units(n_features = 3)
   test_units$yr <- c(1850, 1950, 2010)
 
-  result <- nemeton::indicator_temporal_age(
+  result <- nemeton::indicateur_t1_anciennete(
     test_units,
     age_field = NULL,
     establishment_year_field = "yr",
@@ -815,7 +815,7 @@ test_that("T1 BD Foret with CODE_TFV field name", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = bdforet)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -834,7 +834,7 @@ test_that("T1 BD Foret with lib_fv field name", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = bdforet)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -849,7 +849,7 @@ test_that("T1 BD Foret with ESSENCE field name", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(test_units)
 
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = bdforet)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet)
 
   expect_type(result, "double")
   expect_length(result, 1)
@@ -870,7 +870,7 @@ test_that("T1 BD Foret with no recognized TFV field returns default 50", {
   # No TFV/CODE_TFV/ESSENCE/etc. fields recognized
   # Falls through to Priority 2 (age_field), but "age" not in units
   # Falls to default 50
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = bdforet, age_field = NULL)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet, age_field = NULL)
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -889,7 +889,7 @@ test_that("T1 BD Foret with CRS mismatch triggers transform", {
   # Transform bdforet to 4326
   bdforet_4326 <- sf::st_transform(bdforet_2154, 4326)
 
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = bdforet_4326)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet_4326)
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -906,7 +906,7 @@ test_that("T1 BD Foret with empty sf (0 rows) falls through to age field", {
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = empty_bdforet, age_field = "age")
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = empty_bdforet, age_field = "age")
 
   expect_type(result, "double")
   expect_equal(result, c(80, 120))
@@ -928,7 +928,7 @@ test_that("T1 BD Foret intersection with 0-area result uses default 50", {
   )
 
   # Intersection should produce 0 rows (no overlap) -> default 50
-  result <- nemeton::indicator_temporal_age(test_units, bdforet = bdforet, age_field = NULL)
+  result <- nemeton::indicateur_t1_anciennete(test_units, bdforet = bdforet, age_field = NULL)
 
   expect_type(result, "double")
   expect_length(result, 1)
@@ -941,7 +941,7 @@ test_that("T1 priority chain: age_field takes precedence over establishment_year
   test_units$planted <- c(1900, 1800)
 
   # Both age and establishment_year available; age_field should win
-  result <- nemeton::indicator_temporal_age(
+  result <- nemeton::indicateur_t1_anciennete(
     test_units,
     age_field = "age",
     establishment_year_field = "planted"
@@ -953,7 +953,7 @@ test_that("T1 priority chain: age_field takes precedence over establishment_year
 test_that("T1 falls through to default 50 when no data at all", {
   test_units <- create_test_units(n_features = 3)
 
-  result <- nemeton::indicator_temporal_age(
+  result <- nemeton::indicateur_t1_anciennete(
     test_units,
     age_field = NULL,
     establishment_year_field = NULL
@@ -982,7 +982,7 @@ test_that("T1 resolves bdforet from nemeton_layers", {
     class = "nemeton_layers"
   )
 
-  result <- nemeton::indicator_temporal_age(test_units, layers = mock_layers, age_field = NULL)
+  result <- nemeton::indicateur_t1_anciennete(test_units, layers = mock_layers, age_field = NULL)
 
   expect_type(result, "double")
   expect_length(result, 2)
@@ -990,13 +990,13 @@ test_that("T1 resolves bdforet from nemeton_layers", {
   expect_true(all(result > 0))
 })
 
-# --- T2: indicator_temporal_change ---
+# --- T2: indicateur_t2_changement ---
 
 test_that("T2 uses N2_anciennet column (truncated name variant)", {
   test_units <- create_test_units(n_features = 3)
   test_units$N2_anciennet <- c(30, 70, 110)
 
-  result <- nemeton::indicator_temporal_change(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)
 
   # N2_anciennet found -> used as stability proxy, capped to 0-100
   expect_equal(result, c(30, 70, 100))
@@ -1006,7 +1006,7 @@ test_that("T2 with N2 column containing values > 100 are capped", {
   test_units <- create_test_units(n_features = 3)
   test_units$N2 <- c(-5, 50, 150)
 
-  result <- nemeton::indicator_temporal_change(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)
 
   # capped: pmin(pmax(t2, 0), 100)
   expect_equal(result, c(0, 50, 100))
@@ -1017,7 +1017,7 @@ test_that("T2 fallback to t1_values with NA values replaced by 50", {
   # No N2 columns
   t1 <- c(30, NA, 120, NA)
 
-  result <- nemeton::indicator_temporal_change(test_units, t1_values = t1)
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = t1)
 
   # t1_values used: capped at 100, NA -> 50
   expect_equal(result, c(30, 50, 100, 50))
@@ -1027,7 +1027,7 @@ test_that("T2 with T1 column in units (not t1_values argument)", {
   test_units <- create_test_units(n_features = 3)
   test_units$T1 <- c(25, NA, 90)
 
-  result <- nemeton::indicator_temporal_change(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)
 
   # T1 column used: capped at 100, NA -> 50
   expect_equal(result, c(25, 50, 90))
@@ -1036,7 +1036,7 @@ test_that("T2 with T1 column in units (not t1_values argument)", {
 test_that("T2 default 50 when no N2 or T1 available", {
   test_units <- create_test_units(n_features = 5)
 
-  result <- nemeton::indicator_temporal_change(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -1047,7 +1047,7 @@ test_that("T2 t1_values wrong length is ignored, falls through", {
   test_units <- create_test_units(n_features = 3)
 
   # t1_values has wrong length (2 instead of 3) -> not used
-  result <- nemeton::indicator_temporal_change(test_units, t1_values = c(40, 80))
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(40, 80))
 
   # Falls through to T1 column (not present) -> default 50
   expect_true(all(result == 50))
@@ -1057,7 +1057,7 @@ test_that("T2 t1_values non-numeric is ignored", {
   test_units <- create_test_units(n_features = 2)
 
   # t1_values is character -> not numeric -> not used
-  result <- nemeton::indicator_temporal_change(test_units, t1_values = c("a", "b"))
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c("a", "b"))
 
   # Falls through to default 50
   expect_true(all(result == 50))
@@ -1068,7 +1068,7 @@ test_that("T2 N2_anciennete takes priority over N2", {
   test_units$N2_anciennete <- c(85, 95)
   test_units$N2 <- c(30, 40)
 
-  result <- nemeton::indicator_temporal_change(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)
 
   # N2_anciennete found first in the loop -> used
   expect_equal(result, c(85, 95))
@@ -1079,7 +1079,7 @@ test_that("T2 priority: N2 column over T1 column", {
   test_units$N2 <- c(60, 80)
   test_units$T1 <- c(30, 40)
 
-  result <- nemeton::indicator_temporal_change(test_units)
+  result <- nemeton::indicateur_t2_changement(test_units)
 
   # N2 found -> used, T1 not reached
   expect_equal(result, c(60, 80))
@@ -1089,7 +1089,7 @@ test_that("T2 priority: t1_values argument over T1 column", {
   test_units <- create_test_units(n_features = 2)
   test_units$T1 <- c(30, 40)
 
-  result <- nemeton::indicator_temporal_change(test_units, t1_values = c(70, 90))
+  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(70, 90))
 
   # No N2 column -> t1_values used (correct length)
   expect_equal(result, c(70, 90))
@@ -1109,24 +1109,24 @@ test_that("T2 with layers parameter (interface consistency)", {
   )
 
   # layers is accepted but not used in T2
-  result <- nemeton::indicator_temporal_change(test_units, layers = mock_layers)
+  result <- nemeton::indicateur_t2_changement(test_units, layers = mock_layers)
 
   expect_equal(result, c(45, 75))
 })
 
 test_that("T2 validates sf input", {
   expect_error(
-    nemeton::indicator_temporal_change(data.frame(x = 1:3)),
+    nemeton::indicateur_t2_changement(data.frame(x = 1:3)),
     "must be.*sf"
   )
 
   expect_error(
-    nemeton::indicator_temporal_change("not sf"),
+    nemeton::indicateur_t2_changement("not sf"),
     "must be.*sf"
   )
 
   expect_error(
-    nemeton::indicator_temporal_change(NULL),
+    nemeton::indicateur_t2_changement(NULL),
     "must be.*sf"
   )
 })

@@ -426,14 +426,14 @@ test_that("translate_task_message handles compute:indicator_key format", {
   i18n_en <- nemeton:::get_i18n("en")
 
   # Test with indicator key
-  result_fr <- nemeton:::translate_task_message("compute:indicator_carbon_biomass", i18n_fr)
+  result_fr <- nemeton:::translate_task_message("compute:indicateur_c1_biomasse", i18n_fr)
   expect_true(grepl("Calcul", result_fr))
 
-  result_en <- nemeton:::translate_task_message("compute:indicator_carbon_biomass", i18n_en)
+  result_en <- nemeton:::translate_task_message("compute:indicateur_c1_biomasse", i18n_en)
   expect_true(grepl("Computing", result_en))
 
   # Test with another indicator
-  result <- nemeton:::translate_task_message("compute:indicator_water_twi", i18n_en)
+  result <- nemeton:::translate_task_message("compute:indicateur_w3_humidite", i18n_en)
   expect_true(grepl("Computing", result))
 })
 
@@ -557,7 +557,7 @@ test_that("All 12 family names are translated", {
   i18n_fr <- nemeton:::get_i18n("fr")
   i18n_en <- nemeton:::get_i18n("en")
 
-  family_keys <- paste0("family_", c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"))
+  family_keys <- unname(nemeton:::FAMILLE_NMT_MAP[c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")])
 
   for (key in family_keys) {
     expect_true(i18n_fr$has(key), info = paste("Missing FR:", key))
@@ -573,7 +573,7 @@ test_that("All 12 family descriptions are translated", {
   i18n_fr <- nemeton:::get_i18n("fr")
   i18n_en <- nemeton:::get_i18n("en")
 
-  family_desc_keys <- paste0("family_", c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"), "_desc")
+  family_desc_keys <- paste0(unname(nemeton:::FAMILLE_NMT_MAP[c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")]), "_desc")
 
   for (key in family_desc_keys) {
     expect_true(i18n_fr$has(key), info = paste("Missing FR desc:", key))

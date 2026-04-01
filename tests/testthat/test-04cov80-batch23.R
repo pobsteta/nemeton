@@ -690,7 +690,7 @@ test_that("mod_progress_server: translate_task compute indicator prefix", {
         nemeton:::mod_progress_server,
         args = list(compute_state = mock_compute_state, app_state = mock_app_state),
         {
-          result <- suppressWarnings(translate_task("compute:carbon_biomass"))
+          result <- suppressWarnings(translate_task("compute:indicateur_c1_biomasse"))
           expect_type(result, "character")
           expect_true(nchar(result) > 0)
         }
@@ -737,12 +737,12 @@ test_that("mod_progress_server: translate_indicator_name returns labels for know
         args = list(compute_state = mock_compute_state, app_state = mock_app_state),
         {
           known_keys <- c(
-            "carbon_biomass", "carbon_ndvi",
-            "biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity",
-            "water_network", "water_wetlands", "water_twi",
-            "risk_fire", "risk_storm", "risk_drought", "risk_browsing",
-            "social_trails", "social_accessibility",
-            "naturalness_distance", "naturalness_continuity", "naturalness_score"
+            "indicateur_c1_biomasse", "indicateur_c2_ndvi",
+            "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
+            "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
+            "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
+            "indicateur_s1_routes", "indicateur_s2_bati",
+            "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
           )
           for (key in known_keys) {
             label <- translate_indicator_name(key)
@@ -840,7 +840,7 @@ test_that("mod_progress_server: reset_tracking clears all tracking fields", {
             status = "computing", phase = "computing",
             progress = 3, progress_max = 10,
             indicators_completed = 3, indicators_failed = 0,
-            indicators_total = 10, current_task = "compute:carbon_biomass",
+            indicators_total = 10, current_task = "compute:indicateur_c1_biomasse",
             errors = list()
           )
           suppressWarnings(send_running_update(state))
@@ -923,18 +923,18 @@ test_that("mod_progress_server: completed state with indicator status table", {
         indicators_completed = 8, indicators_failed = 2, indicators_total = 10,
         current_task = NULL,
         errors = list(
-          list(indicator = "water_twi", message = "TWI error"),
-          list(indicator = "risk_fire", message = "Fire error")
+          list(indicator = "indicateur_w3_humidite", message = "TWI error"),
+          list(indicator = "indicateur_r1_feu", message = "Fire error")
         ),
         indicators_status = list(
-          carbon_biomass = "completed",
-          carbon_ndvi = "completed",
-          water_network = "completed",
-          water_twi = "failed",
-          risk_fire = "failed",
-          social_trails = "completed",
-          landscape_fragmentation = "completed",
-          naturalness_score = "completed"
+          indicateur_c1_biomasse = "completed",
+          indicateur_c2_ndvi = "completed",
+          indicateur_w1_reseau = "completed",
+          indicateur_w3_humidite = "failed",
+          indicateur_r1_feu = "failed",
+          indicateur_s1_routes = "completed",
+          indicateur_l2_fragmentation = "completed",
+          indicateur_n3_naturalite = "completed"
         )
       ))
       mock_app_state <- make_progress_app_state()
@@ -1051,7 +1051,7 @@ test_that("mod_progress_server: running state is ignored by terminal observer", 
         phase = "computing",
         progress = 5, progress_max = 10,
         indicators_completed = 5, indicators_failed = 0, indicators_total = 10,
-        current_task = "compute:carbon_biomass",
+        current_task = "compute:indicateur_c1_biomasse",
         errors = list()
       ))
       mock_app_state <- make_progress_app_state()
@@ -1144,16 +1144,16 @@ test_that("mod_progress_server: send_running_update with error toast (indicator 
             status = "computing", phase = "computing",
             progress = 2, progress_max = 10,
             indicators_completed = 2, indicators_failed = 0,
-            indicators_total = 10, current_task = "compute:carbon_biomass",
+            indicators_total = 10, current_task = "compute:indicateur_c1_biomasse",
             errors = list()
           )
           suppressWarnings(send_running_update(state))
 
           # Second call adds an error with indicator prefix
           state$indicators_failed <- 1
-          state$current_task <- "compute:carbon_ndvi"
+          state$current_task <- "compute:indicateur_c2_ndvi"
           state$errors <- list(
-            list(indicator = "carbon_biomass", message = "Raster missing")
+            list(indicator = "indicateur_c1_biomasse", message = "Raster missing")
           )
           suppressWarnings(send_running_update(state))
           expect_equal(tracking$last_error_count, 1)
@@ -1162,7 +1162,7 @@ test_that("mod_progress_server: send_running_update with error toast (indicator 
           state$errors <- c(state$errors, list(
             list(source = "IGN", message = "Connection failed")
           ))
-          state$current_task <- "compute:water_network"
+          state$current_task <- "compute:indicateur_w1_reseau"
           suppressWarnings(send_running_update(state))
           expect_equal(tracking$last_error_count, 2)
 
@@ -1170,7 +1170,7 @@ test_that("mod_progress_server: send_running_update with error toast (indicator 
           state$errors <- c(state$errors, list(
             list(message = "Unknown failure")
           ))
-          state$current_task <- "compute:risk_fire"
+          state$current_task <- "compute:indicateur_r1_feu"
           suppressWarnings(send_running_update(state))
           expect_equal(tracking$last_error_count, 3)
         }
@@ -1220,7 +1220,7 @@ test_that("mod_progress_server: send_running_update repeated same task does not 
             status = "computing", phase = "computing",
             progress = 5, progress_max = 10,
             indicators_completed = 5, indicators_failed = 0,
-            indicators_total = 10, current_task = "compute:carbon_biomass",
+            indicators_total = 10, current_task = "compute:indicateur_c1_biomasse",
             errors = list()
           )
           suppressWarnings(send_running_update(state))

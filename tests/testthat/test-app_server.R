@@ -578,7 +578,7 @@ test_that("app_server lazy loads family modules on navigation", {
         expect_length(family_calls, 0)
 
         # Navigate to Carbon family tab
-        session$setInputs(main_nav = "family_C")
+        session$setInputs(main_nav = "famille_carbone")
         session$flushReact()
       })
     }
@@ -617,13 +617,13 @@ test_that("app_server does not reload already initialized family modules", {
     {
       shiny::testServer(nemeton:::app_server, {
         # Navigate to Carbon tab twice
-        session$setInputs(main_nav = "family_C")
+        session$setInputs(main_nav = "famille_carbone")
         session$flushReact()
 
         session$setInputs(main_nav = "selection")
         session$flushReact()
 
-        session$setInputs(main_nav = "family_C")
+        session$setInputs(main_nav = "famille_carbone")
         session$flushReact()
       })
     }
@@ -660,11 +660,11 @@ test_that("app_server tracks initialized families correctly", {
         expect_equal(initialized_families(), character(0))
 
         # Navigate to multiple family tabs
-        session$setInputs(main_nav = "family_C")
+        session$setInputs(main_nav = "famille_carbone")
         session$flushReact()
         expect_true("C" %in% initialized_families())
 
-        session$setInputs(main_nav = "family_B")
+        session$setInputs(main_nav = "famille_biodiversite")
         session$flushReact()
         expect_true("B" %in% initialized_families())
         expect_true("C" %in% initialized_families())

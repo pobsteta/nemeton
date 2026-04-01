@@ -466,7 +466,7 @@ load_project <- function(project_id) {
     return(NULL)
   }
 
-  list(
+  project <- list(
     id = project_id,
     path = project_path,
     metadata = metadata,
@@ -474,6 +474,17 @@ load_project <- function(project_id) {
     indicators = load_indicators(project_id),
     comments = load_comments(project_id)
   )
+
+  # Sync vers PostGIS si configure et si le projet a des indicateurs
+  if (is_db_configured() && isTRUE(metadata$indicators_computed)) {
+    tryCatch({
+      db_sync_project(project_id)
+    }, error = function(e) {
+      cli::cli_warn("Database sync on load failed (non-blocking): {e$message}")
+    })
+  }
+
+  project
 }
 
 

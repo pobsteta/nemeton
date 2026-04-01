@@ -266,8 +266,8 @@ test_that("get_column_family_map() returns named character vector with all famil
   expect_true(length(mapping) > 0)
 
   # Should contain both long-form and short-form mappings
-  expect_true("carbon_biomass" %in% names(mapping))
-  expect_equal(unname(mapping["carbon_biomass"]), "C")
+  expect_true("indicateur_c1_biomasse" %in% names(mapping))
+  expect_equal(unname(mapping["indicateur_c1_biomasse"]), "C")
 
   expect_true("C1" %in% names(mapping))
   expect_equal(unname(mapping["C1"]), "C")
@@ -326,8 +326,8 @@ test_that("get_all_indicator_codes() returns all short indicator codes", {
 test_that("get_all_column_names() returns all long-form column names", {
   cols <- nemeton:::get_all_column_names()
   expect_true(length(cols) > 20)
-  expect_true("carbon_biomass" %in% cols)
-  expect_true("naturalness_score" %in% cols)
+  expect_true("indicateur_c1_biomasse" %in% cols)
+  expect_true("indicateur_n3_naturalite" %in% cols)
 })
 
 test_that("get_data_source_config() returns NULL for unknown source", {
@@ -495,22 +495,22 @@ test_that("build_analysis_prompt() builds prompt from indicator data", {
   # Create minimal test data with indicator columns
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:5),
-    carbon_biomass = c(60, 70, 80, NA, 90),
-    carbon_ndvi = c(0.5, 0.6, 0.7, 0.8, 0.9)
+    indicateur_c1_biomasse = c(60, 70, 80, NA, 90),
+    indicateur_c2_ndvi = c(0.5, 0.6, 0.7, 0.8, 0.9)
   )
   family_config <- nemeton:::INDICATOR_FAMILIES[["C"]]
 
   prompt <- nemeton:::build_analysis_prompt(family_config, test_data, "English")
   expect_type(prompt, "character")
   expect_true(grepl("5", prompt))  # n_parcels = 5
-  expect_true(grepl("carbon_biomass", prompt))
+  expect_true(grepl("indicateur_c1_biomasse", prompt))
 })
 
 test_that("build_analysis_prompt() works with French language", {
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:3),
-    carbon_biomass = c(60, 70, 80),
-    carbon_ndvi = c(0.5, 0.6, 0.7)
+    indicateur_c1_biomasse = c(60, 70, 80),
+    indicateur_c2_ndvi = c(0.5, 0.6, 0.7)
   )
   family_config <- nemeton:::INDICATOR_FAMILIES[["C"]]
   prompt <- nemeton:::build_analysis_prompt(family_config, test_data, "fran\u00e7ais")
@@ -520,20 +520,20 @@ test_that("build_analysis_prompt() works with French language", {
 
 test_that("build_analysis_prompt() handles sf data by dropping geometry", {
   test_sf <- create_test_units(n_features = 3)
-  test_sf$carbon_biomass <- c(60, 70, 80)
-  test_sf$carbon_ndvi <- c(0.5, 0.6, 0.7)
+  test_sf$indicateur_c1_biomasse <- c(60, 70, 80)
+  test_sf$indicateur_c2_ndvi <- c(0.5, 0.6, 0.7)
   family_config <- nemeton:::INDICATOR_FAMILIES[["C"]]
 
   prompt <- nemeton:::build_analysis_prompt(family_config, test_sf, "English")
   expect_type(prompt, "character")
-  expect_true(grepl("carbon_biomass", prompt))
+  expect_true(grepl("indicateur_c1_biomasse", prompt))
 })
 
 test_that("build_analysis_prompt() handles all-NA indicator column", {
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:3),
-    carbon_biomass = c(NA_real_, NA_real_, NA_real_),
-    carbon_ndvi = c(0.5, 0.6, 0.7)
+    indicateur_c1_biomasse = c(NA_real_, NA_real_, NA_real_),
+    indicateur_c2_ndvi = c(0.5, 0.6, 0.7)
   )
   family_config <- nemeton:::INDICATOR_FAMILIES[["C"]]
   prompt <- nemeton:::build_analysis_prompt(family_config, test_data, "English")
@@ -544,9 +544,9 @@ test_that("build_analysis_prompt() handles all-NA indicator column", {
 test_that("build_synthesis_prompt() builds prompt from family scores", {
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:4),
-    family_C = c(70, 80, 60, 75),
-    family_B = c(50, 60, 55, 45),
-    family_W = c(80, 90, 85, 70)
+    famille_carbone = c(70, 80, 60, 75),
+    famille_biodiversite = c(50, 60, 55, 45),
+    famille_eau = c(80, 90, 85, 70)
   )
   prompt <- nemeton:::build_synthesis_prompt(test_data, "English")
   expect_type(prompt, "character")
@@ -558,8 +558,8 @@ test_that("build_synthesis_prompt() builds prompt from family scores", {
 test_that("build_synthesis_prompt() works with French language", {
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:3),
-    family_C = c(70, 80, 60),
-    family_B = c(50, 60, 55)
+    famille_carbone = c(70, 80, 60),
+    famille_biodiversite = c(50, 60, 55)
   )
   prompt <- nemeton:::build_synthesis_prompt(test_data, "fran\u00e7ais")
   expect_type(prompt, "character")
@@ -568,9 +568,9 @@ test_that("build_synthesis_prompt() works with French language", {
 
 test_that("build_synthesis_prompt() handles sf input by dropping geometry", {
   test_sf <- create_test_units(n_features = 3)
-  test_sf$family_C <- c(70, 80, 60)
-  test_sf$family_B <- c(50, 60, 55)
-  test_sf$family_W <- c(80, 90, 85)
+  test_sf$famille_carbone <- c(70, 80, 60)
+  test_sf$famille_biodiversite <- c(50, 60, 55)
+  test_sf$famille_eau <- c(80, 90, 85)
 
   prompt <- nemeton:::build_synthesis_prompt(test_sf, "English")
   expect_type(prompt, "character")
@@ -580,7 +580,7 @@ test_that("build_synthesis_prompt() handles sf input by dropping geometry", {
 test_that("build_synthesis_prompt() handles unknown family column gracefully", {
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:3),
-    family_C = c(70, 80, 60),
+    famille_carbone = c(70, 80, 60),
     family_Z = c(10, 20, 30)  # Z is not a real family
   )
   prompt <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -592,8 +592,8 @@ test_that("build_synthesis_prompt() handles unknown family column gracefully", {
 test_that("build_synthesis_prompt() handles all-NA family scores", {
   test_data <- data.frame(
     nemeton_id = paste0("U", 1:3),
-    family_C = c(NA_real_, NA_real_, NA_real_),
-    family_B = c(50, 60, 55)
+    famille_carbone = c(NA_real_, NA_real_, NA_real_),
+    famille_biodiversite = c(50, 60, 55)
   )
   prompt <- nemeton:::build_synthesis_prompt(test_data, "English")
   expect_type(prompt, "character")

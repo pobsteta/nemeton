@@ -75,7 +75,7 @@ test_that("Full workflow with real parcel and synthetic layers", {
   )
 
   # Add required attributes for indicator computation
-  # (carbon_biomass needs species, age, density)
+  # (indicateur_c1_biomasse needs species, age, density)
   units$species <- "Quercus"
   units$age <- 80
   units$density <- 0.7
@@ -100,10 +100,10 @@ test_that("Full workflow with real parcel and synthetic layers", {
   )
 
   # Compute indicators with preprocessing
-  # Note: forest_values causes issues with carbon_biomass, so we only use it for landscape_fragmentation
+  # Note: forest_values causes issues with indicateur_c1_biomasse, so we only use it for indicateur_l2_fragmentation
   result <- nemeton_compute(
     units, layers,
-    indicators = c("carbon_biomass", "landscape_fragmentation"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation"),
     preprocess = TRUE
   )
 
@@ -112,8 +112,8 @@ test_that("Full workflow with real parcel and synthetic layers", {
   expect_equal(nrow(result), 1)
 
   # Check that indicator columns were added
-  expect_true("carbon_biomass" %in% names(result))
-  expect_true("landscape_fragmentation" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_l2_fragmentation" %in% names(result))
 
   # Check metadata
   meta <- attr(result, "metadata")
@@ -122,8 +122,8 @@ test_that("Full workflow with real parcel and synthetic layers", {
   expect_equal(meta$site_name, "Test Cadastral Parcel")
 
   # Indicator values should be present
-  expect_false(is.na(result$carbon_biomass))
-  expect_false(is.na(result$landscape_fragmentation))
+  expect_false(is.na(result$indicateur_c1_biomasse))
+  expect_false(is.na(result$indicateur_l2_fragmentation))
 })
 
 test_that("Real parcel with subset of indicators", {
@@ -156,18 +156,18 @@ test_that("Real parcel with subset of indicators", {
   # Note: indicators="all" + forest_values causes issues with some indicators
   result <- nemeton_compute(
     units, layers,
-    indicators = c("carbon_biomass", "landscape_fragmentation"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation"),
     preprocess = TRUE
   )
 
   # Should have the requested indicator columns
-  expect_true("carbon_biomass" %in% names(result))
-  expect_true("landscape_fragmentation" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_l2_fragmentation" %in% names(result))
 
-  # Check that carbon_biomass (computed from attributes) is valid
-  expect_true(result$carbon_biomass >= 0)
-  # Check landscape_fragmentation (computed from landcover) is valid
-  expect_true(result$landscape_fragmentation >= 0 && result$landscape_fragmentation <= 100)
+  # Check that indicateur_c1_biomasse (computed from attributes) is valid
+  expect_true(result$indicateur_c1_biomasse >= 0)
+  # Check indicateur_l2_fragmentation (computed from landcover) is valid
+  expect_true(result$indicateur_l2_fragmentation >= 0 && result$indicateur_l2_fragmentation <= 100)
 })
 
 test_that("Real parcel survives CRS harmonization", {
@@ -198,12 +198,12 @@ test_that("Real parcel survives CRS harmonization", {
   # Compute with preprocessing (should harmonize CRS)
   result <- nemeton_compute(
     units, layers,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     preprocess = TRUE
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
 })
 
 test_that("Real parcel metadata is preserved through computation", {
@@ -223,7 +223,7 @@ test_that("Real parcel metadata is preserved through computation", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   # Original metadata should be preserved
   meta <- attr(result, "metadata")

@@ -1,2 +1,26 @@
 YEAR: 2026
 COPYRIGHT HOLDER: Pascal Obstétar
+
+This package uses a dual-license structure (ADR-006):
+
+1. MIT License — for business logic code (indicators, NDP, families, normalization)
+   See LICENSE-MIT.md
+
+2. EUPL v1.2 — for the Shiny application layer (modules, UI, server, services)
+   See LICENSE-EUPL.md
+
+3. CC-BY 4.0 — for produced data (indicator values, species maps, reports)
+   See LICENSE-DATA.md
+
+Detailed scope:
+
+MIT (R/indicators-*.R, R/ndp.R, R/family-system.R, R/normalization.R,
+     R/visualization.R, R/nemeton-class.R, R/species-config.R, R/datasources.R):
+  Business logic, reusable in any context (commercial, academic, institutional).
+
+EUPL v1.2 (R/mod_*.R, R/app_*.R, R/service_*.R, R/run_app.R, R/llm_prompts.R,
+            inst/quarto/, inst/experts/, inst/app/):
+  Application layer. Copyleft: improvements must be shared back.
+
+CC-BY 4.0 (output data, indicator values, species classifications, reports):
+  Data produced by Nemeton. Attribution required.

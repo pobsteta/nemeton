@@ -1,18 +1,18 @@
 # Tests for Soil Family Indicators (Famille F)
 # Phase 6: US4 - Fertilité des Sols (Soil Fertility)
 #
-# F1: indicator_fertility_erosion() - Erosion risk (RUSLE: LS × C_factor)
-# F2: indicator_fertility_soil() - Soil fertility index (TWI + slope)
+# F1: indicateur_f2_erosion() - Erosion risk (RUSLE: LS × C_factor)
+# F2: indicateur_f1_fertilite() - Soil fertility index (TWI + slope)
 #
 # Core functions:
-# indicator_soil_fertility() - Soil fertility classification (BD Sol)
-# indicator_soil_erosion() - Soil fertility index (TWI + slope)
+# indicateur_f1_fertilite() - Soil fertility classification (BD Sol)
+# indicateur_f2_erosion() - Soil fertility index (TWI + slope)
 
 # ==============================================================================
 # F1: SOIL FERTILITY CLASS
 # ==============================================================================
 
-test_that("indicator_soil_fertility extracts fertility from raster", {
+test_that("indicateur_f1_fertilite extracts fertility from raster", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -20,7 +20,7 @@ test_that("indicator_soil_fertility extracts fertility from raster", {
 
   # Use landcover as proxy for soil fertility (for testing)
   # In production, this would be BD Sol or equivalent
-  fertility <- indicator_soil_fertility(
+  fertility <- indicateur_f1_fertilite(
     units,
     layers,
     soil_layer = "landcover",
@@ -40,7 +40,7 @@ test_that("indicator_soil_fertility extracts fertility from raster", {
 # Note: Vector soil data handling is not implemented in MVP (raster-only)
 # This test was removed as it was a placeholder
 
-test_that("indicator_soil_fertility with custom fertility mapping", {
+test_that("indicateur_f1_fertilite with custom fertility mapping", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -48,7 +48,7 @@ test_that("indicator_soil_fertility with custom fertility mapping", {
 
   # Test with fertility mapping (landcover values → fertility scores)
   # Value 1 = high fertility, value 4 = low fertility, etc.
-  fertility <- indicator_soil_fertility(
+  fertility <- indicateur_f1_fertilite(
     units,
     layers,
     soil_layer = "landcover",
@@ -59,31 +59,31 @@ test_that("indicator_soil_fertility with custom fertility mapping", {
   expect_true(all(fertility >= 0 & fertility <= 100))
 })
 
-test_that("indicator_soil_fertility errors when soil layer missing", {
+test_that("indicateur_f1_fertilite errors when soil layer missing", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
   expect_error(
-    indicator_soil_fertility(units, layers, soil_layer = "nonexistent"),
+    indicateur_f1_fertilite(units, layers, soil_layer = "nonexistent"),
     "not found"
   )
 })
 
-test_that("indicator_soil_fertility validates inputs", {
+test_that("indicateur_f1_fertilite validates inputs", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   # Invalid units
   expect_error(
-    indicator_soil_fertility(data.frame(x = 1:3), layers),
+    indicateur_f1_fertilite(data.frame(x = 1:3), layers),
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicator_soil_fertility(massif_demo_units, list()),
+    indicateur_f1_fertilite(massif_demo_units, list()),
     "must be.*nemeton_layers"
   )
 })
@@ -92,14 +92,14 @@ test_that("indicator_soil_fertility validates inputs", {
 # F2: SOIL FERTILITY INDEX (TWI + SLOPE)
 # ==============================================================================
 
-test_that("indicator_soil_erosion calculates fertility from TWI and slope", {
+test_that("indicateur_f2_erosion calculates fertility from TWI and slope", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
   # Calculate soil fertility (F2 = (twi_norm + slope_norm) / 2)
-  fertility <- indicator_soil_erosion(units, layers, dem_layer = "dem")
+  fertility <- indicateur_f2_erosion(units, layers, dem_layer = "dem")
 
   # Test output
   expect_type(fertility, "double")
@@ -115,7 +115,7 @@ test_that("indicator_soil_erosion calculates fertility from TWI and slope", {
   expect_true(all(valid_fertility <= 100))
 })
 
-test_that("indicator_soil_erosion produces higher values on flat wet areas", {
+test_that("indicateur_f2_erosion produces higher values on flat wet areas", {
   # Flat areas with high TWI should have higher fertility
 
   data(massif_demo_units)
@@ -123,7 +123,7 @@ test_that("indicator_soil_erosion produces higher values on flat wet areas", {
 
   units <- massif_demo_units[1:10, ]
 
-  fertility <- indicator_soil_erosion(units, layers)
+  fertility <- indicateur_f2_erosion(units, layers)
 
   # Check that calculation produces valid results (allow some NA for edge cases)
   valid_fertility <- fertility[!is.na(fertility)]
@@ -135,7 +135,7 @@ test_that("indicator_soil_erosion produces higher values on flat wet areas", {
   expect_true(mean(valid_fertility) > 0)
 })
 
-test_that("indicator_soil_erosion still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
+test_that("indicateur_f2_erosion still works with nonexistent dem_layer (falls back to lidar_mnt/dem)", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -143,24 +143,24 @@ test_that("indicator_soil_erosion still works with nonexistent dem_layer (falls 
 
   # The function first tries get_dem_raster() which checks lidar_mnt then dem
   # If the demo layers have dem, it will still work
-  fertility <- indicator_soil_erosion(units, layers, dem_layer = "nonexistent")
+  fertility <- indicateur_f2_erosion(units, layers, dem_layer = "nonexistent")
   expect_type(fertility, "double")
   expect_length(fertility, 3)
 })
 
-test_that("indicator_soil_erosion validates inputs", {
+test_that("indicateur_f2_erosion validates inputs", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   # Invalid units
   expect_error(
-    indicator_soil_erosion(data.frame(x = 1:3), layers),
+    indicateur_f2_erosion(data.frame(x = 1:3), layers),
     "must be.*sf"
   )
 
   # Invalid layers
   expect_error(
-    indicator_soil_erosion(massif_demo_units, list()),
+    indicateur_f2_erosion(massif_demo_units, list()),
     "must be.*nemeton_layers"
   )
 })
@@ -177,8 +177,8 @@ test_that("Both soil indicators work together", {
 
   # Calculate both indicators
   expect_no_error({
-    f1 <- indicator_soil_fertility(units, layers, soil_layer = "landcover")
-    f2 <- indicator_soil_erosion(units, layers)
+    f1 <- indicateur_f1_fertilite(units, layers, soil_layer = "landcover")
+    f2 <- indicateur_f2_erosion(units, layers)
   })
 
   # Both should return valid numeric vectors
@@ -193,17 +193,17 @@ test_that("Both soil indicators work together", {
 
 # ==============================================================================
 # ALIAS FUNCTIONS (dispatch from app_config)
-# F1 -> indicator_fertility_erosion (RUSLE)
-# F2 -> indicator_fertility_soil (TWI + slope)
+# F1 -> indicateur_f2_erosion (RUSLE)
+# F2 -> indicateur_f1_fertilite (TWI + slope)
 # ==============================================================================
 
-test_that("indicator_fertility_erosion computes RUSLE erosion risk (F1)", {
+test_that("indicateur_f2_erosion computes RUSLE erosion risk (F1)", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
-  erosion <- indicator_fertility_erosion(units, layers)
+  erosion <- indicateur_f2_erosion(units, layers)
 
   expect_type(erosion, "double")
   expect_length(erosion, 5)
@@ -213,36 +213,36 @@ test_that("indicator_fertility_erosion computes RUSLE erosion risk (F1)", {
   expect_true(all(erosion <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_fertility_erosion returns NA without layers", {
+test_that("indicateur_f2_erosion returns NA without layers", {
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
-  result <- indicator_fertility_erosion(units, layers = NULL)
+  result <- indicateur_f2_erosion(units, layers = NULL)
   expect_length(result, 3)
   expect_true(all(is.na(result)))
 })
 
-test_that("indicator_fertility_soil delegates to TWI+slope (F2)", {
+test_that("indicateur_f1_fertilite delegates to TWI+slope (F2)", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
-  fertility <- indicator_fertility_soil(units, layers)
+  fertility <- indicateur_f1_fertilite(units, layers)
 
   expect_type(fertility, "double")
   expect_length(fertility, 5)
 
-  # Should match indicator_soil_erosion output
-  direct <- indicator_soil_erosion(units, layers)
+  # Should match indicateur_f2_erosion output
+  direct <- indicateur_f2_erosion(units, layers)
   expect_equal(fertility, direct)
 })
 
-test_that("indicator_fertility_soil returns NA without layers", {
+test_that("indicateur_f1_fertilite returns NA without layers", {
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
-  result <- indicator_fertility_soil(units, layers = NULL)
+  result <- indicateur_f1_fertilite(units, layers = NULL)
   expect_length(result, 3)
   expect_true(all(is.na(result)))
 })
@@ -254,8 +254,8 @@ test_that("Soil indicators can be added to units dataframe", {
   units <- massif_demo_units[1:3, ]
 
   # Add all soil indicators as columns (F1=erosion RUSLE, F2=fertility TWI+slope)
-  units$F1_erosion <- indicator_fertility_erosion(units, layers)
-  units$F2_fertility <- indicator_fertility_soil(units, layers)
+  units$F1_erosion <- indicateur_f2_erosion(units, layers)
+  units$F2_fertility <- indicateur_f1_fertilite(units, layers)
 
   # Check structure
   expect_true("F1_erosion" %in% names(units))
@@ -272,8 +272,8 @@ test_that("F1 erosion and F2 fertility can be correlated", {
 
   units <- massif_demo_units[1:10, ]
 
-  f1 <- indicator_fertility_erosion(units, layers)
-  f2 <- indicator_fertility_soil(units, layers)
+  f1 <- indicateur_f2_erosion(units, layers)
+  f2 <- indicateur_f1_fertilite(units, layers)
 
   # Check that both indicators produce mostly valid values
   expect_true(all(!is.na(f1)))

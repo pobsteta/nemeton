@@ -12,7 +12,7 @@ library(terra)
 
 # Note: Complete v0.3.0 pipe workflow test removed - deprecated in favor of nemeton_compute()
 # For a complete workflow, use:
-#   result <- nemeton_compute(units, layers, indicators = c("temporal_age", "risk_storm", ...))
+#   result <- nemeton_compute(units, layers, indicators = c("indicateur_t1_anciennete", "indicateur_r2_tempete", ...))
 #   normalized <- normalize_indicators(result, ...)
 #   final <- create_family_index(normalized, ...)
 
@@ -37,14 +37,14 @@ test_that("v0.3.0 workflow maintains backward compatibility with v0.2.0", {
   families <- create_family_index(normalized)
 
   # Should have both old and new families
-  expect_true("family_C" %in% names(families))
-  expect_true("family_W" %in% names(families))
-  expect_true("family_B" %in% names(families))
-  expect_true("family_R" %in% names(families))
+  expect_true("famille_carbone" %in% names(families))
+  expect_true("famille_eau" %in% names(families))
+  expect_true("famille_biodiversite" %in% names(families))
+  expect_true("famille_risque" %in% names(families))
 
   # All should be valid
-  expect_true(all(!is.na(families$family_C)))
-  expect_true(all(!is.na(families$family_B)))
+  expect_true(all(!is.na(families$famille_carbone)))
+  expect_true(all(!is.na(families$famille_biodiversite)))
 })
 
 test_that("v0.3.0 workflow handles partial indicator sets gracefully", {
@@ -67,10 +67,10 @@ test_that("v0.3.0 workflow handles partial indicator sets gracefully", {
   families <- create_family_index(normalized)
 
   # Should create families from available indicators
-  expect_true("family_B" %in% names(families)) # From B1, B2
-  expect_true("family_R" %in% names(families)) # From R1 only
-  expect_true("family_T" %in% names(families)) # From T1, T2
+  expect_true("famille_biodiversite" %in% names(families)) # From B1, B2
+  expect_true("famille_risque" %in% names(families)) # From R1 only
+  expect_true("famille_temporel" %in% names(families)) # From T1, T2
 
   # Family B should average B1 and B2
-  expect_true(all(!is.na(families$family_B)))
+  expect_true(all(!is.na(families$famille_biodiversite)))
 })

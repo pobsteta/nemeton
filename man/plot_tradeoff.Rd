@@ -78,47 +78,47 @@ data("massif_demo_units")
 # Basic trade-off plot: carbon vs biodiversity
 plot_tradeoff(
   massif_demo_units,
-  x = "family_C",
-  y = "family_B"
+  x = "famille_carbone",
+  y = "famille_biodiversite"
 )
 
 # Add color for a third dimension (production)
 plot_tradeoff(
   massif_demo_units,
-  x = "family_C",
-  y = "family_B",
-  color = "family_P",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
+  color = "famille_production",
   title = "Carbon-Biodiversity Trade-off (colored by Production)"
 )
 
 # Overlay Pareto frontier
 result <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "family_P"),
+  objectives = c("famille_carbone", "famille_biodiversite", "famille_production"),
   maximize = rep(TRUE, 3)
 )
 
 plot_tradeoff(
   result,
-  x = "family_C",
-  y = "family_B",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
   pareto_frontier = TRUE
 )
 
 # With labels for Pareto optimal parcels
 plot_tradeoff(
   result,
-  x = "family_C",
-  y = "family_B",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
   pareto_frontier = TRUE,
   label = "name"
 )
 
 # Multiple trade-off comparisons
 library(patchwork)
-p1 <- plot_tradeoff(massif_demo_units, "family_C", "family_B")
-p2 <- plot_tradeoff(massif_demo_units, "family_C", "family_P")
-p3 <- plot_tradeoff(massif_demo_units, "family_B", "family_P")
+p1 <- plot_tradeoff(massif_demo_units, "famille_carbone", "famille_biodiversite")
+p2 <- plot_tradeoff(massif_demo_units, "famille_carbone", "famille_production")
+p3 <- plot_tradeoff(massif_demo_units, "famille_biodiversite", "famille_production")
 p1 + p2 + p3
 }
 

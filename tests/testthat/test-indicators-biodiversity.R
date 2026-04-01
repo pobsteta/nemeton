@@ -7,10 +7,10 @@ library(sf)
 library(terra)
 
 # ==============================================================================
-# T014: Unit Tests for indicator_biodiversity_protection() (B1)
+# T014: Unit Tests for indicateur_b1_protection() (B1)
 # ==============================================================================
 
-test_that("indicator_biodiversity_protection calculates overlap correctly", {
+test_that("indicateur_b1_protection calculates overlap correctly", {
   skip_if_not_installed("nemeton")
 
   # Load demo data
@@ -21,7 +21,7 @@ test_that("indicator_biodiversity_protection calculates overlap correctly", {
   protected_areas <- readRDS(test_path("fixtures/protected_areas/protected_areas_demo.rds"))
 
   # Calculate B1 with local data
-  result <- indicator_biodiversity_protection(
+  result <- indicateur_b1_protection(
     units,
     protected_areas = protected_areas,
     source = "local"
@@ -37,7 +37,7 @@ test_that("indicator_biodiversity_protection calculates overlap correctly", {
   expect_true(any(result$B1 > 0, na.rm = TRUE))
 })
 
-test_that("indicator_biodiversity_protection handles missing data gracefully", {
+test_that("indicateur_b1_protection handles missing data gracefully", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -47,17 +47,17 @@ test_that("indicator_biodiversity_protection handles missing data gracefully", {
     geometry = st_sfc(crs = st_crs(units))
   )
 
-  result <- indicator_biodiversity_protection(units, protected_areas = empty_pa, source = "local")
+  result <- indicateur_b1_protection(units, protected_areas = empty_pa, source = "local")
 
   # Should return 0% protection for all parcels
   expect_true(all(result$B1 == 0, na.rm = TRUE))
 })
 
 # ==============================================================================
-# T015: Unit Tests for indicator_biodiversity_structure() (B2)
+# T015: Unit Tests for indicateur_b2_structure() (B2)
 # ==============================================================================
 
-test_that("indicator_biodiversity_structure calculates Shannon diversity", {
+test_that("indicateur_b2_structure calculates Shannon diversity", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -71,7 +71,7 @@ test_that("indicator_biodiversity_structure calculates Shannon diversity", {
     replace = TRUE
   )
 
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "strata_classes",
     age_class_field = "age_classes",
@@ -86,7 +86,7 @@ test_that("indicator_biodiversity_structure calculates Shannon diversity", {
   expect_true(all(result$B2 >= 0 & result$B2 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_biodiversity_structure handles monoculture", {
+test_that("indicateur_b2_structure handles monoculture", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -94,7 +94,7 @@ test_that("indicator_biodiversity_structure handles monoculture", {
   units$strata_classes <- rep("Dominant", 3)
   units$age_classes <- rep("Mature", 3)
 
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "strata_classes",
     age_class_field = "age_classes"
@@ -105,10 +105,10 @@ test_that("indicator_biodiversity_structure handles monoculture", {
 })
 
 # ==============================================================================
-# T016: Unit Tests for indicator_biodiversity_connectivity() (B3)
+# T016: Unit Tests for indicateur_b3_connectivite() (B3)
 # ==============================================================================
 
-test_that("indicator_biodiversity_connectivity calculates with bdforet data", {
+test_that("indicateur_b3_connectivite calculates with bdforet data", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -133,7 +133,7 @@ test_that("indicator_biodiversity_connectivity calculates with bdforet data", {
     geometry = st_sfc(forest1, forest2, crs = st_crs(units))
   )
 
-  result <- indicator_biodiversity_connectivity(
+  result <- indicateur_b3_connectivite(
     units,
     bdforet = bdforet,
     max_distance = 3000
@@ -146,12 +146,12 @@ test_that("indicator_biodiversity_connectivity calculates with bdforet data", {
   expect_true(all(result$B3 >= 0 & result$B3 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_biodiversity_connectivity returns fallback when no bdforet", {
+test_that("indicateur_b3_connectivite returns fallback when no bdforet", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   expect_warning(
-    result <- indicator_biodiversity_connectivity(units, bdforet = NULL),
+    result <- indicateur_b3_connectivite(units, bdforet = NULL),
     "BD"
   )
 
@@ -164,7 +164,7 @@ test_that("indicator_biodiversity_connectivity returns fallback when no bdforet"
 # T017: Integration Test for B Family Workflow
 # ==============================================================================
 
-test_that("B family workflow: B1-B3 → normalize → family_B composite", {
+test_that("B family workflow: B1-B3 → normalize → famille_biodiversite composite", {
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -196,20 +196,20 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
 
   # Full workflow
   result <- units %>%
-    indicator_biodiversity_protection(protected_areas = protected_areas, source = "local") %>%
-    indicator_biodiversity_structure(
+    indicateur_b1_protection(protected_areas = protected_areas, source = "local") %>%
+    indicateur_b2_structure(
       strata_field = "strata_classes",
       age_class_field = "age_classes"
     ) %>%
-    indicator_biodiversity_connectivity(bdforet = bdforet) %>%
+    indicateur_b3_connectivite(bdforet = bdforet) %>%
     normalize_indicators(indicators = c("B1", "B2", "B3")) %>%
     create_family_index(family_codes = "B")
 
   # Verify complete workflow
   expect_true(all(c("B1", "B2", "B3") %in% names(result)))
   expect_true(all(c("B1_norm", "B2_norm", "B3_norm") %in% names(result)))
-  expect_true("family_B" %in% names(result))
-  expect_true(all(result$family_B >= 0 & result$family_B <= 100, na.rm = TRUE))
+  expect_true("famille_biodiversite" %in% names(result))
+  expect_true(all(result$famille_biodiversite >= 0 & result$famille_biodiversite <= 100, na.rm = TRUE))
 })
 
 # Note: Regression fixture test removed - will be added when fixtures are created
@@ -218,31 +218,31 @@ test_that("B family workflow: B1-B3 → normalize → family_B composite", {
 # Additional tests for better coverage
 # ==============================================================================
 
-test_that("indicator_biodiversity_protection validates input", {
+test_that("indicateur_b1_protection validates input", {
   expect_error(
-    indicator_biodiversity_protection(data.frame(x = 1:3), source = "local"),
+    indicateur_b1_protection(data.frame(x = 1:3), source = "local"),
     "must be an.*sf.*object"
   )
 })
 
-test_that("indicator_biodiversity_protection returns 0 when source='local' and no protected_areas", {
+test_that("indicateur_b1_protection returns 0 when source='local' and no protected_areas", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   # No protected areas data -> graceful degradation to 0% coverage
-  result <- indicator_biodiversity_protection(units, protected_areas = NULL, source = "local")
+  result <- indicateur_b1_protection(units, protected_areas = NULL, source = "local")
   expect_s3_class(result, "sf")
   expect_true("B1" %in% names(result))
   expect_true(all(result$B1 == 0))
 })
 
-test_that("indicator_biodiversity_protection handles WFS source with fallback", {
+test_that("indicateur_b1_protection handles WFS source with fallback", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   # WFS source without protected_areas should warn but work
   expect_warning(
-    result <- indicator_biodiversity_protection(units, source = "wfs"),
+    result <- indicateur_b1_protection(units, source = "wfs"),
     "WFS"
   )
 
@@ -252,7 +252,7 @@ test_that("indicator_biodiversity_protection handles WFS source with fallback", 
   expect_true(all(result$B1 == 0))
 })
 
-test_that("indicator_biodiversity_protection transforms CRS when needed", {
+test_that("indicateur_b1_protection transforms CRS when needed", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -269,7 +269,7 @@ test_that("indicator_biodiversity_protection transforms CRS when needed", {
   )
   pa_4326 <- sf::st_transform(pa, 4326)
 
-  result <- indicator_biodiversity_protection(
+  result <- indicateur_b1_protection(
     units,
     protected_areas = pa_4326,
     source = "local",
@@ -280,19 +280,19 @@ test_that("indicator_biodiversity_protection transforms CRS when needed", {
   expect_true("B1" %in% names(result))
 })
 
-test_that("indicator_biodiversity_structure validates input", {
+test_that("indicateur_b2_structure validates input", {
   expect_error(
-    indicator_biodiversity_structure(data.frame(x = 1:3)),
+    indicateur_b2_structure(data.frame(x = 1:3)),
     "must be an.*sf.*object"
   )
 })
 
-test_that("indicator_biodiversity_structure returns NA when required fields missing", {
+test_that("indicateur_b2_structure returns NA when required fields missing", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   # Missing strata/age fields should return NA (graceful degradation)
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "nonexistent_field",
     age_class_field = "nonexistent_field"
@@ -302,14 +302,14 @@ test_that("indicator_biodiversity_structure returns NA when required fields miss
   expect_true(all(is.na(result$B2)))
 })
 
-test_that("indicator_biodiversity_structure uses species field when provided", {
+test_that("indicateur_b2_structure uses species field when provided", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
   units$species <- c("Quercus", "Fagus", "Pinus", "Quercus", "Fagus")
   units$strata_classes <- sample(c("Dominant", "Intermediate"), 5, replace = TRUE)
 
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "strata_classes",
     species_field = "species"
@@ -319,14 +319,14 @@ test_that("indicator_biodiversity_structure uses species field when provided", {
   expect_true("B2" %in% names(result))
 })
 
-test_that("indicator_biodiversity_connectivity validates input", {
+test_that("indicateur_b3_connectivite validates input", {
   expect_error(
-    indicator_biodiversity_connectivity(data.frame(x = 1:3)),
+    indicateur_b3_connectivite(data.frame(x = 1:3)),
     "must be an.*sf.*object"
   )
 })
 
-test_that("indicator_biodiversity_connectivity handles empty bdforet", {
+test_that("indicateur_b3_connectivite handles empty bdforet", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -336,7 +336,7 @@ test_that("indicator_biodiversity_connectivity handles empty bdforet", {
   )
 
   expect_warning(
-    result <- indicator_biodiversity_connectivity(units, bdforet = empty_bdforet),
+    result <- indicateur_b3_connectivite(units, bdforet = empty_bdforet),
     "BD"
   )
 
@@ -345,7 +345,7 @@ test_that("indicator_biodiversity_connectivity handles empty bdforet", {
   expect_true(all(result$B3 == 50))
 })
 
-test_that("indicator_biodiversity_connectivity scores vary with forest proximity", {
+test_that("indicateur_b3_connectivite scores vary with forest proximity", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -363,7 +363,7 @@ test_that("indicator_biodiversity_connectivity scores vary with forest proximity
     geometry = sf::st_sfc(forest_poly, crs = sf::st_crs(units))
   )
 
-  result <- indicator_biodiversity_connectivity(units, bdforet = bdforet)
+  result <- indicateur_b3_connectivite(units, bdforet = bdforet)
 
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
@@ -374,9 +374,9 @@ test_that("indicator_biodiversity_connectivity scores vary with forest proximity
 # Coverage-focused tests for uncovered code paths
 # ==============================================================================
 
-# --- B1: indicator_biodiversity_protection additional coverage ---
+# --- B1: indicateur_b1_protection additional coverage ---
 
-test_that("indicator_biodiversity_protection with type_protection column exercises weighted scoring", {
+test_that("indicateur_b1_protection with type_protection column exercises weighted scoring", {
   # Create test units
   units <- create_test_units(n_features = 3)
 
@@ -390,7 +390,7 @@ test_that("indicator_biodiversity_protection with type_protection column exercis
     geometry = c(pa_geom1, pa_geom2)
   )
 
-  result <- indicator_biodiversity_protection(
+  result <- indicateur_b1_protection(
     units,
     protected_areas = pa,
     source = "local"
@@ -406,7 +406,7 @@ test_that("indicator_biodiversity_protection with type_protection column exercis
   expect_true(any(result$B1 > 0))
 })
 
-test_that("indicator_biodiversity_protection without type column uses simple coverage", {
+test_that("indicateur_b1_protection without type column uses simple coverage", {
   # Create test units
   units <- create_test_units(n_features = 2)
 
@@ -417,7 +417,7 @@ test_that("indicator_biodiversity_protection without type column uses simple cov
     geometry = pa_geom
   )
 
-  result <- indicator_biodiversity_protection(
+  result <- indicateur_b1_protection(
     units,
     protected_areas = pa,
     source = "local"
@@ -432,7 +432,7 @@ test_that("indicator_biodiversity_protection without type column uses simple cov
   expect_true(all(result$B1 >= 0 & result$B1 <= 100))
 })
 
-test_that("indicator_biodiversity_protection with WFS source and provided protected_areas", {
+test_that("indicateur_b1_protection with WFS source and provided protected_areas", {
   units <- create_test_units(n_features = 2)
 
   # Protected areas with type column, CRS matches
@@ -444,7 +444,7 @@ test_that("indicator_biodiversity_protection with WFS source and provided protec
   )
 
   # WFS source but with protected_areas already provided should use them directly
-  result <- indicator_biodiversity_protection(
+  result <- indicateur_b1_protection(
     units,
     protected_areas = pa,
     source = "wfs"
@@ -455,15 +455,15 @@ test_that("indicator_biodiversity_protection with WFS source and provided protec
   expect_true(all(result$B1 >= 0 & result$B1 <= 100))
 })
 
-# --- B2: indicator_biodiversity_structure additional coverage ---
+# --- B2: indicateur_b2_structure additional coverage ---
 
-test_that("indicator_biodiversity_structure with strata and age and species fields", {
+test_that("indicateur_b2_structure with strata and age and species fields", {
   units <- create_test_units(n_features = 5)
   units$strata <- c("Emergent", "Dominant", "Intermediate", "Suppressed", "Dominant")
   units$age_class <- c("Young", "Mature", "Old", "Ancient", "Young")
   units$species <- c("Quercus", "Fagus", "Pinus", "Abies", "Betula")
 
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "strata",
     age_class_field = "age_class",
@@ -478,11 +478,11 @@ test_that("indicator_biodiversity_structure with strata and age and species fiel
   expect_true(any(result$B2 > 20))
 })
 
-test_that("indicator_biodiversity_structure without strata/age falls back to NA (no layers)", {
+test_that("indicateur_b2_structure without strata/age falls back to NA (no layers)", {
   units <- create_test_units(n_features = 3)
 
   # No strata or age fields, no layers -> should return NA
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "missing_strata",
     age_class_field = "missing_age",
@@ -494,13 +494,13 @@ test_that("indicator_biodiversity_structure without strata/age falls back to NA 
   expect_true(all(is.na(result$B2)))
 })
 
-test_that("indicator_biodiversity_structure monoculture with species", {
+test_that("indicateur_b2_structure monoculture with species", {
   units <- create_test_units(n_features = 3)
   units$strata <- rep("Dominant", 3)
   units$age_class <- rep("Mature", 3)
   units$species <- rep("Pinus", 3)
 
-  result <- indicator_biodiversity_structure(
+  result <- indicateur_b2_structure(
     units,
     strata_field = "strata",
     age_class_field = "age_class",
@@ -513,7 +513,7 @@ test_that("indicator_biodiversity_structure monoculture with species", {
   expect_true(all(result$B2 <= 23))  # 20 + max 3 variation
 })
 
-# --- B3: indicator_biodiversity_connectivity sub-component coverage ---
+# --- B3: indicateur_b3_connectivite sub-component coverage ---
 
 test_that(".b3_local calculates distance-based local connectivity", {
   units <- create_test_units(n_features = 3)
@@ -679,11 +679,11 @@ test_that(".b3_kernel computes kernel with enough intersecting parcels", {
   expect_true(result >= 0 && result <= 100)
 })
 
-test_that("indicator_biodiversity_connectivity rejects non-sf bdforet", {
+test_that("indicateur_b3_connectivite rejects non-sf bdforet", {
   units <- create_test_units(n_features = 2)
 
   expect_error(
-    indicator_biodiversity_connectivity(units, bdforet = data.frame(x = 1)),
+    indicateur_b3_connectivite(units, bdforet = data.frame(x = 1)),
     "bdforet must be an sf object"
   )
 })

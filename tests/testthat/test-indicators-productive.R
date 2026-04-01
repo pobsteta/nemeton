@@ -17,10 +17,10 @@ make_sf <- function(data, n = NULL) {
 }
 
 # ==============================================================================
-# indicator_productive_volume (P1)
+# indicateur_p1_volume (P1)
 # ==============================================================================
 
-test_that("indicator_productive_volume (P1) calculates with IFN equations", {
+test_that("indicateur_p1_volume (P1) calculates with IFN equations", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -31,7 +31,7 @@ test_that("indicator_productive_volume (P1) calculates with IFN equations", {
     density = c(250, 320, 180)
   ))
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -46,7 +46,7 @@ test_that("indicator_productive_volume (P1) calculates with IFN equations", {
   expect_true(all(result$P1 < 5000, na.rm = TRUE))
 })
 
-test_that("indicator_productive_volume (P1) handles missing height with estimation", {
+test_that("indicateur_p1_volume (P1) handles missing height with estimation", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -57,7 +57,7 @@ test_that("indicator_productive_volume (P1) handles missing height with estimati
   ), n = 1)
 
   # Without height field - should estimate using Naslund approximation
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -69,32 +69,32 @@ test_that("indicator_productive_volume (P1) handles missing height with estimati
   expect_true(result$P1[1] > 0)
 })
 
-test_that("indicator_productive_volume validates input is sf", {
+test_that("indicateur_p1_volume validates input is sf", {
   expect_error(
-    indicator_productive_volume(data.frame(x = 1:3)),
+    indicateur_p1_volume(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_productive_volume errors on missing required fields", {
+test_that("indicateur_p1_volume errors on missing required fields", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(id = 1L), n = 1)
 
   expect_error(
-    indicator_productive_volume(test_units),
+    indicateur_p1_volume(test_units),
     "Missing required fields"
   )
 
   # Only species present, still missing dbh and density
   test_units2 <- make_sf(list(id = 1L, species = "FASY"), n = 1)
   expect_error(
-    indicator_productive_volume(test_units2),
+    indicateur_p1_volume(test_units2),
     "Missing required fields"
   )
 })
 
-test_that("indicator_productive_volume handles NA species, dbh, and density", {
+test_that("indicateur_p1_volume handles NA species, dbh, and density", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -104,7 +104,7 @@ test_that("indicator_productive_volume handles NA species, dbh, and density", {
     density = c(250, 200, 320, NA)
   ))
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -118,7 +118,7 @@ test_that("indicator_productive_volume handles NA species, dbh, and density", {
   expect_true(is.na(result$P1[4]))   # NA density
 })
 
-test_that("indicator_productive_volume uses height when present but handles NA height", {
+test_that("indicateur_p1_volume uses height when present but handles NA height", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -129,7 +129,7 @@ test_that("indicator_productive_volume uses height when present but handles NA h
     density = c(250, 320)
   ))
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -144,7 +144,7 @@ test_that("indicator_productive_volume uses height when present but handles NA h
   expect_true(result$P1[2] > 0)
 })
 
-test_that("indicator_productive_volume handles unknown species with fallback", {
+test_that("indicateur_p1_volume handles unknown species with fallback", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -156,7 +156,7 @@ test_that("indicator_productive_volume handles unknown species with fallback", {
 
   # Unknown species should use BROADLEAF_GENUS fallback
   result <- suppressWarnings(
-    indicator_productive_volume(
+    indicateur_p1_volume(
       test_units,
       species_field = "species",
       dbh_field = "dbh",
@@ -168,7 +168,7 @@ test_that("indicator_productive_volume handles unknown species with fallback", {
   expect_false(is.na(result$P1[1]))
 })
 
-test_that("indicator_productive_volume uses custom column name", {
+test_that("indicateur_p1_volume uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -178,7 +178,7 @@ test_that("indicator_productive_volume uses custom column name", {
     density = 250
   ), n = 1)
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -190,7 +190,7 @@ test_that("indicator_productive_volume uses custom column name", {
   expect_false("P1" %in% names(result))
 })
 
-test_that("indicator_productive_volume works with zero-row sf", {
+test_that("indicateur_p1_volume works with zero-row sf", {
   skip_if_not_installed("sf")
 
   empty_sf <- sf::st_sf(
@@ -200,7 +200,7 @@ test_that("indicator_productive_volume works with zero-row sf", {
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = empty_sf,
     species_field = "species",
     dbh_field = "dbh",
@@ -212,7 +212,7 @@ test_that("indicator_productive_volume works with zero-row sf", {
   expect_equal(nrow(result), 0)
 })
 
-test_that("indicator_productive_volume volume differs for different species", {
+test_that("indicateur_p1_volume volume differs for different species", {
   skip_if_not_installed("sf")
 
   # Same DBH and density, different species should give different volumes
@@ -224,7 +224,7 @@ test_that("indicator_productive_volume volume differs for different species", {
     density = c(250, 250)
   ))
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -236,7 +236,7 @@ test_that("indicator_productive_volume volume differs for different species", {
   expect_false(result$P1[1] == result$P1[2])
 })
 
-test_that("indicator_productive_volume scales linearly with density", {
+test_that("indicateur_p1_volume scales linearly with density", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -247,7 +247,7 @@ test_that("indicator_productive_volume scales linearly with density", {
     density = c(100, 200)
   ))
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -259,7 +259,7 @@ test_that("indicator_productive_volume scales linearly with density", {
   expect_equal(result$P1[2], result$P1[1] * 2)
 })
 
-test_that("indicator_productive_volume handles conifer species correctly", {
+test_that("indicateur_p1_volume handles conifer species correctly", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -270,7 +270,7 @@ test_that("indicator_productive_volume handles conifer species correctly", {
     density = c(300, 300, 300)
   ))
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -283,10 +283,10 @@ test_that("indicator_productive_volume handles conifer species correctly", {
 })
 
 # ==============================================================================
-# indicator_productive_station (P2)
+# indicateur_p2_station (P2)
 # ==============================================================================
 
-test_that("indicator_productive_station (P2) looks up productivity tables", {
+test_that("indicateur_p2_station (P2) looks up productivity tables", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -296,7 +296,7 @@ test_that("indicator_productive_station (P2) looks up productivity tables", {
     climate = c("temperate_oceanic", "mountainous", "temperate_oceanic")
   ))
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -309,32 +309,32 @@ test_that("indicator_productive_station (P2) looks up productivity tables", {
   expect_true(all(result$P2 > 0 & result$P2 < 20, na.rm = TRUE))
 })
 
-test_that("indicator_productive_station validates input is sf", {
+test_that("indicateur_p2_station validates input is sf", {
   expect_error(
-    indicator_productive_station(data.frame(x = 1:3)),
+    indicateur_p2_station(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_productive_station errors on missing required fields", {
+test_that("indicateur_p2_station errors on missing required fields", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(id = 1L), n = 1)
 
   expect_error(
-    indicator_productive_station(test_units),
+    indicateur_p2_station(test_units),
     "Missing required fields"
   )
 
   # Only species present, still missing fertility and climate
   test_units2 <- make_sf(list(id = 1L, species = "FASY"), n = 1)
   expect_error(
-    indicator_productive_station(test_units2),
+    indicateur_p2_station(test_units2),
     "Missing required fields"
   )
 })
 
-test_that("indicator_productive_station handles NA in all key fields", {
+test_that("indicateur_p2_station handles NA in all key fields", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -344,7 +344,7 @@ test_that("indicator_productive_station handles NA in all key fields", {
     climate = c("temperate_oceanic", "mountainous", NA, "temperate_oceanic")
   ))
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -357,7 +357,7 @@ test_that("indicator_productive_station handles NA in all key fields", {
   expect_false(is.na(result$P2[4]))  # All valid
 })
 
-test_that("indicator_productive_station uses custom productivity_table", {
+test_that("indicateur_p2_station uses custom productivity_table", {
   skip_if_not_installed("sf")
 
   custom_table <- data.frame(
@@ -375,7 +375,7 @@ test_that("indicator_productive_station uses custom productivity_table", {
     climate = c("temperate_oceanic", "mountainous")
   ))
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -387,7 +387,7 @@ test_that("indicator_productive_station uses custom productivity_table", {
   expect_equal(result$P2[2], 88.8)
 })
 
-test_that("indicator_productive_station falls back to genus average when species/combo not found", {
+test_that("indicateur_p2_station falls back to genus average when species/combo not found", {
   skip_if_not_installed("sf")
 
   # Use a species+climate combo that does NOT exist in the bundled table
@@ -407,7 +407,7 @@ test_that("indicator_productive_station falls back to genus average when species
     climate = "temperate_oceanic"
   ), n = 1)
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -419,7 +419,7 @@ test_that("indicator_productive_station falls back to genus average when species
   expect_equal(result$P2[1], mean(c(5.5, 9.0)))
 })
 
-test_that("indicator_productive_station returns NA when no fallback available", {
+test_that("indicateur_p2_station returns NA when no fallback available", {
   skip_if_not_installed("sf")
 
   # Custom table with no matching rows at all
@@ -438,7 +438,7 @@ test_that("indicator_productive_station returns NA when no fallback available", 
     climate = "temperate_oceanic"
   ), n = 1)
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -450,7 +450,7 @@ test_that("indicator_productive_station returns NA when no fallback available", 
   expect_true(is.na(result$P2[1]))
 })
 
-test_that("indicator_productive_station uses custom column name", {
+test_that("indicateur_p2_station uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -460,7 +460,7 @@ test_that("indicator_productive_station uses custom column name", {
     climate = "temperate_oceanic"
   ), n = 1)
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -472,7 +472,7 @@ test_that("indicator_productive_station uses custom column name", {
   expect_false("P2" %in% names(result))
 })
 
-test_that("indicator_productive_station works with zero-row sf", {
+test_that("indicateur_p2_station works with zero-row sf", {
   skip_if_not_installed("sf")
 
   empty_sf <- sf::st_sf(
@@ -482,7 +482,7 @@ test_that("indicator_productive_station works with zero-row sf", {
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = empty_sf,
     species_field = "species",
     fertility_field = "fertility",
@@ -494,7 +494,7 @@ test_that("indicator_productive_station works with zero-row sf", {
   expect_equal(nrow(result), 0)
 })
 
-test_that("indicator_productive_station returns correct values for known species", {
+test_that("indicateur_p2_station returns correct values for known species", {
   skip_if_not_installed("sf")
 
   # FASY fertility=1 temperate_oceanic should be 8.5 according to bundled table
@@ -505,7 +505,7 @@ test_that("indicator_productive_station returns correct values for known species
     climate = "temperate_oceanic"
   ), n = 1)
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -515,7 +515,7 @@ test_that("indicator_productive_station returns correct values for known species
   expect_equal(result$P2[1], 8.5)
 })
 
-test_that("indicator_productive_station handles lowercase species codes", {
+test_that("indicateur_p2_station handles lowercase species codes", {
   skip_if_not_installed("sf")
 
   # The function uses toupper() so lowercase should work
@@ -526,7 +526,7 @@ test_that("indicator_productive_station handles lowercase species codes", {
     climate = "temperate_oceanic"
   ), n = 1)
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -537,10 +537,10 @@ test_that("indicator_productive_station handles lowercase species codes", {
 })
 
 # ==============================================================================
-# indicator_productive_quality (P3)
+# indicateur_p3_qualite_bois (P3)
 # ==============================================================================
 
-test_that("indicator_productive_quality (P3) scores timber quality", {
+test_that("indicateur_p3_qualite_bois (P3) scores timber quality", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -551,7 +551,7 @@ test_that("indicator_productive_quality (P3) scores timber quality", {
     defects = c(0, 0, 1)
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     units = test_units,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -567,25 +567,25 @@ test_that("indicator_productive_quality (P3) scores timber quality", {
   expect_true(result$P3[1] > result$P3[3])
 })
 
-test_that("indicator_productive_quality validates input is sf", {
+test_that("indicateur_p3_qualite_bois validates input is sf", {
   expect_error(
-    indicator_productive_quality(data.frame(x = 1:3)),
+    indicateur_p3_qualite_bois(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_productive_quality errors on missing dbh field", {
+test_that("indicateur_p3_qualite_bois errors on missing dbh field", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(id = 1L), n = 1)
 
   expect_error(
-    indicator_productive_quality(test_units),
+    indicateur_p3_qualite_bois(test_units),
     "Required field missing"
   )
 })
 
-test_that("indicator_productive_quality handles NA in dbh", {
+test_that("indicateur_p3_qualite_bois handles NA in dbh", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -594,7 +594,7 @@ test_that("indicator_productive_quality handles NA in dbh", {
     species = c("FASY", "FASY")
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     species_field = "species"
@@ -604,7 +604,7 @@ test_that("indicator_productive_quality handles NA in dbh", {
   expect_false(is.na(result$P3[2]))
 })
 
-test_that("indicator_productive_quality uses generic thresholds when no species field", {
+test_that("indicateur_p3_qualite_bois uses generic thresholds when no species field", {
   skip_if_not_installed("sf")
 
   # species_field not in the data => generic sawlog=35, pulp=18
@@ -613,7 +613,7 @@ test_that("indicator_productive_quality uses generic thresholds when no species 
     dbh = c(40, 25, 10)
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     species_field = "nonexistent_species"
@@ -626,7 +626,7 @@ test_that("indicator_productive_quality uses generic thresholds when no species 
   expect_true(all(!is.na(result$P3)))
 })
 
-test_that("indicator_productive_quality applies conifer thresholds for pine species", {
+test_that("indicateur_p3_qualite_bois applies conifer thresholds for pine species", {
   skip_if_not_installed("sf")
 
   # Conifer species matching ^P[IML] pattern
@@ -636,7 +636,7 @@ test_that("indicator_productive_quality applies conifer thresholds for pine spec
     species = c("PIAB", "PISY", "PINI")
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     species_field = "species"
@@ -653,7 +653,7 @@ test_that("indicator_productive_quality applies conifer thresholds for pine spec
   expect_equal(result$P3[2], 65)
 })
 
-test_that("indicator_productive_quality applies broadleaf thresholds for non-conifer species", {
+test_that("indicateur_p3_qualite_bois applies broadleaf thresholds for non-conifer species", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -662,7 +662,7 @@ test_that("indicator_productive_quality applies broadleaf thresholds for non-con
     species = c("FASY", "QUPE", "CASA")
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     species_field = "species"
@@ -684,7 +684,7 @@ test_that("indicator_productive_quality applies broadleaf thresholds for non-con
   expect_equal(result$P3[3], 55)
 })
 
-test_that("indicator_productive_quality handles all three diameter score ranges", {
+test_that("indicateur_p3_qualite_bois handles all three diameter score ranges", {
   skip_if_not_installed("sf")
 
   # Use broadleaf (FASY): sawlog=40, pulp=20
@@ -696,7 +696,7 @@ test_that("indicator_productive_quality handles all three diameter score ranges"
     defects = c(0, 0, 0)
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -717,7 +717,7 @@ test_that("indicator_productive_quality handles all three diameter score ranges"
   expect_equal(result$P3[3], 57)
 })
 
-test_that("indicator_productive_quality uses provided form_score and handles NA", {
+test_that("indicateur_p3_qualite_bois uses provided form_score and handles NA", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -728,7 +728,7 @@ test_that("indicator_productive_quality uses provided form_score and handles NA"
     defects = c(0, 0, 0)
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -745,7 +745,7 @@ test_that("indicator_productive_quality uses provided form_score and handles NA"
   expect_equal(result$P3[3], 80)
 })
 
-test_that("indicator_productive_quality handles defects field values and NA", {
+test_that("indicateur_p3_qualite_bois handles defects field values and NA", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -756,7 +756,7 @@ test_that("indicator_productive_quality handles defects field values and NA", {
     defects = c(0, 1, NA)
   ))
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -773,7 +773,7 @@ test_that("indicator_productive_quality handles defects field values and NA", {
   expect_equal(result$P3[3], 89)
 })
 
-test_that("indicator_productive_quality handles missing optional fields entirely", {
+test_that("indicateur_p3_qualite_bois handles missing optional fields entirely", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -783,7 +783,7 @@ test_that("indicator_productive_quality handles missing optional fields entirely
   ))
 
   # Without form_score and defects columns
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     species_field = "species"
@@ -793,7 +793,7 @@ test_that("indicator_productive_quality handles missing optional fields entirely
   expect_true(all(result$P3 >= 0 & result$P3 <= 100))
 })
 
-test_that("indicator_productive_quality uses custom weights", {
+test_that("indicateur_p3_qualite_bois uses custom weights", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -806,7 +806,7 @@ test_that("indicator_productive_quality uses custom weights", {
 
   custom_weights <- c(form = 0.6, diameter = 0.3, defects = 0.1)
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -828,7 +828,7 @@ test_that("indicator_productive_quality uses custom weights", {
     defects = 1
   ), n = 1)
 
-  result2_default <- indicator_productive_quality(
+  result2_default <- indicateur_p3_qualite_bois(
     test_units2,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -836,7 +836,7 @@ test_that("indicator_productive_quality uses custom weights", {
     species_field = "species"
   )
 
-  result2_custom <- indicator_productive_quality(
+  result2_custom <- indicateur_p3_qualite_bois(
     test_units2,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -849,7 +849,7 @@ test_that("indicator_productive_quality uses custom weights", {
   expect_false(result2_default$P3[1] == result2_custom$P3[1])
 })
 
-test_that("indicator_productive_quality uses custom column name", {
+test_that("indicateur_p3_qualite_bois uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -860,7 +860,7 @@ test_that("indicator_productive_quality uses custom column name", {
     defects = 0
   ), n = 1)
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     test_units,
     dbh_field = "dbh",
     form_score_field = "form_score",
@@ -873,7 +873,7 @@ test_that("indicator_productive_quality uses custom column name", {
   expect_false("P3" %in% names(result))
 })
 
-test_that("indicator_productive_quality works with zero-row sf", {
+test_that("indicateur_p3_qualite_bois works with zero-row sf", {
   skip_if_not_installed("sf")
 
   empty_sf <- sf::st_sf(
@@ -882,7 +882,7 @@ test_that("indicator_productive_quality works with zero-row sf", {
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- indicator_productive_quality(
+  result <- indicateur_p3_qualite_bois(
     units = empty_sf,
     dbh_field = "dbh",
     species_field = "species"
@@ -910,7 +910,7 @@ test_that("Productive indicators handle missing data correctly", {
   ))
 
   # P1 with missing species or density should return NA
-  result_p1 <- indicator_productive_volume(
+  result_p1 <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",
@@ -921,7 +921,7 @@ test_that("Productive indicators handle missing data correctly", {
   expect_true(is.na(result_p1$P1[2]))
 
   # P2 with missing species should return NA
-  result_p2 <- indicator_productive_station(
+  result_p2 <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -949,18 +949,18 @@ test_that("Productive family indicators integrate with family system", {
 
   # Calculate all P indicators
   result <- test_units %>%
-    indicator_productive_volume(
+    indicateur_p1_volume(
       species_field = "species",
       dbh_field = "dbh",
       height_field = "height",
       density_field = "density"
     ) %>%
-    indicator_productive_station(
+    indicateur_p2_station(
       species_field = "species",
       fertility_field = "fertility",
       climate_field = "climate"
     ) %>%
-    indicator_productive_quality(
+    indicateur_p3_qualite_bois(
       dbh_field = "dbh",
       form_score_field = "form_score",
       defects_field = "defects",
@@ -973,12 +973,12 @@ test_that("Productive family indicators integrate with family system", {
   # Create family composite
   result_family <- create_family_index(result, family_codes = "P")
 
-  expect_true("family_P" %in% names(result_family))
-  expect_type(result_family$family_P, "double")
-  expect_true(all(result_family$family_P > 0))
+  expect_true("famille_production" %in% names(result_family))
+  expect_type(result_family$famille_production, "double")
+  expect_true(all(result_family$famille_production > 0))
 })
 
-test_that("indicator_productive_station with species not in table but genus in table", {
+test_that("indicateur_p2_station with species not in table but genus in table", {
 
   skip_if_not_installed("sf")
 
@@ -990,7 +990,7 @@ test_that("indicator_productive_station with species not in table but genus in t
     climate = "temperate_oceanic"
   ), n = 1)
 
-  result <- indicator_productive_station(
+  result <- indicateur_p2_station(
     units = test_units,
     species_field = "species",
     fertility_field = "fertility",
@@ -1003,7 +1003,7 @@ test_that("indicator_productive_station with species not in table but genus in t
   expect_equal(result$P2[1], mean(c(5.0, 8.0)))
 })
 
-test_that("indicator_productive_volume result preserves original columns", {
+test_that("indicateur_p1_volume result preserves original columns", {
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -1015,7 +1015,7 @@ test_that("indicator_productive_volume result preserves original columns", {
     extra_col = "keep_me"
   ), n = 1)
 
-  result <- indicator_productive_volume(
+  result <- indicateur_p1_volume(
     units = test_units,
     species_field = "species",
     dbh_field = "dbh",

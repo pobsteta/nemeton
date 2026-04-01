@@ -392,8 +392,8 @@ test_that("get_family_name uses get_language when lang is NULL", {
 test_that("detect_indicator_family handles long-form column names", {
   # These are mapped via get_column_family_map() from INDICATOR_FAMILIES
   # Test a few known column names from INDICATOR_FAMILIES config
-  result_c <- nemeton:::detect_indicator_family("carbon_biomass")
-  result_w <- nemeton:::detect_indicator_family("water_twi")
+  result_c <- nemeton:::detect_indicator_family("indicateur_c1_biomasse")
+  result_w <- nemeton:::detect_indicator_family("indicateur_w3_humidite")
 
   # These should map to families if they're in the config
   # If not in config, they return NA - that's also fine, just testing the code path
@@ -428,14 +428,14 @@ test_that("identify_pareto_optimal rejects non-data.frame/non-sf input", {
 test_that("identify_pareto_optimal rejects non-numeric objectives", {
   test_data <- data.frame(
     id = c("P1", "P2", "P3"),
-    family_C = c("a", "b", "c"),
-    family_B = c(50, 55, 52)
+    famille_carbone = c("a", "b", "c"),
+    famille_biodiversite = c(50, 55, 52)
   )
 
   expect_error(
     identify_pareto_optimal(
       test_data,
-      objectives = c("family_C", "family_B"),
+      objectives = c("famille_carbone", "famille_biodiversite"),
       maximize = c(TRUE, TRUE)
     ),
     "numeric"
@@ -445,14 +445,14 @@ test_that("identify_pareto_optimal rejects non-numeric objectives", {
 test_that("identify_pareto_optimal rejects data with NA in objectives", {
   test_data <- data.frame(
     id = c("P1", "P2", "P3"),
-    family_C = c(60, NA, 70),
-    family_B = c(50, 55, 52)
+    famille_carbone = c(60, NA, 70),
+    famille_biodiversite = c(50, 55, 52)
   )
 
   expect_error(
     identify_pareto_optimal(
       test_data,
-      objectives = c("family_C", "family_B"),
+      objectives = c("famille_carbone", "famille_biodiversite"),
       maximize = c(TRUE, TRUE)
     ),
     "NA"
@@ -462,13 +462,13 @@ test_that("identify_pareto_optimal rejects data with NA in objectives", {
 test_that("identify_pareto_optimal works with simple data.frame", {
   test_data <- data.frame(
     id = c("P1", "P2", "P3", "P4"),
-    family_C = c(80, 60, 70, 50),
-    family_B = c(50, 80, 60, 70)
+    famille_carbone = c(80, 60, 70, 50),
+    famille_biodiversite = c(50, 80, 60, 70)
   )
 
   result <- identify_pareto_optimal(
     test_data,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
 
@@ -482,13 +482,13 @@ test_that("identify_pareto_optimal works with simple data.frame", {
 
 test_that("identify_pareto_optimal with all minimize", {
   test_data <- data.frame(
-    family_C = c(80, 60, 70, 50),
-    family_B = c(50, 80, 60, 70)
+    famille_carbone = c(80, 60, 70, 50),
+    famille_biodiversite = c(50, 80, 60, 70)
   )
 
   result <- identify_pareto_optimal(
     test_data,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(FALSE, FALSE)
   )
 
@@ -500,13 +500,13 @@ test_that("identify_pareto_optimal with all minimize", {
 
 test_that("identify_pareto_optimal with two identical rows", {
   test_data <- data.frame(
-    family_C = c(60, 60, 80),
-    family_B = c(50, 50, 30)
+    famille_carbone = c(60, 60, 80),
+    famille_biodiversite = c(50, 50, 30)
   )
 
   result <- identify_pareto_optimal(
     test_data,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
 
@@ -537,23 +537,23 @@ test_that("msg handles various message categories", {
   nemeton::nemeton_set_language("en")
 
   # v0.3.0 messages
-  result <- nemeton:::msg("indicator_biodiversity_protection")
+  result <- nemeton:::msg("indicateur_b1_protection")
   expect_true(nchar(result) > 0)
 
-  result <- nemeton:::msg("indicator_risk_fire")
+  result <- nemeton:::msg("indicateur_r1_feu")
   expect_true(nchar(result) > 0)
 
   # v0.4.0 messages
-  result <- nemeton:::msg("indicator_social_trails")
+  result <- nemeton:::msg("indicateur_s1_routes")
   expect_true(nchar(result) > 0)
 
-  result <- nemeton:::msg("indicator_productive_volume")
+  result <- nemeton:::msg("indicateur_p1_volume")
   expect_true(nchar(result) > 0)
 
-  result <- nemeton:::msg("indicator_energy_fuelwood")
+  result <- nemeton:::msg("indicateur_e1_bois_energie")
   expect_true(nchar(result) > 0)
 
-  result <- nemeton:::msg("indicator_naturalness_distance")
+  result <- nemeton:::msg("indicateur_n1_distance")
   expect_true(nchar(result) > 0)
 })
 
@@ -692,7 +692,7 @@ test_that("create_family_index geometric mean warns on zero/negative values", {
     result <- create_family_index(units, method = "geometric", family_codes = "C"),
     "positive values|absolute values"
   )
-  expect_true("family_C" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
 })
 
 test_that("create_family_index harmonic mean warns on zero values", {
@@ -704,7 +704,7 @@ test_that("create_family_index harmonic mean warns on zero values", {
     result <- create_family_index(units, method = "harmonic", family_codes = "C"),
     "zero values|small value"
   )
-  expect_true("family_C" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
 })
 
 test_that("create_family_index handles all-NA row", {
@@ -713,8 +713,8 @@ test_that("create_family_index handles all-NA row", {
   units$C2 <- c(NA, 50, 60)
 
   result <- create_family_index(units, method = "mean", family_codes = "C")
-  expect_true(is.na(result$family_C[1]))
-  expect_false(is.na(result$family_C[2]))
+  expect_true(is.na(result$famille_carbone[1]))
+  expect_false(is.na(result$famille_carbone[2]))
 })
 
 # ==============================================================================
@@ -725,12 +725,12 @@ test_that("identify_pareto_optimal preserves sf class and geometry", {
   skip_if_not_installed("sf")
 
   units <- create_test_units(n_features = 4, crs = 2154)
-  units$family_C <- c(80, 60, 70, 50)
-  units$family_B <- c(50, 80, 60, 70)
+  units$famille_carbone <- c(80, 60, 70, 50)
+  units$famille_biodiversite <- c(50, 80, 60, 70)
 
   result <- identify_pareto_optimal(
     units,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
 

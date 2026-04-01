@@ -107,15 +107,15 @@ nemeton_radar(family_scores, unit_id = 1, mode = "family")
 \strong{Indicator Calculation:}
 \itemize{
   \item \code{\link{nemeton_compute}} - Compute biophysical indicators
-  \item \code{\link{indicator_carbon_biomass}} - Carbon stock (C1)
-  \item \code{\link{indicator_carbon_ndvi}} - Vegetation vitality (C2)
-  \item \code{\link{indicator_water_network}} - Hydrographic density (W1)
-  \item \code{\link{indicator_water_wetlands}} - Wetland coverage (W2)
-  \item \code{\link{indicator_water_twi}} - Topographic Wetness Index (W3)
-  \item \code{\link{indicator_soil_fertility}} - Soil fertility (F1)
-  \item \code{\link{indicator_soil_erosion}} - Erosion risk (F2)
-  \item \code{\link{indicator_landscape_fragmentation}} - Fragmentation (L1)
-  \item \code{\link{indicator_landscape_edge}} - Edge ratio (L2)
+  \item \code{\link{indicateur_c1_biomasse}} - Carbon stock (C1)
+  \item \code{\link{indicateur_c2_ndvi}} - Vegetation vitality (C2)
+  \item \code{\link{indicateur_w1_reseau}} - Hydrographic density (W1)
+  \item \code{\link{indicateur_w2_zones_humides}} - Wetland coverage (W2)
+  \item \code{\link{indicateur_w3_humidite}} - Topographic Wetness Index (W3)
+  \item \code{\link{indicateur_f1_fertilite}} - Soil fertility (F1)
+  \item \code{\link{indicateur_f2_erosion}} - Erosion risk (F2)
+  \item \code{\link{indicateur_l2_fragmentation}} - Fragmentation (L1)
+  \item \code{\link{indicateur_l1_sylvosphere}} - Edge ratio (L2)
 }
 
 \strong{Temporal Analysis:}

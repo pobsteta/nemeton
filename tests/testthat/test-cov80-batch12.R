@@ -7,25 +7,25 @@
 
 # --- clean_indicator_name (internal) ------------------------------------------
 
-test_that("clean_indicator_name converts family_C to C", {
-  expect_equal(nemeton:::clean_indicator_name("family_C"), "C")
+test_that("clean_indicator_name converts famille_carbone to C", {
+  expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
 })
 
-test_that("clean_indicator_name converts family_B to B", {
-  expect_equal(nemeton:::clean_indicator_name("family_B"), "B")
+test_that("clean_indicator_name converts famille_biodiversite to B", {
+  expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
 })
 
-test_that("clean_indicator_name converts family_W to W", {
-  expect_equal(nemeton:::clean_indicator_name("family_W"), "W")
+test_that("clean_indicator_name converts famille_eau to W", {
+  expect_equal(nemeton:::clean_indicator_name("famille_eau"), "W")
 })
 
-test_that("clean_indicator_name converts family_R to R", {
-  expect_equal(nemeton:::clean_indicator_name("family_R"), "R")
+test_that("clean_indicator_name converts famille_risque to R", {
+  expect_equal(nemeton:::clean_indicator_name("famille_risque"), "R")
 })
 
 test_that("clean_indicator_name does NOT strip family_ when followed by lowercase", {
 
-  # The regex only matches family_[A-Z]$ (single uppercase letter)
+  # The regex only matches famille_[a-z] (single uppercase letter)
   result <- nemeton:::clean_indicator_name("family_carbon")
   expect_false(result == "carbon")
   expect_true(grepl("Family", result))
@@ -44,7 +44,7 @@ test_that("clean_indicator_name removes _inv suffix and adds (Inverted)", {
 })
 
 test_that("clean_indicator_name replaces underscores with spaces", {
-  result <- nemeton:::clean_indicator_name("carbon_biomass")
+  result <- nemeton:::clean_indicator_name("indicateur_c1_biomasse")
   expect_equal(result, "Carbon biomass")
 })
 
@@ -59,7 +59,7 @@ test_that("clean_indicator_name handles already-capitalized names", {
 })
 
 test_that("clean_indicator_name vectorized over multiple names", {
-  result <- nemeton:::clean_indicator_name(c("family_C", "water_twi_norm", "risk_inv"))
+  result <- nemeton:::clean_indicator_name(c("famille_carbone", "water_twi_norm", "risk_inv"))
   expect_length(result, 3)
   expect_equal(result[1], "C")
   expect_true(grepl("\\(Normalized\\)", result[2]))
@@ -202,18 +202,18 @@ test_that("add_color_scale with direction = -1 reversed", {
 
 test_that("plot_indicators_map returns ggplot for single indicator", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  p <- nemeton::plot_indicators_map(data, indicators = "carbon_biomass")
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  p <- nemeton::plot_indicators_map(data, indicators = "indicateur_c1_biomasse")
   expect_s3_class(p, "ggplot")
 })
 
 test_that("plot_indicators_map creates faceted plot for multiple indicators", {
   data <- create_test_units(n_features = 4)
-  data$carbon_biomass <- c(80, 60, 70, 50)
-  data$water_twi <- c(30, 40, 50, 60)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     facet = TRUE
   )
   expect_s3_class(p, "ggplot")
@@ -222,8 +222,8 @@ test_that("plot_indicators_map creates faceted plot for multiple indicators", {
 
 test_that("plot_indicators_map auto-detects known indicators", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_network <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w1_reseau <- c(30, 40, 50)
 
   p <- nemeton::plot_indicators_map(data)
   expect_s3_class(p, "ggplot")
@@ -239,8 +239,8 @@ test_that("plot_indicators_map auto-detects _norm indicators", {
 
 test_that("plot_indicators_map auto-detects family indices", {
   data <- create_test_units(n_features = 3)
-  data$family_C <- c(50, 60, 70)
-  data$family_W <- c(40, 50, 60)
+  data$famille_carbone <- c(50, 60, 70)
+  data$famille_eau <- c(40, 50, 60)
 
   p <- nemeton::plot_indicators_map(data)
   expect_s3_class(p, "ggplot")
@@ -256,10 +256,10 @@ test_that("plot_indicators_map auto-detects composite_index", {
 
 test_that("plot_indicators_map auto-selects YlOrRd for risk indicators", {
   data <- create_test_units(n_features = 3)
-  data$risk_fire <- c(10, 50, 90)
+  data$indicateur_r1_feu <- c(10, 50, 90)
 
   # Passing a risk_ indicator without explicit palette
-  p <- nemeton::plot_indicators_map(data, indicators = "risk_fire")
+  p <- nemeton::plot_indicators_map(data, indicators = "indicateur_r1_feu")
   expect_s3_class(p, "ggplot")
 })
 
@@ -273,21 +273,21 @@ test_that("plot_indicators_map auto-selects YlOrRd for R1-R4 indicators", {
 
 test_that("plot_indicators_map uses user palette even for risk indicators", {
   data <- create_test_units(n_features = 3)
-  data$risk_fire <- c(10, 50, 90)
+  data$indicateur_r1_feu <- c(10, 50, 90)
 
   # Explicit palette should override auto-selection
   p <- nemeton::plot_indicators_map(
-    data, indicators = "risk_fire", palette = "Blues"
+    data, indicators = "indicateur_r1_feu", palette = "Blues"
   )
   expect_s3_class(p, "ggplot")
 })
 
 test_that("plot_indicators_map with custom title and legend_title", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     title = "My Custom Title",
     legend_title = "Custom Legend"
   )
@@ -297,10 +297,10 @@ test_that("plot_indicators_map with custom title and legend_title", {
 
 test_that("plot_indicators_map with custom alpha, border_color, border_size", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     alpha = 0.5,
     border_color = "black",
     border_size = 1.0,
@@ -310,16 +310,16 @@ test_that("plot_indicators_map with custom alpha, border_color, border_size", {
 })
 
 test_that("plot_indicators_map errors on non-sf input", {
-  df <- data.frame(carbon_biomass = c(1, 2, 3))
+  df <- data.frame(indicateur_c1_biomasse = c(1, 2, 3))
   expect_error(
-    nemeton::plot_indicators_map(df, indicators = "carbon_biomass"),
+    nemeton::plot_indicators_map(df, indicators = "indicateur_c1_biomasse"),
     "must be an.*sf.*object"
   )
 })
 
 test_that("plot_indicators_map errors on missing indicator column", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
   expect_error(
     nemeton::plot_indicators_map(data, indicators = "nonexistent_col"),
     "not found"
@@ -337,30 +337,30 @@ test_that("plot_indicators_map errors when no indicators can be detected", {
 
 test_that("plot_indicators_map single indicator auto-generates title", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  p <- nemeton::plot_indicators_map(data, indicators = "carbon_biomass")
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  p <- nemeton::plot_indicators_map(data, indicators = "indicateur_c1_biomasse")
   expect_true(grepl("Map of", p$labels$title))
 })
 
 test_that("plot_indicators_map multiple indicators auto-generates title", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = c("carbon_biomass", "water_twi")
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite")
   )
   expect_true(grepl("Maps of 2 indicators", p$labels$title))
 })
 
 test_that("plot_indicators_map multiple indicators with facet=TRUE (default) works", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
   # Multiple indicators with default facet=TRUE
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     facet = TRUE
   )
   expect_s3_class(p, "ggplot")
@@ -369,10 +369,10 @@ test_that("plot_indicators_map multiple indicators with facet=TRUE (default) wor
 
 test_that("plot_indicators_map with custom breaks and labels", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(0, 25, 50, 75, 100)
+  data$indicateur_c1_biomasse <- c(0, 25, 50, 75, 100)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     breaks = c(0, 50, 100),
     labels = c("Low", "Med", "High")
   )
@@ -381,10 +381,10 @@ test_that("plot_indicators_map with custom breaks and labels", {
 
 test_that("plot_indicators_map with RdYlGn palette (non-viridis)", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     palette = "RdYlGn"
   )
   expect_s3_class(p, "ggplot")
@@ -392,10 +392,10 @@ test_that("plot_indicators_map with RdYlGn palette (non-viridis)", {
 
 test_that("plot_indicators_map with direction=-1 reverses scale", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     direction = -1
   )
   expect_s3_class(p, "ggplot")
@@ -403,12 +403,12 @@ test_that("plot_indicators_map with direction=-1 reverses scale", {
 
 test_that("plot_indicators_map with ncol parameter for facets", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
   data$soil_erosion <- c(10, 20, 30)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = c("carbon_biomass", "water_twi", "soil_erosion"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite", "soil_erosion"),
     ncol = 3
   )
   expect_s3_class(p, "ggplot")
@@ -419,11 +419,11 @@ test_that("plot_indicators_map with ncol parameter for facets", {
 
 test_that("plot_comparison_map returns ggplot with faceted comparison", {
   d1 <- create_test_units(n_features = 3)
-  d1$carbon_biomass <- c(100, 200, 300)
+  d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
-  d2$carbon_biomass <- c(150, 250, 350)
+  d2$indicateur_c1_biomasse <- c(150, 250, 350)
 
-  p <- nemeton::plot_comparison_map(d1, d2, indicator = "carbon_biomass")
+  p <- nemeton::plot_comparison_map(d1, d2, indicator = "indicateur_c1_biomasse")
   expect_s3_class(p, "ggplot")
   expect_true("FacetWrap" %in% class(p$facet))
 })
@@ -501,12 +501,12 @@ test_that("plot_comparison_map errors when data1 is not sf", {
 
 test_that("plot_comparison_map errors when indicator missing from data2", {
   d1 <- create_test_units(n_features = 3)
-  d1$carbon_biomass <- c(100, 200, 300)
+  d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
-  d2$other_col <- c(1, 2, 3) # Missing carbon_biomass
+  d2$other_col <- c(1, 2, 3) # Missing indicateur_c1_biomasse
 
   expect_error(
-    nemeton::plot_comparison_map(d1, d2, indicator = "carbon_biomass"),
+    nemeton::plot_comparison_map(d1, d2, indicator = "indicateur_c1_biomasse"),
     "must exist in both"
   )
 })
@@ -515,24 +515,24 @@ test_that("plot_comparison_map errors when indicator missing from data2", {
 
 test_that("plot_difference_map absolute type returns ggplot", {
   d1 <- create_test_units(n_features = 3)
-  d1$carbon_biomass <- c(100, 200, 300)
+  d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
-  d2$carbon_biomass <- c(150, 250, 350)
+  d2$indicateur_c1_biomasse <- c(150, 250, 350)
 
   p <- nemeton::plot_difference_map(
-    d1, d2, indicator = "carbon_biomass", type = "absolute"
+    d1, d2, indicator = "indicateur_c1_biomasse", type = "absolute"
   )
   expect_s3_class(p, "ggplot")
 })
 
 test_that("plot_difference_map relative type returns ggplot", {
   d1 <- create_test_units(n_features = 3)
-  d1$carbon_biomass <- c(100, 200, 300)
+  d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
-  d2$carbon_biomass <- c(120, 220, 330)
+  d2$indicateur_c1_biomasse <- c(120, 220, 330)
 
   p <- nemeton::plot_difference_map(
-    d1, d2, indicator = "carbon_biomass", type = "relative"
+    d1, d2, indicator = "indicateur_c1_biomasse", type = "relative"
   )
   expect_s3_class(p, "ggplot")
 })
@@ -594,12 +594,12 @@ test_that("plot_difference_map errors on non-sf input", {
 
 test_that("plot_difference_map errors when indicator missing", {
   d1 <- create_test_units(n_features = 3)
-  d1$carbon_biomass <- c(100, 200, 300)
+  d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
-  # d2 does NOT have carbon_biomass
+  # d2 does NOT have indicateur_c1_biomasse
 
   expect_error(
-    nemeton::plot_difference_map(d1, d2, indicator = "carbon_biomass"),
+    nemeton::plot_difference_map(d1, d2, indicator = "indicateur_c1_biomasse"),
     "must exist in both"
   )
 })
@@ -608,8 +608,8 @@ test_that("plot_difference_map errors when indicator missing", {
 
 test_that("nemeton_radar single unit in indicator mode returns ggplot", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
   data$soil_erosion <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, mode = "indicator")
@@ -618,10 +618,10 @@ test_that("nemeton_radar single unit in indicator mode returns ggplot", {
 
 test_that("nemeton_radar single unit in family mode returns ggplot", {
   data <- create_test_units(n_features = 5)
-  data$family_C <- c(80, 60, 70, 50, 90)
-  data$family_B <- c(70, 50, 60, 40, 80)
-  data$family_W <- c(65, 75, 85, 55, 45)
-  data$family_A <- c(55, 45, 35, 65, 75)
+  data$famille_carbone <- c(80, 60, 70, 50, 90)
+  data$famille_biodiversite <- c(70, 50, 60, 40, 80)
+  data$famille_eau <- c(65, 75, 85, 55, 45)
+  data$famille_air <- c(55, 45, 35, 65, 75)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, mode = "family")
   expect_s3_class(p, "ggplot")
@@ -629,9 +629,9 @@ test_that("nemeton_radar single unit in family mode returns ggplot", {
 
 test_that("nemeton_radar family mode auto-detects family_ columns", {
   data <- create_test_units(n_features = 3)
-  data$family_C <- c(80, 60, 70)
-  data$family_W <- c(65, 75, 85)
-  data$family_R <- c(40, 50, 60)
+  data$famille_carbone <- c(80, 60, 70)
+  data$famille_eau <- c(65, 75, 85)
+  data$famille_risque <- c(40, 50, 60)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, mode = "family")
   expect_s3_class(p, "ggplot")
@@ -641,7 +641,7 @@ test_that("nemeton_radar family mode auto-detects family_ columns", {
 
 test_that("nemeton_radar family mode errors when no family columns found", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
 
   expect_error(
     nemeton::nemeton_radar(data, mode = "family"),
@@ -651,8 +651,8 @@ test_that("nemeton_radar family mode errors when no family columns found", {
 
 test_that("nemeton_radar mean of all units (unit_id=NULL)", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
 
   p <- nemeton::nemeton_radar(data, unit_id = NULL, mode = "indicator")
   expect_s3_class(p, "ggplot")
@@ -661,8 +661,8 @@ test_that("nemeton_radar mean of all units (unit_id=NULL)", {
 
 test_that("nemeton_radar multiple unit_ids comparison mode", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
 
   p <- nemeton::nemeton_radar(data, unit_id = c(1, 3))
   expect_s3_class(p, "ggplot")
@@ -673,8 +673,8 @@ test_that("nemeton_radar multiple unit_ids comparison mode", {
 
 test_that("nemeton_radar comparison mode with 3 units", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
   data$soil_erosion <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = c(1, 2, 3))
@@ -684,8 +684,8 @@ test_that("nemeton_radar comparison mode with 3 units", {
 
 test_that("nemeton_radar auto-detects numeric indicators in indicator mode", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1)
   expect_s3_class(p, "ggplot")
@@ -693,7 +693,7 @@ test_that("nemeton_radar auto-detects numeric indicators in indicator mode", {
 
 test_that("nemeton_radar errors on missing indicator", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
 
   expect_error(
     nemeton::nemeton_radar(data, indicators = c("nonexistent")),
@@ -711,8 +711,8 @@ test_that("nemeton_radar errors on non-sf input", {
 
 test_that("nemeton_radar with normalize=TRUE scales to 0-100", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(100, 200, 300, 400, 500)
-  data$water_twi <- c(10, 20, 30, 40, 50)
+  data$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
+  data$indicateur_w3_humidite <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, normalize = TRUE)
   expect_s3_class(p, "ggplot")
@@ -722,8 +722,8 @@ test_that("nemeton_radar with normalize=TRUE scales to 0-100", {
 
 test_that("nemeton_radar with normalize=FALSE keeps raw values", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(100, 200, 300, 400, 500)
-  data$water_twi <- c(10, 20, 30, 40, 50)
+  data$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
+  data$indicateur_w3_humidite <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, normalize = FALSE)
   expect_s3_class(p, "ggplot")
@@ -735,20 +735,20 @@ test_that("nemeton_radar with normalize=FALSE keeps raw values", {
 
 test_that("nemeton_radar normalize handles all-equal values (max == min)", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(50, 50, 50) # all same
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(50, 50, 50) # all same
+  data$indicateur_w3_humidite <- c(30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, normalize = TRUE)
   expect_s3_class(p, "ggplot")
   # For constant indicator, normalized value should be 50
-  carbon_val <- p$data$value[p$data$indicator == "carbon_biomass"]
+  carbon_val <- p$data$value[p$data$indicator == "indicateur_c1_biomasse"]
   expect_equal(carbon_val, 50)
 })
 
 test_that("nemeton_radar single unit with custom title", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
 
   p <- nemeton::nemeton_radar(
     data, unit_id = 1, title = "My Custom Radar"
@@ -758,8 +758,8 @@ test_that("nemeton_radar single unit with custom title", {
 
 test_that("nemeton_radar single unit auto-generates title with unit label", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1)
   expect_true(grepl("Indicator Profile", p$labels$title))
@@ -767,8 +767,8 @@ test_that("nemeton_radar single unit auto-generates title with unit label", {
 
 test_that("nemeton_radar comparison mode auto-generates title", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
 
   p <- nemeton::nemeton_radar(data, unit_id = c(1, 2))
   expect_true(grepl("Comparison", p$labels$title))
@@ -776,8 +776,8 @@ test_that("nemeton_radar comparison mode auto-generates title", {
 
 test_that("nemeton_radar comparison mode with custom title", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
 
   p <- nemeton::nemeton_radar(
     data, unit_id = c(1, 2), title = "Parcels A vs B"
@@ -787,20 +787,20 @@ test_that("nemeton_radar comparison mode with custom title", {
 
 test_that("nemeton_radar comparison mode normalize handles constant indicator", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(50, 50, 50) # all same
-  data$water_twi <- c(10, 20, 30)
+  data$indicateur_c1_biomasse <- c(50, 50, 50) # all same
+  data$indicateur_w3_humidite <- c(10, 20, 30)
 
   p <- nemeton::nemeton_radar(data, unit_id = c(1, 2), normalize = TRUE)
   expect_s3_class(p, "ggplot")
   # The constant indicator should have value 50
-  carbon_vals <- p$data$value[p$data$indicator == "carbon_biomass"]
+  carbon_vals <- p$data$value[p$data$indicator == "indicateur_c1_biomasse"]
   expect_true(all(carbon_vals == 50))
 })
 
 test_that("nemeton_radar with custom fill_color and fill_alpha", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
 
   p <- nemeton::nemeton_radar(
     data, unit_id = 1,
@@ -812,13 +812,13 @@ test_that("nemeton_radar with custom fill_color and fill_alpha", {
 
 test_that("nemeton_radar with explicit indicators parameter", {
   data <- create_test_units(n_features = 5)
-  data$carbon_biomass <- c(80, 60, 70, 50, 90)
-  data$water_twi <- c(30, 40, 50, 60, 20)
+  data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
+  data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
   data$soil_erosion <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(
     data, unit_id = 1,
-    indicators = c("carbon_biomass", "water_twi")
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite")
   )
   expect_s3_class(p, "ggplot")
   # Should only have 2 indicators, not 3
@@ -827,7 +827,7 @@ test_that("nemeton_radar with explicit indicators parameter", {
 
 test_that("nemeton_radar errors on invalid unit_id (string not found)", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
 
   expect_error(
     nemeton::nemeton_radar(data, unit_id = "INVALID"),
@@ -837,14 +837,14 @@ test_that("nemeton_radar errors on invalid unit_id (string not found)", {
 
 test_that("nemeton_radar indicator mode excludes family_ columns from auto-detect", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass <- c(80, 60, 70)
-  data$family_C <- c(50, 60, 70)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$famille_carbone <- c(50, 60, 70)
 
-  # In indicator mode, family_C should be excluded from auto-detected indicators
+  # In indicator mode, famille_carbone should be excluded from auto-detected indicators
   p <- nemeton::nemeton_radar(data, unit_id = 1, mode = "indicator")
   expect_s3_class(p, "ggplot")
-  # Should only show carbon_biomass, not family_C
-  expect_false("family_C" %in% p$data$indicator)
+  # Should only show indicateur_c1_biomasse, not famille_carbone
+  expect_false("famille_carbone" %in% p$data$indicator)
 })
 
 test_that("nemeton_radar indicator mode errors when no numeric indicators", {
@@ -862,8 +862,8 @@ test_that("nemeton_radar indicator mode errors when no numeric indicators", {
 test_that("nemeton_radar lookup by nemeton_id column", {
   data <- create_test_units(n_features = 3)
   data$nemeton_id <- c("P01", "P02", "P03")
-  data$carbon_biomass <- c(80, 60, 70)
-  data$water_twi <- c(30, 40, 50)
+  data$indicateur_c1_biomasse <- c(80, 60, 70)
+  data$indicateur_w3_humidite <- c(30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = "P02")
   expect_s3_class(p, "ggplot")

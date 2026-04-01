@@ -197,15 +197,18 @@ app_server <- function(input, output, session) {
     tab <- input$main_nav
     if (is.null(tab)) return()
 
-    # Check if this is a family tab (format: "family_X")
-    if (grepl("^family_", tab)) {
-      family_code <- sub("^family_", "", tab)
+    # Vérifier si c'est un onglet famille (format NMT : "famille_*")
+    if (grepl("^famille_", tab)) {
+      # Reverse lookup : famille_carbone -> "C"
+      famille_rev <- stats::setNames(names(FAMILLE_NMT_MAP), unname(FAMILLE_NMT_MAP))
+      family_code <- famille_rev[[tab]]
+      if (is.null(family_code)) return()
       already_init <- initialized_families()
 
       # Initialize only if not already done
       if (!(family_code %in% already_init)) {
         cli::cli_alert_info("Lazy loading family module: {family_code}")
-        mod_family_server(paste0("family_", family_code), family_code, app_state)
+        mod_family_server(tab, family_code, app_state)
         initialized_families(c(already_init, family_code))
       }
     }

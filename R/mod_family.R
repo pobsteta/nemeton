@@ -38,7 +38,7 @@ mod_family_server <- function(id, family_code, app_state) {
 
       all_cols <- names(df)
 
-      # Try both short codes (C1, C2) and long-form column names (carbon_biomass)
+      # Try both short codes (C1, C2) and long-form column names (indicateur_c1_biomasse)
       candidates <- c(family_config$indicators, family_config$column_names)
       matched <- character(0)
       for (col in candidates) {
@@ -660,7 +660,7 @@ make_indicator_leaflet <- function(sf_data, ind_col, title) {
     val_range <- c(max(0, mid - 1), mid + 1)
   }
   # Use YlOrRd palette for risk indicators, viridis otherwise
-  is_risk <- grepl("^R[1-4]|^family_R|^risk_", ind_col)
+  is_risk <- grepl("^R[1-4]|^famille_risque|^risk_", ind_col)
   pal_name <- if (is_risk) "YlOrRd" else "viridis"
   pal <- leaflet::colorNumeric(pal_name, domain = val_range, na.color = "#cccccc")
 

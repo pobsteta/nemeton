@@ -6,7 +6,7 @@
 #'
 #' @param data An sf object or data.frame containing the parcels to cluster
 #' @param families Character vector of family column names to use for clustering
-#'   (e.g., \code{c("family_C", "family_B", "family_P", "family_S")})
+#'   (e.g., \code{c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")})
 #' @param k Integer number of clusters. If \code{NULL} (default), the optimal
 #'   number of clusters is determined automatically using silhouette analysis.
 #' @param method Character string specifying clustering method: \code{"kmeans"}
@@ -53,7 +53,7 @@
 #' # Cluster parcels into 3 groups based on 4 families
 #' result <- cluster_parcels(
 #'   massif_demo_units,
-#'   families = c("family_C", "family_B", "family_P", "family_S"),
+#'   families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
 #'   k = 3,
 #'   method = "kmeans"
 #' )
@@ -67,7 +67,7 @@
 #' # Auto-determine optimal k
 #' result_auto <- cluster_parcels(
 #'   massif_demo_units,
-#'   families = c("family_C", "family_B", "family_P", "family_S"),
+#'   families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
 #'   k = NULL
 #' )
 #' attr(result_auto, "optimal_k")
@@ -76,7 +76,7 @@
 #' # Use hierarchical clustering
 #' result_hclust <- cluster_parcels(
 #'   massif_demo_units,
-#'   families = c("family_C", "family_B", "family_P", "family_S"),
+#'   families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
 #'   k = 3,
 #'   method = "hierarchical"
 #' )

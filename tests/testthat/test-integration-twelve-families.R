@@ -41,7 +41,7 @@ test_that("create_family_index handles all 12 families", {
 
   for (fam in families) {
     result <- create_family_index(twelve_families, family_codes = fam)
-    family_col <- paste0("family_", fam)
+    family_col <- nemeton:::get_famille_col(fam)
     expect_true(family_col %in% names(result),
       info = paste("Family", fam, "should have family index")
     )
@@ -60,7 +60,7 @@ test_that("create_family_index can process all 12 families together", {
     family_codes = c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
   )
 
-  expected_cols <- paste0("family_", c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N"))
+  expected_cols <- unname(nemeton:::FAMILLE_NMT_MAP[c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")])
   expect_true(all(expected_cols %in% names(result)))
 })
 
@@ -80,9 +80,9 @@ test_that("12-axis radar plot works with all families (T086)", {
   p <- nemeton_radar(result,
     unit_id = 1, mode = "family",
     indicators = c(
-      "family_C", "family_B", "family_W", "family_A",
-      "family_F", "family_L", "family_T", "family_R",
-      "family_S", "family_P", "family_E", "family_N"
+      "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air",
+      "famille_sol", "famille_paysage", "famille_temporel", "famille_risque",
+      "famille_social", "famille_production", "famille_energie", "famille_naturalite"
     )
   )
 
@@ -114,8 +114,8 @@ test_that("12×12 correlation matrix generation works (T087)", {
 
   # Column/row names should be family_*
   expected_names <- c(
-    "family_C", "family_B", "family_W", "family_A", "family_F", "family_L",
-    "family_T", "family_R", "family_S", "family_P", "family_E", "family_N"
+    "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air", "famille_sol", "famille_paysage",
+    "famille_temporel", "famille_risque", "famille_social", "famille_production", "famille_energie", "famille_naturalite"
   )
   expect_true(all(rownames(cor_matrix) %in% expected_names))
   expect_true(all(colnames(cor_matrix) %in% expected_names))

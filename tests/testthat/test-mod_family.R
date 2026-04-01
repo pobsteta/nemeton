@@ -9,7 +9,7 @@ test_that("mod_family_ui returns valid Shiny UI for each family", {
   withr::local_options(nemeton.app_options = list(language = "fr"))
 
   for (code in nemeton:::get_family_codes()) {
-    ui <- nemeton:::mod_family_ui(paste0("family_", code), code)
+    ui <- nemeton:::mod_family_ui(nemeton:::get_famille_col(code), code)
     # UI returns tagList which is shiny.tag.list
     expect_true(inherits(ui, "shiny.tag.list") || inherits(ui, "shiny.tag"))
   }
@@ -22,17 +22,17 @@ test_that("mod_family_ui contains expected output elements", {
 
   withr::local_options(nemeton.app_options = list(language = "fr"))
 
-  ui <- nemeton:::mod_family_ui("family_C", "C")
+  ui <- nemeton:::mod_family_ui("famille_carbone", "C")
   ui_html <- as.character(ui)
 
   # Should contain dynamic map output (rendered via renderUI)
-  expect_true(grepl("family_C-maps_row", ui_html))
+  expect_true(grepl("famille_carbone-maps_row", ui_html))
 
   # Should contain table output
-  expect_true(grepl("family_C-indicator_table", ui_html))
+  expect_true(grepl("famille_carbone-indicator_table", ui_html))
 
   # Should contain statistics output
-  expect_true(grepl("family_C-analysis_stats", ui_html))
+  expect_true(grepl("famille_carbone-analysis_stats", ui_html))
 })
 
 test_that("mod_family_ui works in English", {
@@ -42,7 +42,7 @@ test_that("mod_family_ui works in English", {
 
   withr::local_options(nemeton.app_options = list(language = "en"))
 
-  ui <- nemeton:::mod_family_ui("family_B", "B")
+  ui <- nemeton:::mod_family_ui("famille_biodiversite", "B")
   ui_html <- as.character(ui)
 
   # Should contain English family name
@@ -83,10 +83,10 @@ test_that("clean_indicator_label resolves long-form column names", {
   withr::local_options(nemeton.app_options = list(language = "fr"))
 
   i18n <- nemeton:::get_i18n("fr")
-  label <- nemeton:::clean_indicator_label("carbon_biomass", i18n)
+  label <- nemeton:::clean_indicator_label("indicateur_c1_biomasse", i18n)
   expect_equal(label, "C1 - Biomasse carbone (tC/ha)")
 
-  label_en <- nemeton:::clean_indicator_label("water_twi", nemeton:::get_i18n("en"))
+  label_en <- nemeton:::clean_indicator_label("indicateur_w3_humidite", nemeton:::get_i18n("en"))
   expect_equal(label_en, "W3 - Topographic Wetness Index")
 })
 
@@ -97,11 +97,11 @@ test_that("mod_family_ui contains AI generate button", {
 
   withr::local_options(nemeton.app_options = list(language = "fr"))
 
-  ui <- nemeton:::mod_family_ui("family_C", "C")
+  ui <- nemeton:::mod_family_ui("famille_carbone", "C")
   ui_html <- as.character(ui)
 
   # Should contain AI generate button
-  expect_true(grepl("family_C-ai_generate", ui_html))
+  expect_true(grepl("famille_carbone-ai_generate", ui_html))
   expect_true(grepl("robot", ui_html))
 })
 
@@ -186,7 +186,7 @@ test_that("get_indicator_tooltip returns tooltips for short codes", {
 })
 
 test_that("get_indicator_tooltip returns tooltips for long column names", {
-  tooltip <- nemeton:::get_indicator_tooltip("carbon_biomass", "fr")
+  tooltip <- nemeton:::get_indicator_tooltip("indicateur_c1_biomasse", "fr")
   expect_type(tooltip, "character")
   expect_true(nchar(tooltip) > 0)
 
@@ -518,12 +518,12 @@ test_that("INDICATOR_FAMILIES contains column_names mappings", {
   # Test that family config has column_names for mapping
   config <- nemeton:::get_family_config("C")
   expect_true("column_names" %in% names(config))
-  expect_equal(config$column_names, c("carbon_biomass", "carbon_ndvi"))
+  expect_equal(config$column_names, c("indicateur_c1_biomasse", "indicateur_c2_ndvi"))
 
   # The indicators list maps to column_names by position
   expect_equal(length(config$indicators), length(config$column_names))
   expect_equal(config$indicators[1], "C1")  # First indicator is C1
-  expect_equal(config$column_names[1], "carbon_biomass")  # Maps to carbon_biomass
+  expect_equal(config$column_names[1], "indicateur_c1_biomasse")  # Maps to indicateur_c1_biomasse
 })
 
 # ==============================================================================

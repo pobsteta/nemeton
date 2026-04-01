@@ -20,12 +20,12 @@ test_that("create_family_index aggregates indicators by family", {
 
   # Test output structure
   expect_s3_class(result, "sf")
-  expect_true("family_C" %in% names(result)) # Carbon family score
-  expect_true("family_W" %in% names(result)) # Water family score
+  expect_true("famille_carbone" %in% names(result)) # Carbon family score
+  expect_true("famille_eau" %in% names(result)) # Water family score
 
   # Test values are in 0-100 range (if normalized)
-  expect_true(all(!is.na(result$family_C)))
-  expect_true(all(!is.na(result$family_W)))
+  expect_true(all(!is.na(result$famille_carbone)))
+  expect_true(all(!is.na(result$famille_eau)))
 })
 
 test_that("create_family_index supports custom weights per indicator", {
@@ -42,11 +42,11 @@ test_that("create_family_index supports custom weights per indicator", {
   )
 
   expect_s3_class(result, "sf")
-  expect_true("family_C" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
 
   # Verify weighted average calculation
   expected_C <- units$C1 * 0.7 + units$C2 * 0.3
-  expect_equal(result$family_C, expected_C, tolerance = 0.01)
+  expect_equal(result$famille_carbone, expected_C, tolerance = 0.01)
 })
 
 test_that("create_family_index handles partial families", {
@@ -61,21 +61,21 @@ test_that("create_family_index handles partial families", {
   result <- create_family_index(units)
 
   # Should create indices for available families
-  expect_true("family_C" %in% names(result)) # Single indicator
-  expect_true("family_W" %in% names(result)) # Two indicators
+  expect_true("famille_carbone" %in% names(result)) # Single indicator
+  expect_true("famille_eau" %in% names(result)) # Two indicators
 })
 
 test_that("create_family_index detects family from indicator names", {
   # Use clean test units without pre-existing indicator columns
   units <- create_test_units(n_features = 2)
   units$C1_biomass <- c(50, 60) # Alternative naming
-  units$carbon_ndvi <- c(70, 75) # Non-standard
+  units$indicateur_c2_ndvi <- c(70, 75) # Non-standard
   units$W1 <- c(10, 15)
 
   # Should detect C1 prefix or W1
   result <- create_family_index(units)
 
-  expect_true("family_C" %in% names(result) || "family_W" %in% names(result))
+  expect_true("famille_carbone" %in% names(result) || "famille_eau" %in% names(result))
 })
 
 test_that("create_family_index supports different aggregation methods", {
@@ -86,15 +86,15 @@ test_that("create_family_index supports different aggregation methods", {
 
   # Mean
   result_mean <- create_family_index(units, method = "mean")
-  expect_equal(result_mean$family_C, (units$C1 + units$C2) / 2)
+  expect_equal(result_mean$famille_carbone, (units$C1 + units$C2) / 2)
 
   # Weighted mean with equal weights
   result_weighted <- create_family_index(units, method = "weighted")
-  expect_true("family_C" %in% names(result_weighted))
+  expect_true("famille_carbone" %in% names(result_weighted))
 
   # Geometric mean
   result_geom <- create_family_index(units, method = "geometric")
-  expect_equal(result_geom$family_C, sqrt(units$C1 * units$C2), tolerance = 0.01)
+  expect_equal(result_geom$famille_carbone, sqrt(units$C1 * units$C2), tolerance = 0.01)
 })
 
 test_that("create_family_index handles NA values appropriately", {
@@ -106,13 +106,13 @@ test_that("create_family_index handles NA values appropriately", {
   result <- create_family_index(units, method = "mean", na.rm = TRUE)
 
   # First unit: both values present
-  expect_false(is.na(result$family_C[1]))
+  expect_false(is.na(result$famille_carbone[1]))
 
   # Second unit: C1 is NA, only C2 contributes
-  expect_equal(result$family_C[2], 75)
+  expect_equal(result$famille_carbone[2], 75)
 
   # Third unit: C2 is NA, only C1 contributes
-  expect_equal(result$family_C[3], 55)
+  expect_equal(result$famille_carbone[3], 55)
 })
 
 test_that("create_family_index validates inputs", {
@@ -177,8 +177,8 @@ test_that("normalize_indicators maintains backward compatibility", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
-  units$carbon_biomass <- c(50, 60, 55)
-  units$water_twi <- c(10, 15, 12)
+  units$indicateur_c1_biomasse <- c(50, 60, 55)
+  units$indicateur_w3_humidite <- c(10, 15, 12)
 
   # Should work without family detection
   # (some demo columns may have identical values on 3 rows)
@@ -187,8 +187,8 @@ test_that("normalize_indicators maintains backward compatibility", {
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
-  expect_true("water_twi" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_w3_humidite" %in% names(result))
 })
 
 # ==============================================================================
@@ -241,7 +241,7 @@ test_that("nemeton_radar maintains backward compatibility with indicator mode", 
 
   # v0.1.0 style workflow
   units <- massif_demo_units[1:3, ]
-  results <- nemeton_compute(units, layers, indicators = c("carbon_biomass", "water_twi"))
+  results <- nemeton_compute(units, layers, indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"))
   # (some computed columns may have identical values on 3 rows)
   normalized <- suppressWarnings(
     normalize_indicators(results, method = "minmax")
@@ -317,8 +317,8 @@ test_that("Family system preserves original indicator columns", {
   expect_true("W1" %in% names(result))
 
   # Family indices should be added
-  expect_true("family_C" %in% names(result))
-  expect_true("family_W" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
+  expect_true("famille_eau" %in% names(result))
 })
 
 test_that("Family system works with temporal datasets", {
@@ -346,11 +346,11 @@ test_that("Family system works with temporal datasets", {
   )
 
   # Calculate change rates for family scores
-  rates <- calculate_change_rate(temporal, indicators = c("family_C", "family_W"))
+  rates <- calculate_change_rate(temporal, indicators = c("famille_carbone", "famille_eau"))
 
   expect_s3_class(rates, "sf")
-  expect_true("family_C_rate_abs" %in% names(rates))
-  expect_true("family_W_rate_abs" %in% names(rates))
+  expect_true("famille_carbone_rate_abs" %in% names(rates))
+  expect_true("famille_eau_rate_abs" %in% names(rates))
 })
 
 test_that("Family detection works with all family codes", {
@@ -393,9 +393,9 @@ test_that("create_family_index handles B (Biodiversity) family correctly", {
   result <- create_family_index(units, family_codes = "B")
 
   expect_s3_class(result, "sf")
-  expect_true("family_B" %in% names(result))
-  expect_true(all(!is.na(result$family_B)))
-  expect_true(all(result$family_B >= 0))
+  expect_true("famille_biodiversite" %in% names(result))
+  expect_true(all(!is.na(result$famille_biodiversite)))
+  expect_true(all(result$famille_biodiversite >= 0))
 })
 
 test_that("create_family_index handles R (Risk/Resilience) family correctly", {
@@ -409,8 +409,8 @@ test_that("create_family_index handles R (Risk/Resilience) family correctly", {
   result <- create_family_index(units, family_codes = "R")
 
   expect_s3_class(result, "sf")
-  expect_true("family_R" %in% names(result))
-  expect_true(all(!is.na(result$family_R)))
+  expect_true("famille_risque" %in% names(result))
+  expect_true(all(!is.na(result$famille_risque)))
 })
 
 test_that("create_family_index handles T (Temporal) family correctly", {
@@ -423,8 +423,8 @@ test_that("create_family_index handles T (Temporal) family correctly", {
   result <- create_family_index(units, family_codes = "T")
 
   expect_s3_class(result, "sf")
-  expect_true("family_T" %in% names(result))
-  expect_true(all(!is.na(result$family_T)))
+  expect_true("famille_temporel" %in% names(result))
+  expect_true(all(!is.na(result$famille_temporel)))
 })
 
 test_that("create_family_index handles A (Air quality) family correctly", {
@@ -437,8 +437,8 @@ test_that("create_family_index handles A (Air quality) family correctly", {
   result <- create_family_index(units, family_codes = "A")
 
   expect_s3_class(result, "sf")
-  expect_true("family_A" %in% names(result))
-  expect_true(all(!is.na(result$family_A)))
+  expect_true("famille_air" %in% names(result))
+  expect_true(all(!is.na(result$famille_air)))
 })
 
 test_that("create_family_index handles mixed v0.2.0 and v0.3.0 families", {
@@ -457,12 +457,12 @@ test_that("create_family_index handles mixed v0.2.0 and v0.3.0 families", {
   result <- create_family_index(units, family_codes = c("C", "W", "B", "R", "T", "A"))
 
   # Check all families created
-  expect_true(all(c("family_C", "family_W", "family_B", "family_R", "family_T", "family_A") %in% names(result)))
+  expect_true(all(c("famille_carbone", "famille_eau", "famille_biodiversite", "famille_risque", "famille_temporel", "famille_air") %in% names(result)))
 
   # All should have valid values
-  expect_true(all(!is.na(result$family_C)))
-  expect_true(all(!is.na(result$family_B)))
-  expect_true(all(!is.na(result$family_R)))
+  expect_true(all(!is.na(result$famille_carbone)))
+  expect_true(all(!is.na(result$famille_biodiversite)))
+  expect_true(all(!is.na(result$famille_risque)))
 })
 
 test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)", {
@@ -488,10 +488,10 @@ test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)"
   expect_true(length(family_cols) >= 8)
 
   # Verify key v0.3.0 families exist
-  expect_true("family_B" %in% names(result))
-  expect_true("family_R" %in% names(result))
-  expect_true("family_T" %in% names(result))
-  expect_true("family_A" %in% names(result))
+  expect_true("famille_biodiversite" %in% names(result))
+  expect_true("famille_risque" %in% names(result))
+  expect_true("famille_temporel" %in% names(result))
+  expect_true("famille_air" %in% names(result))
 })
 
 test_that("create_family_index aggregation methods work for new families", {
@@ -503,16 +503,16 @@ test_that("create_family_index aggregation methods work for new families", {
 
   # Mean
   result_mean <- create_family_index(units, family_codes = "B", method = "mean")
-  expect_equal(result_mean$family_B, c(30, 50, 70))
+  expect_equal(result_mean$famille_biodiversite, c(30, 50, 70))
 
   # Geometric mean
   result_geom <- create_family_index(units, family_codes = "B", method = "geometric")
   expected_geom <- (20 * 30 * 40)^(1 / 3)
-  expect_equal(result_geom$family_B[1], expected_geom, tolerance = 0.01)
+  expect_equal(result_geom$famille_biodiversite[1], expected_geom, tolerance = 0.01)
 
   # Min (bottleneck approach - worst indicator drives score)
   result_min <- create_family_index(units, family_codes = "B", method = "min")
-  expect_equal(result_min$family_B, c(20, 40, 60))
+  expect_equal(result_min$famille_biodiversite, c(20, 40, 60))
 })
 
 test_that("create_family_index supports custom weights for new families", {
@@ -531,7 +531,7 @@ test_that("create_family_index supports custom weights for new families", {
 
   # Calculate expected weighted average
   expected <- units$R1 * 0.5 + units$R2 * 0.3 + units$R3 * 0.2
-  expect_equal(result$family_R, expected)
+  expect_equal(result$famille_risque, expected)
 })
 
 # ==============================================================================
@@ -545,10 +545,10 @@ test_that("create_family_index uses harmonic mean method", {
 
   result <- create_family_index(units, method = "harmonic", family_codes = "C")
 
-  expect_true("family_C" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
   # Harmonic mean should be less than arithmetic mean for unequal values
   mean_result <- create_family_index(units, method = "mean", family_codes = "C")
-  expect_true(result$family_C[1] <= mean_result$family_C[1])
+  expect_true(result$famille_carbone[1] <= mean_result$famille_carbone[1])
 })
 
 test_that("create_family_index warns when weights don't match all indicators", {
@@ -576,8 +576,8 @@ test_that("create_family_index prefers _norm columns when available", {
   result <- create_family_index(units, family_codes = "C")
 
   # Should use normalized C1_norm, not raw C1
-  # So family_C should be closer to (50+70)/2 = 60 than (500+70)/2 = 285
-  expect_true(result$family_C[1] < 100)
+  # So famille_carbone should be closer to (50+70)/2 = 60 than (500+70)/2 = 285
+  expect_true(result$famille_carbone[1] < 100)
 })
 
 test_that("get_family_name returns family names", {

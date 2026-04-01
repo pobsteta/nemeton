@@ -39,13 +39,13 @@ NULL
 #' @export
 #' @examples
 #' \dontrun{
-#' result <- indicator_social_trails(
+#' result <- indicateur_s1_routes(
 #'   units = parcels,
 #'   roads = roads_sf,
 #'   dem = dem_raster
 #' )
 #' }
-indicator_social_trails <- function(units,
+indicateur_s1_routes <- function(units,
                                     roads = NULL,
                                     dem = NULL,
                                     layers = NULL,
@@ -122,13 +122,13 @@ indicator_social_trails <- function(units,
 #' @export
 #' @examples
 #' \dontrun{
-#' result <- indicator_social_accessibility(
+#' result <- indicateur_s2_bati(
 #'   units = parcels,
 #'   buildings = buildings_sf,
 #'   dem = dem_raster
 #' )
 #' }
-indicator_social_accessibility <- function(units,
+indicateur_s2_bati <- function(units,
                                            buildings = NULL,
                                            dem = NULL,
                                            layers = NULL,
@@ -209,13 +209,13 @@ indicator_social_accessibility <- function(units,
 #' @examples
 #' \dontrun{
 #' data(massif_demo_units)
-#' result <- indicator_social_proximity(
+#' result <- indicateur_s3_population(
 #'   units = massif_demo_units,
 #'   method = "proxy",
 #'   buffer_radii = c(5000, 10000, 20000)
 #' )
 #' }
-indicator_social_proximity <- function(units,
+indicateur_s3_population <- function(units,
                                        population_grid = NULL,
                                        method = c("proxy", "insee", "local"),
                                        buffer_radii = c(5000, 10000, 20000),
@@ -255,7 +255,7 @@ indicator_social_proximity <- function(units,
   result$S3_20km <- pop_20km
   result[[column_name]] <- pop_5km # Primary indicator is 5km buffer
 
-  msg_info("social_population_calculated", median(pop_5km), median(pop_10km), median(pop_20km))
+  msg_info("social_population_calculated", as.integer(median(pop_5km)), as.integer(median(pop_10km)), as.integer(median(pop_20km)))
 
   cli::cli_alert_success("Calculated {column_name}: Population proximity (5/10/20km buffers)")
 

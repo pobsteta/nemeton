@@ -10,7 +10,7 @@ create_test_report_data <- function() {
   # Add family columns (12 families)
   family_codes <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
   for (code in family_codes) {
-    units[[paste0("family_", code)]] <- runif(3, 20, 90)
+    units[[nemeton:::get_famille_col(code)]] <- runif(3, 20, 90)
   }
   # Add some indicator columns
   units$C1 <- runif(3, 0, 100)
@@ -161,7 +161,7 @@ test_that("draw_standard_cover_page handles low global score", {
   # Set low scores
   family_codes <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
   for (code in family_codes) {
-    td$family_scores[[paste0("family_", code)]] <- rep(15, 3)
+    td$family_scores[[nemeton:::get_famille_col(code)]] <- rep(15, 3)
   }
   report_data <- nemeton:::prepare_report_data(td$project, td$family_scores, "fr")
   expect_true(report_data$global_score < 20)
@@ -177,7 +177,7 @@ test_that("draw_standard_cover_page handles medium global score", {
   td <- create_test_report_data()
   family_codes <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
   for (code in family_codes) {
-    td$family_scores[[paste0("family_", code)]] <- rep(50, 3)
+    td$family_scores[[nemeton:::get_famille_col(code)]] <- rep(50, 3)
   }
   report_data <- nemeton:::prepare_report_data(td$project, td$family_scores, "en")
 

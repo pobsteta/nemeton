@@ -124,7 +124,7 @@ test_that("Tutorial 05 references all 12 families", {
   families <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 
   # At least check that family_ columns are mentioned
-  expect_match(content, "family_C|family_B|family_W",
+  expect_match(content, "famille_carbone|famille_biodiversite|famille_eau",
                info = "Should reference family score columns")
 })
 

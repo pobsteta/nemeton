@@ -199,29 +199,29 @@ msg_error <- function(key, ...) {
     temporal_period_missing = "Period '%s' not found in temporal dataset",
 
     # v0.2.0 - Family C: Carbone/\u00c9nerg\u00e9tique
-    indicator_carbon_biomass = "Carbon stock via allometric models (C: Carbone/\u00c9nerg\u00e9tique)",
-    indicator_carbon_ndvi = "NDVI vitality index (C: Carbone/\u00c9nerg\u00e9tique)",
+    indicateur_c1_biomasse = "Carbon stock via allometric models (C: Carbone/\u00c9nerg\u00e9tique)",
+    indicateur_c2_ndvi = "NDVI vitality index (C: Carbone/\u00c9nerg\u00e9tique)",
     carbon_species_missing = "Species column '%s' not found",
     carbon_age_missing = "Age column '%s' not found",
     carbon_density_missing = "Density column '%s' not found",
     carbon_allometric_applied = "Applied allometric equation: %s",
 
     # v0.2.0 - Family W: Water/Infiltr\u00e9e
-    indicator_water_network = "Hydrographic network density (W: Water/Infiltr\u00e9e)",
-    indicator_water_wetlands = "Wetland coverage (W: Water/Infiltr\u00e9e)",
-    indicator_water_twi = "Topographic Wetness Index (W: Water/Infiltr\u00e9e)",
+    indicateur_w1_reseau = "Hydrographic network density (W: Water/Infiltr\u00e9e)",
+    indicateur_w2_zones_humides = "Wetland coverage (W: Water/Infiltr\u00e9e)",
+    indicateur_w3_humidite = "Topographic Wetness Index (W: Water/Infiltr\u00e9e)",
     water_twi_method = "Using TWI method: %s",
     water_wetland_detected = "Detected %d wetland pixels",
 
     # v0.2.0 - Family F: Fertilit\u00e9/Riche
-    indicator_soil_fertility = "Soil fertility class (F: Fertilit\u00e9/Riche)",
-    indicator_soil_erosion = "Soil fertility index TWI+slope (F: Fertilit\u00e9/Riche)",
+    indicateur_f1_fertilite = "Soil fertility class (F: Fertilit\u00e9/Riche)",
+    indicateur_f2_erosion = "Soil fertility index TWI+slope (F: Fertilit\u00e9/Riche)",
     soil_fertility_extracted = "Extracted fertility data for %d parcels",
     soil_erosion_calculated = "Calculated erosion risk (slope \u00d7 land cover)",
 
     # v0.2.0 - Family L: Landscape/Esth\u00e9tique
-    indicator_landscape_fragmentation = "Sylvosphere - edge effect (L: Landscape/Esth\u00e9tique)",
-    indicator_landscape_edge = "Landscape fragmentation (L: Landscape/Esth\u00e9tique)",
+    indicateur_l2_fragmentation = "Sylvosphere - edge effect (L: Landscape/Esth\u00e9tique)",
+    indicateur_l1_sylvosphere = "Landscape fragmentation (L: Landscape/Esth\u00e9tique)",
     landscape_patches_detected = "Detected %d forest patches in buffer zone",
     landscape_edge_calculated = "Calculated edge density for %d parcels",
 
@@ -231,9 +231,9 @@ msg_error <- function(key, ...) {
     family_no_indicators = "No indicators found for family '%s'",
 
     # v0.3.0 - Family B: Biodiversity/Vivant
-    indicator_biodiversity_protection = "Protected area coverage (B: Biodiversity/Vivant)",
-    indicator_biodiversity_structure = "Structural diversity (B: Biodiversity/Vivant)",
-    indicator_biodiversity_connectivity = "Ecological connectivity (B: Biodiversity/Vivant)",
+    indicateur_b1_protection = "Protected area coverage (B: Biodiversity/Vivant)",
+    indicateur_b2_structure = "Structural diversity (B: Biodiversity/Vivant)",
+    indicateur_b3_connectivite = "Ecological connectivity (B: Biodiversity/Vivant)",
     biodiversity_wfs_fetching = "Fetching protected areas from INPN WFS...",
     biodiversity_wfs_fetched = "Retrieved %d protected area features",
     biodiversity_wfs_failed = "WFS fetch failed, using local data fallback",
@@ -243,24 +243,24 @@ msg_error <- function(key, ...) {
     biodiversity_corridor_distance = "Minimum corridor distance: %0.0f m",
 
     # v0.3.0 - Family R: Risk & Resilience/Flexible
-    indicator_risk_fire = "Fire risk index (R: Risk & Resilience/Flexible)",
-    indicator_risk_storm = "Storm vulnerability (R: Risk & Resilience/Flexible)",
-    indicator_risk_drought = "Drought stress (R: Risk & Resilience/Flexible)",
+    indicateur_r1_feu = "Fire risk index (R: Risk & Resilience/Flexible)",
+    indicateur_r2_tempete = "Storm vulnerability (R: Risk & Resilience/Flexible)",
+    indicateur_r3_secheresse = "Drought stress (R: Risk & Resilience/Flexible)",
     risk_fire_factors = "Fire risk: slope=%0.1f, species=%0.1f, climate=%0.1f",
     risk_storm_factors = "Storm vulnerability: height=%0.1f, density=%0.1f, exposure=%0.1f",
     risk_drought_factors = "Drought stress: TWI=%0.1f, precip=%0.1f, species=%0.1f",
     risk_species_unknown = "Unknown species '%s', using default sensitivity",
 
     # v0.3.0 - Family T: Temporal Dynamics/Nervur\u00e9e
-    indicator_temporal_age = "Stand age (T: Temporal Dynamics/Nervur\u00e9e)",
-    indicator_temporal_change = "Land use change rate (T: Temporal Dynamics/Nervur\u00e9e)",
+    indicateur_t1_anciennete = "Stand age (T: Temporal Dynamics/Nervur\u00e9e)",
+    indicateur_t2_changement = "Land use change rate (T: Temporal Dynamics/Nervur\u00e9e)",
     temporal_age_calculated = "Calculated stand age: median=%0.0f years",
     temporal_change_detected = "Detected %0.2f%% area change over %d years",
     temporal_change_interpretation = "Using interpretation mode: %s",
 
     # v0.3.0 - Family A: Air Quality & Microclimate/Vaporeuse
-    indicator_air_coverage = "Tree coverage buffer (A: Air Quality/Vaporeuse)",
-    indicator_air_quality = "Air quality index (A: Air Quality/Vaporeuse)",
+    indicateur_a1_couverture = "Tree coverage buffer (A: Air Quality/Vaporeuse)",
+    indicateur_a2_qualite_air = "Air quality index (A: Air Quality/Vaporeuse)",
     air_coverage_calculated = "Forest coverage in buffer: %0.1f%%",
     air_quality_method = "Using air quality method: %s",
     air_quality_proxy_warning = "ATMO data unavailable, using distance proxy",
@@ -280,31 +280,31 @@ msg_error <- function(key, ...) {
     correlation_matrix_plotting = "Creating correlation matrix heatmap",
 
     # v0.4.0 - Family S: Social & Recreational/Usages r\u00e9cr\u00e9atifs
-    indicator_social_trails = "Distance to roads (S: Social & Recreational)",
-    indicator_social_accessibility = "Distance to buildings (S: Social & Recreational)",
-    indicator_social_proximity = "Population proximity (S: Social & Recreational)",
+    indicateur_s1_routes = "Distance to roads (S: Social & Recreational)",
+    indicateur_s2_bati = "Distance to buildings (S: Social & Recreational)",
+    indicateur_s3_population = "Population proximity (S: Social & Recreational)",
     social_population_calculated = "Population within buffers: 5km=%d, 10km=%d, 20km=%d",
 
     # v0.4.0 - Family P: Productive & Economic/Productif
-    indicator_productive_volume = "Standing timber volume (P: Productive & Economic)",
-    indicator_productive_station = "Site productivity index (P: Productive & Economic)",
-    indicator_productive_quality = "Timber quality score (P: Productive & Economic)",
+    indicateur_p1_volume = "Standing timber volume (P: Productive & Economic)",
+    indicateur_p2_station = "Site productivity index (P: Productive & Economic)",
+    indicateur_p3_qualite_bois = "Timber quality score (P: Productive & Economic)",
     productive_volume_calculated = "Standing volume: %0.1f m\u00b3/ha (species: %s)",
     productive_allometry_applied = "Applied IFN equation: %s (DBH=%0.1f cm, H=%0.1f m)",
     productive_station_score = "Station productivity: %0.1f m\u00b3/ha/yr (fertility=%s, climate=%s)",
     productive_quality_assessed = "Timber quality: %0.1f/100 (form=%0.1f, diameter=%0.1f, defects=%0.1f)",
 
     # v0.4.0 - Family E: Energy & Climate/\u00c9nergie
-    indicator_energy_fuelwood = "Mobilizable fuelwood potential (E: Energy & Climate)",
-    indicator_energy_avoidance = "Carbon emission avoidance (E: Energy & Climate)",
+    indicateur_e1_bois_energie = "Mobilizable fuelwood potential (E: Energy & Climate)",
+    indicateur_e2_evitement = "Carbon emission avoidance (E: Energy & Climate)",
     energy_fuelwood_calculated = "Fuelwood potential: %0.1f tonnes DM/yr (residues=%0.1f, coppice=%0.1f)",
     energy_avoidance_calculated = "CO2 avoided: %0.1f tCO2eq/yr (energy=%0.1f, material=%0.1f)",
     energy_substitution_scenario = "Substitution scenario: %s (factor=%0.3f kgCO2eq/unit)",
 
     # v0.4.0 - Family N: Naturalness & Wilderness/Naturalit\u00e9
-    indicator_naturalness_distance = "Infrastructure distance (N: Naturalness & Wilderness)",
-    indicator_naturalness_continuity = "Forest continuity (N: Naturalness & Wilderness)",
-    indicator_naturalness_composite = "Wilderness composite index (N: Naturalness & Wilderness)",
+    indicateur_n1_distance = "Infrastructure distance (N: Naturalness & Wilderness)",
+    indicateur_n2_continuite = "Forest continuity (N: Naturalness & Wilderness)",
+    indicateur_n3_naturalite = "Wilderness composite index (N: Naturalness & Wilderness)",
 
     # v0.4.0 - Advanced Analysis (US7)
     # Pareto analysis
@@ -415,29 +415,29 @@ msg_error <- function(key, ...) {
     temporal_period_missing = "P\u00e9riode '%s' introuvable dans le dataset temporel",
 
     # v0.2.0 - Famille C : Carbone/\u00c9nerg\u00e9tique
-    indicator_carbon_biomass = "Stock de carbone via mod\u00e8les allom\u00e9triques (C: Carbone/\u00c9nerg\u00e9tique)",
-    indicator_carbon_ndvi = "Indice de vitalit\u00e9 NDVI (C: Carbone/\u00c9nerg\u00e9tique)",
+    indicateur_c1_biomasse = "Stock de carbone via mod\u00e8les allom\u00e9triques (C: Carbone/\u00c9nerg\u00e9tique)",
+    indicateur_c2_ndvi = "Indice de vitalit\u00e9 NDVI (C: Carbone/\u00c9nerg\u00e9tique)",
     carbon_species_missing = "Colonne d'essence '%s' introuvable",
     carbon_age_missing = "Colonne d'\u00e2ge '%s' introuvable",
     carbon_density_missing = "Colonne de densit\u00e9 '%s' introuvable",
     carbon_allometric_applied = "\u00c9quation allom\u00e9trique appliqu\u00e9e : %s",
 
     # v0.2.0 - Famille W : Water/Infiltr\u00e9e
-    indicator_water_network = "Densit\u00e9 du r\u00e9seau hydrographique (W: Water/Infiltr\u00e9e)",
-    indicator_water_wetlands = "Couverture en zones humides (W: Water/Infiltr\u00e9e)",
-    indicator_water_twi = "Indice topographique d'humidit\u00e9 (W: Water/Infiltr\u00e9e)",
+    indicateur_w1_reseau = "Densit\u00e9 du r\u00e9seau hydrographique (W: Water/Infiltr\u00e9e)",
+    indicateur_w2_zones_humides = "Couverture en zones humides (W: Water/Infiltr\u00e9e)",
+    indicateur_w3_humidite = "Indice topographique d'humidit\u00e9 (W: Water/Infiltr\u00e9e)",
     water_twi_method = "M\u00e9thode TWI utilis\u00e9e : %s",
     water_wetland_detected = "%d pixels de zones humides d\u00e9tect\u00e9s",
 
     # v0.2.0 - Famille F : Fertilit\u00e9/Riche
-    indicator_soil_fertility = "Classe de fertilit\u00e9 du sol (F: Fertilit\u00e9/Riche)",
-    indicator_soil_erosion = "Indice fertilit\u00e9 TWI+pente (F: Fertilit\u00e9/Riche)",
+    indicateur_f1_fertilite = "Classe de fertilit\u00e9 du sol (F: Fertilit\u00e9/Riche)",
+    indicateur_f2_erosion = "Indice fertilit\u00e9 TWI+pente (F: Fertilit\u00e9/Riche)",
     soil_fertility_extracted = "Donn\u00e9es de fertilit\u00e9 extraites pour %d parcelles",
     soil_erosion_calculated = "Risque d'\u00e9rosion calcul\u00e9 (pente \u00d7 couvert)",
 
     # v0.2.0 - Famille L : Landscape/Esth\u00e9tique
-    indicator_landscape_fragmentation = "Sylvosph\u00e8re - effet lisi\u00e8re (L: Landscape/Esth\u00e9tique)",
-    indicator_landscape_edge = "Fragmentation paysag\u00e8re (L: Landscape/Esth\u00e9tique)",
+    indicateur_l2_fragmentation = "Sylvosph\u00e8re - effet lisi\u00e8re (L: Landscape/Esth\u00e9tique)",
+    indicateur_l1_sylvosphere = "Fragmentation paysag\u00e8re (L: Landscape/Esth\u00e9tique)",
     landscape_patches_detected = "%d taches foresti\u00e8res d\u00e9tect\u00e9es dans la zone tampon",
     landscape_edge_calculated = "Densit\u00e9 de lisi\u00e8re calcul\u00e9e pour %d parcelles",
 
@@ -447,9 +447,9 @@ msg_error <- function(key, ...) {
     family_no_indicators = "Aucun indicateur trouv\u00e9 pour la famille '%s'",
 
     # v0.3.0 - Famille B : Biodiversit\u00e9/Vivant
-    indicator_biodiversity_protection = "Couverture en zones prot\u00e9g\u00e9es (B: Biodiversit\u00e9/Vivant)",
-    indicator_biodiversity_structure = "Diversit\u00e9 structurelle (B: Biodiversit\u00e9/Vivant)",
-    indicator_biodiversity_connectivity = "Connectivit\u00e9 \u00e9cologique (B: Biodiversit\u00e9/Vivant)",
+    indicateur_b1_protection = "Couverture en zones prot\u00e9g\u00e9es (B: Biodiversit\u00e9/Vivant)",
+    indicateur_b2_structure = "Diversit\u00e9 structurelle (B: Biodiversit\u00e9/Vivant)",
+    indicateur_b3_connectivite = "Connectivit\u00e9 \u00e9cologique (B: Biodiversit\u00e9/Vivant)",
     biodiversity_wfs_fetching = "R\u00e9cup\u00e9ration des zones prot\u00e9g\u00e9es depuis INPN WFS...",
     biodiversity_wfs_fetched = "%d entit\u00e9s de zones prot\u00e9g\u00e9es r\u00e9cup\u00e9r\u00e9es",
     biodiversity_wfs_failed = "\u00c9chec WFS, utilisation des donn\u00e9es locales",
@@ -459,24 +459,24 @@ msg_error <- function(key, ...) {
     biodiversity_corridor_distance = "Distance minimale au corridor : %0.0f m",
 
     # v0.3.0 - Famille R : R\u00e9silience/Flexible
-    indicator_risk_fire = "Indice de risque incendie (R: R\u00e9silience/Flexible)",
-    indicator_risk_storm = "Vuln\u00e9rabilit\u00e9 temp\u00eate (R: R\u00e9silience/Flexible)",
-    indicator_risk_drought = "Stress hydrique (R: R\u00e9silience/Flexible)",
+    indicateur_r1_feu = "Indice de risque incendie (R: R\u00e9silience/Flexible)",
+    indicateur_r2_tempete = "Vuln\u00e9rabilit\u00e9 temp\u00eate (R: R\u00e9silience/Flexible)",
+    indicateur_r3_secheresse = "Stress hydrique (R: R\u00e9silience/Flexible)",
     risk_fire_factors = "Risque incendie : pente=%0.1f, essence=%0.1f, climat=%0.1f",
     risk_storm_factors = "Vuln\u00e9rabilit\u00e9 temp\u00eate : hauteur=%0.1f, densit\u00e9=%0.1f, exposition=%0.1f",
     risk_drought_factors = "Stress hydrique : TWI=%0.1f, pr\u00e9cip=%0.1f, essence=%0.1f",
     risk_species_unknown = "Essence inconnue '%s', utilisation sensibilit\u00e9 par d\u00e9faut",
 
     # v0.3.0 - Famille T : Trame/Nervur\u00e9e
-    indicator_temporal_age = "Anciennet\u00e9 du peuplement (T: Trame/Nervur\u00e9e)",
-    indicator_temporal_change = "Taux de changement d'occupation (T: Trame/Nervur\u00e9e)",
+    indicateur_t1_anciennete = "Anciennet\u00e9 du peuplement (T: Trame/Nervur\u00e9e)",
+    indicateur_t2_changement = "Taux de changement d'occupation (T: Trame/Nervur\u00e9e)",
     temporal_age_calculated = "Anciennet\u00e9 calcul\u00e9e : m\u00e9diane=%0.0f ans",
     temporal_change_detected = "%0.2f%% de changement d\u00e9tect\u00e9 sur %d ans",
     temporal_change_interpretation = "Mode d'interpr\u00e9tation : %s",
 
     # v0.3.0 - Famille A : Air/Vaporeuse
-    indicator_air_coverage = "Couverture arbor\u00e9e buffer (A: Air/Vaporeuse)",
-    indicator_air_quality = "Indice qualit\u00e9 de l'air (A: Air/Vaporeuse)",
+    indicateur_a1_couverture = "Couverture arbor\u00e9e buffer (A: Air/Vaporeuse)",
+    indicateur_a2_qualite_air = "Indice qualit\u00e9 de l'air (A: Air/Vaporeuse)",
     air_coverage_calculated = "Couverture foresti\u00e8re dans buffer : %0.1f%%",
     air_quality_method = "M\u00e9thode qualit\u00e9 air utilis\u00e9e : %s",
     air_quality_proxy_warning = "Donn\u00e9es ATMO indisponibles, utilisation proxy distance",
@@ -496,31 +496,31 @@ msg_error <- function(key, ...) {
     correlation_matrix_plotting = "Cr\u00e9ation heatmap matrice de corr\u00e9lation",
 
     # v0.4.0 - Famille S : Social & Usages r\u00e9cr\u00e9atifs
-    indicator_social_trails = "Distance aux routes (S : Social & Usages r\u00e9cr\u00e9atifs)",
-    indicator_social_accessibility = "Distance aux b\u00e2timents (S : Social & Usages r\u00e9cr\u00e9atifs)",
-    indicator_social_proximity = "Proximit\u00e9 de population (S : Social & Usages r\u00e9cr\u00e9atifs)",
+    indicateur_s1_routes = "Distance aux routes (S : Social & Usages r\u00e9cr\u00e9atifs)",
+    indicateur_s2_bati = "Distance aux b\u00e2timents (S : Social & Usages r\u00e9cr\u00e9atifs)",
+    indicateur_s3_population = "Proximit\u00e9 de population (S : Social & Usages r\u00e9cr\u00e9atifs)",
     social_population_calculated = "Population dans les buffers : 5km=%d, 10km=%d, 20km=%d",
 
     # v0.4.0 - Famille P : Productif & \u00c9conomie foresti\u00e8re
-    indicator_productive_volume = "Volume bois sur pied (P : Productif & \u00c9conomie)",
-    indicator_productive_station = "Indice productivit\u00e9 station (P : Productif & \u00c9conomie)",
-    indicator_productive_quality = "Score qualit\u00e9 bois \u0153uvre (P : Productif & \u00c9conomie)",
+    indicateur_p1_volume = "Volume bois sur pied (P : Productif & \u00c9conomie)",
+    indicateur_p2_station = "Indice productivit\u00e9 station (P : Productif & \u00c9conomie)",
+    indicateur_p3_qualite_bois = "Score qualit\u00e9 bois \u0153uvre (P : Productif & \u00c9conomie)",
     productive_volume_calculated = "Volume sur pied : %0.1f m\u00b3/ha (essence : %s)",
     productive_allometry_applied = "\u00c9quation IFN appliqu\u00e9e : %s (DHP=%0.1f cm, H=%0.1f m)",
     productive_station_score = "Productivit\u00e9 station : %0.1f m\u00b3/ha/an (fertilit\u00e9=%s, climat=%s)",
     productive_quality_assessed = "Qualit\u00e9 bois : %0.1f/100 (forme=%0.1f, diam\u00e8tre=%0.1f, d\u00e9fauts=%0.1f)",
 
     # v0.4.0 - Famille E : \u00c9nergie & Climat
-    indicator_energy_fuelwood = "Potentiel bois-\u00e9nergie mobilisable (E : \u00c9nergie & Climat)",
-    indicator_energy_avoidance = "\u00c9vitement \u00e9missions carbone (E : \u00c9nergie & Climat)",
+    indicateur_e1_bois_energie = "Potentiel bois-\u00e9nergie mobilisable (E : \u00c9nergie & Climat)",
+    indicateur_e2_evitement = "\u00c9vitement \u00e9missions carbone (E : \u00c9nergie & Climat)",
     energy_fuelwood_calculated = "Potentiel bois-\u00e9nergie : %0.1f tonnes MS/an (r\u00e9manents=%0.1f, taillis=%0.1f)",
     energy_avoidance_calculated = "CO2 \u00e9vit\u00e9 : %0.1f tCO2eq/an (\u00e9nergie=%0.1f, mat\u00e9riaux=%0.1f)",
     energy_substitution_scenario = "Sc\u00e9nario substitution : %s (facteur=%0.3f kgCO2eq/unit\u00e9)",
 
     # v0.4.0 - Famille N : Naturalit\u00e9 & Caract\u00e8re sauvage
-    indicator_naturalness_distance = "Distance infrastructures (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
-    indicator_naturalness_continuity = "Continuit\u00e9 foresti\u00e8re (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
-    indicator_naturalness_composite = "Indice composite wilderness (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
+    indicateur_n1_distance = "Distance infrastructures (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
+    indicateur_n2_continuite = "Continuit\u00e9 foresti\u00e8re (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
+    indicateur_n3_naturalite = "Indice composite wilderness (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
 
     # v0.4.0 - Analyse Avanc\u00e9e (US7)
     # Analyse Pareto

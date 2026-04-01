@@ -6,7 +6,7 @@
 # indicators-biodiversity.R
 # ==============================================================================
 
-test_that("indicator_biodiversity_protection with mock protected areas", {
+test_that("indicateur_b1_protection with mock protected areas", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
@@ -17,21 +17,21 @@ test_that("indicator_biodiversity_protection with mock protected areas", {
   )
   sf::st_crs(pa) <- sf::st_crs(units)
   
-  result <- indicator_biodiversity_protection(units, protected_areas = pa)
+  result <- indicateur_b1_protection(units, protected_areas = pa)
   expect_s3_class(result, "sf")
   expect_true("B1" %in% names(result))
   expect_true(all(result$B1 >= 0, na.rm = TRUE))
 })
 
-test_that("indicator_biodiversity_protection without protected areas returns NA", {
+test_that("indicateur_b1_protection without protected areas returns NA", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
-  result <- indicator_biodiversity_protection(units, protected_areas = NULL)
+  result <- indicateur_b1_protection(units, protected_areas = NULL)
   expect_s3_class(result, "sf")
   expect_true("B1" %in% names(result))
 })
 
-test_that("indicator_biodiversity_protection with protection_types filter", {
+test_that("indicateur_b1_protection with protection_types filter", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
@@ -45,43 +45,43 @@ test_that("indicator_biodiversity_protection with protection_types filter", {
     )
   )
   
-  result <- indicator_biodiversity_protection(
+  result <- indicateur_b1_protection(
     units, protected_areas = pa, protection_types = c("RN", "APPB")
   )
   expect_s3_class(result, "sf")
 })
 
-test_that("indicator_biodiversity_structure returns valid structure index", {
+test_that("indicateur_b2_structure returns valid structure index", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
   units <- create_test_units(n_features = 3)
-  result <- indicator_biodiversity_structure(units)
+  result <- indicateur_b2_structure(units)
   
   expect_s3_class(result, "sf")
   expect_true("B2" %in% names(result))
 })
 
-test_that("indicator_biodiversity_structure with strata_field", {
+test_that("indicateur_b2_structure with strata_field", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$strate <- c("futaie", "taillis", "mixte")
   
-  result <- indicator_biodiversity_structure(units, strata_field = "strate")
+  result <- indicateur_b2_structure(units, strata_field = "strate")
   expect_s3_class(result, "sf")
   expect_true("B2" %in% names(result))
 })
 
-test_that("indicator_biodiversity_connectivity returns B3", {
+test_that("indicateur_b3_connectivite returns B3", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
-  result <- suppressWarnings(indicator_biodiversity_connectivity(units))
+  result <- suppressWarnings(indicateur_b3_connectivite(units))
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
 })
 
-test_that("indicator_biodiversity_connectivity with bdforet", {
+test_that("indicateur_b3_connectivite with bdforet", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
@@ -99,7 +99,7 @@ test_that("indicator_biodiversity_connectivity with bdforet", {
     }), crs = 2154)
   )
   
-  result <- indicator_biodiversity_connectivity(units, bdforet = bdforet)
+  result <- indicateur_b3_connectivite(units, bdforet = bdforet)
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
 })
@@ -108,20 +108,20 @@ test_that("indicator_biodiversity_connectivity with bdforet", {
 # indicators-risk.R
 # ==============================================================================
 
-test_that("indicator_risk_fire returns R1 with fallback method", {
+test_that("indicateur_r1_feu returns R1 with fallback method", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = "random")
   
-  result <- indicator_risk_fire(units, dem = dem)
+  result <- indicateur_r1_feu(units, dem = dem)
   expect_s3_class(result, "sf")
   expect_true("R1" %in% names(result))
   expect_true(all(result$R1 >= 0, na.rm = TRUE))
 })
 
-test_that("indicator_risk_fire with species data", {
+test_that("indicateur_r1_feu with species data", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
@@ -129,68 +129,68 @@ test_that("indicator_risk_fire with species data", {
   units$essence <- c("Pinus", "Quercus", "Fagus")
   dem <- create_test_raster(values = "random")
   
-  result <- indicator_risk_fire(units, dem = dem)
+  result <- indicateur_r1_feu(units, dem = dem)
   expect_s3_class(result, "sf")
   expect_true("R1" %in% names(result))
 })
 
-test_that("indicator_risk_storm returns R2", {
+test_that("indicateur_r2_tempete returns R2", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 500, length.out = terra::ncell(create_test_raster())))
   
-  result <- indicator_risk_storm(units, dem = dem)
+  result <- indicateur_r2_tempete(units, dem = dem)
   expect_s3_class(result, "sf")
   expect_true("R2" %in% names(result))
 })
 
-test_that("indicator_risk_storm without DEM returns defaults", {
+test_that("indicateur_r2_tempete without DEM returns defaults", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
-  result <- indicator_risk_storm(units)
+  result <- indicateur_r2_tempete(units)
   expect_s3_class(result, "sf")
   expect_true("R2" %in% names(result))
 })
 
-test_that("indicator_risk_drought returns R3", {
+test_that("indicateur_r3_secheresse returns R3", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
-  result <- indicator_risk_drought(units)
+  result <- indicateur_r3_secheresse(units)
   expect_s3_class(result, "sf")
   expect_true("R3" %in% names(result))
 })
 
-test_that("indicator_risk_drought with DEM for topographic modulation", {
+test_that("indicateur_r3_secheresse with DEM for topographic modulation", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster(values = seq(100, 500, length.out = terra::ncell(create_test_raster())))
   
-  result <- indicator_risk_drought(units, dem = dem)
+  result <- indicateur_r3_secheresse(units, dem = dem)
   expect_s3_class(result, "sf")
   expect_true("R3" %in% names(result))
 })
 
-test_that("indicator_risk_browsing returns R4", {
+test_that("indicateur_r4_abroutissement returns R4", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
-  result <- indicator_risk_browsing(units)
+  result <- indicateur_r4_abroutissement(units)
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
 })
 
-test_that("indicator_risk_browsing with species palatability", {
+test_that("indicateur_r4_abroutissement with species palatability", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$essence <- c("Quercus", "Fagus", "Pinus")
   
-  result <- indicator_risk_browsing(units)
+  result <- indicateur_r4_abroutissement(units)
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
 })
@@ -199,43 +199,43 @@ test_that("indicator_risk_browsing with species palatability", {
 # indicators-naturalness.R
 # ==============================================================================
 
-test_that("indicator_naturalness_distance returns N1", {
+test_that("indicateur_n1_distance returns N1", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   roads <- create_test_vector(type = "lines")
   
-  result <- indicator_naturalness_distance(units, roads = roads)
+  result <- indicateur_n1_distance(units, roads = roads)
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
 })
 
-test_that("indicator_naturalness_distance without roads returns default", {
+test_that("indicateur_n1_distance without roads returns default", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
-  result <- indicator_naturalness_distance(units)
+  result <- indicateur_n1_distance(units)
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
 })
 
-test_that("indicator_naturalness_distance with custom column_name", {
+test_that("indicateur_n1_distance with custom column_name", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
-  result <- indicator_naturalness_distance(units, column_name = "nat_dist")
+  result <- indicateur_n1_distance(units, column_name = "nat_dist")
   expect_true("nat_dist" %in% names(result))
 })
 
-test_that("indicator_naturalness_continuity returns N2", {
+test_that("indicateur_n2_continuite returns N2", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
-  result <- indicator_naturalness_continuity(units)
+  result <- indicateur_n2_continuite(units)
   expect_s3_class(result, "sf")
   expect_true("N2" %in% names(result))
 })
 
-test_that("indicator_naturalness_continuity with bdforet", {
+test_that("indicateur_n2_continuite with bdforet", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
@@ -245,27 +245,27 @@ test_that("indicator_naturalness_continuity with bdforet", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
   
-  result <- indicator_naturalness_continuity(units, bdforet = bdforet)
+  result <- indicateur_n2_continuite(units, bdforet = bdforet)
   expect_s3_class(result, "sf")
   expect_true("N2" %in% names(result))
 })
 
-test_that("indicator_naturalness_composite returns N3", {
+test_that("indicateur_n3_naturalite returns N3", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$N1 <- c(60, 70, 80)
   units$N2 <- c(50, 60, 70)
   
-  result <- indicator_naturalness_composite(units)
+  result <- indicateur_n3_naturalite(units)
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
 })
 
-test_that("indicator_naturalness_composite without N1/N2 returns default", {
+test_that("indicateur_n3_naturalite without N1/N2 returns default", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
-  result <- indicator_naturalness_composite(units)
+  result <- indicateur_n3_naturalite(units)
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
 })
@@ -274,7 +274,7 @@ test_that("indicator_naturalness_composite without N1/N2 returns default", {
 # indicators-air.R
 # ==============================================================================
 
-test_that("indicator_air_coverage returns A1 with landcover raster", {
+test_that("indicateur_a1_couverture returns A1 with landcover raster", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
@@ -282,12 +282,12 @@ test_that("indicator_air_coverage returns A1 with landcover raster", {
   landcover <- create_test_raster(values = "constant")
   terra::values(landcover) <- sample(1:5, terra::ncell(landcover), replace = TRUE)
   
-  result <- indicator_air_coverage(units, land_cover = landcover)
+  result <- indicateur_a1_couverture(units, land_cover = landcover)
   expect_s3_class(result, "sf")
   expect_true("A1" %in% names(result))
 })
 
-test_that("indicator_air_coverage with custom forest_classes", {
+test_that("indicateur_a1_couverture with custom forest_classes", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
@@ -295,7 +295,7 @@ test_that("indicator_air_coverage with custom forest_classes", {
   landcover <- create_test_raster(values = "constant")
   terra::values(landcover) <- sample(1:10, terra::ncell(landcover), replace = TRUE)
   
-  result <- indicator_air_coverage(
+  result <- indicateur_a1_couverture(
     units, land_cover = landcover,
     forest_classes = c(1, 2, 3, 4, 5)
   )
@@ -303,7 +303,7 @@ test_that("indicator_air_coverage with custom forest_classes", {
   expect_true("A1" %in% names(result))
 })
 
-test_that("indicator_air_coverage with custom buffer_radius", {
+test_that("indicateur_a1_couverture with custom buffer_radius", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   
@@ -311,28 +311,28 @@ test_that("indicator_air_coverage with custom buffer_radius", {
   landcover <- create_test_raster(values = "constant")
   terra::values(landcover) <- sample(1:5, terra::ncell(landcover), replace = TRUE)
   
-  result <- indicator_air_coverage(
+  result <- indicateur_a1_couverture(
     units, land_cover = landcover, buffer_radius = 500
   )
   expect_s3_class(result, "sf")
   expect_true("A1" %in% names(result))
 })
 
-test_that("indicator_air_quality returns A2 with proxy method", {
+test_that("indicateur_a2_qualite_air returns A2 with proxy method", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   roads <- create_test_vector(type = "lines")
   
-  result <- indicator_air_quality(units, roads = roads, method = "proxy")
+  result <- indicateur_a2_qualite_air(units, roads = roads, method = "proxy")
   expect_s3_class(result, "sf")
   expect_true("A2" %in% names(result))
 })
 
-test_that("indicator_air_quality without roads returns default", {
+test_that("indicateur_a2_qualite_air without roads returns default", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
-  result <- indicator_air_quality(units)
+  result <- indicateur_a2_qualite_air(units)
   expect_s3_class(result, "sf")
   expect_true("A2" %in% names(result))
 })
@@ -341,13 +341,13 @@ test_that("indicator_air_quality without roads returns default", {
 # indicators-energy.R
 # ==============================================================================
 
-test_that("indicator_energy_fuelwood returns E1", {
+test_that("indicateur_e1_bois_energie returns E1", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$volume <- c(100, 200, 300)
   units$essence <- c("Quercus", "Fagus", "Pinus")
   
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     units,
     volume_field = "volume",
     species_field = "essence"
@@ -356,32 +356,32 @@ test_that("indicator_energy_fuelwood returns E1", {
   expect_true("E1" %in% names(result))
 })
 
-test_that("indicator_energy_fuelwood errors without volume field", {
+test_that("indicateur_e1_bois_energie errors without volume field", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
-  expect_error(indicator_energy_fuelwood(units), "Required field missing")
+  expect_error(indicateur_e1_bois_energie(units), "Required field missing")
 })
 
-test_that("indicator_energy_fuelwood with custom harvest_rate", {
+test_that("indicateur_e1_bois_energie with custom harvest_rate", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   units$volume <- c(100, 200)
   
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     units, volume_field = "volume", harvest_rate = 0.5
   )
   expect_s3_class(result, "sf")
   expect_true("E1" %in% names(result))
 })
 
-test_that("indicator_energy_avoidance returns E2", {
+test_that("indicateur_e2_evitement returns E2", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$E1 <- c(50, 100, 150)
   units$volume <- c(100, 200, 300)
   
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     units,
     fuelwood_field = "E1",
     volume_field = "volume"
@@ -390,19 +390,19 @@ test_that("indicator_energy_avoidance returns E2", {
   expect_true("E2" %in% names(result))
 })
 
-test_that("indicator_energy_avoidance with default fields", {
+test_that("indicateur_e2_evitement with default fields", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   
-  result <- indicator_energy_avoidance(units)
+  result <- indicateur_e2_evitement(units)
   expect_s3_class(result, "sf")
   expect_true("E2" %in% names(result))
 })
 
-test_that("indicator_energy_avoidance with custom column_name", {
+test_that("indicateur_e2_evitement with custom column_name", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   
-  result <- indicator_energy_avoidance(units, column_name = "co2_avoided")
+  result <- indicateur_e2_evitement(units, column_name = "co2_avoided")
   expect_true("co2_avoided" %in% names(result))
 })

@@ -71,64 +71,64 @@ app_ui <- function(request) {
         icon = bsicons::bs_icon("layers"),
 
         bslib::nav_panel(
-          title = i18n$t("family_C"),
-          value = "family_C",
-          mod_family_ui("family_C", "C")
+          title = i18n$t("famille_carbone"),
+          value = "famille_carbone",
+          mod_family_ui("famille_carbone", "C")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_B"),
-          value = "family_B",
-          mod_family_ui("family_B", "B")
+          title = i18n$t("famille_biodiversite"),
+          value = "famille_biodiversite",
+          mod_family_ui("famille_biodiversite", "B")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_W"),
-          value = "family_W",
-          mod_family_ui("family_W", "W")
+          title = i18n$t("famille_eau"),
+          value = "famille_eau",
+          mod_family_ui("famille_eau", "W")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_A"),
-          value = "family_A",
-          mod_family_ui("family_A", "A")
+          title = i18n$t("famille_air"),
+          value = "famille_air",
+          mod_family_ui("famille_air", "A")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_F"),
-          value = "family_F",
-          mod_family_ui("family_F", "F")
+          title = i18n$t("famille_sol"),
+          value = "famille_sol",
+          mod_family_ui("famille_sol", "F")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_L"),
-          value = "family_L",
-          mod_family_ui("family_L", "L")
+          title = i18n$t("famille_paysage"),
+          value = "famille_paysage",
+          mod_family_ui("famille_paysage", "L")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_T"),
-          value = "family_T",
-          mod_family_ui("family_T", "T")
+          title = i18n$t("famille_temporel"),
+          value = "famille_temporel",
+          mod_family_ui("famille_temporel", "T")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_R"),
-          value = "family_R",
-          mod_family_ui("family_R", "R")
+          title = i18n$t("famille_risque"),
+          value = "famille_risque",
+          mod_family_ui("famille_risque", "R")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_S"),
-          value = "family_S",
-          mod_family_ui("family_S", "S")
+          title = i18n$t("famille_social"),
+          value = "famille_social",
+          mod_family_ui("famille_social", "S")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_P"),
-          value = "family_P",
-          mod_family_ui("family_P", "P")
+          title = i18n$t("famille_production"),
+          value = "famille_production",
+          mod_family_ui("famille_production", "P")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_E"),
-          value = "family_E",
-          mod_family_ui("family_E", "E")
+          title = i18n$t("famille_energie"),
+          value = "famille_energie",
+          mod_family_ui("famille_energie", "E")
         ),
         bslib::nav_panel(
-          title = i18n$t("family_N"),
-          value = "family_N",
-          mod_family_ui("family_N", "N")
+          title = i18n$t("famille_naturalite"),
+          value = "famille_naturalite",
+          mod_family_ui("famille_naturalite", "N")
         )
       ),
 
@@ -632,7 +632,7 @@ mod_family_ui <- function(id, family_code) {
       htmltools::span(family_name, class = "fw-bold me-2"),
       htmltools::span(
         class = "text-muted",
-        paste0("\u2014 ", i18n$t(paste0("family_", family_code, "_desc")))
+        paste0("\u2014 ", i18n$t(paste0(get_famille_col(family_code), "_desc")))
       )
     ),
 

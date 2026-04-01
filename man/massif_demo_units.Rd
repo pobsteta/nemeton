@@ -102,7 +102,7 @@ An \code{sf} object with 20 forest parcels and 100+ columns:
   \item{*_norm}{Normalized versions (0-100 scale) for all 29 indicators}
 
   \strong{Family composite indices:}
-  \item{family_C, family_B, ..., family_N}{Aggregated family scores (0-100)}
+  \item{famille_carbone, famille_biodiversite, ..., famille_naturalite}{Aggregated family scores (0-100)}
 }
 }
 \source{
@@ -279,8 +279,8 @@ data("massif_demo_units")
 
 # Explore structure
 library(sf)
-plot(massif_demo_units["family_S"]) # Social services
-plot(massif_demo_units["family_E"]) # Energy services
+plot(massif_demo_units["famille_social"]) # Social services
+plot(massif_demo_units["famille_energie"]) # Energy services
 
 # Create 12-axis radar plot for parcel 1
 library(nemeton)
@@ -302,7 +302,7 @@ hotspots <- identify_hotspots(
 )
 
 # Summary statistics
-summary(massif_demo_units[, c("family_S", "family_P", "family_E", "family_N")])
+summary(massif_demo_units[, c("famille_social", "famille_production", "famille_energie", "famille_naturalite")])
 }
 
 }

@@ -85,7 +85,7 @@ test_that("build_synthesis_prompt includes all 12 families", {
   skip_if_not_installed("sf")
   scores <- create_test_units(n_features = 3)
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    scores[[paste0("family_", code)]] <- runif(3, 20, 80)
+    scores[[nemeton:::get_famille_col(code)]] <- runif(3, 20, 80)
   }
 
   prompt <- nemeton:::build_synthesis_prompt(scores, "fran\u00e7ais")
@@ -96,7 +96,7 @@ test_that("build_synthesis_prompt works in English", {
   skip_if_not_installed("sf")
   scores <- create_test_units(n_features = 3)
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    scores[[paste0("family_", code)]] <- runif(3, 20, 80)
+    scores[[nemeton:::get_famille_col(code)]] <- runif(3, 20, 80)
   }
 
   prompt <- nemeton:::build_synthesis_prompt(scores, "English")
@@ -138,23 +138,23 @@ test_that("load_expert_profiles loads YAML files from inst/experts", {
 
 test_that("msg handles all indicator name keys", {
   indicator_keys <- c(
-    "indicator_carbon_biomass", "indicator_carbon_ndvi",
-    "indicator_biodiversity_protection", "indicator_biodiversity_structure",
-    "indicator_biodiversity_connectivity",
-    "indicator_water_network", "indicator_water_twi", "indicator_water_wetlands",
-    "indicator_air_coverage", "indicator_air_quality",
-    "indicator_soil_fertility", "indicator_soil_erosion",
-    "indicator_landscape_fragmentation", "indicator_landscape_edge",
-    "indicator_temporal_age", "indicator_temporal_change",
-    "indicator_risk_fire", "indicator_risk_storm",
-    "indicator_risk_drought", "indicator_risk_browsing",
-    "indicator_social_trails", "indicator_social_accessibility",
-    "indicator_social_proximity",
-    "indicator_productive_volume", "indicator_productive_station",
-    "indicator_productive_quality",
-    "indicator_energy_fuelwood", "indicator_energy_avoidance",
-    "indicator_naturalness_distance", "indicator_naturalness_continuity",
-    "indicator_naturalness_composite"
+    "indicateur_c1_biomasse", "indicateur_c2_ndvi",
+    "indicateur_b1_protection", "indicateur_b2_structure",
+    "indicateur_b3_connectivite",
+    "indicateur_w1_reseau", "indicateur_w3_humidite", "indicateur_w2_zones_humides",
+    "indicateur_a1_couverture", "indicateur_a2_qualite_air",
+    "indicateur_f1_fertilite", "indicateur_f2_erosion",
+    "indicateur_l2_fragmentation", "indicateur_l1_sylvosphere",
+    "indicateur_t1_anciennete", "indicateur_t2_changement",
+    "indicateur_r1_feu", "indicateur_r2_tempete",
+    "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
+    "indicateur_s1_routes", "indicateur_s2_bati",
+    "indicateur_s3_population",
+    "indicateur_p1_volume", "indicateur_p2_station",
+    "indicateur_p3_qualite_bois",
+    "indicateur_e1_bois_energie", "indicateur_e2_evitement",
+    "indicateur_n1_distance", "indicateur_n2_continuite",
+    "indicateur_n3_naturalite"
   )
 
   for (key in indicator_keys) {
@@ -228,7 +228,7 @@ test_that("msg handles French versions of all categories", {
   on.exit(nemeton::nemeton_set_language("en"))
 
   keys <- c(
-    "indicator_carbon_biomass", "error_invalid_data_type",
+    "indicateur_c1_biomasse", "error_invalid_data_type",
     "demo_loading", "units_not_sf", "normalize_normalized",
     "family_index_created", "compute_start"
   )
@@ -355,9 +355,9 @@ test_that("create_family_index works with mean method for all families", {
   }
 
   result <- nemeton::create_family_index(units, method = "mean")
-  expect_true("family_C" %in% names(result))
-  expect_true("family_B" %in% names(result))
-  expect_true("family_W" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
+  expect_true("famille_biodiversite" %in% names(result))
+  expect_true("famille_eau" %in% names(result))
 })
 
 test_that("create_family_index with single indicator per family", {
@@ -365,8 +365,8 @@ test_that("create_family_index with single indicator per family", {
   units$C1 <- c(50, 60, 70)
 
   result <- nemeton::create_family_index(units, method = "mean", family_codes = "C")
-  expect_true("family_C" %in% names(result))
-  expect_equal(result$family_C, c(50, 60, 70))
+  expect_true("famille_carbone" %in% names(result))
+  expect_equal(result$famille_carbone, c(50, 60, 70))
 })
 
 test_that("create_family_index harmonic method works", {
@@ -375,10 +375,10 @@ test_that("create_family_index harmonic method works", {
   units$C2 <- c(40, 80, 30)
 
   result <- nemeton::create_family_index(units, method = "harmonic", family_codes = "C")
-  expect_true("family_C" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
   # Harmonic mean should be <= arithmetic mean
   arith_mean <- (c(50, 60, 70) + c(40, 80, 30)) / 2
-  expect_true(all(result$family_C <= arith_mean + 0.01))
+  expect_true(all(result$famille_carbone <= arith_mean + 0.01))
 })
 
 test_that("create_family_index geometric method works", {
@@ -387,8 +387,8 @@ test_that("create_family_index geometric method works", {
   units$B2 <- c(40, 80, 30)
 
   result <- nemeton::create_family_index(units, method = "geometric", family_codes = "B")
-  expect_true("family_B" %in% names(result))
-  expect_true(all(is.numeric(result$family_B)))
+  expect_true("famille_biodiversite" %in% names(result))
+  expect_true(all(is.numeric(result$famille_biodiversite)))
 })
 
 test_that("create_family_index min method works", {
@@ -397,8 +397,8 @@ test_that("create_family_index min method works", {
   units$W2 <- c(40, 80, 30)
 
   result <- nemeton::create_family_index(units, method = "min", family_codes = "W")
-  expect_true("family_W" %in% names(result))
-  expect_equal(result$family_W, c(40, 60, 30))
+  expect_true("famille_eau" %in% names(result))
+  expect_equal(result$famille_eau, c(40, 60, 30))
 })
 
 test_that("create_family_index errors for non-sf input", {

@@ -15,36 +15,36 @@ test_that("list_indicators returns all 31 indicator names by default", {
   expect_length(indicators, 31)
 
   # Spot-check a few from different families
-  expect_true("carbon_biomass" %in% indicators)
-  expect_true("carbon_ndvi" %in% indicators)
-  expect_true("water_network" %in% indicators)
-  expect_true("water_wetlands" %in% indicators)
-  expect_true("water_twi" %in% indicators)
+  expect_true("indicateur_c1_biomasse" %in% indicators)
+  expect_true("indicateur_c2_ndvi" %in% indicators)
+  expect_true("indicateur_w1_reseau" %in% indicators)
+  expect_true("indicateur_w2_zones_humides" %in% indicators)
+  expect_true("indicateur_w3_humidite" %in% indicators)
   expect_true("soil_fertility" %in% indicators)
   expect_true("soil_erosion" %in% indicators)
-  expect_true("landscape_fragmentation" %in% indicators)
+  expect_true("indicateur_l2_fragmentation" %in% indicators)
   expect_true("landscape_edge" %in% indicators)
-  expect_true("biodiversity_protection" %in% indicators)
-  expect_true("biodiversity_structure" %in% indicators)
-  expect_true("biodiversity_connectivity" %in% indicators)
-  expect_true("risk_fire" %in% indicators)
-  expect_true("risk_storm" %in% indicators)
-  expect_true("risk_drought" %in% indicators)
-  expect_true("risk_browsing" %in% indicators)
-  expect_true("temporal_age" %in% indicators)
-  expect_true("temporal_change" %in% indicators)
+  expect_true("indicateur_b1_protection" %in% indicators)
+  expect_true("indicateur_b2_structure" %in% indicators)
+  expect_true("indicateur_b3_connectivite" %in% indicators)
+  expect_true("indicateur_r1_feu" %in% indicators)
+  expect_true("indicateur_r2_tempete" %in% indicators)
+  expect_true("indicateur_r3_secheresse" %in% indicators)
+  expect_true("indicateur_r4_abroutissement" %in% indicators)
+  expect_true("indicateur_t1_anciennete" %in% indicators)
+  expect_true("indicateur_t2_changement" %in% indicators)
   expect_true("air_coverage" %in% indicators)
-  expect_true("air_quality" %in% indicators)
-  expect_true("social_trails" %in% indicators)
-  expect_true("social_accessibility" %in% indicators)
+  expect_true("indicateur_a2_qualite_air" %in% indicators)
+  expect_true("indicateur_s1_routes" %in% indicators)
+  expect_true("indicateur_s2_bati" %in% indicators)
   expect_true("social_proximity" %in% indicators)
   expect_true("productive_volume" %in% indicators)
   expect_true("productive_quality" %in% indicators)
   expect_true("productive_station" %in% indicators)
   expect_true("energy_fuelwood" %in% indicators)
   expect_true("energy_avoidance" %in% indicators)
-  expect_true("naturalness_distance" %in% indicators)
-  expect_true("naturalness_continuity" %in% indicators)
+  expect_true("indicateur_n1_distance" %in% indicators)
+  expect_true("indicateur_n2_continuite" %in% indicators)
   expect_true("naturalness_composite" %in% indicators)
 })
 
@@ -69,10 +69,10 @@ test_that("list_indicators details contain correct family codes", {
   expect_setequal(actual_families, expected_families)
 
   # Verify family mapping for specific indicators
-  carbon_row <- details[details$name == "carbon_biomass", ]
+  carbon_row <- details[details$name == "indicateur_c1_biomasse", ]
   expect_equal(carbon_row$family, "C")
 
-  risk_row <- details[details$name == "risk_fire", ]
+  risk_row <- details[details$name == "indicateur_r1_feu", ]
   expect_equal(risk_row$family, "R")
 
   naturalness_row <- details[details$name == "naturalness_composite", ]
@@ -86,54 +86,54 @@ test_that("list_indicators details contain correct family codes", {
 test_that("list_indicators filters by category = 'biophysical'", {
   biophysical <- list_indicators(category = "biophysical")
 
-  expect_true("carbon_biomass" %in% biophysical)
-  expect_true("carbon_ndvi" %in% biophysical)
-  expect_true("water_network" %in% biophysical)
-  expect_true("biodiversity_protection" %in% biophysical)
+  expect_true("indicateur_c1_biomasse" %in% biophysical)
+  expect_true("indicateur_c2_ndvi" %in% biophysical)
+  expect_true("indicateur_w1_reseau" %in% biophysical)
+  expect_true("indicateur_b1_protection" %in% biophysical)
   expect_true("air_coverage" %in% biophysical)
   # social, risk, etc. should NOT be in biophysical
 
-  expect_false("social_accessibility" %in% biophysical)
-  expect_false("risk_fire" %in% biophysical)
-  expect_false("landscape_fragmentation" %in% biophysical)
+  expect_false("indicateur_s2_bati" %in% biophysical)
+  expect_false("indicateur_r1_feu" %in% biophysical)
+  expect_false("indicateur_l2_fragmentation" %in% biophysical)
 })
 
 test_that("list_indicators filters by category = 'risk'", {
   risk <- list_indicators(category = "risk")
 
   expect_length(risk, 4)
-  expect_true("risk_fire" %in% risk)
-  expect_true("risk_storm" %in% risk)
-  expect_true("risk_drought" %in% risk)
-  expect_true("risk_browsing" %in% risk)
-  expect_false("carbon_biomass" %in% risk)
+  expect_true("indicateur_r1_feu" %in% risk)
+  expect_true("indicateur_r2_tempete" %in% risk)
+  expect_true("indicateur_r3_secheresse" %in% risk)
+  expect_true("indicateur_r4_abroutissement" %in% risk)
+  expect_false("indicateur_c1_biomasse" %in% risk)
 })
 
 test_that("list_indicators filters by category = 'social'", {
   social <- list_indicators(category = "social")
 
   expect_length(social, 3)
-  expect_true("social_trails" %in% social)
-  expect_true("social_accessibility" %in% social)
+  expect_true("indicateur_s1_routes" %in% social)
+  expect_true("indicateur_s2_bati" %in% social)
   expect_true("social_proximity" %in% social)
-  expect_false("carbon_biomass" %in% social)
+  expect_false("indicateur_c1_biomasse" %in% social)
 })
 
 test_that("list_indicators filters by category = 'landscape'", {
   landscape <- list_indicators(category = "landscape")
 
   expect_length(landscape, 2)
-  expect_true("landscape_fragmentation" %in% landscape)
+  expect_true("indicateur_l2_fragmentation" %in% landscape)
   expect_true("landscape_edge" %in% landscape)
-  expect_false("carbon_biomass" %in% landscape)
+  expect_false("indicateur_c1_biomasse" %in% landscape)
 })
 
 test_that("list_indicators filters by category = 'temporal'", {
   temporal <- list_indicators(category = "temporal")
 
   expect_length(temporal, 2)
-  expect_true("temporal_age" %in% temporal)
-  expect_true("temporal_change" %in% temporal)
+  expect_true("indicateur_t1_anciennete" %in% temporal)
+  expect_true("indicateur_t2_changement" %in% temporal)
 })
 
 test_that("list_indicators filters by category = 'productive'", {
@@ -157,8 +157,8 @@ test_that("list_indicators filters by category = 'naturalness'", {
   naturalness <- list_indicators(category = "naturalness")
 
   expect_length(naturalness, 3)
-  expect_true("naturalness_distance" %in% naturalness)
-  expect_true("naturalness_continuity" %in% naturalness)
+  expect_true("indicateur_n1_distance" %in% naturalness)
+  expect_true("indicateur_n2_continuite" %in% naturalness)
   expect_true("naturalness_composite" %in% naturalness)
 })
 
@@ -269,14 +269,14 @@ test_that("nemeton_compute warns on unknown indicators and skips them", {
   expect_warning(
     result <- nemeton_compute(
       units, layers,
-      indicators = c("carbon_biomass", "totally_fake_indicator"),
+      indicators = c("indicateur_c1_biomasse", "totally_fake_indicator"),
       preprocess = FALSE
     ),
     "Unknown indicator"
   )
 
   # The valid indicator should still be computed
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
   # The fake one should not appear as a column (it was skipped before dispatch)
   expect_false("totally_fake_indicator" %in% names(result))
 })
@@ -289,13 +289,13 @@ test_that("nemeton_compute warns on multiple unknown indicators", {
   expect_warning(
     result <- nemeton_compute(
       units, layers,
-      indicators = c("carbon_biomass", "fake1", "fake2"),
+      indicators = c("indicateur_c1_biomasse", "fake1", "fake2"),
       preprocess = FALSE
     ),
     "Unknown indicator"
   )
 
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
 })
 
 test_that("nemeton_compute errors when ALL indicators are invalid", {
@@ -351,7 +351,7 @@ test_that("nemeton_compute expands 'all' to full indicator list", {
 # nemeton_compute() — indicator calculation and error handling
 # ══════════════════════════════════════════════════════════════════
 
-test_that("nemeton_compute calculates carbon_biomass successfully", {
+test_that("nemeton_compute calculates indicateur_c1_biomasse successfully", {
   units <- nemeton_units(create_test_units(n_features = 3))
   units$species <- c("Quercus", "Fagus", "Pinus")
   units$age <- c(80, 60, 40)
@@ -362,15 +362,15 @@ test_that("nemeton_compute calculates carbon_biomass successfully", {
 
   result <- nemeton_compute(
     units, layers,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     preprocess = FALSE
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
   expect_equal(nrow(result), 3)
-  expect_type(result$carbon_biomass, "double")
-  expect_false(all(is.na(result$carbon_biomass)))
+  expect_type(result$indicateur_c1_biomasse, "double")
+  expect_false(all(is.na(result$indicateur_c1_biomasse)))
 })
 
 test_that("nemeton_compute handles failing indicators gracefully (sets NA)", {
@@ -380,15 +380,15 @@ test_that("nemeton_compute handles failing indicators gracefully (sets NA)", {
   # Only provide biomass layer, try water indicator which needs different data
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  # water_twi may fail or return 0/NA when required layers are missing
+  # indicateur_w3_humidite may fail or return 0/NA when required layers are missing
   expect_warning(
-    result <- nemeton_compute(units, layers, indicators = "water_twi", preprocess = FALSE),
+    result <- nemeton_compute(units, layers, indicators = "indicateur_w3_humidite", preprocess = FALSE),
     regexp = NULL  # Accept any warning about missing layers or failure
   )
 
-  expect_true("water_twi" %in% names(result))
+  expect_true("indicateur_w3_humidite" %in% names(result))
   # Value should be NA or 0 when layers are missing
-  expect_true(all(is.na(result$water_twi) | result$water_twi == 0))
+  expect_true(all(is.na(result$indicateur_w3_humidite) | result$indicateur_w3_humidite == 0))
 })
 
 test_that("nemeton_compute computes multiple indicators at once", {
@@ -402,18 +402,18 @@ test_that("nemeton_compute computes multiple indicators at once", {
     )
   )
 
-  # carbon_biomass may fail with mock data
+  # indicateur_c1_biomasse may fail with mock data
   result <- suppressWarnings(
     nemeton_compute(
       units, layers,
-      indicators = c("carbon_biomass", "landscape_fragmentation"),
+      indicators = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation"),
       preprocess = FALSE,
       forest_values = c(1, 2, 3)
     )
   )
 
-  expect_true("carbon_biomass" %in% names(result))
-  expect_true("landscape_fragmentation" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_l2_fragmentation" %in% names(result))
   expect_equal(nrow(result), nrow(units))
 })
 
@@ -428,7 +428,7 @@ test_that("nemeton_compute preprocesses layers when preprocess = TRUE", {
 
   # With preprocessing, should emit "Preprocessing" message
   expect_message(
-    result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = TRUE),
+    result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = TRUE),
     "Preprocessing|Harmoniz"
   )
 
@@ -440,7 +440,7 @@ test_that("nemeton_compute skips preprocessing when preprocess = FALSE", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   expect_s3_class(result, "sf")
 })
@@ -458,7 +458,7 @@ test_that("nemeton_compute attaches metadata to result", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   meta <- attr(result, "metadata")
   expect_true(!is.null(meta))
@@ -466,7 +466,7 @@ test_that("nemeton_compute attaches metadata to result", {
   expect_true("indicators_computed" %in% names(meta))
   expect_true("layers_used" %in% names(meta))
   expect_true(inherits(meta$computed_at, "POSIXct"))
-  expect_true("carbon_biomass" %in% meta$indicators_computed)
+  expect_true("indicateur_c1_biomasse" %in% meta$indicators_computed)
   expect_true("biomass" %in% meta$layers_used)
 })
 
@@ -478,7 +478,7 @@ test_that("nemeton_compute preserves original metadata from units", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   meta <- attr(result, "metadata")
   # Original metadata should be preserved (merged)
@@ -493,19 +493,19 @@ test_that("nemeton_compute metadata tracks failed indicators correctly", {
   units <- nemeton_units(create_test_units())
   temp_files <- create_temp_test_files()
 
-  # Only biomass layer — water_twi will likely fail or return NA
+  # Only biomass layer — indicateur_w3_humidite will likely fail or return NA
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
   suppressWarnings(
     result <- nemeton_compute(
       units, layers,
-      indicators = c("carbon_biomass", "water_twi"),
+      indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
       preprocess = FALSE
     )
   )
 
   meta <- attr(result, "metadata")
-  # carbon_biomass should be in computed list; water_twi may or may not be
+  # indicateur_c1_biomasse should be in computed list; indicateur_w3_humidite may or may not be
   # depending on whether it returns a value or throws an error
 
   expect_true("indicators_computed" %in% names(meta))
@@ -524,7 +524,7 @@ test_that("nemeton_compute preserves original unit columns", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   expect_true("custom_col" %in% names(result))
   expect_equal(result$custom_col, c("A", "B", "C"))
@@ -542,8 +542,8 @@ test_that("nemeton_compute shows progress messages when progress = TRUE", {
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
   expect_message(
-    nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE, progress = TRUE),
-    "Calculating|carbon_biomass"
+    nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE, progress = TRUE),
+    "Calculating|indicateur_c1_biomasse"
   )
 })
 
@@ -554,13 +554,13 @@ test_that("nemeton_compute works with progress = FALSE", {
 
   result <- nemeton_compute(
     units, layers,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     preprocess = FALSE,
     progress = FALSE
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
 })
 
 # ══════════════════════════════════════════════════════════════════
@@ -576,7 +576,7 @@ test_that("compute_indicator dispatches to correct indicator function", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  values <- nemeton:::compute_indicator("carbon_biomass", units, layers)
+  values <- nemeton:::compute_indicator("indicateur_c1_biomasse", units, layers)
 
   expect_type(values, "double")
   expect_length(values, nrow(units))
@@ -605,13 +605,13 @@ test_that("compute_indicator handles risk indicators that return sf with R-colum
 
   # Risk indicators return an sf with R1/R2/R3/R4 columns.
   # compute_indicator should extract the correct column.
-  values <- nemeton:::compute_indicator("risk_fire", units, layers)
+  values <- nemeton:::compute_indicator("indicateur_r1_feu", units, layers)
 
   expect_type(values, "double")
   expect_length(values, 3)
 })
 
-test_that("compute_indicator handles risk_storm indicator", {
+test_that("compute_indicator handles indicateur_r2_tempete indicator", {
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -621,12 +621,12 @@ test_that("compute_indicator handles risk_storm indicator", {
     )
   )
 
-  values <- nemeton:::compute_indicator("risk_storm", units, layers)
+  values <- nemeton:::compute_indicator("indicateur_r2_tempete", units, layers)
   expect_type(values, "double")
   expect_length(values, 3)
 })
 
-test_that("compute_indicator handles risk_drought indicator", {
+test_that("compute_indicator handles indicateur_r3_secheresse indicator", {
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -636,12 +636,12 @@ test_that("compute_indicator handles risk_drought indicator", {
     )
   )
 
-  values <- nemeton:::compute_indicator("risk_drought", units, layers)
+  values <- nemeton:::compute_indicator("indicateur_r3_secheresse", units, layers)
   expect_type(values, "double")
   expect_length(values, 3)
 })
 
-test_that("compute_indicator handles risk_browsing indicator", {
+test_that("compute_indicator handles indicateur_r4_abroutissement indicator", {
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(
@@ -651,7 +651,7 @@ test_that("compute_indicator handles risk_browsing indicator", {
     )
   )
 
-  values <- nemeton:::compute_indicator("risk_browsing", units, layers)
+  values <- nemeton:::compute_indicator("indicateur_r4_abroutissement", units, layers)
   expect_type(values, "double")
   expect_length(values, 3)
 })
@@ -660,8 +660,8 @@ test_that("compute_indicator handles risk_browsing indicator", {
 # compute_indicator() — col_map logic for sf-returning indicators
 # ══════════════════════════════════════════════════════════════════
 
-test_that("compute_indicator col_map maps risk_fire to R1", {
-  # Verify the col_map extracts the R1 column from sf returned by risk_fire
+test_that("compute_indicator col_map maps indicateur_r1_feu to R1", {
+  # Verify the col_map extracts the R1 column from sf returned by indicateur_r1_feu
   units <- nemeton_units(create_test_units(n_features = 2))
 
   mock_sf <- units
@@ -671,16 +671,16 @@ test_that("compute_indicator col_map maps risk_fire to R1", {
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
   local_mocked_bindings(
-    indicator_risk_fire = function(units, ...) mock_sf,
+    indicateur_r1_feu = function(units, ...) mock_sf,
     .package = "nemeton"
   )
 
-  values <- nemeton:::compute_indicator("risk_fire", units, layers)
+  values <- nemeton:::compute_indicator("indicateur_r1_feu", units, layers)
   expect_equal(values, c(42.0, 58.0))
 })
 
 test_that("compute_indicator returns numeric vector for non-sf indicators", {
-  # carbon_biomass should return a numeric vector, not an sf
+  # indicateur_c1_biomasse should return a numeric vector, not an sf
   units <- nemeton_units(create_test_units(n_features = 3))
   units$species <- c("Quercus", "Fagus", "Pinus")
   units$age <- c(80, 60, 40)
@@ -689,7 +689,7 @@ test_that("compute_indicator returns numeric vector for non-sf indicators", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton:::compute_indicator("carbon_biomass", units, layers)
+  result <- nemeton:::compute_indicator("indicateur_c1_biomasse", units, layers)
 
   expect_type(result, "double")
   expect_false(inherits(result, "sf"))
@@ -710,13 +710,13 @@ test_that("nemeton_compute works with single-feature units", {
 
   result <- nemeton_compute(
     units, layers,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     preprocess = FALSE
   )
 
   expect_s3_class(result, "sf")
   expect_equal(nrow(result), 1)
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
 })
 
 test_that("nemeton_compute passes extra arguments through ...", {
@@ -726,16 +726,16 @@ test_that("nemeton_compute passes extra arguments through ...", {
     rasters = list(landcover = temp_files$landcover)
   )
 
-  # forest_values is passed through ... to indicator_landscape_fragmentation
+  # forest_values is passed through ... to indicateur_l2_fragmentation
   result <- nemeton_compute(
     units, layers,
-    indicators = "landscape_fragmentation",
+    indicators = "indicateur_l2_fragmentation",
     preprocess = FALSE,
     forest_values = c(1, 2, 3)
   )
 
   expect_s3_class(result, "sf")
-  expect_true("landscape_fragmentation" %in% names(result))
+  expect_true("indicateur_l2_fragmentation" %in% names(result))
 })
 
 test_that("nemeton_compute result is still an sf object", {
@@ -743,7 +743,7 @@ test_that("nemeton_compute result is still an sf object", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   expect_s3_class(result, "sf")
   # Geometry should still be present
@@ -759,7 +759,7 @@ test_that("nemeton_compute with layers having both rasters and vectors tracks la
     vectors = list(roads = temp_files$roads)
   )
 
-  result <- nemeton_compute(units, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(units, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   meta <- attr(result, "metadata")
   expect_true("layers_used" %in% names(meta))
@@ -773,10 +773,10 @@ test_that("nemeton_compute accepts raw sf (not nemeton_units) as units input", {
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
 
-  result <- nemeton_compute(raw_sf, layers, indicators = "carbon_biomass", preprocess = FALSE)
+  result <- nemeton_compute(raw_sf, layers, indicators = "indicateur_c1_biomasse", preprocess = FALSE)
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
 })
 
 test_that("nemeton_compute with indicators = vector of length 1 (not 'all')", {
@@ -786,10 +786,10 @@ test_that("nemeton_compute with indicators = vector of length 1 (not 'all')", {
 
   result <- nemeton_compute(
     units, layers,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     preprocess = FALSE
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
 })

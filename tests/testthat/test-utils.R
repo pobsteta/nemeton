@@ -47,7 +47,7 @@ test_that("detect_indicator_family extracts family code", {
 })
 
 test_that("detect_indicator_family returns NA for non-indicator names", {
-  expect_true(is.na(nemeton:::detect_indicator_family("carbon_biomass")))
+  expect_true(is.na(nemeton:::detect_indicator_family("indicateur_c1_biomasse")))
   expect_true(is.na(nemeton:::detect_indicator_family("unknown")))
   expect_true(is.na(nemeton:::detect_indicator_family("abc")))
   expect_true(is.na(nemeton:::detect_indicator_family("area")))

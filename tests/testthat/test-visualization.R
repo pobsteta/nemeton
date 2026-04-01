@@ -1,10 +1,10 @@
 test_that("plot_indicators_map creates ggplot for single indicator", {
   # Create test data
   units <- nemeton_units(create_test_units(n_features = 5))
-  units$carbon_biomass <- c(100, 200, 300, 400, 500)
+  units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
 
   # Create plot
-  p <- plot_indicators_map(units, indicators = "carbon_biomass")
+  p <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse")
 
   expect_s3_class(p, "ggplot")
   expect_s3_class(p, "gg")
@@ -12,12 +12,12 @@ test_that("plot_indicators_map creates ggplot for single indicator", {
 
 test_that("plot_indicators_map creates faceted plot for multiple indicators", {
   units <- nemeton_units(create_test_units(n_features = 5))
-  units$carbon_biomass <- c(100, 200, 300, 400, 500)
-  units$water_twi <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
+  units$indicateur_w3_humidite <- c(10, 20, 30, 40, 50)
 
   p <- plot_indicators_map(
     units,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     facet = TRUE
   )
 
@@ -29,8 +29,8 @@ test_that("plot_indicators_map creates faceted plot for multiple indicators", {
 
 test_that("plot_indicators_map auto-detects indicators", {
   units <- nemeton_units(create_test_units(n_features = 3))
-  units$carbon_biomass <- c(100, 200, 300)
-  units$biodiversity_protection <- c(10, 20, 30)
+  units$indicateur_c1_biomasse <- c(100, 200, 300)
+  units$indicateur_b1_protection <- c(10, 20, 30)
 
   # Should auto-detect carbon and biodiversity
   p <- plot_indicators_map(units)
@@ -40,27 +40,27 @@ test_that("plot_indicators_map auto-detects indicators", {
 
 test_that("plot_indicators_map accepts different palettes", {
   units <- nemeton_units(create_test_units(n_features = 3))
-  units$carbon_biomass <- c(100, 200, 300)
+  units$indicateur_c1_biomasse <- c(100, 200, 300)
 
   # Viridis
-  p1 <- plot_indicators_map(units, indicators = "carbon_biomass", palette = "viridis")
+  p1 <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse", palette = "viridis")
   expect_s3_class(p1, "ggplot")
 
   # ColorBrewer
-  p2 <- plot_indicators_map(units, indicators = "carbon_biomass", palette = "Greens")
+  p2 <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse", palette = "Greens")
   expect_s3_class(p2, "ggplot")
 
-  p3 <- plot_indicators_map(units, indicators = "carbon_biomass", palette = "RdYlGn")
+  p3 <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse", palette = "RdYlGn")
   expect_s3_class(p3, "ggplot")
 })
 
 test_that("plot_indicators_map accepts custom title and legend", {
   units <- nemeton_units(create_test_units(n_features = 3))
-  units$carbon_biomass <- c(100, 200, 300)
+  units$indicateur_c1_biomasse <- c(100, 200, 300)
 
   p <- plot_indicators_map(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     title = "Custom Title",
     legend_title = "Custom Legend"
   )
@@ -73,11 +73,11 @@ test_that("plot_indicators_map accepts custom title and legend", {
 
 test_that("plot_indicators_map accepts custom breaks and labels", {
   units <- nemeton_units(create_test_units(n_features = 5))
-  units$carbon_biomass <- c(0, 25, 50, 75, 100)
+  units$indicateur_c1_biomasse <- c(0, 25, 50, 75, 100)
 
   p <- plot_indicators_map(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     breaks = c(0, 50, 100),
     labels = c("Low", "Medium", "High")
   )
@@ -87,10 +87,10 @@ test_that("plot_indicators_map accepts custom breaks and labels", {
 
 test_that("plot_indicators_map handles normalized indicators", {
   units <- nemeton_units(create_test_units(n_features = 3))
-  units$carbon_biomass <- c(100, 200, 300)
+  units$indicateur_c1_biomasse <- c(100, 200, 300)
 
   # Normalize
-  normalized <- normalize_indicators(units, indicators = "carbon_biomass", method = "minmax")
+  normalized <- normalize_indicators(units, indicators = "indicateur_c1_biomasse", method = "minmax")
 
   # Plot normalized
   p <- plot_indicators_map(normalized, indicators = "carbon_biomass_norm")
@@ -120,14 +120,14 @@ test_that("plot_indicators_map errors on non-sf input", {
   df <- data.frame(carbon = c(1, 2, 3))
 
   expect_error(
-    plot_indicators_map(df, indicators = "carbon_biomass"),
+    plot_indicators_map(df, indicators = "indicateur_c1_biomasse"),
     "must be an.*sf.*object"
   )
 })
 
 test_that("plot_indicators_map errors on missing indicators", {
   units <- nemeton_units(create_test_units(n_features = 3))
-  units$carbon_biomass <- c(100, 200, 300)
+  units$indicateur_c1_biomasse <- c(100, 200, 300)
 
   expect_error(
     plot_indicators_map(units, indicators = "missing_column"),
@@ -148,16 +148,16 @@ test_that("plot_indicators_map errors when no indicators found", {
 test_that("plot_comparison_map creates side-by-side comparison", {
   # Create two datasets
   units1 <- nemeton_units(create_test_units(n_features = 3))
-  units1$carbon_biomass <- c(100, 200, 300)
+  units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$carbon_biomass <- c(150, 250, 350)
+  units2$indicateur_c1_biomasse <- c(150, 250, 350)
 
   # Create comparison
   p <- plot_comparison_map(
     units1,
     units2,
-    indicator = "carbon_biomass",
+    indicator = "indicateur_c1_biomasse",
     labels = c("Current", "Future")
   )
 
@@ -172,35 +172,35 @@ test_that("plot_comparison_map errors on non-sf inputs", {
   df2 <- data.frame(carbon = c(4, 5, 6))
 
   expect_error(
-    plot_comparison_map(df1, df2, indicator = "carbon_biomass"),
+    plot_comparison_map(df1, df2, indicator = "indicateur_c1_biomasse"),
     "must be.*sf.*objects"
   )
 })
 
 test_that("plot_comparison_map errors when indicator missing", {
   units1 <- nemeton_units(create_test_units(n_features = 3))
-  units1$carbon_biomass <- c(100, 200, 300)
+  units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$water_twi <- c(10, 20, 30) # Different indicator
+  units2$indicateur_w3_humidite <- c(10, 20, 30) # Different indicator
 
   expect_error(
-    plot_comparison_map(units1, units2, indicator = "carbon_biomass"),
+    plot_comparison_map(units1, units2, indicator = "indicateur_c1_biomasse"),
     "must exist in both datasets"
   )
 })
 
 test_that("plot_difference_map creates absolute difference map", {
   units1 <- nemeton_units(create_test_units(n_features = 3))
-  units1$carbon_biomass <- c(100, 200, 300)
+  units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$carbon_biomass <- c(150, 250, 350) # +50 each
+  units2$indicateur_c1_biomasse <- c(150, 250, 350) # +50 each
 
   p <- plot_difference_map(
     units1,
     units2,
-    indicator = "carbon_biomass",
+    indicator = "indicateur_c1_biomasse",
     type = "absolute"
   )
 
@@ -209,15 +209,15 @@ test_that("plot_difference_map creates absolute difference map", {
 
 test_that("plot_difference_map creates relative difference map", {
   units1 <- nemeton_units(create_test_units(n_features = 3))
-  units1$carbon_biomass <- c(100, 200, 300)
+  units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
   units2 <- nemeton_units(create_test_units(n_features = 3))
-  units2$carbon_biomass <- c(150, 250, 350) # +50% for first, +25% for second, etc.
+  units2$indicateur_c1_biomasse <- c(150, 250, 350) # +50% for first, +25% for second, etc.
 
   p <- plot_difference_map(
     units1,
     units2,
-    indicator = "carbon_biomass",
+    indicator = "indicateur_c1_biomasse",
     type = "relative"
   )
 
@@ -229,7 +229,7 @@ test_that("plot_difference_map errors on non-sf inputs", {
   df2 <- data.frame(carbon = c(4, 5, 6))
 
   expect_error(
-    plot_difference_map(df1, df2, indicator = "carbon_biomass"),
+    plot_difference_map(df1, df2, indicator = "indicateur_c1_biomasse"),
     "must be.*sf.*objects"
   )
 })
@@ -254,18 +254,18 @@ test_that("visualization works with real cadastral data", {
   units <- nemeton_units(cadastral_path)
 
   # Add some indicator values
-  units$carbon_biomass <- 250
-  units$biodiversity_protection <- 30
-  units$water_twi <- 0.75
+  units$indicateur_c1_biomasse <- 250
+  units$indicateur_b1_protection <- 30
+  units$indicateur_w3_humidite <- 0.75
 
   # Single indicator map
-  p1 <- plot_indicators_map(units, indicators = "carbon_biomass")
+  p1 <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse")
   expect_s3_class(p1, "ggplot")
 
   # Multiple indicators
   p2 <- plot_indicators_map(
     units,
-    indicators = c("carbon_biomass", "biodiversity_protection", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_b1_protection", "indicateur_w3_humidite"),
     facet = TRUE
   )
   expect_s3_class(p2, "ggplot")
@@ -274,15 +274,15 @@ test_that("visualization works with real cadastral data", {
 test_that("full visualization workflow works end-to-end", {
   # Create test data
   units <- nemeton_units(create_test_units(n_features = 10))
-  units$carbon_biomass <- seq(100, 1000, length.out = 10)
-  units$biodiversity_protection <- seq(10, 100, length.out = 10)
-  units$water_twi <- seq(5, 50, length.out = 10)
-  units$social_accessibility <- seq(0, 100, length.out = 10)
+  units$indicateur_c1_biomasse <- seq(100, 1000, length.out = 10)
+  units$indicateur_b1_protection <- seq(10, 100, length.out = 10)
+  units$indicateur_w3_humidite <- seq(5, 50, length.out = 10)
+  units$indicateur_s2_bati <- seq(0, 100, length.out = 10)
 
   # Step 1: Normalize
   normalized <- normalize_indicators(
     units,
-    indicators = c("carbon_biomass", "biodiversity_protection", "water_twi", "social_accessibility"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_b1_protection", "indicateur_w3_humidite", "indicateur_s2_bati"),
     method = "minmax"
   )
 
@@ -304,7 +304,7 @@ test_that("full visualization workflow works end-to-end", {
   # Step 4: Visualize raw indicators
   p1 <- plot_indicators_map(
     units,
-    indicators = c("carbon_biomass", "biodiversity_protection"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_b1_protection"),
     palette = "Greens"
   )
   expect_s3_class(p1, "ggplot")
@@ -336,9 +336,9 @@ test_that("full visualization workflow works end-to-end", {
 
 test_that("plots can be saved to file", {
   units <- nemeton_units(create_test_units(n_features = 5))
-  units$carbon_biomass <- c(100, 200, 300, 400, 500)
+  units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
 
-  p <- plot_indicators_map(units, indicators = "carbon_biomass")
+  p <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse")
 
   # Test that ggsave works (but don't actually save in tests)
   temp_file <- tempfile(fileext = ".png")
@@ -511,7 +511,7 @@ test_that("nemeton_radar handles new family names correctly", {
   p <- nemeton_radar(
     result,
     unit_id = 1,
-    indicators = c("family_B", "family_R", "family_T", "family_A"),
+    indicators = c("famille_biodiversite", "famille_risque", "famille_temporel", "famille_air"),
     normalize = FALSE
   )
 
@@ -564,7 +564,7 @@ test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
   p <- nemeton_radar(
     result,
     unit_id = c(1, 2),
-    indicators = c("family_B", "family_R", "family_T"),
+    indicators = c("famille_biodiversite", "famille_risque", "famille_temporel"),
     normalize = FALSE
   )
 
@@ -583,9 +583,9 @@ test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
 # --- clean_indicator_name (internal) -----------------------------------------
 
 test_that("clean_indicator_name transforms family_ prefix correctly", {
-  expect_equal(nemeton:::clean_indicator_name("family_C"), "C")
-  expect_equal(nemeton:::clean_indicator_name("family_B"), "B")
-  expect_equal(nemeton:::clean_indicator_name("family_W"), "W")
+  expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
+  expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
+  expect_equal(nemeton:::clean_indicator_name("famille_eau"), "W")
 })
 
 test_that("clean_indicator_name handles _norm suffix", {
@@ -599,7 +599,7 @@ test_that("clean_indicator_name handles _inv suffix", {
 })
 
 test_that("clean_indicator_name replaces underscores with spaces", {
-  result <- nemeton:::clean_indicator_name("carbon_biomass")
+  result <- nemeton:::clean_indicator_name("indicateur_c1_biomasse")
   expect_equal(result, "Carbon biomass")
 })
 
@@ -816,10 +816,10 @@ test_that("plot_indicators_map auto-selects YlOrRd for risk indicators", {
   expect_true(!is.null(scale_fill))
 })
 
-test_that("plot_indicators_map auto-selects YlOrRd for family_R indicator", {
+test_that("plot_indicators_map auto-selects YlOrRd for famille_risque indicator", {
   units <- create_test_units(n_features = 3)
-  units$family_R <- c(10, 20, 30)
-  p <- plot_indicators_map(units, indicators = "family_R")
+  units$famille_risque <- c(10, 20, 30)
+  p <- plot_indicators_map(units, indicators = "famille_risque")
   expect_s3_class(p, "ggplot")
 })
 

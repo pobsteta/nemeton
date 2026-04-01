@@ -1,18 +1,18 @@
 # Tests for Landscape Family Indicators (Famille L)
-# L1: indicator_landscape_fragmentation() - Sylvosphere (edge effect), score 0-100
-# L2: indicator_landscape_edge() - Landscape fragmentation, score 0-100
+# L1: indicateur_l2_fragmentation() - Sylvosphere (edge effect), score 0-100
+# L2: indicateur_l1_sylvosphere() - Landscape fragmentation, score 0-100
 
 # ==============================================================================
 # L1: SYLVOSPHERE (EDGE EFFECT)
 # ==============================================================================
 
-test_that("indicator_landscape_fragmentation returns score 0-100", {
+test_that("indicateur_l2_fragmentation returns score 0-100", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
-  score <- indicator_landscape_fragmentation(
+  score <- indicateur_l2_fragmentation(
     units,
     layers,
     landcover_layer = "landcover",
@@ -27,12 +27,12 @@ test_that("indicator_landscape_fragmentation returns score 0-100", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_fragmentation works without layers (fallback)", {
+test_that("indicateur_l2_fragmentation works without layers (fallback)", {
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
   # No layers: geometry + exposure still work, contrast defaults to 50
-  score <- indicator_landscape_fragmentation(units)
+  score <- indicateur_l2_fragmentation(units)
 
   expect_type(score, "double")
   expect_length(score, 3)
@@ -40,13 +40,13 @@ test_that("indicator_landscape_fragmentation works without layers (fallback)", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_fragmentation geometry component varies with shape", {
+test_that("indicateur_l2_fragmentation geometry component varies with shape", {
   data(massif_demo_units)
   units <- massif_demo_units[1:10, ]
 
   # Scores should vary across parcels with different shapes
 
-  score <- indicator_landscape_fragmentation(units)
+  score <- indicateur_l2_fragmentation(units)
 
   expect_length(score, 10)
   expect_true(all(score >= 0 & score <= 100))
@@ -57,22 +57,22 @@ test_that("indicator_landscape_fragmentation geometry component varies with shap
   }
 })
 
-test_that("indicator_landscape_fragmentation validates inputs", {
+test_that("indicateur_l2_fragmentation validates inputs", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   # Invalid units
   expect_error(
-    indicator_landscape_fragmentation(data.frame(x = 1:3), layers),
+    indicateur_l2_fragmentation(data.frame(x = 1:3), layers),
     "must be.*sf"
   )
 })
 
-test_that("indicator_landscape_fragmentation works for single parcel", {
+test_that("indicateur_l2_fragmentation works for single parcel", {
   data(massif_demo_units)
   units <- massif_demo_units[1, ]
 
-  score <- indicator_landscape_fragmentation(units)
+  score <- indicateur_l2_fragmentation(units)
 
   expect_length(score, 1)
   expect_true(!is.na(score))
@@ -83,12 +83,12 @@ test_that("indicator_landscape_fragmentation works for single parcel", {
 # L2: LANDSCAPE FRAGMENTATION
 # ==============================================================================
 
-test_that("indicator_landscape_edge returns score 0-100", {
+test_that("indicateur_l1_sylvosphere returns score 0-100", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:5, ]
 
-  score <- indicator_landscape_edge(units)
+  score <- indicateur_l1_sylvosphere(units)
 
   # Test output
   expect_type(score, "double")
@@ -97,12 +97,12 @@ test_that("indicator_landscape_edge returns score 0-100", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_edge fallback uses shape index", {
+test_that("indicateur_l1_sylvosphere fallback uses shape index", {
   data(massif_demo_units)
   units <- massif_demo_units[1:5, ]
 
   # Without layers, should use shape index fallback
-  score <- indicator_landscape_edge(units)
+  score <- indicateur_l1_sylvosphere(units)
 
   expect_type(score, "double")
   expect_length(score, 5)
@@ -110,14 +110,14 @@ test_that("indicator_landscape_edge fallback uses shape index", {
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_edge with layers uses landscapemetrics when available", {
+test_that("indicateur_l1_sylvosphere with layers uses landscapemetrics when available", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:5, ]
 
   # With layers - may use landscapemetrics if available, otherwise shape index
-  score <- indicator_landscape_edge(
+  score <- indicateur_l1_sylvosphere(
     units,
     layers,
     landcover_layer = "landcover",
@@ -131,27 +131,27 @@ test_that("indicator_landscape_edge with layers uses landscapemetrics when avail
   expect_true(all(score >= 0 & score <= 100))
 })
 
-test_that("indicator_landscape_edge validates inputs", {
+test_that("indicateur_l1_sylvosphere validates inputs", {
   # Invalid units
   expect_error(
-    indicator_landscape_edge(data.frame(x = 1:3)),
+    indicateur_l1_sylvosphere(data.frame(x = 1:3)),
     "must be.*sf"
   )
 
   # Empty units
   data(massif_demo_units)
   expect_error(
-    indicator_landscape_edge(massif_demo_units[0, ]),
+    indicateur_l1_sylvosphere(massif_demo_units[0, ]),
     "empty|no features|nrow.*0"
   )
 })
 
-test_that("indicator_landscape_edge works for single parcel", {
+test_that("indicateur_l1_sylvosphere works for single parcel", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1, ]
 
-  score <- indicator_landscape_edge(units)
+  score <- indicateur_l1_sylvosphere(units)
 
   expect_length(score, 1)
   expect_true(!is.na(score))
@@ -170,13 +170,13 @@ test_that("Both landscape indicators work together", {
 
   # Calculate both indicators
   expect_no_error({
-    l1 <- indicator_landscape_fragmentation(
+    l1 <- indicateur_l2_fragmentation(
       units,
       layers,
       forest_values = c(1, 2, 3),
       buffer = 50
     )
-    l2 <- indicator_landscape_edge(units)
+    l2 <- indicateur_l1_sylvosphere(units)
   })
 
   # Both should return valid 0-100 scores
@@ -196,13 +196,13 @@ test_that("Landscape indicators can be added to units dataframe", {
   units <- massif_demo_units[1:3, ]
 
   # Add all landscape indicators as columns
-  units$L1_sylvosphere <- indicator_landscape_fragmentation(
+  units$L1_sylvosphere <- indicateur_l2_fragmentation(
     units,
     layers,
     forest_values = c(1, 2, 3),
     buffer = 50
   )
-  units$L2_fragmentation <- indicator_landscape_edge(units)
+  units$L2_fragmentation <- indicateur_l1_sylvosphere(units)
 
   # Check structure
   expect_true("L1_sylvosphere" %in% names(units))
@@ -222,13 +222,13 @@ test_that("Landscape indicators work with full dataset", {
   # Test on all parcels
   units <- massif_demo_units
 
-  l1 <- indicator_landscape_fragmentation(
+  l1 <- indicateur_l2_fragmentation(
     units,
     layers,
     forest_values = c(1, 2, 3),
     buffer = 50
   )
-  l2 <- indicator_landscape_edge(units)
+  l2 <- indicateur_l1_sylvosphere(units)
 
   expect_length(l1, nrow(massif_demo_units))
   expect_length(l2, nrow(massif_demo_units))

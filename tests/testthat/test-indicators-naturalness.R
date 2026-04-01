@@ -5,7 +5,7 @@
 # N1: Distance to Infrastructure
 # ==============================================================================
 
-test_that("indicator_naturalness_distance (N1) works with roads + buildings", {
+test_that("indicateur_n1_distance (N1) works with roads + buildings", {
   skip_if_not_installed("sf")
 
   # Create test units: one near infrastructure, one far
@@ -54,7 +54,7 @@ test_that("indicator_naturalness_distance (N1) works with roads + buildings", {
     )
   )
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = roads,
     buildings = buildings
@@ -72,7 +72,7 @@ test_that("indicator_naturalness_distance (N1) works with roads + buildings", {
   expect_true(result$N1[1] < result$N1[2])
 })
 
-test_that("indicator_naturalness_distance (N1) returns default scores without roads/buildings", {
+test_that("indicateur_n1_distance (N1) returns default scores without roads/buildings", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -83,7 +83,7 @@ test_that("indicator_naturalness_distance (N1) returns default scores without ro
     )
   )
 
-  result <- indicator_naturalness_distance(units = test_units)
+  result <- indicateur_n1_distance(units = test_units)
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
@@ -93,14 +93,14 @@ test_that("indicator_naturalness_distance (N1) returns default scores without ro
   expect_equal(result$N1[1], 53.75)
 })
 
-test_that("indicator_naturalness_distance validates input", {
+test_that("indicateur_n1_distance validates input", {
   expect_error(
-    indicator_naturalness_distance(data.frame(x = 1:3)),
+    indicateur_n1_distance(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_naturalness_distance uses custom column name", {
+test_that("indicateur_n1_distance uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -111,13 +111,13 @@ test_that("indicator_naturalness_distance uses custom column name", {
     )
   )
 
-  result <- indicator_naturalness_distance(test_units, column_name = "remoteness")
+  result <- indicateur_n1_distance(test_units, column_name = "remoteness")
 
   expect_true("remoteness" %in% names(result))
   expect_false("N1" %in% names(result))
 })
 
-test_that("indicator_naturalness_distance (N1) handles empty roads sf (0 rows)", {
+test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
 
   skip_if_not_installed("sf")
 
@@ -146,7 +146,7 @@ test_that("indicator_naturalness_distance (N1) handles empty roads sf (0 rows)",
     )
   )
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = empty_roads,
     buildings = buildings
@@ -158,7 +158,7 @@ test_that("indicator_naturalness_distance (N1) handles empty roads sf (0 rows)",
   expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
 })
 
-test_that("indicator_naturalness_distance (N1) handles empty buildings sf (0 rows)", {
+test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -184,7 +184,7 @@ test_that("indicator_naturalness_distance (N1) handles empty buildings sf (0 row
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = roads,
     buildings = empty_buildings
@@ -196,7 +196,7 @@ test_that("indicator_naturalness_distance (N1) handles empty buildings sf (0 row
   expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
 })
 
-test_that("indicator_naturalness_distance (N1) handles non-sf roads/buildings (ignored)", {
+test_that("indicateur_n1_distance (N1) handles non-sf roads/buildings (ignored)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -208,7 +208,7 @@ test_that("indicator_naturalness_distance (N1) handles non-sf roads/buildings (i
   )
 
   # Pass non-sf objects for roads and buildings: they should be ignored (treated as NULL)
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = data.frame(x = 1),
     buildings = list(a = 1)
@@ -220,7 +220,7 @@ test_that("indicator_naturalness_distance (N1) handles non-sf roads/buildings (i
   expect_equal(result$N1[1], 53.75)
 })
 
-test_that("indicator_naturalness_distance (N1) resolves layers via nemeton_layers", {
+test_that("indicateur_n1_distance (N1) resolves layers via nemeton_layers", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -272,7 +272,7 @@ test_that("indicator_naturalness_distance (N1) resolves layers via nemeton_layer
   class(mock_layers) <- "nemeton_layers"
 
   # Use layers argument (roads/buildings = NULL, so they get resolved from layers)
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     layers = mock_layers
   )
@@ -285,7 +285,7 @@ test_that("indicator_naturalness_distance (N1) resolves layers via nemeton_layer
   expect_true(result$N1[1] < 53.75)  # Less than the default
 })
 
-test_that("indicator_naturalness_distance (N1) with layers but no matching vector names", {
+test_that("indicateur_n1_distance (N1) with layers but no matching vector names", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -307,7 +307,7 @@ test_that("indicator_naturalness_distance (N1) with layers but no matching vecto
   )
   class(mock_layers) <- "nemeton_layers"
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     layers = mock_layers
   )
@@ -316,7 +316,7 @@ test_that("indicator_naturalness_distance (N1) with layers but no matching vecto
   expect_equal(result$N1[1], 53.75)
 })
 
-test_that("indicator_naturalness_distance (N1) roads/buildings override layers", {
+test_that("indicateur_n1_distance (N1) roads/buildings override layers", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -357,7 +357,7 @@ test_that("indicator_naturalness_distance (N1) roads/buildings override layers",
   )
   class(mock_layers) <- "nemeton_layers"
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = direct_roads,
     layers = mock_layers
@@ -368,7 +368,7 @@ test_that("indicator_naturalness_distance (N1) roads/buildings override layers",
   expect_true(result$N1[1] < 53.75)
 })
 
-test_that("indicator_naturalness_distance (N1) transforms CRS for roads in different CRS", {
+test_that("indicateur_n1_distance (N1) transforms CRS for roads in different CRS", {
   skip_if_not_installed("sf")
 
   # Units in Lambert 93 (EPSG:2154)
@@ -396,7 +396,7 @@ test_that("indicator_naturalness_distance (N1) transforms CRS for roads in diffe
   )
   road_4326 <- sf::st_transform(road_2154, 4326)
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = road_4326
   )
@@ -406,19 +406,19 @@ test_that("indicator_naturalness_distance (N1) transforms CRS for roads in diffe
   expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
 })
 
-test_that("indicator_naturalness_distance (N1) handles multiple units", {
+test_that("indicateur_n1_distance (N1) handles multiple units", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 5)
 
-  result <- indicator_naturalness_distance(units = test_units)
+  result <- indicateur_n1_distance(units = test_units)
 
   expect_equal(nrow(result), 5)
   expect_true(all(!is.na(result$N1)))
   expect_true(all(result$N1 >= 0 & result$N1 <= 100))
 })
 
-test_that("indicator_naturalness_distance (N1) normalization caps at 100", {
+test_that("indicateur_n1_distance (N1) normalization caps at 100", {
   skip_if_not_installed("sf")
 
   # Unit far from everything -- default dist_urbain = 2000 -> 2000/20 = 100 (capped)
@@ -448,7 +448,7 @@ test_that("indicator_naturalness_distance (N1) normalization caps at 100", {
     )
   )
 
-  result <- indicator_naturalness_distance(
+  result <- indicateur_n1_distance(
     units = test_units,
     roads = far_roads,
     buildings = far_buildings
@@ -462,7 +462,7 @@ test_that("indicator_naturalness_distance (N1) normalization caps at 100", {
 # N2: Forest Continuity
 # ==============================================================================
 
-test_that("indicator_naturalness_continuity (N2) works with bdforet", {
+test_that("indicateur_n2_continuite (N2) works with bdforet", {
   skip_if_not_installed("sf")
 
   # Test unit
@@ -484,7 +484,7 @@ test_that("indicator_naturalness_continuity (N2) works with bdforet", {
     )
   )
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet
   )
@@ -499,7 +499,7 @@ test_that("indicator_naturalness_continuity (N2) works with bdforet", {
   expect_equal(result$N2[2], 15)
 })
 
-test_that("indicator_naturalness_continuity (N2) with ancient forest", {
+test_that("indicateur_n2_continuite (N2) with ancient forest", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -526,7 +526,7 @@ test_that("indicator_naturalness_continuity (N2) with ancient forest", {
     )
   )
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet,
     foret_ancienne = foret_ancienne
@@ -536,7 +536,7 @@ test_that("indicator_naturalness_continuity (N2) with ancient forest", {
   expect_true(result$N2[1] >= 60 & result$N2[1] <= 100)
 })
 
-test_that("indicator_naturalness_continuity (N2) returns 50 without data", {
+test_that("indicateur_n2_continuite (N2) returns 50 without data", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -547,19 +547,19 @@ test_that("indicator_naturalness_continuity (N2) returns 50 without data", {
     )
   )
 
-  result <- indicator_naturalness_continuity(units = test_units)
+  result <- indicateur_n2_continuite(units = test_units)
 
   expect_equal(result$N2[1], 50)
 })
 
-test_that("indicator_naturalness_continuity validates input", {
+test_that("indicateur_n2_continuite validates input", {
   expect_error(
-    indicator_naturalness_continuity(data.frame(x = 1:3)),
+    indicateur_n2_continuite(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_naturalness_continuity uses custom column name", {
+test_that("indicateur_n2_continuite uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -570,13 +570,13 @@ test_that("indicator_naturalness_continuity uses custom column name", {
     )
   )
 
-  result <- indicator_naturalness_continuity(test_units, column_name = "forest_cont")
+  result <- indicateur_n2_continuite(test_units, column_name = "forest_cont")
 
   expect_true("forest_cont" %in% names(result))
   expect_false("N2" %in% names(result))
 })
 
-test_that("indicator_naturalness_continuity (N2) handles empty bdforet sf (0 rows)", {
+test_that("indicateur_n2_continuite (N2) handles empty bdforet sf (0 rows)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -597,7 +597,7 @@ test_that("indicator_naturalness_continuity (N2) handles empty bdforet sf (0 row
   # the function still enters the for loop (since bdforet was not NULL initially
   # but foret_ancienne is). After bdforet gets nullified, taux_boisement=0
   # and taux_ancienne=0 => score=15
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = empty_bdforet
   )
@@ -607,7 +607,7 @@ test_that("indicator_naturalness_continuity (N2) handles empty bdforet sf (0 row
   expect_equal(result$N2[1], 15)
 })
 
-test_that("indicator_naturalness_continuity (N2) handles empty foret_ancienne sf (0 rows)", {
+test_that("indicateur_n2_continuite (N2) handles empty foret_ancienne sf (0 rows)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -632,7 +632,7 @@ test_that("indicator_naturalness_continuity (N2) handles empty foret_ancienne sf
     geometry = sf::st_sfc(crs = 2154)
   )
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet,
     foret_ancienne = empty_ancienne
@@ -644,7 +644,7 @@ test_that("indicator_naturalness_continuity (N2) handles empty foret_ancienne sf
   expect_true(result$N2[1] > 30 & result$N2[1] <= 60)
 })
 
-test_that("indicator_naturalness_continuity (N2) with partial bdforet coverage", {
+test_that("indicateur_n2_continuite (N2) with partial bdforet coverage", {
   skip_if_not_installed("sf")
 
   # Unit is 100x100
@@ -665,7 +665,7 @@ test_that("indicator_naturalness_continuity (N2) with partial bdforet coverage",
     )
   )
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet
   )
@@ -676,7 +676,7 @@ test_that("indicator_naturalness_continuity (N2) with partial bdforet coverage",
   expect_equal(result$N2[1], 45, tolerance = 2)
 })
 
-test_that("indicator_naturalness_continuity (N2) with partial ancient forest", {
+test_that("indicateur_n2_continuite (N2) with partial ancient forest", {
   skip_if_not_installed("sf")
 
   # Unit is 100x100
@@ -705,7 +705,7 @@ test_that("indicator_naturalness_continuity (N2) with partial ancient forest", {
     )
   )
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet,
     foret_ancienne = foret_ancienne
@@ -716,7 +716,7 @@ test_that("indicator_naturalness_continuity (N2) with partial ancient forest", {
   expect_equal(result$N2[1], 80, tolerance = 2)
 })
 
-test_that("indicator_naturalness_continuity (N2) with foret_ancienne only (no bdforet)", {
+test_that("indicateur_n2_continuite (N2) with foret_ancienne only (no bdforet)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -738,7 +738,7 @@ test_that("indicator_naturalness_continuity (N2) with foret_ancienne only (no bd
   # bdforet = NULL, foret_ancienne provided -> enters the loop
   # taux_boisement = 0 (no bdforet), taux_ancienne ~ 1.0
   # score = 60 + 40 * 1.0 = 100
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     foret_ancienne = foret_ancienne
   )
@@ -746,7 +746,7 @@ test_that("indicator_naturalness_continuity (N2) with foret_ancienne only (no bd
   expect_true(result$N2[1] >= 60 & result$N2[1] <= 100)
 })
 
-test_that("indicator_naturalness_continuity (N2) resolves bdforet from nemeton_layers", {
+test_that("indicateur_n2_continuite (N2) resolves bdforet from nemeton_layers", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -773,7 +773,7 @@ test_that("indicator_naturalness_continuity (N2) resolves bdforet from nemeton_l
   )
   class(mock_layers) <- "nemeton_layers"
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     layers = mock_layers
   )
@@ -782,7 +782,7 @@ test_that("indicator_naturalness_continuity (N2) resolves bdforet from nemeton_l
   expect_true(result$N2[1] > 30 & result$N2[1] <= 60)
 })
 
-test_that("indicator_naturalness_continuity (N2) bdforet arg overrides layers", {
+test_that("indicateur_n2_continuite (N2) bdforet arg overrides layers", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -817,7 +817,7 @@ test_that("indicator_naturalness_continuity (N2) bdforet arg overrides layers", 
   )
   class(mock_layers) <- "nemeton_layers"
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = direct_bdforet,
     layers = mock_layers
@@ -827,7 +827,7 @@ test_that("indicator_naturalness_continuity (N2) bdforet arg overrides layers", 
   expect_true(result$N2[1] > 30 & result$N2[1] <= 60)
 })
 
-test_that("indicator_naturalness_continuity (N2) with CRS transform", {
+test_that("indicateur_n2_continuite (N2) with CRS transform", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -848,7 +848,7 @@ test_that("indicator_naturalness_continuity (N2) with CRS transform", {
   )
   bdforet_4326 <- sf::st_transform(bdforet_2154, 4326)
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet_4326
   )
@@ -859,7 +859,7 @@ test_that("indicator_naturalness_continuity (N2) with CRS transform", {
   expect_true(result$N2[1] > 30 & result$N2[1] <= 60)
 })
 
-test_that("indicator_naturalness_continuity (N2) non-sf bdforet treated as NULL", {
+test_that("indicateur_n2_continuite (N2) non-sf bdforet treated as NULL", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -873,7 +873,7 @@ test_that("indicator_naturalness_continuity (N2) non-sf bdforet treated as NULL"
   # Non-sf bdforet does not satisfy inherits(bdforet, "sf")
   # and is also not NULL -> but the check on line 123 is: !is.null AND inherits(sf) AND nrow > 0
   # so a non-sf object fails that check, bdforet becomes NULL
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = data.frame(x = 1)
   )
@@ -885,7 +885,7 @@ test_that("indicator_naturalness_continuity (N2) non-sf bdforet treated as NULL"
   expect_equal(result$N2[1], 15)
 })
 
-test_that("indicator_naturalness_continuity (N2) multiple units different coverages", {
+test_that("indicateur_n2_continuite (N2) multiple units different coverages", {
   skip_if_not_installed("sf")
 
   # 3 units: unit1 fully covered by ancient forest, unit2 half covered by bdforet, unit3 no forest
@@ -917,7 +917,7 @@ test_that("indicator_naturalness_continuity (N2) multiple units different covera
     )
   )
 
-  result <- indicator_naturalness_continuity(
+  result <- indicateur_n2_continuite(
     units = test_units,
     bdforet = bdforet,
     foret_ancienne = foret_ancienne
@@ -936,7 +936,7 @@ test_that("indicator_naturalness_continuity (N2) multiple units different covera
 # N3: Composite Naturalness
 # ==============================================================================
 
-test_that("indicator_naturalness_composite (N3) combines N1 and N2", {
+test_that("indicateur_n3_naturalite (N3) combines N1 and N2", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -950,7 +950,7 @@ test_that("indicator_naturalness_composite (N3) combines N1 and N2", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
@@ -966,7 +966,7 @@ test_that("indicator_naturalness_composite (N3) combines N1 and N2", {
   expect_true(result$N3[1] > result$N3[2])
 })
 
-test_that("indicator_naturalness_composite (N3) uses L1 and B3 when available", {
+test_that("indicateur_n3_naturalite (N3) uses L1 and B3 when available", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -981,14 +981,14 @@ test_that("indicator_naturalness_composite (N3) uses L1 and B3 when available", 
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # N3 = 0.35*60 + 0.35*70 + 0.15*(100-40) + 0.15*80
   expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 60 + 0.15 * 80
   expect_equal(result$N3[1], expected)
 })
 
-test_that("indicator_naturalness_composite (N3) without N1/N2 uses fallback 50", {
+test_that("indicateur_n3_naturalite (N3) without N1/N2 uses fallback 50", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -999,20 +999,20 @@ test_that("indicator_naturalness_composite (N3) without N1/N2 uses fallback 50",
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # All fallback to 50 -> N3 = 50
   expect_equal(result$N3[1], 50)
 })
 
-test_that("indicator_naturalness_composite validates input", {
+test_that("indicateur_n3_naturalite validates input", {
   expect_error(
-    indicator_naturalness_composite(data.frame(x = 1:3)),
+    indicateur_n3_naturalite(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_naturalness_composite uses custom column name", {
+test_that("indicateur_n3_naturalite uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1025,13 +1025,13 @@ test_that("indicator_naturalness_composite uses custom column name", {
     )
   )
 
-  result <- indicator_naturalness_composite(test_units, column_name = "nat_idx")
+  result <- indicateur_n3_naturalite(test_units, column_name = "nat_idx")
 
   expect_true("nat_idx" %in% names(result))
   expect_false("N3" %in% names(result))
 })
 
-test_that("indicator_naturalness_composite (N3) with only N1 (no N2)", {
+test_that("indicateur_n3_naturalite (N3) with only N1 (no N2)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1043,14 +1043,14 @@ test_that("indicator_naturalness_composite (N3) with only N1 (no N2)", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # N1 = 80, N2 fallback 50, L1 fallback -> anti_frag=50, B3 fallback -> connectivite=50
   expected <- 0.35 * 80 + 0.35 * 50 + 0.15 * 50 + 0.15 * 50
   expect_equal(result$N3[1], expected)
 })
 
-test_that("indicator_naturalness_composite (N3) with only N2 (no N1)", {
+test_that("indicateur_n3_naturalite (N3) with only N2 (no N1)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1062,14 +1062,14 @@ test_that("indicator_naturalness_composite (N3) with only N2 (no N1)", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # N1 fallback 50, N2 = 90
   expected <- 0.35 * 50 + 0.35 * 90 + 0.15 * 50 + 0.15 * 50
   expect_equal(result$N3[1], expected)
 })
 
-test_that("indicator_naturalness_composite (N3) with only L1 (no B3)", {
+test_that("indicateur_n3_naturalite (N3) with only L1 (no B3)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1083,14 +1083,14 @@ test_that("indicator_naturalness_composite (N3) with only L1 (no B3)", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # anti_frag = 100 - 30 = 70, connectivite fallback = 50
   expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 70 + 0.15 * 50
   expect_equal(result$N3[1], expected)
 })
 
-test_that("indicator_naturalness_composite (N3) with only B3 (no L1)", {
+test_that("indicateur_n3_naturalite (N3) with only B3 (no L1)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1104,14 +1104,14 @@ test_that("indicator_naturalness_composite (N3) with only B3 (no L1)", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # anti_frag fallback = 50, connectivite = 90
   expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 50 + 0.15 * 90
   expect_equal(result$N3[1], expected)
 })
 
-test_that("indicator_naturalness_composite (N3) all columns present", {
+test_that("indicateur_n3_naturalite (N3) all columns present", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1128,7 +1128,7 @@ test_that("indicator_naturalness_composite (N3) all columns present", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # Unit 1: all max -> 0.35*100 + 0.35*100 + 0.15*100 + 0.15*100 = 100
   expect_equal(result$N3[1], 100)
@@ -1138,7 +1138,7 @@ test_that("indicator_naturalness_composite (N3) all columns present", {
   expect_equal(result$N3[3], 50)
 })
 
-test_that("indicator_naturalness_composite (N3) handles NA in N1/N2 columns", {
+test_that("indicateur_n3_naturalite (N3) handles NA in N1/N2 columns", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1152,7 +1152,7 @@ test_that("indicator_naturalness_composite (N3) handles NA in N1/N2 columns", {
     )
   )
 
-  result <- indicator_naturalness_composite(units = test_units)
+  result <- indicateur_n3_naturalite(units = test_units)
 
   # NA propagates through arithmetic: 0.35*NA + ... = NA
   expect_true(is.na(result$N3[1]))
@@ -1177,9 +1177,9 @@ test_that("Naturalness indicators integrate with family system", {
 
   # N1 and N2 without external data -> defaults, N3 combines them
   result <- test_units |>
-    indicator_naturalness_distance() |>
-    indicator_naturalness_continuity() |>
-    indicator_naturalness_composite()
+    indicateur_n1_distance() |>
+    indicateur_n2_continuite() |>
+    indicateur_n3_naturalite()
 
   expect_true(all(c("N1", "N2", "N3") %in% names(result)))
   expect_true(all(result$N3 >= 0 & result$N3 <= 100))
@@ -1213,14 +1213,14 @@ test_that("Full pipeline with spatial data and L1/B3 produces valid N3", {
   )
 
   result <- test_units |>
-    indicator_naturalness_distance(roads = roads) |>
-    indicator_naturalness_continuity(bdforet = bdforet)
+    indicateur_n1_distance(roads = roads) |>
+    indicateur_n2_continuite(bdforet = bdforet)
 
   # Manually add L1 and B3 for composite
   result$L1 <- 20
   result$B3 <- 75
 
-  result <- indicator_naturalness_composite(result)
+  result <- indicateur_n3_naturalite(result)
 
   expect_true(all(c("N1", "N2", "N3") %in% names(result)))
   expect_true(result$N3[1] >= 0 & result$N3[1] <= 100)

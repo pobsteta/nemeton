@@ -27,7 +27,7 @@ If NULL, equal weights are used.}
 \item{family_codes}{Character vector. Family codes to process. Default NULL (auto-detect).}
 }
 \value{
-The input sf object with added family_* columns (e.g., family_C, family_W).
+The input sf object with added family_* columns (e.g., famille_carbone, famille_eau).
 }
 \description{
 Aggregates sub-indicators into family-level composite scores (e.g., score_carbon,
@@ -37,11 +37,11 @@ score_water). Automatically detects indicator families from column name prefixes
 \details{
 **Family Detection**: Automatically identifies indicators by prefix:
 \itemize{
-  \item C1, C2 -> Carbon family (family_C)
-  \item W1, W2, W3 -> Water family (family_W)
-  \item F1, F2 -> Soil fertility family (family_F)
-  \item L1, L2 -> Landscape family (family_L)
-  \item B1, B2, B3 -> Biodiversity family (family_B)
+  \item C1, C2 -> Carbon family (famille_carbone)
+  \item W1, W2, W3 -> Water family (famille_eau)
+  \item F1, F2 -> Soil fertility family (famille_sol)
+  \item L1, L2 -> Landscape family (famille_paysage)
+  \item B1, B2, B3 -> Biodiversity family (famille_biodiversite)
   \item And 7 other families (A, T, R, S, P, E, N)
 }
 

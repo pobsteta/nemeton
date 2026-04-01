@@ -20,10 +20,10 @@ make_energy_sf <- function(n = 1, extra_cols = list(), crs = 2154) {
 }
 
 # ==============================================================================
-# indicator_energy_fuelwood (E1)
+# indicateur_e1_bois_energie (E1)
 # ==============================================================================
 
-test_that("indicator_energy_fuelwood (E1) calculates biomass potential", {
+test_that("indicateur_e1_bois_energie (E1) calculates biomass potential", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(3, list(
@@ -31,7 +31,7 @@ test_that("indicator_energy_fuelwood (E1) calculates biomass potential", {
     species = c("FASY", "PIAB", "QUPE")
   ))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     units = test_units,
     volume_field = "volume",
     species_field = "species"
@@ -43,37 +43,37 @@ test_that("indicator_energy_fuelwood (E1) calculates biomass potential", {
   expect_true(all(result$E1 > 0, na.rm = TRUE))
 })
 
-test_that("indicator_energy_fuelwood validates input is sf", {
+test_that("indicateur_e1_bois_energie validates input is sf", {
   expect_error(
-    indicator_energy_fuelwood(data.frame(x = 1:3)),
+    indicateur_e1_bois_energie(data.frame(x = 1:3)),
     "must be an sf object"
   )
   expect_error(
-    indicator_energy_fuelwood(NULL),
+    indicateur_e1_bois_energie(NULL),
     "must be an sf object"
   )
   expect_error(
-    indicator_energy_fuelwood("not_sf"),
+    indicateur_e1_bois_energie("not_sf"),
     "must be an sf object"
   )
 })
 
-test_that("indicator_energy_fuelwood requires volume field", {
+test_that("indicateur_e1_bois_energie requires volume field", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1)
 
   expect_error(
-    indicator_energy_fuelwood(test_units, volume_field = "volume"),
+    indicateur_e1_bois_energie(test_units, volume_field = "volume"),
     "Required field missing"
   )
   expect_error(
-    indicator_energy_fuelwood(test_units, volume_field = "nonexistent"),
+    indicateur_e1_bois_energie(test_units, volume_field = "nonexistent"),
     "Required field missing"
   )
 })
 
-test_that("indicator_energy_fuelwood handles NA volume values", {
+test_that("indicateur_e1_bois_energie handles NA volume values", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(3, list(
@@ -81,7 +81,7 @@ test_that("indicator_energy_fuelwood handles NA volume values", {
     species = c("FASY", "PIAB", "QUPE")
   ))
 
-  result <- indicator_energy_fuelwood(test_units, volume_field = "volume", species_field = "species")
+  result <- indicateur_e1_bois_energie(test_units, volume_field = "volume", species_field = "species")
 
   expect_false(is.na(result$E1[1]))
   expect_true(is.na(result$E1[2]))
@@ -91,7 +91,7 @@ test_that("indicator_energy_fuelwood handles NA volume values", {
   expect_equal(result$E1_coppice[2], 0)
 })
 
-test_that("indicator_energy_fuelwood uses species-specific density when species field present", {
+test_that("indicateur_e1_bois_energie uses species-specific density when species field present", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(
@@ -99,7 +99,7 @@ test_that("indicator_energy_fuelwood uses species-specific density when species 
     species = "FASY"
   ))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     species_field = "species"
@@ -111,13 +111,13 @@ test_that("indicator_energy_fuelwood uses species-specific density when species 
   expect_equal(result$E1_coppice[1], 0)
 })
 
-test_that("indicator_energy_fuelwood falls back to BROADLEAF_GENUS when species field absent", {
+test_that("indicateur_e1_bois_energie falls back to BROADLEAF_GENUS when species field absent", {
   skip_if_not_installed("sf")
 
   # No 'species' column at all -- should use "BROADLEAF_GENUS" fallback
   test_units <- make_energy_sf(1, list(volume = 200))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     species_field = "species"  # not in names(units)
@@ -127,7 +127,7 @@ test_that("indicator_energy_fuelwood falls back to BROADLEAF_GENUS when species 
   expect_true(result$E1_residues[1] > 0)
 })
 
-test_that("indicator_energy_fuelwood uses default density 550 when lookup returns NA", {
+test_that("indicateur_e1_bois_energie uses default density 550 when lookup returns NA", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(
@@ -138,7 +138,7 @@ test_that("indicator_energy_fuelwood uses default density 550 when lookup return
   # Mock lookup_species_threshold to return NA so fallback density 550 is used
   # Must patch both the namespace AND the function's environment (which may differ
   # under pkgload after local_mocked_bindings is used in earlier tests)
-  fn_env <- environment(indicator_energy_fuelwood)
+  fn_env <- environment(indicateur_e1_bois_energie)
   ns <- asNamespace("nemeton")
   mock_fn <- function(species_code, parameter, table_name) NA_real_
 
@@ -171,7 +171,7 @@ test_that("indicator_energy_fuelwood uses default density 550 when lookup return
     }
   }, add = TRUE)
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     species_field = "species"
@@ -186,16 +186,16 @@ test_that("indicator_energy_fuelwood uses default density 550 when lookup return
   expect_equal(result$E1_residues[1], 1.2 * 550 / 1000 * 0.5)
 })
 
-test_that("indicator_energy_fuelwood uses custom harvest rate and residue fraction", {
+test_that("indicateur_e1_bois_energie uses custom harvest rate and residue fraction", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 200, species = "FASY"))
 
-  result_low <- indicator_energy_fuelwood(
+  result_low <- indicateur_e1_bois_energie(
     test_units, volume_field = "volume", harvest_rate = 0.01
   )
 
-  result_high <- indicator_energy_fuelwood(
+  result_high <- indicateur_e1_bois_energie(
     test_units, volume_field = "volume", harvest_rate = 0.04
   )
 
@@ -203,16 +203,16 @@ test_that("indicator_energy_fuelwood uses custom harvest rate and residue fracti
   expect_true(result_high$E1[1] > result_low$E1[1])
 
   # Test custom residue_fraction
-  result_low_res <- indicator_energy_fuelwood(
+  result_low_res <- indicateur_e1_bois_energie(
     test_units, volume_field = "volume", residue_fraction = 0.1
   )
-  result_high_res <- indicator_energy_fuelwood(
+  result_high_res <- indicateur_e1_bois_energie(
     test_units, volume_field = "volume", residue_fraction = 0.5
   )
   expect_true(result_high_res$E1[1] > result_low_res$E1[1])
 })
 
-test_that("indicator_energy_fuelwood uses coppice area if provided", {
+test_that("indicateur_e1_bois_energie uses coppice area if provided", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -221,7 +221,7 @@ test_that("indicator_energy_fuelwood uses coppice area if provided", {
     coppice_fraction = c(0, 0.5)
   ))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     species_field = "species",
@@ -236,7 +236,7 @@ test_that("indicator_energy_fuelwood uses coppice area if provided", {
   expect_equal(result$E1_coppice[2], 0.5 * 2)
 })
 
-test_that("indicator_energy_fuelwood handles NA coppice_fraction", {
+test_that("indicateur_e1_bois_energie handles NA coppice_fraction", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -245,7 +245,7 @@ test_that("indicator_energy_fuelwood handles NA coppice_fraction", {
     coppice_fraction = c(NA, 0.3)
   ))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     species_field = "species",
@@ -258,7 +258,7 @@ test_that("indicator_energy_fuelwood handles NA coppice_fraction", {
   expect_equal(result$E1_coppice[2], 0.3 * 2)
 })
 
-test_that("indicator_energy_fuelwood ignores coppice when field not in data", {
+test_that("indicateur_e1_bois_energie ignores coppice when field not in data", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(
@@ -266,7 +266,7 @@ test_that("indicator_energy_fuelwood ignores coppice when field not in data", {
     species = "FASY"
   ))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     coppice_area_field = "nonexistent_field"
@@ -277,12 +277,12 @@ test_that("indicator_energy_fuelwood ignores coppice when field not in data", {
   expect_true(result$E1[1] > 0)
 })
 
-test_that("indicator_energy_fuelwood uses custom column name", {
+test_that("indicateur_e1_bois_energie uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 200))
 
-  result <- indicator_energy_fuelwood(
+  result <- indicateur_e1_bois_energie(
     test_units,
     volume_field = "volume",
     column_name = "fuelwood_potential"
@@ -293,7 +293,7 @@ test_that("indicator_energy_fuelwood uses custom column name", {
   expect_true("E1_coppice" %in% names(result))
 })
 
-test_that("indicator_energy_fuelwood preserves original sf columns", {
+test_that("indicateur_e1_bois_energie preserves original sf columns", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -302,34 +302,34 @@ test_that("indicator_energy_fuelwood preserves original sf columns", {
     extra_col = c("a", "b")
   ))
 
-  result <- indicator_energy_fuelwood(test_units, volume_field = "volume", species_field = "species")
+  result <- indicateur_e1_bois_energie(test_units, volume_field = "volume", species_field = "species")
 
   expect_true("extra_col" %in% names(result))
   expect_equal(result$extra_col, c("a", "b"))
   expect_equal(nrow(result), 2)
 })
 
-test_that("indicator_energy_fuelwood handles zero volume", {
+test_that("indicateur_e1_bois_energie handles zero volume", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 0, species = "FASY"))
 
-  result <- indicator_energy_fuelwood(test_units, volume_field = "volume")
+  result <- indicateur_e1_bois_energie(test_units, volume_field = "volume")
 
   expect_equal(result$E1[1], 0)
   expect_equal(result$E1_residues[1], 0)
 })
 
 # ==============================================================================
-# indicator_energy_avoidance (E2)
+# indicateur_e2_evitement (E2)
 # ==============================================================================
 
-test_that("indicator_energy_avoidance (E2) calculates CO2 substitution", {
+test_that("indicateur_e2_evitement (E2) calculates CO2 substitution", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(E1 = c(5.0, 3.5)))
 
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     units = test_units,
     fuelwood_field = "E1",
     energy_scenario = "vs_natural_gas"
@@ -343,27 +343,27 @@ test_that("indicator_energy_avoidance (E2) calculates CO2 substitution", {
   expect_true(all(result$E2_material == 0))
 })
 
-test_that("indicator_energy_avoidance validates input is sf", {
+test_that("indicateur_e2_evitement validates input is sf", {
   expect_error(
-    indicator_energy_avoidance(data.frame(x = 1:3)),
+    indicateur_e2_evitement(data.frame(x = 1:3)),
     "must be an sf object"
   )
   expect_error(
-    indicator_energy_avoidance(NULL),
+    indicateur_e2_evitement(NULL),
     "must be an sf object"
   )
   expect_error(
-    indicator_energy_avoidance(list(a = 1)),
+    indicateur_e2_evitement(list(a = 1)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_energy_avoidance handles missing fuelwood field gracefully", {
+test_that("indicateur_e2_evitement handles missing fuelwood field gracefully", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1)
 
-  result <- indicator_energy_avoidance(test_units, fuelwood_field = "E1")
+  result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
   expect_true("E2" %in% names(result))
   expect_equal(result$E2[1], 0)
@@ -371,19 +371,19 @@ test_that("indicator_energy_avoidance handles missing fuelwood field gracefully"
   expect_equal(result$E2_material[1], 0)
 })
 
-test_that("indicator_energy_avoidance handles NA fuelwood values", {
+test_that("indicateur_e2_evitement handles NA fuelwood values", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(3, list(E1 = c(5.0, NA, 3.0)))
 
-  result <- indicator_energy_avoidance(test_units, fuelwood_field = "E1")
+  result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
   expect_true(result$E2_energy[1] > 0)
   expect_equal(result$E2_energy[2], 0)  # NA fuelwood => no energy calculation
   expect_true(result$E2_energy[3] > 0)
 })
 
-test_that("indicator_energy_avoidance E2 total = E2_energy + E2_material", {
+test_that("indicateur_e2_evitement E2 total = E2_energy + E2_material", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -391,7 +391,7 @@ test_that("indicator_energy_avoidance E2 total = E2_energy + E2_material", {
     construction_volume = c(50, 30)
   ))
 
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     test_units,
     fuelwood_field = "E1",
     volume_field = "construction_volume",
@@ -403,7 +403,7 @@ test_that("indicator_energy_avoidance E2 total = E2_energy + E2_material", {
   }
 })
 
-test_that("indicator_energy_avoidance works with material substitution", {
+test_that("indicateur_e2_evitement works with material substitution", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -411,7 +411,7 @@ test_that("indicator_energy_avoidance works with material substitution", {
     construction_volume = c(50, 30)
   ))
 
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     test_units,
     fuelwood_field = "E1",
     volume_field = "construction_volume",
@@ -424,7 +424,7 @@ test_that("indicator_energy_avoidance works with material substitution", {
   expect_true(all(result$E2_energy > 0))
 })
 
-test_that("indicator_energy_avoidance handles NA construction volume in material calc", {
+test_that("indicateur_e2_evitement handles NA construction volume in material calc", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -432,7 +432,7 @@ test_that("indicator_energy_avoidance handles NA construction volume in material
     construction_volume = c(NA, 30)
   ))
 
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     test_units,
     fuelwood_field = "E1",
     volume_field = "construction_volume",
@@ -445,7 +445,7 @@ test_that("indicator_energy_avoidance handles NA construction volume in material
   expect_true(result$E2_energy[1] > 0)
 })
 
-test_that("indicator_energy_avoidance with unknown energy scenario warns and uses default", {
+test_that("indicateur_e2_evitement with unknown energy scenario warns and uses default", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
@@ -453,7 +453,7 @@ test_that("indicator_energy_avoidance with unknown energy scenario warns and use
   # An unknown scenario should trigger lookup_ademe_factor returning NULL,
   # which should emit a warning and use the default factor
   expect_warning(
-    result <- indicator_energy_avoidance(
+    result <- indicateur_e2_evitement(
       test_units,
       fuelwood_field = "E1",
       energy_scenario = "vs_unknown_scenario_xyz"
@@ -467,13 +467,13 @@ test_that("indicator_energy_avoidance with unknown energy scenario warns and use
   expect_equal(result$E2_energy[1], 5.0 * 4500 * 0.222 / 1000)
 })
 
-test_that("indicator_energy_avoidance with material_scenario but missing volume_field in data", {
+test_that("indicateur_e2_evitement with material_scenario but missing volume_field in data", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
 
   # material_scenario set, volume_field set to something not in the data
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     test_units,
     fuelwood_field = "E1",
     volume_field = "nonexistent_col",
@@ -485,12 +485,12 @@ test_that("indicator_energy_avoidance with material_scenario but missing volume_
   expect_true(result$E2_energy[1] > 0)
 })
 
-test_that("indicator_energy_avoidance uses custom column name", {
+test_that("indicateur_e2_evitement uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
 
-  result <- indicator_energy_avoidance(
+  result <- indicateur_e2_evitement(
     test_units,
     fuelwood_field = "E1",
     column_name = "co2_avoided"
@@ -501,39 +501,39 @@ test_that("indicator_energy_avoidance uses custom column name", {
   expect_true("E2_material" %in% names(result))
 })
 
-test_that("indicator_energy_avoidance handles different energy scenarios", {
+test_that("indicateur_e2_evitement handles different energy scenarios", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
 
-  result_gas <- indicator_energy_avoidance(
+  result_gas <- indicateur_e2_evitement(
     test_units, fuelwood_field = "E1", energy_scenario = "vs_natural_gas"
   )
   expect_true(result_gas$E2[1] > 0)
 
-  result_oil <- indicator_energy_avoidance(
+  result_oil <- indicateur_e2_evitement(
     test_units, fuelwood_field = "E1", energy_scenario = "vs_fuel_oil"
   )
   expect_true("E2" %in% names(result_oil))
 })
 
-test_that("indicator_energy_avoidance preserves original sf columns", {
+test_that("indicateur_e2_evitement preserves original sf columns", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0, extra = "hello"))
 
-  result <- indicator_energy_avoidance(test_units, fuelwood_field = "E1")
+  result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
   expect_true("extra" %in% names(result))
   expect_equal(result$extra[1], "hello")
 })
 
-test_that("indicator_energy_avoidance with zero fuelwood produces zero CO2 avoidance", {
+test_that("indicateur_e2_evitement with zero fuelwood produces zero CO2 avoidance", {
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 0))
 
-  result <- indicator_energy_avoidance(test_units, fuelwood_field = "E1")
+  result <- indicateur_e2_evitement(test_units, fuelwood_field = "E1")
 
   expect_equal(result$E2_energy[1], 0)
   expect_equal(result$E2[1], 0)
@@ -552,8 +552,8 @@ test_that("Energy family integrates: E1 piped into E2", {
   ))
 
   result <- test_units |>
-    indicator_energy_fuelwood(volume_field = "volume", species_field = "species") |>
-    indicator_energy_avoidance(fuelwood_field = "E1")
+    indicateur_e1_bois_energie(volume_field = "volume", species_field = "species") |>
+    indicateur_e2_evitement(fuelwood_field = "E1")
 
   expect_true(all(c("E1", "E2", "E1_residues", "E1_coppice", "E2_energy", "E2_material") %in% names(result)))
   expect_true(all(result$E1 > 0))
@@ -571,12 +571,12 @@ test_that("E1 + E2 chain with coppice and material substitution", {
   ))
 
   result <- test_units |>
-    indicator_energy_fuelwood(
+    indicateur_e1_bois_energie(
       volume_field = "volume",
       species_field = "species",
       coppice_area_field = "coppice_fraction"
     ) |>
-    indicator_energy_avoidance(
+    indicateur_e2_evitement(
       fuelwood_field = "E1",
       volume_field = "construction_volume",
       material_scenario = "vs_concrete"
@@ -599,12 +599,12 @@ test_that("Energy family integrates with family system", {
   ))
 
   result <- test_units |>
-    indicator_energy_fuelwood(volume_field = "volume", species_field = "species") |>
-    indicator_energy_avoidance(fuelwood_field = "E1")
+    indicateur_e1_bois_energie(volume_field = "volume", species_field = "species") |>
+    indicateur_e2_evitement(fuelwood_field = "E1")
 
   expect_true(all(c("E1", "E2") %in% names(result)))
 
   result_family <- create_family_index(result, family_codes = "E")
-  expect_true("family_E" %in% names(result_family))
-  expect_true(all(result_family$family_E > 0))
+  expect_true("famille_energie" %in% names(result_family))
+  expect_true(all(result_family$famille_energie > 0))
 })

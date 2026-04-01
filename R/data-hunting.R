@@ -10,27 +10,40 @@ NULL
 # Data source URLs (data.gouv.fr - OFB/ONCFS)
 # ==============================================================================
 
-#' URLs for hunting statistics datasets (data.gouv.fr - OFB)
-#' Updated 2025-06-05 with all 8 large game species
+#' Get hunting data URLs from datasource config (ADR-002)
+#'
+#' Sources are loaded from inst/datasources/FR.json when available,
+#' with fallback to hardcoded URLs for backward compatibility.
 #' @noRd
-HUNTING_DATA_URLS <- list(
-  # Principal browsers - high impact on forest regeneration
+get_hunting_data_urls <- function(country = "FR") {
+  # Essayer de charger depuis la configuration par pays
+  hunting_cfg <- tryCatch(
+    get_data_source("hunting", country),
+    error = function(e) NULL
+  )
+  if (!is.null(hunting_cfg$species)) {
+    return(hunting_cfg$species)
+  }
+  # Fallback : URLs statiques
+  .HUNTING_DATA_URLS_DEFAULT
+}
+
+# URLs statiques (fallback et valeur au chargement du package)
+# Ne pas appeler get_data_source() ici car datasources.R n'est
+# pas encore charge (ordre alphabetique : data < datasources)
+.HUNTING_DATA_URLS_DEFAULT <- list(
   chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
   cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
   sanglier = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140017/sanglier-departement.csv",
-
-
-  # Mountain ungulates - localized impact
-
   chamois = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140032/chamois-departement.csv",
   isard = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140024/isard-departement.csv",
   mouflon = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140020/mouflon-departement.csv",
-
-  # Other deer species
-
   daim = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140026/daim-departement.csv",
   cerf_sika = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140034/cerf-sika-departement.csv"
 )
+
+# Compatibilite avec le code existant qui reference HUNTING_DATA_URLS
+HUNTING_DATA_URLS <- .HUNTING_DATA_URLS_DEFAULT
 
 # ==============================================================================
 # Download and Process Hunting Data
@@ -414,7 +427,7 @@ compute_game_pressure_index <- function(hunting_data = NULL,
 #' Get Game Pressure Raster for R4 Indicator
 #'
 #' Creates a SpatRaster of game pressure index by department for use with
-#' the \code{\link{indicator_risk_browsing}} function.
+#' the \code{\link{indicateur_r4_abroutissement}} function.
 #'
 #' @param units sf object. Forest parcels to determine spatial extent and CRS.
 #' @param pressure_data Data.frame from \code{\link{compute_game_pressure_index}},
@@ -430,7 +443,7 @@ compute_game_pressure_index <- function(hunting_data = NULL,
 #' 1. Downloads/computes game pressure index by department
 #' 2. Downloads department boundaries if not provided
 #' 3. Rasterizes the pressure values
-#' 4. Returns a raster for use with indicator_risk_browsing(game_density = ...)
+#' 4. Returns a raster for use with indicateur_r4_abroutissement(game_density = ...)
 #'
 #' @family data-acquisition
 #' @export
@@ -447,7 +460,7 @@ compute_game_pressure_index <- function(hunting_data = NULL,
 #' game_raster <- get_game_pressure_raster(parcels)
 #'
 #' # Use with R4 indicator
-#' result <- indicator_risk_browsing(
+#' result <- indicateur_r4_abroutissement(
 #'   parcels,
 #'   species_field = "essence",
 #'   game_density = game_raster

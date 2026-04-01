@@ -11,13 +11,13 @@ pareto_test_data <- data.frame(
   name = sprintf("Parcel_%02d", 1:10),
 
   # Objective 1: Carbon storage (maximize) - range 100-300
-  family_C = c(250, 200, 150, 220, 180, 160, 240, 190, 170, 210),
+  famille_carbone = c(250, 200, 150, 220, 180, 160, 240, 190, 170, 210),
 
   # Objective 2: Biodiversity (maximize) - range 0-100
-  family_B = c(80, 85, 60, 70, 90, 50, 75, 65, 55, 88),
+  famille_biodiversite = c(80, 85, 60, 70, 90, 50, 75, 65, 55, 88),
 
   # Objective 3: Production (maximize) - range 0-100
-  family_P = c(60, 70, 80, 65, 75, 90, 55, 85, 95, 72)
+  famille_production = c(60, 70, 80, 65, 75, 90, 55, 85, 95, 72)
 )
 
 # Add simple geometry (points for testing)
@@ -71,7 +71,7 @@ expected_pareto_ids <- c(1, 2, 5, 9, 10)
 # Save fixture
 reference_output <- list(
   input_data = pareto_test_data,
-  objectives = c("family_C", "family_B", "family_P"),
+  objectives = c("famille_carbone", "famille_biodiversite", "famille_production"),
   maximize = c(TRUE, TRUE, TRUE),
   expected_pareto_ids = expected_pareto_ids,
   expected_n_optimal = length(expected_pareto_ids)

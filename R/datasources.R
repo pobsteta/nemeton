@@ -168,6 +168,40 @@ get_national_crs <- function(country = "FR") {
 }
 
 
+#' Get storage CRS (pan-European)
+#'
+#' Returns the EPSG code used for internal data storage.
+#' EPSG:3035 (ETRS89/LAEA) is the pan-European standard (ADR-008).
+#'
+#' @return Integer. EPSG code (3035).
+#'
+#' @examples
+#' get_storage_crs()  # 3035
+#'
+#' @export
+get_storage_crs <- function() {
+  get_app_config("storage_crs", 3035L)
+}
+
+
+#' Get metric CRS for a country
+#'
+#' Returns the CRS to use for metric calculations (distances, areas).
+#' Uses the national CRS for precision (Lambert-93 for France, UTM for others).
+#'
+#' @param country Character. ISO country code. Default "FR".
+#'
+#' @return Integer. EPSG code for metric calculations.
+#'
+#' @examples
+#' get_metric_crs("FR")  # 2154 (Lambert-93)
+#'
+#' @export
+get_metric_crs <- function(country = "FR") {
+  get_national_crs(country)
+}
+
+
 #' List available countries
 #'
 #' Returns the country codes for which data source configurations exist.

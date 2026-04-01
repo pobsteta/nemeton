@@ -137,7 +137,7 @@ mod_synthesis_server <- function(id, app_state) {
         ))
       }
 
-      family_cols <- grep("^family_[A-Z]$", names(sf_data), value = TRUE)
+      family_cols <- grep("^famille_[a-z]", names(sf_data), value = TRUE)
       if (length(family_cols) == 0) {
         return(htmltools::div(class = "text-muted", i18n$t("no_data")))
       }
@@ -329,7 +329,7 @@ mod_synthesis_server <- function(id, app_state) {
       }
 
       # Check that family columns exist
-      family_cols <- grep("^family_[A-Z]$", names(sf_data), value = TRUE)
+      family_cols <- grep("^famille_[a-z]", names(sf_data), value = TRUE)
       if (length(family_cols) == 0) {
         plot.new()
         text(0.5, 0.5, i18n$t("no_data"), cex = 1.5, col = "gray50")
@@ -369,7 +369,7 @@ mod_synthesis_server <- function(id, app_state) {
 
       # Build summary data.frame
       rows <- lapply(codes, function(code) {
-        col_name <- paste0("family_", code)
+        col_name <- get_famille_col(code)
         fam <- families[[code]]
         fam_name <- if (lang == "fr") fam$name_fr else fam$name_en
 
@@ -394,7 +394,7 @@ mod_synthesis_server <- function(id, app_state) {
 
       # Rename columns for display
       col_names <- c(
-        i18n$t("family_C"),  # reuse as generic "Family" label
+        i18n$t("famille_carbone"),  # reuse as generic "Family" label
         "Code",
         "Score",
         i18n$t("indicator_column")

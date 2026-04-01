@@ -6,24 +6,24 @@ make_cluster_df <- function(n_per_group = 5) {
   # Three well-separated groups for predictable clustering
   high <- data.frame(
     id = seq_len(n_per_group),
-    family_C = runif(n_per_group, 80, 100),
-    family_B = runif(n_per_group, 80, 100),
-    family_P = runif(n_per_group, 80, 100),
-    family_S = runif(n_per_group, 80, 100)
+    famille_carbone = runif(n_per_group, 80, 100),
+    famille_biodiversite = runif(n_per_group, 80, 100),
+    famille_production = runif(n_per_group, 80, 100),
+    famille_social = runif(n_per_group, 80, 100)
   )
   mid <- data.frame(
     id = n_per_group + seq_len(n_per_group),
-    family_C = runif(n_per_group, 40, 60),
-    family_B = runif(n_per_group, 40, 60),
-    family_P = runif(n_per_group, 40, 60),
-    family_S = runif(n_per_group, 40, 60)
+    famille_carbone = runif(n_per_group, 40, 60),
+    famille_biodiversite = runif(n_per_group, 40, 60),
+    famille_production = runif(n_per_group, 40, 60),
+    famille_social = runif(n_per_group, 40, 60)
   )
   low <- data.frame(
     id = 2 * n_per_group + seq_len(n_per_group),
-    family_C = runif(n_per_group, 0, 20),
-    family_B = runif(n_per_group, 0, 20),
-    family_P = runif(n_per_group, 0, 20),
-    family_S = runif(n_per_group, 0, 20)
+    famille_carbone = runif(n_per_group, 0, 20),
+    famille_biodiversite = runif(n_per_group, 0, 20),
+    famille_production = runif(n_per_group, 0, 20),
+    famille_social = runif(n_per_group, 0, 20)
   )
   rbind(high, mid, low)
 }
@@ -199,13 +199,13 @@ test_that("cluster_parcels computes cluster profiles correctly", {
 
   # For the fixture, cluster of parcels 1-3 should have high values
   cluster_high <- result$cluster[1]
-  expect_gte(profiles[cluster_high, "family_C"], 70)
-  expect_gte(profiles[cluster_high, "family_B"], 70)
+  expect_gte(profiles[cluster_high, "famille_carbone"], 70)
+  expect_gte(profiles[cluster_high, "famille_biodiversite"], 70)
 
   # Cluster of parcels 7-9 should have low values
   cluster_low <- result$cluster[7]
-  expect_lte(profiles[cluster_low, "family_C"], 30)
-  expect_lte(profiles[cluster_low, "family_B"], 30)
+  expect_lte(profiles[cluster_low, "famille_carbone"], 30)
+  expect_lte(profiles[cluster_low, "famille_biodiversite"], 30)
 })
 
 # ===========================================================================
@@ -246,7 +246,7 @@ test_that("cluster_parcels parameter validation", {
 
   # Test with non-numeric families
   data_bad <- data
-  data_bad$family_C <- as.character(data_bad$family_C)
+  data_bad$famille_carbone <- as.character(data_bad$famille_carbone)
   expect_error(
     cluster_parcels(data_bad, families = families, k = 3, method = "kmeans"),
     "numeric"
@@ -292,7 +292,7 @@ test_that("cluster_parcels handles missing values appropriately", {
 
   # Introduce NA in one family
   data_na <- data
-  data_na$family_C[1] <- NA
+  data_na$famille_carbone[1] <- NA
 
   # Should error or handle gracefully
   expect_error(
@@ -308,7 +308,7 @@ test_that("cluster_parcels handles missing values appropriately", {
 test_that("cluster_parcels works with plain data.frame (non-sf)", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = 3, method = "kmeans")
 
@@ -335,7 +335,7 @@ test_that("cluster_parcels works with plain data.frame (non-sf)", {
 test_that("cluster_parcels with data.frame and hierarchical method", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = 3, method = "hierarchical")
 
@@ -351,7 +351,7 @@ test_that("cluster_parcels with data.frame and hierarchical method", {
 # ===========================================================================
 
 test_that("cluster_parcels rejects invalid data types", {
-  families <- c("family_C", "family_B")
+  families <- c("famille_carbone", "famille_biodiversite")
 
   # NULL input
   expect_error(
@@ -391,7 +391,7 @@ test_that("cluster_parcels rejects invalid data types", {
 test_that("cluster_parcels rejects k equal to number of rows", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 3)  # 9 rows total
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   # k == n should fail
   expect_error(
@@ -409,7 +409,7 @@ test_that("cluster_parcels rejects k equal to number of rows", {
 test_that("cluster_parcels works with k = 2 (minimum valid k)", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = 2, method = "kmeans")
 
@@ -425,10 +425,10 @@ test_that("cluster_parcels works with k = n-1 (maximum valid k)", {
   set.seed(42)
   # Small dataset for fast test: 5 rows
   df <- data.frame(
-    family_C = c(10, 30, 50, 70, 90),
-    family_B = c(15, 35, 55, 75, 95)
+    famille_carbone = c(10, 30, 50, 70, 90),
+    famille_biodiversite = c(15, 35, 55, 75, 95)
   )
-  families <- c("family_C", "family_B")
+  families <- c("famille_carbone", "famille_biodiversite")
 
   result <- cluster_parcels(df, families = families, k = 4, method = "kmeans")
 
@@ -483,7 +483,7 @@ test_that("cluster_parcels auto-determines k with hierarchical method", {
 test_that("cluster_parcels auto-determines k with plain data.frame", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = NULL, method = "kmeans")
 
@@ -503,7 +503,7 @@ test_that("cluster_parcels auto-determines k with plain data.frame", {
 test_that("cluster_parcels respects max_k parameter", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)  # 15 rows
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   # With max_k = 4, should test k = 2, 3, 4
   result <- cluster_parcels(df, families = families, k = NULL, max_k = 4, method = "kmeans")
@@ -521,10 +521,10 @@ test_that("cluster_parcels limits max_k when n-1 < max_k", {
   # Create tiny dataset with 4 rows => max valid k is 3
   set.seed(42)
   df <- data.frame(
-    family_C = c(10, 50, 90, 30),
-    family_B = c(15, 55, 95, 35)
+    famille_carbone = c(10, 50, 90, 30),
+    famille_biodiversite = c(15, 55, 95, 35)
   )
-  families <- c("family_C", "family_B")
+  families <- c("famille_carbone", "famille_biodiversite")
 
   # max_k=10 but n=4, so max_test_k = min(10, 3) = 3
   result <- cluster_parcels(df, families = families, k = NULL, max_k = 10, method = "kmeans")
@@ -542,15 +542,15 @@ test_that("cluster_parcels limits max_k when n-1 < max_k", {
 test_that("cluster_parcels error message includes all NA family names", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 3)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   # Introduce NA in two families
-  df$family_C[1] <- NA
-  df$family_P[2] <- NA
+  df$famille_carbone[1] <- NA
+  df$famille_production[2] <- NA
 
   expect_error(
     cluster_parcels(df, families = families, k = 3),
-    "family_C.*family_P|family_P.*family_C"
+    "famille_carbone.*famille_production|famille_production.*famille_carbone"
   )
 })
 
@@ -560,10 +560,10 @@ test_that("cluster_parcels error message includes all NA family names", {
 
 test_that("cluster_parcels error message includes all missing family names", {
   set.seed(42)
-  df <- data.frame(family_C = c(1, 2, 3), family_B = c(4, 5, 6))
+  df <- data.frame(famille_carbone = c(1, 2, 3), famille_biodiversite = c(4, 5, 6))
 
   expect_error(
-    cluster_parcels(df, families = c("family_C", "family_X", "family_Y"), k = 2),
+    cluster_parcels(df, families = c("famille_carbone", "family_X", "family_Y"), k = 2),
     "family_X.*family_Y|family_Y.*family_X"
   )
 })
@@ -575,14 +575,14 @@ test_that("cluster_parcels error message includes all missing family names", {
 test_that("cluster_parcels error message includes all non-numeric family names", {
   set.seed(42)
   df <- data.frame(
-    family_C = c("a", "b", "c"),
-    family_B = factor(c("x", "y", "z")),
-    family_P = c(1, 2, 3)
+    famille_carbone = c("a", "b", "c"),
+    famille_biodiversite = factor(c("x", "y", "z")),
+    famille_production = c(1, 2, 3)
   )
 
   expect_error(
-    cluster_parcels(df, families = c("family_C", "family_B", "family_P"), k = 2),
-    "family_C.*family_B|family_B.*family_C"
+    cluster_parcels(df, families = c("famille_carbone", "famille_biodiversite", "famille_production"), k = 2),
+    "famille_carbone.*famille_biodiversite|famille_biodiversite.*famille_carbone"
   )
 })
 
@@ -594,10 +594,10 @@ test_that("cluster_parcels profiles are actual means of family values per cluste
   # Create a deterministic dataset where we can verify means exactly
   set.seed(123)
   df <- data.frame(
-    family_C = c(10, 10, 10, 90, 90, 90),
-    family_B = c(20, 20, 20, 80, 80, 80)
+    famille_carbone = c(10, 10, 10, 90, 90, 90),
+    famille_biodiversite = c(20, 20, 20, 80, 80, 80)
   )
-  families <- c("family_C", "family_B")
+  families <- c("famille_carbone", "famille_biodiversite")
 
   # With k=2, these should clearly split into two groups
 
@@ -622,11 +622,11 @@ test_that("cluster_parcels preserves all original columns plus adds 'cluster'", 
   set.seed(42)
   df <- data.frame(
     my_id = letters[1:6],
-    family_C = c(10, 20, 30, 70, 80, 90),
-    family_B = c(15, 25, 35, 75, 85, 95),
+    famille_carbone = c(10, 20, 30, 70, 80, 90),
+    famille_biodiversite = c(15, 25, 35, 75, 85, 95),
     extra_col = c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE)
   )
-  families <- c("family_C", "family_B")
+  families <- c("famille_carbone", "famille_biodiversite")
 
   result <- cluster_parcels(df, families = families, k = 2, method = "kmeans")
 
@@ -634,15 +634,15 @@ test_that("cluster_parcels preserves all original columns plus adds 'cluster'", 
 
   expect_true("my_id" %in% names(result))
   expect_true("extra_col" %in% names(result))
-  expect_true("family_C" %in% names(result))
-  expect_true("family_B" %in% names(result))
+  expect_true("famille_carbone" %in% names(result))
+  expect_true("famille_biodiversite" %in% names(result))
   expect_true("cluster" %in% names(result))
 
   # Original values should be unchanged
   expect_equal(result$my_id, df$my_id)
   expect_equal(result$extra_col, df$extra_col)
-  expect_equal(result$family_C, df$family_C)
-  expect_equal(result$family_B, df$family_B)
+  expect_equal(result$famille_carbone, df$famille_carbone)
+  expect_equal(result$famille_biodiversite, df$famille_biodiversite)
 })
 
 # ===========================================================================
@@ -653,7 +653,7 @@ test_that("cluster_parcels works with massif_demo_units dataset", {
   skip_if_not_installed("sf")
 
   data(massif_demo_units, package = "nemeton")
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   # K-means with fixed k
   result <- cluster_parcels(
@@ -677,7 +677,7 @@ test_that("cluster_parcels auto k with massif_demo_units", {
   skip_if_not_installed("sf")
 
   data(massif_demo_units, package = "nemeton")
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(
     massif_demo_units,
@@ -703,7 +703,7 @@ test_that("cluster_parcels auto k with massif_demo_units", {
 test_that("cluster_parcels hierarchical with plain data.frame", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 4)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = 3, method = "hierarchical")
 
@@ -724,7 +724,7 @@ test_that("cluster_parcels hierarchical with plain data.frame", {
 test_that("cluster_parcels auto k hierarchical with plain data.frame", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(
     df, families = families, k = NULL, method = "hierarchical", max_k = 6
@@ -750,14 +750,14 @@ test_that("cluster_parcels works with a subset of families", {
   # Use only 2 of 4 families
   result <- cluster_parcels(
     df,
-    families = c("family_C", "family_B"),
+    families = c("famille_carbone", "famille_biodiversite"),
     k = 3,
     method = "kmeans"
   )
 
   profiles <- attr(result, "cluster_profile")
   expect_equal(ncol(profiles), 2)
-  expect_true(all(names(profiles) %in% c("family_C", "family_B")))
+  expect_true(all(names(profiles) %in% c("famille_carbone", "famille_biodiversite")))
 })
 
 # ===========================================================================
@@ -767,10 +767,10 @@ test_that("cluster_parcels works with a subset of families", {
 test_that("cluster_parcels works with a single family column", {
   set.seed(42)
   df <- data.frame(
-    family_C = c(10, 12, 11, 50, 52, 51, 90, 88, 91)
+    famille_carbone = c(10, 12, 11, 50, 52, 51, 90, 88, 91)
   )
 
-  result <- cluster_parcels(df, families = "family_C", k = 3, method = "kmeans")
+  result <- cluster_parcels(df, families = "famille_carbone", k = 3, method = "kmeans")
 
   expect_equal(length(unique(result$cluster)), 3)
   profiles <- attr(result, "cluster_profile")
@@ -785,7 +785,7 @@ test_that("cluster_parcels works with a single family column", {
 test_that("silhouette scores are bounded between -1 and 1", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = NULL, max_k = 5, method = "kmeans")
 
@@ -801,7 +801,7 @@ test_that("silhouette scores are bounded between -1 and 1", {
 test_that("optimal_k corresponds to the highest silhouette score", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = NULL, max_k = 6, method = "kmeans")
 
@@ -822,7 +822,7 @@ test_that("cluster_parcels auto k hierarchical preserves sf geometry", {
   skip_if_not_installed("sf")
 
   data(massif_demo_units, package = "nemeton")
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(
     massif_demo_units,
@@ -845,7 +845,7 @@ test_that("cluster_parcels auto k hierarchical preserves sf geometry", {
 test_that("when k is provided, optimal_k and silhouette_scores are not set", {
   set.seed(42)
   df <- make_cluster_df(n_per_group = 5)
-  families <- c("family_C", "family_B", "family_P", "family_S")
+  families <- c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")
 
   result <- cluster_parcels(df, families = families, k = 3, method = "kmeans")
 

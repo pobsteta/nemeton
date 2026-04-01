@@ -197,8 +197,8 @@ nemeton_compute <- function(units,
 #' @keywords internal
 #' @noRd
 compute_indicator <- function(indicator, units, layers, ...) {
-  # Convert indicator name to function name (e.g., "carbon_biomass" -> "indicator_carbon_biomass")
-  func_name <- paste0("indicator_", indicator)
+  # Le nom NMT de l'indicateur est aussi le nom de la fonction
+  func_name <- indicator
 
   # Check if function exists
   if (!exists(func_name, mode = "function")) {
@@ -215,8 +215,8 @@ compute_indicator <- function(indicator, units, layers, ...) {
   # Extract the indicator column as a numeric vector
   if (inherits(result, "sf")) {
     col_map <- c(
-      risk_fire = "R1", risk_storm = "R2",
-      risk_drought = "R3", risk_browsing = "R4"
+      indicateur_r1_feu = "R1", indicateur_r2_tempete = "R2",
+      indicateur_r3_secheresse = "R3", indicateur_r4_abroutissement = "R4"
     )
     col_name <- col_map[indicator]
     if (!is.na(col_name) && col_name %in% names(result)) {
@@ -256,29 +256,29 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
   indicators <- data.frame(
     name = c(
       # C - Carbon/Energy (2)
-      "carbon_biomass", "carbon_ndvi",
+      "indicateur_c1_biomasse", "indicateur_c2_ndvi",
       # W - Water (3)
-      "water_network", "water_wetlands", "water_twi",
+      "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
       # F - Soil Fertility (2)
       "soil_fertility", "soil_erosion",
       # L - Landscape (2)
-      "landscape_fragmentation", "landscape_edge",
+      "indicateur_l2_fragmentation", "landscape_edge",
       # B - Biodiversity (3)
-      "biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity",
+      "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
       # R - Risk/Resilience (4)
-      "risk_fire", "risk_storm", "risk_drought", "risk_browsing",
+      "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
       # T - Temporal (2)
-      "temporal_age", "temporal_change",
+      "indicateur_t1_anciennete", "indicateur_t2_changement",
       # A - Air/Microclimate (2)
-      "air_coverage", "air_quality",
+      "air_coverage", "indicateur_a2_qualite_air",
       # S - Social (3)
-      "social_trails", "social_accessibility", "social_proximity",
+      "indicateur_s1_routes", "indicateur_s2_bati", "social_proximity",
       # P - Productive (3)
       "productive_volume", "productive_quality", "productive_station",
       # E - Energy (2)
       "energy_fuelwood", "energy_avoidance",
       # N - Naturalness (3)
-      "naturalness_distance", "naturalness_continuity", "naturalness_composite"
+      "indicateur_n1_distance", "indicateur_n2_continuite", "naturalness_composite"
     ),
     family = c(
       "C", "C",

@@ -26,7 +26,7 @@ of all units.}
 If NULL, auto-detects based on mode.}
 
 \item{mode}{Character. Display mode: "indicator" for individual indicators (default)
-or "family" for family indices (family_C, family_W, etc.). When mode = "family",
+or "family" for family indices (famille_carbone, famille_eau, etc.). When mode = "family",
 supports 4-12 family axes dynamically.}
 
 \item{normalize}{Logical. If TRUE (default), normalizes values to 0-100 scale.}

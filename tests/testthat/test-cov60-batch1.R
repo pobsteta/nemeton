@@ -173,10 +173,10 @@ test_that("theme_nemeton_accessible() minor grid is blank", {
 # ==============================================================================
 
 test_that("identify_pareto_optimal with single parcel returns it as optimal", {
-  df <- data.frame(family_C = 60, family_B = 50)
+  df <- data.frame(famille_carbone = 60, famille_biodiversite = 50)
   result <- identify_pareto_optimal(
     df,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
   expect_true(result$is_optimal[1])
@@ -184,12 +184,12 @@ test_that("identify_pareto_optimal with single parcel returns it as optimal", {
 
 test_that("identify_pareto_optimal with all identical rows: none dominated", {
   df <- data.frame(
-    family_C = c(50, 50, 50),
-    family_B = c(40, 40, 40)
+    famille_carbone = c(50, 50, 50),
+    famille_biodiversite = c(40, 40, 40)
   )
   result <- identify_pareto_optimal(
     df,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
   expect_true(all(result$is_optimal))
@@ -197,12 +197,12 @@ test_that("identify_pareto_optimal with all identical rows: none dominated", {
 
 test_that("identify_pareto_optimal with one parcel dominating all others", {
   df <- data.frame(
-    family_C = c(100, 50, 60, 40),
-    family_B = c(100, 60, 50, 70)
+    famille_carbone = c(100, 50, 60, 40),
+    famille_biodiversite = c(100, 60, 50, 70)
   )
   result <- identify_pareto_optimal(
     df,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
   expect_true(result$is_optimal[1])
@@ -261,12 +261,12 @@ test_that("identify_pareto_optimal mixed maximize: first max, second min", {
 test_that("identify_pareto_optimal with sf input preserves geometry", {
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 4)
-  units$family_C <- c(90, 50, 70, 60)
-  units$family_B <- c(50, 90, 60, 70)
+  units$famille_carbone <- c(90, 50, 70, 60)
+  units$famille_biodiversite <- c(50, 90, 60, 70)
 
   result <- identify_pareto_optimal(
     units,
-    objectives = c("family_C", "family_B"),
+    objectives = c("famille_carbone", "famille_biodiversite"),
     maximize = c(TRUE, TRUE)
   )
   expect_s3_class(result, "sf")

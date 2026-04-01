@@ -4,7 +4,7 @@
 # C1: CARBON BIOMASS VIA ALLOMETRIC MODELS
 # ==============================================================================
 
-test_that("indicator_carbon_biomass calculates biomass with BD Forêt attributes", {
+test_that("indicateur_c1_biomasse calculates biomass with BD Forêt attributes", {
   data(massif_demo_units)
 
   # Add BD Forêt attributes
@@ -14,7 +14,7 @@ test_that("indicator_carbon_biomass calculates biomass with BD Forêt attributes
   units$density <- c(0.7, 0.8, 0.6, 0.9, 0.5)
 
   # Calculate biomass
-  biomass <- indicator_carbon_biomass(units)
+  biomass <- indicateur_c1_biomasse(units)
 
   # Test output
   expect_type(biomass, "double")
@@ -28,7 +28,7 @@ test_that("indicator_carbon_biomass calculates biomass with BD Forêt attributes
   expect_true(all(biomass < 500)) # Maximum upper bound
 })
 
-test_that("indicator_carbon_biomass uses Generic model for unknown species", {
+test_that("indicateur_c1_biomasse uses Generic model for unknown species", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -37,12 +37,12 @@ test_that("indicator_carbon_biomass uses Generic model for unknown species", {
   units$density <- c(0.7, 0.7, 0.7)
 
   # Should not error, should use Generic for unknown
-  expect_no_error(biomass <- indicator_carbon_biomass(units))
+  expect_no_error(biomass <- indicateur_c1_biomasse(units))
   expect_length(biomass, 3)
   expect_true(all(!is.na(biomass)))
 })
 
-test_that("indicator_carbon_biomass returns NA when required columns missing", {
+test_that("indicateur_c1_biomasse returns NA when required columns missing", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -52,7 +52,7 @@ test_that("indicator_carbon_biomass returns NA when required columns missing", {
   units_no_species$species <- NULL
   units_no_species$age <- c(80, 60, 40)
   units_no_species$density <- c(0.7, 0.8, 0.6)
-  result <- indicator_carbon_biomass(units_no_species)
+  result <- indicateur_c1_biomasse(units_no_species)
   expect_true(all(is.na(result)))
 
   # Missing age
@@ -60,7 +60,7 @@ test_that("indicator_carbon_biomass returns NA when required columns missing", {
   units_no_age$age <- NULL
   units_no_age$species <- c("Quercus", "Fagus", "Pinus")
   units_no_age$density <- c(0.7, 0.8, 0.6)
-  result <- indicator_carbon_biomass(units_no_age)
+  result <- indicateur_c1_biomasse(units_no_age)
   expect_true(all(is.na(result)))
 
   # Missing density
@@ -68,11 +68,11 @@ test_that("indicator_carbon_biomass returns NA when required columns missing", {
   units_no_density$density <- NULL
   units_no_density$species <- c("Quercus", "Fagus", "Pinus")
   units_no_density$age <- c(80, 60, 40)
-  result <- indicator_carbon_biomass(units_no_density)
+  result <- indicateur_c1_biomasse(units_no_density)
   expect_true(all(is.na(result)))
 })
 
-test_that("indicator_carbon_biomass handles NA values appropriately", {
+test_that("indicateur_c1_biomasse handles NA values appropriately", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:4, ]
@@ -80,7 +80,7 @@ test_that("indicator_carbon_biomass handles NA values appropriately", {
   units$age <- c(80, 60, NA, 40)
   units$density <- c(0.7, 0.8, 0.6, NA)
 
-  biomass <- indicator_carbon_biomass(units)
+  biomass <- indicateur_c1_biomasse(units)
 
   # NA inputs should produce NA outputs
   expect_true(is.na(biomass[2])) # NA species
@@ -91,7 +91,7 @@ test_that("indicator_carbon_biomass handles NA values appropriately", {
   expect_false(is.na(biomass[1]))
 })
 
-test_that("indicator_carbon_biomass respects custom column names", {
+test_that("indicateur_c1_biomasse respects custom column names", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -99,7 +99,7 @@ test_that("indicator_carbon_biomass respects custom column names", {
   units$stand_age <- c(80, 60, 40)
   units$stand_density <- c(0.7, 0.8, 0.6)
 
-  biomass <- indicator_carbon_biomass(
+  biomass <- indicateur_c1_biomasse(
     units,
     species_col = "tree_species",
     age_col = "stand_age",
@@ -110,7 +110,7 @@ test_that("indicator_carbon_biomass respects custom column names", {
   expect_true(all(!is.na(biomass)))
 })
 
-test_that("indicator_carbon_biomass produces consistent results", {
+test_that("indicateur_c1_biomasse produces consistent results", {
   data(massif_demo_units)
 
   units <- massif_demo_units[1:2, ]
@@ -118,13 +118,13 @@ test_that("indicator_carbon_biomass produces consistent results", {
   units$age <- c(80, 80) # Same age
   units$density <- c(0.7, 0.7) # Same density
 
-  biomass <- indicator_carbon_biomass(units)
+  biomass <- indicateur_c1_biomasse(units)
 
   # Same inputs should produce same outputs
   expect_equal(biomass[1], biomass[2])
 })
 
-test_that("indicator_carbon_biomass scales with age and density", {
+test_that("indicateur_c1_biomasse scales with age and density", {
   data(massif_demo_units)
 
   # Test age scaling
@@ -133,7 +133,7 @@ test_that("indicator_carbon_biomass scales with age and density", {
   units_age$age <- c(40, 80, 120) # Increasing age
   units_age$density <- c(0.7, 0.7, 0.7)
 
-  biomass_age <- indicator_carbon_biomass(units_age)
+  biomass_age <- indicateur_c1_biomasse(units_age)
   expect_true(biomass_age[1] < biomass_age[2]) # More age = more biomass
   expect_true(biomass_age[2] < biomass_age[3])
 
@@ -143,7 +143,7 @@ test_that("indicator_carbon_biomass scales with age and density", {
   units_density$age <- c(60, 60, 60)
   units_density$density <- c(0.4, 0.7, 1.0) # Increasing density
 
-  biomass_density <- indicator_carbon_biomass(units_density)
+  biomass_density <- indicateur_c1_biomasse(units_density)
   expect_true(biomass_density[1] < biomass_density[2]) # More density = more biomass
   expect_true(biomass_density[2] < biomass_density[3])
 })
@@ -152,7 +152,7 @@ test_that("indicator_carbon_biomass scales with age and density", {
 # C2: NDVI VITALITY INDEX
 # ==============================================================================
 
-test_that("indicator_carbon_ndvi extracts mean NDVI from raster", {
+test_that("indicateur_c2_ndvi extracts mean NDVI from raster", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -172,7 +172,7 @@ test_that("indicator_carbon_ndvi extracts mean NDVI from raster", {
     layer_type = "raster"
   )
 
-  ndvi <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi")
+  ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
 
   # Test output
   expect_type(ndvi, "double")
@@ -184,19 +184,19 @@ test_that("indicator_carbon_ndvi extracts mean NDVI from raster", {
   expect_true(all(ndvi <= 1))
 })
 
-test_that("indicator_carbon_ndvi errors when NDVI layer missing", {
+test_that("indicateur_c2_ndvi errors when NDVI layer missing", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
   expect_error(
-    indicator_carbon_ndvi(units, layers, ndvi_layer = "nonexistent"),
+    indicateur_c2_ndvi(units, layers, ndvi_layer = "nonexistent"),
     "NDVI layer.*not found"
   )
 })
 
-test_that("indicator_carbon_ndvi handles edge NDVI values", {
+test_that("indicateur_c2_ndvi handles edge NDVI values", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -212,13 +212,13 @@ test_that("indicator_carbon_ndvi handles edge NDVI values", {
 
   layers$rasters$ndvi <- list(object = ndvi_raster, layer_type = "raster")
 
-  ndvi <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi")
+  ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
 
   expect_length(ndvi, 3)
   expect_true(all(ndvi >= 0 & ndvi <= 1))
 })
 
-test_that("indicator_carbon_ndvi with trend option (future implementation)", {
+test_that("indicateur_c2_ndvi with trend option (future implementation)", {
   # Note: Trend calculation requires multi-date NDVI rasters
   # This is a placeholder for future temporal NDVI support
 
@@ -235,7 +235,7 @@ test_that("indicator_carbon_ndvi with trend option (future implementation)", {
 
   # For v0.2.0 MVP, trend = TRUE should warn or use single-date only
   expect_warning(
-    ndvi <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE),
+    ndvi <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE),
     "trend.*not.*implemented|single.*date"
   )
 })
@@ -262,7 +262,7 @@ test_that("nemeton_compute works with new carbon indicators", {
   # This will be implemented when nemeton_compute() is extended
   # For now, just test that the functions can be called independently
   expect_no_error({
-    c1 <- indicator_carbon_biomass(units)
-    c2 <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi")
+    c1 <- indicateur_c1_biomasse(units)
+    c2 <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
   })
 })

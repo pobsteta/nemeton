@@ -5,7 +5,7 @@
 # S1: Distance to Roads
 # ==============================================================================
 
-test_that("indicator_social_trails (S1) works with DEM + roads", {
+test_that("indicateur_s1_routes (S1) works with DEM + roads", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -48,7 +48,7 @@ test_that("indicator_social_trails (S1) works with DEM + roads", {
     )
   )
 
-  result <- indicator_social_trails(
+  result <- indicateur_s1_routes(
     units = test_units,
     roads = roads,
     dem = dem
@@ -66,7 +66,7 @@ test_that("indicator_social_trails (S1) works with DEM + roads", {
   expect_true(result$S1[1] < result$S1[2])
 })
 
-test_that("indicator_social_trails (S1) returns NA without DEM", {
+test_that("indicateur_s1_routes (S1) returns NA without DEM", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -77,14 +77,14 @@ test_that("indicator_social_trails (S1) returns NA without DEM", {
     )
   )
 
-  result <- indicator_social_trails(units = test_units)
+  result <- indicateur_s1_routes(units = test_units)
 
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_true(is.na(result$S1[1]))
 })
 
-test_that("indicator_social_trails (S1) returns NA without roads", {
+test_that("indicateur_s1_routes (S1) returns NA without roads", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -102,12 +102,12 @@ test_that("indicator_social_trails (S1) returns NA without roads", {
     )
   )
 
-  result <- indicator_social_trails(units = test_units, dem = dem)
+  result <- indicateur_s1_routes(units = test_units, dem = dem)
 
   expect_true(is.na(result$S1[1]))
 })
 
-test_that("indicator_social_trails (S1) returns NA with empty roads (0 rows)", {
+test_that("indicateur_s1_routes (S1) returns NA with empty roads (0 rows)", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -131,21 +131,21 @@ test_that("indicator_social_trails (S1) returns NA with empty roads (0 rows)", {
     )
   )
 
-  result <- indicator_social_trails(units = test_units, roads = empty_roads, dem = dem)
+  result <- indicateur_s1_routes(units = test_units, roads = empty_roads, dem = dem)
 
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_true(is.na(result$S1[1]))
 })
 
-test_that("indicator_social_trails validates input types", {
+test_that("indicateur_s1_routes validates input types", {
   expect_error(
-    indicator_social_trails(data.frame(x = 1:3)),
+    indicateur_s1_routes(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_trails uses custom column name", {
+test_that("indicateur_s1_routes uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -156,7 +156,7 @@ test_that("indicator_social_trails uses custom column name", {
     )
   )
 
-  result <- indicator_social_trails(
+  result <- indicateur_s1_routes(
     units = test_units,
     column_name = "road_distance"
   )
@@ -165,7 +165,7 @@ test_that("indicator_social_trails uses custom column name", {
   expect_false("S1" %in% names(result))
 })
 
-test_that("indicator_social_trails resolves roads and DEM from layers", {
+test_that("indicateur_s1_routes resolves roads and DEM from layers", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -206,7 +206,7 @@ test_that("indicator_social_trails resolves roads and DEM from layers", {
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_trails(units = test_units, layers = layers)
+  result <- indicateur_s1_routes(units = test_units, layers = layers)
 
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
@@ -215,7 +215,7 @@ test_that("indicator_social_trails resolves roads and DEM from layers", {
   expect_true(result$S1[1] >= 0)
 })
 
-test_that("indicator_social_trails resolves DEM from lidar_mnt fallback in layers", {
+test_that("indicateur_s1_routes resolves DEM from lidar_mnt fallback in layers", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -256,14 +256,14 @@ test_that("indicator_social_trails resolves DEM from lidar_mnt fallback in layer
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_trails(units = test_units, layers = layers)
+  result <- indicateur_s1_routes(units = test_units, layers = layers)
 
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
   expect_false(is.na(result$S1[1]))
 })
 
-test_that("indicator_social_trails returns NA when layers has no roads", {
+test_that("indicateur_s1_routes returns NA when layers has no roads", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -290,12 +290,12 @@ test_that("indicator_social_trails returns NA when layers has no roads", {
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_trails(units = test_units, layers = layers)
+  result <- indicateur_s1_routes(units = test_units, layers = layers)
 
   expect_true(is.na(result$S1[1]))
 })
 
-test_that("indicator_social_trails preserves original columns", {
+test_that("indicateur_s1_routes preserves original columns", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -308,7 +308,7 @@ test_that("indicator_social_trails preserves original columns", {
     )
   )
 
-  result <- indicator_social_trails(units = test_units)
+  result <- indicateur_s1_routes(units = test_units)
 
   # Original columns should be preserved
   expect_true("id" %in% names(result))
@@ -321,7 +321,7 @@ test_that("indicator_social_trails preserves original columns", {
   expect_equal(nrow(result), 2)
 })
 
-test_that("indicator_social_trails uses helper test fixtures", {
+test_that("indicateur_s1_routes uses helper test fixtures", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -331,7 +331,7 @@ test_that("indicator_social_trails uses helper test fixtures", {
   dem <- create_test_raster(values = "constant")
   roads <- create_test_vector(type = "lines")
 
-  result <- indicator_social_trails(
+  result <- indicateur_s1_routes(
     units = test_units,
     roads = roads,
     dem = dem
@@ -349,7 +349,7 @@ test_that("indicator_social_trails uses helper test fixtures", {
 # S2: Distance to Buildings
 # ==============================================================================
 
-test_that("indicator_social_accessibility (S2) works with DEM + buildings", {
+test_that("indicateur_s2_bati (S2) works with DEM + buildings", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -398,7 +398,7 @@ test_that("indicator_social_accessibility (S2) works with DEM + buildings", {
     )
   )
 
-  result <- indicator_social_accessibility(
+  result <- indicateur_s2_bati(
     units = test_units,
     buildings = buildings,
     dem = dem
@@ -416,7 +416,7 @@ test_that("indicator_social_accessibility (S2) works with DEM + buildings", {
   expect_true(result$S2[1] < result$S2[2])
 })
 
-test_that("indicator_social_accessibility (S2) returns NA without DEM", {
+test_that("indicateur_s2_bati (S2) returns NA without DEM", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -427,14 +427,14 @@ test_that("indicator_social_accessibility (S2) returns NA without DEM", {
     )
   )
 
-  result <- indicator_social_accessibility(units = test_units)
+  result <- indicateur_s2_bati(units = test_units)
 
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_true(is.na(result$S2[1]))
 })
 
-test_that("indicator_social_accessibility (S2) returns NA without buildings", {
+test_that("indicateur_s2_bati (S2) returns NA without buildings", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -452,12 +452,12 @@ test_that("indicator_social_accessibility (S2) returns NA without buildings", {
     )
   )
 
-  result <- indicator_social_accessibility(units = test_units, dem = dem)
+  result <- indicateur_s2_bati(units = test_units, dem = dem)
 
   expect_true(is.na(result$S2[1]))
 })
 
-test_that("indicator_social_accessibility (S2) returns NA with empty buildings (0 rows)", {
+test_that("indicateur_s2_bati (S2) returns NA with empty buildings (0 rows)", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -481,7 +481,7 @@ test_that("indicator_social_accessibility (S2) returns NA with empty buildings (
     )
   )
 
-  result <- indicator_social_accessibility(
+  result <- indicateur_s2_bati(
     units = test_units,
     buildings = empty_buildings,
     dem = dem
@@ -492,14 +492,14 @@ test_that("indicator_social_accessibility (S2) returns NA with empty buildings (
   expect_true(is.na(result$S2[1]))
 })
 
-test_that("indicator_social_accessibility validates input", {
+test_that("indicateur_s2_bati validates input", {
   expect_error(
-    indicator_social_accessibility(data.frame(x = 1:3)),
+    indicateur_s2_bati(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_accessibility uses custom column name", {
+test_that("indicateur_s2_bati uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -510,7 +510,7 @@ test_that("indicator_social_accessibility uses custom column name", {
     )
   )
 
-  result <- indicator_social_accessibility(
+  result <- indicateur_s2_bati(
     units = test_units,
     column_name = "building_distance"
   )
@@ -519,7 +519,7 @@ test_that("indicator_social_accessibility uses custom column name", {
   expect_false("S2" %in% names(result))
 })
 
-test_that("indicator_social_accessibility resolves buildings and DEM from layers", {
+test_that("indicateur_s2_bati resolves buildings and DEM from layers", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -565,7 +565,7 @@ test_that("indicator_social_accessibility resolves buildings and DEM from layers
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_accessibility(units = test_units, layers = layers)
+  result <- indicateur_s2_bati(units = test_units, layers = layers)
 
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
@@ -573,7 +573,7 @@ test_that("indicator_social_accessibility resolves buildings and DEM from layers
   expect_true(result$S2[1] >= 0)
 })
 
-test_that("indicator_social_accessibility resolves DEM from lidar_mnt fallback", {
+test_that("indicateur_s2_bati resolves DEM from lidar_mnt fallback", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -620,14 +620,14 @@ test_that("indicator_social_accessibility resolves DEM from lidar_mnt fallback",
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_accessibility(units = test_units, layers = layers)
+  result <- indicateur_s2_bati(units = test_units, layers = layers)
 
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
   expect_false(is.na(result$S2[1]))
 })
 
-test_that("indicator_social_accessibility returns NA when layers has no buildings", {
+test_that("indicateur_s2_bati returns NA when layers has no buildings", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -653,12 +653,12 @@ test_that("indicator_social_accessibility returns NA when layers has no building
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_accessibility(units = test_units, layers = layers)
+  result <- indicateur_s2_bati(units = test_units, layers = layers)
 
   expect_true(is.na(result$S2[1]))
 })
 
-test_that("indicator_social_accessibility preserves original columns", {
+test_that("indicateur_s2_bati preserves original columns", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -671,7 +671,7 @@ test_that("indicator_social_accessibility preserves original columns", {
     )
   )
 
-  result <- indicator_social_accessibility(units = test_units)
+  result <- indicateur_s2_bati(units = test_units)
 
   expect_true("id" %in% names(result))
   expect_true("name" %in% names(result))
@@ -684,7 +684,7 @@ test_that("indicator_social_accessibility preserves original columns", {
 # S3: Population Proximity
 # ==============================================================================
 
-test_that("indicator_social_proximity (S3) calculates population buffers", {
+test_that("indicateur_s3_population (S3) calculates population buffers", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -696,7 +696,7 @@ test_that("indicator_social_proximity (S3) calculates population buffers", {
     )
   )
 
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     units = test_units,
     method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
@@ -715,20 +715,20 @@ test_that("indicator_social_proximity (S3) calculates population buffers", {
   expect_true(all(result$S3_20km >= result$S3_10km))
 })
 
-test_that("indicator_social_proximity validates input", {
+test_that("indicateur_s3_population validates input", {
   expect_error(
-    indicator_social_proximity(data.frame(x = 1:3)),
+    indicateur_s3_population(data.frame(x = 1:3)),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_proximity uses buffer_radii parameter", {
+test_that("indicateur_s3_population uses buffer_radii parameter", {
   skip_if_not_installed("sf")
 
   # Use properly sized units with real coordinates
   test_units <- create_test_units(n_features = 1)
 
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     test_units,
     method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
@@ -740,7 +740,7 @@ test_that("indicator_social_proximity uses buffer_radii parameter", {
   expect_true("S3" %in% names(result))
 })
 
-test_that("indicator_social_proximity uses custom column name", {
+test_that("indicateur_s3_population uses custom column name", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -751,7 +751,7 @@ test_that("indicator_social_proximity uses custom column name", {
     )
   )
 
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     test_units,
     method = "proxy",
     column_name = "pop_score"
@@ -760,7 +760,7 @@ test_that("indicator_social_proximity uses custom column name", {
   expect_true("pop_score" %in% names(result))
 })
 
-test_that("indicator_social_proximity S3 equals S3_5km (primary = first buffer)", {
+test_that("indicateur_s3_population S3 equals S3_5km (primary = first buffer)", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -773,7 +773,7 @@ test_that("indicator_social_proximity S3 equals S3_5km (primary = first buffer)"
     )
   )
 
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     test_units,
     method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
@@ -783,7 +783,7 @@ test_that("indicator_social_proximity S3 equals S3_5km (primary = first buffer)"
   expect_equal(result$S3, result$S3_5km)
 })
 
-test_that("indicator_social_proximity rejects invalid method", {
+test_that("indicateur_s3_population rejects invalid method", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -795,12 +795,12 @@ test_that("indicator_social_proximity rejects invalid method", {
   )
 
   expect_error(
-    indicator_social_proximity(test_units, method = "invalid_method"),
+    indicateur_s3_population(test_units, method = "invalid_method"),
     "arg"
   )
 })
 
-test_that("indicator_social_proximity produces positive population values", {
+test_that("indicateur_s3_population produces positive population values", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -811,7 +811,7 @@ test_that("indicator_social_proximity produces positive population values", {
     )
   )
 
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     test_units,
     method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
@@ -824,7 +824,7 @@ test_that("indicator_social_proximity produces positive population values", {
   expect_true(all(result$S3 > 0))
 })
 
-test_that("indicator_social_proximity preserves original columns", {
+test_that("indicateur_s3_population preserves original columns", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -837,7 +837,7 @@ test_that("indicator_social_proximity preserves original columns", {
     )
   )
 
-  result <- indicator_social_proximity(test_units, method = "proxy")
+  result <- indicateur_s3_population(test_units, method = "proxy")
 
   expect_true("id" %in% names(result))
   expect_true("name" %in% names(result))
@@ -845,7 +845,7 @@ test_that("indicator_social_proximity preserves original columns", {
   expect_equal(nrow(result), 2)
 })
 
-test_that("indicator_social_proximity with custom buffer_radii", {
+test_that("indicateur_s3_population with custom buffer_radii", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -857,7 +857,7 @@ test_that("indicator_social_proximity with custom buffer_radii", {
   )
 
   # Use different buffer radii
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     test_units,
     method = "proxy",
     buffer_radii = c(1000, 2000, 5000)
@@ -874,7 +874,7 @@ test_that("indicator_social_proximity with custom buffer_radii", {
   expect_true(result$S3_20km >= result$S3_10km)
 })
 
-test_that("indicator_social_proximity accepts method 'insee'", {
+test_that("indicateur_s3_population accepts method 'insee'", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -886,13 +886,13 @@ test_that("indicator_social_proximity accepts method 'insee'", {
   )
 
   # 'insee' is a valid method per match.arg; function runs the same proxy logic
-  result <- indicator_social_proximity(test_units, method = "insee")
+  result <- indicateur_s3_population(test_units, method = "insee")
 
   expect_s3_class(result, "sf")
   expect_true("S3" %in% names(result))
 })
 
-test_that("indicator_social_proximity accepts method 'local'", {
+test_that("indicateur_s3_population accepts method 'local'", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -904,18 +904,18 @@ test_that("indicator_social_proximity accepts method 'local'", {
   )
 
   # 'local' is a valid method per match.arg
-  result <- indicator_social_proximity(test_units, method = "local")
+  result <- indicateur_s3_population(test_units, method = "local")
 
   expect_s3_class(result, "sf")
   expect_true("S3" %in% names(result))
 })
 
-test_that("indicator_social_proximity with multiple units computes per-unit values", {
+test_that("indicateur_s3_population with multiple units computes per-unit values", {
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 5)
 
-  result <- indicator_social_proximity(
+  result <- indicateur_s3_population(
     test_units,
     method = "proxy",
     buffer_radii = c(5000, 10000, 20000)
@@ -951,9 +951,9 @@ test_that("Social indicators integrate with family system", {
 
   # S1 and S2 return NA without DEM/roads/buildings -- that's expected
   result <- test_units |>
-    indicator_social_trails() |>
-    indicator_social_accessibility() |>
-    indicator_social_proximity(method = "proxy")
+    indicateur_s1_routes() |>
+    indicateur_s2_bati() |>
+    indicateur_s3_population(method = "proxy")
 
   # Check all indicators present
   expect_true(all(c("S1", "S2", "S3") %in% names(result)))
@@ -974,9 +974,9 @@ test_that("Social indicators can be chained on units with existing columns", {
   )
 
   result <- test_units |>
-    indicator_social_trails() |>
-    indicator_social_accessibility() |>
-    indicator_social_proximity(method = "proxy")
+    indicateur_s1_routes() |>
+    indicateur_s2_bati() |>
+    indicateur_s3_population(method = "proxy")
 
   # Original columns preserved
   expect_true("C1" %in% names(result))
@@ -987,7 +987,7 @@ test_that("Social indicators can be chained on units with existing columns", {
   expect_true(all(c("S1", "S2", "S3") %in% names(result)))
 })
 
-test_that("indicator_social_trails returns correct number of NA for multi-unit input without DEM", {
+test_that("indicateur_s1_routes returns correct number of NA for multi-unit input without DEM", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1006,13 +1006,13 @@ test_that("indicator_social_trails returns correct number of NA for multi-unit i
     )
   )
 
-  result <- indicator_social_trails(units = test_units)
+  result <- indicateur_s1_routes(units = test_units)
 
   expect_equal(nrow(result), 5)
   expect_equal(sum(is.na(result$S1)), 5)
 })
 
-test_that("indicator_social_accessibility returns correct number of NA for multi-unit input without DEM", {
+test_that("indicateur_s2_bati returns correct number of NA for multi-unit input without DEM", {
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1031,55 +1031,55 @@ test_that("indicator_social_accessibility returns correct number of NA for multi
     )
   )
 
-  result <- indicator_social_accessibility(units = test_units)
+  result <- indicateur_s2_bati(units = test_units)
 
   expect_equal(nrow(result), 4)
   expect_equal(sum(is.na(result$S2)), 4)
 })
 
-test_that("indicator_social_trails rejects NULL input", {
+test_that("indicateur_s1_routes rejects NULL input", {
   expect_error(
-    indicator_social_trails(NULL),
+    indicateur_s1_routes(NULL),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_accessibility rejects NULL input", {
+test_that("indicateur_s2_bati rejects NULL input", {
   expect_error(
-    indicator_social_accessibility(NULL),
+    indicateur_s2_bati(NULL),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_proximity rejects NULL input", {
+test_that("indicateur_s3_population rejects NULL input", {
   expect_error(
-    indicator_social_proximity(NULL),
+    indicateur_s3_population(NULL),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_trails rejects character input", {
+test_that("indicateur_s1_routes rejects character input", {
   expect_error(
-    indicator_social_trails("not an sf object"),
+    indicateur_s1_routes("not an sf object"),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_accessibility rejects character input", {
+test_that("indicateur_s2_bati rejects character input", {
   expect_error(
-    indicator_social_accessibility("not an sf object"),
+    indicateur_s2_bati("not an sf object"),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_proximity rejects character input", {
+test_that("indicateur_s3_population rejects character input", {
   expect_error(
-    indicator_social_proximity("not an sf object"),
+    indicateur_s3_population("not an sf object"),
     "must be an sf object"
   )
 })
 
-test_that("indicator_social_trails directly provided roads override layers", {
+test_that("indicateur_s1_routes directly provided roads override layers", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1120,7 +1120,7 @@ test_that("indicator_social_trails directly provided roads override layers", {
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_trails(
+  result <- indicateur_s1_routes(
     units = test_units,
     roads = direct_roads,
     layers = layers
@@ -1130,7 +1130,7 @@ test_that("indicator_social_trails directly provided roads override layers", {
   expect_true(result$S1[1] >= 0)
 })
 
-test_that("indicator_social_accessibility directly provided buildings override layers", {
+test_that("indicateur_s2_bati directly provided buildings override layers", {
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1176,7 +1176,7 @@ test_that("indicator_social_accessibility directly provided buildings override l
     class = "nemeton_layers"
   )
 
-  result <- indicator_social_accessibility(
+  result <- indicateur_s2_bati(
     units = test_units,
     buildings = direct_buildings,
     layers = layers

@@ -178,7 +178,7 @@ build_analysis_prompt <- function(family_config, ind_data, language) {
 
 #' Build synthesis prompt for AI generation (all 12 families)
 #'
-#' @param family_scores_df data.frame. Family scores (family_C, family_B, ...).
+#' @param family_scores_df data.frame. Family scores (famille_carbone, famille_biodiversite, ...).
 #' @param language Character. "fran\u00e7ais" or "English".
 #' @return Character string prompt.
 #' @noRd
@@ -188,11 +188,11 @@ build_synthesis_prompt <- function(family_scores_df, language) {
   }
 
   n_parcels <- nrow(family_scores_df)
-  family_cols <- grep("^family_[A-Z]$", names(family_scores_df), value = TRUE)
+  family_cols <- grep("^famille_[a-z]", names(family_scores_df), value = TRUE)
 
   # Build per-family stats summary
   stats_lines <- vapply(family_cols, function(col) {
-    code <- sub("^family_", "", col)
+    code <- get_famille_code(col)
     fam <- INDICATOR_FAMILIES[[code]]
     if (is.null(fam)) return(paste0("- ", col, ": unknown family"))
     fam_name <- if (language == "fran\u00e7ais") fam$name_fr else fam$name_en

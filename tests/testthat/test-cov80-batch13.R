@@ -9,12 +9,12 @@
 
 test_that("normalize_indicators() minmax with explicit indicators scales to 0-100", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
-  units$water_twi <- c(100, 200, 300, 400, 500)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+  units$indicateur_w3_humidite <- c(100, 200, 300, 400, 500)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     method = "minmax"
   )
 
@@ -30,11 +30,11 @@ test_that("normalize_indicators() minmax with explicit indicators scales to 0-10
 test_that("normalize_indicators() zscore method centers around 0 with sd=1", {
   set.seed(42)
   units <- create_test_units(n_features = 20)
-  units$carbon_biomass <- rnorm(20, mean = 50, sd = 10)
+  units$indicateur_c1_biomasse <- rnorm(20, mean = 50, sd = 10)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "zscore"
   )
 
@@ -45,11 +45,11 @@ test_that("normalize_indicators() zscore method centers around 0 with sd=1", {
 
 test_that("normalize_indicators() quantile method produces 0-100 ranks", {
   units <- create_test_units(n_features = 10)
-  units$carbon_biomass <- seq(10, 100, by = 10)
+  units$indicateur_c1_biomasse <- seq(10, 100, by = 10)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "quantile"
   )
 
@@ -64,8 +64,8 @@ test_that("normalize_indicators() quantile method produces 0-100 ranks", {
 
 test_that("normalize_indicators() auto-detects known indicator columns", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
-  units$water_twi <- c(5, 10, 15, 20, 25)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+  units$indicateur_w3_humidite <- c(5, 10, 15, 20, 25)
   units$random_col <- c(1, 2, 3, 4, 5) # Should NOT be auto-detected
 
   result <- nemeton::normalize_indicators(units, method = "minmax")
@@ -126,13 +126,13 @@ test_that("normalize_indicators() by_family=TRUE changes suffix to '' and keep_o
 
 test_that("normalize_indicators() with reference_data uses external parameters", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(20, 30, 40, 50, 60)
+  units$indicateur_c1_biomasse <- c(20, 30, 40, 50, 60)
 
-  ref <- data.frame(carbon_biomass = c(0, 100))
+  ref <- data.frame(indicateur_c1_biomasse = c(0, 100))
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax",
     reference_data = ref
   )
@@ -144,7 +144,7 @@ test_that("normalize_indicators() with reference_data uses external parameters",
 
 test_that("normalize_indicators() warns when reference_data missing indicator", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   ref <- data.frame(other_col = c(0, 100))
 
@@ -152,7 +152,7 @@ test_that("normalize_indicators() warns when reference_data missing indicator", 
   expect_warning(
     result <- nemeton::normalize_indicators(
       units,
-      indicators = "carbon_biomass",
+      indicators = "indicateur_c1_biomasse",
       method = "minmax",
       reference_data = ref
     ),
@@ -162,12 +162,12 @@ test_that("normalize_indicators() warns when reference_data missing indicator", 
 
 test_that("normalize_indicators() errors on missing indicator columns", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   expect_error(
     nemeton::normalize_indicators(
       units,
-      indicators = c("carbon_biomass", "nonexistent_col"),
+      indicators = c("indicateur_c1_biomasse", "nonexistent_col"),
       method = "minmax"
     )
   )
@@ -185,11 +185,11 @@ test_that("normalize_indicators() errors when no indicators found", {
 
 test_that("normalize_indicators() suffix parameter customizes column names", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax",
     suffix = "_z"
   )
@@ -200,44 +200,44 @@ test_that("normalize_indicators() suffix parameter customizes column names", {
 
 test_that("normalize_indicators() keep_original=TRUE keeps originals", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax",
     keep_original = TRUE
   )
 
-  expect_true("carbon_biomass" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
   expect_true("carbon_biomass_norm" %in% names(result))
-  expect_equal(result$carbon_biomass, c(10, 20, 30, 40, 50))
+  expect_equal(result$indicateur_c1_biomasse, c(10, 20, 30, 40, 50))
 })
 
 test_that("normalize_indicators() keep_original=FALSE removes originals", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax",
     keep_original = FALSE,
     suffix = "_norm"
   )
 
   # When keep_original=FALSE and suffix != "", original is removed
-  expect_false("carbon_biomass" %in% names(result))
+  expect_false("indicateur_c1_biomasse" %in% names(result))
   expect_true("carbon_biomass_norm" %in% names(result))
 })
 
 test_that("normalize_indicators() preserves sf class", {
   units <- create_test_units(n_features = 5)
-  units$carbon_biomass <- c(10, 20, 30, 40, 50)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   result <- nemeton::normalize_indicators(
     units,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax"
   )
 
@@ -251,11 +251,11 @@ test_that("normalize_indicators() preserves nemeton_units class metadata", {
     units,
     metadata = list(site_name = "Test Forest", year = 2024)
   )
-  nu$carbon_biomass <- c(10, 20, 30, 40, 50)
+  nu$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
 
   result <- nemeton::normalize_indicators(
     nu,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax"
   )
 
@@ -265,7 +265,7 @@ test_that("normalize_indicators() preserves nemeton_units class metadata", {
   expect_equal(meta$year, 2024)
   expect_equal(meta$normalization_method, "minmax")
   expect_true(!is.null(meta$normalized_at))
-  expect_equal(meta$normalized_indicators, "carbon_biomass")
+  expect_equal(meta$normalized_indicators, "indicateur_c1_biomasse")
 })
 
 # =============================================================================
@@ -1068,13 +1068,13 @@ test_that("summary.nemeton_layers() outputs basic info", {
 
 test_that("normalize_indicators() on plain data.frame (not sf)", {
   df <- data.frame(
-    carbon_biomass = c(10, 20, 30, 40, 50),
-    water_twi = c(5, 10, 15, 20, 25)
+    indicateur_c1_biomasse = c(10, 20, 30, 40, 50),
+    indicateur_w3_humidite = c(5, 10, 15, 20, 25)
   )
 
   result <- nemeton::normalize_indicators(
     df,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     method = "minmax"
   )
 

@@ -91,11 +91,11 @@ fetch_api_cadastre <- function(code_insee) {
     cli::cli_abort("Package 'httr2' is required for API calls")
   }
 
-  # API Cadastre URL for GeoJSON parcels
-  url <- sprintf(
-    "https://cadastre.data.gouv.fr/bundler/cadastre-etalab/communes/%s/geojson/parcelles",
-    code_insee
-  )
+  # API Cadastre URL for GeoJSON parcels (source: inst/datasources/FR.json)
+  cadastre_cfg <- get_data_source("cadastre_api", "FR")
+  url_template <- cadastre_cfg$url %||%
+    "https://cadastre.data.gouv.fr/bundler/cadastre-etalab/communes/{code_commune}/geojson/parcelles"
+  url <- gsub("{code_commune}", code_insee, url_template, fixed = TRUE)
 
   cli::cli_alert("Requesting: {url}")
 

@@ -297,9 +297,9 @@ test_that("build_synthesis_prompt generates prompt from family scores", {
   # Create test data with family scores
   test_data <- data.frame(
     id = c("P1", "P2", "P3"),
-    family_C = c(60, 70, 65),
-    family_B = c(50, 55, 52),
-    family_W = c(40, 45, 42)
+    famille_carbone = c(60, 70, 65),
+    famille_biodiversite = c(50, 55, 52),
+    famille_eau = c(40, 45, 42)
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -316,8 +316,8 @@ test_that("build_synthesis_prompt generates prompt from family scores", {
 test_that("build_synthesis_prompt handles sf objects correctly", {
   # Create sf test data with family scores
   units <- create_test_units(n_features = 3)
-  units$family_C <- c(60, 70, 65)
-  units$family_B <- c(50, 55, 52)
+  units$famille_carbone <- c(60, 70, 65)
+  units$famille_biodiversite <- c(50, 55, 52)
 
   # Should not error with sf object
   result <- nemeton:::build_synthesis_prompt(units, "English")
@@ -330,8 +330,8 @@ test_that("build_synthesis_prompt calculates global score correctly", {
   # Create test data with known family scores
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 80),  # mean = 70
-    family_B = c(40, 60)   # mean = 50
+    famille_carbone = c(60, 80),  # mean = 70
+    famille_biodiversite = c(40, 60)   # mean = 50
   )
   # Global = mean of family means = (70 + 50) / 2 = 60
 
@@ -344,8 +344,8 @@ test_that("build_synthesis_prompt calculates global score correctly", {
 test_that("build_synthesis_prompt includes family names from config", {
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 70),
-    family_W = c(40, 50)
+    famille_carbone = c(60, 70),
+    famille_eau = c(40, 50)
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -358,8 +358,8 @@ test_that("build_synthesis_prompt includes family names from config", {
 test_that("build_synthesis_prompt works with French language", {
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 70),
-    family_B = c(50, 55)
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(50, 55)
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "fran\u00e7ais")
@@ -372,8 +372,8 @@ test_that("build_synthesis_prompt works with French language", {
 test_that("build_synthesis_prompt handles NA values in family scores", {
   test_data <- data.frame(
     id = c("P1", "P2", "P3"),
-    family_C = c(60, NA, 70),
-    family_B = c(NA, NA, NA)  # All NA
+    famille_carbone = c(60, NA, 70),
+    famille_biodiversite = c(NA, NA, NA)  # All NA
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -386,7 +386,7 @@ test_that("build_synthesis_prompt handles NA values in family scores", {
 test_that("build_synthesis_prompt includes min/max/mean statistics", {
   test_data <- data.frame(
     id = c("P1", "P2", "P3"),
-    family_C = c(40, 60, 80)  # min=40, max=80, mean=60
+    famille_carbone = c(40, 60, 80)  # min=40, max=80, mean=60
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -400,7 +400,7 @@ test_that("build_synthesis_prompt includes min/max/mean statistics", {
 test_that("build_synthesis_prompt adds recommendations request in English", {
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 70)
+    famille_carbone = c(60, 70)
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -412,7 +412,7 @@ test_that("build_synthesis_prompt adds recommendations request in English", {
 test_that("build_synthesis_prompt adds recommendations request in French", {
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 70)
+    famille_carbone = c(60, 70)
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "fran\u00e7ais")
@@ -425,7 +425,7 @@ test_that("build_synthesis_prompt handles unknown family codes gracefully", {
   # Create data with a family column that doesn't match config
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 70),
+    famille_carbone = c(60, 70),
     family_X = c(30, 40)  # Unknown family
   )
 
@@ -440,18 +440,18 @@ test_that("build_synthesis_prompt handles all 12 families", {
   # Create data with all family codes
   test_data <- data.frame(
     id = c("P1", "P2"),
-    family_C = c(60, 70),
-    family_B = c(50, 55),
-    family_W = c(40, 45),
-    family_A = c(55, 60),
-    family_F = c(45, 50),
-    family_L = c(65, 70),
-    family_T = c(35, 40),
-    family_R = c(70, 75),
-    family_S = c(50, 55),
-    family_P = c(60, 65),
-    family_E = c(55, 60),
-    family_N = c(45, 50)
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(50, 55),
+    famille_eau = c(40, 45),
+    famille_air = c(55, 60),
+    famille_sol = c(45, 50),
+    famille_paysage = c(65, 70),
+    famille_temporel = c(35, 40),
+    famille_risque = c(70, 75),
+    famille_social = c(50, 55),
+    famille_production = c(60, 65),
+    famille_energie = c(55, 60),
+    famille_naturalite = c(45, 50)
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -485,10 +485,10 @@ test_that("Prompt generation workflow works end-to-end for family analysis", {
 test_that("Prompt generation workflow works end-to-end for synthesis", {
   # Create family scores data
   units <- create_test_units(n_features = 4)
-  units$family_C <- c(65, 72, 68, 70)
-  units$family_B <- c(45, 52, 48, 50)
-  units$family_W <- c(55, 62, 58, 60)
-  units$family_R <- c(75, 82, 78, 80)
+  units$famille_carbone <- c(65, 72, 68, 70)
+  units$famille_biodiversite <- c(45, 52, 48, 50)
+  units$famille_eau <- c(55, 62, 58, 60)
+  units$famille_risque <- c(75, 82, 78, 80)
 
   # Generate prompts
   system_prompt <- nemeton:::build_system_prompt("English", expert = "owner")
@@ -504,7 +504,7 @@ test_that("French and English prompts are consistently different", {
   test_data <- data.frame(
     id = c("P1", "P2"),
     C1 = c(50, 60),
-    family_C = c(55, 65)
+    famille_carbone = c(55, 65)
   )
 
   family_config <- nemeton:::INDICATOR_FAMILIES$C
@@ -546,7 +546,7 @@ test_that("build_analysis_prompt handles single-row data", {
 test_that("build_synthesis_prompt handles single-row data", {
   test_data <- data.frame(
     id = "P1",
-    family_C = 60
+    famille_carbone = 60
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
@@ -577,7 +577,7 @@ test_that("build_analysis_prompt handles data with only id column (no indicators
 test_that("build_synthesis_prompt handles data with no family_* columns", {
   test_data <- data.frame(
     id = c("P1", "P2"),
-    C1 = c(50, 60)  # Not family_C
+    C1 = c(50, 60)  # Not famille_carbone
   )
 
   result <- nemeton:::build_synthesis_prompt(test_data, "English")
