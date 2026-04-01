@@ -640,11 +640,32 @@ nemeton_radar <- function(data,
     if (mode == "family") {
       # Look for family_* columns (famille_carbone, famille_eau, etc.)
       family_pattern <- "^famille_[a-z]"
-      indicators <- grep(family_pattern, all_cols, value = TRUE)
+      found_families <- grep(family_pattern, all_cols, value = TRUE)
 
-      if (length(indicators) == 0) {
+      if (length(found_families) == 0) {
         cli::cli_abort("No family indices found. Use {.fn create_family_index} first or set mode = \"indicator\"")
       }
+
+      # Ordre circulaire optimise pour le radar (familles adjacentes thematiquement proches)
+      # Evite les croisements de polygone entre familles aux valeurs tres differentes
+      radar_order <- c(
+        "famille_biodiversite",  # B
+        "famille_eau",           # W
+        "famille_air",           # A
+        "famille_sol",           # F
+        "famille_paysage",       # L
+        "famille_temporel",      # T
+        "famille_risque",        # R
+        "famille_social",        # S
+        "famille_production",    # P
+        "famille_energie",       # E
+        "famille_carbone",       # C
+        "famille_naturalite"     # N
+      )
+      # Garder uniquement les familles presentes dans les donnees, dans l'ordre du radar
+      indicators <- radar_order[radar_order %in% found_families]
+      # Ajouter les familles non prevues dans l'ordre (securite)
+      indicators <- c(indicators, setdiff(found_families, indicators))
     } else {
       # Get numeric columns excluding geometry and standard metadata
       exclude_cols <- c(
