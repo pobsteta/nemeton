@@ -9,19 +9,19 @@ make_report_fixtures <- function(n = 3, scores = NULL) {
   family_codes <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
   for (code in family_codes) {
     if (!is.null(scores) && code %in% names(scores)) {
-      units[[paste0("family_", code)]] <- rep_len(scores[[code]], n)
+      units[[nemeton:::get_famille_col(code)]] <- rep_len(scores[[code]], n)
     } else {
-      units[[paste0("family_", code)]] <- seq(30, 80, length.out = n)
+      units[[nemeton:::get_famille_col(code)]] <- seq(30, 80, length.out = n)
     }
   }
   # Add indicator-level columns for the C family
-  units$carbon_biomass <- runif(n, 20, 90)
-  units$carbon_ndvi <- runif(n, 30, 85)
+  units$indicateur_c1_biomasse <- runif(n, 20, 90)
+  units$indicateur_c2_ndvi <- runif(n, 30, 85)
   # B family
 
-  units$biodiversity_protection <- runif(n, 10, 80)
-  units$biodiversity_structure <- runif(n, 20, 70)
-  units$biodiversity_connectivity <- runif(n, 15, 75)
+  units$indicateur_b1_protection <- runif(n, 10, 80)
+  units$indicateur_b2_structure <- runif(n, 20, 70)
+  units$indicateur_b3_connectivite <- runif(n, 15, 75)
 
   project <- list(
     metadata = list(
@@ -745,7 +745,7 @@ test_that("prepare_report_data builds family_colors mapping", {
 test_that("prepare_report_data has indicator_stats with column data", {
   td <- make_report_fixtures(n = 3)
   result <- nemeton:::prepare_report_data(td$project, td$family_scores, "fr")
-  # C family should have indicator stats for carbon_biomass, carbon_ndvi
+  # C family should have indicator stats for indicateur_c1_biomasse, indicateur_c2_ndvi
   c_stats <- result$indicator_stats[["C"]]
   expect_true(nrow(c_stats) > 0)
   expect_true("Indicateur" %in% names(c_stats))
@@ -768,7 +768,7 @@ test_that("generate_radar_image creates file with fallback on error", {
   # Remove family columns to force nemeton_radar to error
   bad_data <- td$family_scores
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    bad_data[[paste0("family_", code)]] <- NULL
+    bad_data[[nemeton:::get_famille_col(code)]] <- NULL
   }
 
   withr::with_tempdir({
@@ -785,7 +785,7 @@ test_that("generate_radar_image creates file with fallback on error", {
 
 test_that("generate_family_maps handles all-NA family column", {
   td <- make_report_fixtures(n = 3)
-  td$family_scores$family_C <- NA_real_
+  td$family_scores$famille_carbone <- NA_real_
 
   withr::with_tempdir({
     out_dir <- file.path(getwd(), "fmaps")
@@ -801,7 +801,7 @@ test_that("generate_family_maps handles all-NA family column", {
 
     nemeton:::generate_family_maps(td$family_scores, out_dir, "fr")
     # C map should still be generated (shows "data not available")
-    expect_true(file.exists(file.path(out_dir, "family_C_map.png")))
+    expect_true(file.exists(file.path(out_dir, "famille_carbone_map.png")))
   })
 })
 

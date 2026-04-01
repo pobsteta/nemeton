@@ -296,9 +296,9 @@ test_that("mod_synthesis_server handles sf indicators with geometry", {
 
   with_mocked_bindings(
     get_app_options = function() list(language = "fr"),
-    get_all_column_names = function() c("carbon_biomass", "carbon_ndvi"),
+    get_all_column_names = function() c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
     create_family_index = function(data, ...) {
-      data$family_C <- 75
+      data$famille_carbone <- 75
       data
     },
     {
@@ -315,8 +315,8 @@ test_that("mod_synthesis_server handles sf indicators with geometry", {
 
       indicators <- sf::st_sf(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60),
-        carbon_ndvi = c(0.7, 0.8),
+        indicateur_c1_biomasse = c(50, 60),
+        indicateur_c2_ndvi = c(0.7, 0.8),
         geometry = geom
       )
 
@@ -387,7 +387,7 @@ test_that("i18n keys for family names exist in both languages", {
   family_codes <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 
   for (code in family_codes) {
-    key <- paste0("family_", code)
+    key <- nemeton:::get_famille_col(code)
     expect_true(fr$has(key), info = paste("FR missing:", key))
     expect_true(en$has(key), info = paste("EN missing:", key))
   }
@@ -491,9 +491,9 @@ test_that("INDICATOR_FAMILIES codes match their keys", {
 test_that("build_synthesis_prompt returns valid prompt string", {
   family_scores <- data.frame(
     nemeton_id = c("p1", "p2", "p3"),
-    family_C = c(50, 60, 70),
-    family_B = c(40, 50, 60),
-    family_W = c(30, 40, 50)
+    famille_carbone = c(50, 60, 70),
+    famille_biodiversite = c(40, 50, 60),
+    famille_eau = c(30, 40, 50)
   )
 
   prompt <- nemeton:::build_synthesis_prompt(family_scores, "English")
@@ -501,14 +501,14 @@ test_that("build_synthesis_prompt returns valid prompt string", {
   expect_true(nchar(prompt) > 0)
   expect_true(grepl("3 parcels", prompt))
   expect_true(grepl("Global score", prompt))
-  expect_true(grepl("Carbon", prompt) || grepl("family_C", prompt))
+  expect_true(grepl("Carbon", prompt) || grepl("famille_carbone", prompt))
 })
 
 test_that("build_synthesis_prompt works with French language", {
   family_scores <- data.frame(
     nemeton_id = c("p1", "p2"),
-    family_C = c(50, 60),
-    family_B = c(40, 50)
+    famille_carbone = c(50, 60),
+    famille_biodiversite = c(40, 50)
   )
 
   prompt <- nemeton:::build_synthesis_prompt(family_scores, "fran\u00e7ais")
@@ -522,8 +522,8 @@ test_that("build_synthesis_prompt handles sf input", {
 
   family_scores <- sf::st_sf(
     nemeton_id = c("p1", "p2"),
-    family_C = c(50, 60),
-    family_B = c(40, 50),
+    famille_carbone = c(50, 60),
+    famille_biodiversite = c(40, 50),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 1))
@@ -538,8 +538,8 @@ test_that("build_synthesis_prompt handles sf input", {
 test_that("build_synthesis_prompt handles NA values", {
   family_scores <- data.frame(
     nemeton_id = c("p1", "p2", "p3"),
-    family_C = c(50, NA, 70),
-    family_B = c(NA, NA, NA)
+    famille_carbone = c(50, NA, 70),
+    famille_biodiversite = c(NA, NA, NA)
   )
 
   prompt <- nemeton:::build_synthesis_prompt(family_scores, "English")
@@ -646,7 +646,7 @@ test_that("family_scores reactive handles missing join column gracefully", {
 
   with_mocked_bindings(
     get_app_options = function() list(language = "en"),
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     {
       # Create mock data with mismatched column names
       parcels <- sf::st_sf(
@@ -659,7 +659,7 @@ test_that("family_scores reactive handles missing join column gracefully", {
 
       indicators <- data.frame(
         other_id = c("y1", "y2"),  # Different column name
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(
@@ -713,9 +713,9 @@ test_that("mod_synthesis_server handles AI generate without API key", {
       if (key == "llm_provider") return("anthropic")
       default
     },
-    get_all_column_names = function() c("carbon_biomass"),
+    get_all_column_names = function() c("indicateur_c1_biomasse"),
     create_family_index = function(data, ...) {
-      data$family_C <- 75
+      data$famille_carbone <- 75
       data
     },
     {
@@ -729,7 +729,7 @@ test_that("mod_synthesis_server handles AI generate without API key", {
 
       indicators <- data.frame(
         nemeton_id = c("p1", "p2"),
-        carbon_biomass = c(50, 60)
+        indicateur_c1_biomasse = c(50, 60)
       )
 
       mock_app_state <- shiny::reactiveValues(

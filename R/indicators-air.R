@@ -54,13 +54,13 @@ NULL
 #' land_cover <- rast("path/to/corine_land_cover.tif")
 #'
 #' # Calculate A1 with 1km buffer
-#' result <- indicator_air_coverage(units, land_cover = land_cover, buffer_radius = 1000)
+#' result <- indicateur_a1_couverture(units, land_cover = land_cover, buffer_radius = 1000)
 #' summary(result$A1)
 #'
 #' # Calculate with 500m buffer
-#' result <- indicator_air_coverage(units, land_cover = land_cover, buffer_radius = 500)
+#' result <- indicateur_a1_couverture(units, land_cover = land_cover, buffer_radius = 500)
 #' }
-indicator_air_coverage <- function(units,
+indicateur_a1_couverture <- function(units,
                                    land_cover,
                                    forest_classes = c(16, 17, 18),
                                    buffer_radius = 1000) {
@@ -125,7 +125,7 @@ indicator_air_coverage <- function(units,
   # A1 score (already 0-100 percentage)
   units$A1 <- coverage_pct
 
-  msg_info("indicator_air_coverage")
+  msg_info("indicateur_a1_couverture")
 
   units
 }
@@ -180,14 +180,14 @@ indicator_air_coverage <- function(units,
 #'
 #' # Direct method with ATMO data
 #' atmo_data <- st_read("path/to/atmo_stations.gpkg")
-#' result <- indicator_air_quality(units, atmo_data = atmo_data, method = "direct")
+#' result <- indicateur_a2_qualite_air(units, atmo_data = atmo_data, method = "direct")
 #'
 #' # Proxy method
 #' roads <- st_read("path/to/roads.gpkg")
 #' urban <- st_read("path/to/urban_areas.gpkg")
-#' result <- indicator_air_quality(units, roads = roads, urban_areas = urban, method = "proxy")
+#' result <- indicateur_a2_qualite_air(units, roads = roads, urban_areas = urban, method = "proxy")
 #' }
-indicator_air_quality <- function(units,
+indicateur_a2_qualite_air <- function(units,
                                   layers = NULL,
                                   atmo_data = NULL,
                                   roads = NULL,
@@ -346,7 +346,7 @@ indicator_air_quality <- function(units,
     stop("method must be 'auto', 'direct', or 'proxy'", call. = FALSE)
   }
 
-  msg_info("indicator_air_quality")
+  msg_info("indicateur_a2_qualite_air")
 
   units
 }

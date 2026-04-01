@@ -32,13 +32,13 @@ test_that("nemeton_compute completes within 5 minutes for 20 parcels", {
 
   # Define indicators to test (core indicators that don't require external data)
   test_indicators <- c(
-    "carbon_biomass",
-    "carbon_ndvi",
+    "indicateur_c1_biomasse",
+    "indicateur_c2_ndvi",
     "biodiversity_protected",
-    "biodiversity_structure",
-    "water_network",
-    "landscape_fragmentation",
-    "landscape_edge_ratio"
+    "indicateur_b2_structure",
+    "indicateur_w1_reseau",
+    "indicateur_l2_fragmentation",
+    "indicateur_l1_sylvosphere"
   )
 
   # Filter to only available indicators
@@ -207,18 +207,18 @@ test_that("nemeton_radar generation is fast (< 2 seconds)", {
   n <- 20
   test_data <- data.frame(
     id = 1:n,
-    family_C = runif(n, 30, 80),
-    family_B = runif(n, 40, 90),
-    family_W = runif(n, 35, 75),
-    family_A = runif(n, 45, 85),
-    family_F = runif(n, 25, 70),
-    family_L = runif(n, 50, 95),
-    family_T = runif(n, 30, 70),
-    family_R = runif(n, 20, 60),
-    family_S = runif(n, 40, 80),
-    family_P = runif(n, 35, 75),
-    family_E = runif(n, 30, 70),
-    family_N = runif(n, 45, 85)
+    famille_carbone = runif(n, 30, 80),
+    famille_biodiversite = runif(n, 40, 90),
+    famille_eau = runif(n, 35, 75),
+    famille_air = runif(n, 45, 85),
+    famille_sol = runif(n, 25, 70),
+    famille_paysage = runif(n, 50, 95),
+    famille_temporel = runif(n, 30, 70),
+    famille_risque = runif(n, 20, 60),
+    famille_social = runif(n, 40, 80),
+    famille_production = runif(n, 35, 75),
+    famille_energie = runif(n, 30, 70),
+    famille_naturalite = runif(n, 45, 85)
   )
 
   test_data$lon <- runif(n, 2, 3)

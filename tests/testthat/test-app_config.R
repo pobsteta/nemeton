@@ -326,11 +326,11 @@ test_that("get_all_column_names returns character vector", {
 test_that("get_all_column_names contains expected column names", {
   columns <- nemeton:::get_all_column_names()
 
-  expect_true("carbon_biomass" %in% columns)
-  expect_true("carbon_ndvi" %in% columns)
-  expect_true("biodiversity_protection" %in% columns)
-  expect_true("water_network" %in% columns)
-  expect_true("risk_fire" %in% columns)
+  expect_true("indicateur_c1_biomasse" %in% columns)
+  expect_true("indicateur_c2_ndvi" %in% columns)
+  expect_true("indicateur_b1_protection" %in% columns)
+  expect_true("indicateur_w1_reseau" %in% columns)
+  expect_true("indicateur_r1_feu" %in% columns)
 })
 
 test_that("get_all_column_names has no duplicates", {
@@ -353,12 +353,12 @@ test_that("get_column_family_map maps column names to family codes correctly", {
   map <- nemeton:::get_column_family_map()
 
   # Long-form column name mappings
-  expect_equal(unname(map["carbon_biomass"]), "C")
-  expect_equal(unname(map["carbon_ndvi"]), "C")
-  expect_equal(unname(map["biodiversity_protection"]), "B")
-  expect_equal(unname(map["water_network"]), "W")
-  expect_equal(unname(map["risk_fire"]), "R")
-  expect_equal(unname(map["production_volume"]), "P")
+  expect_equal(unname(map["indicateur_c1_biomasse"]), "C")
+  expect_equal(unname(map["indicateur_c2_ndvi"]), "C")
+  expect_equal(unname(map["indicateur_b1_protection"]), "B")
+  expect_equal(unname(map["indicateur_w1_reseau"]), "W")
+  expect_equal(unname(map["indicateur_r1_feu"]), "R")
+  expect_equal(unname(map["indicateur_p1_volume"]), "P")
 })
 
 test_that("get_column_family_map maps short indicator codes to family codes", {

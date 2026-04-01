@@ -87,7 +87,7 @@ test_that("app_ui contains all 12 family tabs", {
   html <- htmltools::renderTags(result)$html
 
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    expect_true(grepl(paste0("family_", code), html),
+    expect_true(grepl(nemeton:::get_famille_col(code), html),
                 info = paste("Missing family tab for", code))
   }
 })

@@ -119,9 +119,9 @@ test_that("main_nav input is accessible",
    if (!is.null(current_tab)) {
      expect_true(
        current_tab %in% c("selection", "synthesis",
-                          "family_C", "family_B", "family_W", "family_A",
-                          "family_F", "family_L", "family_T", "family_R",
-                          "family_S", "family_P", "family_E", "family_N")
+                          "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air",
+                          "famille_sol", "famille_paysage", "famille_temporel", "famille_risque",
+                          "famille_social", "famille_production", "famille_energie", "famille_naturalite")
      )
    }
 

@@ -190,11 +190,11 @@ prepare_report_data <- function(project, family_scores, language,
   }
 
   # Get family columns
-  family_cols <- grep("^family_[A-Z]$", names(scores_df), value = TRUE)
+  family_cols <- grep("^famille_[a-z]", names(scores_df), value = TRUE)
 
   # Calculate family statistics
   family_stats <- lapply(family_cols, function(col) {
-    code <- sub("^family_", "", col)
+    code <- sub("^famille_", "", col)
     fam <- INDICATOR_FAMILIES[[code]]
     vals <- scores_df[[col]]
 
@@ -209,7 +209,7 @@ prepare_report_data <- function(project, family_scores, language,
       icon = fam$icon
     )
   })
-  names(family_stats) <- sub("^family_", "", family_cols)
+  names(family_stats) <- sub("^famille_", "", family_cols)
 
   # Build family descriptions from INDICATOR_FAMILIES
   family_descriptions <- lapply(names(INDICATOR_FAMILIES), function(code) {
@@ -296,7 +296,7 @@ prepare_report_data <- function(project, family_scores, language,
   # Build per-parcel score data for detailed tables
   parcel_scores <- list()
   for (code in names(INDICATOR_FAMILIES)) {
-    fam_col <- paste0("family_", code)
+    fam_col <- get_famille_col(code)
     if (fam_col %in% names(scores_df)) {
       parcel_ids <- if ("id" %in% names(scores_df)) {
         as.character(scores_df[["id"]])
@@ -435,7 +435,7 @@ generate_family_maps <- function(family_scores, output_dir, language) {
   }
 
   # Get family columns present in data
-  family_cols <- grep("^family_[A-Z]$", names(family_scores), value = TRUE)
+  family_cols <- grep("^famille_[a-z]", names(family_scores), value = TRUE)
 
   has_maptiles <- requireNamespace("maptiles", quietly = TRUE)
 
@@ -457,12 +457,12 @@ generate_family_maps <- function(family_scores, output_dir, language) {
   }
 
   for (col in family_cols) {
-    code <- sub("^family_", "", col)
+    code <- sub("^famille_", "", col)
     fam <- INDICATOR_FAMILIES[[code]]
 
     if (is.null(fam)) next
 
-    output_file <- file.path(output_dir, paste0("family_", code, "_map.png"))
+    output_file <- file.path(output_dir, paste0(get_famille_col(code), "_map.png"))
 
     tryCatch({
       grDevices::png(output_file, width = 800, height = 600, res = 150)
@@ -1665,7 +1665,7 @@ generate_simple_pdf_report <- function(project,
 
     # ----- Page B: Family aggregate map -----
     if (inherits(family_scores, "sf")) {
-      col_name <- paste0("family_", code)
+      col_name <- get_famille_col(code)
       if (col_name %in% names(family_scores)) {
         draw_indicator_map_page(family_scores, col_name, fam$name, fam$color, language)
         # Parcel table for family aggregate with indicator title

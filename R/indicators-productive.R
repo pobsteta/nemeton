@@ -58,7 +58,7 @@ NULL
 #' units$height <- c(25, 30, 22)
 #' units$density <- c(250, 180, 320)
 #'
-#' result <- indicator_productive_volume(
+#' result <- indicateur_p1_volume(
 #'   units = units,
 #'   species_field = "species",
 #'   dbh_field = "dbh",
@@ -66,7 +66,7 @@ NULL
 #'   density_field = "density"
 #' )
 #' }
-indicator_productive_volume <- function(units,
+indicateur_p1_volume <- function(units,
                                         species_field = "species",
                                         dbh_field = "dbh",
                                         height_field = "height",
@@ -191,14 +191,14 @@ indicator_productive_volume <- function(units,
 #' units$fertility <- c(1, 2, 2)
 #' units$climate <- c("temperate_oceanic", "mountainous", "temperate_oceanic")
 #'
-#' result <- indicator_productive_station(
+#' result <- indicateur_p2_station(
 #'   units = units,
 #'   species_field = "species",
 #'   fertility_field = "fertility",
 #'   climate_field = "climate"
 #' )
 #' }
-indicator_productive_station <- function(units,
+indicateur_p2_station <- function(units,
                                          species_field = "species",
                                          fertility_field = "fertility",
                                          climate_field = "climate",
@@ -321,14 +321,14 @@ indicator_productive_station <- function(units,
 #' units$form_score <- c(85, 70, 60)
 #' units$defects <- c(0, 0, 1)
 #'
-#' result <- indicator_productive_quality(
+#' result <- indicateur_p3_qualite_bois(
 #'   units = units,
 #'   dbh_field = "dbh",
 #'   form_score_field = "form_score",
 #'   defects_field = "defects"
 #' )
 #' }
-indicator_productive_quality <- function(units,
+indicateur_p3_qualite_bois <- function(units,
                                          dbh_field = "dbh",
                                          form_score_field = "form_score",
                                          defects_field = "defects",

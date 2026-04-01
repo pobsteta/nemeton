@@ -20,12 +20,12 @@ library(sf)
 test_that("compute_family_correlations returns correlation matrix for family indices", {
   # Use clean test units to avoid conflicts with pre-existing family columns
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_W <- runif(10, 35, 80)
-  units$family_R <- runif(10, 25, 75)
-  units$family_T <- runif(10, 45, 95)
-  units$family_A <- runif(10, 50, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_eau <- runif(10, 35, 80)
+  units$famille_risque <- runif(10, 25, 75)
+  units$famille_temporel <- runif(10, 45, 95)
+  units$famille_air <- runif(10, 50, 85)
 
   # Compute correlations
   result <- compute_family_correlations(units)
@@ -34,7 +34,7 @@ test_that("compute_family_correlations returns correlation matrix for family ind
   expect_true(is.matrix(result))
   expect_true(is.numeric(result))
   expect_equal(nrow(result), ncol(result)) # Square matrix
-  expect_true(all(c("family_C", "family_B", "family_W", "family_R", "family_T", "family_A") %in% colnames(result)))
+  expect_true(all(c("famille_carbone", "famille_biodiversite", "famille_eau", "famille_risque", "famille_temporel", "famille_air") %in% colnames(result)))
 
   # Test properties of correlation matrix
   expect_true(all(result >= -1 & result <= 1)) # Correlations in [-1, 1]
@@ -46,28 +46,28 @@ test_that("compute_family_correlations works with subset of families", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:8, ]
-  units$family_C <- runif(8, 40, 90)
-  units$family_B <- runif(8, 30, 85)
-  units$family_W <- runif(8, 35, 80)
+  units$famille_carbone <- runif(8, 40, 90)
+  units$famille_biodiversite <- runif(8, 30, 85)
+  units$famille_eau <- runif(8, 35, 80)
 
   # Compute for specific families only
   result <- compute_family_correlations(
     units,
-    families = c("family_C", "family_B", "family_W")
+    families = c("famille_carbone", "famille_biodiversite", "famille_eau")
   )
 
   expect_equal(nrow(result), 3)
   expect_equal(ncol(result), 3)
-  expect_true(all(c("family_C", "family_B", "family_W") %in% colnames(result)))
+  expect_true(all(c("famille_carbone", "famille_biodiversite", "famille_eau") %in% colnames(result)))
 })
 
 test_that("compute_family_correlations supports different correlation methods", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_W <- runif(10, 35, 80)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_eau <- runif(10, 35, 80)
 
   # Pearson (default)
   result_pearson <- compute_family_correlations(units, method = "pearson")
@@ -84,9 +84,9 @@ test_that("compute_family_correlations handles NA values gracefully", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_B[c(3, 7)] <- NA # Introduce NAs
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_biodiversite[c(3, 7)] <- NA # Introduce NAs
 
   # Should work with na.rm equivalent
   result <- compute_family_correlations(units)
@@ -98,9 +98,9 @@ test_that("compute_family_correlations handles NA values gracefully", {
 test_that("compute_family_correlations auto-detects family columns", {
   # Use clean test units to control exactly which family columns exist
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_W <- runif(10, 35, 80)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_eau <- runif(10, 35, 80)
   units$other_col <- runif(10) # Non-family column
 
   # Auto-detect (families = NULL)
@@ -119,10 +119,10 @@ test_that("identify_hotspots identifies parcels ranking high on multiple familie
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:20, ]
-  units$family_C <- runif(20, 40, 90)
-  units$family_B <- runif(20, 30, 85)
-  units$family_W <- runif(20, 35, 80)
-  units$family_R <- runif(20, 25, 75)
+  units$famille_carbone <- runif(20, 40, 90)
+  units$famille_biodiversite <- runif(20, 30, 85)
+  units$famille_eau <- runif(20, 35, 80)
+  units$famille_risque <- runif(20, 25, 75)
 
   # Identify hotspots: top 20% in at least 3 families
   result <- identify_hotspots(
@@ -146,9 +146,9 @@ test_that("identify_hotspots respects threshold parameter", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:15, ]
-  units$family_C <- c(rep(90, 3), rep(50, 12)) # 3 high, 12 low
-  units$family_B <- c(rep(85, 3), rep(45, 12))
-  units$family_W <- c(rep(88, 3), rep(48, 12))
+  units$famille_carbone <- c(rep(90, 3), rep(50, 12)) # 3 high, 12 low
+  units$famille_biodiversite <- c(rep(85, 3), rep(45, 12))
+  units$famille_eau <- c(rep(88, 3), rep(48, 12))
 
   # Top 20% = 3 parcels
   result <- identify_hotspots(units, threshold = 80, min_families = 2)
@@ -162,9 +162,9 @@ test_that("identify_hotspots handles min_families parameter", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- c(95, 90, 85, rep(50, 7))
-  units$family_B <- c(92, 88, 50, rep(45, 7))
-  units$family_W <- c(90, 50, 82, rep(48, 7))
+  units$famille_carbone <- c(95, 90, 85, rep(50, 7))
+  units$famille_biodiversite <- c(92, 88, 50, rep(45, 7))
+  units$famille_eau <- c(90, 50, 82, rep(48, 7))
 
   # min_families = 1: parcel high in ANY family
   result1 <- identify_hotspots(units, threshold = 80, min_families = 1)
@@ -184,15 +184,15 @@ test_that("identify_hotspots works with specific family subset", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_W <- runif(10, 35, 80)
-  units$family_R <- runif(10, 25, 75)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_eau <- runif(10, 35, 80)
+  units$famille_risque <- runif(10, 25, 75)
 
   # Analyze only specific families
   result <- identify_hotspots(
     units,
-    families = c("family_C", "family_B"),
+    families = c("famille_carbone", "famille_biodiversite"),
     threshold = 70,
     min_families = 2
   )
@@ -205,27 +205,27 @@ test_that("identify_hotspots returns hotspot_families as comma-separated list", 
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:8, ]
-  units$family_C <- c(95, 90, 85, rep(50, 5))
-  units$family_B <- c(92, 50, 88, rep(45, 5))
-  units$family_W <- c(50, 91, 86, rep(48, 5))
+  units$famille_carbone <- c(95, 90, 85, rep(50, 5))
+  units$famille_biodiversite <- c(92, 50, 88, rep(45, 5))
+  units$famille_eau <- c(50, 91, 86, rep(48, 5))
 
   result <- identify_hotspots(units, threshold = 80, min_families = 1)
 
   # Parcel 1: high in C and B
-  expect_true(grepl("family_C", result$hotspot_families[1]))
-  expect_true(grepl("family_B", result$hotspot_families[1]))
+  expect_true(grepl("famille_carbone", result$hotspot_families[1]))
+  expect_true(grepl("famille_biodiversite", result$hotspot_families[1]))
 
   # Parcel 2: high in C and W
-  expect_true(grepl("family_C", result$hotspot_families[2]))
-  expect_true(grepl("family_W", result$hotspot_families[2]))
+  expect_true(grepl("famille_carbone", result$hotspot_families[2]))
+  expect_true(grepl("famille_eau", result$hotspot_families[2]))
 })
 
 test_that("identify_hotspots handles no hotspots when threshold very high", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- runif(10, 30, 50) # Low-mid range
-  units$family_B <- runif(10, 25, 45) # Low-mid range
+  units$famille_carbone <- runif(10, 30, 50) # Low-mid range
+  units$famille_biodiversite <- runif(10, 25, 45) # Low-mid range
 
   # With 100th percentile threshold, no parcels can be above it
   result <- identify_hotspots(units, threshold = 100, min_families = 2)
@@ -245,12 +245,12 @@ test_that("Complete workflow: correlation + hotspot identification", {
 
   # Simulate family indices with realistic relationships
   set.seed(42)
-  units$family_B <- runif(15, 30, 90) # Biodiversity
-  units$family_T <- 20 + 0.6 * units$family_B + rnorm(15, 0, 10) # Age correlates with biodiversity
-  units$family_R <- 100 - 0.3 * units$family_B + rnorm(15, 0, 15) # Risk inversely correlated
-  units$family_C <- 40 + 0.5 * units$family_T + rnorm(15, 0, 12) # Carbon correlates with age
-  units$family_W <- runif(15, 30, 80) # Independent
-  units$family_A <- runif(15, 40, 85) # Independent
+  units$famille_biodiversite <- runif(15, 30, 90) # Biodiversity
+  units$famille_temporel <- 20 + 0.6 * units$famille_biodiversite + rnorm(15, 0, 10) # Age correlates with biodiversity
+  units$famille_risque <- 100 - 0.3 * units$famille_biodiversite + rnorm(15, 0, 15) # Risk inversely correlated
+  units$famille_carbone <- 40 + 0.5 * units$famille_temporel + rnorm(15, 0, 12) # Carbon correlates with age
+  units$famille_eau <- runif(15, 30, 80) # Independent
+  units$famille_air <- runif(15, 40, 85) # Independent
 
   # Step 1: Compute correlations
   corr_matrix <- compute_family_correlations(units)
@@ -259,8 +259,8 @@ test_that("Complete workflow: correlation + hotspot identification", {
   expect_equal(nrow(corr_matrix), 6)
 
   # Verify expected relationships
-  expect_true(corr_matrix["family_B", "family_T"] > 0.3) # Positive
-  expect_true(corr_matrix["family_B", "family_R"] < 0) # Negative
+  expect_true(corr_matrix["famille_biodiversite", "famille_temporel"] > 0.3) # Positive
+  expect_true(corr_matrix["famille_biodiversite", "famille_risque"] < 0) # Negative
 
   # Step 2: Identify hotspots
   hotspots <- identify_hotspots(
@@ -286,8 +286,8 @@ test_that("Complete workflow: correlation + hotspot identification", {
 test_that("Workflow handles edge case: only 2 families available", {
   # Use clean test units to control exactly which family columns exist
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   # Should work with just 2 families
   corr_matrix <- compute_family_correlations(units)
@@ -304,13 +304,13 @@ test_that("Workflow detects biodiversity-age synergy (US6 acceptance scenario)",
   units <- massif_demo_units[1:20, ]
 
   # Create deliberate synergy: high biodiversity + high age
-  units$family_B <- c(rep(85, 5), rep(45, 15)) # 5 high biodiversity
-  units$family_T <- c(rep(90, 5), rep(40, 15)) # Same 5 high age
-  units$family_C <- runif(20, 40, 70) # Neutral
+  units$famille_biodiversite <- c(rep(85, 5), rep(45, 15)) # 5 high biodiversity
+  units$famille_temporel <- c(rep(90, 5), rep(40, 15)) # Same 5 high age
+  units$famille_carbone <- runif(20, 40, 70) # Neutral
 
   # Correlation should be positive
   corr_matrix <- compute_family_correlations(units)
-  expect_true(corr_matrix["family_B", "family_T"] > 0.5)
+  expect_true(corr_matrix["famille_biodiversite", "famille_temporel"] > 0.5)
 
   # Hotspots should identify the 5 parcels
   hotspots <- identify_hotspots(units, threshold = 80, min_families = 2)
@@ -327,8 +327,8 @@ test_that("Functions handle sf objects with CRS correctly", {
   data(massif_demo_units, package = "nemeton")
 
   units <- massif_demo_units[1:10, ]
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   # Verify CRS is preserved
   original_crs <- st_crs(units)
@@ -346,8 +346,8 @@ test_that("Functions work with tibble sf objects", {
   units <- massif_demo_units[1:10, ] %>%
     dplyr::as_tibble() %>%
     sf::st_as_sf()
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   result <- identify_hotspots(units, threshold = 70, min_families = 1)
 
@@ -362,30 +362,30 @@ test_that("Functions work with tibble sf objects", {
 
 test_that("compute_family_correlations works with explicit families parameter", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_W <- runif(10, 35, 80)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_eau <- runif(10, 35, 80)
 
   result <- compute_family_correlations(
     units,
-    families = c("family_C", "family_B")
+    families = c("famille_carbone", "famille_biodiversite")
   )
 
   expect_true(is.matrix(result))
   expect_equal(nrow(result), 2)
   expect_equal(ncol(result), 2)
-  expect_true(all(c("family_C", "family_B") %in% colnames(result)))
-  # family_W should NOT be included
+  expect_true(all(c("famille_carbone", "famille_biodiversite") %in% colnames(result)))
+  # famille_eau should NOT be included
 
-  expect_false("family_W" %in% colnames(result))
+  expect_false("famille_eau" %in% colnames(result))
 })
 
 # --- compute_family_correlations: spearman and kendall methods ---
 
 test_that("compute_family_correlations works with spearman method", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   result <- compute_family_correlations(units, method = "spearman")
 
@@ -395,8 +395,8 @@ test_that("compute_family_correlations works with spearman method", {
 
 test_that("compute_family_correlations works with kendall method", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   result <- compute_family_correlations(units, method = "kendall")
 
@@ -408,10 +408,10 @@ test_that("compute_family_correlations works with kendall method", {
 
 test_that("compute_family_correlations errors on missing families", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
+  units$famille_carbone <- runif(10, 40, 90)
 
   expect_error(
-    compute_family_correlations(units, families = c("family_C", "family_MISSING")),
+    compute_family_correlations(units, families = c("famille_carbone", "family_MISSING")),
     "Families not found in data"
   )
 })
@@ -420,11 +420,11 @@ test_that("compute_family_correlations errors on missing families", {
 
 test_that("compute_family_correlations errors on non-numeric family columns", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- c("a", "b", "c", "d", "e")  # character, not numeric
-  units$family_B <- runif(5, 30, 85)
+  units$famille_carbone <- c("a", "b", "c", "d", "e")  # character, not numeric
+  units$famille_biodiversite <- runif(5, 30, 85)
 
   expect_error(
-    compute_family_correlations(units, families = c("family_C", "family_B")),
+    compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite")),
     "All family columns must be numeric"
   )
 })
@@ -433,8 +433,8 @@ test_that("compute_family_correlations errors on non-numeric family columns", {
 
 test_that("identify_hotspots auto-detects family columns", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
   units$other_col <- runif(10)  # should be ignored
 
   result <- identify_hotspots(units, threshold = 80, min_families = 1)
@@ -448,12 +448,12 @@ test_that("identify_hotspots auto-detects family columns", {
 
 test_that("identify_hotspots with threshold=100 uses strict greater-than", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   result <- identify_hotspots(
     units,
-    families = c("family_C", "family_B"),
+    families = c("famille_carbone", "famille_biodiversite"),
     threshold = 100,
     min_families = 1
   )
@@ -468,12 +468,12 @@ test_that("identify_hotspots with threshold=100 uses strict greater-than", {
 
 test_that("identify_hotspots handles all-NA family values", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- rep(NA_real_, 5)
-  units$family_B <- runif(5, 30, 85)
+  units$famille_carbone <- rep(NA_real_, 5)
+  units$famille_biodiversite <- runif(5, 30, 85)
 
   result <- identify_hotspots(
     units,
-    families = c("family_C", "family_B"),
+    families = c("famille_carbone", "famille_biodiversite"),
     threshold = 80,
     min_families = 1
   )
@@ -487,31 +487,31 @@ test_that("identify_hotspots handles all-NA family values", {
 
 test_that("identify_hotspots works with specific families parameter", {
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
-  units$family_W <- runif(10, 35, 80)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
+  units$famille_eau <- runif(10, 35, 80)
 
   # Only analyze C and B, not W
   result <- identify_hotspots(
     units,
-    families = c("family_C", "family_B"),
+    families = c("famille_carbone", "famille_biodiversite"),
     threshold = 70,
     min_families = 1
   )
 
   expect_s3_class(result, "sf")
-  # hotspot_families should never mention family_W
-  expect_false(any(grepl("family_W", result$hotspot_families)))
+  # hotspot_families should never mention famille_eau
+  expect_false(any(grepl("famille_eau", result$hotspot_families)))
 })
 
 # --- identify_hotspots: error on missing families ---
 
 test_that("identify_hotspots errors on missing families", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- runif(5, 40, 90)
+  units$famille_carbone <- runif(5, 40, 90)
 
   expect_error(
-    identify_hotspots(units, families = c("family_C", "family_NONEXISTENT")),
+    identify_hotspots(units, families = c("famille_carbone", "family_NONEXISTENT")),
     "Families not found in data"
   )
 })
@@ -534,10 +534,10 @@ test_that("plot_correlation_matrix works with method='number'", {
   skip_if_not_installed("ggplot2")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
-  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  cm <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
   p <- plot_correlation_matrix(cm, method = "number")
 
   expect_s3_class(p, "ggplot")
@@ -549,10 +549,10 @@ test_that("plot_correlation_matrix works with method='square'", {
   skip_if_not_installed("ggplot2")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
-  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  cm <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
   p <- plot_correlation_matrix(cm, method = "square")
 
   expect_s3_class(p, "ggplot")
@@ -564,10 +564,10 @@ test_that("plot_correlation_matrix works with method='color'", {
   skip_if_not_installed("ggplot2")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
-  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  cm <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
   p <- plot_correlation_matrix(cm, method = "color")
 
   expect_s3_class(p, "ggplot")
@@ -580,10 +580,10 @@ test_that("plot_correlation_matrix works with viridis palette", {
   skip_if_not_installed("viridisLite")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
-  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  cm <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
   p <- plot_correlation_matrix(cm, palette = "viridis")
 
   expect_s3_class(p, "ggplot")
@@ -595,8 +595,8 @@ test_that("plot_correlation_matrix generates title from method attribute", {
   skip_if_not_installed("ggplot2")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
   cm <- compute_family_correlations(units, method = "spearman")
   p <- plot_correlation_matrix(cm, title = NULL)
@@ -612,10 +612,10 @@ test_that("plot_correlation_matrix uses custom title when provided", {
   skip_if_not_installed("ggplot2")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
-  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  cm <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
   p <- plot_correlation_matrix(cm, title = "My Custom Title")
 
   expect_s3_class(p, "ggplot")
@@ -629,8 +629,8 @@ test_that("plot_correlation_matrix handles matrix without method attribute", {
 
   # Create a plain matrix without the method attribute
   m <- matrix(c(1, 0.5, 0.5, 1), nrow = 2)
-  colnames(m) <- c("family_C", "family_B")
-  rownames(m) <- c("family_C", "family_B")
+  colnames(m) <- c("famille_carbone", "famille_biodiversite")
+  rownames(m) <- c("famille_carbone", "famille_biodiversite")
 
   p <- plot_correlation_matrix(m, title = NULL)
 
@@ -645,10 +645,10 @@ test_that("plot_correlation_matrix supports all four display methods", {
   skip_if_not_installed("ggplot2")
 
   units <- create_test_units(n_features = 10)
-  units$family_C <- runif(10, 40, 90)
-  units$family_B <- runif(10, 30, 85)
+  units$famille_carbone <- runif(10, 40, 90)
+  units$famille_biodiversite <- runif(10, 30, 85)
 
-  cm <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  cm <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
 
   for (m in c("circle", "square", "number", "color")) {
     p <- plot_correlation_matrix(cm, method = m)
@@ -685,7 +685,7 @@ test_that("compute_family_correlations errors when no family columns auto-detect
 
 test_that("compute_family_correlations errors on invalid method", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- runif(5)
+  units$famille_carbone <- runif(5)
 
   expect_error(
     compute_family_correlations(units, method = "invalid"),
@@ -697,8 +697,8 @@ test_that("compute_family_correlations errors on invalid method", {
 
 test_that("compute_family_correlations stores n_obs attribute", {
   units <- create_test_units(n_features = 8)
-  units$family_C <- runif(8, 40, 90)
-  units$family_B <- runif(8, 30, 85)
+  units$famille_carbone <- runif(8, 40, 90)
+  units$famille_biodiversite <- runif(8, 30, 85)
 
   result <- compute_family_correlations(units)
 

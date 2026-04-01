@@ -27,9 +27,9 @@ test_that("identify_pareto_optimal identifies correct Pareto optimal parcels (T1
   expect_lte(n_optimal, nrow(data))
 
   # Check that at least the extreme points are optimal
-  # Parcel 1 has highest family_C
-  # Parcel 5 has highest family_B
-  # Parcel 9 has highest family_P
+  # Parcel 1 has highest famille_carbone
+  # Parcel 5 has highest famille_biodiversite
+  # Parcel 9 has highest famille_production
   expect_true(result$is_optimal[1]) # Highest C
   expect_true(result$is_optimal[5]) # Highest B
   expect_true(result$is_optimal[9]) # Highest P
@@ -93,7 +93,7 @@ test_that("identify_pareto_optimal handles edge cases", {
   # Test with single objective (all should be "Pareto optimal" with respect to that single dimension)
   result_single <- identify_pareto_optimal(
     data,
-    objectives = objectives[1], # Just family_C
+    objectives = objectives[1], # Just famille_carbone
     maximize = TRUE
   )
   # With single objective, only the maximum point is optimal

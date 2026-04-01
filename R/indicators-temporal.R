@@ -63,15 +63,15 @@ NULL
 #' layers <- massif_demo_layers()
 #'
 #' # Primary method: BD Forêt
-#' result <- indicator_temporal_age(massif_demo_units, layers = layers)
+#' result <- indicateur_t1_anciennete(massif_demo_units, layers = layers)
 #' summary(result)
 #'
 #' # Direct age field
 #' units <- massif_demo_units
 #' units$age <- runif(nrow(units), 20, 250)
-#' result <- indicator_temporal_age(units, age_field = "age")
+#' result <- indicateur_t1_anciennete(units, age_field = "age")
 #' }
-indicator_temporal_age <- function(units,
+indicateur_t1_anciennete <- function(units,
                                    layers = NULL,
                                    bdforet = NULL,
                                    age_field = "age",
@@ -127,7 +127,7 @@ indicator_temporal_age <- function(units,
         }
       }
 
-      msg_info("indicator_temporal_age")
+      msg_info("indicateur_t1_anciennete")
       return(age_values)
     }
   }
@@ -135,7 +135,7 @@ indicator_temporal_age <- function(units,
   # --- Priority 2: Direct age field ---
   if (!is.null(age_field) && age_field %in% names(units)) {
     age_values <- units[[age_field]]
-    msg_info("indicator_temporal_age")
+    msg_info("indicateur_t1_anciennete")
     return(age_values)
   }
 
@@ -145,7 +145,7 @@ indicator_temporal_age <- function(units,
       current_year <- as.integer(format(Sys.Date(), "%Y"))
     }
     age_values <- current_year - units[[establishment_year_field]]
-    msg_info("indicator_temporal_age")
+    msg_info("indicateur_t1_anciennete")
     return(age_values)
   }
 
@@ -157,7 +157,7 @@ indicator_temporal_age <- function(units,
       as_pure_sf(units), fun = "mean", progress = FALSE)
     # NDVI 0.2 ~ young (20yr), NDVI 0.8 ~ mature (120yr)
     age_values <- 20 + pmax(0, ndvi_mean - 0.2) / 0.6 * 100
-    msg_info("indicator_temporal_age")
+    msg_info("indicateur_t1_anciennete")
     return(age_values)
   }
 
@@ -224,10 +224,10 @@ indicator_temporal_age <- function(units,
 #' units <- massif_demo_units[1:10, ]
 #'
 #' # Compute T1 first, then T2
-#' t1 <- indicator_temporal_age(units, layers = massif_demo_layers())
-#' t2 <- indicator_temporal_change(units, t1_values = t1)
+#' t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
+#' t2 <- indicateur_t2_changement(units, t1_values = t1)
 #' }
-indicator_temporal_change <- function(units,
+indicateur_t2_changement <- function(units,
                                       layers = NULL,
                                       t1_values = NULL) {
   # Validate inputs
@@ -248,7 +248,7 @@ indicator_temporal_change <- function(units,
     t2 <- units[[n2_col]]
     # Ensure 0-100 range
     t2 <- pmin(pmax(t2, 0), 100)
-    msg_info("indicator_temporal_change")
+    msg_info("indicateur_t2_changement")
     return(t2)
   }
 
@@ -258,7 +258,7 @@ indicator_temporal_change <- function(units,
     cli::cli_alert_info("T2: Estimated from T1 age values")
     t2 <- pmin(100, t1_values)
     t2[is.na(t2)] <- 50
-    msg_info("indicator_temporal_change")
+    msg_info("indicateur_t2_changement")
     return(t2)
   }
 
@@ -267,7 +267,7 @@ indicator_temporal_change <- function(units,
     cli::cli_alert_info("T2: Estimated from T1 column")
     t2 <- pmin(100, units$T1)
     t2[is.na(t2)] <- 50
-    msg_info("indicator_temporal_change")
+    msg_info("indicateur_t2_changement")
     return(t2)
   }
 

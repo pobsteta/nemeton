@@ -46,33 +46,33 @@ DATA_SOURCES <- list(
       name = "NDVI (from IGN IRC)",
       type = "raster",
       source = "ign_irc",
-      required_for = c("carbon_ndvi")
+      required_for = c("indicateur_c2_ndvi")
     ),
     dem = list(
       name = "Digital Elevation Model",
       type = "raster",
       source = "ign_bd_alti",
-      required_for = c("water_twi", "risk_erosion")
+      required_for = c("indicateur_w3_humidite", "risk_erosion")
     ),
     forest_cover = list(
       name = "Forest Cover (OSO)",
       type = "raster",
       source = "oso",
-      required_for = c("carbon_biomass", "landscape_fragmentation")
+      required_for = c("indicateur_c1_biomasse", "indicateur_l2_fragmentation")
     ),
     lidar_mnh = list(
       name = "Canopy Height Model (LiDAR HD)",
       type = "raster",
       source = "ign_lidar_hd",
       product = "mnh",
-      required_for = c("biodiversity_structure", "production_volume", "risk_storm")
+      required_for = c("indicateur_b2_structure", "indicateur_p1_volume", "indicateur_r2_tempete")
     ),
     lidar_mnt = list(
       name = "Digital Terrain Model (LiDAR HD)",
       type = "raster",
       source = "ign_lidar_hd",
       product = "mnt",
-      required_for = c("water_twi", "risk_erosion", "risk_fire", "risk_storm", "risk_drought")
+      required_for = c("indicateur_w3_humidite", "risk_erosion", "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse")
     )
   ),
   # Vector sources
@@ -81,46 +81,46 @@ DATA_SOURCES <- list(
       name = "Protected Areas",
       type = "vector",
       source = "inpn_wfs",
-      required_for = c("biodiversity_protection")
+      required_for = c("indicateur_b1_protection")
     ),
-    water_network = list(
+    indicateur_w1_reseau = list(
       name = "Water Network",
       type = "vector",
       source = "ign_bd_topo",
-      required_for = c("water_network")
+      required_for = c("indicateur_w1_reseau")
     ),
     water_surfaces = list(
       name = "Water Surfaces",
       type = "vector",
       source = "ign_bd_topo",
-      required_for = c("water_wetlands")
+      required_for = c("indicateur_w2_zones_humides")
     ),
     wetlands = list(
       name = "Wetlands",
       type = "vector",
       source = "inpn_wfs",
-      required_for = c("water_wetlands")
+      required_for = c("indicateur_w2_zones_humides")
     ),
     roads = list(
       name = "Roads",
       type = "vector",
       source = "ign_bd_topo",
-      required_for = c("naturalness_distance", "social_trails")
+      required_for = c("indicateur_n1_distance", "indicateur_s1_routes")
     ),
     buildings = list(
       name = "Buildings",
       type = "vector",
       source = "ign_bd_topo",
-      required_for = c("social_accessibility", "naturalness_distance")
+      required_for = c("indicateur_s2_bati", "indicateur_n1_distance")
     ),
     bdforet = list(
       name = "BD For\u00eat V2 (IGN)",
       type = "vector",
       source = "ign_bdforet",
-      required_for = c("carbon_biomass", "production_volume", "production_site",
-                        "biodiversity_structure", "biodiversity_connectivity",
-                        "temporal_age", "risk_fire", "risk_browsing",
-                        "naturalness_continuity")
+      required_for = c("indicateur_c1_biomasse", "indicateur_p1_volume", "indicateur_p2_station",
+                        "indicateur_b2_structure", "indicateur_b3_connectivite",
+                        "indicateur_t1_anciennete", "indicateur_r1_feu", "indicateur_r4_abroutissement",
+                        "indicateur_n2_continuite")
     )
   ),
   # Point cloud sources (not loaded as raster/vector but cached as files)
@@ -130,7 +130,7 @@ DATA_SOURCES <- list(
       type = "point_cloud",
       source = "ign_lidar_hd",
       product = "nuage",
-      required_for = c("biodiversity_structure")
+      required_for = c("indicateur_b2_structure")
     )
   )
 )
@@ -218,29 +218,29 @@ init_compute_state <- function(project_id, indicators = "all") {
 list_available_indicators <- function() {
   c(
     # Carbon (C)
-    "carbon_biomass", "carbon_ndvi",
+    "indicateur_c1_biomasse", "indicateur_c2_ndvi",
     # Biodiversity (B)
-    "biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity",
+    "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
     # Water (W)
-    "water_network", "water_wetlands", "water_twi",
+    "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
     # Air (A)
-    "air_forest_buffer", "air_quality",
+    "indicateur_a1_couverture", "indicateur_a2_qualite_air",
     # Fertility (F)
-    "fertility_soil", "fertility_erosion",
+    "indicateur_f1_fertilite", "indicateur_f2_erosion",
     # Landscape (L)
-    "landscape_fragmentation", "landscape_edge_ratio",
+    "indicateur_l2_fragmentation", "indicateur_l1_sylvosphere",
     # Temporal (T)
-    "temporal_age", "temporal_change",
+    "indicateur_t1_anciennete", "indicateur_t2_changement",
     # Risk (R)
-    "risk_fire", "risk_storm", "risk_drought", "risk_browsing",
+    "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement",
     # Social (S)
-    "social_trails", "social_accessibility", "social_population",
+    "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
     # Production (P)
-    "production_volume", "production_productivity", "production_quality",
+    "indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois",
     # Energy (E)
-    "energy_wood", "energy_co2",
+    "indicateur_e1_bois_energie", "indicateur_e2_evitement",
     # Naturalness (N)
-    "naturalness_distance", "naturalness_continuity", "naturalness_score"
+    "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
   )
 }
 
@@ -510,7 +510,7 @@ download_layers_for_parcels <- function(parcels,
     lidar_mnh = "source_lidar_mnh",
     lidar_mnt = "source_lidar_mnt",
     protected_areas = "source_protected_areas",
-    water_network = "source_water_network",
+    indicateur_w1_reseau = "source_water_network",
     water_surfaces = "source_water_surfaces",
     wetlands = "source_wetlands",
     roads = "source_roads",
@@ -952,7 +952,7 @@ download_inpn_wfs <- function(layer_name, bbox, cache_file) {
 #' Downloads vector data from IGN Geoplateforme WFS service.
 #'
 #' @param layer_name Character. Name of the layer to download.
-#'   Supported: "roads", "water_network", "buildings"
+#'   Supported: "roads", "indicateur_w1_reseau", "buildings"
 #' @param bbox Numeric vector or sf bbox. Bounding box in WGS84.
 #' @param cache_file Character. Path to save the downloaded data.
 #'
@@ -974,7 +974,7 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
   if (is.null(typename)) {
     layer_mapping <- list(
       roads = "BDTOPO_V3:troncon_de_route",
-      water_network = "BDTOPO_V3:troncon_hydrographique",
+      indicateur_w1_reseau = "BDTOPO_V3:troncon_hydrographique",
       water_surfaces = "BDTOPO_V3:surface_hydrographique",
       buildings = "BDTOPO_V3:batiment"
     )
@@ -1976,32 +1976,32 @@ normalize_indicator <- function(indicator, values) {
   # Indicators already returning 0-100 scores → NULL (just clamp):
   #   biodiversity (B1-B3), air (A1-A2), fertility (F1-F2),
   #   landscape (L1-L2), temporal (T1-T2), risks (R1-R4),
-  #   naturalness (N1-N3), production_quality (P3)
+  #   naturalness (N1-N3), indicateur_p3_qualite_bois (P3)
   ref_max <- switch(indicator,
     # Carbon: biomass in tC/ha, typical temperate forest max ~150 tC/ha
-    "carbon_biomass" = 150,
+    "indicateur_c1_biomasse" = 150,
     # Carbon: NDVI in 0-1 scale — special handling below
-    "carbon_ndvi" = NULL,
+    "indicateur_c2_ndvi" = NULL,
     # Water: hydrographic network density in m/ha (50 m/ha = well-watered forest)
-    "water_network" = 50,
+    "indicateur_w1_reseau" = 50,
     # Water: wetland/water surface coverage (%) — 5% coverage = max score
-    "water_wetlands" = 5,
+    "indicateur_w2_zones_humides" = 5,
     # Water: TWI — special handling below
-    "water_twi" = NULL,
+    "indicateur_w3_humidite" = NULL,
     # Social: distance to roads (m) — special inverse handling below
-    "social_trails" = NULL,
+    "indicateur_s1_routes" = NULL,
     # Social: distance to buildings (m) — special inverse handling below
-    "social_accessibility" = NULL,
+    "indicateur_s2_bati" = NULL,
     # Social: population within buffers
-    "social_population" = 10000,
+    "indicateur_s3_population" = 10000,
     # Production: standing volume in m³/ha (tuto 02 formula range ~100-800)
-    "production_volume" = 800,
+    "indicateur_p1_volume" = 800,
     # Production: annual increment in m³/ha/yr
-    "production_productivity" = 15,
+    "indicateur_p2_station" = 15,
     # Energy: fuelwood potential in tep/ha/yr
-    "energy_wood" = 0.3,
+    "indicateur_e1_bois_energie" = 0.3,
     # Energy: CO2 avoidance in tCO2/ha/yr (E1 * 2.5 * 0.85)
-    "energy_co2" = 0.75,
+    "indicateur_e2_evitement" = 0.75,
     # All other indicators already return 0-100 scores → NULL
     NULL
   )
@@ -2009,19 +2009,19 @@ normalize_indicator <- function(indicator, values) {
   # Special handling: TWI rescale [2.5, 4.5] → [0, 100]
   # Calibrated on typical temperate forest TWI range (sandy/draining substrates ~3,
   # clay/alluvial ~4-5). Tighter window gives meaningful differentiation.
-  if (indicator == "water_twi") {
+  if (indicator == "indicateur_w3_humidite") {
     # Higher TWI = wetter = more water service
     return(pmin(100, pmax(0, (values - 2.5) / 2 * 100)))
   }
 
   # Special handling: NDVI scale 0-1 → 0-100
-  if (indicator == "carbon_ndvi") {
+  if (indicator == "indicateur_c2_ndvi") {
     return(pmin(100, pmax(0, values * 100)))
   }
 
   # Special handling: distance indicators (inverse — closer = higher social value)
   # 0m → score 100 (very accessible), 2000m+ → score 0 (very remote)
-  if (indicator %in% c("social_trails", "social_accessibility")) {
+  if (indicator %in% c("indicateur_s1_routes", "indicateur_s2_bati")) {
     return(pmin(100, pmax(0, 100 * (1 - values / 2000))))
   }
 
@@ -2130,8 +2130,8 @@ compute_all_indicators <- function(parcels,
       break
     }
 
-    # Send indicator key with compute prefix for translation
-    indicator_key <- paste0("indicator_", ind)
+    # Clé de l'indicateur NMT pour la traduction
+    indicator_key <- ind
 
     if (!is.null(progress_callback)) {
       progress_callback(list(
@@ -2208,8 +2208,8 @@ compute_all_indicators <- function(parcels,
 #'
 #' @noRd
 compute_single_indicator <- function(indicator, parcels, layers) {
-  # Try to use existing nemeton indicator functions if available
-  func_name <- paste0("indicator_", indicator)
+  # Utiliser directement le nom NMT comme nom de fonction (ex: indicateur_c1_biomasse)
+  func_name <- indicator
 
   if (exists(func_name, mode = "function")) {
     func <- get(func_name, mode = "function")
@@ -2272,23 +2272,23 @@ compute_single_indicator <- function(indicator, parcels, layers) {
     if (inherits(result, "sf") || inherits(result, "data.frame")) {
       # Map indicator names to the column names used by each function
       col_map <- c(
-        "biodiversity_protection" = "B1",
-        "biodiversity_structure" = "B2",
-        "biodiversity_connectivity" = "B3",
-        "air_forest_buffer" = "A1",
-        "air_quality" = "A2",
-        "risk_fire" = "R1",
-        "risk_storm" = "R2",
-        "risk_drought" = "R3",
-        "risk_browsing" = "R4",
-        "naturalness_distance" = "N1",
-        "naturalness_continuity" = "N2",
-        "naturalness_score" = "N3",
-        "social_trails" = "S1",
-        "social_accessibility" = "S2",
-        "social_population" = "S3",
-        "energy_wood" = "E1",
-        "energy_co2" = "E2"
+        "indicateur_b1_protection" = "B1",
+        "indicateur_b2_structure" = "B2",
+        "indicateur_b3_connectivite" = "B3",
+        "indicateur_a1_couverture" = "A1",
+        "indicateur_a2_qualite_air" = "A2",
+        "indicateur_r1_feu" = "R1",
+        "indicateur_r2_tempete" = "R2",
+        "indicateur_r3_secheresse" = "R3",
+        "indicateur_r4_abroutissement" = "R4",
+        "indicateur_n1_distance" = "N1",
+        "indicateur_n2_continuite" = "N2",
+        "indicateur_n3_naturalite" = "N3",
+        "indicateur_s1_routes" = "S1",
+        "indicateur_s2_bati" = "S2",
+        "indicateur_s3_population" = "S3",
+        "indicateur_e1_bois_energie" = "E1",
+        "indicateur_e2_evitement" = "E2"
       )
 
       # Try mapped column name first
@@ -2299,9 +2299,9 @@ compute_single_indicator <- function(indicator, parcels, layers) {
         }
       }
 
-      # Look for the indicator column by name
+      # Chercher la colonne indicateur par nom NMT
       indicator_col <- intersect(
-        c(indicator, toupper(indicator), paste0("indicator_", indicator)),
+        c(indicator, toupper(indicator)),
         names(result)
       )
       if (length(indicator_col) > 0) {

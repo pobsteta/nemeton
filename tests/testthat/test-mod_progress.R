@@ -494,7 +494,7 @@ test_that("init_compute_state creates valid state structure", {
 
   with_mocked_bindings(
     get_computation_progress = function(project_id) list(computed_indicators = character(0)),
-    list_available_indicators = function() c("carbon_biomass", "carbon_ndvi", "water_network"),
+    list_available_indicators = function() c("indicateur_c1_biomasse", "indicateur_c2_ndvi", "indicateur_w1_reseau"),
     {
       state <- nemeton:::init_compute_state("test_project", "all")
 
@@ -524,10 +524,10 @@ test_that("init_compute_state handles resume with existing progress", {
 
   with_mocked_bindings(
     get_computation_progress = function(project_id) {
-      list(computed_indicators = c("carbon_biomass", "carbon_ndvi"))
+      list(computed_indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"))
     },
     list_available_indicators = function() {
-      c("carbon_biomass", "carbon_ndvi", "water_network")
+      c("indicateur_c1_biomasse", "indicateur_c2_ndvi", "indicateur_w1_reseau")
     },
     {
       state <- nemeton:::init_compute_state("test_project", "all")
@@ -535,9 +535,9 @@ test_that("init_compute_state handles resume with existing progress", {
       expect_equal(state$indicators_completed, 2)
       expect_equal(state$indicators_skipped, 2)
       expect_true(state$is_resume)
-      expect_equal(state$indicators_status[["carbon_biomass"]], "completed")
-      expect_equal(state$indicators_status[["carbon_ndvi"]], "completed")
-      expect_equal(state$indicators_status[["water_network"]], "pending")
+      expect_equal(state$indicators_status[["indicateur_c1_biomasse"]], "completed")
+      expect_equal(state$indicators_status[["indicateur_c2_ndvi"]], "completed")
+      expect_equal(state$indicators_status[["indicateur_w1_reseau"]], "pending")
     }
   )
 })
@@ -549,8 +549,8 @@ test_that("init_compute_state handles resume with existing progress", {
 test_that("list_available_indicators returns 31 indicators", {
   indicators <- nemeton:::list_available_indicators()
   expect_length(indicators, 31)
-  expect_true("carbon_biomass" %in% indicators)
-  expect_true("naturalness_score" %in% indicators)
+  expect_true("indicateur_c1_biomasse" %in% indicators)
+  expect_true("indicateur_n3_naturalite" %in% indicators)
 })
 
 test_that("init_compute_state returns correct structure with all 31 indicators", {
@@ -576,7 +576,7 @@ test_that("init_compute_state supports resume with previously computed indicator
   with_mocked_bindings(
     get_computation_progress = function(project_id) {
       list(
-        computed_indicators = c("carbon_biomass", "carbon_ndvi"),
+        computed_indicators = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
         last_saved_at = Sys.time()
       )
     },
@@ -585,9 +585,9 @@ test_that("init_compute_state supports resume with previously computed indicator
       expect_equal(state$indicators_completed, 2)
       expect_equal(state$indicators_skipped, 2)
       expect_true(state$is_resume)
-      expect_equal(state$indicators_status[["carbon_biomass"]], "completed")
-      expect_equal(state$indicators_status[["carbon_ndvi"]], "completed")
-      expect_equal(state$indicators_status[["water_twi"]], "pending")
+      expect_equal(state$indicators_status[["indicateur_c1_biomasse"]], "completed")
+      expect_equal(state$indicators_status[["indicateur_c2_ndvi"]], "completed")
+      expect_equal(state$indicators_status[["indicateur_w3_humidite"]], "pending")
     }
   )
 })

@@ -26,7 +26,7 @@ NULL
 #' @return sf object with added columns: E1 (fuelwood potential tonnes DM/yr), E1_residues, E1_coppice
 #'
 #' @export
-indicator_energy_fuelwood <- function(units,
+indicateur_e1_bois_energie <- function(units,
                                       volume_field = "volume",
                                       species_field = "species",
                                       harvest_rate = 0.02,
@@ -101,7 +101,7 @@ indicator_energy_fuelwood <- function(units,
 #' @return sf object with added columns: E2 (total CO2 avoided tCO2eq/yr), E2_energy, E2_material
 #'
 #' @export
-indicator_energy_avoidance <- function(units,
+indicateur_e2_evitement <- function(units,
                                        fuelwood_field = "E1",
                                        volume_field = NULL,
                                        energy_scenario = "vs_natural_gas",

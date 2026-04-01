@@ -125,11 +125,11 @@ test_that("get_all_indicator_codes returns all indicator codes", {
 test_that("get_all_column_names returns long-form column names", {
   cols <- nemeton:::get_all_column_names()
   expect_type(cols, "character")
-  expect_true("carbon_biomass" %in% cols)
-  expect_true("carbon_ndvi" %in% cols)
-  expect_true("biodiversity_protection" %in% cols)
-  expect_true("water_network" %in% cols)
-  expect_true("naturalness_score" %in% cols)
+  expect_true("indicateur_c1_biomasse" %in% cols)
+  expect_true("indicateur_c2_ndvi" %in% cols)
+  expect_true("indicateur_b1_protection" %in% cols)
+  expect_true("indicateur_w1_reseau" %in% cols)
+  expect_true("indicateur_n3_naturalite" %in% cols)
 })
 
 # ==============================================================================
@@ -141,10 +141,10 @@ test_that("get_column_family_map maps columns to families", {
   expect_type(mapping, "character")
 
   # Long-form names
-  expect_equal(mapping[["carbon_biomass"]], "C")
-  expect_equal(mapping[["biodiversity_protection"]], "B")
-  expect_equal(mapping[["water_network"]], "W")
-  expect_equal(mapping[["naturalness_score"]], "N")
+  expect_equal(mapping[["indicateur_c1_biomasse"]], "C")
+  expect_equal(mapping[["indicateur_b1_protection"]], "B")
+  expect_equal(mapping[["indicateur_w1_reseau"]], "W")
+  expect_equal(mapping[["indicateur_n3_naturalite"]], "N")
 
   # Short codes
   expect_equal(mapping[["C1"]], "C")

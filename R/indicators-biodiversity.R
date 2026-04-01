@@ -49,14 +49,14 @@ NULL
 #'
 #' # Option A: Use local protected area data
 #' protected_zones <- st_read("path/to/protected_areas.shp")
-#' result <- indicator_biodiversity_protection(
+#' result <- indicateur_b1_protection(
 #'   massif_demo_units,
 #'   protected_areas = protected_zones,
 #'   source = "local"
 #' )
 #'
 #' # Option B: Fetch from INPN WFS (requires internet)
-#' result <- indicator_biodiversity_protection(
+#' result <- indicateur_b1_protection(
 #'   massif_demo_units,
 #'   source = "wfs",
 #'   protection_types = c("ZNIEFF1", "ZNIEFF2", "N2000_SCI")
@@ -65,7 +65,7 @@ NULL
 #' # View results
 #' summary(result$B1)
 #' }
-indicator_biodiversity_protection <- function(units,
+indicateur_b1_protection <- function(units,
                                               protected_areas = NULL,
                                               source = c("local", "wfs"),
                                               protection_types = c("ZNIEFF1", "ZNIEFF2", "N2000_SCI"),
@@ -102,7 +102,7 @@ indicator_biodiversity_protection <- function(units,
   units$B1 <- numeric(nrow(units))
 
   if (nrow(protected_areas) == 0) {
-    msg_info("indicator_biodiversity_protection")
+    msg_info("indicateur_b1_protection")
     return(units)
   }
 
@@ -207,7 +207,7 @@ indicator_biodiversity_protection <- function(units,
   # Cap at 100%
   units$B1 <- pmin(units$B1, 100)
 
-  msg_info("indicator_biodiversity_protection")
+  msg_info("indicateur_b1_protection")
 
   units
 }
@@ -270,7 +270,7 @@ indicator_biodiversity_protection <- function(units,
 #'   replace = TRUE
 #' )
 #'
-#' result <- indicator_biodiversity_structure(
+#' result <- indicateur_b2_structure(
 #'   units,
 #'   strata_field = "strata",
 #'   age_class_field = "age_class",
@@ -279,7 +279,7 @@ indicator_biodiversity_protection <- function(units,
 #'
 #' hist(result$B2, main = "Structural Diversity Distribution")
 #' }
-indicator_biodiversity_structure <- function(units,
+indicateur_b2_structure <- function(units,
                                              layers = NULL,
                                              strata_field = "strata",
                                              age_class_field = "age_class",
@@ -410,7 +410,7 @@ indicator_biodiversity_structure <- function(units,
     units$B2[i] <- pmin(base_score + variation, 100)
   }
 
-  msg_info("indicator_biodiversity_structure")
+  msg_info("indicateur_b2_structure")
 
   units
 }
@@ -455,7 +455,7 @@ indicator_biodiversity_structure <- function(units,
 #'
 #' @family biodiversity-indicators
 #' @export
-indicator_biodiversity_connectivity <- function(units,
+indicateur_b3_connectivite <- function(units,
                                                 bdforet = NULL,
                                                 dem = NULL,
                                                 max_distance = 5000) {
@@ -553,7 +553,7 @@ indicator_biodiversity_connectivity <- function(units,
   # B3 per parcel = 70% global + 30% local (like tutorial)
   units$B3 <- pmin(100, pmax(0, 0.7 * B3_global + 0.3 * local_connectivity))
 
-  msg_info("indicator_biodiversity_connectivity")
+  msg_info("indicateur_b3_connectivite")
   msg_info("biodiversity_b3_components",
            round(mean(structural_score)), round(mean(cost_score)),
            round(mean(graph_score)), round(mean(kernel_score)))

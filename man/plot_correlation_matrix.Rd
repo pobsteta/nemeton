@@ -49,9 +49,9 @@ This function supports bilingual labels via `nemeton_set_language()`.
 # Compute correlations
 data(massif_demo_units)
 units <- massif_demo_units
-units$family_B <- runif(nrow(units), 30, 90)
-units$family_T <- runif(nrow(units), 40, 85)
-units$family_C <- runif(nrow(units), 45, 80)
+units$famille_biodiversite <- runif(nrow(units), 30, 90)
+units$famille_temporel <- runif(nrow(units), 40, 85)
+units$famille_carbone <- runif(nrow(units), 45, 80)
 
 corr_matrix <- compute_family_correlations(units)
 

@@ -7,10 +7,10 @@ library(sf)
 library(terra)
 
 # ==============================================================================
-# T048: Unit Tests for indicator_air_coverage() (A1)
+# T048: Unit Tests for indicateur_a1_couverture() (A1)
 # ==============================================================================
 
-test_that("indicator_air_coverage calculates buffer coverage correctly", {
+test_that("indicateur_a1_couverture calculates buffer coverage correctly", {
   skip_if_not_installed("nemeton")
 
   # Load demo data
@@ -20,7 +20,7 @@ test_that("indicator_air_coverage calculates buffer coverage correctly", {
   # Load test fixture
   land_cover <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
 
-  result <- indicator_air_coverage(
+  result <- indicateur_a1_couverture(
     units,
     land_cover = land_cover,
     forest_classes = c(311, 312, 313),
@@ -37,14 +37,14 @@ test_that("indicator_air_coverage calculates buffer coverage correctly", {
   expect_true(any(result$A1 > 50, na.rm = TRUE))
 })
 
-test_that("indicator_air_coverage handles different buffer radii", {
+test_that("indicateur_a1_couverture handles different buffer radii", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   land_cover <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
 
-  result_1km <- indicator_air_coverage(units, land_cover, buffer_radius = 1000)
-  result_500m <- indicator_air_coverage(units, land_cover, buffer_radius = 500)
+  result_1km <- indicateur_a1_couverture(units, land_cover, buffer_radius = 1000)
+  result_500m <- indicateur_a1_couverture(units, land_cover, buffer_radius = 500)
 
   # Both should produce valid results
   expect_true(all(result_1km$A1 >= 0 & result_1km$A1 <= 100, na.rm = TRUE))
@@ -56,27 +56,27 @@ test_that("indicator_air_coverage handles different buffer radii", {
   expect_type(result_500m$A1, "double")
 })
 
-test_that("indicator_air_coverage filters forest classes correctly", {
+test_that("indicateur_a1_couverture filters forest classes correctly", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
   land_cover <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
 
   # Only broadleaf forests
-  result_broadleaf <- indicator_air_coverage(units, land_cover, forest_classes = c(311))
+  result_broadleaf <- indicateur_a1_couverture(units, land_cover, forest_classes = c(311))
 
   # All forest types
-  result_all <- indicator_air_coverage(units, land_cover, forest_classes = c(311, 312, 313))
+  result_all <- indicateur_a1_couverture(units, land_cover, forest_classes = c(311, 312, 313))
 
   # All-forest coverage should be >= broadleaf-only coverage
   expect_true(all(result_all$A1 >= result_broadleaf$A1, na.rm = TRUE))
 })
 
 # ==============================================================================
-# T049: Unit Tests for indicator_air_quality() (A2)
+# T049: Unit Tests for indicateur_a2_qualite_air() (A2)
 # ==============================================================================
 
-test_that("indicator_air_quality uses direct method when ATMO data available", {
+test_that("indicateur_a2_qualite_air uses direct method when ATMO data available", {
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -99,7 +99,7 @@ test_that("indicator_air_quality uses direct method when ATMO data available", {
     crs = st_crs(units)
   )
 
-  result <- indicator_air_quality(units, atmo_data = atmo_data, method = "direct")
+  result <- indicateur_a2_qualite_air(units, atmo_data = atmo_data, method = "direct")
 
   # Tests
   expect_s3_class(result, "sf")
@@ -109,7 +109,7 @@ test_that("indicator_air_quality uses direct method when ATMO data available", {
   expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_air_quality uses proxy method when ATMO data unavailable", {
+test_that("indicateur_a2_qualite_air uses proxy method when ATMO data unavailable", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -125,7 +125,7 @@ test_that("indicator_air_quality uses proxy method when ATMO data unavailable", 
     )
   )
 
-  result <- indicator_air_quality(
+  result <- indicateur_a2_qualite_air(
     units,
     atmo_data = NULL,
     roads = roads,
@@ -140,7 +140,7 @@ test_that("indicator_air_quality uses proxy method when ATMO data unavailable", 
   expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_air_quality auto-detects method", {
+test_that("indicateur_a2_qualite_air auto-detects method", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -161,18 +161,18 @@ test_that("indicator_air_quality auto-detects method", {
     crs = st_crs(units)
   )
 
-  result_auto <- indicator_air_quality(units, atmo_data = atmo_data, method = "auto")
+  result_auto <- indicateur_a2_qualite_air(units, atmo_data = atmo_data, method = "auto")
 
   expect_equal(unique(result_auto$A2_method), "direct")
 })
 
-test_that("indicator_air_quality handles missing data gracefully", {
+test_that("indicateur_a2_qualite_air handles missing data gracefully", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
   # No roads → should fail for proxy method
   expect_error(
-    indicator_air_quality(units, atmo_data = NULL, roads = NULL, method = "proxy"),
+    indicateur_a2_qualite_air(units, atmo_data = NULL, roads = NULL, method = "proxy"),
     "roads"
   )
 })
@@ -181,7 +181,7 @@ test_that("indicator_air_quality handles missing data gracefully", {
 # T050: Integration Test for A Family Workflow
 # ==============================================================================
 
-test_that("A family workflow: A1-A2 → normalize → family_A composite", {
+test_that("A family workflow: A1-A2 → normalize → famille_air composite", {
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -204,8 +204,8 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
   # Full workflow (normalize_indicators warns when all values are identical)
   expect_warning(
     result <- units %>%
-      indicator_air_coverage(land_cover = land_cover, buffer_radius = 1000) %>%
-      indicator_air_quality(atmo_data = NULL, roads = roads, method = "proxy") %>%
+      indicateur_a1_couverture(land_cover = land_cover, buffer_radius = 1000) %>%
+      indicateur_a2_qualite_air(atmo_data = NULL, roads = roads, method = "proxy") %>%
       normalize_indicators(indicators = c("A1", "A2")) %>%
       create_family_index(family_codes = "A"),
     "All values are identical"
@@ -214,8 +214,8 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
   # Verify complete workflow
   expect_true(all(c("A1", "A2") %in% names(result)))
   expect_true(all(c("A1_norm", "A2_norm") %in% names(result)))
-  expect_true("family_A" %in% names(result))
-  expect_true(all(result$family_A >= 0 & result$family_A <= 100, na.rm = TRUE))
+  expect_true("famille_air" %in% names(result))
+  expect_true(all(result$famille_air >= 0 & result$famille_air <= 100, na.rm = TRUE))
 })
 
 # Note: Regression fixture test removed - will be added when fixtures are created
@@ -224,31 +224,31 @@ test_that("A family workflow: A1-A2 → normalize → family_A composite", {
 # Additional tests for better coverage
 # ==============================================================================
 
-test_that("indicator_air_coverage validates input", {
+test_that("indicateur_a1_couverture validates input", {
   expect_error(
-    indicator_air_coverage(data.frame(x = 1:3)),
+    indicateur_a1_couverture(data.frame(x = 1:3)),
     "must be an.*sf.*object"
   )
 })
 
-test_that("indicator_air_coverage handles missing land_cover", {
+test_that("indicateur_a1_couverture handles missing land_cover", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   expect_error(
-    indicator_air_coverage(units, land_cover = NULL),
+    indicateur_a1_couverture(units, land_cover = NULL),
     "land_cover"
   )
 })
 
-test_that("indicator_air_coverage works with custom forest classes", {
+test_that("indicateur_a1_couverture works with custom forest classes", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
   land_cover <- terra::rast(test_path("fixtures/land_cover/land_cover_2020.tif"))
 
   # Custom classes
-  result <- indicator_air_coverage(
+  result <- indicateur_a1_couverture(
     units,
     land_cover = land_cover,
     forest_classes = c(311)  # Only broadleaf
@@ -258,14 +258,14 @@ test_that("indicator_air_coverage works with custom forest classes", {
   expect_true("A1" %in% names(result))
 })
 
-test_that("indicator_air_quality validates input", {
+test_that("indicateur_a2_qualite_air validates input", {
   expect_error(
-    indicator_air_quality(data.frame(x = 1:3)),
+    indicateur_a2_qualite_air(data.frame(x = 1:3)),
     "must be an.*sf.*object"
   )
 })
 
-test_that("indicator_air_quality handles empty ATMO data", {
+test_that("indicateur_a2_qualite_air handles empty ATMO data", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -279,7 +279,7 @@ test_that("indicator_air_quality handles empty ATMO data", {
 
   # Should either error or produce NA/0 values
   result <- tryCatch(
-    indicator_air_quality(units, atmo_data = atmo_empty, method = "direct"),
+    indicateur_a2_qualite_air(units, atmo_data = atmo_empty, method = "direct"),
     error = function(e) NULL
   )
 
@@ -291,7 +291,7 @@ test_that("indicator_air_quality handles empty ATMO data", {
 # A2: Road field name fallback
 # ==============================================================================
 
-test_that("indicator_air_quality handles road_type field name fallback", {
+test_that("indicateur_a2_qualite_air handles road_type field name fallback", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -307,7 +307,7 @@ test_that("indicator_air_quality handles road_type field name fallback", {
     )
   )
 
-  result <- indicator_air_quality(
+  result <- indicateur_a2_qualite_air(
     units,
     atmo_data = NULL,
     roads = roads,
@@ -320,7 +320,7 @@ test_that("indicator_air_quality handles road_type field name fallback", {
   expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_air_quality handles unknown road field name gracefully", {
+test_that("indicateur_a2_qualite_air handles unknown road field name gracefully", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -335,7 +335,7 @@ test_that("indicator_air_quality handles unknown road field name gracefully", {
     )
   )
 
-  result <- indicator_air_quality(
+  result <- indicateur_a2_qualite_air(
     units,
     atmo_data = NULL,
     roads = roads,

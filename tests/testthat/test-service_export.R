@@ -124,18 +124,18 @@ test_that("prepare_report_data creates valid structure", {
   # Create mock family scores
   family_scores <- sf::st_sf(
     id = 1:3,
-    family_C = c(60, 70, 65),
-    family_B = c(55, 60, 58),
-    family_W = c(40, 45, 42),
-    family_A = c(50, 55, 52),
-    family_F = c(45, 50, 48),
-    family_L = c(35, 40, 38),
-    family_T = c(70, 75, 72),
-    family_R = c(30, 35, 32),
-    family_S = c(25, 30, 28),
-    family_P = c(65, 70, 68),
-    family_E = c(55, 60, 58),
-    family_N = c(80, 85, 82),
+    famille_carbone = c(60, 70, 65),
+    famille_biodiversite = c(55, 60, 58),
+    famille_eau = c(40, 45, 42),
+    famille_air = c(50, 55, 52),
+    famille_sol = c(45, 50, 48),
+    famille_paysage = c(35, 40, 38),
+    famille_temporel = c(70, 75, 72),
+    famille_risque = c(30, 35, 32),
+    famille_social = c(25, 30, 28),
+    famille_production = c(65, 70, 68),
+    famille_energie = c(55, 60, 58),
+    famille_naturalite = c(80, 85, 82),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 0)),
@@ -169,18 +169,18 @@ test_that("prepare_report_data works with en language", {
 
   family_scores <- sf::st_sf(
     id = 1,
-    family_C = 50,
-    family_B = 50,
-    family_W = 50,
-    family_A = 50,
-    family_F = 50,
-    family_L = 50,
-    family_T = 50,
-    family_R = 50,
-    family_S = 50,
-    family_P = 50,
-    family_E = 50,
-    family_N = 50,
+    famille_carbone = 50,
+    famille_biodiversite = 50,
+    famille_eau = 50,
+    famille_air = 50,
+    famille_sol = 50,
+    famille_paysage = 50,
+    famille_temporel = 50,
+    famille_risque = 50,
+    famille_social = 50,
+    famille_production = 50,
+    famille_energie = 50,
+    famille_naturalite = 50,
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)
   )
 
@@ -205,18 +205,18 @@ test_that("prepare_report_data handles family_comments parameter", {
 
   family_scores <- sf::st_sf(
     id = 1,
-    family_C = 50,
-    family_B = 50,
-    family_W = 50,
-    family_A = 50,
-    family_F = 50,
-    family_L = 50,
-    family_T = 50,
-    family_R = 50,
-    family_S = 50,
-    family_P = 50,
-    family_E = 50,
-    family_N = 50,
+    famille_carbone = 50,
+    famille_biodiversite = 50,
+    famille_eau = 50,
+    famille_air = 50,
+    famille_sol = 50,
+    famille_paysage = 50,
+    famille_temporel = 50,
+    famille_risque = 50,
+    famille_social = 50,
+    famille_production = 50,
+    famille_energie = 50,
+    famille_naturalite = 50,
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)
   )
 
@@ -242,18 +242,18 @@ test_that("prepare_report_data works with non-sf data (drops geometry)", {
   # Create as data.frame (not sf)
   family_scores <- data.frame(
     id = 1,
-    family_C = 50,
-    family_B = 50,
-    family_W = 50,
-    family_A = 50,
-    family_F = 50,
-    family_L = 50,
-    family_T = 50,
-    family_R = 50,
-    family_S = 50,
-    family_P = 50,
-    family_E = 50,
-    family_N = 50
+    famille_carbone = 50,
+    famille_biodiversite = 50,
+    famille_eau = 50,
+    famille_air = 50,
+    famille_sol = 50,
+    famille_paysage = 50,
+    famille_temporel = 50,
+    famille_risque = 50,
+    famille_social = 50,
+    famille_production = 50,
+    famille_energie = 50,
+    famille_naturalite = 50
   )
 
   result <- nemeton:::prepare_report_data(project, family_scores, "fr", NULL)
@@ -272,7 +272,7 @@ test_that("export_geopackage creates valid file", {
   # Create test data
   test_sf <- sf::st_sf(
     id = 1:2,
-    family_C = c(60, 70),
+    famille_carbone = c(60, 70),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 1)),
@@ -291,7 +291,7 @@ test_that("export_geopackage creates valid file", {
   # Verify content
   read_back <- sf::st_read(temp_file, quiet = TRUE)
   expect_equal(nrow(read_back), 2)
-  expect_true("family_C" %in% names(read_back))
+  expect_true("famille_carbone" %in% names(read_back))
 })
 
 test_that("export_geopackage fails for non-sf input", {
@@ -762,8 +762,8 @@ test_that("generate_family_maps creates map files for family columns", {
 
   family_scores <- sf::st_sf(
     id = 1:2,
-    family_C = c(60, 70),
-    family_B = c(50, 55),
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(50, 55),
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
       sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
@@ -780,8 +780,8 @@ test_that("generate_family_maps creates map files for family columns", {
   )
 
   # Check that map files were created
-  expect_true(file.exists(file.path(temp_dir, "family_C_map.png")))
-  expect_true(file.exists(file.path(temp_dir, "family_B_map.png")))
+  expect_true(file.exists(file.path(temp_dir, "famille_carbone_map.png")))
+  expect_true(file.exists(file.path(temp_dir, "famille_biodiversite_map.png")))
 })
 
 test_that("generate_family_maps handles all NA values", {
@@ -789,7 +789,7 @@ test_that("generate_family_maps handles all NA values", {
 
   family_scores <- sf::st_sf(
     id = 1:2,
-    family_C = c(NA_real_, NA_real_),
+    famille_carbone = c(NA_real_, NA_real_),
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
       sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
@@ -820,18 +820,18 @@ test_that("generate_radar_image creates PNG file", {
 
   family_scores <- sf::st_sf(
     id = 1:2,
-    family_C = c(60, 70),
-    family_B = c(55, 60),
-    family_W = c(40, 45),
-    family_A = c(50, 55),
-    family_F = c(45, 50),
-    family_L = c(35, 40),
-    family_T = c(70, 75),
-    family_R = c(30, 35),
-    family_S = c(25, 30),
-    family_P = c(65, 70),
-    family_E = c(55, 60),
-    family_N = c(80, 85),
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(55, 60),
+    famille_eau = c(40, 45),
+    famille_air = c(50, 55),
+    famille_sol = c(45, 50),
+    famille_paysage = c(35, 40),
+    famille_temporel = c(70, 75),
+    famille_risque = c(30, 35),
+    famille_social = c(25, 30),
+    famille_production = c(65, 70),
+    famille_energie = c(55, 60),
+    famille_naturalite = c(80, 85),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 1)),
@@ -1039,18 +1039,18 @@ test_that("generate_simple_pdf_report creates file", {
 
   family_scores <- sf::st_sf(
     id = 1:2,
-    family_C = c(60, 70),
-    family_B = c(55, 60),
-    family_W = c(40, 45),
-    family_A = c(50, 55),
-    family_F = c(45, 50),
-    family_L = c(35, 40),
-    family_T = c(70, 75),
-    family_R = c(30, 35),
-    family_S = c(25, 30),
-    family_P = c(65, 70),
-    family_E = c(55, 60),
-    family_N = c(80, 85),
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(55, 60),
+    famille_eau = c(40, 45),
+    famille_air = c(50, 55),
+    famille_sol = c(45, 50),
+    famille_paysage = c(35, 40),
+    famille_temporel = c(70, 75),
+    famille_risque = c(30, 35),
+    famille_social = c(25, 30),
+    famille_production = c(65, 70),
+    famille_energie = c(55, 60),
+    famille_naturalite = c(80, 85),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 1)),
@@ -1086,9 +1086,9 @@ test_that("generate_simple_pdf_report works with English language", {
 
   family_scores <- sf::st_sf(
     id = 1,
-    family_C = 50, family_B = 50, family_W = 50, family_A = 50,
-    family_F = 50, family_L = 50, family_T = 50, family_R = 50,
-    family_S = 50, family_P = 50, family_E = 50, family_N = 50,
+    famille_carbone = 50, famille_biodiversite = 50, famille_eau = 50, famille_air = 50,
+    famille_sol = 50, famille_paysage = 50, famille_temporel = 50, famille_risque = 50,
+    famille_social = 50, famille_production = 50, famille_energie = 50, famille_naturalite = 50,
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)
   )
 
@@ -1117,9 +1117,9 @@ test_that("generate_simple_pdf_report includes family_comments", {
 
   family_scores <- sf::st_sf(
     id = 1,
-    family_C = 50, family_B = 50, family_W = 50, family_A = 50,
-    family_F = 50, family_L = 50, family_T = 50, family_R = 50,
-    family_S = 50, family_P = 50, family_E = 50, family_N = 50,
+    famille_carbone = 50, famille_biodiversite = 50, famille_eau = 50, famille_air = 50,
+    famille_sol = 50, famille_paysage = 50, famille_temporel = 50, famille_risque = 50,
+    famille_social = 50, famille_production = 50, famille_energie = 50, famille_naturalite = 50,
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)
   )
 
@@ -1155,20 +1155,20 @@ test_that("generate_simple_pdf_report handles polygon geometry", {
   # Create polygon geometries instead of points
   family_scores <- sf::st_sf(
     id = c("PARCEL001", "PARCEL002"),
-    family_C = c(60, 70),
-    family_B = c(55, 60),
-    family_W = c(40, 45),
-    family_A = c(50, 55),
-    family_F = c(45, 50),
-    family_L = c(35, 40),
-    family_T = c(70, 75),
-    family_R = c(30, 35),
-    family_S = c(25, 30),
-    family_P = c(65, 70),
-    family_E = c(55, 60),
-    family_N = c(80, 85),
-    carbon_biomass = c(100, 120),
-    carbon_ndvi = c(0.7, 0.8),
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(55, 60),
+    famille_eau = c(40, 45),
+    famille_air = c(50, 55),
+    famille_sol = c(45, 50),
+    famille_paysage = c(35, 40),
+    famille_temporel = c(70, 75),
+    famille_risque = c(30, 35),
+    famille_social = c(25, 30),
+    famille_production = c(65, 70),
+    famille_energie = c(55, 60),
+    famille_naturalite = c(80, 85),
+    indicateur_c1_biomasse = c(100, 120),
+    indicateur_c2_ndvi = c(0.7, 0.8),
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
       sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
@@ -1206,9 +1206,9 @@ test_that("generate_report_pdf works without Quarto", {
 
   family_scores <- sf::st_sf(
     id = 1,
-    family_C = 50, family_B = 50, family_W = 50, family_A = 50,
-    family_F = 50, family_L = 50, family_T = 50, family_R = 50,
-    family_S = 50, family_P = 50, family_E = 50, family_N = 50,
+    famille_carbone = 50, famille_biodiversite = 50, famille_eau = 50, famille_air = 50,
+    famille_sol = 50, famille_paysage = 50, famille_temporel = 50, famille_risque = 50,
+    famille_social = 50, famille_production = 50, famille_energie = 50, famille_naturalite = 50,
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)
   )
 
@@ -1239,18 +1239,18 @@ test_that("generate_report_pdf handles synthesis_comments and family_comments", 
 
   family_scores <- sf::st_sf(
     id = 1:2,
-    family_C = c(60, 70),
-    family_B = c(55, 60),
-    family_W = c(40, 45),
-    family_A = c(50, 55),
-    family_F = c(45, 50),
-    family_L = c(35, 40),
-    family_T = c(70, 75),
-    family_R = c(30, 35),
-    family_S = c(25, 30),
-    family_P = c(65, 70),
-    family_E = c(55, 60),
-    family_N = c(80, 85),
+    famille_carbone = c(60, 70),
+    famille_biodiversite = c(55, 60),
+    famille_eau = c(40, 45),
+    famille_air = c(50, 55),
+    famille_sol = c(45, 50),
+    famille_paysage = c(35, 40),
+    famille_temporel = c(70, 75),
+    famille_risque = c(30, 35),
+    famille_social = c(25, 30),
+    famille_production = c(65, 70),
+    famille_energie = c(55, 60),
+    famille_naturalite = c(80, 85),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 1)),
@@ -1315,9 +1315,9 @@ test_that("prepare_report_data calculates correct global score", {
   # All families with same value = 75
   family_scores <- sf::st_sf(
     id = 1,
-    family_C = 75, family_B = 75, family_W = 75, family_A = 75,
-    family_F = 75, family_L = 75, family_T = 75, family_R = 75,
-    family_S = 75, family_P = 75, family_E = 75, family_N = 75,
+    famille_carbone = 75, famille_biodiversite = 75, famille_eau = 75, famille_air = 75,
+    famille_sol = 75, famille_paysage = 75, famille_temporel = 75, famille_risque = 75,
+    famille_social = 75, famille_production = 75, famille_energie = 75, famille_naturalite = 75,
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)
   )
 
@@ -1341,18 +1341,18 @@ test_that("prepare_report_data handles multiple parcels for statistics", {
   # Family C with values 20, 50, 80 -> mean = 50, min = 20, max = 80
   family_scores <- sf::st_sf(
     id = 1:3,
-    family_C = c(20, 50, 80),
-    family_B = c(30, 30, 30),
-    family_W = c(40, 40, 40),
-    family_A = c(50, 50, 50),
-    family_F = c(60, 60, 60),
-    family_L = c(70, 70, 70),
-    family_T = c(80, 80, 80),
-    family_R = c(90, 90, 90),
-    family_S = c(100, 100, 100),
-    family_P = c(10, 10, 10),
-    family_E = c(25, 25, 25),
-    family_N = c(35, 35, 35),
+    famille_carbone = c(20, 50, 80),
+    famille_biodiversite = c(30, 30, 30),
+    famille_eau = c(40, 40, 40),
+    famille_air = c(50, 50, 50),
+    famille_sol = c(60, 60, 60),
+    famille_paysage = c(70, 70, 70),
+    famille_temporel = c(80, 80, 80),
+    famille_risque = c(90, 90, 90),
+    famille_social = c(100, 100, 100),
+    famille_production = c(10, 10, 10),
+    famille_energie = c(25, 25, 25),
+    famille_naturalite = c(35, 35, 35),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
       sf::st_point(c(1, 0)),
@@ -1379,7 +1379,7 @@ create_test_family_scores <- function(n = 3) {
   units <- create_test_units(n_features = n)
   # Add family score columns
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    units[[paste0("family_", code)]] <- runif(n, 20, 80)
+    units[[nemeton:::get_famille_col(code)]] <- runif(n, 20, 80)
   }
   units$id <- paste0("PARCEL_", seq_len(n))
   units
@@ -2029,7 +2029,7 @@ test_that("generate_family_maps creates maps for all 12 family columns", {
 
   # Verify maps for all families are created
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    map_file <- file.path(temp_dir, paste0("family_", code, "_map.png"))
+    map_file <- file.path(temp_dir, paste0(nemeton:::get_famille_col(code), "_map.png"))
     expect_true(file.exists(map_file), info = paste("Missing map for family", code))
     expect_true(file.size(map_file) > 0, info = paste("Empty map for family", code))
   }
@@ -2048,7 +2048,7 @@ test_that("generate_family_maps works with English language", {
     expect_no_error(nemeton:::generate_family_maps(family_scores, temp_dir, "en"))
   )
 
-  expect_true(file.exists(file.path(temp_dir, "family_C_map.png")))
+  expect_true(file.exists(file.path(temp_dir, "famille_carbone_map.png")))
 })
 
 # ==============================================================================
@@ -2128,8 +2128,8 @@ test_that("prepare_report_data builds indicator_stats correctly", {
   project <- create_test_project()
   family_scores <- create_test_family_scores(n = 3)
   # Add a known indicator column
-  family_scores$carbon_biomass <- c(100, 120, 80)
-  family_scores$carbon_ndvi <- c(0.7, 0.8, 0.6)
+  family_scores$indicateur_c1_biomasse <- c(100, 120, 80)
+  family_scores$indicateur_c2_ndvi <- c(0.7, 0.8, 0.6)
 
   result <- nemeton:::prepare_report_data(project, family_scores, "fr", NULL)
 
@@ -2146,7 +2146,7 @@ test_that("prepare_report_data indicator_stats uses English column names", {
 
   project <- create_test_project()
   family_scores <- create_test_family_scores(n = 2)
-  family_scores$carbon_biomass <- c(100, 120)
+  family_scores$indicateur_c1_biomasse <- c(100, 120)
 
   result <- nemeton:::prepare_report_data(project, family_scores, "en", NULL)
 
@@ -2244,8 +2244,8 @@ test_that("generate_simple_pdf_report creates multi-page PDF with all families",
   family_scores <- create_test_family_scores(n = 3)
 
   # Add some indicator columns to exercise individual indicator pages
-  family_scores$carbon_biomass <- c(100, 120, 80)
-  family_scores$carbon_ndvi <- c(0.7, 0.8, 0.6)
+  family_scores$indicateur_c1_biomasse <- c(100, 120, 80)
+  family_scores$indicateur_c2_ndvi <- c(0.7, 0.8, 0.6)
 
   temp_file <- tempfile(fileext = ".pdf")
   on.exit(unlink(temp_file), add = TRUE)
@@ -2360,7 +2360,7 @@ test_that("generate_simple_pdf_report handles low global score coloring", {
   # Create data with all low scores
   units <- create_test_units(n_features = 2)
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    units[[paste0("family_", code)]] <- c(15, 20)
+    units[[nemeton:::get_famille_col(code)]] <- c(15, 20)
   }
   units$id <- c("P1", "P2")
 
@@ -2381,7 +2381,7 @@ test_that("generate_simple_pdf_report handles medium global score coloring", {
   project <- create_test_project()
   units <- create_test_units(n_features = 2)
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    units[[paste0("family_", code)]] <- c(45, 50)
+    units[[nemeton:::get_famille_col(code)]] <- c(45, 50)
   }
   units$id <- c("P1", "P2")
 
@@ -2410,11 +2410,11 @@ test_that("generate_simple_pdf_report renders complete report with all comments"
 
   family_scores <- create_test_family_scores(n = 4)
   # Add multiple indicator columns
-  family_scores$carbon_biomass <- runif(4, 50, 150)
-  family_scores$carbon_ndvi <- runif(4, 0.3, 0.9)
-  family_scores$biodiversity_protection <- runif(4, 20, 80)
-  family_scores$biodiversity_structure <- runif(4, 30, 70)
-  family_scores$biodiversity_connectivity <- runif(4, 10, 90)
+  family_scores$indicateur_c1_biomasse <- runif(4, 50, 150)
+  family_scores$indicateur_c2_ndvi <- runif(4, 0.3, 0.9)
+  family_scores$indicateur_b1_protection <- runif(4, 20, 80)
+  family_scores$indicateur_b2_structure <- runif(4, 30, 70)
+  family_scores$indicateur_b3_connectivite <- runif(4, 10, 90)
 
   temp_file <- tempfile(fileext = ".pdf")
   on.exit(unlink(temp_file), add = TRUE)

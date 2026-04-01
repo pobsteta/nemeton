@@ -49,10 +49,10 @@ This function supports bilingual messages via `nemeton_set_language()`.
 # Load demo data with family indices
 data(massif_demo_units)
 units <- massif_demo_units
-units$family_B <- runif(nrow(units), 30, 90)
-units$family_T <- runif(nrow(units), 40, 85)
-units$family_C <- runif(nrow(units), 45, 80)
-units$family_W <- runif(nrow(units), 35, 75)
+units$famille_biodiversite <- runif(nrow(units), 30, 90)
+units$famille_temporel <- runif(nrow(units), 40, 85)
+units$famille_carbone <- runif(nrow(units), 45, 80)
+units$famille_eau <- runif(nrow(units), 35, 75)
 
 # Identify hotspots: top 20\\% in at least 3 families
 hotspots <- identify_hotspots(
@@ -75,7 +75,7 @@ elite_hotspots <- identify_hotspots(
 # Analyze specific families only
 biodiversity_hotspots <- identify_hotspots(
   units,
-  families = c("family_B", "family_T"),
+  families = c("famille_biodiversite", "famille_temporel"),
   threshold = 75,
   min_families = 2
 )

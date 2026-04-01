@@ -206,19 +206,19 @@ test_that("All message values are non-empty strings", {
 
 test_that("All indicator family messages exist in both languages", {
   indicator_keys <- c(
-    "indicator_carbon_biomass",
-    "indicator_carbon_ndvi",
-    "indicator_biodiversity_protection",
-    "indicator_biodiversity_structure",
-    "indicator_water_network",
-    "indicator_water_wetlands",
-    "indicator_risk_fire",
-    "indicator_risk_storm",
-    "indicator_risk_drought",
-    "indicator_social_trails",
-    "indicator_productive_volume",
-    "indicator_energy_fuelwood",
-    "indicator_naturalness_distance"
+    "indicateur_c1_biomasse",
+    "indicateur_c2_ndvi",
+    "indicateur_b1_protection",
+    "indicateur_b2_structure",
+    "indicateur_w1_reseau",
+    "indicateur_w2_zones_humides",
+    "indicateur_r1_feu",
+    "indicateur_r2_tempete",
+    "indicateur_r3_secheresse",
+    "indicateur_s1_routes",
+    "indicateur_p1_volume",
+    "indicateur_e1_bois_energie",
+    "indicateur_n1_distance"
   )
 
   for (key in indicator_keys) {

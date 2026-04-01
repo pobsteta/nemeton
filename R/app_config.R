@@ -85,7 +85,7 @@ INDICATOR_FAMILIES <- list(
     icon = "tree-fill",
     color = "#228B22",
     indicators = c("C1", "C2"),
-    column_names = c("carbon_biomass", "carbon_ndvi"),
+    column_names = c("indicateur_c1_biomasse", "indicateur_c2_ndvi"),
     indicator_labels = list(
       C1 = list(fr = "Biomasse carbone (tC/ha)", en = "Carbon Biomass (tC/ha)"),
       C2 = list(fr = "NDVI - Vitalit\u00e9", en = "NDVI - Vitality")
@@ -108,7 +108,7 @@ INDICATOR_FAMILIES <- list(
     icon = "bug-fill",
     color = "#9932CC",
     indicators = c("B1", "B2", "B3"),
-    column_names = c("biodiversity_protection", "biodiversity_structure", "biodiversity_connectivity"),
+    column_names = c("indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite"),
     indicator_labels = list(
       B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
       B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
@@ -136,7 +136,7 @@ INDICATOR_FAMILIES <- list(
     icon = "droplet-fill",
     color = "#1E90FF",
     indicators = c("W1", "W2", "W3"),
-    column_names = c("water_network", "water_wetlands", "water_twi"),
+    column_names = c("indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite"),
     indicator_labels = list(
       W1 = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
       W2 = list(fr = "Zones humides", en = "Wetlands"),
@@ -164,7 +164,7 @@ INDICATOR_FAMILIES <- list(
     icon = "wind",
     color = "#87CEEB",
     indicators = c("A1", "A2"),
-    column_names = c("air_forest_buffer", "air_quality"),
+    column_names = c("indicateur_a1_couverture", "indicateur_a2_qualite_air"),
     indicator_labels = list(
       A1 = list(fr = "Tampon forestier", en = "Forest Buffer"),
       A2 = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality")
@@ -187,7 +187,7 @@ INDICATOR_FAMILIES <- list(
     icon = "globe-americas",
     color = "#8B4513",
     indicators = c("F1", "F2"),
-    column_names = c("fertility_erosion", "fertility_soil"),
+    column_names = c("indicateur_f2_erosion", "indicateur_f1_fertilite"),
     indicator_labels = list(
       F1 = list(fr = "Risque d'\u00e9rosion", en = "Erosion Risk"),
       F2 = list(fr = "Fertilit\u00e9 des sols", en = "Soil Fertility")
@@ -210,7 +210,7 @@ INDICATOR_FAMILIES <- list(
     icon = "image-fill",
     color = "#32CD32",
     indicators = c("L1", "L2"),
-    column_names = c("landscape_fragmentation", "landscape_edge_ratio"),
+    column_names = c("indicateur_l2_fragmentation", "indicateur_l1_sylvosphere"),
     indicator_labels = list(
       L1 = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
       L2 = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation")
@@ -233,7 +233,7 @@ INDICATOR_FAMILIES <- list(
     icon = "clock-fill",
     color = "#FFD700",
     indicators = c("T1", "T2"),
-    column_names = c("temporal_age", "temporal_change"),
+    column_names = c("indicateur_t1_anciennete", "indicateur_t2_changement"),
     indicator_labels = list(
       T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
       T2 = list(fr = "Taux de changement", en = "Change Rate")
@@ -256,7 +256,7 @@ INDICATOR_FAMILIES <- list(
     icon = "exclamation-triangle-fill",
     color = "#DC143C",
     indicators = c("R1", "R2", "R3", "R4"),
-    column_names = c("risk_fire", "risk_storm", "risk_drought", "risk_browsing"),
+    column_names = c("indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse", "indicateur_r4_abroutissement"),
     indicator_labels = list(
       R1 = list(fr = "Risque incendie", en = "Fire Risk"),
       R2 = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
@@ -289,7 +289,7 @@ INDICATOR_FAMILIES <- list(
     icon = "people-fill",
     color = "#FF69B4",
     indicators = c("S1", "S2", "S3"),
-    column_names = c("social_trails", "social_accessibility", "social_population"),
+    column_names = c("indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population"),
     indicator_labels = list(
       S1 = list(fr = "Distance aux routes", en = "Road Distance"),
       S2 = list(fr = "Distance aux b\u00e2timents", en = "Building Distance"),
@@ -317,7 +317,7 @@ INDICATOR_FAMILIES <- list(
     icon = "box-seam-fill",
     color = "#006400",
     indicators = c("P1", "P2", "P3"),
-    column_names = c("production_volume", "production_productivity", "production_quality"),
+    column_names = c("indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois"),
     indicator_labels = list(
       P1 = list(fr = "Volume de bois (m\u00b3/ha)", en = "Timber Volume (m\u00b3/ha)"),
       P2 = list(fr = "Productivit\u00e9", en = "Productivity"),
@@ -345,7 +345,7 @@ INDICATOR_FAMILIES <- list(
     icon = "lightning-fill",
     color = "#FF8C00",
     indicators = c("E1", "E2"),
-    column_names = c("energy_wood", "energy_co2"),
+    column_names = c("indicateur_e1_bois_energie", "indicateur_e2_evitement"),
     indicator_labels = list(
       E1 = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
       E2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance")
@@ -368,7 +368,7 @@ INDICATOR_FAMILIES <- list(
     icon = "flower1",
     color = "#2E8B57",
     indicators = c("N1", "N2", "N3"),
-    column_names = c("naturalness_distance", "naturalness_continuity", "naturalness_score"),
+    column_names = c("indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"),
     indicator_labels = list(
       N1 = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
       N2 = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
@@ -433,7 +433,7 @@ get_all_column_names <- function() {
 #'
 #' @description
 #' Returns a named character vector mapping column names to family codes.
-#' Supports both short codes (C1, B2) and long-form names (carbon_biomass).
+#' Supports both short codes (C1, B2) and long-form names (indicateur_c1_biomasse).
 #'
 #' @return Named character vector (names = column names, values = family codes)
 #' @noRd

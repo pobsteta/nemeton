@@ -12,7 +12,7 @@ NULL
 #'
 #' @param units sf object with computed family indices (family_*)
 #' @param families Character vector of family column names to analyze.
-#'   If NULL (default), auto-detects all columns starting with "family_"
+#'   If NULL (default), auto-detects all columns starting with "famille_"
 #' @param method Correlation method: "pearson" (default), "spearman", or "kendall"
 #'
 #' @return Correlation matrix (class "matrix") with family names as row/column names
@@ -34,9 +34,9 @@ NULL
 #' # Load demo data with family indices
 #' data(massif_demo_units)
 #' units <- massif_demo_units
-#' units$family_B <- runif(nrow(units), 30, 90)
-#' units$family_T <- runif(nrow(units), 40, 85)
-#' units$family_C <- runif(nrow(units), 45, 80)
+#' units$famille_biodiversite <- runif(nrow(units), 30, 90)
+#' units$famille_temporel <- runif(nrow(units), 40, 85)
+#' units$famille_carbone <- runif(nrow(units), 45, 80)
 #'
 #' # Compute correlation matrix
 #' corr_matrix <- compute_family_correlations(units)
@@ -48,7 +48,7 @@ NULL
 #' # Analyze specific families only
 #' corr_subset <- compute_family_correlations(
 #'   units,
-#'   families = c("family_B", "family_T")
+#'   families = c("famille_biodiversite", "famille_temporel")
 #' )
 #' }
 #'
@@ -70,10 +70,10 @@ compute_family_correlations <- function(units,
   # Auto-detect family columns if not specified
   if (is.null(families)) {
     all_names <- names(units)
-    families <- all_names[grepl("^family_", all_names)]
+    families <- all_names[grepl("^famille_", all_names)]
 
     if (length(families) == 0) {
-      stop("No family indices found. Columns must start with 'family_'")
+      stop("No family indices found. Columns must start with 'famille_'")
     }
   }
 
@@ -114,7 +114,7 @@ compute_family_correlations <- function(units,
 #'
 #' @param units sf object with computed family indices (family_*)
 #' @param families Character vector of family column names to analyze.
-#'   If NULL (default), uses all columns starting with "family_"
+#'   If NULL (default), uses all columns starting with "famille_"
 #' @param threshold Numeric percentile threshold (0-100) for defining "high" values.
 #'   Default: 80 (top 20 percent)
 #' @param min_families Minimum number of families in which a parcel must rank
@@ -144,10 +144,10 @@ compute_family_correlations <- function(units,
 #' # Load demo data with family indices
 #' data(massif_demo_units)
 #' units <- massif_demo_units
-#' units$family_B <- runif(nrow(units), 30, 90)
-#' units$family_T <- runif(nrow(units), 40, 85)
-#' units$family_C <- runif(nrow(units), 45, 80)
-#' units$family_W <- runif(nrow(units), 35, 75)
+#' units$famille_biodiversite <- runif(nrow(units), 30, 90)
+#' units$famille_temporel <- runif(nrow(units), 40, 85)
+#' units$famille_carbone <- runif(nrow(units), 45, 80)
+#' units$famille_eau <- runif(nrow(units), 35, 75)
 #'
 #' # Identify hotspots: top 20\% in at least 3 families
 #' hotspots <- identify_hotspots(
@@ -170,7 +170,7 @@ compute_family_correlations <- function(units,
 #' # Analyze specific families only
 #' biodiversity_hotspots <- identify_hotspots(
 #'   units,
-#'   families = c("family_B", "family_T"),
+#'   families = c("famille_biodiversite", "famille_temporel"),
 #'   threshold = 75,
 #'   min_families = 2
 #' )
@@ -199,10 +199,10 @@ identify_hotspots <- function(units,
   # Auto-detect family columns if not specified
   if (is.null(families)) {
     all_names <- names(units)
-    families <- all_names[grepl("^family_", all_names)]
+    families <- all_names[grepl("^famille_", all_names)]
 
     if (length(families) == 0) {
-      stop("No family indices found. Columns must start with 'family_'")
+      stop("No family indices found. Columns must start with 'famille_'")
     }
   }
 
@@ -295,9 +295,9 @@ identify_hotspots <- function(units,
 #' # Compute correlations
 #' data(massif_demo_units)
 #' units <- massif_demo_units
-#' units$family_B <- runif(nrow(units), 30, 90)
-#' units$family_T <- runif(nrow(units), 40, 85)
-#' units$family_C <- runif(nrow(units), 45, 80)
+#' units$famille_biodiversite <- runif(nrow(units), 30, 90)
+#' units$famille_temporel <- runif(nrow(units), 40, 85)
+#' units$famille_carbone <- runif(nrow(units), 45, 80)
 #'
 #' corr_matrix <- compute_family_correlations(units)
 #'
@@ -332,9 +332,9 @@ plot_correlation_matrix <- function(corr_matrix,
   corr_df <- as.data.frame(as.table(corr_matrix))
   names(corr_df) <- c("Family1", "Family2", "Correlation")
 
-  # Clean family names for display (remove "family_" prefix)
-  corr_df$Family1 <- gsub("^family_", "", corr_df$Family1)
-  corr_df$Family2 <- gsub("^family_", "", corr_df$Family2)
+  # Clean family names for display (remove "famille_" prefix)
+  corr_df$Family1 <- gsub("^famille_", "", corr_df$Family1)
+  corr_df$Family2 <- gsub("^famille_", "", corr_df$Family2)
 
   # Generate title if not provided
   if (is.null(title)) {

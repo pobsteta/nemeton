@@ -142,7 +142,7 @@ test_that("compute_general_index computes correct score", {
 })
 
 test_that("compute_general_index handles family_ prefix", {
-  scores <- c(family_C = 40, family_B = 60)
+  scores <- c(famille_carbone = 40, famille_biodiversite = 60)
   result <- compute_general_index(scores, ndp = 0)
   expect_equal(result$score, 50.0)
 })
@@ -193,8 +193,8 @@ test_that("compute_general_index_mixed handles no common families", {
 })
 
 test_that("compute_general_index_mixed handles family_ prefix", {
-  scores <- c(family_C = 80, family_B = 40)
-  ndps <- c(family_C = 1L, family_B = 1L)
+  scores <- c(famille_carbone = 80, famille_biodiversite = 40)
+  ndps <- c(famille_carbone = 1L, famille_biodiversite = 1L)
   result <- compute_general_index_mixed(scores, ndps)
   expect_equal(result$score, 60.0)
 })

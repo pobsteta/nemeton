@@ -88,7 +88,7 @@ test_that("mod_progress_server translate_task handles compute tasks", {
             indicators_completed = 5,
             indicators_failed = 0,
             indicators_total = 10,
-            current_task = "compute:indicator_carbon_biomass",
+            current_task = "compute:indicateur_c1_biomasse",
             errors = list()
           )
           result$send_running_update(state)
@@ -285,7 +285,7 @@ test_that("mod_progress_server send_running_update tracks errors", {
             indicators_completed = 2,
             indicators_failed = 0,
             indicators_total = 10,
-            current_task = "compute:indicator_carbon_biomass",
+            current_task = "compute:indicateur_c1_biomasse",
             errors = list()
           )
           result$send_running_update(state1)
@@ -293,9 +293,9 @@ test_that("mod_progress_server send_running_update tracks errors", {
           # Second update with an error
           state2 <- state1
           state2$indicators_failed <- 1
-          state2$current_task <- "compute:indicator_carbon_ndvi"
+          state2$current_task <- "compute:indicateur_c2_ndvi"
           state2$errors <- list(
-            list(indicator = "carbon_biomass", message = "Raster not found")
+            list(indicator = "indicateur_c1_biomasse", message = "Raster not found")
           )
           result$send_running_update(state2)
 
@@ -304,7 +304,7 @@ test_that("mod_progress_server send_running_update tracks errors", {
           state3$errors <- c(state2$errors, list(
             list(source = "IGN WFS", message = "Connection timeout")
           ))
-          state3$current_task <- "compute:indicator_water_network"
+          state3$current_task <- "compute:indicateur_w1_reseau"
           result$send_running_update(state3)
 
           expect_true(TRUE)
@@ -435,7 +435,7 @@ test_that("mod_progress_server reset_tracking resets state", {
             indicators_completed = 5,
             indicators_failed = 0,
             indicators_total = 10,
-            current_task = "compute:indicator_risk_fire",
+            current_task = "compute:indicateur_r1_feu",
             errors = list()
           )
           result$send_running_update(state)
@@ -471,9 +471,9 @@ test_that("mod_progress_server handles completed state", {
         current_task = NULL,
         errors = list(),
         indicators_status = list(
-          carbon_biomass = "completed",
-          carbon_ndvi = "completed",
-          water_network = "completed"
+          indicateur_c1_biomasse = "completed",
+          indicateur_c2_ndvi = "completed",
+          indicateur_w1_reseau = "completed"
         )
       ))
 
@@ -516,13 +516,13 @@ test_that("mod_progress_server handles completed with failures", {
         indicators_total = 10,
         current_task = NULL,
         errors = list(
-          list(indicator = "water_twi", message = "Error computing TWI"),
-          list(indicator = "risk_fire", message = "Raster not available")
+          list(indicator = "indicateur_w3_humidite", message = "Error computing TWI"),
+          list(indicator = "indicateur_r1_feu", message = "Raster not available")
         ),
         indicators_status = list(
-          carbon_biomass = "completed",
-          water_twi = "failed",
-          risk_fire = "failed"
+          indicateur_c1_biomasse = "completed",
+          indicateur_w3_humidite = "failed",
+          indicateur_r1_feu = "failed"
         )
       ))
 
@@ -728,7 +728,7 @@ test_that("mod_progress_server translate_phase all branches", {
 
           # Test computing phase
           base_state$phase <- "computing"
-          base_state$current_task <- "compute:indicator_temporal_age"
+          base_state$current_task <- "compute:indicateur_t1_anciennete"
           result$send_running_update(base_state)
 
           # Test complete phase
@@ -770,11 +770,11 @@ test_that("mod_progress_server translate_indicator_name known indicators", {
         current_task = NULL,
         errors = list(),
         indicators_status = list(
-          carbon_biomass = "completed",
-          biodiversity_protection = "completed",
-          water_network = "completed",
-          risk_fire = "completed",
-          naturalness_score = "completed"
+          indicateur_c1_biomasse = "completed",
+          indicateur_b1_protection = "completed",
+          indicateur_w1_reseau = "completed",
+          indicateur_r1_feu = "completed",
+          indicateur_n3_naturalite = "completed"
         )
       ))
 

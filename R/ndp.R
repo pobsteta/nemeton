@@ -370,7 +370,7 @@ detect_ndp_from_cache <- function(project_path) {
 #'
 #' @param family_scores Named numeric vector of family scores (0-100).
 #'   Names should be family codes (e.g., "C", "B", "W") or
-#'   "family_C", "family_B" format.
+#'   "famille_carbone", "famille_biodiversite" format.
 #' @param ndp Integer. NDP level (0-4). Default 0.
 #'
 #' @return A list with:
@@ -395,10 +395,10 @@ compute_general_index <- function(family_scores, ndp = 0L) {
   ndp <- as.integer(ndp)
   level <- get_ndp_level(ndp)
 
-  # Nettoyer les noms (supporter family_C ou C)
+  # Nettoyer les noms (supporter famille_carbone ou C)
   nms <- names(family_scores)
   if (!is.null(nms)) {
-    nms <- sub("^family_", "", nms)
+    nms <- sub("^famille_", "", nms)
     names(family_scores) <- nms
   }
 
@@ -460,13 +460,13 @@ compute_general_index_mixed <- function(family_scores, ndp_per_indicator) {
   # Nettoyer les noms
   nms <- names(family_scores)
   if (!is.null(nms)) {
-    nms <- sub("^family_", "", nms)
+    nms <- sub("^famille_", "", nms)
     names(family_scores) <- nms
   }
 
   ndp_nms <- names(ndp_per_indicator)
   if (!is.null(ndp_nms)) {
-    ndp_nms <- sub("^family_", "", ndp_nms)
+    ndp_nms <- sub("^famille_", "", ndp_nms)
     names(ndp_per_indicator) <- ndp_nms
   }
 

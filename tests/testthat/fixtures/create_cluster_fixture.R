@@ -16,25 +16,25 @@ cluster_test_data <- data.frame(
   # Cluster 2: Medium values (40-60 range)
   # Cluster 3: Low values (10-30 range)
 
-  family_C = c(
+  famille_carbone = c(
     85, 80, 88, # Cluster 1
     50, 55, 52, # Cluster 2
     20, 15, 25
   ), # Cluster 3
 
-  family_B = c(
+  famille_biodiversite = c(
     82, 87, 85, # Cluster 1
     48, 52, 50, # Cluster 2
     18, 22, 20
   ), # Cluster 3
 
-  family_P = c(
+  famille_production = c(
     78, 83, 80, # Cluster 1
     45, 50, 48, # Cluster 2
     25, 20, 22
   ), # Cluster 3
 
-  family_S = c(
+  famille_social = c(
     88, 85, 82, # Cluster 1
     55, 52, 58, # Cluster 2
     15, 18, 20
@@ -66,7 +66,7 @@ expected_clusters_k2 <- c(
 # Save fixture
 reference_output <- list(
   input_data = cluster_test_data,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   expected_k_optimal = 3, # Optimal number of clusters
   expected_clusters_k3 = expected_clusters_k3,
   expected_clusters_k2 = expected_clusters_k2

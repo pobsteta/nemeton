@@ -307,9 +307,9 @@ test_that("invert_indicator errors on missing indicator", {
 test_that("compute_family_correlations works with auto-detection", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
-  units$family_W <- runif(10, 35, 75)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
   result <- compute_family_correlations(units)
   expect_true(inherits(result, "matrix"))
   expect_equal(nrow(result), 3)
@@ -323,8 +323,8 @@ test_that("compute_family_correlations works with auto-detection", {
 test_that("compute_family_correlations with spearman", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
   result <- compute_family_correlations(units, method = "spearman")
   expect_true(inherits(result, "matrix"))
   expect_equal(attr(result, "method"), "spearman")
@@ -333,8 +333,8 @@ test_that("compute_family_correlations with spearman", {
 test_that("compute_family_correlations with kendall", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
   result <- compute_family_correlations(units, method = "kendall")
   expect_true(inherits(result, "matrix"))
 })
@@ -342,22 +342,22 @@ test_that("compute_family_correlations with kendall", {
 test_that("compute_family_correlations with explicit families", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
-  units$family_W <- runif(10, 35, 75)
-  result <- compute_family_correlations(units, families = c("family_C", "family_B"))
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
+  result <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
   expect_equal(nrow(result), 2)
   expect_equal(ncol(result), 2)
 })
 
 test_that("compute_family_correlations errors on non-sf", {
-  df <- data.frame(family_C = 1:5, family_B = 5:1)
+  df <- data.frame(famille_carbone = 1:5, famille_biodiversite = 5:1)
   expect_error(compute_family_correlations(df), "sf")
 })
 
 test_that("compute_family_correlations errors on invalid method", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
+  units$famille_carbone <- 1:5
   expect_error(compute_family_correlations(units, method = "invalid"), "method")
 })
 
@@ -368,8 +368,8 @@ test_that("compute_family_correlations errors on no family columns", {
 
 test_that("compute_family_correlations errors on missing family", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
-  expect_error(compute_family_correlations(units, families = c("family_C", "family_NONE")),
+  units$famille_carbone <- 1:5
+  expect_error(compute_family_correlations(units, families = c("famille_carbone", "family_NONE")),
                "not found")
 })
 
@@ -381,9 +381,9 @@ test_that("compute_family_correlations errors on missing family", {
 test_that("identify_hotspots works with default threshold", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
-  units$family_W <- runif(10, 35, 75)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
   result <- identify_hotspots(units, threshold = 50, min_families = 2)
   expect_true("hotspot_count" %in% names(result))
   expect_true("hotspot_families" %in% names(result))
@@ -394,9 +394,9 @@ test_that("identify_hotspots works with default threshold", {
 test_that("identify_hotspots with strict threshold", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- c(rep(90, 3), rep(10, 7))
-  units$family_B <- c(rep(90, 3), rep(10, 7))
-  units$family_W <- c(rep(90, 3), rep(10, 7))
+  units$famille_carbone <- c(rep(90, 3), rep(10, 7))
+  units$famille_biodiversite <- c(rep(90, 3), rep(10, 7))
+  units$famille_eau <- c(rep(90, 3), rep(10, 7))
   result <- identify_hotspots(units, threshold = 80, min_families = 3)
   # Top 20% should be parcels 1-3 (value 90)
   expect_true(sum(result$is_hotspot) >= 1)
@@ -404,27 +404,27 @@ test_that("identify_hotspots with strict threshold", {
 
 test_that("identify_hotspots with threshold 100", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- c(100, 90, 80, 70, 60)
-  units$family_B <- c(100, 90, 80, 70, 60)
+  units$famille_carbone <- c(100, 90, 80, 70, 60)
+  units$famille_biodiversite <- c(100, 90, 80, 70, 60)
   result <- identify_hotspots(units, threshold = 100, min_families = 1)
   # Threshold=100 uses strict > (no values above max)
   expect_true(all(!result$is_hotspot))
 })
 
 test_that("identify_hotspots errors on non-sf", {
-  df <- data.frame(family_C = 1:5, family_B = 5:1)
+  df <- data.frame(famille_carbone = 1:5, famille_biodiversite = 5:1)
   expect_error(identify_hotspots(df), "sf")
 })
 
 test_that("identify_hotspots errors on invalid threshold", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
+  units$famille_carbone <- 1:5
   expect_error(identify_hotspots(units, threshold = 150), "threshold")
 })
 
 test_that("identify_hotspots errors on invalid min_families", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
+  units$famille_carbone <- 1:5
   expect_error(identify_hotspots(units, min_families = 0), "min_families")
 })
 
@@ -434,8 +434,8 @@ test_that("identify_hotspots errors on invalid min_families", {
 # ==============================================================================
 
 test_that("clean_indicator_name works for family indices", {
-  expect_equal(nemeton:::clean_indicator_name("family_C"), "C")
-  expect_equal(nemeton:::clean_indicator_name("family_B"), "B")
+  expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
+  expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
 })
 
 test_that("clean_indicator_name strips _norm suffix", {
@@ -451,7 +451,7 @@ test_that("clean_indicator_name capitalizes and replaces underscores", {
 })
 
 test_that("clean_indicator_name works as vector", {
-  result <- nemeton:::clean_indicator_name(c("family_C", "carbon_norm", "C1"))
+  result <- nemeton:::clean_indicator_name(c("famille_carbone", "carbon_norm", "C1"))
   expect_equal(length(result), 3)
   expect_equal(result[1], "C")
   expect_equal(result[2], "Carbon (Normalized)")
@@ -466,15 +466,15 @@ test_that("clean_indicator_name works as vector", {
 test_that("plot_tradeoff works with basic sf data", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
-  p <- plot_tradeoff(units, x = "family_C", y = "family_B")
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite")
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("plot_tradeoff works with data.frame", {
-  df <- data.frame(family_C = runif(10), family_B = runif(10))
-  p <- plot_tradeoff(df, x = "family_C", y = "family_B")
+  df <- data.frame(famille_carbone = runif(10), famille_biodiversite = runif(10))
+  p <- plot_tradeoff(df, x = "famille_carbone", y = "famille_biodiversite")
   expect_true(inherits(p, "ggplot"))
 })
 
@@ -487,18 +487,18 @@ test_that("plot_tradeoff errors on invalid data type", {
 
 test_that("plot_tradeoff errors on missing x variable", {
   units <- create_test_units(n_features = 5)
-  units$family_B <- 1:5
+  units$famille_biodiversite <- 1:5
   expect_error(
-    plot_tradeoff(units, x = "nonexistent", y = "family_B"),
+    plot_tradeoff(units, x = "nonexistent", y = "famille_biodiversite"),
     regexp = NULL
   )
 })
 
 test_that("plot_tradeoff errors on missing y variable", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
+  units$famille_carbone <- 1:5
   expect_error(
-    plot_tradeoff(units, x = "family_C", y = "nonexistent"),
+    plot_tradeoff(units, x = "famille_carbone", y = "nonexistent"),
     regexp = NULL
   )
 })
@@ -526,19 +526,19 @@ test_that("plot_tradeoff errors on non-numeric y", {
 test_that("plot_tradeoff with color parameter", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
-  units$family_W <- runif(10, 20, 70)
-  p <- plot_tradeoff(units, x = "family_C", y = "family_B", color = "family_W")
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 20, 70)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", color = "famille_eau")
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("plot_tradeoff errors on missing color variable", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
-  units$family_B <- 5:1
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
   expect_error(
-    plot_tradeoff(units, x = "family_C", y = "family_B", color = "nonexistent"),
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", color = "nonexistent"),
     regexp = NULL
   )
 })
@@ -546,19 +546,19 @@ test_that("plot_tradeoff errors on missing color variable", {
 test_that("plot_tradeoff with size parameter", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
   units$area_ha <- runif(10, 1, 50)
-  p <- plot_tradeoff(units, x = "family_C", y = "family_B", size = "area_ha")
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", size = "area_ha")
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("plot_tradeoff errors on missing size variable", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
-  units$family_B <- 5:1
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
   expect_error(
-    plot_tradeoff(units, x = "family_C", y = "family_B", size = "nonexistent"),
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", size = "nonexistent"),
     regexp = NULL
   )
 })
@@ -566,21 +566,21 @@ test_that("plot_tradeoff errors on missing size variable", {
 test_that("plot_tradeoff with pareto_frontier", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
   units$is_optimal <- c(TRUE, FALSE, TRUE, FALSE, FALSE,
                         FALSE, FALSE, TRUE, FALSE, FALSE)
-  p <- plot_tradeoff(units, x = "family_C", y = "family_B",
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
                      pareto_frontier = TRUE)
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("plot_tradeoff errors when pareto without is_optimal", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
-  units$family_B <- 5:1
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
   expect_error(
-    plot_tradeoff(units, x = "family_C", y = "family_B",
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
                   pareto_frontier = TRUE),
     regexp = NULL
   )
@@ -588,10 +588,10 @@ test_that("plot_tradeoff errors when pareto without is_optimal", {
 
 test_that("plot_tradeoff with custom labels", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- c(80, 60, 40, 20, 50)
-  units$family_B <- c(20, 40, 60, 80, 50)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(20, 40, 60, 80, 50)
   units$name <- paste0("Parcel_", 1:5)
-  p <- plot_tradeoff(units, x = "family_C", y = "family_B",
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
                      label = "name",
                      xlab = "Carbon", ylab = "Biodiversity",
                      title = "Test Trade-off")
@@ -600,10 +600,10 @@ test_that("plot_tradeoff with custom labels", {
 
 test_that("plot_tradeoff errors on missing label variable", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- 1:5
-  units$family_B <- 5:1
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
   expect_error(
-    plot_tradeoff(units, x = "family_C", y = "family_B",
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
                   label = "nonexistent"),
     regexp = NULL
   )
@@ -665,36 +665,36 @@ test_that("plot_indicators_map with custom breaks and labels", {
 
 test_that("nemeton_radar works in family mode", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- c(80, 60, 40, 20, 50)
-  units$family_B <- c(70, 50, 30, 10, 40)
-  units$family_W <- c(60, 80, 20, 40, 50)
-  units$family_A <- c(50, 70, 60, 30, 80)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(70, 50, 30, 10, 40)
+  units$famille_eau <- c(60, 80, 20, 40, 50)
+  units$famille_air <- c(50, 70, 60, 30, 80)
   p <- nemeton_radar(units, unit_id = 1, mode = "family")
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("nemeton_radar works in mean mode", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- c(80, 60, 40, 20, 50)
-  units$family_B <- c(70, 50, 30, 10, 40)
-  units$family_W <- c(60, 80, 20, 40, 50)
-  units$family_A <- c(50, 70, 60, 30, 80)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(70, 50, 30, 10, 40)
+  units$famille_eau <- c(60, 80, 20, 40, 50)
+  units$famille_air <- c(50, 70, 60, 30, 80)
   p <- nemeton_radar(units, mode = "family")
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("nemeton_radar comparison mode with multiple units", {
   units <- create_test_units(n_features = 5)
-  units$family_C <- c(80, 60, 40, 20, 50)
-  units$family_B <- c(70, 50, 30, 10, 40)
-  units$family_W <- c(60, 80, 20, 40, 50)
-  units$family_A <- c(50, 70, 60, 30, 80)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(70, 50, 30, 10, 40)
+  units$famille_eau <- c(60, 80, 20, 40, 50)
+  units$famille_air <- c(50, 70, 60, 30, 80)
   p <- nemeton_radar(units, unit_id = c(1, 2, 3), mode = "family")
   expect_true(inherits(p, "ggplot"))
 })
 
 test_that("nemeton_radar errors on non-sf", {
-  df <- data.frame(family_C = 1:5)
+  df <- data.frame(famille_carbone = 1:5)
   expect_error(nemeton_radar(df), "sf")
 })
 
@@ -780,7 +780,7 @@ test_that("msg returns key for unknown message key", {
 
 test_that("msg_info dispatches correctly", {
   # Should produce a message (cli_alert_info), not an error
-  expect_message(nemeton:::msg_info("indicator_carbon_biomass"))
+  expect_message(nemeton:::msg_info("indicateur_c1_biomasse"))
 })
 
 test_that("nemeton_set_language to fr works", {
@@ -912,7 +912,7 @@ test_that("detect_indicator_family extracts family code", {
 
 test_that("detect_indicator_family returns NA for non-indicator", {
   expect_true(is.na(nemeton:::detect_indicator_family("carbon")))
-  expect_true(is.na(nemeton:::detect_indicator_family("family_C")))
+  expect_true(is.na(nemeton:::detect_indicator_family("famille_carbone")))
 })
 
 
@@ -923,9 +923,9 @@ test_that("detect_indicator_family returns NA for non-indicator", {
 test_that("plot_correlation_matrix works", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
-  units$family_W <- runif(10, 35, 75)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
   corr <- compute_family_correlations(units)
   p <- plot_correlation_matrix(corr)
   expect_true(inherits(p, "ggplot"))
@@ -934,8 +934,8 @@ test_that("plot_correlation_matrix works", {
 test_that("plot_correlation_matrix with number method", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
   corr <- compute_family_correlations(units)
   p <- plot_correlation_matrix(corr, method = "number")
   expect_true(inherits(p, "ggplot"))
@@ -944,8 +944,8 @@ test_that("plot_correlation_matrix with number method", {
 test_that("plot_correlation_matrix with color method", {
   units <- create_test_units(n_features = 10)
   set.seed(42)
-  units$family_C <- runif(10, 30, 90)
-  units$family_B <- runif(10, 40, 85)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
   corr <- compute_family_correlations(units)
   p <- plot_correlation_matrix(corr, method = "color", title = "Test")
   expect_true(inherits(p, "ggplot"))

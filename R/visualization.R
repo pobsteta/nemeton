@@ -137,7 +137,7 @@ plot_indicators_map <- function(data,
   }
 
   # Auto-select YlOrRd palette for risk indicators
-  if (!user_palette && all(grepl("^R[1-4]|^family_R|^R[1-4]_norm|^risk_", indicators))) {
+  if (!user_palette && all(grepl("^R[1-4]|^famille_risque|^R[1-4]_norm|^risk_", indicators))) {
     palette <- "YlOrRd"
   }
 
@@ -303,8 +303,9 @@ add_color_scale <- function(p, palette, direction, breaks, labels, legend_title)
 #' @keywords internal
 #' @noRd
 clean_indicator_name <- function(names) {
-  # Family indices: family_C -> C, family_B -> B, etc.
-  cleaned <- gsub("^family_([A-Z])$", "\\1", names)
+
+  # Family indices: famille_carbone -> carbone, famille_biodiversite -> biodiversite, etc.
+  cleaned <- gsub("^famille_", "", names)
 
   # Remove common suffixes
   cleaned <- gsub("_norm$", " (Normalized)", cleaned)
@@ -558,7 +559,7 @@ plot_difference_map <- function(data1,
 #' @param indicators Character vector of indicator names to include in the radar.
 #'   If NULL, auto-detects based on mode.
 #' @param mode Character. Display mode: "indicator" for individual indicators (default)
-#'   or "family" for family indices (family_C, family_W, etc.). When mode = "family",
+#'   or "family" for family indices (famille_carbone, famille_eau, etc.). When mode = "family",
 #'   supports 4-12 family axes dynamically.
 #' @param normalize Logical. If TRUE (default), normalizes values to 0-100 scale.
 #' @param title Optional plot title. If NULL, auto-generated based on unit_id.
@@ -637,8 +638,8 @@ nemeton_radar <- function(data,
     all_cols <- names(data)
 
     if (mode == "family") {
-      # Look for family_* columns (family_C, family_W, etc.)
-      family_pattern <- "^family_[A-Z]$"
+      # Look for family_* columns (famille_carbone, famille_eau, etc.)
+      family_pattern <- "^famille_[a-z]"
       indicators <- grep(family_pattern, all_cols, value = TRUE)
 
       if (length(indicators) == 0) {
@@ -650,8 +651,8 @@ nemeton_radar <- function(data,
         "geometry", "nemeton_id", "id", "area", "surface_geo",
         "geo_parcelle", "nomcommune", "codecommune"
       )
-      # Also exclude family_* columns in indicator mode
-      exclude_patterns <- c(exclude_cols, grep("^family_", all_cols, value = TRUE))
+      # Also exclude famille_* columns in indicator mode
+      exclude_patterns <- c(exclude_cols, grep("^famille_", all_cols, value = TRUE))
       numeric_cols <- all_cols[sapply(data, is.numeric)]
       indicators <- setdiff(numeric_cols, exclude_patterns)
 

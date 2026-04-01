@@ -566,7 +566,7 @@ test_that("DATA_SOURCES has expected structure", {
 test_that("DATA_SOURCES vector sources are well-formed", {
   ds <- nemeton:::DATA_SOURCES
   expect_true("protected_areas" %in% names(ds$vectors))
-  expect_true("water_network" %in% names(ds$vectors))
+  expect_true("indicateur_w1_reseau" %in% names(ds$vectors))
   expect_true("roads" %in% names(ds$vectors))
   expect_true("buildings" %in% names(ds$vectors))
   expect_true("bdforet" %in% names(ds$vectors))
@@ -593,15 +593,15 @@ test_that("list_available_indicators returns expected indicator list", {
   expect_type(indicators, "character")
   expect_true(length(indicators) > 20)  # Should have 30+ indicators
   # Check some key indicators exist
-  expect_true("carbon_biomass" %in% indicators)
-  expect_true("carbon_ndvi" %in% indicators)
-  expect_true("biodiversity_protection" %in% indicators)
-  expect_true("water_twi" %in% indicators)
-  expect_true("risk_fire" %in% indicators)
-  expect_true("risk_storm" %in% indicators)
-  expect_true("production_volume" %in% indicators)
-  expect_true("energy_wood" %in% indicators)
-  expect_true("naturalness_score" %in% indicators)
+  expect_true("indicateur_c1_biomasse" %in% indicators)
+  expect_true("indicateur_c2_ndvi" %in% indicators)
+  expect_true("indicateur_b1_protection" %in% indicators)
+  expect_true("indicateur_w3_humidite" %in% indicators)
+  expect_true("indicateur_r1_feu" %in% indicators)
+  expect_true("indicateur_r2_tempete" %in% indicators)
+  expect_true("indicateur_p1_volume" %in% indicators)
+  expect_true("indicateur_e1_bois_energie" %in% indicators)
+  expect_true("indicateur_n3_naturalite" %in% indicators)
   # No duplicates
   expect_equal(length(indicators), length(unique(indicators)))
 })
@@ -744,7 +744,7 @@ test_that("build_synthesis_prompt produces valid prompt", {
   skip_if_not_installed("sf")
   scores_df <- create_test_units(n_features = 3)
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    scores_df[[paste0("family_", code)]] <- runif(3, 20, 80)
+    scores_df[[nemeton:::get_famille_col(code)]] <- runif(3, 20, 80)
   }
 
   prompt_fr <- nemeton:::build_synthesis_prompt(scores_df, "fran\u00e7ais")
@@ -762,7 +762,7 @@ test_that("build_synthesis_prompt handles sf input", {
   skip_if_not_installed("sf")
   scores_df <- create_test_units(n_features = 2)
   for (code in c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")) {
-    scores_df[[paste0("family_", code)]] <- runif(2, 30, 90)
+    scores_df[[nemeton:::get_famille_col(code)]] <- runif(2, 30, 90)
   }
   prompt <- nemeton:::build_synthesis_prompt(scores_df, "fran\u00e7ais")
   expect_type(prompt, "character")
@@ -934,8 +934,8 @@ test_that("plot_tradeoff rejects non-data.frame input", {
 
 test_that("plot_tradeoff rejects missing column x", {
   skip_if_not_installed("ggplot2")
-  df <- data.frame(family_B = c(50, 60), family_C = c(70, 80))
+  df <- data.frame(famille_biodiversite = c(50, 60), famille_carbone = c(70, 80))
   expect_error(
-    nemeton:::plot_tradeoff(df, x = "NONEXISTENT", y = "family_B")
+    nemeton:::plot_tradeoff(df, x = "NONEXISTENT", y = "famille_biodiversite")
   )
 })

@@ -2,13 +2,13 @@ test_that("normalize_indicators normalizes with min-max method", {
   # Create test data
   test_data <- data.frame(
     id = 1:5,
-    carbon_biomass = c(10, 20, 30, 40, 50),
-    water_twi = c(5, 10, 15, 20, 25)
+    indicateur_c1_biomasse = c(10, 20, 30, 40, 50),
+    indicateur_w3_humidite = c(5, 10, 15, 20, 25)
   )
 
   normalized <- normalize_indicators(
     test_data,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     method = "minmax"
   )
 
@@ -29,12 +29,12 @@ test_that("normalize_indicators normalizes with min-max method", {
 test_that("normalize_indicators normalizes with z-score method", {
   test_data <- data.frame(
     id = 1:10,
-    carbon_biomass = rnorm(10, mean = 50, sd = 10)
+    indicateur_c1_biomasse = rnorm(10, mean = 50, sd = 10)
   )
 
   normalized <- normalize_indicators(
     test_data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "zscore"
   )
 
@@ -46,12 +46,12 @@ test_that("normalize_indicators normalizes with z-score method", {
 test_that("normalize_indicators normalizes with quantile method", {
   test_data <- data.frame(
     id = 1:100,
-    carbon_biomass = 1:100
+    indicateur_c1_biomasse = 1:100
   )
 
   normalized <- normalize_indicators(
     test_data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "quantile"
   )
 
@@ -64,8 +64,8 @@ test_that("normalize_indicators normalizes with quantile method", {
 test_that("normalize_indicators auto-detects indicator columns", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass = c(10, 20, 30),
-    biodiversity_protection = c(5, 10, 15),
+    indicateur_c1_biomasse = c(10, 20, 30),
+    indicateur_b1_protection = c(5, 10, 15),
     other_col = c(1, 2, 3)
   )
 
@@ -80,28 +80,28 @@ test_that("normalize_indicators auto-detects indicator columns", {
 test_that("normalize_indicators can remove original columns", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass = c(10, 20, 30)
+    indicateur_c1_biomasse = c(10, 20, 30)
   )
 
   normalized <- normalize_indicators(
     test_data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     keep_original = FALSE
   )
 
-  expect_false("carbon_biomass" %in% names(normalized))
+  expect_false("indicateur_c1_biomasse" %in% names(normalized))
   expect_true("carbon_biomass_norm" %in% names(normalized))
 })
 
 test_that("normalize_indicators accepts custom suffix", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass = c(10, 20, 30)
+    indicateur_c1_biomasse = c(10, 20, 30)
   )
 
   normalized <- normalize_indicators(
     test_data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     suffix = "_scaled"
   )
 
@@ -111,12 +111,12 @@ test_that("normalize_indicators accepts custom suffix", {
 test_that("normalize_indicators handles NA values", {
   test_data <- data.frame(
     id = 1:5,
-    carbon_biomass = c(10, 20, NA, 40, 50)
+    indicateur_c1_biomasse = c(10, 20, NA, 40, 50)
   )
 
   normalized <- normalize_indicators(
     test_data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     method = "minmax",
     na.rm = TRUE
   )
@@ -132,18 +132,18 @@ test_that("normalize_indicators handles NA values", {
 test_that("normalize_indicators works with reference data", {
   # Reference data with range 0-100
   reference <- data.frame(
-    carbon_biomass = c(0, 25, 50, 75, 100)
+    indicateur_c1_biomasse = c(0, 25, 50, 75, 100)
   )
 
   # New data with values outside reference range
   new_data <- data.frame(
     id = 1:3,
-    carbon_biomass = c(10, 50, 120) # 120 is outside reference range
+    indicateur_c1_biomasse = c(10, 50, 120) # 120 is outside reference range
   )
 
   normalized <- normalize_indicators(
     new_data,
-    indicators = "carbon_biomass",
+    indicators = "indicateur_c1_biomasse",
     reference_data = reference,
     method = "minmax"
   )
@@ -160,16 +160,16 @@ test_that("normalize_indicators works with reference data", {
 
 test_that("normalize_indicators preserves sf class", {
   units <- nemeton_units(create_test_units())
-  units$carbon_biomass <- c(10, 20, 30)
+  units$indicateur_c1_biomasse <- c(10, 20, 30)
 
-  normalized <- normalize_indicators(units, indicators = "carbon_biomass")
+  normalized <- normalize_indicators(units, indicators = "indicateur_c1_biomasse")
 
   expect_s3_class(normalized, "sf")
   expect_s3_class(normalized, "nemeton_units")
 })
 
 test_that("normalize_indicators errors on missing indicators", {
-  test_data <- data.frame(id = 1:3, carbon_biomass = c(10, 20, 30))
+  test_data <- data.frame(id = 1:3, indicateur_c1_biomasse = c(10, 20, 30))
 
   expect_error(
     normalize_indicators(test_data, indicators = "missing_column"),
@@ -180,11 +180,11 @@ test_that("normalize_indicators errors on missing indicators", {
 test_that("normalize_indicators handles constant values", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass = c(50, 50, 50) # All same value
+    indicateur_c1_biomasse = c(50, 50, 50) # All same value
   )
 
   expect_warning(
-    normalized <- normalize_indicators(test_data, indicators = "carbon_biomass", method = "minmax"),
+    normalized <- normalize_indicators(test_data, indicators = "indicateur_c1_biomasse", method = "minmax"),
     "identical"
   )
 
@@ -448,15 +448,15 @@ test_that("invert_indicator accepts custom suffix", {
 test_that("full normalization workflow works end-to-end", {
   # Create test data with indicators
   units <- nemeton_units(create_test_units(n_features = 5))
-  units$carbon_biomass <- c(100, 200, 300, 400, 500)
-  units$biodiversity_protection <- c(10, 20, 30, 40, 50)
-  units$water_twi <- c(5, 15, 25, 35, 45)
-  units$social_accessibility <- c(20, 40, 60, 80, 100)
+  units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
+  units$indicateur_b1_protection <- c(10, 20, 30, 40, 50)
+  units$indicateur_w3_humidite <- c(5, 15, 25, 35, 45)
+  units$indicateur_s2_bati <- c(20, 40, 60, 80, 100)
 
   # Step 1: Normalize
   normalized <- normalize_indicators(
     units,
-    indicators = c("carbon_biomass", "biodiversity_protection", "water_twi", "social_accessibility"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_b1_protection", "indicateur_w3_humidite", "indicateur_s2_bati"),
     method = "minmax"
   )
 

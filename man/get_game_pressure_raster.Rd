@@ -21,14 +21,14 @@ A SpatRaster with game pressure index (0-100) per pixel,
 }
 \description{
 Creates a SpatRaster of game pressure index by department for use with
-the \code{\link{indicator_risk_browsing}} function.
+the \code{\link{indicateur_r4_abroutissement}} function.
 }
 \details{
 This function:
 1. Downloads/computes game pressure index by department
 2. Downloads department boundaries if not provided
 3. Rasterizes the pressure values
-4. Returns a raster for use with indicator_risk_browsing(game_density = ...)
+4. Returns a raster for use with indicateur_r4_abroutissement(game_density = ...)
 }
 \examples{
 \dontrun{
@@ -42,7 +42,7 @@ parcels <- st_read("parcels.gpkg")
 game_raster <- get_game_pressure_raster(parcels)
 
 # Use with R4 indicator
-result <- indicator_risk_browsing(
+result <- indicateur_r4_abroutissement(
   parcels,
   species_field = "essence",
   game_density = game_raster

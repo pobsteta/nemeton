@@ -29,7 +29,7 @@ test_that("mod_family_server missing_warning shows alert when indicators missing
 
   mock_parcels <- make_family_parcels(2)
 
-  # Only carbon_biomass_norm provided — carbon_ndvi is missing
+  # Only carbon_biomass_norm provided — indicateur_c2_ndvi is missing
   mock_indicators <- data.frame(
     nemeton_id = c("p1", "p2"),
     carbon_biomass_norm = c(0.5, 0.7)
@@ -48,7 +48,7 @@ test_that("mod_family_server missing_warning shows alert when indicators missing
     nemeton:::mod_family_server,
     args = list(family_code = "C", app_state = mock_app_state),
     {
-      # missing_warning should show warning about missing C2 (carbon_ndvi)
+      # missing_warning should show warning about missing C2 (indicateur_c2_ndvi)
       warning_html <- output$missing_warning
       expect_true(!is.null(warning_html))
     }
@@ -573,9 +573,9 @@ test_that("mod_family_server indicators_data prefers _norm columns", {
   # Both raw and normalized columns present — should prefer _norm
   mock_indicators <- data.frame(
     nemeton_id = c("p1", "p2"),
-    carbon_biomass = c(50, 60),
+    indicateur_c1_biomasse = c(50, 60),
     carbon_biomass_norm = c(0.5, 0.6),
-    carbon_ndvi = c(0.7, 0.8),
+    indicateur_c2_ndvi = c(0.7, 0.8),
     carbon_ndvi_norm = c(0.7, 0.8)
   )
 
@@ -758,13 +758,13 @@ test_that("make_indicator_leaflet uses viridis for non-risk indicators", {
   expect_s3_class(map, "leaflet")
 })
 
-test_that("make_indicator_leaflet handles family_R pattern", {
+test_that("make_indicator_leaflet handles famille_risque pattern", {
   skip_if_not_installed("sf")
   skip_if_not_installed("leaflet")
 
   sf_data <- sf::st_sf(
     nemeton_id = c("p1", "p2"),
-    family_R = c(30, 70),
+    famille_risque = c(30, 70),
     geometry = sf::st_sfc(
       sf::st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
       sf::st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
@@ -772,7 +772,7 @@ test_that("make_indicator_leaflet handles family_R pattern", {
     )
   )
 
-  map <- nemeton:::make_indicator_leaflet(sf_data, "family_R", "Risk Family")
+  map <- nemeton:::make_indicator_leaflet(sf_data, "famille_risque", "Risk Family")
   expect_s3_class(map, "leaflet")
 })
 

@@ -6,6 +6,37 @@
 #' @keywords internal
 NULL
 
+#' NMT family column name mapping
+#'
+#' Maps single-letter family codes to NMT-compliant column names.
+#' Used by create_family_index() and other functions that dynamically
+#' construct family column names.
+#'
+#' @noRd
+FAMILLE_NMT_MAP <- c(
+  B = "famille_biodiversite",
+  C = "famille_carbone",
+  W = "famille_eau",
+  A = "famille_air",
+  F = "famille_sol",
+  L = "famille_paysage",
+  T = "famille_temporel",
+  R = "famille_risque",
+  S = "famille_social",
+  P = "famille_production",
+  E = "famille_energie",
+  N = "famille_naturalite"
+)
+
+#' Get NMT family column name from code
+#'
+#' @param code Character. Single-letter family code (e.g., "C", "B").
+#' @return Character. NMT family column name (e.g., "famille_carbone").
+#' @noRd
+get_famille_col <- function(code) {
+  FAMILLE_NMT_MAP[[toupper(code)]]
+}
+
 #' Create Family Composite Indices
 #'
 #' Aggregates sub-indicators into family-level composite scores (e.g., score_carbon,
@@ -21,16 +52,16 @@ NULL
 #' @param na.rm Logical. If TRUE, NA values are removed before aggregation. Default TRUE.
 #' @param family_codes Character vector. Family codes to process. Default NULL (auto-detect).
 #'
-#' @return The input sf object with added family_* columns (e.g., family_C, family_W).
+#' @return The input sf object with added family_* columns (e.g., famille_carbone, famille_eau).
 #'
 #' @details
 #' **Family Detection**: Automatically identifies indicators by prefix:
 #' \itemize{
-#'   \item C1, C2 -> Carbon family (family_C)
-#'   \item W1, W2, W3 -> Water family (family_W)
-#'   \item F1, F2 -> Soil fertility family (family_F)
-#'   \item L1, L2 -> Landscape family (family_L)
-#'   \item B1, B2, B3 -> Biodiversity family (family_B)
+#'   \item C1, C2 -> Carbon family (famille_carbone)
+#'   \item W1, W2, W3 -> Water family (famille_eau)
+#'   \item F1, F2 -> Soil fertility family (famille_sol)
+#'   \item L1, L2 -> Landscape family (famille_paysage)
+#'   \item B1, B2, B3 -> Biodiversity family (famille_biodiversite)
 #'   \item And 7 other families (A, T, R, S, P, E, N)
 #' }
 #'
@@ -132,7 +163,7 @@ create_family_index <- function(data,
 
   # Check if any families were detected
   if (length(family_groups) == 0) {
-    stop("No family indicators found. Expected columns like C1, carbon_biomass, etc.",
+    stop("No family indicators found. Expected columns like C1, indicateur_c1_biomasse, etc.",
       call. = FALSE
     )
   }
@@ -142,7 +173,7 @@ create_family_index <- function(data,
 
   for (fam in names(family_groups)) {
     indicators <- family_groups[[fam]]
-    family_col <- paste0("family_", fam)
+    family_col <- get_famille_col(fam)
 
     # Get indicator values
     indicator_data <- as.matrix(sf::st_drop_geometry(data[, indicators, drop = FALSE]))

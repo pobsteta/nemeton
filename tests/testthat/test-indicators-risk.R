@@ -7,10 +7,10 @@ library(sf)
 library(terra)
 
 # ==============================================================================
-# T026: Unit Tests for indicator_risk_fire() (R1)
+# T026: Unit Tests for indicateur_r1_feu() (R1)
 # ==============================================================================
 
-test_that("indicator_risk_fire calculates fallback risk correctly", {
+test_that("indicateur_r1_feu calculates fallback risk correctly", {
   skip_if_not_installed("nemeton")
 
   # Load demo data
@@ -28,7 +28,7 @@ test_that("indicator_risk_fire calculates fallback risk correctly", {
   )
 
   # Calculate R1 (fallback: no bdforet, no fireexposuR)
-  result <- indicator_risk_fire(
+  result <- indicateur_r1_feu(
     units,
     dem = dem,
     species_field = "species",
@@ -42,7 +42,7 @@ test_that("indicator_risk_fire calculates fallback risk correctly", {
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_fire handles missing climate data gracefully", {
+test_that("indicateur_r1_feu handles missing climate data gracefully", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   units$species <- rep("Quercus", 3)
@@ -50,19 +50,19 @@ test_that("indicator_risk_fire handles missing climate data gracefully", {
   dem <- terra::rast(test_path("fixtures/climate/dem_demo.tif"))
 
   # Without climate data (should use slope + species only)
-  result <- indicator_risk_fire(units, dem = dem, species_field = "species", climate = NULL)
+  result <- indicateur_r1_feu(units, dem = dem, species_field = "species", climate = NULL)
 
   expect_true("R1" %in% names(result))
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_fire returns NA without DEM", {
+test_that("indicateur_r1_feu returns NA without DEM", {
   units <- create_test_units(n_features = 3)
-  result <- indicator_risk_fire(units)
+  result <- indicateur_r1_feu(units)
   expect_true(all(is.na(result$R1)))
 })
 
-test_that("indicator_risk_fire accepts bdforet parameter", {
+test_that("indicateur_r1_feu accepts bdforet parameter", {
   # Verify the function signature accepts bdforet (even if fireexposuR not installed)
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster()
@@ -71,21 +71,21 @@ test_that("indicator_risk_fire accepts bdforet parameter", {
   bdforet <- create_test_units(n_features = 2)
 
   # Should work without error (falls back if fireexposuR not installed)
-  result <- indicator_risk_fire(units, dem = dem, bdforet = bdforet)
+  result <- indicateur_r1_feu(units, dem = dem, bdforet = bdforet)
   expect_s3_class(result, "sf")
   expect_true("R1" %in% names(result))
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
 })
 
 # ==============================================================================
-# T027: Unit Tests for indicator_risk_storm() (R2)
+# T027: Unit Tests for indicateur_r2_tempete() (R2)
 # ==============================================================================
 
-test_that("indicator_risk_storm calculates vulnerability with DEM", {
+test_that("indicateur_r2_tempete calculates vulnerability with DEM", {
   units <- create_test_units(n_features = 5)
   dem <- create_test_raster()
 
-  result <- indicator_risk_storm(units, dem = dem)
+  result <- indicateur_r2_tempete(units, dem = dem)
 
   # Tests
   expect_s3_class(result, "sf")
@@ -94,23 +94,23 @@ test_that("indicator_risk_storm calculates vulnerability with DEM", {
   expect_true(all(result$R2 >= 0 & result$R2 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_storm returns NA without DEM", {
+test_that("indicateur_r2_tempete returns NA without DEM", {
   units <- create_test_units(n_features = 3)
 
-  result <- indicator_risk_storm(units)
+  result <- indicateur_r2_tempete(units)
   expect_true(all(is.na(result$R2)))
 })
 
-test_that("indicator_risk_storm simplified signature (no height/density)", {
+test_that("indicateur_r2_tempete simplified signature (no height/density)", {
   # Verify the new signature: only units, dem, layers
-  expect_true(all(c("units", "dem", "layers") %in% names(formals(indicator_risk_storm))))
+  expect_true(all(c("units", "dem", "layers") %in% names(formals(indicateur_r2_tempete))))
   # Old params should NOT be in the signature
-  expect_false("height_field" %in% names(formals(indicator_risk_storm)))
-  expect_false("density_field" %in% names(formals(indicator_risk_storm)))
-  expect_false("weights" %in% names(formals(indicator_risk_storm)))
+  expect_false("height_field" %in% names(formals(indicateur_r2_tempete)))
+  expect_false("density_field" %in% names(formals(indicateur_r2_tempete)))
+  expect_false("weights" %in% names(formals(indicateur_r2_tempete)))
 })
 
-test_that("indicator_risk_storm with demo data", {
+test_that("indicateur_r2_tempete with demo data", {
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -118,7 +118,7 @@ test_that("indicator_risk_storm with demo data", {
 
   dem <- terra::rast(test_path("fixtures/climate/dem_demo.tif"))
 
-  result <- indicator_risk_storm(units, dem = dem)
+  result <- indicateur_r2_tempete(units, dem = dem)
 
   expect_s3_class(result, "sf")
   expect_true("R2" %in% names(result))
@@ -126,14 +126,14 @@ test_that("indicator_risk_storm with demo data", {
 })
 
 # ==============================================================================
-# T028: Unit Tests for indicator_risk_drought() (R3)
+# T028: Unit Tests for indicateur_r3_secheresse() (R3)
 # ==============================================================================
 
-test_that("indicator_risk_drought calculates stress with DEM", {
+test_that("indicateur_r3_secheresse calculates stress with DEM", {
   units <- create_test_units(n_features = 5)
   dem <- create_test_raster()
 
-  result <- indicator_risk_drought(units, dem = dem)
+  result <- indicateur_r3_secheresse(units, dem = dem)
 
   # Tests
   expect_s3_class(result, "sf")
@@ -142,16 +142,16 @@ test_that("indicator_risk_drought calculates stress with DEM", {
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_drought returns NA without DEM", {
+test_that("indicateur_r3_secheresse returns NA without DEM", {
   units <- create_test_units(n_features = 3)
 
-  result <- indicator_risk_drought(units)
+  result <- indicateur_r3_secheresse(units)
   expect_true(all(is.na(result$R3)))
 })
 
-test_that("indicator_risk_drought simplified signature", {
+test_that("indicateur_r3_secheresse simplified signature", {
   # Verify the new signature: units, layers, dem, climate_data
-  params <- names(formals(indicator_risk_drought))
+  params <- names(formals(indicateur_r3_secheresse))
   expect_true(all(c("units", "layers", "dem", "climate_data") %in% params))
   # Old params should NOT be in the signature
   expect_false("twi_field" %in% params)
@@ -159,7 +159,7 @@ test_that("indicator_risk_drought simplified signature", {
   expect_false("weights" %in% params)
 })
 
-test_that("indicator_risk_drought accepts climate_data", {
+test_that("indicateur_r3_secheresse accepts climate_data", {
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster()
 
@@ -177,13 +177,13 @@ test_that("indicator_risk_drought accepts climate_data", {
   )
 
   # Should work with or without SPEI
-  result <- indicator_risk_drought(units, dem = dem, climate_data = climate_data)
+  result <- indicateur_r3_secheresse(units, dem = dem, climate_data = climate_data)
   expect_s3_class(result, "sf")
   expect_true("R3" %in% names(result))
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_drought with demo data", {
+test_that("indicateur_r3_secheresse with demo data", {
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -191,7 +191,7 @@ test_that("indicator_risk_drought with demo data", {
 
   dem <- terra::rast(test_path("fixtures/climate/dem_demo.tif"))
 
-  result <- indicator_risk_drought(units, dem = dem)
+  result <- indicateur_r3_secheresse(units, dem = dem)
 
   expect_s3_class(result, "sf")
   expect_true("R3" %in% names(result))
@@ -202,7 +202,7 @@ test_that("indicator_risk_drought with demo data", {
 # T029: Integration Test for R Family Workflow
 # ==============================================================================
 
-test_that("R family workflow: R1-R3 -> normalize -> family_R composite", {
+test_that("R family workflow: R1-R3 -> normalize -> famille_risque composite", {
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -220,29 +220,29 @@ test_that("R family workflow: R1-R3 -> normalize -> family_R composite", {
 
   # Full workflow (R1 fallback, R2 terrain fallback, R3 topo+default climate)
   result <- units %>%
-    indicator_risk_fire(dem = dem, species_field = "species", climate = climate) %>%
-    indicator_risk_storm(dem = dem) %>%
-    indicator_risk_drought(dem = dem) %>%
+    indicateur_r1_feu(dem = dem, species_field = "species", climate = climate) %>%
+    indicateur_r2_tempete(dem = dem) %>%
+    indicateur_r3_secheresse(dem = dem) %>%
     normalize_indicators(indicators = c("R1", "R2", "R3")) %>%
     create_family_index(family_codes = "R")
 
   # Verify complete workflow
   expect_true(all(c("R1", "R2", "R3") %in% names(result)))
   expect_true(all(c("R1_norm", "R2_norm", "R3_norm") %in% names(result)))
-  expect_true("family_R" %in% names(result))
-  expect_true(all(result$family_R >= 0 & result$family_R <= 100, na.rm = TRUE))
+  expect_true("famille_risque" %in% names(result))
+  expect_true(all(result$famille_risque >= 0 & result$famille_risque <= 100, na.rm = TRUE))
 })
 
 # ==============================================================================
-# T030: Unit Tests for indicator_risk_browsing() (R4)
+# T030: Unit Tests for indicateur_r4_abroutissement() (R4)
 # ==============================================================================
 
-test_that("indicator_risk_browsing calculates composite risk correctly", {
+test_that("indicateur_r4_abroutissement calculates composite risk correctly", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
   # Without layers: defaults for palatability and vulnerability
-  result <- indicator_risk_browsing(units)
+  result <- indicateur_r4_abroutissement(units)
 
   # Tests
   expect_s3_class(result, "sf")
@@ -253,9 +253,9 @@ test_that("indicator_risk_browsing calculates composite risk correctly", {
   expect_true(all(result$R4 >= 0 & result$R4 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_browsing simplified signature (tuto 03)", {
+test_that("indicateur_r4_abroutissement simplified signature (tuto 03)", {
   # Verify the new signature: units, layers, bdforet, game_density, edge_buffer
-  params <- names(formals(indicator_risk_browsing))
+  params <- names(formals(indicateur_r4_abroutissement))
   expect_true(all(c("units", "layers", "bdforet", "game_density", "edge_buffer") %in% params))
   # Old params should NOT be in the signature
   expect_false("species_field" %in% params)
@@ -264,7 +264,7 @@ test_that("indicator_risk_browsing simplified signature (tuto 03)", {
   expect_false("weights" %in% params)
 })
 
-test_that("indicator_risk_browsing uses BD Foret for palatability", {
+test_that("indicateur_r4_abroutissement uses BD Foret for palatability", {
   # Create test units and a mock BD Foret sf
   units <- create_test_units(n_features = 3)
 
@@ -272,7 +272,7 @@ test_that("indicator_risk_browsing uses BD Foret for palatability", {
   bdforet <- create_test_units(n_features = 3)
   bdforet$essence <- c("Chene sessile", "Pin maritime", "Epicea commun")
 
-  result <- indicator_risk_browsing(units, bdforet = bdforet)
+  result <- indicateur_r4_abroutissement(units, bdforet = bdforet)
 
   expect_s3_class(result, "sf")
   expect_true("R4_palatability" %in% names(result))
@@ -280,24 +280,24 @@ test_that("indicator_risk_browsing uses BD Foret for palatability", {
   expect_true(result$R4_palatability[1] > result$R4_palatability[3])
 })
 
-test_that("indicator_risk_browsing calculates edge exposure", {
+test_that("indicateur_r4_abroutissement calculates edge exposure", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
-  result <- indicator_risk_browsing(units, edge_buffer = 50)
+  result <- indicateur_r4_abroutissement(units, edge_buffer = 50)
 
   # Edge factor should be calculated (part of R4)
   expect_true(all(result$R4 >= 0 & result$R4 <= 100))
 })
 
-test_that("indicator_risk_browsing uses game density raster when provided", {
+test_that("indicateur_r4_abroutissement uses game density raster when provided", {
   # Use test units that match raster extent
   units <- create_test_units(n_features = 3)
 
   # Create mock game density raster matching the test units extent
   game_raster <- create_test_raster(values = "random")
 
-  result <- indicator_risk_browsing(
+  result <- indicateur_r4_abroutissement(
     units,
     game_density = game_raster
   )
@@ -306,23 +306,23 @@ test_that("indicator_risk_browsing uses game density raster when provided", {
   expect_true(all(result$R4 >= 0 & result$R4 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_browsing defaults to 50 without layers", {
+test_that("indicateur_r4_abroutissement defaults to 50 without layers", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
   # No layers, no bdforet → default palatability and vulnerability
-  result <- indicator_risk_browsing(units)
+  result <- indicateur_r4_abroutissement(units)
 
   # Should use defaults (50 for both)
   expect_true(all(result$R4_palatability == 50))
   expect_true(all(result$R4_vulnerability == 50))
 })
 
-test_that("indicator_risk_browsing uses fixed weights from tuto 03", {
+test_that("indicateur_r4_abroutissement uses fixed weights from tuto 03", {
   # With default data, R4 should be computed with fixed weights
   # palatability(50)*0.35 + vulnerability(50)*0.30 + edge*0.20 + density(50)*0.15
   units <- create_test_units(n_features = 2)
-  result <- indicator_risk_browsing(units)
+  result <- indicateur_r4_abroutissement(units)
 
   # Without any data sources, palatability=50, vulnerability=50, density=50
   # So R4 ≈ 0.35*50 + 0.30*50 + 0.20*edge + 0.15*50 = 40 + 0.20*edge
@@ -335,7 +335,7 @@ test_that("indicator_risk_browsing uses fixed weights from tuto 03", {
 # Additional edge case tests for R family
 # ==============================================================================
 
-test_that("indicator_risk_fire handles units outside raster extent gracefully", {
+test_that("indicateur_r1_feu handles units outside raster extent gracefully", {
   # Create units outside the standard test raster extent
   offset_units <- create_test_units(n_features = 2)
   sf::st_geometry(offset_units) <- sf::st_geometry(offset_units) + c(10000, 10000)
@@ -346,7 +346,7 @@ test_that("indicator_risk_fire handles units outside raster extent gracefully", 
   dem <- create_test_raster()
 
   # Should still work but may have NA values for slope
-  result <- indicator_risk_fire(
+  result <- indicateur_r1_feu(
     offset_units,
     dem = dem,
     species_field = "species"
@@ -358,22 +358,22 @@ test_that("indicator_risk_fire handles units outside raster extent gracefully", 
 
 test_that("R indicators validate sf input", {
   expect_error(
-    indicator_risk_fire(data.frame(x = 1:3), dem = create_test_raster()),
+    indicateur_r1_feu(data.frame(x = 1:3), dem = create_test_raster()),
     "must be an.*sf.*object"
   )
 
   expect_error(
-    indicator_risk_storm(data.frame(x = 1:3), dem = create_test_raster()),
+    indicateur_r2_tempete(data.frame(x = 1:3), dem = create_test_raster()),
     "must be an.*sf.*object"
   )
 
   expect_error(
-    indicator_risk_drought(data.frame(x = 1:3)),
+    indicateur_r3_secheresse(data.frame(x = 1:3)),
     "must be an.*sf.*object"
   )
 
   expect_error(
-    indicator_risk_browsing(data.frame(x = 1:3)),
+    indicateur_r4_abroutissement(data.frame(x = 1:3)),
     "must be an.*sf.*object"
   )
 })
@@ -382,27 +382,27 @@ test_that("R indicators validate sf input", {
 # Coverage-focused tests for uncovered code paths
 # ==============================================================================
 
-# --- R1: indicator_risk_fire additional coverage ---
+# --- R1: indicateur_r1_feu additional coverage ---
 
-test_that("indicator_risk_fire fallback path without species field", {
+test_that("indicateur_r1_feu fallback path without species field", {
   units <- create_test_units(n_features = 3)
   dem <- create_test_raster()
 
   # No species column present, should use species_factor=50 fallback
-  result <- indicator_risk_fire(units, dem = dem, species_field = "nonexistent_species")
+  result <- indicateur_r1_feu(units, dem = dem, species_field = "nonexistent_species")
 
   expect_s3_class(result, "sf")
   expect_true("R1" %in% names(result))
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_fire with DEM but no bdforet exercises fallback method", {
+test_that("indicateur_r1_feu with DEM but no bdforet exercises fallback method", {
   units <- create_test_units(n_features = 3)
   units$species <- c("Pinus", "Quercus", "Fagus")
   dem <- create_test_raster()
 
   # DEM provided, no bdforet -> should use fallback method (slope + species + climate)
-  result <- indicator_risk_fire(
+  result <- indicateur_r1_feu(
     units,
     dem = dem,
     bdforet = NULL,
@@ -415,13 +415,13 @@ test_that("indicator_risk_fire with DEM but no bdforet exercises fallback method
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_fire weight redistribution when no climate", {
+test_that("indicateur_r1_feu weight redistribution when no climate", {
   units <- create_test_units(n_features = 2)
   units$species <- c("Pinus", "Quercus")
   dem <- create_test_raster()
 
   # Explicit weights, no climate -> weights should be redistributed
-  result <- indicator_risk_fire(
+  result <- indicateur_r1_feu(
     units,
     dem = dem,
     species_field = "species",
@@ -434,9 +434,9 @@ test_that("indicator_risk_fire weight redistribution when no climate", {
   expect_true(all(result$R1 >= 0 & result$R1 <= 100, na.rm = TRUE))
 })
 
-# --- R2: indicator_risk_storm additional coverage ---
+# --- R2: indicateur_r2_tempete additional coverage ---
 
-test_that("indicator_risk_storm exercises terrain fallback (no microclima)", {
+test_that("indicateur_r2_tempete exercises terrain fallback (no microclima)", {
   # This test exercises the fallback branch with aspect, slope, TRI
   units <- create_test_units(n_features = 4)
 
@@ -450,7 +450,7 @@ test_that("indicator_risk_storm exercises terrain fallback (no microclima)", {
   vals <- rep(seq(100, 500, length.out = terra::ncol(dem)), terra::nrow(dem))
   terra::values(dem) <- vals
 
-  result <- indicator_risk_storm(units, dem = dem)
+  result <- indicateur_r2_tempete(units, dem = dem)
 
   expect_s3_class(result, "sf")
   expect_true("R2" %in% names(result))
@@ -458,22 +458,22 @@ test_that("indicator_risk_storm exercises terrain fallback (no microclima)", {
   expect_true(all(result$R2 >= 0 & result$R2 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_storm with constant DEM (TRI max = 0 edge case)", {
+test_that("indicateur_r2_tempete with constant DEM (TRI max = 0 edge case)", {
   units <- create_test_units(n_features = 2)
 
   # Flat DEM -> TRI max will be 0 or very small
   dem <- create_test_raster(values = "constant")
 
-  result <- indicator_risk_storm(units, dem = dem)
+  result <- indicateur_r2_tempete(units, dem = dem)
 
   expect_s3_class(result, "sf")
   expect_true("R2" %in% names(result))
   expect_true(all(result$R2 >= 0 & result$R2 <= 100, na.rm = TRUE))
 })
 
-# --- R3: indicator_risk_drought additional coverage ---
+# --- R3: indicateur_r3_secheresse additional coverage ---
 
-test_that("indicator_risk_drought with SPEI package exercises climate component", {
+test_that("indicateur_r3_secheresse with SPEI package exercises climate component", {
   skip_if_not_installed("SPEI")
 
   units <- create_test_units(n_features = 3)
@@ -481,14 +481,14 @@ test_that("indicator_risk_drought with SPEI package exercises climate component"
 
   # With SPEI installed and no climate_data, uses simulated data
 
-  result <- indicator_risk_drought(units, dem = dem, climate_data = NULL)
+  result <- indicateur_r3_secheresse(units, dem = dem, climate_data = NULL)
 
   expect_s3_class(result, "sf")
   expect_true("R3" %in% names(result))
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_drought with provided climate_data and SPEI", {
+test_that("indicateur_r3_secheresse with provided climate_data and SPEI", {
   skip_if_not_installed("SPEI")
 
   units <- create_test_units(n_features = 3)
@@ -507,7 +507,7 @@ test_that("indicator_risk_drought with provided climate_data and SPEI", {
     )
   )
 
-  result <- indicator_risk_drought(
+  result <- indicateur_r3_secheresse(
     units,
     dem = dem,
     climate_data = climate_data
@@ -518,7 +518,7 @@ test_that("indicator_risk_drought with provided climate_data and SPEI", {
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 })
 
-test_that("indicator_risk_drought topographic component with varied DEM", {
+test_that("indicateur_r3_secheresse topographic component with varied DEM", {
   units <- create_test_units(n_features = 3)
 
   # Create DEM with varying terrain for aspect/slope/TWI variation
@@ -538,20 +538,20 @@ test_that("indicator_risk_drought topographic component with varied DEM", {
   }
   terra::values(dem) <- as.vector(t(vals))
 
-  result <- indicator_risk_drought(units, dem = dem)
+  result <- indicateur_r3_secheresse(units, dem = dem)
 
   expect_s3_class(result, "sf")
   expect_true("R3" %in% names(result))
   expect_true(all(result$R3 >= 0 & result$R3 <= 100, na.rm = TRUE))
 })
 
-# --- R4: indicator_risk_browsing additional coverage ---
+# --- R4: indicateur_r4_abroutissement additional coverage ---
 
-test_that("indicator_risk_browsing exercises all default components", {
+test_that("indicateur_r4_abroutissement exercises all default components", {
   units <- create_test_units(n_features = 5)
 
   # No bdforet, no layers, no game_density -> all defaults
-  result <- indicator_risk_browsing(units)
+  result <- indicateur_r4_abroutissement(units)
 
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
@@ -563,7 +563,7 @@ test_that("indicator_risk_browsing exercises all default components", {
   expect_true(all(result$R4 >= 0 & result$R4 <= 100))
 })
 
-test_that("indicator_risk_browsing with bdforet lacking essence column", {
+test_that("indicateur_r4_abroutissement with bdforet lacking essence column", {
   units <- create_test_units(n_features = 3)
 
   # BD Foret without any recognized essence column
@@ -578,26 +578,26 @@ test_that("indicator_risk_browsing with bdforet lacking essence column", {
   )
 
   # Should use default palatability (50) since no recognized essence column
-  result <- indicator_risk_browsing(units, bdforet = bdforet)
+  result <- indicateur_r4_abroutissement(units, bdforet = bdforet)
 
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
   expect_true(all(result$R4_palatability == 50))
 })
 
-test_that("indicator_risk_browsing edge exposure with small polygons", {
+test_that("indicateur_r4_abroutissement edge exposure with small polygons", {
   # Very small polygons where buffer might collapse entirely
   units <- create_test_units(n_features = 2)
 
   # With edge_buffer larger than polygon -> inner should collapse, edge_proportion = 1
-  result <- indicator_risk_browsing(units, edge_buffer = 200)
+  result <- indicateur_r4_abroutissement(units, edge_buffer = 200)
 
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
   expect_true(all(result$R4 >= 0 & result$R4 <= 100))
 })
 
-test_that("indicator_risk_browsing with bdforet and valid essence column", {
+test_that("indicateur_r4_abroutissement with bdforet and valid essence column", {
   units <- create_test_units(n_features = 3)
 
   # BD Foret with recognized 'essence' column
@@ -611,7 +611,7 @@ test_that("indicator_risk_browsing with bdforet and valid essence column", {
     geometry = bdforet_geom
   )
 
-  result <- indicator_risk_browsing(units, bdforet = bdforet)
+  result <- indicateur_r4_abroutissement(units, bdforet = bdforet)
 
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))

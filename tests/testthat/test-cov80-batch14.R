@@ -94,8 +94,8 @@ test_that("get_computation_progress: reads progress JSON", {
     dir.create(file.path(proj_path, "data"), recursive = TRUE)
 
     progress <- list(
-      computed_indicators = list("carbon_biomass", "water_twi"),
-      last_indicator = "water_twi",
+      computed_indicators = list("indicateur_c1_biomasse", "indicateur_w3_humidite"),
+      last_indicator = "indicateur_w3_humidite",
       last_saved_at = "2025-01-01 12:00:00"
     )
     jsonlite::write_json(progress, file.path(proj_path, "data", "compute_progress.json"),
@@ -108,7 +108,7 @@ test_that("get_computation_progress: reads progress JSON", {
 
     result <- nemeton:::get_computation_progress("test_proj")
     expect_type(result, "list")
-    expect_equal(result$last_indicator, "water_twi")
+    expect_equal(result$last_indicator, "indicateur_w3_humidite")
   })
 })
 
@@ -199,11 +199,11 @@ test_that("compute_single_indicator: dispatches to indicator function", {
 
   # Mock the indicator function to return known values
   local_mocked_bindings(
-    indicator_carbon_biomass = function(units, ...) c(80, 60, 70),
+    indicateur_c1_biomasse = function(units, ...) c(80, 60, 70),
     .package = "nemeton"
   )
 
-  result <- nemeton:::compute_single_indicator("carbon_biomass", units, layers)
+  result <- nemeton:::compute_single_indicator("indicateur_c1_biomasse", units, layers)
   expect_equal(result, c(80, 60, 70))
 })
 
@@ -222,11 +222,11 @@ test_that("compute_single_indicator: handles sf return with column mapping", {
   mock_result$R1 <- c(45, 55, 65)
 
   local_mocked_bindings(
-    indicator_risk_fire = function(units, ...) mock_result,
+    indicateur_r1_feu = function(units, ...) mock_result,
     .package = "nemeton"
   )
 
-  result <- nemeton:::compute_single_indicator("risk_fire", units, layers)
+  result <- nemeton:::compute_single_indicator("indicateur_r1_feu", units, layers)
   expect_equal(result, c(45, 55, 65))
 })
 
@@ -272,14 +272,14 @@ test_that("compute_all_indicators: computes multiple indicators", {
   result <- nemeton:::compute_all_indicators(
     units,
     layers,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     progress_callback = NULL,
     project_id = NULL
   )
 
   expect_s3_class(result, "sf")
-  expect_true("carbon_biomass" %in% names(result))
-  expect_true("water_twi" %in% names(result))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_w3_humidite" %in% names(result))
   expect_equal(call_count, 2L)
 })
 
@@ -295,7 +295,7 @@ test_that("compute_all_indicators: handles indicator failure gracefully", {
 
   local_mocked_bindings(
     compute_single_indicator = function(indicator, parcels, layers) {
-      if (indicator == "water_twi") stop("Test error")
+      if (indicator == "indicateur_w3_humidite") stop("Test error")
       c(50, 60)
     },
     .package = "nemeton"
@@ -304,15 +304,15 @@ test_that("compute_all_indicators: handles indicator failure gracefully", {
   result <- suppressWarnings(nemeton:::compute_all_indicators(
     units,
     layers,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     progress_callback = NULL,
     project_id = NULL
   ))
 
-  expect_true("carbon_biomass" %in% names(result))
-  expect_true("water_twi" %in% names(result))
-  expect_equal(result$carbon_biomass, c(50, 60))
-  expect_true(all(is.na(result$water_twi)))
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_w3_humidite" %in% names(result))
+  expect_equal(result$indicateur_c1_biomasse, c(50, 60))
+  expect_true(all(is.na(result$indicateur_w3_humidite)))
 })
 
 test_that("compute_all_indicators: calls progress callback", {
@@ -338,7 +338,7 @@ test_that("compute_all_indicators: calls progress callback", {
   nemeton:::compute_all_indicators(
     units,
     layers,
-    indicators = c("carbon_biomass"),
+    indicators = c("indicateur_c1_biomasse"),
     progress_callback = callback_fn,
     project_id = NULL
   )
@@ -365,7 +365,7 @@ test_that("compute_all_indicators: skips already computed (resume)", {
     },
     load_indicators = function(project_id) {
       df <- sf::st_drop_geometry(units)
-      df$carbon_biomass <- c(80, 90)  # Already computed
+      df$indicateur_c1_biomasse <- c(80, 90)  # Already computed
       df
     },
     save_indicators_incremental = function(...) TRUE,
@@ -376,12 +376,12 @@ test_that("compute_all_indicators: skips already computed (resume)", {
   result <- nemeton:::compute_all_indicators(
     units,
     layers,
-    indicators = c("carbon_biomass", "water_twi"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
     progress_callback = NULL,
     project_id = "test_proj"
   )
 
-  # Only water_twi should have been computed
+  # Only indicateur_w3_humidite should have been computed
   expect_equal(call_count, 1L)
 })
 
@@ -410,7 +410,7 @@ test_that("compute_all_indicators: cancellation stops loop", {
   result <- nemeton:::compute_all_indicators(
     units,
     layers,
-    indicators = c("carbon_biomass", "water_twi", "soil_erosion"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite", "soil_erosion"),
     progress_callback = NULL,
     project_id = "test_proj"
   )
@@ -426,22 +426,22 @@ test_that("list_indicators: returns all indicator names", {
   result <- nemeton::list_indicators()
   expect_type(result, "character")
   expect_true(length(result) > 25)
-  expect_true("carbon_biomass" %in% result)
-  expect_true("risk_fire" %in% result)
+  expect_true("indicateur_c1_biomasse" %in% result)
+  expect_true("indicateur_r1_feu" %in% result)
   expect_true("naturalness_composite" %in% result)
 })
 
 test_that("list_indicators: filters by category", {
   biophys <- nemeton::list_indicators(category = "biophysical")
-  expect_true("carbon_biomass" %in% biophys)
-  expect_false("risk_fire" %in% biophys)
+  expect_true("indicateur_c1_biomasse" %in% biophys)
+  expect_false("indicateur_r1_feu" %in% biophys)
 
   risk <- nemeton::list_indicators(category = "risk")
-  expect_true("risk_fire" %in% risk)
-  expect_false("carbon_biomass" %in% risk)
+  expect_true("indicateur_r1_feu" %in% risk)
+  expect_false("indicateur_c1_biomasse" %in% risk)
 
   social <- nemeton::list_indicators(category = "social")
-  expect_true("social_trails" %in% social)
+  expect_true("indicateur_s1_routes" %in% social)
 })
 
 test_that("list_indicators: returns details data.frame", {
@@ -472,7 +472,7 @@ test_that("save_indicators: saves data.frame as parquet", {
     # save_indicators (service_project.R version) takes a plain data.frame
     indicators <- data.frame(
       nemeton_id = paste0("u", 1:3),
-      carbon_biomass = c(80, 60, 70),
+      indicateur_c1_biomasse = c(80, 60, 70),
       stringsAsFactors = FALSE
     )
 
@@ -494,7 +494,7 @@ test_that("save_indicators: converts list to data.frame", {
       .package = "nemeton"
     )
 
-    indicators <- list(carbon_biomass = c(80, 60), water_twi = c(3.5, 4.2))
+    indicators <- list(indicateur_c1_biomasse = c(80, 60), indicateur_w3_humidite = c(3.5, 4.2))
 
     result <- nemeton:::save_indicators("test_proj", indicators)
     expect_true(result)
@@ -539,7 +539,7 @@ test_that("save_indicators + load_indicators round-trip", {
 
     indicators <- data.frame(
       nemeton_id = paste0("u", 1:3),
-      carbon_biomass = c(80, 60, 70),
+      indicateur_c1_biomasse = c(80, 60, 70),
       stringsAsFactors = FALSE
     )
 
@@ -548,7 +548,7 @@ test_that("save_indicators + load_indicators round-trip", {
 
     expect_true(is.data.frame(loaded))
     expect_equal(nrow(loaded), 3)
-    expect_true("carbon_biomass" %in% names(loaded))
+    expect_true("indicateur_c1_biomasse" %in% names(loaded))
   })
 })
 
@@ -577,11 +577,11 @@ test_that("compute_indicator: dispatches known indicator", {
   class(layers) <- "nemeton_layers"
 
   local_mocked_bindings(
-    indicator_carbon_biomass = function(units, ...) c(100, 200),
+    indicateur_c1_biomasse = function(units, ...) c(100, 200),
     .package = "nemeton"
   )
 
-  result <- nemeton:::compute_indicator("carbon_biomass", units, layers)
+  result <- nemeton:::compute_indicator("indicateur_c1_biomasse", units, layers)
   expect_equal(result, c(100, 200))
 })
 
@@ -606,10 +606,10 @@ test_that("compute_indicator: extracts column from sf return (risk indicators)",
   mock_result$R1 <- c(30, 40)
 
   local_mocked_bindings(
-    indicator_risk_fire = function(units, ...) mock_result,
+    indicateur_r1_feu = function(units, ...) mock_result,
     .package = "nemeton"
   )
 
-  result <- nemeton:::compute_indicator("risk_fire", units, layers)
+  result <- nemeton:::compute_indicator("indicateur_r1_feu", units, layers)
   expect_equal(result, c(30, 40))
 })

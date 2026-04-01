@@ -182,9 +182,9 @@ get_or_compute_twi <- function(dem, cache_dir = NULL) {
 #' units$age <- c(80, 60, 40)
 #' units$density <- c(0.7, 0.8, 0.6)
 #'
-#' results <- indicator_carbon_biomass(units)
+#' results <- indicateur_c1_biomasse(units)
 #' }
-indicator_carbon_biomass <- function(units,
+indicateur_c1_biomasse <- function(units,
                                      layers = NULL,
                                      species_col = "species",
                                      age_col = "age",
@@ -205,7 +205,7 @@ indicator_carbon_biomass <- function(units,
     density <- units[[density_col]]
 
     biomass <- calculate_allometric_biomass(species, age, density)
-    msg_info("indicator_carbon_biomass")
+    msg_info("indicateur_c1_biomasse")
     return(biomass)
   }
 
@@ -283,12 +283,12 @@ indicator_carbon_biomass <- function(units,
 #' \dontrun{
 #' # Single-date NDVI
 #' layers <- nemeton_layers(rasters = list(ndvi = "sentinel2_ndvi.tif"))
-#' results <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi")
+#' results <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
 #'
 #' # Multi-date NDVI with trend
-#' results <- indicator_carbon_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)
+#' results <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)
 #' }
-indicator_carbon_ndvi <- function(units,
+indicateur_c2_ndvi <- function(units,
                                   layers,
                                   ndvi_layer = "ndvi",
                                   trend = FALSE) {
@@ -324,7 +324,7 @@ indicator_carbon_ndvi <- function(units,
   }
 
   # Log calculation
-  msg_info("indicator_carbon_ndvi")
+  msg_info("indicateur_c2_ndvi")
 
   ndvi_mean
 }
@@ -354,11 +354,11 @@ indicator_carbon_ndvi <- function(units,
 #' @examples
 #' \dontrun{
 #' layers <- nemeton_layers(vectors = list(streams = "watercourses.gpkg"))
-#' results <- indicator_water_network(units, layers, watercourse_layer = "streams")
+#' results <- indicateur_w1_reseau(units, layers, watercourse_layer = "streams")
 #' }
-indicator_water_network <- function(units,
+indicateur_w1_reseau <- function(units,
                                     layers,
-                                    watercourse_layer = "water_network",
+                                    watercourse_layer = "indicateur_w1_reseau",
                                     buffer = 0,
                                     proximity_m = 500,
                                     proximity_ref = 50) {
@@ -428,7 +428,7 @@ indicator_water_network <- function(units,
   }
 
   # Log calculation
-  msg_info("indicator_water_network")
+  msg_info("indicateur_w1_reseau")
 
   density
 }
@@ -449,9 +449,9 @@ indicator_water_network <- function(units,
 #' @examples
 #' \dontrun{
 #' layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
-#' results <- indicator_water_wetlands(units, layers, wetland_values = c(50, 51, 52))
+#' results <- indicateur_w2_zones_humides(units, layers, wetland_values = c(50, 51, 52))
 #' }
-indicator_water_wetlands <- function(units,
+indicateur_w2_zones_humides <- function(units,
                                      layers,
                                      wetland_layer = "wetlands",
                                      wetland_values = NULL) {
@@ -550,7 +550,7 @@ indicator_water_wetlands <- function(units,
     return(rep(NA_real_, nrow(units)))
   }
 
-  msg_info("indicator_water_wetlands")
+  msg_info("indicateur_w2_zones_humides")
   pmin(coverage, 100)
 }
 
@@ -575,9 +575,9 @@ indicator_water_wetlands <- function(units,
 #' @examples
 #' \dontrun{
 #' layers <- nemeton_layers(rasters = list(dem = "dem_25m.tif"))
-#' results <- indicator_water_twi(units, layers, dem_layer = "dem")
+#' results <- indicateur_w3_humidite(units, layers, dem_layer = "dem")
 #' }
-indicator_water_twi <- function(units,
+indicateur_w3_humidite <- function(units,
                                 layers,
                                 dem_layer = "dem",
                                 method = c("auto", "grass", "d8")) {
@@ -618,7 +618,7 @@ indicator_water_twi <- function(units,
   )
 
   # Log calculation
-  msg_info("indicator_water_twi")
+  msg_info("indicateur_w3_humidite")
 
   twi_mean
 }
@@ -765,9 +765,9 @@ calculate_twi_grass <- function(dem) {
 #' @examples
 #' \dontrun{
 #' layers <- nemeton_layers(vectors = list(soil = "bd_sol.gpkg"))
-#' results <- indicator_soil_fertility(units, layers, soil_layer = "soil")
+#' results <- indicateur_f1_fertilite(units, layers, soil_layer = "soil")
 #' }
-indicator_soil_fertility <- function(units,
+indicateur_f1_fertilite <- function(units,
                                      layers,
                                      soil_layer = "soil",
                                      fertility_col = "fertility") {
@@ -797,7 +797,7 @@ indicator_soil_fertility <- function(units,
   }
 
   # Log calculation
-  msg_info("indicator_soil_fertility")
+  msg_info("indicateur_f1_fertilite")
 
   fertility
 }
@@ -900,9 +900,9 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
 #' @examples
 #' \dontrun{
 #' layers <- nemeton_layers(rasters = list(dem = "dem.tif"))
-#' results <- indicator_soil_erosion(units, layers)
+#' results <- indicateur_f2_erosion(units, layers)
 #' }
-indicator_soil_erosion <- function(units,
+indicateur_f2_erosion <- function(units,
                                    layers,
                                    dem_layer = "dem") {
   # Validate inputs
@@ -946,7 +946,7 @@ indicator_soil_erosion <- function(units,
   fertility <- round((twi_norm + slope_norm) / 2, 1)
 
   # Log calculation
-  msg_info("indicator_soil_erosion")
+  msg_info("indicateur_f2_erosion")
 
   fertility
 }
@@ -975,12 +975,12 @@ indicator_soil_erosion <- function(units,
 #' @examples
 #' \dontrun{
 #' layers <- nemeton_layers(rasters = list(landcover = "landcover.tif"))
-#' results <- indicator_landscape_fragmentation(
+#' results <- indicateur_l2_fragmentation(
 #'   units, layers,
 #'   forest_values = c(1, 2, 3), buffer = 50
 #' )
 #' }
-indicator_landscape_fragmentation <- function(units,
+indicateur_l2_fragmentation <- function(units,
                                               layers = NULL,
                                               landcover_layer = "landcover",
                                               forest_values = seq(1, 6),
@@ -1134,7 +1134,7 @@ indicator_landscape_fragmentation <- function(units,
   l1 <- 0.30 * l1_geometrie + 0.40 * l1_contraste + 0.30 * l1_exposition
   l1 <- pmin(pmax(round(l1, 1), 0), 100)
 
-  msg_info("indicator_landscape_fragmentation")
+  msg_info("indicateur_l2_fragmentation")
   l1
 }
 
@@ -1154,9 +1154,9 @@ indicator_landscape_fragmentation <- function(units,
 #' @export
 #' @examples
 #' \dontrun{
-#' results <- indicator_landscape_edge(units, layers, buffer = 1000)
+#' results <- indicateur_l1_sylvosphere(units, layers, buffer = 1000)
 #' }
-indicator_landscape_edge <- function(units, layers = NULL,
+indicateur_l1_sylvosphere <- function(units, layers = NULL,
                                      landcover_layer = "landcover",
                                      forest_values = seq(1, 6),
                                      buffer = 1000) {
@@ -1207,7 +1207,7 @@ indicator_landscape_edge <- function(units, layers = NULL,
           l2_score <- (cohesion[1] + ai[1]) / 2
           l2_score <- pmin(pmax(round(l2_score, 1), 0), 100)
 
-          msg_info("indicator_landscape_edge")
+          msg_info("indicateur_l1_sylvosphere")
           return(rep(l2_score, nrow(units)))
         }
       }, error = function(e) {
@@ -1227,7 +1227,7 @@ indicator_landscape_edge <- function(units, layers = NULL,
     scores[i] <- pmin(round(100 / shape_index, 1), 100)
   }
 
-  msg_info("indicator_landscape_edge")
+  msg_info("indicateur_l1_sylvosphere")
   scores
 }
 
@@ -1239,7 +1239,7 @@ indicator_landscape_edge <- function(units, layers = NULL,
 # ==============================================================================
 
 #' @noRd
-indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
+indicateur_a1_couverture <- function(units, layers = NULL, ...) {
   # A1: Forest coverage on the parcel (tuto 02, exercice 7.5)
   # OSO forest classes: 16 = coniferous, 17 = broadleaf, 18 = mixed
   forest_classes <- c(16, 17, 18)
@@ -1321,18 +1321,18 @@ indicator_air_forest_buffer <- function(units, layers = NULL, ...) {
 }
 
 #' @noRd
-indicator_fertility_soil <- function(units, layers = NULL, ...) {
-  # F2: Soil fertility (TWI + slope) - delegates to indicator_soil_erosion
+indicateur_f1_fertilite <- function(units, layers = NULL, ...) {
+  # F2: Soil fertility (TWI + slope) - delegates to indicateur_f2_erosion
   # Follows tuto 03: F2 = (twi_norm + slope_norm) / 2
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
-    return(indicator_soil_erosion(units, layers))
+    return(indicateur_f2_erosion(units, layers))
   }
   cli::cli_alert_warning("F2: No layers available for soil fertility, returning NA")
   rep(NA_real_, nrow(units))
 }
 
 #' @noRd
-indicator_fertility_erosion <- function(units, layers = NULL, ...) {
+indicateur_f2_erosion <- function(units, layers = NULL, ...) {
   # F1: Erosion risk (RUSLE simplified: LS × C_factor, normalised 0-100)
   # Follows tuto 03, exercice 1.2
   if (is.null(layers) || !inherits(layers, "nemeton_layers")) {
@@ -1402,19 +1402,19 @@ indicator_fertility_erosion <- function(units, layers = NULL, ...) {
 }
 
 #' @noRd
-indicator_landscape_edge_ratio <- function(units, layers = NULL, ...) {
-  # L2: Landscape fragmentation - delegates to indicator_landscape_edge
-  indicator_landscape_edge(units, layers = layers, ...)
+indicateur_l1_sylvosphere_ratio <- function(units, layers = NULL, ...) {
+  # L2: Landscape fragmentation - delegates to indicateur_l1_sylvosphere
+  indicateur_l1_sylvosphere(units, layers = layers, ...)
 }
 
 #' @noRd
-indicator_social_population <- function(units, ...) {
-  # S3: Population proximity - delegates to indicator_social_proximity
-  indicator_social_proximity(units, method = "proxy")
+indicateur_s3_population <- function(units, ...) {
+  # S3: Population proximity - delegates to indicateur_s3_population
+  indicateur_s3_population(units, method = "proxy")
 }
 
 #' @noRd
-indicator_energy_wood <- function(units, layers = NULL, ...) {
+indicateur_e1_bois_energie <- function(units, layers = NULL, ...) {
   # E1: Fuelwood potential (tep/ha/an) — tutorial 02 formula
   # E1 = (pzabove2/100) * zmean * k_conversion
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
@@ -1447,10 +1447,10 @@ indicator_energy_wood <- function(units, layers = NULL, ...) {
 }
 
 #' @noRd
-indicator_energy_co2 <- function(units, layers = NULL, ...) {
+indicateur_e2_evitement <- function(units, layers = NULL, ...) {
   # E2: CO2 emission avoidance (tCO2/ha/an) — tutorial 02 formula
   # E2 = E1 * f_substitution * eta_conversion
-  e1 <- indicator_energy_wood(units, layers = layers)
+  e1 <- indicateur_e1_bois_energie(units, layers = layers)
   if (all(is.na(e1))) return(e1)
   facteur_substitution <- 2.5  # tCO2 avoided per tep of wood energy
   rendement_conversion <- 0.85 # average wood boiler efficiency
@@ -1458,15 +1458,15 @@ indicator_energy_co2 <- function(units, layers = NULL, ...) {
 }
 
 #' @noRd
-indicator_naturalness_score <- function(units, ...) {
+indicateur_n3_naturalite <- function(units, ...) {
   # N3: Composite naturalness — tuto 04 formula
   # N3 = 0.35*N1 + 0.35*N2 + 0.15*(100-L1) + 0.15*B3
   # Fallback to 50 when components are missing
-  indicator_naturalness_composite(units, column_name = "N3")
+  indicateur_n3_naturalite(units, column_name = "N3")
 }
 
 #' @noRd
-indicator_production_volume <- function(units, layers = NULL, ...) {
+indicateur_p1_volume <- function(units, layers = NULL, ...) {
   # P1: Standing timber volume (m3/ha) — tutorial 02 formula
   # P1 = k_volume * (pzabove2/100) * zmean * sqrt(zmax)
   if (!is.null(layers) && inherits(layers, "nemeton_layers")) {
@@ -1499,7 +1499,7 @@ indicator_production_volume <- function(units, layers = NULL, ...) {
 }
 
 #' @noRd
-indicator_production_productivity <- function(units, layers = NULL, ...) {
+indicateur_p2_station <- function(units, layers = NULL, ...) {
   # P2: Forest productivity (m3/ha/yr) — tutorial 02 formula
   # vigueur = clamp((zq95 - zq25) / zmean, 0.1, 2)
   # P2 = k_prod * zmean * (pzabove2/100) * (1 + vigueur)
@@ -1538,7 +1538,7 @@ indicator_production_productivity <- function(units, layers = NULL, ...) {
 }
 
 #' @noRd
-indicator_production_quality <- function(units, layers = NULL, ...) {
+indicateur_p3_qualite_bois <- function(units, layers = NULL, ...) {
   # P3: Structural quality (score 0-100) — tutorial 02 formula
   # entropy_norm = clamp((zentropy - 0.5) / 0.5, 0, 1)
   # cv_norm = min(1, (zsd / zmean) / 0.5)

@@ -659,7 +659,7 @@ test_that("save_indicators saves data.frame and load_indicators reads it back", 
 
         indicators_df <- data.frame(
           parcel_id = c("P001", "P002", "P003"),
-          carbon_biomass = c(120.5, 85.3, 200.1),
+          indicateur_c1_biomasse = c(120.5, 85.3, 200.1),
           biodiversity_score = c(72, 45, 88),
           stringsAsFactors = FALSE
         )
@@ -676,7 +676,7 @@ test_that("save_indicators saves data.frame and load_indicators reads it back", 
         expect_s3_class(loaded, "data.frame")
         expect_equal(nrow(loaded), 3)
         expect_true("parcel_id" %in% names(loaded))
-        expect_true("carbon_biomass" %in% names(loaded))
+        expect_true("indicateur_c1_biomasse" %in% names(loaded))
 
         # Verify metadata was updated
         meta <- nemeton:::load_project_metadata(project$id)

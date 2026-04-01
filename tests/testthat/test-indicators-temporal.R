@@ -9,13 +9,13 @@ library(sf)
 # T1: Stand Age (BD Forêt TFV method)
 # ==============================================================================
 
-test_that("indicator_temporal_age returns numeric vector 0-150 range", {
+test_that("indicateur_t1_anciennete returns numeric vector 0-150 range", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
   units$age <- NULL  # Remove pre-existing age field
 
   # Without BD Forêt or age field, should fall back to default 50
-  result <- indicator_temporal_age(units, age_field = NULL)
+  result <- indicateur_t1_anciennete(units, age_field = NULL)
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -23,12 +23,12 @@ test_that("indicator_temporal_age returns numeric vector 0-150 range", {
   expect_true(all(result >= 0))
 })
 
-test_that("indicator_temporal_age uses direct age field as fallback", {
+test_that("indicateur_t1_anciennete uses direct age field as fallback", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
   units$age <- c(25, 75, 150, 200, 300)
 
-  result <- indicator_temporal_age(units, age_field = "age")
+  result <- indicateur_t1_anciennete(units, age_field = "age")
 
   expect_type(result, "double")
   expect_length(result, 5)
@@ -36,12 +36,12 @@ test_that("indicator_temporal_age uses direct age field as fallback", {
   expect_equal(result, c(25, 75, 150, 200, 300))
 })
 
-test_that("indicator_temporal_age calculates from establishment year", {
+test_that("indicateur_t1_anciennete calculates from establishment year", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   units$planted <- c(1850, 1950, 2000)
 
-  result <- indicator_temporal_age(
+  result <- indicateur_t1_anciennete(
     units,
     age_field = NULL,
     establishment_year_field = "planted",
@@ -53,7 +53,7 @@ test_that("indicator_temporal_age calculates from establishment year", {
   expect_equal(result, c(175, 75, 25))
 })
 
-test_that("indicator_temporal_age with BD Forêt data", {
+test_that("indicateur_t1_anciennete with BD Forêt data", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -64,7 +64,7 @@ test_that("indicator_temporal_age with BD Forêt data", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
 
-  result <- indicator_temporal_age(units, bdforet = bdforet)
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet)
 
   expect_type(result, "double")
   expect_length(result, 3)
@@ -72,7 +72,7 @@ test_that("indicator_temporal_age with BD Forêt data", {
   expect_true(result[1] > result[2])  # feuillus > peuplier
 })
 
-test_that("indicator_temporal_age BD Forêt uses area-weighted average", {
+test_that("indicateur_t1_anciennete BD Forêt uses area-weighted average", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1, ]
 
@@ -87,7 +87,7 @@ test_that("indicator_temporal_age BD Forêt uses area-weighted average", {
   )
   sf::st_crs(bdforet) <- sf::st_crs(units)
 
-  result <- indicator_temporal_age(units, bdforet = bdforet)
+  result <- indicateur_t1_anciennete(units, bdforet = bdforet)
 
   expect_type(result, "double")
   expect_length(result, 1)
@@ -95,12 +95,12 @@ test_that("indicator_temporal_age BD Forêt uses area-weighted average", {
   expect_true(result[1] > 20 && result[1] < 100)
 })
 
-test_that("indicator_temporal_age handles NA values in age field", {
+test_that("indicateur_t1_anciennete handles NA values in age field", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:4, ]
   units$age <- c(50, NA, 100, NA)
 
-  result <- indicator_temporal_age(units, age_field = "age")
+  result <- indicateur_t1_anciennete(units, age_field = "age")
 
   expect_type(result, "double")
   expect_length(result, 4)
@@ -110,14 +110,14 @@ test_that("indicator_temporal_age handles NA values in age field", {
   expect_false(is.na(result[3]))
 })
 
-test_that("indicator_temporal_age validates inputs", {
+test_that("indicateur_t1_anciennete validates inputs", {
   expect_error(
-    indicator_temporal_age(data.frame(x = 1:3)),
+    indicateur_t1_anciennete(data.frame(x = 1:3)),
     "must be.*sf"
   )
 })
 
-test_that("indicator_temporal_age NDVI fallback with layers", {
+test_that("indicateur_t1_anciennete NDVI fallback with layers", {
   data(massif_demo_units, package = "nemeton")
   layers <- massif_demo_layers()
   units <- massif_demo_units[1:3, ]
@@ -126,7 +126,7 @@ test_that("indicator_temporal_age NDVI fallback with layers", {
   # layers has no bdforet, no age field -> falls to NDVI if available
   # Demo layers have no ndvi either, so should get default 50
 
-  result <- indicator_temporal_age(units, layers = layers, age_field = NULL)
+  result <- indicateur_t1_anciennete(units, layers = layers, age_field = NULL)
 
   expect_type(result, "double")
   expect_length(result, 3)
@@ -137,41 +137,41 @@ test_that("indicator_temporal_age NDVI fallback with layers", {
 # T2: Stability / Change Rate
 # ==============================================================================
 
-test_that("indicator_temporal_change returns numeric vector 0-100", {
+test_that("indicateur_t2_changement returns numeric vector 0-100", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
   # No N2 or T1 -> default 50
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
 
   expect_type(result, "double")
   expect_length(result, 5)
   expect_true(all(result >= 0 & result <= 100))
 })
 
-test_that("indicator_temporal_change uses N2 column as proxy", {
+test_that("indicateur_t2_changement uses N2 column as proxy", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
   units$N2 <- c(10, 30, 50, 70, 90)
 
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
 
   expect_type(result, "double")
   expect_length(result, 5)
   expect_equal(result, c(10, 30, 50, 70, 90))
 })
 
-test_that("indicator_temporal_change uses N2_anciennete column", {
+test_that("indicateur_t2_changement uses N2_anciennete column", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   units$N2_anciennete <- c(20, 60, 95)
 
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
 
   expect_equal(result, c(20, 60, 95))
 })
 
-test_that("indicator_temporal_change falls back to T1 capped at 100", {
+test_that("indicateur_t2_changement falls back to T1 capped at 100", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:4, ]
   # Remove N2 columns so T1 fallback is used
@@ -182,7 +182,7 @@ test_that("indicator_temporal_change falls back to T1 capped at 100", {
 
   # Pass T1 values directly
   t1 <- c(25, 80, 150, 200)
-  result <- indicator_temporal_change(units, t1_values = t1)
+  result <- indicateur_t2_changement(units, t1_values = t1)
 
   expect_type(result, "double")
   expect_length(result, 4)
@@ -190,7 +190,7 @@ test_that("indicator_temporal_change falls back to T1 capped at 100", {
   expect_equal(result, c(25, 80, 100, 100))
 })
 
-test_that("indicator_temporal_change uses T1 column from units", {
+test_that("indicateur_t2_changement uses T1 column from units", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
   # Remove N2 so T1 fallback is used
@@ -199,14 +199,14 @@ test_that("indicator_temporal_change uses T1 column from units", {
   units$N2_norm <- NULL
   units$T1 <- c(40, 120, NA)
 
-  result <- indicator_temporal_change(units)
+  result <- indicateur_t2_changement(units)
 
   expect_equal(result, c(40, 100, 50))  # NA -> 50 default
 })
 
-test_that("indicator_temporal_change validates inputs", {
+test_that("indicateur_t2_changement validates inputs", {
   expect_error(
-    indicator_temporal_change(data.frame(x = 1:3)),
+    indicateur_t2_changement(data.frame(x = 1:3)),
     "must be.*sf"
   )
 })
@@ -221,10 +221,10 @@ test_that("T1 and T2 work together", {
 
   # T1 with age field
   units$age <- c(30, 50, 80, 120, 200)
-  t1 <- indicator_temporal_age(units, age_field = "age")
+  t1 <- indicateur_t1_anciennete(units, age_field = "age")
 
   # T2 from T1
-  t2 <- indicator_temporal_change(units, t1_values = t1)
+  t2 <- indicateur_t2_changement(units, t1_values = t1)
 
   expect_length(t1, 5)
   expect_length(t2, 5)

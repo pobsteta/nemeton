@@ -497,65 +497,65 @@ TRANSLATIONS <- list(
   # ============================================================
   # Indicator Families
   # ============================================================
-  family_C = list(fr = "Carbone & Vitalit\u00e9", en = "Carbon & Vitality"),
-  family_B = list(fr = "Biodiversit\u00e9", en = "Biodiversity"),
-  family_W = list(fr = "Eau", en = "Water"),
-  family_A = list(fr = "Air & Microclimat", en = "Air & Microclimate"),
-  family_F = list(fr = "Fertilit\u00e9 des Sols", en = "Soil Fertility"),
-  family_L = list(fr = "Paysage", en = "Landscape"),
-  family_T = list(fr = "Dynamique Temporelle", en = "Temporal Dynamics"),
-  family_R = list(fr = "Risques & R\u00e9silience", en = "Risks & Resilience"),
-  family_S = list(fr = "Social & R\u00e9cr\u00e9atif", en = "Social & Recreational"),
-  family_P = list(fr = "Production", en = "Production"),
-  family_E = list(fr = "\u00c9nergie & Climat", en = "Energy & Climate"),
-  family_N = list(fr = "Naturalit\u00e9", en = "Naturalness"),
+  famille_carbone = list(fr = "Carbone & Vitalit\u00e9", en = "Carbon & Vitality"),
+  famille_biodiversite = list(fr = "Biodiversit\u00e9", en = "Biodiversity"),
+  famille_eau = list(fr = "Eau", en = "Water"),
+  famille_air = list(fr = "Air & Microclimat", en = "Air & Microclimate"),
+  famille_sol = list(fr = "Fertilit\u00e9 des Sols", en = "Soil Fertility"),
+  famille_paysage = list(fr = "Paysage", en = "Landscape"),
+  famille_temporel = list(fr = "Dynamique Temporelle", en = "Temporal Dynamics"),
+  famille_risque = list(fr = "Risques & R\u00e9silience", en = "Risks & Resilience"),
+  famille_social = list(fr = "Social & R\u00e9cr\u00e9atif", en = "Social & Recreational"),
+  famille_production = list(fr = "Production", en = "Production"),
+  famille_energie = list(fr = "\u00c9nergie & Climat", en = "Energy & Climate"),
+  famille_naturalite = list(fr = "Naturalit\u00e9", en = "Naturalness"),
 
   # Family descriptions
-  family_C_desc = list(
+  famille_carbone_desc = list(
     fr = "Stockage de carbone et vitalit\u00e9 de la v\u00e9g\u00e9tation (biomasse, NDVI)",
     en = "Carbon storage and vegetation vitality (biomass, NDVI)"
   ),
-  family_B_desc = list(
+  famille_biodiversite_desc = list(
     fr = "Protection, diversit\u00e9 structurale et connectivit\u00e9 \u00e9cologique",
     en = "Protection, structural diversity and ecological connectivity"
   ),
-  family_W_desc = list(
+  famille_eau_desc = list(
     fr = "R\u00e9gulation hydrique, zones humides et indice topographique",
     en = "Water regulation, wetlands and topographic index"
   ),
-  family_A_desc = list(
+  famille_air_desc = list(
     fr = "Couverture foresti\u00e8re tampon et qualit\u00e9 de l'air",
     en = "Forest cover buffer and air quality"
   ),
-  family_F_desc = list(
+  famille_sol_desc = list(
     fr = "Classes de sol et risque d'\u00e9rosion",
     en = "Soil classes and erosion risk"
   ),
-  family_L_desc = list(
+  famille_paysage_desc = list(
     fr = "Sylvosph\u00e8re (effet lisi\u00e8re) et fragmentation paysag\u00e8re",
     en = "Sylvosphere (edge effect) and landscape fragmentation"
   ),
-  family_T_desc = list(
+  famille_temporel_desc = list(
     fr = "Anciennet\u00e9 foresti\u00e8re et taux de changement",
     en = "Forest age and change rate"
   ),
-  family_R_desc = list(
+  famille_risque_desc = list(
     fr = "Risques feu, temp\u00eate, s\u00e9cheresse et abroutissement",
     en = "Fire, storm, drought and browsing risks"
   ),
-  family_S_desc = list(
+  famille_social_desc = list(
     fr = "Densit\u00e9 de sentiers, accessibilit\u00e9 et proximit\u00e9 population",
     en = "Trail density, accessibility and population proximity"
   ),
-  family_P_desc = list(
+  famille_production_desc = list(
     fr = "Volume de bois, productivit\u00e9 et qualit\u00e9",
     en = "Timber volume, productivity and quality"
   ),
-  family_E_desc = list(
+  famille_energie_desc = list(
     fr = "Potentiel bois-\u00e9nergie et \u00e9vitement CO2",
     en = "Wood energy potential and CO2 avoidance"
   ),
-  family_N_desc = list(
+  famille_naturalite_desc = list(
     fr = "Distance infrastructures, continuit\u00e9 et score de naturalit\u00e9",
     en = "Infrastructure distance, continuity and naturalness score"
   ),
@@ -860,37 +860,37 @@ TRANSLATIONS <- list(
   # ============================================================
   # Progress Messages - Indicator Names
   # ============================================================
-  indicator_carbon_biomass = list(fr = "Biomasse carbone", en = "Carbon Biomass"),
-  indicator_carbon_ndvi = list(fr = "NDVI - Vitalit\u00e9 v\u00e9g\u00e9tation", en = "NDVI - Vegetation Vitality"),
-  indicator_biodiversity_protection = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
-  indicator_biodiversity_structure = list(fr = "Structure biodiversit\u00e9", en = "Biodiversity Structure"),
-  indicator_biodiversity_connectivity = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
-  indicator_water_network = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
-  indicator_water_wetlands = list(fr = "Zones humides", en = "Wetlands"),
-  indicator_water_twi = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
-  indicator_air_forest_buffer = list(fr = "Tampon forestier", en = "Forest Buffer"),
-  indicator_air_quality = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
-  indicator_fertility_erosion = list(fr = "Risque d'\u00e9rosion (RUSLE)", en = "Erosion Risk (RUSLE)"),
-  indicator_fertility_soil = list(fr = "Fertilit\u00e9 des sols (TWI+pente)", en = "Soil Fertility (TWI+slope)"),
-  indicator_landscape_fragmentation = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
-  indicator_landscape_edge_ratio = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
-  indicator_temporal_age = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
-  indicator_temporal_change = list(fr = "Taux de changement", en = "Change Rate"),
-  indicator_risk_fire = list(fr = "Risque incendie", en = "Fire Risk"),
-  indicator_risk_storm = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
-  indicator_risk_drought = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
-  indicator_risk_browsing = list(fr = "Risque abroutissement", en = "Browsing Risk"),
-  indicator_social_trails = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
-  indicator_social_accessibility = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
-  indicator_social_population = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
-  indicator_production_volume = list(fr = "Volume de bois", en = "Timber Volume"),
-  indicator_production_productivity = list(fr = "Productivit\u00e9", en = "Productivity"),
-  indicator_production_quality = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
-  indicator_energy_wood = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
-  indicator_energy_co2 = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
-  indicator_naturalness_distance = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
-  indicator_naturalness_continuity = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
-  indicator_naturalness_score = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
+  indicateur_c1_biomasse = list(fr = "Biomasse carbone", en = "Carbon Biomass"),
+  indicateur_c2_ndvi = list(fr = "NDVI - Vitalit\u00e9 v\u00e9g\u00e9tation", en = "NDVI - Vegetation Vitality"),
+  indicateur_b1_protection = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
+  indicateur_b2_structure = list(fr = "Structure biodiversit\u00e9", en = "Biodiversity Structure"),
+  indicateur_b3_connectivite = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
+  indicateur_w1_reseau = list(fr = "R\u00e9seau hydrographique", en = "Water Network"),
+  indicateur_w2_zones_humides = list(fr = "Zones humides", en = "Wetlands"),
+  indicateur_w3_humidite = list(fr = "Indice topographique d'humidit\u00e9", en = "Topographic Wetness Index"),
+  indicateur_a1_couverture = list(fr = "Tampon forestier", en = "Forest Buffer"),
+  indicateur_a2_qualite_air = list(fr = "Qualit\u00e9 de l'air", en = "Air Quality"),
+  indicateur_f2_erosion = list(fr = "Risque d'\u00e9rosion (RUSLE)", en = "Erosion Risk (RUSLE)"),
+  indicateur_f1_fertilite = list(fr = "Fertilit\u00e9 des sols (TWI+pente)", en = "Soil Fertility (TWI+slope)"),
+  indicateur_l1_sylvosphere = list(fr = "Sylvosph\u00e8re (effet lisi\u00e8re)", en = "Sylvosphere (Edge Effect)"),
+  indicateur_l2_fragmentation = list(fr = "Fragmentation paysag\u00e8re", en = "Landscape Fragmentation"),
+  indicateur_t1_anciennete = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
+  indicateur_t2_changement = list(fr = "Taux de changement", en = "Change Rate"),
+  indicateur_r1_feu = list(fr = "Risque incendie", en = "Fire Risk"),
+  indicateur_r2_tempete = list(fr = "Risque temp\u00eate", en = "Storm Risk"),
+  indicateur_r3_secheresse = list(fr = "Risque s\u00e9cheresse", en = "Drought Risk"),
+  indicateur_r4_abroutissement = list(fr = "Risque abroutissement", en = "Browsing Risk"),
+  indicateur_s1_routes = list(fr = "Densit\u00e9 de sentiers", en = "Trail Density"),
+  indicateur_s2_bati = list(fr = "Accessibilit\u00e9", en = "Accessibility"),
+  indicateur_s3_population = list(fr = "Proximit\u00e9 population", en = "Population Proximity"),
+  indicateur_p1_volume = list(fr = "Volume de bois", en = "Timber Volume"),
+  indicateur_p2_station = list(fr = "Productivit\u00e9", en = "Productivity"),
+  indicateur_p3_qualite_bois = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+  indicateur_e1_bois_energie = list(fr = "Bois-\u00e9nergie", en = "Wood Energy"),
+  indicateur_e2_evitement = list(fr = "\u00c9vitement CO2", en = "CO2 Avoidance"),
+  indicateur_n1_distance = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
+  indicateur_n2_continuite = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
+  indicateur_n3_naturalite = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
 
   # ============================================================
   # NDP (Niveau De Precision)
@@ -902,10 +902,7 @@ TRANSLATIONS <- list(
   ndp_exploration = list(fr = "Exploration", en = "Exploration"),
   ndp_diagnostic = list(fr = "Diagnostic", en = "Diagnostic"),
   ndp_jumeau = list(fr = "Jumeau num\u00e9rique", en = "Digital Twin"),
-  ndp_tip_title = list(
-    fr = "Niveau De Pr\u00e9cision (NDP)",
-    en = "Precision Level (NDP)"
-  ),
+  ndp_tip_title = list(fr = "Niveau De Pr\u00e9cision (NDP)", en = "Precision Level (NDP)"),
   ndp_tip_subtitle = list(
     fr = "Mesure la qualit\u00e9 des donn\u00e9es d'entr\u00e9e, pas la compl\u00e9tude de l'analyse",
     en = "Measures input data quality, not analysis completeness"
@@ -919,18 +916,12 @@ TRANSLATIONS <- list(
     fr = "<table style='width:100%; border-collapse:collapse; margin:6px 0; font-size:0.82rem;'><tr style='background:#e8f0e4;'><th style='padding:4px 6px; text-align:left;'>NDP</th><th style='padding:4px 6px; text-align:left;'>Nom</th><th style='padding:4px 6px; text-align:center;'>Poids</th><th style='padding:4px 6px; text-align:center;'>\u03c6</th></tr><tr><td style='padding:3px 6px;'><strong>0</strong></td><td>D\u00e9couverte</td><td style='text-align:center;'>1</td><td style='text-align:center;'>8.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>1</strong></td><td>Observation</td><td style='text-align:center;'>1</td><td style='text-align:center;'>16.7%</td></tr><tr><td style='padding:3px 6px;'><strong>2</strong></td><td>Exploration</td><td style='text-align:center;'>2</td><td style='text-align:center;'>33.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>3</strong></td><td>Diagnostic</td><td style='text-align:center;'>3</td><td style='text-align:center;'>58.3%</td></tr><tr><td style='padding:3px 6px;'><strong>4</strong></td><td>Jumeau</td><td style='text-align:center;'>5</td><td style='text-align:center;'>100%</td></tr></table>",
     en = "<table style='width:100%; border-collapse:collapse; margin:6px 0; font-size:0.82rem;'><tr style='background:#e8f0e4;'><th style='padding:4px 6px; text-align:left;'>NDP</th><th style='padding:4px 6px; text-align:left;'>Name</th><th style='padding:4px 6px; text-align:center;'>Weight</th><th style='padding:4px 6px; text-align:center;'>\u03c6</th></tr><tr><td style='padding:3px 6px;'><strong>0</strong></td><td>Discovery</td><td style='text-align:center;'>1</td><td style='text-align:center;'>8.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>1</strong></td><td>Observation</td><td style='text-align:center;'>1</td><td style='text-align:center;'>16.7%</td></tr><tr><td style='padding:3px 6px;'><strong>2</strong></td><td>Exploration</td><td style='text-align:center;'>2</td><td style='text-align:center;'>33.3%</td></tr><tr style='background:#f8f8f8;'><td style='padding:3px 6px;'><strong>3</strong></td><td>Diagnostic</td><td style='text-align:center;'>3</td><td style='text-align:center;'>58.3%</td></tr><tr><td style='padding:3px 6px;'><strong>4</strong></td><td>Digital Twin</td><td style='text-align:center;'>5</td><td style='text-align:center;'>100%</td></tr></table>"
   ),
-  ndp_tip_fibonacci_title = list(
-    fr = "Pond\u00e9ration Fibonacci",
-    en = "Fibonacci Weighting"
-  ),
+  ndp_tip_fibonacci_title = list(fr = "Pond\u00e9ration Fibonacci", en = "Fibonacci Weighting"),
   ndp_tip_fibonacci_text = list(
     fr = "L'indice g\u00e9n\u00e9ral est une moyenne pond\u00e9r\u00e9e par les poids de Fibonacci (1, 1, 2, 3, 5). Plus le NDP est \u00e9lev\u00e9, plus les indicateurs p\u00e8sent dans le score final. La suite de Fibonacci refl\u00e8te la croissance naturelle \u2014 chaque niveau apporte autant que les deux pr\u00e9c\u00e9dents combin\u00e9s.",
     en = "The general index is a weighted mean using Fibonacci weights (1, 1, 2, 3, 5). The higher the NDP, the more weight indicators carry in the final score. The Fibonacci sequence reflects natural growth \u2014 each level contributes as much as the two previous levels combined."
   ),
-  ndp_tip_confidence_title = list(
-    fr = "Confiance \u03c6 (nombre d'or)",
-    en = "Confidence \u03c6 (golden ratio)"
-  ),
+  ndp_tip_confidence_title = list(fr = "Confiance \u03c6 (nombre d'or)", en = "Confidence \u03c6 (golden ratio)"),
   ndp_tip_confidence_text = list(
     fr = "Le ratio \u03c6 exprime la confiance cumul\u00e9e : rapport du poids Fibonacci cumul\u00e9 sur le total (12). \u00c0 NDP 0 : 8.3% de confiance \u2014 \u00e0 NDP 4 : 100%. Ce ratio est affich\u00e9 sous le score global dans la barre de progression.",
     en = "The \u03c6 ratio expresses cumulative confidence: the ratio of cumulative Fibonacci weight to the total (12). At NDP 0: 8.3% confidence \u2014 at NDP 4: 100%. This ratio is displayed below the global score in the progress bar."

@@ -11,8 +11,8 @@ test_that("plot_tradeoff creates valid ggplot object (T117)", {
   # Create basic trade-off plot
   p <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B"
+    x = "famille_carbone",
+    y = "famille_biodiversite"
   )
 
   # Should return ggplot object
@@ -22,8 +22,8 @@ test_that("plot_tradeoff creates valid ggplot object (T117)", {
   expect_gte(length(p$layers), 1)
 
   # Check axes are correctly mapped
-  expect_equal(rlang::as_label(p$mapping$x), "family_C")
-  expect_equal(rlang::as_label(p$mapping$y), "family_B")
+  expect_equal(rlang::as_label(p$mapping$x), "famille_carbone")
+  expect_equal(rlang::as_label(p$mapping$y), "famille_biodiversite")
 
   # Check labels
   expect_true(!is.null(p$labels$x))
@@ -41,30 +41,30 @@ test_that("plot_tradeoff handles point customization", {
   # Test with color mapping
   p_color <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
-    color = "family_P"
+    x = "famille_carbone",
+    y = "famille_biodiversite",
+    color = "famille_production"
   )
   expect_s3_class(p_color, "ggplot")
-  expect_equal(rlang::as_label(p_color$mapping$colour), "family_P")
+  expect_equal(rlang::as_label(p_color$mapping$colour), "famille_production")
 
   # Test with size mapping
   p_size <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
-    size = "family_P"
+    x = "famille_carbone",
+    y = "famille_biodiversite",
+    size = "famille_production"
   )
   expect_s3_class(p_size, "ggplot")
-  expect_equal(rlang::as_label(p_size$mapping$size), "family_P")
+  expect_equal(rlang::as_label(p_size$mapping$size), "famille_production")
 
   # Test with both color and size
   p_both <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
-    color = "family_P",
-    size = "family_P"
+    x = "famille_carbone",
+    y = "famille_biodiversite",
+    color = "famille_production",
+    size = "famille_production"
   )
   expect_s3_class(p_both, "ggplot")
 })
@@ -83,8 +83,8 @@ test_that("plot_tradeoff adds Pareto frontier overlay correctly (T118)", {
   # Create plot with Pareto frontier
   p <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
+    x = "famille_carbone",
+    y = "famille_biodiversite",
     pareto_frontier = TRUE
   )
 
@@ -112,8 +112,8 @@ test_that("plot_tradeoff handles Pareto optimal highlighting", {
   # Plot with pareto_frontier=TRUE
   p <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
+    x = "famille_carbone",
+    y = "famille_biodiversite",
     pareto_frontier = TRUE
   )
 
@@ -133,27 +133,27 @@ test_that("plot_tradeoff parameter validation", {
 
   # Test invalid x variable
   expect_error(
-    plot_tradeoff(data, x = "invalid_x", y = "family_B"),
+    plot_tradeoff(data, x = "invalid_x", y = "famille_biodiversite"),
     "Variable.*not found"
   )
 
   # Test invalid y variable
   expect_error(
-    plot_tradeoff(data, x = "family_C", y = "invalid_y"),
+    plot_tradeoff(data, x = "famille_carbone", y = "invalid_y"),
     "Variable.*not found"
   )
 
   # Test invalid color variable
   expect_error(
-    plot_tradeoff(data, x = "family_C", y = "family_B", color = "invalid_col"),
+    plot_tradeoff(data, x = "famille_carbone", y = "famille_biodiversite", color = "invalid_col"),
     "Variable.*not found"
   )
 
   # Test non-numeric x
   data_bad <- data
-  data_bad$family_C <- as.character(data_bad$family_C)
+  data_bad$famille_carbone <- as.character(data_bad$famille_carbone)
   expect_error(
-    plot_tradeoff(data_bad, x = "family_C", y = "family_B"),
+    plot_tradeoff(data_bad, x = "famille_carbone", y = "famille_biodiversite"),
     "numeric"
   )
 })
@@ -169,7 +169,7 @@ test_that("plot_tradeoff handles pareto_frontier without is_optimal column", {
   # Try to plot with pareto_frontier=TRUE but no is_optimal column
   # Should either error gracefully or compute it automatically
   expect_error(
-    plot_tradeoff(data, x = "family_C", y = "family_B", pareto_frontier = TRUE),
+    plot_tradeoff(data, x = "famille_carbone", y = "famille_biodiversite", pareto_frontier = TRUE),
     "is_optimal.*required"
   )
 })
@@ -186,8 +186,8 @@ test_that("plot_tradeoff adds labels when requested", {
   # Plot with labels
   p <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
+    x = "famille_carbone",
+    y = "famille_biodiversite",
     label = "name"
   )
 
@@ -209,8 +209,8 @@ test_that("plot_tradeoff works with regular data.frame (non-sf)", {
   # Should work with regular data.frame
   p <- plot_tradeoff(
     data_df,
-    x = "family_C",
-    y = "family_B"
+    x = "famille_carbone",
+    y = "famille_biodiversite"
   )
 
   expect_s3_class(p, "ggplot")
@@ -227,8 +227,8 @@ test_that("plot_tradeoff handles custom axis labels", {
   # Plot with custom labels
   p <- plot_tradeoff(
     data,
-    x = "family_C",
-    y = "family_B",
+    x = "famille_carbone",
+    y = "famille_biodiversite",
     xlab = "Custom X Label",
     ylab = "Custom Y Label",
     title = "Custom Title"
