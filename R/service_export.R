@@ -194,7 +194,7 @@ prepare_report_data <- function(project, family_scores, language,
 
   # Calculate family statistics
   family_stats <- lapply(family_cols, function(col) {
-    code <- sub("^famille_", "", col)
+    code <- get_famille_code(col)
     fam <- INDICATOR_FAMILIES[[code]]
     vals <- scores_df[[col]]
 
@@ -209,7 +209,7 @@ prepare_report_data <- function(project, family_scores, language,
       icon = fam$icon
     )
   })
-  names(family_stats) <- sub("^famille_", "", family_cols)
+  names(family_stats) <- vapply(family_cols, get_famille_code, character(1))
 
   # Build family descriptions from INDICATOR_FAMILIES
   family_descriptions <- lapply(names(INDICATOR_FAMILIES), function(code) {
@@ -457,7 +457,7 @@ generate_family_maps <- function(family_scores, output_dir, language) {
   }
 
   for (col in family_cols) {
-    code <- sub("^famille_", "", col)
+    code <- get_famille_code(col)
     fam <- INDICATOR_FAMILIES[[code]]
 
     if (is.null(fam)) next

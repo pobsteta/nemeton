@@ -332,9 +332,9 @@ plot_correlation_matrix <- function(corr_matrix,
   corr_df <- as.data.frame(as.table(corr_matrix))
   names(corr_df) <- c("Family1", "Family2", "Correlation")
 
-  # Clean family names for display (remove "famille_" prefix)
-  corr_df$Family1 <- gsub("^famille_", "", corr_df$Family1)
-  corr_df$Family2 <- gsub("^famille_", "", corr_df$Family2)
+  # Afficher le code lettre pour lisibilite
+  corr_df$Family1 <- vapply(corr_df$Family1, function(n) get_famille_code(n) %||% n, character(1))
+  corr_df$Family2 <- vapply(corr_df$Family2, function(n) get_famille_code(n) %||% n, character(1))
 
   # Generate title if not provided
   if (is.null(title)) {

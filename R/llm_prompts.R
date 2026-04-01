@@ -192,7 +192,7 @@ build_synthesis_prompt <- function(family_scores_df, language) {
 
   # Build per-family stats summary
   stats_lines <- vapply(family_cols, function(col) {
-    code <- sub("^famille_", "", col)
+    code <- get_famille_code(col)
     fam <- INDICATOR_FAMILIES[[code]]
     if (is.null(fam)) return(paste0("- ", col, ": unknown family"))
     fam_name <- if (language == "fran\u00e7ais") fam$name_fr else fam$name_en

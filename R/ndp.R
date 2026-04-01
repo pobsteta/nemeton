@@ -395,10 +395,15 @@ compute_general_index <- function(family_scores, ndp = 0L) {
   ndp <- as.integer(ndp)
   level <- get_ndp_level(ndp)
 
+
   # Nettoyer les noms (supporter famille_carbone ou C)
   nms <- names(family_scores)
   if (!is.null(nms)) {
-    nms <- sub("^famille_", "", nms)
+    # Convertir famille_biodiversite → B, etc.
+    nms <- vapply(nms, function(n) {
+      code <- get_famille_code(n)
+      if (!is.na(code)) code else sub("^famille_", "", n)
+    }, character(1), USE.NAMES = FALSE)
     names(family_scores) <- nms
   }
 
@@ -457,16 +462,22 @@ compute_general_index <- function(family_scores, ndp = 0L) {
 #'
 #' @export
 compute_general_index_mixed <- function(family_scores, ndp_per_indicator) {
-  # Nettoyer les noms
+  # Nettoyer les noms (convertir famille_carbone → C)
   nms <- names(family_scores)
   if (!is.null(nms)) {
-    nms <- sub("^famille_", "", nms)
+    nms <- vapply(nms, function(n) {
+      code <- get_famille_code(n)
+      if (!is.na(code)) code else sub("^famille_", "", n)
+    }, character(1), USE.NAMES = FALSE)
     names(family_scores) <- nms
   }
 
   ndp_nms <- names(ndp_per_indicator)
   if (!is.null(ndp_nms)) {
-    ndp_nms <- sub("^famille_", "", ndp_nms)
+    ndp_nms <- vapply(ndp_nms, function(n) {
+      code <- get_famille_code(n)
+      if (!is.na(code)) code else sub("^famille_", "", n)
+    }, character(1), USE.NAMES = FALSE)
     names(ndp_per_indicator) <- ndp_nms
   }
 

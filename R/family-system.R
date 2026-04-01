@@ -37,6 +37,19 @@ get_famille_col <- function(code) {
   FAMILLE_NMT_MAP[[toupper(code)]]
 }
 
+#' Get family code from NMT column name
+#'
+#' Reverse lookup: "famille_biodiversite" -> "B"
+#'
+#' @param col_name Character. NMT family column name.
+#' @return Character. Single-letter family code, or NA if not found.
+#' @noRd
+get_famille_code <- function(col_name) {
+  idx <- match(col_name, FAMILLE_NMT_MAP)
+  if (is.na(idx)) return(NA_character_)
+  names(FAMILLE_NMT_MAP)[idx]
+}
+
 #' Create Family Composite Indices
 #'
 #' Aggregates sub-indicators into family-level composite scores (e.g., score_carbon,
