@@ -358,7 +358,7 @@ indicateur_c2_ndvi <- function(units,
 #' }
 indicateur_w1_reseau <- function(units,
                                     layers,
-                                    watercourse_layer = "indicateur_w1_reseau",
+                                    watercourse_layer = "water_network",
                                     buffer = 0,
                                     proximity_m = 500,
                                     proximity_ref = 50) {
@@ -1407,11 +1407,7 @@ indicateur_l1_sylvosphere_ratio <- function(units, layers = NULL, ...) {
   indicateur_l1_sylvosphere(units, layers = layers, ...)
 }
 
-#' @noRd
-indicateur_s3_population <- function(units, ...) {
-  # S3: Population proximity - delegates to indicateur_s3_population
-  indicateur_s3_population(units, method = "proxy")
-}
+# indicateur_s3_population est defini dans indicators-social.R
 
 #' @noRd
 indicateur_e1_bois_energie <- function(units, layers = NULL, ...) {
