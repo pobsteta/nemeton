@@ -416,6 +416,15 @@ start_computation <- function(project_id,
     # Final save (ensures metadata is updated)
     save_indicators(project_id, results)
 
+    # Sync to PostGIS database if configured (non-bloquant)
+    if (is_db_configured()) {
+      tryCatch({
+        db_sync_project(project_id)
+      }, error = function(e) {
+        cli::cli_warn("Database sync failed (non-blocking): {e$message}")
+      })
+    }
+
     # Update final state
     state$status <- COMPUTE_STATUS$COMPLETED
     state$phase <- "complete"
