@@ -245,7 +245,7 @@ db_save_parcels <- function(con, project_id, parcels) {
   parcels_db$geo_parcelle <- parcels_db$geo_parcelle %||% NA_character_
 
   sf::st_write(parcels_db, con,
-    Id(schema = "nemeton", table = "parcels"),
+    DBI::Id(schema = "nemeton", table = "parcels"),
     append = TRUE, quiet = TRUE
   )
 }
