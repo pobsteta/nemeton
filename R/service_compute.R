@@ -87,6 +87,7 @@ DATA_SOURCES <- list(
       name = "Water Network",
       type = "vector",
       source = "ign_bd_topo",
+      layer_key = "water_network",
       required_for = c("indicateur_w1_reseau")
     ),
     water_surfaces = list(
@@ -967,15 +968,23 @@ download_ign_bdtopo <- function(layer_name, bbox, cache_file) {
   }
 
   # Map layer names to BD TOPO V3 typenames (source: inst/datasources/FR.json)
-  layer_cfg <- get_data_source(layer_name, "FR")
+  # Les cles DATA_SOURCES (indicateur_w1_reseau) peuvent differer des cles FR.json (water_network)
+  datasource_to_json_key <- c(
+    indicateur_w1_reseau = "water_network",
+    water_surfaces = "water_surfaces",
+    roads = "roads",
+    buildings = "buildings"
+  )
+  json_key <- datasource_to_json_key[[layer_name]] %||% layer_name
+  layer_cfg <- get_data_source(json_key, "FR")
   typename <- layer_cfg$typename
 
   # Fallback sur les noms en dur si la config n'est pas trouvee
   if (is.null(typename)) {
     layer_mapping <- list(
-      roads = "BDTOPO_V3:troncon_de_route",
       indicateur_w1_reseau = "BDTOPO_V3:troncon_hydrographique",
       water_surfaces = "BDTOPO_V3:surface_hydrographique",
+      roads = "BDTOPO_V3:troncon_de_route",
       buildings = "BDTOPO_V3:batiment"
     )
     typename <- layer_mapping[[layer_name]]
