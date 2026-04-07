@@ -2,7 +2,6 @@
 #' @importFrom stats sd runif
 #' @importFrom graphics plot.new text
 #' @importFrom glue glue
-#' @importFrom promises %...>% %...!%
 "_PACKAGE"
 
 #' nemeton: Systemic Forest Analysis Using the Nemeton Method

@@ -503,3 +503,56 @@ invert_indicator <- function(data,
 
   data
 }
+
+
+#' Normalize a single indicator to 0-100 scale
+#'
+#' Converts raw indicator values to a common 0-100 scale using
+#' indicator-specific reference maxima and special handling rules.
+#'
+#' @param indicator Character. Indicator name (NMT convention).
+#' @param values Numeric vector. Raw indicator values.
+#'
+#' @return Numeric vector. Normalized values (0-100).
+#'
+#' @export
+normalize_indicator <- function(indicator, values) {
+  ref_max <- switch(indicator,
+    "indicateur_c1_biomasse" = 150,
+    "indicateur_c2_ndvi" = NULL,
+    "indicateur_w1_reseau" = 50,
+    "indicateur_w2_zones_humides" = 5,
+    "indicateur_w3_humidite" = NULL,
+    "indicateur_s1_routes" = NULL,
+    "indicateur_s2_bati" = NULL,
+    "indicateur_s3_population" = 10000,
+    "indicateur_p1_volume" = 800,
+    "indicateur_p2_station" = 15,
+    "indicateur_e1_bois_energie" = 0.3,
+    "indicateur_e2_evitement" = 0.75,
+    NULL
+  )
+
+  # TWI: rescale [2.5, 4.5] -> [0, 100]
+  if (indicator == "indicateur_w3_humidite") {
+    return(pmin(100, pmax(0, (values - 2.5) / 2 * 100)))
+  }
+
+  # NDVI: scale 0-1 -> 0-100
+  if (indicator == "indicateur_c2_ndvi") {
+    return(pmin(100, pmax(0, values * 100)))
+  }
+
+  # Distance indicators: inverse (closer = higher score)
+  if (indicator %in% c("indicateur_s1_routes", "indicateur_s2_bati")) {
+    return(pmin(100, pmax(0, 100 * (1 - values / 2000))))
+  }
+
+  if (!is.null(ref_max)) {
+    values <- pmin(100, pmax(0, values / ref_max * 100))
+  } else {
+    values <- pmin(100, pmax(0, values))
+  }
+
+  values
+}
