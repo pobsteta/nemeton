@@ -8,15 +8,16 @@ template:
     success: "#4CAF50"
 
 home:
-  title: "nemeton - Analyse Systémique Forestière"
+  title: "nemeton - Analyse Systemique Forestiere"
   description: >
-    Évaluation multi-famille des services écosystémiques pour la gestion
-    forestière avec la méthode Nemeton. Calculez, normalisez, agrégez et
-    visualisez des indicateurs biophysiques à travers 12 familles de
-    services écosystémiques.
+    Package R coeur pour l'analyse multi-famille des services ecosystemiques
+    forestiers. 31 indicateurs, 12 familles, systeme NDP (Fibonacci),
+    11 essences par region. Methode Nemeton.
   links:
   - text: Voir sur GitHub
     href: https://github.com/pobsteta/nemeton
+  - text: Application Shiny (nemetonShiny)
+    href: https://github.com/pobsteta/nemeton_shiny
 
 navbar:
   structure:
@@ -26,28 +27,23 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: Démarrage rapide
+      - text: Demarrage rapide
         href: articles/getting-started_fr.html
       - text: Familles d'indicateurs (12 familles)
         href: articles/indicator-families_fr.html
       - text: "---"
-      - text: Référentiel complet 12 familles
+      - text: Referentiel complet 12 familles
         href: articles/complete-referential_fr.html
-      - text: Optimisation multi-critères
+      - text: Optimisation multi-criteres
         href: articles/multi-criteria-optimization_fr.html
-      - text: Biodiversité et résilience
+      - text: Biodiversite et resilience
         href: articles/biodiversity-resilience-v030_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
-      - text: "---"
-      - text: Application nemetonApp
-        href: articles/nemetonapp-guide_fr.html
-      - text: Internationalisation (i18n)
-        href: articles/internationalization.html
 
 reference:
-  - title: "Gestion des données"
-    desc: "Créer et gérer les unités spatiales et les couches"
+  - title: "Gestion des donnees"
+    desc: "Creer et gerer les unites spatiales et les couches"
     contents:
     - nemeton_units
     - nemeton_layers
@@ -60,112 +56,148 @@ reference:
     - nemeton_compute
     - list_indicators
 
-  - title: "Famille C : Carbone & Vitalité"
-    desc: "Stockage de carbone et vitalité de la végétation"
+  - title: "Famille C : Carbone & Vitalite"
+    desc: "Stockage de carbone et vitalite de la vegetation"
     contents:
-    - indicator_carbon_biomass
-    - indicator_carbon_ndvi
+    - indicateur_c1_biomasse
+    - indicateur_c2_ndvi
 
-  - title: "Famille B : Biodiversité"
-    desc: "Protection, diversité structurelle et connectivité écologique"
+  - title: "Famille B : Biodiversite"
+    desc: "Protection, diversite structurelle et connectivite ecologique"
     contents:
-    - indicator_biodiversity_protection
-    - indicator_biodiversity_structure
-    - indicator_biodiversity_connectivity
+    - indicateur_b1_protection
+    - indicateur_b2_structure
+    - indicateur_b3_connectivite
 
-  - title: "Famille W : Régulation de l'eau"
-    desc: "Régulation hydrologique et zones humides"
+  - title: "Famille W : Regulation de l'eau"
+    desc: "Regulation hydrologique et zones humides"
     contents:
-    - indicator_water_network
-    - indicator_water_wetlands
-    - indicator_water_twi
+    - indicateur_w1_reseau
+    - indicateur_w2_zones_humides
+    - indicateur_w3_humidite
 
   - title: "Famille A : Air & Microclimat"
-    desc: "Couverture arborée et qualité de l'air"
+    desc: "Couverture arboree et qualite de l'air"
     contents:
-    - indicator_air_coverage
-    - indicator_air_quality
+    - indicateur_a1_couverture
+    - indicateur_a2_qualite_air
 
-  - title: "Famille F : Fertilité des sols"
-    desc: "Qualité du sol et risque d'érosion"
+  - title: "Famille F : Fertilite des sols"
+    desc: "Qualite du sol et risque d'erosion"
     contents:
-    - indicator_soil_fertility
-    - indicator_soil_erosion
+    - indicateur_f1_fertilite
+    - indicateur_f2_erosion
 
   - title: "Famille L : Paysage"
-    desc: "Structure du paysage et connectivité"
+    desc: "Structure du paysage et connectivite"
     contents:
-    - indicator_landscape_fragmentation
-    - indicator_landscape_edge
+    - indicateur_l2_fragmentation
+    - indicateur_l1_sylvosphere
 
   - title: "Famille T : Dynamique temporelle"
-    desc: "Ancienneté des peuplements et changements d'occupation"
+    desc: "Anciennete des peuplements et changements d'occupation"
     contents:
-    - indicator_temporal_age
-    - indicator_temporal_change
+    - indicateur_t1_anciennete
+    - indicateur_t2_changement
 
-  - title: "Famille R : Risques & Résilience"
-    desc: "Vulnérabilité aux incendies, tempêtes et sécheresse"
+  - title: "Famille R : Risques & Resilience"
+    desc: "Vulnerabilite aux incendies, tempetes et secheresse"
     contents:
-    - indicator_risk_fire
-    - indicator_risk_storm
-    - indicator_risk_drought
-    - indicator_risk_browsing
+    - indicateur_r1_feu
+    - indicateur_r2_tempete
+    - indicateur_r3_secheresse
+    - indicateur_r4_abroutissement
     - compute_game_pressure_index
     - download_hunting_data
     - get_game_pressure_raster
 
   - title: "Famille S : Social & Usages"
-    desc: "Densité de sentiers, accessibilité et proximité population"
+    desc: "Distance routes, distance bati et proximite population"
     contents:
-    - indicator_social_trails
-    - indicator_social_accessibility
-    - indicator_social_proximity
+    - indicateur_s1_routes
+    - indicateur_s2_bati
+    - indicateur_s3_population
 
-  - title: "Famille P : Production & Économie"
-    desc: "Volume bois, productivité station et qualité bois d'œuvre"
+  - title: "Famille P : Production & Economie"
+    desc: "Volume bois, productivite station et qualite bois d'oeuvre"
     contents:
-    - indicator_productive_volume
-    - indicator_productive_station
-    - indicator_productive_quality
+    - indicateur_p1_volume
+    - indicateur_p2_station
+    - indicateur_p3_qualite_bois
 
-  - title: "Famille E : Énergie & Climat"
-    desc: "Potentiel bois-énergie et évitement carbone"
+  - title: "Famille E : Energie & Climat"
+    desc: "Potentiel bois-energie et evitement carbone"
     contents:
-    - indicator_energy_fuelwood
-    - indicator_energy_avoidance
+    - indicateur_e1_bois_energie
+    - indicateur_e2_evitement
 
-  - title: "Famille N : Naturalité"
-    desc: "Distance infrastructures, continuité forestière et indice wilderness"
+  - title: "Famille N : Naturalite"
+    desc: "Distance infrastructures, continuite forestiere et indice wilderness"
     contents:
-    - indicator_naturalness_distance
-    - indicator_naturalness_continuity
-    - indicator_naturalness_composite
+    - indicateur_n1_distance
+    - indicateur_n2_continuite
+    - indicateur_n3_naturalite
+
+  - title: "Systeme NDP (Niveau De Precision)"
+    desc: "Ponderation Fibonacci et confiance phi"
+    contents:
+    - ndp_table
+    - get_ndp_level
+    - get_ndp_name
+    - get_ndp_weight
+    - get_ndp_confidence
+    - compute_general_index
+    - compute_general_index_mixed
+    - detect_ndp
+    - ndp_badge
+    - ndp_progress_bar
+
+  - title: "Configuration essences (ADR-007)"
+    desc: "Classification d'essences par region biogeographique"
+    contents:
+    - get_species_config
+    - list_species_classes
+    - list_species_regions
+    - map_bdforet_essence
+    - map_oso_class
+    - get_allometric_key
+
+  - title: "Sources de donnees (ADR-002)"
+    desc: "Abstraction des sources par pays"
+    contents:
+    - get_country_config
+    - get_data_source
+    - get_layer_service
+    - get_national_crs
+    - get_metric_crs
+    - get_storage_crs
+    - list_countries
 
   - title: "Analyse temporelle"
-    desc: "Analyse multi-périodes et détection de changements"
+    desc: "Analyse multi-periodes et detection de changements"
     contents:
     - nemeton_temporal
     - calculate_change_rate
 
   - title: "Analyse inter-familles"
-    desc: "Corrélations et hotspots multi-critères"
+    desc: "Correlations et hotspots multi-criteres"
     contents:
     - compute_family_correlations
     - identify_hotspots
     - plot_correlation_matrix
 
-  - title: "Analyse multi-critères avancée"
+  - title: "Analyse multi-criteres avancee"
     desc: "Optimisation Pareto, clustering et trade-offs"
     contents:
     - identify_pareto_optimal
     - cluster_parcels
     - plot_tradeoff
 
-  - title: "Normalisation & Agrégation"
+  - title: "Normalisation & Agregation"
     desc: "Transformer et combiner les indicateurs"
     contents:
     - normalize_indicators
+    - normalize_indicator
     - create_composite_index
     - create_family_index
     - invert_indicator
@@ -185,8 +217,14 @@ reference:
     contents:
     - nemeton_set_language
 
-  - title: "Méthodes S3"
-    desc: "Méthodes print et summary pour les objets nemeton"
+  - title: "Application Shiny"
+    desc: >
+      L'application interactive est dans le package separe nemetonShiny.
+      Installez-le avec remotes::install_github("pobsteta/nemeton_shiny")
+      puis lancez nemetonShiny::run_app(language = "fr").
+
+  - title: "Methodes S3"
+    desc: "Methodes print et summary pour les objets nemeton"
     contents:
     - print.nemeton_units
     - print.nemeton_layers
@@ -195,37 +233,18 @@ reference:
     - summary.nemeton_layers
     - summary.nemeton_temporal
 
-  - title: "Application Shiny"
-    desc: "Interface interactive nemetonApp"
-    contents:
-    - run_app
-    - generate_report_pdf
-
   - title: "Documentation du package"
     contents:
     - nemeton-package
 
   - title: "Utilitaires"
-    desc: "Fonctions de traitement parallèle"
+    desc: "Fonctions de traitement parallele"
     contents:
     - smart_map
     - smart_map_sf
 
-  - title: "Fonctions internes"
-    desc: "Fonctions d'aide internes (pour développeurs)"
-    contents:
-    - detect_indicator_family
-    - get_family_name
-    - family-system
-    - indicators-families
-    - indicators-energy
-    - indicators-naturalness
-    - indicators-productive
-    - indicators-social
-    - temporal
-
 authors:
-  Pascal Obstétar:
+  Pascal Obstetar:
     href: https://github.com/pobsteta
 
 footer:
