@@ -270,8 +270,30 @@ mod_home_server <- function(id, app_state) {
         return()
       }
 
+      # Afficher un message de chargement et desactiver les clics
+      loading_msg <- if (i18n$language == "fr") {
+        "Chargement du projet en cours..."
+      } else {
+        "Loading project..."
+      }
+      notif_id <- shiny::showNotification(
+        htmltools::tagList(
+          shiny::icon("spinner", class = "fa-spin me-2"),
+          loading_msg
+        ),
+        type = "message", duration = NULL, session = session
+      )
+      # Desactiver les cartes projet pendant le chargement
+      session$sendCustomMessage("disableProjectCards", list(disable = TRUE))
+
       # Load the project from disk (sync PostGIS si configure)
       project <- load_project(project_id)
+
+      # Retirer la notification de chargement
+      shiny::removeNotification(notif_id, session = session)
+      # Reactiver les cartes projet
+      session$sendCustomMessage("disableProjectCards", list(disable = FALSE))
+
       shiny::req(project)
 
       # Notification sync PostGIS au chargement

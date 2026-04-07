@@ -641,4 +641,21 @@
     });
   }
 
+  // ============================================================
+  // Project Cards: disable/enable during loading
+  // ============================================================
+
+  Shiny.addCustomMessageHandler('disableProjectCards', function(data) {
+    var cards = document.querySelectorAll('.project-card');
+    cards.forEach(function(card) {
+      if (data.disable) {
+        card.style.pointerEvents = 'none';
+        card.style.opacity = '0.5';
+      } else {
+        card.style.pointerEvents = '';
+        card.style.opacity = '';
+      }
+    });
+  });
+
 })();
