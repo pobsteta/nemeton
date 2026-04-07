@@ -108,7 +108,7 @@ test_that("compute_family_correlations auto-detects family columns", {
 
   expect_equal(nrow(result), 3)
   expect_false("other_col" %in% colnames(result))
-  expect_true(all(grepl("^family_", colnames(result))))
+  expect_true(all(grepl("^famille_", colnames(result))))
 })
 
 # ==============================================================================
