@@ -93,20 +93,20 @@ test_that("plot_indicators_map handles normalized indicators", {
   normalized <- normalize_indicators(units, indicators = "indicateur_c1_biomasse", method = "minmax")
 
   # Plot normalized
-  p <- plot_indicators_map(normalized, indicators = "carbon_biomass_norm")
+  p <- plot_indicators_map(normalized, indicators = "indicateur_c1_biomasse_norm")
 
   expect_s3_class(p, "ggplot")
 })
 
 test_that("plot_indicators_map works with composite index", {
   units <- nemeton_units(create_test_units(n_features = 5))
-  units$carbon_biomass_norm <- c(0, 25, 50, 75, 100)
-  units$water_twi_norm <- c(0, 25, 50, 75, 100)
+  units$indicateur_c1_biomasse_norm <- c(0, 25, 50, 75, 100)
+  units$indicateur_w3_humidite_norm <- c(0, 25, 50, 75, 100)
 
   # Create composite
   result <- create_composite_index(
     units,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     name = "ecosystem_health"
   )
 
@@ -237,9 +237,9 @@ test_that("plot_difference_map errors on non-sf inputs", {
 test_that("clean_indicator_name formats names correctly", {
   # Test internal function through plotting
   units <- nemeton_units(create_test_units(n_features = 3))
-  units$carbon_biomass_norm <- c(0, 50, 100)
+  units$indicateur_c1_biomasse_norm <- c(0, 50, 100)
 
-  p <- plot_indicators_map(units, indicators = "carbon_biomass_norm")
+  p <- plot_indicators_map(units, indicators = "indicateur_c1_biomasse_norm")
 
   # Check that plot was created successfully
   # The cleaning happens in the scale name, which is in p$scales
@@ -289,14 +289,14 @@ test_that("full visualization workflow works end-to-end", {
   # Step 2: Invert accessibility
   normalized <- invert_indicator(
     normalized,
-    indicators = "social_accessibility_norm",
+    indicators = "indicateur_s2_bati_norm",
     suffix = "_wilderness"
   )
 
   # Step 3: Create composite
   result <- create_composite_index(
     normalized,
-    indicators = c("carbon_biomass_norm", "biodiversity_protection_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_b1_protection_norm", "indicateur_w3_humidite_norm"),
     weights = c(0.4, 0.4, 0.2),
     name = "ecosystem_health"
   )
@@ -312,7 +312,7 @@ test_that("full visualization workflow works end-to-end", {
   # Step 5: Visualize normalized indicators
   p2 <- plot_indicators_map(
     normalized,
-    indicators = c("carbon_biomass_norm", "biodiversity_protection_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_b1_protection_norm", "indicateur_w3_humidite_norm"),
     palette = "viridis",
     facet = TRUE,
     ncol = 3
@@ -389,7 +389,7 @@ test_that("nemeton_radar works with explicit indicators", {
   p <- suppressWarnings(nemeton_radar(
     normalized,
     unit_id = "P05",
-    indicators = c("carbon_biomass_norm", "biodiversity_protection_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_b1_protection_norm", "indicateur_w3_humidite_norm"),
     normalize = FALSE
   ))
 
@@ -452,7 +452,7 @@ test_that("nemeton_radar supports 9-family axes (v0.3.0)", {
   p <- nemeton_radar(
     result,
     unit_id = 1,
-    indicators = grep("^family_", names(result), value = TRUE),
+    indicators = grep("^famille_", names(result), value = TRUE),
     normalize = FALSE
   )
 
@@ -486,7 +486,7 @@ test_that("nemeton_radar scales correctly with 9-12 axes", {
   p <- nemeton_radar(
     result,
     unit_id = 1,
-    indicators = grep("^family_", names(result), value = TRUE),
+    indicators = grep("^famille_", names(result), value = TRUE),
     normalize = FALSE
   )
 
@@ -518,7 +518,7 @@ test_that("nemeton_radar handles new family names correctly", {
   expect_s3_class(p, "ggplot")
 
   # Plot data should contain family indicator values
-  expect_true(any(grepl("family_", p$data$indicator)))
+  expect_true(any(grepl("famille_", p$data$indicator)))
 })
 
 test_that("nemeton_radar displays correct scaling with mixed v0.2.0 and v0.3.0 families", {
@@ -537,7 +537,7 @@ test_that("nemeton_radar displays correct scaling with mixed v0.2.0 and v0.3.0 f
   p <- nemeton_radar(
     result,
     unit_id = 1,
-    indicators = grep("^family_", names(result), value = TRUE),
+    indicators = grep("^famille_", names(result), value = TRUE),
     normalize = FALSE
   )
 
@@ -582,7 +582,7 @@ test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
 
 # --- clean_indicator_name (internal) -----------------------------------------
 
-test_that("clean_indicator_name transforms family_ prefix correctly", {
+test_that("clean_indicator_name transforms famille_ prefix correctly", {
   expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
   expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
   expect_equal(nemeton:::clean_indicator_name("famille_eau"), "W")

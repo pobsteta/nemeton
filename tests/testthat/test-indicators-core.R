@@ -20,10 +20,10 @@ test_that("list_indicators returns all 31 indicator names by default", {
   expect_true("indicateur_w1_reseau" %in% indicators)
   expect_true("indicateur_w2_zones_humides" %in% indicators)
   expect_true("indicateur_w3_humidite" %in% indicators)
-  expect_true("soil_fertility" %in% indicators)
-  expect_true("soil_erosion" %in% indicators)
+  expect_true("indicateur_f1_fertilite" %in% indicators)
+  expect_true("indicateur_f2_erosion" %in% indicators)
   expect_true("indicateur_l2_fragmentation" %in% indicators)
-  expect_true("landscape_edge" %in% indicators)
+  expect_true("indicateur_l1_sylvosphere" %in% indicators)
   expect_true("indicateur_b1_protection" %in% indicators)
   expect_true("indicateur_b2_structure" %in% indicators)
   expect_true("indicateur_b3_connectivite" %in% indicators)
@@ -33,19 +33,19 @@ test_that("list_indicators returns all 31 indicator names by default", {
   expect_true("indicateur_r4_abroutissement" %in% indicators)
   expect_true("indicateur_t1_anciennete" %in% indicators)
   expect_true("indicateur_t2_changement" %in% indicators)
-  expect_true("air_coverage" %in% indicators)
+  expect_true("indicateur_a1_couverture" %in% indicators)
   expect_true("indicateur_a2_qualite_air" %in% indicators)
   expect_true("indicateur_s1_routes" %in% indicators)
   expect_true("indicateur_s2_bati" %in% indicators)
-  expect_true("social_proximity" %in% indicators)
-  expect_true("productive_volume" %in% indicators)
-  expect_true("productive_quality" %in% indicators)
-  expect_true("productive_station" %in% indicators)
-  expect_true("energy_fuelwood" %in% indicators)
-  expect_true("energy_avoidance" %in% indicators)
+  expect_true("indicateur_s3_population" %in% indicators)
+  expect_true("indicateur_p1_volume" %in% indicators)
+  expect_true("indicateur_p3_qualite_bois" %in% indicators)
+  expect_true("indicateur_p2_station" %in% indicators)
+  expect_true("indicateur_e1_bois_energie" %in% indicators)
+  expect_true("indicateur_e2_evitement" %in% indicators)
   expect_true("indicateur_n1_distance" %in% indicators)
   expect_true("indicateur_n2_continuite" %in% indicators)
-  expect_true("naturalness_composite" %in% indicators)
+  expect_true("indicateur_n3_naturalite" %in% indicators)
 })
 
 test_that("list_indicators returns details data.frame when requested", {
@@ -75,7 +75,7 @@ test_that("list_indicators details contain correct family codes", {
   risk_row <- details[details$name == "indicateur_r1_feu", ]
   expect_equal(risk_row$family, "R")
 
-  naturalness_row <- details[details$name == "naturalness_composite", ]
+  naturalness_row <- details[details$name == "indicateur_n3_naturalite", ]
   expect_equal(naturalness_row$family, "N")
 })
 
@@ -90,7 +90,7 @@ test_that("list_indicators filters by category = 'biophysical'", {
   expect_true("indicateur_c2_ndvi" %in% biophysical)
   expect_true("indicateur_w1_reseau" %in% biophysical)
   expect_true("indicateur_b1_protection" %in% biophysical)
-  expect_true("air_coverage" %in% biophysical)
+  expect_true("indicateur_a1_couverture" %in% biophysical)
   # social, risk, etc. should NOT be in biophysical
 
   expect_false("indicateur_s2_bati" %in% biophysical)
@@ -115,7 +115,7 @@ test_that("list_indicators filters by category = 'social'", {
   expect_length(social, 3)
   expect_true("indicateur_s1_routes" %in% social)
   expect_true("indicateur_s2_bati" %in% social)
-  expect_true("social_proximity" %in% social)
+  expect_true("indicateur_s3_population" %in% social)
   expect_false("indicateur_c1_biomasse" %in% social)
 })
 
@@ -124,7 +124,7 @@ test_that("list_indicators filters by category = 'landscape'", {
 
   expect_length(landscape, 2)
   expect_true("indicateur_l2_fragmentation" %in% landscape)
-  expect_true("landscape_edge" %in% landscape)
+  expect_true("indicateur_l1_sylvosphere" %in% landscape)
   expect_false("indicateur_c1_biomasse" %in% landscape)
 })
 
@@ -140,17 +140,17 @@ test_that("list_indicators filters by category = 'productive'", {
   productive <- list_indicators(category = "productive")
 
   expect_length(productive, 3)
-  expect_true("productive_volume" %in% productive)
-  expect_true("productive_quality" %in% productive)
-  expect_true("productive_station" %in% productive)
+  expect_true("indicateur_p1_volume" %in% productive)
+  expect_true("indicateur_p3_qualite_bois" %in% productive)
+  expect_true("indicateur_p2_station" %in% productive)
 })
 
 test_that("list_indicators filters by category = 'energy'", {
   energy <- list_indicators(category = "energy")
 
   expect_length(energy, 2)
-  expect_true("energy_fuelwood" %in% energy)
-  expect_true("energy_avoidance" %in% energy)
+  expect_true("indicateur_e1_bois_energie" %in% energy)
+  expect_true("indicateur_e2_evitement" %in% energy)
 })
 
 test_that("list_indicators filters by category = 'naturalness'", {
@@ -159,7 +159,7 @@ test_that("list_indicators filters by category = 'naturalness'", {
   expect_length(naturalness, 3)
   expect_true("indicateur_n1_distance" %in% naturalness)
   expect_true("indicateur_n2_continuite" %in% naturalness)
-  expect_true("naturalness_composite" %in% naturalness)
+  expect_true("indicateur_n3_naturalite" %in% naturalness)
 })
 
 test_that("list_indicators with unknown category returns empty", {

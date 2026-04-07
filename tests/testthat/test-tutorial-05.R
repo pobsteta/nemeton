@@ -86,7 +86,7 @@ test_that("Tutorial 05 covers family aggregation", {
   content <- paste(readLines(tutorial_path, warn = FALSE), collapse = "\n")
 
   # Family score patterns
-  expect_match(content, "family_|famille", ignore.case = TRUE,
+  expect_match(content, "famille", ignore.case = TRUE,
                info = "Should cover family score calculation")
   expect_match(content, "12.*famille|famille.*12", ignore.case = TRUE,
                info = "Should mention 12 families")
@@ -123,7 +123,7 @@ test_that("Tutorial 05 references all 12 families", {
   # All 12 family codes
   families <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
 
-  # At least check that family_ columns are mentioned
+  # At least check that famille_ columns are mentioned
   expect_match(content, "famille_carbone|famille_biodiversite|famille_eau",
                info = "Should reference family score columns")
 })

@@ -113,7 +113,7 @@ test_that("FR config has all required sections", {
 test_that("FR config has all expected layers", {
   config <- get_country_config("FR")
   expected_layers <- c("dem", "ortho_irc", "bdforet", "roads",
-                        "water_network", "water_surfaces", "buildings",
+                        "indicateur_w1_reseau", "water_surfaces", "buildings",
                         "protected_areas", "lidar_mnh", "lidar_mnt", "lidar_copc")
   for (layer in expected_layers) {
     expect_true(layer %in% names(config$layers),

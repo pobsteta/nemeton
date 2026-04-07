@@ -18,13 +18,13 @@ test_that("normalize_indicators() minmax with explicit indicators scales to 0-10
     method = "minmax"
   )
 
-  expect_true("carbon_biomass_norm" %in% names(result))
-  expect_true("water_twi_norm" %in% names(result))
-  expect_equal(min(result$carbon_biomass_norm), 0)
-  expect_equal(max(result$carbon_biomass_norm), 100)
-  expect_equal(result$carbon_biomass_norm[3], 50)
-  expect_equal(min(result$water_twi_norm), 0)
-  expect_equal(max(result$water_twi_norm), 100)
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true("indicateur_w3_humidite_norm" %in% names(result))
+  expect_equal(min(result$indicateur_c1_biomasse_norm), 0)
+  expect_equal(max(result$indicateur_c1_biomasse_norm), 100)
+  expect_equal(result$indicateur_c1_biomasse_norm[3], 50)
+  expect_equal(min(result$indicateur_w3_humidite_norm), 0)
+  expect_equal(max(result$indicateur_w3_humidite_norm), 100)
 })
 
 test_that("normalize_indicators() zscore method centers around 0 with sd=1", {
@@ -38,9 +38,9 @@ test_that("normalize_indicators() zscore method centers around 0 with sd=1", {
     method = "zscore"
   )
 
-  expect_true("carbon_biomass_norm" %in% names(result))
-  expect_true(abs(mean(result$carbon_biomass_norm)) < 0.01)
-  expect_true(abs(sd(result$carbon_biomass_norm) - 1) < 0.01)
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true(abs(mean(result$indicateur_c1_biomasse_norm)) < 0.01)
+  expect_true(abs(sd(result$indicateur_c1_biomasse_norm) - 1) < 0.01)
 })
 
 test_that("normalize_indicators() quantile method produces 0-100 ranks", {
@@ -53,13 +53,13 @@ test_that("normalize_indicators() quantile method produces 0-100 ranks", {
     method = "quantile"
   )
 
-  expect_true("carbon_biomass_norm" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
   # The lowest value should get the lowest rank
-  expect_equal(result$carbon_biomass_norm[1], 10) # 1/10 * 100 = 10
+  expect_equal(result$indicateur_c1_biomasse_norm[1], 10) # 1/10 * 100 = 10
   # The highest value should get rank 100
-  expect_equal(result$carbon_biomass_norm[10], 100) # 10/10 * 100 = 100
+  expect_equal(result$indicateur_c1_biomasse_norm[10], 100) # 10/10 * 100 = 100
   # All should be in [0, 100]
-  expect_true(all(result$carbon_biomass_norm >= 0 & result$carbon_biomass_norm <= 100))
+  expect_true(all(result$indicateur_c1_biomasse_norm >= 0 & result$indicateur_c1_biomasse_norm <= 100))
 })
 
 test_that("normalize_indicators() auto-detects known indicator columns", {
@@ -70,8 +70,8 @@ test_that("normalize_indicators() auto-detects known indicator columns", {
 
   result <- nemeton::normalize_indicators(units, method = "minmax")
 
-  expect_true("carbon_biomass_norm" %in% names(result))
-  expect_true("water_twi_norm" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true("indicateur_w3_humidite_norm" %in% names(result))
   expect_false("random_col_norm" %in% names(result))
 })
 
@@ -91,15 +91,15 @@ test_that("normalize_indicators() auto-detects family indicators (C1, W1, etc.)"
   expect_false("not_indicator_norm" %in% names(result))
 })
 
-test_that("normalize_indicators() auto-detects family_index columns", {
+test_that("normalize_indicators() auto-detects famille_ columns", {
   units <- create_test_units(n_features = 5)
-  units$family_carbon <- c(10, 20, 30, 40, 50)
-  units$family_water <- c(5, 10, 15, 20, 25)
+  units$famille_carbone <- c(10, 20, 30, 40, 50)
+  units$famille_eau <- c(5, 10, 15, 20, 25)
 
   result <- nemeton::normalize_indicators(units, method = "minmax")
 
-  expect_true("family_carbon_norm" %in% names(result))
-  expect_true("family_water_norm" %in% names(result))
+  expect_true("famille_carbone_norm" %in% names(result))
+  expect_true("famille_eau_norm" %in% names(result))
 })
 
 test_that("normalize_indicators() by_family=TRUE changes suffix to '' and keep_original=FALSE", {
@@ -138,8 +138,8 @@ test_that("normalize_indicators() with reference_data uses external parameters",
   )
 
   # With reference range 0-100, value 20 should become 20, 60 should become 60
-  expect_equal(result$carbon_biomass_norm[1], 20)
-  expect_equal(result$carbon_biomass_norm[5], 60)
+  expect_equal(result$indicateur_c1_biomasse_norm[1], 20)
+  expect_equal(result$indicateur_c1_biomasse_norm[5], 60)
 })
 
 test_that("normalize_indicators() warns when reference_data missing indicator", {
@@ -194,8 +194,8 @@ test_that("normalize_indicators() suffix parameter customizes column names", {
     suffix = "_z"
   )
 
-  expect_true("carbon_biomass_z" %in% names(result))
-  expect_false("carbon_biomass_norm" %in% names(result))
+  expect_true("indicateur_c1_biomasse_z" %in% names(result))
+  expect_false("indicateur_c1_biomasse_norm" %in% names(result))
 })
 
 test_that("normalize_indicators() keep_original=TRUE keeps originals", {
@@ -210,7 +210,7 @@ test_that("normalize_indicators() keep_original=TRUE keeps originals", {
   )
 
   expect_true("indicateur_c1_biomasse" %in% names(result))
-  expect_true("carbon_biomass_norm" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
   expect_equal(result$indicateur_c1_biomasse, c(10, 20, 30, 40, 50))
 })
 
@@ -228,7 +228,7 @@ test_that("normalize_indicators() keep_original=FALSE removes originals", {
 
   # When keep_original=FALSE and suffix != "", original is removed
   expect_false("indicateur_c1_biomasse" %in% names(result))
-  expect_true("carbon_biomass_norm" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
 })
 
 test_that("normalize_indicators() preserves sf class", {
@@ -1078,8 +1078,8 @@ test_that("normalize_indicators() on plain data.frame (not sf)", {
     method = "minmax"
   )
 
-  expect_true("carbon_biomass_norm" %in% names(result))
-  expect_true("water_twi_norm" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true("indicateur_w3_humidite_norm" %in% names(result))
   expect_false(inherits(result, "sf"))
 })
 

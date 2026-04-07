@@ -32,13 +32,13 @@ test_that("clean_indicator_name does NOT strip family_ when followed by lowercas
 })
 
 test_that("clean_indicator_name removes _norm suffix and adds (Normalized)", {
-  result <- nemeton:::clean_indicator_name("carbon_biomass_norm")
+  result <- nemeton:::clean_indicator_name("indicateur_c1_biomasse_norm")
   expect_true(grepl("\\(Normalized\\)", result))
   expect_false(grepl("_norm", result))
 })
 
 test_that("clean_indicator_name removes _inv suffix and adds (Inverted)", {
-  result <- nemeton:::clean_indicator_name("risk_fire_inv")
+  result <- nemeton:::clean_indicator_name("indicateur_r1_feu_inv")
   expect_true(grepl("\\(Inverted\\)", result))
   expect_false(grepl("_inv", result))
 })
@@ -59,7 +59,7 @@ test_that("clean_indicator_name handles already-capitalized names", {
 })
 
 test_that("clean_indicator_name vectorized over multiple names", {
-  result <- nemeton:::clean_indicator_name(c("famille_carbone", "water_twi_norm", "risk_inv"))
+  result <- nemeton:::clean_indicator_name(c("famille_carbone", "indicateur_w3_humidite_norm", "risk_inv"))
   expect_length(result, 3)
   expect_equal(result[1], "C")
   expect_true(grepl("\\(Normalized\\)", result[2]))
@@ -231,7 +231,7 @@ test_that("plot_indicators_map auto-detects known indicators", {
 
 test_that("plot_indicators_map auto-detects _norm indicators", {
   data <- create_test_units(n_features = 3)
-  data$carbon_biomass_norm <- c(0.2, 0.5, 0.8)
+  data$indicateur_c1_biomasse_norm <- c(0.2, 0.5, 0.8)
 
   p <- nemeton::plot_indicators_map(data)
   expect_s3_class(p, "ggplot")
@@ -405,10 +405,10 @@ test_that("plot_indicators_map with ncol parameter for facets", {
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
-  data$soil_erosion <- c(10, 20, 30)
+  data$indicateur_f2_erosion <- c(10, 20, 30)
   p <- nemeton::plot_indicators_map(
     data,
-    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite", "soil_erosion"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite", "indicateur_f2_erosion"),
     ncol = 3
   )
   expect_s3_class(p, "ggplot")
@@ -610,7 +610,7 @@ test_that("nemeton_radar single unit in indicator mode returns ggplot", {
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
-  data$soil_erosion <- c(10, 20, 30, 40, 50)
+  data$indicateur_f2_erosion <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = 1, mode = "indicator")
   expect_s3_class(p, "ggplot")
@@ -627,7 +627,7 @@ test_that("nemeton_radar single unit in family mode returns ggplot", {
   expect_s3_class(p, "ggplot")
 })
 
-test_that("nemeton_radar family mode auto-detects family_ columns", {
+test_that("nemeton_radar family mode auto-detects famille_ columns", {
   data <- create_test_units(n_features = 3)
   data$famille_carbone <- c(80, 60, 70)
   data$famille_eau <- c(65, 75, 85)
@@ -675,7 +675,7 @@ test_that("nemeton_radar comparison mode with 3 units", {
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
-  data$soil_erosion <- c(10, 20, 30, 40, 50)
+  data$indicateur_f2_erosion <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(data, unit_id = c(1, 2, 3))
   expect_s3_class(p, "ggplot")
@@ -814,7 +814,7 @@ test_that("nemeton_radar with explicit indicators parameter", {
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
-  data$soil_erosion <- c(10, 20, 30, 40, 50)
+  data$indicateur_f2_erosion <- c(10, 20, 30, 40, 50)
 
   p <- nemeton::nemeton_radar(
     data, unit_id = 1,
@@ -835,7 +835,7 @@ test_that("nemeton_radar errors on invalid unit_id (string not found)", {
   )
 })
 
-test_that("nemeton_radar indicator mode excludes family_ columns from auto-detect", {
+test_that("nemeton_radar indicator mode excludes famille_ columns from auto-detect", {
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$famille_carbone <- c(50, 60, 70)

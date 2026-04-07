@@ -13,17 +13,17 @@ test_that("normalize_indicators normalizes with min-max method", {
   )
 
   # Check that normalized columns were created
-  expect_true("carbon_biomass_norm" %in% names(normalized))
-  expect_true("water_twi_norm" %in% names(normalized))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(normalized))
+  expect_true("indicateur_w3_humidite_norm" %in% names(normalized))
 
   # Check min-max scaling (0-100)
-  expect_equal(min(normalized$carbon_biomass_norm), 0)
-  expect_equal(max(normalized$carbon_biomass_norm), 100)
-  expect_equal(min(normalized$water_twi_norm), 0)
-  expect_equal(max(normalized$water_twi_norm), 100)
+  expect_equal(min(normalized$indicateur_c1_biomasse_norm), 0)
+  expect_equal(max(normalized$indicateur_c1_biomasse_norm), 100)
+  expect_equal(min(normalized$indicateur_w3_humidite_norm), 0)
+  expect_equal(max(normalized$indicateur_w3_humidite_norm), 100)
 
   # Check linearity is preserved
-  expect_equal(normalized$carbon_biomass_norm[3], 50) # Middle value
+  expect_equal(normalized$indicateur_c1_biomasse_norm[3], 50) # Middle value
 })
 
 test_that("normalize_indicators normalizes with z-score method", {
@@ -39,8 +39,8 @@ test_that("normalize_indicators normalizes with z-score method", {
   )
 
   # Z-score should have mean ~0 and sd ~1
-  expect_true(abs(mean(normalized$carbon_biomass_norm)) < 0.01)
-  expect_true(abs(sd(normalized$carbon_biomass_norm) - 1) < 0.01)
+  expect_true(abs(mean(normalized$indicateur_c1_biomasse_norm)) < 0.01)
+  expect_true(abs(sd(normalized$indicateur_c1_biomasse_norm) - 1) < 0.01)
 })
 
 test_that("normalize_indicators normalizes with quantile method", {
@@ -56,9 +56,9 @@ test_that("normalize_indicators normalizes with quantile method", {
   )
 
   # Quantile normalization should create uniform distribution
-  expect_equal(min(normalized$carbon_biomass_norm), 1) # Lowest percentile
-  expect_equal(max(normalized$carbon_biomass_norm), 100) # Highest percentile
-  expect_equal(normalized$carbon_biomass_norm[50], 50) # Median
+  expect_equal(min(normalized$indicateur_c1_biomasse_norm), 1) # Lowest percentile
+  expect_equal(max(normalized$indicateur_c1_biomasse_norm), 100) # Highest percentile
+  expect_equal(normalized$indicateur_c1_biomasse_norm[50], 50) # Median
 })
 
 test_that("normalize_indicators auto-detects indicator columns", {
@@ -72,8 +72,8 @@ test_that("normalize_indicators auto-detects indicator columns", {
   # Should auto-detect carbon and biodiversity, ignore other_col
   normalized <- normalize_indicators(test_data, method = "minmax")
 
-  expect_true("carbon_biomass_norm" %in% names(normalized))
-  expect_true("biodiversity_protection_norm" %in% names(normalized))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(normalized))
+  expect_true("indicateur_b1_protection_norm" %in% names(normalized))
   expect_false("other_col_norm" %in% names(normalized))
 })
 
@@ -90,7 +90,7 @@ test_that("normalize_indicators can remove original columns", {
   )
 
   expect_false("indicateur_c1_biomasse" %in% names(normalized))
-  expect_true("carbon_biomass_norm" %in% names(normalized))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(normalized))
 })
 
 test_that("normalize_indicators accepts custom suffix", {
@@ -105,7 +105,7 @@ test_that("normalize_indicators accepts custom suffix", {
     suffix = "_scaled"
   )
 
-  expect_true("carbon_biomass_scaled" %in% names(normalized))
+  expect_true("indicateur_c1_biomasse_scaled" %in% names(normalized))
 })
 
 test_that("normalize_indicators handles NA values", {
@@ -122,11 +122,11 @@ test_that("normalize_indicators handles NA values", {
   )
 
   # NA should be preserved
-  expect_true(is.na(normalized$carbon_biomass_norm[3]))
+  expect_true(is.na(normalized$indicateur_c1_biomasse_norm[3]))
 
   # Other values should be normalized correctly
-  expect_equal(min(normalized$carbon_biomass_norm, na.rm = TRUE), 0)
-  expect_equal(max(normalized$carbon_biomass_norm, na.rm = TRUE), 100)
+  expect_equal(min(normalized$indicateur_c1_biomasse_norm, na.rm = TRUE), 0)
+  expect_equal(max(normalized$indicateur_c1_biomasse_norm, na.rm = TRUE), 100)
 })
 
 test_that("normalize_indicators works with reference data", {
@@ -149,13 +149,13 @@ test_that("normalize_indicators works with reference data", {
   )
 
   # Value of 50 should normalize to 50 (middle of 0-100)
-  expect_equal(normalized$carbon_biomass_norm[2], 50)
+  expect_equal(normalized$indicateur_c1_biomasse_norm[2], 50)
 
   # Value of 10 should normalize to 10
-  expect_equal(normalized$carbon_biomass_norm[1], 10)
+  expect_equal(normalized$indicateur_c1_biomasse_norm[1], 10)
 
   # Value of 120 should be >100 (extrapolated)
-  expect_true(normalized$carbon_biomass_norm[3] > 100)
+  expect_true(normalized$indicateur_c1_biomasse_norm[3] > 100)
 })
 
 test_that("normalize_indicators preserves sf class", {
@@ -189,19 +189,19 @@ test_that("normalize_indicators handles constant values", {
   )
 
   # Should set to 50 (middle value)
-  expect_true(all(normalized$carbon_biomass_norm == 50))
+  expect_true(all(normalized$indicateur_c1_biomasse_norm == 50))
 })
 
 test_that("create_composite_index creates weighted mean composite", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(0, 50, 100),
-    water_twi_norm = c(0, 50, 100)
+    indicateur_c1_biomasse_norm = c(0, 50, 100),
+    indicateur_w3_humidite_norm = c(0, 50, 100)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     weights = c(0.6, 0.4)
   )
 
@@ -215,13 +215,13 @@ test_that("create_composite_index creates weighted mean composite", {
 test_that("create_composite_index uses equal weights by default", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(0, 60, 100),
-    water_twi_norm = c(0, 40, 100)
+    indicateur_c1_biomasse_norm = c(0, 60, 100),
+    indicateur_w3_humidite_norm = c(0, 40, 100)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm")
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm")
   )
 
   # With equal weights, composite should be average
@@ -231,13 +231,13 @@ test_that("create_composite_index uses equal weights by default", {
 test_that("create_composite_index accepts custom name", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(0, 50, 100),
-    water_twi_norm = c(0, 50, 100)
+    indicateur_c1_biomasse_norm = c(0, 50, 100),
+    indicateur_w3_humidite_norm = c(0, 50, 100)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     name = "ecosystem_health"
   )
 
@@ -248,13 +248,13 @@ test_that("create_composite_index accepts custom name", {
 test_that("create_composite_index supports geometric mean", {
   test_data <- data.frame(
     id = 1:4,
-    carbon_biomass_norm = c(10, 25, 50, 100),
-    water_twi_norm = c(10, 25, 50, 100)
+    indicateur_c1_biomasse_norm = c(10, 25, 50, 100),
+    indicateur_w3_humidite_norm = c(10, 25, 50, 100)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     aggregation = "geometric_mean"
   )
 
@@ -269,13 +269,13 @@ test_that("create_composite_index supports geometric mean", {
 test_that("create_composite_index supports min aggregation", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(80, 60, 40),
-    water_twi_norm = c(20, 40, 60)
+    indicateur_c1_biomasse_norm = c(80, 60, 40),
+    indicateur_w3_humidite_norm = c(20, 40, 60)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     aggregation = "min"
   )
 
@@ -288,13 +288,13 @@ test_that("create_composite_index supports min aggregation", {
 test_that("create_composite_index supports max aggregation", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(80, 60, 40),
-    water_twi_norm = c(20, 40, 60)
+    indicateur_c1_biomasse_norm = c(80, 60, 40),
+    indicateur_w3_humidite_norm = c(20, 40, 60)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     aggregation = "max"
   )
 
@@ -307,14 +307,14 @@ test_that("create_composite_index supports max aggregation", {
 test_that("create_composite_index normalizes weights", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(0, 50, 100),
-    water_twi_norm = c(100, 50, 0)
+    indicateur_c1_biomasse_norm = c(0, 50, 100),
+    indicateur_w3_humidite_norm = c(100, 50, 0)
   )
 
   # Weights that don't sum to 1 should be normalized
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     weights = c(2, 1) # Will be normalized to c(0.667, 0.333)
   )
 
@@ -325,23 +325,23 @@ test_that("create_composite_index normalizes weights", {
 test_that("create_composite_index handles NA values", {
   test_data <- data.frame(
     id = 1:4,
-    carbon_biomass_norm = c(50, NA, 60, 70),
-    water_twi_norm = c(50, 40, NA, 70)
+    indicateur_c1_biomasse_norm = c(50, NA, 60, 70),
+    indicateur_w3_humidite_norm = c(50, 40, NA, 70)
   )
 
   result <- create_composite_index(
     test_data,
-    indicators = c("carbon_biomass_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
     na.rm = TRUE
   )
 
   # Row 1: both valid, should be 50
   expect_equal(result$composite_index[1], 50)
 
-  # Row 2: one NA, should use only water_twi_norm = 40
+  # Row 2: one NA, should use only indicateur_w3_humidite_norm = 40
   expect_equal(result$composite_index[2], 40)
 
-  # Row 3: one NA, should use only carbon_biomass_norm = 60
+  # Row 3: one NA, should use only indicateur_c1_biomasse_norm = 60
   expect_equal(result$composite_index[3], 60)
 
   # Row 4: both valid, should be 70
@@ -349,12 +349,12 @@ test_that("create_composite_index handles NA values", {
 })
 
 test_that("create_composite_index errors on missing indicators", {
-  test_data <- data.frame(id = 1:3, carbon_biomass_norm = c(0, 50, 100))
+  test_data <- data.frame(id = 1:3, indicateur_c1_biomasse_norm = c(0, 50, 100))
 
   expect_error(
     create_composite_index(
       test_data,
-      indicators = c("carbon_biomass_norm", "missing_indicator")
+      indicators = c("indicateur_c1_biomasse_norm", "missing_indicator")
     ),
     "Indicators missing"
   )
@@ -363,14 +363,14 @@ test_that("create_composite_index errors on missing indicators", {
 test_that("create_composite_index errors on mismatched weights", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(0, 50, 100),
-    water_twi_norm = c(0, 50, 100)
+    indicateur_c1_biomasse_norm = c(0, 50, 100),
+    indicateur_w3_humidite_norm = c(0, 50, 100)
   )
 
   expect_error(
     create_composite_index(
       test_data,
-      indicators = c("carbon_biomass_norm", "water_twi_norm"),
+      indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
       weights = c(0.5) # Only 1 weight for 2 indicators
     ),
     "must match"
@@ -380,14 +380,14 @@ test_that("create_composite_index errors on mismatched weights", {
 test_that("create_composite_index errors on negative weights", {
   test_data <- data.frame(
     id = 1:3,
-    carbon_biomass_norm = c(0, 50, 100),
-    water_twi_norm = c(0, 50, 100)
+    indicateur_c1_biomasse_norm = c(0, 50, 100),
+    indicateur_w3_humidite_norm = c(0, 50, 100)
   )
 
   expect_error(
     create_composite_index(
       test_data,
-      indicators = c("carbon_biomass_norm", "water_twi_norm"),
+      indicators = c("indicateur_c1_biomasse_norm", "indicateur_w3_humidite_norm"),
       weights = c(0.6, -0.4)
     ),
     "non-negative"
@@ -397,52 +397,52 @@ test_that("create_composite_index errors on negative weights", {
 test_that("invert_indicator inverts values correctly", {
   test_data <- data.frame(
     id = 1:5,
-    social_accessibility_norm = c(0, 25, 50, 75, 100)
+    indicateur_s2_bati_norm = c(0, 25, 50, 75, 100)
   )
 
   inverted <- invert_indicator(
     test_data,
-    indicators = "social_accessibility_norm",
+    indicators = "indicateur_s2_bati_norm",
     scale = 100
   )
 
-  expect_true("social_accessibility_norm_inv" %in% names(inverted))
+  expect_true("indicateur_s2_bati_norm_inv" %in% names(inverted))
 
   # Check inversion
-  expect_equal(inverted$social_accessibility_norm_inv[1], 100) # 0 becomes 100
-  expect_equal(inverted$social_accessibility_norm_inv[3], 50) # 50 stays 50
-  expect_equal(inverted$social_accessibility_norm_inv[5], 0) # 100 becomes 0
+  expect_equal(inverted$indicateur_s2_bati_norm_inv[1], 100) # 0 becomes 100
+  expect_equal(inverted$indicateur_s2_bati_norm_inv[3], 50) # 50 stays 50
+  expect_equal(inverted$indicateur_s2_bati_norm_inv[5], 0) # 100 becomes 0
 })
 
 test_that("invert_indicator can remove original", {
   test_data <- data.frame(
     id = 1:3,
-    social_accessibility_norm = c(0, 50, 100)
+    indicateur_s2_bati_norm = c(0, 50, 100)
   )
 
   inverted <- invert_indicator(
     test_data,
-    indicators = "social_accessibility_norm",
+    indicators = "indicateur_s2_bati_norm",
     keep_original = FALSE
   )
 
-  expect_false("social_accessibility_norm" %in% names(inverted))
-  expect_true("social_accessibility_norm_inv" %in% names(inverted))
+  expect_false("indicateur_s2_bati_norm" %in% names(inverted))
+  expect_true("indicateur_s2_bati_norm_inv" %in% names(inverted))
 })
 
 test_that("invert_indicator accepts custom suffix", {
   test_data <- data.frame(
     id = 1:3,
-    social_accessibility_norm = c(0, 50, 100)
+    indicateur_s2_bati_norm = c(0, 50, 100)
   )
 
   inverted <- invert_indicator(
     test_data,
-    indicators = "social_accessibility_norm",
+    indicators = "indicateur_s2_bati_norm",
     suffix = "_wilderness"
   )
 
-  expect_true("social_accessibility_norm_wilderness" %in% names(inverted))
+  expect_true("indicateur_s2_bati_norm_wilderness" %in% names(inverted))
 })
 
 test_that("full normalization workflow works end-to-end", {
@@ -461,22 +461,22 @@ test_that("full normalization workflow works end-to-end", {
   )
 
   expect_s3_class(normalized, "nemeton_units")
-  expect_true(all(c("carbon_biomass_norm", "biodiversity_protection_norm", "water_twi_norm", "social_accessibility_norm") %in% names(normalized)))
+  expect_true(all(c("indicateur_c1_biomasse_norm", "indicateur_b1_protection_norm", "indicateur_w3_humidite_norm", "indicateur_s2_bati_norm") %in% names(normalized)))
 
   # Step 2: Invert accessibility for wilderness index
   normalized <- invert_indicator(
     normalized,
-    indicators = "social_accessibility_norm",
+    indicators = "indicateur_s2_bati_norm",
     suffix = "_wilderness",
     keep_original = TRUE
   )
 
-  expect_true("social_accessibility_norm_wilderness" %in% names(normalized))
+  expect_true("indicateur_s2_bati_norm_wilderness" %in% names(normalized))
 
   # Step 3: Create ecosystem health composite
   result <- create_composite_index(
     normalized,
-    indicators = c("carbon_biomass_norm", "biodiversity_protection_norm", "water_twi_norm"),
+    indicators = c("indicateur_c1_biomasse_norm", "indicateur_b1_protection_norm", "indicateur_w3_humidite_norm"),
     weights = c(0.4, 0.4, 0.2),
     name = "ecosystem_health"
   )
@@ -486,7 +486,7 @@ test_that("full normalization workflow works end-to-end", {
   # Step 4: Create wilderness index
   result <- create_composite_index(
     result,
-    indicators = c("biodiversity_protection_norm", "social_accessibility_norm_wilderness"),
+    indicators = c("indicateur_b1_protection_norm", "indicateur_s2_bati_norm_wilderness"),
     weights = c(0.5, 0.5),
     name = "wilderness_index"
   )

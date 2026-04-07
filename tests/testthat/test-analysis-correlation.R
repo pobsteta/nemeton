@@ -516,11 +516,11 @@ test_that("identify_hotspots errors on missing families", {
   )
 })
 
-# --- identify_hotspots: error when no family_ columns exist ---
+# --- identify_hotspots: error when no famille_ columns exist ---
 
 test_that("identify_hotspots errors when no family columns found for auto-detect", {
   units <- create_test_units(n_features = 5)
-  # No family_ columns at all
+  # No famille_ columns at all
 
   expect_error(
     identify_hotspots(units),
@@ -673,7 +673,7 @@ test_that("plot_correlation_matrix errors on invalid method", {
 
 test_that("compute_family_correlations errors when no family columns auto-detected", {
   units <- create_test_units(n_features = 5)
-  # No family_ columns
+  # No famille_ columns
 
   expect_error(
     compute_family_correlations(units),

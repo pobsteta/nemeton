@@ -112,7 +112,7 @@ test_that("12×12 correlation matrix generation works (T087)", {
   expect_equal(nrow(cor_matrix), 12)
   expect_equal(ncol(cor_matrix), 12)
 
-  # Column/row names should be family_*
+  # Column/row names should be famille_*
   expected_names <- c(
     "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air", "famille_sol", "famille_paysage",
     "famille_temporel", "famille_risque", "famille_social", "famille_production", "famille_energie", "famille_naturalite"

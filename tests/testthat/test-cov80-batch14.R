@@ -410,7 +410,7 @@ test_that("compute_all_indicators: cancellation stops loop", {
   result <- nemeton:::compute_all_indicators(
     units,
     layers,
-    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite", "soil_erosion"),
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite", "indicateur_f2_erosion"),
     progress_callback = NULL,
     project_id = "test_proj"
   )
@@ -428,7 +428,7 @@ test_that("list_indicators: returns all indicator names", {
   expect_true(length(result) > 25)
   expect_true("indicateur_c1_biomasse" %in% result)
   expect_true("indicateur_r1_feu" %in% result)
-  expect_true("naturalness_composite" %in% result)
+  expect_true("indicateur_n3_naturalite" %in% result)
 })
 
 test_that("list_indicators: filters by category", {

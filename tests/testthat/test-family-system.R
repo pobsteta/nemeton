@@ -300,7 +300,7 @@ test_that("Complete multi-family workflow works end-to-end", {
   expect_s3_class(p, "ggplot")
 
   # Check family columns exist
-  expect_true(any(grepl("^family_", names(units_fam))))
+  expect_true(any(grepl("^famille_", names(units_fam))))
 })
 
 test_that("Family system preserves original indicator columns", {
@@ -375,7 +375,7 @@ test_that("Family detection works with all family codes", {
   result <- create_family_index(units)
 
   # Should detect all families
-  family_cols <- grep("^family_", names(result), value = TRUE)
+  family_cols <- grep("^famille_", names(result), value = TRUE)
   expect_true(length(family_cols) >= 10) # At least most families
 })
 # ==============================================================================
@@ -484,7 +484,7 @@ test_that("create_family_index auto-detects all 9 implemented families (v0.3.0)"
   result <- create_family_index(units)
 
   # Should detect all 8-9 families (C, W, F, L, B, R, T, A)
-  family_cols <- grep("^family_", names(result), value = TRUE)
+  family_cols <- grep("^famille_", names(result), value = TRUE)
   expect_true(length(family_cols) >= 8)
 
   # Verify key v0.3.0 families exist
