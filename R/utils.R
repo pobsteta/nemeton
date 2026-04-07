@@ -1179,3 +1179,24 @@ map_essence_to_species <- function(essence) {
   species[is.na(essence)] <- NA_character_
   species
 }
+
+
+#' Get global shared cache directory
+#'
+#' Returns the path to a global cache directory shared across all projects.
+#' Used for large datasets like OSO, TWI caches, and nasapower wind data.
+#'
+#' @return Character. Path to the global cache directory.
+#' @export
+get_global_cache_dir <- function() {
+  if (requireNamespace("rappdirs", quietly = TRUE)) {
+    base_dir <- rappdirs::user_data_dir("nemeton", "nemeton")
+  } else {
+    base_dir <- file.path(Sys.getenv("HOME"), ".nemeton")
+  }
+  cache_dir <- file.path(base_dir, "cache")
+  if (!dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE)
+  }
+  cache_dir
+}
