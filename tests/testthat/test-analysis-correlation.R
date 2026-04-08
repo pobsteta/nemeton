@@ -705,3 +705,161 @@ test_that("compute_family_correlations stores n_obs attribute", {
   expect_equal(attr(result, "n_obs"), 8)
   expect_equal(attr(result, "method"), "pearson")
 })
+
+# ==============================================================================
+# (migrated from test-coverage-boost2.R)
+# ==============================================================================
+
+# --- compute_family_correlations() ---
+
+test_that("compute_family_correlations works with auto-detection", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
+  result <- compute_family_correlations(units)
+  expect_true(inherits(result, "matrix"))
+  expect_equal(nrow(result), 3)
+  expect_equal(ncol(result), 3)
+  # Diagonal should be 1
+  expect_equal(unname(diag(result)), c(1, 1, 1))
+  # Symmetric
+  expect_equal(result[1, 2], result[2, 1])
+})
+
+test_that("compute_family_correlations with spearman", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  result <- compute_family_correlations(units, method = "spearman")
+  expect_true(inherits(result, "matrix"))
+  expect_equal(attr(result, "method"), "spearman")
+})
+
+test_that("compute_family_correlations with kendall", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  result <- compute_family_correlations(units, method = "kendall")
+  expect_true(inherits(result, "matrix"))
+})
+
+test_that("compute_family_correlations with explicit families", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
+  result <- compute_family_correlations(units, families = c("famille_carbone", "famille_biodiversite"))
+  expect_equal(nrow(result), 2)
+  expect_equal(ncol(result), 2)
+})
+
+test_that("compute_family_correlations errors on non-sf", {
+  df <- data.frame(famille_carbone = 1:5, famille_biodiversite = 5:1)
+  expect_error(compute_family_correlations(df), "sf")
+})
+
+test_that("compute_family_correlations errors on no family columns", {
+  units <- create_test_units(n_features = 5)
+  expect_error(compute_family_correlations(units), "family")
+})
+
+test_that("compute_family_correlations errors on missing family", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  expect_error(compute_family_correlations(units, families = c("famille_carbone", "family_NONE")),
+               "not found")
+})
+
+# --- identify_hotspots() ---
+
+test_that("identify_hotspots works with default threshold", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
+  result <- identify_hotspots(units, threshold = 50, min_families = 2)
+  expect_true("hotspot_count" %in% names(result))
+  expect_true("hotspot_families" %in% names(result))
+  expect_true("is_hotspot" %in% names(result))
+  expect_true(is.logical(result$is_hotspot))
+})
+
+test_that("identify_hotspots with strict threshold", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- c(rep(90, 3), rep(10, 7))
+  units$famille_biodiversite <- c(rep(90, 3), rep(10, 7))
+  units$famille_eau <- c(rep(90, 3), rep(10, 7))
+  result <- identify_hotspots(units, threshold = 80, min_families = 3)
+  # Top 20% should be parcels 1-3 (value 90)
+  expect_true(sum(result$is_hotspot) >= 1)
+})
+
+test_that("identify_hotspots with threshold 100", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- c(100, 90, 80, 70, 60)
+  units$famille_biodiversite <- c(100, 90, 80, 70, 60)
+  result <- identify_hotspots(units, threshold = 100, min_families = 1)
+  # Threshold=100 uses strict > (no values above max)
+  expect_true(all(!result$is_hotspot))
+})
+
+test_that("identify_hotspots errors on non-sf", {
+  df <- data.frame(famille_carbone = 1:5, famille_biodiversite = 5:1)
+  expect_error(identify_hotspots(df), "sf")
+})
+
+test_that("identify_hotspots errors on invalid threshold", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  expect_error(identify_hotspots(units, threshold = 150), "threshold")
+})
+
+test_that("identify_hotspots errors on invalid min_families", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  expect_error(identify_hotspots(units, min_families = 0), "min_families")
+})
+
+# --- plot_correlation_matrix() ---
+
+test_that("plot_correlation_matrix works", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 35, 75)
+  corr <- compute_family_correlations(units)
+  p <- plot_correlation_matrix(corr)
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_correlation_matrix with number method", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  corr <- compute_family_correlations(units)
+  p <- plot_correlation_matrix(corr, method = "number")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_correlation_matrix with color method", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  corr <- compute_family_correlations(units)
+  p <- plot_correlation_matrix(corr, method = "color", title = "Test")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_correlation_matrix errors on non-matrix", {
+  expect_error(plot_correlation_matrix("not_a_matrix"), "matrix")
+})
