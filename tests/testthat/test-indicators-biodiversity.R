@@ -874,3 +874,105 @@ test_that("B3 with bdforet computes connectivity", {
   expect_true("B3" %in% names(result))
   expect_true(all(result$B3 >= 0 & result$B3 <= 100))
 })
+
+# ==============================================================================
+# (migrated from test-cov60-batch4.R)
+# ==============================================================================
+
+test_that("indicateur_b1_protection with mock protected areas", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  # Create protected areas overlapping some units
+  pa <- sf::st_sf(
+    STATUT = c("RN", "PNR"),
+    geometry = sf::st_geometry(sf::st_buffer(units[1:2, ], 50))
+  )
+  sf::st_crs(pa) <- sf::st_crs(units)
+
+  result <- indicateur_b1_protection(units, protected_areas = pa)
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+  expect_true(all(result$B1 >= 0, na.rm = TRUE))
+})
+
+test_that("indicateur_b1_protection without protected areas returns NA", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+  result <- indicateur_b1_protection(units, protected_areas = NULL)
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+})
+
+test_that("indicateur_b1_protection with protection_types filter", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  pa <- sf::st_sf(
+    STATUT = c("RN", "APPB", "PNR"),
+    geometry = sf::st_sfc(
+      sf::st_buffer(sf::st_centroid(sf::st_geometry(units[1, ]))[[1]], 200),
+      sf::st_buffer(sf::st_centroid(sf::st_geometry(units[1, ]))[[1]], 150),
+      sf::st_buffer(sf::st_centroid(sf::st_geometry(units[2, ]))[[1]], 100),
+      crs = sf::st_crs(units)
+    )
+  )
+
+  result <- indicateur_b1_protection(
+    units, protected_areas = pa, protection_types = c("RN", "APPB")
+  )
+  expect_s3_class(result, "sf")
+})
+
+test_that("indicateur_b2_structure returns valid structure index", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  result <- indicateur_b2_structure(units)
+
+  expect_s3_class(result, "sf")
+  expect_true("B2" %in% names(result))
+})
+
+test_that("indicateur_b2_structure with strata_field", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  units$strate <- c("futaie", "taillis", "mixte")
+
+  result <- indicateur_b2_structure(units, strata_field = "strate")
+  expect_s3_class(result, "sf")
+  expect_true("B2" %in% names(result))
+})
+
+test_that("indicateur_b3_connectivite returns B3", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  result <- suppressWarnings(indicateur_b3_connectivite(units))
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
+})
+
+test_that("indicateur_b3_connectivite with bdforet", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  bdforet <- sf::st_sf(
+    TFV = rep("Forêt fermée de feuillus", 5),
+    geometry = sf::st_sfc(lapply(1:5, function(i) {
+      sf::st_polygon(list(matrix(
+        c(566400 + (i-1)*100, 6615100,
+          566400 + i*100, 6615100,
+          566400 + i*100, 6615200,
+          566400 + (i-1)*100, 6615200,
+          566400 + (i-1)*100, 6615100),
+        ncol = 2, byrow = TRUE
+      )))
+    }), crs = 2154)
+  )
+
+  result <- indicateur_b3_connectivite(units, bdforet = bdforet)
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
+})

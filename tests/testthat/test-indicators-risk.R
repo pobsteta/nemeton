@@ -779,3 +779,94 @@ test_that("R4 with edge_buffer parameter", {
   result <- nemeton::indicateur_r4_abroutissement(units, bdforet = bdforet, edge_buffer = 200)
   expect_true("R4" %in% names(result))
 })
+
+# ==============================================================================
+# (migrated from test-cov60-batch4.R)
+# ==============================================================================
+
+test_that("indicateur_r1_feu returns R1 with fallback method", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster(values = "random")
+
+  result <- indicateur_r1_feu(units, dem = dem)
+  expect_s3_class(result, "sf")
+  expect_true("R1" %in% names(result))
+  expect_true(all(result$R1 >= 0, na.rm = TRUE))
+})
+
+test_that("indicateur_r1_feu with species data", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  units$essence <- c("Pinus", "Quercus", "Fagus")
+  dem <- create_test_raster(values = "random")
+
+  result <- indicateur_r1_feu(units, dem = dem)
+  expect_s3_class(result, "sf")
+  expect_true("R1" %in% names(result))
+})
+
+test_that("indicateur_r2_tempete returns R2", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster(values = seq(100, 500, length.out = terra::ncell(create_test_raster())))
+
+  result <- indicateur_r2_tempete(units, dem = dem)
+  expect_s3_class(result, "sf")
+  expect_true("R2" %in% names(result))
+})
+
+test_that("indicateur_r2_tempete without DEM returns defaults", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  result <- indicateur_r2_tempete(units)
+  expect_s3_class(result, "sf")
+  expect_true("R2" %in% names(result))
+})
+
+test_that("indicateur_r3_secheresse returns R3", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  result <- indicateur_r3_secheresse(units)
+  expect_s3_class(result, "sf")
+  expect_true("R3" %in% names(result))
+})
+
+test_that("indicateur_r3_secheresse with DEM for topographic modulation", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  dem <- create_test_raster(values = seq(100, 500, length.out = terra::ncell(create_test_raster())))
+
+  result <- indicateur_r3_secheresse(units, dem = dem)
+  expect_s3_class(result, "sf")
+  expect_true("R3" %in% names(result))
+})
+
+test_that("indicateur_r4_abroutissement returns R4", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  result <- indicateur_r4_abroutissement(units)
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+})
+
+test_that("indicateur_r4_abroutissement with species palatability", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  units$essence <- c("Quercus", "Fagus", "Pinus")
+
+  result <- indicateur_r4_abroutissement(units)
+  expect_s3_class(result, "sf")
+  expect_true("R4" %in% names(result))
+})

@@ -1229,3 +1229,78 @@ test_that("Full pipeline with spatial data and L1/B3 produces valid N3", {
   expected_n3 <- 0.35 * result$N1[1] + 0.35 * result$N2[1] + 0.15 * (100 - 20) + 0.15 * 75
   expect_equal(result$N3[1], expected_n3)
 })
+
+# ==============================================================================
+# (migrated from test-cov60-batch4.R)
+# ==============================================================================
+
+test_that("indicateur_n1_distance returns N1", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  roads <- create_test_vector(type = "lines")
+
+  result <- indicateur_n1_distance(units, roads = roads)
+  expect_s3_class(result, "sf")
+  expect_true("N1" %in% names(result))
+})
+
+test_that("indicateur_n1_distance without roads returns default", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  result <- indicateur_n1_distance(units)
+  expect_s3_class(result, "sf")
+  expect_true("N1" %in% names(result))
+})
+
+test_that("indicateur_n1_distance with custom column_name", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  result <- indicateur_n1_distance(units, column_name = "nat_dist")
+  expect_true("nat_dist" %in% names(result))
+})
+
+test_that("indicateur_n2_continuite returns N2", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  result <- indicateur_n2_continuite(units)
+  expect_s3_class(result, "sf")
+  expect_true("N2" %in% names(result))
+})
+
+test_that("indicateur_n2_continuite with bdforet", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  bdforet <- sf::st_sf(
+    TFV = c("Forêt ancienne", "Forêt récente"),
+    geometry = sf::st_geometry(sf::st_buffer(units, 100))
+  )
+  sf::st_crs(bdforet) <- sf::st_crs(units)
+
+  result <- indicateur_n2_continuite(units, bdforet = bdforet)
+  expect_s3_class(result, "sf")
+  expect_true("N2" %in% names(result))
+})
+
+test_that("indicateur_n3_naturalite returns N3", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  units$N1 <- c(60, 70, 80)
+  units$N2 <- c(50, 60, 70)
+
+  result <- indicateur_n3_naturalite(units)
+  expect_s3_class(result, "sf")
+  expect_true("N3" %in% names(result))
+})
+
+test_that("indicateur_n3_naturalite without N1/N2 returns default", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  result <- indicateur_n3_naturalite(units)
+  expect_s3_class(result, "sf")
+  expect_true("N3" %in% names(result))
+})
