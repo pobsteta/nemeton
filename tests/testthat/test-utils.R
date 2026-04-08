@@ -2778,3 +2778,46 @@ test_that("lookup_ademe_factor for fuelwood_extraction", {
     expect_type(result, "list")
   }
 })
+
+# ==============================================================================
+# (migrated from test-coverage-boost2.R)
+# ==============================================================================
+
+# --- resolve_vector_layer() ---
+
+test_that("resolve_vector_layer returns sf object directly", {
+  sf_obj <- create_test_units(n_features = 3)
+  layers <- structure(list(vectors = list(parcels = sf_obj)), class = "nemeton_layers")
+  result <- nemeton:::resolve_vector_layer(layers, "parcels")
+  expect_true(inherits(result, "sf"))
+  expect_equal(nrow(result), 3)
+})
+
+# --- resolve_raster_layer() ---
+
+test_that("resolve_raster_layer handles lazy-load list with no path", {
+  entry <- list(object = NULL, loaded = FALSE, path = "")
+  layers <- structure(list(rasters = list(dem = entry)), class = "nemeton_layers")
+  result <- nemeton:::resolve_raster_layer(layers, "dem")
+  expect_null(result)
+})
+
+# --- detect_indicator_family() ---
+
+test_that("detect_indicator_family returns NA for non-indicator", {
+  expect_true(is.na(nemeton:::detect_indicator_family("carbon")))
+  expect_true(is.na(nemeton:::detect_indicator_family("famille_carbone")))
+})
+
+# --- get_species_flammability() ---
+
+test_that("get_species_flammability returns scores", {
+  result <- nemeton:::get_species_flammability("Pinus")
+  expect_true(is.numeric(result))
+  expect_true(result >= 0 && result <= 100)
+})
+
+test_that("get_species_flammability returns 50 for unknown species", {
+  result <- nemeton:::get_species_flammability("UnknownSpeciesXYZ")
+  expect_equal(result, 50)
+})

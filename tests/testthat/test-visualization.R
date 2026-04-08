@@ -862,3 +862,181 @@ test_that("nemeton_radar comparison mode normalizes correctly", {
   # All values should be normalized to 0-100
   expect_true(all(p$data$value >= 0 & p$data$value <= 100, na.rm = TRUE))
 })
+
+# ==============================================================================
+# (migrated from test-coverage-boost2.R)
+# ==============================================================================
+
+# --- clean_indicator_name() ---
+
+test_that("clean_indicator_name works for family indices", {
+  expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
+  expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
+})
+
+test_that("clean_indicator_name strips _norm suffix", {
+  expect_equal(nemeton:::clean_indicator_name("carbon_norm"), "Carbon (Normalized)")
+})
+
+test_that("clean_indicator_name strips _inv suffix", {
+  expect_equal(nemeton:::clean_indicator_name("risk_inv"), "Risk (Inverted)")
+})
+
+test_that("clean_indicator_name capitalizes and replaces underscores", {
+  expect_equal(nemeton:::clean_indicator_name("carbon_stock"), "Carbon stock")
+})
+
+test_that("clean_indicator_name works as vector", {
+  result <- nemeton:::clean_indicator_name(c("famille_carbone", "carbon_norm", "C1"))
+  expect_equal(length(result), 3)
+  expect_equal(result[1], "C")
+  expect_equal(result[2], "Carbon (Normalized)")
+  expect_equal(result[3], "C1")
+})
+
+# --- plot_indicators_map() ---
+
+test_that("plot_indicators_map works with single indicator", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  p <- plot_indicators_map(units, indicators = "C1")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_indicators_map errors on non-sf data", {
+  df <- data.frame(C1 = 1:5)
+  expect_error(plot_indicators_map(df, indicators = "C1"), regexp = NULL)
+})
+
+test_that("plot_indicators_map errors on missing indicator", {
+  units <- create_test_units(n_features = 5)
+  expect_error(
+    plot_indicators_map(units, indicators = "nonexistent"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_indicators_map with palette option", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  p <- plot_indicators_map(units, indicators = "C1", palette = "RdYlGn")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_indicators_map with multiple indicators", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  units$W1 <- c(20, 40, 60, 80, 50)
+  p <- plot_indicators_map(units, indicators = c("C1", "W1"))
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_indicators_map with custom breaks and labels", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  p <- plot_indicators_map(units, indicators = "C1",
+                           breaks = c(0, 25, 50, 75, 100),
+                           title = "Carbon", legend_title = "Score")
+  expect_true(inherits(p, "ggplot"))
+})
+
+# --- nemeton_radar() ---
+
+test_that("nemeton_radar works in family mode", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(70, 50, 30, 10, 40)
+  units$famille_eau <- c(60, 80, 20, 40, 50)
+  units$famille_air <- c(50, 70, 60, 30, 80)
+  p <- nemeton_radar(units, unit_id = 1, mode = "family")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("nemeton_radar works in mean mode", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(70, 50, 30, 10, 40)
+  units$famille_eau <- c(60, 80, 20, 40, 50)
+  units$famille_air <- c(50, 70, 60, 30, 80)
+  p <- nemeton_radar(units, mode = "family")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("nemeton_radar comparison mode with multiple units", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(70, 50, 30, 10, 40)
+  units$famille_eau <- c(60, 80, 20, 40, 50)
+  units$famille_air <- c(50, 70, 60, 30, 80)
+  p <- nemeton_radar(units, unit_id = c(1, 2, 3), mode = "family")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("nemeton_radar errors on non-sf", {
+  df <- data.frame(famille_carbone = 1:5)
+  expect_error(nemeton_radar(df), "sf")
+})
+
+test_that("nemeton_radar errors on no family columns in family mode", {
+  units <- create_test_units(n_features = 5)
+  expect_error(nemeton_radar(units, mode = "family"), "family")
+})
+
+# --- reshape_for_facet() ---
+
+test_that("reshape_for_facet creates long format", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(80, 60, 40)
+  units$W1 <- c(20, 40, 60)
+  result <- nemeton:::reshape_for_facet(units, c("C1", "W1"))
+  expect_true(inherits(result, "sf"))
+  expect_true("indicator" %in% names(result))
+  expect_true("value" %in% names(result))
+  expect_equal(nrow(result), 6) # 3 parcels * 2 indicators
+})
+
+test_that("reshape_for_facet with nemeton_id", {
+  units <- create_test_units(n_features = 3)
+  units$nemeton_id <- paste0("P", 1:3)
+  units$C1 <- c(80, 60, 40)
+  units$W1 <- c(20, 40, 60)
+  result <- nemeton:::reshape_for_facet(units, c("C1", "W1"))
+  expect_true("nemeton_id" %in% names(result))
+})
+
+# --- add_color_scale() ---
+
+test_that("add_color_scale viridis works", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  p <- ggplot2::ggplot(units) +
+    ggplot2::geom_sf(ggplot2::aes(fill = C1))
+  p_result <- nemeton:::add_color_scale(p, palette = "viridis",
+                                         direction = 1, breaks = NULL,
+                                         labels = NULL, legend_title = "Score")
+  expect_true(inherits(p_result, "ggplot"))
+})
+
+test_that("add_color_scale with ColorBrewer palette works", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  p <- ggplot2::ggplot(units) +
+    ggplot2::geom_sf(ggplot2::aes(fill = C1))
+  p_result <- nemeton:::add_color_scale(p, palette = "RdYlGn",
+                                         direction = 1, breaks = NULL,
+                                         labels = NULL, legend_title = "Score")
+  expect_true(inherits(p_result, "ggplot"))
+})
+
+test_that("add_color_scale with breaks works", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(80, 60, 40, 20, 50)
+  p <- ggplot2::ggplot(units) +
+    ggplot2::geom_sf(ggplot2::aes(fill = C1))
+  p_result <- nemeton:::add_color_scale(p, palette = "viridis",
+                                         direction = 1,
+                                         breaks = c(0, 25, 50, 75, 100),
+                                         labels = c("Low", "Med-Low", "Med", "Med-Hi", "High"),
+                                         legend_title = "Score")
+  expect_true(inherits(p_result, "ggplot"))
+})
