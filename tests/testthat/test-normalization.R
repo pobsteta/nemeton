@@ -1420,3 +1420,270 @@ test_that("normalize_vector() zscore with separate reference", {
   expected <- (x - ref_mean) / ref_sd
   expect_equal(result, expected)
 })
+
+# ==============================================================================
+# (migrated from test-coverage-boost2.R)
+# ==============================================================================
+
+# --- normalize_vector() ---
+
+test_that("normalize_vector minmax works", {
+  x <- c(10, 20, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "minmax")
+  expect_equal(result[1], 0)
+  expect_equal(result[5], 100)
+  expect_equal(result[3], 50)
+})
+
+test_that("normalize_vector zscore works", {
+  x <- c(10, 20, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "zscore")
+  expect_equal(mean(result), 0, tolerance = 1e-10)
+  expect_equal(sd(result), 1, tolerance = 1e-10)
+})
+
+test_that("normalize_vector quantile works", {
+  x <- c(10, 20, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "quantile")
+  expect_true(all(result >= 0 & result <= 100))
+  # Lowest value should be at low percentile, highest at 100
+  expect_equal(result[1], 20) # 1 out of 5 values <= 10
+  expect_equal(result[5], 100) # all 5 values <= 50
+})
+
+test_that("normalize_vector handles all-NA reference", {
+  x <- c(1, 2, 3)
+  ref <- c(NA, NA, NA)
+  result <- nemeton:::normalize_vector(x, method = "minmax", reference = ref)
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector handles identical values (minmax)", {
+  x <- c(5, 5, 5)
+  expect_warning(
+    result <- nemeton:::normalize_vector(x, method = "minmax"),
+    "All values are identical"
+  )
+  expect_equal(result, c(50, 50, 50))
+})
+
+test_that("normalize_vector handles identical values (zscore)", {
+  x <- c(5, 5, 5)
+  expect_warning(
+    result <- nemeton:::normalize_vector(x, method = "zscore"),
+    "Standard deviation is 0"
+  )
+  expect_equal(result, c(0, 0, 0))
+})
+
+test_that("normalize_vector quantile with empty clean ref", {
+  x <- c(NA, NA, NA)
+  result <- nemeton:::normalize_vector(x, method = "quantile")
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector with separate reference", {
+  x <- c(25, 50, 75)
+  ref <- c(0, 100)
+  result <- nemeton:::normalize_vector(x, method = "minmax", reference = ref)
+  expect_equal(result[1], 25)
+  expect_equal(result[2], 50)
+  expect_equal(result[3], 75)
+})
+
+test_that("normalize_vector quantile with NA values in x", {
+  x <- c(10, NA, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "quantile")
+  expect_true(is.na(result[2]))
+  expect_false(is.na(result[1]))
+})
+
+# --- normalize_indicators() ---
+
+test_that("normalize_indicators works on sf with explicit indicators", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  units$W1 <- c(50, 40, 30, 20, 10)
+  result <- normalize_indicators(units, indicators = c("C1", "W1"), method = "minmax")
+  expect_true("C1_norm" %in% names(result))
+  expect_true("W1_norm" %in% names(result))
+  expect_true("C1" %in% names(result)) # keep_original = TRUE
+  expect_equal(result$C1_norm[1], 0)
+  expect_equal(result$C1_norm[5], 100)
+})
+
+test_that("normalize_indicators with zscore method", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  result <- normalize_indicators(units, indicators = "C1", method = "zscore")
+  expect_true("C1_norm" %in% names(result))
+  expect_equal(mean(result$C1_norm), 0, tolerance = 1e-10)
+})
+
+test_that("normalize_indicators with quantile method", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  result <- normalize_indicators(units, indicators = "C1", method = "quantile")
+  expect_true("C1_norm" %in% names(result))
+  expect_true(all(result$C1_norm >= 0 & result$C1_norm <= 100))
+})
+
+test_that("normalize_indicators with reference_data", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(25, 50, 75)
+  ref_data <- data.frame(C1 = c(0, 100))
+  result <- normalize_indicators(units, indicators = "C1", method = "minmax",
+                                 reference_data = ref_data)
+  expect_equal(result$C1_norm[1], 25)
+  expect_equal(result$C1_norm[2], 50)
+})
+
+test_that("normalize_indicators warns for missing ref column", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(25, 50, 75)
+  ref_data <- data.frame(W1 = c(0, 100))
+  # Should warn about missing reference column
+  expect_warning(
+    result <- normalize_indicators(units, indicators = "C1", method = "minmax",
+                                   reference_data = ref_data),
+    regexp = NULL # Any warning
+  )
+})
+
+test_that("normalize_indicators errors on missing indicator", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(25, 50, 75)
+  expect_error(
+    normalize_indicators(units, indicators = c("C1", "NONEXISTENT")),
+    regexp = NULL
+  )
+})
+
+test_that("normalize_indicators by_family mode", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  units$C2 <- c(5, 15, 25, 35, 45)
+  result <- normalize_indicators(units, indicators = c("C1", "C2"),
+                                 method = "minmax", by_family = TRUE)
+  # by_family sets suffix="" and keep_original=FALSE, so C1 is normalized in-place
+  expect_true("C1" %in% names(result))
+  expect_true("C2" %in% names(result))
+})
+
+# --- create_composite_index() ---
+
+test_that("create_composite_index weighted_mean with equal weights", {
+  units <- create_test_units(n_features = 4)
+  units$C1_norm <- c(80, 60, 40, 20)
+  units$W1_norm <- c(20, 40, 60, 80)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   name = "test_index")
+  expect_true("test_index" %in% names(result))
+  expect_equal(result$test_index, c(50, 50, 50, 50))
+})
+
+test_that("create_composite_index with custom weights", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(100, 0, 50)
+  units$W1_norm <- c(0, 100, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   weights = c(3, 1),
+                                   name = "weighted_idx")
+  expect_true("weighted_idx" %in% names(result))
+  expect_equal(result$weighted_idx[1], 75)  # 3/4*100 + 1/4*0
+  expect_equal(result$weighted_idx[2], 25)  # 3/4*0 + 1/4*100
+})
+
+test_that("create_composite_index geometric_mean method", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(50, 100, 25)
+  units$W1_norm <- c(50, 100, 25)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   aggregation = "geometric_mean",
+                                   name = "geo_idx")
+  expect_true("geo_idx" %in% names(result))
+  expect_equal(result$geo_idx[1], 50, tolerance = 1) # sqrt(50*50) = 50
+  expect_equal(result$geo_idx[2], 100, tolerance = 1) # sqrt(100*100) = 100
+})
+
+test_that("create_composite_index min method", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, 40, 60)
+  units$W1_norm <- c(30, 70, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   aggregation = "min",
+                                   name = "min_idx")
+  expect_true("min_idx" %in% names(result))
+  # min takes the minimum of each row
+  expect_equal(result$min_idx[1], 30)
+  expect_equal(result$min_idx[2], 40)
+})
+
+test_that("create_composite_index max method", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, 40, 60)
+  units$W1_norm <- c(30, 70, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   aggregation = "max",
+                                   name = "max_idx")
+  expect_true("max_idx" %in% names(result))
+  expect_equal(result$max_idx[1], 80)
+  expect_equal(result$max_idx[2], 70)
+})
+
+test_that("create_composite_index handles NA values with na.rm", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, NA, 60)
+  units$W1_norm <- c(30, 70, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   na.rm = TRUE,
+                                   name = "na_idx")
+  expect_equal(result$na_idx[2], 70) # only W1_norm contributes
+})
+
+test_that("create_composite_index errors on wrong weights length", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, 40, 60)
+  units$W1_norm <- c(30, 70, 50)
+  expect_error(
+    create_composite_index(units,
+                           indicators = c("C1_norm", "W1_norm"),
+                           weights = c(1, 2, 3)),
+    regexp = NULL
+  )
+})
+
+# --- invert_indicator() ---
+
+test_that("invert_indicator works", {
+  units <- create_test_units(n_features = 3)
+  units$risk_norm <- c(80, 50, 20)
+  result <- invert_indicator(units, indicators = "risk_norm", scale = 100)
+  expect_true("risk_norm_inv" %in% names(result))
+  expect_equal(result$risk_norm_inv, c(20, 50, 80))
+  # Original should be removed (keep_original = FALSE by default)
+  expect_false("risk_norm" %in% names(result))
+})
+
+test_that("invert_indicator with keep_original", {
+  units <- create_test_units(n_features = 3)
+  units$risk_norm <- c(80, 50, 20)
+  result <- invert_indicator(units, indicators = "risk_norm",
+                             keep_original = TRUE)
+  expect_true("risk_norm" %in% names(result))
+  expect_true("risk_norm_inv" %in% names(result))
+})
+
+test_that("invert_indicator errors on missing indicator", {
+  units <- create_test_units(n_features = 3)
+  expect_error(
+    invert_indicator(units, indicators = "nonexistent"),
+    regexp = NULL
+  )
+})

@@ -1304,3 +1304,387 @@ test_that("indicateur_n3_naturalite without N1/N2 returns default", {
   expect_s3_class(result, "sf")
   expect_true("N3" %in% names(result))
 })
+
+# ==============================================================================
+# (migrated from test-cov80-batch9.R)
+# ==============================================================================
+
+# --- N1: indicateur_n1_distance ---
+
+test_that("N1 with layers that have no roads or buildings keys returns defaults", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  mock_layers <- list(
+    vectors = list(),
+    rasters = list(),
+    metadata = list()
+  )
+  class(mock_layers) <- "nemeton_layers"
+
+  result <- nemeton::indicateur_n1_distance(
+    units = test_units,
+    layers = mock_layers
+  )
+
+  # roads=NULL -> default 1000, buildings=NULL -> default 500
+  # N1 = 0.40*pmin(100,1000/20) + 0.35*pmin(100,500/20) + 0.25*pmin(100,2000/20)
+  # = 0.40*50 + 0.35*25 + 0.25*100 = 20 + 8.75 + 25 = 53.75
+  expect_equal(result$N1[1], 53.75)
+})
+
+test_that("N1 layers argument ignored when not nemeton_layers class", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 1000, 0, 1000, 1000, 0, 1000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # A plain list that is NOT nemeton_layers
+  fake_layers <- list(
+    vectors = list(roads = sf::st_sf(
+      id = 1,
+      geometry = sf::st_sfc(
+        sf::st_linestring(matrix(c(500, 0, 500, 1000), ncol = 2, byrow = TRUE)),
+        crs = 2154
+      )
+    ))
+  )
+
+  result <- nemeton::indicateur_n1_distance(
+    units = test_units,
+    layers = fake_layers
+  )
+
+  # layers ignored (not nemeton_layers class), roads/buildings NULL -> defaults
+
+  expect_equal(result$N1[1], 53.75)
+})
+
+test_that("N1 with lang = 'fr' works correctly", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 2)
+  result <- nemeton::indicateur_n1_distance(units = test_units, lang = "fr")
+  expect_s3_class(result, "sf")
+  expect_true("N1" %in% names(result))
+  expect_true(all(!is.na(result$N1)))
+})
+
+test_that("N1 correctly transforms buildings in different CRS", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  buildings_2154 <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        601000, 6601000,
+        601050, 6601000,
+        601050, 6601050,
+        601000, 6601050,
+        601000, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+  buildings_4326 <- sf::st_transform(buildings_2154, 4326)
+
+  result <- nemeton::indicateur_n1_distance(
+    units = test_units,
+    buildings = buildings_4326
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true("N1" %in% names(result))
+  # buildings transformed -> real distance computed, not default 500
+  expect_true(result$N1[1] >= 0 & result$N1[1] <= 100)
+})
+
+# --- N2: indicateur_n2_continuite ---
+
+test_that("N2 intersection error handling: tryCatch returns NULL on error", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Create a valid bdforet that covers the unit
+  bdforet <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(-10, -10, 110, -10, 110, 110, -10, 110, -10, -10), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Mock st_intersection to error for the bdforet intersection path
+  # The tryCatch in the code catches errors and returns NULL -> taux_boisement=0
+  local_mocked_bindings(
+    st_intersection = function(...) stop("Intentional error"),
+    .package = "sf"
+  )
+
+  result <- nemeton::indicateur_n2_continuite(
+    units = test_units,
+    bdforet = bdforet
+  )
+
+  # When intersection fails, taux_boisement=0, taux_ancienne=0 -> score=15
+  expect_equal(result$N2[1], 15)
+})
+
+test_that("N2 with foret_ancienne in different CRS", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  foret_ancienne_2154 <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(-10, -10, 110, -10, 110, 110, -10, 110, -10, -10), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+  foret_ancienne_4326 <- sf::st_transform(foret_ancienne_2154, 4326)
+
+  result <- nemeton::indicateur_n2_continuite(
+    units = test_units,
+    foret_ancienne = foret_ancienne_4326
+  )
+
+  # After CRS transform, foret_ancienne should still overlap
+  # taux_ancienne > 0 -> score = 60 + 40*taux
+  expect_true(result$N2[1] >= 60 & result$N2[1] <= 100)
+})
+
+test_that("N2 with non-overlapping bdforet returns score 15", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # bdforet far away from unit
+  bdforet_far <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        50000, 50000, 50100, 50000, 50100, 50100, 50000, 50100, 50000, 50000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_n2_continuite(
+    units = test_units,
+    bdforet = bdforet_far
+  )
+
+  # Intersection yields 0 rows -> taux_boisement=0, no ancient -> score=15
+  expect_equal(result$N2[1], 15)
+})
+
+test_that("N2 with non-overlapping foret_ancienne but overlapping bdforet", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # bdforet covers the unit
+  bdforet <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(-10, -10, 110, -10, 110, 110, -10, 110, -10, -10), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # foret_ancienne far away (no overlap)
+  foret_ancienne_far <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        50000, 50000, 50100, 50000, 50100, 50100, 50000, 50100, 50000, 50000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_n2_continuite(
+    units = test_units,
+    bdforet = bdforet,
+    foret_ancienne = foret_ancienne_far
+  )
+
+  # taux_boisement > 0, taux_ancienne = 0 -> score = 30 + 30*taux_boisement
+  expect_true(result$N2[1] > 30 & result$N2[1] <= 60)
+})
+
+test_that("N2 with both bdforet and foret_ancienne having multiple features", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Two bdforet features
+  bdforet <- sf::st_sf(
+    id = 1:2,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 50, 0, 50, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(50, 0, 100, 0, 100, 100, 50, 100, 50, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Two foret_ancienne features (only left half)
+  foret_ancienne <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 50, 0, 50, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_n2_continuite(
+    units = test_units,
+    bdforet = bdforet,
+    foret_ancienne = foret_ancienne
+  )
+
+  # taux_ancienne ~ 0.5, score = 60 + 40*0.5 = 80
+  expect_true(result$N2[1] >= 60 & result$N2[1] <= 100)
+  expect_equal(result$N2[1], 80, tolerance = 2)
+})
+
+test_that("N2 lang = 'fr' works correctly", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 1)
+  result <- nemeton::indicateur_n2_continuite(units = test_units, lang = "fr")
+  # No data -> default 50
+  expect_equal(result$N2[1], 50)
+})
+
+# --- N3: indicateur_n3_naturalite ---
+
+test_that("N3 with pre-computed N1, N2, L1, and B3 columns", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1:3,
+    N1 = c(70, 30, 100),
+    N2 = c(80, 40, 0),
+    L1 = c(10, 80, 50),
+    B3 = c(60, 20, 100),
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(200, 0, 300, 0, 300, 100, 200, 100, 200, 0), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(400, 0, 500, 0, 500, 100, 400, 100, 400, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_n3_naturalite(units = test_units)
+
+  # Unit 1: 0.35*70 + 0.35*80 + 0.15*(100-10) + 0.15*60 = 24.5+28+13.5+9 = 75
+  expect_equal(result$N3[1], 0.35 * 70 + 0.35 * 80 + 0.15 * 90 + 0.15 * 60)
+  # Unit 2: 0.35*30 + 0.35*40 + 0.15*(100-80) + 0.15*20 = 10.5+14+3+3 = 30.5
+  expect_equal(result$N3[2], 0.35 * 30 + 0.35 * 40 + 0.15 * 20 + 0.15 * 20)
+  # Unit 3: 0.35*100 + 0.35*0 + 0.15*(100-50) + 0.15*100 = 35+0+7.5+15 = 57.5
+  expect_equal(result$N3[3], 0.35 * 100 + 0.35 * 0 + 0.15 * 50 + 0.15 * 100)
+})
+
+test_that("N3 lang = 'fr' works correctly", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    N1 = 60,
+    N2 = 70,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_n3_naturalite(units = test_units, lang = "fr")
+  expect_s3_class(result, "sf")
+  expect_true("N3" %in% names(result))
+  expected <- 0.35 * 60 + 0.35 * 70 + 0.15 * 50 + 0.15 * 50
+  expect_equal(result$N3[1], expected)
+})
+
+test_that("N3 preserves original columns", {
+  skip_if_not_installed("sf")
+
+  test_units <- sf::st_sf(
+    id = 1,
+    name = "forest_a",
+    N1 = 80,
+    N2 = 90,
+    area_ha = 15.5,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 100, 0, 100, 100, 0, 100, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_n3_naturalite(units = test_units)
+
+  expect_true("id" %in% names(result))
+  expect_true("name" %in% names(result))
+  expect_true("area_ha" %in% names(result))
+  expect_equal(result$name, "forest_a")
+  expect_equal(result$area_ha, 15.5)
+  expect_true("N3" %in% names(result))
+})
