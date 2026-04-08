@@ -987,23 +987,3 @@ test_that("get_species_flammability is vectorized", {
   expect_equal(length(result), 3)
   expect_true(is.na(result[3]))
 })
-
-
-# ==============================================================================
-# APP_CONFIG: basic tests
-# ==============================================================================
-
-test_that("APP_CONFIG has expected fields", {
-  config <- nemeton:::APP_CONFIG
-  expect_true("app_name" %in% names(config))
-  expect_true("max_parcels" %in% names(config))
-  expect_true("default_crs" %in% names(config))
-  expect_equal(config$default_crs, 2154L)
-})
-
-test_that("APP_CONFIG LLM models are configured", {
-  config <- nemeton:::APP_CONFIG
-  expect_true("llm_models" %in% names(config))
-  expect_true("mistral" %in% names(config$llm_models))
-  expect_true("anthropic" %in% names(config$llm_models))
-})

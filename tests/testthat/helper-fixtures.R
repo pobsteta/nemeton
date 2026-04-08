@@ -213,3 +213,138 @@ skip_if_not_installed <- function(pkg) {
     skip(paste("Package", pkg, "not installed"))
   }
 }
+
+# ==============================================================================
+# Shared test data builders
+# ==============================================================================
+
+#' Create test units with family columns pre-populated
+#'
+#' Replaces the common pattern:
+#'   units <- create_test_units(n_features = N)
+#'   units$famille_carbone <- runif(N, 40, 90)
+#'   units$famille_biodiversite <- runif(N, 30, 85)
+#'   ...
+#'
+#' @param n_features Number of features
+#' @param families Character vector of family names (without "famille_" prefix)
+#' @param seed Optional random seed for reproducibility
+#' @return sf object with family columns
+create_test_family_units <- function(n_features = 10,
+                                     families = c("carbone", "biodiversite",
+                                                  "eau", "risque"),
+                                     seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  units <- create_test_units(n_features = n_features)
+
+  # Plages de valeurs réalistes par famille
+  family_ranges <- list(
+    carbone = c(40, 90), biodiversite = c(30, 85), eau = c(35, 80),
+    risque = c(25, 75), temporel = c(45, 95), air = c(50, 85),
+    social = c(30, 70), production = c(35, 75), energie = c(40, 80),
+    naturalite = c(30, 70), sol = c(35, 75), paysage = c(40, 80)
+  )
+
+  for (fam in families) {
+    rng <- family_ranges[[fam]]
+    if (is.null(rng)) rng <- c(30, 80)
+    units[[paste0("famille_", fam)]] <- runif(n_features, rng[1], rng[2])
+  }
+
+  units
+}
+
+#' Create test units from massif_demo with family columns
+#'
+#' Replaces the common pattern:
+#'   data(massif_demo_units)
+#'   units <- massif_demo_units[1:N, ]
+#'   units$famille_carbone <- runif(N, ...)
+#'
+#' @param n_features Number of features (capped to dataset size)
+#' @param families Character vector of family names
+#' @param seed Optional random seed
+#' @return sf object from massif_demo with family columns
+create_demo_family_units <- function(n_features = 10,
+                                     families = c("carbone", "biodiversite",
+                                                  "eau", "risque"),
+                                     seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  data("massif_demo_units", package = "nemeton", envir = environment())
+  units <- massif_demo_units[seq_len(min(n_features, nrow(massif_demo_units))), ]
+  n <- nrow(units)
+
+  family_ranges <- list(
+    carbone = c(40, 90), biodiversite = c(30, 85), eau = c(35, 80),
+    risque = c(25, 75), temporel = c(45, 95), air = c(50, 85),
+    social = c(30, 70), production = c(35, 75), energie = c(40, 80),
+    naturalite = c(30, 70), sol = c(35, 75), paysage = c(40, 80)
+  )
+
+  for (fam in families) {
+    rng <- family_ranges[[fam]]
+    if (is.null(rng)) rng <- c(30, 80)
+    units[[paste0("famille_", fam)]] <- runif(n, rng[1], rng[2])
+  }
+
+  units
+}
+
+#' Create cluster-ready data frame with clear group separation
+#'
+#' Replaces local make_cluster_df() in test-analysis-clustering.R
+#'
+#' @param n_per_group Number of rows per group (3 groups: high/mid/low)
+#' @param families Character vector of column names
+#' @return data.frame with clusterable data
+create_test_cluster_df <- function(n_per_group = 5,
+                                   families = c("famille_carbone",
+                                                "famille_biodiversite",
+                                                "famille_production",
+                                                "famille_social")) {
+  groups <- list(high = c(80, 100), mid = c(40, 60), low = c(0, 20))
+  dfs <- lapply(seq_along(groups), function(g) {
+    rng <- groups[[g]]
+    df <- data.frame(id = (g - 1) * n_per_group + seq_len(n_per_group))
+    for (fam in families) df[[fam]] <- runif(n_per_group, rng[1], rng[2])
+    df
+  })
+  do.call(rbind, dfs)
+}
+
+#' Create a mock nemeton_layers object
+#'
+#' Replaces local make_layers() in batch test files
+#'
+#' @param rasters Named list of SpatRaster objects
+#' @param vectors Named list of sf objects
+#' @param cache_dir Cache directory path
+#' @return nemeton_layers object
+create_test_layers <- function(rasters = list(), vectors = list(),
+                               cache_dir = NULL) {
+  layers <- list(
+    rasters = rasters,
+    vectors = vectors,
+    cache_dir = if (is.null(cache_dir)) tempdir() else cache_dir,
+    metadata = list(
+      created_at = Sys.time(),
+      n_rasters = length(rasters),
+      n_vectors = length(vectors),
+      validated = FALSE
+    )
+  )
+  class(layers) <- "nemeton_layers"
+  layers
+}
+
+#' Load a test fixture RDS file
+#'
+#' Replaces readRDS(test_path("fixtures", "name.rds"))
+#'
+#' @param name Fixture name (without .rds extension)
+#' @return The deserialized R object, or skip if not found
+load_test_fixture <- function(name) {
+  path <- testthat::test_path("fixtures", paste0(name, ".rds"))
+  if (!file.exists(path)) testthat::skip(paste("Fixture not found:", name))
+  readRDS(path)
+}
