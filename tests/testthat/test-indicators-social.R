@@ -1185,3 +1185,316 @@ test_that("indicateur_s2_bati directly provided buildings override layers", {
   expect_false(is.na(result$S2[1]))
   expect_true(result$S2[1] >= 0)
 })
+
+# ==============================================================================
+# (migrated from test-cov80-batch9.R)
+# ==============================================================================
+
+# --- S1: indicateur_s1_routes ---
+
+test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  # DEM raster
+
+  dem <- terra::rast(
+    xmin = 600000, xmax = 602500, ymin = 6600000, ymax = 6602500,
+    resolution = 25, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 100
+
+  roads <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_linestring(matrix(c(601000, 6600000, 601000, 6602500), ncol = 2, byrow = TRUE)),
+      crs = 2154
+    )
+  )
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # layers has lidar_mnt but NOT dem
+  layers <- structure(
+    list(
+      rasters = list(lidar_mnt = dem),
+      vectors = list(roads = roads)
+    ),
+    class = "nemeton_layers"
+  )
+
+  result <- nemeton::indicateur_s1_routes(units = test_units, layers = layers)
+  expect_s3_class(result, "sf")
+  expect_true("S1" %in% names(result))
+  expect_false(is.na(result$S1[1]))
+  expect_true(result$S1[1] >= 0)
+})
+
+test_that("S1 with lang = 'fr' produces a valid result", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 2)
+  result <- nemeton::indicateur_s1_routes(units = test_units, lang = "fr")
+  expect_s3_class(result, "sf")
+  expect_true("S1" %in% names(result))
+  # Without DEM/roads -> NA
+  expect_true(all(is.na(result$S1)))
+})
+
+test_that("S1 with roads in different CRS triggers transform", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  dem <- terra::rast(
+    xmin = 600000, xmax = 602500, ymin = 6600000, ymax = 6602500,
+    resolution = 25, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 100
+
+  # Roads in WGS84 (CRS 4326)
+  roads_2154 <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_linestring(matrix(c(601000, 6600000, 601000, 6602500), ncol = 2, byrow = TRUE)),
+      crs = 2154
+    )
+  )
+  roads_4326 <- sf::st_transform(roads_2154, 4326)
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_s1_routes(units = test_units, roads = roads_4326, dem = dem)
+  expect_s3_class(result, "sf")
+  expect_true("S1" %in% names(result))
+  expect_false(is.na(result$S1[1]))
+})
+
+# --- S2: indicateur_s2_bati ---
+
+test_that("S2 with layers having lidar_mnt only and buildings", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  dem <- terra::rast(
+    xmin = 600000, xmax = 602500, ymin = 6600000, ymax = 6602500,
+    resolution = 25, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 100
+
+  buildings <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        601000, 6601000,
+        601050, 6601000,
+        601050, 6601050,
+        601000, 6601050,
+        601000, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # layers with lidar_mnt instead of dem; buildings present
+  layers <- structure(
+    list(
+      rasters = list(lidar_mnt = dem),
+      vectors = list(buildings = buildings)
+    ),
+    class = "nemeton_layers"
+  )
+
+  result <- nemeton::indicateur_s2_bati(units = test_units, layers = layers)
+  expect_s3_class(result, "sf")
+  expect_true("S2" %in% names(result))
+  expect_false(is.na(result$S2[1]))
+})
+
+test_that("S2 with lang = 'fr' returns valid result (NA case)", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 1)
+  result <- nemeton::indicateur_s2_bati(units = test_units, lang = "fr")
+  expect_s3_class(result, "sf")
+  expect_true("S2" %in% names(result))
+  expect_true(is.na(result$S2[1]))
+})
+
+test_that("S2 with buildings in different CRS triggers transform", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  dem <- terra::rast(
+    xmin = 600000, xmax = 602500, ymin = 6600000, ymax = 6602500,
+    resolution = 25, crs = "EPSG:2154"
+  )
+  terra::values(dem) <- 100
+
+  buildings_2154 <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        601000, 6601000,
+        601050, 6601000,
+        601050, 6601050,
+        601000, 6601050,
+        601000, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+  buildings_4326 <- sf::st_transform(buildings_2154, 4326)
+
+  test_units <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        600900, 6601000,
+        601100, 6601000,
+        601100, 6601200,
+        600900, 6601200,
+        600900, 6601000
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_s2_bati(
+    units = test_units,
+    buildings = buildings_4326,
+    dem = dem
+  )
+  expect_s3_class(result, "sf")
+  expect_true("S2" %in% names(result))
+  expect_false(is.na(result$S2[1]))
+})
+
+# --- S3: indicateur_s3_population ---
+
+test_that("S3 buffer area calculation with different sized units", {
+  skip_if_not_installed("sf")
+
+  # Small unit: 10m x 10m
+  small_unit <- sf::st_sf(
+    id = 1,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 10, 0, 10, 10, 0, 10, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  # Large unit: 5000m x 5000m
+  large_unit <- sf::st_sf(
+    id = 2,
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(0, 0, 5000, 0, 5000, 5000, 0, 5000, 0, 0), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  res_small <- nemeton::indicateur_s3_population(small_unit, method = "proxy")
+  res_large <- nemeton::indicateur_s3_population(large_unit, method = "proxy")
+
+  # Both should have valid results
+  expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(res_small)))
+  expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(res_large)))
+
+  # Larger unit with bigger buffers should have more area hence more population
+  expect_true(res_large$S3_5km >= res_small$S3_5km)
+})
+
+test_that("S3 with very small buffer_radii still works", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 2)
+  result <- nemeton::indicateur_s3_population(
+    test_units,
+    method = "proxy",
+    buffer_radii = c(100, 500, 1000)
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true(all(c("S3", "S3_5km", "S3_10km", "S3_20km") %in% names(result)))
+  # Population should still increase with buffer
+  expect_true(all(result$S3_10km >= result$S3_5km))
+  expect_true(all(result$S3_20km >= result$S3_10km))
+})
+
+test_that("S3 with single feature returns scalar S3", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 1)
+  result <- nemeton::indicateur_s3_population(test_units, method = "proxy")
+
+  expect_equal(nrow(result), 1)
+  expect_equal(length(result$S3), 1)
+  expect_true(is.numeric(result$S3))
+  expect_true(result$S3 > 0)
+})
+
+test_that("S3 with custom column_name uses that name for primary indicator", {
+  skip_if_not_installed("sf")
+
+  test_units <- create_test_units(n_features = 2)
+  result <- nemeton::indicateur_s3_population(
+    test_units,
+    method = "proxy",
+    column_name = "pop_pressure"
+  )
+
+  expect_true("pop_pressure" %in% names(result))
+  # pop_pressure should equal S3_5km
+  expect_equal(result$pop_pressure, result$S3_5km)
+})
+
+test_that("S3 msg_info is called with correct median values", {
+  skip_if_not_installed("sf")
+
+  # Just make sure the function completes without error when msg_info is called
+  test_units <- create_test_units(n_features = 3)
+  expect_no_error(
+    nemeton::indicateur_s3_population(test_units, method = "proxy")
+  )
+})
