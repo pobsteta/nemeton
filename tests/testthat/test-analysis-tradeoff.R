@@ -239,3 +239,153 @@ test_that("plot_tradeoff handles custom axis labels", {
   expect_equal(p$labels$y, "Custom Y Label")
   expect_equal(p$labels$title, "Custom Title")
 })
+
+# ==============================================================================
+# (migrated from test-coverage-boost2.R)
+# ==============================================================================
+
+test_that("plot_tradeoff works with basic sf data", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_tradeoff works with data.frame", {
+  df <- data.frame(famille_carbone = runif(10), famille_biodiversite = runif(10))
+  p <- plot_tradeoff(df, x = "famille_carbone", y = "famille_biodiversite")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_tradeoff errors on invalid data type", {
+  expect_error(
+    plot_tradeoff("not_a_df", x = "a", y = "b"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff errors on missing x variable", {
+  units <- create_test_units(n_features = 5)
+  units$famille_biodiversite <- 1:5
+  expect_error(
+    plot_tradeoff(units, x = "nonexistent", y = "famille_biodiversite"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff errors on missing y variable", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  expect_error(
+    plot_tradeoff(units, x = "famille_carbone", y = "nonexistent"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff errors on non-numeric x", {
+  units <- create_test_units(n_features = 5)
+  units$x_var <- letters[1:5]
+  units$y_var <- 1:5
+  expect_error(
+    plot_tradeoff(units, x = "x_var", y = "y_var"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff errors on non-numeric y", {
+  units <- create_test_units(n_features = 5)
+  units$x_var <- 1:5
+  units$y_var <- letters[1:5]
+  expect_error(
+    plot_tradeoff(units, x = "x_var", y = "y_var"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff with color parameter", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$famille_eau <- runif(10, 20, 70)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", color = "famille_eau")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_tradeoff errors on missing color variable", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
+  expect_error(
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", color = "nonexistent"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff with size parameter", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$area_ha <- runif(10, 1, 50)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", size = "area_ha")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_tradeoff errors on missing size variable", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
+  expect_error(
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite", size = "nonexistent"),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff with pareto_frontier", {
+  units <- create_test_units(n_features = 10)
+  set.seed(42)
+  units$famille_carbone <- runif(10, 30, 90)
+  units$famille_biodiversite <- runif(10, 40, 85)
+  units$is_optimal <- c(TRUE, FALSE, TRUE, FALSE, FALSE,
+                        FALSE, FALSE, TRUE, FALSE, FALSE)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
+                     pareto_frontier = TRUE)
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_tradeoff errors when pareto without is_optimal", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
+  expect_error(
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
+                  pareto_frontier = TRUE),
+    regexp = NULL
+  )
+})
+
+test_that("plot_tradeoff with custom labels", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- c(80, 60, 40, 20, 50)
+  units$famille_biodiversite <- c(20, 40, 60, 80, 50)
+  units$name <- paste0("Parcel_", 1:5)
+  p <- plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
+                     label = "name",
+                     xlab = "Carbon", ylab = "Biodiversity",
+                     title = "Test Trade-off")
+  expect_true(inherits(p, "ggplot"))
+})
+
+test_that("plot_tradeoff errors on missing label variable", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- 1:5
+  units$famille_biodiversite <- 5:1
+  expect_error(
+    plot_tradeoff(units, x = "famille_carbone", y = "famille_biodiversite",
+                  label = "nonexistent"),
+    regexp = NULL
+  )
+})
