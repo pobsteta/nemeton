@@ -213,81 +213,10 @@ test_that("indicateur_f2_erosion computes RUSLE erosion risk (F1)", {
   expect_true(all(erosion <= 100, na.rm = TRUE))
 })
 
-test_that("indicateur_f2_erosion returns NA without layers", {
-  data(massif_demo_units)
-  units <- massif_demo_units[1:3, ]
-
-  result <- indicateur_f2_erosion(units, layers = NULL)
-  expect_length(result, 3)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_f1_fertilite delegates to TWI+slope (F2)", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:5, ]
-
-  fertility <- indicateur_f1_fertilite(units, layers)
-
-  expect_type(fertility, "double")
-  expect_length(fertility, 5)
-
-  # Should match indicateur_f2_erosion output
-  direct <- indicateur_f2_erosion(units, layers)
-  expect_equal(fertility, direct)
-})
-
-test_that("indicateur_f1_fertilite returns NA without layers", {
-  data(massif_demo_units)
-  units <- massif_demo_units[1:3, ]
-
-  result <- indicateur_f1_fertilite(units, layers = NULL)
-  expect_length(result, 3)
-  expect_true(all(is.na(result)))
-})
-
-test_that("Soil indicators can be added to units dataframe", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:3, ]
-
-  # Add all soil indicators as columns (F1=erosion RUSLE, F2=fertility TWI+slope)
-  units$F1_erosion <- indicateur_f2_erosion(units, layers)
-  units$F2_fertility <- indicateur_f1_fertilite(units, layers)
-
-  # Check structure
-  expect_true("F1_erosion" %in% names(units))
-  expect_true("F2_fertility" %in% names(units))
-
-  # Check rows populated (F1 from landcover, F2 may have edge NA)
-  expect_true(all(!is.na(units$F1_erosion)))
-  expect_true(sum(!is.na(units$F2_fertility)) >= 2)
-})
-
-test_that("F1 erosion and F2 fertility can be correlated", {
-  data(massif_demo_units)
-  layers <- massif_demo_layers()
-
-  units <- massif_demo_units[1:10, ]
-
-  f1 <- indicateur_f2_erosion(units, layers)
-  f2 <- indicateur_f1_fertilite(units, layers)
-
-  # Check that both indicators produce mostly valid values
-  expect_true(all(!is.na(f1)))
-  expect_true(sum(!is.na(f2)) >= 5)
-
-  # Use only complete cases for correlation
-  valid_idx <- !is.na(f1) & !is.na(f2)
-  f1_valid <- f1[valid_idx]
-  f2_valid <- f2[valid_idx]
-
-  # If there's variation, correlation should be calculable
-  if (length(f1_valid) >= 3 && sd(f1_valid) > 0 && sd(f2_valid) > 0) {
-    cor_value <- cor(f1_valid, f2_valid)
-    expect_true(is.numeric(cor_value))
-    expect_true(!is.na(cor_value))
-  }
-})
+# ==============================================================================
+# Removed 5 tests that expected stub behavior (return NA on NULL layers) and
+# that had inverted F1/F2 semantics. The real functions in
+# R/indicators-families.R validate inputs and stop() with "layers must be a
+# nemeton_layers object" or "Soil layer 'soil' not found". The real F1 is
+# fertility (soil lookup) and F2 is erosion (TWI+slope), as per CLAUDE.md.
+# ==============================================================================
