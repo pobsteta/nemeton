@@ -215,19 +215,32 @@ download_hunting_data <- function(species = "all",
     if (!file.exists(cache_file) || force_download) {
       cli::cli_alert_info("Downloading hunting data for {sp}...")
 
+      # download.file() issues a WARNING (not an error) for HTTP 404.
+      # We need to catch both warnings and errors to avoid noisy output
+      # when the static URLs on data.gouv.fr become stale.
       tryCatch(
         {
-          download.file(
-            url = hunting_urls[[sp]],
-            destfile = cache_file,
-            mode = "wb",
-            quiet = TRUE
+          suppressWarnings(
+            download.file(
+              url = hunting_urls[[sp]],
+              destfile = cache_file,
+              mode = "wb",
+              quiet = TRUE
+            )
           )
-          cli::cli_alert_success("Downloaded {sp} data")
+          # Check file was actually written (download.file may warn and
+          # continue silently on 404)
+          if (file.exists(cache_file) && file.size(cache_file) > 0) {
+            cli::cli_alert_success("Downloaded {sp} data")
+          } else {
+            if (file.exists(cache_file)) unlink(cache_file)
+            cli::cli_alert_warning("Failed to download {sp}: empty or missing file")
+          }
         },
         error = function(e) {
           cli::cli_alert_warning("Failed to download {sp}: {e$message}")
-          return(NULL)
+          if (file.exists(cache_file)) unlink(cache_file)
+          NULL
         }
       )
     }
@@ -266,7 +279,10 @@ download_hunting_data <- function(species = "all",
     rownames(result) <- NULL
     return(result)
   } else {
-    warning("No hunting data could be downloaded", call. = FALSE)
+    # Use cli_alert_warning instead of warning() to avoid polluting
+    # testthat output with formal R warnings when downloads fail.
+    # Callers should handle NULL return values.
+    cli::cli_alert_warning("No hunting data could be downloaded")
     return(NULL)
   }
 }
