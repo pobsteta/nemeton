@@ -1067,3 +1067,297 @@ test_that("nemeton_layers handles multiple rasters and vectors", {
     expect_true(nchar(layers$vectors[[name]]$path) > 0)
   }
 })
+
+# ==============================================================================
+# (migrated from test-cov80-batch13.R)
+# ==============================================================================
+
+# --- nemeton_units() ---
+
+test_that("nemeton_units() from sf object creates valid nemeton_units", {
+  units <- create_test_units(n_features = 5)
+
+  nu <- nemeton::nemeton_units(units)
+
+  expect_s3_class(nu, "nemeton_units")
+  expect_s3_class(nu, "sf")
+  expect_true("nemeton_id" %in% names(nu))
+  expect_equal(nrow(nu), 5)
+  expect_equal(length(unique(nu$nemeton_id)), 5)
+
+  meta <- attr(nu, "metadata")
+  expect_true("crs" %in% names(meta))
+  expect_true("n_units" %in% names(meta))
+  expect_true("area_total" %in% names(meta))
+  expect_true("created_at" %in% names(meta))
+  expect_equal(meta$n_units, 5)
+})
+
+test_that("nemeton_units() with id_col uses specified column", {
+  units <- create_test_units(n_features = 3)
+  units$my_id <- c("alpha", "beta", "gamma")
+
+  nu <- nemeton::nemeton_units(units, id_col = "my_id")
+
+  expect_equal(nu$nemeton_id, c("alpha", "beta", "gamma"))
+})
+
+test_that("nemeton_units() with id_col=NULL auto-generates IDs", {
+  units <- create_test_units(n_features = 3)
+
+  nu <- nemeton::nemeton_units(units)
+
+  expect_true("nemeton_id" %in% names(nu))
+  # Auto-generated IDs follow "unit_001", "unit_002" pattern
+  expect_equal(nu$nemeton_id, c("unit_001", "unit_002", "unit_003"))
+})
+
+test_that("nemeton_units() errors on duplicate IDs", {
+  units <- create_test_units(n_features = 3)
+  units$dup_id <- c("A", "A", "B")
+
+  expect_error(
+    nemeton::nemeton_units(units, id_col = "dup_id"),
+    "unique"
+  )
+})
+
+test_that("nemeton_units() errors on missing id_col", {
+  units <- create_test_units(n_features = 3)
+
+  expect_error(
+    nemeton::nemeton_units(units, id_col = "nonexistent"),
+    "not found"
+  )
+})
+
+test_that("nemeton_units() stores metadata correctly", {
+  units <- create_test_units(n_features = 3)
+
+  nu <- nemeton::nemeton_units(
+    units,
+    metadata = list(site_name = "Test Forest", year = 2024, source = "IGN")
+  )
+
+  meta <- attr(nu, "metadata")
+  expect_equal(meta$site_name, "Test Forest")
+  expect_equal(meta$year, 2024)
+  expect_equal(meta$source, "IGN")
+})
+
+# --- print.nemeton_units() ---
+
+test_that("print.nemeton_units() with site_name and year metadata", {
+  units <- create_test_units(n_features = 5)
+  nu <- nemeton::nemeton_units(
+    units,
+    metadata = list(site_name = "Fontainebleau", year = 2024)
+  )
+
+  output <- capture.output(print(nu))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("nemeton_units", output_str))
+  expect_true(grepl("Fontainebleau", output_str))
+  expect_true(grepl("2024", output_str))
+  expect_true(grepl("Units:", output_str))
+  expect_true(grepl("5", output_str))
+})
+
+test_that("print.nemeton_units() with area_total shows hectares", {
+  units <- create_test_units(n_features = 3)
+  nu <- nemeton::nemeton_units(units)
+
+  output <- capture.output(print(nu))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("Total area", output_str))
+  expect_true(grepl("ha", output_str))
+})
+
+# --- summary.nemeton_units() ---
+
+test_that("summary.nemeton_units() outputs complete summary", {
+  units <- create_test_units(n_features = 5)
+  nu <- nemeton::nemeton_units(
+    units,
+    metadata = list(site_name = "Test", year = 2024, source = "Test Data")
+  )
+
+  output <- capture.output(summary(nu))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("Nemeton Units Summary", output_str))
+  expect_true(grepl("Number of units: 5", output_str))
+  expect_true(grepl("Site: Test", output_str))
+  expect_true(grepl("Year: 2024", output_str))
+  expect_true(grepl("Source: Test Data", output_str))
+  expect_true(grepl("Total area", output_str))
+  expect_true(grepl("Mean area", output_str))
+  expect_true(grepl("Attributes", output_str))
+})
+
+test_that("summary.nemeton_units() handles missing metadata fields", {
+  units <- create_test_units(n_features = 3)
+  nu <- nemeton::nemeton_units(units)
+
+  output <- capture.output(summary(nu))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("Not specified", output_str))
+})
+
+# --- nemeton_layers() ---
+
+test_that("nemeton_layers() with rasters and vectors (validate=FALSE)", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/fake_ndvi.tif", dem = "/tmp/fake_dem.tif"),
+    vectors = list(rivers = "/tmp/fake_rivers.gpkg"),
+    validate = FALSE
+  )
+
+  expect_s3_class(layers, "nemeton_layers")
+  expect_equal(layers$metadata$n_rasters, 2)
+  expect_equal(layers$metadata$n_vectors, 1)
+  expect_true("ndvi" %in% names(layers$rasters))
+  expect_true("dem" %in% names(layers$rasters))
+  expect_true("rivers" %in% names(layers$vectors))
+  expect_false(layers$rasters$ndvi$loaded)
+})
+
+test_that("nemeton_layers() with only rasters", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/fake.tif"),
+    validate = FALSE
+  )
+
+  expect_s3_class(layers, "nemeton_layers")
+  expect_equal(layers$metadata$n_rasters, 1)
+  expect_equal(layers$metadata$n_vectors, 0)
+  expect_equal(length(layers$vectors), 0)
+})
+
+test_that("nemeton_layers() with only vectors", {
+  layers <- nemeton::nemeton_layers(
+    vectors = list(roads = "/tmp/fake.gpkg"),
+    validate = FALSE
+  )
+
+  expect_s3_class(layers, "nemeton_layers")
+  expect_equal(layers$metadata$n_rasters, 0)
+  expect_equal(layers$metadata$n_vectors, 1)
+  expect_equal(length(layers$rasters), 0)
+})
+
+test_that("nemeton_layers() errors when both rasters and vectors are NULL", {
+  expect_error(
+    nemeton::nemeton_layers(rasters = NULL, vectors = NULL),
+    "rasters.*vectors"
+  )
+})
+
+test_that("nemeton_layers() errors on unnamed rasters list", {
+  expect_error(
+    nemeton::nemeton_layers(
+      rasters = list("/tmp/fake.tif"),
+      validate = FALSE
+    ),
+    "named list"
+  )
+})
+
+test_that("nemeton_layers() errors on unnamed vectors list", {
+  expect_error(
+    nemeton::nemeton_layers(
+      vectors = list("/tmp/fake.gpkg"),
+      validate = FALSE
+    ),
+    "named list"
+  )
+})
+
+test_that("nemeton_layers() stores path and loaded status", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/test_ndvi.tif"),
+    vectors = list(rivers = "/tmp/test_rivers.gpkg"),
+    validate = FALSE
+  )
+
+  expect_false(layers$rasters$ndvi$loaded)
+  expect_null(layers$rasters$ndvi$object)
+  expect_false(layers$vectors$rivers$loaded)
+  expect_null(layers$vectors$rivers$object)
+})
+
+# --- print.nemeton_layers() ---
+
+test_that("print.nemeton_layers() shows rasters and vectors", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/test_ndvi.tif", dem = "/tmp/test_dem.tif"),
+    vectors = list(rivers = "/tmp/test_rivers.gpkg"),
+    validate = FALSE
+  )
+
+  output <- capture.output(print(layers))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("nemeton_layers", output_str))
+  expect_true(grepl("Rasters", output_str))
+  expect_true(grepl("ndvi", output_str))
+  expect_true(grepl("dem", output_str))
+  expect_true(grepl("Vectors", output_str))
+  expect_true(grepl("rivers", output_str))
+  expect_true(grepl("not loaded", output_str))
+})
+
+test_that("print.nemeton_layers() shows (none) for empty sections", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/test_ndvi.tif"),
+    validate = FALSE
+  )
+
+  output <- capture.output(print(layers))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("\\(none\\)", output_str))
+})
+
+# --- summary.nemeton_layers() ---
+
+test_that("summary.nemeton_layers() outputs basic info", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/test.tif", dem = "/tmp/test2.tif"),
+    vectors = list(roads = "/tmp/test.gpkg"),
+    validate = FALSE
+  )
+
+  output <- capture.output(summary(layers))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("Nemeton Layers Summary", output_str))
+  expect_true(grepl("Rasters: 2", output_str))
+  expect_true(grepl("Vectors: 1", output_str))
+  expect_true(grepl("Created:", output_str))
+})
+
+# --- Additional edge cases ---
+
+test_that("nemeton_layers() validates=TRUE errors on nonexistent files", {
+  expect_error(
+    nemeton::nemeton_layers(
+      rasters = list(ndvi = "/tmp/definitely_nonexistent_file_42.tif"),
+      validate = TRUE
+    ),
+    "not found"
+  )
+})
+
+test_that("nemeton_layers() metadata includes created_at and validated", {
+  layers <- nemeton::nemeton_layers(
+    rasters = list(ndvi = "/tmp/fake.tif"),
+    validate = FALSE
+  )
+
+  expect_true(!is.null(layers$metadata$created_at))
+  expect_false(layers$metadata$validated)
+})

@@ -665,3 +665,481 @@ test_that("nemeton_temporal auto-parses dates from year-like period names", {
   expect_false(is.null(temporal$metadata$dates))
   expect_equal(temporal$metadata$dates, as.Date(c("2015-01-01", "2020-01-01")))
 })
+
+# ==============================================================================
+# (migrated from test-cov80-batch13.R)
+# ==============================================================================
+
+# --- nemeton_temporal() ---
+
+test_that("nemeton_temporal() creates object with two periods", {
+  sf1 <- create_test_units(n_features = 5)
+  sf1$parcel_id <- paste0("P", 1:5)
+  sf1$C1 <- c(10, 20, 30, 40, 50)
+
+  sf2 <- create_test_units(n_features = 5)
+  sf2$parcel_id <- paste0("P", 1:5)
+  sf2$C1 <- c(15, 25, 35, 45, 55)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  expect_s3_class(temporal, "nemeton_temporal")
+  expect_equal(temporal$metadata$n_periods, 2)
+  expect_equal(temporal$metadata$n_units, 5)
+  expect_equal(temporal$metadata$n_complete, 5)
+  expect_equal(length(temporal$periods), 2)
+})
+
+test_that("nemeton_temporal() auto-converts year names to dates", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  expect_false(is.null(temporal$metadata$dates))
+  expect_equal(temporal$metadata$dates[1], as.Date("2015-01-01"))
+  expect_equal(temporal$metadata$dates[2], as.Date("2020-01-01"))
+})
+
+test_that("nemeton_temporal() accepts custom labels", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2),
+    labels = c("Baseline", "Current")
+  )
+
+  expect_equal(temporal$metadata$period_labels, c("Baseline", "Current"))
+})
+
+test_that("nemeton_temporal() handles misaligned units", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- c("P1", "P2", "P3")
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- c("P2", "P3", "P4") # P1 missing, P4 added
+
+  # Should warn about misalignment
+  temporal <- suppressWarnings(
+    nemeton::nemeton_temporal(
+      periods = list("2015" = sf1, "2020" = sf2)
+    )
+  )
+
+  expect_s3_class(temporal, "nemeton_temporal")
+  expect_equal(temporal$metadata$n_units, 4) # P1, P2, P3, P4
+  expect_equal(temporal$metadata$n_complete, 2) # only P2, P3 in both
+})
+
+test_that("nemeton_temporal() errors on empty periods", {
+  expect_error(
+    nemeton::nemeton_temporal(periods = list()),
+    "No periods provided"
+  )
+})
+
+test_that("nemeton_temporal() errors on non-sf period", {
+  sf1 <- create_test_units(n_features = 3)
+  df2 <- data.frame(x = 1:3) # Not sf
+
+  expect_error(
+    nemeton::nemeton_temporal(
+      periods = list("2015" = sf1, "2020" = df2)
+    ),
+    "All periods must be sf objects"
+  )
+})
+
+test_that("nemeton_temporal() with explicit dates parameter", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("period_a" = sf1, "period_b" = sf2),
+    dates = c("2015-06-15", "2020-09-30")
+  )
+
+  expect_equal(temporal$metadata$dates, as.Date(c("2015-06-15", "2020-09-30")))
+})
+
+# --- calculate_change_rate() ---
+
+test_that("calculate_change_rate() with absolute type", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(20, 30, 50)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  result <- nemeton::calculate_change_rate(
+    temporal,
+    indicators = "C1",
+    type = "absolute"
+  )
+
+  expect_true("C1_rate_abs" %in% names(result))
+  expect_false("C1_rate_rel" %in% names(result))
+  # ~5-year time diff (via difftime/365.25), absolute changes: ~(20-10)/5, etc.
+  expect_equal(result$C1_rate_abs[1], 2, tolerance = 0.01)
+  expect_equal(result$C1_rate_abs[2], 2, tolerance = 0.01)
+  expect_equal(result$C1_rate_abs[3], 4, tolerance = 0.01)
+})
+
+test_that("calculate_change_rate() with relative type", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 50)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(20, 40, 100)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  result <- nemeton::calculate_change_rate(
+    temporal,
+    indicators = "C1",
+    type = "relative"
+  )
+
+  expect_true("C1_rate_rel" %in% names(result))
+  expect_false("C1_rate_abs" %in% names(result))
+  # relative rate = ((end/start) - 1) * 100 / time_diff
+  # P1: ((20/10)-1)*100/~5 = ~20
+  expect_equal(result$C1_rate_rel[1], 20, tolerance = 0.01)
+})
+
+test_that("calculate_change_rate() with both type (default)", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  result <- nemeton::calculate_change_rate(
+    temporal,
+    indicators = "C1",
+    type = "both"
+  )
+
+  expect_true("C1_rate_abs" %in% names(result))
+  expect_true("C1_rate_rel" %in% names(result))
+})
+
+test_that("calculate_change_rate() with explicit dates uses difftime", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(20, 30, 40)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("t1" = sf1, "t2" = sf2),
+    dates = c("2015-01-01", "2020-01-01")
+  )
+
+  result <- nemeton::calculate_change_rate(
+    temporal,
+    indicators = "C1",
+    type = "absolute"
+  )
+
+  # time_diff ~4.9986... years (5 * 365 / 365.25)
+  time_diff <- as.numeric(difftime(as.Date("2020-01-01"), as.Date("2015-01-01"), units = "days")) / 365.25
+  expected_rate_1 <- (20 - 10) / time_diff
+  expect_equal(result$C1_rate_abs[1], expected_rate_1, tolerance = 0.01)
+})
+
+test_that("calculate_change_rate() without dates parses years from names", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(20, 30, 40)
+
+  # Dates auto-derived from "2015", "2020" via nemeton_temporal
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  # Should have dates from year names
+  expect_false(is.null(temporal$metadata$dates))
+
+  result <- nemeton::calculate_change_rate(
+    temporal,
+    indicators = "C1",
+    type = "absolute"
+  )
+
+  expect_true("C1_rate_abs" %in% names(result))
+})
+
+test_that("calculate_change_rate() with non-year names and no dates warns", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(20, 30, 40)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("baseline" = sf1, "current" = sf2)
+  )
+
+  # No dates, names are not years -> should warn about time_diff
+  expect_warning(
+    result <- nemeton::calculate_change_rate(
+      temporal,
+      indicators = "C1",
+      type = "absolute"
+    ),
+    "Cannot determine time difference"
+  )
+})
+
+test_that("calculate_change_rate() auto-detects indicators with 'all'", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+  sf1$W1 <- c(5, 10, 15)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+  sf2$W1 <- c(8, 13, 18)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  result <- nemeton::calculate_change_rate(
+    temporal,
+    indicators = "all",
+    type = "both"
+  )
+
+  # Should detect C1 and W1 (numeric + not in excluded columns)
+  expect_true("C1_rate_abs" %in% names(result))
+  expect_true("W1_rate_abs" %in% names(result))
+  expect_true("C1_rate_rel" %in% names(result))
+  expect_true("W1_rate_rel" %in% names(result))
+})
+
+test_that("calculate_change_rate() warns on missing indicator", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  expect_warning(
+    result <- nemeton::calculate_change_rate(
+      temporal,
+      indicators = c("C1", "NONEXISTENT"),
+      type = "absolute"
+    ),
+    "not found in both periods"
+  )
+
+  expect_true("C1_rate_abs" %in% names(result))
+  expect_false("NONEXISTENT_rate_abs" %in% names(result))
+})
+
+test_that("calculate_change_rate() errors on non-nemeton_temporal input", {
+  expect_error(
+    nemeton::calculate_change_rate(list(a = 1, b = 2)),
+    "temporal must be a nemeton_temporal object"
+  )
+})
+
+# --- print.nemeton_temporal() ---
+
+test_that("print.nemeton_temporal() displays with dates", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2),
+    dates = c("2015-01-01", "2020-01-01")
+  )
+
+  output <- capture.output(print(temporal))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("nemeton_temporal", output_str))
+  expect_true(grepl("2 periods", output_str))
+  expect_true(grepl("3 units", output_str))
+  expect_true(grepl("Date range", output_str))
+  expect_true(grepl("2015-01-01", output_str))
+  expect_true(grepl("2020-01-01", output_str))
+})
+
+test_that("print.nemeton_temporal() displays without dates", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("baseline" = sf1, "current" = sf2)
+  )
+
+  output <- capture.output(print(temporal))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("nemeton_temporal", output_str))
+  expect_true(grepl("2 periods", output_str))
+  expect_false(grepl("Date range", output_str))
+})
+
+test_that("print.nemeton_temporal() shows misalignment warning", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- c("P1", "P2", "P3")
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- c("P2", "P3", "P4")
+
+  temporal <- suppressWarnings(
+    nemeton::nemeton_temporal(
+      periods = list("baseline" = sf1, "current" = sf2)
+    )
+  )
+
+  output <- capture.output(print(temporal))
+  output_str <- paste(output, collapse = "\n")
+
+  # Should display the misalignment warning in print output
+  expect_true(grepl("not present in all periods", output_str))
+})
+
+# --- summary.nemeton_temporal() ---
+
+test_that("summary.nemeton_temporal() outputs period summaries", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2),
+    labels = c("Baseline", "Current")
+  )
+
+  output <- capture.output(summary(temporal))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("Period summaries", output_str))
+  expect_true(grepl("Baseline", output_str))
+  expect_true(grepl("Current", output_str))
+  expect_true(grepl("Indicator ranges", output_str))
+})
+
+# --- Additional edge cases ---
+
+test_that("nemeton_temporal() with three periods", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+
+  sf3 <- create_test_units(n_features = 3)
+  sf3$parcel_id <- paste0("P", 1:3)
+  sf3$C1 <- c(20, 30, 40)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2010" = sf1, "2015" = sf2, "2020" = sf3)
+  )
+
+  expect_equal(temporal$metadata$n_periods, 3)
+  expect_equal(length(temporal$periods), 3)
+  expect_equal(temporal$metadata$period_labels, c("2010", "2015", "2020"))
+})
+
+test_that("print.nemeton_temporal() lists indicators from first period", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+  sf1$C1 <- c(10, 20, 30)
+  sf1$W1 <- c(5, 10, 15)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+  sf2$C1 <- c(15, 25, 35)
+  sf2$W1 <- c(8, 13, 18)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  output <- capture.output(print(temporal))
+  output_str <- paste(output, collapse = "\n")
+
+  expect_true(grepl("Indicators", output_str))
+  expect_true(grepl("C1", output_str))
+  expect_true(grepl("W1", output_str))
+})
+
+test_that("print.nemeton_temporal() returns invisible x", {
+  sf1 <- create_test_units(n_features = 3)
+  sf1$parcel_id <- paste0("P", 1:3)
+
+  sf2 <- create_test_units(n_features = 3)
+  sf2$parcel_id <- paste0("P", 1:3)
+
+  temporal <- nemeton::nemeton_temporal(
+    periods = list("2015" = sf1, "2020" = sf2)
+  )
+
+  result <- withVisible(capture.output(ret <- print(temporal)))
+  expect_identical(ret, temporal)
+})

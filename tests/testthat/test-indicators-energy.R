@@ -608,3 +608,73 @@ test_that("Energy family integrates with family system", {
   expect_true("famille_energie" %in% names(result_family))
   expect_true(all(result_family$famille_energie > 0))
 })
+
+# ==============================================================================
+# (migrated from test-cov60-batch4.R)
+# ==============================================================================
+
+test_that("indicateur_e1_bois_energie returns E1", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  units$volume <- c(100, 200, 300)
+  units$essence <- c("Quercus", "Fagus", "Pinus")
+
+  result <- indicateur_e1_bois_energie(
+    units,
+    volume_field = "volume",
+    species_field = "essence"
+  )
+  expect_s3_class(result, "sf")
+  expect_true("E1" %in% names(result))
+})
+
+test_that("indicateur_e1_bois_energie errors without volume field", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  expect_error(indicateur_e1_bois_energie(units), "Required field missing")
+})
+
+test_that("indicateur_e1_bois_energie with custom harvest_rate", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+  units$volume <- c(100, 200)
+
+  result <- indicateur_e1_bois_energie(
+    units, volume_field = "volume", harvest_rate = 0.5
+  )
+  expect_s3_class(result, "sf")
+  expect_true("E1" %in% names(result))
+})
+
+test_that("indicateur_e2_evitement returns E2", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  units$E1 <- c(50, 100, 150)
+  units$volume <- c(100, 200, 300)
+
+  result <- indicateur_e2_evitement(
+    units,
+    fuelwood_field = "E1",
+    volume_field = "volume"
+  )
+  expect_s3_class(result, "sf")
+  expect_true("E2" %in% names(result))
+})
+
+test_that("indicateur_e2_evitement with default fields", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  result <- indicateur_e2_evitement(units)
+  expect_s3_class(result, "sf")
+  expect_true("E2" %in% names(result))
+})
+
+test_that("indicateur_e2_evitement with custom column_name", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  result <- indicateur_e2_evitement(units, column_name = "co2_avoided")
+  expect_true("co2_avoided" %in% names(result))
+})

@@ -1019,3 +1019,671 @@ test_that("invert_indicator inverts multiple indicators", {
   expect_equal(inverted$A1_norm_inv, c(100, 50, 0))
   expect_equal(inverted$A2_norm_inv, c(80, 40, 20))
 })
+
+# ==============================================================================
+# (migrated from test-cov80-batch13.R)
+# ==============================================================================
+
+# --- normalize_indicators() ---
+
+test_that("normalize_indicators() minmax with explicit indicators scales to 0-100", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+  units$indicateur_w3_humidite <- c(100, 200, 300, 400, 500)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
+    method = "minmax"
+  )
+
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true("indicateur_w3_humidite_norm" %in% names(result))
+  expect_equal(min(result$indicateur_c1_biomasse_norm), 0)
+  expect_equal(max(result$indicateur_c1_biomasse_norm), 100)
+  expect_equal(result$indicateur_c1_biomasse_norm[3], 50)
+  expect_equal(min(result$indicateur_w3_humidite_norm), 0)
+  expect_equal(max(result$indicateur_w3_humidite_norm), 100)
+})
+
+test_that("normalize_indicators() zscore method centers around 0 with sd=1", {
+  set.seed(42)
+  units <- create_test_units(n_features = 20)
+  units$indicateur_c1_biomasse <- rnorm(20, mean = 50, sd = 10)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "zscore"
+  )
+
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true(abs(mean(result$indicateur_c1_biomasse_norm)) < 0.01)
+  expect_true(abs(sd(result$indicateur_c1_biomasse_norm) - 1) < 0.01)
+})
+
+test_that("normalize_indicators() quantile method produces 0-100 ranks", {
+  units <- create_test_units(n_features = 10)
+  units$indicateur_c1_biomasse <- seq(10, 100, by = 10)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "quantile"
+  )
+
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  # The lowest value should get the lowest rank
+  expect_equal(result$indicateur_c1_biomasse_norm[1], 10) # 1/10 * 100 = 10
+  # The highest value should get rank 100
+  expect_equal(result$indicateur_c1_biomasse_norm[10], 100) # 10/10 * 100 = 100
+  # All should be in [0, 100]
+  expect_true(all(result$indicateur_c1_biomasse_norm >= 0 & result$indicateur_c1_biomasse_norm <= 100))
+})
+
+test_that("normalize_indicators() auto-detects known indicator columns", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+  units$indicateur_w3_humidite <- c(5, 10, 15, 20, 25)
+  units$random_col <- c(1, 2, 3, 4, 5) # Should NOT be auto-detected
+
+  result <- nemeton::normalize_indicators(units, method = "minmax")
+
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true("indicateur_w3_humidite_norm" %in% names(result))
+  expect_false("random_col_norm" %in% names(result))
+})
+
+test_that("normalize_indicators() auto-detects family indicators (C1, W1, etc.)", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  units$W1 <- c(5, 10, 15, 20, 25)
+  units$B2 <- c(1, 2, 3, 4, 5)
+  units$not_indicator <- c(100, 200, 300, 400, 500)
+
+
+  result <- nemeton::normalize_indicators(units, method = "minmax")
+
+  expect_true("C1_norm" %in% names(result))
+  expect_true("W1_norm" %in% names(result))
+  expect_true("B2_norm" %in% names(result))
+  expect_false("not_indicator_norm" %in% names(result))
+})
+
+test_that("normalize_indicators() auto-detects famille_ columns", {
+  units <- create_test_units(n_features = 5)
+  units$famille_carbone <- c(10, 20, 30, 40, 50)
+  units$famille_eau <- c(5, 10, 15, 20, 25)
+
+  result <- nemeton::normalize_indicators(units, method = "minmax")
+
+  expect_true("famille_carbone_norm" %in% names(result))
+  expect_true("famille_eau_norm" %in% names(result))
+})
+
+test_that("normalize_indicators() by_family=TRUE changes suffix to '' and keep_original=FALSE", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  units$W1 <- c(5, 10, 15, 20, 25)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = c("C1", "W1"),
+    method = "minmax",
+    by_family = TRUE
+  )
+
+  # When by_family=TRUE and suffix="_norm" (default), suffix becomes "" and keep_original=FALSE
+
+  # So columns should be replaced in place with normalized values
+  expect_true("C1" %in% names(result))
+  expect_true("W1" %in% names(result))
+  # The values should be normalized (0-100)
+  expect_equal(min(result$C1), 0)
+  expect_equal(max(result$C1), 100)
+})
+
+test_that("normalize_indicators() with reference_data uses external parameters", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(20, 30, 40, 50, 60)
+
+  ref <- data.frame(indicateur_c1_biomasse = c(0, 100))
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "minmax",
+    reference_data = ref
+  )
+
+  # With reference range 0-100, value 20 should become 20, 60 should become 60
+  expect_equal(result$indicateur_c1_biomasse_norm[1], 20)
+  expect_equal(result$indicateur_c1_biomasse_norm[5], 60)
+})
+
+test_that("normalize_indicators() warns when reference_data missing indicator", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  ref <- data.frame(other_col = c(0, 100))
+
+  # Should warn about missing indicator in reference, then fall back to using own values
+  expect_warning(
+    result <- nemeton::normalize_indicators(
+      units,
+      indicators = "indicateur_c1_biomasse",
+      method = "minmax",
+      reference_data = ref
+    ),
+    class = "rlang_warning"
+  )
+})
+
+test_that("normalize_indicators() errors on missing indicator columns", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  expect_error(
+    nemeton::normalize_indicators(
+      units,
+      indicators = c("indicateur_c1_biomasse", "nonexistent_col"),
+      method = "minmax"
+    )
+  )
+})
+
+test_that("normalize_indicators() errors when no indicators found", {
+  units <- create_test_units(n_features = 5)
+  units$random_x <- c(1, 2, 3, 4, 5)
+  units$random_y <- c(10, 20, 30, 40, 50)
+
+  expect_error(
+    nemeton::normalize_indicators(units, method = "minmax")
+  )
+})
+
+test_that("normalize_indicators() suffix parameter customizes column names", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "minmax",
+    suffix = "_z"
+  )
+
+  expect_true("indicateur_c1_biomasse_z" %in% names(result))
+  expect_false("indicateur_c1_biomasse_norm" %in% names(result))
+})
+
+test_that("normalize_indicators() keep_original=TRUE keeps originals", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "minmax",
+    keep_original = TRUE
+  )
+
+  expect_true("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_equal(result$indicateur_c1_biomasse, c(10, 20, 30, 40, 50))
+})
+
+test_that("normalize_indicators() keep_original=FALSE removes originals", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "minmax",
+    keep_original = FALSE,
+    suffix = "_norm"
+  )
+
+  # When keep_original=FALSE and suffix != "", original is removed
+  expect_false("indicateur_c1_biomasse" %in% names(result))
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+})
+
+test_that("normalize_indicators() preserves sf class", {
+  units <- create_test_units(n_features = 5)
+  units$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  result <- nemeton::normalize_indicators(
+    units,
+    indicators = "indicateur_c1_biomasse",
+    method = "minmax"
+  )
+
+  expect_s3_class(result, "sf")
+  expect_true(!is.null(sf::st_geometry(result)))
+})
+
+test_that("normalize_indicators() preserves nemeton_units class metadata", {
+  units <- create_test_units(n_features = 5)
+  nu <- nemeton::nemeton_units(
+    units,
+    metadata = list(site_name = "Test Forest", year = 2024)
+  )
+  nu$indicateur_c1_biomasse <- c(10, 20, 30, 40, 50)
+
+  result <- nemeton::normalize_indicators(
+    nu,
+    indicators = "indicateur_c1_biomasse",
+    method = "minmax"
+  )
+
+  expect_s3_class(result, "nemeton_units")
+  meta <- attr(result, "metadata")
+  expect_equal(meta$site_name, "Test Forest")
+  expect_equal(meta$year, 2024)
+  expect_equal(meta$normalization_method, "minmax")
+  expect_true(!is.null(meta$normalized_at))
+  expect_equal(meta$normalized_indicators, "indicateur_c1_biomasse")
+})
+
+# --- normalize_vector() (internal) ---
+
+test_that("normalize_vector() minmax with normal range produces 0-100", {
+  result <- nemeton:::normalize_vector(
+    x = c(10, 20, 30, 40, 50),
+    method = "minmax"
+  )
+
+  expect_equal(result[1], 0)
+  expect_equal(result[5], 100)
+  expect_equal(result[3], 50)
+})
+
+test_that("normalize_vector() minmax with all identical values returns 50", {
+  result <- suppressWarnings(
+    nemeton:::normalize_vector(
+      x = c(5, 5, 5, 5),
+      method = "minmax"
+    )
+  )
+
+  expect_equal(result, rep(50, 4))
+})
+
+test_that("normalize_vector() minmax with all NA reference returns NA", {
+  result <- nemeton:::normalize_vector(
+    x = c(1, 2, 3),
+    method = "minmax",
+    reference = c(NA_real_, NA_real_, NA_real_)
+  )
+
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector() zscore produces mean~0, sd~1", {
+  set.seed(42)
+  x <- rnorm(100, mean = 50, sd = 10)
+
+  result <- nemeton:::normalize_vector(x, method = "zscore")
+
+  expect_true(abs(mean(result)) < 0.01)
+  expect_true(abs(sd(result) - 1) < 0.01)
+})
+
+test_that("normalize_vector() zscore with sd=0 returns 0", {
+  result <- suppressWarnings(
+    nemeton:::normalize_vector(
+      x = c(5, 5, 5, 5),
+      method = "zscore"
+    )
+  )
+
+  expect_equal(result, rep(0, 4))
+})
+
+test_that("normalize_vector() quantile produces percentile ranks", {
+  result <- nemeton:::normalize_vector(
+    x = c(10, 20, 30, 40, 50),
+    method = "quantile"
+  )
+
+  # 10 is <= 1/5 of values -> 20%
+  expect_equal(result[1], 20)
+  # 50 is <= 5/5 of values -> 100%
+  expect_equal(result[5], 100)
+  expect_true(all(result >= 0 & result <= 100))
+})
+
+test_that("normalize_vector() quantile with NAs returns NA for NA inputs", {
+  result <- nemeton:::normalize_vector(
+    x = c(10, NA, 30, NA, 50),
+    method = "quantile"
+  )
+
+  expect_true(is.na(result[2]))
+  expect_true(is.na(result[4]))
+  expect_false(is.na(result[1]))
+  expect_false(is.na(result[3]))
+  expect_false(is.na(result[5]))
+})
+
+test_that("normalize_vector() quantile with empty reference returns NA", {
+  # All NA in reference -> ref_clean is empty
+  result <- nemeton:::normalize_vector(
+    x = c(1, 2, 3),
+    method = "quantile",
+    reference = c(NA_real_, NA_real_)
+  )
+
+  expect_true(all(is.na(result)))
+})
+
+# --- Additional edge cases ---
+
+test_that("normalize_indicators() on plain data.frame (not sf)", {
+  df <- data.frame(
+    indicateur_c1_biomasse = c(10, 20, 30, 40, 50),
+    indicateur_w3_humidite = c(5, 10, 15, 20, 25)
+  )
+
+  result <- nemeton::normalize_indicators(
+    df,
+    indicators = c("indicateur_c1_biomasse", "indicateur_w3_humidite"),
+    method = "minmax"
+  )
+
+  expect_true("indicateur_c1_biomasse_norm" %in% names(result))
+  expect_true("indicateur_w3_humidite_norm" %in% names(result))
+  expect_false(inherits(result, "sf"))
+})
+
+test_that("normalize_vector() minmax with separate reference range", {
+  x <- c(20, 40, 60)
+  ref <- c(0, 100)
+
+  result <- nemeton:::normalize_vector(x, method = "minmax", reference = ref)
+
+  expect_equal(result[1], 20)
+  expect_equal(result[2], 40)
+  expect_equal(result[3], 60)
+})
+
+test_that("normalize_vector() zscore with separate reference", {
+  x <- c(50, 60, 70)
+  ref <- c(0, 20, 40, 60, 80, 100)
+
+  result <- nemeton:::normalize_vector(x, method = "zscore", reference = ref)
+
+  ref_mean <- mean(ref)
+  ref_sd <- sd(ref)
+  expected <- (x - ref_mean) / ref_sd
+  expect_equal(result, expected)
+})
+
+# ==============================================================================
+# (migrated from test-coverage-boost2.R)
+# ==============================================================================
+
+# --- normalize_vector() ---
+
+test_that("normalize_vector minmax works", {
+  x <- c(10, 20, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "minmax")
+  expect_equal(result[1], 0)
+  expect_equal(result[5], 100)
+  expect_equal(result[3], 50)
+})
+
+test_that("normalize_vector zscore works", {
+  x <- c(10, 20, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "zscore")
+  expect_equal(mean(result), 0, tolerance = 1e-10)
+  expect_equal(sd(result), 1, tolerance = 1e-10)
+})
+
+test_that("normalize_vector quantile works", {
+  x <- c(10, 20, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "quantile")
+  expect_true(all(result >= 0 & result <= 100))
+  # Lowest value should be at low percentile, highest at 100
+  expect_equal(result[1], 20) # 1 out of 5 values <= 10
+  expect_equal(result[5], 100) # all 5 values <= 50
+})
+
+test_that("normalize_vector handles all-NA reference", {
+  x <- c(1, 2, 3)
+  ref <- c(NA, NA, NA)
+  result <- nemeton:::normalize_vector(x, method = "minmax", reference = ref)
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector handles identical values (minmax)", {
+  x <- c(5, 5, 5)
+  expect_warning(
+    result <- nemeton:::normalize_vector(x, method = "minmax"),
+    "All values are identical"
+  )
+  expect_equal(result, c(50, 50, 50))
+})
+
+test_that("normalize_vector handles identical values (zscore)", {
+  x <- c(5, 5, 5)
+  expect_warning(
+    result <- nemeton:::normalize_vector(x, method = "zscore"),
+    "Standard deviation is 0"
+  )
+  expect_equal(result, c(0, 0, 0))
+})
+
+test_that("normalize_vector quantile with empty clean ref", {
+  x <- c(NA, NA, NA)
+  result <- nemeton:::normalize_vector(x, method = "quantile")
+  expect_true(all(is.na(result)))
+})
+
+test_that("normalize_vector with separate reference", {
+  x <- c(25, 50, 75)
+  ref <- c(0, 100)
+  result <- nemeton:::normalize_vector(x, method = "minmax", reference = ref)
+  expect_equal(result[1], 25)
+  expect_equal(result[2], 50)
+  expect_equal(result[3], 75)
+})
+
+test_that("normalize_vector quantile with NA values in x", {
+  x <- c(10, NA, 30, 40, 50)
+  result <- nemeton:::normalize_vector(x, method = "quantile")
+  expect_true(is.na(result[2]))
+  expect_false(is.na(result[1]))
+})
+
+# --- normalize_indicators() ---
+
+test_that("normalize_indicators works on sf with explicit indicators", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  units$W1 <- c(50, 40, 30, 20, 10)
+  result <- normalize_indicators(units, indicators = c("C1", "W1"), method = "minmax")
+  expect_true("C1_norm" %in% names(result))
+  expect_true("W1_norm" %in% names(result))
+  expect_true("C1" %in% names(result)) # keep_original = TRUE
+  expect_equal(result$C1_norm[1], 0)
+  expect_equal(result$C1_norm[5], 100)
+})
+
+test_that("normalize_indicators with zscore method", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  result <- normalize_indicators(units, indicators = "C1", method = "zscore")
+  expect_true("C1_norm" %in% names(result))
+  expect_equal(mean(result$C1_norm), 0, tolerance = 1e-10)
+})
+
+test_that("normalize_indicators with quantile method", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  result <- normalize_indicators(units, indicators = "C1", method = "quantile")
+  expect_true("C1_norm" %in% names(result))
+  expect_true(all(result$C1_norm >= 0 & result$C1_norm <= 100))
+})
+
+test_that("normalize_indicators with reference_data", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(25, 50, 75)
+  ref_data <- data.frame(C1 = c(0, 100))
+  result <- normalize_indicators(units, indicators = "C1", method = "minmax",
+                                 reference_data = ref_data)
+  expect_equal(result$C1_norm[1], 25)
+  expect_equal(result$C1_norm[2], 50)
+})
+
+test_that("normalize_indicators warns for missing ref column", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(25, 50, 75)
+  ref_data <- data.frame(W1 = c(0, 100))
+  # Should warn about missing reference column
+  expect_warning(
+    result <- normalize_indicators(units, indicators = "C1", method = "minmax",
+                                   reference_data = ref_data),
+    regexp = NULL # Any warning
+  )
+})
+
+test_that("normalize_indicators errors on missing indicator", {
+  units <- create_test_units(n_features = 3)
+  units$C1 <- c(25, 50, 75)
+  expect_error(
+    normalize_indicators(units, indicators = c("C1", "NONEXISTENT")),
+    regexp = NULL
+  )
+})
+
+test_that("normalize_indicators by_family mode", {
+  units <- create_test_units(n_features = 5)
+  units$C1 <- c(10, 20, 30, 40, 50)
+  units$C2 <- c(5, 15, 25, 35, 45)
+  result <- normalize_indicators(units, indicators = c("C1", "C2"),
+                                 method = "minmax", by_family = TRUE)
+  # by_family sets suffix="" and keep_original=FALSE, so C1 is normalized in-place
+  expect_true("C1" %in% names(result))
+  expect_true("C2" %in% names(result))
+})
+
+# --- create_composite_index() ---
+
+test_that("create_composite_index weighted_mean with equal weights", {
+  units <- create_test_units(n_features = 4)
+  units$C1_norm <- c(80, 60, 40, 20)
+  units$W1_norm <- c(20, 40, 60, 80)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   name = "test_index")
+  expect_true("test_index" %in% names(result))
+  expect_equal(result$test_index, c(50, 50, 50, 50))
+})
+
+test_that("create_composite_index with custom weights", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(100, 0, 50)
+  units$W1_norm <- c(0, 100, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   weights = c(3, 1),
+                                   name = "weighted_idx")
+  expect_true("weighted_idx" %in% names(result))
+  expect_equal(result$weighted_idx[1], 75)  # 3/4*100 + 1/4*0
+  expect_equal(result$weighted_idx[2], 25)  # 3/4*0 + 1/4*100
+})
+
+test_that("create_composite_index geometric_mean method", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(50, 100, 25)
+  units$W1_norm <- c(50, 100, 25)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   aggregation = "geometric_mean",
+                                   name = "geo_idx")
+  expect_true("geo_idx" %in% names(result))
+  expect_equal(result$geo_idx[1], 50, tolerance = 1) # sqrt(50*50) = 50
+  expect_equal(result$geo_idx[2], 100, tolerance = 1) # sqrt(100*100) = 100
+})
+
+test_that("create_composite_index min method", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, 40, 60)
+  units$W1_norm <- c(30, 70, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   aggregation = "min",
+                                   name = "min_idx")
+  expect_true("min_idx" %in% names(result))
+  # min takes the minimum of each row
+  expect_equal(result$min_idx[1], 30)
+  expect_equal(result$min_idx[2], 40)
+})
+
+test_that("create_composite_index max method", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, 40, 60)
+  units$W1_norm <- c(30, 70, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   aggregation = "max",
+                                   name = "max_idx")
+  expect_true("max_idx" %in% names(result))
+  expect_equal(result$max_idx[1], 80)
+  expect_equal(result$max_idx[2], 70)
+})
+
+test_that("create_composite_index handles NA values with na.rm", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, NA, 60)
+  units$W1_norm <- c(30, 70, 50)
+  result <- create_composite_index(units,
+                                   indicators = c("C1_norm", "W1_norm"),
+                                   na.rm = TRUE,
+                                   name = "na_idx")
+  expect_equal(result$na_idx[2], 70) # only W1_norm contributes
+})
+
+test_that("create_composite_index errors on wrong weights length", {
+  units <- create_test_units(n_features = 3)
+  units$C1_norm <- c(80, 40, 60)
+  units$W1_norm <- c(30, 70, 50)
+  expect_error(
+    create_composite_index(units,
+                           indicators = c("C1_norm", "W1_norm"),
+                           weights = c(1, 2, 3)),
+    regexp = NULL
+  )
+})
+
+# --- invert_indicator() ---
+
+test_that("invert_indicator works", {
+  units <- create_test_units(n_features = 3)
+  units$risk_norm <- c(80, 50, 20)
+  result <- invert_indicator(units, indicators = "risk_norm", scale = 100)
+  expect_true("risk_norm_inv" %in% names(result))
+  expect_equal(result$risk_norm_inv, c(20, 50, 80))
+  # Original should be removed (keep_original = FALSE by default)
+  expect_false("risk_norm" %in% names(result))
+})
+
+test_that("invert_indicator with keep_original", {
+  units <- create_test_units(n_features = 3)
+  units$risk_norm <- c(80, 50, 20)
+  result <- invert_indicator(units, indicators = "risk_norm",
+                             keep_original = TRUE)
+  expect_true("risk_norm" %in% names(result))
+  expect_true("risk_norm_inv" %in% names(result))
+})
+
+test_that("invert_indicator errors on missing indicator", {
+  units <- create_test_units(n_features = 3)
+  expect_error(
+    invert_indicator(units, indicators = "nonexistent"),
+    regexp = NULL
+  )
+})

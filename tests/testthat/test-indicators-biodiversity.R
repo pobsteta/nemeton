@@ -2,10 +2,6 @@
 # Unit and integration tests for Biodiversity Family (B) Indicators
 # MVP v0.3.0 - Following TDD: Tests written BEFORE implementation
 
-library(testthat)
-library(sf)
-library(terra)
-
 # ==============================================================================
 # T014: Unit Tests for indicateur_b1_protection() (B1)
 # ==============================================================================
@@ -686,4 +682,293 @@ test_that("indicateur_b3_connectivite rejects non-sf bdforet", {
     indicateur_b3_connectivite(units, bdforet = data.frame(x = 1)),
     "bdforet must be an sf object"
   )
+})
+
+# ==============================================================================
+# (migrated from test-cov80-batch8.R)
+# Coverage boost for B1 weighted scoring, B2 fallbacks, B3 components
+# ==============================================================================
+
+# --- B1: indicateur_b1_protection batch8 tests ---
+
+test_that("B1 with typed protection areas computes weighted score", {
+  units <- create_test_units(n_features = 2)
+  # Create protected areas with different protection types
+  pa <- sf::st_sf(
+    zone_type = c("ZNIEFF1", "Natura_SIC", "RNR_reserve"),
+    geometry = sf::st_sfc(
+      # ZNIEFF1 overlaps both units
+      sf::st_polygon(list(matrix(c(
+        566400, 6615100, 567000, 6615100, 567000, 6615500, 566400, 6615500, 566400, 6615100
+      ), ncol = 2, byrow = TRUE))),
+      # Natura overlaps first unit only
+      sf::st_polygon(list(matrix(c(
+        566400, 6615100, 566600, 6615100, 566600, 6615300, 566400, 6615300, 566400, 6615100
+      ), ncol = 2, byrow = TRUE))),
+      # Reserve overlaps second unit only
+      sf::st_polygon(list(matrix(c(
+        566550, 6615250, 566800, 6615250, 566800, 6615500, 566550, 6615500, 566550, 6615250
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_b1_protection(units, protected_areas = pa, source = "local")
+  expect_true("B1" %in% names(result))
+  expect_true("B1_pct" %in% names(result))
+  expect_true("B1_nb" %in% names(result))
+  expect_true(all(result$B1 >= 0 & result$B1 <= 100))
+  # Both units should have some coverage
+  expect_true(all(result$B1 > 0))
+})
+
+test_that("B1 with no type column uses default weight", {
+  units <- create_test_units(n_features = 2)
+  # No zone_type column — triggers default weight path
+  pa <- sf::st_sf(
+    name = "Zone A",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        566400, 6615100, 567000, 6615100, 567000, 6615500, 566400, 6615500, 566400, 6615100
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_b1_protection(units, protected_areas = pa)
+  expect_true(all(result$B1 >= 0))
+  # Score should be multiplied by 0.5 (default weight)
+  expect_true(all(result$B1_pct > 0))
+})
+
+test_that("B1 with WFS source and NULL areas returns 0", {
+  units <- create_test_units(n_features = 2)
+  suppressWarnings({
+    result <- nemeton::indicateur_b1_protection(units, source = "wfs")
+  })
+  expect_true(all(result$B1 == 0))
+})
+
+test_that("B1 with NULL protected_areas in local mode returns 0", {
+  units <- create_test_units(n_features = 2)
+  result <- nemeton::indicateur_b1_protection(units, protected_areas = NULL, source = "local")
+  expect_true(all(result$B1 == 0))
+})
+
+test_that("B1 with CRS mismatch preprocesses correctly", {
+  units <- create_test_units(n_features = 2)
+  # Create PA in WGS84
+  pa <- sf::st_sf(
+    zone_type = "ZNIEFF1",
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        2.9, 47.0, 3.1, 47.0, 3.1, 47.2, 2.9, 47.2, 2.9, 47.0
+      ), ncol = 2, byrow = TRUE))),
+      crs = 4326
+    )
+  )
+  # Should not error even if no overlap
+  result <- nemeton::indicateur_b1_protection(units, protected_areas = pa, preprocess = TRUE)
+  expect_true("B1" %in% names(result))
+})
+
+# --- B2: indicateur_b2_structure batch8 tests ---
+
+test_that("B2 with strata and age fields computes score", {
+  units <- create_test_units(n_features = 4)
+  units$strata <- c("Emergent", "Dominant", "Intermediate", "Suppressed")
+  units$age_class <- c("young", "mature", "old", "ancient")
+
+  result <- nemeton::indicateur_b2_structure(units)
+  expect_true("B2" %in% names(result))
+  expect_true(all(result$B2 >= 0 & result$B2 <= 100, na.rm = TRUE))
+})
+
+test_that("B2 with species field uses 3-component weighting", {
+  units <- create_test_units(n_features = 4)
+  units$strata <- c("Emergent", "Dominant", "Intermediate", "Suppressed")
+  units$age_class <- c("young", "mature", "old", "ancient")
+  units$species <- c("Quercus robur", "Fagus sylvatica", "Pinus sylvestris", "Picea abies")
+
+  result <- nemeton::indicateur_b2_structure(units, species_field = "species")
+  expect_true(all(result$B2 >= 0 & result$B2 <= 100))
+})
+
+test_that("B2 monoculture capped at 20", {
+  units <- create_test_units(n_features = 3)
+  units$strata <- rep("Dominant", 3)
+  units$age_class <- rep("mature", 3)
+
+  result <- nemeton::indicateur_b2_structure(units)
+  expect_true(all(result$B2 <= 20))
+})
+
+test_that("B2 falls back to NDVI when no strata/age fields", {
+  units <- create_test_units(n_features = 3)
+  ndvi_raster <- create_test_raster(values = "random")
+  terra::values(ndvi_raster) <- runif(terra::ncell(ndvi_raster), 0.2, 0.9)
+
+  # Create a minimal nemeton_layers object
+  layers <- list(
+    rasters = list(ndvi = ndvi_raster)
+  )
+  class(layers) <- "nemeton_layers"
+
+  result <- nemeton::indicateur_b2_structure(units, layers = layers)
+  expect_true("B2" %in% names(result))
+  expect_true(all(!is.na(result$B2)))
+})
+
+test_that("B2 falls back to LiDAR MNH", {
+  units <- create_test_units(n_features = 3)
+  mnh_raster <- create_test_raster(values = "random")
+  terra::values(mnh_raster) <- runif(terra::ncell(mnh_raster), 5, 25)
+
+  layers <- list(
+    rasters = list(lidar_mnh = mnh_raster)
+  )
+  class(layers) <- "nemeton_layers"
+
+  result <- nemeton::indicateur_b2_structure(units, layers = layers)
+  expect_true("B2" %in% names(result))
+  expect_true(all(!is.na(result$B2)))
+})
+
+test_that("B2 returns NA when no data available at all", {
+  units <- create_test_units(n_features = 3)
+  result <- nemeton::indicateur_b2_structure(units, layers = NULL)
+  expect_true(all(is.na(result$B2)))
+})
+
+# --- B3: indicateur_b3_connectivite batch8 tests ---
+
+test_that("B3 with NULL bdforet returns fallback 50", {
+  units <- create_test_units(n_features = 3)
+  suppressWarnings({
+    result <- nemeton::indicateur_b3_connectivite(units, bdforet = NULL)
+  })
+  expect_true(all(result$B3 == 50))
+})
+
+test_that("B3 with bdforet computes connectivity", {
+  units <- create_test_units(n_features = 3)
+  # Create forest patches covering the test area
+  bdforet <- sf::st_sf(
+    code_tfv = c("FF1-00", "FF2G61"),
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(matrix(c(
+        566400, 6615100, 566700, 6615100, 566700, 6615300, 566400, 6615300, 566400, 6615100
+      ), ncol = 2, byrow = TRUE))),
+      sf::st_polygon(list(matrix(c(
+        566700, 6615200, 567000, 6615200, 567000, 6615500, 566700, 6615500, 566700, 6615200
+      ), ncol = 2, byrow = TRUE))),
+      crs = 2154
+    )
+  )
+
+  result <- nemeton::indicateur_b3_connectivite(units, bdforet = bdforet)
+  expect_true("B3" %in% names(result))
+  expect_true(all(result$B3 >= 0 & result$B3 <= 100))
+})
+
+# ==============================================================================
+# (migrated from test-cov60-batch4.R)
+# ==============================================================================
+
+test_that("indicateur_b1_protection with mock protected areas", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  # Create protected areas overlapping some units
+  pa <- sf::st_sf(
+    STATUT = c("RN", "PNR"),
+    geometry = sf::st_geometry(sf::st_buffer(units[1:2, ], 50))
+  )
+  sf::st_crs(pa) <- sf::st_crs(units)
+
+  result <- indicateur_b1_protection(units, protected_areas = pa)
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+  expect_true(all(result$B1 >= 0, na.rm = TRUE))
+})
+
+test_that("indicateur_b1_protection without protected areas returns NA", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+  result <- indicateur_b1_protection(units, protected_areas = NULL)
+  expect_s3_class(result, "sf")
+  expect_true("B1" %in% names(result))
+})
+
+test_that("indicateur_b1_protection with protection_types filter", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  pa <- sf::st_sf(
+    STATUT = c("RN", "APPB", "PNR"),
+    geometry = sf::st_sfc(
+      sf::st_buffer(sf::st_centroid(sf::st_geometry(units[1, ]))[[1]], 200),
+      sf::st_buffer(sf::st_centroid(sf::st_geometry(units[1, ]))[[1]], 150),
+      sf::st_buffer(sf::st_centroid(sf::st_geometry(units[2, ]))[[1]], 100),
+      crs = sf::st_crs(units)
+    )
+  )
+
+  result <- indicateur_b1_protection(
+    units, protected_areas = pa, protection_types = c("RN", "APPB")
+  )
+  expect_s3_class(result, "sf")
+})
+
+test_that("indicateur_b2_structure returns valid structure index", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  result <- indicateur_b2_structure(units)
+
+  expect_s3_class(result, "sf")
+  expect_true("B2" %in% names(result))
+})
+
+test_that("indicateur_b2_structure with strata_field", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  units$strate <- c("futaie", "taillis", "mixte")
+
+  result <- indicateur_b2_structure(units, strata_field = "strate")
+  expect_s3_class(result, "sf")
+  expect_true("B2" %in% names(result))
+})
+
+test_that("indicateur_b3_connectivite returns B3", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  result <- suppressWarnings(indicateur_b3_connectivite(units))
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
+})
+
+test_that("indicateur_b3_connectivite with bdforet", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  bdforet <- sf::st_sf(
+    TFV = rep("Forêt fermée de feuillus", 5),
+    geometry = sf::st_sfc(lapply(1:5, function(i) {
+      sf::st_polygon(list(matrix(
+        c(566400 + (i-1)*100, 6615100,
+          566400 + i*100, 6615100,
+          566400 + i*100, 6615200,
+          566400 + (i-1)*100, 6615200,
+          566400 + (i-1)*100, 6615100),
+        ncol = 2, byrow = TRUE
+      )))
+    }), crs = 2154)
+  )
+
+  result <- indicateur_b3_connectivite(units, bdforet = bdforet)
+  expect_s3_class(result, "sf")
+  expect_true("B3" %in% names(result))
 })

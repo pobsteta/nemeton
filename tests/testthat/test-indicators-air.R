@@ -2,10 +2,6 @@
 # Unit and integration tests for Air Quality & Microclimate Family (A) Indicators
 # MVP v0.3.0 - Following TDD: Tests written BEFORE implementation
 
-library(testthat)
-library(sf)
-library(terra)
-
 # ==============================================================================
 # T048: Unit Tests for indicateur_a1_couverture() (A1)
 # ==============================================================================
@@ -345,4 +341,71 @@ test_that("indicateur_a2_qualite_air handles unknown road field name gracefully"
   expect_s3_class(result, "sf")
   expect_true("A2" %in% names(result))
   expect_true(all(result$A2 >= 0 & result$A2 <= 100, na.rm = TRUE))
+})
+
+# ==============================================================================
+# (migrated from test-cov60-batch4.R)
+# ==============================================================================
+
+test_that("indicateur_a1_couverture returns A1 with landcover raster", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  landcover <- create_test_raster(values = "constant")
+  terra::values(landcover) <- sample(1:5, terra::ncell(landcover), replace = TRUE)
+
+  result <- indicateur_a1_couverture(units, land_cover = landcover)
+  expect_s3_class(result, "sf")
+  expect_true("A1" %in% names(result))
+})
+
+test_that("indicateur_a1_couverture with custom forest_classes", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 2)
+  landcover <- create_test_raster(values = "constant")
+  terra::values(landcover) <- sample(1:10, terra::ncell(landcover), replace = TRUE)
+
+  result <- indicateur_a1_couverture(
+    units, land_cover = landcover,
+    forest_classes = c(1, 2, 3, 4, 5)
+  )
+  expect_s3_class(result, "sf")
+  expect_true("A1" %in% names(result))
+})
+
+test_that("indicateur_a1_couverture with custom buffer_radius", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 2)
+  landcover <- create_test_raster(values = "constant")
+  terra::values(landcover) <- sample(1:5, terra::ncell(landcover), replace = TRUE)
+
+  result <- indicateur_a1_couverture(
+    units, land_cover = landcover, buffer_radius = 500
+  )
+  expect_s3_class(result, "sf")
+  expect_true("A1" %in% names(result))
+})
+
+test_that("indicateur_a2_qualite_air returns A2 with proxy method", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+  roads <- create_test_vector(type = "lines")
+
+  result <- indicateur_a2_qualite_air(units, roads = roads, method = "proxy")
+  expect_s3_class(result, "sf")
+  expect_true("A2" %in% names(result))
+})
+
+test_that("indicateur_a2_qualite_air without roads returns default", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  result <- indicateur_a2_qualite_air(units)
+  expect_s3_class(result, "sf")
+  expect_true("A2" %in% names(result))
 })

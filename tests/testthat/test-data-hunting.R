@@ -2,9 +2,6 @@
 # Tests for hunting data acquisition functions
 # R/data-hunting.R - currently 0% coverage
 
-library(testthat)
-library(sf)
-
 # ==============================================================================
 # Tests for download_hunting_data()
 # Note: Network-dependent tests are skipped by default
@@ -625,4 +622,23 @@ test_that("get_game_pressure_raster errors on non-sf list input", {
     get_game_pressure_raster(units = list(a = 1, b = 2)),
     "units must be an sf object"
   )
+})
+
+# ==============================================================================
+# standardize_hunting_columns — code_dept pattern
+# (migrated from test-cov60-batch2.R)
+# ==============================================================================
+
+test_that("standardize_hunting_columns handles code_dept pattern", {
+  mock_data <- data.frame(
+    code_dept = c("01", "02"),
+    nom_departement = c("Ain", "Aisne"),
+    campagne = c("2022-2023", "2022-2023"),
+    realisations = c(1000, 800),
+    stringsAsFactors = FALSE
+  )
+  result <- nemeton:::standardize_hunting_columns(mock_data, "cerf")
+  expect_true("espece" %in% names(result))
+  expect_equal(result$espece[1], "cerf")
+  expect_true("code_dept" %in% names(result))
 })
