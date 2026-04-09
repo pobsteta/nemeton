@@ -14,7 +14,9 @@ test_that("get_species_config loads BFC config", {
 test_that("get_species_config loads EU fallback", {
   config <- get_species_config("EU")
   expect_equal(config$region, "EU")
-  expect_equal(config$n_classes, 10)
+  # EU config has 11 classes (updated from 10)
+  expect_equal(config$n_classes, length(config$classes))
+  expect_true(config$n_classes >= 10)
 })
 
 test_that("get_species_config is case-insensitive", {

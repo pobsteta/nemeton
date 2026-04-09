@@ -98,8 +98,8 @@ normalize_indicators <- function(data,
     family_pattern <- "^[A-Z][0-9]" # Matches C1, W1, F1, etc.
     family_indicators <- grep(family_pattern, all_cols, value = TRUE)
 
-    # Family index columns (family_carbon, family_water, etc.)
-    family_index_pattern <- "^family_"
+    # Family index columns (family_carbon, famille_carbone, etc.)
+    family_index_pattern <- "^(family|famille)_"
     family_index_indicators <- grep(family_index_pattern, all_cols, value = TRUE)
 
     # Combine all

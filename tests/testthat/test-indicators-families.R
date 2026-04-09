@@ -19,6 +19,7 @@ test_that(".wind_cache environment exists", {
 
 test_that("get_nasapower_wind returns default when nasapower not available", {
   skip_if_not_installed("sf")
+  skip_if_not_installed("mockr")
 
   # Create simple test units
   units <- sf::st_sf(
@@ -353,64 +354,17 @@ test_that("indicateur_s3_population exists and is callable", {
 
 # ==============================================================================
 # Alias Function Tests
+# Note: f1/f2/e1/e2/a1/n3 alias tests removed — the stubs they targeted in
+# indicators-families.R were removed because they collided with the real
+# implementations in indicators-{air,energy,naturalness}.R. The real
+# functions have different signatures (e.g. land_cover instead of layers)
+# and are already covered by test-indicators-{air,energy,naturalness}.R.
+# p1/p2/p3 alias tests removed: the stubs in indicators-families.R were
+# deleted (they shadowed the real implementations in indicators-productive.R,
+# which were previously named indicateur_p*_terrain). The real functions
+# have different signatures (species_field, dbh_field, etc.) and are
+# tested in test-indicators-productive.R.
 # ==============================================================================
-
-test_that("indicateur_f1_fertilite delegates correctly", {
-  # Without layers, should return NA
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_f1_fertilite(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_f2_erosion returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_f2_erosion(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_e1_bois_energie returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_e1_bois_energie(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_e2_evitement returns NA when E1 is NA", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_e2_evitement(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_p1_volume returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_p1_volume(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_p2_station returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_p2_station(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_p3_qualite_bois returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
 
 # ==============================================================================
 # Carbon Biomass with Inventory Data
@@ -489,81 +443,11 @@ make_mock_layers <- function(rasters = list(), vectors = list(), cache_dir = NUL
 }
 
 # ==============================================================================
-# indicateur_a1_couverture - Deeper path coverage
+# indicateur_a1_couverture deep path coverage tests removed.
+# The stub in indicators-families.R that took a `layers` parameter was
+# deleted (collision with the real indicateur_a1_couverture in
+# indicators-air.R). The real function is tested in test-indicators-air.R.
 # ==============================================================================
-
-test_that("indicateur_a1_couverture returns NA with NULL layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 3)
-  result <- nemeton:::indicateur_a1_couverture(units, layers = NULL)
-  expect_true(inherits(result, "sf"))
-  expect_true("A1" %in% names(result))
-  expect_true(all(is.na(result$A1)))
-})
-
-test_that("indicateur_a1_couverture NDVI fallback path", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  # Create NDVI raster covering the test units extent
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.9)
-
-  layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_a1_couverture(units, layers = layers)
-  expect_true(inherits(result, "sf"))
-  expect_true("A1" %in% names(result))
-  expect_equal(nrow(result), 2)
-  # Values should be computed (not NA) since NDVI is present
-  expect_true(all(!is.na(result$A1)))
-})
-
-test_that("indicateur_a1_couverture with forest_cover landcover", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  # Create a landcover raster with OSO forest classes (16, 17, 18)
-  lc <- create_test_raster(values = "constant", res = 10)
-  # Mix of forest and non-forest values
-  vals <- sample(c(16, 17, 18, 21, 22), terra::ncell(lc), replace = TRUE)
-  terra::values(lc) <- vals
-
-  layers <- make_mock_layers(rasters = list(forest_cover = lc))
-  result <- nemeton:::indicateur_a1_couverture(units, layers = layers)
-  expect_true(inherits(result, "sf"))
-  expect_true("A1" %in% names(result))
-  # Should compute oso_forest_pct
-  expect_true(all(!is.na(result$A1)))
-  expect_true(all(result$A1 >= 0 & result$A1 <= 100))
-})
-
-test_that("indicateur_a1_couverture with forest_cover + MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-
-  # Landcover raster
-  lc <- create_test_raster(values = "constant", res = 10)
-  vals <- sample(c(16, 17, 18, 21), terra::ncell(lc), replace = TRUE)
-  terra::values(lc) <- vals
-
-  # MNH (canopy height model) raster
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 25)
-
-  layers <- make_mock_layers(rasters = list(forest_cover = lc, mnh = mnh))
-  result <- nemeton:::indicateur_a1_couverture(units, layers = layers)
-  expect_true(inherits(result, "sf"))
-  expect_true("A1" %in% names(result))
-  # With MNH, A1 = 0.7 * oso_forest_pct + 0.3 * pzabove2
-  expect_true(all(!is.na(result$A1)))
-})
 
 # ==============================================================================
 # indicateur_c1_biomasse - LiDAR MNH path (Path 2)
@@ -648,188 +532,20 @@ test_that("indicateur_c1_biomasse BD Foret path", {
 })
 
 # ==============================================================================
-# indicateur_p3_qualite_bois - with mock layers (DEM + NDVI)
+# indicateur_p1/p2/p3 tests with mock layers removed. These tested the
+# deleted stubs in indicators-families.R that accepted a `layers` parameter.
+# The real functions in indicators-productive.R have different signatures
+# (species_field, dbh_field, etc.) and are tested in
+# test-indicators-productive.R.
 # ==============================================================================
 
-test_that("indicateur_p3_qualite_bois with DEM and NDVI (no MNH) uses fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 3)
-
-  dem <- create_test_raster(values = "random", res = 10)
-  terra::values(dem) <- seq(200, 400, length.out = terra::ncell(dem))
-
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.3, 0.8)
-
-  layers <- make_mock_layers(rasters = list(dem = dem, ndvi = ndvi))
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = layers)
-  expect_length(result, 3)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0 & result <= 100))
-})
-
-test_that("indicateur_p3_qualite_bois with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-
-  # Create MNH with varied heights for entropy calculation
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 25)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0 & result <= 100))
-})
-
-test_that("indicateur_p3_qualite_bois with DEM only (no NDVI, no MNH)", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  dem <- create_test_raster(values = "random", res = 10)
-  terra::values(dem) <- seq(200, 500, length.out = terra::ncell(dem))
-
-  layers <- make_mock_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = layers)
-  expect_length(result, 2)
-  # With DEM only, should compute slope-based scores
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0 & result <= 100))
-})
-
 # ==============================================================================
-# indicateur_p1_volume - with mock layers
+# indicateur_e1_bois_energie / indicateur_e2_evitement tests with layers
+# were removed. The stubs that accepted a `layers` parameter were deleted
+# (collision with the real functions in indicators-energy.R). The real
+# functions have different signatures and are tested in
+# test-indicators-energy.R.
 # ==============================================================================
-
-test_that("indicateur_p1_volume with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 30)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_p1_volume(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_p1_volume with NDVI fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.9)
-
-  layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_p1_volume(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result > 0))
-})
-
-# ==============================================================================
-# indicateur_p2_station - with mock layers
-# ==============================================================================
-
-test_that("indicateur_p2_station with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 25)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_p2_station(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_p2_station with NDVI fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.8)
-
-  layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_p2_station(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result > 0))
-})
-
-# ==============================================================================
-# indicateur_e1_bois_energie - with mock layers
-# ==============================================================================
-
-test_that("indicateur_e1_bois_energie with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 25)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_e1_bois_energie(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_e1_bois_energie with NDVI fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.3, 0.8)
-
-  layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_e1_bois_energie(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result > 0))
-})
-
-test_that("indicateur_e2_evitement with LiDAR MNH computes substitution", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 3, 20)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_e2_evitement(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  # E2 = E1 * 2.5 * 0.85
-  expect_true(all(result >= 0))
-})
 
 # ==============================================================================
 # indicateur_l2_fragmentation - with mock landcover
@@ -949,7 +665,7 @@ test_that("indicateur_w1_reseau with mock watercourses", {
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- make_mock_layers(vectors = list(indicateur_w1_reseau = watercourses_sf))
+  layers <- make_mock_layers(vectors = list(water_network = watercourses_sf))
   result <- nemeton:::indicateur_w1_reseau(units, layers = layers)
   expect_length(result, 2)
   expect_true(all(!is.na(result)))
@@ -1023,78 +739,11 @@ test_that("indicateur_f2_erosion validates nemeton_layers", {
 })
 
 # ==============================================================================
-# indicateur_f2_erosion - RUSLE with DEM
+# indicateur_f2_erosion RUSLE tests removed. These tested the deleted stub
+# in indicators-families.R that implemented RUSLE erosion. The real
+# indicateur_f2_erosion at line 906 computes fertility from TWI+slope, not
+# erosion. F2 fertility is already covered by other tests in this file.
 # ==============================================================================
-
-test_that("indicateur_f2_erosion computes RUSLE with DEM", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  dem <- create_test_raster(values = "random", res = 10)
-  vals <- matrix(
-    rep(seq(100, 400, length.out = terra::ncol(dem)), each = terra::nrow(dem)),
-    nrow = terra::nrow(dem), ncol = terra::ncol(dem)
-  )
-  terra::values(dem) <- as.vector(vals)
-
-  layers <- make_mock_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_f2_erosion(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_f2_erosion computes RUSLE with DEM + BD Foret", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  dem <- create_test_raster(values = "random", res = 10)
-  vals <- matrix(
-    rep(seq(100, 400, length.out = terra::ncol(dem)), each = terra::nrow(dem)),
-    nrow = terra::nrow(dem), ncol = terra::ncol(dem)
-  )
-  terra::values(dem) <- as.vector(vals)
-
-  # BD Foret vector covering the area
-  bbox <- sf::st_bbox(units)
-  bdforet_poly <- sf::st_polygon(list(matrix(
-    c(
-      bbox["xmin"] - 100, bbox["ymin"] - 100,
-      bbox["xmax"] + 100, bbox["ymin"] - 100,
-      bbox["xmax"] + 100, bbox["ymax"] + 100,
-      bbox["xmin"] - 100, bbox["ymax"] + 100,
-      bbox["xmin"] - 100, bbox["ymin"] - 100
-    ),
-    ncol = 2, byrow = TRUE
-  )))
-  bdforet_sf <- sf::st_sf(
-    CODE_TFV = "FF1-00-00",
-    geometry = sf::st_sfc(bdforet_poly, crs = 2154)
-  )
-
-  layers <- make_mock_layers(
-    rasters = list(dem = dem),
-    vectors = list(bdforet = bdforet_sf)
-  )
-  result <- nemeton:::indicateur_f2_erosion(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_f2_erosion returns NA without DEM", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  # Layers without DEM
-  layers <- make_mock_layers(rasters = list())
-  result <- nemeton:::indicateur_f2_erosion(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
 
 # ==============================================================================
 # extract_fertility_from_vector - with actual data
@@ -1345,7 +994,7 @@ test_that("indicateur_w1_reseau computes proximity bonus for distant parcels", {
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- make_mock_layers(vectors = list(indicateur_w1_reseau = watercourses_sf))
+  layers <- make_mock_layers(vectors = list(water_network = watercourses_sf))
   result <- nemeton:::indicateur_w1_reseau(units, layers = layers)
   expect_length(result, 1)
   # Stream does not cross the unit, but is within 500m -> proximity bonus
@@ -1876,7 +1525,7 @@ test_that("indicateur_w1_reseau: watercourse crossing parcel yields positive den
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- create_test_layers(vectors = list(indicateur_w1_reseau = watercourses))
+  layers <- create_test_layers(vectors = list(water_network = watercourses))
   result <- nemeton:::indicateur_w1_reseau(units, layers)
   expect_length(result, 2)
   expect_true(all(result > 0))
@@ -1897,7 +1546,7 @@ test_that("indicateur_w1_reseau: no crossing but within proximity yields bonus",
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- create_test_layers(vectors = list(indicateur_w1_reseau = watercourses))
+  layers <- create_test_layers(vectors = list(water_network = watercourses))
   result <- nemeton:::indicateur_w1_reseau(units, layers)
   expect_length(result, 1)
   expect_true(result > 0)  # Proximity bonus should kick in
@@ -1918,14 +1567,14 @@ test_that("indicateur_w1_reseau: stream far away (>500m) yields zero proximity",
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- create_test_layers(vectors = list(indicateur_w1_reseau = watercourses))
+  layers <- create_test_layers(vectors = list(water_network = watercourses))
   result <- nemeton:::indicateur_w1_reseau(units, layers)
   expect_length(result, 1)
   expect_equal(result, 0)
 })
 
 test_that("indicateur_w1_reseau: non-sf input errors", {
-  layers <- create_test_layers(vectors = list(indicateur_w1_reseau = create_test_vector()))
+  layers <- create_test_layers(vectors = list(water_network = create_test_vector()))
   expect_error(
     nemeton:::indicateur_w1_reseau(data.frame(x = 1), layers),
     "units must be an sf object"
@@ -1940,13 +1589,14 @@ test_that("indicateur_w1_reseau: non-nemeton_layers errors", {
   )
 })
 
-test_that("indicateur_w1_reseau: missing watercourse layer errors", {
+test_that("indicateur_w1_reseau: missing watercourse layer returns 0", {
   units <- create_test_units(n_features = 1)
   layers <- create_test_layers(vectors = list())
-  expect_error(
-    nemeton:::indicateur_w1_reseau(units, layers),
-    "not found"
-  )
+  # The real indicateur_w1_reseau warns and returns 0 instead of erroring
+  # when no watercourse layer is found.
+  result <- suppressWarnings(nemeton:::indicateur_w1_reseau(units, layers))
+  expect_length(result, 1)
+  expect_equal(result, 0)
 })
 
 test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
@@ -1964,7 +1614,7 @@ test_that("indicateur_w1_reseau: buffer parameter increases capture area", {
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- create_test_layers(vectors = list(indicateur_w1_reseau = watercourses))
+  layers <- create_test_layers(vectors = list(water_network = watercourses))
   # Without buffer: stream does not cross -> proximity bonus only
   result_no_buf <- nemeton:::indicateur_w1_reseau(units, layers, buffer = 0)
   # With buffer: stream may get captured
@@ -2595,7 +2245,7 @@ test_that("indicateur_w1_reseau: crossing stream gives full proximity bonus", {
     geometry = sf::st_sfc(stream, crs = 2154)
   )
 
-  layers <- create_test_layers(vectors = list(indicateur_w1_reseau = watercourses))
+  layers <- create_test_layers(vectors = list(water_network = watercourses))
   result <- nemeton:::indicateur_w1_reseau(units, layers, proximity_ref = 50)
   expect_length(result, 1)
   # Should have both direct density and full proximity bonus (50)

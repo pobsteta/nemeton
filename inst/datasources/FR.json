@@ -120,6 +120,19 @@
     "hunting": {
       "provider": "OFB / data.gouv.fr",
       "description": "Tableaux de chasse départementaux du grand gibier",
+      "dataset_slug": "evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973",
+      "api_url": "https://www.data.gouv.fr/api/1/datasets/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/",
+      "note": "URLs are resolved dynamically at runtime via the data.gouv.fr API (see R/data-hunting.R::resolve_hunting_urls_from_api). The static URLs in 'species' are a fallback only and may become outdated when files are re-uploaded on data.gouv.fr.",
+      "species_files": {
+        "chevreuil": "chevreuil-departement.csv",
+        "cerf": "cerf-elaphe-departement.csv",
+        "sanglier": "sanglier-departement.csv",
+        "chamois": "chamois-departement.csv",
+        "isard": "isard-departement.csv",
+        "mouflon": "mouflon-departement.csv",
+        "daim": "daim-departement.csv",
+        "cerf_sika": "cerf-sika-departement.csv"
+      },
       "species": {
         "chevreuil": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
         "cerf": "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",

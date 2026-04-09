@@ -2,6 +2,8 @@
 # Tests for Temporal Dynamics Family (T) Indicators
 # Aligned with tuto 04 methodology
 
+library(sf)
+
 # ==============================================================================
 # T1: Stand Age (BD Forêt TFV method)
 # ==============================================================================

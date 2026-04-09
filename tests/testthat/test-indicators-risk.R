@@ -2,6 +2,9 @@
 # Unit and integration tests for Risk & Resilience Family (R) Indicators
 # Aligned with tuto 03 methodology (fireexposuR, microclima, SPEI)
 
+library(sf)
+library(terra)
+
 # ==============================================================================
 # T026: Unit Tests for indicateur_r1_feu() (R1)
 # ==============================================================================

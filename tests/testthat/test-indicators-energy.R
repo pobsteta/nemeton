@@ -142,8 +142,15 @@ test_that("indicateur_e1_bois_energie uses default density 550 when lookup retur
   ns <- asNamespace("nemeton")
   mock_fn <- function(species_code, parameter, table_name) NA_real_
 
+  # Deduplicate environments: if ns and fn_env are the same environment,
+  # patching twice would cause the cleanup to save the mock as "original"
+  # on the second iteration and leak the mock into the namespace.
+  candidate_envs <- list(ns)
+  if (!identical(fn_env, ns)) {
+    candidate_envs <- c(candidate_envs, list(fn_env))
+  }
   envs_to_patch <- list()
-  for (env in list(ns, fn_env)) {
+  for (env in candidate_envs) {
     if (exists("lookup_species_threshold", envir = env, inherits = FALSE)) {
       envs_to_patch <- c(envs_to_patch, list(env))
     }

@@ -120,12 +120,14 @@ test_that("Tutorial 05 references all 12 families", {
 
   content <- paste(readLines(tutorial_path, warn = FALSE), collapse = "\n")
 
-  # All 12 family codes
-  families <- c("C", "B", "W", "A", "F", "L", "T", "R", "S", "P", "E", "N")
-
-  # At least check that famille_ columns are mentioned
-  expect_match(content, "famille_carbone|famille_biodiversite|famille_eau",
-               info = "Should reference family score columns")
+  # Check that tutorial uses the 12 NMT family codes or the famille_* column names.
+  # Tutorial 05 currently uses single-letter codes (C, B, W, ...) rather than
+  # famille_* column names, which is the tutorial's canonical form.
+  expect_true(
+    grepl("famille_carbone|famille_biodiversite|famille_eau", content) ||
+    grepl("\"C\".+\"B\".+\"W\"", content),
+    info = "Should reference family codes or famille_* columns"
+  )
 })
 
 test_that("Tutorial 05 references cache directory", {

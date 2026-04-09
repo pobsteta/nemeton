@@ -10,13 +10,95 @@ NULL
 # Data source URLs (data.gouv.fr - OFB/ONCFS)
 # ==============================================================================
 
+# Nom du dataset sur data.gouv.fr (URL slug)
+.HUNTING_DATASET_SLUG <- "evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973"
+
+# Correspondance entre clé d'espèce et nom de fichier CSV attendu
+.HUNTING_SPECIES_FILES <- list(
+  chevreuil = "chevreuil-departement.csv",
+  cerf      = "cerf-elaphe-departement.csv",
+  sanglier  = "sanglier-departement.csv",
+  chamois   = "chamois-departement.csv",
+  isard     = "isard-departement.csv",
+  mouflon   = "mouflon-departement.csv",
+  daim      = "daim-departement.csv",
+  cerf_sika = "cerf-sika-departement.csv"
+)
+
+# Cache de session pour éviter de refaire l'appel API à chaque download
+.hunting_urls_cache <- new.env(parent = emptyenv())
+
+#' Resolve hunting data URLs via data.gouv.fr API
+#'
+#' data.gouv.fr utilise des URLs horodatées (.../20250605-140029/...) qui
+#' changent à chaque ré-upload. Cette fonction interroge l'API pour récupérer
+#' les URLs courantes des fichiers CSV par espèce.
+#'
+#' Le résultat est mis en cache pour la session R.
+#'
+#' @return Liste nommée (espece → URL) ou NULL en cas d'échec
+#' @noRd
+resolve_hunting_urls_from_api <- function() {
+  # Renvoyer le cache si déjà résolu
+  if (!is.null(.hunting_urls_cache$urls)) {
+    return(.hunting_urls_cache$urls)
+  }
+
+  api_url <- paste0("https://www.data.gouv.fr/api/1/datasets/",
+                    .HUNTING_DATASET_SLUG, "/")
+
+  result <- tryCatch(
+    {
+      resp <- jsonlite::fromJSON(api_url, simplifyDataFrame = FALSE)
+      resources <- resp$resources
+
+      if (is.null(resources) || length(resources) == 0) {
+        NULL
+      } else {
+        urls <- list()
+        for (sp in names(.HUNTING_SPECIES_FILES)) {
+          target_file <- .HUNTING_SPECIES_FILES[[sp]]
+          for (res in resources) {
+            title_match <- !is.null(res$title) &&
+              identical(res$title, target_file)
+            url_match <- !is.null(res$url) &&
+              identical(basename(res$url), target_file)
+            if (title_match || url_match) {
+              urls[[sp]] <- res$url
+              break
+            }
+          }
+        }
+
+        if (length(urls) > 0) urls else NULL
+      }
+    },
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+
+  if (!is.null(result)) {
+    .hunting_urls_cache$urls <- result
+  }
+  result
+}
+
 #' Get hunting data URLs from datasource config (ADR-002)
 #'
-#' Sources are loaded from inst/datasources/FR.json when available,
-#' with fallback to hardcoded URLs for backward compatibility.
+#' Resolution order:
+#'   1. Dynamic API lookup via data.gouv.fr (most up-to-date)
+#'   2. Country config from inst/datasources/{country}.json
+#'   3. Hardcoded fallback (may be outdated)
+#'
 #' @noRd
 get_hunting_data_urls <- function(country = "FR") {
-  # Essayer de charger depuis la configuration par pays
+  # 1. Résolution dynamique via l'API data.gouv.fr (évite les 404)
+  dynamic_urls <- resolve_hunting_urls_from_api()
+  if (!is.null(dynamic_urls)) {
+    return(dynamic_urls)
+  }
+
+  # 2. Configuration par pays (inst/datasources/FR.json)
   hunting_cfg <- tryCatch(
     get_data_source("hunting", country),
     error = function(e) NULL
@@ -24,13 +106,15 @@ get_hunting_data_urls <- function(country = "FR") {
   if (!is.null(hunting_cfg$species)) {
     return(hunting_cfg$species)
   }
-  # Fallback : URLs statiques
+
+  # 3. Fallback : URLs statiques (peuvent être obsolètes)
   .HUNTING_DATA_URLS_DEFAULT
 }
 
-# URLs statiques (fallback et valeur au chargement du package)
-# Ne pas appeler get_data_source() ici car datasources.R n'est
-# pas encore charge (ordre alphabetique : data < datasources)
+# URLs statiques (dernier fallback). Ces URLs sont horodatées et peuvent
+# devenir obsolètes à chaque ré-upload sur data.gouv.fr. En pratique, elles
+# ne sont utilisées que si l'API data.gouv.fr et les configs JSON ne sont
+# pas accessibles.
 .HUNTING_DATA_URLS_DEFAULT <- list(
   chevreuil = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140029/chevreuil-departement.csv",
   cerf = "https://static.data.gouv.fr/resources/evolution-des-tableaux-de-chasse-departementaux-du-grand-gibier-en-france-donnees-depuis-1973/20250605-140037/cerf-elaphe-departement.csv",
@@ -103,17 +187,20 @@ download_hunting_data <- function(species = "all",
     dir.create(cache_dir, recursive = TRUE)
   }
 
+  # Résolution des URLs (API dynamique → config pays → fallback statique)
+  hunting_urls <- get_hunting_data_urls("FR")
+
   # Determine species to download
 
   if ("all" %in% species) {
-    species <- names(HUNTING_DATA_URLS)
+    species <- names(hunting_urls)
   }
 
   # Validate species
 
-  valid_species <- intersect(species, names(HUNTING_DATA_URLS))
+  valid_species <- intersect(species, names(hunting_urls))
   if (length(valid_species) == 0) {
-    stop("No valid species specified. Use: ", paste(names(HUNTING_DATA_URLS), collapse = ", "),
+    stop("No valid species specified. Use: ", paste(names(hunting_urls), collapse = ", "),
       call. = FALSE
     )
   }
@@ -128,19 +215,32 @@ download_hunting_data <- function(species = "all",
     if (!file.exists(cache_file) || force_download) {
       cli::cli_alert_info("Downloading hunting data for {sp}...")
 
+      # download.file() issues a WARNING (not an error) for HTTP 404.
+      # We need to catch both warnings and errors to avoid noisy output
+      # when the static URLs on data.gouv.fr become stale.
       tryCatch(
         {
-          download.file(
-            url = HUNTING_DATA_URLS[[sp]],
-            destfile = cache_file,
-            mode = "wb",
-            quiet = TRUE
+          suppressWarnings(
+            download.file(
+              url = hunting_urls[[sp]],
+              destfile = cache_file,
+              mode = "wb",
+              quiet = TRUE
+            )
           )
-          cli::cli_alert_success("Downloaded {sp} data")
+          # Check file was actually written (download.file may warn and
+          # continue silently on 404)
+          if (file.exists(cache_file) && file.size(cache_file) > 0) {
+            cli::cli_alert_success("Downloaded {sp} data")
+          } else {
+            if (file.exists(cache_file)) unlink(cache_file)
+            cli::cli_alert_warning("Failed to download {sp}: empty or missing file")
+          }
         },
         error = function(e) {
           cli::cli_alert_warning("Failed to download {sp}: {e$message}")
-          return(NULL)
+          if (file.exists(cache_file)) unlink(cache_file)
+          NULL
         }
       )
     }
@@ -179,7 +279,10 @@ download_hunting_data <- function(species = "all",
     rownames(result) <- NULL
     return(result)
   } else {
-    warning("No hunting data could be downloaded", call. = FALSE)
+    # Use cli_alert_warning instead of warning() to avoid polluting
+    # testthat output with formal R warnings when downloads fail.
+    # Callers should handle NULL return values.
+    cli::cli_alert_warning("No hunting data could be downloaded")
     return(NULL)
   }
 }

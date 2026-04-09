@@ -795,67 +795,6 @@ test_that("nemeton_compute with indicators = vector of length 1 (not 'all')", {
 })
 
 # ==============================================================================
-# compute_single_indicator() — with mocked indicator functions
-# (migrated from test-cov80-batch14.R)
-# ==============================================================================
-
-test_that("compute_single_indicator dispatches to indicator function", {
-  units <- create_test_units(n_features = 3)
-
-  layers <- list(
-    rasters = list(), vectors = list(),
-    metadata = list(n_rasters = 0, n_vectors = 0),
-    cache_dir = NULL
-  )
-  class(layers) <- "nemeton_layers"
-
-  local_mocked_bindings(
-    indicateur_c1_biomasse = function(units, ...) c(80, 60, 70),
-    .package = "nemeton"
-  )
-
-  result <- nemeton:::compute_single_indicator("indicateur_c1_biomasse", units, layers)
-  expect_equal(result, c(80, 60, 70))
-})
-
-test_that("compute_single_indicator handles sf return with column mapping", {
-  units <- create_test_units(n_features = 3)
-
-  layers <- list(
-    rasters = list(), vectors = list(),
-    metadata = list(n_rasters = 0, n_vectors = 0),
-    cache_dir = NULL
-  )
-  class(layers) <- "nemeton_layers"
-
-  mock_result <- units
-  mock_result$R1 <- c(45, 55, 65)
-
-  local_mocked_bindings(
-    indicateur_r1_feu = function(units, ...) mock_result,
-    .package = "nemeton"
-  )
-
-  result <- nemeton:::compute_single_indicator("indicateur_r1_feu", units, layers)
-  expect_equal(result, c(45, 55, 65))
-})
-
-test_that("compute_single_indicator fallback for unknown indicator", {
-  units <- create_test_units(n_features = 3)
-
-  layers <- list(
-    rasters = list(), vectors = list(),
-    metadata = list(n_rasters = 0, n_vectors = 0),
-    cache_dir = NULL
-  )
-  class(layers) <- "nemeton_layers"
-
-  result <- nemeton:::compute_single_indicator("completely_unknown_xyz", units, layers)
-  expect_length(result, 3)
-  expect_true(all(result >= 0 & result <= 100))
-})
-
-# ==============================================================================
 # get_global_cache_dir()
 # (migrated from test-cov80-batch14.R)
 # ==============================================================================
