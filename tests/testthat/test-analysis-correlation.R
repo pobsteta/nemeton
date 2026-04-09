@@ -10,6 +10,8 @@
 # TDD: Write tests FIRST, ensure they FAIL, then implement functions
 # See spec.md User Story 6 for requirements
 
+library(sf)
+
 # ==============================================================================
 # T068: Unit Tests for compute_family_correlations()
 # ==============================================================================

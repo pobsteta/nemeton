@@ -2,6 +2,9 @@
 # Unit and integration tests for Biodiversity Family (B) Indicators
 # MVP v0.3.0 - Following TDD: Tests written BEFORE implementation
 
+library(sf)
+library(terra)
+
 # ==============================================================================
 # T014: Unit Tests for indicateur_b1_protection() (B1)
 # ==============================================================================

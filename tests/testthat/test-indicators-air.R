@@ -2,6 +2,9 @@
 # Unit and integration tests for Air Quality & Microclimate Family (A) Indicators
 # MVP v0.3.0 - Following TDD: Tests written BEFORE implementation
 
+library(sf)
+library(terra)
+
 # ==============================================================================
 # T048: Unit Tests for indicateur_a1_couverture() (A1)
 # ==============================================================================

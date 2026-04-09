@@ -2,6 +2,9 @@
 # Integration Tests for v0.3.0 - Full Multi-Family Workflow
 # T061: Complete workflow from data loading to visualization
 
+library(sf)
+library(terra)
+
 # ==============================================================================
 # T061: Full v0.3.0 Workflow Integration Test
 # ==============================================================================
