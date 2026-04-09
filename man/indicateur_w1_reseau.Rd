@@ -7,7 +7,7 @@
 indicateur_w1_reseau(
   units,
   layers,
-  watercourse_layer = "indicateur_w1_reseau",
+  watercourse_layer = "water_network",
   buffer = 0,
   proximity_m = 500,
   proximity_ref = 50

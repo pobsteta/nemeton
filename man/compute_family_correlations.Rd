@@ -10,7 +10,7 @@ compute_family_correlations(units, families = NULL, method = "pearson")
 \item{units}{sf object with computed family indices (family_*)}
 
 \item{families}{Character vector of family column names to analyze.
-If NULL (default), auto-detects all columns starting with "family_"}
+If NULL (default), auto-detects all columns starting with "famille_"}
 
 \item{method}{Correlation method: "pearson" (default), "spearman", or "kendall"}
 }

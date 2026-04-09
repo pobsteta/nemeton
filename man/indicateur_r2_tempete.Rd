@@ -50,8 +50,8 @@ summary(result$R2)
 }
 \seealso{
 Other risk-indicators: 
-\code{\link{indicateur_r4_abroutissement}()},
+\code{\link{indicateur_r1_feu}()},
 \code{\link{indicateur_r3_secheresse}()},
-\code{\link{indicateur_r1_feu}()}
+\code{\link{indicateur_r4_abroutissement}()}
 }
 \concept{risk-indicators}

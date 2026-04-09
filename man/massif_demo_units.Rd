@@ -302,7 +302,10 @@ hotspots <- identify_hotspots(
 )
 
 # Summary statistics
-summary(massif_demo_units[, c("famille_social", "famille_production", "famille_energie", "famille_naturalite")])
+summary(massif_demo_units[, c(
+  "famille_social", "famille_production",
+  "famille_energie", "famille_naturalite"
+)])
 }
 
 }

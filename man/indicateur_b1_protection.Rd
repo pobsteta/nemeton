@@ -71,7 +71,7 @@ summary(result$B1)
 }
 \seealso{
 Other biodiversity-indicators: 
-\code{\link{indicateur_b3_connectivite}()},
-\code{\link{indicateur_b2_structure}()}
+\code{\link{indicateur_b2_structure}()},
+\code{\link{indicateur_b3_connectivite}()}
 }
 \concept{biodiversity-indicators}
