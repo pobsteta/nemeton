@@ -260,9 +260,9 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
       # W - Water (3)
       "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
       # F - Soil Fertility (2)
-      "soil_fertility", "soil_erosion",
+      "indicateur_f1_fertilite", "indicateur_f2_erosion",
       # L - Landscape (2)
-      "indicateur_l2_fragmentation", "landscape_edge",
+      "indicateur_l1_sylvosphere", "indicateur_l2_fragmentation",
       # B - Biodiversity (3)
       "indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite",
       # R - Risk/Resilience (4)
@@ -270,15 +270,15 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
       # T - Temporal (2)
       "indicateur_t1_anciennete", "indicateur_t2_changement",
       # A - Air/Microclimate (2)
-      "air_coverage", "indicateur_a2_qualite_air",
+      "indicateur_a1_couverture", "indicateur_a2_qualite_air",
       # S - Social (3)
-      "indicateur_s1_routes", "indicateur_s2_bati", "social_proximity",
+      "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
       # P - Productive (3)
-      "productive_volume", "productive_quality", "productive_station",
+      "indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois",
       # E - Energy (2)
-      "energy_fuelwood", "energy_avoidance",
+      "indicateur_e1_bois_energie", "indicateur_e2_evitement",
       # N - Naturalness (3)
-      "indicateur_n1_distance", "indicateur_n2_continuite", "naturalness_composite"
+      "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
     ),
     family = c(
       "C", "C",
@@ -316,8 +316,8 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
       "Water regulation via Topographic Wetness Index (W3)",
       "Soil fertility assessment (F1)",
       "Soil erosion risk (F2)",
-      "Forest fragmentation metrics (L1)",
-      "Edge density and quality (L2)",
+      "Sylvosphere landscape mosaic (L1)",
+      "Forest fragmentation metrics (L2)",
       "Biodiversity protection status (B1)",
       "Structural diversity (B2)",
       "Habitat connectivity (B3)",
@@ -333,8 +333,8 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
       "General accessibility (S2)",
       "Proximity to population centers (S3)",
       "Timber volume production (P1)",
-      "Wood quality (P2)",
-      "Site productivity (P3)",
+      "Site productivity (P2)",
+      "Wood quality (P3)",
       "Fuelwood energy potential (E1)",
       "Fossil fuel avoidance via carbon sequestration (E2)",
       "Distance to natural reference (N1)",
