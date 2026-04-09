@@ -2,9 +2,6 @@
 # Tests for hunting data acquisition functions
 # R/data-hunting.R - currently 0% coverage
 
-library(testthat)
-library(sf)
-
 # ==============================================================================
 # Tests for download_hunting_data()
 # Note: Network-dependent tests are skipped by default

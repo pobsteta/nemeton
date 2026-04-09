@@ -2,8 +2,6 @@
 # Tests for internationalization system
 # R/i18n.R - currently 65% coverage
 
-library(testthat)
-
 # ==============================================================================
 # Tests for get_language()
 # ==============================================================================
