@@ -456,7 +456,7 @@ massif_demo_units$A1 <- pmin(100, pmax(0, 60 + (vol_val / 10) + rnorm(n, 0, 15))
 massif_demo_units$A2 <- runif(n, 45, 95)
 
 # ---- Famille F : Fertilité des sols ----
-massif_demo_units$F1 <- as.integer(massif_demo_units$fertility)
+massif_demo_units$F1 <- as.numeric(massif_demo_units$fertility)
 massif_demo_units$F2 <- runif(n, 0, 35)
 
 # ---- Famille L : Paysage ----
