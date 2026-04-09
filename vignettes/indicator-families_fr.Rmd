@@ -279,9 +279,9 @@ demo_norm$famille_naturalite <- (demo_norm$N1_norm + demo_norm$N2_norm + demo_no
 # Afficher les scores moyens par famille
 family_means <- demo_norm |>
   st_drop_geometry() |>
-  summarise(across(starts_with("family_"), mean, na.rm = TRUE)) |>
-  pivot_longer(everything(), names_to = "family", values_to = "mean_score") |>
-  mutate(family = gsub("family_", "", family)) |>
+  summarise(across(starts_with("famille_"), mean, na.rm = TRUE)) |>
+  pivot_longer(everything(), names_to = "famille", values_to = "mean_score") |>
+  mutate(famille = gsub("famille_", "", famille)) |>
   arrange(desc(mean_score))
 
 family_means
@@ -322,7 +322,7 @@ nemeton_radar(
 map_data <- demo_norm |>
   select(parcel_id, famille_carbone, famille_biodiversite, famille_eau, famille_production, geometry) |>
   pivot_longer(
-    cols = starts_with("family_"),
+    cols = starts_with("famille_"),
     names_to = "family",
     values_to = "score"
   ) |>
@@ -357,10 +357,10 @@ ggplot(map_data) +
 # Extraire les scores de famille
 family_scores <- demo_norm |>
   st_drop_geometry() |>
-  select(starts_with("family_"))
+  select(starts_with("famille_"))
 
 # Renommer pour lisibilité
-names(family_scores) <- gsub("family_", "", names(family_scores))
+names(family_scores) <- gsub("famille_", "", names(family_scores))
 
 # Calculer la matrice de corrélation
 cor_matrix <- cor(family_scores, use = "complete.obs")

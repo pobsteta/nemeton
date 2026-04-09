@@ -107,7 +107,7 @@ result <- create_family_index(massif_demo_units)
 # Afficher les indices de famille
 result |>
   sf::st_drop_geometry() |>
-  select(parcel_id, starts_with("family_")) |>
+  select(parcel_id, starts_with("famille_")) |>
   head()
 ```
 
@@ -219,7 +219,7 @@ p_naturalness <- ggplot(result) +
 result_long <- result |>
   sf::st_drop_geometry() |>
   tidyr::pivot_longer(
-    cols = starts_with("family_"),
+    cols = starts_with("famille_"),
     names_to = "famille",
     values_to = "valeur"
   ) |>
