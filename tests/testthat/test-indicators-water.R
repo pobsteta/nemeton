@@ -59,16 +59,19 @@ test_that("indicateur_w1_reseau handles parcels with no watercourses", {
   expect_true(all(!is.na(density)))
 })
 
-test_that("indicateur_w1_reseau errors when watercourse layer missing", {
+test_that("indicateur_w1_reseau returns 0 when watercourse layer missing", {
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
   units <- massif_demo_units[1:3, ]
 
-  expect_error(
-    indicateur_w1_reseau(units, layers, watercourse_layer = "nonexistent"),
-    "not found"
+  # The real indicateur_w1_reseau warns and returns 0 instead of erroring
+  # when the specified watercourse_layer is not found.
+  result <- suppressWarnings(
+    indicateur_w1_reseau(units, layers, watercourse_layer = "nonexistent")
   )
+  expect_length(result, 3)
+  expect_true(all(result == 0))
 })
 
 test_that("indicateur_w1_reseau validates inputs", {
