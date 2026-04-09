@@ -66,7 +66,7 @@ NULL
 #'   density_field = "density"
 #' )
 #' }
-indicateur_p1_volume_terrain <- function(units,
+indicateur_p1_volume <- function(units,
                                         species_field = "species",
                                         dbh_field = "dbh",
                                         height_field = "height",
@@ -198,7 +198,7 @@ indicateur_p1_volume_terrain <- function(units,
 #'   climate_field = "climate"
 #' )
 #' }
-indicateur_p2_station_terrain <- function(units,
+indicateur_p2_station <- function(units,
                                          species_field = "species",
                                          fertility_field = "fertility",
                                          climate_field = "climate",
@@ -328,7 +328,7 @@ indicateur_p2_station_terrain <- function(units,
 #'   defects_field = "defects"
 #' )
 #' }
-indicateur_p3_qualite_bois_terrain <- function(units,
+indicateur_p3_qualite_bois <- function(units,
                                          dbh_field = "dbh",
                                          form_score_field = "form_score",
                                          defects_field = "defects",

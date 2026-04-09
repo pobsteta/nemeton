@@ -359,32 +359,12 @@ test_that("indicateur_s3_population exists and is callable", {
 # implementations in indicators-{air,energy,naturalness}.R. The real
 # functions have different signatures (e.g. land_cover instead of layers)
 # and are already covered by test-indicators-{air,energy,naturalness}.R.
-# p1/p2/p3 alias tests are kept because they have no collision.
+# p1/p2/p3 alias tests removed: the stubs in indicators-families.R were
+# deleted (they shadowed the real implementations in indicators-productive.R,
+# which were previously named indicateur_p*_terrain). The real functions
+# have different signatures (species_field, dbh_field, etc.) and are
+# tested in test-indicators-productive.R.
 # ==============================================================================
-
-test_that("indicateur_p1_volume returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_p1_volume(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_p2_station returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_p2_station(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
-
-test_that("indicateur_p3_qualite_bois returns NA without layers", {
-  skip_if_not_installed("sf")
-  units <- create_test_units(n_features = 2)
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = NULL)
-  expect_length(result, 2)
-  expect_true(all(is.na(result)))
-})
 
 # ==============================================================================
 # Carbon Biomass with Inventory Data
@@ -552,135 +532,12 @@ test_that("indicateur_c1_biomasse BD Foret path", {
 })
 
 # ==============================================================================
-# indicateur_p3_qualite_bois - with mock layers (DEM + NDVI)
+# indicateur_p1/p2/p3 tests with mock layers removed. These tested the
+# deleted stubs in indicators-families.R that accepted a `layers` parameter.
+# The real functions in indicators-productive.R have different signatures
+# (species_field, dbh_field, etc.) and are tested in
+# test-indicators-productive.R.
 # ==============================================================================
-
-test_that("indicateur_p3_qualite_bois with DEM and NDVI (no MNH) uses fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 3)
-
-  dem <- create_test_raster(values = "random", res = 10)
-  terra::values(dem) <- seq(200, 400, length.out = terra::ncell(dem))
-
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.3, 0.8)
-
-  layers <- make_mock_layers(rasters = list(dem = dem, ndvi = ndvi))
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = layers)
-  expect_length(result, 3)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0 & result <= 100))
-})
-
-test_that("indicateur_p3_qualite_bois with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-
-  # Create MNH with varied heights for entropy calculation
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 25)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0 & result <= 100))
-})
-
-test_that("indicateur_p3_qualite_bois with DEM only (no NDVI, no MNH)", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  dem <- create_test_raster(values = "random", res = 10)
-  terra::values(dem) <- seq(200, 500, length.out = terra::ncell(dem))
-
-  layers <- make_mock_layers(rasters = list(dem = dem))
-  result <- nemeton:::indicateur_p3_qualite_bois(units, layers = layers)
-  expect_length(result, 2)
-  # With DEM only, should compute slope-based scores
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0 & result <= 100))
-})
-
-# ==============================================================================
-# indicateur_p1_volume - with mock layers
-# ==============================================================================
-
-test_that("indicateur_p1_volume with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 30)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_p1_volume(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_p1_volume with NDVI fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.9)
-
-  layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_p1_volume(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result > 0))
-})
-
-# ==============================================================================
-# indicateur_p2_station - with mock layers
-# ==============================================================================
-
-test_that("indicateur_p2_station with LiDAR MNH", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  mnh <- create_test_raster(values = "random", res = 10)
-  terra::values(mnh) <- runif(terra::ncell(mnh), 0, 25)
-
-  layers <- make_mock_layers(rasters = list(lidar_mnh = mnh))
-  result <- nemeton:::indicateur_p2_station(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result >= 0))
-})
-
-test_that("indicateur_p2_station with NDVI fallback", {
-  skip_if_not_installed("sf")
-  skip_if_not_installed("terra")
-  skip_if_not_installed("exactextractr")
-
-  units <- create_test_units(n_features = 2)
-  ndvi <- create_test_raster(values = "random", res = 10)
-  terra::values(ndvi) <- runif(terra::ncell(ndvi), 0.2, 0.8)
-
-  layers <- make_mock_layers(rasters = list(ndvi = ndvi))
-  result <- nemeton:::indicateur_p2_station(units, layers = layers)
-  expect_length(result, 2)
-  expect_true(all(!is.na(result)))
-  expect_true(all(result > 0))
-})
 
 # ==============================================================================
 # indicateur_e1_bois_energie / indicateur_e2_evitement tests with layers
