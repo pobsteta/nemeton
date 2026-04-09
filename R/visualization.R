@@ -103,10 +103,11 @@ plot_indicators_map <- function(data,
     # Normalized versions (indicator_name_norm)
     norm_indicators <- grep("_norm$", all_cols, value = TRUE)
 
-    # Family indicators (C1, W1, etc.) and family indices (family_carbon, etc.)
+    # Family indicators (C1, W1, etc.) and family indices
+    # (family_carbon, famille_carbone, etc.)
     family_pattern <- "^[A-Z][0-9]"
     family_indicators <- grep(family_pattern, all_cols, value = TRUE)
-    family_index_pattern <- "^family_"
+    family_index_pattern <- "^(family|famille)_"
     family_index_indicators <- grep(family_index_pattern, all_cols, value = TRUE)
 
     # Composite indices
@@ -304,14 +305,21 @@ add_color_scale <- function(p, palette, direction, breaks, labels, legend_title)
 #' @noRd
 clean_indicator_name <- function(names) {
 
-  # Family indices: famille_carbone -> carbone, famille_biodiversite -> biodiversite, etc.
-  cleaned <- gsub("^famille_", "", names)
+  # Family indices: famille_carbone -> C, famille_biodiversite -> B, etc.
+  # Use the FAMILLE_NMT_MAP from family-system.R to resolve the short code.
+  cleaned <- vapply(names, function(nm) {
+    if (grepl("^famille_", nm)) {
+      code <- get_famille_code(nm)
+      if (!is.null(code) && !is.na(code)) return(code)
+    }
+    nm
+  }, character(1), USE.NAMES = FALSE)
 
   # Remove common suffixes
   cleaned <- gsub("_norm$", " (Normalized)", cleaned)
   cleaned <- gsub("_inv$", " (Inverted)", cleaned)
 
-  # Capitalize first letter
+  # Capitalize first letter (for non-family-code names)
   cleaned <- gsub("^(.)", "\\U\\1", cleaned, perl = TRUE)
 
   # Replace underscores with spaces

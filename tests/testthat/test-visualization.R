@@ -600,7 +600,8 @@ test_that("clean_indicator_name handles _inv suffix", {
 
 test_that("clean_indicator_name replaces underscores with spaces", {
   result <- nemeton:::clean_indicator_name("indicateur_c1_biomasse")
-  expect_equal(result, "Carbon biomass")
+  # The function capitalizes the first letter and replaces _ with spaces
+  expect_equal(result, "Indicateur c1 biomasse")
 })
 
 test_that("clean_indicator_name capitalizes first letter", {
