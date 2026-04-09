@@ -263,18 +263,18 @@ Créons des indices agrégés pour chaque famille.
 
 ```{r}
 # Calculer les indices de famille
-demo_norm$family_C <- (demo_norm$C1_norm + demo_norm$C2_norm) / 2
-demo_norm$family_B <- (demo_norm$B1_norm + demo_norm$B2_norm + demo_norm$B3_norm) / 3
-demo_norm$family_W <- (demo_norm$W1_norm + demo_norm$W2_norm + demo_norm$W3_norm) / 3
-demo_norm$family_A <- (demo_norm$A1_norm + demo_norm$A2_norm) / 2
-demo_norm$family_F <- (demo_norm$F1_norm + demo_norm$F2_norm) / 2
-demo_norm$family_L <- (demo_norm$L1_norm + demo_norm$L2_norm) / 2
-demo_norm$family_T <- (demo_norm$T1_norm + demo_norm$T2_norm) / 2
-demo_norm$family_R <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm + demo_norm$R4_norm) / 4
-demo_norm$family_S <- (demo_norm$S1_norm + demo_norm$S2_norm) / 2
-demo_norm$family_P <- (demo_norm$P1_norm + demo_norm$P2_norm + demo_norm$P3_norm) / 3
-demo_norm$family_E <- (demo_norm$E1_norm + demo_norm$E2_norm) / 2
-demo_norm$family_N <- (demo_norm$N1_norm + demo_norm$N2_norm + demo_norm$N3_norm) / 3
+demo_norm$famille_carbone <- (demo_norm$C1_norm + demo_norm$C2_norm) / 2
+demo_norm$famille_biodiversite <- (demo_norm$B1_norm + demo_norm$B2_norm + demo_norm$B3_norm) / 3
+demo_norm$famille_eau <- (demo_norm$W1_norm + demo_norm$W2_norm + demo_norm$W3_norm) / 3
+demo_norm$famille_air <- (demo_norm$A1_norm + demo_norm$A2_norm) / 2
+demo_norm$famille_sol <- (demo_norm$F1_norm + demo_norm$F2_norm) / 2
+demo_norm$famille_paysage <- (demo_norm$L1_norm + demo_norm$L2_norm) / 2
+demo_norm$famille_temporel <- (demo_norm$T1_norm + demo_norm$T2_norm) / 2
+demo_norm$famille_risque <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm + demo_norm$R4_norm) / 4
+demo_norm$famille_social <- (demo_norm$S1_norm + demo_norm$S2_norm) / 2
+demo_norm$famille_production <- (demo_norm$P1_norm + demo_norm$P2_norm + demo_norm$P3_norm) / 3
+demo_norm$famille_energie <- (demo_norm$E1_norm + demo_norm$E2_norm) / 2
+demo_norm$famille_naturalite <- (demo_norm$N1_norm + demo_norm$N2_norm + demo_norm$N3_norm) / 3
 
 # Afficher les scores moyens par famille
 family_means <- demo_norm |>
@@ -320,17 +320,17 @@ nemeton_radar(
 ```{r, fig.height=8, fig.width=10}
 # Préparer les données pour les cartes
 map_data <- demo_norm |>
-  select(parcel_id, family_C, family_B, family_W, family_P, geometry) |>
+  select(parcel_id, famille_carbone, famille_biodiversite, famille_eau, famille_production, geometry) |>
   pivot_longer(
     cols = starts_with("family_"),
     names_to = "family",
     values_to = "score"
   ) |>
   mutate(family = case_when(
-    family == "family_C" ~ "Carbone",
-    family == "family_B" ~ "Biodiversité",
-    family == "family_W" ~ "Eau",
-    family == "family_P" ~ "Production"
+    family == "famille_carbone" ~ "Carbone",
+    family == "famille_biodiversite" ~ "Biodiversité",
+    family == "famille_eau" ~ "Eau",
+    family == "famille_production" ~ "Production"
   ))
 
 ggplot(map_data) +
@@ -399,8 +399,8 @@ ggplot(cor_data, aes(x = Family1, y = Family2, fill = Correlation)) +
 ## Scatter plot des synergies/conflits
 
 ```{r, fig.height=5}
-ggplot(demo_norm |> st_drop_geometry(), aes(x = family_C, y = family_B)) +
-  geom_point(aes(color = family_P, size = family_N), alpha = 0.7) +
+ggplot(demo_norm |> st_drop_geometry(), aes(x = famille_carbone, y = famille_biodiversite)) +
+  geom_point(aes(color = famille_production, size = famille_naturalite), alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE, color = "gray40", linetype = "dashed") +
   scale_color_viridis_c(name = "Production", option = "D") +
   scale_size_continuous(name = "Naturalité", range = c(2, 8)) +
@@ -421,11 +421,11 @@ threshold <- 60  # Top 40%
 
 demo_norm <- demo_norm |>
   mutate(
-    high_C = family_C >= threshold,
-    high_B = family_B >= threshold,
-    high_W = family_W >= threshold,
-    high_N = family_N >= threshold,
-    high_P = family_P >= threshold,
+    high_C = famille_carbone >= threshold,
+    high_B = famille_biodiversite >= threshold,
+    high_W = famille_eau >= threshold,
+    high_N = famille_naturalite >= threshold,
+    high_P = famille_production >= threshold,
     hotspot_count = high_C + high_B + high_W + high_N + high_P,
     is_hotspot = hotspot_count >= 3
   )
@@ -459,9 +459,9 @@ hotspot_stats <- demo_norm |>
   summarise(
     n_parcelles = n(),
     surface_totale = round(sum(surface_ha), 1),
-    C_mean = round(mean(family_C), 1),
-    B_mean = round(mean(family_B), 1),
-    P_mean = round(mean(family_P), 1),
+    C_mean = round(mean(famille_carbone), 1),
+    B_mean = round(mean(famille_biodiversite), 1),
+    P_mean = round(mean(famille_production), 1),
     .groups = "drop"
   )
 
@@ -475,18 +475,18 @@ hotspot_stats
 demo_norm <- demo_norm |>
   mutate(
     ecosystem_index = (
-      family_C * 0.15 +  # Carbone
-      family_B * 0.15 +  # Biodiversité
-      family_W * 0.10 +  # Eau
-      family_A * 0.05 +  # Air
-      family_F * 0.05 +  # Fertilité
-      family_L * 0.05 +  # Paysage
-      family_T * 0.05 +  # Temporel
-      family_R * 0.10 +  # Risques (résilience)
-      family_S * 0.05 +  # Social
-      family_P * 0.10 +  # Production
-      family_E * 0.05 +  # Énergie
-      family_N * 0.10    # Naturalité
+      famille_carbone * 0.15 +  # Carbone
+      famille_biodiversite * 0.15 +  # Biodiversité
+      famille_eau * 0.10 +  # Eau
+      famille_air * 0.05 +  # Air
+      famille_sol * 0.05 +  # Fertilité
+      famille_paysage * 0.05 +  # Paysage
+      famille_temporel * 0.05 +  # Temporel
+      famille_risque * 0.10 +  # Risques (résilience)
+      famille_social * 0.05 +  # Social
+      famille_production * 0.10 +  # Production
+      famille_energie * 0.05 +  # Énergie
+      famille_naturalite * 0.10    # Naturalité
     )
   )
 
