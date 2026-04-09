@@ -1,11 +1,11 @@
-#' NDP System (Niveau De Précision)
+#' NDP System (Niveau De Precision)
 #'
 #' @description
 #' NDP measures the QUALITY of input data, not the number of families calculated.
 #' All 12 families are always calculated, but with increasing precision as NDP rises.
 #'
 #' The system uses Fibonacci weighting (1, 1, 2, 3, 5) and golden ratio confidence
-#' (φ) to express data reliability.
+#' (phi) to express data reliability.
 #'
 #' @name ndp
 #' @keywords internal
@@ -13,7 +13,7 @@ NULL
 
 
 # ================================================================
-# NDP_LEVELS: Configuration des 5 niveaux de précision
+# NDP_LEVELS: Configuration des 5 niveaux de precision
 # ================================================================
 
 #' NDP level definitions
@@ -28,7 +28,7 @@ NDP_LEVELS <- list(
   list(
     ndp = 0L,
     key = "ndp_decouverte",
-    name = "Découverte",
+    name = "D\u00e9couverte",
     fibonacci = 1L,
     confidence = 1 / 12,
     sources = c("sentinel_2", "worldclim", "bd_topo", "mnt_25m")
@@ -101,7 +101,7 @@ get_ndp_level <- function(ndp) {
 #' @return Character. French name of the level.
 #'
 #' @examples
-#' get_ndp_name(0) # "Découverte"
+#' get_ndp_name(0) # "Decouverte"
 #' get_ndp_name(4) # "Jumeau"
 #'
 #' @export
@@ -128,7 +128,7 @@ get_ndp_weight <- function(ndp) {
 
 #' Get NDP confidence ratio
 #'
-#' Returns the cumulative confidence φ, calculated as the ratio of
+#' Returns the cumulative confidence phi, calculated as the ratio of
 #' cumulative Fibonacci weight up to this level over the total (12).
 #'
 #' @param ndp Integer. NDP level (0-4).
@@ -258,7 +258,7 @@ detect_ndp_from_layers <- function(layers) {
 
   if (!has_lidar_hd) return(0L)
 
-  # NDP 2+ : drone, inventaire terrain, scanner — pas encore dans le pipeline
+  # NDP 2+ : drone, inventaire terrain, scanner - pas encore dans le pipeline
   # La detection sera etendue quand ces sources seront integrees
   1L
 }
@@ -377,7 +377,7 @@ detect_ndp_from_cache <- function(project_path) {
 #'   \describe{
 #'     \item{score}{Numeric. The weighted general index (0-100).}
 #'     \item{ndp}{Integer. The NDP level used.}
-#'     \item{confidence}{Numeric. The confidence φ ratio.}
+#'     \item{confidence}{Numeric. The confidence phi ratio.}
 #'     \item{weight}{Integer. The Fibonacci weight.}
 #'     \item{n_families}{Integer. Number of families used.}
 #'   }
@@ -399,7 +399,7 @@ compute_general_index <- function(family_scores, ndp = 0L) {
   # Nettoyer les noms (supporter famille_carbone ou C)
   nms <- names(family_scores)
   if (!is.null(nms)) {
-    # Convertir famille_biodiversite → B, etc.
+    # Convertir famille_biodiversite -> B, etc.
     nms <- vapply(nms, function(n) {
       code <- get_famille_code(n)
       if (!is.na(code)) code else sub("^famille_", "", n)
@@ -462,7 +462,7 @@ compute_general_index <- function(family_scores, ndp = 0L) {
 #'
 #' @export
 compute_general_index_mixed <- function(family_scores, ndp_per_indicator) {
-  # Nettoyer les noms (convertir famille_carbone → C)
+  # Nettoyer les noms (convertir famille_carbone -> C)
   nms <- names(family_scores)
   if (!is.null(nms)) {
     nms <- vapply(nms, function(n) {
@@ -569,14 +569,14 @@ ndp_badge <- function(ndp, lang = "fr") {
       "font-size: 0.85rem; ",
       "padding: 4px 10px;"
     ),
-    paste0("NDP ", ndp, " – ", name)
+    paste0("NDP ", ndp, " \u2013 ", name)
   )
 }
 
 
 #' NDP confidence progress bar widget
 #'
-#' Creates an HTML progress bar showing the confidence φ percentage.
+#' Creates an HTML progress bar showing the confidence phi percentage.
 #'
 #' @param ndp Integer. NDP level (0-4).
 #' @param lang Character. Language ("fr" or "en"). Default "fr".
@@ -591,9 +591,9 @@ ndp_progress_bar <- function(ndp, lang = "fr") {
   pct <- round(level$confidence * 100, 1)
 
   label <- if (lang == "en") {
-    paste0("Confidence φ: ", pct, "%")
+    paste0("Confidence \u03c6: ", pct, "%")
   } else {
-    paste0("Confiance φ : ", pct, "%")
+    paste0("Confiance \u03c6 : ", pct, "%")
   }
 
   htmltools::div(
