@@ -499,8 +499,13 @@ indicator_cols <- c(
   "R1", "R2", "R3", "R4", "S1", "S2", "S3",
   "P1", "P2", "P3", "E1", "E2", "N1", "N2", "N3"
 )
+# Force tous les indicateurs en double (certains pourraient arriver en
+# integer via les colonnes sources comme age ou fertility)
 for (col in indicator_cols) {
-  massif_demo_units[[paste0(col, "_norm")]] <- nm(massif_demo_units[[col]])
+  massif_demo_units[[col]] <- as.double(massif_demo_units[[col]])
+}
+for (col in indicator_cols) {
+  massif_demo_units[[paste0(col, "_norm")]] <- as.double(nm(massif_demo_units[[col]]))
 }
 
 # ---- Composites famille (moyenne des indicateurs normalisés) ----
