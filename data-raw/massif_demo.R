@@ -405,12 +405,138 @@ writeRaster(species_richness, "inst/extdata/massif_demo_species_richness.tif", o
 
 cat("  ✓ Rasters sauvegardés dans inst/extdata/\n")
 
-# Sauvegarder les vecteurs
-st_write(massif_demo_units, "inst/extdata/massif_demo_units.gpkg", delete_dsn = TRUE, quiet = TRUE)
+# Sauvegarder les autres vecteurs maintenant (sans indicateurs)
 st_write(massif_demo_roads, "inst/extdata/massif_demo_roads.gpkg", delete_dsn = TRUE, quiet = TRUE)
 st_write(massif_demo_water, "inst/extdata/massif_demo_water.gpkg", delete_dsn = TRUE, quiet = TRUE)
 
-cat("  ✓ Vecteurs sauvegardés dans inst/extdata/\n")
+cat("  ✓ Vecteurs (routes, cours d'eau) sauvegardés dans inst/extdata/\n")
+
+# =============================================================================
+# 4b. AJOUTER LES 29 INDICATEURS SYNTHÉTIQUES + 12 COMPOSITES FAMILLE
+# =============================================================================
+# Valeurs générées de façon déterministe (set.seed) pour les tests reproductibles.
+# Les indicateurs sont corrélés avec les attributs de base (species, age,
+# density, volume, dbh, etc.) pour rester cohérents.
+
+cat("Ajout des 29 indicateurs et 12 composites famille...\n")
+set.seed(42)
+n <- nrow(massif_demo_units)
+
+# Helper: normalisation min-max vers 0-100
+nm <- function(x, lo = NULL, hi = NULL) {
+  if (is.null(lo)) lo <- min(x, na.rm = TRUE)
+  if (is.null(hi)) hi <- max(x, na.rm = TRUE)
+  if (hi == lo) return(rep(50, length(x)))
+  pmax(0, pmin(100, (x - lo) / (hi - lo) * 100))
+}
+
+age_val <- massif_demo_units$age
+vol_val <- massif_demo_units$volume
+dens_val <- massif_demo_units$density
+dbh_val <- massif_demo_units$dbh
+height_val <- massif_demo_units$height
+surf_val <- massif_demo_units$surface_ha
+
+# ---- Famille C : Carbone & Vitalité ----
+massif_demo_units$C1 <- pmin(300, pmax(20, vol_val * 0.45 + rnorm(n, 0, 15)))
+massif_demo_units$C2 <- runif(n, 0.3, 0.85) + (age_val / 500)
+
+# ---- Famille B : Biodiversité ----
+massif_demo_units$B1 <- runif(n, 0, 100)
+massif_demo_units$B2 <- pmin(100, pmax(0, 50 + (age_val - 80) / 3 + rnorm(n, 0, 10)))
+massif_demo_units$B3 <- runif(n, 20, 95)
+
+# ---- Famille W : Eau & Régulation ----
+massif_demo_units$W1 <- runif(n, 0, 8)
+massif_demo_units$W2 <- runif(n, 0, 40)
+massif_demo_units$W3 <- runif(n, 3, 12)
+
+# ---- Famille A : Air & Microclimat ----
+massif_demo_units$A1 <- pmin(100, pmax(0, 60 + (vol_val / 10) + rnorm(n, 0, 15)))
+massif_demo_units$A2 <- runif(n, 45, 95)
+
+# ---- Famille F : Fertilité des sols ----
+massif_demo_units$F1 <- as.numeric(massif_demo_units$fertility)
+massif_demo_units$F2 <- runif(n, 0, 35)
+
+# ---- Famille L : Paysage ----
+massif_demo_units$L1 <- runif(n, 30, 90)
+massif_demo_units$L2 <- runif(n, 20, 80)
+
+# ---- Famille T : Temporel ----
+massif_demo_units$T1 <- as.numeric(age_val)
+massif_demo_units$T2 <- runif(n, 0, 18)
+
+# ---- Famille R : Risques & Résilience ----
+massif_demo_units$R1 <- pmin(100, pmax(0, 40 + rnorm(n, 0, 20)))
+massif_demo_units$R2 <- pmin(100, pmax(0, (height_val / 30) * 60 + rnorm(n, 0, 15)))
+massif_demo_units$R3 <- pmin(100, pmax(0, 35 + rnorm(n, 0, 20)))
+massif_demo_units$R4 <- pmin(100, pmax(0, 30 + rnorm(n, 0, 20)))
+
+# ---- Famille S : Social & Usages ----
+massif_demo_units$S1 <- runif(n, 0, 4.5)
+massif_demo_units$S2 <- runif(n, 20, 95)
+massif_demo_units$S3 <- runif(n, 0, 80000)
+
+# ---- Famille P : Production & Économie ----
+massif_demo_units$P1 <- pmin(1000, pmax(0, vol_val + rnorm(n, 0, 30)))
+massif_demo_units$P2 <- pmin(20, pmax(0, 8 + (massif_demo_units$fertility - 3) * 1.5 + rnorm(n, 0, 2)))
+massif_demo_units$P3 <- pmin(100, pmax(0, 50 + (dbh_val - 30) + rnorm(n, 0, 10)))
+
+# ---- Famille E : Énergie & Climat ----
+massif_demo_units$E1 <- pmin(15, pmax(0, (vol_val * 0.02) + rnorm(n, 0, 1)))
+massif_demo_units$E2 <- pmin(30, pmax(0, massif_demo_units$E1 * 2.2))
+
+# ---- Famille N : Naturalité ----
+massif_demo_units$N1 <- runif(n, 100, 9500)
+massif_demo_units$N2 <- runif(n, 10, 9500)
+massif_demo_units$N3 <- pmin(100, pmax(0, (age_val / 2) + rnorm(n, 0, 15)))
+
+# ---- Versions normalisées (0-100) pour les 29 indicateurs ----
+indicator_cols <- c(
+  "C1", "C2", "B1", "B2", "B3", "W1", "W2", "W3",
+  "A1", "A2", "F1", "F2", "L1", "L2", "T1", "T2",
+  "R1", "R2", "R3", "R4", "S1", "S2", "S3",
+  "P1", "P2", "P3", "E1", "E2", "N1", "N2", "N3"
+)
+# Force tous les indicateurs en double (certains pourraient arriver en
+# integer via les colonnes sources comme age ou fertility)
+for (col in indicator_cols) {
+  massif_demo_units[[col]] <- as.double(massif_demo_units[[col]])
+}
+for (col in indicator_cols) {
+  massif_demo_units[[paste0(col, "_norm")]] <- as.double(nm(massif_demo_units[[col]]))
+}
+
+# ---- Composites famille (moyenne des indicateurs normalisés) ----
+fam_components <- list(
+  famille_carbone      = c("C1_norm", "C2_norm"),
+  famille_biodiversite = c("B1_norm", "B2_norm", "B3_norm"),
+  famille_eau          = c("W1_norm", "W2_norm", "W3_norm"),
+  famille_air          = c("A1_norm", "A2_norm"),
+  famille_sol          = c("F1_norm", "F2_norm"),
+  famille_paysage      = c("L1_norm", "L2_norm"),
+  famille_temporel     = c("T1_norm", "T2_norm"),
+  famille_risque       = c("R1_norm", "R2_norm", "R3_norm", "R4_norm"),
+  famille_social       = c("S1_norm", "S2_norm", "S3_norm"),
+  famille_production   = c("P1_norm", "P2_norm", "P3_norm"),
+  famille_energie      = c("E1_norm", "E2_norm"),
+  famille_naturalite   = c("N1_norm", "N2_norm", "N3_norm")
+)
+for (fam in names(fam_components)) {
+  cols <- fam_components[[fam]]
+  massif_demo_units[[fam]] <- rowMeans(
+    sf::st_drop_geometry(massif_demo_units)[, cols, drop = FALSE],
+    na.rm = TRUE
+  )
+}
+
+cat("  ✓ 29 indicateurs + 12 composites famille ajoutés\n")
+
+# Sauvegarder le .gpkg APRÈS l'ajout des indicateurs (pour que le fichier
+# partage contienne toutes les colonnes utilisées par les tests et vignettes)
+st_write(massif_demo_units, "inst/extdata/massif_demo_units.gpkg", delete_dsn = TRUE, quiet = TRUE)
+cat("  ✓ massif_demo_units.gpkg sauvegardé avec indicateurs\n")
 
 # Sauvegarder aussi comme objets R pour accès rapide
 usethis::use_data(massif_demo_units, overwrite = TRUE)

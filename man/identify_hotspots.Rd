@@ -10,7 +10,7 @@ identify_hotspots(units, families = NULL, threshold = 80, min_families = 3)
 \item{units}{sf object with computed family indices (family_*)}
 
 \item{families}{Character vector of family column names to analyze.
-If NULL (default), uses all columns starting with "family_"}
+If NULL (default), uses all columns starting with "famille_"}
 
 \item{threshold}{Numeric percentile threshold (0-100) for defining "high" values.
 Default: 80 (top 20 percent)}

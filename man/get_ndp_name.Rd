@@ -16,7 +16,7 @@ Character. French name of the level.
 Get NDP level name
 }
 \examples{
-get_ndp_name(0) # "D\u00e9couverte"
+get_ndp_name(0) # "Decouverte"
 get_ndp_name(4) # "Jumeau"
 
 }

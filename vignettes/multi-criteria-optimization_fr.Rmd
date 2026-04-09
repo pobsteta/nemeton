@@ -90,7 +90,7 @@ Une parcelle est **Pareto-optimale** (non-dominée) si aucune autre parcelle n'e
 # Exemple 1: Maximiser Carbon (C), Biodiversité (B), et Production (P)
 result_pareto <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "family_P"),
+  objectives = c("famille_carbone", "famille_biodiversite", "famille_production"),
   maximize = c(TRUE, TRUE, TRUE)
 )
 
@@ -101,7 +101,7 @@ table(result_pareto$is_optimal)
 result_pareto |>
   sf::st_drop_geometry() |>
   filter(is_optimal) |>
-  select(parcel_id, family_C, family_B, family_P, is_optimal)
+  select(parcel_id, famille_carbone, famille_biodiversite, famille_production, is_optimal)
 ```
 
 ## Visualisation Spatiale
@@ -125,7 +125,7 @@ ggplot(result_pareto) +
 # Exemple 2: Maximiser C et B, Minimiser Risque incendie (R1)
 result_mixed <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "R1"),
+  objectives = c("famille_carbone", "famille_biodiversite", "R1"),
   maximize = c(TRUE, TRUE, FALSE) # Minimiser R1
 )
 
@@ -135,7 +135,7 @@ table(result_mixed$is_optimal)
 result_mixed |>
   sf::st_drop_geometry() |>
   filter(is_optimal) |>
-  select(parcel_id, family_C, family_B, R1, is_optimal)
+  select(parcel_id, famille_carbone, famille_biodiversite, R1, is_optimal)
 ```
 
 # 2. Clustering de Parcelles
@@ -148,7 +148,7 @@ Le clustering K-means regroupe les parcelles ayant des profils similaires sur pl
 # Clustering avec k=3 prédéfini
 result_kmeans <- cluster_parcels(
   massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   k = 3,
   method = "kmeans"
 )
@@ -180,7 +180,7 @@ Utiliser l'analyse de silhouette pour trouver automatiquement le nombre optimal 
 # Laisser l'algorithme déterminer k optimal
 result_auto <- cluster_parcels(
   massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   k = NULL, # Auto-détermination
   method = "kmeans"
 )
@@ -212,7 +212,7 @@ Alternative au K-means utilisant la méthode de Ward :
 # Clustering hiérarchique
 result_hclust <- cluster_parcels(
   massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   k = 3,
   method = "hierarchical"
 )
@@ -234,17 +234,17 @@ profiles_kmeans <- attr(result_kmeans, "cluster_profile")
 # Identifier les caractéristiques de chaque cluster
 for (i in seq_len(nrow(profiles_kmeans))) {
   cat("\n=== Cluster", i, "===\n")
-  cat("Carbone (C):", round(profiles_kmeans[i, "family_C"], 2), "\n")
-  cat("Biodiversité (B):", round(profiles_kmeans[i, "family_B"], 2), "\n")
-  cat("Production (P):", round(profiles_kmeans[i, "family_P"], 2), "\n")
-  cat("Social (S):", round(profiles_kmeans[i, "family_S"], 2), "\n")
+  cat("Carbone (C):", round(profiles_kmeans[i, "famille_carbone"], 2), "\n")
+  cat("Biodiversité (B):", round(profiles_kmeans[i, "famille_biodiversite"], 2), "\n")
+  cat("Production (P):", round(profiles_kmeans[i, "famille_production"], 2), "\n")
+  cat("Social (S):", round(profiles_kmeans[i, "famille_social"], 2), "\n")
 
   # Interprétation
-  if (profiles_kmeans[i, "family_B"] > 0.7 && profiles_kmeans[i, "family_C"] > 0.7) {
+  if (profiles_kmeans[i, "famille_biodiversite"] > 0.7 && profiles_kmeans[i, "famille_carbone"] > 0.7) {
     cat("→ Type: Haute conservation\n")
-  } else if (profiles_kmeans[i, "family_P"] > 0.7) {
+  } else if (profiles_kmeans[i, "famille_production"] > 0.7) {
     cat("→ Type: Production intensive\n")
-  } else if (profiles_kmeans[i, "family_S"] > 0.7) {
+  } else if (profiles_kmeans[i, "famille_social"] > 0.7) {
     cat("→ Type: Usage récréatif\n")
   } else {
     cat("→ Type: Usage mixte/équilibré\n")
@@ -262,8 +262,8 @@ Les trade-off plots révèlent les relations (synergies ou compromis) entre pair
 # Trade-off entre Carbone et Biodiversité
 plot_tradeoff(
   massif_demo_units,
-  x = "family_C",
-  y = "family_B",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
   xlab = "Carbone & Vitalité",
   ylab = "Biodiversité",
   title = "Trade-off: Carbone vs Biodiversité"
@@ -281,9 +281,9 @@ plot_tradeoff(
 # Ajouter une 3ème dimension (Production) via la couleur
 plot_tradeoff(
   massif_demo_units,
-  x = "family_C",
-  y = "family_B",
-  color = "family_P",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
+  color = "famille_production",
   xlab = "Carbone",
   ylab = "Biodiversité",
   title = "Trade-off C-B (coloré par Production)"
@@ -298,15 +298,15 @@ Combiner trade-off plot avec l'analyse de Pareto pour identifier visuellement le
 # D'abord identifier les parcelles Pareto-optimales
 pareto_result <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B"),
+  objectives = c("famille_carbone", "famille_biodiversite"),
   maximize = c(TRUE, TRUE)
 )
 
 # Puis tracer avec frontière Pareto
 plot_tradeoff(
   pareto_result,
-  x = "family_C",
-  y = "family_B",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
   pareto_frontier = TRUE,
   xlab = "Carbone",
   ylab = "Biodiversité",
@@ -324,22 +324,22 @@ Analyser plusieurs paires d'objectifs simultanément :
 library(patchwork)
 
 # Créer une matrice de trade-off plots
-p1 <- plot_tradeoff(massif_demo_units, "family_C", "family_B",
+p1 <- plot_tradeoff(massif_demo_units, "famille_carbone", "famille_biodiversite",
   title = "C vs B"
 ) + theme(legend.position = "none")
-p2 <- plot_tradeoff(massif_demo_units, "family_C", "family_P",
+p2 <- plot_tradeoff(massif_demo_units, "famille_carbone", "famille_production",
   title = "C vs P"
 ) + theme(legend.position = "none")
-p3 <- plot_tradeoff(massif_demo_units, "family_B", "family_P",
+p3 <- plot_tradeoff(massif_demo_units, "famille_biodiversite", "famille_production",
   title = "B vs P"
 ) + theme(legend.position = "none")
-p4 <- plot_tradeoff(massif_demo_units, "family_P", "family_E",
+p4 <- plot_tradeoff(massif_demo_units, "famille_production", "famille_energie",
   title = "P vs E"
 ) + theme(legend.position = "none")
-p5 <- plot_tradeoff(massif_demo_units, "family_S", "family_N",
+p5 <- plot_tradeoff(massif_demo_units, "famille_social", "famille_naturalite",
   title = "S vs N"
 ) + theme(legend.position = "none")
-p6 <- plot_tradeoff(massif_demo_units, "family_B", "family_N",
+p6 <- plot_tradeoff(massif_demo_units, "famille_biodiversite", "famille_naturalite",
   title = "B vs N"
 ) + theme(legend.position = "none")
 
@@ -355,8 +355,8 @@ Identifier des parcelles spécifiques sur le trade-off plot :
 # Ajouter des labels pour les parcelles Pareto-optimales
 plot_tradeoff(
   pareto_result,
-  x = "family_C",
-  y = "family_B",
+  x = "famille_carbone",
+  y = "famille_biodiversite",
   pareto_frontier = TRUE,
   label = "parcel_id", # Afficher les identifiants
   xlab = "Carbone",
@@ -375,7 +375,7 @@ Identifier les **5 meilleures parcelles** pour un projet de conservation intégr
 # Étape 1: Analyse de Pareto sur les 3 objectifs
 conservation_pareto <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_B", "family_C", "family_N"),
+  objectives = c("famille_biodiversite", "famille_carbone", "famille_naturalite"),
   maximize = c(TRUE, TRUE, TRUE)
 )
 
@@ -386,7 +386,7 @@ cat("Nombre de parcelles Pareto-optimales:", n_optimal, "\n")
 # Étape 2: Classer les parcelles Pareto-optimales par score composite
 conservation_subset <- conservation_pareto |>
   filter(is_optimal) |>
-  mutate(composite_score = (family_B + family_C + family_N) / 3) |>
+  mutate(composite_score = (famille_biodiversite + famille_carbone + famille_naturalite) / 3) |>
   arrange(desc(composite_score))
 
 # Top 5 parcelles
@@ -394,7 +394,7 @@ top5 <- head(conservation_subset, 5)
 
 top5 |>
   sf::st_drop_geometry() |>
-  select(parcel_id, family_B, family_C, family_N, composite_score)
+  select(parcel_id, famille_biodiversite, famille_carbone, famille_naturalite, composite_score)
 ```
 
 ## Visualisation de la Sélection
@@ -423,10 +423,10 @@ ggplot(conservation_pareto) +
 # Visualiser les parcelles sélectionnées sur le trade-off B-C
 plot_tradeoff(
   conservation_pareto,
-  x = "family_B",
-  y = "family_C",
-  color = "family_N",
-  size = "family_N",
+  x = "famille_biodiversite",
+  y = "famille_carbone",
+  color = "famille_naturalite",
+  size = "famille_naturalite",
   xlab = "Biodiversité",
   ylab = "Carbone",
   title = "Sélection Conservation (taille/couleur = Naturalité)"
@@ -444,9 +444,9 @@ Créer un **zonage** de 4 types de gestion basé sur les profils multi-familles 
 zonage <- cluster_parcels(
   massif_demo_units,
   families = c(
-    "family_C", "family_B", "family_W", "family_N", # Conservation
-    "family_P", "family_E", # Production
-    "family_S", "family_A"
+    "famille_carbone", "famille_biodiversite", "famille_eau", "famille_naturalite", # Conservation
+    "famille_production", "famille_energie", # Production
+    "famille_social", "famille_air"
   ), # Social
   k = 4,
   method = "kmeans"
@@ -491,11 +491,11 @@ zonage |>
   group_by(zone_name) |>
   summarise(
     n_parcelles = n(),
-    C_mean = mean(family_C, na.rm = TRUE),
-    B_mean = mean(family_B, na.rm = TRUE),
-    P_mean = mean(family_P, na.rm = TRUE),
-    S_mean = mean(family_S, na.rm = TRUE),
-    N_mean = mean(family_N, na.rm = TRUE)
+    C_mean = mean(famille_carbone, na.rm = TRUE),
+    B_mean = mean(famille_biodiversite, na.rm = TRUE),
+    P_mean = mean(famille_production, na.rm = TRUE),
+    S_mean = mean(famille_social, na.rm = TRUE),
+    N_mean = mean(famille_naturalite, na.rm = TRUE)
   ) |>
   mutate(across(where(is.numeric), ~ round(., 2)))
 ```

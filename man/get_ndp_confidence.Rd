@@ -13,7 +13,7 @@ get_ndp_confidence(ndp)
 Numeric. Confidence ratio between 0 and 1.
 }
 \description{
-Returns the cumulative confidence \u03c6, calculated as the ratio of
+Returns the cumulative confidence phi, calculated as the ratio of
 cumulative Fibonacci weight up to this level over the total (12).
 }
 \examples{

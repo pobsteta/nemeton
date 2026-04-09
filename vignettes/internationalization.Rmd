@@ -74,7 +74,7 @@ Les messages d'information, d'avertissement et d'erreur s'affichent dans la lang
 nemeton_set_language("fr")
 
 # Erreur si données manquantes
-nemeton_compute(NULL, NULL, "carbon_biomass")
+nemeton_compute(NULL, NULL, "indicateur_c1_biomasse")
 # Erreur : Les données 'data' doivent être un objet sf
 ```
 
@@ -84,7 +84,7 @@ nemeton_compute(NULL, NULL, "carbon_biomass")
 nemeton_set_language("en")
 
 # Error with missing data
-nemeton_compute(NULL, NULL, "carbon_biomass")
+nemeton_compute(NULL, NULL, "indicateur_c1_biomasse")
 # Error: 'data' must be an sf object
 ```
 
@@ -191,14 +191,14 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = "carbon_biomass"
+  indicators = "indicateur_c1_biomasse"
 )
 # ℹ Calcul de 1 indicateurs...
 # ✔ 1/1 indicateurs calculés
 
 plot_indicators_map(
   results,
-  indicators = "carbon_biomass",
+  indicators = "indicateur_c1_biomasse",
   title = "Stock de carbone",
   legend_title = "Mg C/parcel"
 )
@@ -212,14 +212,14 @@ layers <- massif_demo_layers()
 results <- nemeton_compute(
   massif_demo_units,
   layers,
-  indicators = "carbon_biomass"
+  indicators = "indicateur_c1_biomasse"
 )
 # ℹ Computing 1 indicators...
 # ✔ 1/1 indicators computed
 
 plot_indicators_map(
   results,
-  indicators = "carbon_biomass",
+  indicators = "indicateur_c1_biomasse",
   title = "Carbon Stock",
   legend_title = "Mg C/parcel"
 )

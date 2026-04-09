@@ -9,7 +9,7 @@ compute_general_index(family_scores, ndp = 0L)
 \arguments{
 \item{family_scores}{Named numeric vector of family scores (0-100).
 Names should be family codes (e.g., "C", "B", "W") or
-"family_C", "family_B" format.}
+"famille_carbone", "famille_biodiversite" format.}
 
 \item{ndp}{Integer. NDP level (0-4). Default 0.}
 }
@@ -18,7 +18,7 @@ A list with:
   \describe{
     \item{score}{Numeric. The weighted general index (0-100).}
     \item{ndp}{Integer. The NDP level used.}
-    \item{confidence}{Numeric. The confidence \u03c6 ratio.}
+    \item{confidence}{Numeric. The confidence phi ratio.}
     \item{weight}{Integer. The Fibonacci weight.}
     \item{n_families}{Integer. Number of families used.}
   }

@@ -64,8 +64,8 @@ summary(result$R1)
 }
 \seealso{
 Other risk-indicators: 
-\code{\link{indicateur_r4_abroutissement}()},
+\code{\link{indicateur_r2_tempete}()},
 \code{\link{indicateur_r3_secheresse}()},
-\code{\link{indicateur_r2_tempete}()}
+\code{\link{indicateur_r4_abroutissement}()}
 }
 \concept{risk-indicators}

@@ -2,12 +2,12 @@
 % Please edit documentation in R/ndp.R
 \name{ndp}
 \alias{ndp}
-\title{NDP System (Niveau De Pr\u00e9cision)}
+\title{NDP System (Niveau De Precision)}
 \description{
 NDP measures the QUALITY of input data, not the number of families calculated.
 All 12 families are always calculated, but with increasing precision as NDP rises.
 
 The system uses Fibonacci weighting (1, 1, 2, 3, 5) and golden ratio confidence
-(\u03c6) to express data reliability.
+(phi) to express data reliability.
 }
 \keyword{internal}

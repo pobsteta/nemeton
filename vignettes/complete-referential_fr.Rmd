@@ -107,7 +107,7 @@ result <- create_family_index(massif_demo_units)
 # Afficher les indices de famille
 result |>
   sf::st_drop_geometry() |>
-  select(parcel_id, starts_with("family_")) |>
+  select(parcel_id, starts_with("famille_")) |>
   head()
 ```
 
@@ -131,9 +131,9 @@ nemeton_radar(
 ```{r, fig.width=10, fig.height=9}
 # Calculer les corrélations entre toutes les familles
 families_all <- c(
-  "family_C", "family_B", "family_W", "family_A",
-  "family_F", "family_L", "family_T", "family_R",
-  "family_S", "family_P", "family_E", "family_N"
+  "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air",
+  "famille_sol", "famille_paysage", "famille_temporel", "famille_risque",
+  "famille_social", "famille_production", "famille_energie", "famille_naturalite"
 )
 
 correlations <- compute_family_correlations(result, families = families_all)
@@ -150,7 +150,7 @@ Identifier les parcelles qui excellent simultanément sur plusieurs familles :
 # Hotspots pour conservation (C, B, N)
 hotspots_conservation <- identify_hotspots(
   result,
-  families = c("family_C", "family_B", "family_N"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_naturalite"),
   threshold = 0.7,
   min_families = 2
 )
@@ -158,7 +158,7 @@ hotspots_conservation <- identify_hotspots(
 # Hotspots pour production durable (P, C, E)
 hotspots_production <- identify_hotspots(
   result,
-  families = c("family_P", "family_C", "family_E"),
+  families = c("famille_production", "famille_carbone", "famille_energie"),
   threshold = 0.7,
   min_families = 2
 )
@@ -166,7 +166,7 @@ hotspots_production <- identify_hotspots(
 # Hotspots pour services sociaux (S, A, L)
 hotspots_social <- identify_hotspots(
   result,
-  families = c("family_S", "family_A", "family_L"),
+  families = c("famille_social", "famille_air", "famille_paysage"),
   threshold = 0.7,
   min_families = 2
 )
@@ -186,25 +186,25 @@ table(hotspots_social$is_hotspot)
 library(patchwork)
 
 p_social <- ggplot(result) +
-  geom_sf(aes(fill = family_S)) +
+  geom_sf(aes(fill = famille_social)) +
   scale_fill_viridis_c(name = "Social") +
   labs(title = "Famille S - Social & Usages") +
   theme_minimal()
 
 p_production <- ggplot(result) +
-  geom_sf(aes(fill = family_P)) +
+  geom_sf(aes(fill = famille_production)) +
   scale_fill_viridis_c(name = "Production") +
   labs(title = "Famille P - Production & Économie") +
   theme_minimal()
 
 p_energy <- ggplot(result) +
-  geom_sf(aes(fill = family_E)) +
+  geom_sf(aes(fill = famille_energie)) +
   scale_fill_viridis_c(name = "Énergie") +
   labs(title = "Famille E - Énergie & Climat") +
   theme_minimal()
 
 p_naturalness <- ggplot(result) +
-  geom_sf(aes(fill = family_N)) +
+  geom_sf(aes(fill = famille_naturalite)) +
   scale_fill_viridis_c(name = "Naturalité") +
   labs(title = "Famille N - Naturalité & Wilderness") +
   theme_minimal()
@@ -219,7 +219,7 @@ p_naturalness <- ggplot(result) +
 result_long <- result |>
   sf::st_drop_geometry() |>
   tidyr::pivot_longer(
-    cols = starts_with("family_"),
+    cols = starts_with("famille_"),
     names_to = "famille",
     values_to = "valeur"
   ) |>
@@ -231,18 +231,18 @@ result_long <- result |>
 
 # Labels des familles pour la facette
 family_labels <- c(
-  family_C = "C - Carbone",
-  family_B = "B - Biodiversité",
-  family_W = "W - Eau",
-  family_A = "A - Air",
-  family_F = "F - Fertilité",
-  family_L = "L - Paysage",
-  family_T = "T - Temps",
-  family_R = "R - Risques",
-  family_S = "S - Social",
-  family_P = "P - Production",
-  family_E = "E - Énergie",
-  family_N = "N - Naturalité"
+  famille_carbone = "C - Carbone",
+  famille_biodiversite = "B - Biodiversité",
+  famille_eau = "W - Eau",
+  famille_air = "A - Air",
+  famille_sol = "F - Fertilité",
+  famille_paysage = "L - Paysage",
+  famille_temporel = "T - Temps",
+  famille_risque = "R - Risques",
+  famille_social = "S - Social",
+  famille_production = "P - Production",
+  famille_energie = "E - Énergie",
+  famille_naturalite = "N - Naturalité"
 )
 
 ggplot(result_long) +
@@ -297,7 +297,7 @@ ggplot(result_composite) +
 # Scénario 1: Conservation intégrale
 composite_conservation <- create_composite_index(
   result_norm,
-  indicators = c("family_C", "family_B", "family_W", "family_N"),
+  indicators = c("famille_carbone", "famille_biodiversite", "famille_eau", "famille_naturalite"),
   weights = c(0.3, 0.4, 0.15, 0.15),
   name = "conservation"
 )
@@ -305,7 +305,7 @@ composite_conservation <- create_composite_index(
 # Scénario 2: Production durable
 composite_production <- create_composite_index(
   result_norm,
-  indicators = c("family_P", "family_E", "family_F", "family_C"),
+  indicators = c("famille_production", "famille_energie", "famille_sol", "famille_carbone"),
   weights = c(0.4, 0.25, 0.2, 0.15),
   name = "production"
 )
@@ -313,7 +313,7 @@ composite_production <- create_composite_index(
 # Scénario 3: Services sociaux
 composite_social <- create_composite_index(
   result_norm,
-  indicators = c("family_S", "family_A", "family_L", "family_R"),
+  indicators = c("famille_social", "famille_air", "famille_paysage", "famille_risque"),
   weights = c(0.35, 0.25, 0.2, 0.2),
   name = "social"
 )

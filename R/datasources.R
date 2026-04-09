@@ -180,7 +180,7 @@ get_national_crs <- function(country = "FR") {
 #'
 #' @export
 get_storage_crs <- function() {
-  get_app_config("storage_crs", 3035L)
+  3035L
 }
 
 
