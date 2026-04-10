@@ -240,6 +240,24 @@ reference:
     contents:
     - smart_map
     - smart_map_sf
+    - get_global_cache_dir
+    - detect_indicator_family
+    - get_family_name
+
+  - title: "Internal documentation"
+    desc: "Package-level and internal documentation pages"
+    contents:
+    - NDP_LEVELS
+    - ndp
+    - datasources
+    - family-system
+    - species-config
+    - temporal
+    - indicators-families
+    - indicators-energy
+    - indicators-naturalness
+    - indicators-productive
+    - indicators-social
 
 authors:
   Pascal Obstetar:
