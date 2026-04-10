@@ -731,6 +731,8 @@ nemeton_radar <- function(data,
         # Extract indicator values
         unit_df <- sf::st_drop_geometry(unit_data)
         unit_values <- as.numeric(unit_df[1, indicators])
+        # Replace NaN with 0 so all vertices remain in the polygon
+        unit_values[is.nan(unit_values)] <- 0
 
         radar_data_list[[length(radar_data_list) + 1]] <- data.frame(
           indicator = indicators,
@@ -871,6 +873,10 @@ nemeton_radar <- function(data,
     })
     unit_label <- "Average (all units)"
   }
+
+  # Replace NaN with 0 so all vertices remain in the polygon
+  # (NaN causes geom_polygon to drop vertices, breaking the radar shape)
+  values[is.nan(values)] <- 0
 
   # Normalize values if requested
   if (normalize) {
