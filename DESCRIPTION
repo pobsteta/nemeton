@@ -85,5 +85,5 @@ Suggests:
     jpeg
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
-URL: https://github.com/pobsteta/nemeton
+URL: https://pobsteta.github.io/nemeton/, https://github.com/pobsteta/nemeton
 BugReports: https://github.com/pobsteta/nemeton/issues

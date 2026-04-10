@@ -149,8 +149,6 @@ reference:
     - compute_general_index
     - compute_general_index_mixed
     - detect_ndp
-    - ndp_badge
-    - ndp_progress_bar
 
   - title: "Configuration essences (ADR-007)"
     desc: "Classification d'essences par region biogeographique"
