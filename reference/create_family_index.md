@@ -45,22 +45,22 @@ create_family_index(
 
 ## Value
 
-The input sf object with added family\_\* columns (e.g., family_C,
-family_W).
+The input sf object with added family\_\* columns (e.g.,
+famille_carbone, famille_eau).
 
 ## Details
 
 \*\*Family Detection\*\*: Automatically identifies indicators by prefix:
 
-- C1, C2 -\> Carbon family (family_C)
+- C1, C2 -\> Carbon family (famille_carbone)
 
-- W1, W2, W3 -\> Water family (family_W)
+- W1, W2, W3 -\> Water family (famille_eau)
 
-- F1, F2 -\> Soil fertility family (family_F)
+- F1, F2 -\> Soil fertility family (famille_sol)
 
-- L1, L2 -\> Landscape family (family_L)
+- L1, L2 -\> Landscape family (famille_paysage)
 
-- B1, B2, B3 -\> Biodiversity family (family_B)
+- B1, B2, B3 -\> Biodiversity family (famille_biodiversite)
 
 - And 7 other families (A, T, R, S, P, E, N)
 

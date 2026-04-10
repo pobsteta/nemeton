@@ -9,7 +9,7 @@ color-coded correlation coefficients."><meta property="og:image" content="https:
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,16 +20,13 @@ color-coded correlation coefficients."><meta property="og:image" content="https:
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -115,9 +112,9 @@ color-coded correlation coefficients.</p>
 <span class="r-in"><span><span class="co"># Compute correlations</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span></span></span>
-<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">family_B</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, <span class="fl">30</span>, <span class="fl">90</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">family_T</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, <span class="fl">40</span>, <span class="fl">85</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">family_C</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, <span class="fl">45</span>, <span class="fl">80</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">famille_biodiversite</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, <span class="fl">30</span>, <span class="fl">90</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">famille_temporel</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, <span class="fl">40</span>, <span class="fl">85</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">units</span><span class="op">$</span><span class="va">famille_carbone</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span>, <span class="fl">45</span>, <span class="fl">80</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">corr_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="compute_family_correlations.html">compute_family_correlations</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -139,7 +136,7 @@ color-coded correlation coefficients.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

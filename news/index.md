@@ -1,5 +1,7 @@
 # Changelog
 
+## nemeton (development version)
+
 ## nemeton 0.14.1
 
 **Date**: 2026-02-18
@@ -81,8 +83,7 @@
 
 ##### New Features
 
-- **PDF Report Generation**
-  ([`generate_report_pdf()`](https://pobsteta.github.io/nemeton/reference/generate_report_pdf.md))
+- **PDF Report Generation** (`generate_report_pdf()`)
   - Quarto-based reports with professional layout
   - Fallback to base R graphics when Quarto unavailable
   - Automatic Quarto installation via `ensure_quarto_installed()`
@@ -122,8 +123,7 @@
 
 ##### nemetonApp - Interactive Shiny Application
 
-- **[`run_app()`](https://pobsteta.github.io/nemeton/reference/run_app.md)** -
-  Launch the nemetonApp Shiny application
+- **`run_app()`** - Launch the nemetonApp Shiny application
   - Interactive parcel selection on a map (Leaflet)
   - French commune search with autocomplete
   - Calculate all 31 nemeton indicators automatically
@@ -207,34 +207,20 @@ change for code using v0.1.0 indicators.
 
 ##### Removed Functions
 
-- `indicator_carbon()` - **Use instead:**
-  [`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)
-  (C1) or
-  [`indicator_carbon_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md)
-  (C2)
+- `indicator_carbon()` - **Use instead:** `indicator_carbon_biomass()`
+  (C1) or `indicator_carbon_ndvi()` (C2)
 - `indicator_biodiversity()` - **Use instead:**
-  [`indicator_biodiversity_protection()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md)
-  (B1),
-  [`indicator_biodiversity_structure()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.md)
-  (B2), or
-  [`indicator_biodiversity_connectivity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.md)
-  (B3)
-- `indicator_water()` - **Use instead:**
-  [`indicator_water_network()`](https://pobsteta.github.io/nemeton/reference/indicator_water_network.md)
-  (W1),
-  [`indicator_water_wetlands()`](https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.md)
-  (W2), or
-  [`indicator_water_twi()`](https://pobsteta.github.io/nemeton/reference/indicator_water_twi.md)
+  `indicator_biodiversity_protection()` (B1),
+  `indicator_biodiversity_structure()` (B2), or
+  `indicator_biodiversity_connectivity()` (B3)
+- `indicator_water()` - **Use instead:** `indicator_water_network()`
+  (W1), `indicator_water_wetlands()` (W2), or `indicator_water_twi()`
   (W3)
 - `indicator_fragmentation()` - **Use instead:**
-  [`indicator_landscape_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md)
-  (L1) or
-  [`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)
-  (L2)
+  `indicator_landscape_fragmentation()` (L1) or
+  `indicator_landscape_edge()` (L2)
 - `indicator_accessibility()` - **Use instead:**
-  [`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)
-  (S2) or
-  [`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)
+  `indicator_social_accessibility()` (S2) or `indicator_social_trails()`
   (S1)
 
 ##### Migration Guide
@@ -470,68 +456,60 @@ across 12 families**.
 
 ##### Social & Recreational Family (Famille S) - 3 Indicators
 
-- **[`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)**
-  (S1) - Trail density
+- **`indicator_social_trails()`** (S1) - Trail density
   - Calculates recreational trail density (km/ha) from OSM or local data
   - Supports footways, cycleways, and bridleways
   - Output: 0-5+ km/ha trail density
-- **[`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)**
-  (S2) - Multimodal accessibility score
+- **`indicator_social_accessibility()`** (S2) - Multimodal accessibility
+  score
   - Distance-based scoring for road, parking, and public transport
     access
   - Configurable distance thresholds and weights
   - Output: 0-100 accessibility score
-- **[`indicator_social_proximity()`](https://pobsteta.github.io/nemeton/reference/indicator_social_proximity.md)**
-  (S3) - Population proximity
+- **`indicator_social_proximity()`** (S3) - Population proximity
   - Population within configurable buffer zones (5/10/20 km)
   - Supports INSEE population grid or custom data
   - Output: Total population count within buffers
 
 ##### Productive & Economic Family (Famille P) - 3 Indicators
 
-- **[`indicator_productive_volume()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_volume.md)**
-  (P1) - Standing timber volume
+- **`indicator_productive_volume()`** (P1) - Standing timber volume
   - IFN-based allometric equations by species
   - Genus-level fallback for rare species
   - Output: m³/ha standing volume
-- **[`indicator_productive_station()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_station.md)**
-  (P2) - Site productivity index
+- **`indicator_productive_station()`** (P2) - Site productivity index
   - Fertility × climate × species interaction
   - Based on French forestry station classification
   - Output: m³/ha/yr potential productivity
-- **[`indicator_productive_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_quality.md)**
-  (P3) - Timber quality score
+- **`indicator_productive_quality()`** (P3) - Timber quality score
   - Form factor, diameter distribution, defect assessment
   - Configurable quality criteria weights
   - Output: 0-100 quality score
 
 ##### Energy & Climate Family (Famille E) - 2 Indicators
 
-- **[`indicator_energy_fuelwood()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_fuelwood.md)**
-  (E1) - Fuelwood potential
+- **`indicator_energy_fuelwood()`** (E1) - Fuelwood potential
   - Harvest residues + coppice biomass estimation
   - Species-specific conversion factors
   - Output: tonnes DM/ha/yr mobilizable fuelwood
-- **[`indicator_energy_avoidance()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_avoidance.md)**
-  (E2) - CO2 emission avoidance
+- **`indicator_energy_avoidance()`** (E2) - CO2 emission avoidance
   - ADEME emission factors for energy substitution
   - Supports energy and material substitution scenarios
   - Output: tCO2eq/ha/yr avoided emissions
 
 ##### Naturalness & Wilderness Family (Famille N) - 3 Indicators
 
-- **[`indicator_naturalness_distance()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_distance.md)**
-  (N1) - Infrastructure distance
+- **`indicator_naturalness_distance()`** (N1) - Infrastructure distance
   - Distance to roads, buildings, powerlines from OSM
   - Minimum distance to nearest infrastructure
   - Output: meters to nearest infrastructure
-- **[`indicator_naturalness_continuity()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_continuity.md)**
-  (N2) - Forest patch continuity
+- **`indicator_naturalness_continuity()`** (N2) - Forest patch
+  continuity
   - Connected forest area calculation
   - Based on landscape patch analysis
   - Output: hectares of continuous forest
-- **[`indicator_naturalness_composite()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_composite.md)**
-  (N3) - Wilderness composite index
+- **`indicator_naturalness_composite()`** (N3) - Wilderness composite
+  index
   - Multiplicative aggregation of N1 × N2 × T1 × B1
   - Weighted aggregation option available
   - Output: 0-100 wilderness score
@@ -614,15 +592,15 @@ enhances the family aggregation and visualization system.
 
 ##### Biodiversity Family (Famille B) - 3 Indicators
 
-- **[`indicator_biodiversity_protection()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md)**
-  (B1) - Protected area coverage
+- **`indicator_biodiversity_protection()`** (B1) - Protected area
+  coverage
   - Calculates percentage of forest parcel within protected zones
     (ZNIEFF, Natura2000, etc.)
   - Supports local or remote protected area datasets
   - Output: 0-100% protection coverage
   - Spatial overlay with area-weighted calculation
-- **[`indicator_biodiversity_structure()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.md)**
-  (B2) - Structural diversity index
+- **`indicator_biodiversity_structure()`** (B2) - Structural diversity
+  index
   - Shannon diversity index across vegetation strata, age classes, and
     species
   - Configurable weights for each diversity component (default: strata
@@ -630,8 +608,8 @@ enhances the family aggregation and visualization system.
   - Optional height coefficient of variation (CV) integration
   - Output: 0-100 diversity score
   - Handles monoculture scenarios (low diversity → low scores)
-- **[`indicator_biodiversity_connectivity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.md)**
-  (B3) - Ecological connectivity
+- **`indicator_biodiversity_connectivity()`** (B3) - Ecological
+  connectivity
   - Distance to ecological corridors (TVB - Trame Verte et Bleue)
   - Supports edge and centroid distance methods
   - Configurable max distance threshold (default: 5000m)
@@ -640,22 +618,19 @@ enhances the family aggregation and visualization system.
 
 ##### Risk & Resilience Family (Famille R) - 3 Indicators
 
-- **[`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md)**
-  (R1) - Fire risk index
+- **`indicator_risk_fire()`** (R1) - Fire risk index
   - Multi-factor fire susceptibility: slope + species + climate
   - Species flammability coefficients (conifer \> broadleaf)
   - Slope amplification (higher slope = faster fire spread)
   - Optional climate data integration (temperature, precipitation)
   - Output: 0-100 risk score (higher = more vulnerable)
-- **[`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)**
-  (R2) - Storm vulnerability index
+- **`indicator_risk_storm()`** (R2) - Storm vulnerability index
   - Wind damage risk: tree height × stand density × exposure
   - Height coefficient (taller trees more vulnerable)
   - Density factor (dense stands = higher windthrow risk)
   - Topographic exposure from DEM (exposed ridges = higher risk)
   - Output: 0-100 vulnerability score
-- **[`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)**
-  (R3) - Drought stress index
+- **`indicator_risk_drought()`** (R3) - Drought stress index
   - Combines water availability (TWI) and species drought tolerance
   - Species tolerance coefficients (drought-resistant
     vs. water-demanding)
@@ -665,15 +640,13 @@ enhances the family aggregation and visualization system.
 
 ##### Temporal Dynamics Family (Famille T) - 2 Indicators
 
-- **[`indicator_temporal_age()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.md)**
-  (T1) - Stand age/ancientness
+- **`indicator_temporal_age()`** (T1) - Stand age/ancientness
   - Historical forest age from BD Forêt or Cassini maps
   - Ancient forest detection (age \> 150 years)
   - Supports multi-source age estimation
   - Output: Years since establishment (or age class)
   - Handles missing historical data gracefully
-- **[`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)**
-  (T2) - Land cover change rate
+- **`indicator_temporal_change()`** (T2) - Land cover change rate
   - Temporal change detection using Corine Land Cover multi-dates
   - Calculates change rate between two periods
   - Supports custom date ranges
@@ -683,15 +656,13 @@ enhances the family aggregation and visualization system.
 
 ##### Air Quality & Microclimate Family (Famille A) - 2 Indicators
 
-- **[`indicator_air_coverage()`](https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.md)**
-  (A1) - Tree canopy coverage
+- **`indicator_air_coverage()`** (A1) - Tree canopy coverage
   - Percentage of tree cover within 1km buffer
   - High-resolution vegetation data (sentinel-2 or lidar-derived)
   - Urban microclimate regulation potential
   - Output: 0-100% coverage in buffer zone
   - Supports custom buffer distances
-- **[`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)**
-  (A2) - Air quality index
+- **`indicator_air_quality()`** (A2) - Air quality index
   - Integration with ATMO air quality data (when available)
   - Fallback: distance to pollution sources (roads, industry)
   - Supports custom air quality datasets
@@ -953,8 +924,8 @@ enhances the family aggregation and visualization system.
 
 ##### Landscape Family (Famille L) - 2 Indicators
 
-- **[`indicator_landscape_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md)**
-  (L1) - Forest fragmentation metric
+- **`indicator_landscape_fragmentation()`** (L1) - Forest fragmentation
+  metric
   - Counts number of forest patches within a buffer zone around each
     parcel
   - Uses connected component labeling (terra::patches with 8-neighbor
@@ -963,8 +934,7 @@ enhances the family aggregation and visualization system.
   - Configurable forest definition via landcover codes
   - Output: Number of discrete forest patches (higher = more fragmented)
   - Zero buffer option for parcel-only analysis
-- **[`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)**
-  (L2) - Edge-to-area ratio
+- **`indicator_landscape_edge()`** (L2) - Edge-to-area ratio
   - Calculates perimeter-to-area ratio for forest parcels
   - Formula: `Edge density = perimeter (m) / area (ha)`
   - Higher values indicate greater edge effect and fragmentation
@@ -1008,8 +978,7 @@ enhances the family aggregation and visualization system.
 
 ##### Soil Family (Famille F) - 2 Indicators
 
-- **[`indicator_soil_fertility()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_fertility.md)**
-  (F1) - Soil fertility classification
+- **`indicator_soil_fertility()`** (F1) - Soil fertility classification
   - Extracts fertility scores from soil data (raster or vector)
   - Supports BD Sol (French soil database) or equivalent pedological
     data
@@ -1017,8 +986,7 @@ enhances the family aggregation and visualization system.
   - Auto-normalizes input values to 0-100 range
   - Supports both raster and vector soil layers (with area-weighted
     averaging)
-- **[`indicator_soil_erosion()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_erosion.md)**
-  (F2) - Erosion risk index
+- **`indicator_soil_erosion()`** (F2) - Erosion risk index
   - Calculates erosion risk by combining slope and land cover protection
   - Formula: `Risk = slope × (1 - forest_protection)`
   - High slope + low forest cover = high erosion risk
@@ -1072,22 +1040,19 @@ enhances the family aggregation and visualization system.
 
 ##### Water Family (Famille W) - 3 Indicators
 
-- **[`indicator_water_network()`](https://pobsteta.github.io/nemeton/reference/indicator_water_network.md)**
-  (W1) - Hydrographic network density
+- **`indicator_water_network()`** (W1) - Hydrographic network density
   - Calculates stream/river network length density within or near forest
     parcels
   - Supports buffer distance parameter for proximity analysis
   - Output: km/ha (kilometers of watercourse per hectare)
   - Higher values = greater hydrological connectivity
-- **[`indicator_water_wetlands()`](https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.md)**
-  (W2) - Wetland coverage percentage
+- **`indicator_water_wetlands()`** (W2) - Wetland coverage percentage
   - Calculates percentage of parcel area classified as wetland or
     riparian zone
   - Supports multiple wetland type codes from landcover rasters
   - Output: 0-100% coverage
   - Area-weighted calculation using coverage fractions
-- **[`indicator_water_twi()`](https://pobsteta.github.io/nemeton/reference/indicator_water_twi.md)**
-  (W3) - Topographic Wetness Index
+- **`indicator_water_twi()`** (W3) - Topographic Wetness Index
   - Calculates TWI using terra D8 flow algorithm
   - Formula: `TWI = ln(catchment_area / tan(slope))`
   - Automatically handles flat areas and edge cases
@@ -1139,16 +1104,14 @@ enhances the family aggregation and visualization system.
 
 ##### Carbon Family (Famille C) - 2 Indicators
 
-- **[`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)**
-  (C1) - Aboveground carbon stock using species-specific allometric
-  equations
+- **`indicator_carbon_biomass()`** (C1) - Aboveground carbon stock using
+  species-specific allometric equations
   - Requires: BD Forêt v2 attributes (species, age, density)
   - Species support: Quercus, Fagus, Pinus, Abies, + Generic fallback
   - Allometric model: `Biomass = a × Age^b × Density^c`
   - Output: tC/ha (tonnes carbon per hectare)
   - Citations: IGN/IFN literature (Dupouey, Bontemps, Vallet, Wutzler)
-- **[`indicator_carbon_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md)**
-  (C2) - Vegetation vitality via NDVI
+- **`indicator_carbon_ndvi()`** (C2) - Vegetation vitality via NDVI
   - Requires: Sentinel-2 or equivalent NDVI raster (0-1 scale)
   - Output: Mean NDVI per forest parcel
   - Future: Temporal trend analysis (v0.3.0+)
@@ -1172,11 +1135,8 @@ enhances the family aggregation and visualization system.
 #### Deprecations
 
 - **`indicator_carbon()`** - Now deprecated (will be removed in v1.0.0)
-  - Replacement: Use
-    [`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)
-    for BD Forêt support, or
-    [`indicator_carbon_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md)
-    for NDVI
+  - Replacement: Use `indicator_carbon_biomass()` for BD Forêt support,
+    or `indicator_carbon_ndvi()` for NDVI
   - Backward compatibility: Function still works with deprecation
     warning
   - All existing workflows continue to function
@@ -1340,9 +1300,7 @@ plot_indicators_map(normalized, palette = "viridis")
 
 Fix test fixtures
 
-Verify
-[`devtools::check()`](https://devtools.r-lib.org/reference/check.html)
-passes
+Verify `devtools::check()` passes
 
 Measure test coverage (target: ≥70%)
 

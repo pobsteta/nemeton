@@ -11,7 +11,7 @@ score_water). Automatically detects indicator families from column name prefixes
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,16 +22,13 @@ score_water). Automatically detects indicator families from column name prefixes
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -95,15 +92,15 @@ If NULL, equal weights are used.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The input sf object with added family_* columns (e.g., family_C, family_W).</p>
+    <p>The input sf object with added family_* columns (e.g., famille_carbone, famille_eau).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>**Family Detection**: Automatically identifies indicators by prefix:</p><ul><li><p>C1, C2 -&gt; Carbon family (family_C)</p></li>
-<li><p>W1, W2, W3 -&gt; Water family (family_W)</p></li>
-<li><p>F1, F2 -&gt; Soil fertility family (family_F)</p></li>
-<li><p>L1, L2 -&gt; Landscape family (family_L)</p></li>
-<li><p>B1, B2, B3 -&gt; Biodiversity family (family_B)</p></li>
+    <p>**Family Detection**: Automatically identifies indicators by prefix:</p><ul><li><p>C1, C2 -&gt; Carbon family (famille_carbone)</p></li>
+<li><p>W1, W2, W3 -&gt; Water family (famille_eau)</p></li>
+<li><p>F1, F2 -&gt; Soil fertility family (famille_sol)</p></li>
+<li><p>L1, L2 -&gt; Landscape family (famille_paysage)</p></li>
+<li><p>B1, B2, B3 -&gt; Biodiversity family (famille_biodiversite)</p></li>
 <li><p>And 7 other families (A, T, R, S, P, E, N)</p></li>
 </ul><p>**Aggregation Methods**:</p><ul><li><p>mean: Simple arithmetic mean</p></li>
 <li><p>weighted: Weighted average using provided weights</p></li>
@@ -138,7 +135,7 @@ If NULL, equal weights are used.</p></dd>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

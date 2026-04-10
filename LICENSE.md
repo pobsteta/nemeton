@@ -1,6 +1,4 @@
-# NA
-
-MIT License
+# MIT License
 
 Copyright (c) 2026 Pascal Obstétar
 
@@ -22,3 +20,11 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+------------------------------------------------------------------------
+
+## Related packages
+
+- **nemetonShiny** (EUPL v1.2): Shiny application —
+  <https://github.com/pobsteta/nemeton_shiny>
+- **Produced data** (CC-BY 4.0): Indicator values, species maps, reports

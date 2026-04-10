@@ -18,7 +18,7 @@ compute_family_correlations(units, families = NULL, method = "pearson")
 - families:
 
   Character vector of family column names to analyze. If NULL (default),
-  auto-detects all columns starting with "family\_"
+  auto-detects all columns starting with "famille\_"
 
 - method:
 
@@ -58,9 +58,9 @@ if (FALSE) { # \dontrun{
 # Load demo data with family indices
 data(massif_demo_units)
 units <- massif_demo_units
-units$family_B <- runif(nrow(units), 30, 90)
-units$family_T <- runif(nrow(units), 40, 85)
-units$family_C <- runif(nrow(units), 45, 80)
+units$famille_biodiversite <- runif(nrow(units), 30, 90)
+units$famille_temporel <- runif(nrow(units), 40, 85)
+units$famille_carbone <- runif(nrow(units), 45, 80)
 
 # Compute correlation matrix
 corr_matrix <- compute_family_correlations(units)
@@ -72,7 +72,7 @@ corr_spearman <- compute_family_correlations(units, method = "spearman")
 # Analyze specific families only
 corr_subset <- compute_family_correlations(
   units,
-  families = c("family_B", "family_T")
+  families = c("famille_biodiversite", "famille_temporel")
 )
 } # }
 ```

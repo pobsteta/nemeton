@@ -2,8 +2,7 @@
 
 ## Authors
 
-- **[Pascal Obstétar](https://github.com/pobsteta)**. Author,
-  maintainer.
+- **Pascal Obstétar**. Author, maintainer.
 
 ## Citation
 

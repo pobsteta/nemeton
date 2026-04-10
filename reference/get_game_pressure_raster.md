@@ -2,7 +2,7 @@
 
 Creates a SpatRaster of game pressure index by department for use with
 the
-[`indicator_risk_browsing`](https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.md)
+[`indicateur_r4_abroutissement`](https://pobsteta.github.io/nemeton/reference/indicateur_r4_abroutissement.md)
 function.
 
 ## Usage
@@ -38,7 +38,7 @@ extent and CRS of the input units.
 This function: 1. Downloads/computes game pressure index by department
 2. Downloads department boundaries if not provided 3. Rasterizes the
 pressure values 4. Returns a raster for use with
-indicator_risk_browsing(game_density = ...)
+indicateur_r4_abroutissement(game_density = ...)
 
 ## See also
 
@@ -60,7 +60,7 @@ parcels <- st_read("parcels.gpkg")
 game_raster <- get_game_pressure_raster(parcels)
 
 # Use with R4 indicator
-result <- indicator_risk_browsing(
+result <- indicateur_r4_abroutissement(
   parcels,
   species_field = "essence",
   game_density = game_raster

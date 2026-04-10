@@ -72,10 +72,9 @@ L’indicateur **B1** calcule le pourcentage de surface en zones de
 protection.
 
 ``` r
-result <- indicator_biodiversity_protection(
+result <- indicateur_b1_protection(
   units,
-  protected_areas = protected_areas,
-  source = "local"
+  protected_areas = protected_areas
 )
 
 summary(result$B1)
@@ -92,7 +91,7 @@ L’indicateur **B2** mesure la diversité de Shannon à travers les
 strates, âges et essences.
 
 ``` r
-result <- indicator_biodiversity_structure(
+result <- indicateur_b2_structure(
   result,
   strata_field = "strata",
   age_class_field = "age_class",
@@ -113,7 +112,7 @@ L’indicateur **B3** évalue la proximité aux corridors écologiques.
 ``` r
 # B3 utilise la BD Forêt pour calculer la connectivité
 # Sans données réelles, la fonction retourne une valeur par défaut
-result <- indicator_biodiversity_connectivity(
+result <- indicateur_b3_connectivite(
   result,
   bdforet = NULL,  # En production: charger depuis layers
   max_distance = 3000
@@ -131,11 +130,11 @@ summary(result$B3)
 Les indicateurs de risque évaluent les vulnérabilités aux perturbations.
 *Note: Dans cette vignette, nous simulons les valeurs. Pour un usage
 réel, utilisez les fonctions
-[`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md),
-[`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md),
-[`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)
+[`indicateur_r1_feu()`](https://pobsteta.github.io/nemeton/reference/indicateur_r1_feu.md),
+[`indicateur_r2_tempete()`](https://pobsteta.github.io/nemeton/reference/indicateur_r2_tempete.md),
+[`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md)
 et
-[`indicator_risk_browsing()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.md)
+[`indicateur_r4_abroutissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r4_abroutissement.md)
 avec des données DEM, climatiques et BD Forêt.*
 
 ``` r
@@ -189,7 +188,7 @@ summary(result$T1)
 ### T2 : Changements d’occupation
 
 L’indicateur **T2** détecte les transformations. *Note: Utiliser
-[`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)
+[`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
 avec des rasters Corine Land Cover multi-dates pour un usage réel.*
 
 ``` r
@@ -209,7 +208,7 @@ summary(result$T2)
 
 L’indicateur **A1** mesure le % de couverture arborée dans un buffer de
 1km. *Note: Utiliser
-[`indicator_air_coverage()`](https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.md)
+[`indicateur_a1_couverture()`](https://pobsteta.github.io/nemeton/reference/indicateur_a1_couverture.md)
 avec un raster de végétation pour un usage réel.*
 
 ``` r
@@ -224,7 +223,7 @@ summary(result$A1)
 ### A2 : Qualité de l’air
 
 L’indicateur **A2** évalue la qualité de l’air. *Note: Utiliser
-[`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)
+[`indicateur_a2_qualite_air()`](https://pobsteta.github.io/nemeton/reference/indicateur_a2_qualite_air.md)
 avec des données ATMO ou sources de pollution pour un usage réel.*
 
 ``` r
@@ -260,15 +259,15 @@ result_norm <- create_family_index(
 # Afficher les indices par famille
 result_norm |>
   st_drop_geometry() |>
-  select(parcel_id, family_B, family_R, family_T, family_A) |>
+  select(parcel_id, famille_biodiversite, famille_risque, famille_temporel, famille_air) |>
   head()
-#>   parcel_id family_B family_R family_T family_A
-#> 1       P01 31.22326 70.33977 61.29032 50.00000
-#> 2       P02 63.53333 48.24446 17.62303 28.71851
-#> 3       P03 30.00000 53.02653 44.71207 44.90653
-#> 4       P04 10.00000 16.61201 62.47047 40.25588
-#> 5       P05 16.66667 26.45295 11.29032 30.80376
-#> 6       P06 23.33333 48.35630 41.69098 54.08198
+#>   parcel_id famille_biodiversite famille_risque famille_temporel famille_air
+#> 1       P01             31.22326       70.33977         61.29032    50.00000
+#> 2       P02             63.53333       48.24446         17.62303    28.71851
+#> 3       P03             30.00000       53.02653         44.71207    44.90653
+#> 4       P04             10.00000       16.61201         62.47047    40.25588
+#> 5       P05             16.66667       26.45295         11.29032    30.80376
+#> 6       P06             23.33333       48.35630         41.69098    54.08198
 ```
 
 ### Agrégation conservative (méthode “min”)
@@ -286,20 +285,20 @@ result_risk_min <- create_family_index(
 # Comparer méthodes "mean" vs "min"
 comparison <- result_norm |>
   st_drop_geometry() |>
-  select(parcel_id, R1_norm, R2_norm, R3_norm, R4_norm, family_R) |>
+  select(parcel_id, R1_norm, R2_norm, R3_norm, R4_norm, famille_risque) |>
   mutate(
     risk_min = pmin(R1_norm, R2_norm, R3_norm, R4_norm)
   ) |>
   head()
 
 comparison
-#>   parcel_id   R1_norm   R2_norm   R3_norm    R4_norm family_R  risk_min
-#> 1       P01 28.205045  53.15405 100.00000 100.000000 70.33977 28.205045
-#> 2       P02 67.956914  21.54089  90.57869  12.901354 48.24446 12.901354
-#> 3       P03  1.120893 100.00000  16.42606  94.559155 53.02653  1.120893
-#> 4       P04 48.780961  17.66709   0.00000   0.000000 16.61201  0.000000
-#> 5       P05 12.187465  55.34306  36.88004   1.401253 26.45295  1.401253
-#> 6       P06 33.620254  77.29592  15.35528  67.153735 48.35630 15.355282
+#>   parcel_id   R1_norm   R2_norm   R3_norm    R4_norm famille_risque  risk_min
+#> 1       P01 28.205045  53.15405 100.00000 100.000000       70.33977 28.205045
+#> 2       P02 67.956914  21.54089  90.57869  12.901354       48.24446 12.901354
+#> 3       P03  1.120893 100.00000  16.42606  94.559155       53.02653  1.120893
+#> 4       P04 48.780961  17.66709   0.00000   0.000000       16.61201  0.000000
+#> 5       P05 12.187465  55.34306  36.88004   1.401253       26.45295  1.401253
+#> 6       P06 33.620254  77.29592  15.35528  67.153735       48.35630 15.355282
 ```
 
 **Interprétation** : La méthode “min” identifie le facteur limitant
@@ -390,8 +389,8 @@ Identifier les forêts anciennes à haute valeur écologique :
 
 ``` r
 hotspots_bio <- result_complete |>
-  filter(family_B > 60, T1 > 100) |>
-  arrange(desc(family_B))
+  filter(famille_biodiversite > 60, T1 > 100) |>
+  arrange(desc(famille_biodiversite))
 
 cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles\n")
 #> Forêts anciennes à haute biodiversité : 1 parcelles
@@ -400,11 +399,11 @@ cat("Forêts anciennes à haute biodiversité :", nrow(hotspots_bio), "parcelles
 if (nrow(hotspots_bio) > 0) {
   hotspots_bio |>
     st_drop_geometry() |>
-    select(parcel_id, family_B, T1, family_R) |>
+    select(parcel_id, famille_biodiversite, T1, famille_risque) |>
     head()
 }
-#>   parcel_id family_B  T1 family_R
-#> 1       P07     70.2 150 53.99158
+#>   parcel_id famille_biodiversite  T1 famille_risque
+#> 1       P07                 70.2 150       53.99158
 ```
 
 ### Parcelles vulnérables multi-risques
@@ -426,14 +425,14 @@ cat("Parcelles à risques multiples (≥2) :", nrow(multi_risques), "\n")
 if (nrow(multi_risques) > 0) {
   multi_risques |>
     st_drop_geometry() |>
-    select(parcel_id, R1_norm, R2_norm, R3_norm, R4_norm, nb_risques, family_R) |>
+    select(parcel_id, R1_norm, R2_norm, R3_norm, R4_norm, nb_risques, famille_risque) |>
     head()
 }
-#>   parcel_id   R1_norm   R2_norm   R3_norm   R4_norm nb_risques family_R
-#> 1       P01 28.205045  53.15405 100.00000 100.00000          2 70.33977
-#> 2       P02 67.956914  21.54089  90.57869  12.90135          2 48.24446
-#> 3       P03  1.120893 100.00000  16.42606  94.55915          2 53.02653
-#> 4       P06 33.620254  77.29592  15.35528  67.15374          2 48.35630
+#>   parcel_id   R1_norm   R2_norm   R3_norm   R4_norm nb_risques famille_risque
+#> 1       P01 28.205045  53.15405 100.00000 100.00000          2       70.33977
+#> 2       P02 67.956914  21.54089  90.57869  12.90135          2       48.24446
+#> 3       P03  1.120893 100.00000  16.42606  94.55915          2       53.02653
+#> 4       P06 33.620254  77.29592  15.35528  67.15374          2       48.35630
 ```
 
 ### Services climatiques urbains
@@ -443,7 +442,7 @@ if (nrow(multi_risques) > 0) {
 ``` r
 services_climat <- result_complete |>
   filter(A1 > 70, A2 > 70) |>
-  arrange(desc(family_A))
+  arrange(desc(famille_air))
 
 cat("Parcelles à fort potentiel climatique :", nrow(services_climat), "\n")
 #> Parcelles à fort potentiel climatique : 1
@@ -451,11 +450,11 @@ cat("Parcelles à fort potentiel climatique :", nrow(services_climat), "\n")
 if (nrow(services_climat) > 0) {
   services_climat |>
     st_drop_geometry() |>
-    select(parcel_id, A1, A2, family_A) |>
+    select(parcel_id, A1, A2, famille_air) |>
     head()
 }
-#>   parcel_id       A1       A2 family_A
-#> 1       P08 70.51631 78.73541 70.51087
+#>   parcel_id       A1       A2 famille_air
+#> 1       P08 70.51631 78.73541    70.51087
 ```
 
 ## Cartographie Multi-Critères
@@ -466,11 +465,11 @@ Visualisons les indices composites pour les nouvelles familles :
 library(patchwork)
 
 p_bio <- plot_indicators_map(result_complete,
-  indicator = "family_B",
+  indicator = "famille_biodiversite",
   palette = "Greens", title = "Biodiversité (B)"
 )
 p_risk <- plot_indicators_map(result_complete,
-  indicator = "family_R",
+  indicator = "famille_risque",
   palette = "YlOrRd", title = "Risques (R)"
 )
 p_temp <- plot_indicators_map(result_complete,
@@ -478,7 +477,7 @@ p_temp <- plot_indicators_map(result_complete,
   palette = "Blues", title = "Ancienneté (T1)"
 )
 p_air <- plot_indicators_map(result_complete,
-  indicator = "family_A",
+  indicator = "famille_air",
   palette = "viridis", title = "Air & Climat (A)"
 )
 
@@ -498,29 +497,35 @@ summary_table <- result_complete |>
   select(
     parcel_id,
     # Biodiversité
-    B1, B2, B3, family_B,
+    B1, B2, B3, famille_biodiversite,
     # Risques
-    R1, R2, R3, R4, family_R,
+    R1, R2, R3, R4, famille_risque,
     # Temporel
-    T1, T2, family_T,
+    T1, T2, famille_temporel,
     # Air
-    A1, A2, family_A
+    A1, A2, famille_air
   ) |>
   head(5)
 
 summary_table
-#>   parcel_id        B1 B2 B3 family_B       R1       R2       R3       R4
-#> 1       P01  47.20474 85 50 31.22326 44.25188 47.07114 73.04010 64.02529
-#> 2       P02 100.00000 86 50 63.53333 65.53830 30.47225 68.09509 22.89638
-#> 3       P03   0.00000 87 50 30.00000 29.74880 71.66821 29.17421 61.45606
-#> 4       P04   0.00000 84 50 10.00000 55.26992 28.43826 20.55258 16.80423
-#> 5       P05   0.00000 85 50 16.66667 35.67475 48.22051 39.90999 17.46591
-#>   family_R  T1         T2 family_T       A1       A2 family_A
-#> 1 70.33977  80 18.5854441 61.29032 74.83550 62.37394 50.00000
-#> 2 48.24446  45  7.0717841 17.62303 57.46452 64.73451 28.71851
-#> 3 53.02653  80 12.6900074 44.71207 53.25070 78.35990 44.90653
-#> 4 16.61201 120 14.4165688 62.47047 60.81278 68.82518 40.25588
-#> 5 26.45295  80  0.8048135 11.29032 59.36794 64.32505 30.80376
+#>   parcel_id        B1 B2 B3 famille_biodiversite       R1       R2       R3
+#> 1       P01  47.20474 85 50             31.22326 44.25188 47.07114 73.04010
+#> 2       P02 100.00000 86 50             63.53333 65.53830 30.47225 68.09509
+#> 3       P03   0.00000 87 50             30.00000 29.74880 71.66821 29.17421
+#> 4       P04   0.00000 84 50             10.00000 55.26992 28.43826 20.55258
+#> 5       P05   0.00000 85 50             16.66667 35.67475 48.22051 39.90999
+#>         R4 famille_risque  T1         T2 famille_temporel       A1       A2
+#> 1 64.02529       70.33977  80 18.5854441         61.29032 74.83550 62.37394
+#> 2 22.89638       48.24446  45  7.0717841         17.62303 57.46452 64.73451
+#> 3 61.45606       53.02653  80 12.6900074         44.71207 53.25070 78.35990
+#> 4 16.80423       16.61201 120 14.4165688         62.47047 60.81278 68.82518
+#> 5 17.46591       26.45295  80  0.8048135         11.29032 59.36794 64.32505
+#>   famille_air
+#> 1    50.00000
+#> 2    28.71851
+#> 3    44.90653
+#> 4    40.25588
+#> 5    30.80376
 ```
 
 ## Conclusion
@@ -538,6 +543,6 @@ Cette vignette a présenté :
   familles
 - Vignette “Analyse temporelle” : workflows multi-périodes
 - Documentation API :
-  [`?indicator_biodiversity_protection`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md),
+  [`?indicateur_b1_protection`](https://pobsteta.github.io/nemeton/reference/indicateur_b1_protection.md),
   [`?nemeton_radar`](https://pobsteta.github.io/nemeton/reference/nemeton_radar.md),
   etc.

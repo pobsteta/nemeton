@@ -39,18 +39,18 @@ data(massif_demo_units)
 
 # Aperçu des données de base
 head(massif_demo_units)
-#> Simple feature collection with 6 features and 88 fields
+#> Simple feature collection with 6 features and 89 fields
 #> Geometry type: POLYGON
 #> Dimension:     XY
 #> Bounding box:  xmin: 698041.8 ymin: 6499388 xmax: 702507.7 ymax: 6504159
 #> Projected CRS: RGF93 v1 / Lambert-93
 #>   parcel_id      forest_type age_class   management species age
-#> 1       P01     Futaie mixte    Mature        Mixte    FASY  68
-#> 2       P02 Futaie résineuse     Moyen   Production    PIAB  33
-#> 3       P03  Futaie feuillue  Surannée Conservation    QUPE 104
-#> 4       P04  Futaie feuillue  Surannée   Production    ABAL 166
-#> 5       P05 Futaie résineuse     Moyen   Production    PISY  47
-#> 6       P06 Futaie résineuse    Mature   Production    QURO  79
+#> 1       P01     Futaie mixte    Mature        Mixte      09  68
+#> 2       P02 Futaie résineuse     Moyen   Production      64  33
+#> 3       P03  Futaie feuillue  Surannée Conservation      03 104
+#> 4       P04  Futaie feuillue  Surannée   Production      03 166
+#> 5       P05 Futaie résineuse     Moyen   Production      61  47
+#> 6       P06 Futaie résineuse    Mature   Production      61  79
 #>   establishment_year density height  dbh volume strata fertility     climate
 #> 1               1958     266   30.3 45.8  557.7      4         1 continental
 #> 2               1993     465   30.4 57.5 1541.7      1         3  atlantique
@@ -58,76 +58,90 @@ head(massif_demo_units)
 #> 4               1860     104   29.9 42.6  186.1      2         1  atlantique
 #> 5               1979     324   27.5 51.5  779.5      2         2  atlantique
 #> 6               1947     281   38.6 76.1 2072.1      2         1  atlantique
-#>   surface_ha  area_ha        A1   A1_norm       A2   A2_norm B1  B1_norm
-#> 1   4.989211 4.989211 0.5293842  32.76917 41.31477 15.769170  0  0.00000
-#> 2   5.867935 5.867935 0.6934514  56.20735 54.25911 83.462924  0  0.00000
-#> 3   6.557777 6.557777 1.0000000 100.00000 40.10522  9.443733  2 66.66667
-#> 4   9.989553 9.989553 0.8866660  83.80943 47.07552 45.895638  0  0.00000
-#> 5   5.906395 5.906395 0.5849180  40.70258 48.98128 55.861977  1 33.33333
-#> 6   1.048296 1.048296 0.3000000   0.00000 56.56038 95.497643  2 66.66667
-#>         B2  B2_norm        B3  B3_norm       C1   C1_norm          C2  C2_norm
-#> 1 2.556369 41.55096 0.8262637 90.87085 258.9182  91.81550  0.03279953 98.02844
-#> 2 2.387431 35.94171 0.3583569 17.21558 228.1229  78.28157  0.01631406 72.74375
-#> 3 2.482645 39.10309 0.6591732 64.56840 193.5217  63.07502  0.03085372 95.04404
-#> 4 2.177975 28.98713 0.6150537 57.62336 187.2273  60.30875  0.00574035 56.52626
-#> 5 2.455282 38.19456 0.6392320 61.42937 269.4859  96.45981  0.01794201 75.24062
-#> 6 1.853111 18.20065 0.5374482 45.40713 277.5413 100.00000 -0.02087305 15.70780
-#>          E1    E1_norm       E2  E2_norm F1 F1_norm        F2  F2_norm family_A
-#> 1 0.6332431 48.4520928 1.286294 37.35401  3      50 15.017516 63.53406 24.26917
-#> 2 0.5003880  0.1410856 1.135298 30.18071  3      50 18.802915 79.54881 69.83514
-#> 3 0.5000000  0.0000000 1.037217 25.52125  3      50  8.778060 37.13702 54.72187
-#> 4 0.5000000  0.0000000 1.679691 56.04287  4      75 16.643021 70.41103 64.85253
-#> 5 0.5239562  8.7113699 0.500000  0.00000  4      75 23.180358 98.06830 48.28228
-#> 6 0.5000000  0.0000000 0.500000  0.00000  2      25  6.919386 29.27359 47.74882
-#>   family_B family_C  family_E family_F family_L family_N family_P family_R
-#> 1 44.14061 94.92197 42.903050 56.76703 31.33202 50.88637 47.68739 32.09087
-#> 2 17.71910 75.51266 15.160900 64.77440 88.45910 23.50773 86.78162 24.35791
-#> 3 56.77938 79.05953 12.760627 43.56851 64.18903 29.82359 46.78139 42.35100
-#> 4 28.87016 58.41750 28.021436 72.70551 56.54965 82.49126 48.20880 26.49766
-#> 5 44.31909 85.85022  4.355685 86.53415 29.12421 24.91877 75.19072 66.66667
-#> 6 43.42482 57.85390  0.000000 27.13680 73.96207 18.79035 14.75698 13.46698
-#>   family_S family_T  family_W        L1   L1_norm        L2   L2_norm        N1
-#> 1 24.30425 54.11307  9.825682 0.2521898  10.97026 0.3017459  51.69377 1823.0542
-#> 2 24.18268 46.60595 50.880574 0.5743217 100.00000 0.3891689  76.91820  670.1452
-#> 3 37.86009 77.38554 23.501831 0.3701597  43.57440 0.4164985  84.80367 1365.9276
-#> 4 17.50914 38.82146 49.612081 0.3389725  34.95499 0.3934184  78.14431 2734.2239
-#> 5 81.17865 24.74926 61.265609 0.3539412  39.09197 0.1889777  19.15645  628.5385
-#> 6 61.86987 55.77872  4.498593 0.3858981  47.92413 0.4691661 100.00000 1259.2921
-#>     N1_norm        N2   N2_norm        N3   N3_norm       P1  P1_norm        P2
-#> 1  66.05463 200.27051 24.049640  73.73125  62.55485 383.7837 79.52972  2.000000
-#> 2  23.10333 125.83536 14.560032  52.89941  32.85982 303.2654 60.34486 10.150362
-#> 3  49.02451 101.35012 11.438453  50.19713  29.00781 268.2949 52.01252  4.796243
-#> 4 100.00000 384.00619 47.473781 100.00000 100.00000 250.9696 47.88446  6.134844
-#> 5  21.55329 238.93704 28.979168  46.84107  24.22387 317.5492 63.74822  8.705667
-#> 6  45.05183  20.07441  1.076754  37.03275  10.24246  50.0000  0.00000  4.414458
-#>     P2_norm       P3   P3_norm R1 R1_norm R2 R2_norm        R3   R3_norm
-#> 1   0.00000 65.29495  63.53244  1       0  4      75 0.3397302  21.27261
-#> 2 100.00000 84.57162 100.00000  1       0  2      25 0.5299777  48.07374
-#> 3  34.30821 60.26851  54.02344  2      25  3      50 0.5582243  52.05299
-#> 4  50.73203 56.03258  46.00991  1       0  3      50 0.3980824  29.49298
-#> 5  82.27447 73.76151  79.54946  3      50  3      50 0.8985756 100.00000
-#> 6  29.62394 39.45421  14.64700  1       0  1       0 0.4755124  40.40094
-#>            S1     S1_norm       S2  S2_norm        S3    S3_norm        T1
-#> 1 0.473262981  30.4048558 49.06710 36.33387  1904.090   6.174013  88.06364
-#> 2 0.004570495   0.2936322 77.80352 72.25440  1000.000   0.000000  82.82317
-#> 3 0.963719475  61.9143116 51.13707 38.92133  2866.255  12.744614 126.47324
-#> 4 0.817609054  52.5274243 20.00000  0.00000  1000.000   0.000000  62.19125
-#> 5 1.162277601  74.6707102 75.09220 68.86525 15643.478 100.000000  10.00000
-#> 6 1.556537495 100.0000000 70.17784 62.72230  4351.499  22.887318 130.42042
-#>    T1_norm        T2  T2_norm        W1   W1_norm       W2  W2_norm        W3
-#> 1 57.29425 11.324896 50.93189 0.1862923  9.782561 1.119890 10.45221  5.089475
-#> 2 53.44804  9.198844 39.76386 0.5393849 28.324119 8.374436 78.16072  8.400556
-#> 3 85.48470 14.819030 69.28638 0.4476438 23.506618 2.896998 27.03841  6.050851
-#> 4 38.30539  9.117684 39.33753 1.1437187 60.058825 4.913373 45.85774  8.110192
-#> 5  0.00000 11.052026 49.49852 1.0737964 56.387074 3.125075 29.16711 13.072421
-#> 6 88.38171  6.040972 23.17574 0.0000000  0.000000 0.000000  0.00000  5.470996
-#>     W3_norm                       geometry
-#> 1  9.242271 POLYGON ((698299.9 6499928,...
-#> 2 46.156887 POLYGON ((701702.2 6500418,...
-#> 3 19.960465 POLYGON ((702240.4 6500270,...
-#> 4 42.919675 POLYGON ((700641.3 6504129,...
-#> 5 98.242638 POLYGON ((699268.2 6500307,...
-#> 6 13.495779 POLYGON ((699943.5 6499421,...
+#>   surface_ha                       geometry        C1        C2       B1
+#> 1   4.989211 POLYGON ((698299.9 6499928,... 271.52938 0.6447576 67.56073
+#> 2   5.867935 POLYGON ((701702.2 6500418,... 300.00000 0.6056744 98.28172
+#> 3   6.557777 POLYGON ((702240.4 6500270,... 110.16193 0.5285871 75.95443
+#> 4   9.989553 POLYGON ((700641.3 6504129,...  93.23794 1.1674470 56.64884
+#> 5   5.906395 POLYGON ((699268.2 6500307,... 300.00000 0.6314632 84.96897
+#> 6   1.048296 POLYGON ((699943.5 6499421,... 300.00000 0.9846671 18.94739
+#>         B2       B3        W1       W2        W3        A1       A2 F1
+#> 1 48.05999 46.75415 1.1875729 37.39292 11.262508 100.00000 48.38184  1
+#> 2 30.72276 50.79763 0.6421157 22.01976 10.763668 100.00000 73.07190  3
+#> 3 65.58163 63.01069 3.7125564 24.07065  5.852777  68.22187 48.53609  2
+#> 4 71.39962 64.22587 6.2349453  7.87978  5.333345 100.00000 55.56960  1
+#> 5 25.31719 73.97430 5.8682237 21.40946  9.680398 100.00000 72.48102  2
+#> 6 53.99485 49.62298 6.5378436  7.18223  9.726250 100.00000 69.09907  1
+#>          F2       L1       L2  T1        T2        R1       R2       R3
+#> 1 25.019879 57.94143 49.02609  68  7.745998 35.404437 63.67438 10.97556
+#> 2  4.315520 32.99353 46.67417  33  7.087985 56.732381 55.62368 75.73944
+#> 3 10.886737 41.24140 23.62314 104  2.554360  5.098883 67.18918 37.15549
+#> 4 33.100871 88.95956 39.65036 166  5.036521 73.789178 40.38996 33.31784
+#> 5 17.500878 49.69644 72.70574  47 10.166800 57.295560 40.61244 44.91239
+#> 6  4.733067 40.25978 75.83629  79 16.832511 36.984480 93.48662 35.74830
+#>          R4        S1       S2       S3        P1       P2       P3        E1
+#> 1 24.564726 0.6142734 80.64513 57354.57  582.4222 4.990758 60.95405 11.132573
+#> 2 48.959040 0.7971139 89.99527 76907.49 1000.0000 9.520484 79.39129 15.000000
+#> 3  5.968351 2.3380220 82.53975 41461.33  215.6208 6.577982 62.21006  4.219383
+#> 4 20.677678 3.6500435 29.52521 13962.24  205.1654 6.470144 62.59759  2.608120
+#> 5 24.612972 0.5191291 68.70905 45003.21  780.8117 6.207055 89.59382 15.000000
+#> 6 22.180692 4.0203980 71.77637 60740.65 1000.0000 4.884225 87.84672 15.000000
+#>          E2       N1       N2          N3   C1_norm   C2_norm   B1_norm
+#> 1 24.491660 1961.124 9009.219  70.3324503  89.83192  18.18404  68.69188
+#> 2 30.000000 5976.014 5456.947   0.3475665 100.00000  12.06639 100.00000
+#> 3  9.282643 1398.919 5089.703  59.2891167  32.20069   0.00000  77.24599
+#> 4  5.737864 3606.938 8946.680 100.0000000  26.15641 100.00000  57.57144
+#> 5 30.000000 3052.444 8478.450  20.5651477 100.00000  16.10308  86.43282
+#> 6 30.000000 7762.738 3903.807  36.2273780 100.00000  71.38969  19.14945
+#>    B2_norm  B3_norm   W1_norm    W2_norm   W3_norm   A1_norm   A2_norm F1_norm
+#> 1 50.33336 28.62731 13.035855 100.000000 100.00000 100.00000  5.025117       0
+#> 2 26.95334 34.97861  5.589419  53.053237  93.59175 100.00000 58.750856     100
+#> 3 73.96207 54.16226 47.506263  59.316263  30.50498  30.98201  5.360775      50
+#> 4 81.80788 56.07101 81.941248   9.872349  23.83220 100.00000 20.665725       0
+#> 5 19.66369 71.38334 76.934862  51.189497  79.67574 100.00000 57.465104      50
+#> 6 58.33678 33.13352 86.076335   7.742161  80.26477 100.00000 50.105960       0
+#>      F2_norm   L1_norm  L2_norm  T1_norm   T2_norm   R1_norm   R2_norm
+#> 1  71.926722  46.37097 45.50493 35.66879  45.88045  44.11912  55.33710
+#> 2   0.000000   3.23710 41.29189 13.37580  41.96130  75.16855  43.27603
+#> 3  22.828336  17.49732  0.00000 58.59873  14.95889   0.00000  60.60275
+#> 4 100.000000 100.00000 28.70996 98.08917  29.74272 100.00000  20.45379
+#> 5  45.805793  32.11573 87.92288 22.29299  60.29882  75.98843  20.78710
+#> 6   1.450555  15.80015 93.53071 42.67516 100.00000  46.41936 100.00000
+#>      R3_norm   R4_norm   S1_norm   S2_norm    S3_norm   P1_norm   P2_norm
+#> 1   2.480901 32.323036  2.685042  86.59194  71.857692  58.23268  17.55010
+#> 2 100.000000 67.877065  7.844928 100.00000 100.000000 100.00000 100.00000
+#> 3  41.901695  5.219342 51.330450  89.30881  48.982723  21.54416  46.44068
+#> 4  36.123091 26.657773 88.356628  13.28616   9.403583  20.49838  44.47782
+#> 5  53.581750 32.393354  0.000000  69.47563  54.080517  78.07616  39.68908
+#> 6  39.782798 28.848373 98.808295  73.87417  76.731251 100.00000  15.61098
+#>     P3_norm   E1_norm   E2_norm   N1_norm  N2_norm     N3_norm famille_carbone
+#> 1  53.89207  74.21715  81.63887 12.965307 98.39928  70.3324503        54.00798
+#> 2  83.57467 100.00000 100.00000 61.069681 57.39465   0.3475665        56.03319
+#> 3  55.91417  28.12922  30.94214  6.229248 53.15548  59.2891167        16.10034
+#> 4  56.53806  17.38747  19.12621 32.684614 97.67738 100.0000000        63.07820
+#> 5 100.00000 100.00000 100.00000 26.040953 92.27251  20.5651477        58.05154
+#> 6  97.18730 100.00000 100.00000 82.477298 39.46642  36.2273780        85.69484
+#>   famille_biodiversite famille_eau famille_air famille_sol famille_paysage
+#> 1             49.21751    71.01195    52.51256  35.9633611       45.937952
+#> 2             53.97732    50.74480    79.37543  50.0000000       22.264494
+#> 3             68.45678    45.77583    18.17139  36.4141678        8.748662
+#> 4             65.15011    38.54860    60.33286  50.0000000       64.354982
+#> 5             59.15995    69.26670    78.73255  47.9028964       60.019306
+#> 6             36.87325    58.02776    75.05298   0.7252773       54.665429
+#>   famille_temporel famille_risque famille_social famille_production
+#> 1         40.77462       33.56504       53.71156           43.22495
+#> 2         27.66855       71.58041       69.28164           94.52489
+#> 3         36.77881       26.93095       63.20733           41.29967
+#> 4         63.91594       45.80866       37.01546           40.50475
+#> 5         41.29591       45.68766       41.18538           72.58841
+#> 6         71.33758       53.76263       83.13790           70.93276
+#>   famille_energie famille_naturalite
+#> 1        77.92801           60.56568
+#> 2       100.00000           39.60397
+#> 3        29.53568           39.55795
+#> 4        18.25684           76.78733
+#> 5       100.00000           46.29287
+#> 6       100.00000           52.72370
 
 # Calculer les indicateurs pour la démonstration
 # Les indicateurs sont générés de manière synthétique pour les besoins de cette vignette
@@ -180,22 +194,29 @@ result <- create_family_index(massif_demo_units)
 # Afficher les indices de famille
 result |>
   sf::st_drop_geometry() |>
-  select(parcel_id, starts_with("family_")) |>
+  select(parcel_id, starts_with("famille_")) |>
   head()
-#>   parcel_id family_A family_B family_C  family_E family_F family_L family_N
-#> 1       P01 24.26917 44.14061 94.92197 42.903050 56.76703 31.33202 50.88637
-#> 2       P02 69.83514 17.71910 75.51266 15.160900 64.77440 88.45910 23.50773
-#> 3       P03 54.72187 56.77938 79.05953 12.760627 43.56851 64.18903 29.82359
-#> 4       P04 64.85253 28.87016 58.41750 28.021436 72.70551 56.54965 82.49126
-#> 5       P05 48.28228 44.31909 85.85022  4.355685 86.53415 29.12421 24.91877
-#> 6       P06 47.74882 43.42482 57.85390  0.000000 27.13680 73.96207 18.79035
-#>   family_P family_R family_S family_T  family_W
-#> 1 47.68739 32.09087 24.30425 54.11307  9.825682
-#> 2 86.78162 24.35791 24.18268 46.60595 50.880574
-#> 3 46.78139 42.35100 37.86009 77.38554 23.501831
-#> 4 48.20880 26.49766 17.50914 38.82146 49.612081
-#> 5 75.19072 66.66667 81.17865 24.74926 61.265609
-#> 6 14.75698 13.46698 61.86987 55.77872  4.498593
+#>   parcel_id famille_carbone famille_biodiversite famille_eau famille_air
+#> 1       P01        54.00798             49.21751    71.01195    52.51256
+#> 2       P02        56.03319             53.97732    50.74480    79.37543
+#> 3       P03        16.10034             68.45678    45.77583    18.17139
+#> 4       P04        63.07820             65.15011    38.54860    60.33286
+#> 5       P05        58.05154             59.15995    69.26670    78.73255
+#> 6       P06        85.69484             36.87325    58.02776    75.05298
+#>   famille_sol famille_paysage famille_temporel famille_risque famille_social
+#> 1  35.9633611       45.937952         40.77462       33.56504       53.71156
+#> 2  50.0000000       22.264494         27.66855       71.58041       69.28164
+#> 3  36.4141678        8.748662         36.77881       26.93095       63.20733
+#> 4  50.0000000       64.354982         63.91594       45.80866       37.01546
+#> 5  47.9028964       60.019306         41.29591       45.68766       41.18538
+#> 6   0.7252773       54.665429         71.33758       53.76263       83.13790
+#>   famille_production famille_energie famille_naturalite
+#> 1           43.22495        77.92801           60.56568
+#> 2           94.52489       100.00000           39.60397
+#> 3           41.29967        29.53568           39.55795
+#> 4           40.50475        18.25684           76.78733
+#> 5           72.58841       100.00000           46.29287
+#> 6           70.93276       100.00000           52.72370
 ```
 
 ## Visualisation Radar 12-Axes
@@ -221,9 +242,9 @@ nemeton_radar(
 ``` r
 # Calculer les corrélations entre toutes les familles
 families_all <- c(
-  "family_C", "family_B", "family_W", "family_A",
-  "family_F", "family_L", "family_T", "family_R",
-  "family_S", "family_P", "family_E", "family_N"
+  "famille_carbone", "famille_biodiversite", "famille_eau", "famille_air",
+  "famille_sol", "famille_paysage", "famille_temporel", "famille_risque",
+  "famille_social", "famille_production", "famille_energie", "famille_naturalite"
 )
 
 correlations <- compute_family_correlations(result, families = families_all)
@@ -243,7 +264,7 @@ familles :
 # Hotspots pour conservation (C, B, N)
 hotspots_conservation <- identify_hotspots(
   result,
-  families = c("family_C", "family_B", "family_N"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_naturalite"),
   threshold = 0.7,
   min_families = 2
 )
@@ -251,7 +272,7 @@ hotspots_conservation <- identify_hotspots(
 # Hotspots pour production durable (P, C, E)
 hotspots_production <- identify_hotspots(
   result,
-  families = c("family_P", "family_C", "family_E"),
+  families = c("famille_production", "famille_carbone", "famille_energie"),
   threshold = 0.7,
   min_families = 2
 )
@@ -259,7 +280,7 @@ hotspots_production <- identify_hotspots(
 # Hotspots pour services sociaux (S, A, L)
 hotspots_social <- identify_hotspots(
   result,
-  families = c("family_S", "family_A", "family_L"),
+  families = c("famille_social", "famille_air", "famille_paysage"),
   threshold = 0.7,
   min_families = 2
 )
@@ -271,12 +292,12 @@ table(hotspots_conservation$is_hotspot)
 #>   20
 table(hotspots_production$is_hotspot)
 #> 
-#> TRUE 
-#>   20
-table(hotspots_social$is_hotspot)
-#> 
 #> FALSE  TRUE 
 #>     1    19
+table(hotspots_social$is_hotspot)
+#> 
+#> TRUE 
+#>   20
 ```
 
 ## Cartographie Multi-Familles
@@ -288,25 +309,25 @@ table(hotspots_social$is_hotspot)
 library(patchwork)
 
 p_social <- ggplot(result) +
-  geom_sf(aes(fill = family_S)) +
+  geom_sf(aes(fill = famille_social)) +
   scale_fill_viridis_c(name = "Social") +
   labs(title = "Famille S - Social & Usages") +
   theme_minimal()
 
 p_production <- ggplot(result) +
-  geom_sf(aes(fill = family_P)) +
+  geom_sf(aes(fill = famille_production)) +
   scale_fill_viridis_c(name = "Production") +
   labs(title = "Famille P - Production & Économie") +
   theme_minimal()
 
 p_energy <- ggplot(result) +
-  geom_sf(aes(fill = family_E)) +
+  geom_sf(aes(fill = famille_energie)) +
   scale_fill_viridis_c(name = "Énergie") +
   labs(title = "Famille E - Énergie & Climat") +
   theme_minimal()
 
 p_naturalness <- ggplot(result) +
-  geom_sf(aes(fill = family_N)) +
+  geom_sf(aes(fill = famille_naturalite)) +
   scale_fill_viridis_c(name = "Naturalité") +
   labs(title = "Famille N - Naturalité & Wilderness") +
   theme_minimal()
@@ -323,7 +344,7 @@ p_naturalness <- ggplot(result) +
 result_long <- result |>
   sf::st_drop_geometry() |>
   tidyr::pivot_longer(
-    cols = starts_with("family_"),
+    cols = starts_with("famille_"),
     names_to = "famille",
     values_to = "valeur"
   ) |>
@@ -335,18 +356,18 @@ result_long <- result |>
 
 # Labels des familles pour la facette
 family_labels <- c(
-  family_C = "C - Carbone",
-  family_B = "B - Biodiversité",
-  family_W = "W - Eau",
-  family_A = "A - Air",
-  family_F = "F - Fertilité",
-  family_L = "L - Paysage",
-  family_T = "T - Temps",
-  family_R = "R - Risques",
-  family_S = "S - Social",
-  family_P = "P - Production",
-  family_E = "E - Énergie",
-  family_N = "N - Naturalité"
+  famille_carbone = "C - Carbone",
+  famille_biodiversite = "B - Biodiversité",
+  famille_eau = "W - Eau",
+  famille_air = "A - Air",
+  famille_sol = "F - Fertilité",
+  famille_paysage = "L - Paysage",
+  famille_temporel = "T - Temps",
+  famille_risque = "R - Risques",
+  famille_social = "S - Social",
+  famille_production = "P - Production",
+  famille_energie = "E - Énergie",
+  famille_naturalite = "N - Naturalité"
 )
 
 ggplot(result_long) +
@@ -405,7 +426,7 @@ ggplot(result_composite) +
 # Scénario 1: Conservation intégrale
 composite_conservation <- create_composite_index(
   result_norm,
-  indicators = c("family_C", "family_B", "family_W", "family_N"),
+  indicators = c("famille_carbone", "famille_biodiversite", "famille_eau", "famille_naturalite"),
   weights = c(0.3, 0.4, 0.15, 0.15),
   name = "conservation"
 )
@@ -413,7 +434,7 @@ composite_conservation <- create_composite_index(
 # Scénario 2: Production durable
 composite_production <- create_composite_index(
   result_norm,
-  indicators = c("family_P", "family_E", "family_F", "family_C"),
+  indicators = c("famille_production", "famille_energie", "famille_sol", "famille_carbone"),
   weights = c(0.4, 0.25, 0.2, 0.15),
   name = "production"
 )
@@ -421,7 +442,7 @@ composite_production <- create_composite_index(
 # Scénario 3: Services sociaux
 composite_social <- create_composite_index(
   result_norm,
-  indicators = c("family_S", "family_A", "family_L", "family_R"),
+  indicators = c("famille_social", "famille_air", "famille_paysage", "famille_risque"),
   weights = c(0.35, 0.25, 0.2, 0.2),
   name = "social"
 )

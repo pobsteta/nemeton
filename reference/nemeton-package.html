@@ -17,7 +17,7 @@ dimensions."><meta property="og:image" content="https://pobsteta.github.io/nemet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,16 +28,13 @@ dimensions."><meta property="og:image" content="https://pobsteta.github.io/nemet
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -112,7 +109,7 @@ dimensions.</p>
 
 
 <div class="sourceCode"><pre><code><span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Load demo data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
@@ -142,15 +139,15 @@ dimensions.</p>
 
 
 <p><strong>Indicator Calculation:</strong></p><ul><li><p><code><a href="nemeton_compute.html">nemeton_compute</a></code> - Compute biophysical indicators</p></li>
-<li><p><code><a href="indicator_carbon_biomass.html">indicator_carbon_biomass</a></code> - Carbon stock (C1)</p></li>
-<li><p><code><a href="indicator_carbon_ndvi.html">indicator_carbon_ndvi</a></code> - Vegetation vitality (C2)</p></li>
-<li><p><code><a href="indicator_water_network.html">indicator_water_network</a></code> - Hydrographic density (W1)</p></li>
-<li><p><code><a href="indicator_water_wetlands.html">indicator_water_wetlands</a></code> - Wetland coverage (W2)</p></li>
-<li><p><code><a href="indicator_water_twi.html">indicator_water_twi</a></code> - Topographic Wetness Index (W3)</p></li>
-<li><p><code><a href="indicator_soil_fertility.html">indicator_soil_fertility</a></code> - Soil fertility (F1)</p></li>
-<li><p><code><a href="indicator_soil_erosion.html">indicator_soil_erosion</a></code> - Erosion risk (F2)</p></li>
-<li><p><code><a href="indicator_landscape_fragmentation.html">indicator_landscape_fragmentation</a></code> - Fragmentation (L1)</p></li>
-<li><p><code><a href="indicator_landscape_edge.html">indicator_landscape_edge</a></code> - Edge ratio (L2)</p></li>
+<li><p><code><a href="indicateur_c1_biomasse.html">indicateur_c1_biomasse</a></code> - Carbon stock (C1)</p></li>
+<li><p><code><a href="indicateur_c2_ndvi.html">indicateur_c2_ndvi</a></code> - Vegetation vitality (C2)</p></li>
+<li><p><code><a href="indicateur_w1_reseau.html">indicateur_w1_reseau</a></code> - Hydrographic density (W1)</p></li>
+<li><p><code><a href="indicateur_w2_zones_humides.html">indicateur_w2_zones_humides</a></code> - Wetland coverage (W2)</p></li>
+<li><p><code><a href="indicateur_w3_humidite.html">indicateur_w3_humidite</a></code> - Topographic Wetness Index (W3)</p></li>
+<li><p><code><a href="indicateur_f1_fertilite.html">indicateur_f1_fertilite</a></code> - Soil fertility (F1)</p></li>
+<li><p><code><a href="indicateur_f2_erosion.html">indicateur_f2_erosion</a></code> - Erosion risk (F2)</p></li>
+<li><p><code><a href="indicateur_l2_fragmentation.html">indicateur_l2_fragmentation</a></code> - Fragmentation (L1)</p></li>
+<li><p><code><a href="indicateur_l1_sylvosphere.html">indicateur_l1_sylvosphere</a></code> - Edge ratio (L2)</p></li>
 </ul><p><strong>Temporal Analysis:</strong></p><ul><li><p><code><a href="nemeton_temporal.html">nemeton_temporal</a></code> - Multi-period dataset management</p></li>
 <li><p><code><a href="calculate_change_rate.html">calculate_change_rate</a></code> - Change rate calculations</p></li>
 <li><p><code><a href="plot_temporal_trend.html">plot_temporal_trend</a></code> - Time-series plots</p></li>
@@ -230,7 +227,7 @@ developed by <em>Vivre en Forêt</em>, organizing ecosystem services into
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

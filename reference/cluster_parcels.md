@@ -20,7 +20,7 @@ cluster_parcels(data, families, k = NULL, method = "kmeans", max_k = 10)
 - families:
 
   Character vector of family column names to use for clustering (e.g.,
-  `c("family_C", "family_B", "family_P", "family_S")`)
+  `c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")`)
 
 - k:
 
@@ -83,7 +83,7 @@ data("massif_demo_units")
 # Cluster parcels into 3 groups based on 4 families
 result <- cluster_parcels(
   massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   k = 3,
   method = "kmeans"
 )
@@ -97,7 +97,7 @@ attr(result, "cluster_profile")
 # Auto-determine optimal k
 result_auto <- cluster_parcels(
   massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   k = NULL
 )
 attr(result_auto, "optimal_k")
@@ -106,7 +106,7 @@ attr(result_auto, "silhouette_scores")
 # Use hierarchical clustering
 result_hclust <- cluster_parcels(
   massif_demo_units,
-  families = c("family_C", "family_B", "family_P", "family_S"),
+  families = c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social"),
   k = 3,
   method = "hierarchical"
 )

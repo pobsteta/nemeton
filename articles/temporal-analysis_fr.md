@@ -414,9 +414,9 @@ ggplot(change_data, aes(x = C1_rate, y = B1_rate)) +
 
 ``` r
 sessionInfo()
-#> R version 4.5.2 (2025-10-31)
+#> R version 4.5.3 (2026-03-11)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.3 LTS
+#> Running under: Ubuntu 24.04.4 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -435,23 +435,23 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] sf_1.0-24           dplyr_1.2.0         ggplot2_4.0.2      
-#> [4] nemeton_0.14.1.9000
+#> [1] sf_1.1-0            dplyr_1.2.1         ggplot2_4.0.2      
+#> [4] nemeton_0.15.1.9000
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] utf8_1.2.6         tidyr_1.3.2        sass_0.4.10        generics_0.1.4    
-#>  [5] class_7.3-23       KernSmooth_2.23-26 digest_0.6.39      magrittr_2.0.4    
-#>  [9] evaluate_1.0.5     grid_4.5.2         RColorBrewer_1.1-3 fastmap_1.2.0     
-#> [13] jsonlite_2.0.0     e1071_1.7-17       DBI_1.2.3          promises_1.5.0    
-#> [17] purrr_1.2.1        viridisLite_0.4.3  scales_1.4.0       codetools_0.2-20  
-#> [21] textshaping_1.0.4  jquerylib_0.1.4    cli_3.6.5          rlang_1.1.7       
-#> [25] units_1.0-0        withr_3.0.2        cachem_1.1.0       yaml_2.3.12       
-#> [29] otel_0.2.0         tools_4.5.2        vctrs_0.7.1        R6_2.6.1          
-#> [33] proxy_0.4-29       lifecycle_1.0.5    classInt_0.4-11    fs_1.6.6          
-#> [37] htmlwidgets_1.6.4  ragg_1.5.0         pkgconfig_2.0.3    desc_1.4.3        
-#> [41] pkgdown_2.2.0      terra_1.8-93       bslib_0.10.0       pillar_1.11.1     
-#> [45] later_1.4.6        gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1        
-#> [49] systemfonts_1.3.1  xfun_0.56          tibble_3.3.1       tidyselect_1.2.1  
-#> [53] knitr_1.51         farver_2.1.2       htmltools_0.5.9    labeling_0.4.3    
-#> [57] rmarkdown_2.30     compiler_4.5.2     S7_0.2.1
+#>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     tidyr_1.3.2       
+#>  [5] class_7.3-23       KernSmooth_2.23-26 digest_0.6.39      magrittr_2.0.5    
+#>  [9] evaluate_1.0.5     grid_4.5.3         RColorBrewer_1.1-3 fastmap_1.2.0     
+#> [13] jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0          purrr_1.2.1       
+#> [17] viridisLite_0.4.3  scales_1.4.0       codetools_0.2-20   textshaping_1.0.5 
+#> [21] jquerylib_0.1.4    cli_3.6.6          rlang_1.2.0        units_1.0-1       
+#> [25] withr_3.0.2        cachem_1.1.0       yaml_2.3.12        otel_0.2.0        
+#> [29] tools_4.5.3        vctrs_0.7.2        R6_2.6.1           proxy_0.4-29      
+#> [33] lifecycle_1.0.5    classInt_0.4-11    fs_2.0.1           htmlwidgets_1.6.4 
+#> [37] ragg_1.5.2         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0     
+#> [41] terra_1.9-11       bslib_0.10.0       pillar_1.11.1      gtable_0.3.6      
+#> [45] glue_1.8.0         Rcpp_1.1.1         systemfonts_1.3.2  xfun_0.57         
+#> [49] tibble_3.3.1       tidyselect_1.2.1   knitr_1.51         farver_2.1.2      
+#> [53] htmltools_0.5.9    labeling_0.4.3     rmarkdown_2.31     compiler_4.5.3    
+#> [57] S7_0.2.1
 ```

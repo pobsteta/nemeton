@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>nemeton - Analyse Systémique Forestière • nemeton</title>
+<title>nemeton - Analyse Systemique Forestiere • nemeton</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -15,10 +15,10 @@
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="nemeton - Analyse Systémique Forestière">
-<meta name="description" content="Évaluation multi-famille des services écosystémiques pour la gestion forestière avec la méthode Nemeton. Calculez, normalisez, agrégez et visualisez des indicateurs biophysiques à travers 12 familles de services écosystémiques.
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="nemeton - Analyse Systemique Forestiere">
+<meta name="description" content="Package R coeur pour l'analyse multi-famille des services ecosystemiques forestiers. 31 indicateurs, 12 familles, systeme NDP (Fibonacci), 11 essences par region. Methode Nemeton.
 ">
-<meta property="og:description" content="Évaluation multi-famille des services écosystémiques pour la gestion forestière avec la méthode Nemeton. Calculez, normalisez, agrégez et visualisez des indicateurs biophysiques à travers 12 familles de services écosystémiques.
+<meta property="og:description" content="Package R coeur pour l'analyse multi-famille des services ecosystemiques forestiers. 31 indicateurs, 12 familles, systeme NDP (Fibonacci), 11 essences par region. Methode Nemeton.
 ">
 <meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg">
 </head>
@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,16 +43,13 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/getting-started_fr.html">Démarrage rapide</a></li>
+<li><a class="dropdown-item" href="articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -77,142 +74,161 @@
 <!-- badges: start -->
 
 <blockquote>
-<p><strong>Analyse systémique de territoires forestiers selon la méthode Nemeton</strong></p>
+<p><strong>Analyse systemique de territoires forestiers selon la methode Nemeton</strong></p>
 </blockquote>
-<p><code>nemeton</code> est un package R pour l’analyse intégrée d’écosystèmes forestiers. Il calcule, normalise et visualise des <strong>indicateurs biophysiques multi-famille</strong> pour la gestion forestière durable.</p>
+<p><code>nemeton</code> est le package R coeur pour l’analyse integree d’ecosystemes forestiers. Il calcule, normalise et visualise des <strong>indicateurs biophysiques multi-famille</strong> pour la gestion forestiere durable.</p>
 <div class="section level2">
-<h2 id="fonctionnalités">Fonctionnalités<a class="anchor" aria-label="anchor" href="#fonctionnalit%C3%A9s"></a>
+<h2 id="architecture-adr-009">Architecture (ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-adr-009"></a>
 </h2>
-<p><strong>12 familles d’indicateurs</strong> avec 31 sous-indicateurs :</p>
+<pre><code>nemeton (ce repo)       -&gt; Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
+nemetonShiny            -&gt; Application Shiny (EUPL v1.2). Interface web interactive.
+tree_sat_nemeton        -&gt; Classification d'essences Sentinel-1/2. NDP 0. MIT.
+maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.</code></pre>
+</div>
+<div class="section level2">
+<h2 id="fonctionnalites">Fonctionnalites<a class="anchor" aria-label="anchor" href="#fonctionnalites"></a>
+</h2>
+<p><strong>12 familles d’indicateurs</strong> avec 31 sous-indicateurs (convention NMT) :</p>
 <table class="table">
+<colgroup>
+<col width="21%">
+<col width="32%">
+<col width="46%">
+</colgroup>
 <thead><tr class="header">
+<th>Code</th>
 <th>Famille</th>
-<th>Description</th>
 <th>Indicateurs</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><strong>C</strong></td>
-<td>Carbone &amp; Vitalité</td>
-<td>C1-C2</td>
+<td><strong>B</strong></td>
+<td>Biodiversite</td>
+<td>indicateur_b1_protection, b2_structure, b3_connectivite</td>
 </tr>
 <tr class="even">
-<td><strong>B</strong></td>
-<td>Biodiversité</td>
-<td>B1-B3</td>
+<td><strong>C</strong></td>
+<td>Carbone &amp; Vitalite</td>
+<td>indicateur_c1_biomasse, c2_ndvi</td>
 </tr>
 <tr class="odd">
 <td><strong>W</strong></td>
-<td>Eau &amp; Régulation</td>
-<td>W1-W3</td>
+<td>Eau &amp; Regulation</td>
+<td>indicateur_w1_reseau, w2_zones_humides, w3_humidite</td>
 </tr>
 <tr class="even">
 <td><strong>A</strong></td>
 <td>Air &amp; Microclimat</td>
-<td>A1-A2</td>
+<td>indicateur_a1_couverture, a2_qualite_air</td>
 </tr>
 <tr class="odd">
 <td><strong>F</strong></td>
-<td>Fertilité Sols</td>
-<td>F1-F2</td>
+<td>Fertilite Sols</td>
+<td>indicateur_f1_fertilite, f2_erosion</td>
 </tr>
 <tr class="even">
 <td><strong>L</strong></td>
 <td>Paysage</td>
-<td>L1-L2</td>
+<td>indicateur_l1_sylvosphere, l2_fragmentation</td>
 </tr>
 <tr class="odd">
 <td><strong>T</strong></td>
 <td>Temporel</td>
-<td>T1-T2</td>
+<td>indicateur_t1_anciennete, t2_changement</td>
 </tr>
 <tr class="even">
 <td><strong>R</strong></td>
-<td>Risques &amp; Résilience</td>
-<td>R1-R3</td>
+<td>Risques &amp; Resilience</td>
+<td>indicateur_r1_feu, r2_tempete, r3_secheresse, r4_abroutissement</td>
 </tr>
 <tr class="odd">
 <td><strong>S</strong></td>
 <td>Social &amp; Usages</td>
-<td>S1-S3</td>
+<td>indicateur_s1_routes, s2_bati, s3_population</td>
 </tr>
 <tr class="even">
 <td><strong>P</strong></td>
-<td>Production &amp; Économie</td>
-<td>P1-P3</td>
+<td>Production &amp; Economie</td>
+<td>indicateur_p1_volume, p2_station, p3_qualite_bois</td>
 </tr>
 <tr class="odd">
 <td><strong>E</strong></td>
-<td>Énergie &amp; Climat</td>
-<td>E1-E2</td>
+<td>Energie &amp; Climat</td>
+<td>indicateur_e1_bois_energie, e2_evitement</td>
 </tr>
 <tr class="even">
 <td><strong>N</strong></td>
-<td>Naturalité</td>
-<td>N1-N3</td>
+<td>Naturalite</td>
+<td>indicateur_n1_distance, n2_continuite, n3_naturalite</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Outils d’analyse</strong> : Pareto, clustering, trade-offs, radar 12-axes, corrélations.</p>
+<p><strong>Systeme NDP</strong> (Niveau De Precision) : ponderation Fibonacci (1,1,2,3,5), confiance phi.</p>
+<p><strong>11 essences forestieres</strong> par region biogeographique (BFC, EU).</p>
+<p><strong>Outils d’analyse</strong> : Pareto, clustering, trade-offs, radar 12-axes, correlations.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemeton"</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Prérequis</strong> : R &gt;= 4.1.0, <code>sf</code>, <code>terra</code>, <code>ggplot2</code></p>
+<p><strong>Prerequis</strong> : R &gt;= 4.1.0, <code>sf</code>, <code>terra</code>, <code>ggplot2</code></p>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Charger le dataset de démonstration (20 parcelles, 12 familles)</span></span>
+<span><span class="co"># Charger le dataset de demonstration (20 parcelles, 12 familles)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Visualiser le profil radar d'une parcelle</span></span>
-<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, unit_id <span class="op">=</span> <span class="fl">1</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/readme-radar.png" width="100%"></p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Identifier les parcelles Pareto-optimales</span></span>
-<span><span class="va">pareto</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/identify_pareto_optimal.html">identify_pareto_optimal</a></span><span class="op">(</span></span>
-<span>  <span class="va">massif_demo_units</span>,</span>
-<span>  objectives <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span><span class="op">)</span>,</span>
-<span>  maximize <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">massif_demo_units</span>, unit_id <span class="op">=</span> <span class="fl">1</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Trade-offs avec frontière de Pareto</span></span>
-<span><span class="fu"><a href="reference/plot_tradeoff.html">plot_tradeoff</a></span><span class="op">(</span><span class="va">pareto</span>, x <span class="op">=</span> <span class="st">"family_C"</span>, y <span class="op">=</span> <span class="st">"family_B"</span>, pareto_frontier <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/readme-tradeoff.png" width="100%"></p>
+<span><span class="co"># Systeme NDP</span></span>
+<span><span class="fu"><a href="reference/ndp_table.html">ndp_table</a></span><span class="op">(</span><span class="op">)</span>                        <span class="co"># 5 niveaux de precision</span></span>
+<span><span class="fu"><a href="reference/get_ndp_confidence.html">get_ndp_confidence</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>              <span class="co"># 16.7% pour NDP 1 (Observation)</span></span>
+<span></span>
+<span><span class="co"># Configuration des essences</span></span>
+<span><span class="fu"><a href="reference/list_species_classes.html">list_species_classes</a></span><span class="op">(</span><span class="st">"BFC"</span><span class="op">)</span>        <span class="co"># 11 classes pour la BFC</span></span>
+<span><span class="fu"><a href="reference/map_bdforet_essence.html">map_bdforet_essence</a></span><span class="op">(</span><span class="st">"Hetre"</span><span class="op">)</span>       <span class="co"># "essence_hetraie"</span></span>
+<span></span>
+<span><span class="co"># Sources de donnees par pays</span></span>
+<span><span class="fu"><a href="reference/get_data_source.html">get_data_source</a></span><span class="op">(</span><span class="st">"dem"</span>, <span class="st">"FR"</span><span class="op">)</span>       <span class="co"># config MNT IGN</span></span>
+<span><span class="fu"><a href="reference/list_countries.html">list_countries</a></span><span class="op">(</span><span class="op">)</span>                   <span class="co"># c("EU", "FR")</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="application-interactive-nemetonapp">Application Interactive (nemetonApp)<a class="anchor" aria-label="anchor" href="#application-interactive-nemetonapp"></a>
+<h2 id="application-interactive-nemetonshiny">Application Interactive (nemetonShiny)<a class="anchor" aria-label="anchor" href="#application-interactive-nemetonshiny"></a>
 </h2>
-<p>Pour une utilisation sans code, lancez l’application Shiny :</p>
+<p>L’application Shiny est dans un package separe :</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/run_app.html">run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Installer l'application</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"pobsteta/nemeton_shiny"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Lancer</span></span>
+<span><span class="fu">nemetonShiny</span><span class="fu">::</span><span class="fu">run_app</span><span class="op">(</span>language <span class="op">=</span> <span class="st">"fr"</span><span class="op">)</span></span></code></pre></div>
 <p>L’application permet de :</p>
 <ul>
-<li>Rechercher et sélectionner des parcelles cadastrales par commune</li>
+<li>Rechercher et selectionner des parcelles cadastrales par commune</li>
 <li>Calculer automatiquement les 31 indicateurs (12 familles)</li>
-<li>Visualiser les résultats (radar, cartes, histogrammes)</li>
-<li>Exporter en PDF ou GeoPackage (auto-sauvegarde dans <code>exports/</code>)</li>
-<li>Commenter chaque famille avec assistance IA (ellmer)</li>
-<li>Consulter les profils d’experts personnalisables (YAML)</li>
+<li>Visualiser les resultats (radar avec NDP, cartes, tableaux)</li>
+<li>Generer des perspectives IA par profil d’acteur (18 profils)</li>
+<li>Exporter en PDF ou GeoPackage</li>
+<li>Synchroniser avec PostGIS (Clever Cloud)</li>
+<li>S’authentifier via OAuth2/OIDC (Keycloak, AgentConnect)</li>
 </ul>
-<p><img src="reference/figures/nemeton-app.gif" width="100%"></p>
+<p>Repository : <a href="https://github.com/pobsteta/nemeton_shiny" class="external-link">pobsteta/nemeton_shiny</a></p>
 </div>
 <div class="section level2">
-<h2 id="workflow-avec-vos-données">Workflow avec vos données<a class="anchor" aria-label="anchor" href="#workflow-avec-vos-donn%C3%A9es"></a>
+<h2 id="workflow-avec-vos-donnees">Workflow avec vos donnees<a class="anchor" aria-label="anchor" href="#workflow-avec-vos-donnees"></a>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Créer les unités d'analyse</span></span>
+<span><span class="co"># 1. Creer les unites d'analyse</span></span>
 <span><span class="va">units</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_units.html">nemeton_units</a></span><span class="op">(</span><span class="st">"parcelles.gpkg"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 2. Cataloguer les couches spatiales</span></span>
@@ -224,46 +240,38 @@
 <span><span class="co"># 3. Calculer les indicateurs</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nemeton_compute.html">nemeton_compute</a></span><span class="op">(</span><span class="va">units</span>, <span class="va">layers</span>, indicators <span class="op">=</span> <span class="st">"all"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Normaliser (échelle 0-100)</span></span>
+<span><span class="co"># 4. Normaliser (echelle 0-100)</span></span>
 <span><span class="va">normalized</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/normalize_indicators.html">normalize_indicators</a></span><span class="op">(</span><span class="va">results</span>, method <span class="op">=</span> <span class="st">"minmax"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 5. Créer un indice composite</span></span>
-<span><span class="va">health</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
-<span>  <span class="va">normalized</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"carbon_norm"</span>, <span class="st">"biodiversity_norm"</span>, <span class="st">"water_norm"</span><span class="op">)</span>,</span>
-<span>  name <span class="op">=</span> <span class="st">"ecosystem_health"</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># 5. Creer les indices par famille</span></span>
+<span><span class="va">families</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_family_index.html">create_family_index</a></span><span class="op">(</span><span class="va">normalized</span>, method <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. Visualiser</span></span>
-<span><span class="fu"><a href="reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">health</span>, indicators <span class="op">=</span> <span class="st">"ecosystem_health"</span>, palette <span class="op">=</span> <span class="st">"RdYlGn"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># 6. Visualiser le radar</span></span>
+<span><span class="fu"><a href="reference/nemeton_radar.html">nemeton_radar</a></span><span class="op">(</span><span class="va">families</span>, mode <span class="op">=</span> <span class="st">"family"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
+<p>Site pkgdown : <a href="https://pobsteta.github.io/nemeton/">pobsteta.github.io/nemeton</a></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Vignettes</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"getting-started_fr"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"nemetonapp-guide_fr"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"indicator-families_fr"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"temporal-analysis_fr"</span>, package <span class="op">=</span> <span class="st">"nemeton"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Aide</span></span>
-<span><span class="op">?</span><span class="va">nemeton_compute</span></span>
+<code class="sourceCode R"><span><span class="op">?</span><span class="va">nemeton_compute</span></span>
 <span><span class="op">?</span><span class="va">create_family_index</span></span>
-<span><span class="op">?</span><span class="va">run_app</span></span></code></pre></div>
+<span><span class="op">?</span><span class="va">ndp_table</span></span>
+<span><span class="op">?</span><span class="va">get_species_config</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="licence">Licence<a class="anchor" aria-label="anchor" href="#licence"></a>
 </h2>
 <p>MIT - Voir <a href="LICENSE">LICENSE</a></p>
+<p>L’application Shiny (<a href="https://github.com/pobsteta/nemeton_shiny" class="external-link">nemetonShiny</a>) est sous EUPL v1.2.</p>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <pre><code>Obstetar, P. (2026). nemeton: Systemic Forest Analysis Using the Nemeton Method.
-R package version 0.13.0. https://github.com/pobsteta/nemeton</code></pre>
+R package version 0.15.0. https://github.com/pobsteta/nemeton</code></pre>
 <hr>
-<p><strong>Developpe avec</strong> ❤️ <strong>et</strong> <a href="https://claude.com/claude-code" class="external-link">Claude Code</a></p>
+<p><strong>Developpe avec</strong> <a href="https://claude.com/claude-code" class="external-link">Claude Code</a></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -272,6 +280,7 @@ R package version 0.13.0. https://github.com/pobsteta/nemeton</code></pre>
 <li><a href="https://github.com/pobsteta/nemeton/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/pobsteta/nemeton/issues" class="external-link">Report a bug</a></li>
 <li><a href="https://github.com/pobsteta/nemeton" class="external-link">Voir sur GitHub</a></li>
+<li><a href="https://github.com/pobsteta/nemeton_shiny" class="external-link">Application Shiny (nemetonShiny)</a></li>
 </ul>
 </div>
 
@@ -294,8 +303,7 @@ R package version 0.13.0. https://github.com/pobsteta/nemeton</code></pre>
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>
-<a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a> <br><small class="roles"> Author, maintainer </small>   </li>
+<li>Pascal Obstétar <br><small class="roles"> Author, maintainer </small>   </li>
 </ul>
 </div>
 
@@ -303,10 +311,9 @@ R package version 0.13.0. https://github.com/pobsteta/nemeton</code></pre>
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/pobsteta/nemeton/actions/workflows/r.yml" class="external-link"><img src="https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://github.com/pobsteta/nemeton/releases/tag/v0.14.1" class="external-link"><img src="https://img.shields.io/badge/version-0.14.1-blue.svg?logo=github" alt="Version"></a></li>
+<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/version-0.15.1-blue.svg?logo=github" alt="Version"></a></li>
 <li><a href="https://pobsteta.github.io/nemeton/"><img src="https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
-<li><a href="https://github.com/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/tests-13000%2B%20passing-success.svg?logo=github-actions" alt="Tests"></a></li>
-<li><a href="https://app.codecov.io/gh/pobsteta/nemeton" class="external-link"><img src="https://img.shields.io/badge/codecov-80%25-brightgreen.svg?logo=codecov" alt="codecov"></a></li>
+<li><a href="https://codecov.io/gh/pobsteta/nemeton" class="external-link"><img src="https://codecov.io/gh/pobsteta/nemeton/graph/badge.svg" alt="codecov"></a></li>
 <li><a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative" alt="License: MIT"></a></li>
 </ul>
 </div>
@@ -316,7 +323,7 @@ R package version 0.13.0. https://github.com/pobsteta/nemeton</code></pre>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

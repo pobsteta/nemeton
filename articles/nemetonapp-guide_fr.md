@@ -144,9 +144,7 @@ generate_report_pdf(..., use_quarto = FALSE)
 
 ## Voir aussi
 
-- [`?run_app`](https://pobsteta.github.io/nemeton/reference/run_app.md) -
-  Documentation de la fonction de lancement
-- [`?generate_report_pdf`](https://pobsteta.github.io/nemeton/reference/generate_report_pdf.md) -
-  Documentation de l’export PDF
+- `?run_app` - Documentation de la fonction de lancement
+- `?generate_report_pdf` - Documentation de l’export PDF
 - [Site pkgdown](https://pobsteta.github.io/nemeton/) - Documentation
   complète

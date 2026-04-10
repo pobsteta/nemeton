@@ -111,31 +111,31 @@ See the vignettes for comprehensive guides:
 - [`nemeton_compute`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md) -
   Compute biophysical indicators
 
-- [`indicator_carbon_biomass`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md) -
+- [`indicateur_c1_biomasse`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md) -
   Carbon stock (C1)
 
-- [`indicator_carbon_ndvi`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md) -
+- [`indicateur_c2_ndvi`](https://pobsteta.github.io/nemeton/reference/indicateur_c2_ndvi.md) -
   Vegetation vitality (C2)
 
-- [`indicator_water_network`](https://pobsteta.github.io/nemeton/reference/indicator_water_network.md) -
+- [`indicateur_w1_reseau`](https://pobsteta.github.io/nemeton/reference/indicateur_w1_reseau.md) -
   Hydrographic density (W1)
 
-- [`indicator_water_wetlands`](https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.md) -
+- [`indicateur_w2_zones_humides`](https://pobsteta.github.io/nemeton/reference/indicateur_w2_zones_humides.md) -
   Wetland coverage (W2)
 
-- [`indicator_water_twi`](https://pobsteta.github.io/nemeton/reference/indicator_water_twi.md) -
+- [`indicateur_w3_humidite`](https://pobsteta.github.io/nemeton/reference/indicateur_w3_humidite.md) -
   Topographic Wetness Index (W3)
 
-- [`indicator_soil_fertility`](https://pobsteta.github.io/nemeton/reference/indicator_soil_fertility.md) -
+- [`indicateur_f1_fertilite`](https://pobsteta.github.io/nemeton/reference/indicateur_f1_fertilite.md) -
   Soil fertility (F1)
 
-- [`indicator_soil_erosion`](https://pobsteta.github.io/nemeton/reference/indicator_soil_erosion.md) -
+- [`indicateur_f2_erosion`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md) -
   Erosion risk (F2)
 
-- [`indicator_landscape_fragmentation`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md) -
+- [`indicateur_l2_fragmentation`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md) -
   Fragmentation (L1)
 
-- [`indicator_landscape_edge`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md) -
+- [`indicateur_l1_sylvosphere`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md) -
   Edge ratio (L2)
 
 **Temporal Analysis:**

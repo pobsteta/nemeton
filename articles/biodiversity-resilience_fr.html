@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,16 +38,13 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
+<li><a class="dropdown-item" href="../articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -73,7 +70,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-02-19</h4>
+            <h4 data-toc-skip class="date">2026-04-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/biodiversity-resilience_fr.Rmd" class="external-link"><code>vignettes/biodiversity-resilience_fr.Rmd</code></a></small>
       <div class="d-none name"><code>biodiversity-resilience_fr.Rmd</code></div>
@@ -91,7 +88,7 @@ vignette démontre l’utilisation des <strong>10 indicateurs</strong>
 (B1-B3, R1-R3, T1-T2, A1-A2) et leur intégration dans des workflows
 multi-familles.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
@@ -154,10 +151,9 @@ indicateurs.</p>
 <p>L’indicateur <strong>B1</strong> calcule le pourcentage de surface en
 zones de protection.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_protection.html">indicator_biodiversity_protection</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicateur_b1_protection.html">indicateur_b1_protection</a></span><span class="op">(</span></span>
 <span>  <span class="va">units</span>,</span>
-<span>  protected_areas <span class="op">=</span> <span class="va">protected_areas</span>,</span>
-<span>  source <span class="op">=</span> <span class="st">"local"</span></span>
+<span>  protected_areas <span class="op">=</span> <span class="va">protected_areas</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">B1</span><span class="op">)</span></span>
@@ -172,7 +168,7 @@ bénéficient d’une protection significative.</p>
 <p>L’indicateur <strong>B2</strong> mesure la diversité de Shannon à
 travers les strates, âges et essences.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_structure.html">indicator_biodiversity_structure</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicateur_b2_structure.html">indicateur_b2_structure</a></span><span class="op">(</span></span>
 <span>  <span class="va">result</span>,</span>
 <span>  strata_field <span class="op">=</span> <span class="st">"strata"</span>,</span>
 <span>  age_class_field <span class="op">=</span> <span class="st">"age_class"</span>,</span>
@@ -193,7 +189,7 @@ travers les strates, âges et essences.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># B3 utilise la BD Forêt pour calculer la connectivité</span></span>
 <span><span class="co"># Sans données réelles, la fonction retourne une valeur par défaut</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicator_biodiversity_connectivity.html">indicator_biodiversity_connectivity</a></span><span class="op">(</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/indicateur_b3_connectivite.html">indicateur_b3_connectivite</a></span><span class="op">(</span></span>
 <span>  <span class="va">result</span>,</span>
 <span>  bdforet <span class="op">=</span> <span class="cn">NULL</span>,  <span class="co"># En production: charger depuis layers</span></span>
 <span>  max_distance <span class="op">=</span> <span class="fl">3000</span></span>
@@ -213,10 +209,10 @@ travers les strates, âges et essences.</p>
 <p>Les indicateurs de risque évaluent les vulnérabilités aux
 perturbations. <em>Note: Dans cette vignette, nous simulons les valeurs.
 Pour un usage réel, utilisez les fonctions
-<code><a href="../reference/indicator_risk_fire.html">indicator_risk_fire()</a></code>, <code><a href="../reference/indicator_risk_storm.html">indicator_risk_storm()</a></code>,
-<code><a href="../reference/indicator_risk_drought.html">indicator_risk_drought()</a></code> et
-<code><a href="../reference/indicator_risk_browsing.html">indicator_risk_browsing()</a></code> avec des données DEM, climatiques
-et BD Forêt.</em></p>
+<code><a href="../reference/indicateur_r1_feu.html">indicateur_r1_feu()</a></code>, <code><a href="../reference/indicateur_r2_tempete.html">indicateur_r2_tempete()</a></code>,
+<code><a href="../reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code> et
+<code><a href="../reference/indicateur_r4_abroutissement.html">indicateur_r4_abroutissement()</a></code> avec des données DEM,
+climatiques et BD Forêt.</em></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulation des indicateurs de risque</span></span>
 <span><span class="co"># (Dans un cas réel, utiliser les fonctions avec DEM et données climatiques)</span></span>
@@ -269,7 +265,7 @@ et BD Forêt.</em></p>
 <h3 id="t2-changements-doccupation">T2 : Changements d’occupation<a class="anchor" aria-label="anchor" href="#t2-changements-doccupation"></a>
 </h3>
 <p>L’indicateur <strong>T2</strong> détecte les transformations.
-<em>Note: Utiliser <code><a href="../reference/indicator_temporal_change.html">indicator_temporal_change()</a></code> avec des
+<em>Note: Utiliser <code><a href="../reference/indicateur_t2_changement.html">indicateur_t2_changement()</a></code> avec des
 rasters Corine Land Cover multi-dates pour un usage réel.</em></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulation de taux de changement (%/an)</span></span>
@@ -290,8 +286,8 @@ rasters Corine Land Cover multi-dates pour un usage réel.</em></p>
 </h3>
 <p>L’indicateur <strong>A1</strong> mesure le % de couverture arborée
 dans un buffer de 1km. <em>Note: Utiliser
-<code><a href="../reference/indicator_air_coverage.html">indicator_air_coverage()</a></code> avec un raster de végétation pour
-un usage réel.</em></p>
+<code><a href="../reference/indicateur_a1_couverture.html">indicateur_a1_couverture()</a></code> avec un raster de végétation
+pour un usage réel.</em></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulation de couverture dans buffer 1km</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">45</span><span class="op">)</span></span>
@@ -304,8 +300,8 @@ un usage réel.</em></p>
 <h3 id="a2-qualité-de-lair">A2 : Qualité de l’air<a class="anchor" aria-label="anchor" href="#a2-qualit%C3%A9-de-lair"></a>
 </h3>
 <p>L’indicateur <strong>A2</strong> évalue la qualité de l’air.
-<em>Note: Utiliser <code><a href="../reference/indicator_air_quality.html">indicator_air_quality()</a></code> avec des données
-ATMO ou sources de pollution pour un usage réel.</em></p>
+<em>Note: Utiliser <code><a href="../reference/indicateur_a2_qualite_air.html">indicateur_a2_qualite_air()</a></code> avec des
+données ATMO ou sources de pollution pour un usage réel.</em></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulation d'indice qualité air</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">46</span><span class="op">)</span></span>
@@ -341,15 +337,15 @@ famille.</p>
 <span><span class="co"># Afficher les indices par famille</span></span>
 <span><span class="va">result_norm</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_B</span>, <span class="va">family_R</span>, <span class="va">family_T</span>, <span class="va">family_A</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">famille_biodiversite</span>, <span class="va">famille_risque</span>, <span class="va">famille_temporel</span>, <span class="va">famille_air</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   parcel_id family_B family_R family_T family_A</span></span>
-<span><span class="co">#&gt; 1       P01 31.22326 70.33977 61.29032 50.00000</span></span>
-<span><span class="co">#&gt; 2       P02 63.53333 48.24446 17.62303 28.71851</span></span>
-<span><span class="co">#&gt; 3       P03 30.00000 53.02653 44.71207 44.90653</span></span>
-<span><span class="co">#&gt; 4       P04 10.00000 16.61201 62.47047 40.25588</span></span>
-<span><span class="co">#&gt; 5       P05 16.66667 26.45295 11.29032 30.80376</span></span>
-<span><span class="co">#&gt; 6       P06 23.33333 48.35630 41.69098 54.08198</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id famille_biodiversite famille_risque famille_temporel famille_air</span></span>
+<span><span class="co">#&gt; 1       P01             31.22326       70.33977         61.29032    50.00000</span></span>
+<span><span class="co">#&gt; 2       P02             63.53333       48.24446         17.62303    28.71851</span></span>
+<span><span class="co">#&gt; 3       P03             30.00000       53.02653         44.71207    44.90653</span></span>
+<span><span class="co">#&gt; 4       P04             10.00000       16.61201         62.47047    40.25588</span></span>
+<span><span class="co">#&gt; 5       P05             16.66667       26.45295         11.29032    30.80376</span></span>
+<span><span class="co">#&gt; 6       P06             23.33333       48.35630         41.69098    54.08198</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="agrégation-conservative-méthode-min">Agrégation conservative (méthode “min”)<a class="anchor" aria-label="anchor" href="#agr%C3%A9gation-conservative-m%C3%A9thode-min"></a>
@@ -367,20 +363,20 @@ cas) :</p>
 <span><span class="co"># Comparer méthodes "mean" vs "min"</span></span>
 <span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="va">result_norm</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">R4_norm</span>, <span class="va">family_R</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">R4_norm</span>, <span class="va">famille_risque</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    risk_min <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">R4_norm</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">comparison</span></span>
-<span><span class="co">#&gt;   parcel_id   R1_norm   R2_norm   R3_norm    R4_norm family_R  risk_min</span></span>
-<span><span class="co">#&gt; 1       P01 28.205045  53.15405 100.00000 100.000000 70.33977 28.205045</span></span>
-<span><span class="co">#&gt; 2       P02 67.956914  21.54089  90.57869  12.901354 48.24446 12.901354</span></span>
-<span><span class="co">#&gt; 3       P03  1.120893 100.00000  16.42606  94.559155 53.02653  1.120893</span></span>
-<span><span class="co">#&gt; 4       P04 48.780961  17.66709   0.00000   0.000000 16.61201  0.000000</span></span>
-<span><span class="co">#&gt; 5       P05 12.187465  55.34306  36.88004   1.401253 26.45295  1.401253</span></span>
-<span><span class="co">#&gt; 6       P06 33.620254  77.29592  15.35528  67.153735 48.35630 15.355282</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id   R1_norm   R2_norm   R3_norm    R4_norm famille_risque  risk_min</span></span>
+<span><span class="co">#&gt; 1       P01 28.205045  53.15405 100.00000 100.000000       70.33977 28.205045</span></span>
+<span><span class="co">#&gt; 2       P02 67.956914  21.54089  90.57869  12.901354       48.24446 12.901354</span></span>
+<span><span class="co">#&gt; 3       P03  1.120893 100.00000  16.42606  94.559155       53.02653  1.120893</span></span>
+<span><span class="co">#&gt; 4       P04 48.780961  17.66709   0.00000   0.000000       16.61201  0.000000</span></span>
+<span><span class="co">#&gt; 5       P05 12.187465  55.34306  36.88004   1.401253       26.45295  1.401253</span></span>
+<span><span class="co">#&gt; 6       P06 33.620254  77.29592  15.35528  67.153735       48.35630 15.355282</span></span></code></pre></div>
 <p><strong>Interprétation</strong> : La méthode “min” identifie le
 facteur limitant (risque le plus élevé).</p>
 </div>
@@ -465,8 +461,8 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <p>Identifier les forêts anciennes à haute valeur écologique :</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hotspots_bio</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">family_B</span> <span class="op">&gt;</span> <span class="fl">60</span>, <span class="va">T1</span> <span class="op">&gt;</span> <span class="fl">100</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">family_B</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">famille_biodiversite</span> <span class="op">&gt;</span> <span class="fl">60</span>, <span class="va">T1</span> <span class="op">&gt;</span> <span class="fl">100</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">famille_biodiversite</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Forêts anciennes à haute biodiversité :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hotspots_bio</span><span class="op">)</span>, <span class="st">"parcelles\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Forêts anciennes à haute biodiversité : 1 parcelles</span></span>
@@ -475,11 +471,11 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">hotspots_bio</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">hotspots_bio</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">family_B</span>, <span class="va">T1</span>, <span class="va">family_R</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">famille_biodiversite</span>, <span class="va">T1</span>, <span class="va">famille_risque</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   parcel_id family_B  T1 family_R</span></span>
-<span><span class="co">#&gt; 1       P07     70.2 150 53.99158</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id famille_biodiversite  T1 famille_risque</span></span>
+<span><span class="co">#&gt; 1       P07                 70.2 150       53.99158</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="parcelles-vulnérables-multi-risques">Parcelles vulnérables multi-risques<a class="anchor" aria-label="anchor" href="#parcelles-vuln%C3%A9rables-multi-risques"></a>
@@ -500,14 +496,14 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">multi_risques</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">multi_risques</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">R4_norm</span>, <span class="va">nb_risques</span>, <span class="va">family_R</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">R1_norm</span>, <span class="va">R2_norm</span>, <span class="va">R3_norm</span>, <span class="va">R4_norm</span>, <span class="va">nb_risques</span>, <span class="va">famille_risque</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   parcel_id   R1_norm   R2_norm   R3_norm   R4_norm nb_risques family_R</span></span>
-<span><span class="co">#&gt; 1       P01 28.205045  53.15405 100.00000 100.00000          2 70.33977</span></span>
-<span><span class="co">#&gt; 2       P02 67.956914  21.54089  90.57869  12.90135          2 48.24446</span></span>
-<span><span class="co">#&gt; 3       P03  1.120893 100.00000  16.42606  94.55915          2 53.02653</span></span>
-<span><span class="co">#&gt; 4       P06 33.620254  77.29592  15.35528  67.15374          2 48.35630</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id   R1_norm   R2_norm   R3_norm   R4_norm nb_risques famille_risque</span></span>
+<span><span class="co">#&gt; 1       P01 28.205045  53.15405 100.00000 100.00000          2       70.33977</span></span>
+<span><span class="co">#&gt; 2       P02 67.956914  21.54089  90.57869  12.90135          2       48.24446</span></span>
+<span><span class="co">#&gt; 3       P03  1.120893 100.00000  16.42606  94.55915          2       53.02653</span></span>
+<span><span class="co">#&gt; 4       P06 33.620254  77.29592  15.35528  67.15374          2       48.35630</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="services-climatiques-urbains">Services climatiques urbains<a class="anchor" aria-label="anchor" href="#services-climatiques-urbains"></a>
@@ -516,7 +512,7 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">services_climat</span> <span class="op">&lt;-</span> <span class="va">result_complete</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">A1</span> <span class="op">&gt;</span> <span class="fl">70</span>, <span class="va">A2</span> <span class="op">&gt;</span> <span class="fl">70</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">family_A</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">famille_air</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Parcelles à fort potentiel climatique :"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">services_climat</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Parcelles à fort potentiel climatique : 1</span></span>
@@ -524,11 +520,11 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">services_climat</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">services_climat</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">A1</span>, <span class="va">A2</span>, <span class="va">family_A</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="va">A1</span>, <span class="va">A2</span>, <span class="va">famille_air</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   parcel_id       A1       A2 family_A</span></span>
-<span><span class="co">#&gt; 1       P08 70.51631 78.73541 70.51087</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id       A1       A2 famille_air</span></span>
+<span><span class="co">#&gt; 1       P08 70.51631 78.73541    70.51087</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -539,11 +535,11 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_bio</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>,</span>
-<span>  indicator <span class="op">=</span> <span class="st">"family_B"</span>,</span>
+<span>  indicator <span class="op">=</span> <span class="st">"famille_biodiversite"</span>,</span>
 <span>  palette <span class="op">=</span> <span class="st">"Greens"</span>, title <span class="op">=</span> <span class="st">"Biodiversité (B)"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">p_risk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>,</span>
-<span>  indicator <span class="op">=</span> <span class="st">"family_R"</span>,</span>
+<span>  indicator <span class="op">=</span> <span class="st">"famille_risque"</span>,</span>
 <span>  palette <span class="op">=</span> <span class="st">"YlOrRd"</span>, title <span class="op">=</span> <span class="st">"Risques (R)"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">p_temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>,</span>
@@ -551,7 +547,7 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span>  palette <span class="op">=</span> <span class="st">"Blues"</span>, title <span class="op">=</span> <span class="st">"Ancienneté (T1)"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">p_air</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_indicators_map.html">plot_indicators_map</a></span><span class="op">(</span><span class="va">result_complete</span>,</span>
-<span>  indicator <span class="op">=</span> <span class="st">"family_A"</span>,</span>
+<span>  indicator <span class="op">=</span> <span class="st">"famille_air"</span>,</span>
 <span>  palette <span class="op">=</span> <span class="st">"viridis"</span>, title <span class="op">=</span> <span class="st">"Air &amp; Climat (A)"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -569,29 +565,35 @@ haute biodiversité (famille B) mais forte vulnérabilité (famille R).</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
 <span>    <span class="va">parcel_id</span>,</span>
 <span>    <span class="co"># Biodiversité</span></span>
-<span>    <span class="va">B1</span>, <span class="va">B2</span>, <span class="va">B3</span>, <span class="va">family_B</span>,</span>
+<span>    <span class="va">B1</span>, <span class="va">B2</span>, <span class="va">B3</span>, <span class="va">famille_biodiversite</span>,</span>
 <span>    <span class="co"># Risques</span></span>
-<span>    <span class="va">R1</span>, <span class="va">R2</span>, <span class="va">R3</span>, <span class="va">R4</span>, <span class="va">family_R</span>,</span>
+<span>    <span class="va">R1</span>, <span class="va">R2</span>, <span class="va">R3</span>, <span class="va">R4</span>, <span class="va">famille_risque</span>,</span>
 <span>    <span class="co"># Temporel</span></span>
-<span>    <span class="va">T1</span>, <span class="va">T2</span>, <span class="va">family_T</span>,</span>
+<span>    <span class="va">T1</span>, <span class="va">T2</span>, <span class="va">famille_temporel</span>,</span>
 <span>    <span class="co"># Air</span></span>
-<span>    <span class="va">A1</span>, <span class="va">A2</span>, <span class="va">family_A</span></span>
+<span>    <span class="va">A1</span>, <span class="va">A2</span>, <span class="va">famille_air</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">summary_table</span></span>
-<span><span class="co">#&gt;   parcel_id        B1 B2 B3 family_B       R1       R2       R3       R4</span></span>
-<span><span class="co">#&gt; 1       P01  47.20474 85 50 31.22326 44.25188 47.07114 73.04010 64.02529</span></span>
-<span><span class="co">#&gt; 2       P02 100.00000 86 50 63.53333 65.53830 30.47225 68.09509 22.89638</span></span>
-<span><span class="co">#&gt; 3       P03   0.00000 87 50 30.00000 29.74880 71.66821 29.17421 61.45606</span></span>
-<span><span class="co">#&gt; 4       P04   0.00000 84 50 10.00000 55.26992 28.43826 20.55258 16.80423</span></span>
-<span><span class="co">#&gt; 5       P05   0.00000 85 50 16.66667 35.67475 48.22051 39.90999 17.46591</span></span>
-<span><span class="co">#&gt;   family_R  T1         T2 family_T       A1       A2 family_A</span></span>
-<span><span class="co">#&gt; 1 70.33977  80 18.5854441 61.29032 74.83550 62.37394 50.00000</span></span>
-<span><span class="co">#&gt; 2 48.24446  45  7.0717841 17.62303 57.46452 64.73451 28.71851</span></span>
-<span><span class="co">#&gt; 3 53.02653  80 12.6900074 44.71207 53.25070 78.35990 44.90653</span></span>
-<span><span class="co">#&gt; 4 16.61201 120 14.4165688 62.47047 60.81278 68.82518 40.25588</span></span>
-<span><span class="co">#&gt; 5 26.45295  80  0.8048135 11.29032 59.36794 64.32505 30.80376</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id        B1 B2 B3 famille_biodiversite       R1       R2       R3</span></span>
+<span><span class="co">#&gt; 1       P01  47.20474 85 50             31.22326 44.25188 47.07114 73.04010</span></span>
+<span><span class="co">#&gt; 2       P02 100.00000 86 50             63.53333 65.53830 30.47225 68.09509</span></span>
+<span><span class="co">#&gt; 3       P03   0.00000 87 50             30.00000 29.74880 71.66821 29.17421</span></span>
+<span><span class="co">#&gt; 4       P04   0.00000 84 50             10.00000 55.26992 28.43826 20.55258</span></span>
+<span><span class="co">#&gt; 5       P05   0.00000 85 50             16.66667 35.67475 48.22051 39.90999</span></span>
+<span><span class="co">#&gt;         R4 famille_risque  T1         T2 famille_temporel       A1       A2</span></span>
+<span><span class="co">#&gt; 1 64.02529       70.33977  80 18.5854441         61.29032 74.83550 62.37394</span></span>
+<span><span class="co">#&gt; 2 22.89638       48.24446  45  7.0717841         17.62303 57.46452 64.73451</span></span>
+<span><span class="co">#&gt; 3 61.45606       53.02653  80 12.6900074         44.71207 53.25070 78.35990</span></span>
+<span><span class="co">#&gt; 4 16.80423       16.61201 120 14.4165688         62.47047 60.81278 68.82518</span></span>
+<span><span class="co">#&gt; 5 17.46591       26.45295  80  0.8048135         11.29032 59.36794 64.32505</span></span>
+<span><span class="co">#&gt;   famille_air</span></span>
+<span><span class="co">#&gt; 1    50.00000</span></span>
+<span><span class="co">#&gt; 2    28.71851</span></span>
+<span><span class="co">#&gt; 3    44.90653</span></span>
+<span><span class="co">#&gt; 4    40.25588</span></span>
+<span><span class="co">#&gt; 5    30.80376</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
@@ -611,7 +613,7 @@ risque</li>
 <li>Vignette “Familles d’indicateurs” : référentiel complet des 12
 familles</li>
 <li>Vignette “Analyse temporelle” : workflows multi-périodes</li>
-<li>Documentation API : <code><a href="../reference/indicator_biodiversity_protection.html">?indicator_biodiversity_protection</a></code>,
+<li>Documentation API : <code><a href="../reference/indicateur_b1_protection.html">?indicateur_b1_protection</a></code>,
 <code><a href="../reference/nemeton_radar.html">?nemeton_radar</a></code>, etc.</li>
 </ul>
 </div>
@@ -622,7 +624,7 @@ familles</li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

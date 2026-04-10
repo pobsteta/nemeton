@@ -24,7 +24,8 @@ identify_pareto_optimal(
 - objectives:
 
   Character vector of column names representing the objectives to
-  optimize (e.g., `c("family_C", "family_B", "family_P")`)
+  optimize (e.g.,
+  `c("famille_carbone", "famille_biodiversite", "famille_production")`)
 
 - maximize:
 
@@ -68,7 +69,7 @@ data("massif_demo_units")
 # Find parcels that are optimal for carbon, biodiversity, and production
 result <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "family_P"),
+  objectives = c("famille_carbone", "famille_biodiversite", "famille_production"),
   maximize = c(TRUE, TRUE, TRUE)
 )
 
@@ -78,13 +79,13 @@ sum(result$is_optimal)
 # Mixed objectives: maximize carbon and biodiversity, minimize fire risk
 result_mixed <- identify_pareto_optimal(
   massif_demo_units,
-  objectives = c("family_C", "family_B", "family_R"),
+  objectives = c("famille_carbone", "famille_biodiversite", "famille_risque"),
   maximize = c(TRUE, TRUE, FALSE)
 )
 
 # Visualize optimal parcels
 library(ggplot2)
-ggplot(result, aes(x = family_C, y = family_B, color = is_optimal)) +
+ggplot(result, aes(x = famille_carbone, y = famille_biodiversite, color = is_optimal)) +
   geom_point(size = 3) +
   scale_color_manual(values = c("gray", "red")) +
   labs(

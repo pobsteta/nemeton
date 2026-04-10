@@ -1,8 +1,8 @@
 # Package index
 
-## Gestion des données
+## Gestion des donnees
 
-Créer et gérer les unités spatiales et les couches
+Creer et gerer les unites spatiales et les couches
 
 - [`nemeton_units()`](https://pobsteta.github.io/nemeton/reference/nemeton_units.md)
   : Create nemeton_units object
@@ -22,84 +22,84 @@ Fonctions principales pour le calcul d’indicateurs
 - [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
   : List available indicators
 
-## Famille C : Carbone & Vitalité
+## Famille C : Carbone & Vitalite
 
-Stockage de carbone et vitalité de la végétation
+Stockage de carbone et vitalite de la vegetation
 
-- [`indicator_carbon_biomass()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_biomass.md)
+- [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md)
   : Carbon Stock via Biomass and Allometric Models (C1)
-- [`indicator_carbon_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicator_carbon_ndvi.md)
+- [`indicateur_c2_ndvi()`](https://pobsteta.github.io/nemeton/reference/indicateur_c2_ndvi.md)
   : NDVI Mean and Trend Analysis (C2)
 
-## Famille B : Biodiversité
+## Famille B : Biodiversite
 
-Protection, diversité structurelle et connectivité écologique
+Protection, diversite structurelle et connectivite ecologique
 
-- [`indicator_biodiversity_protection()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_protection.md)
+- [`indicateur_b1_protection()`](https://pobsteta.github.io/nemeton/reference/indicateur_b1_protection.md)
   : Calculate Protected Area Coverage (B1)
-- [`indicator_biodiversity_structure()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_structure.md)
+- [`indicateur_b2_structure()`](https://pobsteta.github.io/nemeton/reference/indicateur_b2_structure.md)
   : Calculate Structural Diversity (B2)
-- [`indicator_biodiversity_connectivity()`](https://pobsteta.github.io/nemeton/reference/indicator_biodiversity_connectivity.md)
+- [`indicateur_b3_connectivite()`](https://pobsteta.github.io/nemeton/reference/indicateur_b3_connectivite.md)
   : Calculate Ecological Connectivity (B3)
 
-## Famille W : Régulation de l’eau
+## Famille W : Regulation de l’eau
 
-Régulation hydrologique et zones humides
+Regulation hydrologique et zones humides
 
-- [`indicator_water_network()`](https://pobsteta.github.io/nemeton/reference/indicator_water_network.md)
+- [`indicateur_w1_reseau()`](https://pobsteta.github.io/nemeton/reference/indicateur_w1_reseau.md)
   : Hydrographic Network Density (W1)
-- [`indicator_water_wetlands()`](https://pobsteta.github.io/nemeton/reference/indicator_water_wetlands.md)
+- [`indicateur_w2_zones_humides()`](https://pobsteta.github.io/nemeton/reference/indicateur_w2_zones_humides.md)
   : Wetland Coverage (W2)
-- [`indicator_water_twi()`](https://pobsteta.github.io/nemeton/reference/indicator_water_twi.md)
+- [`indicateur_w3_humidite()`](https://pobsteta.github.io/nemeton/reference/indicateur_w3_humidite.md)
   : Topographic Wetness Index (W3)
 
 ## Famille A : Air & Microclimat
 
-Couverture arborée et qualité de l’air
+Couverture arboree et qualite de l’air
 
-- [`indicator_air_coverage()`](https://pobsteta.github.io/nemeton/reference/indicator_air_coverage.md)
+- [`indicateur_a1_couverture()`](https://pobsteta.github.io/nemeton/reference/indicateur_a1_couverture.md)
   : Calculate Tree Coverage Buffer Index (A1)
-- [`indicator_air_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_air_quality.md)
+- [`indicateur_a2_qualite_air()`](https://pobsteta.github.io/nemeton/reference/indicateur_a2_qualite_air.md)
   : Calculate Air Quality Index (A2)
 
-## Famille F : Fertilité des sols
+## Famille F : Fertilite des sols
 
-Qualité du sol et risque d’érosion
+Qualite du sol et risque d’erosion
 
-- [`indicator_soil_fertility()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_fertility.md)
+- [`indicateur_f1_fertilite()`](https://pobsteta.github.io/nemeton/reference/indicateur_f1_fertilite.md)
   : Soil Fertility Class (F1)
-- [`indicator_soil_erosion()`](https://pobsteta.github.io/nemeton/reference/indicator_soil_erosion.md)
+- [`indicateur_f2_erosion()`](https://pobsteta.github.io/nemeton/reference/indicateur_f2_erosion.md)
   : Soil Fertility Index (F2)
 
 ## Famille L : Paysage
 
-Structure du paysage et connectivité
+Structure du paysage et connectivite
 
-- [`indicator_landscape_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_fragmentation.md)
+- [`indicateur_l2_fragmentation()`](https://pobsteta.github.io/nemeton/reference/indicateur_l2_fragmentation.md)
   : Sylvosphere - Edge Effect (L1)
-- [`indicator_landscape_edge()`](https://pobsteta.github.io/nemeton/reference/indicator_landscape_edge.md)
+- [`indicateur_l1_sylvosphere()`](https://pobsteta.github.io/nemeton/reference/indicateur_l1_sylvosphere.md)
   : Landscape Fragmentation (L2)
 
 ## Famille T : Dynamique temporelle
 
-Ancienneté des peuplements et changements d’occupation
+Anciennete des peuplements et changements d’occupation
 
-- [`indicator_temporal_age()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_age.md)
+- [`indicateur_t1_anciennete()`](https://pobsteta.github.io/nemeton/reference/indicateur_t1_anciennete.md)
   : Calculate Stand Age Index (T1)
-- [`indicator_temporal_change()`](https://pobsteta.github.io/nemeton/reference/indicator_temporal_change.md)
+- [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
   : Calculate Stability / Change Rate Index (T2)
 
-## Famille R : Risques & Résilience
+## Famille R : Risques & Resilience
 
-Vulnérabilité aux incendies, tempêtes et sécheresse
+Vulnerabilite aux incendies, tempetes et secheresse
 
-- [`indicator_risk_fire()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_fire.md)
+- [`indicateur_r1_feu()`](https://pobsteta.github.io/nemeton/reference/indicateur_r1_feu.md)
   : Calculate Fire Risk Index (R1)
-- [`indicator_risk_storm()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_storm.md)
+- [`indicateur_r2_tempete()`](https://pobsteta.github.io/nemeton/reference/indicateur_r2_tempete.md)
   : Calculate Storm Vulnerability Index (R2)
-- [`indicator_risk_drought()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_drought.md)
+- [`indicateur_r3_secheresse()`](https://pobsteta.github.io/nemeton/reference/indicateur_r3_secheresse.md)
   : Calculate Drought Stress Index (R3)
-- [`indicator_risk_browsing()`](https://pobsteta.github.io/nemeton/reference/indicator_risk_browsing.md)
+- [`indicateur_r4_abroutissement()`](https://pobsteta.github.io/nemeton/reference/indicateur_r4_abroutissement.md)
   : Calculate Game Browsing Pressure Index (R4)
 - [`compute_game_pressure_index()`](https://pobsteta.github.io/nemeton/reference/compute_game_pressure_index.md)
   : Compute Game Browsing Pressure Index by Department
@@ -110,49 +110,106 @@ Vulnérabilité aux incendies, tempêtes et sécheresse
 
 ## Famille S : Social & Usages
 
-Densité de sentiers, accessibilité et proximité population
+Distance routes, distance bati et proximite population
 
-- [`indicator_social_trails()`](https://pobsteta.github.io/nemeton/reference/indicator_social_trails.md)
+- [`indicateur_s1_routes()`](https://pobsteta.github.io/nemeton/reference/indicateur_s1_routes.md)
   : S1: Distance to Roads Indicator
-- [`indicator_social_accessibility()`](https://pobsteta.github.io/nemeton/reference/indicator_social_accessibility.md)
+- [`indicateur_s2_bati()`](https://pobsteta.github.io/nemeton/reference/indicateur_s2_bati.md)
   : S2: Distance to Buildings Indicator
-- [`indicator_social_proximity()`](https://pobsteta.github.io/nemeton/reference/indicator_social_proximity.md)
+- [`indicateur_s3_population()`](https://pobsteta.github.io/nemeton/reference/indicateur_s3_population.md)
   : S3: Population Proximity Indicator
 
-## Famille P : Production & Économie
+## Famille P : Production & Economie
 
-Volume bois, productivité station et qualité bois d’œuvre
+Volume bois, productivite station et qualite bois d’oeuvre
 
-- [`indicator_productive_volume()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_volume.md)
+- [`indicateur_p1_volume()`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)
   : P1: Standing Timber Volume Indicator
-- [`indicator_productive_station()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_station.md)
+- [`indicateur_p2_station()`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md)
   : P2: Site Productivity Index Indicator
-- [`indicator_productive_quality()`](https://pobsteta.github.io/nemeton/reference/indicator_productive_quality.md)
+- [`indicateur_p3_qualite_bois()`](https://pobsteta.github.io/nemeton/reference/indicateur_p3_qualite_bois.md)
   : P3: Timber Quality Score Indicator
 
-## Famille E : Énergie & Climat
+## Famille E : Energie & Climat
 
-Potentiel bois-énergie et évitement carbone
+Potentiel bois-energie et evitement carbone
 
-- [`indicator_energy_fuelwood()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_fuelwood.md)
+- [`indicateur_e1_bois_energie()`](https://pobsteta.github.io/nemeton/reference/indicateur_e1_bois_energie.md)
   : E1: Fuelwood Potential Indicator
-- [`indicator_energy_avoidance()`](https://pobsteta.github.io/nemeton/reference/indicator_energy_avoidance.md)
+- [`indicateur_e2_evitement()`](https://pobsteta.github.io/nemeton/reference/indicateur_e2_evitement.md)
   : E2: Carbon Emission Avoidance Indicator
 
-## Famille N : Naturalité
+## Famille N : Naturalite
 
-Distance infrastructures, continuité forestière et indice wilderness
+Distance infrastructures, continuite forestiere et indice wilderness
 
-- [`indicator_naturalness_distance()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_distance.md)
+- [`indicateur_n1_distance()`](https://pobsteta.github.io/nemeton/reference/indicateur_n1_distance.md)
   : N1: Infrastructure Distance Indicator
-- [`indicator_naturalness_continuity()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_continuity.md)
+- [`indicateur_n2_continuite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.md)
   : N2: Forest Continuity Indicator
-- [`indicator_naturalness_composite()`](https://pobsteta.github.io/nemeton/reference/indicator_naturalness_composite.md)
+- [`indicateur_n3_naturalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_n3_naturalite.md)
   : N3: Composite Naturalness Index
+
+## Systeme NDP (Niveau De Precision)
+
+Ponderation Fibonacci et confiance phi
+
+- [`ndp_table()`](https://pobsteta.github.io/nemeton/reference/ndp_table.md)
+  : NDP levels as a data.frame
+- [`get_ndp_level()`](https://pobsteta.github.io/nemeton/reference/get_ndp_level.md)
+  : Get NDP level configuration
+- [`get_ndp_name()`](https://pobsteta.github.io/nemeton/reference/get_ndp_name.md)
+  : Get NDP level name
+- [`get_ndp_weight()`](https://pobsteta.github.io/nemeton/reference/get_ndp_weight.md)
+  : Get NDP Fibonacci weight
+- [`get_ndp_confidence()`](https://pobsteta.github.io/nemeton/reference/get_ndp_confidence.md)
+  : Get NDP confidence ratio
+- [`compute_general_index()`](https://pobsteta.github.io/nemeton/reference/compute_general_index.md)
+  : Compute Fibonacci-weighted general index
+- [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
+  : Compute general index with mixed NDP per indicator
+- [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  : Detect NDP level from data
+
+## Configuration essences (ADR-007)
+
+Classification d’essences par region biogeographique
+
+- [`get_species_config()`](https://pobsteta.github.io/nemeton/reference/get_species_config.md)
+  : Get species configuration for a region
+- [`list_species_classes()`](https://pobsteta.github.io/nemeton/reference/list_species_classes.md)
+  : Get species classes for a region
+- [`list_species_regions()`](https://pobsteta.github.io/nemeton/reference/list_species_regions.md)
+  : List available species regions
+- [`map_bdforet_essence()`](https://pobsteta.github.io/nemeton/reference/map_bdforet_essence.md)
+  : Map BD Foret essence to NMT species class
+- [`map_oso_class()`](https://pobsteta.github.io/nemeton/reference/map_oso_class.md)
+  : Map OSO class to possible NMT species classes
+- [`get_allometric_key()`](https://pobsteta.github.io/nemeton/reference/get_allometric_key.md)
+  : Get allometric key for a species class
+
+## Sources de donnees (ADR-002)
+
+Abstraction des sources par pays
+
+- [`get_country_config()`](https://pobsteta.github.io/nemeton/reference/get_country_config.md)
+  : Get country data source configuration
+- [`get_data_source()`](https://pobsteta.github.io/nemeton/reference/get_data_source.md)
+  : Get data source URL or configuration
+- [`get_layer_service()`](https://pobsteta.github.io/nemeton/reference/get_layer_service.md)
+  : Get service URL for a layer
+- [`get_national_crs()`](https://pobsteta.github.io/nemeton/reference/get_national_crs.md)
+  : Get national CRS for a country
+- [`get_metric_crs()`](https://pobsteta.github.io/nemeton/reference/get_metric_crs.md)
+  : Get metric CRS for a country
+- [`get_storage_crs()`](https://pobsteta.github.io/nemeton/reference/get_storage_crs.md)
+  : Get storage CRS (pan-European)
+- [`list_countries()`](https://pobsteta.github.io/nemeton/reference/list_countries.md)
+  : List available countries
 
 ## Analyse temporelle
 
-Analyse multi-périodes et détection de changements
+Analyse multi-periodes et detection de changements
 
 - [`nemeton_temporal()`](https://pobsteta.github.io/nemeton/reference/nemeton_temporal.md)
   : Create Multi-Period Temporal Dataset
@@ -161,7 +218,7 @@ Analyse multi-périodes et détection de changements
 
 ## Analyse inter-familles
 
-Corrélations et hotspots multi-critères
+Correlations et hotspots multi-criteres
 
 - [`compute_family_correlations()`](https://pobsteta.github.io/nemeton/reference/compute_family_correlations.md)
   : Compute Correlation Matrix Between Family Indices
@@ -170,7 +227,7 @@ Corrélations et hotspots multi-critères
 - [`plot_correlation_matrix()`](https://pobsteta.github.io/nemeton/reference/plot_correlation_matrix.md)
   : Plot Correlation Matrix Heatmap
 
-## Analyse multi-critères avancée
+## Analyse multi-criteres avancee
 
 Optimisation Pareto, clustering et trade-offs
 
@@ -181,12 +238,14 @@ Optimisation Pareto, clustering et trade-offs
 - [`plot_tradeoff()`](https://pobsteta.github.io/nemeton/reference/plot_tradeoff.md)
   : Plot Trade-off Analysis Between Two Objectives
 
-## Normalisation & Agrégation
+## Normalisation & Agregation
 
 Transformer et combiner les indicateurs
 
 - [`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md)
   : Normalize indicator values
+- [`normalize_indicator()`](https://pobsteta.github.io/nemeton/reference/normalize_indicator.md)
+  : Normalize a single indicator to 0-100 scale
 - [`create_composite_index()`](https://pobsteta.github.io/nemeton/reference/create_composite_index.md)
   : Create composite index from multiple indicators
 - [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
@@ -218,9 +277,15 @@ Support multi-langues
 - [`nemeton_set_language()`](https://pobsteta.github.io/nemeton/reference/nemeton_set_language.md)
   : Set language manually
 
-## Méthodes S3
+## Application Shiny
 
-Méthodes print et summary pour les objets nemeton
+L’application interactive est dans le package separe nemetonShiny.
+Installez-le avec remotes::install_github(“pobsteta/nemeton_shiny”) puis
+lancez nemetonShiny::run_app(language = “fr”).
+
+## Methodes S3
+
+Methodes print et summary pour les objets nemeton
 
 - [`print(`*`<nemeton_units>`*`)`](https://pobsteta.github.io/nemeton/reference/print.nemeton_units.md)
   : Print method for nemeton_units
@@ -235,15 +300,6 @@ Méthodes print et summary pour les objets nemeton
 - [`summary(`*`<nemeton_temporal>`*`)`](https://pobsteta.github.io/nemeton/reference/summary.nemeton_temporal.md)
   : Summary Method for nemeton_temporal Objects
 
-## Application Shiny
-
-Interface interactive nemetonApp
-
-- [`run_app()`](https://pobsteta.github.io/nemeton/reference/run_app.md)
-  : Launch the nemetonApp Shiny Application
-- [`generate_report_pdf()`](https://pobsteta.github.io/nemeton/reference/generate_report_pdf.md)
-  : Generate PDF report (main entry point)
-
 ## Documentation du package
 
 - [`nemeton-package`](https://pobsteta.github.io/nemeton/reference/nemeton-package.md)
@@ -252,23 +308,35 @@ Interface interactive nemetonApp
 
 ## Utilitaires
 
-Fonctions de traitement parallèle
+Fonctions de traitement parallele
 
 - [`smart_map()`](https://pobsteta.github.io/nemeton/reference/smart_map.md)
   : Smart Map with Adaptive Parallelization
 - [`smart_map_sf()`](https://pobsteta.github.io/nemeton/reference/smart_map_sf.md)
   : Smart Map for Spatial Data with Row Indices
-
-## Fonctions internes
-
-Fonctions d’aide internes (pour développeurs)
-
+- [`get_global_cache_dir()`](https://pobsteta.github.io/nemeton/reference/get_global_cache_dir.md)
+  : Get global shared cache directory
 - [`detect_indicator_family()`](https://pobsteta.github.io/nemeton/reference/detect_indicator_family.md)
   : Detect Indicator Family from Name
 - [`get_family_name()`](https://pobsteta.github.io/nemeton/reference/get_family_name.md)
   : Get Family Name from Code
+
+## Internal documentation
+
+Package-level and internal documentation pages
+
+- [`NDP_LEVELS`](https://pobsteta.github.io/nemeton/reference/NDP_LEVELS.md)
+  : NDP level definitions
+- [`ndp`](https://pobsteta.github.io/nemeton/reference/ndp.md) : NDP
+  System (Niveau De Precision)
+- [`datasources`](https://pobsteta.github.io/nemeton/reference/datasources.md)
+  : Data Source Configuration by Country
 - [`family-system`](https://pobsteta.github.io/nemeton/reference/family-system.md)
   : Multi-Family Indicator System
+- [`species-config`](https://pobsteta.github.io/nemeton/reference/species-config.md)
+  : Species Configuration by Region (ADR-007)
+- [`temporal`](https://pobsteta.github.io/nemeton/reference/temporal.md)
+  : Multi-Temporal Analysis Infrastructure
 - [`indicators-families`](https://pobsteta.github.io/nemeton/reference/indicators-families.md)
   : Indicator Family Functions - v0.2.0 Extension
 - [`indicators-energy`](https://pobsteta.github.io/nemeton/reference/indicators-energy.md)
@@ -279,5 +347,3 @@ Fonctions d’aide internes (pour développeurs)
   : Productive & Economic Services Indicators (Family P)
 - [`indicators-social`](https://pobsteta.github.io/nemeton/reference/indicators-social.md)
   : Social & Recreational Services Indicators (Family S)
-- [`temporal`](https://pobsteta.github.io/nemeton/reference/temporal.md)
-  : Multi-Temporal Analysis Infrastructure

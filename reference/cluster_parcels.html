@@ -11,7 +11,7 @@ with automatic optimal k determination via silhouette analysis."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,16 +22,13 @@ with automatic optimal k determination via silhouette analysis."><meta property=
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -70,7 +67,7 @@ with automatic optimal k determination via silhouette analysis.</p>
 
 <dt id="arg-families">families<a class="anchor" aria-label="anchor" href="#arg-families"></a></dt>
 <dd><p>Character vector of family column names to use for clustering
-(e.g., <code>c("family_C", "family_B", "family_P", "family_S")</code>)</p></dd>
+(e.g., <code>c("famille_carbone", "famille_biodiversite", "famille_production", "famille_social")</code>)</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
@@ -124,7 +121,7 @@ low biodiversity" cluster).</p>
 <span class="r-in"><span><span class="co"># Cluster parcels into 3 groups based on 4 families</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">cluster_parcels</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">massif_demo_units</span>,</span></span>
-<span class="r-in"><span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_carbone"</span>, <span class="st">"famille_biodiversite"</span>, <span class="st">"famille_production"</span>, <span class="st">"famille_social"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  k <span class="op">=</span> <span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  method <span class="op">=</span> <span class="st">"kmeans"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
@@ -138,7 +135,7 @@ low biodiversity" cluster).</p>
 <span class="r-in"><span><span class="co"># Auto-determine optimal k</span></span></span>
 <span class="r-in"><span><span class="va">result_auto</span> <span class="op">&lt;-</span> <span class="fu">cluster_parcels</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">massif_demo_units</span>,</span></span>
-<span class="r-in"><span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_carbone"</span>, <span class="st">"famille_biodiversite"</span>, <span class="st">"famille_production"</span>, <span class="st">"famille_social"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  k <span class="op">=</span> <span class="cn">NULL</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">result_auto</span>, <span class="st">"optimal_k"</span><span class="op">)</span></span></span>
@@ -147,7 +144,7 @@ low biodiversity" cluster).</p>
 <span class="r-in"><span><span class="co"># Use hierarchical clustering</span></span></span>
 <span class="r-in"><span><span class="va">result_hclust</span> <span class="op">&lt;-</span> <span class="fu">cluster_parcels</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">massif_demo_units</span>,</span></span>
-<span class="r-in"><span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_P"</span>, <span class="st">"family_S"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_carbone"</span>, <span class="st">"famille_biodiversite"</span>, <span class="st">"famille_production"</span>, <span class="st">"famille_social"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  k <span class="op">=</span> <span class="fl">3</span>,</span></span>
 <span class="r-in"><span>  method <span class="op">=</span> <span class="st">"hierarchical"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
@@ -167,7 +164,7 @@ low biodiversity" cluster).</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

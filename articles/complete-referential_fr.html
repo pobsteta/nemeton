@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.14.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.15.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,16 +38,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started_fr.html">Démarrage rapide</a></li>
+<li><a class="dropdown-item" href="../articles/getting-started_fr.html">Demarrage rapide</a></li>
     <li><a class="dropdown-item" href="../articles/indicator-families_fr.html">Familles d'indicateurs (12 familles)</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Référentiel complet 12 familles</a></li>
-    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-critères</a></li>
-    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversité et résilience</a></li>
+    <li><a class="dropdown-item" href="../articles/complete-referential_fr.html">Referentiel complet 12 familles</a></li>
+    <li><a class="dropdown-item" href="../articles/multi-criteria-optimization_fr.html">Optimisation multi-criteres</a></li>
+    <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/nemetonapp-guide_fr.html">Application nemetonApp</a></li>
-    <li><a class="dropdown-item" href="../articles/internationalization.html">Internationalisation (i18n)</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -73,7 +70,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-02-19</h4>
+            <h4 data-toc-skip class="date">2026-04-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/complete-referential_fr.Rmd" class="external-link"><code>vignettes/complete-referential_fr.Rmd</code></a></small>
       <div class="d-none name"><code>complete-referential_fr.Rmd</code></div>
@@ -192,7 +189,7 @@ données <code>massif_demo_units</code>.</p>
 <h2 id="chargement-des-données">Chargement des Données<a class="anchor" aria-label="anchor" href="#chargement-des-donn%C3%A9es"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pobsteta/nemeton" class="external-link">nemeton</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pobsteta.github.io/nemeton/">nemeton</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -201,18 +198,18 @@ données <code>massif_demo_units</code>.</p>
 <span></span>
 <span><span class="co"># Aperçu des données de base</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Simple feature collection with 6 features and 88 fields</span></span>
+<span><span class="co">#&gt; Simple feature collection with 6 features and 89 fields</span></span>
 <span><span class="co">#&gt; Geometry type: POLYGON</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
 <span><span class="co">#&gt; Bounding box:  xmin: 698041.8 ymin: 6499388 xmax: 702507.7 ymax: 6504159</span></span>
 <span><span class="co">#&gt; Projected CRS: RGF93 v1 / Lambert-93</span></span>
 <span><span class="co">#&gt;   parcel_id      forest_type age_class   management species age</span></span>
-<span><span class="co">#&gt; 1       P01     Futaie mixte    Mature        Mixte    FASY  68</span></span>
-<span><span class="co">#&gt; 2       P02 Futaie résineuse     Moyen   Production    PIAB  33</span></span>
-<span><span class="co">#&gt; 3       P03  Futaie feuillue  Surannée Conservation    QUPE 104</span></span>
-<span><span class="co">#&gt; 4       P04  Futaie feuillue  Surannée   Production    ABAL 166</span></span>
-<span><span class="co">#&gt; 5       P05 Futaie résineuse     Moyen   Production    PISY  47</span></span>
-<span><span class="co">#&gt; 6       P06 Futaie résineuse    Mature   Production    QURO  79</span></span>
+<span><span class="co">#&gt; 1       P01     Futaie mixte    Mature        Mixte      09  68</span></span>
+<span><span class="co">#&gt; 2       P02 Futaie résineuse     Moyen   Production      64  33</span></span>
+<span><span class="co">#&gt; 3       P03  Futaie feuillue  Surannée Conservation      03 104</span></span>
+<span><span class="co">#&gt; 4       P04  Futaie feuillue  Surannée   Production      03 166</span></span>
+<span><span class="co">#&gt; 5       P05 Futaie résineuse     Moyen   Production      61  47</span></span>
+<span><span class="co">#&gt; 6       P06 Futaie résineuse    Mature   Production      61  79</span></span>
 <span><span class="co">#&gt;   establishment_year density height  dbh volume strata fertility     climate</span></span>
 <span><span class="co">#&gt; 1               1958     266   30.3 45.8  557.7      4         1 continental</span></span>
 <span><span class="co">#&gt; 2               1993     465   30.4 57.5 1541.7      1         3  atlantique</span></span>
@@ -220,76 +217,90 @@ données <code>massif_demo_units</code>.</p>
 <span><span class="co">#&gt; 4               1860     104   29.9 42.6  186.1      2         1  atlantique</span></span>
 <span><span class="co">#&gt; 5               1979     324   27.5 51.5  779.5      2         2  atlantique</span></span>
 <span><span class="co">#&gt; 6               1947     281   38.6 76.1 2072.1      2         1  atlantique</span></span>
-<span><span class="co">#&gt;   surface_ha  area_ha        A1   A1_norm       A2   A2_norm B1  B1_norm</span></span>
-<span><span class="co">#&gt; 1   4.989211 4.989211 0.5293842  32.76917 41.31477 15.769170  0  0.00000</span></span>
-<span><span class="co">#&gt; 2   5.867935 5.867935 0.6934514  56.20735 54.25911 83.462924  0  0.00000</span></span>
-<span><span class="co">#&gt; 3   6.557777 6.557777 1.0000000 100.00000 40.10522  9.443733  2 66.66667</span></span>
-<span><span class="co">#&gt; 4   9.989553 9.989553 0.8866660  83.80943 47.07552 45.895638  0  0.00000</span></span>
-<span><span class="co">#&gt; 5   5.906395 5.906395 0.5849180  40.70258 48.98128 55.861977  1 33.33333</span></span>
-<span><span class="co">#&gt; 6   1.048296 1.048296 0.3000000   0.00000 56.56038 95.497643  2 66.66667</span></span>
-<span><span class="co">#&gt;         B2  B2_norm        B3  B3_norm       C1   C1_norm          C2  C2_norm</span></span>
-<span><span class="co">#&gt; 1 2.556369 41.55096 0.8262637 90.87085 258.9182  91.81550  0.03279953 98.02844</span></span>
-<span><span class="co">#&gt; 2 2.387431 35.94171 0.3583569 17.21558 228.1229  78.28157  0.01631406 72.74375</span></span>
-<span><span class="co">#&gt; 3 2.482645 39.10309 0.6591732 64.56840 193.5217  63.07502  0.03085372 95.04404</span></span>
-<span><span class="co">#&gt; 4 2.177975 28.98713 0.6150537 57.62336 187.2273  60.30875  0.00574035 56.52626</span></span>
-<span><span class="co">#&gt; 5 2.455282 38.19456 0.6392320 61.42937 269.4859  96.45981  0.01794201 75.24062</span></span>
-<span><span class="co">#&gt; 6 1.853111 18.20065 0.5374482 45.40713 277.5413 100.00000 -0.02087305 15.70780</span></span>
-<span><span class="co">#&gt;          E1    E1_norm       E2  E2_norm F1 F1_norm        F2  F2_norm family_A</span></span>
-<span><span class="co">#&gt; 1 0.6332431 48.4520928 1.286294 37.35401  3      50 15.017516 63.53406 24.26917</span></span>
-<span><span class="co">#&gt; 2 0.5003880  0.1410856 1.135298 30.18071  3      50 18.802915 79.54881 69.83514</span></span>
-<span><span class="co">#&gt; 3 0.5000000  0.0000000 1.037217 25.52125  3      50  8.778060 37.13702 54.72187</span></span>
-<span><span class="co">#&gt; 4 0.5000000  0.0000000 1.679691 56.04287  4      75 16.643021 70.41103 64.85253</span></span>
-<span><span class="co">#&gt; 5 0.5239562  8.7113699 0.500000  0.00000  4      75 23.180358 98.06830 48.28228</span></span>
-<span><span class="co">#&gt; 6 0.5000000  0.0000000 0.500000  0.00000  2      25  6.919386 29.27359 47.74882</span></span>
-<span><span class="co">#&gt;   family_B family_C  family_E family_F family_L family_N family_P family_R</span></span>
-<span><span class="co">#&gt; 1 44.14061 94.92197 42.903050 56.76703 31.33202 50.88637 47.68739 32.09087</span></span>
-<span><span class="co">#&gt; 2 17.71910 75.51266 15.160900 64.77440 88.45910 23.50773 86.78162 24.35791</span></span>
-<span><span class="co">#&gt; 3 56.77938 79.05953 12.760627 43.56851 64.18903 29.82359 46.78139 42.35100</span></span>
-<span><span class="co">#&gt; 4 28.87016 58.41750 28.021436 72.70551 56.54965 82.49126 48.20880 26.49766</span></span>
-<span><span class="co">#&gt; 5 44.31909 85.85022  4.355685 86.53415 29.12421 24.91877 75.19072 66.66667</span></span>
-<span><span class="co">#&gt; 6 43.42482 57.85390  0.000000 27.13680 73.96207 18.79035 14.75698 13.46698</span></span>
-<span><span class="co">#&gt;   family_S family_T  family_W        L1   L1_norm        L2   L2_norm        N1</span></span>
-<span><span class="co">#&gt; 1 24.30425 54.11307  9.825682 0.2521898  10.97026 0.3017459  51.69377 1823.0542</span></span>
-<span><span class="co">#&gt; 2 24.18268 46.60595 50.880574 0.5743217 100.00000 0.3891689  76.91820  670.1452</span></span>
-<span><span class="co">#&gt; 3 37.86009 77.38554 23.501831 0.3701597  43.57440 0.4164985  84.80367 1365.9276</span></span>
-<span><span class="co">#&gt; 4 17.50914 38.82146 49.612081 0.3389725  34.95499 0.3934184  78.14431 2734.2239</span></span>
-<span><span class="co">#&gt; 5 81.17865 24.74926 61.265609 0.3539412  39.09197 0.1889777  19.15645  628.5385</span></span>
-<span><span class="co">#&gt; 6 61.86987 55.77872  4.498593 0.3858981  47.92413 0.4691661 100.00000 1259.2921</span></span>
-<span><span class="co">#&gt;     N1_norm        N2   N2_norm        N3   N3_norm       P1  P1_norm        P2</span></span>
-<span><span class="co">#&gt; 1  66.05463 200.27051 24.049640  73.73125  62.55485 383.7837 79.52972  2.000000</span></span>
-<span><span class="co">#&gt; 2  23.10333 125.83536 14.560032  52.89941  32.85982 303.2654 60.34486 10.150362</span></span>
-<span><span class="co">#&gt; 3  49.02451 101.35012 11.438453  50.19713  29.00781 268.2949 52.01252  4.796243</span></span>
-<span><span class="co">#&gt; 4 100.00000 384.00619 47.473781 100.00000 100.00000 250.9696 47.88446  6.134844</span></span>
-<span><span class="co">#&gt; 5  21.55329 238.93704 28.979168  46.84107  24.22387 317.5492 63.74822  8.705667</span></span>
-<span><span class="co">#&gt; 6  45.05183  20.07441  1.076754  37.03275  10.24246  50.0000  0.00000  4.414458</span></span>
-<span><span class="co">#&gt;     P2_norm       P3   P3_norm R1 R1_norm R2 R2_norm        R3   R3_norm</span></span>
-<span><span class="co">#&gt; 1   0.00000 65.29495  63.53244  1       0  4      75 0.3397302  21.27261</span></span>
-<span><span class="co">#&gt; 2 100.00000 84.57162 100.00000  1       0  2      25 0.5299777  48.07374</span></span>
-<span><span class="co">#&gt; 3  34.30821 60.26851  54.02344  2      25  3      50 0.5582243  52.05299</span></span>
-<span><span class="co">#&gt; 4  50.73203 56.03258  46.00991  1       0  3      50 0.3980824  29.49298</span></span>
-<span><span class="co">#&gt; 5  82.27447 73.76151  79.54946  3      50  3      50 0.8985756 100.00000</span></span>
-<span><span class="co">#&gt; 6  29.62394 39.45421  14.64700  1       0  1       0 0.4755124  40.40094</span></span>
-<span><span class="co">#&gt;            S1     S1_norm       S2  S2_norm        S3    S3_norm        T1</span></span>
-<span><span class="co">#&gt; 1 0.473262981  30.4048558 49.06710 36.33387  1904.090   6.174013  88.06364</span></span>
-<span><span class="co">#&gt; 2 0.004570495   0.2936322 77.80352 72.25440  1000.000   0.000000  82.82317</span></span>
-<span><span class="co">#&gt; 3 0.963719475  61.9143116 51.13707 38.92133  2866.255  12.744614 126.47324</span></span>
-<span><span class="co">#&gt; 4 0.817609054  52.5274243 20.00000  0.00000  1000.000   0.000000  62.19125</span></span>
-<span><span class="co">#&gt; 5 1.162277601  74.6707102 75.09220 68.86525 15643.478 100.000000  10.00000</span></span>
-<span><span class="co">#&gt; 6 1.556537495 100.0000000 70.17784 62.72230  4351.499  22.887318 130.42042</span></span>
-<span><span class="co">#&gt;    T1_norm        T2  T2_norm        W1   W1_norm       W2  W2_norm        W3</span></span>
-<span><span class="co">#&gt; 1 57.29425 11.324896 50.93189 0.1862923  9.782561 1.119890 10.45221  5.089475</span></span>
-<span><span class="co">#&gt; 2 53.44804  9.198844 39.76386 0.5393849 28.324119 8.374436 78.16072  8.400556</span></span>
-<span><span class="co">#&gt; 3 85.48470 14.819030 69.28638 0.4476438 23.506618 2.896998 27.03841  6.050851</span></span>
-<span><span class="co">#&gt; 4 38.30539  9.117684 39.33753 1.1437187 60.058825 4.913373 45.85774  8.110192</span></span>
-<span><span class="co">#&gt; 5  0.00000 11.052026 49.49852 1.0737964 56.387074 3.125075 29.16711 13.072421</span></span>
-<span><span class="co">#&gt; 6 88.38171  6.040972 23.17574 0.0000000  0.000000 0.000000  0.00000  5.470996</span></span>
-<span><span class="co">#&gt;     W3_norm                       geometry</span></span>
-<span><span class="co">#&gt; 1  9.242271 POLYGON ((698299.9 6499928,...</span></span>
-<span><span class="co">#&gt; 2 46.156887 POLYGON ((701702.2 6500418,...</span></span>
-<span><span class="co">#&gt; 3 19.960465 POLYGON ((702240.4 6500270,...</span></span>
-<span><span class="co">#&gt; 4 42.919675 POLYGON ((700641.3 6504129,...</span></span>
-<span><span class="co">#&gt; 5 98.242638 POLYGON ((699268.2 6500307,...</span></span>
-<span><span class="co">#&gt; 6 13.495779 POLYGON ((699943.5 6499421,...</span></span>
+<span><span class="co">#&gt;   surface_ha                       geometry        C1        C2       B1</span></span>
+<span><span class="co">#&gt; 1   4.989211 POLYGON ((698299.9 6499928,... 271.52938 0.6447576 67.56073</span></span>
+<span><span class="co">#&gt; 2   5.867935 POLYGON ((701702.2 6500418,... 300.00000 0.6056744 98.28172</span></span>
+<span><span class="co">#&gt; 3   6.557777 POLYGON ((702240.4 6500270,... 110.16193 0.5285871 75.95443</span></span>
+<span><span class="co">#&gt; 4   9.989553 POLYGON ((700641.3 6504129,...  93.23794 1.1674470 56.64884</span></span>
+<span><span class="co">#&gt; 5   5.906395 POLYGON ((699268.2 6500307,... 300.00000 0.6314632 84.96897</span></span>
+<span><span class="co">#&gt; 6   1.048296 POLYGON ((699943.5 6499421,... 300.00000 0.9846671 18.94739</span></span>
+<span><span class="co">#&gt;         B2       B3        W1       W2        W3        A1       A2 F1</span></span>
+<span><span class="co">#&gt; 1 48.05999 46.75415 1.1875729 37.39292 11.262508 100.00000 48.38184  1</span></span>
+<span><span class="co">#&gt; 2 30.72276 50.79763 0.6421157 22.01976 10.763668 100.00000 73.07190  3</span></span>
+<span><span class="co">#&gt; 3 65.58163 63.01069 3.7125564 24.07065  5.852777  68.22187 48.53609  2</span></span>
+<span><span class="co">#&gt; 4 71.39962 64.22587 6.2349453  7.87978  5.333345 100.00000 55.56960  1</span></span>
+<span><span class="co">#&gt; 5 25.31719 73.97430 5.8682237 21.40946  9.680398 100.00000 72.48102  2</span></span>
+<span><span class="co">#&gt; 6 53.99485 49.62298 6.5378436  7.18223  9.726250 100.00000 69.09907  1</span></span>
+<span><span class="co">#&gt;          F2       L1       L2  T1        T2        R1       R2       R3</span></span>
+<span><span class="co">#&gt; 1 25.019879 57.94143 49.02609  68  7.745998 35.404437 63.67438 10.97556</span></span>
+<span><span class="co">#&gt; 2  4.315520 32.99353 46.67417  33  7.087985 56.732381 55.62368 75.73944</span></span>
+<span><span class="co">#&gt; 3 10.886737 41.24140 23.62314 104  2.554360  5.098883 67.18918 37.15549</span></span>
+<span><span class="co">#&gt; 4 33.100871 88.95956 39.65036 166  5.036521 73.789178 40.38996 33.31784</span></span>
+<span><span class="co">#&gt; 5 17.500878 49.69644 72.70574  47 10.166800 57.295560 40.61244 44.91239</span></span>
+<span><span class="co">#&gt; 6  4.733067 40.25978 75.83629  79 16.832511 36.984480 93.48662 35.74830</span></span>
+<span><span class="co">#&gt;          R4        S1       S2       S3        P1       P2       P3        E1</span></span>
+<span><span class="co">#&gt; 1 24.564726 0.6142734 80.64513 57354.57  582.4222 4.990758 60.95405 11.132573</span></span>
+<span><span class="co">#&gt; 2 48.959040 0.7971139 89.99527 76907.49 1000.0000 9.520484 79.39129 15.000000</span></span>
+<span><span class="co">#&gt; 3  5.968351 2.3380220 82.53975 41461.33  215.6208 6.577982 62.21006  4.219383</span></span>
+<span><span class="co">#&gt; 4 20.677678 3.6500435 29.52521 13962.24  205.1654 6.470144 62.59759  2.608120</span></span>
+<span><span class="co">#&gt; 5 24.612972 0.5191291 68.70905 45003.21  780.8117 6.207055 89.59382 15.000000</span></span>
+<span><span class="co">#&gt; 6 22.180692 4.0203980 71.77637 60740.65 1000.0000 4.884225 87.84672 15.000000</span></span>
+<span><span class="co">#&gt;          E2       N1       N2          N3   C1_norm   C2_norm   B1_norm</span></span>
+<span><span class="co">#&gt; 1 24.491660 1961.124 9009.219  70.3324503  89.83192  18.18404  68.69188</span></span>
+<span><span class="co">#&gt; 2 30.000000 5976.014 5456.947   0.3475665 100.00000  12.06639 100.00000</span></span>
+<span><span class="co">#&gt; 3  9.282643 1398.919 5089.703  59.2891167  32.20069   0.00000  77.24599</span></span>
+<span><span class="co">#&gt; 4  5.737864 3606.938 8946.680 100.0000000  26.15641 100.00000  57.57144</span></span>
+<span><span class="co">#&gt; 5 30.000000 3052.444 8478.450  20.5651477 100.00000  16.10308  86.43282</span></span>
+<span><span class="co">#&gt; 6 30.000000 7762.738 3903.807  36.2273780 100.00000  71.38969  19.14945</span></span>
+<span><span class="co">#&gt;    B2_norm  B3_norm   W1_norm    W2_norm   W3_norm   A1_norm   A2_norm F1_norm</span></span>
+<span><span class="co">#&gt; 1 50.33336 28.62731 13.035855 100.000000 100.00000 100.00000  5.025117       0</span></span>
+<span><span class="co">#&gt; 2 26.95334 34.97861  5.589419  53.053237  93.59175 100.00000 58.750856     100</span></span>
+<span><span class="co">#&gt; 3 73.96207 54.16226 47.506263  59.316263  30.50498  30.98201  5.360775      50</span></span>
+<span><span class="co">#&gt; 4 81.80788 56.07101 81.941248   9.872349  23.83220 100.00000 20.665725       0</span></span>
+<span><span class="co">#&gt; 5 19.66369 71.38334 76.934862  51.189497  79.67574 100.00000 57.465104      50</span></span>
+<span><span class="co">#&gt; 6 58.33678 33.13352 86.076335   7.742161  80.26477 100.00000 50.105960       0</span></span>
+<span><span class="co">#&gt;      F2_norm   L1_norm  L2_norm  T1_norm   T2_norm   R1_norm   R2_norm</span></span>
+<span><span class="co">#&gt; 1  71.926722  46.37097 45.50493 35.66879  45.88045  44.11912  55.33710</span></span>
+<span><span class="co">#&gt; 2   0.000000   3.23710 41.29189 13.37580  41.96130  75.16855  43.27603</span></span>
+<span><span class="co">#&gt; 3  22.828336  17.49732  0.00000 58.59873  14.95889   0.00000  60.60275</span></span>
+<span><span class="co">#&gt; 4 100.000000 100.00000 28.70996 98.08917  29.74272 100.00000  20.45379</span></span>
+<span><span class="co">#&gt; 5  45.805793  32.11573 87.92288 22.29299  60.29882  75.98843  20.78710</span></span>
+<span><span class="co">#&gt; 6   1.450555  15.80015 93.53071 42.67516 100.00000  46.41936 100.00000</span></span>
+<span><span class="co">#&gt;      R3_norm   R4_norm   S1_norm   S2_norm    S3_norm   P1_norm   P2_norm</span></span>
+<span><span class="co">#&gt; 1   2.480901 32.323036  2.685042  86.59194  71.857692  58.23268  17.55010</span></span>
+<span><span class="co">#&gt; 2 100.000000 67.877065  7.844928 100.00000 100.000000 100.00000 100.00000</span></span>
+<span><span class="co">#&gt; 3  41.901695  5.219342 51.330450  89.30881  48.982723  21.54416  46.44068</span></span>
+<span><span class="co">#&gt; 4  36.123091 26.657773 88.356628  13.28616   9.403583  20.49838  44.47782</span></span>
+<span><span class="co">#&gt; 5  53.581750 32.393354  0.000000  69.47563  54.080517  78.07616  39.68908</span></span>
+<span><span class="co">#&gt; 6  39.782798 28.848373 98.808295  73.87417  76.731251 100.00000  15.61098</span></span>
+<span><span class="co">#&gt;     P3_norm   E1_norm   E2_norm   N1_norm  N2_norm     N3_norm famille_carbone</span></span>
+<span><span class="co">#&gt; 1  53.89207  74.21715  81.63887 12.965307 98.39928  70.3324503        54.00798</span></span>
+<span><span class="co">#&gt; 2  83.57467 100.00000 100.00000 61.069681 57.39465   0.3475665        56.03319</span></span>
+<span><span class="co">#&gt; 3  55.91417  28.12922  30.94214  6.229248 53.15548  59.2891167        16.10034</span></span>
+<span><span class="co">#&gt; 4  56.53806  17.38747  19.12621 32.684614 97.67738 100.0000000        63.07820</span></span>
+<span><span class="co">#&gt; 5 100.00000 100.00000 100.00000 26.040953 92.27251  20.5651477        58.05154</span></span>
+<span><span class="co">#&gt; 6  97.18730 100.00000 100.00000 82.477298 39.46642  36.2273780        85.69484</span></span>
+<span><span class="co">#&gt;   famille_biodiversite famille_eau famille_air famille_sol famille_paysage</span></span>
+<span><span class="co">#&gt; 1             49.21751    71.01195    52.51256  35.9633611       45.937952</span></span>
+<span><span class="co">#&gt; 2             53.97732    50.74480    79.37543  50.0000000       22.264494</span></span>
+<span><span class="co">#&gt; 3             68.45678    45.77583    18.17139  36.4141678        8.748662</span></span>
+<span><span class="co">#&gt; 4             65.15011    38.54860    60.33286  50.0000000       64.354982</span></span>
+<span><span class="co">#&gt; 5             59.15995    69.26670    78.73255  47.9028964       60.019306</span></span>
+<span><span class="co">#&gt; 6             36.87325    58.02776    75.05298   0.7252773       54.665429</span></span>
+<span><span class="co">#&gt;   famille_temporel famille_risque famille_social famille_production</span></span>
+<span><span class="co">#&gt; 1         40.77462       33.56504       53.71156           43.22495</span></span>
+<span><span class="co">#&gt; 2         27.66855       71.58041       69.28164           94.52489</span></span>
+<span><span class="co">#&gt; 3         36.77881       26.93095       63.20733           41.29967</span></span>
+<span><span class="co">#&gt; 4         63.91594       45.80866       37.01546           40.50475</span></span>
+<span><span class="co">#&gt; 5         41.29591       45.68766       41.18538           72.58841</span></span>
+<span><span class="co">#&gt; 6         71.33758       53.76263       83.13790           70.93276</span></span>
+<span><span class="co">#&gt;   famille_energie famille_naturalite</span></span>
+<span><span class="co">#&gt; 1        77.92801           60.56568</span></span>
+<span><span class="co">#&gt; 2       100.00000           39.60397</span></span>
+<span><span class="co">#&gt; 3        29.53568           39.55795</span></span>
+<span><span class="co">#&gt; 4        18.25684           76.78733</span></span>
+<span><span class="co">#&gt; 5       100.00000           46.29287</span></span>
+<span><span class="co">#&gt; 6       100.00000           52.72370</span></span>
 <span></span>
 <span><span class="co"># Calculer les indicateurs pour la démonstration</span></span>
 <span><span class="co"># Les indicateurs sont générés de manière synthétique pour les besoins de cette vignette</span></span>
@@ -341,22 +352,29 @@ indices synthétiques par famille :</p>
 <span><span class="co"># Afficher les indices de famille</span></span>
 <span><span class="va">result</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"family_"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">parcel_id</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"famille_"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   parcel_id family_A family_B family_C  family_E family_F family_L family_N</span></span>
-<span><span class="co">#&gt; 1       P01 24.26917 44.14061 94.92197 42.903050 56.76703 31.33202 50.88637</span></span>
-<span><span class="co">#&gt; 2       P02 69.83514 17.71910 75.51266 15.160900 64.77440 88.45910 23.50773</span></span>
-<span><span class="co">#&gt; 3       P03 54.72187 56.77938 79.05953 12.760627 43.56851 64.18903 29.82359</span></span>
-<span><span class="co">#&gt; 4       P04 64.85253 28.87016 58.41750 28.021436 72.70551 56.54965 82.49126</span></span>
-<span><span class="co">#&gt; 5       P05 48.28228 44.31909 85.85022  4.355685 86.53415 29.12421 24.91877</span></span>
-<span><span class="co">#&gt; 6       P06 47.74882 43.42482 57.85390  0.000000 27.13680 73.96207 18.79035</span></span>
-<span><span class="co">#&gt;   family_P family_R family_S family_T  family_W</span></span>
-<span><span class="co">#&gt; 1 47.68739 32.09087 24.30425 54.11307  9.825682</span></span>
-<span><span class="co">#&gt; 2 86.78162 24.35791 24.18268 46.60595 50.880574</span></span>
-<span><span class="co">#&gt; 3 46.78139 42.35100 37.86009 77.38554 23.501831</span></span>
-<span><span class="co">#&gt; 4 48.20880 26.49766 17.50914 38.82146 49.612081</span></span>
-<span><span class="co">#&gt; 5 75.19072 66.66667 81.17865 24.74926 61.265609</span></span>
-<span><span class="co">#&gt; 6 14.75698 13.46698 61.86987 55.77872  4.498593</span></span></code></pre></div>
+<span><span class="co">#&gt;   parcel_id famille_carbone famille_biodiversite famille_eau famille_air</span></span>
+<span><span class="co">#&gt; 1       P01        54.00798             49.21751    71.01195    52.51256</span></span>
+<span><span class="co">#&gt; 2       P02        56.03319             53.97732    50.74480    79.37543</span></span>
+<span><span class="co">#&gt; 3       P03        16.10034             68.45678    45.77583    18.17139</span></span>
+<span><span class="co">#&gt; 4       P04        63.07820             65.15011    38.54860    60.33286</span></span>
+<span><span class="co">#&gt; 5       P05        58.05154             59.15995    69.26670    78.73255</span></span>
+<span><span class="co">#&gt; 6       P06        85.69484             36.87325    58.02776    75.05298</span></span>
+<span><span class="co">#&gt;   famille_sol famille_paysage famille_temporel famille_risque famille_social</span></span>
+<span><span class="co">#&gt; 1  35.9633611       45.937952         40.77462       33.56504       53.71156</span></span>
+<span><span class="co">#&gt; 2  50.0000000       22.264494         27.66855       71.58041       69.28164</span></span>
+<span><span class="co">#&gt; 3  36.4141678        8.748662         36.77881       26.93095       63.20733</span></span>
+<span><span class="co">#&gt; 4  50.0000000       64.354982         63.91594       45.80866       37.01546</span></span>
+<span><span class="co">#&gt; 5  47.9028964       60.019306         41.29591       45.68766       41.18538</span></span>
+<span><span class="co">#&gt; 6   0.7252773       54.665429         71.33758       53.76263       83.13790</span></span>
+<span><span class="co">#&gt;   famille_production famille_energie famille_naturalite</span></span>
+<span><span class="co">#&gt; 1           43.22495        77.92801           60.56568</span></span>
+<span><span class="co">#&gt; 2           94.52489       100.00000           39.60397</span></span>
+<span><span class="co">#&gt; 3           41.29967        29.53568           39.55795</span></span>
+<span><span class="co">#&gt; 4           40.50475        18.25684           76.78733</span></span>
+<span><span class="co">#&gt; 5           72.58841       100.00000           46.29287</span></span>
+<span><span class="co">#&gt; 6           70.93276       100.00000           52.72370</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="visualisation-radar-12-axes">Visualisation Radar 12-Axes<a class="anchor" aria-label="anchor" href="#visualisation-radar-12-axes"></a>
@@ -381,9 +399,9 @@ parcelle sur l’ensemble des 12 familles :</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculer les corrélations entre toutes les familles</span></span>
 <span><span class="va">families_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  <span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_W"</span>, <span class="st">"family_A"</span>,</span>
-<span>  <span class="st">"family_F"</span>, <span class="st">"family_L"</span>, <span class="st">"family_T"</span>, <span class="st">"family_R"</span>,</span>
-<span>  <span class="st">"family_S"</span>, <span class="st">"family_P"</span>, <span class="st">"family_E"</span>, <span class="st">"family_N"</span></span>
+<span>  <span class="st">"famille_carbone"</span>, <span class="st">"famille_biodiversite"</span>, <span class="st">"famille_eau"</span>, <span class="st">"famille_air"</span>,</span>
+<span>  <span class="st">"famille_sol"</span>, <span class="st">"famille_paysage"</span>, <span class="st">"famille_temporel"</span>, <span class="st">"famille_risque"</span>,</span>
+<span>  <span class="st">"famille_social"</span>, <span class="st">"famille_production"</span>, <span class="st">"famille_energie"</span>, <span class="st">"famille_naturalite"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">correlations</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_family_correlations.html">compute_family_correlations</a></span><span class="op">(</span><span class="va">result</span>, families <span class="op">=</span> <span class="va">families_all</span><span class="op">)</span></span>
@@ -401,7 +419,7 @@ familles :</p>
 <code class="sourceCode R"><span><span class="co"># Hotspots pour conservation (C, B, N)</span></span>
 <span><span class="va">hotspots_conservation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_hotspots.html">identify_hotspots</a></span><span class="op">(</span></span>
 <span>  <span class="va">result</span>,</span>
-<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_N"</span><span class="op">)</span>,</span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_carbone"</span>, <span class="st">"famille_biodiversite"</span>, <span class="st">"famille_naturalite"</span><span class="op">)</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  min_families <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span>
@@ -409,7 +427,7 @@ familles :</p>
 <span><span class="co"># Hotspots pour production durable (P, C, E)</span></span>
 <span><span class="va">hotspots_production</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_hotspots.html">identify_hotspots</a></span><span class="op">(</span></span>
 <span>  <span class="va">result</span>,</span>
-<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_P"</span>, <span class="st">"family_C"</span>, <span class="st">"family_E"</span><span class="op">)</span>,</span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_production"</span>, <span class="st">"famille_carbone"</span>, <span class="st">"famille_energie"</span><span class="op">)</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  min_families <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span>
@@ -417,7 +435,7 @@ familles :</p>
 <span><span class="co"># Hotspots pour services sociaux (S, A, L)</span></span>
 <span><span class="va">hotspots_social</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/identify_hotspots.html">identify_hotspots</a></span><span class="op">(</span></span>
 <span>  <span class="va">result</span>,</span>
-<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_S"</span>, <span class="st">"family_A"</span>, <span class="st">"family_L"</span><span class="op">)</span>,</span>
+<span>  families <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_social"</span>, <span class="st">"famille_air"</span>, <span class="st">"famille_paysage"</span><span class="op">)</span>,</span>
 <span>  threshold <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  min_families <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span>
@@ -429,12 +447,12 @@ familles :</p>
 <span><span class="co">#&gt;   20</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">hotspots_production</span><span class="op">$</span><span class="va">is_hotspot</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; TRUE </span></span>
-<span><span class="co">#&gt;   20</span></span>
+<span><span class="co">#&gt; FALSE  TRUE </span></span>
+<span><span class="co">#&gt;     1    19</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">hotspots_social</span><span class="op">$</span><span class="va">is_hotspot</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; FALSE  TRUE </span></span>
-<span><span class="co">#&gt;     1    19</span></span></code></pre></div>
+<span><span class="co">#&gt; TRUE </span></span>
+<span><span class="co">#&gt;   20</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -448,25 +466,25 @@ familles :</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_social</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">family_S</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">famille_social</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Social"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Famille S - Social &amp; Usages"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_production</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">family_P</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">famille_production</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Production"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Famille P - Production &amp; Économie"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_energy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">family_E</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">famille_energie</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Énergie"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Famille E - Énergie &amp; Climat"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_naturalness</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">family_N</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">famille_naturalite</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_fill_viridis_c</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Naturalité"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Famille N - Naturalité &amp; Wilderness"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -482,7 +500,7 @@ familles :</p>
 <span><span class="va">result_long</span> <span class="op">&lt;-</span> <span class="va">result</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span></span>
-<span>    cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"family_"</span><span class="op">)</span>,</span>
+<span>    cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"famille_"</span><span class="op">)</span>,</span>
 <span>    names_to <span class="op">=</span> <span class="st">"famille"</span>,</span>
 <span>    values_to <span class="op">=</span> <span class="st">"valeur"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -494,18 +512,18 @@ familles :</p>
 <span></span>
 <span><span class="co"># Labels des familles pour la facette</span></span>
 <span><span class="va">family_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  family_C <span class="op">=</span> <span class="st">"C - Carbone"</span>,</span>
-<span>  family_B <span class="op">=</span> <span class="st">"B - Biodiversité"</span>,</span>
-<span>  family_W <span class="op">=</span> <span class="st">"W - Eau"</span>,</span>
-<span>  family_A <span class="op">=</span> <span class="st">"A - Air"</span>,</span>
-<span>  family_F <span class="op">=</span> <span class="st">"F - Fertilité"</span>,</span>
-<span>  family_L <span class="op">=</span> <span class="st">"L - Paysage"</span>,</span>
-<span>  family_T <span class="op">=</span> <span class="st">"T - Temps"</span>,</span>
-<span>  family_R <span class="op">=</span> <span class="st">"R - Risques"</span>,</span>
-<span>  family_S <span class="op">=</span> <span class="st">"S - Social"</span>,</span>
-<span>  family_P <span class="op">=</span> <span class="st">"P - Production"</span>,</span>
-<span>  family_E <span class="op">=</span> <span class="st">"E - Énergie"</span>,</span>
-<span>  family_N <span class="op">=</span> <span class="st">"N - Naturalité"</span></span>
+<span>  famille_carbone <span class="op">=</span> <span class="st">"C - Carbone"</span>,</span>
+<span>  famille_biodiversite <span class="op">=</span> <span class="st">"B - Biodiversité"</span>,</span>
+<span>  famille_eau <span class="op">=</span> <span class="st">"W - Eau"</span>,</span>
+<span>  famille_air <span class="op">=</span> <span class="st">"A - Air"</span>,</span>
+<span>  famille_sol <span class="op">=</span> <span class="st">"F - Fertilité"</span>,</span>
+<span>  famille_paysage <span class="op">=</span> <span class="st">"L - Paysage"</span>,</span>
+<span>  famille_temporel <span class="op">=</span> <span class="st">"T - Temps"</span>,</span>
+<span>  famille_risque <span class="op">=</span> <span class="st">"R - Risques"</span>,</span>
+<span>  famille_social <span class="op">=</span> <span class="st">"S - Social"</span>,</span>
+<span>  famille_production <span class="op">=</span> <span class="st">"P - Production"</span>,</span>
+<span>  famille_energie <span class="op">=</span> <span class="st">"E - Énergie"</span>,</span>
+<span>  famille_naturalite <span class="op">=</span> <span class="st">"N - Naturalité"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">result_long</span><span class="op">)</span> <span class="op">+</span></span>
@@ -563,7 +581,7 @@ familles :</p>
 <span><span class="co"># Scénario 1: Conservation intégrale</span></span>
 <span><span class="va">composite_conservation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
 <span>  <span class="va">result_norm</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_C"</span>, <span class="st">"family_B"</span>, <span class="st">"family_W"</span>, <span class="st">"family_N"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_carbone"</span>, <span class="st">"famille_biodiversite"</span>, <span class="st">"famille_eau"</span>, <span class="st">"famille_naturalite"</span><span class="op">)</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.15</span>, <span class="fl">0.15</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"conservation"</span></span>
 <span><span class="op">)</span></span>
@@ -571,7 +589,7 @@ familles :</p>
 <span><span class="co"># Scénario 2: Production durable</span></span>
 <span><span class="va">composite_production</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
 <span>  <span class="va">result_norm</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_P"</span>, <span class="st">"family_E"</span>, <span class="st">"family_F"</span>, <span class="st">"family_C"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_production"</span>, <span class="st">"famille_energie"</span>, <span class="st">"famille_sol"</span>, <span class="st">"famille_carbone"</span><span class="op">)</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.4</span>, <span class="fl">0.25</span>, <span class="fl">0.2</span>, <span class="fl">0.15</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"production"</span></span>
 <span><span class="op">)</span></span>
@@ -579,7 +597,7 @@ familles :</p>
 <span><span class="co"># Scénario 3: Services sociaux</span></span>
 <span><span class="va">composite_social</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_composite_index.html">create_composite_index</a></span><span class="op">(</span></span>
 <span>  <span class="va">result_norm</span>,</span>
-<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"family_S"</span>, <span class="st">"family_A"</span>, <span class="st">"family_L"</span>, <span class="st">"family_R"</span><span class="op">)</span>,</span>
+<span>  indicators <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"famille_social"</span>, <span class="st">"famille_air"</span>, <span class="st">"famille_paysage"</span>, <span class="st">"famille_risque"</span><span class="op">)</span>,</span>
 <span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.35</span>, <span class="fl">0.25</span>, <span class="fl">0.2</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"social"</span></span>
 <span><span class="op">)</span></span>
@@ -652,7 +670,7 @@ Places</em>. Conservation International.</li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://github.com/pobsteta" class="external-link">Pascal Obstétar</a>.</p>
+  <p>Developed by Pascal Obstétar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -255,43 +255,43 @@ Créons des indices agrégés pour chaque famille.
 
 ``` r
 # Calculer les indices de famille
-demo_norm$family_C <- (demo_norm$C1_norm + demo_norm$C2_norm) / 2
-demo_norm$family_B <- (demo_norm$B1_norm + demo_norm$B2_norm + demo_norm$B3_norm) / 3
-demo_norm$family_W <- (demo_norm$W1_norm + demo_norm$W2_norm + demo_norm$W3_norm) / 3
-demo_norm$family_A <- (demo_norm$A1_norm + demo_norm$A2_norm) / 2
-demo_norm$family_F <- (demo_norm$F1_norm + demo_norm$F2_norm) / 2
-demo_norm$family_L <- (demo_norm$L1_norm + demo_norm$L2_norm) / 2
-demo_norm$family_T <- (demo_norm$T1_norm + demo_norm$T2_norm) / 2
-demo_norm$family_R <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm + demo_norm$R4_norm) / 4
-demo_norm$family_S <- (demo_norm$S1_norm + demo_norm$S2_norm) / 2
-demo_norm$family_P <- (demo_norm$P1_norm + demo_norm$P2_norm + demo_norm$P3_norm) / 3
-demo_norm$family_E <- (demo_norm$E1_norm + demo_norm$E2_norm) / 2
-demo_norm$family_N <- (demo_norm$N1_norm + demo_norm$N2_norm + demo_norm$N3_norm) / 3
+demo_norm$famille_carbone <- (demo_norm$C1_norm + demo_norm$C2_norm) / 2
+demo_norm$famille_biodiversite <- (demo_norm$B1_norm + demo_norm$B2_norm + demo_norm$B3_norm) / 3
+demo_norm$famille_eau <- (demo_norm$W1_norm + demo_norm$W2_norm + demo_norm$W3_norm) / 3
+demo_norm$famille_air <- (demo_norm$A1_norm + demo_norm$A2_norm) / 2
+demo_norm$famille_sol <- (demo_norm$F1_norm + demo_norm$F2_norm) / 2
+demo_norm$famille_paysage <- (demo_norm$L1_norm + demo_norm$L2_norm) / 2
+demo_norm$famille_temporel <- (demo_norm$T1_norm + demo_norm$T2_norm) / 2
+demo_norm$famille_risque <- (demo_norm$R1_norm + demo_norm$R2_norm + demo_norm$R3_norm + demo_norm$R4_norm) / 4
+demo_norm$famille_social <- (demo_norm$S1_norm + demo_norm$S2_norm) / 2
+demo_norm$famille_production <- (demo_norm$P1_norm + demo_norm$P2_norm + demo_norm$P3_norm) / 3
+demo_norm$famille_energie <- (demo_norm$E1_norm + demo_norm$E2_norm) / 2
+demo_norm$famille_naturalite <- (demo_norm$N1_norm + demo_norm$N2_norm + demo_norm$N3_norm) / 3
 
 # Afficher les scores moyens par famille
 family_means <- demo_norm |>
   st_drop_geometry() |>
-  summarise(across(starts_with("family_"), mean, na.rm = TRUE)) |>
-  pivot_longer(everything(), names_to = "family", values_to = "mean_score") |>
-  mutate(family = gsub("family_", "", family)) |>
+  summarise(across(starts_with("famille_"), mean, na.rm = TRUE)) |>
+  pivot_longer(everything(), names_to = "famille", values_to = "mean_score") |>
+  mutate(famille = gsub("famille_", "", famille)) |>
   arrange(desc(mean_score))
 
 family_means
 #> # A tibble: 12 × 2
-#>    family mean_score
-#>    <chr>       <dbl>
-#>  1 F            75.3
-#>  2 T            70.8
-#>  3 R            58.8
-#>  4 L            57.6
-#>  5 C            57.4
-#>  6 W            55.2
-#>  7 B            51.2
-#>  8 N            47.2
-#>  9 A            46.6
-#> 10 P            44.4
-#> 11 S            44.1
-#> 12 E            40.9
+#>    famille      mean_score
+#>    <chr>             <dbl>
+#>  1 sol                75.3
+#>  2 temporel           70.8
+#>  3 risque             58.8
+#>  4 paysage            57.6
+#>  5 carbone            57.4
+#>  6 eau                55.2
+#>  7 biodiversite       51.2
+#>  8 naturalite         47.2
+#>  9 air                46.6
+#> 10 production         44.4
+#> 11 social             44.1
+#> 12 energie            40.9
 ```
 
 ## Visualisation multi-famille
@@ -334,17 +334,17 @@ nemeton_radar(
 ``` r
 # Préparer les données pour les cartes
 map_data <- demo_norm |>
-  select(parcel_id, family_C, family_B, family_W, family_P, geometry) |>
+  select(parcel_id, famille_carbone, famille_biodiversite, famille_eau, famille_production, geometry) |>
   pivot_longer(
-    cols = starts_with("family_"),
+    cols = starts_with("famille_"),
     names_to = "family",
     values_to = "score"
   ) |>
   mutate(family = case_when(
-    family == "family_C" ~ "Carbone",
-    family == "family_B" ~ "Biodiversité",
-    family == "family_W" ~ "Eau",
-    family == "family_P" ~ "Production"
+    family == "famille_carbone" ~ "Carbone",
+    family == "famille_biodiversite" ~ "Biodiversité",
+    family == "famille_eau" ~ "Eau",
+    family == "famille_production" ~ "Production"
   ))
 
 ggplot(map_data) +
@@ -373,10 +373,10 @@ ggplot(map_data) +
 # Extraire les scores de famille
 family_scores <- demo_norm |>
   st_drop_geometry() |>
-  select(starts_with("family_"))
+  select(starts_with("famille_"))
 
 # Renommer pour lisibilité
-names(family_scores) <- gsub("family_", "", names(family_scores))
+names(family_scores) <- gsub("famille_", "", names(family_scores))
 
 # Calculer la matrice de corrélation
 cor_matrix <- cor(family_scores, use = "complete.obs")
@@ -416,8 +416,8 @@ Conflits/trade-offs - **Corrélation faible (blanc)** : Indépendance
 ### Scatter plot des synergies/conflits
 
 ``` r
-ggplot(demo_norm |> st_drop_geometry(), aes(x = family_C, y = family_B)) +
-  geom_point(aes(color = family_P, size = family_N), alpha = 0.7) +
+ggplot(demo_norm |> st_drop_geometry(), aes(x = famille_carbone, y = famille_biodiversite)) +
+  geom_point(aes(color = famille_production, size = famille_naturalite), alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE, color = "gray40", linetype = "dashed") +
   scale_color_viridis_c(name = "Production", option = "D") +
   scale_size_continuous(name = "Naturalité", range = c(2, 8)) +
@@ -440,11 +440,11 @@ threshold <- 60  # Top 40%
 
 demo_norm <- demo_norm |>
   mutate(
-    high_C = family_C >= threshold,
-    high_B = family_B >= threshold,
-    high_W = family_W >= threshold,
-    high_N = family_N >= threshold,
-    high_P = family_P >= threshold,
+    high_C = famille_carbone >= threshold,
+    high_B = famille_biodiversite >= threshold,
+    high_W = famille_eau >= threshold,
+    high_N = famille_naturalite >= threshold,
+    high_P = famille_production >= threshold,
     hotspot_count = high_C + high_B + high_W + high_N + high_P,
     is_hotspot = hotspot_count >= 3
   )
@@ -480,9 +480,9 @@ hotspot_stats <- demo_norm |>
   summarise(
     n_parcelles = n(),
     surface_totale = round(sum(surface_ha), 1),
-    C_mean = round(mean(family_C), 1),
-    B_mean = round(mean(family_B), 1),
-    P_mean = round(mean(family_P), 1),
+    C_mean = round(mean(famille_carbone), 1),
+    B_mean = round(mean(famille_biodiversite), 1),
+    P_mean = round(mean(famille_production), 1),
     .groups = "drop"
   )
 
@@ -503,18 +503,18 @@ hotspot_stats
 demo_norm <- demo_norm |>
   mutate(
     ecosystem_index = (
-      family_C * 0.15 +  # Carbone
-      family_B * 0.15 +  # Biodiversité
-      family_W * 0.10 +  # Eau
-      family_A * 0.05 +  # Air
-      family_F * 0.05 +  # Fertilité
-      family_L * 0.05 +  # Paysage
-      family_T * 0.05 +  # Temporel
-      family_R * 0.10 +  # Risques (résilience)
-      family_S * 0.05 +  # Social
-      family_P * 0.10 +  # Production
-      family_E * 0.05 +  # Énergie
-      family_N * 0.10    # Naturalité
+      famille_carbone * 0.15 +  # Carbone
+      famille_biodiversite * 0.15 +  # Biodiversité
+      famille_eau * 0.10 +  # Eau
+      famille_air * 0.05 +  # Air
+      famille_sol * 0.05 +  # Fertilité
+      famille_paysage * 0.05 +  # Paysage
+      famille_temporel * 0.05 +  # Temporel
+      famille_risque * 0.10 +  # Risques (résilience)
+      famille_social * 0.05 +  # Social
+      famille_production * 0.10 +  # Production
+      famille_energie * 0.05 +  # Énergie
+      famille_naturalite * 0.10    # Naturalité
     )
   )
 
@@ -599,9 +599,9 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = ecosystem_index)) +
 
 ``` r
 sessionInfo()
-#> R version 4.5.2 (2025-10-31)
+#> R version 4.5.3 (2026-03-11)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.3 LTS
+#> Running under: Ubuntu 24.04.4 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -620,24 +620,24 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] tidyr_1.3.2         sf_1.0-24           dplyr_1.2.0        
-#> [4] ggplot2_4.0.2       nemeton_0.14.1.9000
+#> [1] tidyr_1.3.2         sf_1.1-0            dplyr_1.2.1        
+#> [4] ggplot2_4.0.2       nemeton_0.15.1.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      
-#>  [5] KernSmooth_2.23-26 lattice_0.22-7     digest_0.6.39      magrittr_2.0.4    
-#>  [9] evaluate_1.0.5     grid_4.5.2         RColorBrewer_1.1-3 fastmap_1.2.0     
-#> [13] Matrix_1.7-4       jsonlite_2.0.0     e1071_1.7-17       DBI_1.2.3         
-#> [17] promises_1.5.0     mgcv_1.9-3         purrr_1.2.1        viridisLite_0.4.3 
-#> [21] scales_1.4.0       codetools_0.2-20   textshaping_1.0.4  jquerylib_0.1.4   
-#> [25] cli_3.6.5          rlang_1.1.7        units_1.0-0        splines_4.5.2     
-#> [29] withr_3.0.2        cachem_1.1.0       yaml_2.3.12        otel_0.2.0        
-#> [33] tools_4.5.2        vctrs_0.7.1        R6_2.6.1           proxy_0.4-29      
-#> [37] lifecycle_1.0.5    classInt_0.4-11    fs_1.6.6           htmlwidgets_1.6.4 
-#> [41] ragg_1.5.0         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0     
-#> [45] terra_1.8-93       bslib_0.10.0       pillar_1.11.1      later_1.4.6       
-#> [49] gtable_0.3.6       glue_1.8.0         Rcpp_1.1.1         systemfonts_1.3.1 
-#> [53] xfun_0.56          tibble_3.3.1       tidyselect_1.2.1   knitr_1.51        
-#> [57] farver_2.1.2       nlme_3.1-168       htmltools_0.5.9    labeling_0.4.3    
-#> [61] rmarkdown_2.30     compiler_4.5.2     S7_0.2.1
+#>  [5] KernSmooth_2.23-26 lattice_0.22-9     digest_0.6.39      magrittr_2.0.5    
+#>  [9] evaluate_1.0.5     grid_4.5.3         RColorBrewer_1.1-3 fastmap_1.2.0     
+#> [13] Matrix_1.7-4       jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0         
+#> [17] mgcv_1.9-4         purrr_1.2.1        viridisLite_0.4.3  scales_1.4.0      
+#> [21] codetools_0.2-20   textshaping_1.0.5  jquerylib_0.1.4    cli_3.6.6         
+#> [25] rlang_1.2.0        units_1.0-1        splines_4.5.3      withr_3.0.2       
+#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.5.3       
+#> [33] vctrs_0.7.2        R6_2.6.1           proxy_0.4-29       lifecycle_1.0.5   
+#> [37] classInt_0.4-11    fs_2.0.1           htmlwidgets_1.6.4  ragg_1.5.2        
+#> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.0      terra_1.9-11      
+#> [45] bslib_0.10.0       pillar_1.11.1      gtable_0.3.6       glue_1.8.0        
+#> [49] Rcpp_1.1.1         systemfonts_1.3.2  xfun_0.57          tibble_3.3.1      
+#> [53] tidyselect_1.2.1   knitr_1.51         farver_2.1.2       nlme_3.1-168      
+#> [57] htmltools_0.5.9    rmarkdown_2.31     labeling_0.4.3     compiler_4.5.3    
+#> [61] S7_0.2.1
 ```
