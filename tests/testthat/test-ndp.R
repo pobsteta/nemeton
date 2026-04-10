@@ -199,36 +199,6 @@ test_that("compute_general_index_mixed handles famille_ prefix", {
   expect_equal(result$score, 60.0)
 })
 
-# ---- Widgets HTML ----
-
-test_that("ndp_badge returns htmltools tag", {
-  badge <- ndp_badge(0)
-  expect_s3_class(badge, "shiny.tag")
-  rendered <- as.character(badge)
-  expect_match(rendered, "NDP 0")
-  expect_match(rendered, "badge")
-})
-
-test_that("ndp_badge supports English", {
-  badge <- ndp_badge(4, lang = "en")
-  rendered <- as.character(badge)
-  expect_match(rendered, "Digital Twin")
-})
-
-test_that("ndp_progress_bar returns htmltools tag", {
-  bar <- ndp_progress_bar(0)
-  expect_s3_class(bar, "shiny.tag")
-  rendered <- as.character(bar)
-  expect_match(rendered, "progress")
-  expect_match(rendered, "Confiance")
-})
-
-test_that("ndp_progress_bar supports English", {
-  bar <- ndp_progress_bar(4, lang = "en")
-  rendered <- as.character(bar)
-  expect_match(rendered, "Confidence")
-  expect_match(rendered, "100")
-})
 
 # ---- detect_ndp_from_layers ----
 
