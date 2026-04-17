@@ -626,7 +626,7 @@ sessionInfo()
 #> loaded via a namespace (and not attached):
 #>  [1] gtable_0.3.6         xfun_0.57            bslib_0.10.0        
 #>  [4] raster_3.6-32        htmlwidgets_1.6.4    lattice_0.22-9      
-#>  [7] tzdb_0.5.0           fasterRaster_8.4.1.1 vctrs_0.7.2         
+#>  [7] tzdb_0.5.0           fasterRaster_8.4.1.1 vctrs_0.7.3         
 #> [10] tools_4.5.3          generics_0.1.4       parallel_4.5.3      
 #> [13] curl_7.0.0           tibble_3.3.1         proxy_0.4-29        
 #> [16] pkgconfig_2.0.3      KernSmooth_2.23-26   data.table_1.18.2.1 
@@ -638,7 +638,7 @@ sessionInfo()
 #> [34] crayon_1.5.3         pillar_1.11.1        pkgdown_2.2.0       
 #> [37] exactextractr_0.10.1 jquerylib_0.1.4      classInt_0.4-11     
 #> [40] cachem_1.1.0         tidyselect_1.2.1     digest_0.6.39       
-#> [43] purrr_1.2.1          sf_1.1-0             dplyr_1.2.1         
+#> [43] purrr_1.2.2          sf_1.1-0             dplyr_1.2.1         
 #> [46] labeling_0.4.3       fastmap_1.2.0        grid_4.5.3          
 #> [49] cli_3.6.6            magrittr_2.0.5       omnibus_1.2.15      
 #> [52] triebeard_0.4.1      crul_1.6.0           e1071_1.7-17        

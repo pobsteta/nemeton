@@ -46,7 +46,7 @@
 <div class="section level2">
 <h2 id="identité-du-projet">Identité du projet<a class="anchor" aria-label="anchor" href="#identit%C3%A9-du-projet"></a></h2>
 <p>Néméton est une plateforme d’analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule 31 indicateurs organisés en 12 familles, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d’acteurs de la filière forêt-bois. Le nom vient du gaulois <em>nemeton</em> (sanctuaire en forêt).</p>
-<p>Le package R <code>nemeton</code> (v0.14.1.9000) est le cœur du projet. Il contient à la fois la logique métier (indicateurs, familles, radar) et l’application Shiny/golem (nemetonApp).</p>
+<p>Le package R <code>nemeton</code> (v0.15.1.9000) est le <strong>cœur métier</strong> : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l’application Shiny/golem a été extraite dans un package séparé <code>nemetonShiny</code> (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans <code>nemetonShiny</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="convention-nmt-néméton-naming-convention">Convention NMT (Néméton Naming Convention)<a class="anchor" aria-label="anchor" href="#convention-nmt-n%C3%A9m%C3%A9ton-naming-convention"></a></h2>
@@ -65,12 +65,13 @@
 </ul><p>Cette convention s’applique aux nouveaux fichiers et fonctions. Le code existant (noms anglais comme <code>create_family_index</code>, <code>indicator_carbon_biomass</code>) reste en l’état — on ne renomme pas ce qui fonctionne.</p>
 </div>
 <div class="section level2">
-<h2 id="architecture-4-packages-adr-009">Architecture (4 packages, ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-4-packages-adr-009"></a></h2>
-<pre><code>nemeton (ce repo)          → Package cœur + app Shiny. 31 indicateurs, 12 familles, radar, i18n, LLM. MIT.
-tree_sat_nemeton            → Classification d'essences par Sentinel-1/2. NDP 0. MIT.
-maestro_nemeton             → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
-platform_nemeton            → Documentation plateforme, ADR, glossaire. EUPL v1.2.</code></pre>
-<p>Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d’inverse.</p>
+<h2 id="architecture-packages-adr-009">Architecture (packages, ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-packages-adr-009"></a></h2>
+<pre><code>nemeton (ce repo)     → Package cœur. 31 indicateurs, 12 familles, NDP, normalisation, viz. MIT.
+nemetonShiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2. MIT.
+tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0. MIT.
+maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
+platform_nemeton      → Documentation plateforme, ADR, glossaire. EUPL v1.2.</code></pre>
+<p>Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d’inverse. <code>nemetonShiny</code> dépend de <code>nemeton</code> (120+ fonctions exportées, commit <code>720a433</code>).</p>
 </div>
 <div class="section level2">
 <h2 id="les-12-familles-dindicateurs">Les 12 familles d’indicateurs<a class="anchor" aria-label="anchor" href="#les-12-familles-dindicateurs"></a></h2>
@@ -158,12 +159,12 @@ platform_nemeton            → Documentation plateforme, ADR, glossaire. EUPL v
 <p><strong>Détection automatique</strong> : le NDP est déterminé par les sources de données présentes (attributs du jeu de données), pas par le nombre d’indicateurs calculés. L’app actuelle est toujours en NDP 0 (données publiques uniquement).</p>
 <div class="section level3">
 <h3 id="implémentation-ndp">Implémentation NDP<a class="anchor" aria-label="anchor" href="#impl%C3%A9mentation-ndp"></a></h3>
-<p>Le fichier <code>R/ndp.R</code> contient : - <code>NDP_LEVELS</code> : configuration des 5 niveaux - <code><a href="reference/get_ndp_level.html">get_ndp_level()</a></code>, <code><a href="reference/get_ndp_name.html">get_ndp_name()</a></code>, <code><a href="reference/get_ndp_weight.html">get_ndp_weight()</a></code>, <code><a href="reference/get_ndp_confidence.html">get_ndp_confidence()</a></code> : accesseurs - <code><a href="reference/ndp_table.html">ndp_table()</a></code> : data.frame des 5 niveaux - <code><a href="reference/detect_ndp.html">detect_ndp()</a></code> : détection du NDP depuis les données - <code><a href="reference/compute_general_index.html">compute_general_index()</a></code> : indice pondéré Fibonacci - <code><a href="reference/compute_general_index_mixed.html">compute_general_index_mixed()</a></code> : indice avec NDP mixte par indicateur - <code>ndp_badge()</code>, <code>ndp_progress_bar()</code> : widgets HTML pour Shiny</p>
-<p>Le score global dans <code>mod_synthesis.R</code> utilise <code><a href="reference/compute_general_index.html">compute_general_index()</a></code> au lieu d’un simple <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>.</p>
+<p>Le fichier <code>R/ndp.R</code> contient : - <code>NDP_LEVELS</code> : configuration des 5 niveaux - <code><a href="reference/get_ndp_level.html">get_ndp_level()</a></code>, <code><a href="reference/get_ndp_name.html">get_ndp_name()</a></code>, <code><a href="reference/get_ndp_weight.html">get_ndp_weight()</a></code>, <code><a href="reference/get_ndp_confidence.html">get_ndp_confidence()</a></code> : accesseurs - <code><a href="reference/ndp_table.html">ndp_table()</a></code> : data.frame des 5 niveaux - <code><a href="reference/detect_ndp.html">detect_ndp()</a></code> : détection du NDP depuis les données - <code><a href="reference/compute_general_index.html">compute_general_index()</a></code> : indice pondéré Fibonacci - <code><a href="reference/compute_general_index_mixed.html">compute_general_index_mixed()</a></code> : indice avec NDP mixte par indicateur - <code>ndp_badge()</code>, <code>ndp_progress_bar()</code> : widgets HTML — <strong>déplacés dans <code>nemetonShiny</code></strong> (commit 64ba7b1)</p>
+<p>Le score global, calculé côté cœur via <code><a href="reference/compute_general_index.html">compute_general_index()</a></code>, est consommé par <code>mod_synthesis.R</code> dans <code>nemetonShiny</code> (au lieu d’un simple <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>).</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="les-15-profils-dacteurs">Les 15 profils d’acteurs<a class="anchor" aria-label="anchor" href="#les-15-profils-dacteurs"></a></h2>
+<h2 id="les-profils-dacteurs-cible--15-livrés--13">Les profils d’acteurs (cible : 15, livrés : 13)<a class="anchor" aria-label="anchor" href="#les-profils-dacteurs-cible--15-livr%C3%A9s--13"></a></h2>
 <table class="table"><thead><tr class="header"><th>Profil</th>
 <th>Clé</th>
 <th>Familles prioritaires</th>
@@ -212,7 +213,7 @@ platform_nemeton            → Documentation plateforme, ADR, glossaire. EUPL v
 </tr><tr class="odd"><td>Investisseur</td>
 <td>profil_investisseur</td>
 <td>C, P, E</td>
-</tr></tbody></table><p>Les profils experts sont définis dans <code>inst/experts/*.yml</code> avec des prompts bilingues FR/EN.</p>
+</tr></tbody></table><p>Les profils experts sont définis dans <code>nemetonShiny/inst/experts/*.yml</code> avec des prompts bilingues FR/EN (E3 livré, commit 1b32943 — 13 profils sur les 15 listés ci-dessus).</p>
 </div>
 <div class="section level2">
 <h2 id="id_6-bounded-contexts-ddd">6 Bounded Contexts (DDD)<a class="anchor" aria-label="anchor" href="#id_6-bounded-contexts-ddd"></a></h2>
@@ -261,49 +262,38 @@ platform_nemeton            → Documentation plateforme, ADR, glossaire. EUPL v
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="walking-skeleton--épaississements">Walking Skeleton — Épaississements<a class="anchor" aria-label="anchor" href="#walking-skeleton--%C3%A9paississements"></a></h2>
-<p>Le squelette initial est DÉJÀ DEBOUT (l’app fonctionne de bout en bout). L’état actuel est entre l’épaississement 2 et 3 :</p>
+<p>Le squelette initial est DÉJÀ DEBOUT (l’app fonctionne de bout en bout). Les quatre premiers épaississements sont livrés ; prochain chantier = Épaississement 5 (intégrations NDP ≥ 1) :</p>
 <pre><code>✅ Squelette initial     : CSV/cadastre → indicateurs → radar → perspective IA
 ✅ Épaississement 1      : 12 familles complètes, 31 indicateurs
 ✅ Épaississement 2      : Cartographie (Leaflet, parcelles cadastrales)
-⬜ Épaississement 3      : Multi-acteurs (5+ profils, perspectives différenciées)
-⬜ Épaississement 4      : Authentification (OAuth2/OIDC, ADR-005)
+✅ Épaississement 3      : Multi-acteurs — 13 profils experts YAML (commit 1b32943)
+✅ Épaississement 4      : Authentification OAuth2/OIDC via shinyOAuth (commit 3e07c60)
 ⬜ Épaississement 5      : Intégrations et NDP (tree_sat, maestro, QField)
 ⬜ Épaississement 6      : Monitoring forestier continu (TimescaleDB + alertes Sentinel-2, ADR-012)
 ⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)</code></pre>
+<p>Note : E3 et E4 sont implémentés dans <code>nemetonShiny</code> (profils YAML dans <code>inst/experts/</code>, module OAuth2). Ils ne sont pas visibles depuis ce repo.</p>
 </div>
 <div class="section level2">
 <h2 id="internationalisation-i18n">Internationalisation (i18n)<a class="anchor" aria-label="anchor" href="#internationalisation-i18n"></a></h2>
+<p>L’i18n vit dans <code>nemetonShiny</code> depuis v0.15.0. Pour mémoire :</p>
 <ul><li>L’interface utilise <code>shiny.i18n</code> via le système <code>get_i18n(lang)</code> / <code>i18n$t("clé")</code>
 </li>
-<li>Fichiers de traduction : <code>inst/app/i18n/fr.json</code> (274+ clés) et <code>en.json</code>
+<li>Fichiers de traduction dans <code>nemetonShiny/inst/app/i18n/fr.json</code> (274+ clés) et <code>en.json</code>
 </li>
 <li>Les textes affichés passent TOUJOURS par i18n, jamais en littéral français</li>
-<li>Les prompts LLM sont bilingues (inst/experts/*.yml contiennent FR et EN)</li>
+<li>Les prompts LLM sont bilingues (<code>nemetonShiny/inst/experts/*.yml</code> contiennent FR et EN)</li>
 <li>Prévu pour l’extension européenne : DE, ES, IT à ajouter ultérieurement</li>
-</ul></div>
+</ul><p>Dans ce repo (cœur), les messages utilisateur éventuels (avertissements <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn</a></code>, etc.) sont en anglais par cohérence avec la roxygen doc.</p>
+</div>
 <div class="section level2">
 <h2 id="stack-technique">Stack technique<a class="anchor" aria-label="anchor" href="#stack-technique"></a></h2>
-<ul><li>
-<strong>R &gt;= 4.1.0</strong> avec golem pour la structuration Shiny</li>
-<li>
-<strong>bslib</strong> (Bootstrap 5) pour le layout</li>
-<li>
-<strong>leaflet</strong> pour la cartographie</li>
-<li>
-<strong>plotly</strong> (optionnel) / <strong>fmsb</strong> pour le radar</li>
-<li>
-<strong>ellmer</strong> pour l’intégration LLM multi-provider (Anthropic, Mistral, OpenAI)</li>
-<li>
-<strong>sf</strong>, <strong>terra</strong> pour les données spatiales</li>
-<li>
-<strong>shiny.i18n</strong> pour l’internationalisation</li>
-<li>
-<strong>testthat</strong> (edition 3) + <strong>shinytest2</strong> pour les tests</li>
-</ul></div>
+<p>Cœur (ce repo) : - <strong>R &gt;= 4.1.0</strong> - <strong>sf</strong>, <strong>terra</strong>, <strong>exactextractr</strong> pour les données spatiales - <strong>ggplot2</strong>, <strong>cluster</strong>, <strong>tidyr</strong>, <strong>glue</strong>, <strong>cli</strong>, <strong>rlang</strong> - <strong>testthat</strong> (edition 3) pour les tests</p>
+<p>App Shiny (<code>nemetonShiny</code>) — pour mémoire : - <strong>golem</strong> pour la structuration Shiny - <strong>bslib</strong> (Bootstrap 5) pour le layout - <strong>leaflet</strong> pour la cartographie - <strong>plotly</strong> (optionnel) / <strong>fmsb</strong> pour le radar - <strong>ellmer</strong> pour l’intégration LLM multi-provider (Anthropic, Mistral, OpenAI) - <strong>shinyOAuth</strong> pour l’authentification (ADR-005) - <strong>shiny.i18n</strong> pour l’internationalisation - <strong>shinytest2</strong> pour les tests E2E</p>
+</div>
 <div class="section level2">
 <h2 id="commandes-de-référence">Commandes de référence<a class="anchor" aria-label="anchor" href="#commandes-de-r%C3%A9f%C3%A9rence"></a></h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Lancer l'application</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'nemeton::run_app()'</span></span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Lancer l'application (nécessite le package nemetonShiny installé)</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'nemetonShiny::run_app()'</span></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># Lancer tous les tests</span></span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">'devtools::test()'</span></span>
@@ -352,31 +342,53 @@ platform_nemeton            → Documentation plateforme, ADR, glossaire. EUPL v
 </ul></div>
 </div>
 <div class="section level2">
-<h2 id="fichiers-clés">Fichiers clés<a class="anchor" aria-label="anchor" href="#fichiers-cl%C3%A9s"></a></h2>
-<pre><code>R/ndp.R                   → Système NDP, Fibonacci, confiance φ
-R/family-system.R         → Agrégation des indicateurs en familles
-R/mod_synthesis.R         → Synthèse : score global, radar, AI
-R/mod_home.R              → Sélection cadastrale, carte
-R/mod_family.R            → Vue détaillée par famille
-R/indicators-*.R          → Calcul des 31 indicateurs
-R/service_compute.R       → Calcul asynchrone (ExtendedTask + future)
-R/llm_prompts.R           → Gestion des profils experts et prompts LLM
-R/i18n.R + R/utils_i18n.R → Système d'internationalisation
-R/app_ui.R                → UI principale (page_navbar bslib)
-R/app_server.R            → Server principal
-R/run_app.R               → Point d'entrée de l'application
-inst/experts/*.yml        → Profils experts pour les perspectives IA
-inst/app/i18n/*.json      → Traductions FR/EN</code></pre>
+<h2 id="fichiers-clés-cœur-ce-repo">Fichiers clés (cœur, ce repo)<a class="anchor" aria-label="anchor" href="#fichiers-cl%C3%A9s-c%C5%93ur-ce-repo"></a></h2>
+<pre><code>R/ndp.R                       → Système NDP, Fibonacci, confiance φ
+R/family-system.R             → Agrégation des indicateurs en familles
+R/indicators-*.R              → Calcul des 31 indicateurs (air, biodiversity, energy,
+                                 naturalness, productive, risk, social, temporal, core, families)
+R/normalization.R             → Normalisation des indicateurs en indices [0..1]
+R/indicator-config.R          → Configuration des indicateurs (sens, bornes, unité)
+R/analysis-*.R                → Clustering, corrélation, Pareto, trade-off
+R/datasources.R               → Déclaration des sources de données par NDP
+R/species-config.R            → Configuration des essences (maestro, tree_sat)
+R/temporal.R                  → Analyse temporelle (T1, T2)
+R/visualization.R             → Helpers de visualisation (radar, etc.)
+R/data-massif_demo.R + data/  → Fixture massif_demo_units (20 unités, 29 indicateurs)
+R/i18n.R                      → Squelette i18n côté cœur (messages R uniquement)
+inst/tutorials/               → Tutoriels pédagogiques (acquisition, LiDAR, ABA, etc.)
+inst/extdata/aba.model/       → Modèle ABA (Area-Based Approach) + données LiDAR d'exemple
+inst/datasources/             → Définitions des sources de données (NDP)</code></pre>
+</div>
+<div class="section level2">
+<h2 id="fichiers-clés-app-repo-nemetonshiny">Fichiers clés (app, repo <code>nemetonShiny</code>)<a class="anchor" aria-label="anchor" href="#fichiers-cl%C3%A9s-app-repo-nemetonshiny"></a></h2>
+<pre><code>R/mod_synthesis.R             → Synthèse : score global, radar, AI
+R/mod_home.R                  → Sélection cadastrale, carte
+R/mod_family.R                → Vue détaillée par famille
+R/service_compute.R           → Calcul asynchrone (ExtendedTask + future)
+R/llm_prompts.R               → Gestion des profils experts et prompts LLM
+R/mod_auth.R (ou équiv.)      → OAuth2/OIDC via shinyOAuth (E4)
+R/app_ui.R / R/app_server.R   → UI + server principaux
+R/run_app.R                   → Point d'entrée de l'application
+inst/experts/*.yml            → 13 profils experts pour les perspectives IA (E3)
+inst/app/i18n/*.json          → Traductions FR/EN</code></pre>
 </div>
 <div class="section level2">
 <h2 id="règles-strictes">Règles strictes<a class="anchor" aria-label="anchor" href="#r%C3%A8gles-strictes"></a></h2>
-<ol style="list-style-type: decimal"><li>Le code métier (indicateurs, familles, NDP) est dans les fichiers R du package, JAMAIS dans les modules Shiny</li>
-<li>Les modules Shiny (mod_*.R) sont de la présentation : ils appellent les fonctions du package</li>
-<li>Aucune logique métier dans server.R ou ui.R</li>
-<li>Les textes passent par i18n$t(“clé”), jamais en littéral</li>
-<li>Chaque nouvelle fonction exportée a un test dans tests/testthat/</li>
+<ol style="list-style-type: decimal"><li>Le code métier (indicateurs, familles, NDP) reste dans le package <code>nemeton</code> (ce repo), JAMAIS dans <code>nemetonShiny</code>
+</li>
+<li>
+<code>nemetonShiny</code> est de la présentation : il appelle les fonctions exportées par <code>nemeton</code>
+</li>
+<li>Aucune logique métier dans <code>server.R</code> / <code>ui.R</code> / <code>mod_*.R</code> de <code>nemetonShiny</code>
+</li>
+<li>Dans <code>nemetonShiny</code>, les textes UI passent par <code>i18n$t("clé")</code>, jamais en littéral</li>
+<li>Chaque nouvelle fonction exportée (côté cœur) a un test dans <code>tests/testthat/</code>
+</li>
 <li>Les rasters et le LiDAR ne sont JAMAIS stockés dans PostgreSQL (ADR-002)</li>
 <li>Le NDP mesure la qualité des données, pas la complétude de l’analyse</li>
+<li>Pas de dépendance inverse : <code>nemeton</code> n’importe JAMAIS <code>nemetonShiny</code>
+</li>
 </ol></div>
 </div>
 
