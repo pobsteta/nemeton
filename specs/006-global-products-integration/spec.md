@@ -1,10 +1,10 @@
 # Spécification Fonctionnelle : Intégration produits globaux pré-calculés
 
-**Version** : 0.1.0 (draft)
+**Version** : 0.2.0 (draft validé)
 **Date** : 2026-04-17
-**Statut** : Draft
+**Statut** : Draft — décisions validées, prêt pour plan.md
 **Auteur** : Pascal Obstétar (via Claude)
-**Cible nemeton** : v0.16.0 (parallèle à spec 005) ou v0.17.0
+**Cible nemeton** : v0.17.0 (après 005 mergé)
 
 ---
 
@@ -99,23 +99,80 @@ Aucun nouveau package. Tout s'inscrit dans `nemeton::get_data_source()` (ADR-002
      (P1, P2, A1, C1, B2, R2)
 ```
 
-### 3.2 Accès réseau
+### 3.2 Accès réseau — stratégie GDAL-first
 
-Trois modes techniques possibles :
+**Principe validé** : déléguer au maximum à **GDAL** via `terra::rast()` pour éviter d'introduire un SDK R par fournisseur de cloud. Aucune dépendance `paws` / `aws.s3` / client Google.
 
-1. **S3 direct (vsis3 GDAL)** : pour COG hébergés sur AWS Open Data Registry. `terra::rast("/vsis3/...")` avec crédentials anonymes. **Mode privilégié Meta/WRI.**
-2. **STAC** : via `rstac` (package R) pour Dynamic World, Planetary Computer, etc. Catalogue, recherche, puis lecture COG.
-3. **HTTPS + téléchargement** : pour ESA WorldCover (fichiers Zenodo), Potapov GFCH. Cache local obligatoire.
+Trois modes techniques :
 
-### 3.3 Cache local
+1. **S3 public anonyme via GDAL `/vsis3/`** — Meta/WRI, ESA WorldCover.
+   ```r
+   Sys.setenv(AWS_NO_SIGN_REQUEST = "YES")
+   chm <- terra::rast("/vsis3/dataforgood-fb-forests/.../tile.tif")
+   ```
+   Lecture par fenêtre (COG) sans téléchargement intégral. **Aucune dépendance R AWS**.
 
-- Répertoire : `~/.local/share/nemeton/remote_cache/{source}/{tile_id}/`
-- Index DuckDB : `~/.local/share/nemeton/remote_cache.duckdb` — colonnes `source, tile_id, aoi_hash, path, fetched_at, checksum`
-- Stratégie par produit :
-  - Meta/WRI : COG, lecture par fenêtre sans téléchargement intégral possible si réseau disponible
-  - ESA WorldCover : tuiles 3° × 3°, téléchargement + cache
-  - Dynamic World : patch AOI, téléchargement + cache
-  - Potapov : tuiles 10° × 10°, téléchargement + cache
+2. **STAC + signed URLs via `rstac`** — Dynamic World (Microsoft Planetary Computer).
+   ```r
+   stac <- rstac::stac("https://planetarycomputer.microsoft.com/api/stac/v1")
+   items <- rstac::stac_search(stac, collections = "io-lulc-annual-v02", bbox = bbox)
+   assets <- rstac::items_sign(items)    # URL signées gratuites
+   ```
+   Dépendance `rstac` en **Suggests**.
+
+3. **HTTPS téléchargement + cache** via `httr2` — Potapov (GLAD/UMD), Zenodo si miroir S3 absent. Dépendance `httr2` en **Suggests**.
+
+### 3.3 Dépendances minimales
+
+Garde-fous posés pour que `nemeton` reste R-natif :
+
+| Package | Statut | Nécessaire pour |
+|---------|--------|-----------------|
+| `terra` (déjà Imports) | Imports | S3 public via GDAL, COG par fenêtre |
+| `sf` (déjà Imports) | Imports | Géométries AOI, reprojection |
+| `rappdirs` (déjà Suggests) | Suggests → **promu pertinent** | Cache cross-OS |
+| `rstac` | **Nouveau Suggests** | Dynamic World, Planetary Computer |
+| `httr2` | **Nouveau Suggests** | Téléchargement Potapov et assimilés |
+
+Pas ajouté : `paws`, `aws.s3`, `rgee`, `googleCloudStorageR`.
+
+Au runtime, chaque fonction vérifie ses deps :
+```r
+if (!requireNamespace("rstac", quietly = TRUE)) {
+  cli::cli_abort("Package 'rstac' required for Dynamic World. Install with: install.packages('rstac')")
+}
+```
+
+### 3.4 Cache local — chemins cross-OS
+
+**Hiérarchie de résolution** (du plus prioritaire au défaut) :
+
+```r
+get_cache_dir <- function() {
+  opt <- getOption("nemeton.remote_cache")
+  if (!is.null(opt)) return(opt)                         # 1. option R explicite
+
+  env <- Sys.getenv("NEMETON_REMOTE_CACHE", unset = NA)
+  if (!is.na(env) && nzchar(env)) return(env)            # 2. env var (Docker, CI)
+
+  rappdirs::user_cache_dir("nemeton")                    # 3. défaut cross-OS
+}
+```
+
+Chemins par défaut :
+- **Linux** : `~/.cache/nemeton/` (conforme XDG)
+- **macOS** : `~/Library/Caches/nemeton/`
+- **Windows** : `%LOCALAPPDATA%\nemeton\Cache\`
+
+Structure :
+- `{cache}/remote/{source}/{tile_id_ou_aoi_hash}.tif`
+- `{cache}/remote/index.duckdb` — colonnes `source, tile_id, aoi_hash, path, fetched_at, checksum, size_bytes`
+
+Stratégie par produit :
+- **Meta/WRI** : COG, lecture par fenêtre sans téléchargement intégral. Cache uniquement des fenêtres lues.
+- **ESA WorldCover** : tuiles 3° × 3° en COG (S3 public). Cache des tuiles touchées par l'AOI.
+- **Dynamic World** : patch découpé sur AOI + date, cache par AOI-hash et date.
+- **Potapov** : tuiles 10° × 10°. Cache local obligatoire (téléchargement HTTPS depuis GLAD).
 
 ---
 
@@ -179,7 +236,9 @@ Nouvelles entrées :
 list(
   canopy_height_meta = list(
     type          = "raster_remote_cog",
-    endpoint      = "s3://dataforgood-fb-forests/v1/...",
+    access        = "gdal_vsis3",                       # GDAL, pas de SDK AWS R
+    endpoint      = "/vsis3/dataforgood-fb-forests/v1/...",
+    anonymous     = TRUE,                                # AWS_NO_SIGN_REQUEST=YES
     format        = "COG",
     resolution_m  = 1.0,
     unit          = "m",
@@ -191,7 +250,9 @@ list(
   ),
   landcover_worldcover = list(
     type         = "raster_remote_cog",
-    endpoint     = "s3://esa-worldcover/v200/...",
+    access       = "gdal_vsis3",
+    endpoint     = "/vsis3/esa-worldcover/v200/...",
+    anonymous    = TRUE,
     resolution_m = 10,
     classes      = 11,
     licence      = "CC-BY 4.0",
@@ -199,6 +260,7 @@ list(
   ),
   landcover_dynamic_world = list(
     type         = "raster_stac",
+    access       = "rstac_signed",                       # rstac Suggests
     stac_url     = "https://planetarycomputer.microsoft.com/api/stac/v1",
     collection   = "io-lulc-annual-v02",
     resolution_m = 10,
@@ -209,6 +271,7 @@ list(
   ),
   canopy_height_potapov = list(
     type         = "raster_remote_http",
+    access       = "httr2_download",                     # httr2 Suggests
     endpoint     = "https://glad.umd.edu/dataset/global_2008_2020/",
     resolution_m = 30,
     licence      = "CC-BY",
@@ -356,15 +419,34 @@ Les deux specs sont **parfaitement complémentaires** :
 
 ---
 
-## 11. Décisions à valider
+## 11. Décisions validées
 
-| # | Sujet | Proposition |
-|---|-------|-------------|
-| Q1 | Créer un nouveau package `remote_data_nemeton` ou garder dans `nemeton` ? | **Garder dans `nemeton`** : uniquement du fetch + cache, pas de ML |
-| Q2 | Dépendances à ajouter | `aws.s3` ou mieux `paws` (lecture S3), `rstac` (STAC queries) — **Suggests seulement**, pas Imports |
-| Q3 | Cache par défaut via `rappdirs::user_cache_dir()` ou chemin fixe ? | `rappdirs::user_cache_dir("nemeton")` pour portabilité OS |
-| Q4 | Priorité Meta/WRI vs opencanopy en France métro | **opencanopy prioritaire** (résolution native 0.20 m) ; Meta/WRI en fallback silencieux |
-| Q5 | Dynamic World nécessite Google ou STAC public ? | STAC public via Microsoft Planetary Computer (gratuit, pas d'auth) |
+| # | Sujet | Décision |
+|---|-------|----------|
+| **D1** | Nouveau package ? | **Non.** Tout dans `nemeton`. Deps réseau en Suggests, 4 garde-fous : Suggests only, check runtime avec message actionnable, tests `skip_on_cran`/`skip_if_offline`, vignette dédiée « Remote data sources » |
+| **D2** | Dépendances S3 / STAC | **GDAL `/vsis3/` pour tout S3 public** (aucune dep R AWS). `rstac` + `httr2` en Suggests pour STAC et HTTPS. Pas de `paws`, `aws.s3`, `rgee`, `googleCloudStorageR` |
+| **D3** | Cache | `rappdirs::user_cache_dir("nemeton")` avec hiérarchie de surcharge : `options("nemeton.remote_cache")` > env `NEMETON_REMOTE_CACHE` > défaut rappdirs |
+| **D4** | `opencanopy` vs Meta/WRI en France métro | **`opencanopy` prioritaire silencieusement** si installé et `prefer_resolution = TRUE` (défaut). Fallback Meta/WRI gracieux si `opencanopy` absent. User override via `layers$chm_source = "..."` toujours respecté et logué |
+| **D5** | Dynamic World | **Planetary Computer STAC** (Microsoft) + signed URLs via `rstac::items_sign()`. GEE écarté (dépendance Python `rgee` trop lourde). Rate limit 500 k req/mois suffisant |
+
+### 11.1 Conséquence sur la logique `auto_select_chm_source()`
+
+```r
+auto_select_chm_source <- function(aoi, prefer_resolution = TRUE) {
+  is_fr_metro    <- aoi_in_france_metro(aoi)
+  has_opencanopy <- requireNamespace("opencanopy", quietly = TRUE)
+  
+  if (is_fr_metro && has_opencanopy && prefer_resolution) {
+    return(list(source = "opencanopy", reason = "france_metro_hi_res"))
+  }
+  if (has_opencanopy_cache_for_aoi(aoi)) {
+    return(list(source = "opencanopy_cache", reason = "cache_hit"))
+  }
+  list(source = "canopy_height_meta", reason = "global_default")
+}
+```
+
+Sélection silencieuse, toujours traçable via `attr(result, "chm_source_chosen")`.
 
 ---
 
