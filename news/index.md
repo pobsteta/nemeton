@@ -2,6 +2,165 @@
 
 ## nemeton (development version)
 
+#### Refactoring
+
+- Moved `ndp_badge()` and `ndp_progress_bar()` HTML widgets to the
+  `nemetonShiny` package (they had no use in the core package)
+
+#### Bug Fixes
+
+- Fixed radar chart: replaced `NaN` values with 0 to prevent polygon
+  vertex loss when an indicator is missing
+
+#### Documentation
+
+- Added indicator calculation table by NDP level (0-4)
+- Added all 14 missing topics to the `_pkgdown.yml` reference index
+- Synchronized `CLAUDE.md` with the v0.15.0 core/Shiny split: reflect
+  `nemetonShiny` as a separate package, mark Épaississements 3 and 4 as
+  delivered, update file references and strict rules
+
+------------------------------------------------------------------------
+
+## nemeton 0.15.1
+
+**Date**: 2026-04-09
+
+#### Bug Fixes
+
+- Addressed all remaining R CMD check notes and warnings
+- Cast all indicators (including F1 soil fertility) to `double` in
+  `massif_demo_units` for consistent column types
+- Forced conversion to `double` to avoid integer/numeric mismatches in
+  downstream normalization
+
+#### Data
+
+- Regenerated `massif_demo_units` dataset with 29 indicators + 12 family
+  composites using NMT naming (`famille_*` prefix)
+- Regenerated `roads` and `water` GeoPackage fixtures
+
+#### Documentation
+
+- Vignettes realigned with NMT naming:
+  [`starts_with()`](https://tidyselect.r-lib.org/reference/starts_with.html)
+  patterns updated to match `famille_` prefix
+- Fixed unicode escapes in `R/ndp.R`
+
+------------------------------------------------------------------------
+
+## nemeton 0.15.0
+
+**Date**: 2026-04-09
+
+#### BREAKING CHANGES ⚠️
+
+**Core/Shiny package split (ADR-009)**
+
+The `nemeton` package is now **core-only**. The Shiny application
+(`nemetonApp`) has been extracted into a separate package
+`nemetonShiny`. Users who relied on `nemeton::run_app()` must now
+install `nemetonShiny` and call `nemetonShiny::run_app()`.
+
+- 120+ internal functions are now exported from `nemeton` to be consumed
+  by `nemetonShiny` and other downstream packages (`tree_sat_nemeton`,
+  `maestro_nemeton`)
+- All Shiny modules (`mod_*.R`), expert profiles (`inst/experts/`), UI
+  i18n files (`inst/app/i18n/`), LLM prompts and OAuth2 module have been
+  moved out of this repository
+- `NAMESPACE` and `DESCRIPTION` cleaned up to drop Shiny-only
+  dependencies
+
+#### New Features
+
+##### NDP System (Niveau De Précision) — ADR-011
+
+- New `R/ndp.R` module implementing the 5-level data-precision system
+  with Fibonacci weighting (1-1-2-3-5) and confidence ratio φ
+- `NDP_LEVELS` configuration, accessors
+  ([`get_ndp_level()`](https://pobsteta.github.io/nemeton/reference/get_ndp_level.md),
+  [`get_ndp_name()`](https://pobsteta.github.io/nemeton/reference/get_ndp_name.md),
+  [`get_ndp_weight()`](https://pobsteta.github.io/nemeton/reference/get_ndp_weight.md),
+  [`get_ndp_confidence()`](https://pobsteta.github.io/nemeton/reference/get_ndp_confidence.md))
+- [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  — automatic NDP detection from data sources
+- [`compute_general_index()`](https://pobsteta.github.io/nemeton/reference/compute_general_index.md)
+  and
+  [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
+  for Fibonacci-weighted global scores
+- NDP wired into the compute pipeline, radar chart, PDF report and
+  synthesis table
+
+##### Naturalness Indicators (N1, N2, N3)
+
+- Aligned N1, N2, N3 formulas with Tutorial 04 ecological definitions
+
+##### Internationalization & Data Sources (ADR-002)
+
+- Data source abstraction by country — hardcoded URLs replaced with
+  [`get_data_source()`](https://pobsteta.github.io/nemeton/reference/get_data_source.md)
+  calls
+- Species configuration by region for the NDP pipeline (ADR-007)
+- Added `essence_peupleraie` as 11th species class
+- EPSG:3035 pan-European storage CRS (ADR-008)
+
+##### Infrastructure
+
+- PostgreSQL/PostGIS database service for Clever Cloud (ADR-002)
+- Auto-sync to PostGIS after indicator computation
+- CI/CD enhancements with tests and Docker build (ADR-010)
+- Dual license structure MIT + EUPL v1.2 (ADR-006)
+- Real code coverage with covr + codecov (replaces the previous static
+  badge)
+
+#### Refactoring
+
+##### NMT (Néméton Naming Convention) alignment
+
+- All function, column and family names aligned with the NMT glossary
+- DB schema aligned with NMT glossary keys (ADR-002)
+- `get_famille_code()` reverse lookup added for NMT family names
+- Test column names renamed to NMT convention
+- Indicator names in
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+  switched to NMT
+
+##### Test Suite Consolidation
+
+- Consolidated dozens of `coverage-boost*`, `batch*` test files into
+  direct `test-*.R` files aligned with the real R modules they cover
+- Removed dead test files, orphan man pages, and stub functions that
+  shadowed real indicator implementations
+- Removed Shiny-specific tests from the core package
+- Removed unnecessary [`library()`](https://rdrr.io/r/base/library.html)
+  calls from test files
+
+#### Bug Fixes
+
+- Fixed dual `save_indicators()` conflict that was breaking NDP
+  persistence
+- Fixed LiDAR directory (not just file) detection in cache for NDP
+- Added filesystem cache fallback for NDP detection
+- Fixed W1, S3, P1, P2, P3 indicator failures surfaced during NMT
+  migration
+- Defined explicit radar display order for the 12 families
+- Resolved `%||%` import from rlang and fixed `NAMESPACE` export order
+- `hunting` module: suppress expected `download.file` warnings on HTTP
+  404 and resolve `data.gouv.fr` URLs dynamically via API
+- Removed `microclima` hard dependency
+
+#### Documentation
+
+- Updated README for v0.15.0 — `nemetonShiny` installation instructions,
+  NMT names, new badges
+- Updated pkgdown site for v0.15.0 — NMT names, NDP, species,
+  `nemetonShiny`
+- ADR-012 added: future PG extensions (TimescaleDB for continuous
+  monitoring, pgvector for RAG perspectives)
+- `CLAUDE.md` updated with DDD/NDP/BMAD architecture
+
+------------------------------------------------------------------------
+
 ## nemeton 0.14.1
 
 **Date**: 2026-02-18

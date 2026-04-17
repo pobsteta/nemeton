@@ -43,6 +43,127 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="nemeton-development-version">nemeton (development version)<a class="anchor" aria-label="anchor" href="#nemeton-development-version"></a></h2>
+<div class="section level4">
+<h4 id="refactoring-development-version">Refactoring<a class="anchor" aria-label="anchor" href="#refactoring-development-version"></a></h4>
+<ul><li>Moved <code>ndp_badge()</code> and <code>ndp_progress_bar()</code> HTML widgets to the <code>nemetonShiny</code> package (they had no use in the core package)</li>
+</ul></div>
+<div class="section level4">
+<h4 id="bug-fixes-development-version">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h4>
+<ul><li>Fixed radar chart: replaced <code>NaN</code> values with 0 to prevent polygon vertex loss when an indicator is missing</li>
+</ul></div>
+<div class="section level4">
+<h4 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h4>
+<ul><li>Added indicator calculation table by NDP level (0-4)</li>
+<li>Added all 14 missing topics to the <code>_pkgdown.yml</code> reference index</li>
+<li>Synchronized <code>CLAUDE.md</code> with the v0.15.0 core/Shiny split: reflect <code>nemetonShiny</code> as a separate package, mark Épaississements 3 and 4 as delivered, update file references and strict rules</li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.15.1" id="nemeton-0151">nemeton 0.15.1<a class="anchor" aria-label="anchor" href="#nemeton-0151"></a></h2>
+<p><strong>Date</strong>: 2026-04-09</p>
+<div class="section level4">
+<h4 id="bug-fixes-0-15-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-15-1"></a></h4>
+<ul><li>Addressed all remaining R CMD check notes and warnings</li>
+<li>Cast all indicators (including F1 soil fertility) to <code>double</code> in <code>massif_demo_units</code> for consistent column types</li>
+<li>Forced conversion to <code>double</code> to avoid integer/numeric mismatches in downstream normalization</li>
+</ul></div>
+<div class="section level4">
+<h4 id="data-0-15-1">Data<a class="anchor" aria-label="anchor" href="#data-0-15-1"></a></h4>
+<ul><li>Regenerated <code>massif_demo_units</code> dataset with 29 indicators + 12 family composites using NMT naming (<code>famille_*</code> prefix)</li>
+<li>Regenerated <code>roads</code> and <code>water</code> GeoPackage fixtures</li>
+</ul></div>
+<div class="section level4">
+<h4 id="documentation-0-15-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-15-1"></a></h4>
+<ul><li>Vignettes realigned with NMT naming: <code><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with()</a></code> patterns updated to match <code>famille_</code> prefix</li>
+<li>Fixed unicode escapes in <code>R/ndp.R</code>
+</li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.15.0" id="nemeton-0150">nemeton 0.15.0<a class="anchor" aria-label="anchor" href="#nemeton-0150"></a></h2>
+<p><strong>Date</strong>: 2026-04-09</p>
+<div class="section level4">
+<h4 id="breaking-changes-️-0-15-0">BREAKING CHANGES ⚠️<a class="anchor" aria-label="anchor" href="#breaking-changes-%EF%B8%8F-0-15-0"></a></h4>
+<p><strong>Core/Shiny package split (ADR-009)</strong></p>
+<p>The <code>nemeton</code> package is now <strong>core-only</strong>. The Shiny application (<code>nemetonApp</code>) has been extracted into a separate package <code>nemetonShiny</code>. Users who relied on <code>nemeton::run_app()</code> must now install <code>nemetonShiny</code> and call <code>nemetonShiny::run_app()</code>.</p>
+<ul><li>120+ internal functions are now exported from <code>nemeton</code> to be consumed by <code>nemetonShiny</code> and other downstream packages (<code>tree_sat_nemeton</code>, <code>maestro_nemeton</code>)</li>
+<li>All Shiny modules (<code>mod_*.R</code>), expert profiles (<code>inst/experts/</code>), UI i18n files (<code>inst/app/i18n/</code>), LLM prompts and OAuth2 module have been moved out of this repository</li>
+<li>
+<code>NAMESPACE</code> and <code>DESCRIPTION</code> cleaned up to drop Shiny-only dependencies</li>
+</ul></div>
+<div class="section level4">
+<h4 id="new-features-0-15-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-15-0"></a></h4>
+<div class="section level5">
+<h5 id="ndp-system-niveau-de-précision--adr-0-15-0">NDP System (Niveau De Précision) — ADR-011<a class="anchor" aria-label="anchor" href="#ndp-system-niveau-de-pr%C3%A9cision--adr-0-15-0"></a></h5>
+<ul><li>New <code>R/ndp.R</code> module implementing the 5-level data-precision system with Fibonacci weighting (1-1-2-3-5) and confidence ratio φ</li>
+<li>
+<code>NDP_LEVELS</code> configuration, accessors (<code><a href="../reference/get_ndp_level.html">get_ndp_level()</a></code>, <code><a href="../reference/get_ndp_name.html">get_ndp_name()</a></code>, <code><a href="../reference/get_ndp_weight.html">get_ndp_weight()</a></code>, <code><a href="../reference/get_ndp_confidence.html">get_ndp_confidence()</a></code>)</li>
+<li>
+<code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> — automatic NDP detection from data sources</li>
+<li>
+<code><a href="../reference/compute_general_index.html">compute_general_index()</a></code> and <code><a href="../reference/compute_general_index_mixed.html">compute_general_index_mixed()</a></code> for Fibonacci-weighted global scores</li>
+<li>NDP wired into the compute pipeline, radar chart, PDF report and synthesis table</li>
+</ul></div>
+<div class="section level5">
+<h5 id="naturalness-indicators-n1-n2-n3-0-15-0">Naturalness Indicators (N1, N2, N3)<a class="anchor" aria-label="anchor" href="#naturalness-indicators-n1-n2-n3-0-15-0"></a></h5>
+<ul><li>Aligned N1, N2, N3 formulas with Tutorial 04 ecological definitions</li>
+</ul></div>
+<div class="section level5">
+<h5 id="internationalization--data-sources-adr-0-15-0">Internationalization &amp; Data Sources (ADR-002)<a class="anchor" aria-label="anchor" href="#internationalization--data-sources-adr-0-15-0"></a></h5>
+<ul><li>Data source abstraction by country — hardcoded URLs replaced with <code><a href="../reference/get_data_source.html">get_data_source()</a></code> calls</li>
+<li>Species configuration by region for the NDP pipeline (ADR-007)</li>
+<li>Added <code>essence_peupleraie</code> as 11th species class</li>
+<li>EPSG:3035 pan-European storage CRS (ADR-008)</li>
+</ul></div>
+<div class="section level5">
+<h5 id="infrastructure-0-15-0">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-0-15-0"></a></h5>
+<ul><li>PostgreSQL/PostGIS database service for Clever Cloud (ADR-002)</li>
+<li>Auto-sync to PostGIS after indicator computation</li>
+<li>CI/CD enhancements with tests and Docker build (ADR-010)</li>
+<li>Dual license structure MIT + EUPL v1.2 (ADR-006)</li>
+<li>Real code coverage with covr + codecov (replaces the previous static badge)</li>
+</ul></div>
+</div>
+<div class="section level4">
+<h4 id="refactoring-0-15-0">Refactoring<a class="anchor" aria-label="anchor" href="#refactoring-0-15-0"></a></h4>
+<div class="section level5">
+<h5 id="nmt-néméton-naming-convention-alignment-0-15-0">NMT (Néméton Naming Convention) alignment<a class="anchor" aria-label="anchor" href="#nmt-n%C3%A9m%C3%A9ton-naming-convention-alignment-0-15-0"></a></h5>
+<ul><li>All function, column and family names aligned with the NMT glossary</li>
+<li>DB schema aligned with NMT glossary keys (ADR-002)</li>
+<li>
+<code>get_famille_code()</code> reverse lookup added for NMT family names</li>
+<li>Test column names renamed to NMT convention</li>
+<li>Indicator names in <code><a href="../reference/list_indicators.html">list_indicators()</a></code> switched to NMT</li>
+</ul></div>
+<div class="section level5">
+<h5 id="test-suite-consolidation-0-15-0">Test Suite Consolidation<a class="anchor" aria-label="anchor" href="#test-suite-consolidation-0-15-0"></a></h5>
+<ul><li>Consolidated dozens of <code>coverage-boost*</code>, <code>batch*</code> test files into direct <code>test-*.R</code> files aligned with the real R modules they cover</li>
+<li>Removed dead test files, orphan man pages, and stub functions that shadowed real indicator implementations</li>
+<li>Removed Shiny-specific tests from the core package</li>
+<li>Removed unnecessary <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> calls from test files</li>
+</ul></div>
+</div>
+<div class="section level4">
+<h4 id="bug-fixes-0-15-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-15-0"></a></h4>
+<ul><li>Fixed dual <code>save_indicators()</code> conflict that was breaking NDP persistence</li>
+<li>Fixed LiDAR directory (not just file) detection in cache for NDP</li>
+<li>Added filesystem cache fallback for NDP detection</li>
+<li>Fixed W1, S3, P1, P2, P3 indicator failures surfaced during NMT migration</li>
+<li>Defined explicit radar display order for the 12 families</li>
+<li>Resolved <code>%||%</code> import from rlang and fixed <code>NAMESPACE</code> export order</li>
+<li>
+<code>hunting</code> module: suppress expected <code>download.file</code> warnings on HTTP 404 and resolve <code>data.gouv.fr</code> URLs dynamically via API</li>
+<li>Removed <code>microclima</code> hard dependency</li>
+</ul></div>
+<div class="section level4">
+<h4 id="documentation-0-15-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-15-0"></a></h4>
+<ul><li>Updated README for v0.15.0 — <code>nemetonShiny</code> installation instructions, NMT names, new badges</li>
+<li>Updated pkgdown site for v0.15.0 — NMT names, NDP, species, <code>nemetonShiny</code>
+</li>
+<li>ADR-012 added: future PG extensions (TimescaleDB for continuous monitoring, pgvector for RAG perspectives)</li>
+<li>
+<code>CLAUDE.md</code> updated with DDD/NDP/BMAD architecture</li>
+</ul><hr></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.14.1" id="nemeton-0141">nemeton 0.14.1<a class="anchor" aria-label="anchor" href="#nemeton-0141"></a></h2>
