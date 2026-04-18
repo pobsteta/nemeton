@@ -1,4 +1,4 @@
-# nemeton (development version)
+# nemeton 0.16.0
 
 ### New Features
 
