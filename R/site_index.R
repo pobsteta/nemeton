@@ -102,12 +102,13 @@ is_conifer <- function(species) {
 #' in the reference CSV. If the species is directly present,
 #' returns it unchanged. Otherwise falls back to
 #' \code{CONIFER_GENUS} or \code{BROADLEAF_GENUS} based on the
-#' \code{\link{.conifer_codes}} list.
+#' internal \code{.conifer_codes} list (used by
+#' \code{\link{is_conifer}}).
 #'
 #' @param species Character. Species code (length 1).
 #' @param available Character vector of species codes present in
 #'   the curves.
-#' @return Character scalar — the resolved species code, or
+#' @return Character scalar - the resolved species code, or
 #'   \code{NA_character_} if neither the species nor its
 #'   genus-level fallback is available.
 #'

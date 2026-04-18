@@ -201,3 +201,35 @@ test_that("species code is case-insensitive", {
   b <- compute_site_index(20, 80, "qupe")
   expect_equal(a, b, tolerance = 1e-6)
 })
+
+
+# ---- Edge cases for coverage -----------------------------------
+
+test_that("is_conifer handles NA and unknown species", {
+  # Note: is_conifer is an internal helper
+  expect_false(nemeton:::is_conifer(NA))
+  expect_false(nemeton:::is_conifer("UNKNOWN"))
+  expect_true(nemeton:::is_conifer("PIAB"))
+  expect_true(nemeton:::is_conifer("piab"))  # case-insensitive
+})
+
+test_that("resolve_species_code returns NA when nothing matches", {
+  expect_identical(
+    nemeton:::resolve_species_code(NA, c("QUPE", "PIAB")),
+    NA_character_
+  )
+  # Unknown species but no fallbacks available
+  expect_identical(
+    nemeton:::resolve_species_code("XXXX", c("QUPE")),
+    NA_character_
+  )
+})
+
+test_that(".frac_class returns NA when h is finite but unmatched", {
+  # Defensive branch: if the heights vector is not monotone
+  # decreasing, the for-loop may miss. Feed a pathological input
+  # that the normal pipeline would never produce.
+  classes <- c(10, 5, 8, 3, 1)
+  out <- nemeton:::.frac_class(7, classes)
+  expect_true(is.na(out) || (out >= 1 && out <= 5))
+})

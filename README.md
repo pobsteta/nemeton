@@ -79,6 +79,57 @@ get_data_source("dem", "FR")       # config MNT IGN
 list_countries()                   # c("EU", "FR")
 ```
 
+## NDP augmente : integration Open-Canopy (v0.16.0, spec 005)
+
+Depuis la v0.16.0, nemeton exploite des Canopy Height Models (CHM)
+produits par le package amont [`opencanopy`](https://github.com/pobsteta/opencanopynemeton)
+pour affiner cinq indicateurs (P1 volume, P2 station, C1 biomasse,
+B2 structure, R2 tempete) a partir de l'ortho IGN, sans besoin de
+LiDAR. L'ADR-011 amende le systeme NDP avec un flag vectoriel
+`augmented` qui preserve la confiance phi Fibonacci globale.
+
+Exemple end-to-end :
+
+```r
+library(nemeton)
+
+# 1. Produire un CHM depuis une AOI (package separe)
+# chm <- opencanopy::pipeline_aoi_to_chm(aoi, format = "COG")
+
+# 2. Nettoyer le CHM (5 etapes : foret, bati, eau, NDVI, pente)
+clean <- sanitize_chm(chm,
+                     forest_mask = bd_foret,
+                     buildings   = bd_topo_batiments,
+                     water       = bd_carthage,
+                     ndvi        = ndvi)
+# clean$pct_masked, clean$steps_applied
+
+# 3. Detecter le NDP augmente
+attr(units, "chm_source") <- "opencanopy"
+res_ndp <- detect_ndp(units)
+res_ndp$augmented   # "height_ml"
+
+# 4. Calculer les indicateurs en mode CHM
+units <- indicateur_p2_station(units, chm = clean$chm_clean)   # H0 en metres
+units <- indicateur_p1_volume(units,  chm = clean$chm_clean,
+                              pct_masked = clean$pct_masked)    # m3/ha
+units <- indicateur_c1_biomasse(units, chm = clean$chm_clean)   # tC/ha
+units <- indicateur_b2_structure(units, chm = clean$chm_clean)  # 0-100
+units <- indicateur_r2_tempete(units, dem = dem,
+                               chm = clean$chm_clean)           # 0-100
+
+# 5. Voir la liste des essences couvertes par les courbes de station
+list_site_index_species()
+```
+
+Les courbes de hauteur dominante (Duplat & Tran-Ha 1997 et
+publications connexes) sont tabulees dans
+`inst/extdata/site_index_curves.csv`. Leur redistribution est
+autorisee par M. Tran-Ha (communication personnelle, avril 2026 ;
+voir `inst/NOTICE`).
+
+Vignette dediee : [Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy](https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.html).
+
 ## Application Interactive (nemetonShiny)
 
 L'application Shiny est dans un package separe :

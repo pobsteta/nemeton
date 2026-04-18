@@ -138,12 +138,44 @@ Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout). Les q
 ✅ Épaississement 2      : Cartographie (Leaflet, parcelles cadastrales)
 ✅ Épaississement 3      : Multi-acteurs — 13 profils experts YAML (commit 1b32943)
 ✅ Épaississement 4      : Authentification OAuth2/OIDC via shinyOAuth (commit 3e07c60)
-⬜ Épaississement 5      : Intégrations et NDP (tree_sat, maestro, QField)
+🟨 Épaississement 5      : Intégrations et NDP (spec 005 Open-Canopy livré ; tree_sat/maestro/QField à venir)
 ⬜ Épaississement 6      : Monitoring forestier continu (TimescaleDB + alertes Sentinel-2, ADR-012)
 ⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)
 ```
 
 Note : E3 et E4 sont implémentés dans `nemetonShiny` (profils YAML dans `inst/experts/`, module OAuth2). Ils ne sont pas visibles depuis ce repo.
+
+## NDP augmenté et intégration Open-Canopy (spec 005, v0.16.0)
+
+Depuis la v0.16.0 (spec 005), `nemeton` consomme des Canopy Height
+Models (CHM) produits par le package amont `opencanopy`
+(pobsteta/opencanopynemeton). L'intégration suit l'ADR-011 amendé :
+
+- **Flag vectoriel `augmented`** dans le résultat de `detect_ndp()`.
+  Valeurs reconnues : `"height_ml"` (CHM ML d'Open-Canopy),
+  `"species_ml"`, `"texture_ml"`. Le niveau NDP et la confiance φ
+  Fibonacci globale restent inchangés : la granularité ML est
+  exploitée par `compute_general_index_mixed()`.
+- **Pipeline de nettoyage** `sanitize_chm(chm, forest_mask, buildings,
+  water, ndvi, slope, max_height, ndvi_threshold)` en 5 étapes, retourne
+  `list(chm_clean, pct_masked, steps_applied)`.
+- **Extraction H_dom** : `extract_h_dom(chm, units, percentile = 0.9)`.
+- **Indice de station** : `compute_site_index(H_dom, age, species,
+  reference_age)` via courbes Duplat & Tran-Ha 1997 dans
+  `inst/extdata/site_index_curves.csv` (autorisation explicite de
+  M. Tran-Ha, avril 2026).
+- **Indicateurs compatibles CHM** (argument `chm = NULL` sur chacun) :
+  - `indicateur_p1_volume()` — tarif IFN avec H du CHM.
+  - `indicateur_p2_station()` — site index H₀ via courbes Duplat.
+  - `indicateur_c1_biomasse()` — biomasse via V(D, H) × ρ × BEF × C_frac.
+  - `indicateur_b2_structure()` — composante CV(CHM) (poids 0.2 par défaut).
+  - `indicateur_r2_tempete()` — modulation par vulnérabilité f(H, espèce).
+- **Source de données** `chm_opencanopy` déclarée dans
+  `inst/datasources/FR.json` (format COG, CRS EPSG:2154, licence double
+  IGN BD ORTHO + Open-Canopy).
+
+Tous les indicateurs restent strictement rétrocompatibles : quand
+`chm` est `NULL`, le comportement v0.15.x est préservé.
 
 ## Internationalisation (i18n)
 
@@ -220,7 +252,9 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
 ## Fichiers clés (cœur, ce repo)
 
 ```
-R/ndp.R                       → Système NDP, Fibonacci, confiance φ
+R/ndp.R                       → Système NDP, Fibonacci, confiance φ, flag `augmented`
+R/utils-chm.R                 → sanitize_chm(), extract_h_dom() (spec 005)
+R/site_index.R                → compute_site_index() + courbes Duplat & Tran-Ha (spec 005)
 R/family-system.R             → Agrégation des indicateurs en familles
 R/indicators-*.R              → Calcul des 31 indicateurs (air, biodiversity, energy,
                                  naturalness, productive, risk, social, temporal, core, families)
@@ -235,6 +269,7 @@ R/data-massif_demo.R + data/  → Fixture massif_demo_units (20 unités, 29 indi
 R/i18n.R                      → Squelette i18n côté cœur (messages R uniquement)
 inst/tutorials/               → Tutoriels pédagogiques (acquisition, LiDAR, ABA, etc.)
 inst/extdata/aba.model/       → Modèle ABA (Area-Based Approach) + données LiDAR d'exemple
+inst/extdata/site_index_curves.csv → Courbes de hauteur dominante par essence/classe (spec 005)
 inst/datasources/             → Définitions des sources de données (NDP)
 ```
 

@@ -185,3 +185,54 @@ test_that("sanitize_chm returns SpatRaster with same CRS", {
   res <- sanitize_chm(chm)
   expect_equal(terra::crs(res$chm_clean, describe = TRUE)$code, "2154")
 })
+
+
+# ---- extract_h_dom edge cases (T0.2 coverage top-up) ---------
+
+test_that("extract_h_dom rejects non-SpatRaster chm", {
+  poly <- sf::st_polygon(list(rbind(c(0,0), c(10,0), c(10,10),
+                                    c(0,10), c(0,0))))
+  units <- sf::st_sf(geometry = sf::st_sfc(poly, crs = 2154))
+  expect_error(extract_h_dom(matrix(1:4, 2, 2), units),
+               regexp = "SpatRaster")
+})
+
+test_that("extract_h_dom rejects non-sf units", {
+  chm <- terra::rast(nrows = 10, ncols = 10,
+                     xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                     crs = "EPSG:2154",
+                     vals = rep(20, 100))
+  expect_error(extract_h_dom(chm, data.frame(x = 1:3)),
+               regexp = "sf/sfc")
+})
+
+test_that("extract_h_dom rejects invalid percentile", {
+  chm <- terra::rast(nrows = 10, ncols = 10,
+                     xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                     crs = "EPSG:2154",
+                     vals = rep(20, 100))
+  poly <- sf::st_polygon(list(rbind(c(0,0), c(100,0), c(100,100),
+                                    c(0,100), c(0,0))))
+  units <- sf::st_sf(geometry = sf::st_sfc(poly, crs = 2154))
+  expect_error(extract_h_dom(chm, units, percentile = 1.5),
+               regexp = "percentile")
+  expect_error(extract_h_dom(chm, units, percentile = NA),
+               regexp = "percentile")
+  expect_error(extract_h_dom(chm, units, percentile = c(0.5, 0.9)),
+               regexp = "percentile")
+})
+
+test_that("extract_h_dom returns NA when fewer than min_pixels", {
+  chm <- terra::rast(nrows = 100, ncols = 100,
+                     xmin = 0, xmax = 1000, ymin = 0, ymax = 1000,
+                     crs = "EPSG:2154",
+                     vals = rep(20, 10000))
+  # Tiny polygon covering < 10 pixels
+  poly <- sf::st_polygon(list(rbind(c(0, 0), c(5, 0),
+                                    c(5, 5), c(0, 5),
+                                    c(0, 0))))
+  units <- sf::st_sf(geometry = sf::st_sfc(poly, crs = 2154))
+  h <- extract_h_dom(chm, units, min_pixels = 100L)
+  expect_length(h, 1)
+  expect_true(is.na(h))
+})
