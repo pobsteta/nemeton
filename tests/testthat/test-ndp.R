@@ -78,24 +78,24 @@ test_that("ndp_table returns correct data.frame", {
 
 test_that("detect_ndp returns 0 for plain data", {
   df <- data.frame(x = 1:3)
-  expect_equal(detect_ndp(df), 0L)
+  expect_equal(detect_ndp(df)$level, 0L)
 })
 
 test_that("detect_ndp returns 0 for NULL", {
-  expect_equal(detect_ndp(NULL), 0L)
+  expect_equal(detect_ndp(NULL)$level, 0L)
 })
 
 test_that("detect_ndp detects NDP 1 with LiDAR HD", {
   df <- data.frame(x = 1)
   attr(df, "has_lidar_hd") <- TRUE
-  expect_equal(detect_ndp(df), 1L)
+  expect_equal(detect_ndp(df)$level, 1L)
 })
 
 test_that("detect_ndp detects NDP 2 with drone", {
   df <- data.frame(x = 1)
   attr(df, "has_lidar_hd") <- TRUE
   attr(df, "has_drone_rgb") <- TRUE
-  expect_equal(detect_ndp(df), 2L)
+  expect_equal(detect_ndp(df)$level, 2L)
 })
 
 test_that("detect_ndp detects NDP 3 with terrain inventory", {
@@ -103,7 +103,7 @@ test_that("detect_ndp detects NDP 3 with terrain inventory", {
   attr(df, "has_lidar_hd") <- TRUE
   attr(df, "has_drone_rgb") <- TRUE
   attr(df, "has_inventaire_terrain") <- TRUE
-  expect_equal(detect_ndp(df), 3L)
+  expect_equal(detect_ndp(df)$level, 3L)
 })
 
 test_that("detect_ndp detects NDP 4 with scanner", {
@@ -112,14 +112,14 @@ test_that("detect_ndp detects NDP 4 with scanner", {
   attr(df, "has_drone_rgb") <- TRUE
   attr(df, "has_inventaire_terrain") <- TRUE
   attr(df, "has_scanner_terrestre") <- TRUE
-  expect_equal(detect_ndp(df), 4L)
+  expect_equal(detect_ndp(df)$level, 4L)
 })
 
 test_that("detect_ndp requires cumulative sources (no skip)", {
-  # Drone without LiDAR should still be NDP 0
+  # Drone sans LiDAR reste en NDP 0
   df <- data.frame(x = 1)
   attr(df, "has_drone_rgb") <- TRUE
-  expect_equal(detect_ndp(df), 0L)
+  expect_equal(detect_ndp(df)$level, 0L)
 })
 
 # ---- compute_general_index ----
@@ -247,14 +247,14 @@ test_that("set_ndp_attributes sets correct attributes from layers", {
   expect_true(attr(result, "has_lidar_hd"))
   expect_false(attr(result, "has_drone_rgb"))
   expect_equal(attr(result, "ndp_detected"), 1L)
-  expect_equal(detect_ndp(result), 1L)
+  expect_equal(detect_ndp(result)$level, 1L)
 })
 
 test_that("set_ndp_attributes without layers defaults to NDP 0", {
   df <- data.frame(x = 1)
   result <- set_ndp_attributes(df, NULL)
   expect_false(attr(result, "has_lidar_hd"))
-  expect_equal(detect_ndp(result), 0L)
+  expect_equal(detect_ndp(result)$level, 0L)
 })
 
 test_that("restore_ndp_attributes round-trips correctly", {
@@ -262,13 +262,13 @@ test_that("restore_ndp_attributes round-trips correctly", {
   restored <- restore_ndp_attributes(df, 1L)
   expect_true(attr(restored, "has_lidar_hd"))
   expect_false(attr(restored, "has_drone_rgb"))
-  expect_equal(detect_ndp(restored), 1L)
+  expect_equal(detect_ndp(restored)$level, 1L)
 })
 
 test_that("restore_ndp_attributes handles NULL ndp_level", {
   df <- data.frame(x = 1)
   restored <- restore_ndp_attributes(df, NULL)
-  expect_equal(detect_ndp(restored), 0L)
+  expect_equal(detect_ndp(restored)$level, 0L)
 })
 
 # ---- detect_ndp_from_cache ----

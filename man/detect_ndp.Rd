@@ -2,7 +2,7 @@
 % Please edit documentation in R/ndp.R
 \name{detect_ndp}
 \alias{detect_ndp}
-\title{Detect NDP level from data}
+\title{Detect NDP level and ML augmentation from data}
 \usage{
 detect_ndp(data)
 }
@@ -10,33 +10,63 @@ detect_ndp(data)
 \item{data}{An sf object or data.frame with source attributes.}
 }
 \value{
-Integer. Detected NDP level (0-4).
+An object of class \code{"ndp_result"} — a list with:
+  \describe{
+    \item{level}{Integer. Detected NDP level (0-4).}
+    \item{confidence}{Numeric. Fibonacci confidence phi for \code{level}.}
+    \item{augmented}{Character vector. ML-augmentation flags (e.g.
+      \code{"height_ml"} when \code{chm_source = "opencanopy"}).}
+    \item{sources}{Character vector. Data sources detected as present.}
+  }
+  The object also carries \code{level} as an integer attribute so
+  \code{as.integer(result)} and arithmetic comparisons still work.
 }
 \description{
-Determines the NDP level based on the data sources present in the dataset.
-Detection is based on attributes set on the data (e.g., \code{has_lidar_hd},
-\code{has_drone_rgb}).
+Determines the NDP level and ML-augmented flags from the data sources present
+on the dataset. Detection is based on attributes set on the data (e.g.
+\code{has_lidar_hd}, \code{has_drone_rgb}, \code{chm_source}).
 }
 \details{
 The NDP is the highest level for which ALL required sources are present.
+ML-augmented flags (ADR-011 amended) do NOT change the base NDP level —
+they are reported separately via the \code{augmented} vector.
 
 
 Source attributes checked (cumulative):
 \itemize{
-  \item NDP 0: Always available (public data: Sentinel-2, WorldClim, BD TOPO, MNT 25m)
+  \item NDP 0: Always available (public: Sentinel-2, WorldClim, BD TOPO, MNT 25m)
   \item NDP 1: \code{has_lidar_hd = TRUE}
   \item NDP 2: NDP 1 + \code{has_drone_rgb = TRUE}
   \item NDP 3: NDP 2 + \code{has_inventaire_terrain = TRUE}
   \item NDP 4: NDP 3 + \code{has_scanner_terrestre = TRUE}
 }
+
+ML-augmentation flags recognised:
+\itemize{
+  \item \code{"height_ml"} : \code{attr(data, "chm_source") == "opencanopy"}
+  \item \code{"species_ml"} : \code{attr(data, "species_source") \%in\% c("tree_sat", "maestro")}
+  \item \code{"texture_ml"} : \code{attr(data, "texture_source") == "maestro"}
+}
+}
+\note{
+Breaking change in nemeton 0.16.0: \code{detect_ndp()} used to return a
+plain integer. It now returns an \code{ndp_result} list.
+Use \code{result$level} or \code{as.integer(result)} for the numeric level.
 }
 \examples{
-# Default: NDP 0
+# Default: NDP 0, no ML augmentation
 df <- data.frame(x = 1)
-detect_ndp(df)
+r <- detect_ndp(df)
+r$level
+r$augmented
 
 # With LiDAR HD: NDP 1
 attr(df, "has_lidar_hd") <- TRUE
-detect_ndp(df)
+detect_ndp(df)$level
+
+# With opencanopy CHM: NDP 0 but augmented
+df2 <- data.frame(x = 1)
+attr(df2, "chm_source") <- "opencanopy"
+detect_ndp(df2)$augmented  # "height_ml"
 
 }

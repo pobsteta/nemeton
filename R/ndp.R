@@ -176,40 +176,72 @@ ndp_table <- function() {
 # detect_ndp
 # ================================================================
 
-#' Detect NDP level from data
+#' Detect NDP level and ML augmentation from data
 #'
-#' Determines the NDP level based on the data sources present in the dataset.
-#' Detection is based on attributes set on the data (e.g., \code{has_lidar_hd},
-#' \code{has_drone_rgb}).
+#' Determines the NDP level and ML-augmented flags from the data sources present
+#' on the dataset. Detection is based on attributes set on the data (e.g.
+#' \code{has_lidar_hd}, \code{has_drone_rgb}, \code{chm_source}).
 #'
 #' The NDP is the highest level for which ALL required sources are present.
+#' ML-augmented flags (ADR-011 amended) do NOT change the base NDP level —
+#' they are reported separately via the \code{augmented} vector.
 #'
 #' @param data An sf object or data.frame with source attributes.
 #'
-#' @return Integer. Detected NDP level (0-4).
+#' @return An object of class \code{"ndp_result"} — a list with:
+#'   \describe{
+#'     \item{level}{Integer. Detected NDP level (0-4).}
+#'     \item{confidence}{Numeric. Fibonacci confidence phi for \code{level}.}
+#'     \item{augmented}{Character vector. ML-augmentation flags (e.g.
+#'       \code{"height_ml"} when \code{chm_source = "opencanopy"}).}
+#'     \item{sources}{Character vector. Data sources detected as present.}
+#'   }
+#'   The object also carries \code{level} as an integer attribute so
+#'   \code{as.integer(result)} and arithmetic comparisons still work.
 #'
 #' @details
 #' Source attributes checked (cumulative):
 #' \itemize{
-#'   \item NDP 0: Always available (public data: Sentinel-2, WorldClim, BD TOPO, MNT 25m)
+#'   \item NDP 0: Always available (public: Sentinel-2, WorldClim, BD TOPO, MNT 25m)
 #'   \item NDP 1: \code{has_lidar_hd = TRUE}
 #'   \item NDP 2: NDP 1 + \code{has_drone_rgb = TRUE}
 #'   \item NDP 3: NDP 2 + \code{has_inventaire_terrain = TRUE}
 #'   \item NDP 4: NDP 3 + \code{has_scanner_terrestre = TRUE}
 #' }
 #'
+#' ML-augmentation flags recognised:
+#' \itemize{
+#'   \item \code{"height_ml"} : \code{attr(data, "chm_source") == "opencanopy"}
+#'   \item \code{"species_ml"} : \code{attr(data, "species_source") \%in\% c("tree_sat", "maestro")}
+#'   \item \code{"texture_ml"} : \code{attr(data, "texture_source") == "maestro"}
+#' }
+#'
+#' @note
+#' Breaking change in nemeton 0.16.0: \code{detect_ndp()} used to return a
+#' plain integer. It now returns an \code{ndp_result} list.
+#' Use \code{result$level} or \code{as.integer(result)} for the numeric level.
+#'
 #' @examples
-#' # Default: NDP 0
+#' # Default: NDP 0, no ML augmentation
 #' df <- data.frame(x = 1)
-#' detect_ndp(df)
+#' r <- detect_ndp(df)
+#' r$level
+#' r$augmented
 #'
 #' # With LiDAR HD: NDP 1
 #' attr(df, "has_lidar_hd") <- TRUE
-#' detect_ndp(df)
+#' detect_ndp(df)$level
+#'
+#' # With opencanopy CHM: NDP 0 but augmented
+#' df2 <- data.frame(x = 1)
+#' attr(df2, "chm_source") <- "opencanopy"
+#' detect_ndp(df2)$augmented  # "height_ml"
 #'
 #' @export
 detect_ndp <- function(data) {
-  if (is.null(data)) return(0L)
+  if (is.null(data)) {
+    return(new_ndp_result(0L, character(0), character(0)))
+  }
 
   # Source markers par niveau (cumulatifs)
   # NDP 0 est toujours disponible (donnees publiques)
@@ -224,16 +256,122 @@ detect_ndp <- function(data) {
     function(d) isTRUE(attr(d, "has_scanner_terrestre")) || isTRUE(attr(d, "has_modele_3d"))
   )
 
-  ndp <- 0L
+  level <- 0L
   for (check in level_checks) {
     if (check(data)) {
-      ndp <- ndp + 1L
+      level <- level + 1L
     } else {
       break
     }
   }
 
-  ndp
+  # Sources presentes (cumulatif)
+  sources <- c("sentinel_2", "worldclim", "bd_topo", "mnt_25m")
+  if (isTRUE(attr(data, "has_lidar_hd"))) {
+    sources <- c(sources, "ign_rge_alti", "bd_ortho", "lidar_hd")
+  }
+  if (isTRUE(attr(data, "has_drone_rgb"))) sources <- c(sources, "drone_rgb")
+  if (isTRUE(attr(data, "has_lidar_drone"))) sources <- c(sources, "lidar_drone")
+  if (isTRUE(attr(data, "has_inventaire_terrain"))) {
+    sources <- c(sources, "inventaire_terrain")
+  }
+  if (isTRUE(attr(data, "has_scanner_terrestre"))) {
+    sources <- c(sources, "scanner_terrestre")
+  }
+  if (isTRUE(attr(data, "has_modele_3d"))) sources <- c(sources, "modele_3d")
+
+  # Flags d'augmentation ML (ADR-011 amende)
+  augmented <- character(0)
+  chm_source <- attr(data, "chm_source")
+  if (!is.null(chm_source) && identical(as.character(chm_source), "opencanopy")) {
+    augmented <- c(augmented, "height_ml")
+  }
+  species_source <- attr(data, "species_source")
+  if (!is.null(species_source) &&
+      as.character(species_source) %in% c("tree_sat", "maestro")) {
+    augmented <- c(augmented, "species_ml")
+  }
+  texture_source <- attr(data, "texture_source")
+  if (!is.null(texture_source) && identical(as.character(texture_source), "maestro")) {
+    augmented <- c(augmented, "texture_ml")
+  }
+
+  new_ndp_result(level, augmented, sources)
+}
+
+
+#' Constructor for ndp_result objects
+#'
+#' Internal helper used by \code{detect_ndp()}. Keeps the NDP result
+#' structure consistent and attaches the S3 class.
+#'
+#' @param level Integer. NDP level (0-4).
+#' @param augmented Character vector. ML-augmentation flags.
+#' @param sources Character vector. Sources detected.
+#'
+#' @return An \code{ndp_result} list.
+#'
+#' @keywords internal
+#' @noRd
+new_ndp_result <- function(level, augmented = character(0),
+                           sources = character(0)) {
+  level <- as.integer(level)
+  structure(
+    list(
+      level = level,
+      confidence = get_ndp_confidence(level),
+      augmented = augmented,
+      sources = sources
+    ),
+    class = c("ndp_result", "list")
+  )
+}
+
+
+#' Extract augmentation flags from a detect_ndp() result
+#'
+#' Convenience accessor for the \code{augmented} slot of an
+#' \code{ndp_result} object.
+#'
+#' @param x An \code{ndp_result} object from \code{detect_ndp()}.
+#'
+#' @return Character vector of augmentation flags (possibly empty).
+#'
+#' @examples
+#' df <- data.frame(x = 1)
+#' attr(df, "chm_source") <- "opencanopy"
+#' get_ndp_augmented(detect_ndp(df))  # "height_ml"
+#'
+#' @export
+get_ndp_augmented <- function(x) {
+  if (!inherits(x, "ndp_result")) {
+    stop("x must be an ndp_result object returned by detect_ndp()", call. = FALSE)
+  }
+  x$augmented
+}
+
+
+#' @export
+as.integer.ndp_result <- function(x, ...) x$level
+
+
+#' @export
+print.ndp_result <- function(x, ...) {
+  cat(sprintf("NDP %d (confidence %.1f%%)\n",
+              x$level, 100 * x$confidence))
+  if (length(x$augmented) > 0) {
+    cat(sprintf("  augmented: %s\n", paste(x$augmented, collapse = ", ")))
+  }
+  if (length(x$sources) > 0) {
+    cat(sprintf("  sources:   %s\n", paste(x$sources, collapse = ", ")))
+  }
+  invisible(x)
+}
+
+
+#' @export
+format.ndp_result <- function(x, ...) {
+  sprintf("NDP %d", x$level)
 }
 
 
@@ -293,8 +431,8 @@ set_ndp_attributes <- function(data, layers = NULL) {
   attr(data, "has_scanner_terrestre") <- FALSE
   attr(data, "has_modele_3d") <- FALSE
 
-  # Stocker le NDP detecte
-  attr(data, "ndp_detected") <- detect_ndp(data)
+  # Stocker le NDP detecte (niveau integer uniquement pour retrocompat)
+  attr(data, "ndp_detected") <- detect_ndp(data)$level
 
   data
 }
