@@ -27,7 +27,7 @@ Branche : `feat/005-phase1-tuyauterie`
 
 ### 1.2 Détection NDP augmentée
 
-- [ ] T1.5 Lire `R/ndp.R::detect_ndp()` et identifier tous les appelants (grep repo + `nemetonShiny`)
+- [ ] T1.5 Lire `R/ndp.R::detect_ndp()` et identifier tous les appelants (grep repo + `nemetonshiny`)
 - [ ] T1.6 Refactor `detect_ndp()` : retourne `list(level, confidence, augmented, sources)` au lieu d'un simple entier
 - [ ] T1.7 Accesseur de commodité : `get_ndp_augmented(ndp_result)` exporté
 - [ ] T1.8 [P] Adapter les appelants actuels de `detect_ndp()` pour accepter la nouvelle structure (rétrocompatible : accès `$level`)
@@ -228,16 +228,16 @@ Dépend de : **phase 3 mergée**. Tâches internes parallélisables par indicate
 - [ ] T5.5 Mise à jour NEWS.md
 - [ ] T5.6 PR → main, tag v0.16.1
 
-### Phase 6 — UI nemetonShiny (v0.17.0)
+### Phase 6 — UI nemetonshiny (v0.17.0)
 
-Hors repo courant, planning dans `nemetonShiny`.
+Hors repo courant, planning dans `nemetonshiny`.
 
 - [ ] T6.1 Sélecteur source CHM dans `R/mod_home.R` : None / Open-Canopy / LiDAR HD
 - [ ] T6.2 Badge « ⚡ hauteur ML » dans `R/mod_synthesis.R` à côté du badge NDP
 - [ ] T6.3 Traductions FR/EN : `inst/app/i18n/*.json`
 - [ ] T6.4 Intégration du flag `augmented` dans prompts LLM experts (gestionnaire, chercheur)
-- [ ] T6.5 Vignette `nemetonShiny::vignette("augmented-ndp")`
-- [ ] T6.6 PR dans nemetonShiny
+- [ ] T6.5 Vignette `nemetonshiny::vignette("augmented-ndp")`
+- [ ] T6.6 PR dans nemetonshiny
 
 ### Phase 7 — Mosaïquage à l'échelle (v0.17.0)
 

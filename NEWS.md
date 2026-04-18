@@ -106,7 +106,7 @@
 ### Refactoring
 
 * Moved `ndp_badge()` and `ndp_progress_bar()` HTML widgets to the
-  `nemetonShiny` package (they had no use in the core package)
+  `nemetonshiny` package (they had no use in the core package)
 
 ### Bug Fixes
 
@@ -118,7 +118,7 @@
 * Added indicator calculation table by NDP level (0-4)
 * Added all 14 missing topics to the `_pkgdown.yml` reference index
 * Synchronized `CLAUDE.md` with the v0.15.0 core/Shiny split: reflect
-  `nemetonShiny` as a separate package, mark Épaississements 3 and 4 as
+  `nemetonshiny` as a separate package, mark Épaississements 3 and 4 as
   delivered, update file references and strict rules
 
 ---
@@ -158,12 +158,12 @@
 **Core/Shiny package split (ADR-009)**
 
 The `nemeton` package is now **core-only**. The Shiny application
-(`nemetonApp`) has been extracted into a separate package `nemetonShiny`.
-Users who relied on `nemeton::run_app()` must now install `nemetonShiny`
-and call `nemetonShiny::run_app()`.
+(`nemetonApp`) has been extracted into a separate package `nemetonshiny`.
+Users who relied on `nemeton::run_app()` must now install `nemetonshiny`
+and call `nemetonshiny::run_app()`.
 
 * 120+ internal functions are now exported from `nemeton` to be consumed
-  by `nemetonShiny` and other downstream packages (`tree_sat_nemeton`,
+  by `nemetonshiny` and other downstream packages (`tree_sat_nemeton`,
   `maestro_nemeton`)
 * All Shiny modules (`mod_*.R`), expert profiles (`inst/experts/`), UI
   i18n files (`inst/app/i18n/`), LLM prompts and OAuth2 module have been
@@ -240,10 +240,10 @@ and call `nemetonShiny::run_app()`.
 
 ### Documentation
 
-* Updated README for v0.15.0 — `nemetonShiny` installation instructions,
+* Updated README for v0.15.0 — `nemetonshiny` installation instructions,
   NMT names, new badges
 * Updated pkgdown site for v0.15.0 — NMT names, NDP, species,
-  `nemetonShiny`
+  `nemetonshiny`
 * ADR-012 added: future PG extensions (TimescaleDB for continuous
   monitoring, pgvector for RAG perspectives)
 * `CLAUDE.md` updated with DDD/NDP/BMAD architecture

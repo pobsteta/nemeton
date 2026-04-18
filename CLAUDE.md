@@ -4,7 +4,7 @@
 
 Néméton est une plateforme d'analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule 31 indicateurs organisés en 12 familles, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d'acteurs de la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
 
-Le package R `nemeton` (v0.15.1.9000) est le **cœur métier** : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l'application Shiny/golem a été extraite dans un package séparé `nemetonShiny` (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans `nemetonShiny`.
+Le package R `nemeton` (v0.15.1.9000) est le **cœur métier** : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l'application Shiny/golem a été extraite dans un package séparé `nemetonshiny` (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans `nemetonshiny`.
 
 ## Convention NMT (Néméton Naming Convention)
 
@@ -22,13 +22,13 @@ Cette convention s'applique aux nouveaux fichiers et fonctions. Le code existant
 
 ```
 nemeton (ce repo)     → Package cœur. 31 indicateurs, 12 familles, NDP, normalisation, viz. MIT.
-nemetonShiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2. MIT.
+nemetonshiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2. MIT.
 tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
 platform_nemeton      → Documentation plateforme, ADR, glossaire. EUPL v1.2.
 ```
 
-Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. `nemetonShiny` dépend de `nemeton` (120+ fonctions exportées, commit `720a433`).
+Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. `nemetonshiny` dépend de `nemeton` (120+ fonctions exportées, commit `720a433`).
 
 ## Les 12 familles d'indicateurs
 
@@ -74,9 +74,9 @@ Le fichier `R/ndp.R` contient :
 - `detect_ndp()` : détection du NDP depuis les données
 - `compute_general_index()` : indice pondéré Fibonacci
 - `compute_general_index_mixed()` : indice avec NDP mixte par indicateur
-- `ndp_badge()`, `ndp_progress_bar()` : widgets HTML — **déplacés dans `nemetonShiny`** (commit 64ba7b1)
+- `ndp_badge()`, `ndp_progress_bar()` : widgets HTML — **déplacés dans `nemetonshiny`** (commit 64ba7b1)
 
-Le score global, calculé côté cœur via `compute_general_index()`, est consommé par `mod_synthesis.R` dans `nemetonShiny` (au lieu d'un simple `mean()`).
+Le score global, calculé côté cœur via `compute_general_index()`, est consommé par `mod_synthesis.R` dans `nemetonshiny` (au lieu d'un simple `mean()`).
 
 ## Les profils d'acteurs (cible : 15, livrés : 13)
 
@@ -98,7 +98,7 @@ Le score global, calculé côté cœur via `compute_general_index()`, est consom
 | Citoyen | profil_citoyen | S, L, A |
 | Investisseur | profil_investisseur | C, P, E |
 
-Les profils experts sont définis dans `nemetonShiny/inst/experts/*.yml` avec des prompts bilingues FR/EN (E3 livré, commit 1b32943 — 13 profils sur les 15 listés ci-dessus).
+Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml` avec des prompts bilingues FR/EN (E3 livré, commit 1b32943 — 13 profils sur les 15 listés ci-dessus).
 
 ## 6 Bounded Contexts (DDD)
 
@@ -143,7 +143,7 @@ Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout). Les q
 ⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)
 ```
 
-Note : E3 et E4 sont implémentés dans `nemetonShiny` (profils YAML dans `inst/experts/`, module OAuth2). Ils ne sont pas visibles depuis ce repo.
+Note : E3 et E4 sont implémentés dans `nemetonshiny` (profils YAML dans `inst/experts/`, module OAuth2). Ils ne sont pas visibles depuis ce repo.
 
 ## NDP augmenté et intégration Open-Canopy (spec 005, v0.16.0)
 
@@ -179,12 +179,12 @@ Tous les indicateurs restent strictement rétrocompatibles : quand
 
 ## Internationalisation (i18n)
 
-L'i18n vit dans `nemetonShiny` depuis v0.15.0. Pour mémoire :
+L'i18n vit dans `nemetonshiny` depuis v0.15.0. Pour mémoire :
 
 - L'interface utilise `shiny.i18n` via le système `get_i18n(lang)` / `i18n$t("clé")`
-- Fichiers de traduction dans `nemetonShiny/inst/app/i18n/fr.json` (274+ clés) et `en.json`
+- Fichiers de traduction dans `nemetonshiny/inst/app/i18n/fr.json` (274+ clés) et `en.json`
 - Les textes affichés passent TOUJOURS par i18n, jamais en littéral français
-- Les prompts LLM sont bilingues (`nemetonShiny/inst/experts/*.yml` contiennent FR et EN)
+- Les prompts LLM sont bilingues (`nemetonshiny/inst/experts/*.yml` contiennent FR et EN)
 - Prévu pour l'extension européenne : DE, ES, IT à ajouter ultérieurement
 
 Dans ce repo (cœur), les messages utilisateur éventuels (avertissements `cli::cli_warn`, etc.) sont en anglais par cohérence avec la roxygen doc.
@@ -197,7 +197,7 @@ Cœur (ce repo) :
 - **ggplot2**, **cluster**, **tidyr**, **glue**, **cli**, **rlang**
 - **testthat** (edition 3) pour les tests
 
-App Shiny (`nemetonShiny`) — pour mémoire :
+App Shiny (`nemetonshiny`) — pour mémoire :
 - **golem** pour la structuration Shiny
 - **bslib** (Bootstrap 5) pour le layout
 - **leaflet** pour la cartographie
@@ -210,8 +210,8 @@ App Shiny (`nemetonShiny`) — pour mémoire :
 ## Commandes de référence
 
 ```bash
-# Lancer l'application (nécessite le package nemetonShiny installé)
-Rscript -e 'nemetonShiny::run_app()'
+# Lancer l'application (nécessite le package nemetonshiny installé)
+Rscript -e 'nemetonshiny::run_app()'
 
 # Lancer tous les tests
 Rscript -e 'devtools::test()'
@@ -273,7 +273,7 @@ inst/extdata/site_index_curves.csv → Courbes de hauteur dominante par essence/
 inst/datasources/             → Définitions des sources de données (NDP)
 ```
 
-## Fichiers clés (app, repo `nemetonShiny`)
+## Fichiers clés (app, repo `nemetonshiny`)
 
 ```
 R/mod_synthesis.R             → Synthèse : score global, radar, AI
@@ -290,11 +290,11 @@ inst/app/i18n/*.json          → Traductions FR/EN
 
 ## Règles strictes
 
-1. Le code métier (indicateurs, familles, NDP) reste dans le package `nemeton` (ce repo), JAMAIS dans `nemetonShiny`
-2. `nemetonShiny` est de la présentation : il appelle les fonctions exportées par `nemeton`
-3. Aucune logique métier dans `server.R` / `ui.R` / `mod_*.R` de `nemetonShiny`
-4. Dans `nemetonShiny`, les textes UI passent par `i18n$t("clé")`, jamais en littéral
+1. Le code métier (indicateurs, familles, NDP) reste dans le package `nemeton` (ce repo), JAMAIS dans `nemetonshiny`
+2. `nemetonshiny` est de la présentation : il appelle les fonctions exportées par `nemeton`
+3. Aucune logique métier dans `server.R` / `ui.R` / `mod_*.R` de `nemetonshiny`
+4. Dans `nemetonshiny`, les textes UI passent par `i18n$t("clé")`, jamais en littéral
 5. Chaque nouvelle fonction exportée (côté cœur) a un test dans `tests/testthat/`
 6. Les rasters et le LiDAR ne sont JAMAIS stockés dans PostgreSQL (ADR-002)
 7. Le NDP mesure la qualité des données, pas la complétude de l'analyse
-8. Pas de dépendance inverse : `nemeton` n'importe JAMAIS `nemetonShiny`
+8. Pas de dépendance inverse : `nemeton` n'importe JAMAIS `nemetonshiny`

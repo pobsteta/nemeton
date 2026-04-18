@@ -99,7 +99,7 @@ detect_ndp(units)
 #   )
 ```
 
-**UI** (dans `nemetonShiny`) : badge principal inchangé « NDP 0 · 8,3 % ». Tag supplémentaire à côté : « ⚡ hauteur ML ». Le tag ne modifie pas φ global, mais `compute_general_index_mixed()` peut utiliser `augmented` pour pondérer P2 avec un poids Fibonacci équivalent NDP 1 localement.
+**UI** (dans `nemetonshiny`) : badge principal inchangé « NDP 0 · 8,3 % ». Tag supplémentaire à côté : « ⚡ hauteur ML ». Le tag ne modifie pas φ global, mais `compute_general_index_mixed()` peut utiliser `augmented` pour pondérer P2 avec un poids Fibonacci équivalent NDP 1 localement.
 
 Un **amendement ADR-011** sera rédigé en parallèle pour documenter la sémantique du flag.
 
@@ -268,7 +268,7 @@ Tout est **rétrocompatible** : si `chm` absent, comportement actuel inchangé.
 ### Phase 5 — NDVI en bonus (optionnel)
 - [ ] Connexion NDVI (sortie `opencanopy`) → C2, A1, F2
 
-### Phase 6 — UI (`nemetonShiny`, hors cœur)
+### Phase 6 — UI (`nemetonshiny`, hors cœur)
 - [ ] Sélecteur de source CHM dans l'assistant projet
 - [ ] Badge « ⚡ hauteur ML » à côté du badge NDP
 - [ ] Lien vers documentation `opencanopy`
@@ -285,7 +285,7 @@ Tout est **rétrocompatible** : si `chm` absent, comportement actuel inchangé.
   - T2 changement d'occupation
   - R2 post-tempête (dégâts cartographiés)
   - Dynamique P1/P2 (accroissement annuel réel)
-- **Pipeline automatisé** : appeler `opencanopy::pipeline_aoi_to_chm()` directement depuis `nemetonShiny` via `reticulate` côté serveur (coûteux GPU → ADR-003 Scaleway L4 ponctuel)
+- **Pipeline automatisé** : appeler `opencanopy::pipeline_aoi_to_chm()` directement depuis `nemetonshiny` via `reticulate` côté serveur (coûteux GPU → ADR-003 Scaleway L4 ponctuel)
 - **Fusion avec LiDAR HD** : quand disponible, préférer le CHM LiDAR, Open-Canopy en fallback
 - **COG France entière** hébergé sur S3, accès par `terra::rast("s3://...")` + window (phase 7+)
 

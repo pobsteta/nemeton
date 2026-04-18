@@ -24,7 +24,7 @@ SOFTWARE.
 
 ## Related packages
 
-- **nemetonShiny** (EUPL v1.2): Shiny application — https://github.com/pobsteta/nemeton_shiny
+- **nemetonshiny** (EUPL v1.2): Shiny application — https://github.com/pobsteta/nemetonshiny
 - **Produced data** (CC-BY 4.0): Indicator values, species maps, reports
 
 ## Third-party data attributions

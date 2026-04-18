@@ -16,7 +16,7 @@
 
 ```
 nemeton (ce repo)       -> Package coeur R (MIT). 31 indicateurs, 12 familles, NDP, radar.
-nemetonShiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
+nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
 ```
@@ -130,16 +130,16 @@ voir `inst/NOTICE`).
 
 Vignette dediee : [Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy](https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.html).
 
-## Application Interactive (nemetonShiny)
+## Application Interactive (nemetonshiny)
 
 L'application Shiny est dans un package separe :
 
 ```r
 # Installer l'application
-remotes::install_github("pobsteta/nemeton_shiny")
+remotes::install_github("pobsteta/nemetonshiny")
 
 # Lancer
-nemetonShiny::run_app(language = "fr")
+nemetonshiny::run_app(language = "fr")
 ```
 
 L'application permet de :
@@ -152,7 +152,7 @@ L'application permet de :
 - Synchroniser avec PostGIS (Clever Cloud)
 - S'authentifier via OAuth2/OIDC (Keycloak, AgentConnect)
 
-Repository : [pobsteta/nemeton_shiny](https://github.com/pobsteta/nemeton_shiny)
+Repository : [pobsteta/nemetonshiny](https://github.com/pobsteta/nemetonshiny)
 
 ## Workflow avec vos donnees
 
@@ -197,7 +197,7 @@ Site pkgdown : [pobsteta.github.io/nemeton](https://pobsteta.github.io/nemeton/)
 
 MIT - Voir [LICENSE](LICENSE)
 
-L'application Shiny ([nemetonShiny](https://github.com/pobsteta/nemeton_shiny)) est sous EUPL v1.2.
+L'application Shiny ([nemetonshiny](https://github.com/pobsteta/nemetonshiny)) est sous EUPL v1.2.
 
 ## Citation
 

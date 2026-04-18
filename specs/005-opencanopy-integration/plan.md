@@ -19,7 +19,7 @@
 | **vignettes/** | 1 nouvelle vignette (indice de station via Open-Canopy) |
 | **data-raw/** | 1 script de génération des courbes site_index depuis sources brutes |
 | **platform_nemeton** (hors repo) | Amendement ADR-011 |
-| **nemetonShiny** (hors repo) | Phase 6 uniquement (badge UI) |
+| **nemetonshiny** (hors repo) | Phase 6 uniquement (badge UI) |
 
 ### 1.2 Dépendances externes
 
@@ -74,7 +74,7 @@ Phase 1 (tuyauterie + ADR-011 amendment)
    │                         │
    │                         └──► Phase 5 (NDVI bonus, optionnel)
    │
-   └──► Phase 6 (UI nemetonShiny, parallélisable avec P3-5)
+   └──► Phase 6 (UI nemetonshiny, parallélisable avec P3-5)
               │
               └──► Phase 7 (mosaïquage à l'échelle, post-MVP)
 ```
@@ -308,11 +308,11 @@ Tests : compléter `test-indicators-*.R` avec des branches CHM.
 
 ---
 
-## 8. Phase 6 — UI (`nemetonShiny`)
+## 8. Phase 6 — UI (`nemetonshiny`)
 
 **Objectif** : afficher l'augmentation ML dans l'interface.
 
-### 8.1 Livrables (dans `nemetonShiny`)
+### 8.1 Livrables (dans `nemetonshiny`)
 
 | Fichier | Modification |
 |---------|--------------|
@@ -324,7 +324,7 @@ Tests : compléter `test-indicators-*.R` avec des branches CHM.
 
 ### 8.2 Statut
 
-Phase hors repo courant. À planifier dans `nemetonShiny` une fois phase 1 mergée côté cœur.
+Phase hors repo courant. À planifier dans `nemetonshiny` une fois phase 1 mergée côté cœur.
 
 ### 8.3 Effort estimé
 
@@ -428,7 +428,7 @@ Mise à jour pour documenter :
 ## 14. Ce qui vient après (v0.17.0 et au-delà)
 
 - **Phase 5** : NDVI bonus (C2, A1, F2)
-- **Phase 6** : UI `nemetonShiny` (sélecteur CHM, badge « ⚡ hauteur ML »)
+- **Phase 6** : UI `nemetonshiny` (sélecteur CHM, badge « ⚡ hauteur ML »)
 - **Phase 7** : cache dalles IGN + index DuckDB
 - **Open-Canopy-Δ** (nouveau spec 006) : détection de changement T2/R2/dynamique P
 - **Fusion LiDAR HD + Open-Canopy** : priorité LiDAR quand disponible, Open-Canopy en complément

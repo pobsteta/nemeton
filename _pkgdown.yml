@@ -16,8 +16,8 @@ home:
   links:
   - text: Voir sur GitHub
     href: https://github.com/pobsteta/nemeton
-  - text: Application Shiny (nemetonShiny)
-    href: https://github.com/pobsteta/nemeton_shiny
+  - text: Application Shiny (nemetonshiny)
+    href: https://github.com/pobsteta/nemetonshiny
 
 navbar:
   structure:
@@ -228,9 +228,9 @@ reference:
 
   - title: "Application Shiny"
     desc: >
-      L'application interactive est dans le package separe nemetonShiny.
-      Installez-le avec remotes::install_github("pobsteta/nemeton_shiny")
-      puis lancez nemetonShiny::run_app(language = "fr").
+      L'application interactive est dans le package separe nemetonshiny.
+      Installez-le avec remotes::install_github("pobsteta/nemetonshiny")
+      puis lancez nemetonshiny::run_app(language = "fr").
 
   - title: "Methodes S3"
     desc: "Methodes print et summary pour les objets nemeton"
