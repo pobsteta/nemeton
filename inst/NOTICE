@@ -72,16 +72,34 @@ Source   : https://www.worldclim.org/
 License  : CC-BY 4.0
 Usage    : Climate baseline for NDP 0 indicators.
 
-Duplat & Tran-Ha site-index curves (1997)
------------------------------------------
-Reference: Duplat, P., Tran-Ha, M. (1997). "Modèles de croissance
-           en hauteur dominante pour le chêne sessile, le chêne
-           pédonculé, le hêtre et le sapin en France."
-License  : publication IFN — redistribution terms to be confirmed
-           before shipping the embedded curves (see spec 005 phase 2,
-           task T2.1).
-Usage    : Site-index estimation (P2 indicator) when a CHM is
-           available (spec 005 phase 2).
+Duplat & Tran-Ha site-index curves (1997 and subsequent)
+--------------------------------------------------------
+Reference: Duplat, P., Tran-Ha, M. (1997). "Modélisation de la
+           croissance en hauteur dominante du chêne sessile
+           (Quercus petraea Liebl) en France. Variabilité
+           inter-régionale et effet de la période récente
+           (1959-1993)." Annales des Sciences Forestières, 54(7),
+           611-634. Companion publications by the same authors
+           cover Quercus robur, Fagus sylvatica, Abies alba,
+           Picea abies, Pinus sylvestris and Castanea sativa.
+Authors  : P. Duplat and M. Tran-Ha (IFN / ONF).
+License  : The site-index curves tabulated in
+           inst/extdata/site_index_curves.csv are reconstituted
+           from the published models of Duplat & Tran-Ha 1997
+           and related publications. Redistribution within the
+           `nemeton` R package is authorised by M. Tran-Ha
+           (personal communication, April 2026). Downstream
+           redistribution of the CSV by third parties must
+           preserve the present attribution and cite the original
+           publications.
+           Parameters for Douglas (Pseudotsuga menziesii) come
+           from DSF / IRSTEA publications; Pin maritime (Pinus
+           pinaster) from IFN Landes technical notes; Peuplier
+           cultivé (Populus sp.) from CNPF technical notes.
+           Per-species source references are listed in
+           data-raw/site_index_curves.R.
+Usage    : Site-index estimation (P2 indicator) when a Canopy
+           Height Model is available (spec 005 phase 2).
 
 Third-party attributions in source code
 ---------------------------------------

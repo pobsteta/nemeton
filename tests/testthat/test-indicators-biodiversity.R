@@ -975,3 +975,118 @@ test_that("indicateur_b3_connectivite with bdforet", {
   expect_s3_class(result, "sf")
   expect_true("B3" %in% names(result))
 })
+
+
+# ============================================================
+# B2 — CV(CHM) augmentation (spec 005 T4.5-T4.9)
+# ============================================================
+
+test_that("B2 CHM mode increases score on heterogeneous stands", {
+  set.seed(12)
+  # Heterogeneous CHM: wide range of heights -> high CV
+  chm_het <- terra::rast(nrows = 30, ncols = 30,
+                         xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+                         crs = "EPSG:2154",
+                         vals = stats::runif(900, 5, 35))
+  # Homogeneous CHM: all pixels near 25 -> very low CV
+  chm_hom <- terra::rast(nrows = 30, ncols = 30,
+                         xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+                         crs = "EPSG:2154",
+                         vals = rep(25, 900))
+
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(290,10),
+                                    c(290,290), c(10,290),
+                                    c(10,10))))
+  units <- sf::st_sf(
+    strata    = "Dominant",
+    age_class = "Mature",
+    geometry  = sf::st_sfc(poly, crs = 2154)
+  )
+
+  b_base <- indicateur_b2_structure(units)$B2
+  b_het  <- indicateur_b2_structure(units, chm = chm_het)$B2
+  b_hom  <- indicateur_b2_structure(units, chm = chm_hom)$B2
+
+  expect_true(b_het > b_base)
+  expect_true(b_hom <= b_base)
+})
+
+test_that("B2 CHM mode respects cv_chm_weight", {
+  set.seed(3)
+  chm <- terra::rast(nrows = 30, ncols = 30,
+                     xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+                     crs = "EPSG:2154",
+                     vals = stats::runif(900, 5, 35))
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(290,10),
+                                    c(290,290), c(10,290),
+                                    c(10,10))))
+  units <- sf::st_sf(
+    strata    = "Dominant",
+    age_class = "Mature",
+    geometry  = sf::st_sfc(poly, crs = 2154)
+  )
+
+  b_w0  <- indicateur_b2_structure(units, chm = chm, cv_chm_weight = 0)$B2
+  b_w1  <- indicateur_b2_structure(units, chm = chm, cv_chm_weight = 1)$B2
+
+  # Weight 0 -> ignore CHM entirely -> legacy score
+  b_base <- indicateur_b2_structure(units)$B2
+  expect_equal(b_w0, b_base, tolerance = 0.1)
+  # Weight 1 -> output is purely the CV score (100 for this CHM)
+  expect_true(b_w1 > b_base)
+})
+
+test_that("B2 rejects invalid cv_chm_weight", {
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(50,10),
+                                    c(50,50), c(10,50),
+                                    c(10,10))))
+  units <- sf::st_sf(
+    strata    = "Dominant",
+    age_class = "Mature",
+    geometry  = sf::st_sfc(poly, crs = 2154)
+  )
+  expect_error(
+    indicateur_b2_structure(units, cv_chm_weight = -0.1),
+    regexp = "cv_chm_weight"
+  )
+  expect_error(
+    indicateur_b2_structure(units, cv_chm_weight = 1.5),
+    regexp = "cv_chm_weight"
+  )
+})
+
+test_that("B2 without strata uses CHM directly when supplied", {
+  set.seed(7)
+  chm_het <- terra::rast(nrows = 30, ncols = 30,
+                         xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+                         crs = "EPSG:2154",
+                         vals = stats::runif(900, 5, 35))
+  chm_hom <- terra::rast(nrows = 30, ncols = 30,
+                         xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+                         crs = "EPSG:2154",
+                         vals = rep(25, 900))
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(290,10),
+                                    c(290,290), c(10,290),
+                                    c(10,10))))
+  units <- sf::st_sf(geometry = sf::st_sfc(poly, crs = 2154))
+
+  b_het <- indicateur_b2_structure(units, chm = chm_het)$B2
+  b_hom <- indicateur_b2_structure(units, chm = chm_hom)$B2
+
+  expect_true(b_het > 50)
+  expect_true(b_hom < 10)
+})
+
+test_that("B2 CHM mode is backward-compatible without chm arg", {
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(50,10),
+                                    c(50,50), c(10,50),
+                                    c(10,10))))
+  units <- sf::st_sf(
+    strata    = "Dominant",
+    age_class = "Mature",
+    geometry  = sf::st_sfc(poly, crs = 2154)
+  )
+  a <- indicateur_b2_structure(units)$B2
+  b <- indicateur_b2_structure(units)$B2
+  expect_identical(a, b)
+})

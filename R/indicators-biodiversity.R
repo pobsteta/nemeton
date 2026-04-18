@@ -236,6 +236,14 @@ indicateur_b1_protection <- function(units,
 #'   Default c(strata = 0.4, age = 0.3, species = 0.3).
 #' @param use_height_cv Logical. If TRUE and strata_field is NULL, use coefficient
 #'   of variation of height as proxy for vertical diversity. Default FALSE.
+#' @param chm Optional \code{SpatRaster} of canopy heights in
+#'   metres. When supplied, the CV(CHM) per unit is computed and
+#'   blended into the final B2 score with weight
+#'   \code{cv_chm_weight}. If strata/age fields are absent, the
+#'   CV(CHM) becomes the primary score (spec 005 phase 4).
+#' @param cv_chm_weight Numeric in \code{[0, 1]}. Additive weight
+#'   of the CV(CHM) component in the final B2 score. Default
+#'   \code{0.2}. Ignored when \code{chm} is \code{NULL}.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -286,15 +294,65 @@ indicateur_b2_structure <- function(units,
                                              species_field = NULL,
                                              method = "shannon",
                                              weights = c(strata = 0.4, age = 0.3, species = 0.3),
-                                             use_height_cv = FALSE) {
+                                             use_height_cv = FALSE,
+                                             chm = NULL,
+                                             cv_chm_weight = 0.2) {
   # Validate inputs
   validate_sf(units)
+
+  if (!is.numeric(cv_chm_weight) || length(cv_chm_weight) != 1L ||
+      cv_chm_weight < 0 || cv_chm_weight > 1) {
+    stop("cv_chm_weight must be a scalar in [0, 1]", call. = FALSE)
+  }
+
+  # Precompute CV(CHM) once (spec 005 phase 4). Applied as an
+  # additive weighted component at the end of the function when
+  # cv_chm_weight > 0 and a CHM is supplied.
+  cv_chm_score <- NULL
+  if (!is.null(chm)) {
+    if (!inherits(chm, "SpatRaster")) {
+      stop("chm must be a terra SpatRaster", call. = FALSE)
+    }
+    units_proj <- sf::st_transform(as_pure_sf(units), terra::crs(chm))
+    if (requireNamespace("exactextractr", quietly = TRUE)) {
+      vals_list <- exactextractr::exact_extract(
+        chm, units_proj, progress = FALSE, include_cell = FALSE
+      )
+      cv <- vapply(vals_list, function(v) {
+        x <- if (is.data.frame(v)) v$value else v
+        x <- x[!is.na(x) & x >= 0]
+        if (length(x) < 10 || mean(x) <= 0) return(NA_real_)
+        stats::sd(x) / mean(x)
+      }, numeric(1))
+    } else {
+      ext_df <- terra::extract(chm, terra::vect(units_proj),
+                               touches = TRUE)
+      grouped <- split(ext_df[, 2], ext_df[, 1])
+      cv <- vapply(grouped, function(x) {
+        x <- x[!is.na(x) & x >= 0]
+        if (length(x) < 10 || mean(x) <= 0) return(NA_real_)
+        stats::sd(x) / mean(x)
+      }, numeric(1))
+    }
+    # Heterogeneous peuplements score higher. CV ~ 0.4 is the
+    # typical ceiling on mixed multi-strata mature stands.
+    cv_chm_score <- pmin(cv / 0.4, 1) * 100
+  }
 
   # Check fields exist - if missing, use NDVI std dev as proxy for structural diversity
   has_strata <- strata_field %in% names(units)
   has_age <- age_class_field %in% names(units)
 
   if (!has_strata || !has_age) {
+    # Fallback 0: use CHM from the direct `chm` argument
+    # (spec 005 phase 4). Same formula as the LiDAR MNH path
+    # below, but computed from the supplied SpatRaster.
+    if (!is.null(cv_chm_score)) {
+      cli::cli_alert_info("B2: Using direct CHM (spec 005 phase 4)")
+      units$B2 <- cv_chm_score
+      return(units)
+    }
+
     # Fallback 1: use LiDAR MNH (Canopy Height Model) for structural diversity
     # Height variability (std dev) is a direct measure of vertical structure
     mnh_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "lidar_mnh") else NULL
@@ -410,8 +468,39 @@ indicateur_b2_structure <- function(units,
     units$B2[i] <- pmin(base_score + variation, 100)
   }
 
+  # CV(CHM) augmentation (spec 005 phase 4).
+  if (!is.null(cv_chm_score) && cv_chm_weight > 0) {
+    units <- .blend_cv_chm(units, cv_chm_score, cv_chm_weight)
+  }
+
   msg_info("indicateur_b2_structure")
 
+  units
+}
+
+
+# Small internal helper: linearly blend the legacy B2 score with
+# the CV(CHM) score according to `w`. If the legacy B2 is NA for
+# a unit and the CV(CHM) score is available, the CV(CHM) score
+# becomes the fallback.
+#
+# @keywords internal
+.blend_cv_chm <- function(units, cv_chm_score, w) {
+  blended <- numeric(nrow(units))
+  for (i in seq_len(nrow(units))) {
+    b <- units$B2[i]
+    h <- cv_chm_score[i]
+    if (is.na(b) && is.na(h)) {
+      blended[i] <- NA_real_
+    } else if (is.na(b)) {
+      blended[i] <- h
+    } else if (is.na(h)) {
+      blended[i] <- b
+    } else {
+      blended[i] <- (1 - w) * b + w * h
+    }
+  }
+  units$B2 <- pmin(pmax(blended, 0), 100)
   units
 }
 

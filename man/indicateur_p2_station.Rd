@@ -11,7 +11,11 @@ indicateur_p2_station(
   climate_field = "climate",
   productivity_table = NULL,
   column_name = "P2",
-  lang = "en"
+  lang = "en",
+  chm = NULL,
+  age_field = "age",
+  reference_age = 50,
+  h_dom_percentile = 0.9
 )
 }
 \arguments{
@@ -28,15 +32,54 @@ indicateur_p2_station(
 \item{column_name}{Character. Name for output column. Default "P2".}
 
 \item{lang}{Character. Message language. Default "en".}
+
+\item{chm}{Optional \code{SpatRaster} of canopy heights in
+metres. When supplied, activates CHM mode (spec 005 phase
+2). Typically the \code{chm_clean} component returned by
+\code{\link{sanitize_chm}}.}
+
+\item{age_field}{Character. Column name containing stand age
+(years). Used in CHM mode. Default \code{"age"}.}
+
+\item{reference_age}{Numeric. Reference age at which the site
+index is returned in CHM mode. Default \code{50}.}
+
+\item{h_dom_percentile}{Numeric in \code{[0, 1]}. Percentile
+of CHM pixels used to derive dominant height per unit.
+Default \code{0.9}.}
 }
 \value{
-sf object with added column: P2 (annual increment in m3/ha/yr)
+sf object with one added column:
+  \itemize{
+    \item Legacy mode: \code{P2} = annual increment (m3/ha/yr).
+    \item CHM mode:    \code{P2} = site index \eqn{H_0} (m) at
+          \code{reference_age}.
+  }
 }
 \description{
-Calculates a site productivity index combining soil fertility, climate suitability,
-and species-specific growth potential using reference productivity tables.
+Calculates a site productivity index in one of two modes:
+\enumerate{
+  \item \strong{CHM mode} (spec 005 phase 2) — when a Canopy
+        Height Model is supplied via \code{chm}, the function
+        extracts a dominant height per unit and converts it
+        into a site index \eqn{H_0} at \code{reference_age}
+        using \code{\link{compute_site_index}}. The output is
+        a dominant height in metres.
+  \item \strong{Legacy mode} — when \code{chm} is \code{NULL}
+        (default, preserves pre-spec-005 behaviour), the
+        function combines soil fertility, climate suitability
+        and species-specific growth potential using reference
+        productivity tables. The output is an annual
+        increment in \eqn{m^3/ha/yr}.
+}
 }
 \details{
+The two modes answer the same forestry question (how
+productive is this site?) but in different units. Downstream
+callers should use \code{\link{compute_general_index_mixed}}
+or a mode-aware normalization when mixing units.
+
+
 **Calculation**:
 \itemize{
   \item Lookup reference productivity from ONF/IFN tables

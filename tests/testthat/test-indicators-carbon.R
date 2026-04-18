@@ -266,3 +266,135 @@ test_that("nemeton_compute works with new carbon indicators", {
     c2 <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
   })
 })
+
+
+# ============================================================
+# C1 — CHM mode (spec 005 T4.1-T4.4)
+# ============================================================
+
+test_that("C1 CHM mode returns positive biomass for 3 species", {
+  chm <- terra::rast(nrows = 30, ncols = 30,
+                     xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+                     crs = "EPSG:2154",
+                     vals = rep(25, 900))
+  polys <- lapply(1:3, function(i) {
+    ox <- (i - 1) * 100 + 10
+    sf::st_polygon(list(rbind(
+      c(ox, 10), c(ox + 80, 10),
+      c(ox + 80, 90), c(ox, 90), c(ox, 10)
+    )))
+  })
+  units <- sf::st_sf(
+    species  = c("QUPE", "FASY", "PIAB"),
+    dbh      = c(40, 35, 30),
+    stems_ha = c(180, 200, 300),
+    geometry = sf::st_sfc(polys, crs = 2154)
+  )
+  c1 <- indicateur_c1_biomasse(units, chm = chm)
+  expect_length(c1, 3)
+  expect_true(all(!is.na(c1)))
+  expect_true(all(c1 > 0))
+})
+
+test_that("C1 CHM mode propagates NA on missing inputs", {
+  chm <- terra::rast(nrows = 20, ncols = 20,
+                     xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                     crs = "EPSG:2154",
+                     vals = rep(20, 400))
+  polys <- list(
+    sf::st_polygon(list(rbind(c(10,10), c(90,10), c(90,90), c(10,90), c(10,10)))),
+    sf::st_polygon(list(rbind(c(110,110), c(190,110), c(190,190), c(110,190), c(110,110))))
+  )
+  units <- sf::st_sf(
+    species  = c("QUPE", "QUPE"),
+    dbh      = c(35, NA),
+    stems_ha = c(200, 200),
+    geometry = sf::st_sfc(polys, crs = 2154)
+  )
+  c1 <- indicateur_c1_biomasse(units, chm = chm)
+  expect_false(is.na(c1[1]))
+  expect_true(is.na(c1[2]))
+})
+
+test_that("C1 CHM mode and age-based mode are positively correlated", {
+  set.seed(3)
+  n  <- 8
+  dbh_vals <- c(20, 30, 25, 40, 50, 35, 45, 55)
+  h_vals   <- c(15, 22, 18, 28, 32, 26, 30, 34)
+  ages     <- c(40, 80, 50, 100, 120, 70, 90, 140)
+  sp       <- c("QUPE", "FASY", "QUPE", "FASY", "PIAB", "PIAB", "PSME", "PSME")
+
+  rlist <- lapply(seq_along(sp), function(i) {
+    terra::rast(nrows = 10, ncols = 10,
+                xmin = (i - 1) * 100, xmax = i * 100,
+                ymin = 0, ymax = 100,
+                crs = "EPSG:2154",
+                vals = rep(h_vals[i], 100))
+  })
+  chm <- do.call(terra::merge, rlist)
+
+  polys <- lapply(seq_along(sp), function(i) {
+    ox <- (i - 1) * 100 + 10
+    sf::st_polygon(list(rbind(
+      c(ox, 10), c(ox + 80, 10),
+      c(ox + 80, 90), c(ox, 90), c(ox, 10)
+    )))
+  })
+  units <- sf::st_sf(
+    species  = sp,
+    age      = ages,
+    density  = rep(0.7, n),
+    dbh      = dbh_vals,
+    stems_ha = rep(200, n),
+    geometry = sf::st_sfc(polys, crs = 2154)
+  )
+  # genus-level species label for the age path
+  units_age <- units
+  units_age$species <- ifelse(units$species %in% c("QUPE", "FASY"),
+                              "Quercus", "Pinus")
+
+  c1_age <- indicateur_c1_biomasse(units_age)
+  c1_chm <- indicateur_c1_biomasse(units, chm = chm)
+
+  ok <- !is.na(c1_age) & !is.na(c1_chm)
+  rho <- suppressWarnings(
+    stats::cor(c1_age[ok], c1_chm[ok], method = "spearman")
+  )
+  expect_true(rho >= 0.5)
+})
+
+test_that("C1 CHM mode respects the bef argument", {
+  chm <- terra::rast(nrows = 20, ncols = 20,
+                     xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                     crs = "EPSG:2154",
+                     vals = rep(25, 400))
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(190,10), c(190,190), c(10,190), c(10,10))))
+  units <- sf::st_sf(
+    species  = "QUPE",
+    dbh      = 35,
+    stems_ha = 200,
+    geometry = sf::st_sfc(poly, crs = 2154)
+  )
+  c_low  <- indicateur_c1_biomasse(units, chm = chm, bef = 1.0)
+  c_high <- indicateur_c1_biomasse(units, chm = chm, bef = 1.5)
+  expect_equal(c_high, c_low * 1.5, tolerance = 1e-6)
+})
+
+test_that("C1 CHM mode requires dbh_col and species_col", {
+  chm <- terra::rast(nrows = 20, ncols = 20,
+                     xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                     crs = "EPSG:2154",
+                     vals = rep(25, 400))
+  poly <- sf::st_polygon(list(rbind(c(10,10), c(190,10), c(190,190), c(10,190), c(10,10))))
+  # Missing dbh -> falls through to next paths, returns NA since no inventory
+  units <- sf::st_sf(
+    species  = "QUPE",
+    stems_ha = 200,
+    geometry = sf::st_sfc(poly, crs = 2154)
+  )
+  # CHM mode skipped because dbh_col is missing; falls through
+  # to legacy paths. With no inventory data, returns NA.
+  c1 <- suppressMessages(indicateur_c1_biomasse(units, chm = chm))
+  expect_true(is.na(c1))
+})
+

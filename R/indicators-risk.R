@@ -172,10 +172,29 @@ indicateur_r1_feu <- function(units,
 #' \pkg{microclima}. Falls back to DEM-derived terrain exposure when
 #' \pkg{microclima} is unavailable.
 #'
+#' When a Canopy Height Model is supplied (spec 005 phase 4), the
+#' base terrain score is modulated by a canopy-vulnerability
+#' factor \code{f(H_CHM, species)}: tall stands are more
+#' vulnerable than short ones, and at equal height conifers are
+#' more vulnerable than broadleaves (straighter trunks, shallower
+#' roots). The modulation is multiplicative and clamped to
+#' \code{[0, 100]}.
+#'
 #' @param units An sf object with forest parcels.
 #' @param dem A SpatRaster with digital elevation model (meters).
 #' @param layers A nemeton_layers object. Used to extract DEM if
 #'   \code{dem} is NULL.
+#' @param chm Optional \code{SpatRaster} of canopy heights in
+#'   metres. When supplied, activates CHM mode (spec 005 phase
+#'   4).
+#' @param species_field Character. Column of \code{units} holding
+#'   the species code. Used only in CHM mode. Default
+#'   \code{"species"}.
+#' @param h_dom_percentile Numeric in \code{[0, 1]}. Percentile
+#'   of CHM pixels used for dominant height. Default \code{0.9}.
+#' @param h_reference Numeric. Reference height (metres) at which
+#'   the canopy-vulnerability factor equals the species baseline.
+#'   Default \code{30}.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -209,7 +228,11 @@ indicateur_r1_feu <- function(units,
 #' }
 indicateur_r2_tempete <- function(units,
                                  dem = NULL,
-                                 layers = NULL) {
+                                 layers = NULL,
+                                 chm = NULL,
+                                 species_field = "species",
+                                 h_dom_percentile = 0.9,
+                                 h_reference = 30) {
   # Validate inputs
   validate_sf(units)
 
@@ -222,6 +245,24 @@ indicateur_r2_tempete <- function(units,
     cli::cli_alert_warning("R2: No DEM available for storm risk, returning NA")
     units$R2 <- rep(NA_real_, nrow(units))
     return(units)
+  }
+
+  # Optional canopy-vulnerability modulation (spec 005 phase 4).
+  canopy_factor <- NULL
+  if (!is.null(chm)) {
+    if (!inherits(chm, "SpatRaster")) {
+      stop("chm must be a terra SpatRaster", call. = FALSE)
+    }
+    h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
+    sp    <- if (species_field %in% names(units)) units[[species_field]] else NA
+    canopy_factor <- vapply(seq_len(nrow(units)), function(i) {
+      h <- h_dom[i]
+      if (is.na(h)) return(1)
+      species_factor <- if (!is.na(sp[i]) && is_conifer(sp[i])) 1.2 else 0.8
+      f <- (h / h_reference) * species_factor
+      # Clamp so the modulation stays meaningful: [0.5, 1.5].
+      max(0.5, min(1.5, f))
+    }, numeric(1))
   }
 
   # --- Get dominant wind direction (cached) ---
@@ -245,7 +286,9 @@ indicateur_r2_tempete <- function(units,
       r2_raster <- 1 - shelter_coef
       r2_mean <- safe_extract(r2_raster,
         as_pure_sf(units), fun = "mean", progress = FALSE)
-      units$R2 <- pmin(pmax(r2_mean * 100, 0), 100)
+      r2_final <- r2_mean * 100
+      if (!is.null(canopy_factor)) r2_final <- r2_final * canopy_factor
+      units$R2 <- pmin(pmax(r2_final, 0), 100)
       msg_info("indicateur_r2_tempete")
       return(units)
     }, error = function(e) {
@@ -278,7 +321,9 @@ indicateur_r2_tempete <- function(units,
 
   r2_mean <- safe_extract(r2_raster,
     as_pure_sf(units), fun = "mean", progress = FALSE)
-  units$R2 <- pmin(pmax(r2_mean * 100, 0), 100)
+  r2_final <- r2_mean * 100
+  if (!is.null(canopy_factor)) r2_final <- r2_final * canopy_factor
+  units$R2 <- pmin(pmax(r2_final, 0), 100)
   msg_info("indicateur_r2_tempete")
   units
 }

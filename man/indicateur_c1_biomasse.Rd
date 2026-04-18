@@ -9,7 +9,12 @@ indicateur_c1_biomasse(
   layers = NULL,
   species_col = "species",
   age_col = "age",
-  density_col = "density"
+  density_col = "density",
+  chm = NULL,
+  dbh_col = "dbh",
+  stems_col = "stems_ha",
+  h_dom_percentile = 0.9,
+  bef = 1.3
 )
 }
 \arguments{
@@ -22,6 +27,31 @@ indicateur_c1_biomasse(
 \item{age_col}{Character. Column name for stand age (default "age")}
 
 \item{density_col}{Character. Column name for stand density 0-1 (default "density")}
+
+\item{chm}{Optional \code{SpatRaster} of canopy heights in
+metres. When supplied together with \code{dbh_col} and
+\code{species_col}, activates CHM mode (spec 005 phase 4):
+biomass is derived from the IFN tarif
+\eqn{V = a \cdot D^b \cdot H^c} combined with wood density,
+a biomass expansion factor (BEF) and the carbon fraction
+stored in \code{inst/extdata/wood_density.csv}.}
+
+\item{dbh_col}{Character. Column name for mean stand DBH in
+cm. Used only in CHM mode. Default \code{"dbh"}.}
+
+\item{stems_col}{Character. Column name for stand density in
+stems/ha. Used only in CHM mode. Default \code{"stems_ha"}.
+If missing, the value of \code{density_col} (treated as a
+0-1 fraction) is multiplied by 500 stems/ha to derive a
+rough stems/ha proxy.}
+
+\item{h_dom_percentile}{Numeric in \code{[0, 1]}. Percentile
+of CHM pixels used to derive dominant height per unit.
+Default \code{0.9}. Ignored when \code{chm} is \code{NULL}.}
+
+\item{bef}{Numeric. Biomass expansion factor converting stem
+volume to total aboveground dry biomass (branches, bark).
+Default \code{1.30} (IPCC 2006 temperate-forest default).}
 }
 \value{
 Numeric vector of carbon stock values (tC/ha)

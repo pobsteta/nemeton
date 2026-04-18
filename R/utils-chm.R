@@ -242,3 +242,81 @@ sanitize_chm <- function(chm,
   }
   terra::project(r, ref, method = "near")
 }
+
+
+# ================================================================
+# extract_h_dom — dominant height per spatial unit
+# ================================================================
+
+#' Extract dominant height from a CHM for a set of spatial units
+#'
+#' For each polygon unit, computes the dominant height
+#' \eqn{H_{dom}} as a high percentile (default 90\%) of the
+#' canopy-height pixels falling inside that unit. Pixels with
+#' \code{NA} (typically masked by \code{\link{sanitize_chm}}) are
+#' ignored.
+#'
+#' The convention \eqn{H_{dom} = P_{90}(\mathrm{CHM})} is a
+#' practical proxy for the classical definition (mean height of
+#' the 100 largest trees per hectare) when only a CHM raster is
+#' available. Choosing \code{percentile = 1} yields the maximum
+#' height, \code{percentile = 0.5} the median.
+#'
+#' @param chm A \code{SpatRaster} of canopy heights in metres.
+#'   Typically the \code{chm_clean} component returned by
+#'   \code{\link{sanitize_chm}}.
+#' @param units An \code{sf} polygon layer. One row per spatial
+#'   unit.
+#' @param percentile Numeric in \code{[0, 1]}. The percentile of
+#'   canopy heights to take as dominant height. Default
+#'   \code{0.9}.
+#' @param min_pixels Integer. Minimum number of non-\code{NA}
+#'   pixels required to compute \eqn{H_{dom}}. Units with fewer
+#'   pixels get \code{NA}. Default \code{10}.
+#'
+#' @return A numeric vector of length \code{nrow(units)}
+#'   containing the dominant height (in metres) for each unit.
+#'   \code{NA} when the unit holds fewer than \code{min_pixels}
+#'   valid pixels.
+#'
+#' @examples
+#' \dontrun{
+#' chm_clean <- sanitize_chm(chm, forest_mask = bd_foret)$chm_clean
+#' units$H_dom <- extract_h_dom(chm_clean, units)
+#' }
+#'
+#' @export
+extract_h_dom <- function(chm, units, percentile = 0.9,
+                          min_pixels = 10L) {
+  if (!inherits(chm, "SpatRaster")) {
+    stop("chm must be a terra SpatRaster", call. = FALSE)
+  }
+  if (!inherits(units, c("sf", "sfc"))) {
+    stop("units must be an sf/sfc object", call. = FALSE)
+  }
+  if (!is.numeric(percentile) || length(percentile) != 1L ||
+      is.na(percentile) || percentile < 0 || percentile > 1) {
+    stop("percentile must be a scalar in [0, 1]", call. = FALSE)
+  }
+
+  units_proj <- sf::st_transform(units, terra::crs(chm))
+
+  if (requireNamespace("exactextractr", quietly = TRUE)) {
+    vals <- exactextractr::exact_extract(
+      chm, units_proj, progress = FALSE,
+      include_cell = FALSE
+    )
+  } else {
+    vals <- terra::extract(chm, terra::vect(units_proj),
+                           touches = TRUE)
+    vals <- split(vals[, 2], vals[, 1])
+  }
+
+  vapply(vals, function(v) {
+    x <- if (is.data.frame(v)) v$value else v
+    x <- x[!is.na(x)]
+    if (length(x) < min_pixels) return(NA_real_)
+    stats::quantile(x, probs = percentile, names = FALSE,
+                    type = 7)
+  }, numeric(1))
+}

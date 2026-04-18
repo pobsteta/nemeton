@@ -4,7 +4,15 @@
 \alias{indicateur_r2_tempete}
 \title{Calculate Storm Vulnerability Index (R2)}
 \usage{
-indicateur_r2_tempete(units, dem = NULL, layers = NULL)
+indicateur_r2_tempete(
+  units,
+  dem = NULL,
+  layers = NULL,
+  chm = NULL,
+  species_field = "species",
+  h_dom_percentile = 0.9,
+  h_reference = 30
+)
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
@@ -13,6 +21,21 @@ indicateur_r2_tempete(units, dem = NULL, layers = NULL)
 
 \item{layers}{A nemeton_layers object. Used to extract DEM if
 \code{dem} is NULL.}
+
+\item{chm}{Optional \code{SpatRaster} of canopy heights in
+metres. When supplied, activates CHM mode (spec 005 phase
+4).}
+
+\item{species_field}{Character. Column of \code{units} holding
+the species code. Used only in CHM mode. Default
+\code{"species"}.}
+
+\item{h_dom_percentile}{Numeric in \code{[0, 1]}. Percentile
+of CHM pixels used for dominant height. Default \code{0.9}.}
+
+\item{h_reference}{Numeric. Reference height (metres) at which
+the canopy-vulnerability factor equals the species baseline.
+Default \code{30}.}
 }
 \value{
 The input sf object with added column:
@@ -26,6 +49,15 @@ Computes storm vulnerability using wind shelter coefficient from
 \pkg{microclima} is unavailable.
 }
 \details{
+When a Canopy Height Model is supplied (spec 005 phase 4), the
+base terrain score is modulated by a canopy-vulnerability
+factor \code{f(H_CHM, species)}: tall stands are more
+vulnerable than short ones, and at equal height conifers are
+more vulnerable than broadleaves (straighter trunks, shallower
+roots). The modulation is multiplicative and clamped to
+\code{[0, 100]}.
+
+
 **Primary method** (requires \pkg{microclima}):
 Uses \code{microclima::windcoef()} to compute wind shelter coefficient
 from the DEM. Dominant wind direction is obtained from NASA POWER

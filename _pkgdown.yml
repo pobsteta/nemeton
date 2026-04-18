@@ -38,6 +38,8 @@ navbar:
         href: articles/multi-criteria-optimization_fr.html
       - text: Biodiversite et resilience
         href: articles/biodiversity-resilience-v030_fr.html
+      - text: Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy
+        href: articles/site-index-open-canopy_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
 
@@ -137,6 +139,15 @@ reference:
     - indicateur_n1_distance
     - indicateur_n2_continuite
     - indicateur_n3_naturalite
+
+  - title: "CHM et indice de station (spec 005)"
+    desc: "Nettoyage d'un Canopy Height Model et estimation de l'indice de station H0"
+    contents:
+    - sanitize_chm
+    - extract_h_dom
+    - compute_site_index
+    - list_site_index_species
+    - read_site_index_curves
 
   - title: "Systeme NDP (Niveau De Precision)"
     desc: "Ponderation Fibonacci et confiance phi"

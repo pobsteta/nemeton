@@ -12,7 +12,9 @@ indicateur_b2_structure(
   species_field = NULL,
   method = "shannon",
   weights = c(strata = 0.4, age = 0.3, species = 0.3),
-  use_height_cv = FALSE
+  use_height_cv = FALSE,
+  chm = NULL,
+  cv_chm_weight = 0.2
 )
 }
 \arguments{
@@ -38,6 +40,16 @@ Default c(strata = 0.4, age = 0.3, species = 0.3).}
 
 \item{use_height_cv}{Logical. If TRUE and strata_field is NULL, use coefficient
 of variation of height as proxy for vertical diversity. Default FALSE.}
+
+\item{chm}{Optional \code{SpatRaster} of canopy heights in
+metres. When supplied, the CV(CHM) per unit is computed and
+blended into the final B2 score with weight
+\code{cv_chm_weight}. If strata/age fields are absent, the
+CV(CHM) becomes the primary score (spec 005 phase 4).}
+
+\item{cv_chm_weight}{Numeric in \code{[0, 1]}. Additive weight
+of the CV(CHM) component in the final B2 score. Default
+\code{0.2}. Ignored when \code{chm} is \code{NULL}.}
 }
 \value{
 The input sf object with added column:

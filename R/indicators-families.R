@@ -171,6 +171,26 @@ get_or_compute_twi <- function(dem, cache_dir = NULL) {
 #' @param species_col Character. Column name for species (default "species")
 #' @param age_col Character. Column name for stand age (default "age")
 #' @param density_col Character. Column name for stand density 0-1 (default "density")
+#' @param chm Optional \code{SpatRaster} of canopy heights in
+#'   metres. When supplied together with \code{dbh_col} and
+#'   \code{species_col}, activates CHM mode (spec 005 phase 4):
+#'   biomass is derived from the IFN tarif
+#'   \eqn{V = a \cdot D^b \cdot H^c} combined with wood density,
+#'   a biomass expansion factor (BEF) and the carbon fraction
+#'   stored in \code{inst/extdata/wood_density.csv}.
+#' @param dbh_col Character. Column name for mean stand DBH in
+#'   cm. Used only in CHM mode. Default \code{"dbh"}.
+#' @param stems_col Character. Column name for stand density in
+#'   stems/ha. Used only in CHM mode. Default \code{"stems_ha"}.
+#'   If missing, the value of \code{density_col} (treated as a
+#'   0-1 fraction) is multiplied by 500 stems/ha to derive a
+#'   rough stems/ha proxy.
+#' @param h_dom_percentile Numeric in \code{[0, 1]}. Percentile
+#'   of CHM pixels used to derive dominant height per unit.
+#'   Default \code{0.9}. Ignored when \code{chm} is \code{NULL}.
+#' @param bef Numeric. Biomass expansion factor converting stem
+#'   volume to total aboveground dry biomass (branches, bark).
+#'   Default \code{1.30} (IPCC 2006 temperate-forest default).
 #'
 #' @return Numeric vector of carbon stock values (tC/ha)
 #'
@@ -188,10 +208,57 @@ indicateur_c1_biomasse <- function(units,
                                      layers = NULL,
                                      species_col = "species",
                                      age_col = "age",
-                                     density_col = "density") {
+                                     density_col = "density",
+                                     chm = NULL,
+                                     dbh_col = "dbh",
+                                     stems_col = "stems_ha",
+                                     h_dom_percentile = 0.9,
+                                     bef = 1.30) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
+  }
+
+  # --- Path 0: CHM + DBH + species (spec 005 phase 4) -----------
+  if (!is.null(chm) &&
+      species_col %in% names(units) &&
+      dbh_col %in% names(units)) {
+    if (!inherits(chm, "SpatRaster")) {
+      stop("chm must be a terra SpatRaster", call. = FALSE)
+    }
+    cli::cli_alert_info("C1: computing biomass via CHM + DBH (spec 005 phase 4)")
+    h_dom <- extract_h_dom(chm, units, percentile = h_dom_percentile)
+
+    # Stems per ha: prefer stems_col, else derive from density_col fraction
+    if (stems_col %in% names(units)) {
+      stems_ha <- as.numeric(units[[stems_col]])
+    } else if (density_col %in% names(units)) {
+      stems_ha <- as.numeric(units[[density_col]]) * 500
+    } else {
+      stems_ha <- rep(300, nrow(units))
+    }
+
+    sp  <- units[[species_col]]
+    dbh <- as.numeric(units[[dbh_col]])
+
+    biomass <- vapply(seq_len(nrow(units)), function(i) {
+      if (is.na(sp[i]) || is.na(dbh[i]) || is.na(h_dom[i]) ||
+          is.na(stems_ha[i])) return(NA_real_)
+      fallback <- if (is_conifer(sp[i])) "conifer" else "broadleaf"
+      eq <- lookup_ifn_equation(sp[i], fallback_genus = fallback)
+      if (is.null(eq)) return(NA_real_)
+      v_per_tree <- as.numeric(eq$a) * dbh[i]^as.numeric(eq$b) *
+        h_dom[i]^as.numeric(eq$c)
+      rho <- lookup_species_threshold(sp[i], "density_kg_m3",
+                                      "wood_density")
+      cf  <- lookup_species_threshold(sp[i], "carbon_content_fraction",
+                                      "wood_density")
+      if (is.na(rho) || is.na(cf)) return(NA_real_)
+      # tC/ha = V_tree (m3) * rho (kg/m3) / 1000 * BEF * C_frac * stems/ha
+      v_per_tree * rho / 1000 * bef * cf * stems_ha[i]
+    }, numeric(1))
+
+    return(biomass)
   }
 
   has_inventory <- species_col %in% names(units) &&

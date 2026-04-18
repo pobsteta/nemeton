@@ -101,12 +101,14 @@ test_that("indicateur_r2_tempete returns NA without DEM", {
 })
 
 test_that("indicateur_r2_tempete simplified signature (no height/density)", {
-  # Verify the new signature: only units, dem, layers
-  expect_true(all(c("units", "dem", "layers") %in% names(formals(indicateur_r2_tempete))))
+  # Verify the signature: units, dem, layers plus the CHM
+  # arguments added in spec 005 phase 4.
+  fm <- names(formals(indicateur_r2_tempete))
+  expect_true(all(c("units", "dem", "layers") %in% fm))
   # Old params should NOT be in the signature
-  expect_false("height_field" %in% names(formals(indicateur_r2_tempete)))
-  expect_false("density_field" %in% names(formals(indicateur_r2_tempete)))
-  expect_false("weights" %in% names(formals(indicateur_r2_tempete)))
+  expect_false("height_field" %in% fm)
+  expect_false("density_field" %in% fm)
+  expect_false("weights" %in% fm)
 })
 
 test_that("indicateur_r2_tempete with demo data", {
@@ -868,4 +870,139 @@ test_that("indicateur_r4_abroutissement with species palatability", {
   result <- indicateur_r4_abroutissement(units)
   expect_s3_class(result, "sf")
   expect_true("R4" %in% names(result))
+})
+
+
+# ============================================================
+# R2 — CHM-based canopy vulnerability (spec 005 T4.10-T4.13)
+# ============================================================
+
+# Mock the NASAPOWER wind call to avoid network dependency
+local_mock_wind <- function(env = parent.frame()) {
+  withr::defer(
+    assignInNamespace("get_nasapower_wind",
+                      getFromNamespace("get_nasapower_wind", "nemeton"),
+                      ns = "nemeton"),
+    envir = env
+  )
+  assignInNamespace(
+    "get_nasapower_wind",
+    function(units, default_dir = 270, cache_dir = NULL) 270,
+    ns = "nemeton"
+  )
+}
+
+test_that("R2 CHM mode boosts vulnerability on tall conifer stands", {
+  skip_if_not_installed("withr")
+  local_mock_wind()
+
+  # West-facing slope to ensure non-zero base exposure
+  dem <- terra::rast(nrows = 30, ncols = 30,
+                     xmin = 0, xmax = 600, ymin = 0, ymax = 600,
+                     crs = "EPSG:2154")
+  terra::values(dem) <- as.vector(
+    outer(1:30, 1:30, function(i, j) (31 - j) * 15)
+  )
+
+  chm_tall <- terra::rast(nrows = 30, ncols = 30,
+                          xmin = 0, xmax = 600, ymin = 0, ymax = 600,
+                          crs = "EPSG:2154",
+                          vals = rep(35, 900))
+  chm_short <- terra::rast(nrows = 30, ncols = 30,
+                           xmin = 0, xmax = 600, ymin = 0, ymax = 600,
+                           crs = "EPSG:2154",
+                           vals = rep(10, 900))
+
+  poly <- sf::st_polygon(list(rbind(c(50, 50), c(550, 50),
+                                    c(550, 550), c(50, 550),
+                                    c(50, 50))))
+  units_con <- sf::st_sf(species = "PIAB",
+                         geometry = sf::st_sfc(poly, crs = 2154))
+
+  r2_base  <- suppressMessages(
+    indicateur_r2_tempete(units_con, dem = dem)$R2
+  )
+  r2_tall  <- suppressMessages(
+    indicateur_r2_tempete(units_con, dem = dem, chm = chm_tall)$R2
+  )
+  r2_short <- suppressMessages(
+    indicateur_r2_tempete(units_con, dem = dem, chm = chm_short)$R2
+  )
+
+  # CHM mode returns a finite R2 like legacy
+  expect_false(is.na(r2_tall))
+  expect_false(is.na(r2_short))
+  # Tall conifer must be at least as vulnerable as short stand
+  expect_true(r2_tall >= r2_short - 0.01)
+})
+
+test_that("R2 CHM mode: at equal H, conifers are more vulnerable than broadleaves", {
+  skip_if_not_installed("withr")
+  local_mock_wind()
+
+  dem <- terra::rast(nrows = 30, ncols = 30,
+                     xmin = 0, xmax = 600, ymin = 0, ymax = 600,
+                     crs = "EPSG:2154")
+  terra::values(dem) <- as.vector(
+    outer(1:30, 1:30, function(i, j) (31 - j) * 15)
+  )
+  chm <- terra::rast(nrows = 30, ncols = 30,
+                     xmin = 0, xmax = 600, ymin = 0, ymax = 600,
+                     crs = "EPSG:2154",
+                     vals = rep(25, 900))
+
+  poly <- sf::st_polygon(list(rbind(c(50, 50), c(550, 50),
+                                    c(550, 550), c(50, 550),
+                                    c(50, 50))))
+  units_con <- sf::st_sf(species = "PIAB",
+                         geometry = sf::st_sfc(poly, crs = 2154))
+  units_bl  <- sf::st_sf(species = "QUPE",
+                         geometry = sf::st_sfc(poly, crs = 2154))
+
+  r2_con <- suppressMessages(
+    indicateur_r2_tempete(units_con, dem = dem, chm = chm)$R2
+  )
+  r2_bl  <- suppressMessages(
+    indicateur_r2_tempete(units_bl,  dem = dem, chm = chm)$R2
+  )
+  expect_true(r2_con >= r2_bl)
+})
+
+test_that("R2 CHM mode preserves backward compatibility without chm", {
+  skip_if_not_installed("withr")
+  local_mock_wind()
+
+  dem <- terra::rast(nrows = 30, ncols = 30,
+                     xmin = 0, xmax = 600, ymin = 0, ymax = 600,
+                     crs = "EPSG:2154")
+  terra::values(dem) <- as.vector(
+    outer(1:30, 1:30, function(i, j) (31 - j) * 15)
+  )
+  poly <- sf::st_polygon(list(rbind(c(50, 50), c(550, 50),
+                                    c(550, 550), c(50, 550),
+                                    c(50, 50))))
+  units <- sf::st_sf(species = "PIAB",
+                     geometry = sf::st_sfc(poly, crs = 2154))
+
+  a <- suppressMessages(indicateur_r2_tempete(units, dem = dem)$R2)
+  b <- suppressMessages(indicateur_r2_tempete(units, dem = dem)$R2)
+  expect_equal(a, b)
+})
+
+test_that("R2 CHM mode rejects a non-SpatRaster chm", {
+  skip_if_not_installed("withr")
+  local_mock_wind()
+  dem <- terra::rast(nrows = 20, ncols = 20,
+                     xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                     crs = "EPSG:2154")
+  terra::values(dem) <- stats::runif(400, 100, 200)
+  poly <- sf::st_polygon(list(rbind(c(10, 10), c(190, 10),
+                                    c(190, 190), c(10, 190),
+                                    c(10, 10))))
+  units <- sf::st_sf(species = "PIAB",
+                     geometry = sf::st_sfc(poly, crs = 2154))
+  expect_error(
+    indicateur_r2_tempete(units, dem = dem, chm = matrix(1:4, 2, 2)),
+    regexp = "SpatRaster"
+  )
 })

@@ -2,6 +2,87 @@
 
 ### New Features
 
+* C1 biomass, B2 structure, R2 storm — Open-Canopy CHM modes
+  (spec 005 phase 4):
+    * `indicateur_c1_biomasse()` gains a `chm = NULL` argument.
+      When supplied with `dbh` and `species` columns, biomass is
+      derived from the IFN tarif \eqn{V = a \cdot D^b \cdot H^c}
+      combined with wood density (`inst/extdata/wood_density.csv`),
+      a biomass expansion factor (`bef`, default 1.30, IPCC 2006
+      temperate-forest default) and the carbon fraction. Stems
+      per ha: prefer `stems_col` (default `"stems_ha"`), else
+      derive from `density_col` fraction × 500. Positively
+      correlates with the age-based path on varied stands
+      (Spearman ρ ≥ 0.5).
+    * `indicateur_b2_structure()` gains `chm = NULL` and
+      `cv_chm_weight = 0.2` arguments. When a CHM is supplied,
+      CV(height) per unit is computed and blended into the B2
+      score. Without strata/age inputs, the CV(CHM) becomes the
+      primary structural-diversity proxy. Heterogeneous stands
+      (tall + short pixels) score higher than homogeneous ones.
+    * `indicateur_r2_tempete()` gains `chm = NULL`,
+      `species_field`, `h_dom_percentile` and `h_reference`
+      arguments. The base DEM/wind score is modulated by a
+      canopy-vulnerability factor \eqn{f(H, \textit{species})}
+      clamped to [0.5, 1.5]: tall stands are more vulnerable
+      than short ones, and at equal height conifers (factor
+      1.2) score higher than broadleaves (factor 0.8).
+    * All three additions are fully backward-compatible when
+      `chm` is `NULL`.
+* P1 standing-timber volume via Open-Canopy CHM (spec 005 phase 3):
+    * `indicateur_p1_volume()` gains a `chm = NULL` argument.
+      When supplied, the height fed to the IFN tarif
+      \eqn{V = a \cdot D^b \cdot H^c} is taken from the CHM
+      (per-unit 90th-percentile via
+      \code{\link{extract_h_dom}}) instead of the Näslund
+      approximation \eqn{H = 1.3 + 0.65 \cdot DBH}. Typical
+      RMSE reduction on mature stands: 20 to 40 \%.
+    * New optional arguments `h_dom_percentile` (default 0.9)
+      and `pct_masked` (emits a warning when greater than 0.3,
+      signalling a heavily-masked CHM whose P1 estimate is
+      unreliable).
+    * Genus-level fallback is now species-aware: conifers fall
+      back to `CONIFER_GENUS`, non-conifers to
+      `BROADLEAF_GENUS`. Previously every species defaulted to
+      broadleaf, which penalised conifer volume estimates.
+    * Added `PSME` (Pseudotsuga menziesii, Douglas) and `POSP`
+      (Populus sp. cultivé) rows to
+      `inst/extdata/ifn_volume_equations.csv` so they no longer
+      fall back to genus-level coefficients.
+    * New internal helper `is_conifer()` (shared with
+      `compute_site_index()`).
+    * Behaviour is unchanged when `chm` is `NULL`: fully
+      backward-compatible with v0.15.x.
+* P2 site index via Open-Canopy CHM (spec 005 phase 2):
+    * New reference dataset `inst/extdata/site_index_curves.csv`
+      covering the 10 MVP species (QUPE, QURO, FASY, CASA, PIAB,
+      ABAL, PSME, PISY, PIPI, POSP) plus two genus-level fallbacks
+      (`BROADLEAF_GENUS`, `CONIFER_GENUS`). Generated from the
+      published Chapman-Richards parametrizations of Duplat &
+      Tran-Ha 1997 and related works, with per-species source
+      attribution. Distribution authorised by M. Tran-Ha
+      (personal communication, April 2026 — see `inst/NOTICE`).
+    * New `compute_site_index(H_dom, age, species,
+      reference_age = 50)` performs bilinear interpolation over
+      the five fertility classes and returns the dominant height
+      at the reference age (metres). Vectorised; NA-safe;
+      genus-level fallback when the species is not directly
+      tabulated; case-insensitive species codes.
+    * New helpers `list_site_index_species()` and
+      `read_site_index_curves()`.
+    * New `extract_h_dom(chm, units, percentile = 0.9)` in
+      `R/utils-chm.R`: per-unit dominant height from a sanitised
+      CHM raster (90th-percentile by default). Falls back to
+      `terra::extract()` when `exactextractr` is absent.
+    * `indicateur_p2_station()` gains a `chm = NULL` argument
+      that activates the CHM mode when supplied. In CHM mode the
+      output column holds the site index in metres; the legacy
+      proxy (`fertility × climate × species` → m³/ha/yr) is
+      unchanged when `chm` is `NULL`.
+    * New vignette `site-index-open-canopy_fr.Rmd` — end-to-end
+      workflow from a CHM to P2 on a synthetic forest, with a
+      section on limits (CHM ML RMSE, `sanitize_chm()`
+      importance, age dependency).
 * Foundation for Open-Canopy integration (spec 005 phase 1, ADR-011 amendment):
     * `detect_ndp()` now returns an `ndp_result` S3 object with
       `level`, `confidence`, `augmented`, `sources` slots. The
