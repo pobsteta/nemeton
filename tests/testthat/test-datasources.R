@@ -128,3 +128,30 @@ test_that("FR hunting dataset has all species", {
   expect_true("cerf" %in% species)
   expect_true("sanglier" %in% species)
 })
+
+# ---- chm_opencanopy (spec 005 phase 1) ----
+
+test_that("FR config exposes chm_opencanopy dataset", {
+  chm <- get_data_source("chm_opencanopy", "FR")
+  expect_type(chm, "list")
+  expect_equal(chm$type, "raster_local")
+  expect_equal(chm$format, "COG")
+  expect_equal(chm$required_crs, "EPSG:2154")
+  expect_equal(chm$unit, "m")
+})
+
+test_that("chm_opencanopy has plausible value_range", {
+  chm <- get_data_source("chm_opencanopy", "FR")
+  expect_length(chm$value_range, 2)
+  expect_true(chm$value_range[[1]] >= 0)
+  expect_true(chm$value_range[[2]] <= 60)
+  expect_true(chm$value_range[[2]] > chm$value_range[[1]])
+})
+
+test_that("chm_opencanopy declares provenance and license", {
+  chm <- get_data_source("chm_opencanopy", "FR")
+  expect_equal(chm$provenance$package, "opencanopy")
+  expect_true(nzchar(chm$provenance$version_min))
+  expect_true(all(c("bd_ortho", "open_canopy", "derived") %in%
+                    names(chm$license)))
+})

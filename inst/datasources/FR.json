@@ -107,6 +107,28 @@
   },
 
   "datasets": {
+    "chm_opencanopy": {
+      "type": "raster_local",
+      "format": "COG",
+      "description": "Canopy Height Model from opencanopy (IGN BD ORTHO + Open-Canopy pretrained models)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "resolution_m": [0.20, 1.5],
+      "unit": "m",
+      "value_range": [0, 50],
+      "provenance": {
+        "package": "opencanopy",
+        "repo": "https://github.com/pobsteta/opencanopynemeton",
+        "version_min": "0.1.0",
+        "model": ["unet", "pvtv2"],
+        "base_data": "BD ORTHO IGN + Open-Canopy pretrained weights (Fogel et al. 2024)"
+      },
+      "license": {
+        "bd_ortho": "Licence Ouverte / Etalab 2.0",
+        "open_canopy": "MIT (code) / CC-BY-4.0 (data) — to confirm at commit",
+        "derived": "CHM = double attribution IGN BD ORTHO + Fogel et al. 2024"
+      }
+    },
     "oso": {
       "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",
       "description": "OSO - Occupation du Sol (Theia/CESBIO)",
