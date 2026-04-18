@@ -1,5 +1,27 @@
 # nemeton (development version)
 
+### New Features
+
+* Foundation for Open-Canopy integration (spec 005 phase 1, ADR-011 amendment):
+    * `detect_ndp()` now returns an `ndp_result` S3 object with
+      `level`, `confidence`, `augmented`, `sources` slots. The
+      `augmented` vector flags ML-derived layers such as `height_ml`
+      when `attr(data, "chm_source") == "opencanopy"`. The base NDP
+      level and global Fibonacci confidence are unchanged.
+    * **Breaking**: `detect_ndp()` used to return a plain integer.
+      Callers must now use `result$level` or `as.integer(result)`.
+    * New accessor `get_ndp_augmented()`.
+    * New dataset entry `chm_opencanopy` in `inst/datasources/FR.json`
+      (type, format COG, required CRS, value range, provenance, license).
+    * New `sanitize_chm()` 5-step pipeline in `R/utils-chm.R`
+      (forest mask, buildings/water, NDVI threshold, plausibility
+      bounds, slope coherence). Returns `list(chm_clean, pct_masked,
+      steps_applied)` and warns when more than 50% of valid pixels
+      are masked.
+    * New `inst/NOTICE` documenting third-party attributions
+      (IGN BD ORTHO, Open-Canopy weights, LiDAR HD, OSO, WorldClim,
+      Duplat & Tran-Ha site-index curves).
+
 ### Refactoring
 
 * Moved `ndp_badge()` and `ndp_progress_bar()` HTML widgets to the

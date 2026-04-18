@@ -1,0 +1,90 @@
+nemeton — Third-Party Data Attributions
+========================================
+
+This NOTICE lists the third-party datasets and models that the
+`nemeton` R package may consume at runtime via its data-source
+abstraction (ADR-002). Including the ability to consume a dataset
+does not imply that the dataset itself is bundled with the package;
+for the most part, only configuration, schemas, and derived
+statistics are stored here.
+
+IGN BD ORTHO®
+-------------
+Source   : Institut national de l'information géographique et forestière
+           (IGN), https://geoservices.ign.fr/bdortho
+License  : Licence Ouverte / Open Licence version 2.0 (Etalab 2.0)
+Usage    : Base imagery for the opencanopy Canopy Height Model
+           (CHM) workflow (see spec 005 phase 1).
+
+Open-Canopy pre-trained weights and benchmark dataset
+-----------------------------------------------------
+Reference: Fogel, F., Perret, M., Cafferata, S., Chassaing, M.,
+           Lobry, S., Landrieu, L. (2024). "Open-Canopy: A Country-
+           Scale Benchmark for Canopy Height Estimation at Very High
+           Resolution."
+Source   : https://huggingface.co/datasets/AI4Forest/Open-Canopy
+           https://github.com/fajwel/Open-Canopy
+License  : MIT (code) / CC-BY-4.0 (data) — to be confirmed at commit
+           for the specific release consumed.
+Usage    : Pre-trained UNet / PVTv2 weights and benchmark data used
+           by the downstream `opencanopy` R package
+           (pobsteta/opencanopynemeton) to produce CHM rasters fed
+           into `nemeton::sanitize_chm()`.
+
+Derived CHM (opencanopy artefact)
+---------------------------------
+The Canopy Height Model raster produced by the `opencanopy` package
+is a DERIVATIVE WORK of the two sources above. Any redistribution of
+a derived CHM must carry a double attribution:
+  - IGN BD ORTHO® — Licence Ouverte / Etalab 2.0,
+  - Fogel et al. 2024 — Open-Canopy (license of the specific release).
+
+IGN LiDAR HD
+------------
+Source   : IGN, https://geoservices.ign.fr/lidarhd
+License  : Licence Ouverte / Etalab 2.0
+Usage    : High-resolution canopy, terrain and surface models at
+           NDP 1 and above, via the `happign` R package backend.
+
+Theia / CESBIO OSO
+------------------
+Source   : Theia Land Data Centre / CESBIO,
+           https://www.theia-land.fr/
+License  : Licence Ouverte / Etalab 2.0
+Usage    : Land-cover classification (forest classes 17-19).
+
+BD TOPO® / BD Forêt® / BD CARTHAGE®
+-----------------------------------
+Source   : IGN
+License  : Licence Ouverte / Etalab 2.0
+Usage    : Roads, rivers, buildings, forest polygons used as mask
+           layers for CHM sanitisation and indicator computation.
+
+OFB / data.gouv.fr hunting statistics
+-------------------------------------
+Source   : Office Français de la Biodiversité / data.gouv.fr
+License  : Licence Ouverte / Etalab 2.0
+Usage    : R4 abroutissement indicator.
+
+WorldClim
+---------
+Source   : https://www.worldclim.org/
+License  : CC-BY 4.0
+Usage    : Climate baseline for NDP 0 indicators.
+
+Duplat & Tran-Ha site-index curves (1997)
+-----------------------------------------
+Reference: Duplat, P., Tran-Ha, M. (1997). "Modèles de croissance
+           en hauteur dominante pour le chêne sessile, le chêne
+           pédonculé, le hêtre et le sapin en France."
+License  : publication IFN — redistribution terms to be confirmed
+           before shipping the embedded curves (see spec 005 phase 2,
+           task T2.1).
+Usage    : Site-index estimation (P2 indicator) when a CHM is
+           available (spec 005 phase 2).
+
+Third-party attributions in source code
+---------------------------------------
+All data-source metadata (URLs, providers, licenses) are declared in
+JSON configuration files under `inst/datasources/*.json` and read via
+`get_country_config()` / `get_data_source()`.

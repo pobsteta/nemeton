@@ -26,3 +26,11 @@ SOFTWARE.
 
 - **nemetonShiny** (EUPL v1.2): Shiny application — https://github.com/pobsteta/nemeton_shiny
 - **Produced data** (CC-BY 4.0): Indicator values, species maps, reports
+
+## Third-party data attributions
+
+See `inst/NOTICE` (installed alongside the package at
+`system.file("NOTICE", package = "nemeton")`) for attributions of the
+third-party datasets and models that `nemeton` consumes at runtime
+(IGN BD ORTHO, IGN LiDAR HD, Theia OSO, Open-Canopy pre-trained
+weights, WorldClim, IFN site-index curves, etc.).

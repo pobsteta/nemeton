@@ -29,7 +29,6 @@ Imports:
     rlang,
     cluster (>= 2.1.0),
     ggrepel (>= 0.9.0),
-    htmltools (>= 0.5.7),
     jsonlite (>= 1.8.0)
 Suggests:
     testthat (>= 3.0.0),
