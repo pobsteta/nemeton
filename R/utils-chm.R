@@ -110,19 +110,33 @@ sanitize_chm <- function(chm,
 
   chm_out <- chm
 
+  # Each step is wrapped in a named tryCatch so that a downstream
+  # failure (typically terra choking on an sf layer with weird
+  # columns) surfaces with the step name instead of a cryptic
+  # "[subset] invalid name(s)" from terra internals.
+  step <- function(name, expr) {
+    tryCatch(expr, error = function(e) {
+      stop(sprintf("sanitize_chm step '%s' failed: %s",
+                   name, conditionMessage(e)),
+           call. = FALSE)
+    })
+  }
+
   # Etape 1 : masque foret (obligatoire des qu'il est fourni)
   if (!is.null(forest_mask)) {
-    chm_out <- .apply_forest_mask(chm_out, forest_mask)
+    chm_out <- step("forest", .apply_forest_mask(chm_out, forest_mask))
     steps <- c(steps, "forest")
   }
 
   # Etape 2 : masque bati + eau
   if (!is.null(buildings)) {
-    chm_out <- .apply_vector_mask(chm_out, buildings, inverse = TRUE)
+    chm_out <- step("buildings",
+      .apply_vector_mask(chm_out, buildings, inverse = TRUE))
     steps <- c(steps, "buildings")
   }
   if (!is.null(water)) {
-    chm_out <- .apply_vector_mask(chm_out, water, inverse = TRUE)
+    chm_out <- step("water",
+      .apply_vector_mask(chm_out, water, inverse = TRUE))
     steps <- c(steps, "water")
   }
 
@@ -131,13 +145,16 @@ sanitize_chm <- function(chm,
     if (!inherits(ndvi, "SpatRaster")) {
       stop("ndvi must be a SpatRaster", call. = FALSE)
     }
-    ndvi_aligned <- .align_to(ndvi, chm_out)
-    chm_out <- terra::ifel(ndvi_aligned < ndvi_threshold, NA, chm_out)
+    chm_out <- step("ndvi", {
+      ndvi_aligned <- .align_to(ndvi, chm_out)
+      terra::ifel(ndvi_aligned < ndvi_threshold, NA, chm_out)
+    })
     steps <- c(steps, "ndvi")
   }
 
   # Etape 4 : bornes plausibles (toujours appliquee)
-  chm_out <- terra::ifel(chm_out < 0 | chm_out > max_height, NA, chm_out)
+  chm_out <- step("range",
+    terra::ifel(chm_out < 0 | chm_out > max_height, NA, chm_out))
   steps <- c(steps, "range")
 
   # Etape 5 : pente
@@ -145,8 +162,10 @@ sanitize_chm <- function(chm,
     if (!inherits(slope, "SpatRaster")) {
       stop("slope must be a SpatRaster", call. = FALSE)
     }
-    slope_aligned <- .align_to(slope, chm_out)
-    chm_out <- terra::ifel(slope_aligned > 60, NA, chm_out)
+    chm_out <- step("slope", {
+      slope_aligned <- .align_to(slope, chm_out)
+      terra::ifel(slope_aligned > 60, NA, chm_out)
+    })
     steps <- c(steps, "slope")
   }
 
@@ -194,8 +213,7 @@ sanitize_chm <- function(chm,
     return(terra::mask(chm, aligned, maskvalues = c(NA, 0, FALSE)))
   }
   if (inherits(mask, c("sf", "sfc"))) {
-    mask_proj <- sf::st_transform(mask, terra::crs(chm))
-    return(terra::mask(chm, terra::vect(mask_proj)))
+    return(terra::mask(chm, .sf_to_vect_geom(mask, chm)))
   }
   stop("forest_mask must be a SpatRaster or sf layer", call. = FALSE)
 }
@@ -218,8 +236,24 @@ sanitize_chm <- function(chm,
   if (!inherits(vec, c("sf", "sfc"))) {
     stop("vector mask must be an sf/sfc object", call. = FALSE)
   }
-  vec_proj <- sf::st_transform(vec, terra::crs(chm))
-  terra::mask(chm, terra::vect(vec_proj), inverse = inverse)
+  terra::mask(chm, .sf_to_vect_geom(vec, chm), inverse = inverse)
+}
+
+
+# Convert an sf/sfc to a geometry-only SpatVector aligned to the
+# CRS of a reference SpatRaster. Dropping attribute columns avoids
+# terra's "[subset] invalid name(s)" error when the sf has
+# list-columns, factors with weird levels, or field names with
+# characters terra does not like (common with BD Forêt V2 outputs
+# that occasionally keep JSON fragments).
+.sf_to_vect_geom <- function(x, ref_chm) {
+  if (inherits(x, "sfc")) {
+    geom <- x
+  } else {
+    geom <- sf::st_geometry(x)
+  }
+  geom <- sf::st_transform(geom, terra::crs(ref_chm))
+  terra::vect(geom)
 }
 
 
