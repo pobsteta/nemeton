@@ -146,13 +146,20 @@ indicateur_e2_evitement <- function(units,
     }
 
     e2_total[i] <- e2_energy[i] + e2_material[i]
-    msg_info("energy_avoidance_calculated", e2_total[i], e2_energy[i], e2_material[i])
   }
 
   result$E2_energy <- e2_energy
   result$E2_material <- e2_material
   result[[column_name]] <- e2_total
 
+  # One aggregate message for the whole AOI (previously emitted per
+  # unit, which flooded the log with up to nrow(units) lines).
+  msg_info(
+    "energy_avoidance_calculated",
+    sum(e2_total,    na.rm = TRUE),
+    sum(e2_energy,   na.rm = TRUE),
+    sum(e2_material, na.rm = TRUE)
+  )
   cli::cli_alert_success("Calculated {column_name}: CO2 emission avoidance (tCO2eq/yr)")
   return(result)
 }
