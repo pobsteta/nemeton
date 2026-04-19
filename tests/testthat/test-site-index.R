@@ -19,7 +19,7 @@ test_that("all MVP species and fallbacks are tabulated", {
     stringsAsFactors = FALSE
   )
   required_species <- c(
-    "QUPE", "QURO", "FASY", "CASA",
+    "QUPE", "QURO", "FASY", "FASY_NO", "FASY_NE", "CASA",
     "PIAB", "ABAL", "PSME", "PISY", "PIPI", "POSP",
     "BROADLEAF_GENUS", "CONIFER_GENUS"
   )
