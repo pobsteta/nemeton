@@ -181,8 +181,8 @@ Tous les indicateurs restent strictement rétrocompatibles : quand
 
 L'i18n vit dans `nemetonshiny` depuis v0.15.0. Pour mémoire :
 
-- L'interface utilise `shiny.i18n` via le système `get_i18n(lang)` / `i18n$t("clé")`
-- Fichiers de traduction dans `nemetonshiny/inst/app/i18n/fr.json` (274+ clés) et `en.json`
+- L'interface utilise `get_i18n(lang)` / `i18n$t("clé")` (implémentation maison, pas `shiny.i18n`)
+- Source unique des traductions : liste `TRANSLATIONS` dans `nemetonshiny/R/utils_i18n.R` (358+ clés, FR/EN). Une helper `export_translations_json()` permet un export JSON ponctuel pour les traducteurs.
 - Les textes affichés passent TOUJOURS par i18n, jamais en littéral français
 - Les prompts LLM sont bilingues (`nemetonshiny/inst/experts/*.yml` contiennent FR et EN)
 - Prévu pour l'extension européenne : DE, ES, IT à ajouter ultérieurement
@@ -204,7 +204,7 @@ App Shiny (`nemetonshiny`) — pour mémoire :
 - **plotly** (optionnel) / **fmsb** pour le radar
 - **ellmer** pour l'intégration LLM multi-provider (Anthropic, Mistral, OpenAI)
 - **shinyOAuth** pour l'authentification (ADR-005)
-- **shiny.i18n** pour l'internationalisation
+- **i18n maison** (`utils_i18n.R`, liste `TRANSLATIONS` FR/EN)
 - **shinytest2** pour les tests E2E
 
 ## Commandes de référence
@@ -285,7 +285,7 @@ R/mod_auth.R (ou équiv.)      → OAuth2/OIDC via shinyOAuth (E4)
 R/app_ui.R / R/app_server.R   → UI + server principaux
 R/run_app.R                   → Point d'entrée de l'application
 inst/experts/*.yml            → 13 profils experts pour les perspectives IA (E3)
-inst/app/i18n/*.json          → Traductions FR/EN
+R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source unique)
 ```
 
 ## Règles strictes
