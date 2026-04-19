@@ -56,7 +56,20 @@ NULL
 #' @param slope A \code{SpatRaster} of slope in degrees aligned with
 #'   \code{chm}. Optional.
 #' @param ndvi_threshold Numeric. Minimum NDVI to keep a pixel
-#'   (default \code{0.3}).
+#'   (default \code{0.2}). Beech/oak in summer sit at 0.7-0.9, but
+#'   conifer plantations, shadowed pixels and edges commonly dip
+#'   under 0.3, so the default was softened from 0.3 to 0.2 to
+#'   keep enough pixels on realistic stands.
+#' @param forest_coverage_threshold Numeric in \code{[0, 1]}.
+#'   When \code{forest_mask} is an \code{sf} layer, skip the
+#'   forest-mask step if the mask covers less than this fraction
+#'   of the CHM extent (default \code{0.5}). Avoids wiping 95 %+
+#'   of pixels when BD Forêt simply does not map the area. Set to
+#'   \code{0} to force the mask regardless of coverage.
+#' @param verbose Logical. If \code{TRUE} (default), emit a
+#'   \code{cli::cli_alert_info} after every step with the
+#'   cumulative fraction of masked pixels, which helps spot a
+#'   single offending step.
 #'
 #' @return A list with:
 #'   \describe{
@@ -100,7 +113,9 @@ sanitize_chm <- function(chm,
                          ndvi         = NULL,
                          max_height   = 50,
                          slope        = NULL,
-                         ndvi_threshold = 0.3) {
+                         ndvi_threshold = 0.2,
+                         forest_coverage_threshold = 0.5,
+                         verbose = TRUE) {
   if (!inherits(chm, "SpatRaster")) {
     stop("chm must be a terra SpatRaster", call. = FALSE)
   }
@@ -122,10 +137,35 @@ sanitize_chm <- function(chm,
     })
   }
 
-  # Etape 1 : masque foret (obligatoire des qu'il est fourni)
+  # Log cumulative masking after each applied step. Helps spot a
+  # single offending step when the overall ratio looks suspicious.
+  log_step <- function(name) {
+    if (!verbose) return(invisible(NULL))
+    n_now <- sum(!is.na(terra::values(chm_out)))
+    pct   <- if (n_valid_before > 0) 1 - (n_now / n_valid_before) else 0
+    cli::cli_alert_info(
+      "sanitize_chm step '{name}': {round(100 * pct, 1)}% cumulative masked"
+    )
+  }
+
+  # Etape 1 : masque foret — skipped if the mask is an sf layer that
+  # covers too little of the CHM (typical when BD Forêt simply does
+  # not map the area): applying it would wipe 95 %+ of the pixels.
   if (!is.null(forest_mask)) {
-    chm_out <- step("forest", .apply_forest_mask(chm_out, forest_mask))
-    steps <- c(steps, "forest")
+    coverage <- .forest_mask_coverage(chm_out, forest_mask)
+    if (!is.na(coverage) && coverage < forest_coverage_threshold) {
+      cli::cli_warn(c(
+        "sanitize_chm: forest mask covers only \\
+         {round(100 * coverage, 1)}% of the CHM extent \\
+         (< {round(100 * forest_coverage_threshold, 1)}%).",
+        "i" = "Skipping forest step. Pass forest_coverage_threshold = 0 \\
+               to force the mask anyway."
+      ))
+    } else {
+      chm_out <- step("forest", .apply_forest_mask(chm_out, forest_mask))
+      steps <- c(steps, "forest")
+      log_step("forest")
+    }
   }
 
   # Etape 2 : masque bati + eau
@@ -133,11 +173,13 @@ sanitize_chm <- function(chm,
     chm_out <- step("buildings",
       .apply_vector_mask(chm_out, buildings, inverse = TRUE))
     steps <- c(steps, "buildings")
+    log_step("buildings")
   }
   if (!is.null(water)) {
     chm_out <- step("water",
       .apply_vector_mask(chm_out, water, inverse = TRUE))
     steps <- c(steps, "water")
+    log_step("water")
   }
 
   # Etape 3 : seuillage NDVI
@@ -150,12 +192,14 @@ sanitize_chm <- function(chm,
       terra::ifel(ndvi_aligned < ndvi_threshold, NA, chm_out)
     })
     steps <- c(steps, "ndvi")
+    log_step("ndvi")
   }
 
   # Etape 4 : bornes plausibles (toujours appliquee)
   chm_out <- step("range",
     terra::ifel(chm_out < 0 | chm_out > max_height, NA, chm_out))
   steps <- c(steps, "range")
+  log_step("range")
 
   # Etape 5 : pente
   if (!is.null(slope)) {
@@ -167,6 +211,7 @@ sanitize_chm <- function(chm,
       terra::ifel(slope_aligned > 60, NA, chm_out)
     })
     steps <- c(steps, "slope")
+    log_step("slope")
   }
 
   n_valid_after <- sum(!is.na(terra::values(chm_out)))
@@ -237,6 +282,43 @@ sanitize_chm <- function(chm,
     stop("vector mask must be an sf/sfc object", call. = FALSE)
   }
   terra::mask(chm, .sf_to_vect_geom(vec, chm), inverse = inverse)
+}
+
+
+# Fraction of the CHM extent actually covered by the forest mask.
+# Returns NA when the fraction cannot be estimated. sf/sfc inputs
+# are intersected with the CHM bbox; SpatRaster inputs are re-aligned
+# and the fraction of non-NA / non-zero cells is returned.
+.forest_mask_coverage <- function(chm, mask) {
+  ext_vec <- as.vector(terra::ext(chm))
+  chm_bbox <- sf::st_bbox(
+    c(xmin = ext_vec[["xmin"]], ymin = ext_vec[["ymin"]],
+      xmax = ext_vec[["xmax"]], ymax = ext_vec[["ymax"]]),
+    crs = terra::crs(chm)
+  )
+  chm_poly <- sf::st_as_sfc(chm_bbox)
+  chm_area <- as.numeric(sf::st_area(chm_poly))
+  if (!is.finite(chm_area) || chm_area <= 0) return(NA_real_)
+
+  if (inherits(mask, c("sf", "sfc"))) {
+    mask_proj <- sf::st_transform(sf::st_geometry(mask), terra::crs(chm))
+    inter <- tryCatch(
+      suppressWarnings(sf::st_intersection(mask_proj, chm_poly)),
+      error = function(e) NULL
+    )
+    if (is.null(inter) || length(inter) == 0) return(0)
+    return(as.numeric(sum(sf::st_area(inter))) / chm_area)
+  }
+
+  if (inherits(mask, "SpatRaster")) {
+    aligned <- .align_to(mask, chm)
+    vals <- terra::values(aligned)
+    total <- length(vals)
+    if (total == 0) return(NA_real_)
+    return(sum(!is.na(vals) & vals != 0) / total)
+  }
+
+  NA_real_
 }
 
 

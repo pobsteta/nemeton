@@ -12,7 +12,9 @@ sanitize_chm(
   ndvi = NULL,
   max_height = 50,
   slope = NULL,
-  ndvi_threshold = 0.3
+  ndvi_threshold = 0.2,
+  forest_coverage_threshold = 0.5,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -35,7 +37,22 @@ Optional.}
 \code{chm}. Optional.}
 
 \item{ndvi_threshold}{Numeric. Minimum NDVI to keep a pixel
-(default \code{0.3}).}
+(default \code{0.2}). Beech/oak in summer sit at 0.7-0.9, but
+conifer plantations, shadowed pixels and edges commonly dip
+under 0.3, so the default was softened from 0.3 to 0.2 to
+keep enough pixels on realistic stands.}
+
+\item{forest_coverage_threshold}{Numeric in \code{[0, 1]}.
+When \code{forest_mask} is an \code{sf} layer, skip the
+forest-mask step if the mask covers less than this fraction
+of the CHM extent (default \code{0.5}). Avoids wiping 95 %+
+of pixels when BD Forêt simply does not map the area. Set to
+\code{0} to force the mask regardless of coverage.}
+
+\item{verbose}{Logical. If \code{TRUE} (default), emit a
+\code{cli::cli_alert_info} after every step with the
+cumulative fraction of masked pixels, which helps spot a
+single offending step.}
 }
 \value{
 A list with:

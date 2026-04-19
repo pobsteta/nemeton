@@ -151,8 +151,23 @@ test_that("sanitize_chm warns if pct_masked > 0.5", {
   forest_mask <- terra::rast(chm)
   terra::values(forest_mask) <- 0L
   terra::values(forest_mask)[1] <- 1L
-  expect_warning(sanitize_chm(chm, forest_mask = forest_mask),
+  # Force the mask application (coverage check would short-circuit
+  # it otherwise — that's a separate safeguard tested below).
+  expect_warning(sanitize_chm(chm, forest_mask = forest_mask,
+                              forest_coverage_threshold = 0),
                  "masked")
+})
+
+test_that("sanitize_chm skips forest step when mask covers too little", {
+  chm <- make_fixture_chm(size_m = 60, add_artefacts = FALSE)
+  forest_mask <- terra::rast(chm)
+  terra::values(forest_mask) <- 0L
+  terra::values(forest_mask)[1] <- 1L
+  res <- expect_warning(
+    sanitize_chm(chm, forest_mask = forest_mask),
+    "covers only"
+  )
+  expect_false("forest" %in% res$steps_applied)
 })
 
 # ---- ordering and step list ----
