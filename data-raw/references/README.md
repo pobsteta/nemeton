@@ -49,10 +49,36 @@ the HAL links below when you need to audit or extend the parameters.
 - **Vallet P. & Pérot T. (2011).** *Silver fir and Norway spruce
   productivity.* Forest Ecology and Management 261(8), 1390-1400.
 
-### Other species (pending audit)
+### Other species — Phase A calibration vs published points
 
-CASA, PSME, PISY, PIPI, POSP — Chapman-Richards heuristic
-calibration; see comments at the top of `site_index_curves.R`.
+Parameters for the following species remain on a Chapman-Richards
+approximation (pending full equation transcription), but the
+(a, k, p) triplets are calibrated to match one published reference
+point per species at ±0.5 m. Enforced by
+`tests/testthat/test-site-index-calibration.R`.
+
+| Code | Published point           | Source                         |
+|------|---------------------------|--------------------------------|
+| QUPE | H(100) class_3 ≈ 24.0 m   | Duplat & Tran-Ha 1997          |
+| QURO | H(100) class_3 ≈ 22.0 m   | Duplat & Tran-Ha 1997          |
+| CASA | H(80)  class_3 ≈ 22.0 m   | Dhôte-like scaling (IFN 2004)  |
+| PIAB | H(50)  class_3 ≈ 22.0 m   | Seynave et al. 2005            |
+| ABAL | H(50)  class_3 ≈ 20.0 m   | Vallet & Pérot 2011            |
+| PSME | H(50)  class_3 ≈ 27.5 m   | DSF / IRSTEA 2010              |
+| PISY | H(50)  class_3 ≈ 16.5 m   | Duplat 2001 follow-up          |
+| PIPI | H(40)  class_3 ≈ 17.5 m   | Lemoine 1991 (IFN Landes)      |
+| POSP | H(25)  class_3 ≈ 23.5 m   | CNPF 2013 (peupleraie)         |
+
+FASY is separately handled via the Korf recursive model of
+Bontemps et al. 2007 (see the FASY block in
+`data-raw/site_index_curves.R`).
+
+Future phase B would replace each Chapman-Richards approximation
+with the species' native equation (Lundqvist-Matérn BP2 for
+QUPE/QURO from Bontemps 2006, Chapman-Richards fitted via
+stochastic frontier for PIAB from Seynave 2005, etc.); this
+requires non-linear mixed-effects fits over IFN microdata and is
+out of scope of a single documentation pass.
 
 ## Future climate-aware correction (Phase C)
 

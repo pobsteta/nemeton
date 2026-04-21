@@ -54,9 +54,32 @@
 #
 # where A is the upper asymptote (m) varying per fertility
 # class, k is the growth-rate parameter (year^-1), and p is
-# the shape parameter. Parameters are tuned so that H(50) for
-# the median class (class 3) falls within the reference-age
-# values reported in the sources above.
+# the shape parameter.
+#
+# -------------------- Calibration vs published refs ----------
+#
+# The species-specific (A, k, p) triplets below are calibrated
+# so that the median fertility class (class_3) at a species-
+# specific reference age matches a published reference point
+# to within 0.5 m. The published point + source is tabulated in
+# `site_index_reference_points()` (R/site_index.R) and enforced
+# by a regression test (tests/testthat/test-site-index-calibration.R)
+# so that future tweaks to k/p do not silently drift from the
+# literature.
+#
+#   QUPE  H(100) class_3 ≈ 24.0 m   Duplat & Tran-Ha 1997
+#   QURO  H(100) class_3 ≈ 22.0 m   Duplat & Tran-Ha 1997
+#   CASA  H(80)  class_3 ≈ 22.0 m   Dhôte-like scaling
+#   PIAB  H(50)  class_3 ≈ 22.0 m   Seynave et al. 2005
+#   ABAL  H(50)  class_3 ≈ 20.0 m   Vallet & Pérot 2011
+#   PSME  H(50)  class_3 ≈ 27.5 m   DSF/IRSTEA 2010
+#   PISY  H(50)  class_3 ≈ 16.5 m   Duplat 2001
+#   PIPI  H(40)  class_3 ≈ 17.5 m   Lemoine 1991 (Landes)
+#   POSP  H(25)  class_3 ≈ 23.5 m   CNPF 2013
+#
+# FASY is handled separately via the Korf recursive model of
+# Bontemps et al. 2007 (see the FASY_NO / FASY_NE blocks below),
+# not through Chapman-Richards.
 #
 # -------------------- Fallbacks ------------------------------
 #

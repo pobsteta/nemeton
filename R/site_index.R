@@ -152,6 +152,57 @@ list_site_index_species <- function() {
 }
 
 
+#' Published calibration points for the site-index curves
+#'
+#' Returns the set of per-species \eqn{(age, H_{class\_3})}
+#' reference points against which the parameters in
+#' \code{data-raw/site_index_curves.R} are tuned. Each row
+#' carries the source citation so that downstream users can
+#' audit the provenance of the curves, and the regression test
+#' \code{test-site-index-calibration.R} asserts that the
+#' generated CSV reproduces these points within a 0.5 m
+#' tolerance (class_3 at the stated reference age).
+#'
+#' For Phase A species, the underlying equations differ (Duplat
+#' & Tran-Ha 1997, Seynave 2005, Vallet & Pérot 2011…) but the
+#' current Chapman-Richards approximation is calibrated to match
+#' one published point per species. For FASY the full Korf model
+#' from Bontemps et al. 2007 is used, so its calibration point
+#' is the H(100) produced by the Bontemps parameters themselves.
+#'
+#' @return A data.frame with columns \code{species, age, h_class_3,
+#'   source}.
+#'
+#' @examples
+#' site_index_reference_points()
+#'
+#' @export
+site_index_reference_points <- function() {
+  data.frame(
+    species   = c("QUPE", "QURO", "FASY", "CASA",
+                  "PIAB", "ABAL", "PSME", "PISY",
+                  "PIPI", "POSP"),
+    age       = c(100L, 100L, 100L, 80L,
+                  50L,  50L,  50L,  50L,
+                  40L,  25L),
+    h_class_3 = c(24.0, 22.0, 29.2, 22.0,
+                  22.0, 20.0, 27.5, 16.5,
+                  17.5, 23.5),
+    source    = c("Duplat & Tran-Ha 1997",
+                  "Duplat & Tran-Ha 1997",
+                  "Bontemps et al. 2007 (Korf, NO+NE mean)",
+                  "Dh\u00f4te-like scaling (IFN 2004)",
+                  "Seynave et al. 2005",
+                  "Vallet & P\u00e9rot 2011",
+                  "DSF / IRSTEA 2010",
+                  "Duplat 2001 follow-up",
+                  "Lemoine 1991 (IFN Landes)",
+                  "CNPF 2013 (peupleraie)"),
+    stringsAsFactors = FALSE
+  )
+}
+
+
 #' Estimate the site index from a dominant height and a stand age
 #'
 #' Given an observed dominant height \code{H_dom} (typically
