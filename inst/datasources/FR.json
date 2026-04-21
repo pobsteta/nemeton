@@ -107,6 +107,18 @@
   },
 
   "datasets": {
+    "soilgrids_cec": {
+      "type": "raster_remote",
+      "url": "https://files.isric.org/soilgrids/latest/data/cec/cec_0-5cm_mean.vrt",
+      "description": "SoilGrids 2.0 — Cation Exchange Capacity, 0-5 cm topsoil, mean. Direct proxy for nutrient availability and forest soil fertility.",
+      "resolution_m": 250,
+      "unit": "cmol(c)/kg × 10",
+      "native_crs": "Homolosine (IGH)",
+      "format": "VRT (tiled COG)",
+      "provider": "ISRIC - World Soil Information",
+      "license": "CC-BY-4.0",
+      "citation": "Poggio et al. (2021) SoilGrids 2.0: producing soil information for the globe with quantified spatial uncertainty. SOIL 7:217-240."
+    },
     "chm_opencanopy": {
       "type": "raster_local",
       "format": "COG",
