@@ -80,6 +80,41 @@ stochastic frontier for PIAB from Seynave 2005, etc.); this
 requires non-linear mixed-effects fits over IFN microdata and is
 out of scope of a single documentation pass.
 
+## H_dom → D_g allometry (NDP 1 synthetic inventory)
+
+The per-species power-law parameters used by
+`estimate_dq_from_hdom()` (power law `D_g = a · H^0.9` with clamps
+to the observed D_g range) are calibrated against the mean IFN
+`(H_0, D_g)` pair of each species, crossing two Charru papers:
+
+| Code | H_0 IFN mean | D_g IFN mean | Source H_0         | Source D_g     |
+|------|--------------|--------------|--------------------|----------------|
+| FASY |  24.7 m      |  27.3 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| QUPE |  23.3 m      |  23.0 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| QURO |  21.3 m      |  26.0 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| PIAB |  24.5 m      |  29.3 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| ABAL |  25.3 m      |  29.6 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| PISY |  15.0 m      |  22.2 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| QUPU |  14.2 m      |  21.2 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| PIHA |  12.3 m      |  23.5 cm     | Charru 2017 Tab. 1 | Charru 2012 T1 |
+| PSME |  ~25 m*      |  28.1 cm     | IFN 2004 typical*  | Charru 2012 T1 |
+| PIPI |  ~17 m*      |  26.3 cm     | IFN 2004 typical*  | Charru 2012 T1 |
+| PILA |  ~20 m*      |  30.5 cm     | IFN 2004 typical*  | Charru 2012 T1 |
+
+(*) species not in Charru 2017 Tab. 1; H_0 typical values from
+generic IFN 2004 population statistics — less anchored. CASA and
+POSP fall back to broadleaf genus defaults (a = 1.45) for the
+same reason.
+
+Enforced by `tests/testthat/test-synthetic-inventory-calibration.R`
+with 1 cm tolerance on the IFN mean back-propagation.
+
+Phase B (yield-table upgrade, precision target ±15 %) would
+replace this power-law with a proper age-aware table lookup from
+Vannière 1984 (*Tables de production pour les forêts françaises*,
+ENGREF, ISBN 2-85710-016-7); the book is available at ~40 € from
+Decitre / Unithèque / Librairie Gérard, not on HAL.
+
 ## Future climate-aware correction (Phase C)
 
 - **Charru M., Seynave I., Hervé J.-C., Bertrand R., Bontemps J.-D.

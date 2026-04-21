@@ -13,17 +13,31 @@ estimate_dq_from_hdom(H_dom, species)
 (recycled against \code{H_dom}).}
 }
 \value{
-Numeric vector of estimated \eqn{D_g} in cm. \code{NA} when
-  \code{H_dom} is \code{NA}, non-positive or below 6 m (stands too
-  young for this allometry).
+Numeric vector of estimated \eqn{D_g} in cm, clamped
+  to each species' observed range. \code{NA} when
+  \code{H_dom} is \code{NA}, non-positive or below 6 m
+  (stands too young for this allometry).
 }
 \description{
-Applies a species-specific linear allometry
-\deqn{D_g \approx k_{species} \cdot H_{dom}}
-and falls back to a genus-level coefficient when the species is
-not tabulated. The relationship is valid only for pure even-aged
-mature stands; very young or multi-layered stands will be poorly
-approximated.
+Applies a species-specific power-law allometry
+\deqn{D_g \approx a_{species} \cdot H_{dom}^b}
+with \eqn{b = 0.9} (gently sub-linear). The per-species
+\eqn{a_{species}} is calibrated against the mean
+\eqn{(H_0, D_g)} pair observed in the French National Forest
+Inventory — i.e. Charru et al. 2012 Table 1 (mean \eqn{D_g})
+crossed with Charru et al. 2017 Table 1 (mean \eqn{H_0}) for
+the 8 species covered by both, with extensions using typical
+IFN H_0 values for PSME, PIPI, PILA, and broadleaf-genus
+defaults for CASA and POSP.
+}
+\details{
+The relationship is valid only for pure even-aged stands.
+Multi-layered or strongly irregular stands will still be
+approximated — the estimate then reflects a biased mean
+diameter of the dominant social position. The output is
+clamped to the observed \eqn{D_g} range of each species
+(Charru 2012 Table 1) to avoid extrapolation artefacts at
+very small or very large \eqn{H_{dom}}.
 }
 \examples{
 estimate_dq_from_hdom(H_dom = 25, species = "FASY")

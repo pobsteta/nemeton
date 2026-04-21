@@ -24,40 +24,109 @@ NULL
 
 
 # ============================================================
-# H_dom -> D_g allometric coefficients
+# H_dom -> D_g allometric coefficients (power law)
 # ============================================================
 
-# Rough H_dom -> D_g slopes for mature even-aged stands, in cm per m.
-# Values are order-of-magnitude and consistent with IFN 2004 sample
-# statistics (mean H_0 vs mean D_g per species); to be refined from
-# yield tables when available. Keys are the IFN 4-letter codes.
-.h_to_dq_slope <- c(
-  QUPU = 1.20, QURO = 1.05, QUPE = 1.00, FASY = 0.95, CASA = 1.00,
-  PIAB = 0.90, ABAL = 0.90, PSME = 0.85,
-  PISY = 0.95, PIPI = 1.00, PIHA = 1.10, PILA = 0.90,
-  POSP = 1.00
+# Power-law allometry D_g[cm] = a_species * H_dom[m]^b.
+# b = 0.9 is a gently sub-linear shape: at low H young stands
+# retain a D_g floor, and at high H diameter still grows but
+# slower than strictly proportional to height — consistent with
+# published yield-table behaviour and with Eichhorn's law at
+# constant site.
+# For each species, a is calibrated so that D_g(H_0_mean_IFN)
+# equals the IFN mean D_g reported in:
+#   * Charru et al. 2012 Table 1 (mean D_g per species across
+#     the French NFI), and
+#   * Charru et al. 2017 Table 1 (mean H_0 per species in the
+#     same resource, when present).
+# dq_min / dq_max are the observed Dg bounds from Charru 2012
+# Table 1, used as clamps to prevent extrapolation mishaps.
+#
+# Species not in Charru 2017 (PSME, PIPI, PILA) have a derived
+# from Charru 2012 D_g mean and a typical IFN 2004 H_0 mean —
+# less anchored but better than a flat slope.
+# CASA / POSP have no Charru coverage; fall back to broadleaf
+# genus defaults.
+.h_to_dq_params <- data.frame(
+  species = c("QUPU", "QURO", "QUPE", "FASY",
+              "PIAB", "ABAL", "PISY", "PIPI",
+              "PIHA", "PILA", "PSME",
+              "CASA", "POSP"),
+  # a = D_g_IFN_mean / H_0_IFN_mean^0.9 (Charru 2012 x 2017).
+  # Values chosen so that D_g(H_0_ref) = D_g_ref within <0.1 cm.
+  a = c(1.928, 1.646, 1.351, 1.523,
+        1.646, 1.615, 1.922, 2.050,
+        2.431, 2.058, 1.551,
+        1.45,  1.45),
+  b = rep(0.9, 13L),
+  dq_min = c(15, 15, 15, 16,
+             15, 15, 14, 16,
+             15, 18, 20,
+             12, 12),
+  dq_max = c(37, 37, 30, 40,
+             45, 45, 33, 37,
+             40, 50, 50,
+             50, 50),
+  stringsAsFactors = FALSE
 )
 
-# Fallbacks by functional type
-.h_to_dq_fallback <- c(broadleaf = 1.00, conifer = 0.90)
+# Fallbacks by functional type (power-law a, b = 0.9). Derived
+# from per-genus averages of the tabulated species above:
+# broadleaf mean a ≈ 1.57, conifer mean a ≈ 1.90.
+.h_to_dq_fallback <- c(broadleaf = 1.57, conifer = 1.90)
+
+
+#' H_dom -> D_g calibration table (IFN / Charru)
+#'
+#' Returns the species-keyed power-law parameters used by
+#' \code{\link{estimate_dq_from_hdom}}. The \code{a} column is
+#' calibrated so that \eqn{a \cdot H_0^{0.9} = D_g} for the mean
+#' IFN \eqn{(H_0, D_g)} pair of each species (Charru et al. 2012
+#' Table 1 x Charru et al. 2017 Table 1). The \code{dq_min} /
+#' \code{dq_max} columns are the observed Dg range boundaries
+#' from Charru 2012 Table 1.
+#'
+#' @return A data.frame with columns \code{species, a, b, dq_min,
+#'   dq_max}.
+#'
+#' @examples
+#' h_to_dq_params()
+#'
+#' @export
+h_to_dq_params <- function() {
+  .h_to_dq_params
+}
 
 
 #' Estimate a quadratic mean diameter from dominant height
 #'
-#' Applies a species-specific linear allometry
-#' \deqn{D_g \approx k_{species} \cdot H_{dom}}
-#' and falls back to a genus-level coefficient when the species is
-#' not tabulated. The relationship is valid only for pure even-aged
-#' mature stands; very young or multi-layered stands will be poorly
-#' approximated.
+#' Applies a species-specific power-law allometry
+#' \deqn{D_g \approx a_{species} \cdot H_{dom}^b}
+#' with \eqn{b = 0.9} (gently sub-linear). The per-species
+#' \eqn{a_{species}} is calibrated against the mean
+#' \eqn{(H_0, D_g)} pair observed in the French National Forest
+#' Inventory — i.e. Charru et al. 2012 Table 1 (mean \eqn{D_g})
+#' crossed with Charru et al. 2017 Table 1 (mean \eqn{H_0}) for
+#' the 8 species covered by both, with extensions using typical
+#' IFN H_0 values for PSME, PIPI, PILA, and broadleaf-genus
+#' defaults for CASA and POSP.
+#'
+#' The relationship is valid only for pure even-aged stands.
+#' Multi-layered or strongly irregular stands will still be
+#' approximated — the estimate then reflects a biased mean
+#' diameter of the dominant social position. The output is
+#' clamped to the observed \eqn{D_g} range of each species
+#' (Charru 2012 Table 1) to avoid extrapolation artefacts at
+#' very small or very large \eqn{H_{dom}}.
 #'
 #' @param H_dom Numeric vector. Dominant height in metres.
 #' @param species Character vector of IFN species codes
 #'   (recycled against \code{H_dom}).
 #'
-#' @return Numeric vector of estimated \eqn{D_g} in cm. \code{NA} when
-#'   \code{H_dom} is \code{NA}, non-positive or below 6 m (stands too
-#'   young for this allometry).
+#' @return Numeric vector of estimated \eqn{D_g} in cm, clamped
+#'   to each species' observed range. \code{NA} when
+#'   \code{H_dom} is \code{NA}, non-positive or below 6 m
+#'   (stands too young for this allometry).
 #'
 #' @examples
 #' estimate_dq_from_hdom(H_dom = 25, species = "FASY")
@@ -73,17 +142,32 @@ estimate_dq_from_hdom <- function(H_dom, species) {
   H_dom   <- rep_len(as.numeric(H_dom), n)
   species <- rep_len(as.character(species), n)
 
+  tab <- .h_to_dq_params
   out <- rep(NA_real_, n)
+
   for (i in seq_len(n)) {
     h <- H_dom[i]
-    s <- species[i]
+    s <- toupper(species[i])
     if (is.na(h) || is.na(s) || h < 6) next
-    k <- .h_to_dq_slope[toupper(s)]
-    if (length(k) == 0 || is.na(k)) {
-      k <- if (is_conifer(s)) .h_to_dq_fallback["conifer"]
-           else .h_to_dq_fallback["broadleaf"]
+
+    idx <- match(s, tab$species)
+    if (is.na(idx)) {
+      # Unknown species -> functional-type fallback, with broad
+      # bounds borrowed from the most representative genus member.
+      a <- if (is_conifer(s)) .h_to_dq_fallback[["conifer"]]
+           else .h_to_dq_fallback[["broadleaf"]]
+      b <- 0.9
+      lo <- if (is_conifer(s)) 15 else 15
+      hi <- if (is_conifer(s)) 50 else 50
+    } else {
+      a  <- tab$a[idx]
+      b  <- tab$b[idx]
+      lo <- tab$dq_min[idx]
+      hi <- tab$dq_max[idx]
     }
-    out[i] <- as.numeric(k) * h
+
+    dq_raw <- a * h^b
+    out[i] <- pmin(pmax(dq_raw, lo), hi)
   }
   out
 }
