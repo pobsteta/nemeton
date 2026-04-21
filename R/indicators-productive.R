@@ -102,7 +102,8 @@ indicateur_p1_volume <- function(units,
                                         lang = "en",
                                         chm = NULL,
                                         h_dom_percentile = 0.9,
-                                        pct_masked = NULL) {
+                                        pct_masked = NULL,
+                                        use_climate_drift = FALSE) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -201,6 +202,20 @@ indicateur_p1_volume <- function(units,
 
     msg_info("productive_volume_calculated", volume_per_ha, species_code)
     msg_info("productive_allometry_applied", species_code, dbh_cm, height_m)
+  }
+
+  # Optional Charru 2017 climate drift correction (off by default).
+  # Multiplies per-unit volume by a species-specific BAI_chg factor
+  # over 1980-2007 (e.g. 1.25 for PIAB in mountain contexts, 0.72
+  # for PIHA in Mediterranean). See bai_drift_factor().
+  if (isTRUE(use_climate_drift)) {
+    drift <- bai_drift_factor(result[[species_field]])
+    p1_values <- p1_values * drift
+    cli::cli_alert_info(
+      "{column_name}: Charru 2017 climate drift applied \\
+       (range {round(min(drift, na.rm = TRUE), 2)}..\\
+       {round(max(drift, na.rm = TRUE), 2)})"
+    )
   }
 
   # Add to result

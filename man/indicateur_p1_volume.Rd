@@ -15,7 +15,8 @@ indicateur_p1_volume(
   lang = "en",
   chm = NULL,
   h_dom_percentile = 0.9,
-  pct_masked = NULL
+  pct_masked = NULL,
+  use_climate_drift = FALSE
 )
 }
 \arguments{
