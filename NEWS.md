@@ -1,3 +1,82 @@
+# nemeton 0.17.0
+
+### New Features — NDP 1 "synthetic inventory"
+
+* **`n_max_selfthinning(dq, species)`** — species-keyed evaluator of the
+  Charru et al. 2012 self-thinning relationship
+  \eqn{\ln(N_{max}) = a + b \ln(D_g) + c \ln(D_g)^2} for 11 temperate
+  species (11 linear and curvilinear fits from Tables 2/5 of the
+  paper, clamped to each species' observed \eqn{D_g} range).
+* **`estimate_synthetic_inventory()`** — given an `sf` of units, a CHM
+  `SpatRaster` and species codes, chains
+  \eqn{H_{dom}} (CHM) \eqn{\to} \eqn{D_g} (species allometry)
+  \eqn{\to} \eqn{N} (self-thinning × stocking fraction 0.75) and
+  returns per-unit `(dbh, density, source = "synthetic_ml")`.
+* **`ensure_inventory_fields()`** — fills a sf's missing `dbh` /
+  `density` columns in place, leaving user-provided values intact.
+  Wired into `indicateur_p1_volume()`, `_p3_qualite_bois()` and
+  `_e1_bois_energie()` so that these three indicators now compute
+  from the CHM when a terrain inventory is absent, instead of
+  failing with "Missing required fields".
+* **`charru_bai_drift_table()` / `bai_drift_factor(species, habitat)`**
+  — per-species central estimates of the 1980-2007 relative BAI
+  change reported in Charru et al. 2017 (Fig. 4a), with fallback to
+  the per-climatic-habitat mean. `indicateur_p1_volume()` gains an
+  opt-in `use_climate_drift = FALSE` argument that multiplies per-
+  unit volume by the drift factor when TRUE.
+
+### New Features — site-index curves
+
+* **FASY (common beech) migrated to the Korf recursive model of
+  Bontemps et al. 2007 (RFF HS2, Annex 2)**. Three species codes now
+  coexist in `inst/extdata/site_index_curves.csv`:
+    * `FASY_NO` — Nord-Ouest (a=44.2, b=0.032, c=1.647)
+    * `FASY_NE` — Nord-Est  (a=68.7, b=0.028, c=0.823)
+    * `FASY` — per-age per-class mean, used as a regionally-
+      agnostic default pending a GRECO-aware dispatcher.
+* **Phase A calibration audit** — new exported helper
+  `site_index_reference_points()` returns, for each of the 10 MVP
+  species, the published reference point `(age, H_{class\_3})` and
+  its bibliographic source (Duplat & Tran-Ha 1997 for QUPE / QURO,
+  Seynave et al. 2005 for PIAB, Vallet & Pérot 2011 for ABAL,
+  DSF/IRSTEA 2010 for PSME, …). A new regression test
+  `test-site-index-calibration.R` asserts the shipped CSV matches
+  every reference point within 0.5 m (worst current delta: 0.36 m
+  on POSP).
+* **`enrich_parcels_bdforet()` is now exported** so that downstream
+  packages (notably nemetonshiny, for its pre-compute P2 species/age
+  enrichment step) can call it without `:::`.
+
+### Bug Fixes
+
+* **`sanitize_chm()`** hardened against the Open-Canopy feed used in
+  nemetonshiny:
+    * each pipeline step (forest mask, buildings, water, NDVI, range,
+      slope) runs in a named `tryCatch` so a terra failure surfaces
+      with the step name instead of a cryptic `[subset] invalid
+      name(s)`;
+    * sf layers are stripped of every attribute before the
+      `terra::vect()` conversion (via the new internal
+      `.sf_to_vect_geom()`), sidestepping the list-columns /
+      factor-level issues that BD Forêt V2 outputs occasionally
+      carry;
+    * NDVI default threshold softened from 0.3 to 0.2 (the former
+      was too strict for conifer / shadowed / edge pixels);
+    * new `forest_coverage_threshold` (default 0.5): the forest-mask
+      step is skipped with a warning when the mask covers less than
+      that fraction of the CHM extent, instead of wiping 95 %+ of
+      the pixels when BD Forêt simply does not map the area. Pass
+      `forest_coverage_threshold = 0` to force the mask;
+    * each step now emits a `cli_alert_info` with the cumulative
+      fraction of pixels masked, for post-mortem analysis.
+* **E2 CO2 avoidance** emits a single aggregate log line per AOI
+  instead of one line per unit (reduces log noise by ~60× on typical
+  63-UGF projects).
+
+### Breaking changes
+
+* None. All changes are backward-compatible with v0.16.x.
+
 # nemeton 0.16.0
 
 ### New Features
