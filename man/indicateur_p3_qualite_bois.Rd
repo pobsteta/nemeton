@@ -12,7 +12,8 @@ indicateur_p3_qualite_bois(
   species_field = "species",
   weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
   column_name = "P3",
-  lang = "en"
+  lang = "en",
+  chm = NULL
 )
 }
 \arguments{

@@ -12,7 +12,8 @@ indicateur_e1_bois_energie(
   residue_fraction = 0.3,
   coppice_area_field = NULL,
   column_name = "E1",
-  lang = "en"
+  lang = "en",
+  chm = NULL
 )
 }
 \arguments{

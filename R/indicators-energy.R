@@ -33,8 +33,31 @@ indicateur_e1_bois_energie <- function(units,
                                       residue_fraction = 0.3,
                                       coppice_area_field = NULL,
                                       column_name = "E1",
-                                      lang = "en") {
+                                      lang = "en",
+                                      chm = NULL) {
   if (!inherits(units, "sf")) stop("units must be an sf object", call. = FALSE)
+
+  # Auto-estimate volume from CHM when missing: run P1 internally with
+  # the same chm (which in turn synthesises dbh/density from the CHM
+  # via ensure_inventory_fields) and copy the P1 column back as
+  # volume. Keeps E1 self-contained instead of relying on P1 having
+  # been run first (indicators are dispatched independently).
+  if (!volume_field %in% names(units) && !is.null(chm)) {
+    p1 <- tryCatch(
+      indicateur_p1_volume(units, species_field = species_field,
+                           chm = chm, column_name = "..p1_tmp..",
+                           lang = lang),
+      error = function(e) {
+        cli::cli_warn("E1: synthetic P1 estimation failed: {e$message}")
+        NULL
+      }
+    )
+    if (!is.null(p1) && "..p1_tmp.." %in% names(p1)) {
+      units[[volume_field]] <- p1[["..p1_tmp.."]]
+      attr(units, "inventory_source") <- "synthetic_ml"
+    }
+  }
+
   if (!volume_field %in% names(units)) {
     stop(paste("Required field missing:", volume_field), call. = FALSE)
   }

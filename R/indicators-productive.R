@@ -110,6 +110,20 @@ indicateur_p1_volume <- function(units,
 
   method <- match.arg(method)
 
+  # Auto-fill dbh / density from the CHM when they are missing,
+  # before the required-field check. The synthetic path derives
+  # D_g from H_dom via a species allometry, then N from the
+  # Charru 2012 self-thinning law. Fields already present on the
+  # units are respected as-is. No-op when chm is NULL.
+  units <- ensure_inventory_fields(
+    units,
+    species_field = species_field,
+    dbh_field     = dbh_field,
+    density_field = density_field,
+    chm           = chm,
+    h_dom_percentile = h_dom_percentile
+  )
+
   # Check required fields
   required_fields <- c(species_field, dbh_field, density_field)
   missing_fields <- setdiff(required_fields, names(units))
@@ -457,11 +471,23 @@ indicateur_p3_qualite_bois <- function(units,
                                          species_field = "species",
                                          weights = c(form = 0.4, diameter = 0.4, defects = 0.2),
                                          column_name = "P3",
-                                         lang = "en") {
+                                         lang = "en",
+                                         chm = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
   }
+
+  # Auto-fill dbh from the CHM when missing (NDP 1 synthetic, see
+  # ensure_inventory_fields). Density is not needed by P3 but is
+  # produced alongside and dropped if not requested.
+  units <- ensure_inventory_fields(
+    units,
+    species_field = species_field,
+    dbh_field     = dbh_field,
+    density_field = "density",
+    chm           = chm
+  )
 
   if (!dbh_field %in% names(units)) {
     stop(paste("Required field missing:", dbh_field), call. = FALSE)
