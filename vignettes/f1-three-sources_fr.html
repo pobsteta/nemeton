@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Pascal Obstétar" />
+
+<meta name="date" content="2026-04-22" />
+
+<title>F1 Fertilité — trois sources, trois compromis</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">F1 Fertilité — trois sources, trois
+compromis</h1>
+<h4 class="author">Pascal Obstétar</h4>
+<h4 class="date">2026-04-22</h4>
+
+
+
+<div id="pourquoi-trois-sources" class="section level1">
+<h1>Pourquoi trois sources ?</h1>
+<p>L’indicateur F1 « fertilité du sol » est l’un des plus délicats à
+calculer : la <em>fertilité forestière</em> n’est pas un paramètre
+mesurable directement — c’est une synthèse multi-critères (texture,
+profondeur, pH, drainage, nutriments, productivité observée). Selon les
+données disponibles sur l’AOI, <code>nemeton</code> propose
+<strong>trois chemins de calcul</strong> qui reflètent trois compromis
+entre disponibilité, granularité sémantique et rigueur pédologique.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(nemeton)</span></code></pre></div>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>source</code></th>
+<th>Données d’entrée</th>
+<th>Couverture</th>
+<th>Sémantique</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;layer&quot;</code></td>
+<td>Couche utilisateur (raster ou polygone)</td>
+<td>Selon les données</td>
+<td>Dépend de la couche fournie</td>
+<td>Relatif (min-max par appel)</td>
+</tr>
+<tr class="even">
+<td><code>&quot;soilgrids&quot;</code></td>
+<td>SoilGrids 2.0 CEC (0-5 cm, 250 m)</td>
+<td><strong>Mondiale</strong></td>
+<td>CEC continue</td>
+<td><strong>Absolu</strong> (0-100)</td>
+</tr>
+<tr class="odd">
+<td><code>&quot;gissol&quot;</code></td>
+<td>RRP France + table UTS → fertilité AFES 2008</td>
+<td>France métropolitaine</td>
+<td>Typologie pédologique multi-critères</td>
+<td><strong>Absolu</strong> (0-100)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="source-1-layer-échappatoire-générique" class="section level1">
+<h1>Source 1 — <code>&quot;layer&quot;</code> (échappatoire générique)</h1>
+<p>La voie historique : on fournit une couche quelconque portant un
+champ « fertilité », et F1 la normalise linéairement sur 0-100 par
+appel. Utile quand on a des données locales (BD Sol départementale,
+carte de stations régionale) non déclarées dans
+<code>inst/datasources/</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Exemple : un raster local dont chaque pixel porte un score 1-5</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>layers <span class="ot">&lt;-</span> <span class="fu">nemeton_layers</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">rasters =</span> <span class="fu">list</span>(<span class="at">soil =</span> <span class="st">&quot;/chemin/vers/stations.tif&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>f1 <span class="ot">&lt;-</span> <span class="fu">indicateur_f1_fertilite</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">units         =</span> massif_demo_units,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">layers        =</span> layers,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">soil_layer    =</span> <span class="st">&quot;soil&quot;</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">fertility_col =</span> <span class="st">&quot;fertility&quot;</span>     <span class="co"># nom du champ fertilité dans la couche</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Limite</strong> : le score est <em>relatif</em> à l’AOI
+traitée. Deux projets qui utilisent le même raster source obtiendront
+des scores différents si les distributions de leurs AOI diffèrent. Les
+chiffres ne sont pas comparables entre projets.</p>
+</div>
+<div id="source-2-soilgrids-global-absolu-cec" class="section level1">
+<h1>Source 2 — <code>&quot;soilgrids&quot;</code> (global, absolu, CEC)</h1>
+<p>Cette voie streame le raster SoilGrids 2.0 <em>Cation Exchange
+Capacity</em> (topsoil 0-5 cm, mean, 250 m, licence CC-BY 4.0)
+directement depuis ISRIC via un COG <code>/vsicurl/</code>, sans
+téléchargement complet. La CEC observée est ensuite convertie en score
+0-100 via <code>cec_to_fertility_score()</code> (seuils Baize &amp;
+Jabiol 1995, linéaire sur [0, 30] cmol(c)/kg).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Aucune couche à préparer — load_raster_source() fait tout en interne.</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co"># Non exécuté dans cette vignette : dépend d&#39;un accès réseau à ISRIC.</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>f1 <span class="ot">&lt;-</span> <span class="fu">indicateur_f1_fertilite</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">units  =</span> massif_demo_units,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">&quot;soilgrids&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Avantages</strong></p>
+<ul>
+<li>Aucune donnée locale à fournir, l’AOI peut être <strong>n’importe où
+sur la planète</strong> (SoilGrids est global).</li>
+<li>Scores <strong>absolus</strong> : deux projets sur deux forêts
+différentes obtiennent des valeurs comparables.</li>
+<li>Reproductible et versionable (CEC SoilGrids 2.0 est figée).</li>
+</ul>
+<p><strong>Limites</strong> (cf. section <em>Calibration RMQS</em> plus
+bas)</p>
+<ul>
+<li>La CEC seule est un proxy grossier de la fertilité forestière. Les
+sols <strong>alluviaux / colluviaux</strong> (FLUVIOSOL, COLLUVIOSOL)
+sont systématiquement sous-rated car leur fertilité vient de la
+profondeur/drainage, pas du nombre de cations échangeables.</li>
+<li>Les <strong>organosols</strong> (tourbes) sont sur-rated car la
+tourbe a une CEC élevée mais est improductive en sylviculture.</li>
+<li>Résolution 250 m : peut lisser des transitions pédologiques
+fines.</li>
+</ul>
+</div>
+<div id="source-3-gissol-france-typologie-afes-multi-critères" class="section level1">
+<h1>Source 3 — <code>&quot;gissol&quot;</code> (France, typologie AFES,
+multi-critères)</h1>
+<p>Cette voie consomme une couche vectorielle RRP (Référentiel Régional
+Pédologique) que l’utilisateur fournit — polygones portant un code AFES
+2008 (champ <code>rpf_code</code>, <code>UTSDom</code>,
+<code>rp_2008_nom</code>, etc. selon le fournisseur). Chaque polygone
+est intersecté avec les unités, puis son code AFES est joint à la
+<strong>table experte</strong>
+<code>inst/extdata/uts_fertilite_fr.csv</code> (54 UTS, sources Baize
+&amp; Jabiol 1995, AFES 2008, Duchaufour 2001, Jabiol et al. 2009) pour
+récupérer un score 0-100 calibré sur la grille 1-5 (15/35/55/75/90). Le
+score par unité est la <strong>moyenne pondérée par
+surface</strong>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># L&#39;utilisateur a téléchargé le RRP de son département au format GPKG</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>rrp <span class="ot">&lt;-</span> sf<span class="sc">::</span><span class="fu">st_read</span>(<span class="st">&quot;/chemin/vers/rrp_loiret.gpkg&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>layers <span class="ot">&lt;-</span> <span class="fu">nemeton_layers</span>(<span class="at">vectors =</span> <span class="fu">list</span>(<span class="at">soil =</span> rrp))</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>f1 <span class="ot">&lt;-</span> <span class="fu">indicateur_f1_fertilite</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">units         =</span> massif_demo_units,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">layers        =</span> layers,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">source        =</span> <span class="st">&quot;gissol&quot;</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">rpf_code_col  =</span> <span class="st">&quot;UTSDom&quot;</span>        <span class="co"># adapte au nom de colonne du RRP</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>La table expert est exposée</strong> pour audit ou jointure
+manuelle :</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>tbl <span class="ot">&lt;-</span> <span class="fu">read_uts_fertility_table</span>()</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">head</span>(tbl[, <span class="fu">c</span>(<span class="st">&quot;rpf_code&quot;</span>, <span class="st">&quot;rpf_name&quot;</span>, <span class="st">&quot;fertility_class&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>             <span class="st">&quot;fertility_score&quot;</span>, <span class="st">&quot;forest_note&quot;</span>)], <span class="dv">5</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   rpf_code              rpf_name fertility_class fertility_score</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 1 BRUN_EUT     BRUNISOL EUTRIQUE               4              75</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 2 BRUN_MES   BRUNISOL MESOTRIQUE               4              75</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 3 BRUN_DYS    BRUNISOL DYSTRIQUE               2              35</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 4 BRUN_OLI BRUNISOL OLIGO-SATURE               2              35</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 5 BRUN_HUM      BRUNISOL HUMIQUE               3              55</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt;                                                 forest_note</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; 1  bon pour feuillus nobles (hêtre, chêne sessile), douglas</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; 2   polyvalent feuillus-résineux, base forestière française</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; 3 dominante conifères (épicéa, sapin), feuillus acidiphiles</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; 4  station pauvre, productivité médiocre sauf pin sylvestre</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; 5 d&#39;altitude, hêtre-sapin-épicéa, bonne station de montagne</span></span></code></pre></div>
+<p><strong>Avantages</strong></p>
+<ul>
+<li>Score absolu et <strong>multi-critères</strong> : intègre texture,
+drainage, profondeur, pH, acidité, notes forestières.</li>
+<li>Explicable à un technicien forestier : chaque unité est une UTS
+nommée, pas une valeur ML.</li>
+<li>S’aligne sur l’usage pédologique français (nomenclature AFES).</li>
+</ul>
+<p><strong>Limites</strong></p>
+<ul>
+<li><strong>France métropolitaine uniquement</strong>. Hors France,
+revenir à <code>&quot;soilgrids&quot;</code>.</li>
+<li>Nécessite une donnée RRP vectorielle à la main. Les RRP sont
+redistribués région par région (pas de source nationale téléchargeable
+unique en 2026).</li>
+<li>La table V1 est une <strong>ébauche à relire</strong> par un
+pédologue (cf. en-tête
+<code>inst/extdata/uts_fertilite_fr.csv</code>).</li>
+</ul>
+</div>
+<div id="calibration-rmqs-quand-faire-confiance-à-quoi" class="section level1">
+<h1>Calibration RMQS — quand faire confiance à quoi</h1>
+<p>En Phase D de la spécification, la table experte a été confrontée aux
+mesures RMQS (Réseau de Mesures de la Qualité des Sols) 1ère campagne
+2000-2009 (2 037 sites, DOI <a href="https://doi.org/10.15454/QSXKGA">10.15454/QSXKGA</a>, licence
+Etalab 2.0). Le résultat est publié dans
+<code>inst/extdata/uts_fertilite_rmqs_calibration.csv</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>cal_path <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;uts_fertilite_rmqs_calibration.csv&quot;</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                         <span class="at">package =</span> <span class="st">&quot;nemeton&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>cal <span class="ot">&lt;-</span> utils<span class="sc">::</span><span class="fu">read.csv</span>(cal_path, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co"># UTS où l&#39;écart expert vs CEC observée dépasse 20 points</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>outliers <span class="ot">&lt;-</span> cal[cal<span class="sc">$</span>flag_outlier, <span class="fu">c</span>(<span class="st">&quot;rpf_code&quot;</span>, <span class="st">&quot;n_sites&quot;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                                      <span class="st">&quot;cec_median&quot;</span>, <span class="st">&quot;observed_score&quot;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>                                      <span class="st">&quot;expert_score&quot;</span>, <span class="st">&quot;delta&quot;</span>)]</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>outliers[<span class="fu">order</span>(outliers<span class="sc">$</span>delta), ]</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;    rpf_code n_sites cec_median observed_score expert_score delta</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; 22  COL_TYP      63      10.60           35.3           90 -54.7</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; 30  LUV_TYP     159       7.43           24.8           75 -50.2</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; 11 BRUN_MES     378       7.86           26.2           75 -48.8</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 8  BRUN_EUT       9       8.89           29.6           75 -45.4</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; 25  FLU_TYP      54      13.79           46.0           90 -44.0</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; 29  LUV_HYD     192       6.17           20.6           55 -34.4</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; 23  FLU_CAL      15      17.26           57.5           90 -32.5</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; 9  BRUN_HUM       6       7.26           24.2           55 -30.8</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; 27  LUV_DEG      22       7.42           24.7           55 -30.3</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; 37  POD_MEU      24       1.79            6.0           35 -29.0</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; 38  POD_OCR      16       2.72            9.1           35 -25.9</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; 44  RDX_TYP      41       9.14           30.5           55 -24.5</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; 19  CAS_ROU       2      15.49           51.6           75 -23.4</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; 28  LUV_DYS       2       3.68           12.3           35 -22.7</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; 21  COL_CAL      26      20.62           68.7           90 -21.3</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; 13  CAL_CAI     179      24.60           82.0           55  27.0</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; 32  PEY_CAL       3      25.20           84.0           55  29.0</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; 42  RDS_TYP      35      19.30           64.3           35  29.3</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; 31  ORG_INS       4      23.99           80.0           15  65.0</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; 26  LIT_TYP       8      31.95          100.0           15  85.0</span></span></code></pre></div>
+<p>Les deltas ne sont <strong>pas</strong> une invalidation des scores
+experts. Ils mesurent <strong>combien d’information la table expert
+apporte au-delà de la CEC brute</strong>. Quelques lectures utiles :</p>
+<ul>
+<li><strong>Fluviosols / colluviosols sous-rated en CEC</strong>
+(FLU_TYP, COL_TYP, COL_CAL : delta -40 à -55). Leur fertilité forestière
+vient de la profondeur et du drainage. La voie <code>&quot;soilgrids&quot;</code>
+les <strong>sous-rate systématiquement</strong>.</li>
+<li><strong>Organosols sur-rated en CEC</strong> (ORG_INS : +65). La
+tourbe a une haute CEC mais est improductive (acidité, engorgement). La
+voie <code>&quot;soilgrids&quot;</code> les <strong>sur-rate</strong>.</li>
+<li><strong>Bruns « plain » biaisés</strong> (BRUN_MES : 378 sites,
+delta -49). La plupart des étiquettes RMQS « BRUNISOL » sans qualifieur
+tombent dans BRUN_MES par défaut, mais leur profil CEC correspond plutôt
+à BRUN_DYS. Artefact de granularité du mapping, pas une erreur de
+score.</li>
+</ul>
+</div>
+<div id="arbre-de-décision" class="section level1">
+<h1>Arbre de décision</h1>
+<pre><code>AOI hors France ?
+  OUI → source = &quot;soilgrids&quot;
+  NON → As-tu un RRP départemental/régional ?
+          OUI → source = &quot;gissol&quot; (optimal, multi-critères)
+          NON → As-tu des données pédologiques locales (BD Sol, etc.) ?
+                  OUI → source = &quot;layer&quot;   (échappatoire)
+                  NON → source = &quot;soilgrids&quot; (global, mais cf. limites)</code></pre>
+</div>
+<div id="reproduire-la-calibration" class="section level1">
+<h1>Reproduire la calibration</h1>
+<p>Le pipeline complet est shipé dans
+<code>inst/scripts/calibrate_uts_rmqs.R</code>. Il est idempotent et met
+en cache les 4 fichiers RMQS (≈ 2.5 Mo) dans
+<code>tools::R_user_dir(&quot;nemeton&quot;, &quot;cache&quot;)</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Depuis la racine du projet</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="ex">Rscript</span> inst/scripts/calibrate_uts_rmqs.R</span></code></pre></div>
+<p>Le script écrit
+<code>inst/extdata/uts_fertilite_rmqs_calibration.csv</code>. Il signale
+à la console les UTS non appariées (classes absentes de la V1 experte :
+PLANOSOL, PELOSOL, MAGNESISOL, FERSIALSOL, DOLOMITOSOL, ALUANDOSOL,
+ANDOSOL) — candidates pour une extension V2.</p>
+</div>
+<div id="pour-aller-plus-loin" class="section level1">
+<h1>Pour aller plus loin</h1>
+<ul>
+<li><code>?indicateur_f1_fertilite</code> — référence complète du
+paramètre <code>source</code>.</li>
+<li><code>?cec_to_fertility_score</code> — seuils pédologiques de la
+conversion CEC → 0-100.</li>
+<li><code>?read_uts_fertility_table</code> — accès direct à la table
+experte (utile pour un audit ligne par ligne ou une jointure
+ad-hoc).</li>
+<li><code>?load_raster_source</code> — loader générique utilisé par
+<code>source = &quot;soilgrids&quot;</code> (et réutilisable pour toute datasource
+raster déclarée dans <code>inst/datasources/</code>).</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
