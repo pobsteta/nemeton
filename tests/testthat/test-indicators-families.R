@@ -2427,3 +2427,176 @@ test_that("indicateur_f1_fertilite(source='soilgrids') ignores layers arg", {
   expect_length(result, 2)
   expect_true(all(result == 40))  # 120/10 = 12 cmol(c)/kg → 40
 })
+
+# ==============================================================================
+# F1 GIS Sol path — indicateur_f1_fertilite(source = "gissol")
+# ==============================================================================
+
+# Synthetic RRP: two adjacent squares carrying two different AFES codes.
+#   pg1 (x ∈ [0, 10])   CAL_PRO  score 90
+#   pg2 (x ∈ [10, 20])  BRUN_DYS score 35
+make_synthetic_rrp <- function(crs = 2154) {
+  mkpoly <- function(xmin, xmax) {
+    sf::st_polygon(list(rbind(
+      c(xmin, 0), c(xmax, 0), c(xmax, 10), c(xmin, 10), c(xmin, 0)
+    )))
+  }
+  sf::st_sf(
+    rpf_code = c("CAL_PRO", "BRUN_DYS"),
+    geometry = sf::st_sfc(mkpoly(0, 10), mkpoly(10, 20), crs = crs)
+  )
+}
+
+# Helper to build a fake nemeton_layers with a given vector layer.
+make_layers_with_rrp <- function(rrp) {
+  structure(
+    list(
+      rasters = list(),
+      vectors = list(soil = rrp),
+      cache_dir = tempdir()
+    ),
+    class = "nemeton_layers"
+  )
+}
+
+test_that("read_uts_fertility_table loads the shipped CSV", {
+  tbl <- read_uts_fertility_table()
+  expect_s3_class(tbl, "data.frame")
+  expect_true("rpf_code" %in% names(tbl))
+  expect_true("fertility_score" %in% names(tbl))
+  expect_gte(nrow(tbl), 50)
+})
+
+test_that("source='gissol' returns the UTS score when a unit sits entirely in one polygon", {
+  skip_if_not_installed("sf")
+  rrp <- make_synthetic_rrp()
+  layers <- make_layers_with_rrp(rrp)
+  # A unit entirely inside pg1 (CAL_PRO, score 90)
+  unit_in_pg1 <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(1, 1), c(4, 1), c(4, 4), c(1, 4), c(1, 1)
+    ))), crs = 2154)
+  )
+  result <- suppressMessages(
+    indicateur_f1_fertilite(unit_in_pg1, layers, source = "gissol")
+  )
+  expect_equal(result, 90)
+})
+
+test_that("source='gissol' area-weights when a unit straddles two UTS", {
+  skip_if_not_installed("sf")
+  rrp <- make_synthetic_rrp()
+  layers <- make_layers_with_rrp(rrp)
+  # Unit spanning x in [5, 15] — 50% CAL_PRO (90), 50% BRUN_DYS (35)
+  straddling <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(5, 1), c(15, 1), c(15, 9), c(5, 9), c(5, 1)
+    ))), crs = 2154)
+  )
+  result <- suppressMessages(
+    indicateur_f1_fertilite(straddling, layers, source = "gissol")
+  )
+  expect_equal(result, (90 + 35) / 2, tolerance = 1e-6)
+})
+
+test_that("source='gissol' returns NA for units outside any RRP polygon", {
+  skip_if_not_installed("sf")
+  rrp <- make_synthetic_rrp()
+  layers <- make_layers_with_rrp(rrp)
+  outside <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(100, 100), c(105, 100), c(105, 105), c(100, 105), c(100, 100)
+    ))), crs = 2154)
+  )
+  result <- suppressMessages(
+    indicateur_f1_fertilite(outside, layers, source = "gissol")
+  )
+  expect_true(is.na(result))
+})
+
+test_that("source='gissol' warns and drops unknown AFES codes", {
+  skip_if_not_installed("sf")
+  rrp <- sf::st_sf(
+    rpf_code = c("CAL_PRO", "NOT_IN_TABLE"),
+    geometry = sf::st_sfc(
+      sf::st_polygon(list(rbind(c(0,0), c(10,0), c(10,10), c(0,10), c(0,0)))),
+      sf::st_polygon(list(rbind(c(10,0), c(20,0), c(20,10), c(10,10), c(10,0)))),
+      crs = 2154
+    )
+  )
+  layers <- make_layers_with_rrp(rrp)
+  # Unit straddling both — the NOT_IN_TABLE half is dropped, result is 90
+  straddling <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(5, 1), c(15, 1), c(15, 9), c(5, 9), c(5, 1)
+    ))), crs = 2154)
+  )
+  expect_warning(
+    result <- suppressMessages(
+      indicateur_f1_fertilite(straddling, layers, source = "gissol")
+    ),
+    "NOT_IN_TABLE|not in UTS"
+  )
+  expect_equal(result, 90, tolerance = 1e-6)
+})
+
+test_that("source='gissol' honours a custom rpf_code_col", {
+  skip_if_not_installed("sf")
+  rrp <- make_synthetic_rrp()
+  names(rrp)[names(rrp) == "rpf_code"] <- "UTSDom"
+  layers <- make_layers_with_rrp(rrp)
+  unit_in_pg1 <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(1, 1), c(4, 1), c(4, 4), c(1, 4), c(1, 1)
+    ))), crs = 2154)
+  )
+  result <- suppressMessages(
+    indicateur_f1_fertilite(unit_in_pg1, layers,
+                            source = "gissol",
+                            rpf_code_col = "UTSDom")
+  )
+  expect_equal(result, 90)
+})
+
+test_that("source='gissol' errors clearly when the column is missing", {
+  skip_if_not_installed("sf")
+  rrp <- make_synthetic_rrp()
+  names(rrp)[names(rrp) == "rpf_code"] <- "weird_name"
+  layers <- make_layers_with_rrp(rrp)
+  unit <- sf::st_sf(
+    id = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(1, 1), c(4, 1), c(4, 4), c(1, 4), c(1, 1)
+    ))), crs = 2154)
+  )
+  expect_error(
+    indicateur_f1_fertilite(unit, layers, source = "gissol"),
+    "rpf_code.*not found"
+  )
+})
+
+test_that("source='gissol' reprojects RRP when CRSes differ", {
+  skip_if_not_installed("sf")
+  # RRP in WGS84, unit in Lambert-93 — must not error, must return score
+  rrp_wgs <- make_synthetic_rrp(crs = 4326)
+  layers <- make_layers_with_rrp(rrp_wgs)
+  unit_l93 <- sf::st_transform(
+    sf::st_sf(
+      id = 1L,
+      geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+        c(1, 1), c(4, 1), c(4, 4), c(1, 4), c(1, 1)
+      ))), crs = 4326)
+    ),
+    crs = 2154
+  )
+  result <- suppressMessages(
+    indicateur_f1_fertilite(unit_l93, layers, source = "gissol")
+  )
+  expect_false(is.na(result))
+  expect_equal(result, 90, tolerance = 1e-6)
+})

@@ -9,8 +9,9 @@ indicateur_f1_fertilite(
   layers = NULL,
   soil_layer = "soil",
   fertility_col = "fertility",
-  source = c("layer", "soilgrids"),
-  country = "FR"
+  source = c("layer", "soilgrids", "gissol"),
+  country = "FR",
+  rpf_code_col = "rpf_code"
 )
 }
 \arguments{
@@ -22,24 +23,32 @@ indicateur_f1_fertilite(
 \item{soil_layer}{Character. Name of soil layer in layers object.
 Unused when \code{source = "soilgrids"}.}
 
-\item{fertility_col}{Character. Column/band name for fertility class.
-Unused when \code{source = "soilgrids"}.}
+\item{fertility_col}{Character. Column/band name for fertility class
+in \code{"layer"} mode. Unused when \code{source} is
+\code{"soilgrids"} or \code{"gissol"}.}
 
-\item{source}{Character. One of \code{"layer"} (default) or
-\code{"soilgrids"}.}
+\item{source}{Character. One of \code{"layer"} (default),
+\code{"soilgrids"}, or \code{"gissol"}.}
 
 \item{country}{Character. Country code used to resolve the SoilGrids
 datasource entry. Default \code{"FR"}.}
+
+\item{rpf_code_col}{Character. Column in the RRP layer that carries
+the AFES 2008 code (matching the \code{rpf_code} primary key of
+\code{\link{read_uts_fertility_table}}). Default
+\code{"rpf_code"}. Only used when \code{source = "gissol"}.}
 }
 \value{
 Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 }
 \description{
-Extracts soil fertility from a user-supplied pedological layer (BD Sol
-or equivalent) or from the SoilGrids 2.0 global CEC topsoil raster.
+Extracts soil fertility from a user-supplied pedological layer, from
+the SoilGrids 2.0 global CEC topsoil raster, or from a French RRP
+polygon layer joined to the UTS → fertility crosswalk shipped in
+\code{inst/extdata/uts_fertilite_fr.csv}.
 }
 \details{
-Two data sources are supported via \code{source}:
+Three data sources are supported via \code{source}:
 \itemize{
   \item \code{"layer"} (default) — read a raster or polygon layer from
     \code{layers}, min-max normalised per call (relative score).
@@ -49,6 +58,14 @@ Two data sources are supported via \code{source}:
     the per-unit mean and map it to 0-100 via
     \code{\link{cec_to_fertility_score}} (absolute score, comparable
     across projects). No inventory layer is needed.
+  \item \code{"gissol"} — read a French RRP (Référentiel Régional
+    Pédologique) polygon layer from \code{layers} that carries a
+    pedological typology code (AFES 2008 Référentiel Pédologique),
+    intersect it with \code{units}, join the AFES code against
+    \code{\link{read_uts_fertility_table}}, and return an
+    area-weighted fertility score per unit on the 0-100 scale.
+    France metropolitan only. Unknown codes are silently dropped;
+    units whose polygons carry only unknown codes return NA.
 }
 
 SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
@@ -62,5 +79,11 @@ results <- indicateur_f1_fertilite(units, layers, soil_layer = "soil")
 
 # SoilGrids path: no soil layer needed
 results <- indicateur_f1_fertilite(units, source = "soilgrids")
+
+# GIS Sol path: RRP polygons + AFES typology join
+layers <- nemeton_layers(vectors = list(soil = "rrp_departement.gpkg"))
+results <- indicateur_f1_fertilite(units, layers,
+                                   source = "gissol",
+                                   rpf_code_col = "UTSDom")
 }
 }

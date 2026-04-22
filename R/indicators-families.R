@@ -820,10 +820,12 @@ calculate_twi_grass <- function(dem) {
 
 #' Soil Fertility Class (F1)
 #'
-#' Extracts soil fertility from a user-supplied pedological layer (BD Sol
-#' or equivalent) or from the SoilGrids 2.0 global CEC topsoil raster.
+#' Extracts soil fertility from a user-supplied pedological layer, from
+#' the SoilGrids 2.0 global CEC topsoil raster, or from a French RRP
+#' polygon layer joined to the UTS → fertility crosswalk shipped in
+#' \code{inst/extdata/uts_fertilite_fr.csv}.
 #'
-#' Two data sources are supported via \code{source}:
+#' Three data sources are supported via \code{source}:
 #' \itemize{
 #'   \item \code{"layer"} (default) — read a raster or polygon layer from
 #'     \code{layers}, min-max normalised per call (relative score).
@@ -833,6 +835,14 @@ calculate_twi_grass <- function(dem) {
 #'     the per-unit mean and map it to 0-100 via
 #'     \code{\link{cec_to_fertility_score}} (absolute score, comparable
 #'     across projects). No inventory layer is needed.
+#'   \item \code{"gissol"} — read a French RRP (Référentiel Régional
+#'     Pédologique) polygon layer from \code{layers} that carries a
+#'     pedological typology code (AFES 2008 Référentiel Pédologique),
+#'     intersect it with \code{units}, join the AFES code against
+#'     \code{\link{read_uts_fertility_table}}, and return an
+#'     area-weighted fertility score per unit on the 0-100 scale.
+#'     France metropolitan only. Unknown codes are silently dropped;
+#'     units whose polygons carry only unknown codes return NA.
 #' }
 #'
 #' SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
@@ -843,12 +853,17 @@ calculate_twi_grass <- function(dem) {
 #'   \code{source = "soilgrids"}.
 #' @param soil_layer Character. Name of soil layer in layers object.
 #'   Unused when \code{source = "soilgrids"}.
-#' @param fertility_col Character. Column/band name for fertility class.
-#'   Unused when \code{source = "soilgrids"}.
-#' @param source Character. One of \code{"layer"} (default) or
-#'   \code{"soilgrids"}.
+#' @param fertility_col Character. Column/band name for fertility class
+#'   in \code{"layer"} mode. Unused when \code{source} is
+#'   \code{"soilgrids"} or \code{"gissol"}.
+#' @param source Character. One of \code{"layer"} (default),
+#'   \code{"soilgrids"}, or \code{"gissol"}.
 #' @param country Character. Country code used to resolve the SoilGrids
 #'   datasource entry. Default \code{"FR"}.
+#' @param rpf_code_col Character. Column in the RRP layer that carries
+#'   the AFES 2008 code (matching the \code{rpf_code} primary key of
+#'   \code{\link{read_uts_fertility_table}}). Default
+#'   \code{"rpf_code"}. Only used when \code{source = "gissol"}.
 #'
 #' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 #'
@@ -861,13 +876,20 @@ calculate_twi_grass <- function(dem) {
 #'
 #' # SoilGrids path: no soil layer needed
 #' results <- indicateur_f1_fertilite(units, source = "soilgrids")
+#'
+#' # GIS Sol path: RRP polygons + AFES typology join
+#' layers <- nemeton_layers(vectors = list(soil = "rrp_departement.gpkg"))
+#' results <- indicateur_f1_fertilite(units, layers,
+#'                                    source = "gissol",
+#'                                    rpf_code_col = "UTSDom")
 #' }
 indicateur_f1_fertilite <- function(units,
                                      layers = NULL,
                                      soil_layer = "soil",
                                      fertility_col = "fertility",
-                                     source = c("layer", "soilgrids"),
-                                     country = "FR") {
+                                     source = c("layer", "soilgrids", "gissol"),
+                                     country = "FR",
+                                     rpf_code_col = "rpf_code") {
   source <- match.arg(source)
 
   if (!inherits(units, "sf")) {
@@ -876,6 +898,17 @@ indicateur_f1_fertilite <- function(units,
 
   if (identical(source, "soilgrids")) {
     fertility <- extract_fertility_from_soilgrids(units, country = country)
+    msg_info("indicateur_f1_fertilite")
+    return(fertility)
+  }
+
+  if (identical(source, "gissol")) {
+    if (!inherits(layers, "nemeton_layers")) {
+      stop("layers must be a nemeton_layers object", call. = FALSE)
+    }
+    fertility <- extract_fertility_from_gissol(units, layers,
+                                               soil_layer = soil_layer,
+                                               rpf_code_col = rpf_code_col)
     msg_info("indicateur_f1_fertilite")
     return(fertility)
   }
@@ -1022,6 +1055,94 @@ extract_fertility_from_soilgrids <- function(units, country = "FR") {
   )
 
   cec_to_fertility_score(cec_values)
+}
+
+#' Read the UTS → fertility crosswalk shipped with the package
+#'
+#' Loads \code{inst/extdata/uts_fertilite_fr.csv}, the V1 French
+#' typological-soil-unit to forest-fertility table (AFES 2008
+#' Référentiel Pédologique, 54 rows covering the 14 Grands Ensembles
+#' de Référence). Columns: \code{rpf_code} (primary key), \code{rpf_name},
+#' \code{wrb_code} (WRB 2014 equivalent), \code{fertility_class} (1-5),
+#' \code{fertility_score} (0-100), \code{texture_dom}, \code{drainage},
+#' \code{depth_cm}, \code{ph_range}, \code{forest_note},
+#' \code{source_biblio}, \code{notes}.
+#'
+#' The primary consumer is \code{\link{indicateur_f1_fertilite}} in
+#' \code{"gissol"} mode. The table is exposed for external review
+#' (pedologists auditing scores) and for users who want to join
+#' arbitrary RRP vector data against the same crosswalk directly.
+#'
+#' @return A data.frame with 12 columns and 54 rows.
+#' @export
+read_uts_fertility_table <- function() {
+  path <- system.file("extdata", "uts_fertilite_fr.csv",
+                      package = "nemeton", mustWork = TRUE)
+  utils::read.csv(path, stringsAsFactors = FALSE, fileEncoding = "UTF-8")
+}
+
+#' Extract fertility from an RRP polygon layer joined to the UTS table
+#' @keywords internal
+#' @noRd
+extract_fertility_from_gissol <- function(units, layers,
+                                          soil_layer = "soil",
+                                          rpf_code_col = "rpf_code") {
+  rrp <- resolve_vector_layer(layers, soil_layer)
+  if (is.null(rrp)) {
+    stop(sprintf("Soil layer '%s' not found in layers", soil_layer),
+         call. = FALSE)
+  }
+  if (!rpf_code_col %in% names(rrp)) {
+    stop(sprintf("RRP column '%s' not found in layer '%s'",
+                 rpf_code_col, soil_layer), call. = FALSE)
+  }
+
+  if (!sf::st_crs(units) == sf::st_crs(rrp)) {
+    rrp <- sf::st_transform(rrp, sf::st_crs(units))
+  }
+
+  uts_table <- read_uts_fertility_table()
+
+  unmatched <- setdiff(
+    unique(as.character(rrp[[rpf_code_col]])),
+    uts_table$rpf_code
+  )
+  if (length(unmatched) > 0) {
+    preview <- utils::head(unmatched, 5)
+    suffix <- if (length(unmatched) > 5) " (+ more)" else ""
+    cli::cli_warn(sprintf(
+      "F1 GIS Sol: %d RRP code(s) not in UTS table, dropped. Unknown: %s%s",
+      length(unmatched),
+      paste(preview, collapse = ", "),
+      suffix
+    ))
+  }
+
+  fertility <- numeric(nrow(units))
+  for (i in seq_len(nrow(units))) {
+    intersected <- suppressWarnings(
+      sf::st_intersection(rrp, units[i, ])
+    )
+    if (nrow(intersected) == 0) {
+      fertility[i] <- NA_real_
+      next
+    }
+
+    area <- as.numeric(sf::st_area(intersected))
+    codes <- as.character(intersected[[rpf_code_col]])
+    scores <- uts_table$fertility_score[
+      match(codes, uts_table$rpf_code)
+    ]
+    valid <- !is.na(scores) & area > 0
+
+    fertility[i] <- if (any(valid)) {
+      sum(scores[valid] * area[valid]) / sum(area[valid])
+    } else {
+      NA_real_
+    }
+  }
+
+  fertility
 }
 
 #' Soil Fertility Index (F2)

@@ -1,5 +1,24 @@
 # nemeton (development version)
 
+### New Features — F1 GIS Sol wiring (phase C)
+
+* **`indicateur_f1_fertilite()` gains a third `source` option**:
+  `source = "gissol"` reads a French RRP (Référentiel Régional
+  Pédologique) polygon layer from `layers`, intersects it with
+  `units`, joins the AFES 2008 typology code against the UTS
+  crosswalk shipped in `inst/extdata/uts_fertilite_fr.csv`, and
+  returns an area-weighted fertility score per unit on the 0-100
+  scale. Units whose polygons carry only codes absent from the
+  table return NA; units outside the RRP coverage return NA. A
+  `cli::cli_warn` summarises unknown codes when any are present.
+* **`rpf_code_col` argument** (default `"rpf_code"`) lets the
+  caller point at whatever column name the source RRP uses for the
+  AFES code (`UTSDom`, `RPFdom`, etc.) without pre-renaming columns.
+* **`read_uts_fertility_table()`** — new exported helper returning
+  the V1 UTS → fertility crosswalk as a data.frame. Useful for
+  external review of the scoring and for ad-hoc joins against
+  arbitrary RRP vector data.
+
 ### New Data — UTS → fertility lookup (F1 GIS Sol wiring, phase B)
 
 * **`inst/extdata/uts_fertilite_fr.csv`** — V1 draft of the soil
