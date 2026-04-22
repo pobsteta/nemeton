@@ -2367,3 +2367,63 @@ test_that("calculate_twi_terra: NaN and Inf values are handled", {
     expect_true(all(non_na >= 0))
   }
 })
+
+# ==============================================================================
+# F1 SoilGrids path — cec_to_fertility_score + indicateur_f1_fertilite
+# ==============================================================================
+
+test_that("cec_to_fertility_score maps SoilGrids x10 values onto [0,100]", {
+  # Raw 0 cmol(c)/kg × 10 → 0 ; 300 (= 30 cmol(c)/kg) → 100 ; 600 → capped 100
+  expect_equal(cec_to_fertility_score(0), 0)
+  expect_equal(cec_to_fertility_score(300), 100)
+  expect_equal(cec_to_fertility_score(600), 100)
+  expect_equal(cec_to_fertility_score(150), 50)    # 15 cmol(c)/kg → 50
+  expect_equal(cec_to_fertility_score(NA_real_), NA_real_)
+  expect_equal(cec_to_fertility_score(c(0, 60, 300)), c(0, 20, 100))
+})
+
+test_that("indicateur_f1_fertilite(source='soilgrids') wires the loader", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 3)
+
+  # Capture the datasource key passed to load_raster_source, and fake both
+  # the loader and safe_extract to avoid any network / raster work.
+  captured_key <- NULL
+  fake_loader <- function(source_key, country = "FR", aoi = NULL, section = NULL) {
+    captured_key <<- source_key
+    structure(list(), class = "SpatRaster")
+  }
+  fake_extract <- function(raster, polygons, ...) {
+    c(0, 150, 300)  # poor / moderate / rich CEC x10
+  }
+  testthat::local_mocked_bindings(
+    load_raster_source = fake_loader,
+    safe_extract = fake_extract
+  )
+
+  result <- indicateur_f1_fertilite(units, source = "soilgrids")
+
+  expect_equal(captured_key, "soilgrids_cec")
+  expect_equal(result, c(0, 50, 100))
+})
+
+test_that("indicateur_f1_fertilite(source='soilgrids') ignores layers arg", {
+  skip_if_not_installed("sf")
+  units <- create_test_units(n_features = 2)
+
+  fake_loader <- function(source_key, country = "FR", aoi = NULL, section = NULL) {
+    structure(list(), class = "SpatRaster")
+  }
+  fake_extract <- function(raster, polygons, ...) rep(120, nrow(polygons))
+  testthat::local_mocked_bindings(
+    load_raster_source = fake_loader,
+    safe_extract = fake_extract
+  )
+
+  # No layers supplied at all — must not error
+  result <- suppressMessages(
+    indicateur_f1_fertilite(units, source = "soilgrids")
+  )
+  expect_length(result, 2)
+  expect_true(all(result == 40))  # 120/10 = 12 cmol(c)/kg → 40
+})

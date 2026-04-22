@@ -820,35 +820,70 @@ calculate_twi_grass <- function(dem) {
 
 #' Soil Fertility Class (F1)
 #'
-#' Extracts soil fertility classification from BD Sol or equivalent pedological database.
+#' Extracts soil fertility from a user-supplied pedological layer (BD Sol
+#' or equivalent) or from the SoilGrids 2.0 global CEC topsoil raster.
+#'
+#' Two data sources are supported via \code{source}:
+#' \itemize{
+#'   \item \code{"layer"} (default) — read a raster or polygon layer from
+#'     \code{layers}, min-max normalised per call (relative score).
+#'   \item \code{"soilgrids"} — fetch the 250 m SoilGrids 2.0 Cation
+#'     Exchange Capacity raster (0-5 cm topsoil, mean) declared as
+#'     \code{soilgrids_cec} in \code{inst/datasources/FR.json}, extract
+#'     the per-unit mean and map it to 0-100 via
+#'     \code{\link{cec_to_fertility_score}} (absolute score, comparable
+#'     across projects). No inventory layer is needed.
+#' }
+#'
+#' SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
+#' \code{country} only controls where the datasource entry is looked up.
 #'
 #' @param units nemeton_units object
-#' @param layers nemeton_layers object containing soil data
-#' @param soil_layer Character. Name of soil layer in layers object
-#' @param fertility_col Character. Column/band name for fertility class
+#' @param layers nemeton_layers object containing soil data. Unused when
+#'   \code{source = "soilgrids"}.
+#' @param soil_layer Character. Name of soil layer in layers object.
+#'   Unused when \code{source = "soilgrids"}.
+#' @param fertility_col Character. Column/band name for fertility class.
+#'   Unused when \code{source = "soilgrids"}.
+#' @param source Character. One of \code{"layer"} (default) or
+#'   \code{"soilgrids"}.
+#' @param country Character. Country code used to resolve the SoilGrids
+#'   datasource entry. Default \code{"FR"}.
 #'
 #' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 #'
 #' @export
 #' @examples
 #' \dontrun{
+#' # Traditional path: user-supplied soil layer
 #' layers <- nemeton_layers(vectors = list(soil = "bd_sol.gpkg"))
 #' results <- indicateur_f1_fertilite(units, layers, soil_layer = "soil")
+#'
+#' # SoilGrids path: no soil layer needed
+#' results <- indicateur_f1_fertilite(units, source = "soilgrids")
 #' }
 indicateur_f1_fertilite <- function(units,
-                                     layers,
+                                     layers = NULL,
                                      soil_layer = "soil",
-                                     fertility_col = "fertility") {
-  # Validate inputs
+                                     fertility_col = "fertility",
+                                     source = c("layer", "soilgrids"),
+                                     country = "FR") {
+  source <- match.arg(source)
+
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
+  }
+
+  if (identical(source, "soilgrids")) {
+    fertility <- extract_fertility_from_soilgrids(units, country = country)
+    msg_info("indicateur_f1_fertilite")
+    return(fertility)
   }
 
   if (!inherits(layers, "nemeton_layers")) {
     stop("layers must be a nemeton_layers object", call. = FALSE)
   }
 
-  # Check if soil layer exists (try raster first, then vector)
   is_raster <- !is.null(resolve_raster_layer(layers, soil_layer))
   is_vector <- !is.null(resolve_vector_layer(layers, soil_layer))
 
@@ -857,14 +892,11 @@ indicateur_f1_fertilite <- function(units,
   }
 
   if (is_raster) {
-    # Extract from raster
     fertility <- extract_fertility_from_raster(units, layers, soil_layer, fertility_col)
   } else {
-    # Extract from vector (e.g., BD Sol polygons)
     fertility <- extract_fertility_from_vector(units, layers, soil_layer, fertility_col)
   }
 
-  # Log calculation
   msg_info("indicateur_f1_fertilite")
 
   fertility
@@ -947,6 +979,49 @@ extract_fertility_from_vector <- function(units, layers, soil_layer, fertility_c
   fertility <- pmin(pmax(fertility, 0), 100)
 
   fertility
+}
+
+#' Map SoilGrids CEC values to a 0-100 fertility score
+#'
+#' Cation Exchange Capacity (CEC) is the most common proxy for nutrient
+#' retention in forest soils. SoilGrids 2.0 distributes CEC in
+#' \eqn{cmol(c)/kg \times 10}; the raw raster value must be divided by
+#' 10 to recover the physical unit. The mapping used here is linear on
+#' the \eqn{[0, 30]\;cmol(c)/kg} window, capped at the bounds:
+#' \itemize{
+#'   \item < 3 cmol(c)/kg: very poor (acid podzols, sandy soils)
+#'   \item 3-7:  poor
+#'   \item 7-15: moderate
+#'   \item 15-25: good
+#'   \item > 25: rich (calcareous, alluvial, peaty)
+#' }
+#' Thresholds after Baize & Jabiol (1995), \emph{Guide pour la
+#' description des sols}. NA in, NA out.
+#'
+#' @param cec_x10 Numeric. Raw SoilGrids CEC value (cmol(c)/kg x 10).
+#' @return Numeric vector on the 0-100 scale (higher = more fertile).
+#' @export
+cec_to_fertility_score <- function(cec_x10) {
+  cec <- cec_x10 / 10
+  score <- (cec / 30) * 100
+  pmin(pmax(score, 0), 100)
+}
+
+#' Extract fertility from SoilGrids 2.0 CEC topsoil raster
+#' @keywords internal
+#' @noRd
+extract_fertility_from_soilgrids <- function(units, country = "FR") {
+  cec_raster <- load_raster_source("soilgrids_cec", country = country,
+                                   aoi = units)
+
+  cec_values <- safe_extract(
+    cec_raster,
+    as_pure_sf(units),
+    fun = "mean",
+    progress = FALSE
+  )
+
+  cec_to_fertility_score(cec_values)
 }
 
 #' Soil Fertility Index (F2)

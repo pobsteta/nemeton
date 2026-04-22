@@ -1,3 +1,31 @@
+# nemeton (development version)
+
+### New Features — F1 fertility from SoilGrids 2.0
+
+* **`load_raster_source(source_key, country, aoi)`** — new exported
+  loader that resolves a datasource key declared in
+  `inst/datasources/<country>.json` to a ready-to-use `SpatRaster`.
+  Prepends `/vsicurl/` for `raster_remote` sources so GDAL reads
+  only the requested window (essential for planet-scale feeds like
+  SoilGrids). Crops to an optional AOI (reprojected to the raster's
+  native CRS). Refuses `raster_local` entries with no path (e.g.
+  `chm_opencanopy`, which is materialised on the fly by its
+  producing package).
+* **`cec_to_fertility_score(cec_x10)`** — maps raw SoilGrids 2.0
+  Cation Exchange Capacity values (unit: `cmol(c)/kg × 10`) to a
+  0-100 fertility score, linearly on `[0, 30] cmol(c)/kg` and capped
+  at the bounds. Thresholds follow Baize & Jabiol (1995).
+* **`indicateur_f1_fertilite()` gains a `source` argument**:
+    * `source = "layer"` (default) — unchanged, reads a user-supplied
+      soil raster or polygon layer and min-max normalises per call.
+    * `source = "soilgrids"` — fetches the SoilGrids 2.0 CEC topsoil
+      raster via `load_raster_source("soilgrids_cec")`, extracts the
+      per-unit mean, and maps to 0-100 via `cec_to_fertility_score()`.
+      No inventory layer is needed and scores are absolute
+      (comparable across projects), unlike the relative layer-mode
+      score. Global coverage — works for any AOI.
+  Behaviour is fully backward-compatible when `source` is omitted.
+
 # nemeton 0.17.0
 
 ### New Features — NDP 1 "synthetic inventory"

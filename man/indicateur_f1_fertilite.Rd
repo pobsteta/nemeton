@@ -6,29 +6,61 @@
 \usage{
 indicateur_f1_fertilite(
   units,
-  layers,
+  layers = NULL,
   soil_layer = "soil",
-  fertility_col = "fertility"
+  fertility_col = "fertility",
+  source = c("layer", "soilgrids"),
+  country = "FR"
 )
 }
 \arguments{
 \item{units}{nemeton_units object}
 
-\item{layers}{nemeton_layers object containing soil data}
+\item{layers}{nemeton_layers object containing soil data. Unused when
+\code{source = "soilgrids"}.}
 
-\item{soil_layer}{Character. Name of soil layer in layers object}
+\item{soil_layer}{Character. Name of soil layer in layers object.
+Unused when \code{source = "soilgrids"}.}
 
-\item{fertility_col}{Character. Column/band name for fertility class}
+\item{fertility_col}{Character. Column/band name for fertility class.
+Unused when \code{source = "soilgrids"}.}
+
+\item{source}{Character. One of \code{"layer"} (default) or
+\code{"soilgrids"}.}
+
+\item{country}{Character. Country code used to resolve the SoilGrids
+datasource entry. Default \code{"FR"}.}
 }
 \value{
 Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 }
 \description{
-Extracts soil fertility classification from BD Sol or equivalent pedological database.
+Extracts soil fertility from a user-supplied pedological layer (BD Sol
+or equivalent) or from the SoilGrids 2.0 global CEC topsoil raster.
+}
+\details{
+Two data sources are supported via \code{source}:
+\itemize{
+  \item \code{"layer"} (default) — read a raster or polygon layer from
+    \code{layers}, min-max normalised per call (relative score).
+  \item \code{"soilgrids"} — fetch the 250 m SoilGrids 2.0 Cation
+    Exchange Capacity raster (0-5 cm topsoil, mean) declared as
+    \code{soilgrids_cec} in \code{inst/datasources/FR.json}, extract
+    the per-unit mean and map it to 0-100 via
+    \code{\link{cec_to_fertility_score}} (absolute score, comparable
+    across projects). No inventory layer is needed.
+}
+
+SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
+\code{country} only controls where the datasource entry is looked up.
 }
 \examples{
 \dontrun{
+# Traditional path: user-supplied soil layer
 layers <- nemeton_layers(vectors = list(soil = "bd_sol.gpkg"))
 results <- indicateur_f1_fertilite(units, layers, soil_layer = "soil")
+
+# SoilGrids path: no soil layer needed
+results <- indicateur_f1_fertilite(units, source = "soilgrids")
 }
 }
