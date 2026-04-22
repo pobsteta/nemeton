@@ -1,5 +1,44 @@
 # nemeton (development version)
 
+### Calibration — F1 expert scores vs RMQS 1ère campagne (phase D)
+
+* **`inst/scripts/calibrate_uts_rmqs.R`** — reproducible pipeline
+  that downloads the RMQS 1ère campagne dataset (DOI 10.15454/QSXKGA,
+  Etalab 2.0 licence, ≈ 2 171 sites, 2000-2009), joins topsoil CEC
+  (0-30 cm, `cec_40_1`) with the site's AFES 1995/2008 soil name
+  (`rp_95_nom` / `rp_2008_nom`), classifies each name into one of
+  our `rpf_code` values via a keyword-priority dictionary, and
+  compares observed median CEC (mapped to 0-100 via
+  `cec_to_fertility_score()`) with the expert score.
+* **`inst/extdata/uts_fertilite_rmqs_calibration.csv`** — calibration
+  artefact: 45 `rpf_code` × 2 037 RMQS sites, one row per code with
+  `n_sites`, `cec_median`, `cec_q25`, `cec_q75`, `observed_score`,
+  `expert_score`, `delta` and a boolean `flag_outlier` (|delta| > 20).
+* **What the deltas reveal**: 20/45 rows are flagged. The deltas are
+  NOT an indictment of the expert table — they highlight that CEC
+  alone is a coarse proxy. The expert scores integrate Baize & Jabiol
+  multi-criteria (texture, pH, drainage, depth, forestry productivity),
+  which CEC doesn't capture. Key signals:
+    * **Alluvial / colluvial soils under-score on CEC** (FLU_TYP,
+      COL_TYP, COL_CAL all −40 to −55): these are fertile because
+      they are deep, well-drained and productive, not because they
+      hold many cations. The SoilGrids path in F1 will under-rate
+      them by design.
+    * **ORG_INS over-scores on CEC** (+65): peat has very high CEC
+      but is poor for forestry (acidity, waterlogging). The expert
+      score rightly penalises this where CEC alone cannot.
+    * **BRUN_MES bucket is biased** (−49 on 378 sites): most "plain
+      BRUNISOL" RMQS labels fall into this via fallback, but many of
+      those sites show CEC compatible with BRUN_DYS. Not a scoring
+      bug — a mapping-granularity bug in the V2 classifier.
+    * **Classes absent from the V1 expert table** (30+ RMQS sites):
+      PLANOSOL, PELOSOL, MAGNESISOL, FERSIALSOL, DOLOMITOSOL,
+      ALUANDOSOL/ANDOSOL. Candidates for a V2 CSV extension.
+* **`tests/testthat/test-uts-calibration-rmqs.R`** — integrity checks
+  on the calibration CSV (schema, cross-reference to the expert
+  table, arithmetic consistency, sample size, CEC quartile order).
+  Does not re-run the pipeline.
+
 ### New Features — F1 GIS Sol wiring (phase C)
 
 * **`indicateur_f1_fertilite()` gains a third `source` option**:
