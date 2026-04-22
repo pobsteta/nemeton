@@ -155,3 +155,54 @@ test_that("chm_opencanopy declares provenance and license", {
   expect_true(all(c("bd_ortho", "open_canopy", "derived") %in%
                     names(chm$license)))
 })
+
+# ---- load_raster_source ----
+
+test_that("load_raster_source errors on unknown key", {
+  expect_error(
+    load_raster_source("does_not_exist", "FR"),
+    "Unknown datasource"
+  )
+})
+
+test_that("load_raster_source rejects non-raster types", {
+  # "dem" is declared as a service layer, not a raster_{remote,local}
+  expect_error(
+    load_raster_source("dem", "FR", section = "layers"),
+    "load_raster_source"
+  )
+})
+
+test_that("load_raster_source errors when raster_local has no path", {
+  # chm_opencanopy is produced dynamically by the opencanopy package
+  # and carries no path — the loader must refuse rather than guess.
+  expect_error(
+    load_raster_source("chm_opencanopy", "FR"),
+    "no.*path|produced dynamically"
+  )
+})
+
+test_that("load_raster_source prepends /vsicurl/ for raster_remote", {
+  # Avoid hitting ISRIC in tests: intercept terra::rast and capture
+  # the source string the loader hands to GDAL.
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  out <- load_raster_source("soilgrids_cec", "FR")
+  expect_s3_class(out, "SpatRaster")
+  expect_true(startsWith(captured, "/vsicurl/"))
+  expect_true(grepl("soilgrids", captured, fixed = TRUE))
+})
+
+test_that("load_raster_source rejects bad aoi argument", {
+  fake_rast <- function(x, ...) structure(list(), class = "SpatRaster")
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+  expect_error(
+    load_raster_source("soilgrids_cec", "FR", aoi = "not_an_sf"),
+    "aoi.*sf"
+  )
+})

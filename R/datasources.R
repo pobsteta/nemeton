@@ -115,6 +115,96 @@ get_data_source <- function(source_key, country = "FR", section = NULL) {
 }
 
 
+#' Load a raster datasource as a SpatRaster
+#'
+#' Resolves a datasource key declared in \code{inst/datasources/<country>.json}
+#' to a ready-to-use \code{SpatRaster}. Handles remote Cloud-Optimised
+#' GeoTIFF / VRT sources by prepending \code{/vsicurl/} so that GDAL
+#' reads only the requested window. If an area of interest is provided,
+#' the raster is cropped to that AOI (reprojected into the raster's
+#' native CRS) — which is the right thing for planet-scale sources like
+#' SoilGrids, where reading the full grid is never desirable.
+#'
+#' Supported \code{type} values: \code{"raster_remote"} (an \code{url}
+#' field is required), \code{"raster_local"} (a \code{path} field is
+#' required). \code{"raster_local"} entries with no path (such as
+#' \code{chm_opencanopy}, which is materialised on the fly by another
+#' package) must be loaded by their producing package.
+#'
+#' @param source_key Character. The datasource key (e.g.,
+#'   \code{"soilgrids_cec"}).
+#' @param country Character. ISO country code. Default \code{"FR"}.
+#' @param aoi Optional \code{sf} object. When provided, the returned
+#'   raster is cropped to this AOI (reprojected to the raster's CRS,
+#'   \code{snap = "out"}).
+#' @param section Character. Configuration section to search in. See
+#'   \code{\link{get_data_source}}.
+#'
+#' @return A \code{SpatRaster}.
+#'
+#' @examples
+#' \dontrun{
+#' # Full-planet SoilGrids CEC (reads only the requested window)
+#' aoi <- sf::st_as_sf(data.frame(id = 1), geom = sf::st_sfc(
+#'   sf::st_polygon(list(rbind(
+#'     c(646000, 6848000), c(650000, 6848000),
+#'     c(650000, 6852000), c(646000, 6852000),
+#'     c(646000, 6848000)
+#'   ))), crs = 2154
+#' ))
+#' cec <- load_raster_source("soilgrids_cec", "FR", aoi = aoi)
+#' }
+#'
+#' @export
+load_raster_source <- function(source_key, country = "FR",
+                               aoi = NULL, section = NULL) {
+  src <- get_data_source(source_key, country, section)
+  if (is.null(src)) {
+    cli::cli_abort("Unknown datasource key {.val {source_key}} for country {.val {country}}.")
+  }
+
+  type <- src$type %||% NA_character_
+  if (!isTRUE(type %in% c("raster_remote", "raster_local"))) {
+    cli::cli_abort(c(
+      "Datasource {.val {source_key}} has type {.val {type}}, which {.fn load_raster_source} does not handle.",
+      i = "Only {.val raster_remote} and {.val raster_local} can be loaded here."
+    ))
+  }
+
+  if (identical(type, "raster_remote")) {
+    if (!nzchar(src$url %||% "")) {
+      cli::cli_abort("Datasource {.val {source_key}} is {.val raster_remote} but has no {.field url}.")
+    }
+    gdal_src <- paste0("/vsicurl/", src$url)
+  } else {
+    path <- src$path %||% src$url %||% ""
+    if (!nzchar(path)) {
+      cli::cli_abort(c(
+        "Datasource {.val {source_key}} is {.val raster_local} but carries no {.field path}.",
+        i = "Entries produced dynamically (e.g. {.val chm_opencanopy}) must be loaded by their producing package."
+      ))
+    }
+    gdal_src <- path
+  }
+
+  rast <- terra::rast(gdal_src)
+
+  if (!is.null(aoi)) {
+    if (!inherits(aoi, "sf") && !inherits(aoi, "sfc")) {
+      cli::cli_abort("{.arg aoi} must be an sf or sfc object.")
+    }
+    aoi_v <- terra::vect(aoi)
+    if (!is.na(terra::crs(aoi_v)) && !is.na(terra::crs(rast)) &&
+        terra::crs(aoi_v) != terra::crs(rast)) {
+      aoi_v <- terra::project(aoi_v, terra::crs(rast))
+    }
+    rast <- terra::crop(rast, aoi_v, snap = "out")
+  }
+
+  rast
+}
+
+
 #' Get service URL for a layer
 #'
 #' Resolves the full service URL for a given layer by looking up
