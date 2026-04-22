@@ -1,4 +1,16 @@
-# nemeton (development version)
+# nemeton 0.18.0
+
+Release theme: **F1 soil fertility becomes a three-source indicator
+with absolute scoring and empirical calibration against RMQS**.
+
+### New Vignette — F1 three-source decision guide (phase E)
+
+* **`vignettes/f1-three-sources_fr.Rmd`** — end-to-end comparison of
+  the three F1 data-source paths (`"layer"`, `"soilgrids"`,
+  `"gissol"`) with a decision matrix, runnable examples, the Phase D
+  calibration reading (why CEC alone is a coarse proxy and the
+  expert table captures more), and a decision tree for picking the
+  right `source` per AOI.
 
 ### Calibration — F1 expert scores vs RMQS 1ère campagne (phase D)
 
