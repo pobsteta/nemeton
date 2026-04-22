@@ -1,5 +1,24 @@
 # nemeton (development version)
 
+### New Data — UTS → fertility lookup (F1 GIS Sol wiring, phase B)
+
+* **`inst/extdata/uts_fertilite_fr.csv`** — V1 draft of the soil
+  typology → forest-fertility crosswalk for France, 54 rows covering
+  the 14 Grands Ensembles de Référence of the AFES 2008 Référentiel
+  Pédologique (Brunisols, Luvisols, Podzosols, Alocrisols, Calcosols,
+  Calcisols, Fluviosols, Colluviosols, Rankosols, Arenosols,
+  Redoxisols, Reductisols, Peyrosols, Organosols, Régosols/Lithosols,
+  Anthroposols). Columns: `rpf_code`, `rpf_name`, `wrb_code`
+  (WRB 2014 equivalent), `fertility_class` (1–5), `fertility_score`
+  (15/35/55/75/90 per the agreed grid), `texture_dom`, `drainage`,
+  `depth_cm`, `ph_range`, `forest_note`, `source_biblio`, `notes`.
+  Sources: AFES 2008, Baize & Jabiol 1995, Duchaufour 2001, Jabiol
+  et al. 2009, Bonneau 1995. Intended for peer review by a
+  pedologist before production use.
+* **`tests/testthat/test-uts-fertilite.R`** — integrity checks on
+  the CSV (schema, unique keys, score grid, class distribution,
+  coverage of the 14 AFES families).
+
 ### New Features — F1 fertility from SoilGrids 2.0
 
 * **`load_raster_source(source_key, country, aoi)`** — new exported
