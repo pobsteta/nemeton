@@ -22,6 +22,56 @@
   quiz on the `.qgz` format, NotNull constraints and the species
   domain source.
 
+### New feature — Library-level sampling pipeline (Épaississement 5.a bis)
+
+* **`R/sampling_plan.R`** — `create_sampling_plan(zone, n_base, n_over,
+  chm, slope, forest_mask, mnt, ...)` lifts the full GRTS workflow of
+  tutorial 09 to a single exported function. It builds a candidate
+  grid, applies terrain constraints (slope / forest cover), stratifies
+  on CHM height quartiles / BD Forêt tfv / TPI terciles, and draws
+  plots via `spsurvey::grts` when strata are viable, falling back to
+  `BalancedSampling::lpm2`, then to a plain spatial random draw —
+  each step surfaced via an attached `"method"` attribute on the
+  result.
+* Without any of the optional inputs the pipeline degrades to the
+  equivalent of a single `st_sample()` call, which makes it a drop-in
+  replacement for the previous Shiny-side placeholder.
+
+### New feature — QField re-ingestion (Épaississement 5.b)
+
+* **`R/qfield_import.R`** — three companion functions that close the
+  field loop:
+  * `import_qfield_gpkg(path)` reads the `placettes` + `arbres`
+    layers returned from QField.
+  * `validate_field_data(placettes, arbres, region, lang)` checks
+    referential integrity (orphan `plot_id`, duplicate `tree_id`),
+    physical ranges (DBH in (0, 300] cm, height in [0, 80] m),
+    species in the controlled domain of `region`, and returns an
+    `{ok, errors, warnings}` list.
+  * `aggregate_plot_metrics(placettes, arbres, plot_radius)` computes
+    per-plot dendrometric aggregates — `field_n_trees`,
+    `field_dg_cm` (quadratic mean diameter), `field_h_dom_m`
+    (top 5 height), `field_g_ha` (basal area), `field_cv_dbh` /
+    `field_cv_h` for the B2 structural component — as a sf that can
+    be joined onto forest units.
+  * `attach_field_data_to_units(units, field_agg)` spatial-joins the
+    aggregates onto polygon units for downstream indicators
+    (P1 / P2 / B2 / C1 / R2) to consume uniformly via `field_*`
+    columns.
+* **`R/ndp.R`** — `detect_ndp()` gains an alternative QField path:
+  `field_plots_count >= 1` bumps the NDP to at least 2 (Exploration);
+  when trees-per-plot average >= 10, the level goes to 3 (Diagnostic).
+  `tag_field_data_sources(data, placettes, arbres)` is the helper
+  that sets the expected attributes in one call.
+* **`inst/datasources/FR.json`** — new `datasets.field_qfield` entry
+  declaring the format (GeoPackage), required CRS (EPSG:2154),
+  layers (`placettes`, `arbres`) and the NDP bump rule.
+* Tests: `test-sampling-plan.R` (22 assertions across GRTS / LPM2 /
+  random / constraint paths), `test-qfield-import.R` (26 assertions
+  covering round-trip, validation failures, aggregates, and the
+  units join), `test-ndp-qfield.R` (13 assertions on the alternative
+  path including the sources listing and the JSON declaration).
+
 # nemeton 0.18.0
 
 Release theme: **F1 soil fertility becomes a three-source indicator

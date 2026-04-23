@@ -265,6 +265,19 @@ detect_ndp <- function(data) {
     }
   }
 
+  # Alternative path for QField data: users who collect field plots
+  # without going through drone/LiDAR still get an NDP bump.
+  # Heuristic:
+  #   * >=1 placette recorded        -> at least NDP 2 (Exploration)
+  #   * >=10 trees per plot on avg   -> NDP 3 (Diagnostic)
+  field_plots <- as.integer(attr(data, "field_plots_count") %||% 0L)
+  field_trees <- as.integer(attr(data, "field_trees_count") %||% 0L)
+  if (field_plots >= 1L) {
+    trees_per_plot <- field_trees / max(1L, field_plots)
+    field_level <- if (trees_per_plot >= 10) 3L else 2L
+    level <- max(level, field_level)
+  }
+
   # Sources presentes (cumulatif)
   sources <- c("sentinel_2", "worldclim", "bd_topo", "mnt_25m")
   if (isTRUE(attr(data, "has_lidar_hd"))) {
@@ -279,6 +292,10 @@ detect_ndp <- function(data) {
     sources <- c(sources, "scanner_terrestre")
   }
   if (isTRUE(attr(data, "has_modele_3d"))) sources <- c(sources, "modele_3d")
+  n_plots_attr <- attr(data, "field_plots_count")
+  if (!is.null(n_plots_attr) && as.integer(n_plots_attr) > 0L) {
+    sources <- c(sources, "field_qfield")
+  }
 
   # Flags d'augmentation ML (ADR-011 amende)
   augmented <- character(0)

@@ -119,6 +119,19 @@
       "license": "CC-BY-4.0",
       "citation": "Poggio et al. (2021) SoilGrids 2.0: producing soil information for the globe with quantified spatial uncertainty. SOIL 7:217-240."
     },
+    "field_qfield": {
+      "type": "vector_local",
+      "format": "GeoPackage",
+      "description": "Field inventory collected on QField (placettes + arbres layers), produced by create_qfield_project() and re-ingested via import_qfield_gpkg().",
+      "required_crs": "EPSG:2154",
+      "layers": ["placettes", "arbres"],
+      "ndp_bump": {
+        "plots_only": 2,
+        "with_trees_min10_per_plot": 3
+      },
+      "license": "User-generated content - copyright held by the field operator.",
+      "note": "Tag an sf with tag_field_data_sources() so detect_ndp() picks up the NDP bump."
+    },
     "chm_opencanopy": {
       "type": "raster_local",
       "format": "COG",
