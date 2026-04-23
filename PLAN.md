@@ -1,8 +1,8 @@
 # PLAN — Épaississement 5 : intégration QField
 
 **Démarré** : 2026-04-23
-**État global** : E5.a **cœur livré** (export QField côté `nemeton`) ; E5.a côté `nemetonshiny` à faire ; E5.b (réingestion) à faire
-**Branche** : `main` (v0.18.0 taguée, puis bump 0.18.0.9000 pour le cycle de dev ; tip avant travaux `67eadd8`)
+**État global** : E5.a **livré des deux côtés** (cœur `nemeton` + app `nemetonshiny`, poussés sur `main`) ; E5.b (réingestion + montée NDP) à faire
+**Branche** : `main` (nemeton tip `9df1484`, nemetonshiny tip `f074105`)
 
 ## Contexte
 
@@ -28,11 +28,12 @@ Capitalise directement sur les sorties du tuto 09.
 - [x] Tests `tests/testthat/test-qfield-export.R` : 30 assertions, toutes vertes. Full suite 1911/0 failure.
 - [x] Doc roxygen + NAMESPACE regénérés ; 7 pages d'aide créées
 
-**Côté `nemetonshiny`** (repo séparé, après livraison cœur)
-- [ ] `R/mod_sampling.R` — UI formulaire + carte leaflet + `downloadHandler` QField
-- [ ] Nouvelles clés i18n : `sampling_*`, `qfield_download_*`
-- [ ] Entrée navbar « Terrain »
-- [ ] `testServer()` sur `mod_sampling`
+**Côté `nemetonshiny`** — livré (commit `f074105`, branche `main`)
+- [x] `R/mod_sampling.R` — UI formulaire + carte leaflet + `downloadHandler` QField. Tirage `st_sample()` spatial aléatoire (première itération ; upgrade GRTS via future `create_sampling_plan()` côté cœur).
+- [x] 14 nouvelles clés i18n `tab_sampling` / `sampling_*` / `qfield_*` (FR/EN)
+- [x] Entrée navbar « Terrain » (icône `crosshair`) entre Synthèse et Familles
+- [x] `testServer()` sur `mod_sampling` : 23 assertions vertes, suite complète 1053 / 0 failure
+- [x] Bump `nemetonshiny` 0.16.0.9000, `Imports: nemeton (>= 0.18.0.9000)`
 
 ### E5.b — Réingestion QField (terrain → Néméton)
 
@@ -62,4 +63,5 @@ Démarrer E5.a par `R/field_schema.R` (définition du modèle placettes/arbres +
 ## Journal
 
 - **2026-04-23** — PLAN.md créé. `tree_sat` et `maestro` retirés de l'Épaississement 5 dans CLAUDE.md (modif locale non committée). Épaississement 5 = QField uniquement désormais.
-- **2026-04-23** — E5.a côté `nemeton` livré : `R/field_schema.R`, `R/qfield_export.R`, tests (30 expect OK), tuto 09 Section 6, NEWS + bump dev 0.18.0.9000, doc roxygen regénérée. Suite de tests complète : 1911 / 0 failure / 0 error. Prêt pour commit.
+- **2026-04-23** — E5.a côté `nemeton` livré : `R/field_schema.R`, `R/qfield_export.R`, tests (30 expect OK), tuto 09 Section 6, NEWS + bump dev 0.18.0.9000, doc roxygen regénérée. Suite de tests complète : 1911 / 0 failure / 0 error. Committé `9df1484`, poussé sur `origin/main`.
+- **2026-04-23** — E5.a côté `nemetonshiny` livré : `R/mod_sampling.R` (UI + server + downloadHandler), intégration navbar, 14 clés i18n, 23 tests verts. Suite complète 1053 / 0 failure. Bump 0.16.0.9000 avec dépendance `nemeton (>= 0.18.0.9000)`. Committé `f074105`, poussé sur `origin/main`.
