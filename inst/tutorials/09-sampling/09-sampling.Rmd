@@ -1742,6 +1742,133 @@ cat("\n=== Aperçu des placettes ===\n")
 print(sample_df)
 ```
 
+## Section 6 : Export QField {data-progressive=TRUE}
+
+### Introduction
+
+Les exports de la section précédente (GeoPackage, GPX, CSV) sont
+utilisables dans n'importe quel SIG ou GPS de randonnée. Pour aller
+un cran plus loin, **QField** (l'application mobile de QGIS) permet
+de collecter directement sur le terrain les mesures
+dendrométriques (DBH, hauteur, espèce, qualité...) avec des
+**formulaires préconfigurés**, en mode hors-ligne.
+
+Néméton fournit `create_qfield_project()` qui empaquète en un seul
+fichier `.qgz` :
+
+- la couche **placettes** (GRTS, lecture/écriture) ;
+- la couche **arbres** (vide, prête à recevoir les mesures) ;
+- la **zone d'étude** (lecture seule, contexte) ;
+- le **parcours TSP** si on le fournit (lecture seule) ;
+- les **formulaires QField** associés (domaines d'espèces pulled de
+  `species-config`, contraintes NotNull sur plot_id/tree_id/dbh_cm,
+  widgets photo, date-time, plages numériques...).
+
+Le `.qgz` est un simple ZIP du projet QGIS + du GeoPackage. Il se
+copie sur le téléphone ou la tablette et s'ouvre directement dans
+QField.
+
+### Exercice 6.1 : Exporter pour QField
+
+```{r qfield-setup}
+if (requireNamespace("rappdirs", quietly = TRUE)) {
+  data_dir <- file.path(rappdirs::user_data_dir("nemeton"), "tutorial_data")
+} else {
+  data_dir <- file.path(path.expand("~"), ".local", "share", "nemeton", "tutorial_data")
+}
+zone_etude <- tryCatch(
+  st_read(file.path(data_dir, "zone_etude.gpkg"), layer = "zone_etude", quiet = TRUE),
+  error = function(e) st_read(system.file("extdata", "zone_etude.gpkg", package = "nemeton"), quiet = TRUE)
+)
+sample_plots <- tryCatch(
+  st_read(file.path(data_dir, "sample_plots.gpkg"), quiet = TRUE),
+  error = function(e) {
+    set.seed(config$seed)
+    pts <- st_sample(zone_etude, config$n_main + config$n_replacement, type = "random") |>
+      st_as_sf() |>
+      mutate(
+        plot_id = paste0("P", sprintf("%02d", row_number())),
+        type = c(rep("Base", config$n_main), rep("Over", config$n_replacement)),
+        visit_order = row_number()
+      )
+    pts
+  }
+)
+```
+
+```{r qfield, exercise=TRUE, exercise.setup="qfield-setup"}
+# Répertoire d'export
+export_dir <- file.path(data_dir, "result_sampling")
+dir.create(export_dir, showWarnings = FALSE, recursive = TRUE)
+
+# Création du projet QField
+qgz_path <- nemeton::create_qfield_project(
+  placettes    = sample_plots,
+  zone_etude   = zone_etude,
+  output_dir   = export_dir,
+  project_name = "echantillon",
+  region       = "BFC",
+  lang         = "fr"
+)
+
+cat("\nProjet QField créé :", qgz_path, "\n")
+cat("Taille :", round(file.size(qgz_path) / 1024, 1), "KB\n\n")
+
+# Vérification du contenu du .qgz (ZIP)
+cat("=== Contenu du .qgz ===\n")
+print(unzip(qgz_path, list = TRUE))
+
+# Vérification des couches dans le GPKG embarqué
+tmp_unz <- tempfile("qfield_check_")
+dir.create(tmp_unz)
+unzip(qgz_path, exdir = tmp_unz)
+gpkg_embed <- list.files(tmp_unz, pattern = "\\.gpkg$", full.names = TRUE)[1]
+
+cat("\n=== Couches du GeoPackage embarqué ===\n")
+print(st_layers(gpkg_embed))
+```
+
+### À emporter sur le terrain
+
+1. **Transférer le `.qgz`** sur le téléphone ou la tablette (câble,
+   cloud, QFieldCloud...).
+2. **Ouvrir QField** et sélectionner le projet.
+3. Sur chaque **placette atteinte** :
+   - Mettre à jour les métadonnées (date_visite, observateur, pente,
+     exposition, recouvrement, photos).
+   - Ajouter des **arbres** (nouvelle entité dans la couche arbres) :
+     `plot_id` (FK, rappeler celui de la placette courante), `tree_id`,
+     `espece` (liste déroulante), `dbh_cm`, `h_m`, `statut`, `qualite`.
+4. **Synchroniser** au retour : le GPKG modifié revient dans Néméton
+   pour alimenter les indicateurs P1 (volume IFN), P2 (site index) et
+   B2 (structure CV) — voir la future **réingestion QField**
+   (Épaississement 5.b).
+
+### Quiz 6 : QField
+
+```{r qfield-quiz, echo=FALSE}
+quiz(
+  question("Qu'est-ce qu'un fichier .qgz ?",
+    answer("Un format propriétaire d'ESRI"),
+    answer("Une archive ZIP contenant un projet QGIS et ses données", correct = TRUE),
+    answer("Une couche raster compressée"),
+    answer("Une base PostgreSQL dumpée")
+  ),
+  question("Pourquoi contraindre dbh_cm en NotNull dans le formulaire arbre ?",
+    answer("Pour accélérer l'écriture du GeoPackage"),
+    answer("Parce que le DBH est la variable principale dont découlent volume et biomasse — une mesure manquante invalide l'arbre", correct = TRUE),
+    answer("Parce que QField refuse les champs vides"),
+    answer("C'est une convention purement esthétique")
+  ),
+  question("D'où vient la liste des espèces proposée dans le formulaire arbre ?",
+    answer("D'une liste codée en dur dans QField"),
+    answer("Du GeoPackage"),
+    answer("De la configuration species-config (inst/species/<REGION>.json) de Néméton", correct = TRUE),
+    answer("De l'API IGN")
+  )
+)
+```
+
 ## Synthèse
 
 Félicitations ! Vous avez appris à :
@@ -1758,6 +1885,8 @@ Félicitations ! Vous avez appris à :
 7. **Construire un réseau de chemins** avec `sfnetworks`
 8. **Optimiser le parcours terrain** avec le problème du voyageur de commerce (TSP)
 9. **Exporter** les résultats pour le terrain (GeoPackage, GPX, CSV)
+10. **Empaqueter un projet QField** (`.qgz`) avec formulaires
+    préconfigurés pour la saisie dendrométrique sur tablette/téléphone
 
 ### Points clés à retenir
 
@@ -1771,6 +1900,7 @@ Félicitations ! Vous avez appris à :
 - L'**oversample** fournit des placettes de remplacement spatialement distribuées
 - Le **TSP** minimise le temps de déplacement entre placettes
 - Les exports **GPX** permettent la navigation GPS directe sur le terrain
+- Le **projet QField** (`.qgz`) embarque placettes + couche arbres vide + formulaires de saisie pour une collecte hors-ligne
 
 ### Packages utilisés
 

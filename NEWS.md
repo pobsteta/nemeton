@@ -1,3 +1,27 @@
+# nemeton 0.18.0.9000 (development)
+
+### New feature — QField export (Épaississement 5.a)
+
+* **`R/field_schema.R`** — field data schema used for QField
+  integration: `get_placette_schema()` (10 fields) and
+  `get_arbre_schema()` (9 visible fields + species domain). The
+  `espece` domain is pulled from `list_species_classes()` so the
+  vocabulary stays aligned with the rest of the package.
+  `schema_to_df()` and `empty_sf_from_schema()` are internal helpers.
+* **`R/qfield_export.R`** — `create_qfield_project(placettes,
+  zone_etude, parcours_tsp, output_dir, project_name, crs, region,
+  lang, overwrite)` packages a sampling plan as a QField-ready
+  `.qgz` (a ZIP of a minimal QGIS 3.x `.qgs` XML + a GeoPackage
+  with `placettes` / `arbres` / `zone_etude` / `parcours_tsp`
+  layers). Edit widgets (TextEdit, Range, DateTime, ValueMap,
+  ExternalResource), aliases and NotNull constraints are generated
+  from the schemas. Zero new hard dependency: the XML is produced
+  by string assembly, the GPKG by `sf`, the ZIP by `utils::zip()`.
+* **Tutorial 09-sampling** — new Section 6 "Export QField" exercises
+  `create_qfield_project()` on the GRTS output, plus a 3-question
+  quiz on the `.qgz` format, NotNull constraints and the species
+  domain source.
+
 # nemeton 0.18.0
 
 Release theme: **F1 soil fertility becomes a three-source indicator

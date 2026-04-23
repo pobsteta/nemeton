@@ -49,6 +49,7 @@ install.packages(c("learnr", "gradethis"))
 | 3 | 30 min | Stratification et GRTS |
 | 4 | 20 min | Réseau routier et TSP |
 | 5 | 10 min | Export des résultats |
+| 6 | 10 min | Projet QField prêt pour la saisie terrain |
 | Synthèse | 5 min | Récapitulatif et checklist terrain |
 
 ## Données utilisées
@@ -78,15 +79,17 @@ learnr::run_tutorial("09-sampling", package = "nemeton")
 | `parcours_tsp.gpkg` | Itinéraire optimisé |
 | `fiche_terrain.csv` | Fiche de navigation terrain |
 | `sampling_report.html` | Rapport de synthèse |
+| `echantillon.qgz` | Projet QField (placettes + arbres vide + formulaires) |
 
 ## Quiz
 
-4 quiz avec 12 questions au total :
+5 quiz avec 15 questions au total :
 
 1. **Dimensionnement** (3 questions) - Formule n, CV, erreur admissible
 2. **Stratification** (3 questions) - GRTS, allocation, représentativité
 3. **Contraintes** (3 questions) - Pente, couvert, accessibilité
 4. **TSP** (3 questions) - Graphe, heuristiques, temps de parcours
+5. **QField** (3 questions) - Format .qgz, contraintes formulaire, domaine des espèces
 
 ## Concepts clés
 

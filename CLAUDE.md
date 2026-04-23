@@ -138,7 +138,7 @@ Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout). Les q
 ✅ Épaississement 2      : Cartographie (Leaflet, parcelles cadastrales)
 ✅ Épaississement 3      : Multi-acteurs — 13 profils experts YAML (commit 1b32943)
 ✅ Épaississement 4      : Authentification OAuth2/OIDC via shinyOAuth (commit 3e07c60)
-🟨 Épaississement 5      : Intégrations et NDP (spec 005 Open-Canopy livré ; tree_sat/maestro/QField à venir)
+🟨 Épaississement 5      : Intégrations et NDP (spec 005 Open-Canopy livré ; QField à venir)
 ⬜ Épaississement 6      : Monitoring forestier continu (TimescaleDB + alertes Sentinel-2, ADR-012)
 ⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)
 ```
@@ -298,3 +298,5 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 6. Les rasters et le LiDAR ne sont JAMAIS stockés dans PostgreSQL (ADR-002)
 7. Le NDP mesure la qualité des données, pas la complétude de l'analyse
 8. Pas de dépendance inverse : `nemeton` n'importe JAMAIS `nemetonshiny`
+9. Quand je travaille sur une tâche longue, maintiens un fichier PLAN.md à la racine avec l'état actuel, les décisions prises, et la prochaine étape
+10. Mets-le à jour à chaque étape terminée
