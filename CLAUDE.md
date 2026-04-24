@@ -21,12 +21,14 @@ Cette convention s'applique aux nouveaux fichiers et fonctions. Le code existant
 ## Architecture (packages, ADR-009)
 
 ```
-nemeton (ce repo)     → Package cœur. 31 indicateurs, 12 familles, NDP, normalisation, viz. MIT.
-nemetonshiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2. MIT.
-tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0. MIT.
-maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
-platform_nemeton      → Documentation plateforme, ADR, glossaire. EUPL v1.2.
+nemeton (ce repo)     → Package cœur. 31 indicateurs, 12 familles, NDP, normalisation, viz.
+nemetonshiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2.
+tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0.
+maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+.
+platform_nemeton      → Documentation plateforme, ADR, glossaire.
 ```
+
+La licence de chaque repo est portée par son propre fichier `LICENSE` (la règle de CLAUDE.md n'est pas la source de vérité pour les licences — chaque package a la sienne, potentiellement différente).
 
 Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. `nemetonshiny` dépend de `nemeton` (120+ fonctions exportées, commit `720a433`).
 
@@ -287,6 +289,41 @@ R/run_app.R                   → Point d'entrée de l'application
 inst/experts/*.yml            → 13 profils experts pour les perspectives IA (E3)
 R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source unique)
 ```
+
+# Consignes de release pour ce projet
+
+À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI),
+Claude doit :
+
+1. Déterminer le type de changement selon Conventional Commits
+   (feat: / fix: / BREAKING CHANGE:) → bump semver correspondant
+   (minor / patch / major).
+
+2. Mettre à jour le numéro de version dans :
+   - DESCRIPTION (champ Version)  [projet R]
+   - NEWS.md (ajouter une entrée datée)
+   - CITATION.cff si présent
+
+3. Créer un tag git annoté : git tag -a vX.Y.Z -m "Release X.Y.Z"
+
+4. Pousser le tag : git push origin vX.Y.Z
+
+5. Créer la release GitHub via gh :
+   gh release create vX.Y.Z --generate-notes
+
+6. Vérifier que les badges du README pointent vers la bonne version
+   et la dernière release (badges shields.io, R-CMD-check, codecov…).
+
+7. Si le CHANGELOG.md existe, ajouter la section [X.Y.Z] - YYYY-MM-DD
+   avec les catégories Added / Changed / Fixed / Removed.
+
+## Règles de cohérence
+
+- La version dans DESCRIPTION, le tag git et la release GitHub doivent
+  être strictement identiques.
+- Ne jamais pousser un tag sans avoir d'abord mis à jour DESCRIPTION et NEWS.md.
+- Vérifier que la page de documentation est aussi à jour de la version et de ses tags.
+- Toujours demander confirmation avant un bump majeur.
 
 ## Règles strictes
 
