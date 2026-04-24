@@ -1,3 +1,5 @@
+# nemeton 0.20.0.9000 (development)
+
 # nemeton 0.19.0 (2026-04-24)
 
 ### New feature — Sample size from target error + CV typology (Épaississement 5.c)
