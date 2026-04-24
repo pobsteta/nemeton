@@ -1,4 +1,25 @@
-# nemeton 0.19.9.9000 (development)
+# nemeton 0.19.10 (2026-04-24)
+
+### Changed
+
+* **`create_sampling_plan()` auto-simplifies the stratification when
+  GRTS would refuse**. Previously, a single thin stratum — easy to
+  hit on small AOIs, where the 3D stratification (CHM height ×
+  BD Forêt type × TPI) can produce up to 60 combinations — caused
+  the whole GRTS draw to be skipped and the plan fell back to LPM2
+  (which is spatially balanced but *not* stratified). The new
+  `.fit_stratum()` helper now tries the stratification ladder
+  3D → 2D (drop TPI) → 1D (height only), keeping the richest combo
+  where every stratum still meets the allocation + over requirement,
+  and emits a `cli::cli_inform()` listing the dropped dimension(s).
+  LPM2 / random remain the final fallback.
+
+### Added
+
+* Four new unit tests (`test-sampling-plan.R`) covering the new
+  `.fit_stratum()` helper: degradation from 3D to 2D, from 3D to 1D,
+  the fully-thin edge case, and degeneracy handling when one
+  dimension is constant.
 
 # nemeton 0.19.9 (2026-04-24)
 

@@ -250,3 +250,72 @@ test_that(".allocate_per_stratum honors min_per_stratum and caps at counts", {
   expect_true(alloc[["A"]] >= 2)
   expect_true(alloc[["B"]] >= 2)
 })
+
+
+# ------------------------------------------------------------
+# Internal: .fit_stratum degrades 3D → 2D → 1D when strata are too thin
+# ------------------------------------------------------------
+
+test_that(".fit_stratum drops topo first when 3D combo is too thin", {
+  # 3D stratum: 2 height × 2 type × 2 topo = up to 8 bins. We design the
+  # data so the 3D combo has at least one singleton stratum (too thin),
+  # but the 2D combo (height × type) has enough candidates everywhere.
+  set.seed(1)
+  n <- 40
+  frame <- data.frame(
+    strat_height = rep(c("H1", "H2"), each = n / 2),
+    strat_type   = rep(c("FEU", "CON"), times = n / 2),
+    strat_topo   = c(rep("BAS", n - 1), "HAU")   # one singleton in topo
+  )
+  fit <- nemeton:::.fit_stratum(frame, c("height", "type", "topo"),
+                                n_base = 10, n_over = 4, min_per_stratum = 2)
+  expect_false(is.null(fit))
+  expect_setequal(fit$dims, c("height", "type"))
+  expect_true(all(fit$allocation + fit$n_over_per_stratum <=
+                    as.integer(fit$counts[names(fit$allocation)])))
+})
+
+
+test_that(".fit_stratum degrades to 1D (height) when 2D still too thin", {
+  # Design: a rare type combination that makes every 2D (h × type) bucket
+  # thin, but the 1D height stratification is fine.
+  frame <- data.frame(
+    strat_height = rep(c("H1", "H2"), each = 20),
+    strat_type   = c(rep("FEU", 19), "CON", rep("CON", 19), "FEU"),
+    strat_topo   = rep("BAS", 40)
+  )
+  fit <- nemeton:::.fit_stratum(frame, c("height", "type", "topo"),
+                                n_base = 20, n_over = 6, min_per_stratum = 2)
+  expect_false(is.null(fit))
+  expect_identical(fit$dims, "height")
+  expect_equal(length(fit$counts), 2L)
+})
+
+
+test_that(".fit_stratum returns NULL when even 1D is too thin", {
+  # Only 2 candidates in one stratum, but the allocation + over is 3+.
+  frame <- data.frame(
+    strat_height = c(rep("H1", 30), "H2", "H2"),
+    strat_type   = rep("AUT", 32),
+    strat_topo   = rep("NA", 32)
+  )
+  fit <- nemeton:::.fit_stratum(frame, c("height"),
+                                n_base = 20, n_over = 10, min_per_stratum = 2)
+  # H2 has only 2 candidates; allocation is >= 2 (min) + at least 1 over.
+  expect_null(fit)
+})
+
+
+test_that(".fit_stratum skips combos that degenerate to a single stratum", {
+  frame <- data.frame(
+    strat_height = rep("H1", 20),      # constant
+    strat_type   = rep(c("FEU", "CON"), each = 10),
+    strat_topo   = rep(c("BAS", "HAU"), times = 10)
+  )
+  fit <- nemeton:::.fit_stratum(frame, c("height", "type", "topo"),
+                                n_base = 10, n_over = 4, min_per_stratum = 2)
+  # 3D, 2D (h × type) and 1D (height) all contain a constant "height"
+  # component, but the combo stays multi-stratum thanks to type/topo.
+  expect_false(is.null(fit))
+  expect_true(length(fit$counts) > 1L)
+})

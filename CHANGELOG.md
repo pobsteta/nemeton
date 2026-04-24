@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.10] - 2026-04-24
+
+### Changed
+
+- `create_sampling_plan()` now auto-simplifies the stratification
+  (drops TPI, then type) when the full 3D combination would contain
+  thin strata, instead of skipping GRTS entirely. A `cli_inform()`
+  reports which dimensions were dropped. Extends GRTS coverage to
+  small AOIs where the 3D stratification produces too many singletons.
+
+### Added
+
+- Internal helper `.fit_stratum()` plus four unit tests covering
+  degradation, fully-thin edge cases, and constant-dimension handling.
+
 ## [0.19.9] - 2026-04-24
 
 ### Changed

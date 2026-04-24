@@ -233,6 +233,52 @@ dplyr_case_simple <- function(tfv) {
 }
 
 
+# Try progressively simpler stratification combinations until one fits the
+# GRTS candidate threshold (per-stratum: allocation + n_over_per_stratum).
+#
+# Preference order: drop topo first, then type; keep height as long as
+# possible. If height isn't in available_dims, fall back to type alone.
+#
+# Returns list(stratum, dims, allocation, n_over_per_stratum, counts) on
+# success, or NULL if even the simplest 1D combination is too thin or
+# degenerates to a single stratum.
+.fit_stratum <- function(frame, available_dims, n_base, n_over,
+                         min_per_stratum) {
+  prefs <- list()
+  if (length(available_dims) >= 1L) prefs[[length(prefs) + 1L]] <- available_dims
+  if ("topo" %in% available_dims) {
+    d <- setdiff(available_dims, "topo")
+    if (length(d) >= 1L) prefs[[length(prefs) + 1L]] <- d
+  }
+  if ("height" %in% available_dims) {
+    prefs[[length(prefs) + 1L]] <- "height"
+  } else if ("type" %in% available_dims) {
+    prefs[[length(prefs) + 1L]] <- "type"
+  }
+  prefs <- unique(prefs)
+
+  for (dims in prefs) {
+    parts <- lapply(dims, function(d) frame[[paste0("strat_", d)]])
+    stratum <- do.call(paste, c(parts, sep = "_"))
+    sc <- table(stratum)
+    if (length(sc) <= 1L) next
+    alloc <- .allocate_per_stratum(sc, n_base, min_per_stratum)
+    nops <- max(1L, as.integer(ceiling(n_over / max(1L, length(sc)))))
+    needed <- alloc + nops
+    if (!any(needed > as.integer(sc[names(alloc)]))) {
+      return(list(
+        stratum = stratum,
+        dims = dims,
+        allocation = alloc,
+        n_over_per_stratum = nops,
+        counts = sc
+      ))
+    }
+  }
+  NULL
+}
+
+
 .draw_grts <- function(frame, allocation, n_over_per_stratum) {
   # spsurvey::grts prints to stdout on validation errors before throwing.
   # Suppress the noise so users only see the cli warning.
@@ -447,13 +493,16 @@ create_sampling_plan <- function(zone,
   # --- Stratify ---------------------------------------------------------
   chm_ok <- !is.null(chm)
   mnt_ok <- !is.null(mnt)
+  type_ok <- !is.null(forest_mask) && "tfv" %in% names(forest_mask)
   frame <- .stratify(frame, chm_ok = chm_ok, mnt_ok = mnt_ok,
                      forest_mask = forest_mask)
 
-  strata_counts <- table(frame$stratum)
-  n_strata <- length(strata_counts)
-  has_stratification <- n_strata > 1 && (chm_ok || mnt_ok ||
-    (!is.null(forest_mask) && "tfv" %in% names(forest_mask)))
+  available_dims <- c(
+    if (chm_ok) "height",
+    if (type_ok) "type",
+    if (mnt_ok) "topo"
+  )
+  has_stratification <- length(available_dims) >= 1L
 
   # --- Draw -------------------------------------------------------------
   method <- "random"
@@ -461,12 +510,9 @@ create_sampling_plan <- function(zone,
 
   if (!has_stratification) {
     reasons <- character(0)
-    if (n_strata <= 1L) reasons <- c(reasons, "single stratum")
     if (!chm_ok) reasons <- c(reasons, "no CHM")
     if (!mnt_ok) reasons <- c(reasons, "no DEM")
-    if (is.null(forest_mask) || !"tfv" %in% names(forest_mask)) {
-      reasons <- c(reasons, "no BD Foret `tfv` field")
-    }
+    if (!type_ok) reasons <- c(reasons, "no BD Foret `tfv` field")
     cli::cli_inform(
       "Skipping GRTS: no usable stratification ({paste(reasons, collapse = ', ')}). Falling back to LPM2 / random."
     )
@@ -478,20 +524,21 @@ create_sampling_plan <- function(zone,
 
   if (has_stratification &&
       requireNamespace("spsurvey", quietly = TRUE)) {
-    allocation <- .allocate_per_stratum(strata_counts, n_base,
-                                        min_per_stratum = min_per_stratum)
-    n_over_per_stratum <- max(1L, as.integer(ceiling(n_over / max(1L, n_strata))))
-
-    # GRTS requires that every stratum has at least (base + over) candidates.
-    needed <- allocation + n_over_per_stratum
-    thin <- needed > as.integer(strata_counts[names(allocation)])
-    if (any(thin)) {
+    fit <- .fit_stratum(frame, available_dims, n_base, n_over, min_per_stratum)
+    if (is.null(fit)) {
       cli::cli_warn(
-        "Skipping GRTS: {sum(thin)}/{length(thin)} stratum/strata too thin ({.val {min(strata_counts)}} candidates minimum). Falling back to LPM2 / random."
+        "Skipping GRTS: even the simplest 1D stratification has at least one stratum with fewer candidates than the allocation + over requirement. Falling back to LPM2 / random."
       )
       grts_res <- NULL
     } else {
-      grts_res <- .draw_grts(frame, allocation, n_over_per_stratum)
+      dropped <- setdiff(available_dims, fit$dims)
+      if (length(dropped) > 0L) {
+        cli::cli_inform(
+          "Stratification simplified: dropped {.val {dropped}} to keep every stratum above the GRTS candidate threshold. Using {.val {fit$dims}} ({length(fit$counts)} strata)."
+        )
+      }
+      frame$stratum <- fit$stratum
+      grts_res <- .draw_grts(frame, fit$allocation, fit$n_over_per_stratum)
     }
     if (!is.null(grts_res)) {
       method <- "grts"
