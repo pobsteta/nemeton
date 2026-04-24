@@ -306,6 +306,39 @@ test_that(".fit_stratum returns NULL when even 1D is too thin", {
 })
 
 
+test_that("create_sampling_plan clamps n_base + n_over to frame capacity", {
+  skip_if_not_installed("sf")
+  zone <- make_zone()
+  # grid_step = 250 m on a 1 km × 1 km zone → 4×4 = 16 candidates only.
+  # Ask for 30 Base + 10 Over = 40 (far more than the frame holds).
+  suppressWarnings(
+    res <- create_sampling_plan(zone, n_base = 30, n_over = 10,
+                                grid_step = 250, seed = 1)
+  )
+  # The draw should not exceed the frame capacity.
+  expect_lte(nrow(res), 16)
+  # The Base/Over ratio should be roughly preserved (30/40 = 0.75).
+  n_b <- sum(res$type == "Base")
+  n_o <- sum(res$type == "Over")
+  expect_true(n_b >= 1L)
+  # Never silently lose *all* Over plots.
+  expect_true(n_o >= 1L)
+  # Ratio within ~±1 unit of 0.75.
+  expect_true(abs(n_b / (n_b + n_o) - 0.75) <= 0.1)
+})
+
+
+test_that("create_sampling_plan warns when the frame is too small", {
+  skip_if_not_installed("sf")
+  zone <- make_zone()
+  expect_warning(
+    create_sampling_plan(zone, n_base = 30, n_over = 10,
+                         grid_step = 250, seed = 1),
+    regexp = "Candidate frame has .* points but n_base=30"
+  )
+})
+
+
 test_that(".fit_stratum skips combos that degenerate to a single stratum", {
   frame <- data.frame(
     strat_height = rep("H1", 20),      # constant

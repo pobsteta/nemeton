@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.11] - 2026-04-24
+
+### Changed
+
+- `create_sampling_plan()` now clamps `n_base + n_over` to the
+  candidate-frame capacity upfront, preserving the Base/Over ratio
+  and emitting a `cli_warn()`. Prevents the silent LPM2 fallback
+  that could drop all Over plots on small AOIs with strict
+  forest-cover / slope filters.
+
+### Added
+
+- Two new unit tests covering the clamp logic: ratio preservation,
+  minimum-1-Over guarantee, and warning signature.
+
 ## [0.19.10] - 2026-04-24
 
 ### Changed

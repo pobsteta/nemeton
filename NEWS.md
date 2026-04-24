@@ -1,4 +1,24 @@
-# nemeton 0.19.10.9000 (development)
+# nemeton 0.19.11 (2026-04-24)
+
+### Changed
+
+* **`create_sampling_plan()` now clamps `n_base + n_over` to frame
+  capacity with a clear warning**. Previously, when the candidate
+  frame (after `min_forest_cover` / `max_slope` filtering) was smaller
+  than `n_base + n_over`, the pipeline silently fell back to LPM2 and
+  could drop *all* Over plots (since `max(0L, n_frame - n_base)` is 0
+  when `n_base ≥ n_frame`). It now detects the mismatch upfront,
+  scales `n_base` and `n_over` down proportionally (Base/Over ratio
+  preserved, with a minimum of 1 Over when `n_over > 0`), and emits a
+  `cli::cli_warn()` pointing at the likely causes (strict
+  `min_forest_cover`, large `grid_step`). GRTS can then run on the
+  reduced allocation instead of being skipped entirely.
+
+### Added
+
+* Two new unit tests (`test-sampling-plan.R`) locking in the clamp
+  behavior: Base/Over ratio preservation, minimum-1-Over guarantee,
+  and the warning signature.
 
 # nemeton 0.19.10 (2026-04-24)
 

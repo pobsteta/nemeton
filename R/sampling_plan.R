@@ -490,6 +490,30 @@ create_sampling_plan <- function(zone,
     frame <- grid
   }
 
+  # --- Clamp to frame capacity -----------------------------------------
+  # GRTS (and any without-replacement draw) cannot return more points than
+  # the candidate frame contains. If n_base + n_over exceeds the frame,
+  # scale both down proportionally so the Base/Over ratio is preserved and
+  # warn the user — otherwise the pipeline would silently fall back to
+  # LPM2 with 0 replacement plots.
+  n_frame <- nrow(frame)
+  if (n_frame < n_base + n_over) {
+    total_req <- n_base + n_over
+    new_n_base <- max(1L, as.integer(floor(n_frame * n_base / total_req)))
+    new_n_over <- n_frame - new_n_base
+    if (n_over > 0L && new_n_over < 1L) {
+      new_n_base <- max(1L, new_n_base - 1L)
+      new_n_over <- n_frame - new_n_base
+    }
+    cli::cli_warn(c(
+      "Candidate frame has {n_frame} points but n_base={n_base} + n_over={n_over} = {total_req} was requested.",
+      "i" = "Clamping to n_base={new_n_base}, n_over={new_n_over} (Base/Over ratio preserved, total={n_frame}).",
+      "i" = "Loosen {.arg min_forest_cover} or reduce {.arg grid_step} to get more candidates."
+    ))
+    n_base <- new_n_base
+    n_over <- new_n_over
+  }
+
   # --- Stratify ---------------------------------------------------------
   chm_ok <- !is.null(chm)
   mnt_ok <- !is.null(mnt)
