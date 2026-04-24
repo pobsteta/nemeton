@@ -102,16 +102,22 @@ test_that("cv_from_bdforet matches on French libellé when codes are absent", {
 })
 
 
-test_that("cv_from_bdforet reports ambiguous classes and unknown codes", {
+test_that("cv_from_bdforet reports truly unknown codes and ignores mapped non-forest", {
   skip_if_not_installed("sf")
   p <- sf::st_polygon(list(rbind(c(0,0), c(100,0), c(100,100),
                                  c(0,100), c(0,0))))
   bd <- sf::st_sf(
-    # FF1G06-06 is ambiguous; ZZZ-00 is not in the mapping.
-    TFV = c("FF1G06-06", "ZZZ-00"),
-    geometry = sf::st_sfc(p, p, crs = 2154)
+    # FF0 is mapped to NA (non-forest) and must NOT show up as
+    # unmapped; ZZZ-00 is truly absent from the mapping.
+    TFV = c("FF0", "ZZZ-00", "FF2-64-64"),
+    geometry = sf::st_sfc(p, p, p, crs = 2154)
   )
   res <- cv_from_bdforet(bd)
-  expect_true("FF1G06-06" %in% res$ambiguous$tfv_code)
   expect_true("ZZZ-00" %in% res$unmapped)
+  expect_false("FF0" %in% res$unmapped)
+  # Coverage is the forest area over the AOI: only FF2-64-64 counts,
+  # FF0 and ZZZ-00 are both excluded from the numerator.
+  expect_equal(res$coverage, 1 / 3, tolerance = 1e-6)
+  # No ambiguous rows now that the CSV flips every entry to clear.
+  expect_equal(nrow(res$ambiguous), 0L)
 })

@@ -1,4 +1,25 @@
-# nemeton 0.19.3.9000 (development)
+# nemeton 0.19.3 (2026-04-24)
+
+### Changed
+
+* **`inst/extdata/bdforet_v2_mapping.csv`** — every row now has
+  `confidence = "clear"`. The 9 previously ambiguous TFV codes
+  (FF1-00, FF1G06-06, FF1-10-10, FF1-49-49, FF1-00-00, FF2G58-58,
+  FF2G61-61, FO1, FO2) commit to the primary `context_key`; the
+  secondary candidate is still kept in `alt_context_key` as
+  informational metadata so the user can override locally.
+
+### Fixed
+
+* **`cv_from_bdforet()`** — distinguish two cases that were
+  previously conflated in `$unmapped`:
+  - *truly unknown* TFV codes (absent from the mapping) → stay in
+    `$unmapped`;
+  - codes mapped explicitly to `NA` (non-forest: FF0, FO0, LA4,
+    LA6) → no longer reported as unmapped since the mapping
+    acknowledges them.
+  This removes the spurious "FORÊT-FERMÉE-SANS-COUVERT-ARBORÉ"
+  warning in the Shiny sizing report.
 
 # nemeton 0.19.2 (2026-04-24)
 

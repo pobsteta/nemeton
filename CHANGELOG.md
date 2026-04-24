@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.3] - 2026-04-24
+
+### Changed
+
+- Flip every BD Forêt v2 TFV row in `inst/extdata/bdforet_v2_mapping.csv`
+  from `confidence = "ambiguous"` to `"clear"` (9 rows touched).
+  The secondary candidate stays in `alt_context_key` for reference.
+
+### Fixed
+
+- `cv_from_bdforet()` no longer reports non-forest codes (FF0, FO0,
+  LA4, LA6) as `$unmapped` — these are explicitly mapped to `NA`
+  and are silently excluded from the CV. Only codes truly absent
+  from the mapping are surfaced as unmapped.
+
 ## [0.19.2] - 2026-04-24
 
 ### Changed
@@ -92,7 +107,8 @@ For a narrative, per-feature description of each release, see
 See [NEWS.md](NEWS.md) for the complete narrative history
 (0.1.0 onwards).
 
-[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.2...HEAD
+[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.3...HEAD
+[0.19.3]: https://github.com/pobsteta/nemeton/compare/v0.19.2...v0.19.3
 [0.19.2]: https://github.com/pobsteta/nemeton/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/pobsteta/nemeton/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/pobsteta/nemeton/compare/v0.18.0...v0.19.0

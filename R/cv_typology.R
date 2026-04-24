@@ -193,9 +193,15 @@ cv_from_bdforet <- function(bdforet_sf,
   lookup_code <- map[, c("tfv_code", "context_key", "confidence"),
                      drop = FALSE]
   names(lookup_code)[1] <- "tfv_key"
-  df <- merge(df, lookup_code, by = "tfv_key", all.x = TRUE)
+  df <- merge(df, lookup_code, by = "tfv_key", all.x = TRUE,
+              suffixes = c("", ".map"))
+  # Track whether the row was found in the mapping at all (a row with
+  # context_key = NA AND found in the mapping is a legitimate
+  # "non-forest" entry — FF0, FO0, LA4, LA6 — that should NOT be
+  # reported as unmapped).
+  known_code <- df$tfv_key %in% map$tfv_code
 
-  if ("label_key" %in% names(map) && any(is.na(df$context_key))) {
+  if ("label_key" %in% names(map) && any(is.na(df$context_key) & !known_code)) {
     lookup_lab <- map[!is.na(map$label_key),
                       c("label_key", "context_key", "confidence"),
                       drop = FALSE]
@@ -206,12 +212,18 @@ cv_from_bdforet <- function(bdforet_sf,
     df$confidence[fill] <- df$confidence_lab[fill]
     df$context_key_lab <- NULL
     df$confidence_lab  <- NULL
+    known_code <- known_code |
+                  (df$tfv_key %in% map$label_key[!is.na(map$label_key)])
   }
   names(df)[names(df) == "tfv_key"] <- "tfv_code"
 
-  unmapped <- df$tfv_code[is.na(df$context_key)]
+  # Only codes absent from the mapping (both columns) land in
+  # `unmapped`. Codes mapped explicitly to NA (non-forest) are known
+  # and silently dropped from the CV computation.
+  unmapped <- df$tfv_code[!known_code]
 
-  # Drop NA context_key rows (coupe rase, non-forest).
+  # Drop NA context_key rows (coupe rase, non-forest + any unmapped
+  # codes) from the forest-area aggregation.
   keep <- !is.na(df$context_key)
   df_forest <- df[keep, , drop = FALSE]
 
