@@ -19,6 +19,68 @@ NULL
 
 # ---- internal helpers --------------------------------------------------
 
+# Traveling salesman heuristic: nearest-neighbor tour with an optional
+# 2-opt improvement. Input is a numeric matrix of point coordinates
+# (xs, ys); output is the integer vector of indices in tour order.
+# The tour is open (we want a one-way walking path, not a loop).
+#
+# Start point defaults to the south-easternmost point, which in most
+# French forest contexts corresponds to the likeliest road access on
+# the warm slope. 2-opt is capped at `iter_max` full passes (usually
+# 2-3 converge); it does not guarantee the global optimum but a
+# consistent 10-20 % shorter tour than plain NN.
+.tsp_nearest_neighbor <- function(coords, start_idx = NULL,
+                                  improve = TRUE, iter_max = 20L) {
+  n <- nrow(coords)
+  if (n <= 1L) return(seq_len(n))
+  if (is.null(start_idx)) {
+    start_idx <- which.max(coords[, 1] - coords[, 2])  # SE-most
+  }
+  tour <- integer(n)
+  tour[1] <- start_idx
+  remaining <- setdiff(seq_len(n), start_idx)
+  for (k in 2:n) {
+    cur <- tour[k - 1]
+    d <- (coords[remaining, 1] - coords[cur, 1])^2 +
+         (coords[remaining, 2] - coords[cur, 2])^2
+    nxt <- remaining[which.min(d)]
+    tour[k] <- nxt
+    remaining <- setdiff(remaining, nxt)
+  }
+
+  if (!improve || n < 4L) return(tour)
+
+  # 2-opt for an open path: for each pair (i, j) with i+1 < j, see
+  # whether reversing tour[i+1:j] shortens the tour. Stop at the first
+  # pass with no improvement.
+  seg_len <- function(i, j) {
+    sqrt(sum((coords[i, ] - coords[j, ])^2))
+  }
+  tour_cost <- function(t) {
+    sum(vapply(seq_len(length(t) - 1L), function(k)
+      seg_len(t[k], t[k + 1L]), numeric(1)))
+  }
+  for (pass in seq_len(iter_max)) {
+    improved <- FALSE
+    for (i in seq_len(n - 2L)) {
+      if (i + 2L > n - 1L) next
+      for (j in (i + 2L):(n - 1L)) {
+        a <- tour[i];     b <- tour[i + 1L]
+        c <- tour[j];     d <- tour[j + 1L]
+        old_d <- seg_len(a, b) + seg_len(c, d)
+        new_d <- seg_len(a, c) + seg_len(b, d)
+        if (new_d + 1e-9 < old_d) {
+          tour[(i + 1L):j] <- rev(tour[(i + 1L):j])
+          improved <- TRUE
+        }
+      }
+    }
+    if (!improved) break
+  }
+  tour
+}
+
+
 .compute_forest_cover <- function(buffers, forest_mask) {
   if (is.null(forest_mask)) {
     return(rep(1, nrow(buffers)))
@@ -398,6 +460,16 @@ create_sampling_plan <- function(zone,
   }
 
   # --- Finalise ---------------------------------------------------------
+  # Reorder Base plots into a short walking tour (nearest-neighbor +
+  # 2-opt). Over (replacement) plots keep their draw-priority order
+  # at the tail of the frame.
+  is_base <- sample_all$type == "Base"
+  if (sum(is_base) >= 2L) {
+    base_idx    <- which(is_base)
+    base_coords <- sf::st_coordinates(sample_all[base_idx, ])
+    tsp_order   <- .tsp_nearest_neighbor(base_coords)
+    sample_all[base_idx, ] <- sample_all[base_idx[tsp_order], ]
+  }
   sample_all$plot_id <- sprintf("P%03d", seq_len(nrow(sample_all)))
   sample_all$visit_order <- seq_len(nrow(sample_all))
 

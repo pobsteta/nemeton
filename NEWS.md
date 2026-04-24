@@ -1,4 +1,21 @@
-# nemeton 0.20.0.9000 (development)
+# nemeton 0.19.1 (2026-04-24)
+
+### Fixed
+
+* **`create_sampling_plan()`** — `visit_order` now reflects a real
+  walking tour. The previous implementation assigned `visit_order`
+  from the draw order (GRTS / LPM2 / random), which on a wide AOI
+  produced a zig-zag polyline on the Shiny map rather than a
+  sensible field route. Base plots are now reordered via a
+  nearest-neighbor heuristic starting from the south-easternmost
+  point (likeliest road access in French forest contexts), then
+  improved by up to 20 passes of 2-opt for an open path. Over
+  (replacement) plots keep their draw-priority order at the tail.
+  The helper `.tsp_nearest_neighbor()` is internal; no new hard
+  dependency.
+* Tests: two new assertions in `test-sampling-plan.R` (the TSP tour
+  is materially shorter than a random order, and the first plot
+  lands in the east half of a wide rectangle).
 
 # nemeton 0.19.0 (2026-04-24)
 

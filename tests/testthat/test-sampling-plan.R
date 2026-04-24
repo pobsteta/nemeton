@@ -176,6 +176,46 @@ test_that("create_sampling_plan errors when target_error is set without cv", {
 })
 
 
+test_that("Base plots are reordered into a sensible walking tour", {
+  # Draw on a wide rectangle so the TSP has something to untangle.
+  set.seed(1)
+  zone <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(rbind(
+      c(0, 0), c(4000, 0), c(4000, 1000),
+      c(0, 1000), c(0, 0)
+    ))),
+    crs = 2154
+  ))
+  plan <- create_sampling_plan(zone, n_base = 30, n_over = 0, seed = 1)
+  base <- plan[plan$type == "Base", ]
+  base <- base[order(base$visit_order), ]
+  coords <- sf::st_coordinates(base)
+
+  # Length of the obtained tour.
+  seg <- sqrt(diff(coords[, 1])^2 + diff(coords[, 2])^2)
+  tour_len <- sum(seg)
+
+  # Compare with the original draw order (which is random / not
+  # optimised). The TSP tour should be materially shorter.
+  ord_random <- sample(nrow(base))
+  coords_rand <- coords[ord_random, ]
+  seg_rand <- sqrt(diff(coords_rand[, 1])^2 + diff(coords_rand[, 2])^2)
+  rand_len <- sum(seg_rand)
+
+  expect_lt(tour_len, rand_len * 0.6)
+  # First plot (visit_order == 1) should be near the SE corner.
+  first <- sf::st_coordinates(base[1, ])
+  expect_true(first[1] > 2500)  # east half
+})
+
+
+test_that("nearest-neighbor helper returns a permutation of 1:n", {
+  coords <- cbind(runif(10), runif(10))
+  tour <- nemeton:::.tsp_nearest_neighbor(coords)
+  expect_equal(sort(tour), 1:10)
+})
+
+
 test_that("create_sampling_plan errors when neither n_base nor target_error is given", {
   expect_error(
     create_sampling_plan(make_zone()),
