@@ -139,20 +139,17 @@ NULL
 
   mask_union <- suppressWarnings(sf::st_union(forest_mask))
   buf_hit    <- buffers[hit, , drop = FALSE]
+  # Attach an explicit integer id column so we can align the
+  # st_intersection() result back to buf_hit rows. Using a carried
+  # attribute is more robust than row.names() across sf versions
+  # (some reshuffle or rewrite row.names on intersect).
+  buf_hit$.fc_id <- seq_len(nrow(buf_hit))
   inter <- suppressWarnings(sf::st_intersection(buf_hit, mask_union))
 
-  buf_area    <- as.numeric(sf::st_area(buf_hit))
-  # st_intersection may drop rows that reduced to empty after
-  # geometry collection simplification; align by row order of
-  # the intersection result (sf guarantees row order is preserved
-  # for x in st_intersection(x, y) when y is a single geometry).
+  buf_area   <- as.numeric(sf::st_area(buf_hit))
   inter_area <- numeric(sum(hit))
-  if (nrow(inter) > 0) {
-    # inter has as many rows as buf_hit minus any dropped empties;
-    # use row.names() to recover the original index.
-    pos <- match(row.names(inter), row.names(buf_hit))
-    pos <- pos[!is.na(pos)]
-    inter_area[pos] <- as.numeric(sf::st_area(inter))[seq_along(pos)]
+  if (nrow(inter) > 0L) {
+    inter_area[inter$.fc_id] <- as.numeric(sf::st_area(inter))
   }
   out[hit] <- pmin(1, inter_area / buf_area)
   out

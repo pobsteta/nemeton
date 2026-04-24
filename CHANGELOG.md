@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.7] - 2026-04-24
+
+### Fixed
+
+- `.compute_forest_cover()` now aligns its vectorised output using
+  a carried `.fc_id` column instead of `row.names()`, which some
+  sf versions rewrite on intersection. Fixes silent "all-zero"
+  forest cover leading to empty candidate sets in
+  `create_sampling_plan()`.
+
 ## [0.19.6] - 2026-04-24
 
 ### Performance
@@ -134,7 +144,8 @@ For a narrative, per-feature description of each release, see
 See [NEWS.md](NEWS.md) for the complete narrative history
 (0.1.0 onwards).
 
-[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.6...HEAD
+[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD
+[0.19.7]: https://github.com/pobsteta/nemeton/compare/v0.19.6...v0.19.7
 [0.19.6]: https://github.com/pobsteta/nemeton/compare/v0.19.5...v0.19.6
 [0.19.5]: https://github.com/pobsteta/nemeton/compare/v0.19.4...v0.19.5
 [0.19.4]: https://github.com/pobsteta/nemeton/compare/v0.19.3...v0.19.4

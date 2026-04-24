@@ -1,4 +1,14 @@
-# nemeton 0.19.7.9000 (development)
+# nemeton 0.19.7 (2026-04-24)
+
+### Fixed
+
+* **`.compute_forest_cover()` row alignment**: the row.names-based
+  fallback introduced in 0.19.6 was fragile across sf versions —
+  some versions rewrite row.names on intersection and the
+  resulting `match()` returned NA, leaving the forest cover at 0
+  for all buffers. Replaced by a carried integer id column
+  (`.fc_id`) added to buf_hit before the intersection and read
+  back from `inter$.fc_id`. Robust on every sf ≥ 1.0.
 
 # nemeton 0.19.6 (2026-04-24)
 
