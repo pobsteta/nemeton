@@ -169,7 +169,13 @@ cv_from_bdforet <- function(bdforet_sf,
   }
 
   area_m2 <- as.numeric(sf::st_area(bdforet_sf))
-  tfv     <- as.character(bdforet_sf[[tfv_col]])
+  tfv_raw <- as.character(bdforet_sf[[tfv_col]])
+  # Normalize TFV codes: strip whitespace, uppercase letter prefixes,
+  # turn common separator variants back to "-" (IGN WFS is not always
+  # consistent: "FF2-64-64" vs "FF2_64_64" vs "FF2 64 64").
+  tfv <- trimws(tfv_raw)
+  tfv <- gsub("[_[:space:]]+", "-", tfv)
+  tfv <- toupper(tfv)
   total_area <- sum(area_m2, na.rm = TRUE)
 
   # Per-TFV aggregation.
