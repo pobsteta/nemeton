@@ -459,6 +459,23 @@ create_sampling_plan <- function(zone,
   method <- "random"
   sample_all <- NULL
 
+  if (!has_stratification) {
+    reasons <- character(0)
+    if (n_strata <= 1L) reasons <- c(reasons, "single stratum")
+    if (!chm_ok) reasons <- c(reasons, "no CHM")
+    if (!mnt_ok) reasons <- c(reasons, "no DEM")
+    if (is.null(forest_mask) || !"tfv" %in% names(forest_mask)) {
+      reasons <- c(reasons, "no BD Foret `tfv` field")
+    }
+    cli::cli_inform(
+      "Skipping GRTS: no usable stratification ({paste(reasons, collapse = ', ')}). Falling back to LPM2 / random."
+    )
+  } else if (!requireNamespace("spsurvey", quietly = TRUE)) {
+    cli::cli_inform(
+      "Skipping GRTS: package {.pkg spsurvey} is not installed (install it with {.code install.packages(\"spsurvey\")}). Falling back to LPM2 / random."
+    )
+  }
+
   if (has_stratification &&
       requireNamespace("spsurvey", quietly = TRUE)) {
     allocation <- .allocate_per_stratum(strata_counts, n_base,

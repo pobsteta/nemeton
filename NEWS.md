@@ -1,4 +1,14 @@
-# nemeton 0.19.8.9000 (development)
+# nemeton 0.19.9 (2026-04-24)
+
+### Changed
+
+* **`create_sampling_plan()` now explains why GRTS was skipped**. The
+  two previously silent fallback branches (no usable stratification,
+  or `spsurvey` not installed) now emit a `cli::cli_inform()` listing
+  the concrete reasons — e.g. `"Skipping GRTS: no usable
+  stratification (single stratum, no CHM, no DEM, no BD Foret 'tfv'
+  field). Falling back to LPM2 / random."` The two already-reported
+  cases (thin strata and `spsurvey::grts` errors) are unchanged.
 
 # nemeton 0.19.7 (2026-04-24)
 

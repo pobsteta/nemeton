@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.9] - 2026-04-24
+
+### Changed
+
+- `create_sampling_plan()` now prints an informative `cli::cli_inform()`
+  message on the two previously silent GRTS-skip paths (no usable
+  stratification, `spsurvey` not installed), listing the concrete
+  reasons. Users no longer have to guess why the draw fell back to
+  LPM2 or random.
+
 ## [0.19.7] - 2026-04-24
 
 ### Fixed
