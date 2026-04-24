@@ -114,11 +114,21 @@ NULL
   if (is.null(forest_mask)) {
     return(rep(1, nrow(buffers)))
   }
+  # Declare attributes as spatially constant so sf::st_intersection()
+  # stops warning once per call ("attribute variables are assumed to
+  # be spatially constant throughout all geometries") — this loop
+  # runs once per candidate plot, so a few thousand identical
+  # warnings would flood the console.
+  suppressWarnings(sf::st_agr(buffers)     <- "constant")
+  suppressWarnings(sf::st_agr(forest_mask) <- "constant")
+
   n <- nrow(buffers)
   out <- numeric(n)
   for (i in seq_len(n)) {
-    inter <- tryCatch(sf::st_intersection(buffers[i, ], forest_mask),
-                      error = function(e) NULL)
+    inter <- tryCatch(
+      suppressWarnings(sf::st_intersection(buffers[i, ], forest_mask)),
+      error = function(e) NULL
+    )
     if (is.null(inter) || nrow(inter) == 0) {
       out[i] <- 0
     } else {

@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.4] - 2026-04-24
+
+### Fixed
+
+- `create_sampling_plan()` no longer floods the console with sf's
+  "attribute variables are assumed to be spatially constant"
+  warning (one per candidate × polygon). `.compute_forest_cover()`
+  now sets `sf::st_agr()` to `"constant"` and wraps
+  `st_intersection()` in `suppressWarnings()`.
+
 ## [0.19.3] - 2026-04-24
 
 ### Changed
@@ -107,7 +117,8 @@ For a narrative, per-feature description of each release, see
 See [NEWS.md](NEWS.md) for the complete narrative history
 (0.1.0 onwards).
 
-[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.3...HEAD
+[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.4...HEAD
+[0.19.4]: https://github.com/pobsteta/nemeton/compare/v0.19.3...v0.19.4
 [0.19.3]: https://github.com/pobsteta/nemeton/compare/v0.19.2...v0.19.3
 [0.19.2]: https://github.com/pobsteta/nemeton/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/pobsteta/nemeton/compare/v0.19.0...v0.19.1

@@ -1,4 +1,18 @@
-# nemeton 0.19.4.9000 (development)
+# nemeton 0.19.4 (2026-04-24)
+
+### Fixed
+
+* **Warning flood in `.compute_forest_cover()`** — when
+  `create_sampling_plan()` was called with a non-trivial
+  `forest_mask` (e.g. a BD Forêt v2 coverage with 30+ polygons),
+  the per-candidate `sf::st_intersection()` call fired
+  "attribute variables are assumed to be spatially constant
+  throughout all geometries" once per candidate. A large project
+  (~2000 candidates) therefore spammed the console with 2000
+  copies of the same warning. Declare the attributes as constant
+  via `sf::st_agr()` and wrap the intersection in
+  `suppressWarnings()` so the message appears once (in the
+  downstream Shiny log) at most.
 
 # nemeton 0.19.3 (2026-04-24)
 
