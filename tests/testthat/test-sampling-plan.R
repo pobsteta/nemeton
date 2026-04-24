@@ -143,6 +143,48 @@ test_that("create_sampling_plan rejects non-sf zones and non-positive n_base", {
 
 
 # ------------------------------------------------------------
+# target_error / cv path
+# ------------------------------------------------------------
+
+test_that("create_sampling_plan sizes n_base from (target_error, cv)", {
+  plan <- create_sampling_plan(
+    make_zone(),
+    target_error = 0.10,
+    cv = 0.30,
+    n_over = 0L  # let over_ratio kick in
+  )
+  ss <- attr(plan, "sample_size")
+  expect_false(is.null(ss))
+  # Computed n should roughly match normal-approx (1.96 * 0.3 / 0.1)^2 ~= 35.
+  expect_gte(ss$n, 34L)
+  expect_lte(ss$n, 40L)
+  # n_base in the plan should be >= computed n (may be slightly less if
+  # some candidates were filtered out by constraints).
+  n_base_in_plan <- sum(plan$type == "Base")
+  expect_true(n_base_in_plan > 0)
+  # Over plots ~ 20 % of n_base.
+  n_over_in_plan <- sum(plan$type == "Over")
+  expect_true(n_over_in_plan >= 1L)
+})
+
+
+test_that("create_sampling_plan errors when target_error is set without cv", {
+  expect_error(
+    create_sampling_plan(make_zone(), target_error = 0.10),
+    "cv.*must be provided"
+  )
+})
+
+
+test_that("create_sampling_plan errors when neither n_base nor target_error is given", {
+  expect_error(
+    create_sampling_plan(make_zone()),
+    "Either.*n_base.*target_error"
+  )
+})
+
+
+# ------------------------------------------------------------
 # Internal: allocation respects min_per_stratum and caps
 # ------------------------------------------------------------
 

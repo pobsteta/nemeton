@@ -1,3 +1,53 @@
+# nemeton 0.19.0.9000 (development)
+
+### New feature — Sample size from target error + CV typology (Épaississement 5.c)
+
+* **`R/sample_size.R`** — `compute_sample_size(cv, target_error, alpha,
+  N, max_iter, tol)` implements the classic Cochran formula
+  `n >= (t * CV / E)^2` with iterative Student-t refinement on the
+  degrees of freedom and an optional finite-population correction
+  `n_corr = n / (1 + n/N)`. Returns the sized `n`, the converged
+  `t_used` / `df`, convergence flag, iteration count, and the echoed
+  inputs. Formulas are standard sampling theory and are not
+  copyrightable; credit to Max Bruciamacchie / AgroParisTech
+  (PPtools, GPL-2, 2014) for the IFN-G/ha convention we align on.
+
+* **`R/cv_typology.R`** — lookup tables and helpers for the CV side
+  of the equation:
+  - `cv_typology()` loads `inst/extdata/cv_typology.csv`: 8 generic
+    forest contexts (5 peuplement-level, 3 stratification-level) with
+    low / mid / high CV bounds on basal area G/ha.
+  - `cv_lookup(context_key, position)` reads a single CV value.
+  - `bdforet_v2_mapping()` loads `inst/extdata/bdforet_v2_mapping.csv`:
+    the 32 BD Forêt v2 TFV codes mapped to one of the generic
+    contexts with a confidence flag (clear / ambiguous) and a
+    secondary candidate for ambiguous classes.
+  - `cv_from_bdforet(bdforet_sf, position, aoi, tfv_col)` returns an
+    area-weighted CV for an AOI, plus a diagnostic summary (per-TFV
+    share, ambiguous codes, unmapped codes). Polygons mapped to
+    NA (FF0 coupe rase, LA4 lande, etc.) are excluded from the CV.
+
+* **`R/sampling_plan.R`** — `create_sampling_plan()` now accepts
+  `target_error`, `cv`, `alpha` and `over_ratio` as optional
+  arguments. When `target_error` + `cv` are provided, `n_base` is
+  sized via `compute_sample_size()` and `n_over` defaults to
+  `ceiling(n_base * over_ratio)` (default 20 %). The previous
+  `n_base` path is preserved and stays the default when neither
+  argument is set, but at least one must now be provided. The sizing
+  result is attached to the returned sf as `attr(plan, "sample_size")`.
+
+* **CSV editability**: both typology files are loaded via
+  `system.file()` by default, but `cv_typology(file = ...)` and
+  `bdforet_v2_mapping(file = ...)` let the user point at a custom
+  CSV — useful to tune the bounds locally without rebuilding the
+  package.
+
+* Tests: `test-sample-size.R` (24 assertions), `test-cv-typology.R`
+  (24 assertions, including area-weighted aggregation and the
+  ambiguous / unmapped paths), plus 7 new assertions in
+  `test-sampling-plan.R` for the `target_error` path. Full suite
+  5595 / 0 failure.
+
 # nemeton 0.18.0.9000 (development)
 
 ### New feature — QField export (Épaississement 5.a)

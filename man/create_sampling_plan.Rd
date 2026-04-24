@@ -6,8 +6,12 @@
 \usage{
 create_sampling_plan(
   zone,
-  n_base,
+  n_base = NULL,
   n_over = 0L,
+  target_error = NULL,
+  cv = NULL,
+  alpha = 0.05,
+  over_ratio = 0.2,
   chm = NULL,
   slope = NULL,
   forest_mask = NULL,
@@ -24,9 +28,34 @@ create_sampling_plan(
 \item{zone}{sf polygon of the study area (any CRS; result uses
 \code{zone}'s CRS).}
 
-\item{n_base}{Integer. Number of base (primary) plots.}
+\item{n_base}{Integer. Number of base (primary) plots. Optional
+when \code{target_error} and \code{cv} are provided — in that
+case \code{n_base} is computed via
+\code{\link{compute_sample_size}}.}
 
-\item{n_over}{Integer. Number of replacement (oversample) plots.}
+\item{n_over}{Integer. Number of replacement (oversample) plots.
+Ignored when \code{target_error} is provided and \code{n_over}
+is left at 0: an over-ratio is applied to the computed
+\code{n_base} instead.}
+
+\item{target_error}{Optional numeric. Target relative error on the
+mean of the target variable (default variable is basal area
+G/ha), as a fraction (e.g. 0.10 for \eqn{\pm}10 \%). When
+provided together with \code{cv}, \code{n_base} is sized via
+\code{\link{compute_sample_size}}.}
+
+\item{cv}{Optional numeric. Coefficient of variation (fraction)
+of the target variable over the AOI. Required when
+\code{target_error} is set. Can be derived from BD Forêt v2
+via \code{\link{cv_from_bdforet}}.}
+
+\item{alpha}{Numeric. Significance level for the Cochran formula
+(default 0.05 = 95 \% confidence). Only used when
+\code{target_error} is provided.}
+
+\item{over_ratio}{Numeric in [0, 1]. Fraction of \code{n_base} used
+as replacement plots when \code{n_over} is left at 0 and
+\code{target_error} is provided. Default 0.20.}
 
 \item{chm}{Optional \code{SpatRaster} of canopy height, used for
 height quartile stratification and buffer-mean extraction.}

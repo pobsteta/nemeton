@@ -1,0 +1,9 @@
+context_key,context_fr,context_en,variable,level,cv_low,cv_mid,cv_high,notes_fr
+futaie_reguliere_resineuse,Futaie régulière résineuse,Even-aged conifer high forest,G,peuplement,0.20,0.275,0.35,"Plantations Douglas, épicéa, pin."
+futaie_reguliere_feuillue,Futaie régulière feuillue,Even-aged broadleaf high forest,G,peuplement,0.25,0.35,0.45,"Chênaie, hêtraie équienne."
+futaie_irreguliere,Futaie irrégulière,Uneven-aged / mixed-structure high forest,G,peuplement,0.45,0.575,0.70,"Jardinée ou à structure complexe."
+tsf_melange_futaie_taillis,Mélange futaie-taillis / taillis sous futaie,Coppice with standards / mixed coppice-high-forest,G,peuplement,0.50,0.65,0.80,"TSF, mélange vertical."
+taillis_simple,Taillis simple,Simple coppice,G,peuplement,0.40,0.55,0.70,"Coupe rase régulière, taillis purs."
+essence_particuliere,Échelle d'une essence particulière,Single-species (within a mixed stand),G,essence,0.70,0.85,1.00,"CV plus élevé quand on restreint à une essence."
+classe_diametre,Catégorie de diamètre (PB / BM / GB séparément),Diameter class (small / medium / large wood),G,classe_diametre,0.80,1.00,1.20,"CV par classe, toutes essences confondues."
+gros_bois_melange,Gros bois seul dans peuplement mélangé,Large wood only in mixed stand,G,classe_diametre,1.00,1.20,1.50,"CV souvent > 100 %, rare et dispersé."
