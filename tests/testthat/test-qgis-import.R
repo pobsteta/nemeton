@@ -1,5 +1,5 @@
-# test-qfield-import.R
-# Tests for R/qfield_import.R — import_qfield_gpkg, validate_field_data,
+# test-qgis-import.R
+# Tests for R/qgis_import.R — import_qfield_gpkg, validate_field_data,
 # aggregate_plot_metrics and attach_field_data_to_units.
 
 # ------------------------------------------------------------

@@ -1,4 +1,4 @@
-# test-ndp-qfield.R
+# test-ndp-field.R
 # Tests for the QField "alternative path" bump in detect_ndp().
 
 test_that("detect_ndp bumps to NDP 2 when placettes without trees are tagged", {

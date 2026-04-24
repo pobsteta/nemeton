@@ -1,5 +1,5 @@
-# test-qfield-export.R
-# Tests for R/field_schema.R and R/qfield_export.R
+# test-qgis-export.R
+# Tests for R/field_schema.R and R/qgis_export.R
 
 skip_if_no_sf <- function() {
   skip_if_not_installed("sf")
