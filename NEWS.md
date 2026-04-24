@@ -1,4 +1,16 @@
-# nemeton 0.19.2.9000 (development)
+# nemeton 0.19.2 (2026-04-24)
+
+### Changed
+
+* **TSP tour delegated to the `TSP` package** — the hand-rolled
+  nearest-neighbor we shipped in 0.19.1 is replaced by the same
+  recipe used in tutorial `09-sampling`:
+  `TSP::solve_TSP(method = "nearest_insertion")` seeds the tour,
+  `TSP::solve_TSP(method = "2-opt")` refines it. The output is then
+  rotated so the SE-most plot is first (heuristic road-access
+  start). The old NN + open-path 2-opt stays as a fallback when
+  `TSP` is not installed.
+* `TSP (>= 1.2.0)` added to `Suggests` in `DESCRIPTION`.
 
 # nemeton 0.19.1 (2026-04-24)
 

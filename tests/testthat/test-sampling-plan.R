@@ -209,10 +209,23 @@ test_that("Base plots are reordered into a sensible walking tour", {
 })
 
 
-test_that("nearest-neighbor helper returns a permutation of 1:n", {
-  coords <- cbind(runif(10), runif(10))
-  tour <- nemeton:::.tsp_nearest_neighbor(coords)
+test_that("TSP helper returns a permutation of 1:n and starts at SE", {
+  set.seed(2)
+  coords <- cbind(runif(10, 0, 1000), runif(10, 0, 1000))
+  tour <- nemeton:::.tsp_tour(coords)
   expect_equal(sort(tour), 1:10)
+  # Start = SE-most point (max x - y).
+  expect_equal(tour[1], which.max(coords[, 1] - coords[, 2]))
+})
+
+
+test_that("TSP fallback is reachable and also correct", {
+  set.seed(3)
+  coords <- cbind(runif(8, 0, 1000), runif(8, 0, 1000))
+  start <- which.max(coords[, 1] - coords[, 2])
+  tour <- nemeton:::.tsp_fallback(coords, start)
+  expect_equal(sort(tour), 1:8)
+  expect_equal(tour[1], start)
 })
 
 

@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-04-24
+
+### Changed
+
+- Tour optimisation now uses `TSP::solve_TSP()` (nearest_insertion +
+  2-opt) — same recipe as tutorial 09-sampling. Hand-rolled fallback
+  kept when the `TSP` package is not installed. `TSP (>= 1.2.0)`
+  added to `Suggests`.
+
 ## [0.19.1] - 2026-04-24
 
 ### Fixed
@@ -83,6 +92,7 @@ For a narrative, per-feature description of each release, see
 See [NEWS.md](NEWS.md) for the complete narrative history
 (0.1.0 onwards).
 
-[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.1...HEAD
+[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.2...HEAD
+[0.19.2]: https://github.com/pobsteta/nemeton/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/pobsteta/nemeton/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/pobsteta/nemeton/compare/v0.18.0...v0.19.0

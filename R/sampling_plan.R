@@ -19,23 +19,60 @@ NULL
 
 # ---- internal helpers --------------------------------------------------
 
-# Traveling salesman heuristic: nearest-neighbor tour with an optional
-# 2-opt improvement. Input is a numeric matrix of point coordinates
-# (xs, ys); output is the integer vector of indices in tour order.
-# The tour is open (we want a one-way walking path, not a loop).
+# Traveling-salesman walking tour for a set of sampling plots.
 #
-# Start point defaults to the south-easternmost point, which in most
-# French forest contexts corresponds to the likeliest road access on
-# the warm slope. 2-opt is capped at `iter_max` full passes (usually
-# 2-3 converge); it does not guarantee the global optimum but a
-# consistent 10-20 % shorter tour than plain NN.
-.tsp_nearest_neighbor <- function(coords, start_idx = NULL,
-                                  improve = TRUE, iter_max = 20L) {
+# Uses the \pkg{TSP} package (Suggests) with the same recipe as the
+# 09-sampling tutorial: nearest_insertion to seed, 2-opt to refine.
+# Falls back to a hand-rolled nearest-neighbor + 2-opt when \pkg{TSP}
+# is not installed so the function never hard-fails.
+#
+# The tour returned by \code{TSP::solve_TSP()} is closed (loop)
+# and rotation-invariant. We rotate it so the start is at the
+# user-supplied \code{start_idx}, or the south-easternmost point by
+# default (likeliest road access in French forests), and return the
+# sequence as an OPEN path (no closing edge — the walker does not
+# return to the start).
+#
+# @param coords numeric matrix n x 2 of projected coordinates.
+# @param start_idx optional index of the first plot to visit.
+#
+# @return integer vector of indices in visit order.
+.tsp_tour <- function(coords, start_idx = NULL) {
   n <- nrow(coords)
   if (n <= 1L) return(seq_len(n))
   if (is.null(start_idx)) {
     start_idx <- which.max(coords[, 1] - coords[, 2])  # SE-most
   }
+
+  if (requireNamespace("TSP", quietly = TRUE) && n >= 3L) {
+    dist_matrix <- as.matrix(stats::dist(coords))
+    tsp_obj  <- TSP::TSP(dist_matrix)
+    tour_ni  <- TSP::solve_TSP(tsp_obj, method = "nearest_insertion")
+    tour_opt <- tryCatch(
+      TSP::solve_TSP(tsp_obj, method = "2-opt",
+                     control = list(tour = tour_ni)),
+      error = function(e) tour_ni
+    )
+    tour <- as.integer(tour_opt)
+  } else {
+    tour <- .tsp_fallback(coords, start_idx)
+  }
+
+  # Rotate so start_idx comes first. TSP tours are rotation-invariant
+  # (closed loops) but we want a well-defined open walking path.
+  pos <- match(start_idx, tour)
+  if (!is.na(pos) && pos > 1L) {
+    tour <- c(tour[pos:length(tour)], tour[seq_len(pos - 1L)])
+  }
+  tour
+}
+
+
+# Hand-rolled fallback (nearest-neighbor + open-path 2-opt). Used
+# when the TSP package is not available. Result is materially worse
+# than TSP's 2-opt on dense draws but still a valid tour.
+.tsp_fallback <- function(coords, start_idx, iter_max = 20L) {
+  n <- nrow(coords)
   tour <- integer(n)
   tour[1] <- start_idx
   remaining <- setdiff(seq_len(n), start_idx)
@@ -47,18 +84,10 @@ NULL
     tour[k] <- nxt
     remaining <- setdiff(remaining, nxt)
   }
+  if (n < 4L) return(tour)
 
-  if (!improve || n < 4L) return(tour)
-
-  # 2-opt for an open path: for each pair (i, j) with i+1 < j, see
-  # whether reversing tour[i+1:j] shortens the tour. Stop at the first
-  # pass with no improvement.
   seg_len <- function(i, j) {
     sqrt(sum((coords[i, ] - coords[j, ])^2))
-  }
-  tour_cost <- function(t) {
-    sum(vapply(seq_len(length(t) - 1L), function(k)
-      seg_len(t[k], t[k + 1L]), numeric(1)))
   }
   for (pass in seq_len(iter_max)) {
     improved <- FALSE
@@ -467,7 +496,7 @@ create_sampling_plan <- function(zone,
   if (sum(is_base) >= 2L) {
     base_idx    <- which(is_base)
     base_coords <- sf::st_coordinates(sample_all[base_idx, ])
-    tsp_order   <- .tsp_nearest_neighbor(base_coords)
+    tsp_order   <- .tsp_tour(base_coords)
     sample_all[base_idx, ] <- sample_all[base_idx[tsp_order], ]
   }
   sample_all$plot_id <- sprintf("P%03d", seq_len(nrow(sample_all)))

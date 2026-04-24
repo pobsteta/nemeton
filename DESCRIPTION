@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.19.2.9000
+Version: 0.19.2
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -67,6 +67,7 @@ Suggests:
     nasapower (>= 4.0.0),
     spsurvey (>= 5.0.0),
     BalancedSampling (>= 1.6.0),
+    TSP (>= 1.2.0),
     sfnetworks (>= 0.6.0),
     TSP (>= 1.2.0),
     tidygraph (>= 1.2.0),
