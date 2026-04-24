@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "nemeton: Systemic Forest Analysis Using the Nemeton Method"
+abstract: >
+  Implement the Nemeton method for systemic forest territory analysis.
+  Calculate multi-family biophysical indicators across 12 ecosystem
+  service families (carbon, water, soil, landscape, biodiversity,
+  temporal, risk, social, production, energy, naturalness, air),
+  perform temporal analysis, normalize to composite indices, and
+  visualize results. Designed for foresters, ecologists, and land
+  managers.
+authors:
+  - family-names: "Obstétar"
+    given-names: "Pascal"
+    email: "pascal.obstetar@gmail.com"
+    orcid: "https://orcid.org/0009-0003-5403-1187"
+version: "0.19.0"
+date-released: "2026-04-24"
+url: "https://github.com/pobsteta/nemeton"
+repository-code: "https://github.com/pobsteta/nemeton"
+repository-artifact: "https://github.com/pobsteta/nemeton/releases"
+license: MIT
+keywords:
+  - forestry
+  - R
+  - ecosystem-services
+  - biodiversity
+  - carbon-stocks
+  - remote-sensing
+  - spatial-analysis
