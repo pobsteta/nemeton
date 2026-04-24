@@ -160,12 +160,12 @@ test_that("create_qfield_project .qgs XML is well-formed and wires field constra
     expect_true("tree_id" %in% notnull_fields)
     expect_true("dbh_cm"  %in% notnull_fields)
 
-    # espece ValueMap contains the species domain (at least one entry)
-    espece_opts <- xml2::xml_find_all(doc,
-      "//maplayer[layername=\"Arbres\"]//field[@name=\"espece\"]//Option[@type=\"List\"]")
-    # Filter out the parent Option named "map"
-    leaf_names <- vapply(espece_opts, function(o) xml2::xml_attr(o, "name"), character(1))
-    leaf_names <- leaf_names[leaf_names != "map"]
+    # espece ValueMap contains the species domain (at least one entry).
+    # QGIS 3.x canonical structure: map → List of Map, each Map wraps a
+    # QString whose name= is the key (and value= the displayed label).
+    espece_keys <- xml2::xml_find_all(doc,
+      "//maplayer[layername=\"Arbres\"]//field[@name=\"espece\"]//Option[@name=\"map\"]/Option/Option[@type=\"QString\"]")
+    leaf_names <- vapply(espece_keys, function(o) xml2::xml_attr(o, "name"), character(1))
     expect_true(length(leaf_names) > 0)
     expect_true(any(grepl("^essence_", leaf_names)))
   })

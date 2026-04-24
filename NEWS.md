@@ -1,4 +1,38 @@
-# nemeton 0.19.11.9000 (development)
+# nemeton 0.19.12 (2026-04-24)
+
+### Fixed
+
+* **`create_qfield_project()` now produces a `.qgz` that opens in
+  QGIS 3.x without crashing**. Three latent bugs in the hand-written
+  `.qgs` / GeoPackage made the project file unusable:
+
+    1. Placette columns that were not supplied by the caller were
+       filled with plain `NA` (logical), so the GeoPackage ended up
+       typing `date_visite`, `pente_pct`, `observateur`, etc. as
+       `Integer(Boolean)`. QGIS then tried to bind `DateTime` / `Range`
+       / `TextEdit` widgets to boolean columns and crashed while
+       building the attribute form. Missing columns are now filled
+       with a **typed NA** (`NA_character_`, `NA_real_`, `NA_integer_`,
+       `as.POSIXct(NA)`) matching the schema.
+
+    2. `ValueMap` widgets (`type`, `exposition`, `espece`, `statut`,
+       `qualite`) were emitted as `List-of-Lists` instead of the
+       canonical QGIS 3.x `List-of-Maps` (each entry is a `<Option
+       type="Map">` wrapping one `<Option type="QString" name=...
+       value=...>`). QGIS crashed while parsing the form definition.
+
+    3. The QGIS 2.x `<prop k="..." v="..."/>` syntax used by the
+       categorised point renderer is rejected by QGIS 3.x. The custom
+       renderer has been dropped; QGIS now applies its default
+       single-symbol renderer, which users can categorise in the UI.
+
+* Structural hardening of the `.qgs` XML, independent of the crash
+  fix: full `<spatialrefsys>` block (wkt, proj4, srsid, srid, authid,
+  description, geographicflag) built from `sf::st_crs()` instead of a
+  bare `<authid>`; `<extent>` added to every `<maplayer>`; `source`
+  attribute added to every `<layer-tree-layer>`; `<customproperties>`
+  + `<custom-order enabled="0"/>` inside `<layer-tree-group>`;
+  `<homePath>`, `<title>`, `<properties>` at the project root.
 
 # nemeton 0.19.11 (2026-04-24)
 

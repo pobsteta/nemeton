@@ -86,11 +86,21 @@ NULL
     },
     ValueMap = {
       dom <- field$domain %||% character(0)
-      # QField expects a Map of { "label": "key" } entries.
-      entries <- lapply(dom, function(v) {
-        .xml_tag("Option", attrs = list(type = "List", name = v),
-                 children = .xml_tag("Option", attrs = list(type = "QString", value = v)))
-      })
+      # QGIS 3.x ValueMap canonical structure:
+      #   <Option type="Map">
+      #     <Option type="List" name="map">
+      #       <Option type="Map">
+      #         <Option type="QString" name="<label>" value="<key>"/>
+      #       </Option>
+      #       ...
+      #     </Option>
+      #   </Option>
+      # Earlier we emitted List-of-Lists which crashes QGIS at form build.
+      entries <- vapply(dom, function(v) {
+        .xml_tag("Option", attrs = list(type = "Map"),
+                 children = .xml_tag("Option",
+                   attrs = list(type = "QString", name = v, value = v)))
+      }, character(1))
       opts <- list(
         .xml_tag("Option", attrs = list(type = "List", name = "map"),
                  children = entries)
@@ -155,42 +165,37 @@ NULL
 }
 
 
-.srs_xml <- function(crs = 2154) {
-  .xml_tag("srs", children = .xml_tag("spatialrefsys",
+.spatialrefsys_xml <- function(crs = 2154) {
+  # Build a full <spatialrefsys> block that QGIS 3.x can resolve without
+  # relying on just <authid>. Uses sf::st_crs() to pull WKT + proj4.
+  info <- tryCatch(sf::st_crs(crs), error = function(e) NULL)
+  wkt_val <- if (!is.null(info) && !is.null(info$wkt) && !is.na(info$wkt)) {
+    info$wkt
+  } else ""
+  proj4_val <- if (!is.null(info) && !is.null(info$proj4string) &&
+                   !is.na(info$proj4string)) info$proj4string else ""
+  desc_val <- if (!is.null(info) && !is.null(info$Name) && !is.na(info$Name)) {
+    info$Name
+  } else paste0("EPSG:", crs)
+  geographic <- if (!is.null(info) && isTRUE(sf::st_is_longlat(info))) "true" else "false"
+
+  .xml_tag("spatialrefsys",
     attrs = list(nativeFormat = "Wkt"),
     children = c(
-      .xml_tag("authid", text = paste0("EPSG:", crs)),
-      .xml_tag("srsid", text = "2154")
-    )
-  ))
+      .xml_tag("wkt",                text = wkt_val),
+      .xml_tag("proj4",              text = proj4_val),
+      .xml_tag("srsid",              text = as.character(crs)),
+      .xml_tag("srid",               text = as.character(crs)),
+      .xml_tag("authid",             text = paste0("EPSG:", crs)),
+      .xml_tag("description",        text = desc_val),
+      .xml_tag("projectionacronym",  text = ""),
+      .xml_tag("ellipsoidacronym",   text = ""),
+      .xml_tag("geographicflag",     text = geographic)
+    ))
 }
 
-
-.simple_renderer_point <- function(color_base = "#1f77b4", color_over = "#ff7f0e") {
-  # Categorized symbol on column "type" — Base / Over. Falls back to a plain
-  # single-symbol renderer when the field is absent (QGIS handles gracefully).
-  cat_block <- function(cls, color) {
-    .xml_tag("category",
-      attrs = list(symbol = cls, value = cls, label = cls, render = "true"))
-  }
-  symbol_block <- function(name, color) {
-    prop <- .xml_tag("prop", attrs = list(k = "color", v = paste0(col2rgb_str(color), ",255")))
-    size <- .xml_tag("prop", attrs = list(k = "size", v = "3"))
-    layer <- .xml_tag("layer",
-      attrs = list(pass = "0", class = "SimpleMarker", locked = "0"),
-      children = c(prop, size))
-    .xml_tag("symbol",
-      attrs = list(name = name, alpha = "1", type = "marker", clip_to_extent = "1"),
-      children = layer)
-  }
-  categories <- c(cat_block("Base", color_base), cat_block("Over", color_over))
-  symbols <- c(symbol_block("Base", color_base), symbol_block("Over", color_over))
-  .xml_tag("renderer-v2",
-    attrs = list(attr = "type", type = "categorizedSymbol", symbollevels = "0"),
-    children = c(
-      .xml_tag("categories", children = categories),
-      .xml_tag("symbols", children = symbols)
-    ))
+.srs_xml <- function(crs = 2154) {
+  .xml_tag("srs", children = .spatialrefsys_xml(crs))
 }
 
 
@@ -202,9 +207,28 @@ col2rgb_str <- function(hex) {
 
 # ---- Layer block ------------------------------------------------------
 
+.extent_xml <- function(bbox = NULL) {
+  # QGIS 3.x expects an <extent> under every <maplayer>. Missing values
+  # trigger a silent parse failure on some builds.
+  if (is.null(bbox) || any(!is.finite(unlist(bbox)))) {
+    bbox <- c(xmin = 0, ymin = 0, xmax = 1, ymax = 1)
+  }
+  fmt <- function(x) formatC(x, format = "f", digits = 8)
+  .xml_tag("extent",
+    children = c(
+      .xml_tag("xmin", text = fmt(bbox[["xmin"]])),
+      .xml_tag("ymin", text = fmt(bbox[["ymin"]])),
+      .xml_tag("xmax", text = fmt(bbox[["xmax"]])),
+      .xml_tag("ymax", text = fmt(bbox[["ymax"]]))
+    ))
+}
+
+
 .maplayer_xml <- function(id, name, gpkg_rel, layername, geometry,
-                          schema, crs, renderer_xml = NULL, readonly = FALSE) {
+                          schema, crs, bbox = NULL,
+                          renderer_xml = NULL, readonly = FALSE) {
   children <- c(
+    .extent_xml(bbox),
     .xml_tag("id", text = id),
     .xml_tag("datasource", text = sprintf("./%s|layername=%s", gpkg_rel, layername)),
     .xml_tag("layername", text = name),
@@ -224,30 +248,43 @@ col2rgb_str <- function(hex) {
 }
 
 
-.layer_tree_node <- function(id, name) {
+.layer_tree_node <- function(id, name, source) {
   .xml_tag("layer-tree-layer",
-    attrs = list(id = id, name = name, checked = "Qt::Checked",
-                 expanded = "1", providerKey = "ogr"))
+    attrs = list(id = id, name = name, source = source,
+                 checked = "Qt::Checked", expanded = "1",
+                 providerKey = "ogr", patch_size = "-1,-1"))
 }
 
 
 .build_qgs_xml <- function(layers, crs = 2154, project_name = "Nemeton sampling") {
-  # layers: list of list(id, name, gpkg_rel, layername, geometry, schema, renderer, readonly)
+  # layers: list of list(id, name, gpkg_rel, layername, geometry, schema,
+  #                     renderer, readonly, bbox)
   maplayers <- vapply(layers, function(l) {
     .maplayer_xml(l$id, l$name, l$gpkg_rel, l$layername, l$geometry,
-                  l$schema, crs, l$renderer, isTRUE(l$readonly))
+                  l$schema, crs, l$bbox, l$renderer, isTRUE(l$readonly))
   }, character(1))
-  tree_nodes <- vapply(layers, function(l) .layer_tree_node(l$id, l$name), character(1))
+  tree_nodes <- vapply(layers, function(l) {
+    src <- sprintf("./%s|layername=%s", l$gpkg_rel, l$layername)
+    .layer_tree_node(l$id, l$name, src)
+  }, character(1))
+
+  empty_map <- .xml_tag("Option", attrs = list(type = "Map"))
+  customprops <- .xml_tag("customproperties", children = empty_map)
+  custom_order <- .xml_tag("custom-order", attrs = list(enabled = "0"))
 
   header <- '<?xml version="1.0" encoding="UTF-8"?>'
   body <- .xml_tag("qgis",
-    attrs = list(version = "3.34.0", projectname = project_name),
+    attrs = list(version = "3.34.0-Prizren", projectname = project_name),
     children = c(
-      .xml_tag("projectCrs", children = .xml_tag("spatialrefsys",
-        attrs = list(nativeFormat = "Wkt"),
-        children = .xml_tag("authid", text = paste0("EPSG:", crs)))),
-      .xml_tag("layer-tree-group", children = tree_nodes),
-      .xml_tag("projectlayers", children = maplayers)
+      .xml_tag("homePath", attrs = list(path = "")),
+      .xml_tag("title", text = project_name),
+      .xml_tag("projectCrs",
+        children = .spatialrefsys_xml(crs)),
+      .xml_tag("layer-tree-group",
+        attrs = list(checked = "Qt::Checked", expanded = "1"),
+        children = c(customprops, tree_nodes, custom_order)),
+      .xml_tag("projectlayers", children = maplayers),
+      .xml_tag("properties", children = empty_map)
     )
   )
   paste0(header, "\n", body, "\n")
@@ -340,12 +377,33 @@ create_qfield_project <- function(placettes,
   placette_schema <- get_placette_schema()
   arbre_schema    <- get_arbre_schema(region = region, lang = lang)
 
-  # Ensure placettes carries all expected columns (fill missing with NA).
-  p_names <- vapply(Filter(function(f) !startsWith(f$name, "."),
-                           placette_schema), `[[`, character(1), "name")
-  for (col in p_names) {
-    if (!col %in% names(placettes)) placettes[[col]] <- NA
+  # Ensure placettes carries all expected columns, with NA values TYPED
+  # according to the schema — plain NA is logical and would make GPKG
+  # store the column as BOOLEAN, which then mismatches the DateTime /
+  # Range / TextEdit widgets declared in the .qgs and crashes QGIS when
+  # it tries to build the attribute form.
+  visible_p <- Filter(function(f) !startsWith(f$name, "."), placette_schema)
+  typed_na <- function(type) {
+    switch(type,
+      character = NA_character_,
+      integer   = NA_integer_,
+      double    = NA_real_,
+      datetime  = as.POSIXct(NA, tz = "UTC"),
+      NA
+    )
   }
+  for (f in visible_p) {
+    col <- f$name
+    if (!col %in% names(placettes)) {
+      placettes[[col]] <- typed_na(f$type)
+    } else {
+      # Coerce all-NA (logical) columns to the schema type too.
+      if (all(is.na(placettes[[col]])) && is.logical(placettes[[col]])) {
+        placettes[[col]] <- rep(typed_na(f$type), nrow(placettes))
+      }
+    }
+  }
+  p_names <- vapply(visible_p, `[[`, character(1), "name")
   sf::st_write(placettes[c(p_names, attr(placettes, "sf_column"))],
                gpkg_path, layer = "placettes", quiet = TRUE, append = FALSE)
 
@@ -366,28 +424,36 @@ create_qfield_project <- function(placettes,
   }
 
   # --- Build .qgs XML ------------------------------------------------
+  placettes_bbox <- tryCatch(sf::st_bbox(placettes), error = function(e) NULL)
   layers_meta <- list(
     list(id = "placettes_01", name = "Placettes", gpkg_rel = gpkg_rel,
          layername = "placettes", geometry = "Point",
          schema = placette_schema,
-         renderer = .simple_renderer_point(),
+         bbox = placettes_bbox,
+         renderer = NULL,
          readonly = FALSE),
     list(id = "arbres_01", name = "Arbres", gpkg_rel = gpkg_rel,
          layername = "arbres", geometry = "Point",
-         schema = arbre_schema, renderer = NULL, readonly = FALSE)
+         schema = arbre_schema,
+         bbox = placettes_bbox,
+         renderer = NULL, readonly = FALSE)
   )
   if (!is.null(zone_etude)) {
     layers_meta <- c(layers_meta, list(list(
       id = "zone_etude_01", name = "Zone d'étude", gpkg_rel = gpkg_rel,
       layername = "zone_etude", geometry = "Polygon",
-      schema = NULL, renderer = NULL, readonly = TRUE
+      schema = NULL,
+      bbox = tryCatch(sf::st_bbox(zone_etude), error = function(e) placettes_bbox),
+      renderer = NULL, readonly = TRUE
     )))
   }
   if (!is.null(parcours_tsp)) {
     layers_meta <- c(layers_meta, list(list(
       id = "parcours_tsp_01", name = "Parcours TSP", gpkg_rel = gpkg_rel,
       layername = "parcours_tsp", geometry = "Line",
-      schema = NULL, renderer = NULL, readonly = TRUE
+      schema = NULL,
+      bbox = tryCatch(sf::st_bbox(parcours_tsp), error = function(e) placettes_bbox),
+      renderer = NULL, readonly = TRUE
     )))
   }
 
