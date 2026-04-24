@@ -1,4 +1,18 @@
-# nemeton 0.19.6.9000 (development)
+# nemeton 0.19.6 (2026-04-24)
+
+### Performance
+
+* **Vectorised `.compute_forest_cover()`** used by
+  `create_sampling_plan()`. The previous per-row `for` loop was
+  O(n × m) (n = candidate buffers, m = mask polygons) — on a
+  Couchey-sized AOI (n ~ 3000 buffers, m ~ 50 BD Forêt polygons)
+  the pre-filter was running in ~30–60 s, freezing the Shiny UI.
+  New implementation runs in ~0.7 s for the same load by:
+  1. pre-filtering candidates with a bulk `sf::st_intersects()`;
+  2. unioning the mask once;
+  3. calling a single vectorised `st_intersection()`.
+  Output is equivalent to the previous loop (suite 5608 / 0
+  failure).
 
 # nemeton 0.19.5 (2026-04-24)
 

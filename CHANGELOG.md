@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.19.6] - 2026-04-24
+
+### Performance
+
+- `.compute_forest_cover()` vectorised: ~40-80× faster on typical
+  GRTS loads (3000 candidates × 50 mask polygons now in ~0.7 s
+  instead of 30-60 s), removing the UI freeze on create_sampling_plan()
+  calls.
+
 ## [0.19.5] - 2026-04-24
 
 ### Changed
@@ -125,7 +134,8 @@ For a narrative, per-feature description of each release, see
 See [NEWS.md](NEWS.md) for the complete narrative history
 (0.1.0 onwards).
 
-[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.5...HEAD
+[Unreleased]: https://github.com/pobsteta/nemeton/compare/v0.19.6...HEAD
+[0.19.6]: https://github.com/pobsteta/nemeton/compare/v0.19.5...v0.19.6
 [0.19.5]: https://github.com/pobsteta/nemeton/compare/v0.19.4...v0.19.5
 [0.19.4]: https://github.com/pobsteta/nemeton/compare/v0.19.3...v0.19.4
 [0.19.3]: https://github.com/pobsteta/nemeton/compare/v0.19.2...v0.19.3

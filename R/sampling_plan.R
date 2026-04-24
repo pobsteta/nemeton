@@ -116,26 +116,45 @@ NULL
   }
   # Declare attributes as spatially constant so sf::st_intersection()
   # stops warning once per call ("attribute variables are assumed to
-  # be spatially constant throughout all geometries") — this loop
-  # runs once per candidate plot, so a few thousand identical
-  # warnings would flood the console.
+  # be spatially constant throughout all geometries").
   suppressWarnings(sf::st_agr(buffers)     <- "constant")
   suppressWarnings(sf::st_agr(forest_mask) <- "constant")
 
+  # Vectorised version (GRTS sampling on a 50-m grid routinely
+  # generates thousands of candidates; the previous per-row loop
+  # was O(n * m) and could take a minute on a Couchey-sized AOI).
+  # Strategy:
+  #   1. Cheap sf::st_intersects() index to know which buffers hit
+  #      any forest polygon — non-intersecting ones get cover = 0
+  #      without ever calling st_intersection().
+  #   2. Union the mask once so st_intersection returns a single
+  #      geometry per intersecting buffer (no row explosion).
+  #   3. One vectorised st_intersection() call.
   n <- nrow(buffers)
   out <- numeric(n)
-  for (i in seq_len(n)) {
-    inter <- tryCatch(
-      suppressWarnings(sf::st_intersection(buffers[i, ], forest_mask)),
-      error = function(e) NULL
-    )
-    if (is.null(inter) || nrow(inter) == 0) {
-      out[i] <- 0
-    } else {
-      out[i] <- sum(as.numeric(sf::st_area(inter))) /
-                as.numeric(sf::st_area(buffers[i, ]))
-    }
+
+  idx <- suppressWarnings(sf::st_intersects(buffers, forest_mask))
+  hit <- lengths(idx) > 0L
+  if (!any(hit)) return(out)
+
+  mask_union <- suppressWarnings(sf::st_union(forest_mask))
+  buf_hit    <- buffers[hit, , drop = FALSE]
+  inter <- suppressWarnings(sf::st_intersection(buf_hit, mask_union))
+
+  buf_area    <- as.numeric(sf::st_area(buf_hit))
+  # st_intersection may drop rows that reduced to empty after
+  # geometry collection simplification; align by row order of
+  # the intersection result (sf guarantees row order is preserved
+  # for x in st_intersection(x, y) when y is a single geometry).
+  inter_area <- numeric(sum(hit))
+  if (nrow(inter) > 0) {
+    # inter has as many rows as buf_hit minus any dropped empties;
+    # use row.names() to recover the original index.
+    pos <- match(row.names(inter), row.names(buf_hit))
+    pos <- pos[!is.na(pos)]
+    inter_area[pos] <- as.numeric(sf::st_area(inter))[seq_along(pos)]
   }
+  out[hit] <- pmin(1, inter_area / buf_area)
   out
 }
 
