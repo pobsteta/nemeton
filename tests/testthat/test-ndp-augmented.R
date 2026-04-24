@@ -118,3 +118,18 @@ test_that("get_ndp_augmented errors on non ndp_result", {
   expect_error(get_ndp_augmented(0L), "ndp_result")
   expect_error(get_ndp_augmented(list(level = 0L)), "ndp_result")
 })
+
+
+test_that("chm_source='lidar_hd' reports height_lidar augmented flag", {
+  df <- data.frame(x = 1)
+  # has_lidar_hd lifts the NDP to 1 (Observation) AND the augmented
+  # vector records "height_lidar" so downstream code can distinguish
+  # the direct LiDAR HD measurement from the opencanopy ML
+  # prediction.
+  attr(df, "has_lidar_hd") <- TRUE
+  attr(df, "chm_source")   <- "lidar_hd"
+  r <- detect_ndp(df)
+  expect_equal(r$level, 1L)
+  expect_true("height_lidar" %in% r$augmented)
+  expect_false("height_ml" %in% r$augmented)
+})

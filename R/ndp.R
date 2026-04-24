@@ -298,10 +298,18 @@ detect_ndp <- function(data) {
   }
 
   # Flags d'augmentation ML (ADR-011 amende)
+  #   - "height_ml"    : CHM prédit par apprentissage (Open-Canopy,
+  #                      NDP de base inchangé — reste à 0)
+  #   - "height_lidar" : CHM mesuré directement (LiDAR HD IGN,
+  #                      déjà pris en compte dans le niveau via
+  #                      has_lidar_hd -> NDP 1 "Observation").
   augmented <- character(0)
   chm_source <- attr(data, "chm_source")
   if (!is.null(chm_source) && identical(as.character(chm_source), "opencanopy")) {
     augmented <- c(augmented, "height_ml")
+  }
+  if (!is.null(chm_source) && identical(as.character(chm_source), "lidar_hd")) {
+    augmented <- c(augmented, "height_lidar")
   }
   species_source <- attr(data, "species_source")
   if (!is.null(species_source) &&

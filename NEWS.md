@@ -1,4 +1,15 @@
-# nemeton 0.19.5.9000 (development)
+# nemeton 0.19.5 (2026-04-24)
+
+### Changed
+
+* **`detect_ndp()` recognises LiDAR HD as a distinct augmentation**
+  (E5.d phase 2). When the input carries
+  `attr(data, "chm_source") == "lidar_hd"`, the augmented vector
+  now includes `"height_lidar"` alongside any other flags. The
+  `"height_ml"` tag stays reserved for Open-Canopy ML predictions.
+  As before, the base NDP level is lifted to 1 ("Observation") when
+  `attr(data, "has_lidar_hd")` is TRUE — the new flavour flag is
+  purely informational.
 
 # nemeton 0.19.4 (2026-04-24)
 
