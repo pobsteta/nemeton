@@ -77,6 +77,31 @@ test_that("cv_from_bdforet drops unmappable classes (FF0, LA4) from the CV", {
 })
 
 
+test_that("cv_from_bdforet matches on French libellé when codes are absent", {
+  skip_if_not_installed("sf")
+  # The IGN WFS layer `LANDCOVER.FORESTINVENTORY.V2:formation_vegetale`
+  # exposes its `tfv` column as the libellé (upper-cased, dashed)
+  # rather than the TFV code. cv_from_bdforet() should still resolve
+  # the context via the label_key fallback.
+  p1 <- sf::st_polygon(list(rbind(c(0,0), c(100,0), c(100,200),
+                                  c(0,200), c(0,0))))
+  p2 <- sf::st_polygon(list(rbind(c(200,0), c(300,0), c(300,200),
+                                  c(200,200), c(200,0))))
+  bd <- sf::st_sf(
+    # Label-style input, no TFV code. Normalization in
+    # cv_from_bdforet uppercases + dashes these.
+    tfv = c("Forêt fermée de douglas pur",
+            "Forêt fermée à mélange de conifères"),
+    geometry = sf::st_sfc(p1, p2, crs = 2154)
+  )
+  res <- cv_from_bdforet(bd, tfv_col = "tfv")
+  # Equal-area -> mean(0.275, 0.275) = 0.275. Both polygons resolve
+  # to futaie_reguliere_resineuse through the label fallback.
+  expect_equal(res$cv, 0.275, tolerance = 1e-6)
+  expect_equal(length(res$unmapped), 0L)
+})
+
+
 test_that("cv_from_bdforet reports ambiguous classes and unknown codes", {
   skip_if_not_installed("sf")
   p <- sf::st_polygon(list(rbind(c(0,0), c(100,0), c(100,100),

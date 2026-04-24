@@ -170,23 +170,44 @@ cv_from_bdforet <- function(bdforet_sf,
 
   area_m2 <- as.numeric(sf::st_area(bdforet_sf))
   tfv_raw <- as.character(bdforet_sf[[tfv_col]])
-  # Normalize TFV codes: strip whitespace, uppercase letter prefixes,
-  # turn common separator variants back to "-" (IGN WFS is not always
-  # consistent: "FF2-64-64" vs "FF2_64_64" vs "FF2 64 64").
-  tfv <- trimws(tfv_raw)
-  tfv <- gsub("[_[:space:]]+", "-", tfv)
-  tfv <- toupper(tfv)
+  # Normalize TFV values: trim, turn underscores / whitespace into
+  # "-", uppercase. Handles both code-style inputs
+  # ("FF2-64-64", "FF2_64_64", "ff2 64 64") and the French libellé
+  # that IGN WFS exposes in some columns ("Forêt fermée à mélange
+  # de conifères" -> "FORÊT-FERMÉE-À-MÉLANGE-DE-CONIFÈRES").
+  tfv_key <- trimws(tfv_raw)
+  tfv_key <- gsub("[_[:space:]]+", "-", tfv_key)
+  tfv_key <- toupper(tfv_key)
   total_area <- sum(area_m2, na.rm = TRUE)
 
-  # Per-TFV aggregation.
-  df <- data.frame(tfv_code = tfv, area_m2 = area_m2,
+  # Per-value aggregation (both code and label flows end up here).
+  df <- data.frame(tfv_key = tfv_key, area_m2 = area_m2,
                    stringsAsFactors = FALSE)
-  df <- stats::aggregate(area_m2 ~ tfv_code, data = df, FUN = sum)
+  df <- stats::aggregate(area_m2 ~ tfv_key, data = df, FUN = sum)
   df$area_ha <- df$area_m2 / 10000
 
-  # Join the mapping.
-  df <- merge(df, map[, c("tfv_code", "context_key", "confidence")],
-              by = "tfv_code", all.x = TRUE)
+  # --- Two-pass join: try the TFV code first, then the normalized
+  # French label. The mapping CSV carries both columns since the IGN
+  # WFS `tfv` field sometimes exposes the libellé instead of the
+  # code.
+  lookup_code <- map[, c("tfv_code", "context_key", "confidence"),
+                     drop = FALSE]
+  names(lookup_code)[1] <- "tfv_key"
+  df <- merge(df, lookup_code, by = "tfv_key", all.x = TRUE)
+
+  if ("label_key" %in% names(map) && any(is.na(df$context_key))) {
+    lookup_lab <- map[!is.na(map$label_key),
+                      c("label_key", "context_key", "confidence"),
+                      drop = FALSE]
+    names(lookup_lab) <- c("tfv_key", "context_key_lab", "confidence_lab")
+    df <- merge(df, lookup_lab, by = "tfv_key", all.x = TRUE)
+    fill <- is.na(df$context_key) & !is.na(df$context_key_lab)
+    df$context_key[fill] <- df$context_key_lab[fill]
+    df$confidence[fill] <- df$confidence_lab[fill]
+    df$context_key_lab <- NULL
+    df$confidence_lab  <- NULL
+  }
+  names(df)[names(df) == "tfv_key"] <- "tfv_code"
 
   unmapped <- df$tfv_code[is.na(df$context_key)]
 
