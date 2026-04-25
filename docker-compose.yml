@@ -1,0 +1,39 @@
+# docker-compose — services persistants nemeton
+#
+# Pour l'instant : TimescaleDB uniquement (E6 monitoring, spec 007).
+# pgvector (E7 RAG, ADR-012) s'ajoutera plus tard via extension dans la
+# même image.
+#
+# Usage :
+#   cp .env.example .env   # éditer POSTGRES_PASSWORD
+#   docker compose up -d timescaledb
+#
+# Connexion depuis R :
+#   Sys.setenv(NEMETON_DB_URL = "postgresql://nemeton:<pwd>@127.0.0.1:5432/nemeton")
+#   con <- nemeton::db_connect()
+#   nemeton::db_migrate(con)
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: nemeton_timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nemeton}
+      POSTGRES_DB:   ${POSTGRES_DB:-nemeton}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD not set — copy .env.example to .env and edit}
+      TZ: UTC
+    ports:
+      # Bind localhost only — la DB ne doit pas être exposée au réseau public.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - nemeton_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nemeton} -d ${POSTGRES_DB:-nemeton}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nemeton_pg_data:
+    name: nemeton_pg_data

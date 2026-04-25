@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.19.12.9000
+Version: 0.20.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -61,6 +61,7 @@ Suggests:
     corrplot,
     DBI,
     RSQLite,
+    RPostgres,
     leaflet (>= 2.1.0),
     leaflet.extras (>= 1.0.0),
     rappdirs,

@@ -1,4 +1,73 @@
-# nemeton 0.19.12.9000 (development)
+# nemeton 0.20.0 (2026-04-25)
+
+### Added — Épaississement 6.a (walking skeleton monitoring continu)
+
+* **TimescaleDB-backed monitoring subsystem.** First persisted
+  time-series store in nemeton, designed to ingest Sentinel-2
+  observations on demand and detect drops in vegetation indices. See
+  `specs/007-monitoring-continu/` for the full spec.
+
+* **Database layer** (new `R/db.R`): `db_connect()`, `db_disconnect()`,
+  `db_migrate()`. Connection URL via `NEMETON_DB_URL`. Migrations
+  bundled in `inst/db/migrations/0001_init.sql` create four tables —
+  `monitoring_zone`, `plot`, `obs_pixel`, `alert` — with `obs_pixel`
+  promoted to a TimescaleDB hypertable chunked every 7 days. Tracking
+  via `schema_migration` makes re-runs no-ops.
+
+* **STAC Sentinel-2 client** (new `R/sentinel2.R`): `stac_search_s2()`
+  façade with **CDSE priority + Planetary Computer fallback**
+  (ADR-008 souveraineté UE). Per-backend helpers
+  `stac_search_s2_cdse()` and `stac_search_s2_pc()` are exported for
+  finer control. PC hrefs are signed via the SAS-token endpoint so
+  `terra::rast()` reads work without further authentication.
+
+* **On-demand ingestion** (new `R/monitoring.R`):
+    * `register_monitoring_zone(con, name, polygon, placettes)` upserts
+      a zone and its plots (idempotent on `(zone_id, plot_id)`).
+    * `ingest_sentinel2_timeseries(con, zone_id, start, end,
+      bands = c("NDVI","NBR"))` fetches all matching scenes via STAC,
+      computes NDVI from B04/B08 and NBR from B08/B12 in memory, and
+      extracts the per-plot mean over a 15 m circular buffer with
+      `exactextractr`. Bulk INSERT into `obs_pixel` via a TEMP staging
+      table + `ON CONFLICT DO NOTHING`.
+
+* **Alert detection** (new `R/alerts.R`): `detect_alerts(con,
+  zone_id, threshold_ndvi_drop = 0.15, threshold_nbr_drop = 0.25,
+  window_days = 30)` uses a SQL window function to compare each
+  observation against the rolling mean of the preceding window;
+  drops exceeding the per-band threshold are persisted in `alert`
+  (idempotent on `(plot_id, alert_type, trigger_date)`) and returned
+  as an sf POINT object.
+
+* **Docker Compose** (`docker-compose.yml` at repo root, plus
+  `.env.example`): single `timescaledb` service
+  (`timescale/timescaledb:latest-pg16`) bound to localhost,
+  persistent volume `nemeton_pg_data`, healthcheck via `pg_isready`.
+
+* **Tests**: `test-db.R`, `test-sentinel2.R`, `test-alerts.R` plus
+  `helper-monitoring.R`. Unit tests cover URL parsing, STAC feature
+  parsing, CDSE→PC fallback logic, and bbox reprojection. Integration
+  tests against a live TimescaleDB are gated by
+  `skip_if_no_timescaledb()` (looks for `NEMETON_DB_URL_TEST`).
+
+### Dependencies
+
+* `RPostgres` added to Suggests (DBI was already present).
+* No new hard dependency: the monitoring subsystem only loads when its
+  functions are called.
+
+### Documentation
+
+* `specs/007-monitoring-continu/{spec.md, plan.md, tasks.md}` — full
+  specification, implementation plan, 18-task breakdown.
+* `PLAN.md` — refreshed for E6 with phase tracking.
+
+### Out of scope (reported to v0.20.x)
+
+* Shiny module `mod_monitoring` (E6.b, in `nemetonshiny`).
+* Automated cron worker (E6.c).
+* Integration of alerts into `compute_all_indicators()` for dynamic
+  R1/R2/T2 modulation.
 
 # nemeton 0.19.12 (2026-04-24)
 
