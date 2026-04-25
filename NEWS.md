@@ -1,3 +1,5 @@
+# nemeton 0.20.0.9000 (development)
+
 # nemeton 0.20.0 (2026-04-25)
 
 ### Added — Épaississement 6.a (walking skeleton monitoring continu)
