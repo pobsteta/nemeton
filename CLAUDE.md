@@ -132,20 +132,9 @@ Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml` avec de
 
 ## Walking Skeleton — Épaississements
 
-Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout). Les quatre premiers épaississements sont livrés ; prochain chantier = Épaississement 5 (intégrations NDP ≥ 1) :
+Le squelette initial est DÉJÀ DEBOUT (l'app fonctionne de bout en bout) et s'épaissit par vagues numérotées (E1, E2, …). La séquence des épaississements et leur état d'avancement courant vivent dans **`PLAN.md`** à la racine — c'est la *single source of truth*. Cette section ne reproduit plus la table pour éviter la dérive (cf. *Consignes de release*, étape 8).
 
-```
-✅ Squelette initial     : CSV/cadastre → indicateurs → radar → perspective IA
-✅ Épaississement 1      : 12 familles complètes, 31 indicateurs
-✅ Épaississement 2      : Cartographie (Leaflet, parcelles cadastrales)
-✅ Épaississement 3      : Multi-acteurs — 13 profils experts YAML (commit 1b32943)
-✅ Épaississement 4      : Authentification OAuth2/OIDC via shinyOAuth (commit 3e07c60)
-🟨 Épaississement 5      : Intégrations et NDP (spec 005 Open-Canopy livré ; QField à venir)
-⬜ Épaississement 6      : Monitoring forestier continu (TimescaleDB + alertes Sentinel-2, ADR-012)
-⬜ Épaississement 7      : RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012)
-```
-
-Note : E3 et E4 sont implémentés dans `nemetonshiny` (profils YAML dans `inst/experts/`, module OAuth2). Ils ne sont pas visibles depuis ce repo.
+Note : certains épaississements sont implémentés côté `nemetonshiny` (profils experts, OAuth2, modules UI) et ne sont pas visibles depuis ce repo. `PLAN.md` indique chaque fois quel package porte la livraison.
 
 ## NDP augmenté et intégration Open-Canopy (spec 005, v0.16.0)
 
@@ -316,6 +305,13 @@ Claude doit :
 
 7. Si le CHANGELOG.md existe, ajouter la section [X.Y.Z] - YYYY-MM-DD
    avec les catégories Added / Changed / Fixed / Removed.
+
+8. Mettre à jour `PLAN.md` à la racine : cocher la case du sous-chantier
+   livré, ajouter une entrée datée au journal, et — si l'épaississement
+   change d'état — mettre à jour la table d'avancement. `PLAN.md` est la
+   source unique de vérité pour le walking skeleton (CLAUDE.md ne
+   duplique plus la table). Ne jamais clore un chantier dans `PLAN.md`
+   sans qu'une release correspondante ait été poussée.
 
 ## Règles de cohérence
 
