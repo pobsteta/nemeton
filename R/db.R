@@ -122,7 +122,13 @@ db_migrate <- function(con,
     version <- .migration_version(f)
     sql <- paste(readLines(f, warn = FALSE), collapse = "\n")
     DBI::dbWithTransaction(con, {
-      DBI::dbExecute(con, sql)
+      # immediate = TRUE uses the simple-query protocol so a single .sql
+      # file with multiple statements (CREATE TABLE; CREATE INDEX; SELECT
+      # create_hypertable(...); …) is executed in one round-trip.
+      # Without it, RPostgres prepares the statement and PostgreSQL
+      # rejects it with "cannot insert multiple commands into a prepared
+      # statement".
+      DBI::dbExecute(con, sql, immediate = TRUE)
       # schema_migration may have just been created by this very file —
       # record the version *after* the script ran.
       DBI::dbExecute(con,

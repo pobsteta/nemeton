@@ -12,7 +12,7 @@
 | ✅ | E3 | Multi-acteurs — 13 profils experts YAML | `nemetonshiny` (commit `1b32943`) |
 | ✅ | E4 | Authentification OAuth2/OIDC via shinyOAuth | `nemetonshiny` (commit `3e07c60`) |
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest (spec ad hoc) + sizing échantillon + flag `height_lidar` | `nemeton` v0.16.0 → v0.19.12 + `nemetonshiny` (clôture `0a1eb63` le 2026-04-24) |
-| 🟨 | **E6** | **Monitoring forestier continu** (TimescaleDB + Sentinel-2 NDVI/NBR + alertes, ADR-012) | E6.a livré v0.20.0 le 2026-04-25 ; **E6.b en cours** (UI `mod_monitoring`) ; E6.c reporté |
+| 🟨 | **E6** | **Monitoring forestier continu** (TimescaleDB + Sentinel-2 NDVI/NBR + alertes, ADR-012) | E6.a livré v0.20.0 le 2026-04-25 + hardening v0.20.1 (2 bugs DB fixés) ; **E6.b en cours** (UI `mod_monitoring`) ; E6.c reporté |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
@@ -100,3 +100,4 @@ Spec à rédiger (`specs/008-rag-perspectives-ia/`). pgvector + base de connaiss
 
 - **2026-04-24** — E6 démarré. Spec 007 rédigée (spec.md, plan.md, tasks.md). Décisions 1-5 tranchées. Démarrage Phase 1.
 - **2026-04-25** — E6.a phases 1 à 5 livrées dans le commit `28570d4`. Release **v0.20.0** publiée (NEWS.md, tag, GitHub release). Cycle dev `0.20.0.9000` ouvert (`8df05a8`). Working tree propre. Prochain chantier : E6.b (UI `mod_monitoring` côté `nemetonshiny`).
+- **2026-04-25** — E6.a hardening : ajout de `tests/testthat/test-monitoring.R` (12 test_that, 49 assertions, dont 9 d'intégration sur TimescaleDB éphémère). Les integration tests ont surfacé **deux vrais bugs** dans le code v0.20.0 : (1) `db_migrate()` plantait sur la migration multi-statements (RPostgres prepared statement vs PostgreSQL multi-commands) → fix `immediate = TRUE` dans `R/db.R` ; (2) `.insert_obs_pixel()` créait une `TEMP TABLE ON COMMIT DROP` hors transaction → table dropée immédiatement → fix : `CREATE TEMP TABLE` dans la même `dbWithTransaction` que les inserts. Aucun de ces bugs n'avait été détecté parce que la couverture intégration sur la DB était à zéro. Release **v0.20.1** publiée. Suite complète : 5760 PASS / 0 FAIL.

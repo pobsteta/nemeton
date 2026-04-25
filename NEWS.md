@@ -1,4 +1,44 @@
-# nemeton 0.20.0.9000 (development)
+# nemeton 0.20.1 (2026-04-25)
+
+### Fixed — E6.a hardening (integration tests surfaced two real bugs)
+
+* **`db_migrate()` multi-statement migrations.** The bundled
+  `0001_init.sql` migration contains multiple statements (`CREATE
+  TABLE` × 4, `CREATE INDEX` × 3, `SELECT create_hypertable(...)`,
+  `CREATE EXTENSION`). RPostgres prepares the SQL by default and
+  PostgreSQL refuses with *"cannot insert multiple commands into a
+  prepared statement"*. Switched the migration call to
+  `dbExecute(..., immediate = TRUE)` so the simple-query protocol is
+  used. Fresh installs from v0.20.0 could never bootstrap the schema;
+  this fix is required for the monitoring subsystem to be usable.
+
+* **`.insert_obs_pixel()` temp-table scope.** The bulk-ingest helper
+  created a `TEMP TABLE ... ON COMMIT DROP` *outside* the transaction
+  containing the `dbAppendTable` + `INSERT … SELECT`. Each top-level
+  `dbExecute` auto-commits, so the staging table was dropped
+  immediately and the subsequent append failed with *"relation
+  tmp_obs_pixel_staging does not exist"*. Moved the
+  `CREATE TEMP TABLE` inside the same `dbWithTransaction` as the
+  inserts.
+
+* **`register_monitoring_zone()` docstring.** Claimed idempotence on
+  `(zone_name, plot_id)`, but `monitoring_zone` has no uniqueness on
+  `name`. Reworded to reflect actual guarantees: only
+  `(zone_id, plot_id)` is enforced (via `UNIQUE` + `ON CONFLICT DO
+  NOTHING`); same `zone_name` still creates a new zone row.
+
+### Added
+
+* **`tests/testthat/test-monitoring.R`** — 12 test_that blocks, 49
+  assertions (3 pure unit + 9 integration). Covers
+  `register_monitoring_zone()` (insert, WGS84 reprojection from
+  Lambert-93, per-zone plot uniqueness), `ingest_sentinel2_timeseries()`
+  (empty zone warning, empty STAC summary, mocked successful flow with
+  idempotent re-run, per-scene extraction error recovery), and the
+  internal helpers `.empty_ingest_summary()`, `.fetch_plots_sf()`,
+  `.insert_obs_pixel()`. Surfaced both fixes above. `R/monitoring.R`
+  now has its own dedicated test file (the 251-line module had zero
+  direct tests in v0.20.0).
 
 # nemeton 0.20.0 (2026-04-25)
 

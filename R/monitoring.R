@@ -15,8 +15,13 @@ NULL
 
 #' Register a monitoring zone and its plots in the database
 #'
-#' Helper that upserts a `monitoring_zone` row and the associated
-#' `plot` rows. Idempotent on `(zone_name, plot_id)`.
+#' Helper that inserts a `monitoring_zone` row and the associated
+#' `plot` rows. Idempotent on `(zone_id, plot_id)` — within an
+#' existing zone, re-registering the same `plot_id` is a no-op
+#' (UNIQUE constraint + `ON CONFLICT DO NOTHING`). The
+#' `monitoring_zone` table has no uniqueness on `name`, so calling
+#' this function twice with the same `zone_name` creates two
+#' independent zones.
 #'
 #' @param con A `DBIConnection` returned by [db_connect()].
 #' @param zone_name Character. Display name for the zone.
@@ -228,17 +233,22 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 .insert_obs_pixel <- function(con, obs) {
   if (!nrow(obs)) return(0L)
   # Bulk insert via a temp staging table to avoid per-row round-trips.
+  # The CREATE must live INSIDE the same transaction as the COPY/INSERT:
+  # ON COMMIT DROP fires at the end of the enclosing transaction, so a
+  # CREATE outside dbWithTransaction would drop the table immediately
+  # (each dbExecute auto-commits), leaving dbAppendTable with nowhere to
+  # write.
   staging <- "tmp_obs_pixel_staging"
-  DBI::dbExecute(con,
-    paste0("CREATE TEMP TABLE IF NOT EXISTS ", staging, " (",
-           "plot_id   INTEGER, ",
-           "obs_date  DATE, ",
-           "band      TEXT, ",
-           "value     DOUBLE PRECISION, ",
-           "cloud_pct NUMERIC, ",
-           "source    TEXT, ",
-           "scene_id  TEXT) ON COMMIT DROP"))
   DBI::dbWithTransaction(con, {
+    DBI::dbExecute(con,
+      paste0("CREATE TEMP TABLE IF NOT EXISTS ", staging, " (",
+             "plot_id   INTEGER, ",
+             "obs_date  DATE, ",
+             "band      TEXT, ",
+             "value     DOUBLE PRECISION, ",
+             "cloud_pct NUMERIC, ",
+             "source    TEXT, ",
+             "scene_id  TEXT) ON COMMIT DROP"))
     DBI::dbAppendTable(con, staging, obs)
     rs <- DBI::dbExecute(con, sprintf(
       "INSERT INTO obs_pixel (plot_id, obs_date, band, value, cloud_pct, source, scene_id)
