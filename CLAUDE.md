@@ -2,7 +2,7 @@
 
 ## Identité du projet
 
-Néméton est une plateforme d'analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule 31 indicateurs organisés en 12 familles, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d'acteurs de la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
+Néméton est une plateforme d'analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule **31 indicateurs** (32 avec R5 dépérissement quand FORDEAD a tourné, cf. spec 008) organisés en **12 familles**, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d'acteurs de la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
 
 Le package R `nemeton` (v0.15.1.9000) est le **cœur métier** : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l'application Shiny/golem a été extraite dans un package séparé `nemetonshiny` (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans `nemetonshiny`.
 
@@ -43,7 +43,7 @@ Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. 
 | F | Fertilité des sols | F1 (fertilité), F2 (érosion) |
 | L | Paysage | L1 (sylvosphère), L2 (fragmentation) |
 | T | Dynamique temporelle | T1 (ancienneté), T2 (changement) |
-| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement) |
+| R | Risques & Résilience | R1 (feu), R2 (tempête), R3 (sécheresse), R4 (abroutissement), R5 (dépérissement, FORDEAD-conditionné — spec 008) |
 | S | Social & Usages | S1 (routes), S2 (bâti), S3 (population) |
 | P | Production & Économie | P1 (volume bois), P2 (station), P3 (qualité bois) |
 | E | Énergie & Climat | E1 (bois-énergie), E2 (évitement carbone) |
@@ -102,18 +102,19 @@ Le score global, calculé côté cœur via `compute_general_index()`, est consom
 
 Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml` avec des prompts bilingues FR/EN (E3 livré, commit 1b32943 — 13 profils sur les 15 listés ci-dessus).
 
-## 6 Bounded Contexts (DDD)
+## 7 Bounded Contexts (DDD)
 
 1. **Inventaire** (contexte_inventaire) : collecte et validation des données terrain et satellite
 2. **Analyse systémique** (contexte_analyse) : calcul des 31 indicateurs, 12 familles, radar, Fibonacci
 3. **Cartographie** (contexte_cartographie) : classification d'essences, cartes, LiDAR, satellite
-4. **Aide à la décision** (contexte_aide_decision) : perspectives IA, interprétation par profil
-5. **Utilisateurs** (contexte_utilisateurs) : authentification, profils, droits, partage
-6. **Interopérabilité** (contexte_interoperabilite) : export IFN, GroundForest, QField, OGC
+4. **Santé** (contexte_sante) : pipelines de détection sanitaire — rolling-window NDVI/NBR (surveillance rapide) et FORDEAD via reticulate (diagnostic), fusion des deux signaux, indicateur R5, workflow QField de validation. Voir spec 008 et ADR-013.
+5. **Aide à la décision** (contexte_aide_decision) : perspectives IA, interprétation par profil
+6. **Utilisateurs** (contexte_utilisateurs) : authentification, profils, droits, partage
+7. **Interopérabilité** (contexte_interoperabilite) : export IFN, GroundForest, QField, OGC
 
 ## ADR (Architecture Decision Records)
 
-11 ADR documentés dans `platform_nemeton/docs/ADR-001-010_Nemeton_i18n.odt` :
+ADR documentés dans `platform_nemeton/docs/` (sauf ADR-013 dont le draft vit dans `specs/008-suivi-sanitaire/`, à porter vers `platform_nemeton`) :
 
 | ADR | Décision |
 |-----|----------|
@@ -129,6 +130,7 @@ Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml` avec de
 | 010 | Docker Compose + GitHub Actions CI/CD, 12-factor app |
 | 011 | Nombre d'or : pondération Fibonacci, confiance φ, suite 1-1-2-3-5 |
 | 012 | Extensions PG futures : TimescaleDB (monitoring continu) + pgvector (RAG perspectives IA) |
+| 013 | **Suivi sanitaire** : FORDEAD via reticulate (CRSWIR + harmonique, GPL-3) en méthode officielle, hybridé avec rolling-window E6.a, 5 garde-fous applicatifs G1-G5 issus du rapport ONF/DSF 2024 |
 
 ## Walking Skeleton — Épaississements
 
