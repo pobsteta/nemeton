@@ -172,11 +172,11 @@ NULL
 #'   \item Export raster results to \code{output_dir}.
 #' }
 #'
-#' Post-processing of rasters into POINT clusters and persistence
-#' into the \code{alert} table is performed in chantier E6.c.2 by
-#' [.postprocess_fordead_rasters()] / [.insert_fordead_alerts()].
-#' When `con` is supplied here today, a stub returns
-#' `n_alerts_inserted = 0L` until E6.c.2 is wired in.
+#' Post-processing of the rasters into POINT clusters is performed
+#' inline by [.postprocess_fordead_rasters()] (chantier E6.c.2). When
+#' `con` and `zone_id` are both supplied, the centroids are persisted
+#' into the `alert` table via [.insert_fordead_alerts()] (each
+#' centroid is snapped to the nearest registered plot of the zone).
 #'
 #' Calibration is frozen on the ONF/DSF reference values
 #' (Bernard & Doridant 2024) and not exposed to the end user — see
@@ -197,9 +197,15 @@ NULL
 #'   Defaults to a fresh `tempfile("fordead_")`.
 #' @param python_env Character. Virtualenv name. Defaults to
 #'   `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.
-#' @param con Optional `DBIConnection`. When supplied, alerts are
-#'   inserted into the `alert` table (E6.c.2 — currently a no-op
-#'   stub).
+#' @param con Optional `DBIConnection`. When supplied together with
+#'   `zone_id`, FORDEAD centroids are persisted into the `alert`
+#'   table (idempotent ON CONFLICT DO NOTHING).
+#' @param zone_id Integer or `NULL`. Required to persist alerts.
+#'   Centroids are snapped to the nearest registered plot of the
+#'   zone (max 200 m).
+#' @param min_pixels Integer. Minimum FORDEAD patch size (in
+#'   pixels) to be considered an alert. Default 5.
+#' @param connectivity Integer 4 or 8. Default 8.
 #' @param verbose Logical. Print progress via `cli`. Default `TRUE`.
 #'
 #' @return A list with the following fields:
@@ -209,7 +215,9 @@ NULL
 #'     \item{output_dir}{Path where FORDEAD wrote its rasters.}
 #'     \item{rasters}{Named list of GeoTIFF paths (`state`,
 #'       `first_dieback_date`, `stress_index`).}
-#'     \item{alerts_sf}{`NULL` until E6.c.2 lands.}
+#'     \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
+#'       centroids (in EPSG:2154), or `NULL` when no anomaly was
+#'       detected.}
 #'     \item{n_alerts_inserted}{Integer.}
 #'     \item{duration_sec}{Wall-clock duration in seconds.}
 #'     \item{python_env}{The virtualenv that was used.}
@@ -240,6 +248,9 @@ run_fordead_dieback <- function(aoi,
                                 output_dir = tempfile("fordead_"),
                                 python_env = NULL,
                                 con = NULL,
+                                zone_id = NULL,
+                                min_pixels = 5L,
+                                connectivity = 8L,
                                 verbose = TRUE) {
   t0 <- Sys.time()
 
@@ -322,10 +333,23 @@ run_fordead_dieback <- function(aoi,
       stress_index       = file.path(output_dir, "DataAnomalies", "stress_index.tif")
     )
 
-    # 6. Post-processing — wired in E6.c.2. Today we return zeros so
-    # callers can already exercise the orchestrator end to end.
+    # 6. Post-processing: rasters → POINT clusters → optional INSERT.
+    alerts_sf <- tryCatch(
+      .postprocess_fordead_rasters(rasters,
+                                   min_pixels   = as.integer(min_pixels),
+                                   connectivity = as.integer(connectivity)),
+      error = function(e) {
+        cli::cli_alert_warning("Post-processing failed: {conditionMessage(e)}")
+        NULL
+      }
+    )
+    if (!is.null(alerts_sf) && !nrow(alerts_sf)) alerts_sf <- NULL
+
     n_inserted <- 0L
-    alerts_sf  <- NULL
+    if (!is.null(con) && !is.null(zone_id) && !is.null(alerts_sf)) {
+      n_inserted <- .insert_fordead_alerts(con, alerts_sf,
+                                           zone_id = zone_id)
+    }
 
     list(
       status            = "success",

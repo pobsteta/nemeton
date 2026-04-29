@@ -61,38 +61,38 @@ Branche : `feat/008-fordead-postprocess`
 
 ### 2.1 Migration SQL
 
-- [ ] T6c2.1 Créer `inst/db/migrations/0002_fordead.sql` (cf. spec.md §8.3)
-- [ ] T6c2.2 Vérifier la migration en intégration : ajouter un test à `tests/testthat/test-db.R` (idempotence, présence des nouvelles colonnes)
-- [ ] T6c2.3 Mettre à jour `with_clean_db()` dans `helper-monitoring.R` pour drop les nouveaux index
+- [x] T6c2.1 Créer `inst/db/migrations/0002_fordead.sql` (cf. spec.md §8.3)
+- [x] T6c2.2 Vérifier la migration en intégration : ajouter un test à `tests/testthat/test-db.R` (idempotence, présence des nouvelles colonnes)
+- [x] T6c2.3 Mettre à jour `with_clean_db()` dans `helper-monitoring.R` pour drop les nouveaux index — **no-op** : `DROP TABLE alert CASCADE` enlève déjà les nouveaux index avec la table
 
 ### 2.2 Constantes et coefficients
 
-- [ ] T6c2.4 Créer `R/fordead_postprocess.R` avec roxygen header
-- [ ] T6c2.5 Constante `FORDEAD_CONFIDENCE_WEIGHTS` documentée (cite Bernard & Doridant 2024)
-- [ ] T6c2.6 Constante `FORDEAD_CLASSES` (vecteur ordonné des 5 classes : "0-hors-anomalie" → "4-sol-nu")
+- [x] T6c2.4 Créer `R/fordead_postprocess.R` avec roxygen header
+- [x] T6c2.5 Constante `FORDEAD_CONFIDENCE_WEIGHTS` documentée (cite Bernard & Doridant 2024)
+- [x] T6c2.6 Constante `FORDEAD_CLASSES` (vecteur ordonné des 5 classes : "0-hors-anomalie" → "4-sol-nu")
 
 ### 2.3 Conversion raster → POINT clusters
 
-- [ ] T6c2.7 `.classify_pixels_to_classes(state_raster)` : réinterprète les valeurs de state en classes ordinales
-- [ ] T6c2.8 `.cluster_anomaly_pixels(class_raster, min_pixels = 5, connectivity = 8)` : agrège les pixels en clusters via `terra::patches()`
-- [ ] T6c2.9 `.cluster_to_centroids(clusters, stress_index_raster, first_dieback_date_raster)` : retourne sf POINT enrichi de `confidence_class`, `stress_index`, `trigger_date`, `n_pixels`, `area_m2`
-- [ ] T6c2.10 [P] Tests : `tests/testthat/test-fordead-postprocess.R` (12-15 tests) avec rasters synthétiques
+- [x] T6c2.7 `.classify_pixels_to_classes(state_raster)` : réinterprète les valeurs de state en classes ordinales
+- [x] T6c2.8 `.cluster_anomaly_pixels(class_raster, min_pixels = 5, connectivity = 8)` : agrège les pixels en clusters via `terra::patches()`
+- [x] T6c2.9 `.cluster_to_centroids(clusters, stress_index_raster, first_dieback_date_raster)` : retourne sf POINT enrichi de `confidence_class`, `stress_index`, `trigger_date`, `n_pixels`, `area_m2`
+- [x] T6c2.10 [P] Tests : `tests/testthat/test-fordead-postprocess.R` (12-15 tests) avec rasters synthétiques
 
 ### 2.4 Insertion dans `alert`
 
-- [ ] T6c2.11 `.insert_fordead_alerts(con, alerts_sf, zone_id)` : INSERT en bulk via TEMP staging + ON CONFLICT DO NOTHING
-- [ ] T6c2.12 `alert_type = "fordead_dieback"` ; `confidence_class` mappée ; `stress_index` populé
-- [ ] T6c2.13 Test d'intégration (`with_clean_db`) : insertion + idempotence + vérification des champs
+- [x] T6c2.11 `.insert_fordead_alerts(con, alerts_sf, zone_id)` : INSERT en bulk via TEMP staging + ON CONFLICT DO NOTHING
+- [x] T6c2.12 `alert_type = "fordead_dieback"` ; `confidence_class` mappée ; `stress_index` populé
+- [x] T6c2.13 Test d'intégration (`with_clean_db`) : insertion + idempotence + vérification des champs
 
 ### 2.5 Logique de fusion
 
-- [ ] T6c2.14 `classify_disturbance(alerts_df, window_days = 30)` exporté (cf. plan.md §3)
-- [ ] T6c2.15 [P] Tests : 8-10 tests sur des dataframes synthétiques
+- [x] T6c2.14 `classify_disturbance(alerts_df, window_days = 30)` exporté (cf. plan.md §3)
+- [x] T6c2.15 [P] Tests : 8-10 tests sur des dataframes synthétiques
 
 ### 2.6 Helper de listing pour l'UI
 
-- [ ] T6c2.16 `list_alerts(con, zone_id, classes = c("3-forte", "4-sol-nu"), validation_status = NULL, period = NULL)` exporté
-- [ ] T6c2.17 [P] Test d'intégration : 5-6 cas
+- [x] T6c2.16 `list_alerts(con, zone_id, classes = c("3-forte", "4-sol-nu"), validation_status = NULL, period = NULL)` exporté
+- [x] T6c2.17 [P] Test d'intégration : 5-6 cas
 
 ---
 

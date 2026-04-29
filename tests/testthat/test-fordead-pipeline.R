@@ -102,7 +102,19 @@ test_that("runs all five steps in order and returns success", {
   fake_fd <- make_fake_fordead_module(rec)
 
   testthat::local_mocked_bindings(
-    .ensure_fordead_python = function(env_name = "test", verbose = TRUE, ...) fake_fd,
+    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
+    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
+                                            connectivity = 8L) {
+      sf::st_sf(
+        confidence_class = character(0),
+        stress_index     = numeric(0),
+        trigger_date     = as.Date(character(0)),
+        n_pixels         = integer(0),
+        area_m2          = numeric(0),
+        cluster_id       = integer(0),
+        geometry         = sf::st_sfc(crs = 2154)
+      )
+    },
     .package = "nemeton"
   )
   testthat::local_mocked_bindings(
@@ -124,7 +136,7 @@ test_that("runs all five steps in order and returns success", {
   expect_named(res$rasters,
                c("state", "first_dieback_date", "stress_index"))
   expect_equal(res$n_alerts_inserted, 0L)
-  expect_null(res$alerts_sf)
+  expect_null(res$alerts_sf)   # empty postprocess collapses to NULL
   expect_true(is.numeric(res$duration_sec) && res$duration_sec >= 0)
 })
 
@@ -167,6 +179,18 @@ test_that("forest_mask = NULL routes through the BD Forêt stub", {
       bd_called <<- bd_called + 1L
       NULL
     },
+    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
+                                            connectivity = 8L) {
+      sf::st_sf(
+        confidence_class = character(0),
+        stress_index     = numeric(0),
+        trigger_date     = as.Date(character(0)),
+        n_pixels         = integer(0),
+        area_m2          = numeric(0),
+        cluster_id       = integer(0),
+        geometry         = sf::st_sfc(crs = 2154)
+      )
+    },
     .package = "nemeton"
   )
   testthat::local_mocked_bindings(
@@ -199,6 +223,18 @@ test_that("a user-supplied forest_mask path bypasses the BD Forêt stub", {
       bd_called <<- bd_called + 1L
       NULL
     },
+    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
+                                            connectivity = 8L) {
+      sf::st_sf(
+        confidence_class = character(0),
+        stress_index     = numeric(0),
+        trigger_date     = as.Date(character(0)),
+        n_pixels         = integer(0),
+        area_m2          = numeric(0),
+        cluster_id       = integer(0),
+        geometry         = sf::st_sfc(crs = 2154)
+      )
+    },
     .package = "nemeton"
   )
   testthat::local_mocked_bindings(
@@ -220,6 +256,55 @@ test_that("rejects a forest_mask path that does not exist", {
     run_fordead_dieback(aoi, forest_mask = "/no/such/file.tif"),
     "forest_mask"
   )
+})
+
+
+test_that("non-empty postprocess sets alerts_sf, INSERT skipped without con", {
+  skip_if_no_reticulate()
+  aoi <- make_aoi()
+  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
+  fake_fd <- make_fake_fordead_module(rec)
+
+  fake_alerts <- sf::st_sf(
+    confidence_class = c("3-forte", "4-sol-nu"),
+    stress_index     = c(1.5, 2.1),
+    trigger_date     = as.Date(c("2024-06-01", "2024-07-15")),
+    n_pixels         = c(10L, 20L),
+    area_m2          = c(1000, 2000),
+    cluster_id       = c(1L, 2L),
+    geometry         = sf::st_sfc(sf::st_point(c(700100, 6800100)),
+                                  sf::st_point(c(700500, 6800500)),
+                                  crs = 2154)
+  )
+  insert_called <- 0L
+  testthat::local_mocked_bindings(
+    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
+    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
+                                            connectivity = 8L) fake_alerts,
+    .insert_fordead_alerts       = function(con, alerts_sf, zone_id, ...) {
+      insert_called <<- insert_called + 1L
+      nrow(alerts_sf)
+    },
+    .package = "nemeton"
+  )
+  testthat::local_mocked_bindings(
+    py_capture_output = function(expr) { force(expr); "" },
+    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
+    py_to_r           = function(x) x,
+    .package = "reticulate"
+  )
+
+  # Without con/zone_id : alerts_sf populated but no INSERT.
+  res <- run_fordead_dieback(aoi, verbose = FALSE)
+  expect_equal(nrow(res$alerts_sf), 2L)
+  expect_equal(res$n_alerts_inserted, 0L)
+  expect_equal(insert_called, 0L)
+
+  # With con + zone_id : insert is called and the count propagates.
+  res2 <- run_fordead_dieback(aoi, verbose = FALSE,
+                              con = "fake-con", zone_id = 42)
+  expect_equal(res2$n_alerts_inserted, 2L)
+  expect_equal(insert_called, 1L)
 })
 
 

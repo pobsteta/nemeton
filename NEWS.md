@@ -1,5 +1,72 @@
 # nemeton 0.20.1.9000 (development)
 
+### Added — E6.c.2 (FORDEAD post-processing + DB integration, towards v0.21.0)
+
+* **`inst/db/migrations/0002_fordead.sql`** — extends `alert` with
+  the validation workflow columns (`confidence_class`,
+  `stress_index`, `validation_status DEFAULT 'pending'`,
+  `validation_cause`, `validated_by`, `validated_at`) and adds two
+  indexes: `alert_validation_status_idx` (UI filtering) and
+  `alert_plot_date_type_idx` (composite index for the rolling-window
+  × FORDEAD fusion). Idempotent (`ADD COLUMN IF NOT EXISTS` /
+  `CREATE INDEX IF NOT EXISTS`).
+
+* **`R/fordead_postprocess.R`** — turns the GeoTIFF outputs of
+  `run_fordead_dieback()` into an `sf` POINT layer of cluster
+  centroids and persists them in the `alert` table. Pipeline:
+  `.classify_pixels_to_classes()` → `.cluster_anomaly_pixels()`
+  (`terra::patches`, 8-neighbour by default, drops patches smaller
+  than `min_pixels = 5`) → `.cluster_to_centroids()` (one POINT per
+  cluster, enriched with `confidence_class`, `stress_index`,
+  `trigger_date`, `n_pixels`, `area_m2`, `cluster_id`).
+
+* **`FORDEAD_CLASSES`** (exported) — canonical 5-class vocabulary
+  (`0-hors-anomalie`, `1-faible`, `2-moyenne`, `3-forte`,
+  `4-sol-nu`).
+
+* **`FORDEAD_CONFIDENCE_WEIGHTS`** (exported) — per-class
+  trustworthiness coefficients calibrated on the ONF/DSF FORDEAD
+  validation report (Bernard & Doridant 2024 — ADR-013 §G5).
+  Classes 1 / 2 are weighted at 0.10 / 0.30 (poor field
+  validation), classes 3 / 4 at 0.82 / 0.70.
+
+* **`.insert_fordead_alerts(con, alerts_sf, zone_id, radius_m)`** —
+  bulk-inserts cluster centroids as `alert_type =
+  'fordead_dieback'` rows. Each centroid is snapped to the nearest
+  registered plot of the zone (default max 200 m); centroids with
+  no plot in range are skipped with a warning. Idempotent on
+  `(plot_id, alert_type, trigger_date)` via `ON CONFLICT DO
+  NOTHING` and a TEMP staging table.
+
+* **`run_fordead_dieback()` wired** — the orchestrator now calls
+  the post-processor inline and accepts new arguments `zone_id`,
+  `min_pixels`, `connectivity`. The `alerts_sf` field of the
+  return value is populated; `n_alerts_inserted` reflects the
+  actual `ON CONFLICT` outcome when `con` and `zone_id` are
+  supplied.
+
+* **`classify_disturbance(alerts_df, window_days = 30)`**
+  (exported, garde-fou G2) — joins each FORDEAD alert with
+  rolling-window (`ndvi_drop` / `nbr_drop`) alerts on the same
+  plot in a ±`window_days` window. Adds a `disturbance_type`
+  column with values `mechanical`, `progressive`, `recent_event`
+  or `NA`. Pure R, O(n²), no DB writes — recomputed at each call.
+
+* **`list_alerts(con, zone_id, classes, validation_status,
+  period)`** (exported, garde-fou G1) — read helper for the UI.
+  Default class filter keeps `c("3-forte", "4-sol-nu")` (and
+  rolling-window alerts which have no class); pass `classes =
+  NULL` to opt in to lower-confidence alerts. Optional filters on
+  `validation_status` and `trigger_date` period.
+
+* **Tests** — `test-fordead-postprocess.R` (45+ assertions across
+  constants, raster post-processing on synthetic SpatRasters,
+  `classify_disturbance` cases, integration `with_clean_db` for
+  `list_alerts` + `.insert_fordead_alerts`); `test-fordead-pipeline.R`
+  extended with a non-empty postprocess scenario asserting the
+  INSERT wiring. `test-db.R` extended for the `0002_fordead`
+  migration. Suite : 5745 PASS / 0 FAIL offline.
+
 ### Added — E6.c.1 (FORDEAD pipeline scaffolding, towards v0.21.0)
 
 * **`R/fordead_python.R`** — reticulate venv helpers for FORDEAD.

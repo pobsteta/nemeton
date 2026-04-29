@@ -7,13 +7,16 @@
 run_fordead_dieback(
   aoi,
   dates_training = c("2016-01-01", "2017-12-31"),
-  dates_monitoring = c("2018-01-01", Sys.Date()),
+  dates_monitoring = c("2018-01-01", as.character(Sys.Date())),
   vegetation_index = "CRSWIR",
   threshold_anomaly = 0.16,
   forest_mask = NULL,
   output_dir = tempfile("fordead_"),
   python_env = NULL,
   con = NULL,
+  zone_id = NULL,
+  min_pixels = 5L,
+  connectivity = 8L,
   verbose = TRUE
 )
 }
@@ -24,7 +27,7 @@ run_fordead_dieback(
 training window (default `c("2016-01-01", "2017-12-31")`).}
 
 \item{dates_monitoring}{Length-2 character/Date vector defining
-the monitoring window. Defaults to `c("2018-01-01", Sys.Date())`.}
+the monitoring window. Defaults to `c("2018-01-01", as.character(Sys.Date()))`.}
 
 \item{vegetation_index}{One of `"CRSWIR"`, `"NDVI"`, `"NDWI"`.
 Default `"CRSWIR"`.}
@@ -41,9 +44,18 @@ Defaults to a fresh `tempfile("fordead_")`.}
 \item{python_env}{Character. Virtualenv name. Defaults to
 `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.}
 
-\item{con}{Optional `DBIConnection`. When supplied, alerts are
-inserted into the `alert` table (E6.c.2 — currently a no-op
-stub).}
+\item{con}{Optional `DBIConnection`. When supplied together with
+`zone_id`, FORDEAD centroids are persisted into the `alert`
+table (idempotent ON CONFLICT DO NOTHING).}
+
+\item{zone_id}{Integer or `NULL`. Required to persist alerts.
+Centroids are snapped to the nearest registered plot of the
+zone (max 200 m).}
+
+\item{min_pixels}{Integer. Minimum FORDEAD patch size (in
+pixels) to be considered an alert. Default 5.}
+
+\item{connectivity}{Integer 4 or 8. Default 8.}
 
 \item{verbose}{Logical. Print progress via `cli`. Default `TRUE`.}
 }
@@ -55,7 +67,9 @@ A list with the following fields:
     \item{output_dir}{Path where FORDEAD wrote its rasters.}
     \item{rasters}{Named list of GeoTIFF paths (`state`,
       `first_dieback_date`, `stress_index`).}
-    \item{alerts_sf}{`NULL` until E6.c.2 lands.}
+    \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
+      centroids (in EPSG:2154), or `NULL` when no anomaly was
+      detected.}
     \item{n_alerts_inserted}{Integer.}
     \item{duration_sec}{Wall-clock duration in seconds.}
     \item{python_env}{The virtualenv that was used.}
@@ -75,11 +89,11 @@ Orchestrates the five FORDEAD steps via \pkg{reticulate}:
   \item Export raster results to \code{output_dir}.
 }
 
-Post-processing of rasters into POINT clusters and persistence
-into the \code{alert} table is performed in chantier E6.c.2 by
-[.postprocess_fordead_rasters()] / [.insert_fordead_alerts()].
-When `con` is supplied here today, a stub returns
-`n_alerts_inserted = 0L` until E6.c.2 is wired in.
+Post-processing of the rasters into POINT clusters is performed
+inline by [.postprocess_fordead_rasters()] (chantier E6.c.2). When
+`con` and `zone_id` are both supplied, the centroids are persisted
+into the `alert` table via [.insert_fordead_alerts()] (each
+centroid is snapped to the nearest registered plot of the zone).
 
 Calibration is frozen on the ONF/DSF reference values
 (Bernard & Doridant 2024) and not exposed to the end user — see
@@ -93,7 +107,7 @@ aoi <- st_read(system.file("extdata", "aoi_demo.gpkg",
 res <- run_fordead_dieback(
   aoi              = aoi,
   dates_training   = c("2016-01-01", "2017-12-31"),
-  dates_monitoring = c("2018-01-01", Sys.Date())
+  dates_monitoring = c("2018-01-01", as.character(Sys.Date()))
 )
 res$status
 res$rasters
