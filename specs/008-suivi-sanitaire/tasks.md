@@ -27,31 +27,31 @@ Branche : `feat/008-fordead-pipeline`
 
 ### 1.1 Helpers reticulate
 
-- [ ] T6c1.1 Créer `R/fordead_python.R` avec squelette + roxygen header
-- [ ] T6c1.2 `.ensure_fordead_python(env_name = "nemeton-fordead")` : crée le venv si absent, installe `inst/python/requirements.txt`, retourne le module fordead. Idempotent.
-- [ ] T6c1.3 `.use_fordead_env()` : bascule reticulate sur le bon venv (`reticulate::use_virtualenv()`)
-- [ ] T6c1.4 [P] Créer `inst/python/requirements.txt` avec versions pinnées (cf. plan.md §1.3)
-- [ ] T6c1.5 Vérification système : Python ≥ 3.10 requis, message d'erreur explicite si absent
-- [ ] T6c1.6 Tests `tests/testthat/test-fordead-python.R` (5-8 tests, mocked) : skip if reticulate absent ; idempotence ; gestion d'erreur si Python missing
+- [x] T6c1.1 Créer `R/fordead_python.R` avec squelette + roxygen header
+- [x] T6c1.2 `.ensure_fordead_python(env_name = "nemeton-fordead")` : crée le venv si absent, installe `inst/python/requirements.txt`, retourne le module fordead. Idempotent.
+- [x] T6c1.3 `.use_fordead_env()` : bascule reticulate sur le bon venv (`reticulate::use_virtualenv()`)
+- [x] T6c1.4 [P] Créer `inst/python/requirements.txt` avec versions pinnées (cf. plan.md §1.3)
+- [x] T6c1.5 Vérification système : Python ≥ 3.10 requis, message d'erreur explicite si absent
+- [x] T6c1.6 Tests `tests/testthat/test-fordead-python.R` (5-8 tests, mocked) : skip if reticulate absent ; idempotence ; gestion d'erreur si Python missing
 
 ### 1.2 Orchestrateur `run_fordead_dieback`
 
-- [ ] T6c1.7 Créer `R/fordead_pipeline.R` avec squelette + roxygen header
-- [ ] T6c1.8 Signature `run_fordead_dieback(aoi, dates_training, dates_monitoring, vegetation_index = "CRSWIR", threshold_anomaly = 0.16, forest_mask = NULL, output_dir = tempfile(), python_env = NULL, con = NULL)` (cf. plan.md §2.1)
-- [ ] T6c1.9 Validation des arguments : aoi sf POLYGON EPSG:2154 ; dates valides et chronologiques ; threshold_anomaly ∈ [0.05, 0.50] ; vegetation_index ∈ {"CRSWIR", "NDVI", "NDWI"}
-- [ ] T6c1.10 Phase 1 : compute_masked_vegetationindex (appel Python via reticulate)
-- [ ] T6c1.11 Phase 2 : train_model
-- [ ] T6c1.12 Phase 3 : forest_mask (cache local BD Forêt v2 si non fourni). Helper `.download_or_use_cached_bd_foret(aoi)`
-- [ ] T6c1.13 Phase 4 : dieback_detection
-- [ ] T6c1.14 Phase 5 : export_results
-- [ ] T6c1.15 Capture des logs Python via `reticulate::py_capture_output()` → cli_alert_info pendant l'exécution
-- [ ] T6c1.16 Retour structuré (`list(status, output_dir, rasters, alerts_sf, n_alerts_inserted, duration_sec, python_env, fordead_version)`)
-- [ ] T6c1.17 Gestion d'erreurs : tryCatch global, retour `status = "error"` + message
-- [ ] T6c1.18 Doc roxygen complète + 1 exemple `\dontrun{}`
+- [x] T6c1.7 Créer `R/fordead_pipeline.R` avec squelette + roxygen header
+- [x] T6c1.8 Signature `run_fordead_dieback(aoi, dates_training, dates_monitoring, vegetation_index = "CRSWIR", threshold_anomaly = 0.16, forest_mask = NULL, output_dir = tempfile(), python_env = NULL, con = NULL)` (cf. plan.md §2.1)
+- [x] T6c1.9 Validation des arguments : aoi sf POLYGON EPSG:2154 ; dates valides et chronologiques ; threshold_anomaly ∈ [0.05, 0.50] ; vegetation_index ∈ {"CRSWIR", "NDVI", "NDWI"}
+- [x] T6c1.10 Phase 1 : compute_masked_vegetationindex (appel Python via reticulate)
+- [x] T6c1.11 Phase 2 : train_model
+- [x] T6c1.12 Phase 3 : forest_mask (cache local BD Forêt v2 si non fourni). Helper `.download_or_use_cached_bd_foret(aoi)` — **stub jusqu'à E6.c.3**
+- [x] T6c1.13 Phase 4 : dieback_detection
+- [x] T6c1.14 Phase 5 : export_results
+- [x] T6c1.15 Capture des logs Python via `reticulate::py_capture_output()` → cli_alert_info pendant l'exécution
+- [x] T6c1.16 Retour structuré (`list(status, output_dir, rasters, alerts_sf, n_alerts_inserted, duration_sec, python_env, fordead_version)`)
+- [x] T6c1.17 Gestion d'erreurs : tryCatch global, retour `status = "error"` + message
+- [x] T6c1.18 Doc roxygen complète + 1 exemple `\dontrun{}`
 
 ### 1.3 Tests d'orchestration
 
-- [ ] T6c1.19 `tests/testthat/test-fordead-pipeline.R` : 8-12 tests avec phases mockées (`local_mocked_bindings` sur les calls reticulate). Vérifie l'ordre, la propagation d'erreur, le format de retour.
+- [x] T6c1.19 `tests/testthat/test-fordead-pipeline.R` : 8-12 tests avec phases mockées (`local_mocked_bindings` sur les calls reticulate). Vérifie l'ordre, la propagation d'erreur, le format de retour.
 
 ---
 

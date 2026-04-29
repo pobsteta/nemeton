@@ -1,0 +1,12 @@
+# FORDEAD pipeline (spec 008, ADR-013)
+# Pinned per plan.md §1.3. Installed lazily by .ensure_fordead_python()
+# into ~/.virtualenvs/nemeton-fordead/.
+fordead==2.1.4
+xarray>=2024.0
+dask[complete]>=2024.0
+rasterio>=1.3.0
+eodag>=3.0
+numpy>=1.26
+pandas>=2.0
+geopandas>=0.14
+shapely>=2.0

@@ -30,6 +30,11 @@ metres. Default 15.}
 The `zone_id` (integer) of the registered zone.
 }
 \description{
-Helper that upserts a `monitoring_zone` row and the associated
-`plot` rows. Idempotent on `(zone_name, plot_id)`.
+Helper that inserts a `monitoring_zone` row and the associated
+`plot` rows. Idempotent on `(zone_id, plot_id)` — within an
+existing zone, re-registering the same `plot_id` is a no-op
+(UNIQUE constraint + `ON CONFLICT DO NOTHING`). The
+`monitoring_zone` table has no uniqueness on `name`, so calling
+this function twice with the same `zone_name` creates two
+independent zones.
 }

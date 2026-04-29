@@ -1,5 +1,38 @@
 # nemeton 0.20.1.9000 (development)
 
+### Added — E6.c.1 (FORDEAD pipeline scaffolding, towards v0.21.0)
+
+* **`R/fordead_python.R`** — reticulate venv helpers for FORDEAD.
+  `.ensure_fordead_python()` is idempotent (creates the
+  `~/.virtualenvs/nemeton-fordead` venv on first use, installs the
+  pinned dependencies from `inst/python/requirements.txt`, caches the
+  imported module for the session). Python ≥ 3.10 is required;
+  diagnostics make the precondition explicit. Override the venv name
+  via the env var `NEMETON_FORDEAD_ENV`.
+
+* **`R/fordead_pipeline.R`** — `run_fordead_dieback()` orchestrates
+  the five FORDEAD steps (compute masked vegetation index, train
+  model, forest mask, dieback detection, export results) on an AOI
+  in EPSG:2154. Returns a structured list (`status`, `output_dir`,
+  `rasters`, `alerts_sf`, `n_alerts_inserted`, `duration_sec`,
+  `python_env`, `fordead_version`). Calibration is frozen on the
+  ONF/DSF reference values (Bernard & Doridant 2024, ADR-013):
+  CRSWIR + threshold 0.16. Post-processing of rasters into POINT
+  clusters and DB persistence land in chantier E6.c.2.
+
+* **`inst/python/requirements.txt`** — pinned Python deps
+  (`fordead==2.1.4`, xarray, dask, rasterio, eodag, etc.).
+
+* **`reticulate (>= 1.34.0)`** added to `Suggests`. Python and the
+  `fordead` package are not pulled in until the user runs the
+  pipeline; offline / non-Python users keep the existing surface.
+
+* **Tests** — `test-fordead-python.R` (8 test_that, mocked reticulate,
+  covers idempotence, version gating, venv reuse) and
+  `test-fordead-pipeline.R` (12 test_that, mocked Python phases,
+  covers argument validation, in-order step invocation, error
+  propagation, forest-mask routing). All tests run offline.
+
 # nemeton 0.20.1 (2026-04-25)
 
 ### Fixed — E6.a hardening (integration tests surfaced two real bugs)
