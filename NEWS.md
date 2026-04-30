@@ -1,3 +1,18 @@
+# nemeton 0.20.1.9001 (development)
+
+### Fixed
+
+* **`R/fordead_postprocess.R::list_alerts()`** — vector filters
+  (`classes`, `validation_status`) are now serialised as Postgres
+  `text[]` literals via the new internal helper `.pg_text_array()`
+  and bound through `$n::text[]` placeholders. RPostgres requires
+  every `dbBind` parameter to be length 1, so passing an R vector
+  directly to `WHERE x = ANY($n)` was failing with
+  *"Parameter 2 does not have length 1"* whenever a caller passed
+  more than one class or status. Discovered by re-enabling the
+  TimescaleDB integration tests once `NEMETON_DB_URL_TEST` was
+  exported.
+
 # nemeton 0.20.1.9000 (development)
 
 ### Added — E6.c.2 (FORDEAD post-processing + DB integration, towards v0.21.0)

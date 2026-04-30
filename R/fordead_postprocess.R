@@ -76,6 +76,19 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #'   the value attribute table set to [`FORDEAD_CLASSES`]). NA for
 #'   any pixel outside `0..4`.
 #'
+# Serialise a character vector as a Postgres text[] literal so it
+# can be bound as a single scalar parameter and cast via $n::text[].
+# RPostgres requires every bind parameter to be length 1 (or all
+# parameters the same length for batch exec), so vector filters like
+# `WHERE x = ANY($n)` cannot pass an R vector directly.
+.pg_text_array <- function(x) {
+  x <- as.character(x)
+  esc <- gsub("\\", "\\\\", x, fixed = TRUE)
+  esc <- gsub('"', '\\"', esc, fixed = TRUE)
+  sprintf("{%s}", paste0('"', esc, '"', collapse = ","))
+}
+
+
 #' @keywords internal
 .classify_pixels_to_classes <- function(state_raster) {
   if (!inherits(state_raster, "SpatRaster")) {
@@ -476,20 +489,24 @@ list_alerts <- function(con, zone_id,
   where <- c("p.zone_id = $1")
   pars  <- list(as.integer(zone_id))
   i <- 1L
-  add_param <- function(values) {
+  add_param <- function(values, as_array = FALSE) {
     i <<- i + 1L
+    if (as_array) {
+      pars[[length(pars) + 1L]] <<- .pg_text_array(values)
+      return(sprintf("$%d::text[]", i))
+    }
     pars[[length(pars) + 1L]] <<- values
     sprintf("$%d", i)
   }
   if (!is.null(classes)) {
     where <- c(where,
                sprintf("(a.confidence_class IS NULL OR a.confidence_class = ANY(%s))",
-                       add_param(as.character(classes))))
+                       add_param(as.character(classes), as_array = TRUE)))
   }
   if (!is.null(validation_status)) {
     where <- c(where,
                sprintf("a.validation_status = ANY(%s)",
-                       add_param(as.character(validation_status))))
+                       add_param(as.character(validation_status), as_array = TRUE)))
   }
   if (!is.null(period)) {
     if (length(period) != 2L) {
