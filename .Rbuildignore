@@ -36,3 +36,4 @@
 ^cran-comments\.md$
 ^inst/extdata/aba\.model$
 ^inst/extdata/coregistration$
+^\.positai$

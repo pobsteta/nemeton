@@ -49,3 +49,4 @@ Rplots.pdf
 # Bibliographic references kept locally for data-raw scripts
 # (large PDFs; download links listed in data-raw/references/README.md)
 data-raw/references/*.pdf
+.positai
