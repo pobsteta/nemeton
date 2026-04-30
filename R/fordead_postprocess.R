@@ -62,6 +62,19 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 )
 
 
+# Serialise a character vector as a Postgres text[] literal so it
+# can be bound as a single scalar parameter and cast via $n::text[].
+# RPostgres requires every bind parameter to be length 1 (or all
+# parameters the same length for batch exec), so vector filters like
+# `WHERE x = ANY($n)` cannot pass an R vector directly.
+.pg_text_array <- function(x) {
+  x <- as.character(x)
+  esc <- gsub("\\", "\\\\", x, fixed = TRUE)
+  esc <- gsub('"', '\\"', esc, fixed = TRUE)
+  sprintf("{%s}", paste0('"', esc, '"', collapse = ","))
+}
+
+
 #' Reclassify a raw FORDEAD `state.tif` into the canonical class layer
 #'
 #' Maps integer codes 0–4 onto factor levels in [`FORDEAD_CLASSES`].
@@ -76,19 +89,6 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #'   the value attribute table set to [`FORDEAD_CLASSES`]). NA for
 #'   any pixel outside `0..4`.
 #'
-# Serialise a character vector as a Postgres text[] literal so it
-# can be bound as a single scalar parameter and cast via $n::text[].
-# RPostgres requires every bind parameter to be length 1 (or all
-# parameters the same length for batch exec), so vector filters like
-# `WHERE x = ANY($n)` cannot pass an R vector directly.
-.pg_text_array <- function(x) {
-  x <- as.character(x)
-  esc <- gsub("\\", "\\\\", x, fixed = TRUE)
-  esc <- gsub('"', '\\"', esc, fixed = TRUE)
-  sprintf("{%s}", paste0('"', esc, '"', collapse = ","))
-}
-
-
 #' @keywords internal
 .classify_pixels_to_classes <- function(state_raster) {
   if (!inherits(state_raster, "SpatRaster")) {

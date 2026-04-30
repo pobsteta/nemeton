@@ -1,3 +1,44 @@
+# nemeton 0.20.1.9002 (development)
+
+### Added — E6.c.3 (FORDEAD validity zones, towards v0.21.0)
+
+* **`inst/extdata/fordead_validity_zones.geojson`** — five
+  French departments (88 Vosges, 39 Jura, 01 Ain, 73 Savoie,
+  74 Haute-Savoie) where the FORDEAD calibration is validated
+  by the ONF/DSF report (Bernard & Doridant 2024). 5
+  MULTIPOLYGON features, EPSG:4326, simplified at 100 m in
+  Lambert-93 (~27 500 km^2, 80 ko). Built reproducibly from
+  the static `gregoiredavid/france-geojson` mirror
+  (Etalab 2.0).
+
+* **`data-raw/build_fordead_validity_zones.R`** — reproducible
+  script. Pivot from the original plan: `geo.api.gouv.fr` no
+  longer serves contours via `format=geojson&geometry=contour`,
+  so we use the GitHub static mirror instead.
+
+* **`R/fordead_validity.R`** — implements guard-rail G3 of
+  spec 008.
+  * `FORDEAD_VALIDITY_DEPARTMENTS` and
+    `FORDEAD_VALIDITY_SPECIES` exported constants.
+  * `load_fordead_validity_zones()` — loads and caches the
+    GeoJSON for the lifetime of the R session.
+  * `check_fordead_validity(aoi, units, threshold_geo,
+    threshold_species, min_resineux)` — returns a list
+    flagging whether the AOI lies inside the calibrated
+    extent (`geo_valid`, `geo_intersection_pct`,
+    `geo_dept_codes`) and whether the user units are
+    spruce + fir dominated (`species_valid`,
+    `species_resineux_pct`, `species_epc_pct`,
+    `species_sap_pct`), plus an `overall_valid` flag.
+  * Internal `.is_epicea()` and `.is_sapin_pectine()` helpers
+    correctly handle the Norway-spruce / silver-fir Latin
+    name collision (both species share the epithet "abies")
+    and exclude Douglas fir (Pseudotsuga menziesii).
+
+* **Tests** — 16 new offline tests
+  (`test-fordead-validity-zones.R` 4,
+  `test-fordead-validity.R` 12). Total suite: 5866 PASS / 0 FAIL.
+
 # nemeton 0.20.1.9001 (development)
 
 ### Fixed

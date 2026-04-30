@@ -102,27 +102,27 @@ Branche : `feat/008-fordead-validity`
 
 ### 3.1 Construction de `fordead_validity_zones.geojson`
 
-- [ ] T6c3.1 Créer `data-raw/build_fordead_validity_zones.R` :
-  - fetch geo.api.gouv.fr pour codes 88, 39, 01, 73, 74
-  - union, simplification (dTolerance = 100), reprojection EPSG:4326
+- [x] T6c3.1 Créer `data-raw/build_fordead_validity_zones.R` :
+  - fetch via le mirror static `gregoiredavid/france-geojson` (snapshot IGN ADMIN-EXPRESS, Etalab 2.0) — `geo.api.gouv.fr/format=geojson&geometry=contour` ne sert plus le contour depuis 2025
+  - union, simplification (dTolerance = 100 m en Lambert-93), reprojection EPSG:4326
   - écriture `inst/extdata/fordead_validity_zones.geojson`
   - script reproductible, fait partie du repo
-- [ ] T6c3.2 Lancer le script et committer le GeoJSON résultat
-- [ ] T6c3.3 Test `tests/testthat/test-fordead-validity-zones.R` : le fichier charge, contient au minimum 5 polygones (ou 1 multipolygon = union des 5 départements), surface totale dans la fourchette attendue
+- [x] T6c3.2 Lancer le script et committer le GeoJSON résultat (5 features, ~27 500 km², 80 ko)
+- [x] T6c3.3 Test `tests/testthat/test-fordead-validity-zones.R` : le fichier charge, contient les 5 polygones, surface totale dans la fourchette attendue (4 tests)
 
 ### 3.2 Helper de vérification
 
-- [ ] T6c3.4 Créer `R/fordead_validity.R` avec roxygen header
-- [ ] T6c3.5 `load_fordead_validity_zones()` : charge et cache la geojson (sf, EPSG:4326)
-- [ ] T6c3.6 `check_fordead_validity(aoi, units = NULL, threshold_geo = 0.5, threshold_species = 0.7, min_resineux = 0.3)` retourne :
+- [x] T6c3.4 Créer `R/fordead_validity.R` avec roxygen header
+- [x] T6c3.5 `load_fordead_validity_zones()` : charge et cache la geojson (sf, EPSG:4326)
+- [x] T6c3.6 `check_fordead_validity(aoi, units = NULL, threshold_geo = 0.5, threshold_species = 0.7, min_resineux = 0.3)` retourne :
   ```r
-  list(geo_valid = TRUE/FALSE, geo_intersection_pct = 0.87,
-       species_valid = TRUE/FALSE, species_resineux_pct = 0.78,
-       species_epc_pct = 0.42, species_sap_pct = 0.36,
-       overall_valid = TRUE/FALSE)
+  list(geo_valid, geo_intersection_pct, geo_dept_codes,
+       species_valid, species_resineux_pct,
+       species_epc_pct, species_sap_pct,
+       overall_valid, thresholds)
   ```
-- [ ] T6c3.7 La logique espèce s'appuie sur des attributs `essence_dominante` ou `composition` sur les units. Documenter le contrat d'entrée.
-- [ ] T6c3.8 Tests `tests/testthat/test-fordead-validity.R` (10-12 tests) : Vosges → valid ; Massif Central → géo invalid ; Brie → géo invalid ET espèces invalid ; mix → flags partiels
+- [x] T6c3.7 La logique espèce s'appuie sur les colonnes `essence_dominante` / `essence` / `species_label` / `species` / `essence_principale` (priorité dans cet ordre). Helpers `.is_epicea()` et `.is_sapin_pectine()` gèrent les codes ONF/DSF (EPC, SAP), les noms français (épicéa, sapin pectiné) et latins (Picea abies, Abies alba), avec exclusion explicite de Pseudotsuga menziesii / "Sapin de Douglas" et résolution de la collision latine "abies" entre genre et espèce.
+- [x] T6c3.8 Tests `tests/testthat/test-fordead-validity.R` (12 tests) : Vosges valid, Jura valid sans units, Massif Central géo invalid, Brie géo+espèces invalid, AOI à cheval (seuil), seuil 70%, distinction Picea/Abies/Douglas, units vides, units sans colonne espèce (warning), erreurs typées, colonnes alternatives, thresholds échoés
 
 ---
 
