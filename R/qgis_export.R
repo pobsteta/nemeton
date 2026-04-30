@@ -1,8 +1,10 @@
-#' QField Project Export
+#' QGIS Project Export
 #'
 #' @description
 #' Package a sampling plan (output of the GRTS + TSP workflow, see
-#' tutorial \code{09-sampling}) as a QField-ready \code{.qgz} project.
+#' tutorial \code{09-sampling}) as a \code{.qgz} QGIS 3.x project
+#' that can be opened directly in QGIS Desktop or pushed to QField
+#' on a tablet via the QFieldSync plugin.
 #'
 #' A \code{.qgz} is a ZIP archive containing a QGIS project file
 #' (\code{.qgs} XML) and the data referenced with relative paths. We
@@ -18,9 +20,9 @@
 #' The QGIS project file declares edit widgets, aliases, and NOT NULL
 #' constraints based on the schemas returned by
 #' \code{\link{get_placette_schema}} and \code{\link{get_arbre_schema}},
-#' so QField displays a ready-to-use data entry form.
+#' so the form is ready to use both on QGIS Desktop and on QField.
 #'
-#' @name qfield_export
+#' @name qgis_export
 NULL
 
 
@@ -293,11 +295,12 @@ col2rgb_str <- function(hex) {
 
 # ---- Public API -------------------------------------------------------
 
-#' Create a QField project from a sampling plan
+#' Create a QGIS project from a sampling plan
 #'
-#' Packages sampling plots, study area, and (optionally) the TSP route as
-#' a QField-ready \code{.qgz} project. The project embeds a GeoPackage
-#' and a minimal QGIS 3.x project file wired with field schemas.
+#' Packages sampling plots, study area, and (optionally) the TSP route
+#' as a \code{.qgz} QGIS 3.x project. The project embeds a GeoPackage
+#' and a minimal QGIS project file wired with field schemas, ready to
+#' open in QGIS Desktop and to push to QField via QFieldSync.
 #'
 #' @param placettes An sf object with POINT geometry. Must contain the
 #'   \code{plot_id} column. A \code{type} column (values \code{"Base"},
@@ -332,19 +335,19 @@ col2rgb_str <- function(hex) {
 #'                     st_point(c(900200, 6500200)),
 #'                     crs = 2154)
 #' )
-#' qgz <- create_qfield_project(pts, output_dir = tempdir())
+#' qgz <- create_qgis_project(pts, output_dir = tempdir())
 #' }
 #'
 #' @export
-create_qfield_project <- function(placettes,
-                                  zone_etude = NULL,
-                                  parcours_tsp = NULL,
-                                  output_dir,
-                                  project_name = "echantillon",
-                                  crs = 2154,
-                                  region = "BFC",
-                                  lang = "fr",
-                                  overwrite = TRUE) {
+create_qgis_project <- function(placettes,
+                                zone_etude = NULL,
+                                parcours_tsp = NULL,
+                                output_dir,
+                                project_name = "echantillon",
+                                crs = 2154,
+                                region = "BFC",
+                                lang = "fr",
+                                overwrite = TRUE) {
   if (!inherits(placettes, "sf")) {
     cli::cli_abort("{.arg placettes} must be an sf object.")
   }
@@ -366,7 +369,7 @@ create_qfield_project <- function(placettes,
   }
 
   # Stage in a temp dir, then zip into .qgz with relative paths.
-  stage <- tempfile("qfield_stage_")
+  stage <- tempfile("qgis_stage_")
   dir.create(stage, recursive = TRUE)
   on.exit(unlink(stage, recursive = TRUE), add = TRUE)
 
@@ -470,6 +473,36 @@ create_qfield_project <- function(placettes,
     cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).")
   }
 
-  cli::cli_alert_success("QField project created: {.path {qgz_path}}")
+  cli::cli_alert_success("QGIS project created: {.path {qgz_path}}")
   invisible(qgz_path)
+}
+
+
+#' @rdname create_qgis_project
+#' @description
+#' `create_qfield_project()` is a deprecated alias kept for
+#' backwards compatibility. It forwards to [create_qgis_project()]
+#' and emits a one-shot deprecation warning. New code should call
+#' [create_qgis_project()] directly.
+#'
+#' @export
+create_qfield_project <- function(placettes,
+                                  zone_etude = NULL,
+                                  parcours_tsp = NULL,
+                                  output_dir,
+                                  project_name = "echantillon",
+                                  crs = 2154,
+                                  region = "BFC",
+                                  lang = "fr",
+                                  overwrite = TRUE) {
+  .Deprecated("create_qgis_project", package = "nemeton")
+  create_qgis_project(placettes      = placettes,
+                      zone_etude     = zone_etude,
+                      parcours_tsp   = parcours_tsp,
+                      output_dir     = output_dir,
+                      project_name   = project_name,
+                      crs            = crs,
+                      region         = region,
+                      lang           = lang,
+                      overwrite      = overwrite)
 }

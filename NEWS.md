@@ -1,3 +1,52 @@
+# nemeton 0.20.1.9005 (development)
+
+### Renamed — QGIS / QField terminology cleanup
+
+The two QField-named exports were renamed to reflect what they
+actually do: produce / consume a standard `.qgz` QGIS 3.x project
+(zip of `.qgs` XML + GPKG) which any QGIS-speaking client (QGIS
+Desktop, QField via QFieldSync, etc.) can open. There is no
+QFieldSync-specific tagging in the output, so the previous names
+were misleading.
+
+* `create_qfield_project()` → **`create_qgis_project()`**
+* `import_qfield_gpkg()` → **`import_qgis_gpkg()`**
+
+The roxygen group names (and therefore the `man/*.Rd` page names)
+follow:
+
+* `qfield_export` → **`qgis_export`**
+* `qfield_import` → **`qgis_import`**
+
+The function bodies, signatures, return types and behaviour are
+unchanged — this is a pure rename.
+
+### Deprecated
+
+`create_qfield_project()` and `import_qfield_gpkg()` are kept as
+deprecated aliases for backwards compatibility with `nemetonshiny`
+and any external caller. They forward to the new names and emit a
+one-shot `.Deprecated()` warning. **They will be removed in a
+future release** — please migrate.
+
+### Internal cross-references updated
+
+`R/health_validation.R`, `R/sampling_plan.R`, `R/field_schema.R`
+and the QGIS export/import modules now reference the new names in
+their docstrings and comments. 62 textual mentions of "qfield"
+across the codebase were rebalanced toward "qgis" where the
+subject was actually QGIS Desktop / the `.qgz` format and not the
+mobile QField client specifically.
+
+### Tests
+
+* All call sites in `test-qgis-export.R` and `test-qgis-import.R`
+  updated to the new names.
+* Added two tests that exercise the deprecated aliases and assert
+  the deprecation warning is emitted.
+
+Total suite: 5994 PASS / 0 FAIL.
+
 # nemeton 0.20.1.9004 (development)
 
 ### Added — E6.d (R5 dieback indicator, towards v0.21.0)

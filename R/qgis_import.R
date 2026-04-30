@@ -1,22 +1,26 @@
-#' QField Project Import and Aggregation
+#' QGIS Project Import and Aggregation
 #'
 #' @description
-#' Read a GeoPackage produced by a QField field session back into R,
-#' validate its contents against the placette/arbre schema, and
-#' compute per-plot aggregates that can be consumed by the core
+#' Read a GeoPackage produced by a QGIS or QField field session back
+#' into R, validate its contents against the placette/arbre schema,
+#' and compute per-plot aggregates that can be consumed by the core
 #' indicators (P1 volume, P2 site index, B2 structure, etc.).
 #'
-#' Companion of \code{\link{create_qfield_project}} — the same schemas
+#' Companion of \code{\link{create_qgis_project}} — the same schemas
 #' (\code{\link{get_placette_schema}}, \code{\link{get_arbre_schema}})
 #' define both the outbound form and the inbound validation rules.
 #'
-#' @name qfield_import
+#' @name qgis_import
 NULL
 
 
 # ---- Import ----------------------------------------------------------
 
-#' Read placettes + arbres layers from a QField-returned GPKG
+#' Read placettes + arbres layers from a field-returned GPKG
+#'
+#' Reads a GeoPackage written by either QGIS Desktop or QField (or
+#' any other client speaking the same GPKG schema) into a list of
+#' two `sf` objects.
 #'
 #' @param path Character. Path to the GeoPackage.
 #'
@@ -24,7 +28,7 @@ NULL
 #'   (an sf POINT; an empty data.frame if the layer is absent).
 #'
 #' @export
-import_qfield_gpkg <- function(path) {
+import_qgis_gpkg <- function(path) {
   if (!file.exists(path)) {
     cli::cli_abort("File not found: {.path {path}}")
   }
@@ -46,6 +50,20 @@ import_qfield_gpkg <- function(path) {
   }
 
   list(placettes = placettes, arbres = arbres)
+}
+
+
+#' @rdname import_qgis_gpkg
+#' @description
+#' `import_qfield_gpkg()` is a deprecated alias kept for backwards
+#' compatibility. It forwards to [import_qgis_gpkg()] and emits a
+#' one-shot deprecation warning. New code should call
+#' [import_qgis_gpkg()] directly.
+#'
+#' @export
+import_qfield_gpkg <- function(path) {
+  .Deprecated("import_qgis_gpkg", package = "nemeton")
+  import_qgis_gpkg(path)
 }
 
 
@@ -322,7 +340,7 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
 #' Sets the attributes \code{field_plots_count} and
 #' \code{field_trees_count} that \code{\link{detect_ndp}} reads to bump
 #' the NDP to 2 (with plots only) or 3 (with >= 10 trees/plot on
-#' average) along the alternative QField path.
+#' average) along the alternative field-data path.
 #'
 #' @param data An sf / data.frame to tag.
 #' @param placettes sf or data.frame of placettes.

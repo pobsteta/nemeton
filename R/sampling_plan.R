@@ -330,7 +330,7 @@ dplyr_case_simple <- function(tfv) {
 #' equivalent of a single \code{\link[sf]{st_sample}} call — useful for
 #' quick previews when only the zone is known.
 #'
-#' The return is ready for \code{\link{create_qfield_project}}.
+#' The return is ready for \code{\link{create_qgis_project}}.
 #'
 #' @param zone sf polygon of the study area (any CRS; result uses
 #'   \code{zone}'s CRS).

@@ -9,7 +9,7 @@
 # field, and the ingestion path that maps DSF-aligned field
 # observations back to `alert.validation_status`.
 #
-# Workflow: a QGIS project (.qgz) packaged by `create_qfield_project()`
+# Workflow: a QGIS project (.qgz) packaged by `create_qgis_project()`
 # (see R/qgis_export.R) renders the form on QGIS Desktop, and the
 # QFieldSync plugin pushes the same project to QField on a tablet
 # for offline collection. Either side writes back into the same
@@ -101,7 +101,7 @@ HEALTH_VALIDATION_CAUSES <- c(
 #' edited offline by the field crew, then re-ingested by
 #' [ingest_health_validation()]. The schema reuses the same
 #' `.field()` descriptor convention as [get_placette_schema()] so
-#' the existing `create_qfield_project()` machinery (in
+#' the existing `create_qgis_project()` machinery (in
 #' `R/qgis_export.R`) renders the `.qgz` form without changes.
 #'
 #' @param region Character. Species region, used to populate the
@@ -202,7 +202,7 @@ get_health_validation_schema <- function(region = "BFC", lang = "fr") {
 #' balance, and falls back to a per-stratum random draw when
 #' `spsurvey` is not installed.
 #'
-#' The returned `sf` is shaped to feed `create_qfield_project()`
+#' The returned `sf` is shaped to feed `create_qgis_project()`
 #' through [get_health_validation_schema()].
 #'
 #' @param alerts_sf An `sf` POINT layer of alert centroids. Must

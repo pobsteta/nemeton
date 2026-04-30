@@ -40,6 +40,6 @@ balance, and falls back to a per-stratum random draw when
 `spsurvey` is not installed.
 }
 \details{
-The returned `sf` is shaped to feed `create_qfield_project()`
+The returned `sf` is shaped to feed `create_qgis_project()`
 through [get_health_validation_schema()].
 }

@@ -108,7 +108,7 @@ Without any of the optional inputs, the pipeline degrades to the
 equivalent of a single \code{\link[sf]{st_sample}} call — useful for
 quick previews when only the zone is known.
 
-The return is ready for \code{\link{create_qfield_project}}.
+The return is ready for \code{\link{create_qgis_project}}.
 }
 \examples{
 \dontrun{

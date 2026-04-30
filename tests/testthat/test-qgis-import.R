@@ -1,5 +1,5 @@
 # test-qgis-import.R
-# Tests for R/qgis_import.R — import_qfield_gpkg, validate_field_data,
+# Tests for R/qgis_import.R — import_qgis_gpkg, validate_field_data,
 # aggregate_plot_metrics and attach_field_data_to_units.
 
 # ------------------------------------------------------------
@@ -64,11 +64,11 @@ write_demo_gpkg <- function(dir, include_bad = TRUE) {
 # Import
 # ------------------------------------------------------------
 
-test_that("import_qfield_gpkg returns placettes + arbres sf objects", {
+test_that("import_qgis_gpkg returns placettes + arbres sf objects", {
   skip_if_not_installed("sf")
   withr::with_tempdir({
     gpkg <- write_demo_gpkg(".")
-    res <- import_qfield_gpkg(gpkg)
+    res <- import_qgis_gpkg(gpkg)
     expect_true(inherits(res$placettes, "sf"))
     expect_equal(nrow(res$placettes), 3)
     expect_true(inherits(res$arbres, "sf"))
@@ -76,8 +76,18 @@ test_that("import_qfield_gpkg returns placettes + arbres sf objects", {
   })
 })
 
-test_that("import_qfield_gpkg errors when the file is missing or malformed", {
-  expect_error(import_qfield_gpkg("/no/such/file.gpkg"), "File not found")
+test_that("import_qfield_gpkg still works as a deprecated alias", {
+  skip_if_not_installed("sf")
+  withr::with_tempdir({
+    gpkg <- write_demo_gpkg(".")
+    expect_warning(res <- import_qfield_gpkg(gpkg), "deprecated")
+    expect_true(inherits(res$placettes, "sf"))
+    expect_equal(nrow(res$placettes), 3)
+  })
+})
+
+test_that("import_qgis_gpkg errors when the file is missing or malformed", {
+  expect_error(import_qgis_gpkg("/no/such/file.gpkg"), "File not found")
 
   skip_if_not_installed("sf")
   withr::with_tempdir({
@@ -86,7 +96,7 @@ test_that("import_qfield_gpkg errors when the file is missing or malformed", {
       sf::st_sf(geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)),
       "bogus.gpkg", layer = "something_else", quiet = TRUE
     )
-    expect_error(import_qfield_gpkg("bogus.gpkg"), "placettes")
+    expect_error(import_qgis_gpkg("bogus.gpkg"), "placettes")
   })
 })
 

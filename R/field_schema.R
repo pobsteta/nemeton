@@ -11,7 +11,7 @@
 #' }
 #'
 #' Each field description carries the information needed by
-#' \code{\link{create_qfield_project}} to produce a fully configured
+#' \code{\link{create_qgis_project}} to produce a fully configured
 #' \code{.qgz} project: type, domain of values, and the recommended
 #' QGIS edit widget.
 #'
@@ -195,7 +195,7 @@ schema_to_df <- function(schema) {
 #' Build an empty sf data.frame matching a schema
 #'
 #' Produces a zero-row \code{sf} object whose columns and column types
-#' match \code{schema}. Used by \code{\link{create_qfield_project}} to
+#' match \code{schema}. Used by \code{\link{create_qgis_project}} to
 #' seed the \code{arbre} layer before it is filled on the field.
 #'
 #' @param schema A schema list (see \code{\link{get_arbre_schema}}).

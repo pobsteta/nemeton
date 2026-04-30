@@ -14,7 +14,7 @@ are linked by \code{plot_id}:
 }
 
 Each field description carries the information needed by
-\code{\link{create_qfield_project}} to produce a fully configured
+\code{\link{create_qgis_project}} to produce a fully configured
 \code{.qgz} project: type, domain of values, and the recommended
 QGIS edit widget.
 

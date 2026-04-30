@@ -61,15 +61,15 @@ test_that("schema_to_df drops attachment-only fields", {
 
 
 # ==============================================================================
-# create_qfield_project()
+# create_qgis_project()
 # ==============================================================================
 
-test_that("create_qfield_project produces a .qgz with the expected layers", {
+test_that("create_qgis_project produces a .qgz with the expected layers", {
   skip_if_no_sf()
 
   pts <- make_sample_plots()
   withr::with_tempdir({
-    qgz <- create_qfield_project(pts, output_dir = ".", project_name = "demo")
+    qgz <- create_qgis_project(pts, output_dir = ".", project_name = "demo")
 
     expect_true(file.exists(qgz))
     expect_match(qgz, "\\.qgz$")
@@ -101,7 +101,7 @@ test_that("create_qfield_project produces a .qgz with the expected layers", {
   })
 })
 
-test_that("create_qfield_project embeds zone_etude and parcours_tsp when provided", {
+test_that("create_qgis_project embeds zone_etude and parcours_tsp when provided", {
   skip_if_no_sf()
 
   pts <- make_sample_plots(n_base = 2, n_over = 1)
@@ -114,7 +114,7 @@ test_that("create_qfield_project embeds zone_etude and parcours_tsp when provide
   )), crs = 2154))
 
   withr::with_tempdir({
-    qgz <- create_qfield_project(pts, zone_etude = zone, parcours_tsp = route,
+    qgz <- create_qgis_project(pts, zone_etude = zone, parcours_tsp = route,
                                  output_dir = ".", project_name = "demo2")
     unz_dir <- file.path(tempdir(), "unz_demo2")
     dir.create(unz_dir, showWarnings = FALSE)
@@ -126,13 +126,13 @@ test_that("create_qfield_project embeds zone_etude and parcours_tsp when provide
   })
 })
 
-test_that("create_qfield_project .qgs XML is well-formed and wires field constraints", {
+test_that("create_qgis_project .qgs XML is well-formed and wires field constraints", {
   skip_if_no_sf()
   skip_if_no_xml2()
 
   pts <- make_sample_plots()
   withr::with_tempdir({
-    qgz <- create_qfield_project(pts, output_dir = ".", project_name = "xmlt")
+    qgz <- create_qgis_project(pts, output_dir = ".", project_name = "xmlt")
     unz_dir <- file.path(tempdir(), "unz_xmlt")
     dir.create(unz_dir, showWarnings = FALSE)
     utils::unzip(qgz, exdir = unz_dir)
@@ -171,29 +171,29 @@ test_that("create_qfield_project .qgs XML is well-formed and wires field constra
   })
 })
 
-test_that("create_qfield_project refuses overwriting when overwrite=FALSE", {
+test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
   skip_if_no_sf()
 
   pts <- make_sample_plots()
   withr::with_tempdir({
-    create_qfield_project(pts, output_dir = ".", project_name = "once")
+    create_qgis_project(pts, output_dir = ".", project_name = "once")
     expect_error(
-      create_qfield_project(pts, output_dir = ".", project_name = "once",
+      create_qgis_project(pts, output_dir = ".", project_name = "once",
                             overwrite = FALSE),
       "already exists"
     )
   })
 })
 
-test_that("create_qfield_project rejects non-sf placettes", {
+test_that("create_qgis_project rejects non-sf placettes", {
   expect_error(
-    create_qfield_project(data.frame(plot_id = "P01"),
+    create_qgis_project(data.frame(plot_id = "P01"),
                           output_dir = tempdir()),
     "must be an sf object"
   )
 })
 
-test_that("create_qfield_project rejects placettes without plot_id", {
+test_that("create_qgis_project rejects placettes without plot_id", {
   skip_if_no_sf()
 
   bad <- sf::st_sf(
@@ -201,7 +201,23 @@ test_that("create_qfield_project rejects placettes without plot_id", {
     geometry = sf::st_sfc(sf::st_point(c(0, 0)), sf::st_point(c(1, 1)), crs = 2154)
   )
   expect_error(
-    create_qfield_project(bad, output_dir = tempdir()),
+    create_qgis_project(bad, output_dir = tempdir()),
     "plot_id"
   )
+})
+
+
+test_that("create_qfield_project still works as a deprecated alias", {
+  skip_if_no_sf()
+
+  pts <- make_sample_plots()
+  withr::with_tempdir({
+    expect_warning(
+      qgz <- create_qfield_project(pts, output_dir = ".",
+                                   project_name = "deprecated_alias"),
+      "deprecated"
+    )
+    expect_true(file.exists(qgz))
+    expect_match(qgz, "deprecated_alias\\.qgz$")
+  })
 })

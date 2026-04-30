@@ -20,7 +20,7 @@ tag_field_data_sources(data, placettes, arbres = NULL)
 Sets the attributes \code{field_plots_count} and
 \code{field_trees_count} that \code{\link{detect_ndp}} reads to bump
 the NDP to 2 (with plots only) or 3 (with >= 10 trees/plot on
-average) along the alternative QField path.
+average) along the alternative field-data path.
 }
 \examples{
 df <- data.frame(x = 1)

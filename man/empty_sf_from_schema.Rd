@@ -19,7 +19,7 @@ An empty sf object.
 }
 \description{
 Produces a zero-row \code{sf} object whose columns and column types
-match \code{schema}. Used by \code{\link{create_qfield_project}} to
+match \code{schema}. Used by \code{\link{create_qgis_project}} to
 seed the \code{arbre} layer before it is filled on the field.
 }
 \keyword{internal}

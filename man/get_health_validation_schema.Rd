@@ -23,6 +23,6 @@ QGIS Desktop (or pushed to QField on a tablet via QFieldSync),
 edited offline by the field crew, then re-ingested by
 [ingest_health_validation()]. The schema reuses the same
 `.field()` descriptor convention as [get_placette_schema()] so
-the existing `create_qfield_project()` machinery (in
+the existing `create_qgis_project()` machinery (in
 `R/qgis_export.R`) renders the `.qgz` form without changes.
 }
