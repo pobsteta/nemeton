@@ -2,7 +2,7 @@
 % Please edit documentation in R/health_validation.R
 \name{get_health_validation_schema}
 \alias{get_health_validation_schema}
-\title{QField schema for the health-validation `placette` layer}
+\title{QGIS form schema for the health-validation `placette` layer}
 \usage{
 get_health_validation_schema(region = "BFC", lang = "fr")
 }
@@ -19,7 +19,8 @@ A list of field descriptors (see `R/field_schema.R`).
 \description{
 Adds the dieback-specific columns on top of a sampling-style
 header (`plot_id`, observer/date) so the GPKG can be opened in
-QField, edited offline by a field crew, then re-ingested by
+QGIS Desktop (or pushed to QField on a tablet via QFieldSync),
+edited offline by the field crew, then re-ingested by
 [ingest_health_validation()]. The schema reuses the same
 `.field()` descriptor convention as [get_placette_schema()] so
 the existing `create_qfield_project()` machinery (in

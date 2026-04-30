@@ -3,7 +3,7 @@
 \docType{data}
 \name{HEALTH_VALIDATION_CAUSES}
 \alias{HEALTH_VALIDATION_CAUSES}
-\title{Free-form causes proposed in the QField form}
+\title{Free-form causes proposed in the QGIS form}
 \format{
 An object of class \code{character} of length 7.
 }

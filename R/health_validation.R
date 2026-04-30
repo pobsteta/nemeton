@@ -1,21 +1,28 @@
 # ============================================================
-# health_validation.R — QField terrain workflow for FORDEAD
+# health_validation.R — QGIS terrain validation workflow for FORDEAD
 # ------------------------------------------------------------
 # Implements guard-rail G4 of spec 008 (suivi sanitaire) :
 # the methodology requires a terrain validation step (37%
 # false-positive rate on class 1-faible per Bernard & Doridant
-# ONF/DSF 2024). This module ships the QField data schema, a
-# helper to draw a stratified sample of alerts to be checked
-# in the field, and the ingestion path that maps DSF-aligned
-# field observations back to `alert.validation_status`.
+# ONF/DSF 2024). This module ships a QGIS form schema, a helper
+# to draw a stratified sample of alerts to be checked in the
+# field, and the ingestion path that maps DSF-aligned field
+# observations back to `alert.validation_status`.
+#
+# Workflow: a QGIS project (.qgz) packaged by `create_qfield_project()`
+# (see R/qgis_export.R) renders the form on QGIS Desktop, and the
+# QFieldSync plugin pushes the same project to QField on a tablet
+# for offline collection. Either side writes back into the same
+# GPKG; this module re-ingests it.
 # ============================================================
 
 
 #' DSF-aligned dieback stages used by the terrain validation form
 #'
 #' Vocabulary aligned with the ONF/DSF 2024 reference report
-#' (Bernard & Doridant, Annexe 1). Each stage is a code an observer
-#' selects in QField; the code is then translated to the
+#' (Bernard & Doridant, Annexe 1). Each stage is a code an
+#' observer selects in the QGIS form (whether on QGIS Desktop or
+#' on QField). The code is then translated to the
 #' `alert.validation_status` column by [ingest_health_validation()].
 #'
 #' @export
@@ -30,7 +37,7 @@ HEALTH_VALIDATION_STADES <- c(
 )
 
 
-#' Free-form causes proposed in the QField form
+#' Free-form causes proposed in the QGIS form
 #'
 #' These are *suggestions* presented to the field observer. The
 #' chosen value lands in `alert.validation_cause` verbatim — the
@@ -86,11 +93,12 @@ HEALTH_VALIDATION_CAUSES <- c(
 }
 
 
-#' QField schema for the health-validation `placette` layer
+#' QGIS form schema for the health-validation `placette` layer
 #'
 #' Adds the dieback-specific columns on top of a sampling-style
 #' header (`plot_id`, observer/date) so the GPKG can be opened in
-#' QField, edited offline by a field crew, then re-ingested by
+#' QGIS Desktop (or pushed to QField on a tablet via QFieldSync),
+#' edited offline by the field crew, then re-ingested by
 #' [ingest_health_validation()]. The schema reuses the same
 #' `.field()` descriptor convention as [get_placette_schema()] so
 #' the existing `create_qfield_project()` machinery (in
@@ -205,7 +213,8 @@ get_health_validation_schema <- function(region = "BFC", lang = "fr") {
 #' @param method Character. `"grts"` (default) or `"random"`.
 #'   GRTS silently degrades to random when `spsurvey` is missing.
 #' @param crs CRS the result is reprojected into. Default 2154
-#'   (Lambert-93) — the CRS QField sees.
+#'   (Lambert-93) — the CRS the downstream QGIS / QField project
+#'   uses to render the placettes layer.
 #'
 #' @return An `sf` POINT layer with columns `plot_id`, `alert_id`,
 #'   `confidence_class`, `stress_index`, `trigger_date`,
@@ -306,10 +315,11 @@ generate_health_validation_plots <- function(alerts_sf,
 }
 
 
-#' Ingest a QField health-validation GPKG and update `alert` rows
+#' Ingest a health-validation GPKG and update `alert` rows
 #'
-#' Reads the `placettes` layer of `gpkg_path`, snaps each plot to
-#' the nearest alert of the given `zone_id` (within
+#' Reads the `placettes` layer of `gpkg_path` (typically a GPKG
+#' edited in QGIS Desktop or in QField on a tablet), snaps each
+#' plot to the nearest alert of the given `zone_id` (within
 #' `snap_distance_m`), maps the observer-selected
 #' `stade_deperissement` to `validation_status` /
 #' `validation_cause`, and issues an `UPDATE alert` per match.

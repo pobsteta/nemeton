@@ -2,7 +2,7 @@
 % Please edit documentation in R/health_validation.R
 \name{ingest_health_validation}
 \alias{ingest_health_validation}
-\title{Ingest a QField health-validation GPKG and update `alert` rows}
+\title{Ingest a health-validation GPKG and update `alert` rows}
 \usage{
 ingest_health_validation(
   con,
@@ -42,8 +42,9 @@ A list:
   * `details` — a data.frame with one row per processed plot.
 }
 \description{
-Reads the `placettes` layer of `gpkg_path`, snaps each plot to
-the nearest alert of the given `zone_id` (within
+Reads the `placettes` layer of `gpkg_path` (typically a GPKG
+edited in QGIS Desktop or in QField on a tablet), snaps each
+plot to the nearest alert of the given `zone_id` (within
 `snap_distance_m`), maps the observer-selected
 `stade_deperissement` to `validation_status` /
 `validation_cause`, and issues an `UPDATE alert` per match.

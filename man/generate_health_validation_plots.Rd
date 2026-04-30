@@ -23,7 +23,8 @@ and `trigger_date` columns produced by
 GRTS silently degrades to random when `spsurvey` is missing.}
 
 \item{crs}{CRS the result is reprojected into. Default 2154
-(Lambert-93) — the CRS QField sees.}
+(Lambert-93) — the CRS the downstream QGIS / QField project
+uses to render the placettes layer.}
 }
 \value{
 An `sf` POINT layer with columns `plot_id`, `alert_id`,
