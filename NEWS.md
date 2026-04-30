@@ -1,3 +1,48 @@
+# nemeton 0.20.1.9004 (development)
+
+### Added — E6.d (R5 dieback indicator, towards v0.21.0)
+
+* **`R/indicators-deperissement.R`** — implements guard-rail
+  G5 of spec 008. The R5 dieback index is the
+  confidence-weighted fraction of each forest unit's area
+  covered by FORDEAD anomaly clusters (rescaled to 0-100 to
+  align with R1..R4).
+  * `indicateur_r5_deperissement(units, fordead_results,
+    weights = FORDEAD_CONFIDENCE_WEIGHTS, min_resineux = 0.3,
+    include_low_classes = FALSE, resineux_col = NULL)` —
+    returns the input `units` augmented with an `R5` column
+    (numeric, 0-100, NA when skipped) and an `r5_status`
+    column (`"calculated"`, `"skipped_no_resineux"`,
+    `"skipped_no_fordead"`).
+  * Per-UGF logic: skip with `skipped_no_resineux` when the
+    spruce + fir share is below `min_resineux` (binary 0/1
+    when derived from a dominant-species column, or any
+    fraction in `[0, 1]` when the caller passes
+    `resineux_col`). Skip with `skipped_no_fordead` when no
+    FORDEAD results are provided. Otherwise the score is the
+    weighted cluster-area / unit-area ratio, capped at 1 and
+    multiplied by 100.
+  * Defaults to keeping only classes `3-forte` and `4-sol-nu`
+    (G1 from the ONF/DSF 2024 report — classes 1-faible /
+    2-moyenne carry 50% / 33% false-positive rates). Set
+    `include_low_classes = TRUE` to include them, weighted
+    by `FORDEAD_CONFIDENCE_WEIGHTS`.
+
+* **`R/indicator-config.R`** — `INDICATOR_FAMILIES$R` extended
+  from 4 to 5 indicators (`R1..R5`) with bilingual labels and
+  tooltips. `create_family_index()` picks `R5` up automatically
+  through its existing `^R[0-9]` regex; no change needed in
+  `R/family-system.R`. The R family score (`famille_risque`)
+  stays finite when R5 is NA — R1..R4 carry the average in that
+  case.
+
+* **Tests** — 18 new offline tests in
+  `tests/testthat/test-indicators-deperissement.R`. Total
+  suite: 5988 PASS / 0 FAIL. **The cœur side of the v0.21.0
+  release is now complete** (E6.c.1/.2/.3/.4 + E6.d) — only
+  the app side (E6.b phases 2-6, E6.c.5 in `nemetonshiny`)
+  and the end-to-end smoke (E6.f) remain.
+
 # nemeton 0.20.1.9003 (development)
 
 ### Added — E6.c.4 (FORDEAD QField terrain validation, towards v0.21.0)

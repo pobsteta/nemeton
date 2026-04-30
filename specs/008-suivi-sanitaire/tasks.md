@@ -132,28 +132,22 @@ Branche : `feat/008-r5-deperissement`
 
 ### 4.1 Calcul
 
-- [ ] T6d.1 Créer `R/indicators-deperissement.R` avec roxygen header
-- [ ] T6d.2 `indicateur_r5_deperissement(units, fordead_results, weights = FORDEAD_CONFIDENCE_WEIGHTS, min_resineux = 0.3, include_low_classes = FALSE)`
-- [ ] T6d.3 Validation : `units` est sf, `fordead_results$alerts_sf` ou raster `state` doit être présent
-- [ ] T6d.4 Pour chaque UGF : check_fordead_validity (espèces seulement, géo déjà filtré en amont) ; si invalide → R5 = NA
-- [ ] T6d.5 Pour chaque UGF valide : intersection avec les clusters d'anomalie (par classe), somme pondérée des surfaces, divisé par surface UGF, plafonné à 1
-- [ ] T6d.6 Retour : sf identique à `units` avec colonnes `r5_deperissement` (numeric) et `r5_status` (`"calculated" | "skipped_no_resineux" | "skipped_no_fordead"`)
-- [ ] T6d.7 Doc roxygen + exemple
+- [x] T6d.1 Créer `R/indicators-deperissement.R` avec roxygen header
+- [x] T6d.2 `indicateur_r5_deperissement(units, fordead_results = NULL, weights = FORDEAD_CONFIDENCE_WEIGHTS, min_resineux = 0.3, include_low_classes = FALSE, resineux_col = NULL)` — argument supplémentaire `resineux_col` pour brancher une fraction résineux pré-calculée (sinon dérivée du dominant species via `.is_epicea` / `.is_sapin_pectine`).
+- [x] T6d.3 Validation : `units` est sf (sinon abort typé) ; `fordead_results$alerts_sf` doit avoir les colonnes `confidence_class` + `area_m2` (sinon abort typé). `fordead_results = NULL` ou `alerts_sf` vide → R5 = NA partout (status `skipped_no_fordead`).
+- [x] T6d.4 Per-UGF : helper `.resolve_resineux_share(units_m, resineux_col)` produit une fraction résineux par UGF (1/0 binaire si dérivée du dominant species, ou la valeur clampée [0,1] si `resineux_col` est fourni). `< min_resineux` → R5 = NA, status `skipped_no_resineux`.
+- [x] T6d.5 Per-UGF valide : intersection POINT-in-polygon entre les centroïdes de clusters et l'UGF, somme pondérée `weights[class] × area_m2`, divisé par surface UGF (Lambert-93), plafonné à 1, rescalé en 0-100 pour cohérence radar (R1..R4 sont déjà en 0-100).
+- [x] T6d.6 Retour : sf identique à `units` avec deux colonnes ajoutées — `R5` (numeric 0-100, NA si skip — convention `R[0-9]` reprise des 4 autres indicateurs de la famille R) et `r5_status` (character ∈ `{"calculated", "skipped_no_resineux", "skipped_no_fordead"}`).
+- [x] T6d.7 Doc roxygen complète : `@param`, `@return`, justification G1 (exclusion 1-faible/2-moyenne par défaut), pointeur vers `FORDEAD_CONFIDENCE_WEIGHTS`.
 
 ### 4.2 Intégration radar
 
-- [ ] T6d.8 Mettre à jour `R/family-system.R::compute_family_index(family = "R", ...)` : si la colonne `r5_deperissement` existe et n'est pas tout NA, l'inclure dans la moyenne R1..R5 ; sinon R1..R4
-- [ ] T6d.9 [P] Vérifier que `compute_general_index_mixed()` (NDP augmenté) propage le flag `health_fordead`
+- [x] T6d.8 `INDICATOR_FAMILIES$R` étendu à 5 indicateurs (`R1..R5`) avec `column_names`, `indicator_labels` (FR/EN) et `indicator_tooltips` (FR/EN). `create_family_index()` détecte automatiquement `R5` via la regex `^R[0-9]` existante — pas de changement à `R/family-system.R` nécessaire. Validé dans le test : la colonne `famille_risque` reflète bien R1..R5 quand R5 est présent, et reste finie quand R5 est NA.
+- [x] T6d.9 [P] `normalize_indicator()` n'a pas besoin de switch case dédié pour `R5` : la valeur est déjà en 0-100 et le default `pmin(100, pmax(0, values))` la conserve telle quelle, comme R1..R4.
 
 ### 4.3 Tests
 
-- [ ] T6d.10 `tests/testthat/test-indicators-deperissement.R` : 18-20 assertions
-  - cas vide (pas de fordead_results) → R5 = NA partout
-  - cas mono-classe (100% classe 3-forte couvrant 50% de l'UGF) → R5 = 0.41
-  - cas multi-classes
-  - UGF avec < 30% résineux → R5 = NA, status = `skipped_no_resineux`
-  - inclusion des classes 1-2 via `include_low_classes = TRUE`
-  - plafonnement (ne dépasse jamais 1.0)
+- [x] T6d.10 `tests/testthat/test-indicators-deperissement.R` — 18 tests : cas vide → NA partout, mono-classe 50% × 3-forte → R5 = 41 (0.82 × 0.5 × 100), multi-classes additif (3-forte + 4-sol-nu), Quercus → skipped_no_resineux, classes 1-faible/2-moyenne ignorées par défaut (G1), `include_low_classes = TRUE` les rajoute, plafonnement à 100, clusters hors UGF ne contribuent pas, `resineux_col` custom (override + clamp [0,1]), `min_resineux` honoré, `weights` custom, sf vide retourne sf vide avec colonnes, erreur typée sur non-sf, erreur typée sur `alerts_sf` mal formé, intégration radar via `create_family_index(family_codes = "R")` (R5 picked up + NA non poison la moyenne quand R1..R4 sont là).
 
 ---
 
