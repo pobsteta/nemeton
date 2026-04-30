@@ -163,39 +163,24 @@ Branche : `feat/008-health-validation`
 
 ### 5.1 Schéma de saisie
 
-- [ ] T6c4.1 Créer `R/health_validation.R` avec roxygen header
-- [ ] T6c4.2 `get_health_validation_schema(region = "FR", lang = "fr")` retourne une liste de champs avec types/contraintes :
-  - `stade_deperissement` : ValueMap = ["Sain", "Sain_scolyte_vert_indif", "Scolyte_vert", "Scolyte_rouge", "Scolyte_gris", "Scolyte_rouge_gris_indif", "Coupe_rase"]
-  - `cause` : ValueMap libre (Scolyte / Sécheresse / Casse_cime / Coupe / Chablis / Phénologie / Autre)
-  - `taux_couvert` : Range [0, 100], unité %
-  - `essence_dominante` : ValueMap depuis `list_species_classes("FR")`
-  - `commentaires` : TextEdit multi-line
-  - `photo_houppier` : ExternalResource (image)
-  - `obs_date` : DateTime (default = now)
-  - `obs_by` : TextEdit (auto-rempli par OAuth si dispo)
-- [ ] T6c4.3 Cohérence avec `get_placette_schema()` existant : mêmes types de champs, mêmes conventions de naming
-- [ ] T6c4.4 Tests `tests/testthat/test-health-validation-schema.R` (8-10 tests)
+- [x] T6c4.1 Créer `R/health_validation.R` avec roxygen header
+- [x] T6c4.2 `get_health_validation_schema(region = "BFC", lang = "fr")` retourne 11 champs `.field()` (réutilise le constructeur de `R/field_schema.R`) : `plot_id` (required), `alert_id`, `confidence_class`, `stade_deperissement` (required, ValueMap = `HEALTH_VALIDATION_STADES`), `cause` (ValueMap = `HEALTH_VALIDATION_CAUSES`), `taux_couvert` (Range [0, 100]), `essence_dominante` (ValueMap depuis `list_species_classes`, fallback texte si config manquante), `commentaires` (TextEdit), `photo_houppier` (ExternalResource), `obs_date` (DateTime), `obs_by` (TextEdit). Constantes `HEALTH_VALIDATION_STADES` et `HEALTH_VALIDATION_CAUSES` exportées.
+- [x] T6c4.3 Cohérence avec `get_placette_schema()` : mêmes widgets QGIS (`TextEdit`, `Range`, `DateTime`, `ValueMap`, `ExternalResource`), même structure de retour `.field()`, mêmes conventions snake_case NMT (sans accent).
+- [x] T6c4.4 Tests `tests/testthat/test-health-validation-schema.R` — 10 tests : présence des champs, vocabulaire DSF, bornes, fallback `essence_dominante`, mapping stade→status incluant la règle `coupe_rase` × `confidence_class`.
 
 ### 5.2 Génération de placettes de vérification
 
-- [ ] T6c4.5 `generate_health_validation_plots(alerts_sf, n = 30, method = "grts", crs = 2154)` : échantillonnage GRTS sur les centroïdes des clusters d'alertes (réutilise `R/sampling_plan.R`)
-- [ ] T6c4.6 Stratification par `confidence_class` si possible (au moins 1 placette par classe représentée)
-- [ ] T6c4.7 Retour : sf POINT EPSG:2154 avec `plot_id`, `confidence_class`, `stress_index`, `trigger_date`, `geometry`
-- [ ] T6c4.8 Tests `tests/testthat/test-generate-health-validation-plots.R` (6-8 tests)
+- [x] T6c4.5 `generate_health_validation_plots(alerts_sf, n = 30, method = c("grts", "random"), crs = 2154)` : échantillonnage stratifié par `confidence_class`. GRTS via `spsurvey::grts()` quand le package est disponible (helper repris de `R/sampling_plan.R`), repli silencieux sur tirage aléatoire intra-strate sinon. Allocation par strate : `.allocate_health_strata()` (au moins 1 placette par classe présente, reste réparti à la plus grande fraction restante avec capping par capacité de strate).
+- [x] T6c4.6 Stratification par `confidence_class` : couvre toutes les classes représentées dans l'input ; si `n < k_classes`, on garde les `n` plus grandes strates.
+- [x] T6c4.7 Retour : sf POINT EPSG:2154 (configurable) avec `plot_id` (`HV-0001`...), `alert_id`, `confidence_class`, `stress_index`, `trigger_date`, `sampling_method` (`grts` ou `random`), plus colonnes éditables pré-allouées en NA typés (`stade_deperissement`, `cause`, `taux_couvert`, `essence_dominante`, `commentaires`, `photo_houppier`, `obs_date`, `obs_by`).
+- [x] T6c4.8 Tests `tests/testthat/test-generate-health-validation-plots.R` — 11 tests : allocation par strate (`>=1` partout, capping, cas `n < k`), nombre exact de plots tirés, reprojection, couverture des classes, NA typés, fallback GRTS→random via `local_mocked_bindings(requireNamespace)`, sf vide, colonne manquante, erreurs typées.
 
 ### 5.3 Ingestion de la validation
 
-- [ ] T6c4.9 `ingest_health_validation(con, gpkg_path, zone_id, snap_distance_m = 50, validated_by = NULL)` :
-  - lit le GPKG (couche `placettes` avec champs sanitaires)
-  - pour chaque placette saisie, trouve l'alerte la plus proche dans `zone_id` (distance ≤ `snap_distance_m`)
-  - mappe `stade_deperissement` → `validation_status` :
-    - "Sain" → `false_positive` (cause = "sain_terrain")
-    - "Coupe_rase" → `confirmed` ou `false_positive` selon la classe initiale (4-sol-nu = confirmed cohérent ; 3-forte = confirmed mécanique ; 1-2 = false_positive)
-    - autres → `confirmed`
-  - UPDATE alert SET validation_status, validation_cause, validated_by, validated_at WHERE id = ...
-- [ ] T6c4.10 Retour : tibble avec `n_confirmed`, `n_false_positive`, `n_unmatched` (placettes sans alerte proche), détail
-- [ ] T6c4.11 Logging : cli_alert_success par batch
-- [ ] T6c4.12 Test d'intégration `tests/testthat/test-ingest-health-validation.R` (10-12 tests, `with_clean_db`)
+- [x] T6c4.9 `ingest_health_validation(con, gpkg_path, zone_id, snap_distance_m = 50, validated_by = NULL, layer = "placettes")` : lit la couche GPKG, snap par plus-proche-voisin (distance euclidienne en Lambert-93), mappe `stade_deperissement` → `(validation_status, validation_cause)` via le helper privé `.health_stade_to_status()` qui respecte la règle `coupe_rase` × `confidence_class` (1-faible / 2-moyenne → false_positive ; 3-forte / 4-sol-nu → confirmed). UPDATE atomique par alerte. Précédence `validated_by` : argument > champ `obs_by` du GPKG > `Sys.info()`. La cause libre du terrain (champ `cause`) écrase la cause auto-mappée si elle est non-vide.
+- [x] T6c4.10 Retour : `list(n_updated, n_confirmed, n_false_positive, n_unmatched, n_skipped, details)`. `details` est un data.frame avec une ligne par placette traitée (`plot_id`, `alert_id`, `distance_m`, `stade`, `status`, `cause`, `reason ∈ {ok, no_alert_within_snap, missing_stade}`).
+- [x] T6c4.11 Logging : `cli::cli_alert_success` post-batch avec compteurs et pluralisation.
+- [x] T6c4.12 Test d'intégration `tests/testthat/test-ingest-health-validation.R` — 10 tests via `with_clean_db` : sain → false_positive, scolyte → confirmed/scolyte_terrain, coupe_rase × classe, snap distance, plots sans stade (skipped), précédence `validated_by`, cause libre du terrain, zone sans alertes, GPKG manquant, colonne `stade_deperissement` manquante, structure de `details`.
 
 ---
 

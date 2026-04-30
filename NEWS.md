@@ -1,3 +1,54 @@
+# nemeton 0.20.1.9003 (development)
+
+### Added — E6.c.4 (FORDEAD QField terrain validation, towards v0.21.0)
+
+* **`R/health_validation.R`** — guard-rail G4 of spec 008 (the
+  ONF/DSF report mandates a terrain validation step). Three
+  exported functions plus two exported vocabularies:
+  * `HEALTH_VALIDATION_STADES` — 7 DSF-aligned dieback stage
+    codes (`sain`, `sain_scolyte_vert_indif`, `scolyte_vert`,
+    `scolyte_rouge`, `scolyte_gris`,
+    `scolyte_rouge_gris_indif`, `coupe_rase`).
+  * `HEALTH_VALIDATION_CAUSES` — 7 free-form cause suggestions
+    rendered as a value-map in the QField form.
+  * `get_health_validation_schema(region, lang)` — 11
+    `.field()` descriptors compatible with
+    `create_qfield_project()`. The `essence_dominante`
+    domain comes from `list_species_classes()` and falls
+    back to free text when the region is unknown.
+  * `generate_health_validation_plots(alerts_sf, n, method, crs)`
+    — stratified draw on `confidence_class`. Uses
+    `spsurvey::grts()` when available, falls back to per-stratum
+    random sampling otherwise (the `sampling_method` column of
+    the result tracks which path ran). Internal
+    `.allocate_health_strata()` distributes the budget with a
+    largest-remainder method while guaranteeing at least one
+    plot per present class. Output ready for QField export
+    (typed-NA editable columns).
+  * `ingest_health_validation(con, gpkg_path, zone_id,
+    snap_distance_m, validated_by, layer)` — reads the GPKG
+    placette layer, snaps each plot to the nearest alert in
+    Lambert-93 (default 50 m), and translates
+    `stade_deperissement` to `validation_status` /
+    `validation_cause` via the internal `.health_stade_to_status()`
+    helper. The `coupe_rase` rule is class-dependent
+    (1-faible / 2-moyenne → `false_positive`; 3-forte /
+    4-sol-nu → `confirmed`). `validated_by` precedence: arg >
+    `obs_by` field > `Sys.info()`. The field's free-form `cause`
+    column overrides the auto-mapped cause when present.
+    Returns `list(n_updated, n_confirmed, n_false_positive,
+    n_unmatched, n_skipped, details)` where `details` is a
+    data.frame tracing each plot.
+
+* **Tests** — 31 new tests
+  (`test-health-validation-schema.R` 10,
+  `test-generate-health-validation-plots.R` 11 with a
+  `local_mocked_bindings(requireNamespace)` to exercise the
+  GRTS-fallback path,
+  `test-ingest-health-validation.R` 10 TimescaleDB integration
+  tests through `with_clean_db`). Total suite:
+  **5957 PASS / 0 FAIL**.
+
 # nemeton 0.20.1.9002 (development)
 
 ### Added — E6.c.3 (FORDEAD validity zones, towards v0.21.0)
