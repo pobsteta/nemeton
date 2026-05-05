@@ -271,6 +271,146 @@ test_that("ingest_sentinel2_timeseries skips scenes that fail extraction", {
   })
 })
 
+test_that("ingest_sentinel2_timeseries emits progress callbacks across phases", {
+  skip_if_no_timescaledb()
+  with_clean_db(function(con) {
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(
+      plot_id  = c("P01", "P02"),
+      geometry = sf::st_sfc(
+        sf::st_point(c(4.5, 47.5)),
+        sf::st_point(c(4.6, 47.6)),
+        crs = 4326))
+    zid <- register_monitoring_zone(con, "Zcb", pol, placettes)
+
+    scenes <- fake_scenes(
+      dates = as.Date(c("2025-06-10", "2025-06-25")),
+      cloud = c(5, 8))
+
+    fake_obs <- function(scene, plots, bands) {
+      data.frame(
+        plot_id   = plots$id,
+        obs_date  = scene$obs_date,
+        band      = "NDVI",
+        value     = rep(0.7, nrow(plots)),
+        cloud_pct = scene$cloud_pct,
+        source    = scene$source,
+        scene_id  = scene$scene_id,
+        stringsAsFactors = FALSE
+      )
+    }
+
+    testthat::local_mocked_bindings(
+      stac_search_s2     = function(...) scenes,
+      .extract_scene_obs = fake_obs
+    )
+
+    seen <- list()
+    out <- ingest_sentinel2_timeseries(
+      con, zid, "2025-06-01", "2025-07-01",
+      bands = "NDVI",
+      progress_callback = function(p) {
+        seen[[length(seen) + 1L]] <<- p
+      }
+    )
+    expect_equal(out$n_obs_inserted, 4L)
+
+    phases <- vapply(seen, function(p) p$current, character(1))
+    # Expected order: search → search_done → scene(×2) → complete.
+    expect_identical(
+      phases,
+      c("s2:search", "s2:search_done", "s2:scene", "s2:scene", "s2:complete")
+    )
+
+    search <- seen[[1]]
+    expect_equal(search$n_plots, 2L)
+    expect_equal(search$bands, "NDVI")
+
+    search_done <- seen[[2]]
+    expect_equal(search_done$total, 2L)
+
+    scene_evt <- seen[[3]]
+    expect_equal(scene_evt$completed, 0L)
+    expect_equal(scene_evt$total, 2L)
+    expect_true(nzchar(scene_evt$scene_id))
+    expect_s3_class(scene_evt$obs_date, "Date")
+    expect_true(is.numeric(scene_evt$cloud_pct))
+
+    done <- seen[[length(seen)]]
+    expect_equal(done$completed, 2L)
+    expect_equal(done$total, 2L)
+    expect_equal(done$n_obs_inserted, 4L)
+  })
+})
+
+test_that("ingest_sentinel2_timeseries reports skipped scenes via callback", {
+  skip_if_no_timescaledb()
+  with_clean_db(function(con) {
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(
+      plot_id  = "P01",
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
+    zid <- register_monitoring_zone(con, "Zcb_skip", pol, placettes)
+
+    scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
+    testthat::local_mocked_bindings(
+      stac_search_s2     = function(...) scenes,
+      .extract_scene_obs = function(...) stop("fake extraction failure")
+    )
+
+    seen <- list()
+    expect_warning(
+      ingest_sentinel2_timeseries(
+        con, zid, "2025-06-01", "2025-07-01",
+        bands = "NDVI",
+        progress_callback = function(p) {
+          seen[[length(seen) + 1L]] <<- p
+        }
+      ),
+      "skipped"
+    )
+
+    skipped <- Filter(function(p) identical(p$current, "s2:scene_skipped"), seen)
+    expect_length(skipped, 1L)
+    expect_match(skipped[[1]]$error_message, "fake extraction failure")
+    expect_equal(skipped[[1]]$total, 1L)
+  })
+})
+
+test_that("ingest_sentinel2_timeseries emits search_done when STAC silent", {
+  skip_if_no_timescaledb()
+  with_clean_db(function(con) {
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(
+      plot_id  = "P01",
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
+    zid <- register_monitoring_zone(con, "Zcb_empty", pol, placettes)
+
+    testthat::local_mocked_bindings(
+      stac_search_s2 = function(...) nemeton:::.empty_scene_tibble()
+    )
+
+    seen <- list()
+    out <- ingest_sentinel2_timeseries(
+      con, zid, "2025-06-01", "2025-06-30",
+      progress_callback = function(p) {
+        seen[[length(seen) + 1L]] <<- p
+      }
+    )
+    expect_equal(out$n_scenes, 0L)
+
+    phases <- vapply(seen, function(p) p$current, character(1))
+    expect_identical(phases, c("s2:search", "s2:search_done"))
+    expect_equal(seen[[2]]$total, 0L)
+  })
+})
+
 
 # ---- internal helpers ------------------------------------------------
 

@@ -10,19 +10,42 @@ ingest_sentinel2_timeseries(
   start,
   end,
   bands = c("NDVI", "NBR"),
-  max_cloud = 20
+  max_cloud = 20,
+  progress_callback = NULL
 )
 }
 \arguments{
-\item{con}{A `DBIConnection`.}
+\item{con}{A \code{DBIConnection}.}
 
-\item{zone_id}{Integer. Existing zone in `monitoring_zone`.}
+\item{zone_id}{Integer. Existing zone in \code{monitoring_zone}.}
 
-\item{start, end}{Date or character `"YYYY-MM-DD"`.}
+\item{start, end}{Date or character \code{"YYYY-MM-DD"}.}
 
-\item{bands}{Character vector. Subset of `c("NDVI", "NBR")`.}
+\item{bands}{Character vector. Subset of \code{c("NDVI", "NBR")}.}
 
-\item{max_cloud}{Numeric. Maximum scene cloud cover (%). Default 20.}
+\item{max_cloud}{Numeric. Maximum scene cloud cover (\%). Default 20.}
+
+\item{progress_callback}{Optional function called at each step of
+the ingestion to allow callers (e.g. \code{nemetonshiny}) to report
+download progress to the user. Receives a single named list
+argument with at least \code{current} (a short phase key, see below)
+and, when meaningful, \code{completed} and \code{total} (numeric units).
+Phases emitted, in order:
+\describe{
+  \item{\code{s2:search}}{Before the STAC query — payload includes
+    \code{start}, \code{end}, \code{n_plots}, \code{bands}.}
+  \item{\code{s2:search_done}}{After STAC — payload includes
+    \code{total} (number of scenes found) and \code{bands}.}
+  \item{\code{s2:scene}}{Before processing each scene — payload
+    includes \code{completed = i - 1L}, \code{total}, plus
+    \code{scene_id}, \code{obs_date}, \code{cloud_pct}, \code{source}.}
+  \item{\code{s2:scene_skipped}}{When a scene fails extraction —
+    payload adds \code{error_message} to the \code{s2:scene} shape.}
+  \item{\code{s2:complete}}{After the loop — payload includes
+    \code{completed = total}, \code{total}, \code{n_obs_inserted}.}
+}
+The callback is invoked synchronously inside the calling thread.
+Default \code{NULL} (silent — no callback emitted).}
 }
 \value{
 A tibble summarising the ingestion: number of scenes
@@ -31,7 +54,7 @@ A tibble summarising the ingestion: number of scenes
 \description{
 Searches Sentinel-2 L2A scenes (CDSE then PC fallback), computes
 NDVI and/or NBR per scene, extracts the mean per plot over a
-circular buffer (`exactextractr::exact_extract`), and inserts the
-results into `obs_pixel` (idempotent on
-`(plot_id, obs_date, band)`).
+circular buffer (\code{exactextractr::exact_extract}), and inserts
+the results into \code{obs_pixel} (idempotent on
+\code{(plot_id, obs_date, band)}).
 }

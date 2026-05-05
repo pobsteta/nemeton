@@ -89,6 +89,27 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param start,end Date or character `"YYYY-MM-DD"`.
 #' @param bands Character vector. Subset of `c("NDVI", "NBR")`.
 #' @param max_cloud Numeric. Maximum scene cloud cover (%). Default 20.
+#' @param progress_callback Optional function called at each step of
+#'   the ingestion to allow callers (e.g. `nemetonshiny`) to report
+#'   download progress to the user. Receives a single named list
+#'   argument with at least `current` (a short phase key, see below)
+#'   and, when meaningful, `completed` and `total` (numeric units).
+#'   Phases emitted, in order:
+#'   \describe{
+#'     \item{`s2:search`}{Before the STAC query — payload includes
+#'       `start`, `end`, `n_plots`, `bands`.}
+#'     \item{`s2:search_done`}{After STAC — payload includes `total`
+#'       (number of scenes found) and `bands`.}
+#'     \item{`s2:scene`}{Before processing each scene — payload
+#'       includes `completed = i - 1L`, `total`, plus `scene_id`,
+#'       `obs_date`, `cloud_pct`, `source`.}
+#'     \item{`s2:scene_skipped`}{When a scene fails extraction —
+#'       payload adds `error_message` to the `s2:scene` shape.}
+#'     \item{`s2:complete`}{After the loop — payload includes
+#'       `completed = total`, `total`, `n_obs_inserted`.}
+#'   }
+#'   The callback is invoked synchronously inside the calling thread.
+#'   Default `NULL` (silent — no callback emitted).
 #'
 #' @return A tibble summarising the ingestion: number of scenes
 #'   considered, number of observations inserted, bands ingested.
@@ -97,7 +118,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 ingest_sentinel2_timeseries <- function(con, zone_id,
                                         start, end,
                                         bands = c("NDVI", "NBR"),
-                                        max_cloud = 20) {
+                                        max_cloud = 20,
+                                        progress_callback = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -107,26 +129,61 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   }
   bands <- match.arg(bands, c("NDVI", "NBR"), several.ok = TRUE)
 
+  # Local emitter — no-op when no callback is set, keeps the body free
+  # of `if (!is.null(progress_callback))` boilerplate.
+  emit <- function(payload) {
+    if (!is.null(progress_callback)) progress_callback(payload)
+  }
+
   plots <- .fetch_plots_sf(con, zone_id)
   if (!nrow(plots)) {
     cli::cli_warn("No plots registered for zone_id {.val {zone_id}}. Use {.fn register_monitoring_zone} first.")
     return(.empty_ingest_summary())
   }
 
+  emit(list(current = "s2:search",
+            start   = as.character(start),
+            end     = as.character(end),
+            n_plots = nrow(plots),
+            bands   = bands))
+
   bbox <- sf::st_as_sfc(sf::st_bbox(plots))
   scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
   if (!nrow(scenes)) {
     cli::cli_alert_info("No Sentinel-2 scene found for zone_id {zone_id} between {start} and {end} (max_cloud = {max_cloud}%).")
+    emit(list(current = "s2:search_done",
+              total   = 0L,
+              bands   = bands))
     return(.empty_ingest_summary())
   }
 
+  total_scenes <- nrow(scenes)
+  emit(list(current = "s2:search_done",
+            total   = total_scenes,
+            bands   = bands))
+
   total_inserted <- 0L
-  for (i in seq_len(nrow(scenes))) {
+  for (i in seq_len(total_scenes)) {
     sc <- scenes[i, , drop = FALSE]
+    emit(list(current   = "s2:scene",
+              completed = as.integer(i - 1L),
+              total     = as.integer(total_scenes),
+              scene_id  = sc$scene_id,
+              obs_date  = sc$obs_date,
+              cloud_pct = sc$cloud_pct,
+              source    = sc$source))
     obs <- tryCatch(
       .extract_scene_obs(sc, plots, bands),
       error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
+        emit(list(current       = "s2:scene_skipped",
+                  completed     = as.integer(i - 1L),
+                  total         = as.integer(total_scenes),
+                  scene_id      = sc$scene_id,
+                  obs_date      = sc$obs_date,
+                  cloud_pct     = sc$cloud_pct,
+                  source        = sc$source,
+                  error_message = conditionMessage(e)))
         NULL
       }
     )
@@ -135,8 +192,13 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
     total_inserted <- total_inserted + inserted
   }
 
+  emit(list(current        = "s2:complete",
+            completed      = as.integer(total_scenes),
+            total          = as.integer(total_scenes),
+            n_obs_inserted = as.integer(total_inserted)))
+
   data.frame(
-    n_scenes        = nrow(scenes),
+    n_scenes        = total_scenes,
     n_obs_inserted  = total_inserted,
     n_plots         = nrow(plots),
     bands           = paste(bands, collapse = "+"),

@@ -1,3 +1,27 @@
+# nemeton 0.20.1.9007 (development)
+
+### Added — `ingest_sentinel2_timeseries()` progress callback
+
+`ingest_sentinel2_timeseries()` now accepts an optional
+`progress_callback` argument so long-running scene downloads can be
+streamed back to the UI (typically `nemetonshiny`'s `mod_monitoring`
+in E6.b). The contract follows the same shape as the indicator /
+download callbacks already used in `nemetonshiny/service_compute.R`:
+the callback receives a single named list with a `current` phase
+key plus context fields. Phases emitted, in order:
+
+* `s2:search` — before the STAC query (`start`, `end`, `n_plots`,
+  `bands`).
+* `s2:search_done` — after STAC (`total` = number of scenes).
+* `s2:scene` — before each scene (`completed`, `total`, `scene_id`,
+  `obs_date`, `cloud_pct`, `source`).
+* `s2:scene_skipped` — when a scene fails extraction (adds
+  `error_message`).
+* `s2:complete` — at the end (`completed = total`, `n_obs_inserted`).
+
+The argument defaults to `NULL` (silent), so existing callers are
+unaffected.
+
 # nemeton 0.20.1.9006 (development)
 
 ### Infra — DB stack now embeds PostGIS by default
