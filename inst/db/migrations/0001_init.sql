@@ -2,8 +2,13 @@
 --
 -- Idempotent: safe to re-run. db_migrate() also tracks applied versions
 -- in schema_migration so this would normally only execute once.
+--
+-- Extensions activées dès l'init : timescaledb (hypertables, spec 007)
+-- + postgis (géométries projetées, ADR-002). pgvector sera ajouté par
+-- une migration ultérieure (E7 RAG, ADR-012).
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- -----------------------------------------------------------------------
 -- Migration tracking

@@ -1,3 +1,29 @@
+# nemeton 0.20.1.9006 (development)
+
+### Infra — DB stack now embeds PostGIS by default
+
+The `docker-compose.yml` reference deployment switched from
+`timescale/timescaledb:latest-pg16` (Alpine, TimescaleDB only) to
+`timescale/timescaledb-ha:pg16` (Debian, ships TimescaleDB + PostGIS
++ pgvector) so the cœur and downstream `nemetonshiny` no longer need
+a separate spatial extension setup. Migration `0001_init.sql` now
+activates `postgis` alongside `timescaledb`, so a fresh
+`db_migrate()` run leaves the DB ready for both hypertables and
+spatial geometries.
+
+* The `-ha` image uses `/home/postgres/pgdata` as `PGDATA` (vs
+  `/var/lib/postgresql/data` for the Alpine image), so existing
+  development volumes must be recreated:
+  ```
+  docker compose down
+  docker volume rm nemeton_pg_data
+  docker compose up -d timescaledb
+  ```
+* Schema columns stay in WKT TEXT for now — the `geometry(Point,
+  2154)` migration plus GiST indexes will land in a later cycle when
+  data volume justifies pushing snap-to-plot and `ST_DWithin`
+  filtering down to SQL.
+
 # nemeton 0.20.1.9005 (development)
 
 ### Renamed — QGIS / QField terminology cleanup

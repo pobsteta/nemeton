@@ -1,8 +1,9 @@
 # docker-compose — services persistants nemeton
 #
-# Pour l'instant : TimescaleDB uniquement (E6 monitoring, spec 007).
-# pgvector (E7 RAG, ADR-012) s'ajoutera plus tard via extension dans la
-# même image.
+# Image `timescale/timescaledb-ha:pg16` : PostgreSQL 16 + TimescaleDB
+# + PostGIS + pgvector activables en CREATE EXTENSION (cf. spec 007 /
+# E6 monitoring, ADR-002, ADR-012). Les extensions sont créées par les
+# migrations SQL bundle (`inst/db/migrations/`).
 #
 # Usage :
 #   cp .env.example .env   # éditer POSTGRES_PASSWORD
@@ -12,10 +13,16 @@
 #   Sys.setenv(NEMETON_DB_URL = "postgresql://nemeton:<pwd>@127.0.0.1:5432/nemeton")
 #   con <- nemeton::db_connect()
 #   nemeton::db_migrate(con)
+#
+# Migration depuis l'image `timescaledb:latest-pg16` (avant v0.20.2) :
+# le chemin PGDATA diffère, le volume doit être recréé.
+#   docker compose down
+#   docker volume rm nemeton_pg_data
+#   docker compose up -d timescaledb
 
 services:
   timescaledb:
-    image: timescale/timescaledb:latest-pg16
+    image: timescale/timescaledb-ha:pg16
     container_name: nemeton_timescaledb
     restart: unless-stopped
     environment:
@@ -27,7 +34,9 @@ services:
       # Bind localhost only — la DB ne doit pas être exposée au réseau public.
       - "127.0.0.1:5432:5432"
     volumes:
-      - nemeton_pg_data:/var/lib/postgresql/data
+      # L'image -ha utilise /home/postgres/pgdata comme PGDATA (vs
+      # /var/lib/postgresql/data sur l'image Alpine de base).
+      - nemeton_pg_data:/home/postgres/pgdata
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nemeton} -d ${POSTGRES_DB:-nemeton}"]
       interval: 10s
