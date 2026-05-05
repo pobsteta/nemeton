@@ -214,9 +214,18 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
       httr2::req_url_query(href = url) |>
       httr2::req_timeout(20) |>
       httr2::req_perform(),
-    error = function(e) NULL
+    error = function(e) {
+      # Surface the failure so callers can tell the URL is unsigned (and
+      # Azure will return 409). Silent fallback used to mask rate-limit
+      # / auth / network errors and made debugging the 409 wave painful.
+      cli::cli_warn("PC sign failed: {conditionMessage(e)}")
+      NULL
+    }
   )
   if (is.null(resp)) return(url)
-  signed <- tryCatch(httr2::resp_body_json(resp)$href, error = function(e) NULL)
+  signed <- tryCatch(httr2::resp_body_json(resp)$href, error = function(e) {
+    cli::cli_warn("PC sign returned malformed body: {conditionMessage(e)}")
+    NULL
+  })
   if (is.null(signed) || !nzchar(signed)) url else signed
 }
