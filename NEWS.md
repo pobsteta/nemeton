@@ -1,3 +1,17 @@
+# nemeton 0.20.1.9008 (development)
+
+### Diagnostic — `.pc_sign_url()` no longer swallows failures
+
+The Planetary Computer SAS sign helper used to fall back silently
+to the unsigned URL whenever `httr2::req_perform()` errored or the
+response body could not be parsed. This caused a confusing wave of
+`HTTP 409` errors from `sentinel2l2a01.blob.core.windows.net`
+("file does not exist" via `terra::rast()`) whenever something —
+rate limit, timeout, transient auth — broke the per-href signing
+loop. Two `cli::cli_warn()` calls now surface the underlying cause
+so we can pick the right durable fix (batched token endpoint,
+retry/backoff, …) instead of guessing.
+
 # nemeton 0.20.1.9007 (development)
 
 ### Added — `ingest_sentinel2_timeseries()` progress callback
