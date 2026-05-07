@@ -82,3 +82,101 @@ test_that("stac_search_s2 rejects end < start", {
     "must be on or after"
   )
 })
+
+
+# ---- .pc_apply_token ---------------------------------------------------
+
+test_that(".pc_apply_token appends a SAS token to bare hrefs", {
+  href  <- "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/X/Y/Z.tif"
+  token <- "se=2026-05-06T13Z&sp=r&sig=abc%3D"
+  out <- nemeton:::.pc_apply_token(href, token)
+  expect_equal(out, paste0(href, "?", token))
+})
+
+test_that(".pc_apply_token accepts a leading '?' in the token", {
+  href  <- "https://example.blob.core.windows.net/c/x.tif"
+  token <- "?se=2026-05-06T13Z&sig=xyz"
+  out <- nemeton:::.pc_apply_token(href, token)
+  expect_equal(out, paste0(href, "?se=2026-05-06T13Z&sig=xyz"))
+})
+
+test_that(".pc_apply_token uses '&' when the href already has a query", {
+  href  <- "https://example.blob.core.windows.net/c/x.tif?cache=1"
+  token <- "se=Z&sig=Q"
+  out <- nemeton:::.pc_apply_token(href, token)
+  expect_equal(out, "https://example.blob.core.windows.net/c/x.tif?cache=1&se=Z&sig=Q")
+})
+
+test_that(".pc_apply_token returns href unchanged on empty token", {
+  href <- "https://example/x.tif"
+  expect_equal(nemeton:::.pc_apply_token(href, NULL),  href)
+  expect_equal(nemeton:::.pc_apply_token(href, ""),    href)
+  expect_equal(nemeton:::.pc_apply_token("",   "sig"), "")
+})
+
+
+# ---- .pc_collection_token ---------------------------------------------
+
+test_that(".pc_collection_token returns a cached token while it is fresh", {
+  # Pre-seed the cache with a far-future expiry.
+  rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+     envir = nemeton:::.pc_token_cache)
+  on.exit(rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+             envir = nemeton:::.pc_token_cache), add = TRUE)
+  assign("sentinel-2-l2a",
+         list(token = "se=cached&sig=AAA",
+              expiry = Sys.time() + 3600),
+         envir = nemeton:::.pc_token_cache)
+  # If the function tried to make an HTTP call, we'd see a real
+  # network attempt; the cached path returns without touching httr2.
+  out <- nemeton:::.pc_collection_token("sentinel-2-l2a")
+  expect_equal(out, "se=cached&sig=AAA")
+})
+
+test_that(".pc_collection_token refreshes when the cached entry has expired", {
+  rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+     envir = nemeton:::.pc_token_cache)
+  on.exit(rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+             envir = nemeton:::.pc_token_cache), add = TRUE)
+  # Cached but expired — must be replaced.
+  assign("sentinel-2-l2a",
+         list(token = "se=stale&sig=OLD",
+              expiry = Sys.time() - 60),
+         envir = nemeton:::.pc_token_cache)
+  fake_resp <- structure(list(), class = "httr2_response")
+  testthat::local_mocked_bindings(
+    request       = function(url) structure(list(url = url), class = "httr2_request"),
+    req_timeout   = function(req, seconds) req,
+    req_perform   = function(req) fake_resp,
+    resp_body_json = function(resp) list(
+      token = "se=fresh&sig=NEW",
+      `msft:expiry` = format(Sys.time() + 1800, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+    ),
+    .package = "httr2"
+  )
+  out <- nemeton:::.pc_collection_token("sentinel-2-l2a")
+  expect_equal(out, "se=fresh&sig=NEW")
+  # Cache must now hold the new value.
+  expect_equal(nemeton:::.pc_token_cache[["sentinel-2-l2a"]]$token,
+               "se=fresh&sig=NEW")
+})
+
+test_that(".pc_collection_token returns NULL on HTTP failure", {
+  rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+     envir = nemeton:::.pc_token_cache)
+  on.exit(rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+             envir = nemeton:::.pc_token_cache), add = TRUE)
+  testthat::local_mocked_bindings(
+    request     = function(url) structure(list(url = url), class = "httr2_request"),
+    req_timeout = function(req, seconds) req,
+    req_perform = function(req) stop("network down"),
+    .package = "httr2"
+  )
+  expect_warning(
+    out <- nemeton:::.pc_collection_token("sentinel-2-l2a"),
+    "PC token fetch failed"
+  )
+  expect_null(out)
+  # And nothing was cached.
+  expect_false("sentinel-2-l2a" %in% ls(nemeton:::.pc_token_cache))
+})

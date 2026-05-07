@@ -1,3 +1,38 @@
+# nemeton 0.20.1.9009 (development)
+
+### Fixed — Planetary Computer SAS signing migrated to batch token endpoint
+
+`stac_search_s2_pc()` used to sign every Sentinel-2 band href
+individually through `/api/sas/v1/sign`. A single STAC search
+typically returns 20-50 scenes × 3 bands (B04, B08, B12), so the
+loop instantly hit Planetary Computer's per-IP rate limit and
+emitted 50+ `PC sign failed: HTTP 429 Too Many Requests` warnings,
+followed by a wave of `GDAL Error 1: HTTP error code : 409` from
+`sentinel2l2a01.blob.core.windows.net` because terra fell back to
+the unsigned URLs.
+
+The signing now uses the documented batch endpoint
+`/api/sas/v1/token/{collection}` instead. One HTTP call returns a
+SAS query string that is valid for the whole collection for ~30
+minutes; we cache it in a per-process env (`.pc_token_cache`,
+keyed by collection) and append it to every href via the new
+helper `.pc_apply_token()`. Subsequent searches in the same R
+session reuse the cached token until 60 s before its `msft:expiry`.
+
+Net effect: a search that previously made 60-150 sign calls and
+got rate-limited now makes a single token call and signs every
+href client-side. The original `.pc_sign_url()` helper is kept
+in the source as a documented single-href fallback but is no
+longer called from the search path.
+
+* New private helpers: `.pc_collection_token(collection,
+  grace_seconds = 60L)` and `.pc_apply_token(href, token)`.
+* New private cache env: `.pc_token_cache` (cleared at session end).
+* 6 new test_thats covering: token append on a bare href,
+  leading-`?` normalisation, append with existing query string,
+  empty-token short-circuit, fresh-cache reuse, expired-cache
+  refresh, network failure → NULL with warning.
+
 # nemeton 0.20.1.9008 (development)
 
 ### Diagnostic — `.pc_sign_url()` no longer swallows failures

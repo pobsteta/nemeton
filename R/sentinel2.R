@@ -139,9 +139,22 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
   features <- httr2::resp_body_json(resp)$features %||% list()
   out <- .features_to_tibble(features, source = "pc")
   if (nrow(out) > 0) {
-    out$href_B04 <- vapply(out$href_B04, .pc_sign_url, character(1))
-    out$href_B08 <- vapply(out$href_B08, .pc_sign_url, character(1))
-    out$href_B12 <- vapply(out$href_B12, .pc_sign_url, character(1))
+    # Batched-token signing: one HTTP call gets a SAS query string for
+    # the whole collection, then we append it to every href. Replaces
+    # the per-href `/api/sas/v1/sign` loop that hit HTTP 429 as soon
+    # as a search returned more than ~10 scenes (each scene = 3 bands).
+    token <- .pc_collection_token("sentinel-2-l2a")
+    if (!is.null(token)) {
+      out$href_B04 <- vapply(out$href_B04, .pc_apply_token,
+                             character(1), token)
+      out$href_B08 <- vapply(out$href_B08, .pc_apply_token,
+                             character(1), token)
+      out$href_B12 <- vapply(out$href_B12, .pc_apply_token,
+                             character(1), token)
+    }
+    # On token failure: hrefs stay unsigned. Azure will return 409;
+    # the user already saw the "PC token fetch failed" warning above
+    # so the cause is visible.
   }
   out
 }
@@ -228,4 +241,91 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
     NULL
   })
   if (is.null(signed) || !nzchar(signed)) url else signed
+}
+
+
+# Per-process cache of SAS tokens, keyed by collection. Each entry is
+# a list(token = "<query string>", expiry = POSIXct). The token is
+# valid for ~30 minutes per Planetary Computer's documented contract.
+.pc_token_cache <- new.env(parent = emptyenv())
+
+
+#' Fetch a SAS token for a Planetary Computer collection
+#'
+#' Calls `/api/sas/v1/token/{collection}` once and caches the result
+#' until ~`grace_seconds` before its documented expiry. Subsequent
+#' calls in the same R session return the cached token without
+#' another round-trip — the previous per-href `/api/sas/v1/sign`
+#' implementation triggered HTTP 429 the moment a STAC search
+#' returned more than a handful of scenes.
+#'
+#' @param collection Character. Planetary Computer collection name
+#'   (e.g. `"sentinel-2-l2a"`).
+#' @param grace_seconds Integer. Refresh the token this many seconds
+#'   before the announced expiry to avoid races at the boundary.
+#' @return Character. The SAS query string (without leading `?`),
+#'   or `NULL` on any failure (network down, 5xx, malformed body).
+#' @noRd
+.pc_collection_token <- function(collection,
+                                 grace_seconds = 60L) {
+  if (!nzchar(collection)) return(NULL)
+  now <- Sys.time()
+  cached <- .pc_token_cache[[collection]]
+  if (!is.null(cached) &&
+      !is.null(cached$expiry) &&
+      as.numeric(cached$expiry - now, units = "secs") > grace_seconds) {
+    return(cached$token)
+  }
+  url <- sprintf(
+    "https://planetarycomputer.microsoft.com/api/sas/v1/token/%s",
+    utils::URLencode(collection, reserved = TRUE)
+  )
+  resp <- tryCatch(
+    httr2::request(url) |>
+      httr2::req_timeout(20) |>
+      httr2::req_perform(),
+    error = function(e) {
+      cli::cli_warn("PC token fetch failed: {conditionMessage(e)}")
+      NULL
+    }
+  )
+  if (is.null(resp)) return(NULL)
+  body <- tryCatch(httr2::resp_body_json(resp), error = function(e) NULL)
+  if (is.null(body) || is.null(body$token) || !nzchar(body$token)) {
+    cli::cli_warn("PC token response malformed (collection {.val {collection}})")
+    return(NULL)
+  }
+  expiry <- tryCatch(
+    as.POSIXct(body$`msft:expiry`,
+               format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    error = function(e) NA
+  )
+  # Default to 25 min if expiry is unparseable — PC tokens last
+  # 30 min, so we retain a 5 min margin even without server hint.
+  if (is.na(expiry) || length(expiry) != 1L) expiry <- now + 25 * 60
+  .pc_token_cache[[collection]] <- list(token = body$token,
+                                        expiry = expiry)
+  body$token
+}
+
+
+#' Append a SAS token to a Planetary Computer href
+#'
+#' The token returned by `/api/sas/v1/token/{collection}` is a
+#' query string of the form `se=...&sp=...&sig=...` (PC docs say it
+#' may or may not start with `?`; we normalise both shapes). When
+#' the href already carries query parameters (rare for Sentinel-2
+#' blob URLs but possible) we append with `&` instead of `?`.
+#'
+#' @param href Character. Blob URL.
+#' @param token Character. SAS query string from
+#'   [.pc_collection_token()].
+#' @return Character. The signed URL, or the original `href`
+#'   unchanged when either argument is empty.
+#' @noRd
+.pc_apply_token <- function(href, token) {
+  if (!nzchar(href) || is.null(token) || !nzchar(token)) return(href)
+  q <- sub("^\\?", "", token)
+  sep <- if (grepl("?", href, fixed = TRUE)) "&" else "?"
+  paste0(href, sep, q)
 }
