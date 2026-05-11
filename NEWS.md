@@ -1,3 +1,60 @@
+# nemeton 0.21.0 (2026-05-11)
+
+### Added — Local DuckDB backend for the monitoring subsystem
+
+The monitoring database (spec 007 / E6) can now run on a local
+DuckDB file instead of PostgreSQL + TimescaleDB + PostGIS. Use
+case : single-user `nemetonshiny` deployments where setting up
+Postgres is overkill.
+
+**Selection by URL scheme.** `db_connect()` inspects the
+connection URL and dispatches to the right driver :
+
+* `postgresql://user:pass@host:port/dbname` →
+  [RPostgres::Postgres()] (unchanged).
+* `duckdb:///absolute/path/to/file.duckdb` →
+  [duckdb::duckdb()]. The parent directory is created
+  automatically.
+
+A bare path ending in `.duckdb` is also accepted for convenience.
+
+**Two migration directories.** `inst/db/migrations/` is now
+split between `pg/` (the existing files — `CREATE EXTENSION
+timescaledb`, `create_hypertable()`, `TIMESTAMPTZ`…) and
+`duckdb/` (same schema, minus the TimescaleDB / PostGIS
+specifics — no hypertable, `GENERATED ALWAYS AS IDENTITY`
+instead of `SERIAL`, `TIMESTAMP` instead of `TIMESTAMPTZ`).
+`db_migrate()` picks the directory matching the connection's
+driver class.
+
+**Portable SQL touches in the monitoring functions.**
+
+* `list_alerts()` no longer uses the PG-only
+  `ANY($n::text[])` cast. Filters now bind one parameter per
+  value and emit a portable `IN ($n, $n+1, …)` clause that
+  works on both backends.
+* `.insert_obs_pixel()` and `.insert_alerts()` branch on the
+  connection class to emit `CREATE TEMP TABLE … ON COMMIT DROP`
+  for Postgres or a `DROP TABLE IF EXISTS` + `CREATE TEMP
+  TABLE` + explicit `DROP TABLE` for DuckDB (which has no
+  `ON COMMIT DROP` clause).
+
+**Suggested dependency.** `duckdb (>= 0.8.0)` is added to
+`Suggests`. The PG path is unaffected by its absence ;
+`db_connect()` only loads `duckdb` when the URL scheme
+selects that backend.
+
+**Removed helper.** `.pg_text_array()` is dropped — it only
+existed to support `ANY($n::text[])` which is no longer used.
+Internal, never exported.
+
+### Changed — `db_migrate()` signature
+
+`migrations_dir` now defaults to `NULL` (was the bundled
+`inst/db/migrations/`). The directory is then picked
+automatically based on the connection's driver. Callers
+passing an explicit path still work unchanged.
+
 # nemeton 0.20.1.9009 (development)
 
 ### Fixed — Planetary Computer SAS signing migrated to batch token endpoint
