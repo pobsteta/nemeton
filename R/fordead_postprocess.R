@@ -62,19 +62,6 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 )
 
 
-# Serialise a character vector as a Postgres text[] literal so it
-# can be bound as a single scalar parameter and cast via $n::text[].
-# RPostgres requires every bind parameter to be length 1 (or all
-# parameters the same length for batch exec), so vector filters like
-# `WHERE x = ANY($n)` cannot pass an R vector directly.
-.pg_text_array <- function(x) {
-  x <- as.character(x)
-  esc <- gsub("\\", "\\\\", x, fixed = TRUE)
-  esc <- gsub('"', '\\"', esc, fixed = TRUE)
-  sprintf("{%s}", paste0('"', esc, '"', collapse = ","))
-}
-
-
 #' Reclassify a raw FORDEAD `state.tif` into the canonical class layer
 #'
 #' Maps integer codes 0–4 onto factor levels in [`FORDEAD_CLASSES`].
@@ -357,18 +344,36 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   staging <- staging[!is.na(staging$trigger_date), , drop = FALSE]
   if (!nrow(staging)) return(0L)
 
+  is_duckdb <- inherits(con, "duckdb_connection")
   inserted <- DBI::dbWithTransaction(con, {
-    DBI::dbExecute(con,
-      "CREATE TEMP TABLE tmp_fordead_alert_staging (
-         plot_id          INTEGER,
-         alert_type       TEXT,
-         trigger_date     DATE,
-         value_before     DOUBLE PRECISION,
-         value_after      DOUBLE PRECISION,
-         delta            DOUBLE PRECISION,
-         confidence_class TEXT,
-         stress_index     DOUBLE PRECISION
-       ) ON COMMIT DROP")
+    if (is_duckdb) {
+      # DuckDB has no `ON COMMIT DROP`; drop any leftover from a
+      # previous failed run, create, use, and drop manually.
+      DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_fordead_alert_staging")
+      DBI::dbExecute(con,
+        "CREATE TEMP TABLE tmp_fordead_alert_staging (
+           plot_id          INTEGER,
+           alert_type       TEXT,
+           trigger_date     DATE,
+           value_before     DOUBLE,
+           value_after      DOUBLE,
+           delta            DOUBLE,
+           confidence_class TEXT,
+           stress_index     DOUBLE
+         )")
+    } else {
+      DBI::dbExecute(con,
+        "CREATE TEMP TABLE tmp_fordead_alert_staging (
+           plot_id          INTEGER,
+           alert_type       TEXT,
+           trigger_date     DATE,
+           value_before     DOUBLE PRECISION,
+           value_after      DOUBLE PRECISION,
+           delta            DOUBLE PRECISION,
+           confidence_class TEXT,
+           stress_index     DOUBLE PRECISION
+         ) ON COMMIT DROP")
+    }
     DBI::dbAppendTable(con, "tmp_fordead_alert_staging", staging)
     n <- DBI::dbExecute(con,
       "INSERT INTO alert (plot_id, alert_type, trigger_date,
@@ -379,6 +384,9 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
               confidence_class, stress_index
          FROM tmp_fordead_alert_staging
        ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING")
+    if (is_duckdb) {
+      DBI::dbExecute(con, "DROP TABLE tmp_fordead_alert_staging")
+    }
     as.integer(n)
   })
   inserted
@@ -489,24 +497,30 @@ list_alerts <- function(con, zone_id,
   where <- c("p.zone_id = $1")
   pars  <- list(as.integer(zone_id))
   i <- 1L
-  add_param <- function(values, as_array = FALSE) {
+  add_param <- function(values) {
     i <<- i + 1L
-    if (as_array) {
-      pars[[length(pars) + 1L]] <<- .pg_text_array(values)
-      return(sprintf("$%d::text[]", i))
-    }
     pars[[length(pars) + 1L]] <<- values
     sprintf("$%d", i)
   }
+  # Generate a portable `IN ($n, $n+1, ...)` clause and append one
+  # parameter per value. Replaces the previous PG-only
+  # `ANY($n::text[])` form which relied on a server-side cast — DuckDB
+  # has no `text[]` type and parameter-binds the array literal as a
+  # scalar string, producing an empty result set instead of erroring.
+  add_in_clause <- function(values) {
+    vals <- as.character(values)
+    placeholders <- vapply(vals, add_param, character(1))
+    sprintf("(%s)", paste(placeholders, collapse = ", "))
+  }
   if (!is.null(classes)) {
     where <- c(where,
-               sprintf("(a.confidence_class IS NULL OR a.confidence_class = ANY(%s))",
-                       add_param(as.character(classes), as_array = TRUE)))
+               sprintf("(a.confidence_class IS NULL OR a.confidence_class IN %s)",
+                       add_in_clause(classes)))
   }
   if (!is.null(validation_status)) {
     where <- c(where,
-               sprintf("a.validation_status = ANY(%s)",
-                       add_param(as.character(validation_status), as_array = TRUE)))
+               sprintf("a.validation_status IN %s",
+                       add_in_clause(validation_status)))
   }
   if (!is.null(period)) {
     if (length(period) != 2L) {
