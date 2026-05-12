@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-05-12
+
+### Fixed
+
+- DuckDB migration `0001_init.sql` rejected by the parser on
+  `GENERATED ALWAYS AS IDENTITY` and `ON DELETE CASCADE`. Replaced
+  with explicit `CREATE SEQUENCE` + `DEFAULT nextval(...)` and
+  dropped the cascade actions from FK clauses. Fixes the
+  "Base de suivi non configurée" error on first launch of
+  `nemetonshiny` with a local DuckDB backend.
+
 ## [0.19.11] - 2026-04-24
 
 ### Changed

@@ -22,9 +22,9 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 # Chantier en cours — Stabilisation post-v0.23.5 / cadrage E7
 
-**État au 2026-05-09** : pas de chantier d'épaississement actif. Working tree propre des deux côtés.
+**État au 2026-05-12** : pas de chantier d'épaississement actif. Working tree propre des deux côtés.
 
-- `nemeton@main = f3050a2` (cycle dev `0.20.1.9009`) — fix structurel batch SAS Sentinel-2 livré, pas de release stable depuis `v0.20.1`. Le cycle dev s'accumule en attendant le prochain trigger métier (probablement E7).
+- `nemeton@main = f3050a2` (cycle dev `0.20.1.9009`) puis release `v0.21.0` (backend DuckDB local, commit `e037df5`) — patch `v0.21.1` le 2026-05-12 sur la branche `claude/fix-duckdb-sql-error-cpXZ7` : migration `0001_init.sql` corrigée (DuckDB rejette `GENERATED ALWAYS AS IDENTITY` et `ON DELETE CASCADE` en parsing — bascule sur `CREATE SEQUENCE` + `nextval()` et suppression des actions en cascade). Débloque le premier lancement de `nemetonshiny` en mode DuckDB local. Smoke-test contre DuckDB 1.5.2 : 5 tables créées + auto-id + FK encore enforced + ré-exécution idempotente.
 - `nemetonshiny@main = 9596e6c` (release `v0.23.5` poussée sur `origin` le 2026-05-09, GitHub release publiée).
 
 **Backlog identifié** :
