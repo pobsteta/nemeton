@@ -207,6 +207,34 @@ NULL
 #'   pixels) to be considered an alert. Default 5.
 #' @param connectivity Integer 4 or 8. Default 8.
 #' @param verbose Logical. Print progress via `cli`. Default `TRUE`.
+#' @param progress_callback Optional function called at each phase of
+#'   the pipeline to allow callers (e.g. `nemetonshiny`) to report
+#'   progress to the user. Receives a single named list argument with
+#'   at least `current` (a short phase key) and, when meaningful,
+#'   `completed` / `total` (number of phases done / scheduled) and
+#'   `phase_name`. Phases emitted, in order:
+#'   \describe{
+#'     \item{`fordead:start`}{Once at the beginning — payload includes
+#'       `total` (number of scheduled phases, 6 without `con`/`zone_id`,
+#'       7 when persistence is requested), `python_env`,
+#'       `fordead_version`.}
+#'     \item{`fordead:phase`}{Before each phase — payload includes
+#'       `phase_name`, `completed = i - 1L`, `total`.}
+#'     \item{`fordead:phase_done`}{After each successful phase —
+#'       payload includes `phase_name`, `completed = i`, `total`.}
+#'     \item{`fordead:complete`}{After the last phase — payload
+#'       includes `completed = total`, `total`, `n_alerts_inserted`,
+#'       `duration_sec`.}
+#'     \item{`fordead:error`}{When the pipeline aborts in a phase —
+#'       payload includes `phase_name`, `error_message`,
+#'       `duration_sec`.}
+#'   }
+#'   The `phase_name` values are, in order: `"vegetation_index"`,
+#'   `"train_model"`, `"forest_mask"`, `"dieback_detection"`,
+#'   `"export_results"`, `"postprocess"`, and (when applicable)
+#'   `"persist"`. The callback is invoked synchronously inside the
+#'   calling thread; exceptions raised inside it are swallowed so a
+#'   buggy UI never aborts the pipeline. Default `NULL` (silent).
 #'
 #' @return A list with the following fields:
 #'   \describe{
@@ -251,7 +279,8 @@ run_fordead_dieback <- function(aoi,
                                 zone_id = NULL,
                                 min_pixels = 5L,
                                 connectivity = 8L,
-                                verbose = TRUE) {
+                                verbose = TRUE,
+                                progress_callback = NULL) {
   t0 <- Sys.time()
 
   .validate_fordead_args(aoi, dates_training, dates_monitoring,
@@ -262,6 +291,38 @@ run_fordead_dieback <- function(aoi,
 
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  # Phase plan. "persist" is only scheduled when caller passes both
+  # `con` and `zone_id` — otherwise INSERT is skipped entirely.
+  will_persist <- !is.null(con) && !is.null(zone_id)
+  phase_plan <- c("vegetation_index", "train_model", "forest_mask",
+                  "dieback_detection", "export_results", "postprocess",
+                  if (will_persist) "persist")
+  total_phases <- length(phase_plan)
+  current_phase_idx <- 0L
+  current_phase_name <- NA_character_
+
+  # Local emitter — no-op when no callback is set, swallows callback
+  # exceptions so a buggy UI never aborts the pipeline.
+  emit <- function(payload) {
+    if (is.null(progress_callback)) return(invisible(NULL))
+    tryCatch(progress_callback(payload),
+             error = function(e) invisible(NULL))
+  }
+  begin_phase <- function(name) {
+    current_phase_idx <<- current_phase_idx + 1L
+    current_phase_name <<- name
+    emit(list(current    = "fordead:phase",
+              phase_name = name,
+              completed  = as.integer(current_phase_idx - 1L),
+              total      = as.integer(total_phases)))
+  }
+  end_phase <- function(name) {
+    emit(list(current    = "fordead:phase_done",
+              phase_name = name,
+              completed  = as.integer(current_phase_idx),
+              total      = as.integer(total_phases)))
   }
 
   result <- tryCatch({
@@ -281,6 +342,11 @@ run_fordead_dieback <- function(aoi,
       cli::cli_alert_info("FORDEAD pipeline starting (env={.val {env_name}}, fordead={.val {fordead_version}}).")
     }
 
+    emit(list(current         = "fordead:start",
+              total           = as.integer(total_phases),
+              python_env      = env_name,
+              fordead_version = fordead_version))
+
     log_buf <- character(0)
     .capture <- function(label, expr) {
       if (verbose) cli::cli_alert_info("Step: {label}")
@@ -291,41 +357,51 @@ run_fordead_dieback <- function(aoi,
     }
 
     # 1. Masked vegetation index
+    begin_phase("vegetation_index")
     .capture("compute_masked_vegetationindex", {
       fd$steps$step1_compute_masked_vegetationindex$compute_masked_vegetationindex(
         input_directory  = output_dir,
         vegetation_index = vegetation_index
       )
     })
+    end_phase("vegetation_index")
 
     # 2. Train model
+    begin_phase("train_model")
     .capture("train_model", {
       fd$steps$step2_train_model$train_model(
         input_directory = output_dir,
         nb_min_date     = 10L
       )
     })
+    end_phase("train_model")
 
     # 3. Forest mask
+    begin_phase("forest_mask")
     fmask <- forest_mask
     if (is.null(fmask)) {
       fmask <- .download_or_use_cached_bd_foret(aoi)
     }
+    end_phase("forest_mask")
 
     # 4. Dieback detection
+    begin_phase("dieback_detection")
     .capture("dieback_detection", {
       fd$steps$step3_dieback_detection$dieback_detection(
         input_directory   = output_dir,
         threshold_anomaly = threshold_anomaly
       )
     })
+    end_phase("dieback_detection")
 
     # 5. Export results
+    begin_phase("export_results")
     .capture("export_results", {
       fd$steps$step5_export_results$export_results(
         input_directory = output_dir
       )
     })
+    end_phase("export_results")
 
     rasters <- list(
       state              = file.path(output_dir, "DataAnomalies", "state.tif"),
@@ -334,6 +410,7 @@ run_fordead_dieback <- function(aoi,
     )
 
     # 6. Post-processing: rasters → POINT clusters → optional INSERT.
+    begin_phase("postprocess")
     alerts_sf <- tryCatch(
       .postprocess_fordead_rasters(rasters,
                                    min_pixels   = as.integer(min_pixels),
@@ -344,12 +421,24 @@ run_fordead_dieback <- function(aoi,
       }
     )
     if (!is.null(alerts_sf) && !nrow(alerts_sf)) alerts_sf <- NULL
+    end_phase("postprocess")
 
     n_inserted <- 0L
-    if (!is.null(con) && !is.null(zone_id) && !is.null(alerts_sf)) {
-      n_inserted <- .insert_fordead_alerts(con, alerts_sf,
-                                           zone_id = zone_id)
+    if (will_persist) {
+      begin_phase("persist")
+      if (!is.null(alerts_sf)) {
+        n_inserted <- .insert_fordead_alerts(con, alerts_sf,
+                                             zone_id = zone_id)
+      }
+      end_phase("persist")
     }
+
+    duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    emit(list(current           = "fordead:complete",
+              completed         = as.integer(total_phases),
+              total             = as.integer(total_phases),
+              n_alerts_inserted = as.integer(n_inserted),
+              duration_sec      = duration_sec))
 
     list(
       status            = "success",
@@ -358,16 +447,21 @@ run_fordead_dieback <- function(aoi,
       rasters           = rasters,
       alerts_sf         = alerts_sf,
       n_alerts_inserted = n_inserted,
-      duration_sec      = as.numeric(difftime(Sys.time(), t0, units = "secs")),
+      duration_sec      = duration_sec,
       python_env        = env_name,
       fordead_version   = fordead_version
     )
   }, error = function(e) {
     if (verbose) cli::cli_alert_danger("FORDEAD pipeline failed: {conditionMessage(e)}")
+    duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    emit(list(current       = "fordead:error",
+              phase_name    = current_phase_name,
+              error_message = conditionMessage(e),
+              duration_sec  = duration_sec))
     .empty_fordead_result(output_dir = output_dir,
                           python_env = env_name,
                           status     = "error",
-                          duration_sec = as.numeric(difftime(Sys.time(), t0, units = "secs")),
+                          duration_sec = duration_sec,
                           message    = conditionMessage(e))
   })
 

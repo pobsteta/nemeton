@@ -1,3 +1,38 @@
+# nemeton 0.21.2 (2026-05-12)
+
+### Added — `progress_callback` for `run_fordead_dieback()`
+
+The FORDEAD orchestrator now accepts an optional
+`progress_callback = NULL` argument, mirroring the convention
+already used by `ingest_sentinel2_timeseries()` (v0.21.0). Callers
+— typically the async worker in `nemetonshiny` — can subscribe to
+ordered, phase-level events and surface a live progress
+indicator to the user.
+
+The callback receives a single named list with a `current`
+discriminator. Phases emitted, in order:
+
+* `fordead:start` — once, with `total` (6 or 7 phases depending
+  on whether persistence is requested), `python_env`,
+  `fordead_version`.
+* `fordead:phase` / `fordead:phase_done` — bracket each phase
+  with `phase_name`, `completed`, `total`. The seven possible
+  `phase_name` values are: `"vegetation_index"`, `"train_model"`,
+  `"forest_mask"`, `"dieback_detection"`, `"export_results"`,
+  `"postprocess"`, and (when `con` + `zone_id` are supplied)
+  `"persist"`.
+* `fordead:complete` — once on success, with `n_alerts_inserted`
+  and `duration_sec`.
+* `fordead:error` — once on failure, with the `phase_name` that
+  blew up, `error_message` and `duration_sec`. No
+  `fordead:complete` is emitted in that case.
+
+Exceptions raised inside the callback are caught and discarded —
+a buggy UI never aborts the FORDEAD pipeline.
+
+Default `NULL` preserves the v0.21.1 behaviour (silent, no
+events). No call site needs to change.
+
 # nemeton 0.21.1 (2026-05-12)
 
 ### Fixed — DuckDB migration 0001 rejected by the parser

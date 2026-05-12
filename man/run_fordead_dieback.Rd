@@ -17,7 +17,8 @@ run_fordead_dieback(
   zone_id = NULL,
   min_pixels = 5L,
   connectivity = 8L,
-  verbose = TRUE
+  verbose = TRUE,
+  progress_callback = NULL
 )
 }
 \arguments{
@@ -58,6 +59,35 @@ pixels) to be considered an alert. Default 5.}
 \item{connectivity}{Integer 4 or 8. Default 8.}
 
 \item{verbose}{Logical. Print progress via `cli`. Default `TRUE`.}
+
+\item{progress_callback}{Optional function called at each phase of
+the pipeline to allow callers (e.g. `nemetonshiny`) to report
+progress to the user. Receives a single named list argument with
+at least `current` (a short phase key) and, when meaningful,
+`completed` / `total` (number of phases done / scheduled) and
+`phase_name`. Phases emitted, in order:
+\describe{
+  \item{`fordead:start`}{Once at the beginning — payload includes
+    `total` (number of scheduled phases, 6 without `con`/`zone_id`,
+    7 when persistence is requested), `python_env`,
+    `fordead_version`.}
+  \item{`fordead:phase`}{Before each phase — payload includes
+    `phase_name`, `completed = i - 1L`, `total`.}
+  \item{`fordead:phase_done`}{After each successful phase —
+    payload includes `phase_name`, `completed = i`, `total`.}
+  \item{`fordead:complete`}{After the last phase — payload
+    includes `completed = total`, `total`, `n_alerts_inserted`,
+    `duration_sec`.}
+  \item{`fordead:error`}{When the pipeline aborts in a phase —
+    payload includes `phase_name`, `error_message`,
+    `duration_sec`.}
+}
+The `phase_name` values are, in order: `"vegetation_index"`,
+`"train_model"`, `"forest_mask"`, `"dieback_detection"`,
+`"export_results"`, `"postprocess"`, and (when applicable)
+`"persist"`. The callback is invoked synchronously inside the
+calling thread; exceptions raised inside it are swallowed so a
+buggy UI never aborts the pipeline. Default `NULL` (silent).}
 }
 \value{
 A list with the following fields:
