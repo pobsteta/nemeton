@@ -11,6 +11,7 @@ ingest_sentinel2_timeseries(
   end,
   bands = c("NDVI", "NBR"),
   max_cloud = 20,
+  skip_cached = TRUE,
   progress_callback = NULL
 )
 }
@@ -25,6 +26,14 @@ ingest_sentinel2_timeseries(
 
 \item{max_cloud}{Numeric. Maximum scene cloud cover (\%). Default 20.}
 
+\item{skip_cached}{Logical. When \code{TRUE} (default since v0.21.3),
+query \code{obs_pixel} before the STAC loop and skip every scene
+whose \code{obs_date} already has a row for \strong{every} plot of the
+zone × \strong{every} requested band. Lets re-runs against an
+existing database avoid all the per-scene HTTP traffic. Set
+\code{FALSE} to force re-extraction (e.g. after invalidating
+\code{obs_pixel} manually).}
+
 \item{progress_callback}{Optional function called at each step of
 the ingestion to allow callers (e.g. \code{nemetonshiny}) to report
 download progress to the user. Receives a single named list
@@ -36,20 +45,31 @@ Phases emitted, in order:
     \code{start}, \code{end}, \code{n_plots}, \code{bands}.}
   \item{\code{s2:search_done}}{After STAC — payload includes
     \code{total} (number of scenes found) and \code{bands}.}
-  \item{\code{s2:scene}}{Before processing each scene — payload
-    includes \code{completed = i - 1L}, \code{total}, plus
+  \item{\code{s2:cache_lookup}}{After the \code{obs_pixel} cache
+    query (only when \code{skip_cached = TRUE}) — payload includes
+    \code{n_cached} (scenes whose obs_date is already fully ingested
+    and will be skipped) and \code{n_to_process} (scenes that will
+    hit the network).}
+  \item{\code{s2:scene_cached}}{For each scene skipped thanks to
+    the cache — payload includes \code{completed = i - 1L},
+    \code{total}, \code{scene_id}, \code{obs_date}, \code{cloud_pct},
+    \code{source}.}
+  \item{\code{s2:scene}}{Before processing each non-cached scene —
+    payload includes \code{completed = i - 1L}, \code{total}, plus
     \code{scene_id}, \code{obs_date}, \code{cloud_pct}, \code{source}.}
   \item{\code{s2:scene_skipped}}{When a scene fails extraction —
     payload adds \code{error_message} to the \code{s2:scene} shape.}
   \item{\code{s2:complete}}{After the loop — payload includes
-    \code{completed = total}, \code{total}, \code{n_obs_inserted}.}
+    \code{completed = total}, \code{total}, \code{n_obs_inserted},
+    \code{n_scenes_cached}.}
 }
 The callback is invoked synchronously inside the calling thread.
 Default \code{NULL} (silent — no callback emitted).}
 }
 \value{
 A tibble summarising the ingestion: number of scenes
-  considered, number of observations inserted, bands ingested.
+  considered, number of scenes skipped thanks to the cache,
+  number of observations inserted, bands ingested.
 }
 \description{
 Searches Sentinel-2 L2A scenes (CDSE then PC fallback), computes

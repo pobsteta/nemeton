@@ -89,6 +89,13 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param start,end Date or character `"YYYY-MM-DD"`.
 #' @param bands Character vector. Subset of `c("NDVI", "NBR")`.
 #' @param max_cloud Numeric. Maximum scene cloud cover (%). Default 20.
+#' @param skip_cached Logical. When `TRUE` (default since v0.21.3),
+#'   query `obs_pixel` before the STAC loop and skip every scene
+#'   whose `obs_date` already has a row for **every** plot of the
+#'   zone × **every** requested band. Lets re-runs against an
+#'   existing database avoid all the per-scene HTTP traffic. Set
+#'   `FALSE` to force re-extraction (e.g. after invalidating
+#'   `obs_pixel` manually).
 #' @param progress_callback Optional function called at each step of
 #'   the ingestion to allow callers (e.g. `nemetonshiny`) to report
 #'   download progress to the user. Receives a single named list
@@ -100,25 +107,36 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       `start`, `end`, `n_plots`, `bands`.}
 #'     \item{`s2:search_done`}{After STAC — payload includes `total`
 #'       (number of scenes found) and `bands`.}
-#'     \item{`s2:scene`}{Before processing each scene — payload
-#'       includes `completed = i - 1L`, `total`, plus `scene_id`,
-#'       `obs_date`, `cloud_pct`, `source`.}
+#'     \item{`s2:cache_lookup`}{After the `obs_pixel` cache query
+#'       (only when `skip_cached = TRUE`) — payload includes
+#'       `n_cached` (scenes whose obs_date is already fully ingested
+#'       and will be skipped) and `n_to_process` (scenes that will
+#'       hit the network).}
+#'     \item{`s2:scene_cached`}{For each scene skipped thanks to the
+#'       cache — payload includes `completed = i - 1L`, `total`,
+#'       `scene_id`, `obs_date`, `cloud_pct`, `source`.}
+#'     \item{`s2:scene`}{Before processing each non-cached scene —
+#'       payload includes `completed = i - 1L`, `total`, plus
+#'       `scene_id`, `obs_date`, `cloud_pct`, `source`.}
 #'     \item{`s2:scene_skipped`}{When a scene fails extraction —
 #'       payload adds `error_message` to the `s2:scene` shape.}
 #'     \item{`s2:complete`}{After the loop — payload includes
-#'       `completed = total`, `total`, `n_obs_inserted`.}
+#'       `completed = total`, `total`, `n_obs_inserted`,
+#'       `n_scenes_cached`.}
 #'   }
 #'   The callback is invoked synchronously inside the calling thread.
 #'   Default `NULL` (silent — no callback emitted).
 #'
 #' @return A tibble summarising the ingestion: number of scenes
-#'   considered, number of observations inserted, bands ingested.
+#'   considered, number of scenes skipped thanks to the cache,
+#'   number of observations inserted, bands ingested.
 #'
 #' @export
 ingest_sentinel2_timeseries <- function(con, zone_id,
                                         start, end,
                                         bands = c("NDVI", "NBR"),
                                         max_cloud = 20,
+                                        skip_cached = TRUE,
                                         progress_callback = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -162,9 +180,35 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             total   = total_scenes,
             bands   = bands))
 
+  # Cache lookup: which obs_dates are already fully covered for
+  # *every* plot × *every* requested band? Those scenes never need
+  # to hit the network. Cheap one-shot query against the local DB.
+  cached_dates <- character(0)
+  if (isTRUE(skip_cached)) {
+    cached_dates <- as.character(
+      .find_cached_obs_dates(con, plots$id, bands, start, end)
+    )
+    n_cached_scenes <- sum(as.character(scenes$obs_date) %in% cached_dates)
+    emit(list(current      = "s2:cache_lookup",
+              n_cached     = as.integer(n_cached_scenes),
+              n_to_process = as.integer(total_scenes - n_cached_scenes)))
+  }
+
   total_inserted <- 0L
+  total_cached   <- 0L
   for (i in seq_len(total_scenes)) {
     sc <- scenes[i, , drop = FALSE]
+    if (as.character(sc$obs_date) %in% cached_dates) {
+      total_cached <- total_cached + 1L
+      emit(list(current   = "s2:scene_cached",
+                completed = as.integer(i - 1L),
+                total     = as.integer(total_scenes),
+                scene_id  = sc$scene_id,
+                obs_date  = sc$obs_date,
+                cloud_pct = sc$cloud_pct,
+                source    = sc$source))
+      next
+    }
     emit(list(current   = "s2:scene",
               completed = as.integer(i - 1L),
               total     = as.integer(total_scenes),
@@ -192,13 +236,15 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
     total_inserted <- total_inserted + inserted
   }
 
-  emit(list(current        = "s2:complete",
-            completed      = as.integer(total_scenes),
-            total          = as.integer(total_scenes),
-            n_obs_inserted = as.integer(total_inserted)))
+  emit(list(current         = "s2:complete",
+            completed       = as.integer(total_scenes),
+            total           = as.integer(total_scenes),
+            n_obs_inserted  = as.integer(total_inserted),
+            n_scenes_cached = as.integer(total_cached)))
 
   data.frame(
     n_scenes        = total_scenes,
+    n_scenes_cached = total_cached,
     n_obs_inserted  = total_inserted,
     n_plots         = nrow(plots),
     bands           = paste(bands, collapse = "+"),
@@ -211,10 +257,46 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
 .empty_ingest_summary <- function() {
   data.frame(
-    n_scenes = 0L, n_obs_inserted = 0L,
+    n_scenes = 0L, n_scenes_cached = 0L, n_obs_inserted = 0L,
     n_plots = 0L, bands = "",
     stringsAsFactors = FALSE
   )
+}
+
+# Return the Date vector of obs_dates whose `obs_pixel` rows already
+# cover *every* plot in `plot_ids` × *every* band in `bands`. Used by
+# `ingest_sentinel2_timeseries()` to short-circuit scenes that would
+# only re-download data we already have.
+#
+# Inlines `plot_ids` and `bands` into the SQL: both come from
+# trusted sources (our own `plot.id` integers + a whitelist of
+# bands enforced by `match.arg`), so injection is impossible.
+.find_cached_obs_dates <- function(con, plot_ids, bands, start, end) {
+  if (!length(plot_ids) || !length(bands)) {
+    return(as.Date(character(0)))
+  }
+  expected <- length(plot_ids) * length(bands)
+  plot_list <- paste(as.integer(plot_ids), collapse = ", ")
+  band_list <- paste(sprintf("'%s'", bands),    collapse = ", ")
+  sql <- sprintf(
+    "SELECT obs_date FROM obs_pixel
+      WHERE plot_id IN (%s)
+        AND band IN (%s)
+        AND obs_date BETWEEN $1 AND $2
+      GROUP BY obs_date
+     HAVING COUNT(*) = %d",
+    plot_list, band_list, expected
+  )
+  rs <- tryCatch(
+    DBI::dbGetQuery(con, sql,
+                    params = list(as.character(start), as.character(end))),
+    error = function(e) {
+      cli::cli_warn("Cache lookup against {.code obs_pixel} failed: {conditionMessage(e)}. Re-extracting all scenes.")
+      NULL
+    }
+  )
+  if (is.null(rs) || !nrow(rs)) return(as.Date(character(0)))
+  as.Date(rs$obs_date)
 }
 
 .fetch_plots_sf <- function(con, zone_id) {

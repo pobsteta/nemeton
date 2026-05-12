@@ -1,3 +1,39 @@
+# nemeton 0.21.3 (2026-05-12)
+
+### Added — `skip_cached` short-circuit for `ingest_sentinel2_timeseries()`
+
+`ingest_sentinel2_timeseries()` now accepts an optional
+`skip_cached = TRUE` argument. Before the STAC loop, it queries
+`obs_pixel` and identifies every `obs_date` already covered for
+**every** plot of the zone × **every** requested band. Matching
+scenes are skipped: no VSI/HTTP read, no `terra::crop`, no
+`exactextractr` extraction — the user only pays for scenes whose
+data is genuinely missing from the database.
+
+Concretely this turns a re-run of `ingest_sentinel2_timeseries()`
+against an already-populated zone from ~1-2 GB of network into
+zero, while preserving the existing idempotent INSERT semantics.
+
+The cache lookup is partial-coverage-aware: requesting a new band
+(e.g. adding `"NBR"` to a zone previously ingested with `"NDVI"`
+only) does not trigger a false-positive skip — the scene is
+re-extracted because at least one `(plot, band)` tuple is still
+absent. Set `skip_cached = FALSE` to force re-extraction
+unconditionally (debugging or post-invalidation workflows).
+
+Two new progress phases are emitted:
+
+* `s2:cache_lookup` — once after the STAC query, with `n_cached`
+  and `n_to_process` so the UI can immediately show "x/y scenes
+  already in cache, fetching y" before the first HTTP read.
+* `s2:scene_cached` — once per skipped scene, mirroring the
+  `s2:scene` payload (`scene_id`, `obs_date`, `cloud_pct`,
+  `source`). Lets the toast tick through the cached scenes at
+  loop speed for visual feedback.
+
+The summary tibble gains an `n_scenes_cached` column;
+`s2:complete` emits the same value alongside `n_obs_inserted`.
+
 # nemeton 0.21.2 (2026-05-12)
 
 ### Added — `progress_callback` for `run_fordead_dieback()`
