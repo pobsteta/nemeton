@@ -1,3 +1,31 @@
+# nemeton 0.21.1 (2026-05-12)
+
+### Fixed — DuckDB migration 0001 rejected by the parser
+
+`db_migrate()` failed on a fresh DuckDB monitoring database with
+`Parser Error: syntax error at or near "GENERATED" — LINE 2: id
+INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY`. The DuckDB
+parser does not accept the SQL-standard `GENERATED ALWAYS AS
+IDENTITY` clause, contrary to the comment shipped in
+`inst/db/migrations/duckdb/0001_init.sql`. As a side effect, FK
+clauses also relied on `ON DELETE CASCADE`, which DuckDB rejects
+at parse time.
+
+* `0001_init.sql` (DuckDB variant) now uses explicit
+  `CREATE SEQUENCE IF NOT EXISTS … START 1` + `INTEGER PRIMARY KEY
+  DEFAULT nextval('…')` for `monitoring_zone`, `plot` and `alert`.
+* `ON DELETE CASCADE` is dropped from the three FK clauses
+  (`plot.zone_id`, `obs_pixel.plot_id`, `alert.plot_id`). FK
+  existence is still enforced; no current code path issues
+  `DELETE FROM monitoring_zone` / `DELETE FROM plot`, so this is
+  a documented restriction rather than a behavioural gap.
+* Header comments updated to reflect the actual DuckDB-vs-PG
+  differences (no false claim about IDENTITY support since 0.7).
+
+The first launch of `nemetonshiny` against a local DuckDB
+backend (`NEMETON_DB_URL=duckdb:///...` or auto-detected
+`*.duckdb` path) now completes the schema bootstrap cleanly.
+
 # nemeton 0.21.0 (2026-05-11)
 
 ### Added — Local DuckDB backend for the monitoring subsystem

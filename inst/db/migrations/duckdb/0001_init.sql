@@ -14,8 +14,19 @@
 --     At the volumes we target (a single forestry project ⇒ at most
 --     a few k plots × 100 dates ≈ 1 M rows) DuckDB's vectorized
 --     scans are fast enough without time partitioning.
---   * `SERIAL` → `INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY`
---     (SQL-standard, supported by DuckDB ≥ 0.7).
+--   * `SERIAL` → explicit `SEQUENCE` + `INTEGER PRIMARY KEY DEFAULT
+--     nextval('<seq>')`. DuckDB's SQL parser does not accept the
+--     SQL-standard `GENERATED ALWAYS AS IDENTITY` clause (it raises
+--     a `Parser Error: syntax error at or near "GENERATED"`), so we
+--     fall back to the portable sequence-based pattern, which is
+--     functionally equivalent and idempotent thanks to
+--     `CREATE SEQUENCE IF NOT EXISTS`.
+--   * `ON DELETE CASCADE` is dropped from FOREIGN KEY clauses:
+--     DuckDB enforces FK existence but rejects cascade / SET NULL /
+--     SET DEFAULT referential actions at parse time. Deletes that
+--     need to clear children must do so explicitly from R (none of
+--     the current monitoring code paths delete plots or zones, so
+--     this is documented restriction rather than a behavioural gap).
 --   * `TIMESTAMPTZ` → `TIMESTAMP` (DuckDB stores TIMESTAMPTZ as
 --     UTC under a different name; we keep things simple and store
 --     UTC implicitly).
@@ -34,8 +45,9 @@ CREATE TABLE IF NOT EXISTS schema_migration (
 -- -----------------------------------------------------------------------
 -- monitoring_zone — registered AOIs
 -- -----------------------------------------------------------------------
+CREATE SEQUENCE IF NOT EXISTS monitoring_zone_id_seq START 1;
 CREATE TABLE IF NOT EXISTS monitoring_zone (
-    id         INTEGER   PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    id         INTEGER   PRIMARY KEY DEFAULT nextval('monitoring_zone_id_seq'),
     name       TEXT      NOT NULL,
     zone_wkt   TEXT      NOT NULL,
     crs_epsg   INTEGER   NOT NULL DEFAULT 2154,
@@ -46,9 +58,10 @@ CREATE TABLE IF NOT EXISTS monitoring_zone (
 -- -----------------------------------------------------------------------
 -- plot — monitored plots (typically GRTS sampling points)
 -- -----------------------------------------------------------------------
+CREATE SEQUENCE IF NOT EXISTS plot_id_seq START 1;
 CREATE TABLE IF NOT EXISTS plot (
-    id         INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    zone_id    INTEGER NOT NULL REFERENCES monitoring_zone(id) ON DELETE CASCADE,
+    id         INTEGER PRIMARY KEY DEFAULT nextval('plot_id_seq'),
+    zone_id    INTEGER NOT NULL REFERENCES monitoring_zone(id),
     plot_id    TEXT    NOT NULL,
     plot_type  TEXT,
     geom_wkt   TEXT    NOT NULL,
@@ -65,7 +78,7 @@ CREATE INDEX IF NOT EXISTS plot_zone_idx ON plot (zone_id);
 -- lookups on (plot_id, obs_date, band); DuckDB's columnar layout keeps
 -- (obs_date, band) range scans efficient.
 CREATE TABLE IF NOT EXISTS obs_pixel (
-    plot_id   INTEGER          NOT NULL REFERENCES plot(id) ON DELETE CASCADE,
+    plot_id   INTEGER          NOT NULL REFERENCES plot(id),
     obs_date  DATE             NOT NULL,
     band      TEXT             NOT NULL,
     value     DOUBLE,
@@ -78,9 +91,10 @@ CREATE TABLE IF NOT EXISTS obs_pixel (
 -- -----------------------------------------------------------------------
 -- alert — drops detected by detect_alerts()
 -- -----------------------------------------------------------------------
+CREATE SEQUENCE IF NOT EXISTS alert_id_seq START 1;
 CREATE TABLE IF NOT EXISTS alert (
-    id            INTEGER   PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    plot_id       INTEGER   NOT NULL REFERENCES plot(id) ON DELETE CASCADE,
+    id            INTEGER   PRIMARY KEY DEFAULT nextval('alert_id_seq'),
+    plot_id       INTEGER   NOT NULL REFERENCES plot(id),
     alert_type    TEXT      NOT NULL,
     trigger_date  DATE      NOT NULL,
     value_before  DOUBLE,
