@@ -160,6 +160,15 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'     \item{`s2:band_fetched`}{Per-band miss → VSI fetch + write
 #'       to the cache (only when `cache_dir` is set) — payload:
 #'       `scene_id`, `band`, `path`.}
+#'     \item{`s2:pc_token_refreshed`}{The Planetary Computer SAS
+#'       token expired between STAC search and band read; the band
+#'       open was retried with a fresh token — payload:
+#'       `scene_id`, `band`, `collection`.}
+#'     \item{`s2:band_fetch_failed`}{`terra::rast(href)` raised an
+#'       unrecoverable error (after the PC token refresh path if
+#'       applicable) — payload: `scene_id`, `band`, `href`,
+#'       `error_message`. The scene is then skipped at scene level
+#'       (`s2:scene_skipped`).}
 #'     \item{`s2:complete`}{After the loop — payload includes
 #'       `completed = total`, `total`, `n_obs_inserted`,
 #'       `n_scenes_cached`.}
@@ -448,13 +457,14 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 # contains the needed extent. If a re-run adds a new placette outside
 # the previously cached window, the file is silently overwritten.
 
-# Filesystem-safe scene directory (creates it eagerly on cache enable).
-.s2_scene_cache_dir <- function(cache_dir, scene_id) {
+# Filesystem-safe COG path for one band. Does NOT create any
+# directory — creation is deferred to the writeRaster moment in
+# `.get_s2_band_raster()` so a failed VSI fetch no longer leaves
+# behind an empty scene directory.
+.s2_band_cache_path <- function(cache_dir, scene_id, band) {
   if (is.null(cache_dir) || !nzchar(cache_dir)) return(NULL)
   safe_id <- gsub("[^A-Za-z0-9._-]", "_", as.character(scene_id))
-  d <- file.path(cache_dir, safe_id)
-  dir.create(d, recursive = TRUE, showWarnings = FALSE)
-  d
+  file.path(cache_dir, safe_id, paste0(band, ".tif"))
 }
 
 # Geometric predicate: does `outer` (xmin, xmax, ymin, ymax) contain
@@ -465,6 +475,76 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   o[1] <= i[1] && o[2] >= i[2] && o[3] <= i[3] && o[4] >= i[4]
 }
 
+# Open a Sentinel-2 band href with `terra::rast()`, retrying once
+# with a fresh SAS token when the first attempt fails with a 403/401
+# on a Planetary Computer blob URL. Token-expired-mid-ingestion is the
+# top failure mode on long (>30 min) runs: STAC search signs every
+# href with a snapshot of the cached token, then each band open hits
+# Azure with a possibly-stale signature.
+#
+# Emits `s2:band_fetch_failed` when the band cannot be opened (after
+# retry, if applicable) and `s2:pc_token_refreshed` when the retry
+# path succeeds. Both events carry `scene_id` + `band` + `href`.
+.terra_rast_with_pc_retry <- function(href,
+                                      collection = "sentinel-2-l2a",
+                                      emit_fn    = NULL,
+                                      scene_id   = NA_character_,
+                                      band       = NA_character_) {
+  emit_failure <- function(msg) {
+    if (!is.null(emit_fn)) {
+      emit_fn(list(current       = "s2:band_fetch_failed",
+                   scene_id      = scene_id,
+                   band          = band,
+                   href          = href,
+                   error_message = msg))
+    }
+  }
+
+  r1 <- tryCatch(terra::rast(href), error = function(e) e)
+  if (!inherits(r1, "error")) return(r1)
+
+  err_msg1 <- conditionMessage(r1)
+  # PC blob URL? + auth-shaped error? Otherwise no point refreshing
+  # — propagate the original error (and let the scene-level handler
+  # decide what to do with it).
+  is_pc_blob <- grepl("blob\\.core\\.windows\\.net", href) &&
+                grepl("sig=", href, fixed = TRUE)
+  is_auth <- grepl("\\b(40[13]|forbidden|unauthorized|authentication)\\b",
+                   err_msg1, ignore.case = TRUE, perl = TRUE)
+
+  if (!is_pc_blob || !is_auth) {
+    emit_failure(err_msg1)
+    stop(r1)
+  }
+
+  # Refresh the SAS token, re-sign, retry once.
+  .pc_invalidate_token(collection)
+  fresh_href <- .pc_resign_href(href, collection)
+  if (is.null(fresh_href)) {
+    emit_failure(paste0(err_msg1, " (token refresh failed)"))
+    stop(r1)
+  }
+  if (!is.null(emit_fn)) {
+    emit_fn(list(current    = "s2:pc_token_refreshed",
+                 scene_id   = scene_id,
+                 band       = band,
+                 collection = collection))
+  }
+  r2 <- tryCatch(terra::rast(fresh_href), error = function(e) e)
+  if (inherits(r2, "error")) {
+    msg2 <- conditionMessage(r2)
+    emit_failure(sprintf("before refresh: %s | after refresh: %s",
+                         err_msg1, msg2))
+    cli::cli_warn(c(
+      "PC SAS token refresh did not unstick {.val {scene_id}}/{band}.",
+      i = "Before refresh: {err_msg1}",
+      i = "After refresh:  {msg2}"
+    ))
+    stop(r2)
+  }
+  r2
+}
+
 # Return the (cropped) terra SpatRaster for one S2 band. Reads from
 # `cache_dir` if a usable cached file exists; otherwise fetches via
 # VSI, crops, and writes to cache (best-effort, write failures only
@@ -472,10 +552,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 .get_s2_band_raster <- function(scene, band, buf_plots,
                                 cache_dir = NULL, emit = NULL) {
   scene_id <- as.character(scene$scene_id)
-  scene_dir <- .s2_scene_cache_dir(cache_dir, scene_id)
-  cached_path <- if (!is.null(scene_dir)) {
-    file.path(scene_dir, paste0(band, ".tif"))
-  } else NULL
+  cached_path <- .s2_band_cache_path(cache_dir, scene_id, band)
 
   href_col <- paste0("href_", band)
   if (!href_col %in% names(scene)) {
@@ -510,12 +587,22 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
     }
   }
 
-  # Cache miss → fetch via VSI, crop to AOI.
-  r <- terra::rast(href)
+  # Cache miss → fetch via VSI (with PC token auto-refresh on 403/401),
+  # crop to AOI.
+  r <- .terra_rast_with_pc_retry(href,
+                                 emit_fn  = emit_fn,
+                                 scene_id = scene_id,
+                                 band     = band)
   buf_native <- sf::st_transform(buf_plots, terra::crs(r))
   r <- terra::crop(r, terra::ext(terra::vect(buf_native)), snap = "out")
 
   if (!is.null(cached_path)) {
+    # Lazy directory creation: only at the moment we're about to
+    # write. A failed `.terra_rast_with_pc_retry()` above raises
+    # before we get here, so a broken scene no longer leaves an
+    # empty scene directory behind.
+    dir.create(dirname(cached_path), recursive = TRUE,
+               showWarnings = FALSE)
     tmp <- paste0(cached_path, ".tmp")
     tryCatch({
       terra::writeRaster(

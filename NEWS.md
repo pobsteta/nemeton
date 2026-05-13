@@ -1,3 +1,58 @@
+# nemeton 0.21.6 (2026-05-13)
+
+### Fixed — empty `cache/layers/sentinel2/{scene_id}/` dirs after failed fetches
+
+In v0.21.4 `.get_s2_band_raster()` created the per-scene cache
+directory eagerly at function entry, *before* attempting the VSI
+fetch. If `terra::rast(href)` then raised (typical causes: PC SAS
+token expired mid-ingestion → HTTP 403, Azure 504, Sentinel-2 COG
+moved), the scene directory was already on disk while no
+`B04.tif` / `B08.tif` / `B12.tif` was ever written. Users saw
+hundreds of empty scene folders with no obvious cause.
+
+* Directory creation is now **deferred** to the moment immediately
+  preceding `terra::writeRaster()`. A scene whose bands cannot be
+  opened no longer leaves a phantom folder behind.
+* Two new progress events let callers (e.g. `nemetonshiny`)
+  surface the actual failure cleanly:
+  * `s2:band_fetch_failed` — emitted when `terra::rast(href)` is
+    unrecoverable (after PC-token-refresh path if applicable).
+    Payload: `scene_id`, `band`, `href`, `error_message`.
+  * `s2:pc_token_refreshed` — emitted when an initial 403/401 on
+    a Planetary Computer blob URL triggered a successful token
+    refresh + retry. Payload: `scene_id`, `band`, `collection`.
+
+### Added — auto-refresh of Planetary Computer SAS tokens on 403/401
+
+The previous design signed every href at STAC search time and
+relied on `terra::rast()` reading them later. PC SAS tokens last
+~30 min, so any ingestion that ran longer than that started
+hitting HTTP 403 on the last scenes' bands.
+
+`.get_s2_band_raster()` now wraps each `terra::rast(href)` in
+`.terra_rast_with_pc_retry()`:
+
+1. First call goes through as-is.
+2. On failure, the error message is sniffed: when the href is a
+   PC blob URL (`*.blob.core.windows.net` with a `sig=…` query)
+   *and* the error matches `\\b(40[13]|forbidden|unauthorized
+   |authentication)\\b`, the cached SAS token for `sentinel-2-l2a`
+   is invalidated, the href is re-signed with a fresh token, and
+   the open is retried exactly once.
+3. Anything else (504, network, malformed COG, non-PC URL)
+   propagates immediately — no point spending a token round-trip.
+
+Two new internal helpers back the retry path:
+
+* `.pc_invalidate_token(collection)` — drops one collection's
+  cached token so the next fetch hits `/api/sas/v1/token/…`.
+* `.pc_resign_href(href, collection)` — strips the current SAS
+  query string and applies a freshly-fetched one (returns `NULL`
+  when the token refresh itself failed).
+
+10 new tests cover the lazy creation, the retry happy/sad paths,
+the non-PC short-circuit, and the helper-level behaviours.
+
 # nemeton 0.21.5 (2026-05-13)
 
 ### Fixed — transient STAC failures (HTTP 504/503/502) no longer abort the search

@@ -103,6 +103,15 @@ Phases emitted, in order:
   \item{\code{s2:band_fetched}}{Per-band miss → VSI fetch + write
     to the cache (only when \code{cache_dir} is set) — payload:
     \code{scene_id}, \code{band}, \code{path}.}
+  \item{\code{s2:pc_token_refreshed}}{The Planetary Computer SAS
+    token expired between STAC search and band read; the band
+    open was retried with a fresh token — payload:
+    \code{scene_id}, \code{band}, \code{collection}.}
+  \item{\code{s2:band_fetch_failed}}{\code{terra::rast(href)}
+    raised an unrecoverable error (after the PC token refresh path
+    if applicable) — payload: \code{scene_id}, \code{band},
+    \code{href}, \code{error_message}. The scene is then skipped
+    at scene level (\code{s2:scene_skipped}).}
   \item{\code{s2:complete}}{After the loop — payload includes
     \code{completed = total}, \code{total}, \code{n_obs_inserted},
     \code{n_scenes_cached}.}

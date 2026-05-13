@@ -221,6 +221,46 @@ test_that(".pc_collection_token refreshes when the cached entry has expired", {
                "se=fresh&sig=NEW")
 })
 
+# ---- .pc_invalidate_token / .pc_resign_href (v0.21.6) ----------------
+
+test_that(".pc_invalidate_token drops the cached entry", {
+  rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+     envir = nemeton:::.pc_token_cache)
+  on.exit(rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
+             envir = nemeton:::.pc_token_cache), add = TRUE)
+  assign("sentinel-2-l2a",
+         list(token = "se=x&sig=Y", expiry = Sys.time() + 3600),
+         envir = nemeton:::.pc_token_cache)
+  expect_true("sentinel-2-l2a" %in% ls(nemeton:::.pc_token_cache))
+  nemeton:::.pc_invalidate_token("sentinel-2-l2a")
+  expect_false("sentinel-2-l2a" %in% ls(nemeton:::.pc_token_cache))
+  # Idempotent: a second call on an empty entry is a no-op.
+  expect_silent(nemeton:::.pc_invalidate_token("sentinel-2-l2a"))
+  expect_silent(nemeton:::.pc_invalidate_token(""))
+})
+
+test_that(".pc_resign_href strips the old query and applies a fresh token", {
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) "se=NEW&sp=r&sig=FRESH",
+    .package = "nemeton"
+  )
+  href <- "https://sentinel2l2a01.blob.core.windows.net/c/X.tif?se=OLD&sig=STALE"
+  out <- nemeton:::.pc_resign_href(href)
+  expect_match(out, "\\?se=NEW&sp=r&sig=FRESH$")
+  expect_false(grepl("STALE", out, fixed = TRUE))
+  expect_false(grepl("OLD", out, fixed = TRUE))
+})
+
+test_that(".pc_resign_href returns NULL when token refresh fails", {
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) NULL,
+    .package = "nemeton"
+  )
+  out <- nemeton:::.pc_resign_href("https://x.blob.core.windows.net/c/X.tif?sig=Z")
+  expect_null(out)
+})
+
+
 test_that(".pc_collection_token returns NULL on HTTP failure", {
   rm(list = ls(nemeton:::.pc_token_cache, all.names = TRUE),
      envir = nemeton:::.pc_token_cache)

@@ -304,6 +304,35 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
 .pc_token_cache <- new.env(parent = emptyenv())
 
 
+# Drop the cached SAS token for a collection so the next
+# `.pc_collection_token()` call hits the network again. Used by the
+# 403/401 auto-retry path in `.terra_rast_with_pc_retry()`: when an
+# already-signed href starts returning Forbidden, the most likely
+# cause is a token that expired between STAC search and band read
+# (long ingestions outrun the 30-minute window). Invalidating the
+# cache + re-signing the href fixes the request.
+.pc_invalidate_token <- function(collection) {
+  if (!nzchar(collection)) return(invisible())
+  if (exists(collection, envir = .pc_token_cache, inherits = FALSE)) {
+    rm(list = collection, envir = .pc_token_cache, inherits = FALSE)
+  }
+  invisible()
+}
+
+
+# Strip the current SAS query string from a Planetary Computer href
+# and re-apply a freshly-fetched one. Returns NULL when the token
+# refresh itself failed (network down, 5xx after retries…) so the
+# caller can decide whether to abort or fall back to the unsigned URL.
+.pc_resign_href <- function(href, collection = "sentinel-2-l2a") {
+  if (!nzchar(href)) return(href)
+  token <- .pc_collection_token(collection)
+  if (is.null(token)) return(NULL)
+  base_href <- sub("\\?.*", "", href)
+  .pc_apply_token(base_href, token)
+}
+
+
 #' Fetch a SAS token for a Planetary Computer collection
 #'
 #' Calls `/api/sas/v1/token/{collection}` once and caches the result

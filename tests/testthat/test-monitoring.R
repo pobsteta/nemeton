@@ -611,17 +611,58 @@ test_that(".ext_contains is a strict bbox-containment predicate", {
   expect_false(nemeton:::.ext_contains(outer, c(10, 90, 10, 101)))
 })
 
-test_that(".s2_scene_cache_dir sanitises scene_id and creates the dir", {
+test_that(".s2_band_cache_path sanitises scene_id and does NOT create the dir", {
   cache <- withr::local_tempdir()
-  out <- nemeton:::.s2_scene_cache_dir(cache, "S2A:MSIL2A/2024 06 01")
-  expect_true(dir.exists(out))
-  # No ':', '/', or space leaks into the path component.
-  leaf <- basename(out)
-  expect_false(grepl("[ :/]", leaf))
+  out <- nemeton:::.s2_band_cache_path(cache, "S2A:MSIL2A/2024 06 01", "B04")
+  expect_type(out, "character")
+  expect_match(basename(out), "^B04\\.tif$")
+  # No ':', '/' (in the scene_id portion), or space leaks into the path.
+  scene_leaf <- basename(dirname(out))
+  expect_false(grepl("[ :]", scene_leaf))
+  # Critically: the scene dir must NOT exist yet — creation is deferred
+  # to writeRaster time so failed fetches don't leave empty dirs.
+  expect_false(dir.exists(dirname(out)))
 
   # NULL / empty cache_dir → NULL output (caching disabled).
-  expect_null(nemeton:::.s2_scene_cache_dir(NULL, "scene"))
-  expect_null(nemeton:::.s2_scene_cache_dir("", "scene"))
+  expect_null(nemeton:::.s2_band_cache_path(NULL, "scene", "B04"))
+  expect_null(nemeton:::.s2_band_cache_path("", "scene", "B04"))
+})
+
+test_that(".get_s2_band_raster: scene dir is NOT created when terra::rast fails", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scene_id <- "S2_TEST_FAIL"
+
+  # Mock terra::rast to throw — simulates a 504 / 403 from VSI.
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) stop("simulated VSI failure"),
+    .package = "terra"
+  )
+
+  buf <- sf::st_sf(
+    radius_m = 5,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(50, 50)), 5),
+                          crs = 2154))
+  scene <- data.frame(scene_id = scene_id,
+                      href_B04 = "https://example/nope.tif",
+                      stringsAsFactors = FALSE)
+  events <- list()
+  emit_fn <- function(p) events[[length(events) + 1L]] <<- p
+
+  expect_error(
+    nemeton:::.get_s2_band_raster(scene, "B04", buf, cache_dir = cache,
+                                  emit = emit_fn),
+    "simulated VSI failure"
+  )
+  # No directory should have been created.
+  expect_false(dir.exists(file.path(cache, scene_id)))
+  # `s2:band_fetch_failed` event was emitted before throwing.
+  phases <- vapply(events, function(p) p$current, character(1))
+  expect_true("s2:band_fetch_failed" %in% phases)
+  failed <- events[[which(phases == "s2:band_fetch_failed")[1]]]
+  expect_equal(failed$band, "B04")
+  expect_equal(failed$scene_id, scene_id)
+  expect_match(failed$error_message, "simulated VSI failure")
 })
 
 test_that(".get_s2_band_raster: cache hit reads the COG without HTTP", {
@@ -738,6 +779,94 @@ test_that(".get_s2_band_raster: stale cache (extent too small) is overwritten", 
   # New cached file now encloses the AOI.
   new_ext <- terra::ext(terra::rast(cached))
   expect_true(new_ext[1] <= 390 && new_ext[2] >= 410)
+})
+
+test_that(".terra_rast_with_pc_retry: non-PC error propagates without retry", {
+  skip_if_not_installed("terra")
+  n_calls <- 0L
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) { n_calls <<- n_calls + 1L; stop("HTTP 504 timeout") },
+    .package = "terra"
+  )
+  events <- list()
+  expect_error(
+    nemeton:::.terra_rast_with_pc_retry(
+      "https://example/scene/B04.tif",   # NOT a PC blob URL
+      emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+      scene_id = "S", band = "B04"
+    ),
+    "HTTP 504 timeout"
+  )
+  expect_equal(n_calls, 1L)   # no retry attempted
+  phases <- vapply(events, function(p) p$current, character(1))
+  expect_true("s2:band_fetch_failed" %in% phases)
+  expect_false("s2:pc_token_refreshed" %in% phases)
+})
+
+test_that(".terra_rast_with_pc_retry: PC 403 triggers token refresh + retry", {
+  skip_if_not_installed("terra")
+  pc_href <- "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/X.tif?se=expired&sp=r&sig=old"
+
+  # First call: 403. Second call (with re-signed href): success.
+  call_log <- list()
+  fake_rast_seq <- list(
+    function(x, ...) stop("HTTP error code: 403 Forbidden"),
+    function(x, ...) { call_log[["second_href"]] <<- x; "FAKE_RASTER" }
+  )
+  call_idx <- 0L
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) {
+      call_idx <<- call_idx + 1L
+      fake_rast_seq[[call_idx]](x, ...)
+    },
+    .package = "terra"
+  )
+  # Stub the token fetch so we don't hit the network.
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) "se=fresh&sp=r&sig=new",
+    .package = "nemeton"
+  )
+  events <- list()
+  out <- nemeton:::.terra_rast_with_pc_retry(
+    pc_href,
+    emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+    scene_id = "S2_T", band = "B04"
+  )
+  expect_identical(out, "FAKE_RASTER")
+  # The second call must have used the re-signed href, not the original.
+  expect_false(grepl("sig=old", call_log$second_href, fixed = TRUE))
+  expect_true(grepl("sig=new", call_log$second_href, fixed = TRUE))
+  phases <- vapply(events, function(p) p$current, character(1))
+  expect_true("s2:pc_token_refreshed" %in% phases)
+  expect_false("s2:band_fetch_failed" %in% phases)
+})
+
+test_that(".terra_rast_with_pc_retry: 403 that survives refresh emits band_fetch_failed", {
+  skip_if_not_installed("terra")
+  pc_href <- "https://sentinel2l2a01.blob.core.windows.net/c/X.tif?se=x&sig=old"
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) stop("HTTP error code: 403 Forbidden"),
+    .package = "terra"
+  )
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) "se=fresh&sig=new",
+    .package = "nemeton"
+  )
+  events <- list()
+  expect_warning(
+    expect_error(
+      nemeton:::.terra_rast_with_pc_retry(
+        pc_href,
+        emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+        scene_id = "S", band = "B04"
+      ),
+      "403 Forbidden"
+    ),
+    "did not unstick"
+  )
+  failed <- Filter(function(p) p$current == "s2:band_fetch_failed", events)
+  expect_length(failed, 1L)
+  expect_match(failed[[1]]$error_message, "before refresh:.*after refresh:")
 })
 
 test_that(".get_s2_band_raster: cache_dir = NULL bypasses the cache entirely", {
