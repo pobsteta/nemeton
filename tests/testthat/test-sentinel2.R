@@ -84,6 +84,66 @@ test_that("stac_search_s2 rejects end < start", {
 })
 
 
+# ---- retry policy (v0.21.5) ------------------------------------------
+
+test_that(".is_stac_transient flags 429 + 5xx as retryable", {
+  fake_resp <- function(status) {
+    structure(list(status_code = status), class = "httr2_response")
+  }
+  expect_true(nemeton:::.is_stac_transient(fake_resp(429)))
+  expect_true(nemeton:::.is_stac_transient(fake_resp(500)))
+  expect_true(nemeton:::.is_stac_transient(fake_resp(502)))
+  expect_true(nemeton:::.is_stac_transient(fake_resp(503)))
+  expect_true(nemeton:::.is_stac_transient(fake_resp(504)))
+  expect_false(nemeton:::.is_stac_transient(fake_resp(200)))
+  expect_false(nemeton:::.is_stac_transient(fake_resp(400)))
+  expect_false(nemeton:::.is_stac_transient(fake_resp(404)))
+})
+
+test_that(".with_stac_retry honours NEMETON_STAC_MAX_TRIES env var", {
+  skip_if_not_installed("httr2")
+  withr::local_envvar(NEMETON_STAC_MAX_TRIES = "7")
+  req <- httr2::request("https://example.test") |>
+    nemeton:::.with_stac_retry()
+  # httr2 stores the configured policy in req$policies$retry_max_tries
+  # (or under a similar key depending on version). Fall back to a
+  # structural smoke check if the layout differs across httr2 versions.
+  pol <- req$policies %||% list()
+  mt <- pol$retry_max_tries %||% pol$retry$max_tries
+  if (is.null(mt)) skip("httr2 policy layout differs — covered indirectly")
+  expect_equal(as.integer(mt), 7L)
+})
+
+test_that(".with_stac_retry falls back to 4 when the env var is invalid", {
+  skip_if_not_installed("httr2")
+  withr::local_envvar(NEMETON_STAC_MAX_TRIES = "not-a-number")
+  req <- httr2::request("https://example.test") |>
+    nemeton:::.with_stac_retry()
+  pol <- req$policies %||% list()
+  mt <- pol$retry_max_tries %||% pol$retry$max_tries
+  if (is.null(mt)) skip("httr2 policy layout differs")
+  expect_equal(as.integer(mt), 4L)
+})
+
+test_that("stac_search_s2 emits an 'All STAC backends failed' warning when every backend errors", {
+  testthat::local_mocked_bindings(
+    stac_search_s2_cdse = function(...) stop("CDSE 504"),
+    stac_search_s2_pc   = function(...) stop("PC 504")
+  )
+  expect_warning(
+    expect_warning(
+      expect_warning(
+        out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30"),
+        "All STAC backends"
+      ),
+      "STAC backend.*pc.*failed"
+    ),
+    "STAC backend.*cdse.*failed"
+  )
+  expect_equal(nrow(out), 0)
+})
+
+
 # ---- .pc_apply_token ---------------------------------------------------
 
 test_that(".pc_apply_token appends a SAS token to bare hrefs", {

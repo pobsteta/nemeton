@@ -26,11 +26,50 @@ NULL
 }
 
 
+# Treat 429 + 5xx as transient (worth retrying). Default `httr2`
+# `is_transient` only covers 429 + 503; 504 (Gateway Timeout) is a
+# common Planetary Computer hiccup on big AOIs / wide date ranges
+# and absolutely should be retried.
+.is_stac_transient <- function(resp) {
+  httr2::resp_status(resp) %in% c(429, 500, 502, 503, 504)
+}
+
+
+# Wrap an `httr2_request` with the project-wide STAC retry policy.
+# Max-tries default is 4 (≈ 14 s of cumulative backoff in the worst
+# case: 2 + 4 + 8 seconds between attempts). Override with the env
+# var `NEMETON_STAC_MAX_TRIES` (integer) for power users or CI.
+.with_stac_retry <- function(req, max_tries = NULL) {
+  if (is.null(max_tries)) {
+    mt <- suppressWarnings(
+      as.integer(Sys.getenv("NEMETON_STAC_MAX_TRIES", "4"))
+    )
+    max_tries <- if (is.na(mt) || mt < 1L) 4L else mt
+  }
+  req |>
+    httr2::req_retry(
+      max_tries    = max_tries,
+      is_transient = .is_stac_transient,
+      backoff      = function(i) min(60, 2^i)
+    )
+}
+
+
 #' Search Sentinel-2 L2A scenes via STAC
 #'
 #' Façade around CDSE (priority) and Planetary Computer (fallback).
 #' Returns a tibble with one row per scene, holding the COG hrefs for
 #' bands B04, B08, B12 (used to derive NDVI and NBR downstream).
+#'
+#' Each backend request is automatically retried on transient HTTP
+#' errors (429, 500, 502, 503, 504) with exponential backoff capped
+#' at 60 s. Default budget is 4 attempts per backend; override with
+#' the `NEMETON_STAC_MAX_TRIES` environment variable. When every
+#' configured backend exhausts its retry budget the function emits
+#' a single \dQuote{All STAC backends failed} warning (in addition
+#' to the per-backend warnings) and returns the canonical empty
+#' tibble — callers (e.g. `nemetonshiny`) can use that aggregated
+#' warning to render one toast instead of stacking one per backend.
 #'
 #' @param zone An sf or sfc object covering the area of interest.
 #'   Re-projected to WGS84 internally.
@@ -67,6 +106,7 @@ stac_search_s2 <- function(zone,
   start <- as.Date(start); end <- as.Date(end)
   if (end < start) cli::cli_abort("{.arg end} ({end}) must be on or after {.arg start} ({start}).")
 
+  failures <- character(0)
   for (s in source) {
     res <- tryCatch(
       switch(s,
@@ -74,7 +114,9 @@ stac_search_s2 <- function(zone,
         pc   = stac_search_s2_pc(bbox, start, end, max_cloud, limit)
       ),
       error = function(e) {
-        cli::cli_warn("STAC backend {.val {s}} failed: {conditionMessage(e)}")
+        msg <- conditionMessage(e)
+        failures[[s]] <<- msg
+        cli::cli_warn("STAC backend {.val {s}} failed: {msg}")
         NULL
       }
     )
@@ -82,7 +124,16 @@ stac_search_s2 <- function(zone,
       return(res)
     }
   }
-  # All backends exhausted: return empty tibble with the canonical schema.
+  # All backends exhausted: surface a single, actionable warning so
+  # the UI can render one toast instead of stacking the per-backend
+  # ones. The caller still sees the per-backend warnings above for
+  # debugging.
+  if (length(failures)) {
+    cli::cli_warn(c(
+      "All STAC backends ({.val {names(failures)}}) failed after retries.",
+      i = "This is usually transient (504 Gateway Timeout on Planetary Computer, EU peak hours on CDSE). Retry in a few minutes or narrow the date range."
+    ))
+  }
   .empty_scene_tibble()
 }
 
@@ -108,6 +159,7 @@ stac_search_s2_cdse <- function(bbox, start, end, max_cloud = 20, limit = 100L) 
                        Accept         = "application/json") |>
     httr2::req_body_json(body) |>
     httr2::req_timeout(60) |>
+    .with_stac_retry() |>
     httr2::req_perform()
 
   features <- httr2::resp_body_json(resp)$features %||% list()
@@ -134,6 +186,7 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
                        Accept         = "application/json") |>
     httr2::req_body_json(body) |>
     httr2::req_timeout(60) |>
+    .with_stac_retry() |>
     httr2::req_perform()
 
   features <- httr2::resp_body_json(resp)$features %||% list()
@@ -226,6 +279,7 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
     httr2::request("https://planetarycomputer.microsoft.com/api/sas/v1/sign") |>
       httr2::req_url_query(href = url) |>
       httr2::req_timeout(20) |>
+      .with_stac_retry() |>
       httr2::req_perform(),
     error = function(e) {
       # Surface the failure so callers can tell the URL is unsigned (and
@@ -283,6 +337,7 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
   resp <- tryCatch(
     httr2::request(url) |>
       httr2::req_timeout(20) |>
+      .with_stac_retry() |>
       httr2::req_perform(),
     error = function(e) {
       cli::cli_warn("PC token fetch failed: {conditionMessage(e)}")

@@ -1,3 +1,32 @@
+# nemeton 0.21.5 (2026-05-13)
+
+### Fixed — transient STAC failures (HTTP 504/503/502) no longer abort the search
+
+`stac_search_s2()` (and its CDSE / Planetary Computer
+implementations) now retry on transient HTTP errors before
+giving up:
+
+* Retried status codes: **429, 500, 502, 503, 504**. The default
+  `httr2` policy only retries on 429 + 503, which left genuine
+  Planetary Computer 504 Gateway Timeouts surfaced immediately
+  as toasts in `nemetonshiny`.
+* Default budget: 4 attempts per backend (≈ 14 s of cumulative
+  exponential backoff in the worst case: 2 + 4 + 8 s between
+  attempts, capped at 60 s).
+* Override via `NEMETON_STAC_MAX_TRIES` (integer env var).
+
+When every configured backend exhausts its retry budget,
+`stac_search_s2()` now emits a single aggregated warning
+\dQuote{All STAC backends (cdse, pc) failed after retries} —
+in addition to the per-backend warnings — so the UI can render
+one toast instead of stacking one per backend.
+
+The retry policy is also applied to the Planetary Computer SAS
+token fetch (`/api/sas/v1/token/{collection}`) and the legacy
+per-href sign endpoint (`/api/sas/v1/sign`), so a transient PC
+hiccup during the auth round-trip no longer falls back to
+unsigned URLs (which Azure would then 409).
+
 # nemeton 0.21.4 (2026-05-12)
 
 ### Added — on-disk COG band cache for `ingest_sentinel2_timeseries()`
