@@ -1,3 +1,36 @@
+# nemeton 0.21.9 (2026-05-13)
+
+### Fixed — transient DNS / network errors abort entire scenes
+
+`.terra_rast_with_pc_retry()` used to retry **only** on PC SAS
+401/403. Any other failure — including DNS hiccups
+(`Could not resolve host: …`), connection timeouts, and GDAL HTTP
+5xx — propagated immediately, the scene was skipped, and the
+ingestion lost data for what was usually a 5-30 second blip.
+
+The retry path now classifies the error and reacts accordingly:
+
+* **PC SAS auth** (`40[13]`, `forbidden`, `unauthorized`) on a PC
+  blob URL → invalidate cached token, re-sign href, retry
+  immediately. *(Behaviour preserved from v0.21.6.)*
+* **Transient network** (`could not resolve host`, `could not
+  connect`, `connection (timed out|reset|refused)`,
+  `network unreachable`, `temporary failure`, `http error 5xx`,
+  `gdal error … timeout`) → sleep with exponential backoff
+  (2 s, 4 s, 8 s, …, capped at 30 s) and retry the same href.
+* **Anything else** (404, malformed COG, permission denied)
+  propagates immediately as before.
+
+Total budget is **3 attempts** per band by default; override with
+the env var `NEMETON_S2_MAX_TRIES` (positive integer).
+
+A new progress event `s2:band_fetch_retry` is emitted before each
+sleep, with payload `scene_id`, `band`, `attempt`, `max_tries`,
+`retry_in_sec`, `error_message`. Callers (`nemetonshiny`) can
+render it as a toast like *"Hoquet réseau sur scène X bande B04 —
+réessai dans 4 s"* so the user sees the pipeline is recovering,
+not stuck.
+
 # nemeton 0.21.8 (2026-05-13)
 
 ### Fixed — every S2 band cache hit raised "cannot coerce type 'S4' to vector of type 'double'"

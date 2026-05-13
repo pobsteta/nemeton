@@ -164,11 +164,17 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       token expired between STAC search and band read; the band
 #'       open was retried with a fresh token — payload:
 #'       `scene_id`, `band`, `collection`.}
+#'     \item{`s2:band_fetch_retry`}{Transient network error (DNS,
+#'       timeout, connection refused, 5xx) on a band fetch; sleeping
+#'       and retrying — payload: `scene_id`, `band`, `attempt`,
+#'       `max_tries`, `retry_in_sec`, `error_message`. Override the
+#'       max-attempts budget with the `NEMETON_S2_MAX_TRIES` env var
+#'       (default 3).}
 #'     \item{`s2:band_fetch_failed`}{`terra::rast(href)` raised an
-#'       unrecoverable error (after the PC token refresh path if
-#'       applicable) — payload: `scene_id`, `band`, `href`,
-#'       `error_message`. The scene is then skipped at scene level
-#'       (`s2:scene_skipped`).}
+#'       unrecoverable error (after the PC token refresh path and
+#'       transient-network retries if applicable) — payload:
+#'       `scene_id`, `band`, `href`, `error_message`. The scene is
+#'       then skipped at scene level (`s2:scene_skipped`).}
 #'     \item{`s2:complete`}{After the loop — payload includes
 #'       `completed = total`, `total`, `n_obs_inserted`,
 #'       `n_scenes_cached`.}
@@ -623,21 +629,40 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   o[1] <= i[1] && o[2] >= i[2] && o[3] <= i[3] && o[4] >= i[4]
 }
 
-# Open a Sentinel-2 band href with `terra::rast()`, retrying once
-# with a fresh SAS token when the first attempt fails with a 403/401
-# on a Planetary Computer blob URL. Token-expired-mid-ingestion is the
-# top failure mode on long (>30 min) runs: STAC search signs every
-# href with a snapshot of the cached token, then each band open hits
-# Azure with a possibly-stale signature.
+# Open a Sentinel-2 band href with `terra::rast()`, retrying on the
+# following transient failures (up to `max_tries` attempts, default
+# 3; override with the env var `NEMETON_S2_MAX_TRIES`):
 #
-# Emits `s2:band_fetch_failed` when the band cannot be opened (after
-# retry, if applicable) and `s2:pc_token_refreshed` when the retry
-# path succeeds. Both events carry `scene_id` + `band` + `href`.
+# - PC SAS auth (40[13] / forbidden / unauthorized) on a PC blob URL
+#   → invalidate cached token, re-sign href, retry immediately.
+#   Top failure mode on long (>30 min) ingestions: STAC search signs
+#   every href with a snapshot of the cached token, then each band
+#   open hits Azure with a possibly-stale signature.
+#
+# - Network-transient (DNS / connection timed out / refused /
+#   network unreachable / GDAL HTTP 5xx) → sleep with exponential
+#   backoff (2 s, 4 s, 8 s, capped at 30 s) and retry the same href.
+#   These typically clear in seconds on a flaky ISP / VPN
+#   reconnect, so a hard skip used to lose entire scenes for a
+#   30-second DNS hiccup.
+#
+# Any other error (404, malformed COG, etc.) propagates immediately.
+#
+# Emits `s2:pc_token_refreshed`, `s2:band_fetch_retry` (per retry on
+# transient errors), and `s2:band_fetch_failed` (on giving up).
 .terra_rast_with_pc_retry <- function(href,
                                       collection = "sentinel-2-l2a",
                                       emit_fn    = NULL,
                                       scene_id   = NA_character_,
-                                      band       = NA_character_) {
+                                      band       = NA_character_,
+                                      max_tries  = NULL) {
+  if (is.null(max_tries)) {
+    mt <- suppressWarnings(
+      as.integer(Sys.getenv("NEMETON_S2_MAX_TRIES", "3"))
+    )
+    max_tries <- if (is.na(mt) || mt < 1L) 3L else mt
+  }
+
   emit_failure <- function(msg) {
     if (!is.null(emit_fn)) {
       emit_fn(list(current       = "s2:band_fetch_failed",
@@ -648,49 +673,78 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     }
   }
 
-  r1 <- tryCatch(terra::rast(href), error = function(e) e)
-  if (!inherits(r1, "error")) return(r1)
+  current_href <- href
+  last_err     <- NULL
+  for (attempt in seq_len(max_tries)) {
+    r <- tryCatch(terra::rast(current_href), error = function(e) e)
+    if (!inherits(r, "error")) return(r)
 
-  err_msg1 <- conditionMessage(r1)
-  # PC blob URL? + auth-shaped error? Otherwise no point refreshing
-  # — propagate the original error (and let the scene-level handler
-  # decide what to do with it).
-  is_pc_blob <- grepl("blob\\.core\\.windows\\.net", href) &&
-                grepl("sig=", href, fixed = TRUE)
-  is_auth <- grepl("\\b(40[13]|forbidden|unauthorized|authentication)\\b",
-                   err_msg1, ignore.case = TRUE, perl = TRUE)
+    last_err <- r
+    err_msg <- conditionMessage(r)
 
-  if (!is_pc_blob || !is_auth) {
-    emit_failure(err_msg1)
-    stop(r1)
+    if (attempt == max_tries) break
+
+    is_pc_blob <- grepl("blob\\.core\\.windows\\.net", current_href) &&
+                  grepl("sig=", current_href, fixed = TRUE)
+    is_auth <- grepl("\\b(40[13]|forbidden|unauthorized|authentication)\\b",
+                     err_msg, ignore.case = TRUE, perl = TRUE)
+    is_transient <- grepl(
+      paste0("could not resolve host|could not connect|",
+             "connection (timed out|reset|refused)|",
+             "network (is )?unreachable|temporary failure|",
+             "http error.*\\b5\\d{2}\\b|gdal error.*timeout"),
+      err_msg, ignore.case = TRUE, perl = TRUE
+    )
+
+    if (is_pc_blob && is_auth) {
+      # PC SAS token refresh path — no sleep, retry on a fresh URL.
+      .pc_invalidate_token(collection)
+      fresh_href <- .pc_resign_href(href, collection)
+      if (is.null(fresh_href)) {
+        emit_failure(paste0(err_msg, " (token refresh failed)"))
+        stop(last_err)
+      }
+      if (!is.null(emit_fn)) {
+        emit_fn(list(current    = "s2:pc_token_refreshed",
+                     scene_id   = scene_id,
+                     band       = band,
+                     collection = collection))
+      }
+      current_href <- fresh_href
+      next
+    }
+
+    if (is_transient) {
+      sleep_s <- min(30, 2L^attempt)
+      if (!is.null(emit_fn)) {
+        emit_fn(list(current        = "s2:band_fetch_retry",
+                     scene_id       = scene_id,
+                     band           = band,
+                     attempt        = as.integer(attempt),
+                     max_tries      = as.integer(max_tries),
+                     retry_in_sec   = as.integer(sleep_s),
+                     error_message  = err_msg))
+      }
+      cli::cli_alert_info(c(
+        "Transient S2 fetch error ({.val {scene_id}}/{band}, attempt {attempt}/{max_tries}): {err_msg}",
+        i = "Retrying in {sleep_s}s."
+      ))
+      Sys.sleep(sleep_s)
+      next
+    }
+
+    # Non-recoverable (404, malformed COG, etc.) — propagate.
+    emit_failure(err_msg)
+    stop(last_err)
   }
 
-  # Refresh the SAS token, re-sign, retry once.
-  .pc_invalidate_token(collection)
-  fresh_href <- .pc_resign_href(href, collection)
-  if (is.null(fresh_href)) {
-    emit_failure(paste0(err_msg1, " (token refresh failed)"))
-    stop(r1)
-  }
-  if (!is.null(emit_fn)) {
-    emit_fn(list(current    = "s2:pc_token_refreshed",
-                 scene_id   = scene_id,
-                 band       = band,
-                 collection = collection))
-  }
-  r2 <- tryCatch(terra::rast(fresh_href), error = function(e) e)
-  if (inherits(r2, "error")) {
-    msg2 <- conditionMessage(r2)
-    emit_failure(sprintf("before refresh: %s | after refresh: %s",
-                         err_msg1, msg2))
-    cli::cli_warn(c(
-      "PC SAS token refresh did not unstick {.val {scene_id}}/{band}.",
-      i = "Before refresh: {err_msg1}",
-      i = "After refresh:  {msg2}"
-    ))
-    stop(r2)
-  }
-  r2
+  # All attempts exhausted.
+  emit_failure(conditionMessage(last_err))
+  cli::cli_warn(c(
+    "S2 band fetch gave up on {.val {scene_id}}/{band} after {max_tries} attempts.",
+    i = "Last error: {conditionMessage(last_err)}"
+  ))
+  stop(last_err)
 }
 
 # Return the (cropped) terra SpatRaster for one S2 band. Reads from

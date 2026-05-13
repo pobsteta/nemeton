@@ -107,11 +107,18 @@ Phases emitted, in order:
     token expired between STAC search and band read; the band
     open was retried with a fresh token — payload:
     \code{scene_id}, \code{band}, \code{collection}.}
+  \item{\code{s2:band_fetch_retry}}{Transient network error (DNS,
+    timeout, connection refused, 5xx) on a band fetch; sleeping
+    and retrying — payload: \code{scene_id}, \code{band},
+    \code{attempt}, \code{max_tries}, \code{retry_in_sec},
+    \code{error_message}. Override the max-attempts budget with
+    the \code{NEMETON_S2_MAX_TRIES} env var (default 3).}
   \item{\code{s2:band_fetch_failed}}{\code{terra::rast(href)}
     raised an unrecoverable error (after the PC token refresh path
-    if applicable) — payload: \code{scene_id}, \code{band},
-    \code{href}, \code{error_message}. The scene is then skipped
-    at scene level (\code{s2:scene_skipped}).}
+    and transient-network retries if applicable) — payload:
+    \code{scene_id}, \code{band}, \code{href},
+    \code{error_message}. The scene is then skipped at scene level
+    (\code{s2:scene_skipped}).}
   \item{\code{s2:complete}}{After the loop — payload includes
     \code{completed = total}, \code{total}, \code{n_obs_inserted},
     \code{n_scenes_cached}.}

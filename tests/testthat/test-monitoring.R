@@ -950,15 +950,125 @@ test_that(".terra_rast_with_pc_retry: 403 that survives refresh emits band_fetch
       nemeton:::.terra_rast_with_pc_retry(
         pc_href,
         emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
-        scene_id = "S", band = "B04"
+        scene_id = "S", band = "B04",
+        max_tries = 2L   # bound to keep the test snappy
       ),
       "403 Forbidden"
     ),
-    "did not unstick"
+    "gave up"
   )
   failed <- Filter(function(p) p$current == "s2:band_fetch_failed", events)
   expect_length(failed, 1L)
-  expect_match(failed[[1]]$error_message, "before refresh:.*after refresh:")
+  expect_match(failed[[1]]$error_message, "403 Forbidden")
+})
+
+
+# ---- transient network retry (v0.21.9) -------------------------------
+
+test_that("transient error patterns are recognised by the retry classifier", {
+  skip_if_not_installed("terra")
+  transient_messages <- c(
+    "Could not resolve host: x.blob.core.windows.net",
+    "Could not connect to x.example.com",
+    "Connection timed out",
+    "Connection refused",
+    "Connection reset by peer",
+    "Network unreachable",
+    "Network is unreachable",
+    "Temporary failure in name resolution",
+    "HTTP error: 502 Bad Gateway",
+    "HTTP error 504 Gateway Timeout",
+    "GDAL error 1: timeout"
+  )
+  pattern <- paste0(
+    "could not resolve host|could not connect|",
+    "connection (timed out|reset|refused)|",
+    "network (is )?unreachable|temporary failure|",
+    "http error.*\\b5\\d{2}\\b|gdal error.*timeout"
+  )
+  for (msg in transient_messages) {
+    expect_true(
+      grepl(pattern, msg, ignore.case = TRUE, perl = TRUE),
+      info = sprintf("Expected pattern to match: %s", msg)
+    )
+  }
+  # Sanity: hard errors must NOT match.
+  for (msg in c("File not found (404)", "Malformed COG", "Permission denied")) {
+    expect_false(
+      grepl(pattern, msg, ignore.case = TRUE, perl = TRUE),
+      info = sprintf("Pattern accidentally matched: %s", msg)
+    )
+  }
+})
+
+test_that(".terra_rast_with_pc_retry: transient DNS error retries on the same URL", {
+  skip_if_not_installed("terra")
+  call_idx <- 0L
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) {
+      call_idx <<- call_idx + 1L
+      if (call_idx < 2L) {
+        stop("Could not resolve host: sentinel2l2a01.blob.core.windows.net")
+      }
+      "FAKE_RASTER"
+    },
+    .package = "terra"
+  )
+  events <- list()
+  out <- nemeton:::.terra_rast_with_pc_retry(
+    "https://sentinel2l2a01.blob.core.windows.net/X.tif?sig=Z",
+    emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+    scene_id = "S", band = "B04",
+    max_tries = 2L   # second attempt succeeds, first attempt sleeps 2s
+  )
+  expect_identical(out, "FAKE_RASTER")
+  expect_equal(call_idx, 2L)
+  retries <- Filter(function(p) p$current == "s2:band_fetch_retry", events)
+  expect_length(retries, 1L)
+  expect_equal(retries[[1]]$attempt, 1L)
+  expect_equal(retries[[1]]$max_tries, 2L)
+  expect_match(retries[[1]]$error_message, "Could not resolve host")
+})
+
+test_that(".terra_rast_with_pc_retry: persistent transient → gives up after max_tries", {
+  skip_if_not_installed("terra")
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) stop("Could not resolve host: x"),
+    .package = "terra"
+  )
+  events <- list()
+  expect_warning(
+    expect_error(
+      nemeton:::.terra_rast_with_pc_retry(
+        "https://x.example/B04.tif",
+        emit_fn  = function(p) events[[length(events) + 1L]] <<- p,
+        scene_id = "S", band = "B04",
+        max_tries = 2L
+      ),
+      "Could not resolve host"
+    ),
+    "gave up"
+  )
+  failed <- Filter(function(p) p$current == "s2:band_fetch_failed", events)
+  expect_length(failed, 1L)
+})
+
+test_that(".terra_rast_with_pc_retry: NEMETON_S2_MAX_TRIES env var overrides default", {
+  skip_if_not_installed("terra")
+  withr::local_envvar(NEMETON_S2_MAX_TRIES = "1")
+  n_calls <- 0L
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) { n_calls <<- n_calls + 1L; stop("Connection timed out") },
+    .package = "terra"
+  )
+  expect_error(
+    nemeton:::.terra_rast_with_pc_retry(
+      "https://x.example/B04.tif", scene_id = "S", band = "B04"
+    ),
+    "Connection timed out"
+  )
+  # Only one attempt — no retry on Sys.sleep.
+  expect_equal(n_calls, 1L)
 })
 
 test_that(".get_s2_band_raster: cache_dir = NULL bypasses the cache entirely", {
