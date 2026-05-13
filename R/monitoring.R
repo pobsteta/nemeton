@@ -107,6 +107,14 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   overwritten. Default `NULL` (no on-disk cache, v0.21.3
 #'   behaviour). Combine with `skip_cached = FALSE` to force
 #'   re-extraction from cached COGs without touching the network.
+#'
+#'   Recommended layout for callers (e.g. `nemetonshiny`):
+#'   `<project>/cache/layers/sentinel2/`, matching the
+#'   `<project>/cache/layers/{lidar_mnh,lidar_mnt,lidar_nuage,...}`
+#'   convention already used by `detect_ndp_from_cache()`. The
+#'   `cache/` subtree is for derived, regeneratable artefacts and
+#'   should be in `.gitignore`; do not use `<project>/data/` which
+#'   is reserved for user-owned project data.
 #' @param progress_callback Optional function called at each step of
 #'   the ingestion to allow callers (e.g. `nemetonshiny`) to report
 #'   download progress to the user. Receives a single named list

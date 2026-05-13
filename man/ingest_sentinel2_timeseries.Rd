@@ -46,7 +46,15 @@ file whose bounding box no longer covers the requested plots is
 silently overwritten. Default \code{NULL} (no on-disk cache,
 v0.21.3 behaviour). Combine with \code{skip_cached = FALSE} to
 force re-extraction from cached COGs without touching the
-network.}
+network.
+
+Recommended layout for callers (e.g. \code{nemetonshiny}):
+\code{<project>/cache/layers/sentinel2/}, matching the
+\code{<project>/cache/layers/\{lidar_mnh,lidar_mnt,lidar_nuage,...\}}
+convention already used by \code{detect_ndp_from_cache()}. The
+\code{cache/} subtree is for derived, regeneratable artefacts and
+should be in \code{.gitignore}; do not use \code{<project>/data/}
+which is reserved for user-owned project data.}
 
 \item{progress_callback}{Optional function called at each step of
 the ingestion to allow callers (e.g. \code{nemetonshiny}) to report
