@@ -115,6 +115,21 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   `cache/` subtree is for derived, regeneratable artefacts and
 #'   should be in `.gitignore`; do not use `<project>/data/` which
 #'   is reserved for user-owned project data.
+#'
+#'   \strong{Priming the cache on an existing zone.} The two cache
+#'   layers (`skip_cached` and `cache_dir`) are independent: when
+#'   `skip_cached = TRUE` (default) finds an `obs_date` already
+#'   covered in `obs_pixel`, the scene is skipped \emph{before}
+#'   `.extract_scene_obs()` runs, so no COG is written. If you
+#'   enable `cache_dir` on a zone whose `obs_pixel` is already
+#'   populated, run the ingestion \emph{once} with
+#'   `skip_cached = FALSE` to force re-extraction: scenes go through
+#'   the full path and the COGs land on disk; SQL INSERTs are
+#'   `ON CONFLICT DO NOTHING` so the DB stays bit-identical
+#'   (no duplicate rows, no overwritten values). Subsequent runs
+#'   can revert to `skip_cached = TRUE` — the COG cache will then
+#'   kick in only when a genuine re-extraction is needed
+#'   (a new band, a new metric, a manual `obs_pixel` wipe).
 #' @param progress_callback Optional function called at each step of
 #'   the ingestion to allow callers (e.g. `nemetonshiny`) to report
 #'   download progress to the user. Receives a single named list
@@ -155,6 +170,29 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @return A tibble summarising the ingestion: number of scenes
 #'   considered, number of scenes skipped thanks to the cache,
 #'   number of observations inserted, bands ingested.
+#'
+#' @examples
+#' \dontrun{
+#' # Typical wiring from nemetonshiny's monitoring worker.
+#' cache <- file.path(project_path, "cache", "layers", "sentinel2")
+#'
+#' # First run on an already-populated zone, to prime the COG cache.
+#' # SQL INSERTs are ON CONFLICT DO NOTHING -> DB stays bit-identical.
+#' ingest_sentinel2_timeseries(
+#'   con, zone_id, "2020-01-01", "2025-12-31",
+#'   bands       = c("NDVI", "NBR"),
+#'   skip_cached = FALSE,                 # force re-extraction
+#'   cache_dir   = cache
+#' )
+#'
+#' # Subsequent runs: skip_cached short-circuits at the DB level,
+#' # cache_dir only kicks in when a genuine re-extraction is needed.
+#' ingest_sentinel2_timeseries(
+#'   con, zone_id, "2026-01-01", "2026-06-30",
+#'   bands     = c("NDVI", "NBR"),
+#'   cache_dir = cache                    # skip_cached defaults to TRUE
+#' )
+#' }
 #'
 #' @export
 ingest_sentinel2_timeseries <- function(con, zone_id,

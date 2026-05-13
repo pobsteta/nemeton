@@ -54,7 +54,23 @@ Recommended layout for callers (e.g. \code{nemetonshiny}):
 convention already used by \code{detect_ndp_from_cache()}. The
 \code{cache/} subtree is for derived, regeneratable artefacts and
 should be in \code{.gitignore}; do not use \code{<project>/data/}
-which is reserved for user-owned project data.}
+which is reserved for user-owned project data.
+
+\strong{Priming the cache on an existing zone.} The two cache
+layers (\code{skip_cached} and \code{cache_dir}) are independent:
+when \code{skip_cached = TRUE} (default) finds an \code{obs_date}
+already covered in \code{obs_pixel}, the scene is skipped
+\emph{before} \code{.extract_scene_obs()} runs, so no COG is
+written. If you enable \code{cache_dir} on a zone whose
+\code{obs_pixel} is already populated, run the ingestion
+\emph{once} with \code{skip_cached = FALSE} to force re-extraction:
+scenes go through the full path and the COGs land on disk; SQL
+INSERTs are \code{ON CONFLICT DO NOTHING} so the DB stays
+bit-identical (no duplicate rows, no overwritten values).
+Subsequent runs can revert to \code{skip_cached = TRUE} — the
+COG cache will then kick in only when a genuine re-extraction is
+needed (a new band, a new metric, a manual \code{obs_pixel}
+wipe).}
 
 \item{progress_callback}{Optional function called at each step of
 the ingestion to allow callers (e.g. \code{nemetonshiny}) to report
@@ -105,4 +121,27 @@ NDVI and/or NBR per scene, extracts the mean per plot over a
 circular buffer (\code{exactextractr::exact_extract}), and inserts
 the results into \code{obs_pixel} (idempotent on
 \code{(plot_id, obs_date, band)}).
+}
+\examples{
+\dontrun{
+# Typical wiring from nemetonshiny's monitoring worker.
+cache <- file.path(project_path, "cache", "layers", "sentinel2")
+
+# First run on an already-populated zone, to prime the COG cache.
+# SQL INSERTs are ON CONFLICT DO NOTHING -> DB stays bit-identical.
+ingest_sentinel2_timeseries(
+  con, zone_id, "2020-01-01", "2025-12-31",
+  bands       = c("NDVI", "NBR"),
+  skip_cached = FALSE,                 # force re-extraction
+  cache_dir   = cache
+)
+
+# Subsequent runs: skip_cached short-circuits at the DB level,
+# cache_dir only kicks in when a genuine re-extraction is needed.
+ingest_sentinel2_timeseries(
+  con, zone_id, "2026-01-01", "2026-06-30",
+  bands     = c("NDVI", "NBR"),
+  cache_dir = cache                    # skip_cached defaults to TRUE
+)
+}
 }
