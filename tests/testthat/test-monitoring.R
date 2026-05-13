@@ -781,6 +781,72 @@ test_that(".get_s2_band_raster: stale cache (extent too small) is overwritten", 
   expect_true(new_ext[1] <= 390 && new_ext[2] >= 410)
 })
 
+# ---- diagnose_s2_cache + debug log gating (v0.21.7) -----------------
+
+test_that(".s2_cache_debug_enabled honours NEMETON_S2_CACHE_DEBUG", {
+  withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = ""), {
+    expect_false(nemeton:::.s2_cache_debug_enabled())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = "FALSE"), {
+    expect_false(nemeton:::.s2_cache_debug_enabled())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = "TRUE"), {
+    expect_true(nemeton:::.s2_cache_debug_enabled())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = "1"), {
+    expect_true(nemeton:::.s2_cache_debug_enabled())
+  })
+})
+
+test_that(".s2_cache_log is silent unless NEMETON_S2_CACHE_DEBUG is on", {
+  withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = "FALSE"), {
+    expect_silent(nemeton:::.s2_cache_log("anything"))
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_DEBUG = "TRUE"), {
+    expect_message(nemeton:::.s2_cache_log("hello"), "s2_cache.*hello")
+  })
+})
+
+test_that("diagnose_s2_cache reports a missing cache cleanly", {
+  out <- diagnose_s2_cache("/nonexistent/path", verbose = FALSE)
+  expect_equal(out$n_scenes, 0L)
+  expect_equal(out$n_populated, 0L)
+  expect_equal(out$n_empty, 0L)
+})
+
+test_that("diagnose_s2_cache reports an empty cache cleanly", {
+  cache <- withr::local_tempdir()
+  out <- diagnose_s2_cache(cache, verbose = FALSE)
+  expect_equal(out$n_scenes, 0L)
+})
+
+test_that("diagnose_s2_cache distinguishes populated vs empty scene dirs", {
+  cache <- withr::local_tempdir()
+  # Populated scene
+  dir.create(file.path(cache, "S2_OK"))
+  writeLines("fake", file.path(cache, "S2_OK", "B04.tif"))
+  writeLines("fake", file.path(cache, "S2_OK", "B08.tif"))
+  # Empty scene (leftover from v0.21.4)
+  dir.create(file.path(cache, "S2_EMPTY"))
+
+  out <- diagnose_s2_cache(cache, verbose = FALSE)
+  expect_equal(out$n_scenes, 2L)
+  expect_equal(out$n_populated, 1L)
+  expect_equal(out$n_empty, 1L)
+  expect_true(out$total_bytes > 0)
+  expect_equal(basename(out$empty_dirs), "S2_EMPTY")
+})
+
+test_that("diagnose_s2_cache prints a cli summary when verbose = TRUE", {
+  cache <- withr::local_tempdir()
+  dir.create(file.path(cache, "S2_X"))
+  writeLines("fake", file.path(cache, "S2_X", "B04.tif"))
+  expect_message(diagnose_s2_cache(cache, verbose = TRUE), "S2 cache at")
+})
+
+
+# ---- existing PC retry tests -----------------------------------------
+
 test_that(".terra_rast_with_pc_retry: non-PC error propagates without retry", {
   skip_if_not_installed("terra")
   n_calls <- 0L

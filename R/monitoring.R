@@ -220,8 +220,20 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   }
   bands <- match.arg(bands, c("NDVI", "NBR"), several.ok = TRUE)
 
-  if (!is.null(cache_dir) && nzchar(cache_dir) && !dir.exists(cache_dir)) {
-    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+  # Always-on cache status banner. Catches the most common wiring bug
+  # ("I forgot to pass cache_dir") at the very first line of output, so
+  # a missing argument can't go unnoticed for 30 minutes of ingestion.
+  if (is.null(cache_dir) || !nzchar(cache_dir)) {
+    cli::cli_alert_info("S2 band cache: {.strong DISABLED} ({.code cache_dir} is NULL or empty).")
+  } else {
+    cli::cli_alert_info("S2 band cache: enabled at {.path {cache_dir}}")
+    if (!dir.exists(cache_dir)) {
+      dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+      cli::cli_alert_info("S2 cache directory created.")
+    }
+  }
+  if (.s2_cache_debug_enabled()) {
+    cli::cli_alert_info("S2 cache verbose tracing: ON ({.envvar NEMETON_S2_CACHE_DEBUG}=TRUE).")
   }
 
   # Local emitter — no-op when no callback is set, keeps the body free
@@ -377,6 +389,109 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   as.Date(rs$obs_date)
 }
 
+#' Diagnose an S2 band cache directory
+#'
+#' Walks `<cache_dir>/{scene_id}/` and reports how many scene
+#' directories are populated (contain at least one `.tif`) versus
+#' empty (no `.tif`). Empty dirs are typically leftovers from the
+#' v0.21.4 eager-creation bug (fixed in v0.21.6) — they can be
+#' safely wiped. Use this as a one-shot sanity check after running
+#' `ingest_sentinel2_timeseries(..., cache_dir = ...)`.
+#'
+#' @param cache_dir Character. Path to the S2 cache root, e.g.
+#'   `<project>/cache/layers/sentinel2`.
+#' @param verbose Logical. When `TRUE` (default), print a `cli`
+#'   summary; when `FALSE` only return the result list invisibly.
+#'
+#' @return Invisibly, a list with `cache_dir`, `n_scenes`,
+#'   `n_populated`, `n_empty`, `total_bytes`, `bands_per_scene`
+#'   (mean), and `empty_dirs` (character vector of paths).
+#'
+#' @examples
+#' \dontrun{
+#' diagnose_s2_cache(file.path(project_path, "cache", "layers", "sentinel2"))
+#' # i S2 cache at <project>/cache/layers/sentinel2
+#' #   * Scene directories: 159
+#' #   * Populated: 12 (3.4 MB)
+#' #   * Empty: 147   <- leftover from v0.21.4 or active fetch failures
+#' }
+#'
+#' @export
+diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
+  if (is.null(cache_dir) || !nzchar(cache_dir) || !dir.exists(cache_dir)) {
+    if (verbose) {
+      cli::cli_alert_danger("S2 cache directory not found: {.path {cache_dir %||% '<NULL>'}}")
+    }
+    return(invisible(list(
+      cache_dir       = cache_dir,
+      n_scenes        = 0L, n_populated = 0L, n_empty = 0L,
+      total_bytes     = 0,  bands_per_scene = 0,
+      empty_dirs      = character(0)
+    )))
+  }
+  scene_dirs <- list.dirs(cache_dir, recursive = FALSE)
+  n_scenes <- length(scene_dirs)
+  if (!n_scenes) {
+    if (verbose) {
+      cli::cli_alert_info("S2 cache at {.path {cache_dir}} is empty (no scene directories).")
+    }
+    return(invisible(list(
+      cache_dir = cache_dir, n_scenes = 0L, n_populated = 0L,
+      n_empty = 0L, total_bytes = 0, bands_per_scene = 0,
+      empty_dirs = character(0)
+    )))
+  }
+
+  per_scene <- lapply(scene_dirs, function(d) {
+    tifs <- list.files(d, pattern = "\\.tif$", full.names = TRUE)
+    if (!length(tifs)) {
+      list(populated = FALSE, n_bands = 0L, bytes = 0)
+    } else {
+      list(populated = TRUE,
+           n_bands   = length(tifs),
+           bytes     = sum(file.info(tifs)$size, na.rm = TRUE))
+    }
+  })
+  pop_idx     <- vapply(per_scene, function(x) x$populated, logical(1))
+  n_pop       <- sum(pop_idx)
+  n_empty     <- n_scenes - n_pop
+  total_bytes <- sum(vapply(per_scene, function(x) x$bytes, numeric(1)))
+  mean_bands  <- if (n_pop) {
+    mean(vapply(per_scene[pop_idx], function(x) x$n_bands, integer(1)))
+  } else 0
+  empty_dirs  <- scene_dirs[!pop_idx]
+
+  if (verbose) {
+    fmt_mb <- function(b) formatC(b / 1e6, digits = 1, format = "f")
+    cli::cli_alert_info("S2 cache at {.path {cache_dir}}")
+    cli::cli_bullets(c(
+      "*" = "Scene directories: {n_scenes}",
+      "*" = "Populated: {n_pop} ({fmt_mb(total_bytes)} MB, mean {round(mean_bands, 1)} bands/scene)",
+      "*" = "Empty: {n_empty}"
+    ))
+    if (n_empty > 0) {
+      cli::cli_alert_warning(c(
+        "Empty scene dirs detected. Most likely causes:"
+      ))
+      cli::cli_li(c(
+        "Leftover from v0.21.4 (eager dir-creation bug, fixed in v0.21.6).",
+        "Active fetch failure: scan warnings for {.code S2 band cache write failed} or {.code Scene .* skipped}.",
+        "Wiring: confirm {.code cache_dir} is passed to {.fn ingest_sentinel2_timeseries}."
+      ))
+      cli::cli_alert_info("Wipe leftovers safely: {.code unlink(diagnose_s2_cache(...)$empty_dirs, recursive = TRUE)}.")
+    }
+  }
+  invisible(list(
+    cache_dir       = cache_dir,
+    n_scenes        = as.integer(n_scenes),
+    n_populated     = as.integer(n_pop),
+    n_empty         = as.integer(n_empty),
+    total_bytes     = total_bytes,
+    bands_per_scene = mean_bands,
+    empty_dirs      = empty_dirs
+  ))
+}
+
 .fetch_plots_sf <- function(con, zone_id) {
   rs <- DBI::dbGetQuery(con,
     "SELECT id, plot_id, plot_type, geom_wkt, radius_m
@@ -456,6 +571,23 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 # Stale-cache rule: a cached file is reused only if its extent fully
 # contains the needed extent. If a re-run adds a new placette outside
 # the previously cached window, the file is silently overwritten.
+
+# Verbose tracer for diagnosing why no .tif lands on disk. Off by
+# default; enable with `Sys.setenv(NEMETON_S2_CACHE_DEBUG = "TRUE")`
+# (or the env var at process launch). Writes via `message()` so the
+# output is captured by Shiny / RStudio / `future_promise` worker
+# logs even when the calling thread doesn't render `cli` output.
+.s2_cache_debug_enabled <- function() {
+  v <- Sys.getenv("NEMETON_S2_CACHE_DEBUG", "FALSE")
+  isTRUE(as.logical(v)) || identical(v, "1")
+}
+.s2_cache_log <- function(...) {
+  if (.s2_cache_debug_enabled()) {
+    message(sprintf("[s2_cache %s] %s",
+                    format(Sys.time(), "%H:%M:%S"),
+                    paste0(c(...), collapse = "")))
+  }
+}
 
 # Filesystem-safe COG path for one band. Does NOT create any
 # directory — creation is deferred to the writeRaster moment in
@@ -554,6 +686,12 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   scene_id <- as.character(scene$scene_id)
   cached_path <- .s2_band_cache_path(cache_dir, scene_id, band)
 
+  .s2_cache_log("ENTER scene=", scene_id, " band=", band,
+                " cache_dir=",
+                if (is.null(cache_dir)) "<NULL>" else cache_dir,
+                " cached_path=",
+                if (is.null(cached_path)) "<NULL>" else cached_path)
+
   href_col <- paste0("href_", band)
   if (!href_col %in% names(scene)) {
     cli::cli_abort("Scene {.val {scene_id}} has no {.field {href_col}} column.")
@@ -566,7 +704,13 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
   # Try cache first.
   if (!is.null(cached_path) && file.exists(cached_path)) {
-    r_cached <- tryCatch(terra::rast(cached_path), error = function(e) NULL)
+    .s2_cache_log("CACHE-HIT? checking ", cached_path,
+                  " (", file.info(cached_path)$size, " bytes)")
+    r_cached <- tryCatch(terra::rast(cached_path), error = function(e) {
+      .s2_cache_log("CACHE-HIT abort: terra::rast(local) failed: ",
+                    conditionMessage(e))
+      NULL
+    })
     if (!is.null(r_cached)) {
       buf_native <- sf::st_transform(buf_plots, terra::crs(r_cached))
       needed_ext <- terra::ext(terra::vect(buf_native))
@@ -577,45 +721,69 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
         # cache's pixel grid, which is itself aligned to the source
         # tile's grid — so all bands stay co-registered.
         r_cached <- terra::crop(r_cached, needed_ext, snap = "out")
+        .s2_cache_log("CACHE-HIT served from disk")
         emit_fn(list(current  = "s2:band_cached",
                      scene_id = scene_id,
                      band     = band,
                      path     = cached_path))
         return(r_cached)
       }
-      # Stale (extent doesn't cover plots) — drop and refetch below.
+      .s2_cache_log("CACHE-STALE extent does not cover AOI, refetching")
     }
+  } else if (!is.null(cached_path)) {
+    .s2_cache_log("CACHE-MISS file does not exist yet")
+  } else {
+    .s2_cache_log("CACHE-DISABLED (cached_path is NULL)")
   }
 
   # Cache miss → fetch via VSI (with PC token auto-refresh on 403/401),
   # crop to AOI.
+  .s2_cache_log("FETCH href=", href)
   r <- .terra_rast_with_pc_retry(href,
                                  emit_fn  = emit_fn,
                                  scene_id = scene_id,
                                  band     = band)
+  .s2_cache_log("FETCH ok, cropping to AOI")
   buf_native <- sf::st_transform(buf_plots, terra::crs(r))
   r <- terra::crop(r, terra::ext(terra::vect(buf_native)), snap = "out")
+  .s2_cache_log("CROP ok dim=",
+                paste(dim(r)[1:2], collapse = "x"),
+                " ext=",
+                paste(round(as.numeric(terra::ext(r)), 1),
+                      collapse = ","))
 
   if (!is.null(cached_path)) {
     # Lazy directory creation: only at the moment we're about to
     # write. A failed `.terra_rast_with_pc_retry()` above raises
     # before we get here, so a broken scene no longer leaves an
     # empty scene directory behind.
-    dir.create(dirname(cached_path), recursive = TRUE,
-               showWarnings = FALSE)
+    scene_dir <- dirname(cached_path)
+    .s2_cache_log("WRITE preparing dir.create(", scene_dir, ")")
+    dir.create(scene_dir, recursive = TRUE, showWarnings = FALSE)
+    if (!dir.exists(scene_dir)) {
+      .s2_cache_log("WRITE ABORT dir.create did NOT yield a directory at ",
+                    scene_dir, " (permissions?)")
+      cli::cli_warn("S2 band cache: cannot create {.path {scene_dir}}. Check write permissions.")
+      return(r)
+    }
     tmp <- paste0(cached_path, ".tmp")
+    .s2_cache_log("WRITE writeRaster -> ", tmp)
     tryCatch({
       terra::writeRaster(
         r, tmp, overwrite = TRUE,
         gdal = c("TILED=YES", "COMPRESS=DEFLATE",
                  "BLOCKXSIZE=256", "BLOCKYSIZE=256", "PREDICTOR=2")
       )
+      sz <- if (file.exists(tmp)) file.info(tmp)$size else NA_integer_
+      .s2_cache_log("WRITE ok size=", sz, " bytes")
       file.rename(tmp, cached_path)
+      .s2_cache_log("RENAME ok -> ", cached_path)
       emit_fn(list(current  = "s2:band_fetched",
                    scene_id = scene_id,
                    band     = band,
                    path     = cached_path))
     }, error = function(e) {
+      .s2_cache_log("WRITE ERROR: ", conditionMessage(e))
       if (file.exists(tmp)) unlink(tmp)
       cli::cli_warn("S2 band cache write failed for {.val {scene_id}}/{band}: {conditionMessage(e)}")
     })

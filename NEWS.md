@@ -1,3 +1,50 @@
+# nemeton 0.21.7 (2026-05-13)
+
+### Added — observability for the S2 band cache
+
+Three additions to make it easy to answer "why is no `.tif`
+landing in `cache/layers/sentinel2/`":
+
+1. **Always-on cache status banner** at the top of every
+   `ingest_sentinel2_timeseries()` call:
+
+   ```
+   i S2 band cache: enabled at <project>/cache/layers/sentinel2
+   ```
+
+   …or the unmissable inverse when the wiring is wrong:
+
+   ```
+   i S2 band cache: DISABLED (cache_dir is NULL or empty).
+   ```
+
+   Catches the most common bug — `cache_dir` not actually being
+   passed by the caller — at the very first line of output instead
+   of after 30 minutes of silent ingestion.
+
+2. **Verbose tracer** gated by `NEMETON_S2_CACHE_DEBUG=TRUE` (or
+   `=1`). When enabled, `.get_s2_band_raster()` writes one
+   `message()` line per decision point: ENTER, CACHE-HIT/MISS/STALE,
+   FETCH (with href), CROP, WRITE preparing dir, WRITE writeRaster
+   target + size, RENAME, or any error along the way. Off by
+   default to keep regular runs quiet. Use `message()` (not `cli`)
+   so the trace is captured by `future_promise` worker logs.
+
+3. **`diagnose_s2_cache(cache_dir)`** — new exported helper that
+   walks the cache and reports populated vs empty scene
+   directories, total bytes, mean bands per scene, and the list of
+   empty dirs. Returns the result list invisibly so callers can
+   script cleanups (`unlink(diagnose_s2_cache(...)$empty_dirs,
+   recursive = TRUE)`).
+
+### Fixed — write permission failures now produce a clear warning
+
+When `dir.create(scene_dir)` silently fails (Windows permission
+issue, antivirus quarantine, network drive), `.get_s2_band_raster()`
+now emits `S2 band cache: cannot create <path>. Check write
+permissions.` and skips the write — instead of silently dropping
+into `terra::writeRaster` and surfacing a cryptic GDAL error.
+
 # nemeton 0.21.6 (2026-05-13)
 
 ### Fixed — empty `cache/layers/sentinel2/{scene_id}/` dirs after failed fetches
