@@ -1,3 +1,41 @@
+# nemeton 0.21.4 (2026-05-12)
+
+### Added — on-disk COG band cache for `ingest_sentinel2_timeseries()`
+
+`ingest_sentinel2_timeseries()` now accepts an optional
+`cache_dir = NULL` argument. When set, each cropped Sentinel-2
+band (B04, B08, B12) is persisted as a tiled GeoTIFF
+(COG-compatible: `TILED=YES`, `COMPRESS=DEFLATE`, `PREDICTOR=2`,
+256×256 blocks) under `<cache_dir>/{scene_id}/{band}.tif`.
+
+* On a cache hit, the band is opened with `terra::rast()` against
+  the local file — no VSI/HTTP read.
+* On a cache miss, the band is fetched via VSI, cropped to the
+  AOI bbox, and written atomically (`.tmp` → `rename`). Cache
+  write failures only warn, the pipeline continues with the
+  in-memory raster.
+* The cache is **extent-aware**: a cached file whose bbox no
+  longer covers the requested plots is silently overwritten. A
+  new placette outside the previous window therefore does not
+  return stale data.
+
+This complements the `skip_cached` short-circuit added in
+v0.21.3:
+
+| Layer    | Saves when            | Where           |
+|----------|------------------------|-----------------|
+| `skip_cached` (v0.21.3) | `obs_pixel` already has the (plot × band) values for an `obs_date` | DB SQL pre-filter |
+| `cache_dir` (this release) | `obs_pixel` needs a refresh (new band, new metric, manual wipe) but the raw bands are unchanged | local COG store |
+
+Two new progress events:
+
+* `s2:band_cached` — per band, payload `scene_id`, `band`, `path`.
+* `s2:band_fetched` — per band, same payload.
+
+Disk usage estimate: ~50 KB per band for a 1 km² AOI; ~24 MB for
+the typical 159-scene × 3-band run. Set `cache_dir = NULL`
+(default) to keep the v0.21.3 behaviour (no caching).
+
 # nemeton 0.21.3 (2026-05-12)
 
 ### Added — `skip_cached` short-circuit for `ingest_sentinel2_timeseries()`

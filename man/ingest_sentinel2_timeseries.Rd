@@ -12,6 +12,7 @@ ingest_sentinel2_timeseries(
   bands = c("NDVI", "NBR"),
   max_cloud = 20,
   skip_cached = TRUE,
+  cache_dir = NULL,
   progress_callback = NULL
 )
 }
@@ -33,6 +34,19 @@ zone × \strong{every} requested band. Lets re-runs against an
 existing database avoid all the per-scene HTTP traffic. Set
 \code{FALSE} to force re-extraction (e.g. after invalidating
 \code{obs_pixel} manually).}
+
+\item{cache_dir}{Optional path to a directory under which cropped
+band rasters are persisted as tiled GeoTIFF (COG-compatible
+layout) at \code{<cache_dir>/\{scene_id\}/\{band\}.tif}. On a
+cache hit the band is read locally (no HTTP); on a miss it is
+fetched via VSI, cropped, and written to the cache atomically.
+Cache write failures only warn — the pipeline continues with the
+in-memory raster. Cache reuse is \emph{extent-aware}: a cached
+file whose bounding box no longer covers the requested plots is
+silently overwritten. Default \code{NULL} (no on-disk cache,
+v0.21.3 behaviour). Combine with \code{skip_cached = FALSE} to
+force re-extraction from cached COGs without touching the
+network.}
 
 \item{progress_callback}{Optional function called at each step of
 the ingestion to allow callers (e.g. \code{nemetonshiny}) to report
@@ -59,6 +73,12 @@ Phases emitted, in order:
     \code{scene_id}, \code{obs_date}, \code{cloud_pct}, \code{source}.}
   \item{\code{s2:scene_skipped}}{When a scene fails extraction —
     payload adds \code{error_message} to the \code{s2:scene} shape.}
+  \item{\code{s2:band_cached}}{Per-band hit on the local COG cache
+    (only when \code{cache_dir} is set) — payload: \code{scene_id},
+    \code{band}, \code{path}.}
+  \item{\code{s2:band_fetched}}{Per-band miss → VSI fetch + write
+    to the cache (only when \code{cache_dir} is set) — payload:
+    \code{scene_id}, \code{band}, \code{path}.}
   \item{\code{s2:complete}}{After the loop — payload includes
     \code{completed = total}, \code{total}, \code{n_obs_inserted},
     \code{n_scenes_cached}.}

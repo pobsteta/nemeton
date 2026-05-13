@@ -96,6 +96,17 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   existing database avoid all the per-scene HTTP traffic. Set
 #'   `FALSE` to force re-extraction (e.g. after invalidating
 #'   `obs_pixel` manually).
+#' @param cache_dir Optional path to a directory under which cropped
+#'   band rasters are persisted as tiled GeoTIFF (COG-compatible
+#'   layout) at `<cache_dir>/{scene_id}/{band}.tif`. On a cache hit
+#'   the band is read locally (no HTTP); on a miss it is fetched via
+#'   VSI, cropped, and written to the cache atomically. Cache write
+#'   failures only warn — the pipeline continues with the in-memory
+#'   raster. Cache reuse is *extent-aware*: a cached file whose
+#'   bounding box no longer covers the requested plots is silently
+#'   overwritten. Default `NULL` (no on-disk cache, v0.21.3
+#'   behaviour). Combine with `skip_cached = FALSE` to force
+#'   re-extraction from cached COGs without touching the network.
 #' @param progress_callback Optional function called at each step of
 #'   the ingestion to allow callers (e.g. `nemetonshiny`) to report
 #'   download progress to the user. Receives a single named list
@@ -120,6 +131,12 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       `scene_id`, `obs_date`, `cloud_pct`, `source`.}
 #'     \item{`s2:scene_skipped`}{When a scene fails extraction —
 #'       payload adds `error_message` to the `s2:scene` shape.}
+#'     \item{`s2:band_cached`}{Per-band hit on the local COG cache
+#'       (only when `cache_dir` is set) — payload: `scene_id`,
+#'       `band`, `path`.}
+#'     \item{`s2:band_fetched`}{Per-band miss → VSI fetch + write
+#'       to the cache (only when `cache_dir` is set) — payload:
+#'       `scene_id`, `band`, `path`.}
 #'     \item{`s2:complete`}{After the loop — payload includes
 #'       `completed = total`, `total`, `n_obs_inserted`,
 #'       `n_scenes_cached`.}
@@ -137,6 +154,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                                         bands = c("NDVI", "NBR"),
                                         max_cloud = 20,
                                         skip_cached = TRUE,
+                                        cache_dir = NULL,
                                         progress_callback = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -146,6 +164,10 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
     cli::cli_abort("Package {.pkg exactextractr} required.")
   }
   bands <- match.arg(bands, c("NDVI", "NBR"), several.ok = TRUE)
+
+  if (!is.null(cache_dir) && nzchar(cache_dir) && !dir.exists(cache_dir)) {
+    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+  }
 
   # Local emitter — no-op when no callback is set, keeps the body free
   # of `if (!is.null(progress_callback))` boilerplate.
@@ -217,7 +239,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
               cloud_pct = sc$cloud_pct,
               source    = sc$source))
     obs <- tryCatch(
-      .extract_scene_obs(sc, plots, bands),
+      .extract_scene_obs(sc, plots, bands,
+                         cache_dir = cache_dir, emit = emit),
       error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
@@ -314,21 +337,16 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   sf::st_sf(rs, geometry = geom_sfc, crs = 4326)
 }
 
-.extract_scene_obs <- function(scene, plots, bands) {
+.extract_scene_obs <- function(scene, plots, bands,
+                               cache_dir = NULL, emit = NULL) {
   # Buffer plots in their native projected CRS (Lambert-93 by default
   # for FR; in 4326 we'd buffer in degrees, which is wrong).
   plots_proj <- sf::st_transform(plots, 2154)
   buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)
 
-  # Read just the windows we need. terra reads COGs over HTTP via VSI.
-  rB04 <- terra::rast(scene$href_B04)
-  rB08 <- terra::rast(scene$href_B08)
-  buf_in_raster_crs_04 <- sf::st_transform(buf, terra::crs(rB04))
+  rB04 <- .get_s2_band_raster(scene, "B04", buf, cache_dir, emit)
+  rB08 <- .get_s2_band_raster(scene, "B08", buf, cache_dir, emit)
   buf_in_raster_crs_08 <- sf::st_transform(buf, terra::crs(rB08))
-  rB04 <- terra::crop(rB04, terra::ext(terra::vect(buf_in_raster_crs_04)),
-                      snap = "out")
-  rB08 <- terra::crop(rB08, terra::ext(terra::vect(buf_in_raster_crs_08)),
-                      snap = "out")
   # B04 and B08 share resolution (10 m), no resample needed.
 
   out <- list()
@@ -350,10 +368,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   }
 
   if ("NBR" %in% bands) {
-    rB12 <- terra::rast(scene$href_B12)
-    buf_in_raster_crs_12 <- sf::st_transform(buf, terra::crs(rB12))
-    rB12 <- terra::crop(rB12, terra::ext(terra::vect(buf_in_raster_crs_12)),
-                        snap = "out")
+    rB12 <- .get_s2_band_raster(scene, "B12", buf, cache_dir, emit)
     # B12 is 20 m — resample to B08 grid for the formula.
     rB12r <- terra::resample(rB12, rB08, method = "bilinear")
     nbr <- (rB08 - rB12r) / (rB08 + rB12r)
@@ -372,6 +387,107 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   }
 
   do.call(rbind, out)
+}
+
+
+# ---- S2 band cache (option C, v0.21.4) -------------------------------
+#
+# Persist the cropped Sentinel-2 band rasters as tiled GeoTIFF (DEFLATE +
+# PREDICTOR=2 — COG-compatible layout) under
+# `<cache_dir>/{scene_id}/{band}.tif`. On cache hit, the local file is
+# opened by terra without any HTTP traffic; on miss the band is fetched
+# via VSI, cropped to the plots' bbox, and atomically written to disk.
+#
+# Stale-cache rule: a cached file is reused only if its extent fully
+# contains the needed extent. If a re-run adds a new placette outside
+# the previously cached window, the file is silently overwritten.
+
+# Filesystem-safe scene directory (creates it eagerly on cache enable).
+.s2_scene_cache_dir <- function(cache_dir, scene_id) {
+  if (is.null(cache_dir) || !nzchar(cache_dir)) return(NULL)
+  safe_id <- gsub("[^A-Za-z0-9._-]", "_", as.character(scene_id))
+  d <- file.path(cache_dir, safe_id)
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  d
+}
+
+# Geometric predicate: does `outer` (xmin, xmax, ymin, ymax) contain
+# `inner`? Accepts terra::ext() results or 4-numeric vectors.
+.ext_contains <- function(outer, inner) {
+  o <- as.numeric(c(outer[1], outer[2], outer[3], outer[4]))
+  i <- as.numeric(c(inner[1], inner[2], inner[3], inner[4]))
+  o[1] <= i[1] && o[2] >= i[2] && o[3] <= i[3] && o[4] >= i[4]
+}
+
+# Return the (cropped) terra SpatRaster for one S2 band. Reads from
+# `cache_dir` if a usable cached file exists; otherwise fetches via
+# VSI, crops, and writes to cache (best-effort, write failures only
+# warn).
+.get_s2_band_raster <- function(scene, band, buf_plots,
+                                cache_dir = NULL, emit = NULL) {
+  scene_id <- as.character(scene$scene_id)
+  scene_dir <- .s2_scene_cache_dir(cache_dir, scene_id)
+  cached_path <- if (!is.null(scene_dir)) {
+    file.path(scene_dir, paste0(band, ".tif"))
+  } else NULL
+
+  href_col <- paste0("href_", band)
+  if (!href_col %in% names(scene)) {
+    cli::cli_abort("Scene {.val {scene_id}} has no {.field {href_col}} column.")
+  }
+  href <- scene[[href_col]][[1]]
+
+  emit_fn <- function(payload) {
+    if (!is.null(emit)) emit(payload)
+  }
+
+  # Try cache first.
+  if (!is.null(cached_path) && file.exists(cached_path)) {
+    r_cached <- tryCatch(terra::rast(cached_path), error = function(e) NULL)
+    if (!is.null(r_cached)) {
+      buf_native <- sf::st_transform(buf_plots, terra::crs(r_cached))
+      needed_ext <- terra::ext(terra::vect(buf_native))
+      if (.ext_contains(terra::ext(r_cached), needed_ext)) {
+        # Re-crop to today's AOI so callers that arithmetic two
+        # cached bands together (NDVI = (B08 - B04) / (B08 + B04))
+        # see identical extents on both. snap = "out" rounds to the
+        # cache's pixel grid, which is itself aligned to the source
+        # tile's grid — so all bands stay co-registered.
+        r_cached <- terra::crop(r_cached, needed_ext, snap = "out")
+        emit_fn(list(current  = "s2:band_cached",
+                     scene_id = scene_id,
+                     band     = band,
+                     path     = cached_path))
+        return(r_cached)
+      }
+      # Stale (extent doesn't cover plots) — drop and refetch below.
+    }
+  }
+
+  # Cache miss → fetch via VSI, crop to AOI.
+  r <- terra::rast(href)
+  buf_native <- sf::st_transform(buf_plots, terra::crs(r))
+  r <- terra::crop(r, terra::ext(terra::vect(buf_native)), snap = "out")
+
+  if (!is.null(cached_path)) {
+    tmp <- paste0(cached_path, ".tmp")
+    tryCatch({
+      terra::writeRaster(
+        r, tmp, overwrite = TRUE,
+        gdal = c("TILED=YES", "COMPRESS=DEFLATE",
+                 "BLOCKXSIZE=256", "BLOCKYSIZE=256", "PREDICTOR=2")
+      )
+      file.rename(tmp, cached_path)
+      emit_fn(list(current  = "s2:band_fetched",
+                   scene_id = scene_id,
+                   band     = band,
+                   path     = cached_path))
+    }, error = function(e) {
+      if (file.exists(tmp)) unlink(tmp)
+      cli::cli_warn("S2 band cache write failed for {.val {scene_id}}/{band}: {conditionMessage(e)}")
+    })
+  }
+  r
 }
 
 .insert_obs_pixel <- function(con, obs) {

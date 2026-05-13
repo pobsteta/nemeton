@@ -197,7 +197,7 @@ test_that("ingest_sentinel2_timeseries inserts obs from mocked scenes", {
       dates = as.Date(c("2025-06-10", "2025-06-25")),
       cloud = c(5, 8))
 
-    fake_obs <- function(scene, plots, bands) {
+    fake_obs <- function(scene, plots, bands, ...) {
       data.frame(
         plot_id   = plots$id,
         obs_date  = scene$obs_date,
@@ -291,7 +291,7 @@ test_that("ingest_sentinel2_timeseries emits progress callbacks across phases", 
       dates = as.Date(c("2025-06-10", "2025-06-25")),
       cloud = c(5, 8))
 
-    fake_obs <- function(scene, plots, bands) {
+    fake_obs <- function(scene, plots, bands, ...) {
       data.frame(
         plot_id   = plots$id,
         obs_date  = scene$obs_date,
@@ -435,7 +435,7 @@ test_that("skip_cached skips scenes whose obs_dates are already complete", {
       cloud = c(5, 8, 10))
 
     n_extracted <- 0L
-    fake_obs <- function(scene, plots, bands) {
+    fake_obs <- function(scene, plots, bands, ...) {
       n_extracted <<- n_extracted + 1L
       data.frame(
         plot_id   = plots$id,
@@ -506,7 +506,7 @@ test_that("skip_cached only skips dates with complete (plot × band) coverage", 
       dates = as.Date(c("2025-06-10", "2025-06-25")),
       cloud = c(5, 8))
 
-    fake_obs <- function(scene, plots, bands) {
+    fake_obs <- function(scene, plots, bands, ...) {
       do.call(rbind, lapply(bands, function(b) {
         data.frame(
           plot_id   = plots$id,
@@ -554,7 +554,7 @@ test_that("skip_cached = FALSE forces re-extraction even when DB is fully covere
 
     scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
     n_extracted <- 0L
-    fake_obs <- function(scene, plots, bands) {
+    fake_obs <- function(scene, plots, bands, ...) {
       n_extracted <<- n_extracted + 1L
       data.frame(
         plot_id   = plots$id,
@@ -596,6 +596,205 @@ test_that(".find_cached_obs_dates returns empty for empty inputs", {
                                      "2025-01-01", "2025-12-31"),
     0L
   )
+})
+
+
+# ---- S2 COG band cache (v0.21.4) -------------------------------------
+
+test_that(".ext_contains is a strict bbox-containment predicate", {
+  outer <- c(0, 100, 0, 100)
+  expect_true(nemeton:::.ext_contains(outer, c(10, 90, 10, 90)))
+  expect_true(nemeton:::.ext_contains(outer, c(0, 100, 0, 100)))
+  expect_false(nemeton:::.ext_contains(outer, c(-1, 50, 10, 50)))
+  expect_false(nemeton:::.ext_contains(outer, c(10, 101, 10, 50)))
+  expect_false(nemeton:::.ext_contains(outer, c(10, 90, -1, 50)))
+  expect_false(nemeton:::.ext_contains(outer, c(10, 90, 10, 101)))
+})
+
+test_that(".s2_scene_cache_dir sanitises scene_id and creates the dir", {
+  cache <- withr::local_tempdir()
+  out <- nemeton:::.s2_scene_cache_dir(cache, "S2A:MSIL2A/2024 06 01")
+  expect_true(dir.exists(out))
+  # No ':', '/', or space leaks into the path component.
+  leaf <- basename(out)
+  expect_false(grepl("[ :/]", leaf))
+
+  # NULL / empty cache_dir → NULL output (caching disabled).
+  expect_null(nemeton:::.s2_scene_cache_dir(NULL, "scene"))
+  expect_null(nemeton:::.s2_scene_cache_dir("", "scene"))
+})
+
+test_that(".get_s2_band_raster: cache hit reads the COG without HTTP", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scene_id <- "S2_TEST_HIT"
+
+  # Build a synthetic Int16 raster covering the AOI fully.
+  r <- terra::rast(nrows = 20, ncols = 20,
+                   xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                   crs = "EPSG:2154", vals = seq_len(400))
+  terra::values(r) <- as.integer(seq_len(400))
+  scene_dir <- file.path(cache, scene_id); dir.create(scene_dir)
+  cached <- file.path(scene_dir, "B04.tif")
+  terra::writeRaster(r, cached,
+                     gdal = c("TILED=YES", "COMPRESS=DEFLATE"),
+                     overwrite = TRUE)
+
+  # A single placette in the centre, radius 5 m.
+  buf <- sf::st_sf(
+    radius_m = 5,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(100, 100)), 5),
+                          crs = 2154))
+
+  # href is a bogus URL — should never be opened on a cache hit.
+  scene <- data.frame(scene_id = scene_id,
+                      href_B04 = "https://nope/should-not-be-read",
+                      stringsAsFactors = FALSE)
+  events <- list()
+  out <- nemeton:::.get_s2_band_raster(
+    scene, "B04", buf, cache_dir = cache,
+    emit = function(p) events[[length(events) + 1L]] <<- p)
+  expect_s4_class(out, "SpatRaster")
+  expect_length(events, 1L)
+  expect_identical(events[[1]]$current, "s2:band_cached")
+  expect_identical(events[[1]]$band, "B04")
+})
+
+test_that(".get_s2_band_raster: cache miss fetches, writes, emits 's2:band_fetched'", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scene_id <- "S2_TEST_MISS"
+
+  # Source raster on local disk — stand-in for the VSI URL.
+  src <- file.path(withr::local_tempdir(), "src.tif")
+  r_src <- terra::rast(nrows = 50, ncols = 50,
+                       xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                       crs = "EPSG:2154", vals = seq_len(2500))
+  terra::writeRaster(r_src, src, overwrite = TRUE)
+
+  buf <- sf::st_sf(
+    radius_m = 10,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(250, 250)), 10),
+                          crs = 2154))
+
+  scene <- data.frame(scene_id = scene_id, href_B08 = src,
+                      stringsAsFactors = FALSE)
+  events <- list()
+  out <- nemeton:::.get_s2_band_raster(
+    scene, "B08", buf, cache_dir = cache,
+    emit = function(p) events[[length(events) + 1L]] <<- p)
+
+  expect_s4_class(out, "SpatRaster")
+  cached_path <- file.path(cache, scene_id, "B08.tif")
+  expect_true(file.exists(cached_path))
+  expect_length(events, 1L)
+  expect_identical(events[[1]]$current, "s2:band_fetched")
+
+  # Second call → cache hit on the freshly-written file.
+  events2 <- list()
+  out2 <- nemeton:::.get_s2_band_raster(
+    scene, "B08", buf, cache_dir = cache,
+    emit = function(p) events2[[length(events2) + 1L]] <<- p)
+  expect_s4_class(out2, "SpatRaster")
+  expect_identical(events2[[1]]$current, "s2:band_cached")
+})
+
+test_that(".get_s2_band_raster: stale cache (extent too small) is overwritten", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scene_id <- "S2_TEST_STALE"
+
+  # Cache holds a tiny crop covering only (0..50, 0..50).
+  r_small <- terra::rast(nrows = 5, ncols = 5,
+                         xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                         crs = "EPSG:2154", vals = 1:25)
+  scene_dir <- file.path(cache, scene_id); dir.create(scene_dir)
+  cached <- file.path(scene_dir, "B12.tif")
+  terra::writeRaster(r_small, cached,
+                     gdal = c("TILED=YES", "COMPRESS=DEFLATE"),
+                     overwrite = TRUE)
+
+  # Source covers (0..500, 0..500). Plot at (400, 400) → far outside cache.
+  src <- file.path(withr::local_tempdir(), "src.tif")
+  r_src <- terra::rast(nrows = 50, ncols = 50,
+                       xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                       crs = "EPSG:2154", vals = seq_len(2500))
+  terra::writeRaster(r_src, src, overwrite = TRUE)
+
+  buf <- sf::st_sf(
+    radius_m = 10,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(400, 400)), 10),
+                          crs = 2154))
+
+  scene <- data.frame(scene_id = scene_id, href_B12 = src,
+                      stringsAsFactors = FALSE)
+  events <- list()
+  out <- nemeton:::.get_s2_band_raster(
+    scene, "B12", buf, cache_dir = cache,
+    emit = function(p) events[[length(events) + 1L]] <<- p)
+  expect_s4_class(out, "SpatRaster")
+  # Stale cache → no `s2:band_cached`, miss path runs and rewrites.
+  expect_identical(events[[1]]$current, "s2:band_fetched")
+  # New cached file now encloses the AOI.
+  new_ext <- terra::ext(terra::rast(cached))
+  expect_true(new_ext[1] <= 390 && new_ext[2] >= 410)
+})
+
+test_that(".get_s2_band_raster: cache_dir = NULL bypasses the cache entirely", {
+  skip_if_not_installed("terra")
+  src <- file.path(withr::local_tempdir(), "src.tif")
+  r_src <- terra::rast(nrows = 10, ncols = 10,
+                       xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                       crs = "EPSG:2154", vals = 1:100)
+  terra::writeRaster(r_src, src, overwrite = TRUE)
+  buf <- sf::st_sf(
+    radius_m = 5,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(50, 50)), 5),
+                          crs = 2154))
+  scene <- data.frame(scene_id = "X", href_B04 = src,
+                      stringsAsFactors = FALSE)
+  events <- list()
+  out <- nemeton:::.get_s2_band_raster(
+    scene, "B04", buf, cache_dir = NULL,
+    emit = function(p) events[[length(events) + 1L]] <<- p)
+  expect_s4_class(out, "SpatRaster")
+  expect_length(events, 0L)
+})
+
+test_that("ingest_sentinel2_timeseries forwards cache_dir to .extract_scene_obs", {
+  skip_if_no_timescaledb()
+  with_clean_db(function(con) {
+    db_migrate(con)
+    pol <- sf::st_as_sfc(sf::st_bbox(
+      c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
+    placettes <- sf::st_sf(
+      plot_id  = "P01",
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
+    zid <- register_monitoring_zone(con, "Zforward", pol, placettes)
+
+    seen_cache_dir <- NA_character_
+    fake_obs <- function(scene, plots, bands, cache_dir = NULL, emit = NULL) {
+      seen_cache_dir <<- if (is.null(cache_dir)) NA_character_ else cache_dir
+      data.frame(
+        plot_id  = plots$id, obs_date = scene$obs_date, band = "NDVI",
+        value = 0.7, cloud_pct = scene$cloud_pct,
+        source = scene$source, scene_id = scene$scene_id,
+        stringsAsFactors = FALSE)
+    }
+
+    scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
+    testthat::local_mocked_bindings(
+      stac_search_s2     = function(...) scenes,
+      .extract_scene_obs = fake_obs
+    )
+
+    cache <- withr::local_tempdir()
+    ingest_sentinel2_timeseries(
+      con, zid, "2025-06-01", "2025-07-01",
+      bands = "NDVI", skip_cached = FALSE, cache_dir = cache
+    )
+    expect_identical(seen_cache_dir, cache)
+  })
 })
 
 
