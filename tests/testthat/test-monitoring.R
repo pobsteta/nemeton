@@ -611,6 +611,32 @@ test_that(".ext_contains is a strict bbox-containment predicate", {
   expect_false(nemeton:::.ext_contains(outer, c(10, 90, 10, 101)))
 })
 
+test_that(".ext_contains accepts terra::ext SpatExtent objects (S4)", {
+  # Regression for v0.21.8 — every cache-hit used to error out with
+  # "cannot coerce type 'S4' to vector of type 'double'" because the
+  # old implementation did `c(outer[1], …)` on an S4 SpatExtent.
+  skip_if_not_installed("terra")
+  outer_se <- terra::ext(c(0, 100, 0, 100))
+  inner_se <- terra::ext(c(10, 90, 10, 90))
+  expect_true(nemeton:::.ext_contains(outer_se, inner_se))
+  expect_true(nemeton:::.ext_contains(outer_se, outer_se))
+  too_wide <- terra::ext(c(-10, 110, 10, 90))
+  expect_false(nemeton:::.ext_contains(outer_se, too_wide))
+  too_tall <- terra::ext(c(10, 90, -10, 110))
+  expect_false(nemeton:::.ext_contains(outer_se, too_tall))
+  # Mixed call (SpatExtent outer, numeric inner) must also work.
+  expect_true(nemeton:::.ext_contains(outer_se, c(10, 90, 10, 90)))
+  expect_true(nemeton:::.ext_contains(c(0, 100, 0, 100), inner_se))
+})
+
+test_that(".ext_as_numeric returns (xmin, xmax, ymin, ymax) for both shapes", {
+  skip_if_not_installed("terra")
+  out_se   <- nemeton:::.ext_as_numeric(terra::ext(c(1, 2, 3, 4)))
+  out_num  <- nemeton:::.ext_as_numeric(c(1, 2, 3, 4))
+  expect_equal(out_se,  c(1, 2, 3, 4))
+  expect_equal(out_num, c(1, 2, 3, 4))
+})
+
 test_that(".s2_band_cache_path sanitises scene_id and does NOT create the dir", {
   cache <- withr::local_tempdir()
   out <- nemeton:::.s2_band_cache_path(cache, "S2A:MSIL2A/2024 06 01", "B04")

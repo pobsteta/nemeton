@@ -1,3 +1,43 @@
+# nemeton 0.21.8 (2026-05-13)
+
+### Fixed — every S2 band cache hit raised "cannot coerce type 'S4' to vector of type 'double'"
+
+`.ext_contains()` (introduced in v0.21.4 to decide whether a cached
+COG covers today's AOI) did:
+
+```r
+o <- as.numeric(c(outer[1], outer[2], outer[3], outer[4]))
+```
+
+`outer` is a `terra::SpatExtent` (S4). `outer[1]` does NOT return a
+plain double — it returns a nested S4 element. `c()` accumulates
+those into an S4 list, and `as.numeric()` then chokes with
+
+```
+cannot coerce type 'S4' to vector of type 'double'
+```
+
+Symptom for the user: every scene that already had a cached band
+on disk got skipped at the scene level
+
+```
+Scene "S2A_MSIL2A_20250712T104041_R008..." skipped:
+  cannot coerce type 'S4' to vector of type 'double'
+```
+
+— so the cache never got reused, the network was hit again, and
+ingestion looked like nothing was making progress.
+
+* New private helper `.ext_as_numeric(e)` routes `SpatExtent`
+  through `terra::xmin()/xmax()/ymin()/ymax()`, falls back to
+  `as.numeric()` for plain numeric vectors. Bulletproof across
+  terra versions.
+* `.ext_contains()` and the verbose `.s2_cache_log()` debug call
+  both go through the new helper.
+
+2 new regression tests exercise `.ext_contains()` with real
+`terra::ext()` objects (mixed S4 / numeric combinations).
+
 # nemeton 0.21.7 (2026-05-13)
 
 ### Added — observability for the S2 band cache

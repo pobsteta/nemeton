@@ -599,11 +599,27 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   file.path(cache_dir, safe_id, paste0(band, ".tif"))
 }
 
+# Coerce an extent-like to a length-4 numeric in (xmin, xmax, ymin, ymax)
+# order. `terra::SpatExtent` is an S4 object — `outer[1]` returns a
+# nested S4 element (NOT a plain double), so the old
+# `as.numeric(c(outer[1], …))` blew up with
+# "cannot coerce type 'S4' to vector of type 'double'" on every cache
+# hit. We now route SpatExtent through `terra::xmin()/xmax()/ymin()/ymax()`
+# which are bulletproof across terra versions.
+.ext_as_numeric <- function(e) {
+  if (inherits(e, "SpatExtent")) {
+    c(terra::xmin(e), terra::xmax(e), terra::ymin(e), terra::ymax(e))
+  } else {
+    as.numeric(e)
+  }
+}
+
 # Geometric predicate: does `outer` (xmin, xmax, ymin, ymax) contain
-# `inner`? Accepts terra::ext() results or 4-numeric vectors.
+# `inner`? Accepts terra::ext() results or 4-numeric vectors. Robust
+# to terra S4 indexing quirks since v0.21.8.
 .ext_contains <- function(outer, inner) {
-  o <- as.numeric(c(outer[1], outer[2], outer[3], outer[4]))
-  i <- as.numeric(c(inner[1], inner[2], inner[3], inner[4]))
+  o <- .ext_as_numeric(outer)
+  i <- .ext_as_numeric(inner)
   o[1] <= i[1] && o[2] >= i[2] && o[3] <= i[3] && o[4] >= i[4]
 }
 
@@ -749,7 +765,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   .s2_cache_log("CROP ok dim=",
                 paste(dim(r)[1:2], collapse = "x"),
                 " ext=",
-                paste(round(as.numeric(terra::ext(r)), 1),
+                paste(round(.ext_as_numeric(terra::ext(r)), 1),
                       collapse = ","))
 
   if (!is.null(cached_path)) {
