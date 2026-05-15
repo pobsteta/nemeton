@@ -15,13 +15,20 @@
 | ✅ | E4 | Authentification OAuth2/OIDC | n/a (app) |
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008, ADR-013. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 / v0.20.1 ; E6.c.1/.2/.3/.4 + E6.d → cycle dev `0.20.1.9000..9004` ; empaqueté dans la release **v0.21.0** (2026-05-12, qui livre aussi le backend DuckDB). |
+| ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
-# Chantier en cours — Durcissement ingestion S2 / cadrage E7
+# Chantier en cours — Carte pixel (spec 010) livrée / cadrage E7
+
+**État au 2026-05-15 (post-v0.22.0)** : 4 fonctions API publiques exposent le cache S2 pixel-par-pixel pour permettre la construction côté app d'une carte interactive NDVI/NBR avec time series au clic. Spec 010 close côté cœur. Implémentation côté `nemetonshiny` à venir (sous-onglet *Carte pixel* dans `mod_monitoring` — repo séparé).
+
+---
+
+# Chantier précédent — Durcissement ingestion S2 / cadrage E7
 
 **État au 2026-05-15** : `nemeton`, dernière release **v0.21.12** (DESCRIPTION + NEWS.md alignés). Working tree propre. Pas de chantier d'épaississement actif. **Reliquat E6.b clos côté app** par `nemetonshiny@v0.27.0` (cf. journal 2026-05-15) : phases 2 (ingestion async + toasts, livrée rétroactivement), 3 (plotly NDVI/NBR per-plot via `read_obs_pixel()`), et 6 (smoke E2E shinytest2) cochées. Plus aucun reliquat E6 ouvert.
 
@@ -136,6 +143,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-15** — Release **v0.22.0** (minor bump). Spec 010 (Carte pixel + time series interactive) livrée côté cœur en une session : refactor `.s2_safe_scene_id` + 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) + 16 tests offline avec fixture synthétique GeoTIFF en temp dir. Approche *paperwork-before-code* : 1081 lignes de spec/plan/tasks rédigées avant tout code (commit `2e80a8d`). Implémentation suit fidèlement le pseudo-code du plan §3 — aucune dérive. Branche `feat/010-pixel-map`, 7 commits granulaires (T1 refactor → T2-T5 features → T6 NAMESPACE → T8 release), mergée FF sur main et taggée. Tests **non rejoués localement** (env R cassé : terra absent en R 4.6, rlang ABI mismatch en R 4.5) — syntaxe parsée via `Rscript -e 'parse(...)'`, validation à exécuter côté utilisateur via `devtools::test()`. Idem `devtools::document()` à exécuter pour régénérer les 4 `man/*.Rd` (le NAMESPACE est édité manuellement et coupled au @export roxygen donc les deux convergeront). T7 bench skippé (nécessite runtime). Cette spec ouvre le 2e fil de l'extension UI sanitaire après v0.21.11 (`read_obs_pixel` per-plot) — désormais l'app a les deux granularités : per-plot via DB (`read_obs_pixel`), per-pixel via cache (`extract_pixel_timeseries`).
 
 - **2026-05-15** — Release **v0.21.12**. Bug démasqué pendant la validation in-prod de v0.21.10 (monitor live sur `ingest_console.log`) : chaque `terra::writeRaster()` du cache COG échouait silencieusement avec `[writeRaster] cannot guess file type from filename`. Le fichier temporaire sortait avec l'extension `<scene_id>/B04.tif.tmp` — les versions terra récentes refusent l'inférence de driver depuis `.tmp`. Le `tryCatch` autour de writeRaster (R/monitoring.R:870-887) avalait l'erreur et émettait juste un `cli::cli_warn` ; encore plus invisible après v0.21.10 qui nettoyait le scene_dir orphelin (le warning était l'unique signal restant). Bug présent depuis v0.21.4 (introduction du cache COG) → **le cache S2 n'a jamais réellement fonctionné depuis 3 jours**, chaque ingestion re-téléchargeait toutes les bandes via VSI même quand `cache_dir` était passé. Test existant `.get_s2_band_raster: cache miss fetches, writes` (avec `expect_true(file.exists(cached_path))`) aurait dû attraper la régression — possiblement passé sur une terra moins stricte côté CI/dev. Fix : ajout de `filetype = "GTiff"` explicite dans `terra::writeRaster()`. Les options `gdal=` (TILED, COMPRESS=DEFLATE, BLOCKXSIZE, PREDICTOR=2) étaient déjà GeoTIFF-spécifiques, on rend juste le driver explicite plutôt que de dépendre de l'inférence d'extension. 1 nouveau test de régression `.get_s2_band_raster: writeRaster is called with filetype = 'GTiff'` qui capture l'argument via un mock délégué (delegate-pattern : le mock capte l'arg puis appelle la vraie terra::writeRaster) — robuste indépendamment de la version terra du runner. Commit à venir sur `main` directement (séquence de patches close).
 

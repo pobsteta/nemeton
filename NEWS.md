@@ -1,3 +1,62 @@
+# nemeton 0.22.0 (2026-05-15)
+
+### Added — per-pixel Sentinel-2 readers and pixel time-series extraction
+
+Four new exported functions exposing the on-disk Sentinel-2 cache
+(`<cache_dir>/{scene_id}/{B04,B08,B12}.tif`, written since v0.21.4
+and functional since v0.21.12) as `terra::SpatRaster` objects:
+
+* **`read_s2_band_raster(cache_dir, scene_id, band)`** — single band
+  reader, returns a 1-layer SpatRaster or `NULL` if the file is
+  missing.
+* **`read_s2_band_stack(cache_dir, scenes_df, band)`** — multi-temporal
+  stack for one band (B04 / B08 / B12), layers named by `obs_date`,
+  `terra::time()` attribute set. Missing scenes skipped silently with
+  a single aggregated warning.
+* **`build_index_stack(cache_dir, scenes_df, index = c("NDVI", "NBR"))`**
+  — computes NDVI or NBR pixel-wise on each scene, returns a 10 m
+  stack. For NBR, B12 (20 m natively) is resampled bilinearly onto
+  the B08 10 m grid — same idiom as `.extract_scene_obs` so per-pixel
+  NBR is numerically consistent with the per-plot NBR aggregates in
+  `obs_pixel`. Carries an `"index"` attribute identifying the chosen
+  index.
+* **`extract_pixel_timeseries(cache_dir, scenes_df, xy, crs = 4326,
+  indices = c("NDVI", "NBR"))`** — per-pixel time series at a clicked
+  point. `xy` defaults to WGS84 (the convention of leaflet
+  `input$map_click`), reprojected per scene to its native S2 CRS.
+  Missing scenes produce a row with `value = NA` at that date (the
+  temporal hole is preserved for plotly display), not silently
+  skipped. NBR uses native 20 m B12 here (no resample), because for a
+  single-point lookup the pixel containing the click is what the user
+  wants — this differs from `build_index_stack()` by a sub-pixel
+  amount, documented in both man pages.
+
+Implements **spec 010** (`specs/010-carte-pixel-timeseries/`). The
+intended consumer is a new "Carte pixel" sub-tab under "Suivi
+sanitaire" in `nemetonshiny` — leaflet shows the index stack with a
+date slider, click on a pixel calls `extract_pixel_timeseries()` and
+renders a plotly. No DB schema change (the on-disk cache is the
+source of truth), no new dependency (everything via `terra`, `sf`,
+`cli`, `rlang` already in Imports).
+
+### Internal
+
+`R/monitoring.R`: extracted the scene_id sanitization rule
+(`gsub("[^A-Za-z0-9._-]", "_", ...)`) from `.s2_band_cache_path()`
+into a shared private helper `.s2_safe_scene_id()` so the new
+readers in `R/pixel-map.R` resolve the same on-disk layout the write
+path computes. No behaviour change.
+
+### Tests
+
+16 new offline tests in `tests/testthat/test-pixel-map.R` covering
+input validation, file-absent NULL semantics, scene ordering by
+date, aggregated-warning skip policy, NDVI / NBR formula correctness
+on fixed-value fixtures, NA propagation, B12 resampling, CRS
+transform from 4326 to L93, multi-index sort order, point-outside-AOI
+all-NA rows, and incomplete-scene NA-row policy. Synthetic fixtures
+build valid GeoTIFFs in temp dirs — zero network, zero DB.
+
 # nemeton 0.21.12 (2026-05-15)
 
 ### Fixed — S2 band cache never populated because `writeRaster` couldn't guess driver
