@@ -266,3 +266,131 @@ test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped silently
   expect_silent(stack_ndvi <- build_index_stack(cache, scenes, "NDVI"))
   expect_equal(terra::nlyr(stack_ndvi), 3L)
 })
+
+# ---- extract_pixel_timeseries() ---------------------------------------
+
+# Build a single-scene fixture with all bands holding fixed values so
+# we can predict NDVI / NBR analytically and verify the CRS transform
+# from 4326 → 2154 picks the right pixel.
+make_fixture_known_values <- function(dir, scene_id = "S2_FIX_KNOWN",
+                                      b04 = 0.10, b08 = 0.40, b12 = 0.20) {
+  scene_dir <- file.path(dir, scene_id)
+  dir.create(scene_dir, recursive = TRUE)
+  for (b in c("B04", "B08", "B12")) {
+    v   <- switch(b, B04 = b04, B08 = b08, B12 = b12)
+    res <- if (b == "B12") 20 else 10
+    nc  <- if (b == "B12") 15L else 30L
+    r <- terra::rast(nrows = nc, ncols = nc,
+                     xmin = 644000, xmax = 644000 + nc * res,
+                     ymin = 5235000, ymax = 5235000 + nc * res,
+                     crs = "EPSG:2154", vals = rep(v, nc * nc))
+    terra::writeRaster(r, file.path(scene_dir, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+  invisible(scene_id)
+}
+
+test_that("extract_pixel_timeseries: CRS transform 4326 → L93 works on known pixel", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  sid <- make_fixture_known_values(cache, b04 = 0.10, b08 = 0.40, b12 = 0.20)
+  scenes <- data.frame(scene_id = sid,
+                       obs_date = as.Date("2026-03-01"),
+                       stringsAsFactors = FALSE)
+
+  # A point inside the fixture footprint, expressed in 4326. The
+  # fixture covers L93 [644000-644300, 5235000-5235300] — a tiny
+  # patch in eastern France. Use a point in L93 then transform back
+  # to 4326 so we don't hard-code lat/lng that might shift with
+  # GDAL/proj updates.
+  pt_l93 <- sf::st_sfc(sf::st_point(c(644150, 5235150)), crs = 2154)
+  pt_wgs <- sf::st_transform(pt_l93, 4326)
+  xy_wgs <- as.numeric(sf::st_coordinates(pt_wgs))
+
+  out <- extract_pixel_timeseries(cache, scenes, xy_wgs,
+                                  crs = 4326,
+                                  indices = c("NDVI", "NBR"))
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 2L)
+  expect_setequal(names(out), c("obs_date", "index", "value"))
+  ndvi <- out$value[out$index == "NDVI"]
+  nbr  <- out$value[out$index == "NBR"]
+  # NDVI = (0.40 - 0.10) / (0.40 + 0.10) = 0.6
+  # NBR  = (0.40 - 0.20) / (0.40 + 0.20) = 1/3
+  expect_equal(ndvi, 0.6, tolerance = 1e-9)
+  expect_equal(nbr,  1/3, tolerance = 1e-9)
+})
+
+test_that("extract_pixel_timeseries: multi-index output is sorted (obs_date, index)", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L, with_b12 = TRUE)
+  # Shuffle to ensure the function sorts internally.
+  scenes_shuffled <- scenes[c(3L, 1L, 2L), , drop = FALSE]
+
+  # Point in the L93 footprint
+  xy <- as.numeric(sf::st_coordinates(
+    sf::st_transform(sf::st_sfc(sf::st_point(c(644150, 5235150)), crs = 2154),
+                     4326)))
+
+  out <- extract_pixel_timeseries(cache, scenes_shuffled, xy,
+                                  indices = c("NDVI", "NBR"))
+  expect_equal(nrow(out), 6L)   # 3 scenes × 2 indices
+  # Sorted by date first, then alphabetic index ("NBR" < "NDVI")
+  expect_equal(out$obs_date,
+               rep(sort(scenes$obs_date), each = 2L))
+  expect_equal(out$index,
+               rep(c("NBR", "NDVI"), times = 3L))
+})
+
+test_that("extract_pixel_timeseries: point outside AOI returns NAs", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 2L)
+
+  # A point clearly outside the fixture footprint (Paris area in 4326)
+  out <- extract_pixel_timeseries(cache, scenes, c(2.35, 48.85),
+                                  crs = 4326,
+                                  indices = c("NDVI", "NBR"))
+  expect_equal(nrow(out), 4L)
+  expect_true(all(is.na(out$value)))
+})
+
+test_that("extract_pixel_timeseries: incomplete scene yields NAs at that date, not skipped", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L, with_b12 = TRUE)
+  # Remove B08 from scene 2 — both NDVI and NBR need B08 → NAs expected.
+  unlink(file.path(cache, scenes$scene_id[2], "B08.tif"))
+
+  xy <- as.numeric(sf::st_coordinates(
+    sf::st_transform(sf::st_sfc(sf::st_point(c(644150, 5235150)), crs = 2154),
+                     4326)))
+
+  out <- extract_pixel_timeseries(cache, scenes, xy,
+                                  indices = c("NDVI", "NBR"))
+  expect_equal(nrow(out), 6L)
+  # The date of the incomplete scene is still in the output …
+  expect_true(scenes$obs_date[2] %in% out$obs_date)
+  # … but with NA values for both indices on that date.
+  rows_missing <- out[out$obs_date == scenes$obs_date[2], , drop = FALSE]
+  expect_true(all(is.na(rows_missing$value)))
+  # Surrounding dates remain numeric (the random fixture values may
+  # or may not be NaN by chance, but mostly numeric).
+})
+
+test_that("extract_pixel_timeseries: validates xy", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  make_fixture_known_values(cache)
+  scenes <- data.frame(scene_id = "S2_FIX_KNOWN",
+                       obs_date = as.Date("2026-03-01"),
+                       stringsAsFactors = FALSE)
+
+  expect_error(extract_pixel_timeseries(cache, scenes, c(1.0)),
+               "length-2")
+  expect_error(extract_pixel_timeseries(cache, scenes, c(1.0, NA)),
+               "no NA")
+  expect_error(extract_pixel_timeseries(cache, scenes, "lng,lat"),
+               "length-2")
+})

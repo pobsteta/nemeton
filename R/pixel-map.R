@@ -234,6 +234,134 @@ build_index_stack <- function(cache_dir, scenes_df,
   out
 }
 
+#' Extract a per-pixel NDVI / NBR time series at one geographic point
+#'
+#' Reads, for each scene in `scenes_df`, the cached source bands needed
+#' for the requested indices and returns the value of the pixel
+#' containing the point `xy`. The point is transformed from its input
+#' CRS (`crs`, default WGS84 = EPSG:4326 — the convention used by
+#' leaflet `input$map_click`) to each scene's source CRS internally.
+#'
+#' Behaviour at the boundaries:
+#'
+#' * **Scene with incomplete cache** (e.g. B08 missing) → the row for
+#'   that `obs_date` is present in the output with `value = NA`. The
+#'   missing-scene case is **not** skipped silently here — the user
+#'   wants to see the temporal hole on the plotly, not have it
+#'   disappear.
+#' * **Point outside the raster footprint** → `value = NA` for every
+#'   date / index.
+#' * **NA pixel** (cloud mask, no data) → `value = NA` for that date.
+#'
+#' For NBR, B12 is sampled at its native 20 m resolution (no resample).
+#' This intentionally differs from [build_index_stack()] where B12 is
+#' resampled bilinearly to the B08 10 m grid — see the *Note on B12
+#' resampling* section there. Net effect: NBR at point `(x, y)` from
+#' `extract_pixel_timeseries()` may differ from the same point read
+#' off `build_index_stack()` by a sub-pixel amount.
+#'
+#' @param cache_dir Character(1). Path to the S2 cache root.
+#' @param scenes_df See [read_s2_band_stack()].
+#' @param xy Numeric(2). Coordinates `c(x, y)` of the point of interest
+#'   in the CRS specified by `crs`.
+#' @param crs Coordinate reference system of `xy`. Accepts anything
+#'   [sf::st_crs()] understands: an EPSG integer (default `4326`), a
+#'   PROJ string, a WKT. The transformation to each scene's source CRS
+#'   happens internally on a per-scene basis.
+#' @param indices Character. A non-empty subset of `c("NDVI", "NBR")`.
+#'   Default: both.
+#'
+#' @return A `data.frame` with columns `obs_date` (Date), `index`
+#'   (character) and `value` (numeric, possibly NA), sorted by
+#'   `(obs_date, index)`. `nrow` = `nrow(scenes_df) * length(indices)`.
+#'
+#' @examples
+#' \dontrun{
+#'   cache <- "/proj/cache/layers/sentinel2"
+#'   scenes <- unique(read_obs_pixel(con, 1L)[, c("scene_id", "obs_date")])
+#'   # A point clicked on the leaflet map at (lng, lat) = (5.0, 47.5)
+#'   ts <- extract_pixel_timeseries(cache, scenes, c(5.0, 47.5))
+#'   library(ggplot2)
+#'   ggplot(ts, aes(obs_date, value, colour = index)) + geom_line()
+#' }
+#'
+#' @seealso [build_index_stack()], [read_s2_band_stack()],
+#'   [read_obs_pixel()] for the per-plot equivalent already aggregated
+#'   in the DB.
+#' @export
+extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
+                                     crs = 4326,
+                                     indices = c("NDVI", "NBR")) {
+  .validate_scenes_df(scenes_df)
+  if (!is.numeric(xy) || length(xy) != 2L || anyNA(xy)) {
+    stop("`xy` must be a length-2 numeric, no NA.", call. = FALSE)
+  }
+  indices <- match.arg(indices, c("NDVI", "NBR"), several.ok = TRUE)
+
+  scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
+
+  # Build the point sf once, reproject per-scene to the raster's CRS.
+  pt_in <- sf::st_sfc(sf::st_point(xy), crs = crs)
+
+  # Bands the union of indices needs.
+  bands_needed <- unique(unlist(lapply(indices, function(idx) {
+    if (idx == "NDVI") c("B04", "B08") else c("B08", "B12")
+  })))
+
+  na_row <- function(date_i) {
+    data.frame(
+      obs_date = rep(date_i, length(indices)),
+      index    = indices,
+      value    = NA_real_,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  rows <- lapply(seq_len(nrow(scenes_df)), function(i) {
+    sid     <- scenes_df$scene_id[i]
+    date_i  <- as.Date(scenes_df$obs_date[i])
+
+    rs <- setNames(
+      lapply(bands_needed, function(b) read_s2_band_raster(cache_dir, sid, b)),
+      bands_needed
+    )
+    if (any(vapply(rs, is.null, logical(1)))) {
+      return(na_row(date_i))
+    }
+
+    # Use the CRS of B08 as the canonical native CRS. All S2 bands of
+    # the same scene share the same CRS (different resolutions but
+    # same tile projection), so picking any is equivalent.
+    pt_native <- sf::st_transform(pt_in, terra::crs(rs[["B08"]]))
+    pt_vect   <- terra::vect(pt_native)
+
+    vals <- vapply(indices, function(idx) {
+      if (idx == "NDVI") {
+        b04 <- terra::extract(rs$B04, pt_vect)[1L, 2L]
+        b08 <- terra::extract(rs$B08, pt_vect)[1L, 2L]
+        if (is.na(b04) || is.na(b08) || (b04 + b08) == 0) return(NA_real_)
+        (b08 - b04) / (b08 + b04)
+      } else { # NBR
+        b08 <- terra::extract(rs$B08, pt_vect)[1L, 2L]
+        # Native 20 m B12 — no resample for a single-point extraction.
+        b12 <- terra::extract(rs$B12, pt_vect)[1L, 2L]
+        if (is.na(b08) || is.na(b12) || (b08 + b12) == 0) return(NA_real_)
+        (b08 - b12) / (b08 + b12)
+      }
+    }, numeric(1L))
+
+    data.frame(
+      obs_date = rep(date_i, length(indices)),
+      index    = indices,
+      value    = as.numeric(vals),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  out <- do.call(rbind, rows)
+  out[order(out$obs_date, out$index), , drop = FALSE]
+}
+
 # Internal: validate the `scenes_df` argument shared by read_s2_band_stack(),
 # build_index_stack(), and extract_pixel_timeseries(). Stops on first failure
 # rather than collecting — these are programmer-side mistakes, fail fast.
