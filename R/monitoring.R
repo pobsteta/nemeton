@@ -868,8 +868,15 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     tmp <- paste0(cached_path, ".tmp")
     .s2_cache_log("WRITE writeRaster -> ", tmp)
     tryCatch({
+      # `filetype = "GTiff"` is REQUIRED — without it, terra infers the
+      # GDAL driver from the file extension, and our temp file ends in
+      # `.tmp` (e.g. `B04.tif.tmp`). Recent terra versions reject that
+      # with "cannot guess file type from filename", so every write
+      # failed silently and the cache stayed empty since v0.21.4
+      # (v0.21.12 fix).
       terra::writeRaster(
         r, tmp, overwrite = TRUE,
+        filetype = "GTiff",
         gdal = c("TILED=YES", "COMPRESS=DEFLATE",
                  "BLOCKXSIZE=256", "BLOCKYSIZE=256", "PREDICTOR=2")
       )

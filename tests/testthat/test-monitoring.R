@@ -1304,3 +1304,56 @@ test_that(".get_s2_band_raster: empty scene_dir is removed when writeRaster fail
   # cleaned up so diagnose_s2_cache() doesn't flag it.
   expect_false(dir.exists(file.path(cache, scene_id)))
 })
+
+# ---- v0.21.12: writeRaster must declare GTiff filetype ---------------
+# Regression test for the bug surfaced during v0.21.10 in-prod
+# validation: terra writes the temp file as `<path>/B04.tif.tmp`, and
+# recent terra versions refuse to guess the driver from the `.tmp`
+# extension ("cannot guess file type from filename"). Every write
+# silently failed and the cache stayed empty since v0.21.4. The fix
+# passes `filetype = "GTiff"` explicitly. This test asserts the
+# argument is present, independent of which terra version is on the
+# test runner (so we'd catch a future regression even on a lax
+# terra).
+test_that(".get_s2_band_raster: writeRaster is called with filetype = 'GTiff'", {
+  skip_if_not_installed("terra")
+  cache    <- withr::local_tempdir()
+  scene_id <- "S2_FILETYPE_TEST"
+
+  src <- file.path(withr::local_tempdir(), "src.tif")
+  r_src <- terra::rast(nrows = 50, ncols = 50,
+                       xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                       crs = "EPSG:2154", vals = seq_len(2500))
+  terra::writeRaster(r_src, src, overwrite = TRUE)
+
+  buf <- sf::st_sf(
+    radius_m = 10,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(250, 250)), 10),
+                          crs = 2154))
+  scene <- data.frame(scene_id = scene_id, href_B04 = src,
+                      stringsAsFactors = FALSE)
+
+  # Capture writeRaster's call so we can inspect the `filetype` arg.
+  captured_filetype <- NULL
+  captured_filename <- NULL
+  real_writeRaster <- terra::writeRaster
+  testthat::local_mocked_bindings(
+    writeRaster = function(x, filename, filetype = NULL, ...) {
+      captured_filetype <<- filetype
+      captured_filename <<- filename
+      # Delegate to the real implementation so the test still
+      # validates the file lands on disk.
+      real_writeRaster(x, filename, filetype = filetype, ...)
+    },
+    .package = "terra"
+  )
+
+  out <- nemeton:::.get_s2_band_raster(scene, "B04", buf,
+                                       cache_dir = cache)
+  expect_s4_class(out, "SpatRaster")
+  expect_identical(captured_filetype, "GTiff")
+  # Tmp filename ends in .tif.tmp — confirming why filetype is needed.
+  expect_match(captured_filename, "\\.tif\\.tmp$")
+  # Final cached file exists with the right (.tif) extension.
+  expect_true(file.exists(file.path(cache, scene_id, "B04.tif")))
+})

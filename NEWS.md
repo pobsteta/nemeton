@@ -1,3 +1,47 @@
+# nemeton 0.21.12 (2026-05-15)
+
+### Fixed — S2 band cache never populated because `writeRaster` couldn't guess driver
+
+The disk-side persistence of cropped Sentinel-2 bands (added in v0.21.4
+and progressively hardened up to v0.21.10) silently failed on every
+scene with recent terra versions:
+
+```
+[writeRaster] cannot guess file type from filename
+```
+
+Root cause: the temp file is named `<cached_path>.tmp` — i.e.
+`<scene_id>/B04.tif.tmp`. `terra::writeRaster()` infers the GDAL
+driver from the filename extension, and `.tmp` isn't a known GIS
+alias. On older terra the inference was looser and the write
+succeeded; on recent terra it's strict and the write throws. The
+`tryCatch` around `writeRaster` swallowed the error, unlinked the
+partial `.tmp`, emitted a `cli::cli_warn()`, and (since v0.21.10)
+cleaned up the empty `scene_dir` — making the failure *less* visible
+because no orphan directory was left to flag the issue.
+
+Net effect since v0.21.4: **the cache was never populated**, every
+ingestion re-downloaded all bands via VSI even when `cache_dir` was
+passed.
+
+Fix (R/monitoring.R): pass `filetype = "GTiff"` explicitly to
+`terra::writeRaster()`. The GDAL creation options
+(`TILED=YES, COMPRESS=DEFLATE, BLOCKXSIZE=256, BLOCKYSIZE=256,
+PREDICTOR=2`) were already GeoTIFF-specific, so this just makes the
+driver selection explicit instead of relying on extension inference.
+
+New regression test `.get_s2_band_raster: writeRaster is called with
+filetype = 'GTiff'` (test-monitoring.R) — captures the call via a
+delegating mock so it catches a future regression even on a lax
+terra version.
+
+Surfaced during in-prod validation of v0.21.10's
+`FETCH+MATERIALIZE` + scene_dir cleanup logic. v0.21.10's defense-in-
+depth cleanup is what made the underlying bug visible: with the
+orphan dirs gone, the only remaining symptom was an empty cache, and
+the verbose trace (v0.21.7) pointed straight at the writeRaster
+line.
+
 # nemeton 0.21.11 (2026-05-15)
 
 ### Added — `read_obs_pixel()` exported reader for the obs_pixel hypertable
