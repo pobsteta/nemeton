@@ -595,13 +595,23 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   }
 }
 
+# Filesystem-safe variant of a scene_id for use as a directory name.
+# Shared between the write path (`.s2_band_cache_path`) and the read
+# path (spec 010 — `read_s2_band_raster` and friends in
+# `R/pixel-map.R`). Keeping one definition guarantees writes and
+# reads agree on the on-disk layout — if a future scene_id contains
+# a new exotic character, we change the rule here and only here.
+.s2_safe_scene_id <- function(scene_id) {
+  gsub("[^A-Za-z0-9._-]", "_", as.character(scene_id))
+}
+
 # Filesystem-safe COG path for one band. Does NOT create any
 # directory — creation is deferred to the writeRaster moment in
 # `.get_s2_band_raster()` so a failed VSI fetch no longer leaves
 # behind an empty scene directory.
 .s2_band_cache_path <- function(cache_dir, scene_id, band) {
   if (is.null(cache_dir) || !nzchar(cache_dir)) return(NULL)
-  safe_id <- gsub("[^A-Za-z0-9._-]", "_", as.character(scene_id))
+  safe_id <- .s2_safe_scene_id(scene_id)
   file.path(cache_dir, safe_id, paste0(band, ".tif"))
 }
 
