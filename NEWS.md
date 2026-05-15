@@ -1,3 +1,66 @@
+# nemeton 0.21.10 (2026-05-15)
+
+### Fixed — S2 cache leaves empty `<cache_dir>/{scene_id}/` directories
+
+`ingest_sentinel2_timeseries(..., cache_dir = ...)` created scene
+subdirectories under `<cache_dir>/` without any `B04.tif` / `B08.tif`
+files inside.
+
+Root cause: `terra::rast(href)` on a VSI URL only fetches the COG
+**header** — pixel reads are deferred until something consumes the
+SpatRaster (typically `terra::writeRaster()`). The retry/auth-refresh
+helper `.terra_rast_with_pc_retry()` (v0.21.6 → v0.21.9) wrapped
+**only the head request**, so:
+
+1. `terra::rast(href)` succeeds → metadata in hand.
+2. `terra::crop(r, ext)` is also lazy → still no bytes downloaded.
+3. `dir.create(<cache_dir>/{scene_id}/)` succeeds → directory exists.
+4. `terra::writeRaster(r, tmp, …)` finally triggers the byte-range
+   reads on the COG over VSI. If the SAS token expired mid-scene, or
+   Azure returned a 5xx / 429 on the range request, this step
+   throws — **past the retry budget**.
+5. The `tryCatch` swallowed the error with a `cli::cli_warn()`,
+   unlinked the partial `.tmp`, and returned — leaving the empty
+   scene directory behind.
+
+The fix moves the AOI crop **and** the pixel materialization into a
+`materialize` closure passed to `.terra_rast_with_pc_retry()`. Both
+steps now run **inside** the retry/refresh loop:
+
+```r
+materialize = function(r0) {
+  buf_native <- sf::st_transform(buf_plots, terra::crs(r0))
+  r_cropped  <- terra::crop(r0, terra::ext(terra::vect(buf_native)),
+                            snap = "out")
+  r_cropped + 0   # forces in-memory pixel read via terra arithmetic
+}
+```
+
+`r_cropped + 0` is the canonical terra idiom for "make this
+SpatRaster in-memory": scalar arithmetic creates a new SpatRaster
+whose values are read into RAM. Any VSI failure (auth expiry,
+transient 5xx, DNS hiccup mid-stream) surfaces inside the loop and
+triggers re-sign / exponential backoff just like a metadata failure
+would. The downstream `terra::writeRaster()` then writes from RAM —
+no more VSI traffic — so the only way it can fail is local disk I/O.
+
+Defensive cleanup: if `terra::writeRaster()` still fails for a
+genuinely local reason (disk full, permission denied, GDAL driver
+hiccup) AFTER `dir.create()`, the now-empty `scene_dir` is removed
+in the `tryCatch` so `diagnose_s2_cache()` doesn't keep flagging it
+as an empty entry. Sibling-band files (a previous successful B04
+when B08 fails) are left untouched — partial caches are preserved.
+
+Three new tests:
+
+* `.terra_rast_with_pc_retry: materialize closure runs once on success`
+* `.terra_rast_with_pc_retry: materialize failure with PC auth →
+  token refresh + retry`
+* `.terra_rast_with_pc_retry: materialize failure with transient
+  error → backoff retry`
+* `.get_s2_band_raster: empty scene_dir is removed when writeRaster
+  fails`
+
 # nemeton 0.21.9 (2026-05-13)
 
 ### Fixed — transient DNS / network errors abort entire scenes

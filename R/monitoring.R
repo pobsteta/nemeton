@@ -651,11 +651,12 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 # Emits `s2:pc_token_refreshed`, `s2:band_fetch_retry` (per retry on
 # transient errors), and `s2:band_fetch_failed` (on giving up).
 .terra_rast_with_pc_retry <- function(href,
-                                      collection = "sentinel-2-l2a",
-                                      emit_fn    = NULL,
-                                      scene_id   = NA_character_,
-                                      band       = NA_character_,
-                                      max_tries  = NULL) {
+                                      collection  = "sentinel-2-l2a",
+                                      emit_fn     = NULL,
+                                      scene_id    = NA_character_,
+                                      band        = NA_character_,
+                                      max_tries   = NULL,
+                                      materialize = NULL) {
   if (is.null(max_tries)) {
     mt <- suppressWarnings(
       as.integer(Sys.getenv("NEMETON_S2_MAX_TRIES", "3"))
@@ -676,7 +677,19 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   current_href <- href
   last_err     <- NULL
   for (attempt in seq_len(max_tries)) {
-    r <- tryCatch(terra::rast(current_href), error = function(e) e)
+    r <- tryCatch({
+      r0 <- terra::rast(current_href)
+      # When a `materialize` closure is provided, run it INSIDE the
+      # tryCatch so that the actual pixel reads (which terra defers
+      # to whichever call first needs values — typically the caller's
+      # writeRaster) happen under the same retry/refresh budget as
+      # the metadata open. Without this, a SAS token that expires
+      # between the rast() head request and the eventual byte-range
+      # read on the COG silently surfaces as a writeRaster() failure
+      # past the retry budget, leaving an empty
+      # `<cache_dir>/{scene_id}/` behind (v0.21.10 fix).
+      if (is.null(materialize)) r0 else materialize(r0)
+    }, error = function(e) e)
     if (!inherits(r, "error")) return(r)
 
     last_err <- r
@@ -806,17 +819,33 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     .s2_cache_log("CACHE-DISABLED (cached_path is NULL)")
   }
 
-  # Cache miss → fetch via VSI (with PC token auto-refresh on 403/401),
-  # crop to AOI.
+  # Cache miss → fetch via VSI (with PC token auto-refresh on 403/401,
+  # backoff on transient network errors), crop to AOI, and force pixel
+  # materialization. The crop + read happen INSIDE the retry budget
+  # via the `materialize` closure — otherwise pixel reads would only
+  # fire later in terra::writeRaster(), past the retry window, and a
+  # SAS token expiring mid-scene would silently produce an empty
+  # `<cache_dir>/{scene_id}/` (the bug v0.21.10 fixes).
   .s2_cache_log("FETCH href=", href)
-  r <- .terra_rast_with_pc_retry(href,
-                                 emit_fn  = emit_fn,
-                                 scene_id = scene_id,
-                                 band     = band)
-  .s2_cache_log("FETCH ok, cropping to AOI")
-  buf_native <- sf::st_transform(buf_plots, terra::crs(r))
-  r <- terra::crop(r, terra::ext(terra::vect(buf_native)), snap = "out")
-  .s2_cache_log("CROP ok dim=",
+  r <- .terra_rast_with_pc_retry(
+    href,
+    emit_fn    = emit_fn,
+    scene_id   = scene_id,
+    band       = band,
+    materialize = function(r0) {
+      buf_native <- sf::st_transform(buf_plots, terra::crs(r0))
+      needed_ext <- terra::ext(terra::vect(buf_native))
+      r_cropped  <- terra::crop(r0, needed_ext, snap = "out")
+      # Arithmetic with a scalar yields a new SpatRaster whose values
+      # are read into RAM (canonical terra idiom for "make in-memory").
+      # If any VSI range-request fails here — auth expiry, transient
+      # 5xx, DNS hiccup mid-stream — the error surfaces inside the
+      # retry loop and triggers re-sign / backoff. The downstream
+      # writeRaster() then writes from RAM, no more VSI traffic.
+      r_cropped + 0
+    }
+  )
+  .s2_cache_log("FETCH+MATERIALIZE ok dim=",
                 paste(dim(r)[1:2], collapse = "x"),
                 " ext=",
                 paste(round(.ext_as_numeric(terra::ext(r)), 1),
@@ -856,6 +885,15 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       .s2_cache_log("WRITE ERROR: ", conditionMessage(e))
       if (file.exists(tmp)) unlink(tmp)
       cli::cli_warn("S2 band cache write failed for {.val {scene_id}}/{band}: {conditionMessage(e)}")
+      # Clean up an orphan scene_dir we just created. Only remove if
+      # empty — earlier bands of the same scene may have already
+      # populated it, in which case we keep the partial cache.
+      remaining <- list.files(scene_dir, all.files = FALSE,
+                              no.. = TRUE)
+      if (length(remaining) == 0L) {
+        unlink(scene_dir, recursive = FALSE, force = FALSE)
+        .s2_cache_log("WRITE cleanup removed empty ", scene_dir)
+      }
     })
   }
   r

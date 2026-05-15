@@ -1171,3 +1171,136 @@ test_that(".insert_obs_pixel returns 0 on empty input", {
     expect_equal(nemeton:::.insert_obs_pixel(con, data.frame()), 0L)
   })
 })
+
+# ---- v0.21.10: materialize closure protects pixel reads --------------
+
+test_that(".terra_rast_with_pc_retry: materialize closure runs once on success", {
+  skip_if_not_installed("terra")
+  n_rast      <- 0L
+  n_material  <- 0L
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) { n_rast <<- n_rast + 1L; "RAW_RASTER" },
+    .package = "terra"
+  )
+  out <- nemeton:::.terra_rast_with_pc_retry(
+    "https://example/scene/B04.tif",
+    scene_id    = "S", band = "B04",
+    materialize = function(r0) {
+      n_material <<- n_material + 1L
+      expect_identical(r0, "RAW_RASTER")
+      "MATERIALIZED_RASTER"
+    }
+  )
+  expect_identical(out, "MATERIALIZED_RASTER")
+  expect_equal(n_rast, 1L)
+  expect_equal(n_material, 1L)
+})
+
+test_that(".terra_rast_with_pc_retry: materialize failure with PC auth → token refresh + retry", {
+  skip_if_not_installed("terra")
+  pc_href <- "https://sentinel2l2a01.blob.core.windows.net/c/X.tif?se=expired&sp=r&sig=old"
+
+  call_log <- list()
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) {
+      call_log[[length(call_log) + 1L]] <<- x
+      paste0("RAW#", length(call_log))
+    },
+    .package = "terra"
+  )
+  testthat::local_mocked_bindings(
+    .pc_collection_token = function(collection, ...) "se=fresh&sp=r&sig=new",
+    .package = "nemeton"
+  )
+
+  # materialize fails the FIRST time with a 403 (simulates SAS expiry
+  # surfacing during pixel read), succeeds the second time on the
+  # re-signed href.
+  mat_calls <- 0L
+  materializer <- function(r0) {
+    mat_calls <<- mat_calls + 1L
+    if (mat_calls == 1L) stop("HTTP error code: 403 Forbidden")
+    "MATERIALIZED_OK"
+  }
+
+  events <- list()
+  out <- nemeton:::.terra_rast_with_pc_retry(
+    pc_href,
+    emit_fn     = function(p) events[[length(events) + 1L]] <<- p,
+    scene_id    = "S2_T", band = "B04",
+    materialize = materializer
+  )
+  expect_identical(out, "MATERIALIZED_OK")
+  expect_equal(mat_calls, 2L)
+  expect_equal(length(call_log), 2L)
+  # Second open used the re-signed href.
+  expect_false(grepl("sig=old", call_log[[2]], fixed = TRUE))
+  expect_true(grepl("sig=new", call_log[[2]], fixed = TRUE))
+  phases <- vapply(events, function(p) p$current, character(1))
+  expect_true("s2:pc_token_refreshed" %in% phases)
+})
+
+test_that(".terra_rast_with_pc_retry: materialize failure with transient error → backoff retry", {
+  skip_if_not_installed("terra")
+  testthat::local_mocked_bindings(
+    rast = function(x, ...) "RAW",
+    .package = "terra"
+  )
+  mat_calls <- 0L
+  materializer <- function(r0) {
+    mat_calls <<- mat_calls + 1L
+    if (mat_calls < 2L) stop("HTTP error code: 504 Gateway Timeout")
+    "OK"
+  }
+  events <- list()
+  # max_tries = 2 → one retry with a 2 s backoff (2^1). Accept the
+  # 2 s test cost rather than mocking base::Sys.sleep (which is
+  # awkward with local_mocked_bindings on base).
+  out <- nemeton:::.terra_rast_with_pc_retry(
+    "https://example/scene/B04.tif",     # non-PC href
+    emit_fn     = function(p) events[[length(events) + 1L]] <<- p,
+    scene_id    = "S", band = "B04",
+    max_tries   = 2L,
+    materialize = materializer
+  )
+  expect_identical(out, "OK")
+  expect_equal(mat_calls, 2L)
+  phases <- vapply(events, function(p) p$current, character(1))
+  expect_true("s2:band_fetch_retry" %in% phases)
+})
+
+test_that(".get_s2_band_raster: empty scene_dir is removed when writeRaster fails", {
+  skip_if_not_installed("terra")
+  cache    <- withr::local_tempdir()
+  scene_id <- "S2_WRITEFAIL"
+
+  # Source raster on local disk so the FETCH + materialize step
+  # succeeds; the failure is injected at writeRaster time only.
+  src <- file.path(withr::local_tempdir(), "src.tif")
+  r_src <- terra::rast(nrows = 50, ncols = 50,
+                       xmin = 0, xmax = 500, ymin = 0, ymax = 500,
+                       crs = "EPSG:2154", vals = seq_len(2500))
+  terra::writeRaster(r_src, src, overwrite = TRUE)
+
+  buf <- sf::st_sf(
+    radius_m = 10,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(250, 250)), 10),
+                          crs = 2154))
+  scene <- data.frame(scene_id = scene_id, href_B04 = src,
+                      stringsAsFactors = FALSE)
+
+  # Mock writeRaster to throw — simulates disk full / permission /
+  # GDAL driver issue AFTER pixel materialization has succeeded.
+  testthat::local_mocked_bindings(
+    writeRaster = function(...) stop("simulated disk failure"),
+    .package = "terra"
+  )
+
+  expect_warning(
+    nemeton:::.get_s2_band_raster(scene, "B04", buf, cache_dir = cache),
+    "S2 band cache write failed"
+  )
+  # The orphan scene_dir created just before writeRaster must be
+  # cleaned up so diagnose_s2_cache() doesn't flag it.
+  expect_false(dir.exists(file.path(cache, scene_id)))
+})
