@@ -106,7 +106,7 @@ Aucune logique métier n'entre dans `mod_monitoring.R`. Le module appelle exclus
 ### 3.2 Frontière R / Python — Couche reticulate
 
 - Python isolé dans un environnement virtuel **reticulate-managed** : `~/.virtualenvs/nemeton-fordead/` (création au premier appel via `reticulate::virtualenv_create()`).
-- Dépendances Python figées dans `inst/python/requirements.txt` : `fordead==2.1.x`, `xarray`, `dask[complete]`, `rasterio`, `eodag`, `numpy`, `pandas`, `geopandas`, `shapely`.
+- Dépendances Python figées dans `inst/python/requirements.txt` : `fordead @ git+https://gitlab.com/fordead/fordead_package@v2.1.1` (pas sur PyPI, cf. fix v0.22.2), `xarray`, `dask[complete]`, `rasterio`, `eodag`, `numpy`, `pandas`, `geopandas`, `shapely`.
 - Helpers `.ensure_fordead_python()` et `.use_fordead_env()` dans `R/fordead_python.R` :
   - vérifient la présence de Python ≥ 3.10
   - créent l'env virtuel si absent

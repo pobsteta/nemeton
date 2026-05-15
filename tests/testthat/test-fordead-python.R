@@ -23,7 +23,9 @@ test_that(".fordead_requirements_path resolves the shipped requirements", {
   p <- nemeton:::.fordead_requirements_path()
   expect_true(file.exists(p))
   txt <- readLines(p)
-  expect_true(any(grepl("^fordead==", txt)))
+  # fordead lives on gitlab.com (not PyPI) so the pin is a PEP 508 URL.
+  expect_true(any(grepl("^fordead\\b", txt)))
+  expect_true(any(grepl("git\\+https://gitlab\\.com/fordead", txt)))
 })
 
 
@@ -127,6 +129,12 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
     import              = function(module, convert = TRUE) fake_module,
     .package = "reticulate"
   )
+  # Healthy venv: fordead is importable, so .ensure_fordead_python
+  # must skip both create AND install.
+  testthat::local_mocked_bindings(
+    .fordead_is_installed = function(env_name) TRUE,
+    .package = "nemeton"
+  )
 
   m <- nemeton:::.ensure_fordead_python(env_name = "test-env-2", verbose = FALSE)
   expect_identical(m, fake_module)
@@ -134,4 +142,86 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
   expect_equal(install_calls, 0L)
 
   nemeton:::.reset_fordead_state()
+})
+
+
+test_that(".ensure_fordead_python reinstalls when fordead is missing from existing venv", {
+  skip_if_no_reticulate()
+  nemeton:::.reset_fordead_state()
+
+  fake_module <- structure(list(tag = "fake-fordead-3"),
+                           class = "python.builtin.module")
+  create_calls <- 0L
+  install_calls <- 0L
+
+  testthat::local_mocked_bindings(
+    py_discover_config  = function() list(python = "/usr/bin/python3", version = "3.11"),
+    virtualenv_exists   = function(env) TRUE,
+    virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
+    virtualenv_install  = function(env, packages = NULL, requirements = NULL,
+                                   ignore_installed = FALSE, ...) {
+      install_calls <<- install_calls + 1L
+      expect_true(file.exists(requirements))
+      invisible()
+    },
+    use_virtualenv      = function(env, required = TRUE) invisible(env),
+    import              = function(module, convert = TRUE) fake_module,
+    .package = "reticulate"
+  )
+  # Corrupted venv: directory exists but `import fordead` would fail.
+  # Expect: no create (venv is there), one install (recovery path).
+  testthat::local_mocked_bindings(
+    .fordead_is_installed = function(env_name) FALSE,
+    .package = "nemeton"
+  )
+
+  m <- expect_message(
+    nemeton:::.ensure_fordead_python(env_name = "test-env-3", verbose = TRUE),
+    "missing"
+  )
+  expect_identical(m, fake_module)
+  expect_equal(create_calls,  0L)
+  expect_equal(install_calls, 1L)
+
+  nemeton:::.reset_fordead_state()
+})
+
+
+test_that(".fordead_is_installed returns FALSE when the venv python is absent", {
+  skip_if_no_reticulate()
+
+  # Point virtualenv_python at a non-existent path: file.exists() returns
+  # FALSE, the function short-circuits without invoking system2.
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) tempfile("no-such-python-"),
+    .package = "reticulate"
+  )
+  expect_false(nemeton:::.fordead_is_installed("phantom-env"))
+})
+
+
+test_that(".fordead_is_installed reflects the python import probe", {
+  skip_if_no_reticulate()
+
+  fake_py <- tempfile("fake-py-"); file.create(fake_py)
+  on.exit(unlink(fake_py), add = TRUE)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) fake_py,
+    .package = "reticulate"
+  )
+
+  # Probe says OK -> TRUE
+  testthat::local_mocked_bindings(
+    .fordead_python_import_ok = function(py_path, module = "fordead") TRUE,
+    .package = "nemeton"
+  )
+  expect_true(nemeton:::.fordead_is_installed("any-env"))
+
+  # Probe says KO -> FALSE
+  testthat::local_mocked_bindings(
+    .fordead_python_import_ok = function(py_path, module = "fordead") FALSE,
+    .package = "nemeton"
+  )
+  expect_false(nemeton:::.fordead_is_installed("any-env"))
 })

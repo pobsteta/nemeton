@@ -72,6 +72,50 @@ NULL
 }
 
 
+#' Run `python -c "import <module>"` in an external interpreter
+#'
+#' Thin wrapper over [base::system2()] used to probe whether a
+#' Python module is importable from a specific interpreter, without
+#' loading it into the current reticulate session. Exists so tests
+#' can mock the system call without dealing with `system2` directly.
+#'
+#' @param py_path Character path to a Python interpreter.
+#' @param module  Module name to import (default `"fordead"`).
+#' @return `TRUE` if the import succeeded (exit code 0), `FALSE`
+#'   otherwise (non-zero exit, signal, or any error).
+#' @keywords internal
+.fordead_python_import_ok <- function(py_path, module = "fordead") {
+  rc <- tryCatch(
+    suppressWarnings(system2(
+      py_path,
+      c("-c", paste0("import ", module)),
+      stdout = FALSE, stderr = FALSE
+    )),
+    error = function(e) -1L
+  )
+  identical(as.integer(rc), 0L)
+}
+
+
+#' Check whether `fordead` is actually importable in the given venv
+#'
+#' Returns `TRUE` when the venv exists AND its Python interpreter can
+#' `import fordead`. Used by [.ensure_fordead_python()] to detect a
+#' previously-failed install (e.g. when `pip install` aborted mid-way
+#' and left a venv with the base deps but no fordead) and trigger a
+#' re-install instead of plowing ahead into a doomed `reticulate::import`.
+#'
+#' @param env_name Character. Virtualenv name.
+#' @return Logical(1).
+#' @keywords internal
+.fordead_is_installed <- function(env_name) {
+  py <- tryCatch(reticulate::virtualenv_python(env_name),
+                 error = function(e) NA_character_)
+  if (is.na(py) || !nzchar(py) || !file.exists(py)) return(FALSE)
+  .fordead_python_import_ok(py)
+}
+
+
 #' Switch reticulate to the FORDEAD virtualenv
 #'
 #' Calls [reticulate::use_virtualenv()] with `required = TRUE`. The
@@ -119,17 +163,37 @@ NULL
 
   .assert_fordead_system()
 
-  exists_already <- reticulate::virtualenv_exists(env_name)
-  if (!exists_already) {
+  if (!file.exists(requirements)) {
+    cli::cli_abort("Requirements file not found at {.path {requirements}}.")
+  }
+
+  needs_install <- FALSE
+  if (!reticulate::virtualenv_exists(env_name)) {
     if (verbose) {
-      cli::cli_alert_info("Creating Python virtualenv {.val {env_name}} (first FORDEAD use).")
+      cli::cli_alert_info(
+        "Creating Python virtualenv {.val {env_name}} (first FORDEAD use)."
+      )
     }
     reticulate::virtualenv_create(env_name)
-    if (!file.exists(requirements)) {
-      cli::cli_abort("Requirements file not found at {.path {requirements}}.")
-    }
+    needs_install <- TRUE
+  } else if (!.fordead_is_installed(env_name)) {
+    # Venv exists but fordead can't be imported — a previous install
+    # likely aborted mid-way (e.g. transient network failure or a stale
+    # PyPI pin). Re-run the install instead of erroring at `import`.
     if (verbose) {
-      cli::cli_alert_info("Installing FORDEAD dependencies from {.path {basename(requirements)}}.")
+      cli::cli_alert_warning(c(
+        "Virtualenv {.val {env_name}} exists but {.pkg fordead} is missing.",
+        i = "Reinstalling from {.path {basename(requirements)}}."
+      ))
+    }
+    needs_install <- TRUE
+  }
+
+  if (needs_install) {
+    if (verbose) {
+      cli::cli_alert_info(
+        "Installing FORDEAD dependencies from {.path {basename(requirements)}}."
+      )
     }
     reticulate::virtualenv_install(env_name,
                                    packages = NULL,

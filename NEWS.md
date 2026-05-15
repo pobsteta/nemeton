@@ -1,3 +1,91 @@
+# nemeton 0.22.2 (2026-05-15)
+
+### Fixed — FORDEAD install failed because `fordead` is not on PyPI
+
+The pinned dependency `fordead==2.1.4` in `inst/python/requirements.txt`
+made `pip install -r requirements.txt` fail with:
+
+```
+ERROR: Could not find a version that satisfies the requirement fordead==2.1.4
+ERROR: No matching distribution found for fordead==2.1.4
+```
+
+Two problems compounded:
+
+1. **`fordead` is not published on PyPI** at all (verified: HTTP 404 on
+   `https://pypi.org/simple/fordead/`). The official install method
+   per the INRAE docs is
+   `pip install git+https://gitlab.com/fordead/fordead_package`.
+2. **Version `2.1.4` does not exist**. The latest tag on GitLab is
+   `v2.1.1` (2026-02-04); the pin was written aspirationally without
+   verification when spec 008 was drafted.
+
+**Fix**: `inst/python/requirements.txt` now uses a PEP 508 URL pin:
+
+```
+fordead @ git+https://gitlab.com/fordead/fordead_package@v2.1.1
+```
+
+### Fixed — `.ensure_fordead_python()` could not recover from a half-installed venv
+
+Independently of the requirements bug above, `.ensure_fordead_python()`
+in `R/fordead_python.R` only ran `virtualenv_install` when the venv
+**did not** exist. When `pip install` failed mid-way (transient
+network failure, broken pin, etc.) the venv had been created with
+the base deps (pip, wheel, setuptools, numpy) but without `fordead`
+itself. Subsequent calls saw `virtualenv_exists() == TRUE`, skipped
+the install, then exploded at `reticulate::import("fordead")` with
+no recovery path — the user had to run
+`reticulate::virtualenv_remove("nemeton-fordead")` by hand.
+
+**Fix**: two new private helpers in `R/fordead_python.R`:
+
+* `.fordead_python_import_ok(py_path, module)` — runs
+  `<py_path> -c "import <module>"` via `system2()`, returns the
+  exit code as a logical. Test-friendly: it's a one-liner around
+  `system2` that mocks easily.
+* `.fordead_is_installed(env_name)` — resolves the venv's Python
+  interpreter via `reticulate::virtualenv_python()`, returns `FALSE`
+  if it's absent or if `fordead` can't be imported.
+
+`.ensure_fordead_python()` now calls `.fordead_is_installed()` when
+the venv already exists. If `fordead` is missing, it emits a
+warning toast and re-runs `virtualenv_install` instead of plowing
+ahead. The user no longer has to remove the venv manually after a
+failed first install.
+
+### Migration notes for users who hit the bug before this release
+
+If you tried to run FORDEAD against v0.22.1 (or earlier) and saw
+`No matching distribution found for fordead==2.1.4`, your virtualenv
+is in a half-installed state. After upgrading to v0.22.2 the
+recovery is automatic — the next call to `run_fordead_dieback()`
+will detect the missing `fordead` and reinstall from the correct
+source. If you prefer a clean slate, you can still do:
+
+```r
+reticulate::virtualenv_remove("nemeton-fordead")
+```
+
+### Tests
+
+* Updated `.fordead_requirements_path resolves the shipped requirements`
+  to match the new URL-pin format.
+* Updated `.ensure_fordead_python skips create when the venv already exists`
+  to mock `.fordead_is_installed = TRUE` (healthy venv path).
+* New: `.ensure_fordead_python reinstalls when fordead is missing from
+  existing venv` — covers the recovery path.
+* New: 2 tests on `.fordead_is_installed` (absent Python binary;
+  import probe TRUE/FALSE).
+
+### Internal
+
+* spec 008 §1.3 / plan 008 §1.3 docstrings updated to reflect the
+  git-based install. ADR-013 left unchanged (it doesn't quote the
+  pin).
+
+---
+
 # nemeton 0.22.1 (2026-05-15)
 
 ### Fixed — Sentinel-2 ingestion above 30 min triggered an avoidable 403 per remaining band

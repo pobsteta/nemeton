@@ -37,7 +37,7 @@ Ce document traduit la spec 008 en architecture technique exécutable. Pour le �
 - **Création** : à la première utilisation, déclenchée par `.ensure_fordead_python()`
 - **Dépendances** : pinned dans `inst/python/requirements.txt`
   ```
-  fordead==2.1.4
+  fordead @ git+https://gitlab.com/fordead/fordead_package@v2.1.1
   xarray>=2024.0
   dask[complete]>=2024.0
   rasterio>=1.3.0
@@ -47,6 +47,9 @@ Ce document traduit la spec 008 en architecture technique exécutable. Pour le �
   geopandas>=0.14
   shapely>=2.0
   ```
+  Note (corrigé v0.22.2) : `fordead` n'est pas publié sur PyPI. La
+  procédure d'install officielle (docs INRAE) passe par un URL pin
+  PEP 508 vers le dépôt GitLab.
 - **Vérification système** : Python ≥ 3.10 requis, `cli::cli_abort` explicite si absent
 
 ### 1.4 Données embarquées
