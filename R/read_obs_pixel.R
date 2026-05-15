@@ -63,7 +63,9 @@
 #' }
 #'
 #' @seealso [ingest_sentinel2_timeseries()] for the write path,
-#'   [register_monitoring_zone()] to obtain `zone_id`.
+#'   [register_monitoring_zone()] to obtain `zone_id`,
+#'   [extract_pixel_timeseries()] for the per-pixel (not per-plot)
+#'   time series counterpart.
 #' @export
 read_obs_pixel <- function(con,
                            zone_id,
