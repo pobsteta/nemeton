@@ -100,3 +100,82 @@ test_that("read_s2_band_raster: validates inputs", {
   expect_error(read_s2_band_raster(cache, NA_character_, "B04"),
                "non-empty character")
 })
+
+# ---- read_s2_band_stack() ---------------------------------------------
+
+test_that("read_s2_band_stack: stack is ordered by obs_date", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  # Fixture gives us scenes in order; shuffle the input to confirm
+  # the function sorts internally.
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L)
+  shuffled <- scenes[c(3L, 1L, 2L), , drop = FALSE]
+
+  stack <- read_s2_band_stack(cache, shuffled, "B08")
+  expect_s4_class(stack, "SpatRaster")
+  expect_equal(terra::nlyr(stack), 3L)
+  expect_equal(as.Date(terra::time(stack)),
+               as.Date(sort(scenes$obs_date)))
+  expect_equal(names(stack),
+               as.character(sort(scenes$obs_date)))
+})
+
+test_that("read_s2_band_stack: missing scenes are skipped with one aggregated warning", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L)
+  # Remove one scene's B04 file on disk.
+  unlink(file.path(cache, scenes$scene_id[2], "B04.tif"))
+
+  expect_warning(
+    stack <- read_s2_band_stack(cache, scenes, "B04"),
+    "Skipped 1/3 scene"
+  )
+  expect_s4_class(stack, "SpatRaster")
+  expect_equal(terra::nlyr(stack), 2L)
+})
+
+test_that("read_s2_band_stack: NULL when every scene is missing", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  # scenes_df pointing at scenes that don't exist on disk
+  fake_df <- data.frame(
+    scene_id = c("S2_NOPE_1", "S2_NOPE_2"),
+    obs_date = as.Date(c("2026-01-10", "2026-01-20")),
+    stringsAsFactors = FALSE
+  )
+  expect_warning(out <- read_s2_band_stack(cache, fake_df, "B04"),
+                 "Skipped 2/2")
+  expect_null(out)
+})
+
+test_that("read_s2_band_stack: terra::time() is correctly set", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 2L)
+
+  stack <- read_s2_band_stack(cache, scenes, "B08")
+  # `terra::time()` returns POSIXct or Date depending on terra version.
+  # Coerce to Date for the comparison.
+  expect_equal(as.Date(terra::time(stack)),
+               as.Date(scenes$obs_date))
+})
+
+test_that("read_s2_band_stack: validates scenes_df shape", {
+  cache <- withr::local_tempdir()
+
+  expect_error(read_s2_band_stack(cache, list(), "B04"),
+               "must be a data.frame")
+  expect_error(read_s2_band_stack(cache, data.frame(scene_id = "X"), "B04"),
+               "missing column")
+  expect_error(read_s2_band_stack(cache,
+                                  data.frame(scene_id = character(0),
+                                             obs_date = as.Date(character(0))),
+                                  "B04"),
+               "empty")
+  expect_error(read_s2_band_stack(cache,
+                                  data.frame(scene_id = NA_character_,
+                                             obs_date = as.Date("2026-01-01")),
+                                  "B04"),
+               "NA in")
+})
