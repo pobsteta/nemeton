@@ -1,5 +1,32 @@
 # nemeton 0.21.10 (2026-05-15)
 
+### Added — `read_obs_pixel()` exported reader for the obs_pixel hypertable
+
+New exported function `read_obs_pixel(con, zone_id, plot_ids = NULL,
+bands = NULL, date_from = NULL, date_to = NULL)` returns the per-plot
+× per-band × per-date Sentinel-2 observations as a `data.frame`. The
+plot identifier is surfaced as the human-readable `plot.plot_id`
+(TEXT), not the internal `plot.id` (INTEGER FK), via a JOIN — so
+downstream consumers (Shiny `selectInput`, Quarto reports, GeoPackage
+exports) refer to plots by the code the user knows.
+
+Filters are all optional and AND-combined; `NULL` means no filter on
+that dimension. Output is deterministically sorted by `(plot_id,
+obs_date, band)`, types are coerced (`obs_date → Date`, numerics
+forced double), and an empty `data.frame` with the right column
+schema is returned for an empty / unknown zone.
+
+This is the read-side counterpart of the (private) write path
+`.insert_obs_pixel()`. Exposing it as part of the public API keeps
+the `obs_pixel` SQL out of `nemetonshiny` (per the *no business
+logic in the app* rule) and unblocks E6.b phase 3 (per-plot NDVI /
+NBR plotly time series in `mod_monitoring`).
+
+13 new tests in `test-read_obs_pixel.R`: 6 offline (argument
+validation + empty-shape contract), 4 integration via `with_clean_db`
+(empty / unknown zone, full read, every filter combination, sibling
+zone isolation).
+
 ### Fixed — S2 cache leaves empty `<cache_dir>/{scene_id}/` directories
 
 `ingest_sentinel2_timeseries(..., cache_dir = ...)` created scene
