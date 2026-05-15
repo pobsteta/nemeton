@@ -280,3 +280,97 @@ test_that(".pc_collection_token returns NULL on HTTP failure", {
   # And nothing was cached.
   expect_false("sentinel-2-l2a" %in% ls(nemeton:::.pc_token_cache))
 })
+
+# ---- v0.22.1: proactive SAS token expiry check -----------------------
+
+test_that(".pc_href_expires_at parses a valid `se=` parameter", {
+  href <- paste0(
+    "https://sentinel2l2a01.blob.core.windows.net/x/B04.tif",
+    "?st=2026-05-15T08%3A00%3A00Z&se=2026-05-15T09%3A00%3A00Z",
+    "&sp=rl&sig=abc"
+  )
+  out <- nemeton:::.pc_href_expires_at(href)
+  expect_s3_class(out, "POSIXct")
+  expect_equal(
+    format(out, "%Y-%m-%d %H:%M:%S", tz = "UTC"),
+    "2026-05-15 09:00:00"
+  )
+})
+
+test_that(".pc_href_expires_at returns NA on hrefs without `se=`", {
+  # No query
+  expect_true(is.na(nemeton:::.pc_href_expires_at(
+    "https://example/B04.tif"
+  )))
+  # Query but no se=
+  expect_true(is.na(nemeton:::.pc_href_expires_at(
+    "https://example/B04.tif?sig=abc"
+  )))
+  # Empty / NA / non-character
+  expect_true(is.na(nemeton:::.pc_href_expires_at("")))
+  expect_true(is.na(nemeton:::.pc_href_expires_at(NA_character_)))
+  expect_true(is.na(nemeton:::.pc_href_expires_at(NULL)))
+})
+
+test_that(".pc_ensure_fresh_href is a no-op on non-PC URLs", {
+  # CDSE STAC backend, no PC blob
+  href_cdse <- "https://datahub.copernicus.eu/x/B04.tif?token=xyz"
+  expect_identical(nemeton:::.pc_ensure_fresh_href(href_cdse), href_cdse)
+  # Unsigned PC URL (no sig=) — left as-is, the retry helper will fix it
+  href_unsigned <- "https://sentinel2l2a01.blob.core.windows.net/x/B04.tif"
+  expect_identical(nemeton:::.pc_ensure_fresh_href(href_unsigned),
+                   href_unsigned)
+})
+
+test_that(".pc_ensure_fresh_href is a no-op when the token is still fresh", {
+  # se= 2 hours in the future
+  future <- format(Sys.time() + 2 * 3600, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  href <- paste0(
+    "https://sentinel2l2a01.blob.core.windows.net/x/B04.tif",
+    "?st=2026-05-15T08%3A00%3A00Z&se=", utils::URLencode(future, reserved = TRUE),
+    "&sp=rl&sig=abc"
+  )
+  # Mock to assert we did NOT call .pc_resign_href
+  n_resign <- 0L
+  testthat::local_mocked_bindings(
+    .pc_resign_href = function(...) { n_resign <<- n_resign + 1L; "RESIGNED" },
+    .package = "nemeton"
+  )
+  out <- nemeton:::.pc_ensure_fresh_href(href)
+  expect_identical(out, href)
+  expect_equal(n_resign, 0L)
+})
+
+test_that(".pc_ensure_fresh_href resigns when the token is within grace_seconds", {
+  # se= 30 seconds in the future — under default grace = 60s
+  near <- format(Sys.time() + 30, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  href <- paste0(
+    "https://sentinel2l2a01.blob.core.windows.net/x/B04.tif",
+    "?st=2026-05-15T08%3A00%3A00Z&se=", utils::URLencode(near, reserved = TRUE),
+    "&sp=rl&sig=stale"
+  )
+  testthat::local_mocked_bindings(
+    .pc_resign_href = function(...) {
+      "https://sentinel2l2a01.blob.core.windows.net/x/B04.tif?se=fresh&sig=new"
+    },
+    .package = "nemeton"
+  )
+  out <- nemeton:::.pc_ensure_fresh_href(href)
+  expect_match(out, "sig=new", fixed = TRUE)
+  expect_false(grepl("sig=stale", out, fixed = TRUE))
+})
+
+test_that(".pc_ensure_fresh_href falls back to the original href when resign fails", {
+  near <- format(Sys.time() + 10, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  href <- paste0(
+    "https://sentinel2l2a01.blob.core.windows.net/x/B04.tif",
+    "?st=2026-05-15T08%3A00%3A00Z&se=", utils::URLencode(near, reserved = TRUE),
+    "&sp=rl&sig=stale"
+  )
+  testthat::local_mocked_bindings(
+    .pc_resign_href = function(...) NULL,   # simulate token endpoint down
+    .package = "nemeton"
+  )
+  # Falls back to original (the reactive retry will then trigger)
+  expect_identical(nemeton:::.pc_ensure_fresh_href(href), href)
+})

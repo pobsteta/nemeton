@@ -333,6 +333,70 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
 }
 
 
+# Parse the SAS token's `se=` (expiry) query parameter from a PC blob
+# URL and return it as a POSIXct (UTC), or NA if absent / unparseable.
+# Used by `.pc_ensure_fresh_href()` to decide whether to refresh
+# proactively before issuing a request.
+.pc_href_expires_at <- function(href) {
+  if (!is.character(href) || length(href) != 1L || is.na(href) ||
+      !nzchar(href)) {
+    return(as.POSIXct(NA, tz = "UTC"))
+  }
+  m <- regmatches(href, regexpr("[?&]se=[^&]+", href, perl = TRUE))
+  if (!length(m) || !nzchar(m)) return(as.POSIXct(NA, tz = "UTC"))
+  raw <- utils::URLdecode(sub("^[?&]se=", "", m))
+  out <- tryCatch(
+    as.POSIXct(raw, format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    error = function(e) NA
+  )
+  if (length(out) != 1L || is.na(out)) {
+    return(as.POSIXct(NA, tz = "UTC"))
+  }
+  out
+}
+
+
+# Proactively refresh a Planetary Computer signed href if its embedded
+# SAS token (`se=...`) is within `grace_seconds` of expiring. No-op on
+# hrefs that don't look like signed PC blob URLs (other STAC backends,
+# unsigned fallbacks, etc.).
+#
+# This is the v0.22.1 fix: previously, hrefs were signed once at STAC
+# search time (`stac_search_s2_pc`) and baked into `scenes_df`, then
+# consumed many minutes later during the ingestion loop. On long runs
+# (> 30 min) every remaining scene hit a 403 first, then was rescued
+# by `.terra_rast_with_pc_retry`'s reactive refresh — costly and
+# noisy. The proactive check avoids the 403 in the first place; the
+# reactive path stays as a safety net for clock skew / unusual
+# expiry formats.
+#
+# On refresh failure (`.pc_resign_href` returns NULL because the
+# token endpoint itself is down), we fall back to the original href.
+# The downstream retry helper will then either succeed if the cached
+# token in `scenes_df` is still good, or surface a clean PC token
+# fetch failure warning.
+.pc_ensure_fresh_href <- function(href,
+                                  collection    = "sentinel-2-l2a",
+                                  grace_seconds = 60L) {
+  if (!is.character(href) || length(href) != 1L || is.na(href) ||
+      !nzchar(href)) return(href)
+  # Only act on signed PC blob URLs
+  if (!grepl("blob\\.core\\.windows\\.net", href) ||
+      !grepl("sig=", href, fixed = TRUE)) return(href)
+  expires <- .pc_href_expires_at(href)
+  if (is.na(expires)) {
+    # Unsignable expiry — defensive refresh
+    refreshed <- .pc_resign_href(href, collection)
+    return(refreshed %||% href)
+  }
+  if (as.numeric(expires - Sys.time(), units = "secs") > grace_seconds) {
+    return(href)   # token still has time
+  }
+  refreshed <- .pc_resign_href(href, collection)
+  refreshed %||% href
+}
+
+
 #' Fetch a SAS token for a Planetary Computer collection
 #'
 #' Calls `/api/sas/v1/token/{collection}` once and caches the result

@@ -836,6 +836,13 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   # fire later in terra::writeRaster(), past the retry window, and a
   # SAS token expiring mid-scene would silently produce an empty
   # `<cache_dir>/{scene_id}/` (the bug v0.21.10 fixes).
+  #
+  # v0.22.1: proactive PC SAS token refresh. The href in `scene` was
+  # baked at STAC search time (potentially > 30 min ago on a long
+  # run) so parse its `se=` and refresh if within 60 s of expiry —
+  # this avoids a 403 round-trip per remaining scene that the
+  # reactive retry in .terra_rast_with_pc_retry would otherwise catch.
+  href <- .pc_ensure_fresh_href(href)
   .s2_cache_log("FETCH href=", href)
   r <- .terra_rast_with_pc_retry(
     href,

@@ -1,3 +1,50 @@
+# nemeton 0.22.1 (2026-05-15)
+
+### Fixed — Sentinel-2 ingestion above 30 min triggered an avoidable 403 per remaining band
+
+`stac_search_s2_pc()` signs every COG href with a SAS token at search
+time and bakes them into `scenes_df`. On a long ingestion run, by the
+time the loop reaches scene N the token embedded in the hrefs has
+expired (Planetary Computer SAS tokens last ~30 min). The reactive
+recovery in `.terra_rast_with_pc_retry()` (added in v0.21.6) caught
+each 403 individually:
+
+```
+Scene 1..8   → tokens still fresh → OK
+Scene 9..26  → 403 → invalidate cache → resign href → retry → OK
+```
+
+Every band of every late scene paid one extra HTTP round-trip
+(~300 ms each) plus a noisy `s2:pc_token_refreshed` event. On a
+typical 26-scene × 3-band run crossing the 30 min mark, that's
+~50 wasted requests and ~15 s of latency.
+
+**Fix**: two new private helpers in `R/sentinel2.R`:
+
+* `.pc_href_expires_at(href)` — parses the SAS `se=` query parameter,
+  returns a `POSIXct` (UTC) or `NA` if absent / unparseable.
+* `.pc_ensure_fresh_href(href, collection, grace_seconds = 60)` —
+  no-op on non-PC URLs and on hrefs whose `se=` is comfortably in
+  the future; otherwise calls `.pc_resign_href()` to swap in a
+  freshly-fetched token. Falls back to the original href if the
+  token endpoint itself is down (the reactive retry then takes
+  over as a safety net).
+
+Wired into `.get_s2_band_raster()` (R/monitoring.R) immediately
+before the `FETCH href=` trace, so every band lookup gets a
+last-second freshness check.
+
+Effect on a 45-minute run: zero `s2:pc_token_refreshed` events
+(except in genuine clock-skew situations), no warnings to
+spread across the worker console, no measurable extra HTTP cost
+(the proactive check is one regex parse + one `Sys.time()`
+comparison, sub-microsecond).
+
+6 new offline tests in `test-sentinel2.R` covering:
+parser on valid / missing / NA / NULL hrefs, no-op on non-PC and
+unsigned URLs, no-op when the token is still fresh, resign when
+within grace, fallback when resign returns NULL.
+
 # nemeton 0.22.0 (2026-05-15)
 
 ### Added — per-pixel Sentinel-2 readers and pixel time-series extraction
