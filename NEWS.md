@@ -1,4 +1,4 @@
-# nemeton 0.21.10 (2026-05-15)
+# nemeton 0.21.11 (2026-05-15)
 
 ### Added — `read_obs_pixel()` exported reader for the obs_pixel hypertable
 
@@ -26,6 +26,8 @@ NBR plotly time series in `mod_monitoring`).
 validation + empty-shape contract), 4 integration via `with_clean_db`
 (empty / unknown zone, full read, every filter combination, sibling
 zone isolation).
+
+# nemeton 0.21.10 (2026-05-15)
 
 ### Fixed — S2 cache leaves empty `<cache_dir>/{scene_id}/` directories
 
