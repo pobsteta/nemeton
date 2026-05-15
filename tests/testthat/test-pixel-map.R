@@ -179,3 +179,90 @@ test_that("read_s2_band_stack: validates scenes_df shape", {
                                   "B04"),
                "NA in")
 })
+
+# ---- build_index_stack() ----------------------------------------------
+
+test_that("build_index_stack(NDVI): formula is correct pixel-wise", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  # Fixed values so we can predict the NDVI exactly.
+  scene_ids <- c("S2_FIX_NDVI_01")
+  sid       <- scene_ids[1]
+  scene_dir <- file.path(cache, sid)
+  dir.create(scene_dir, recursive = TRUE)
+  for (b in c("B04", "B08")) {
+    val <- if (b == "B04") 0.10 else 0.40
+    r <- terra::rast(nrows = 10, ncols = 10,
+                     xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                     crs = "EPSG:2154", vals = rep(val, 100))
+    terra::writeRaster(r, file.path(scene_dir, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+  scenes <- data.frame(scene_id = scene_ids,
+                       obs_date = as.Date("2026-03-01"),
+                       stringsAsFactors = FALSE)
+
+  stack <- build_index_stack(cache, scenes, "NDVI")
+  expect_s4_class(stack, "SpatRaster")
+  expect_equal(terra::nlyr(stack), 1L)
+  expect_identical(attr(stack, "index"), "NDVI")
+  # Expected = (0.4 - 0.1) / (0.4 + 0.1) = 0.6
+  vals <- as.numeric(terra::values(stack))
+  expect_true(all(abs(vals - 0.6) < 1e-9))
+})
+
+test_that("build_index_stack(NBR): result is on 10 m grid (B12 resampled)", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 1L, with_b12 = TRUE)
+
+  stack <- build_index_stack(cache, scenes, "NBR")
+  expect_s4_class(stack, "SpatRaster")
+  expect_equal(terra::res(stack), c(10, 10))   # 10 m grid (B08), not 20 m
+  # Values bounded in [-1, 1] (reflectances are positive, math holds)
+  vals <- as.numeric(terra::values(stack))
+  expect_true(all(is.na(vals) | (vals >= -1 & vals <= 1)))
+})
+
+test_that("build_index_stack: NA in a source band propagates to the index", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  sid <- "S2_FIX_NA"
+  scene_dir <- file.path(cache, sid)
+  dir.create(scene_dir, recursive = TRUE)
+  # B04 has NA at one pixel, B08 is full.
+  vals_b04 <- rep(0.10, 100); vals_b04[55] <- NA_real_
+  for (b in c("B04", "B08")) {
+    v <- if (b == "B04") vals_b04 else rep(0.40, 100)
+    r <- terra::rast(nrows = 10, ncols = 10,
+                     xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+                     crs = "EPSG:2154", vals = v)
+    terra::writeRaster(r, file.path(scene_dir, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+  scenes <- data.frame(scene_id = sid,
+                       obs_date = as.Date("2026-03-01"),
+                       stringsAsFactors = FALSE)
+
+  stack <- build_index_stack(cache, scenes, "NDVI")
+  vals <- as.numeric(terra::values(stack))
+  expect_true(is.na(vals[55]))
+  expect_equal(sum(is.na(vals)), 1L)
+})
+
+test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped silently with warning", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L, with_b12 = TRUE)
+  # Remove B12 from one scene
+  unlink(file.path(cache, scenes$scene_id[2], "B12.tif"))
+
+  expect_warning(
+    stack <- build_index_stack(cache, scenes, "NBR"),
+    "Skipped 1/3 scene"
+  )
+  expect_equal(terra::nlyr(stack), 2L)
+  # And NDVI on the same fixture sees 3 (because B04 + B08 are intact)
+  expect_silent(stack_ndvi <- build_index_stack(cache, scenes, "NDVI"))
+  expect_equal(terra::nlyr(stack_ndvi), 3L)
+})

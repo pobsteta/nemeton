@@ -136,6 +136,104 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
   out
 }
 
+#' Build a multi-temporal NDVI or NBR stack from cached Sentinel-2 bands
+#'
+#' For each scene in `scenes_df`, opens the required cached bands and
+#' computes the requested spectral index pixel-wise:
+#'
+#' * **NDVI** = (B08 − B04) / (B08 + B04) — proxy of vegetation vigour
+#' * **NBR** = (B08 − B12) / (B08 + B12) — proxy of vegetation /
+#'   burned-area discrimination. B12 is natively 20 m, so it is
+#'   resampled to the B08 10 m grid via [terra::resample()] with
+#'   `method = "bilinear"` — same idiom as the per-plot ingestion path
+#'   in `.extract_scene_obs()`.
+#'
+#' Scenes with incomplete cached bands (missing B04, B08, or — for NBR
+#' — B12) are skipped silently with a single aggregated warning. NAs
+#' propagate naturally through the arithmetic: a NA in any source
+#' pixel yields NA in the index.
+#'
+#' @param cache_dir Character(1). Path to the S2 cache root.
+#' @param scenes_df See [read_s2_band_stack()].
+#' @param index Character(1). One of `"NDVI"` (default) or `"NBR"`.
+#'
+#' @return A multi-layer [terra::SpatRaster] in source CRS at 10 m,
+#'   values in `[-1, 1]` (NAs preserved), layers named by `obs_date`
+#'   with `terra::time()` set, and an `"index"` attribute carrying
+#'   the chosen index name. `NULL` if no scene survives.
+#'
+#' @section Why arithmetic alone is enough:
+#' Sentinel-2 L2A reflectances are non-negative, so `(a − b) / (a + b)`
+#' stays in `[-1, 1]` mathematically. No `clamp()` needed.
+#'
+#' @section Note on B12 resampling:
+#' `extract_pixel_timeseries()` deliberately does **not** resample B12
+#' — for a single-point extraction the natively 20 m pixel containing
+#' the click is what the user wants. So `build_index_stack()` at
+#' point `(x, y)` may differ from `extract_pixel_timeseries()` at the
+#' same `(x, y)` by a sub-pixel amount when `index = "NBR"`. This is
+#' documented and intentional.
+#'
+#' @examples
+#' \dontrun{
+#'   cache <- "/proj/cache/layers/sentinel2"
+#'   scenes <- unique(read_obs_pixel(con, 1L)[, c("scene_id", "obs_date")])
+#'   ndvi_stack <- build_index_stack(cache, scenes, "NDVI")
+#'   terra::plot(ndvi_stack[[1]])
+#' }
+#'
+#' @seealso [read_s2_band_stack()], [extract_pixel_timeseries()].
+#' @export
+build_index_stack <- function(cache_dir, scenes_df,
+                              index = c("NDVI", "NBR")) {
+  index <- match.arg(index)
+  .validate_scenes_df(scenes_df)
+
+  bands_needed <- switch(index,
+    NDVI = c("B04", "B08"),
+    NBR  = c("B08", "B12")
+  )
+
+  scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
+
+  layers <- lapply(seq_len(nrow(scenes_df)), function(i) {
+    sid <- scenes_df$scene_id[i]
+    rs  <- setNames(
+      lapply(bands_needed, function(b) read_s2_band_raster(cache_dir, sid, b)),
+      bands_needed
+    )
+    if (any(vapply(rs, is.null, logical(1)))) return(NULL)
+
+    if (index == "NDVI") {
+      (rs$B08 - rs$B04) / (rs$B08 + rs$B04)
+    } else {
+      # B12 at 20 m onto B08's 10 m grid. method = "bilinear" matches
+      # `.extract_scene_obs` in R/monitoring.R so per-pixel NBR is
+      # numerically consistent with per-plot NBR aggregates.
+      b12_10m <- terra::resample(rs$B12, rs$B08, method = "bilinear")
+      (rs$B08 - b12_10m) / (rs$B08 + b12_10m)
+    }
+  })
+
+  ok <- !vapply(layers, is.null, logical(1))
+  n_total   <- nrow(scenes_df)
+  n_missing <- sum(!ok)
+
+  if (n_missing > 0L) {
+    cli::cli_warn(c(
+      "Skipped {n_missing}/{n_total} scene{?s} (incomplete cache for {.field {index}}).",
+      i = "Run {.fn diagnose_s2_cache} to find the gaps."
+    ))
+  }
+  if (!any(ok)) return(NULL)
+
+  out <- terra::rast(layers[ok])
+  names(out)       <- as.character(scenes_df$obs_date[ok])
+  terra::time(out) <- as.Date(scenes_df$obs_date[ok])
+  attr(out, "index") <- index
+  out
+}
+
 # Internal: validate the `scenes_df` argument shared by read_s2_band_stack(),
 # build_index_stack(), and extract_pixel_timeseries(). Stops on first failure
 # rather than collecting — these are programmer-side mistakes, fail fast.
