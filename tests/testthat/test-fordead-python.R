@@ -142,7 +142,7 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
   # Healthy venv: fordead is importable, so .ensure_fordead_python
   # must skip both create AND install.
   testthat::local_mocked_bindings(
-    .fordead_is_installed = function(env_name) TRUE,
+    .fordead_is_installed = function(env_name, requirements_path = NULL) TRUE,
     .package = "nemeton"
   )
 
@@ -183,7 +183,7 @@ test_that(".ensure_fordead_python reinstalls when fordead is missing from existi
   # Corrupted venv: directory exists but `import fordead` would fail.
   # Expect: no create (venv is there), one install (recovery path).
   testthat::local_mocked_bindings(
-    .fordead_is_installed = function(env_name) FALSE,
+    .fordead_is_installed = function(env_name, requirements_path = NULL) FALSE,
     .package = "nemeton"
   )
 
@@ -375,6 +375,90 @@ test_that(".use_fordead_env errors when Python is already bound to a different e
     nemeton:::.use_fordead_env(env_name = "nemeton-fordead"),
     "already bound|RETICULATE_PYTHON"
   )
+})
+
+
+test_that(".fordead_version_pinned parses git URL pin", {
+  tmp <- tempfile("req-", fileext = ".txt")
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c(
+    "# Some comment",
+    "xarray>=2024.0",
+    "fordead @ git+https://gitlab.com/fordead/fordead_package@v1.11.4",
+    "numpy>=1.26"
+  ), tmp)
+  expect_identical(nemeton:::.fordead_version_pinned(tmp), "1.11.4")
+})
+
+
+test_that(".fordead_version_pinned parses PyPI-style pin", {
+  tmp <- tempfile("req-", fileext = ".txt")
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c("fordead==2.1.1", "numpy>=1.26"), tmp)
+  expect_identical(nemeton:::.fordead_version_pinned(tmp), "2.1.1")
+})
+
+
+test_that(".fordead_version_pinned returns NA when nothing matches", {
+  tmp <- tempfile("req-", fileext = ".txt")
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c("numpy>=1.26", "pandas>=2.0"), tmp)
+  expect_true(is.na(nemeton:::.fordead_version_pinned(tmp)))
+
+  expect_true(is.na(nemeton:::.fordead_version_pinned("/no/such/file")))
+})
+
+
+test_that(".fordead_is_installed flags a version mismatch as not-installed", {
+  skip_if_no_reticulate()
+  fake_py <- tempfile("fake-py-"); file.create(fake_py)
+  on.exit(unlink(fake_py), add = TRUE)
+
+  tmp_req <- tempfile("req-", fileext = ".txt")
+  on.exit(unlink(tmp_req), add = TRUE)
+  writeLines("fordead @ git+https://gitlab.com/fordead/fordead_package@v1.11.4",
+             tmp_req)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) fake_py,
+    .package = "reticulate"
+  )
+  # fordead IS importable but reports the wrong version.
+  testthat::local_mocked_bindings(
+    .fordead_python_import_ok = function(py_path, module = "fordead") TRUE,
+    .fordead_python_version   = function(env_name) "2.1.1",
+    .package = "nemeton"
+  )
+
+  expect_warning(
+    result <- nemeton:::.fordead_is_installed("any-env", requirements_path = tmp_req),
+    "fordead.*2\\.1\\.1.*1\\.11\\.4|fordead"
+  )
+  expect_false(result)
+})
+
+
+test_that(".fordead_is_installed accepts a matching version", {
+  skip_if_no_reticulate()
+  fake_py <- tempfile("fake-py-"); file.create(fake_py)
+  on.exit(unlink(fake_py), add = TRUE)
+
+  tmp_req <- tempfile("req-", fileext = ".txt")
+  on.exit(unlink(tmp_req), add = TRUE)
+  writeLines("fordead @ git+https://gitlab.com/fordead/fordead_package@v1.11.4",
+             tmp_req)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) fake_py,
+    .package = "reticulate"
+  )
+  testthat::local_mocked_bindings(
+    .fordead_python_import_ok = function(py_path, module = "fordead") TRUE,
+    .fordead_python_version   = function(env_name) "1.11.4",
+    .package = "nemeton"
+  )
+
+  expect_true(nemeton:::.fordead_is_installed("any-env", requirements_path = tmp_req))
 })
 
 

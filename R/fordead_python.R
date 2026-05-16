@@ -173,22 +173,94 @@ NULL
 }
 
 
-#' Check whether `fordead` is actually importable in the given venv
+#' Read the fordead version pinned in a requirements file
 #'
-#' Returns `TRUE` when the venv exists AND its Python interpreter can
-#' `import fordead`. Used by [.ensure_fordead_python()] to detect a
-#' previously-failed install (e.g. when `pip install` aborted mid-way
-#' and left a venv with the base deps but no fordead) and trigger a
-#' re-install instead of plowing ahead into a doomed `reticulate::import`.
+#' Parses lines like
+#' `fordead @ git+https://.../fordead_package@v1.11.4` or
+#' `fordead==1.11.4` and returns the X.Y.Z string. The leading
+#' `@v` or `==` is stripped. Returns `NA_character_` when no
+#' fordead line is found or the version can't be parsed.
+#'
+#' @param requirements_path Character path to the requirements file.
+#' @return Character(1) — the pinned version or `NA`.
+#' @keywords internal
+.fordead_version_pinned <- function(requirements_path) {
+  if (!file.exists(requirements_path)) return(NA_character_)
+  lines <- readLines(requirements_path, warn = FALSE)
+  # Strip comments + whitespace, keep only the fordead line
+  lines <- sub("\\s*#.*$", "", lines)
+  fordead <- lines[grepl("^\\s*fordead\\b", lines, ignore.case = TRUE)]
+  if (!length(fordead)) return(NA_character_)
+  # Try git URL pin first (`@vX.Y.Z`), then PyPI-style (`==X.Y.Z`)
+  m <- regmatches(fordead[1], regexpr("@v[0-9]+\\.[0-9]+\\.[0-9]+", fordead[1]))
+  if (!length(m) || !nzchar(m)) {
+    m <- regmatches(fordead[1], regexpr("==[0-9]+\\.[0-9]+\\.[0-9]+", fordead[1]))
+  }
+  if (!length(m) || !nzchar(m)) return(NA_character_)
+  sub("^(@v|==)", "", m)
+}
+
+
+#' Probe the installed fordead version in a virtualenv
+#'
+#' Runs `<venv-python> -c "import fordead; print(fordead.version)"`
+#' and returns the version string. Returns `NA_character_` if fordead
+#' isn't importable or the call fails.
 #'
 #' @param env_name Character. Virtualenv name.
+#' @return Character(1) — installed version, or `NA`.
+#' @keywords internal
+.fordead_python_version <- function(env_name) {
+  py <- tryCatch(reticulate::virtualenv_python(env_name),
+                 error = function(e) NA_character_)
+  if (is.na(py) || !nzchar(py) || !file.exists(py)) return(NA_character_)
+  out <- tryCatch(
+    suppressWarnings(system2(
+      py, c("-c", "import fordead; print(fordead.version)"),
+      stdout = TRUE, stderr = FALSE
+    )),
+    error = function(e) character()
+  )
+  if (length(out) == 0L) return(NA_character_)
+  trimws(out[1])
+}
+
+
+#' Check whether `fordead` is actually importable in the given venv
+#'
+#' Returns `TRUE` when the venv exists, its Python can `import fordead`,
+#' AND — when a `requirements_path` is provided — the installed
+#' fordead version matches the pin. This last check is the recovery
+#' mechanism for cases where a previous nemeton release pinned a
+#' different fordead version (e.g. v0.22.2..v0.22.4 pinned v2.1.1,
+#' v0.22.5 downgrades to v1.11.4): without it, `.ensure_fordead_python`
+#' would see fordead as "installed" and skip the upgrade, leaving the
+#' user with a wrong-API fordead in their venv.
+#'
+#' @param env_name Character. Virtualenv name.
+#' @param requirements_path Optional character path to the pinned
+#'   requirements file. When supplied, the version is compared against
+#'   the pin and a mismatch returns `FALSE` (with a `cli::cli_alert_warning`
+#'   so the user knows why a reinstall is about to happen).
 #' @return Logical(1).
 #' @keywords internal
-.fordead_is_installed <- function(env_name) {
+.fordead_is_installed <- function(env_name, requirements_path = NULL) {
   py <- tryCatch(reticulate::virtualenv_python(env_name),
                  error = function(e) NA_character_)
   if (is.na(py) || !nzchar(py) || !file.exists(py)) return(FALSE)
-  .fordead_python_import_ok(py)
+  if (!.fordead_python_import_ok(py)) return(FALSE)
+  if (!is.null(requirements_path) && file.exists(requirements_path)) {
+    pinned    <- .fordead_version_pinned(requirements_path)
+    installed <- .fordead_python_version(env_name)
+    if (!is.na(pinned) && !is.na(installed) && !identical(pinned, installed)) {
+      cli::cli_alert_warning(c(
+        "{.pkg fordead} {.val {installed}} installed in {.val {env_name}}, ",
+        "but {.path {basename(requirements_path)}} pins {.val {pinned}}."
+      ))
+      return(FALSE)
+    }
+  }
+  TRUE
 }
 
 
@@ -313,14 +385,16 @@ NULL
     }
     reticulate::virtualenv_create(env_name)
     needs_install <- TRUE
-  } else if (!.fordead_is_installed(env_name)) {
-    # Venv exists but fordead can't be imported — a previous install
-    # likely aborted mid-way (e.g. transient network failure or a stale
-    # PyPI pin). Re-run the install instead of erroring at `import`.
+  } else if (!.fordead_is_installed(env_name, requirements_path = requirements)) {
+    # Venv exists but fordead is either missing OR installed at a
+    # different version than the current pin. Both situations need
+    # the same recovery: re-run pip install. The helper itself emits
+    # a warning when the cause is a version mismatch (so we don't
+    # duplicate the message here for that case).
     if (verbose) {
       cli::cli_alert_warning(c(
-        "Virtualenv {.val {env_name}} exists but {.pkg fordead} is missing.",
-        i = "Reinstalling from {.path {basename(requirements)}}."
+        "Reinstalling FORDEAD dependencies into {.val {env_name}} ",
+        "from {.path {basename(requirements)}}."
       ))
     }
     needs_install <- TRUE

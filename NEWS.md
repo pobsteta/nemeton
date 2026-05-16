@@ -1,3 +1,74 @@
+# nemeton 0.22.5 (2026-05-16)
+
+### Fixed — `module 'fordead' has no attribute 'steps'` after v0.22.2..v0.22.4
+
+After the install/discovery fixes of v0.22.2..v0.22.4, the FORDEAD
+pipeline finally started — and immediately failed at the first
+substantive step :
+
+```
+ℹ Step: compute_masked_vegetationindex
+✖ FORDEAD pipeline failed: AttributeError: module 'fordead' has no attribute 'steps'
+```
+
+Cause : **fordead 2.x is a complete API rewrite**. The 1.x pipeline
+exposed `fordead.steps.step1_compute_masked_vegetationindex`,
+`step2_train_model`, `step3_dieback_detection`, `step5_export_results`
+as importable submodules — and that's exactly the API
+`R/fordead_pipeline.R` was written against. fordead 2.x dropped that
+in favour of a single `fordead.workflow.FordeadProcess` class with
+methods like `compute_spectral_index`, `fit`, `predict`,
+`anomaly_detection`, etc. The pin `@v2.1.1` introduced in v0.22.2
+crossed that boundary silently because the spec said "fordead 2.x"
+without verification.
+
+**Fix**: pin downgraded to **`v1.11.4`** (last 1.x release,
+2025-08-13). Verified : `fordead/steps/` at v1.11.4 contains
+exactly the 5 step files our pipeline imports.
+
+### Fixed — pin downgrade required re-install detection
+
+A user already running v0.22.2..v0.22.4 has a venv with `fordead
+2.1.1` installed. After the pin downgrade to `1.11.4`, the previous
+`.fordead_is_installed()` only checked importability — it would
+have returned TRUE for the wrong-API 2.1.1 install and skipped the
+upgrade. The pipeline would have stayed broken.
+
+`.fordead_is_installed()` now takes an optional `requirements_path`
+argument and compares the installed version against the pin. Two
+new private helpers :
+
+* `.fordead_version_pinned(req_path)` — parses
+  `fordead @ git+...@vX.Y.Z` or `fordead==X.Y.Z` from
+  `requirements.txt`.
+* `.fordead_python_version(env_name)` — runs
+  `<venv>/python -c "import fordead; print(fordead.version)"`.
+
+On version mismatch the helper emits a clear `cli::cli_alert_warning`
+and returns FALSE, which makes `.ensure_fordead_python()` re-run
+`pip install --upgrade -r requirements.txt`. pip then sees the new
+URL pin and reinstalls fordead at the correct version.
+
+### Migration tracked
+
+Migrating `R/fordead_pipeline.R` to the fordead 2.x `FordeadProcess`
+class API is a future epic — spec 008 §3 / plan 008 §2 will need
+rework, plus an ADR-013 amendment. Logged as backlog in `PLAN.md`.
+
+### Tests
+
+* 5 new tests in `test-fordead-python.R` covering version parsing
+  and the new `.fordead_is_installed(requirements_path)` branch:
+  - `.fordead_version_pinned` parses git URL pin
+  - `.fordead_version_pinned` parses PyPI-style pin
+  - `.fordead_version_pinned` returns NA when nothing matches
+  - `.fordead_is_installed` flags a version mismatch as not-installed
+  - `.fordead_is_installed` accepts a matching version
+* 2 existing `.fordead_is_installed` mocks updated to accept the
+  new `requirements_path = NULL` argument.
+
+---
+
 # nemeton 0.22.4 (2026-05-16)
 
 ### Fixed — FORDEAD pre-check failed when `RETICULATE_PYTHON` was just unset

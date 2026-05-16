@@ -37,7 +37,7 @@ Ce document traduit la spec 008 en architecture technique exécutable. Pour le �
 - **Création** : à la première utilisation, déclenchée par `.ensure_fordead_python()`
 - **Dépendances** : pinned dans `inst/python/requirements.txt`
   ```
-  fordead @ git+https://gitlab.com/fordead/fordead_package@v2.1.1
+  fordead @ git+https://gitlab.com/fordead/fordead_package@v1.11.4
   xarray>=2024.0
   dask[complete]>=2024.0
   rasterio>=1.3.0
@@ -50,6 +50,12 @@ Ce document traduit la spec 008 en architecture technique exécutable. Pour le �
   Note (corrigé v0.22.2) : `fordead` n'est pas publié sur PyPI. La
   procédure d'install officielle (docs INRAE) passe par un URL pin
   PEP 508 vers le dépôt GitLab.
+  Note (corrigé v0.22.5) : pin sur la branche **1.x** (dernier tag
+  `v1.11.4`, sortie 2025-08-13). fordead 2.x a refactoré l'API du
+  pipeline — `fordead.steps.step1_*..step5_*` (1.x) → classe
+  `fordead.workflow.FordeadProcess` (2.x). Le côté R (`R/fordead_pipeline.R`)
+  appelle l'API 1.x. La migration vers 2.x est un chantier séparé
+  (amendement spec 008 / ADR-013 à venir).
 - **Vérification système** : Python ≥ 3.10 requis, `cli::cli_abort` explicite si absent
 
 ### 1.4 Données embarquées
