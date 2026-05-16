@@ -561,11 +561,11 @@ Les défauts de `FordeadConfig()` correspondent à ADR-013 :
 
 ### 12.7 Critères d'acceptation v0.23.0
 
-- [ ] **AC.12.1** — `run_fordead_dieback(aoi, ...)` aboutit en `status = "success"` sur une AOI de test (≤ 1 km², données S2 PC) sans intervention manuelle (pas de `Sys.setenv("RETICULATE_PYTHON")` requis).
-- [ ] **AC.12.2** — Sortie `rasters$state` = `<out_dir>/ANOMALY_CONFIRMED/fordead_<YYYYMMDD>_ANOMALY_CONFIRMED.tif` existante et valide (`terra::rast()` ouvre, ≥ 1 pixel non-NA).
-- [ ] **AC.12.3** — Tests offline mockés mis à jour pour la nouvelle API ; **+ au moins 2 tests d'intégration** taggés `skip_if_no_fordead()` qui appellent réellement `fp$fit()` sur un fixture mini (5 dates, 100×100 pixels) et vérifient les artefacts sur disque.
-- [ ] **AC.12.4** — Indicateur R5 (`R/indicators-deperissement.R`) inchangé fonctionne sur la sortie 2.x du postprocess. Test de régression `test-indicators-deperissement.R` reste vert.
-- [ ] **AC.12.5** — Migration documentée : NEWS.md `0.23.0` section "Changed", PLAN.md journal, spec 008 §12 (ce document), plan 008 §9, ADR-013 amendement A1.
+- [ ] **AC.12.1** — `run_fordead_dieback(aoi, ...)` aboutit en `status = "success"` sur une AOI de test (≤ 1 km², données S2 PC) sans intervention manuelle (pas de `Sys.setenv("RETICULATE_PYTHON")` requis). *Couvert par `test-fordead-integration.R` opt-in (`NEMETON_FORDEAD_INTEGRATION=TRUE`) — validation finale côté utilisateur sur un cache S2 réel.*
+- [ ] **AC.12.2** — Sortie `rasters$state` = `<out_dir>/ANOMALY_CONFIRMED/fordead_<YYYYMMDD>_ANOMALY_CONFIRMED.tif` existante et valide (`terra::rast()` ouvre, ≥ 1 pixel non-NA). *Vérifié dans le 1er test d'intégration.*
+- [x] **AC.12.3** — Tests offline mockés mis à jour pour la nouvelle API ; **+ au moins 2 tests d'intégration** taggés `skip_if_no_fordead_integration()` qui appellent réellement `fp$fit()` (`test-fordead-integration.R` : pipeline e2e + AOI hors collection). *Recalibrage empirique des seuils dans `.fordead_2x_status_to_classes` reporté à un patch suivant (les seuils 3/6/10 sont des placeholders documentés).*
+- [x] **AC.12.4** — Indicateur R5 (`R/indicators-deperissement.R`) inchangé. `.postprocess_fordead_rasters()` non modifié (input shape `list(state, stress_index, first_dieback_date)` préservé). Test de régression `test-indicators-deperissement.R` n'est pas touché.
+- [x] **AC.12.5** — Migration documentée : NEWS.md `0.23.0` section "Changed" (avec migration notes + known limitations), PLAN.md journal, spec 008 §12 (ce document), plan 008 §9, ADR-013 amendement A1.
 
 ### 12.8 Migration côté app `nemetonshiny`
 

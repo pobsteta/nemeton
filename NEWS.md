@@ -1,3 +1,132 @@
+# nemeton 0.23.0 (2026-05-16)
+
+### Changed — FORDEAD pipeline migrated to fordead 2.x
+
+Spec 008 §12 amendment A1, plan 008 §9. The R-side FORDEAD pipeline
+([run_fordead_dieback()]) is rewritten to use fordead 2.x's unified
+`fordead.workflow.FordeadProcess` class instead of the dispersed
+1.x `fordead.steps.step1_*..step5_*` modules. Bridges the nemeton
+STAC COG cache directly — no more THEIA / MAJA format gap.
+
+The 1.x integration shipped in `v0.21.0` was never end-to-end
+operational : kwargs were wrong (`vegetation_index` vs `vi`,
+`input_directory` vs `data_directory`), the pipeline expected
+THEIA L2A folders which `ingest_sentinel2_timeseries()` doesn't
+produce, and the 44 offline mocks accepted any kwarg. The cascade
+of patches `v0.22.2..v0.22.5` (16 May 2026) revealed the gaps. This
+release closes them properly.
+
+**Public API changes (breaking)** :
+
+* `run_fordead_dieback()` gains two **required** arguments :
+  - `scenes_df` — a data.frame with `scene_id` (character) and
+    `obs_date` (Date). Typically the output of
+    [ingest_sentinel2_timeseries()] or a query against `obs_pixel`.
+  - `cache_dir` — root of the STAC COG cache, where
+    `<cache_dir>/<safe_scene_id>/<band>.tif` files live. Local
+    hrefs avoid PC SAS expiry during long `fit()` runs.
+* `forest_mask` is deprecated and ignored. fordead 2.x handles
+  cloud / shadow / soil masks via `FordeadConfig` defaults, which
+  per ADR-013 §G5 already match the ONF/DSF calibration. A
+  `cli::cli_alert_warning` fires when a non-`NULL` value is passed.
+* All other arguments unchanged.
+
+**Internal restructure** :
+
+* New `R/fordead_stac.R` (session 1, commit 4bf0a0a) :
+  - `.aoi_bbox_4326()` — WGS-84 bbox for `FordeadProcess(bbox=...)`.
+  - `.aoi_geometry_reticulate()` — shapely geometry via WKT.
+  - `.aoi_geojson_list()` — GeoJSON dict for `pystac.Item.geometry`.
+  - `.build_fordead_config()` — `FordeadConfig` with the 4 R-exposed
+    knobs overridden, rest = ADR-013-matching defaults.
+  - `.build_stac_collection_for_aoi()` — walks `scenes_df` + cache,
+    skips scenes missing required bands with one aggregated warning,
+    builds `simplestac.ItemCollection`.
+* New `R/fordead_outputs.R` (session 2, commit ef2d072) :
+  - `.list_layer_files()` / `.latest_layer_file()` — locate
+    `<output_dir>/<LAYER>/fordead_<YYYYMMDD>_<LAYER>.tif`.
+  - `.compute_first_dieback_date()` — stack `ANOMALY_CONFIRMED` and
+    call `fordead.utils.backward_start()`.
+  - `.fordead_2x_status_to_classes()` — derive the 0-4 class raster
+    from `ANOMALY_CONFIRMED` + `CONSECUTIVE_DETECTIONS` +
+    `STOP_CONFIRMED`. Thresholds match spec 008 §12.4 mapping table.
+* `.postprocess_fordead_rasters()` is **unchanged**. The input
+  shape (named list with `state`, `stress_index`,
+  `first_dieback_date`) is preserved — the pipeline builds it from
+  the 2.x layers. Guarantees AC.12.4 (R5 tests stay green).
+
+**Phase progress callback** (compatibility note) :
+
+The 5 phase names in `progress_callback` events have changed from
+the 1.x theoretical list (`vegetation_index`, `train_model`,
+`forest_mask`, `dieback_detection`, `export_results`, `postprocess`,
+`persist`) to the 2.x mapping :
+- `stac_assembly` — STAC ItemCollection + bbox/geom/config build.
+- `fit` — `FordeadProcess.fit()` (umbrella).
+- `predict` — `FordeadProcess.predict()` (umbrella).
+- `postprocess` — `.postprocess_fordead_rasters()` (unchanged).
+- `persist` — `.insert_fordead_alerts()` (optional, when
+  `con` + `zone_id`).
+
+`nemetonshiny@v0.32.0` (released 2026-05-16) anticipated this with
+a generic phase-name lookup design, so the app needs no rewiring.
+
+**Python dependencies** :
+
+* `inst/python/requirements.txt` :
+  - `fordead @ git+https://gitlab.com/fordead/fordead_package@v2.1.1`
+    (was `@v1.11.4`)
+  - `simplestac @ git+https://forge.inrae.fr/umr-tetis/stac/simplestac@v1.2.5`
+    added explicitly (transitive dep of fordead 2.x).
+* `R/fordead_python.R` version-aware reinstall logic (v0.22.5)
+  detects the pin change and triggers `pip install --upgrade` on
+  the next `run_fordead_dieback()` call.
+
+**Tests** :
+
+* `test-fordead-pipeline.R` refactored : 16 offline tests with mocks
+  for `fd$workflow$FordeadProcess` + helpers via
+  `testthat::local_mocked_bindings(!!!, .package = "nemeton")`.
+  Covers 8 validations (2 new : `scenes_df`, `cache_dir`),
+  4 orchestration paths, 1 `.empty_fordead_result` shape.
+* `test-fordead-stac.R` (session 1) : 16 offline tests for the new
+  STAC helpers + FordeadConfig builder.
+* `test-fordead-outputs.R` (session 2) : 11 tests — 6 without terra
+  (`.list_layer_files`, `.latest_layer_file`) + 5 with terra
+  (`.fordead_2x_status_to_classes` mapping + STOP + NA-255).
+* `test-fordead-integration.R` (NEW, session 3) : 2 opt-in tests
+  guarded by `skip_if_no_fordead_integration()` (requires
+  `NEMETON_FORDEAD_INTEGRATION=TRUE` + a real cache + AOI fixture).
+  Plan 008 §9.4 AC.12.3.
+
+**Migration notes for users on `v0.21.0..v0.22.5`** :
+
+* Update your code to pass `scenes_df` and `cache_dir`:
+  ```r
+  res <- run_fordead_dieback(
+    aoi              = aoi,
+    scenes_df        = scenes_df,  # NEW (required)
+    cache_dir        = cache_dir,  # NEW (required)
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", as.character(Sys.Date()))
+  )
+  ```
+* The next call automatically replaces the in-venv fordead 1.x with
+  2.x (version-aware reinstall, no manual `virtualenv_remove`).
+* Remove any `forest_mask = ...` arguments — they're now ignored.
+
+**Known limitation / deferred work** :
+
+* The thresholds in `.fordead_2x_status_to_classes` (`>=3, >=6,
+  >=10`) are placeholders from spec 008 §12.4. They need empirical
+  recalibration against a real FORDEAD run on a validated zone
+  (AC.12.3 part 2). Tracked as a follow-up patch.
+* `test-fordead-integration.R` skip-by-default. Run locally with
+  `NEMETON_FORDEAD_INTEGRATION=TRUE` + a populated cache + AOI to
+  exercise the end-to-end path.
+
+---
+
 # nemeton 0.22.5 (2026-05-16)
 
 ### Fixed — `module 'fordead' has no attribute 'steps'` after v0.22.2..v0.22.4

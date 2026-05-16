@@ -238,6 +238,14 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
 #' [.cluster_anomaly_pixels()] and [.cluster_to_centroids()] into a
 #' single call. Used by [run_fordead_dieback()] and by tests.
 #'
+#' Since v0.23.0 (fordead 2.x migration — spec 008 §12), the
+#' `state` element is no longer the legacy `DataAnomalies/state.tif`
+#' integer raster but a `SpatRaster` built in-memory by
+#' [.fordead_2x_status_to_classes()] from the 2.x layers
+#' (`ANOMALY_CONFIRMED`, `CONSECUTIVE_DETECTIONS`, `STOP_CONFIRMED`).
+#' The accepted input shape (named list with 0-4 integer codes in
+#' `state`) is unchanged so this helper itself didn't need a rewrite.
+#'
 #' @param rasters Named list with character paths or `SpatRaster`
 #'   objects under `state`, `stress_index`, `first_dieback_date`.
 #' @param min_pixels Integer. Minimum patch size. Default 5.
