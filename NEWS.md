@@ -1,3 +1,48 @@
+# nemeton 0.24.1 (2026-05-16)
+
+### Fixed — STAC search now exposes all 7 FAST + FORDEAD bands
+
+Bug revealed at the first production use of v0.24.0
+([`run_fordead_dieback()`]) : the ingest phase tried to fetch B02 /
+B05 / B8A / B11 from each scene but `stac_search_s2()` only
+extracted hrefs for B04 / B08 / B12 (the three FAST bands). Result :
+"Scene X has no href_B02 column" on every band, every scene → 100%
+skip → "No scene in `scenes_df` had all required bands".
+
+Root cause : `.features_to_tibble()` hardcoded the three FAST bands
+when extracting STAC assets, with no extension hook. The fix
+centralises the band list in two private constants :
+
+* `.S2_STAC_BANDS` — the seven bands now exposed:
+  `c("B02","B04","B05","B08","B8A","B11","B12")`.
+* `.S2_STAC_REQUIRED_BANDS` — the three bands a scene must have to
+  remain in the result (`c("B04","B08","B12")`). The four FORDEAD-
+  extra bands are kept tolerant : missing band on a given scene
+  yields an empty href column, not a dropped row. Downstream
+  consumers (FAST keeps using only B04/B08/B12 ; FORDEAD calls the
+  ingest helper which now reports per-scene missing bands cleanly)
+  decide individually whether to accept the scene.
+
+Cost : one more asset lookup per feature, no extra HTTP. PC token
+application is centralised over the seven bands via a loop.
+
+### Improved — clearer error when a STAC asset is missing
+
+`.get_s2_band_raster()` previously errored with "Scene X has no
+href_B12 column" — which conflated two failure modes :
+("the STAC schema doesn't expose this band" vs "this scene doesn't
+have an asset for this band"). v0.24.1 splits these into two typed
+messages so the root cause is obvious in the warning aggregate.
+
+### Test
+
+* `test-sentinel2.R` — empty-tibble shape test widened to the seven
+  bands.
+* No new failures introduced ; pre-existing failures
+  (`charToDate` on synthetic fixtures, STAC retry test fragility)
+  unchanged.
+
+
 # nemeton 0.24.0 (2026-05-16)
 
 ### Changed — FORDEAD now invocable with `(con, zone_id, cache_dir)` only

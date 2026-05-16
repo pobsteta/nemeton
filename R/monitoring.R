@@ -787,9 +787,19 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 
   href_col <- paste0("href_", band)
   if (!href_col %in% names(scene)) {
-    cli::cli_abort("Scene {.val {scene_id}} has no {.field {href_col}} column.")
+    cli::cli_abort(c(
+      "Scene {.val {scene_id}} has no {.field {href_col}} column.",
+      i = "STAC search did not expose this band. Add it to {.field .S2_STAC_BANDS}."
+    ))
   }
   href <- scene[[href_col]][[1]]
+  if (!nzchar(href) || is.na(href)) {
+    cli::cli_abort(c(
+      "Scene {.val {scene_id}} has no asset for band {.val {band}}.",
+      i = "The STAC item exposed the column but the href is empty.",
+      i = "Skip this scene for pipelines that need band {.val {band}}."
+    ))
+  }
 
   emit_fn <- function(payload) {
     if (!is.null(emit)) emit(payload)

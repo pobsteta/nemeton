@@ -198,12 +198,11 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
     # as a search returned more than ~10 scenes (each scene = 3 bands).
     token <- .pc_collection_token("sentinel-2-l2a")
     if (!is.null(token)) {
-      out$href_B04 <- vapply(out$href_B04, .pc_apply_token,
+      for (b in .S2_STAC_BANDS) {
+        col <- paste0("href_", b)
+        out[[col]] <- vapply(out[[col]], .pc_apply_token,
                              character(1), token)
-      out$href_B08 <- vapply(out$href_B08, .pc_apply_token,
-                             character(1), token)
-      out$href_B12 <- vapply(out$href_B12, .pc_apply_token,
-                             character(1), token)
+      }
     }
     # On token failure: hrefs stay unsigned. Azure will return 409;
     # the user already saw the "PC token fetch failed" warning above
@@ -227,18 +226,37 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
   cli::cli_abort("{.arg zone} must be an sf/sfc object or a length-4 bbox.")
 }
 
+# Sentinel-2 bands exposed by STAC search. v0.24.1 widens this from
+# c("B04","B08","B12") (FAST only) to the union of FAST + FORDEAD so
+# any downstream consumer (NDVI / NBR pipeline, FORDEAD CRSWIR, custom
+# pipeline) can pick what it needs without re-querying STAC. Adding a
+# band here is essentially free: one more `href` lookup per feature,
+# no extra HTTP call.
+.S2_STAC_BANDS <- c("B02", "B04", "B05", "B08", "B8A", "B11", "B12")
+
+# Bands required to keep a scene in the result set. FAST builds NDVI
+# from (B04, B08) and NBR from (B08, B12), so a scene missing any of
+# those is unusable for the FAST pipeline. The four FORDEAD-extra
+# bands (B02, B05, B8A, B11) are kept tolerant (empty href = "");
+# `ingest_s2_raw_bands_to_cache()` reports missing-band scenes
+# individually when FORDEAD asks for them.
+.S2_STAC_REQUIRED_BANDS <- c("B04", "B08", "B12")
+
+
 .empty_scene_tibble <- function() {
-  data.frame(
+  out <- data.frame(
     scene_id  = character(0),
     obs_date  = as.Date(character(0)),
     cloud_pct = numeric(0),
-    href_B04  = character(0),
-    href_B08  = character(0),
-    href_B12  = character(0),
-    source    = character(0),
     stringsAsFactors = FALSE
   )
+  for (b in .S2_STAC_BANDS) {
+    out[[paste0("href_", b)]] <- character(0)
+  }
+  out$source <- character(0)
+  out
 }
+
 
 .features_to_tibble <- function(features, source) {
   if (!length(features)) return(.empty_scene_tibble())
@@ -249,21 +267,22 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
       a <- assets[[name]]
       if (is.null(a)) "" else (a$href %||% "")
     }
-    list(
+    row <- list(
       scene_id  = ft$id %||% NA_character_,
       obs_date  = .parse_stac_datetime(props$datetime %||% props$start_datetime),
-      cloud_pct = as.numeric(props$`eo:cloud_cover` %||% NA_real_),
-      href_B04  = href("B04"),
-      href_B08  = href("B08"),
-      href_B12  = href("B12"),
-      source    = source
+      cloud_pct = as.numeric(props$`eo:cloud_cover` %||% NA_real_)
     )
+    for (b in .S2_STAC_BANDS) {
+      row[[paste0("href_", b)]] <- href(b)
+    }
+    row$source <- source
+    row
   })
   out <- do.call(rbind, lapply(rows, as.data.frame, stringsAsFactors = FALSE))
-  out <- out[!is.na(out$obs_date) &
-             nzchar(out$href_B04) &
-             nzchar(out$href_B08) &
-             nzchar(out$href_B12), , drop = FALSE]
+  required_cols <- paste0("href_", .S2_STAC_REQUIRED_BANDS)
+  keep <- !is.na(out$obs_date)
+  for (col in required_cols) keep <- keep & nzchar(out[[col]])
+  out <- out[keep, , drop = FALSE]
   rownames(out) <- NULL
   out
 }

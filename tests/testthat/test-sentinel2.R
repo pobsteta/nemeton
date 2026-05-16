@@ -72,8 +72,10 @@ test_that("stac_search_s2 returns empty tibble when both backends are silent", {
   )
   out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30")
   expect_equal(nrow(out), 0)
+  # v0.24.1 widened the band set from 3 (FAST) to 7 (FAST + FORDEAD).
   expect_named(out, c("scene_id", "obs_date", "cloud_pct",
-                      "href_B04", "href_B08", "href_B12", "source"))
+                      "href_B02", "href_B04", "href_B05", "href_B08",
+                      "href_B8A", "href_B11", "href_B12", "source"))
 })
 
 test_that("stac_search_s2 rejects end < start", {
