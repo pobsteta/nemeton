@@ -48,6 +48,11 @@ test_that(".assert_fordead_system aborts when no Python is found", {
     py_discover_config = function() list(python = "", version = "0.0"),
     .package = "reticulate"
   )
+  # Also block the PATH fallback so the assertion really has no Python.
+  testthat::local_mocked_bindings(
+    .find_python_on_path = function() "",
+    .package = "nemeton"
+  )
   expect_error(nemeton:::.assert_fordead_system(),
                "Python")
 })
@@ -231,6 +236,80 @@ test_that(".fordead_is_installed reflects the python import probe", {
     .package = "nemeton"
   )
   expect_false(nemeton:::.fordead_is_installed("any-env"))
+})
+
+
+# ----- PATH fallback when py_discover_config returns nothing -----------
+
+test_that(".probe_python_version parses major.minor from --version output", {
+  skip_if_no_reticulate()
+  # The real interpreter probably reports its version on stdout (Python ≥ 3.4)
+  # or stderr (older). We don't care which — only that we parse a number.
+  py <- unname(Sys.which("python3"))
+  if (!nzchar(py)) skip("no python3 on PATH")
+  v <- nemeton:::.probe_python_version(py)
+  expect_s3_class(v, "numeric_version")
+  expect_true(is.na(v) || v >= numeric_version("3.0"))
+})
+
+
+test_that(".probe_python_version returns NA on unreachable binary", {
+  fake <- tempfile("no-such-python-")
+  v <- nemeton:::.probe_python_version(fake)
+  expect_true(is.na(v))
+})
+
+
+test_that(".find_python_on_path returns a 3.10+ binary when available", {
+  skip_if_no_reticulate()
+  p <- nemeton:::.find_python_on_path()
+  if (!nzchar(p)) skip("no Python ≥ 3.10 on PATH in the test runner")
+  expect_true(file.exists(p))
+  v <- nemeton:::.probe_python_version(p)
+  expect_true(!is.na(v) && v >= numeric_version("3.10"))
+})
+
+
+test_that(".find_python_on_path returns \"\" when no candidate matches", {
+  testthat::local_mocked_bindings(
+    Sys.which = function(name) setNames("", name),
+    .package = "base"
+  )
+  expect_identical(nemeton:::.find_python_on_path(), "")
+})
+
+
+test_that(".assert_fordead_system falls back to PATH when py_discover_config is NULL", {
+  skip_if_no_reticulate()
+  testthat::local_mocked_bindings(
+    py_discover_config = function() NULL,
+    .package = "reticulate"
+  )
+  # The fallback finds /usr/bin/python3.12 (or whatever exists). The mock
+  # below decouples the test from the runner's actual interpreter.
+  testthat::local_mocked_bindings(
+    .find_python_on_path = function() "/fake/python3.12",
+    .probe_python_version = function(py_path) numeric_version("3.12"),
+    .package = "nemeton"
+  )
+  expect_identical(nemeton:::.assert_fordead_system(), "/fake/python3.12")
+})
+
+
+test_that(".assert_fordead_system errors when both reticulate AND PATH yield nothing", {
+  skip_if_no_reticulate()
+  testthat::local_mocked_bindings(
+    py_discover_config = function() NULL,
+    .package = "reticulate"
+  )
+  testthat::local_mocked_bindings(
+    .find_python_on_path = function() "",
+    .package = "nemeton"
+  )
+  expect_error(
+    nemeton:::.assert_fordead_system(),
+    "No Python interpreter found"
+  )
 })
 
 

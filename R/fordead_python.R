@@ -36,11 +36,74 @@ NULL
 }
 
 
+#' Parse a Python interpreter's version string via `python --version`
+#'
+#' Runs `<py_path> --version` and extracts the major.minor numeric
+#' version. Robust to "Python 3.12.3" on stdout (Python ≥ 3.4) or
+#' stderr (older builds). Returns `NA_numeric_version_` if the
+#' interpreter is unreachable or the output is unparseable.
+#'
+#' @param py_path Character path to a Python interpreter.
+#' @return A [numeric_version] of length 1 (possibly NA).
+#' @keywords internal
+.probe_python_version <- function(py_path) {
+  out <- tryCatch(
+    suppressWarnings(system2(py_path, "--version",
+                             stdout = TRUE, stderr = TRUE)),
+    error = function(e) character()
+  )
+  if (length(out) == 0L) return(numeric_version(NA_character_, strict = FALSE))
+  m <- regmatches(out[1], regexpr("[0-9]+\\.[0-9]+", out[1]))
+  if (length(m) == 0L || !nzchar(m)) {
+    return(numeric_version(NA_character_, strict = FALSE))
+  }
+  numeric_version(m, strict = FALSE)
+}
+
+
+#' Probe PATH for a Python ≥ 3.10 interpreter
+#'
+#' Walks a list of conventional Python binary names from newest to
+#' oldest (3.14 → 3.10 → generic `python3` → `python`) and returns
+#' the first one that exists on `PATH` AND reports a version ≥ 3.10.
+#'
+#' Used as a fallback when [reticulate::py_discover_config()] returns
+#' nothing useful — for instance because the user just removed
+#' `RETICULATE_PYTHON` from their `.Renviron` and reticulate's
+#' internal discovery hasn't kicked in.
+#'
+#' @return Character path (string) to a Python ≥ 3.10 interpreter,
+#'   or `""` if nothing matches.
+#' @keywords internal
+.find_python_on_path <- function() {
+  candidates <- c("python3.14", "python3.13", "python3.12",
+                  "python3.11", "python3.10", "python3", "python")
+  for (cand in candidates) {
+    p <- unname(Sys.which(cand))
+    if (!nzchar(p) || !file.exists(p)) next
+    v <- .probe_python_version(p)
+    if (!is.na(v) && v >= numeric_version("3.10")) return(p)
+  }
+  ""
+}
+
+
 #' Assert reticulate is available and Python >= 3.10 is installed
 #'
 #' Raises a `cli::cli_abort` with installation hints when reticulate
 #' is missing, when Python cannot be found, or when the discovered
 #' interpreter is older than 3.10.
+#'
+#' Discovery is two-pronged: first ask reticulate via
+#' [reticulate::py_discover_config()] (which honours `RETICULATE_PYTHON`
+#' and reticulate's pinned config). If that returns nothing useful —
+#' a real failure mode when the user has just unset `RETICULATE_PYTHON`
+#' or when reticulate's config cache is stale — fall back to
+#' [.find_python_on_path()] which probes `Sys.which()` directly.
+#'
+#' We don't need reticulate to be initialised against the discovered
+#' interpreter at this point; we only need to know that a 3.10+ Python
+#' is reachable so the FORDEAD venv can be built from it.
 #'
 #' @return Invisibly the resolved Python interpreter path (string).
 #' @keywords internal
@@ -51,24 +114,37 @@ NULL
       i = "Install with {.code install.packages(\"reticulate\")}."
     ))
   }
+
   cfg <- tryCatch(reticulate::py_discover_config(),
                   error = function(e) NULL)
-  py_path <- if (is.null(cfg)) "" else (if (is.null(cfg$python)) "" else cfg$python)
+  py_path <- if (is.null(cfg) || is.null(cfg$python)) "" else cfg$python
+  ver_str <- if (is.null(cfg) || is.null(cfg$version)) NA_character_ else cfg$version
+
+  # Fallback: reticulate gave us nothing — probe PATH directly.
+  if (!nzchar(py_path)) {
+    py_path <- .find_python_on_path()
+    if (nzchar(py_path)) {
+      v <- .probe_python_version(py_path)
+      ver_str <- if (is.na(v)) NA_character_ else as.character(v)
+    }
+  }
+
   if (!nzchar(py_path)) {
     cli::cli_abort(c(
       "No Python interpreter found.",
       i = "FORDEAD requires Python {.val >= 3.10}.",
-      i = "Install Python 3.10+ then rerun."
+      i = "Install Python 3.10+ then rerun, or set {.envvar RETICULATE_PYTHON} to its path."
     ))
   }
-  ver <- numeric_version(cfg$version, strict = FALSE)
+
+  ver <- numeric_version(ver_str, strict = FALSE)
   if (is.na(ver) || ver < numeric_version("3.10")) {
     cli::cli_abort(c(
-      "Python {cfg$version} found at {.path {cfg$python}} but {.val >= 3.10} is required.",
+      "Python {ver_str} found at {.path {py_path}} but {.val >= 3.10} is required.",
       i = "FORDEAD 2.x dropped support for Python < 3.10."
     ))
   }
-  invisible(cfg$python)
+  invisible(py_path)
 }
 
 

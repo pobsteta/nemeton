@@ -1,3 +1,55 @@
+# nemeton 0.22.4 (2026-05-16)
+
+### Fixed — FORDEAD pre-check failed when `RETICULATE_PYTHON` was just unset
+
+After applying the recovery procedure from v0.22.3 (unset
+`RETICULATE_PYTHON`, restart R), some users hit a new pre-check
+failure :
+
+```
+✖ FORDEAD pipeline failed: No Python interpreter found.
+ℹ FORDEAD requires Python ">= 3.10".
+```
+
+Cause : `reticulate::py_discover_config()` can return `NULL` even
+when `Sys.which("python3.12")` clearly resolves to a valid
+interpreter. reticulate's discovery relies on a small set of
+heuristics (env var, pinned config, well-known venv locations) and
+isn't a guarantee that the system has no Python. We were treating
+"reticulate doesn't know" as "Python is not installed".
+
+**Fix**: `.assert_fordead_system()` now falls back to direct PATH
+probing when reticulate returns nothing. The new private helper
+`.find_python_on_path()` walks a list of conventional Python binary
+names from newest to oldest (`python3.14` → `python3.13` → … →
+`python3.10` → `python3` → `python`) and returns the first one whose
+`--version` reports ≥ 3.10. Companion helper `.probe_python_version()`
+parses the `<py> --version` output.
+
+This means the FORDEAD pipeline no longer requires `RETICULATE_PYTHON`
+to be set or reticulate's config to be primed beforehand. If any
+Python ≥ 3.10 is reachable on PATH, FORDEAD can build its venv from
+it.
+
+### Tests
+
+* 6 new tests in `test-fordead-python.R` covering the fallback path :
+  - `.probe_python_version` parses `--version` from a real interpreter
+    (skipped if none on PATH)
+  - `.probe_python_version` returns NA on an unreachable binary
+  - `.find_python_on_path` returns a 3.10+ binary when available
+  - `.find_python_on_path` returns `""` when no candidate matches
+    (`Sys.which` mocked to always return empty)
+  - `.assert_fordead_system` falls back to PATH when
+    `py_discover_config` is `NULL`
+  - `.assert_fordead_system` errors when both reticulate AND PATH
+    yield nothing
+* The existing test "aborts when no Python is found" now mocks
+  `.find_python_on_path` too, otherwise the runner's real Python
+  would defeat the assertion.
+
+---
+
 # nemeton 0.22.3 (2026-05-16)
 
 ### Fixed — `RETICULATE_PYTHON` silently shadowed the FORDEAD virtualenv
