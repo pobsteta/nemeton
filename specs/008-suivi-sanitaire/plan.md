@@ -468,9 +468,12 @@ Traduire la décision §13.2 de la spec en :
 1. Une nouvelle signature publique pour `run_fordead_dieback()` (con + zone_id + cache_dir au lieu de aoi + scenes_df + cache_dir).
 2. Un nouveau helper `.get_zone_aoi(con, zone_id)` qui dérive l'AOI sf depuis la table `monitoring_zone`.
 3. Une constante exportée `FORDEAD_BANDS` qui matérialise la liste des 6 bandes Sentinel-2 requises par CRSWIR + masques fordead 2.x.
-4. Une phase d'ingest interne qui délègue à `ingest_sentinel2_timeseries()` (skip_cached partial-coverage-aware) et propage ses événements `s2:*` au callback utilisateur.
+4. **Une nouvelle fonction publique `ingest_s2_raw_bands_to_cache()`** qui peuple le cache COG en bandes brutes (B02/B04/B05/B8A/B11/B12) — `ingest_sentinel2_timeseries()` étant strictement restreint aux indices dérivés NDVI/NBR via `match.arg`, il ne peut pas servir directement.
+5. Une phase d'ingest interne qui délègue à `ingest_s2_raw_bands_to_cache()` et propage ses événements `s2:*` au callback utilisateur.
 
 Tout le reste — helpers de session 1 v0.23.0 (`.build_stac_collection_for_aoi`, `.build_fordead_config`, `.aoi_bbox_4326`, `.aoi_geometry_reticulate`), helpers de session 2 v0.23.0 (`.list_layer_files`, `.latest_layer_file`, `.fordead_2x_status_to_classes`, `.compute_first_dieback_date`, `.postprocess_fordead_rasters`), postprocess mapping (§9.3) — strictement inchangé.
+
+**Note paperwork patch 2026-05-16** : la première version du §10 (commit `c8ef7e7`) écrivait *« la phase 0 délègue à `ingest_sentinel2_timeseries()` »* — c'était inexact. Découverte à la session de code (avant d'écrire la 1ʳᵉ ligne) : `ingest_sentinel2_timeseries(bands = ...)` est restreint à `c("NDVI", "NBR")` via `match.arg`. C'est un pipeline d'indices dérivés calculés à la volée par plot via `exactextractr`, pas un dispatcher de bandes brutes. Les bandes brutes (B04, B08, B12 dans le cas FAST) atterrissent bien dans le cache via `.get_s2_band_raster()` mais sont consommées immédiatement pour calculer NDVI/NBR — il n'y a pas de chemin public pour demander un ensemble arbitraire de bandes. Patch §10.2bis ajoute la fonction publique `ingest_s2_raw_bands_to_cache()`. Reste du plan inchangé.
 
 ### 10.2 Pipeline R — réécriture de §9.2
 
@@ -505,14 +508,13 @@ run_fordead_dieback <- function(con,                       # NEW required
 
   # ---- PHASE 0 — ingest (NOUVEAU v0.24.0) -----------------------------
   emit("fordead:phase",      list(phase = "ingest"))
-  ingest_res <- ingest_sentinel2_timeseries(
+  ingest_res <- ingest_s2_raw_bands_to_cache(    # NEW public function
     con               = con,
     zone_id           = zone_id,
     bands             = FORDEAD_BANDS,
-    date_from         = dates_training[1],
-    date_to           = dates_monitoring[2],
+    start             = dates_training[1],
+    end               = dates_monitoring[2],
     cache_dir         = cache_dir,
-    skip_cached       = TRUE,
     progress_callback = progress_callback   # s2:* events traversent directement
   )
   scenes_df <- ingest_res$scenes_df
@@ -569,42 +571,108 @@ run_fordead_dieback <- function(con,                       # NEW required
 }
 ```
 
+### 10.2bis Nouvelle fonction publique `ingest_s2_raw_bands_to_cache()`
+
+Fichier : `R/monitoring.R` (à côté de `ingest_sentinel2_timeseries`).
+
+```r
+#' Peupler le cache COG Sentinel-2 en bandes brutes
+#'
+#' Pendant FAST-only de [ingest_sentinel2_timeseries()] : descend des
+#' bandes brutes Sentinel-2 (B02, B04, B05, B08, B8A, B11, B12) dans le
+#' cache COG local, sans calcul d'indice ni écriture en base. Utilisé
+#' notamment par FORDEAD ([run_fordead_dieback()]) qui a besoin des 6
+#' bandes CRSWIR+masques, et par toute future application consommant
+#' des bandes brutes (ex : indices alternatifs, machine learning).
+#'
+#' Le cache est `skip-aware` : pour chaque scène × bande, si le COG
+#' est déjà présent et couvre l'AOI, aucune requête réseau n'est émise.
+#'
+#' Émet les mêmes événements `s2:*` que [ingest_sentinel2_timeseries()]
+#' (`search`, `search_done`, `scene`, `band_cached`, `band_fetched`,
+#' `scene_skipped`, `complete`) via `progress_callback`.
+#'
+#' @param con DBIConnection (utilisée pour résoudre l'AOI de la zone).
+#' @param zone_id Identifiant `monitoring_zone.id`.
+#' @param bands Vecteur de codes de bandes Sentinel-2 (ex `c("B02","B11")`).
+#' @param start,end Date ou chaîne `YYYY-MM-DD`.
+#' @param cache_dir Root du cache COG (typiquement `{projet}/cache/layers/sentinel2`).
+#' @param max_cloud Pourcentage maximum de couverture nuageuse (défaut 20).
+#' @param progress_callback Optionnel — function(payload) recevant les `s2:*`.
+#'
+#' @return Liste avec `scenes_df` (data.frame scene_id + obs_date + cloud_pct),
+#'   `n_scenes`, `n_bands_fetched`, `n_bands_cached`, `bands_per_scene`.
+#'
+#' @export
+ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
+                                         start, end, cache_dir,
+                                         max_cloud = 20,
+                                         progress_callback = NULL) { ... }
+```
+
+Implémentation :
+
+1. `.assert_db_pkgs()` + `requireNamespace("terra")` (idem ingest_sentinel2_timeseries).
+2. Validation : `bands` non vide, character, codes alphanumériques `^B[0-9]{1,2}[A]?$` (B02..B12, B8A).
+3. `cache_dir` créé si absent ; sinon abort typé (le cache est l'OUTPUT donc obligatoire ici).
+4. `plots <- .fetch_plots_sf(con, zone_id)` ; abort si vide (zone sans placettes ⇒ pas d'AOI utile).
+5. `bbox <- sf::st_as_sfc(sf::st_bbox(plots))` ; `scenes <- stac_search_s2(bbox, start, end, max_cloud)`.
+6. Émettre `s2:search` puis `s2:search_done` (total = nrow(scenes)).
+7. Pour chaque scène :
+   - Pour chaque bande : `.get_s2_band_raster(scene, band, plots_buffered, cache_dir, emit)`.
+   - Wrap en `tryCatch` : `s2:scene_skipped` + warning si échec.
+   - Compteur band_fetched / band_cached basé sur les événements émis par `.get_s2_band_raster()`.
+8. Émettre `s2:complete` avec `n_obs_inserted = 0L` (champ standard, conservé pour homogénéité d'API).
+9. Retourner `list(scenes_df = scenes[, c("scene_id", "obs_date", "cloud_pct")], n_scenes, n_bands_fetched, n_bands_cached, bands_per_scene)`.
+
+**Refacto interne** : extraire un helper privé `.fetch_scene_bands_to_cache(scene, bands, plots_sf, cache_dir, emit)` qui est appelé à la fois par `ingest_s2_raw_bands_to_cache` (boucle externe) ET par `.extract_scene_obs` (qui peut le pré-appeler pour économiser l'arithmétique NDVI). Pour v0.24.0 on garde la duplication minimale (boucle inline) ; la refacto est notée en backlog.
+
+Tests `test-monitoring-raw-bands.R` (nouveau, ≥ 5) :
+
+* Validation : `bands` vide ⇒ abort ; `bands` invalide (ex `"NDVI"`) ⇒ abort.
+* Cache miss : 1 scène × 2 bandes, mock `.get_s2_band_raster` ⇒ 2 appels, scenes_df renvoyé.
+* Cache hit : `.get_s2_band_raster` retourne immédiatement sans fetch ⇒ pas d'événement `s2:band_fetched`.
+* Scène en erreur : tryCatch ⇒ `s2:scene_skipped` + scene retirée du compteur.
+* Progress callback NULL ⇒ aucun emit, pas d'erreur.
+
 ### 10.3 Helper `.get_zone_aoi(con, zone_id)` — nouveau
 
 Fichier : `R/fordead_pipeline.R` (à côté de `run_fordead_dieback`, pas un fichier dédié — trop court).
 
 ```r
 .get_zone_aoi <- function(con, zone_id) {
-  stopifnot(inherits(con, "DBIConnection"),
-            is.character(zone_id), length(zone_id) == 1L, nzchar(zone_id))
+  stopifnot(inherits(con, "DBIConnection"))
+  if (length(zone_id) != 1L || is.na(zone_id)) {
+    cli::cli_abort("{.arg zone_id} must be a scalar non-NA identifier.")
+  }
 
   row <- DBI::dbGetQuery(con,
-    "SELECT id, ST_AsText(aoi) AS wkt, ST_SRID(aoi) AS srid
-       FROM monitoring_zone
-      WHERE id = $1", params = list(zone_id))
+    "SELECT id, zone_wkt, crs_epsg FROM monitoring_zone WHERE id = $1",
+    params = list(zone_id))
 
   if (nrow(row) == 0L) {
     cli::cli_abort(c("Zone de suivi inconnue.",
                      "x" = "zone_id = {.val {zone_id}}",
-                     "i" = "Vérifier {.fun list_monitoring_zones}."))
+                     "i" = "Vérifier {.fn register_monitoring_zone}."))
   }
 
-  sf_obj <- sf::st_sf(
-    geometry = sf::st_sfc(sf::st_as_sfc(row$wkt)[[1L]], crs = row$srid),
-    crs      = row$srid
+  aoi <- sf::st_sf(
+    geometry = sf::st_sfc(sf::st_as_sfc(row$zone_wkt[[1L]])[[1L]],
+                          crs = as.integer(row$crs_epsg[[1L]])),
+    crs      = as.integer(row$crs_epsg[[1L]])
   )
-  if (sf::st_crs(sf_obj)$epsg != 2154L) {
-    sf_obj <- sf::st_transform(sf_obj, 2154L)
+  if (!identical(sf::st_crs(aoi)$epsg, 2154L)) {
+    aoi <- sf::st_transform(aoi, 2154L)
   }
-  sf_obj
+  aoi
 }
 ```
 
 Notes :
 
-* La table `monitoring_zone` est créée par migration `0002_fordead.sql` (cf. §8.3 spec). Colonne `aoi` est `geometry(POLYGON, 2154)` mais on lit en WKT + SRID pour découpler du driver.
+* La table `monitoring_zone` est créée par migration `0001_init.sql`. Schéma actuel : `zone_wkt TEXT` + `crs_epsg INTEGER NOT NULL DEFAULT 2154`. Pas de colonne PostGIS `geometry` — on lit en WKT + SRID, parse via `sf::st_as_sfc`. Le re-projeté en 2154 garantit l'invariant requis par `.validate_fordead_args()` (héritage v0.23.0).
 * En cas de zone manquante, message d'erreur typé via `cli::cli_abort()` — déjà le pattern utilisé partout dans `nemeton`.
-* Test mocké : `local_mocked_bindings(dbGetQuery = function(...) data.frame(id="Z1", wkt="POLYGON((...))", srid=2154L), .package = "DBI")`.
+* Test mocké : `local_mocked_bindings(dbGetQuery = function(...) data.frame(id=1L, zone_wkt="POLYGON((...))", crs_epsg=4326L), .package = "DBI")`.
 
 ### 10.4 Constante exportée `FORDEAD_BANDS`
 

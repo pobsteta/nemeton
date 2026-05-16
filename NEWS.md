@@ -1,3 +1,95 @@
+# nemeton 0.24.0 (2026-05-16)
+
+### Changed — FORDEAD now invocable with `(con, zone_id, cache_dir)` only
+
+Spec 008 §13 amendment A2, plan 008 §10, ADR-013 amendment A2.
+
+[`run_fordead_dieback()`] now derives its AOI from
+`monitoring_zone.zone_wkt` and runs a partial-coverage-aware ingest
+phase as phase 0 — callers no longer need to supply an explicit AOI
+or scenes_df. Discovered at the first production use of v0.23.0
+(error `scenes_df is required and must be a data.frame`): the app
+has `con + zone_id` everywhere, but reconstructing `scenes_df`
+required walking the disk cache from the UI layer, duplicating
+logic that already exists in the core.
+
+**Public API changes (breaking)** :
+
+* New signature : `run_fordead_dieback(con, zone_id, cache_dir,
+  dates_training, dates_monitoring, ...)`. All three are required.
+* Arguments **removed** : `aoi` (derived from `monitoring_zone.zone_wkt`),
+  `scenes_df` (produced by the new phase-0 ingest), `forest_mask`
+  (already deprecated in v0.23.0).
+* The phase plan grows from 5 (v0.23.0) to 6 phases — `ingest` is
+  added as phase 0. `progress_callback` receives a new
+  `phase_name = "ingest"` event ; the `s2:*` events from the ingest
+  helper pass through verbatim, so a UI that already renders FAST
+  toasts displays them with zero rework.
+
+**New public surface** :
+
+* `FORDEAD_BANDS` — exported character constant
+  `c("B02","B04","B05","B8A","B11","B12")`. The six raw Sentinel-2
+  bands required by fordead 2.x for CRSWIR + masks. Differs from
+  the FAST triplet `c("B04","B08","B12")` used by NDVI / NBR.
+* `ingest_s2_raw_bands_to_cache()` — new public function that
+  populates `<cache_dir>/<safe_scene_id>/<band>.tif` for an
+  arbitrary set of raw Sentinel-2 bands, with no DB writes. Used
+  internally by `run_fordead_dieback()` (phase 0) and available to
+  any custom pipeline that needs raw bands beyond NDVI / NBR.
+  Companion of [`ingest_sentinel2_timeseries()`].
+  [`ingest_sentinel2_timeseries()`] is strictly restricted to NDVI /
+  NBR via `match.arg` — that function computes derived indices on
+  the fly and writes them to `obs_pixel`, so it can't be repurposed
+  to fetch arbitrary bands.
+
+**Internal restructure** :
+
+* New `R/sentinel2_cache.R` — homes `ingest_s2_raw_bands_to_cache()`
+  and `.empty_raw_ingest_summary()`.
+* `R/fordead_pipeline.R` — `.get_zone_aoi(con, zone_id)` helper
+  that queries `monitoring_zone.zone_wkt + crs_epsg` and reprojects
+  to EPSG:2154. Replaces the previous direct AOI argument.
+* `.validate_fordead_args()` signature simplified — no longer takes
+  `aoi` / `forest_mask`. AOI validation moved next to its derivation
+  via `.get_zone_aoi()`. The forest-mask deprecation warning is
+  removed (forest_mask is gone for good).
+* `.empty_fordead_result()` gains `zone_id` and `n_scenes` fields
+  for parity with the success-path return value.
+* Removed dead helper `.download_or_use_cached_bd_foret` (stub never
+  wired to anything since v0.23.0 removed the forest_mask path).
+
+**Tests refactor** :
+
+* `test-fordead-pipeline.R` rewritten — every call site uses the
+  new signature, `.mock_pipeline_helpers()` mocks the new
+  `.get_zone_aoi` + `ingest_s2_raw_bands_to_cache`. Six-phase
+  contract asserted (was four). Three new tests : ingest phase
+  propagates `s2:*` verbatim, `n_alerts_inserted` path with
+  always-on persist, `FORDEAD_BANDS` contents.
+* `test-fordead-zone-aoi.R` (new) — five tests on `.get_zone_aoi`
+  via mocked `DBI::dbGetQuery`.
+* `test-sentinel2-cache.R` (new) — eight tests on
+  `ingest_s2_raw_bands_to_cache` via mocked `.fetch_plots_sf` /
+  `stac_search_s2` / `.get_s2_band_raster`.
+* `test-fordead-integration.R` adapted — env vars are now
+  `NEMETON_DB_URL` + `NEMETON_FORDEAD_TEST_ZONE_ID` +
+  `NEMETON_FORDEAD_TEST_CACHE_DIR` (was AOI path + cache dir).
+
+**Migration path** :
+
+```r
+# v0.23.0
+res <- run_fordead_dieback(aoi, scenes_df, cache_dir, ...)
+
+# v0.24.0
+res <- run_fordead_dieback(con, zone_id, cache_dir, ...)
+```
+
+The `nemetonshiny` migration (1 call site) ships in
+`nemetonshiny@v0.33.0`.
+
+
 # nemeton 0.23.0 (2026-05-16)
 
 ### Changed — FORDEAD pipeline migrated to fordead 2.x
