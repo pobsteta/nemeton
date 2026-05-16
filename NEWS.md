@@ -1,3 +1,30 @@
+# nemeton 0.24.2 (2026-05-16)
+
+### Improved — FORDEAD ingest now emits the same `s2:*` events as FAST
+
+In v0.24.0 / v0.24.1, the phase-0 ingest of [`run_fordead_dieback()`]
+emitted `s2:search`, `s2:search_done`, `s2:scene`,
+`s2:scene_skipped` and `s2:complete` — but **not**
+`s2:cache_lookup` (the pre-loop "X cached, Y to fetch" summary) nor
+`s2:scene_cached` (the per-scene "already on disk" signal). Result:
+the app showed "scene downloading" for every scene even when the
+cache was already fully warm.
+
+Parity restored:
+
+* [`ingest_s2_raw_bands_to_cache()`] now does a filesystem-level
+  cache pre-scan before the per-scene loop, and emits `s2:cache_lookup`
+  with the `n_cached` / `n_to_process` counters.
+* Each fully-cached scene emits `s2:scene_cached` (skipping the band
+  fetch loop) instead of `s2:scene`.
+* `s2:complete` now carries `n_scenes_cached` alongside the existing
+  `n_bands_fetched` and `n_bands_cached`.
+
+The downstream toast dispatcher in `nemetonshiny@v0.32.0+` already
+handles these event keys (they were wired for FAST) — zero app
+change required. Identical UX to FAST during the FORDEAD phase 0.
+
+
 # nemeton 0.24.1 (2026-05-16)
 
 ### Fixed — STAC search now exposes all 7 FAST + FORDEAD bands

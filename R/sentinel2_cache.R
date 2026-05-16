@@ -124,15 +124,49 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
             total   = total_scenes,
             bands   = bands))
 
+  # v0.24.2 — parity with FAST: pre-loop cache lookup. For each scene,
+  # check whether every requested band already has a COG on disk. The
+  # app uses this counter to drive the "X/Y scenes ready, Z to fetch"
+  # toast before the per-scene loop starts emitting.
+  scene_fully_cached <- vapply(seq_len(total_scenes), function(i) {
+    sc <- scenes[i, , drop = FALSE]
+    all(vapply(bands, function(b) {
+      p <- .s2_band_cache_path(cache_dir, sc$scene_id, b)
+      !is.null(p) && file.exists(p)
+    }, logical(1)))
+  }, logical(1))
+  n_cached_scenes <- sum(scene_fully_cached)
+  emit(list(current      = "s2:cache_lookup",
+            n_cached     = as.integer(n_cached_scenes),
+            n_to_process = as.integer(total_scenes - n_cached_scenes)))
+
   plots_proj <- sf::st_transform(plots, 2154)
   buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)
 
   n_bands_fetched <- 0L
   n_bands_cached  <- 0L
   n_skipped       <- 0L
+  total_cached    <- 0L
 
   for (i in seq_len(total_scenes)) {
     sc <- scenes[i, , drop = FALSE]
+
+    # Fully-cached scene → emit scene_cached, skip the band loop. Same
+    # event payload as FAST (`s2:scene_cached`) so the app's existing
+    # toast dispatch handles it identically.
+    if (scene_fully_cached[[i]]) {
+      total_cached <- total_cached + 1L
+      n_bands_cached <- n_bands_cached + length(bands)
+      emit(list(current   = "s2:scene_cached",
+                completed = as.integer(i - 1L),
+                total     = as.integer(total_scenes),
+                scene_id  = sc$scene_id,
+                obs_date  = sc$obs_date,
+                cloud_pct = sc$cloud_pct,
+                source    = sc$source))
+      next
+    }
+
     emit(list(current   = "s2:scene",
               completed = as.integer(i - 1L),
               total     = as.integer(total_scenes),
@@ -176,6 +210,7 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
   emit(list(current         = "s2:complete",
             completed       = as.integer(total_scenes),
             total           = as.integer(total_scenes),
+            n_scenes_cached = as.integer(total_cached),
             n_bands_fetched = as.integer(n_bands_fetched),
             n_bands_cached  = as.integer(n_bands_cached)))
 

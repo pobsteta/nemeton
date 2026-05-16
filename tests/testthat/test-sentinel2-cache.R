@@ -198,6 +198,61 @@ test_that("scene fetch failure is counted as scene_skipped", {
 })
 
 
+test_that("fully cached scenes emit s2:scene_cached and skip the band loop", {
+  skip_if_no_sf(); skip_if_no_terra()
+
+  events <- list()
+  cb <- function(payload) {
+    events[[length(events) + 1L]] <<- payload
+    invisible(NULL)
+  }
+
+  d <- tempfile("raw-bands-"); dir.create(d, recursive = TRUE)
+  # Pre-populate the cache for both scenes × both bands.
+  for (sid in c("S2A_FAKE_01", "S2A_FAKE_02")) {
+    dir.create(file.path(d, sid), recursive = TRUE)
+    for (b in c("B04", "B12")) {
+      file.create(file.path(d, sid, paste0(b, ".tif")))
+    }
+  }
+
+  fetched <- character(0)
+  testthat::local_mocked_bindings(
+    .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    stac_search_s2  = function(...) make_fake_scenes(2L),
+    .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) {
+      fetched <<- c(fetched, paste(scene$scene_id, band, sep = "/"))
+      NULL
+    },
+    .package = "nemeton"
+  )
+
+  res <- ingest_s2_raw_bands_to_cache(
+    con               = make_fake_con(), zone_id = 1L,
+    bands             = c("B04", "B12"),
+    start             = "2020-01-01",
+    end               = "2020-12-31",
+    cache_dir         = d,
+    progress_callback = cb
+  )
+
+  # No fetcher was called — both scenes were fully cached on disk.
+  expect_length(fetched, 0L)
+
+  # Cache lookup + 2× scene_cached + complete were emitted, but no
+  # s2:scene event for a download path.
+  current <- vapply(events, function(e) e$current, character(1))
+  expect_true("s2:cache_lookup" %in% current)
+  expect_equal(sum(current == "s2:scene_cached"), 2L)
+  expect_equal(sum(current == "s2:scene"), 0L)
+
+  # cache_lookup payload has n_cached / n_to_process counters.
+  cl <- events[[which(current == "s2:cache_lookup")[1L]]]
+  expect_equal(cl$n_cached, 2L)
+  expect_equal(cl$n_to_process, 0L)
+})
+
+
 test_that("empty STAC search yields zero-row scenes_df with stable shape", {
   skip_if_no_sf(); skip_if_no_terra()
 
