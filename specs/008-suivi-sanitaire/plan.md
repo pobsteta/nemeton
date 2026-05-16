@@ -283,3 +283,171 @@ Couverture cible : **85%** sur les nouveaux fichiers (objectif aligné avec spec
 - ☐ La suite complète passe : nemeton 5800+ PASS, nemetonshiny 5400+ PASS
 - ☐ NEWS, DESCRIPTION, CITATION, PLAN.md à jour
 - ☐ Tag `v0.21.0` poussé, GitHub release publiée
+
+---
+
+## 9. Migration fordead 2.x (cible v0.23.0)
+
+**Statut** : paperwork validé 2026-05-16. Code à venir. Référence : spec 008 §12.
+
+### 9.1 Stack — diffs
+
+`inst/python/requirements.txt` :
+
+```
+- fordead @ git+https://gitlab.com/fordead/fordead_package@v1.11.4
++ fordead @ git+https://gitlab.com/fordead/fordead_package@v2.1.1
+  # simplestac est pulled comme dépendance transitive de fordead 2.x.
+  # On l'épingle aussi en explicite pour traçabilité.
++ simplestac @ git+https://forge.inrae.fr/umr-tetis/stac/simplestac@v1.2.5
+```
+
+Le reste des deps (xarray, dask, rasterio, eodag, numpy, pandas, geopandas, shapely) reste identique — fordead 2.x les a toujours en transitif.
+
+### 9.2 Pipeline R — réécriture de §2.2
+
+```r
+run_fordead_dieback <- function(aoi, dates_training, dates_monitoring,
+                                vegetation_index = "CRSWIR",
+                                threshold_anomaly = 0.16,
+                                output_dir = tempfile("fordead_"),
+                                cache_dir = NULL,       # NEW — chemin vers
+                                                        # ingest_sentinel2_timeseries cache
+                                ...,
+                                progress_callback = NULL) {
+
+  fd       <- .ensure_fordead_python(verbose = verbose)  # fordead 2.x module
+  simplestac <- reticulate::import("simplestac", convert = FALSE)
+  pystac     <- reticulate::import("pystac",     convert = FALSE)
+
+  # Phase 1 — STAC ASSEMBLY (R side)
+  begin_phase("stac_assembly")
+  items <- .build_stac_collection_for_aoi(
+    aoi              = aoi,
+    dates            = c(dates_training, dates_monitoring),
+    cache_dir        = cache_dir,
+    bands_required   = c("B02","B04","B05","B8A","B11","B12")
+  )
+  # items est une list R de pystac.Item Python objects, chaque item ayant :
+  #   - id    = "fordead_YYYYMMDD"
+  #   - datetime, geometry, bbox
+  #   - assets["B02"]..["B12"] = pystac.Asset(href = "<cache_dir>/{scene}/B0X.tif",
+  #                                            roles = ["data"],
+  #                                            extra_fields = {nodata, scale, offset})
+  collection <- simplestac$ItemCollection(items)
+  end_phase("stac_assembly")
+
+  # Phase 2 — FordeadProcess construction + fit (training)
+  cfg <- .build_fordead_config(dates_training, dates_monitoring,
+                               vegetation_index, threshold_anomaly)
+  fp <- fd$workflow$FordeadProcess(
+    collection = collection,
+    output_dir = output_dir,
+    bbox       = .aoi_bbox_4326(aoi),
+    geometry   = .aoi_geometry_reticulate(aoi),
+    config     = cfg
+  )
+
+  begin_phase("fit")
+  .capture("fit", { fp$fit() })            # writes fit/model.tif, fit/modelled_pixels.tif
+  end_phase("fit")
+
+  # Phase 3 — predict (monitoring)
+  begin_phase("predict")
+  .capture("predict", { fp$predict() })    # writes ANOMALY_CONFIRMED, ANOMALY_INDEX, etc.
+  end_phase("predict")
+
+  # Phase 4 — postprocess (E6.c.2 adapté aux nouveaux chemins)
+  begin_phase("postprocess")
+  alerts_sf <- .postprocess_fordead_rasters(
+    output_dir,
+    status_layer = "ANOMALY_CONFIRMED",
+    stress_layer = "ANOMALY_INDEX",
+    fordead_utils = fd$utils      # pour backward_start()
+  )
+  if (!is.null(con)) .insert_fordead_alerts(con, alerts_sf, zone_id)
+  end_phase("postprocess")
+
+  list(status = "success",
+       output_dir = output_dir,
+       rasters    = list(
+         state              = .latest_layer_file(output_dir, "ANOMALY_CONFIRMED"),
+         first_dieback_date = .compute_first_dieback_date(output_dir, fd$utils),
+         stress_index       = .latest_layer_file(output_dir, "ANOMALY_INDEX")
+       ),
+       alerts_sf  = alerts_sf,
+       fordead_version = "2.1.1",
+       duration_sec    = as.numeric(Sys.time() - t0, units = "secs"))
+}
+```
+
+Trois nouveaux helpers privés :
+
+* **`.build_stac_collection_for_aoi(aoi, dates, cache_dir, bands_required)`** — itère sur `cache_dir/{scene_id}/{band}.tif` qui matchent les dates, construit un `pystac.Item` par scène via reticulate (`pystac$Item(id=..., geometry=..., bbox=..., datetime=..., properties=list(...))` + `item$add_asset(band, pystac$Asset(href=..., extra_fields=...))`). Le `obs_pixel` DB n'est pas utilisé directement — on lit depuis le cache disque (les obs_pixel rows sont juste agrégées par placette ; pour fordead on a besoin du raster scène complet).
+* **`.aoi_bbox_4326(aoi)`** — utilitaire qui retourne `c(xmin, ymin, xmax, ymax)` de `aoi` reproj en EPSG:4326.
+* **`.aoi_geometry_reticulate(aoi)`** — convertit l'`sf` polygone en `shapely.geometry` via `reticulate::r_to_py()` ou via WKT round-trip. Permet de clipper précisément (fordead 2.x supporte une `geometry` shapely en plus du bbox).
+* **`.build_fordead_config(...)`** — construit le `FordeadConfig` Python en surchargeant uniquement les champs exposés en API R (training dates, monitoring dates, threshold, vegetation_index). Le reste vient des défauts ONF/DSF — conformes à ADR-013.
+* **`.latest_layer_file(output_dir, layer)`** — renvoie `<output_dir>/<layer>/fordead_<max(YYYYMMDD)>_<layer>.tif`.
+* **`.compute_first_dieback_date(output_dir, fd_utils)`** — pile les rasters `ANOMALY_CONFIRMED/*.tif` en RAM, appelle `fd_utils$backward_start(arr)` (équivalent fordead du `first_dieback_date` 1.x), retourne un SpatRaster en mémoire.
+
+### 9.3 Postprocess (§E6.c.2) — diffs
+
+`R/fordead_postprocess.R::.classify_pixels_to_classes()` lit les valeurs 0-3 de `state.tif` (1.x) et les mappe sur 4 classes de confiance. Avec fordead 2.x, le raster `ANOMALY_CONFIRMED` contient des valeurs 0-1 (binaire confirmed/not), et `CONSECUTIVE_DETECTIONS` contient le compteur. Mapping mis à jour :
+
+```r
+# 1.x : state ∈ {0, 1, 2, 3}  →  classe ∈ {0=sain, 1=faible, 2=moyen, 3=fort}
+# 2.x : status = ANOMALY_CONFIRMED * CONSECUTIVE_DETECTIONS_capped
+#       0      → sain
+#       1-3    → 1=faible
+#       4-6    → 2=moyenne
+#       7-9    → 3=forte
+#       ≥10    → 4=sol_nu  (avec STOP_CONFIRMED == TRUE)
+```
+
+À calibrer empiriquement sur un AOI test ; intégré dans AC.12.3.
+
+### 9.4 Tests — refonte
+
+`test-fordead-pipeline.R` (44 tests offline mockés) :
+- ❌ Suppression des fixtures `step` (`step1_compute_masked_vegetationindex`, etc.) — ces submodules n'existent plus.
+- ✅ Remplacement par un fixture `fp_class_factory()` qui retourne une stub R6-like avec méthodes `fit()`, `predict()`, `export_layer()` enregistrables et inspectables.
+- ✅ 12 nouveaux tests offline : construction `ItemCollection`, propagation des kwargs vers `FordeadConfig`, capture des phases `stac_assembly / fit / predict / postprocess`, gestion d'erreur (StacAssembly fail → status="error", phase="stac_assembly").
+
+`test-fordead-integration.R` (NOUVEAU, ≥ 2 tests `skip_if_no_fordead()`) :
+- Test 1 : pipeline complet sur fixture mini (5 dates synthétiques, 100×100 px, CRSWIR pré-calculé). Vérifier qu'au moins un fichier `<out>/ANOMALY_CONFIRMED/*.tif` existe et que `terra::rast()` l'ouvre.
+- Test 2 : pipeline avec AOI à l'extérieur de la collection → erreur explicite, pas de crash silencieux.
+
+Helper `skip_if_no_fordead()` :
+
+```r
+skip_if_no_fordead <- function() {
+  testthat::skip_if_not_installed("reticulate")
+  ok <- tryCatch({
+    fd <- reticulate::import("fordead", convert = FALSE)
+    !is.null(reticulate::py_get_attr(fd, "workflow", silent = TRUE))
+  }, error = function(e) FALSE)
+  if (!isTRUE(ok)) testthat::skip("fordead.workflow not importable")
+}
+```
+
+### 9.5 Risque résiduels — mitigations
+
+| Risque | Mitigation |
+|--------|------------|
+| `simplestac` v1.2.5 est aussi pin git-only (forge.inra.fr) — disponibilité du serveur | Identique au pin fordead. Si forge.inra.fr down, install échoue avec erreur clair (réseau). Pas spécifique à 2.x. |
+| Hrefs PC SAS expirent pendant `fp$fit()` (run long) | fordead 2.x délègue à `simplestac.ItemCollection.to_xarray()` qui utilise xarray + rasterio lazy load. À l'évaluation effective (compute_spectral_index), les hrefs déjà signés peuvent expirer si > 30 min. **Mitigation** : `cache_dir` local (les COGs sont déjà sur disque grâce à `ingest_sentinel2_timeseries(..., cache_dir = ...)`) → les hrefs passés au `pystac.Asset` sont des chemins locaux, pas des URLs PC. Plus de problème de SAS expiry. **Conséquence** : `run_fordead_dieback(cache_dir = ...)` devient quasi-obligatoire si on veut éviter les re-téléchargements VSI. |
+| FordeadConfig pydantic — validation stricte | Construire la config en Python via `fd$config$FordeadConfig(...)` avec named args — pas via `reticulate::r_to_py(list(...))` qui peut échouer sur certains types. |
+| Backward compat des tests R5 (`test-indicators-deperissement.R`) | Le mapping confidence_class du postprocess change (§9.3). Fixture des alertes doit être régénérée. AC.12.4 vérifie qu'on reste vert. |
+
+### 9.6 Estimation effort
+
+| Lot | Effort |
+|-----|--------|
+| `.build_stac_collection_for_aoi` + helpers reticulate | 4 h |
+| `.build_fordead_config` + plumbing kwargs | 2 h |
+| Refonte `run_fordead_dieback` (les 4 phases) | 3 h |
+| Postprocess remapping confidence (§9.3) | 3 h |
+| Tests offline refactor (12 nouveaux) | 3 h |
+| Tests intégration `skip_if_no_fordead` (2) | 2 h |
+| NEWS + DESCRIPTION + PLAN + release | 1 h |
+| **Total** | **~18 h** (2-3 sessions) |

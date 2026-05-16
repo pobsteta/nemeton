@@ -180,3 +180,85 @@ R5 retourne **NA** quand l'UGF :
 - ADR-008, ADR-009, ADR-011, ADR-012 (`platform_nemeton/docs/`)
 - Spec 007 (devient la couche surveillance rapide de spec 008)
 - Spec 008 (`specs/008-suivi-sanitaire/`)
+
+---
+
+## Amendement A1 — Migration vers l'API fordead 2.x (2026-05-16, cible v0.23.0)
+
+**Statut** : approuvé (paperwork avant code).
+**Lien** : spec 008 §12, plan 008 §9, PLAN.md journal 2026-05-16.
+
+### Contexte de l'amendement
+
+L'ADR-013 v1 (2026-04-26) supposait fordead 1.x avec les 5 step modules `fordead.steps.step1_*..step5_*` et un format d'entrée THEIA L2A pour les scènes Sentinel-2. La cascade de patches `v0.22.2..v0.22.5` (16 mai 2026) a révélé :
+
+1. **Kwargs incorrects** dans `R/fordead_pipeline.R` (e.g. `vegetation_index` au lieu de `vi`, `input_directory` au lieu de `data_directory`).
+2. **Aucun pont** entre notre cache STAC COG (sortie de `ingest_sentinel2_timeseries()`) et le format THEIA L2A attendu par fordead 1.x.
+3. **Tests mockés complaisants** (44 tests offline) qui n'ont jamais touché un vrai fordead. La double dérive est passée inaperçue jusqu'à la première exécution réelle par l'utilisateur final.
+
+Bilan : le pipeline FORDEAD livré en `v0.21.0` était techniquement non-fonctionnel. R5 dépendant de FORDEAD n'a donc jamais produit de valeur non-NA en pratique. Spec 008 §6 G5 (R5 pondéré) reste valide, mais nécessite un pipeline FORDEAD qui marche réellement.
+
+### Décision
+
+**Migrer vers fordead 2.x** (`@v2.1.1`, pin git+gitlab.com).
+
+Justification courte :
+
+- **fordead 2.x accepte une `simplestac.ItemCollection` directement** via `fordead.workflow.FordeadProcess(collection, output_dir, bbox, geometry, config=FordeadConfig())`. C'est exactement le format de notre cache. Plus de gap STAC ↔ THEIA à combler.
+- **API unifiée** : une classe `FordeadProcess` avec `fit()` puis `predict()`, au lieu de 5 modules dispersés.
+- **Calibration ONF/DSF préservée** : tous les défauts de `FordeadConfig()` (CRSWIR, 0.16, 3 anomalies, 2-ans training) correspondent exactement aux valeurs ADR-013. Aucune dérive métier.
+- **Active branch** : fordead 1.x est en maintenance. La 2.x est la branche de développement INRAE/CNES.
+
+### Ce que cet amendement modifie dans ADR-013 v1
+
+| Décision ADR-013 v1 | Statut après A1 |
+|---------------------|-----------------|
+| §1 Méthode officielle = FORDEAD | ✅ inchangé |
+| §2 Stratégie hybride FORDEAD ⨯ rolling-window | ✅ inchangé |
+| §3 G1 — classes 3-forte + 4-sol-nu par défaut | ✅ inchangé. Le mapping (raster fordead → classes 1-4) est ajusté dans plan 008 §9.3 mais le résultat métier est le même. |
+| §3 G2 — fusion rolling-window × FORDEAD | ✅ inchangé (logique SQL côté `classify_disturbance()`, indépendante de la version fordead) |
+| §3 G3 — bannières géo + essences | ✅ inchangé |
+| §3 G4 — workflow validation QField | ✅ inchangé |
+| §3 G5 — R5 pondéré par confiance, weights `(0.10, 0.30, 0.82, 0.70)` | ✅ inchangé (`R/indicators-deperissement.R` intact). Les poids restent calibrés sur le rapport ONF/DSF 2024. |
+| §4 Architecture (reticulate + fordead Python) | 🟨 **modifié** : `reticulate::import("fordead")` (top-level) au lieu de `import("fordead.steps")`. Voir plan 008 §9.2. |
+| §5 Persistance des limites dans code et doc | ✅ inchangé. La calibration reste figée v0.23.0 sur les défauts 2.x (qui matchent ONF/DSF). |
+
+### Ce que cet amendement ajoute
+
+- **Une couche STAC assembly côté R** (`.build_stac_collection_for_aoi()`) qui transforme notre cache disque `<cache_dir>/{scene_id}/{band}.tif` en `pystac.Item[]` consommable par `FordeadProcess`. Cette couche n'existait pas en v1 (où fordead 1.x était supposé manger des SAFE folders qu'on n'a jamais).
+- **Tests d'intégration `skip_if_no_fordead()`** (≥ 2) qui touchent réellement le venv fordead 2.x, pour qu'une dérive de signature soit attrapée en CI/dev plutôt qu'à l'exécution prod.
+- **Documentation explicite** que `run_fordead_dieback(cache_dir = ...)` devient quasi-obligatoire : sans cache local, les hrefs PC SAS expirent pendant `fit()` long-running (cf. v0.22.1). Avec cache, on passe des paths locaux à `pystac.Asset(href = ...)` → pas de problème d'expiration.
+
+### Conséquences
+
+**Positives (au-delà du fix correctness)** :
+- Le pipeline devient testable end-to-end (les tests intégration cassent si le mapping change).
+- Pas de fork de fordead à maintenir (alternative D de ADR-013 v1 reste rejetée — la 2.x suit notre besoin).
+- Calibration ONF/DSF est désormais documentée comme "défaut fordead 2.x" — donc plus stable face à un futur changement de paramètres dans 2.x (si INRAE/CNES bouge, on bougera avec, après revue).
+
+**Coûts** :
+- Travail de migration : ~18 h (plan 008 §9.6).
+- Régénération du fixture des alertes pour `test-indicators-deperissement.R` (mapping confidence_class § 9.3).
+- Wiring `nemetonshiny@v0.32.0` à venir (noms de phases changent : `vegetation_index → fit / predict`).
+
+**Risque résiduel accepté** : `simplestac` est pin git-only (forge.inrae.fr/umr-tetis). Si la forge INRAE est down au moment d'un install, ça échoue. Identique au risque fordead lui-même (gitlab.com). Pas de mitigation locale ; documenté.
+
+### Historique des décisions sur le pin fordead
+
+| Date | Tag | Justification |
+|------|-----|---------------|
+| 2026-04-26 | (spec 008 v1) | « fordead 2.1.x » mentionné sans vérification. |
+| 2026-04-29 | (E6.c.1 livré) | `fordead==2.1.4` dans `requirements.txt`. Version inexistante (PyPI 404 par dessus le marché). |
+| 2026-05-15 (v0.22.2) | `git+gitlab@v2.1.1` | Fix install : fordead n'est pas sur PyPI, on bascule sur git+gitlab. Latest 2.x tag = v2.1.1. |
+| 2026-05-15 (v0.22.5) | `git+gitlab@v1.11.4` | Découverte du mismatch d'API : pipeline R écrit pour 1.x, downgrade au dernier 1.x stable. |
+| 2026-05-16 (v0.23.0, amendement A1) | `git+gitlab@v2.1.1` | Migration propre : 2.x accepte notre STAC natif. Réécriture du pipeline R. Approche endorsed. |
+
+### Tests de validation de A1
+
+Avant clôture v0.23.0 :
+
+1. `Rscript -e 'devtools::test(filter = "fordead")'` → tous tests verts, dont les nouveaux `test-fordead-integration.R` quand fordead est dispo.
+2. AOI de référence (≤ 1 km², Vosges) — `run_fordead_dieback()` termine en `status = "success"`, `rasters$state` ouvert avec `terra::rast()` sans erreur.
+3. R5 calculé sur une zone avec FORDEAD réel — valeur dans `[0, 100]`, status = `"calculated"`.
+
+Ces checks sont aussi listés en spec 008 §12.7 (AC.12.1-12.5).

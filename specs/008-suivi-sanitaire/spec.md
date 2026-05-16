@@ -441,3 +441,136 @@ Un scénario E2E couvrant : ouvrir un projet, lancer FORDEAD (mocké), voir aler
 - Spec 005 (Open-Canopy CHM), Spec 007 (Monitoring continu — devient la couche surveillance rapide de spec 008)
 - ADR-013 (à rédiger) — Méthode de suivi sanitaire = FORDEAD
 - ADR-008 (souveraineté données UE), ADR-009 (séparation cœur/app), ADR-011 (NDP augmenté)
+
+---
+
+## 12. Amendement v0.23.0 — Migration vers l'API fordead 2.x
+
+**Date** : 2026-05-16
+**Statut** : approuvé (paperwork avant code)
+**Concerne** : §3.3 (Pipeline FORDEAD complet) + §4 (Méthode FORDEAD — paramètres) + plan 008 §1.3 + §2.2 + ADR-013 amendement A1.
+**Ce qui ne change pas** : tout le reste de spec 008 — vision (§1), garde-fous G1-G5, indicateur R5 (`R/indicators-deperissement.R`), workflow validation QField, tests et fixtures (`test-fordead-validity*.R`, `test-health_validation.R`, `test-indicators-deperissement.R`).
+
+### 12.1 Motivation
+
+La cascade de patches `v0.22.2..v0.22.5` (PyPI fix → RETICULATE_PYTHON conflict → PATH fallback → fordead 1.x pin → version-aware reinstall) a révélé un **gap d'intégration jamais validé** entre la spec originale et le code livré en `v0.21.0` :
+
+1. **Kwargs incorrects** : `R/fordead_pipeline.R` appelait `compute_masked_vegetationindex(input_directory, vegetation_index)` ; la vraie signature fordead 1.11.4 est `compute_masked_vegetationindex(input_directory, data_directory, vi='CRSWIR', ...)`. Idem pour les steps 2/3/5 où c'est `data_directory` (pas `input_directory`).
+2. **Mismatch de format d'entrée** : fordead 1.x lit des scènes Sentinel-2 au format **THEIA L2A** (sortie MAJA, structure `SENTINEL2A_<date>_<...>_T<tile>/` avec bandes + masques nuages + XML). Notre pipeline `ingest_sentinel2_timeseries()` produit un cache **STAC COG** (`<cache_dir>/{scene_id}/{band}.tif`). **Les deux formats ne sont pas interchangeables.** Aucun pont n'avait été conçu — plan 008 §2.2 montrait `input_directory = ...` sans préciser d'où venait le `...`.
+3. **Tests offline mockés** : les 44 tests offline de `test-fordead-pipeline.R` acceptaient n'importe quel kwarg via des fixtures complaisantes. Aucun test ne touchait un vrai fordead → la double dérive est passée inaperçue jusqu'à la première exécution réelle en production (utilisateur final, 2026-05-16).
+
+### 12.2 Décision
+
+**Migrer vers fordead 2.x** (pin `@v2.1.1`). fordead 2.x est **conçu pour accepter directement une `simplestac.ItemCollection`** via la classe unifiée `fordead.workflow.FordeadProcess(collection, output_dir, bbox, geometry, config=FordeadConfig())`. C'est exactement le format de notre cache (notre `obs_pixel` table + les COGs disque sont des items STAC dérivables).
+
+Bénéfices :
+- **Suppression du gap STAC ↔ THEIA** — fordead 2.x lit directement nos COGs STAC, plus besoin d'un préprocesseur MAJA / THEIA download.
+- **API unifiée** — une classe `FordeadProcess` au lieu de 5 step modules dispersés. Deux méthodes umbrella : `fit()` (entraîne le modèle) et `predict()` (produit les rasters d'anomalies).
+- **Calibration ONF/DSF préservée** — les défauts 2.x correspondent exactement à ADR-013 : CRSWIR, seuil 0.16, 3 anomalies consécutives, fenêtre training 2016-01-01..2017-12-31. Aucune dérive métier.
+- **Active branch** — fordead 1.x est en maintenance, 2.x est la branche de développement (INRAE/CNES).
+
+### 12.3 Nouveau pipeline (§3.3 amendé)
+
+```
+                ┌─────────────────────────────────────────────┐
+                │ INGESTION (E6.a, inchangée)                 │
+                │   ingest_sentinel2_timeseries()             │
+                │   → obs_pixel table + cache/{scene}/B*.tif  │
+                └─────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌─────────────────────────────────────────────┐
+                │ STAC ASSEMBLY (NOUVEAU, R-side)             │
+                │   .build_stac_collection_for_aoi(           │
+                │       aoi, dates_training+dates_monitoring, │
+                │       cache_dir)                            │
+                │   → reticulate -> pystac.Item[] -> Item-    │
+                │     Collection (simplestac)                 │
+                └─────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌─────────────────────────────────────────────┐
+                │ FORDEAD 2.x (Python via reticulate)         │
+                │   fp = FordeadProcess(collection, out_dir,  │
+                │                       bbox=aoi_bbox,        │
+                │                       config=cfg)           │
+                │   fp$fit()      # entraîne (training range) │
+                │   fp$predict()  # produit anomalies (monit) │
+                │   → out_dir/ANOMALY_CONFIRMED/*.tif         │
+                │     out_dir/ANOMALY_INDEX/*.tif             │
+                │     out_dir/CONSECUTIVE_DETECTIONS/*.tif    │
+                │     out_dir/DEVIATION/*.tif                 │
+                └─────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌─────────────────────────────────────────────┐
+                │ POSTPROCESS (E6.c.2, adapté)                │
+                │   .postprocess_fordead_rasters(out_dir)     │
+                │   → lit ANOMALY_CONFIRMED (status)          │
+                │   → lit ANOMALY_INDEX (stress_index)        │
+                │   → utils.backward_start() pour             │
+                │     first_dieback_date                      │
+                │   → raster → patches → POINT clusters       │
+                │   → snap-to-plot → INSERT alert table       │
+                └─────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌─────────────────────────────────────────────┐
+                │ R5 INDICATEUR (E6.d, inchangé)              │
+                │   indicateur_r5_deperissement(units, ...)   │
+                └─────────────────────────────────────────────┘
+```
+
+### 12.4 Mapping outputs 1.x → 2.x
+
+| Lecture postprocess actuelle (1.x théorique) | Équivalent 2.x |
+|----------------------------------------------|----------------|
+| `<out_dir>/DataAnomalies/state.tif` | `<out_dir>/ANOMALY_CONFIRMED/fordead_<YYYYMMDD>_ANOMALY_CONFIRMED.tif` (un fichier par date monitoring — prendre le plus récent) |
+| `<out_dir>/DataAnomalies/first_dieback_date.tif` | Dérivé via `fordead.utils.backward_start(arr)` sur la pile `ANOMALY_CONFIRMED` |
+| `<out_dir>/DataAnomalies/stress_index.tif` | `<out_dir>/ANOMALY_INDEX/fordead_<YYYYMMDD>_ANOMALY_INDEX.tif` |
+
+`.postprocess_fordead_rasters()` reste un helper R-side ; seuls les chemins changent.
+
+### 12.5 Phases du `progress_callback` (mises à jour)
+
+Ancienne liste (1.x théorique) : `vegetation_index → train_model → forest_mask → dieback_detection → export_results → postprocess [→ persist]` — 6 ou 7 phases.
+
+Nouvelle liste (2.x) : `stac_assembly → fit → predict → postprocess [→ persist]` — 4 ou 5 phases. Plus court, plus honnête : `fit()` et `predict()` englobent chacun plusieurs sous-étapes internes fordead (compute_spectral_index, compute_masks, train_model, predict_model, anomaly_detection, anomaly_analysis, confidence_analysis, stop_analysis).
+
+Compatibilité côté `nemetonshiny@mod_monitoring` : les noms de phases sont des chaînes opaques côté UI (consommées comme `phase_name` pour les toasts). Le wiring se met à jour avec la release v0.23.0 (suivi côté app, séparé).
+
+### 12.6 Configuration FordeadConfig — calibration
+
+Les défauts de `FordeadConfig()` correspondent à ADR-013 :
+
+| Paramètre ADR-013 | Champ fordead 2.x | Valeur défaut |
+|-------------------|-------------------|---------------|
+| Indice CRSWIR | `config.spectral_index.name` | `"CRSWIR"` |
+| Formule CRSWIR | `config.spectral_index.formula` | `B11/(B8A+((B12-B8A)/(2185.7-864))*(1610.4-864))` |
+| Fenêtre training | `config.fit.start` / `.end` | `"2016-01-01"` / `"2017-12-31"` |
+| N min observations | `config.fit.Nmin` | `10` |
+| Période monitoring | `config.predict.start` / `.end` | `"2018-01-01"` / `None` |
+| Seuil anomalie | `config.predict.threshold` | `0.16` |
+| Anomalies consécutives | `config.predict.nmax_anomaly` | `3` |
+| Stops consécutifs | `config.predict.nmax_stop` | `3` |
+| Stop définitif | `config.predict.definitive_stop` | `True` |
+| Anomalie définitive | `config.predict.definitive_anomaly` | `False` |
+| Mode count | `config.predict.flag_count_type` | `"v2"` |
+
+`run_fordead_dieback()` continue d'exposer `dates_training`, `dates_monitoring`, `threshold_anomaly`, `vegetation_index` en argument R — ces valeurs sont propagées dans le `FordeadConfig` Python construit côté `R/fordead_pipeline.R`. **Pas de changement d'API R publique**.
+
+### 12.7 Critères d'acceptation v0.23.0
+
+- [ ] **AC.12.1** — `run_fordead_dieback(aoi, ...)` aboutit en `status = "success"` sur une AOI de test (≤ 1 km², données S2 PC) sans intervention manuelle (pas de `Sys.setenv("RETICULATE_PYTHON")` requis).
+- [ ] **AC.12.2** — Sortie `rasters$state` = `<out_dir>/ANOMALY_CONFIRMED/fordead_<YYYYMMDD>_ANOMALY_CONFIRMED.tif` existante et valide (`terra::rast()` ouvre, ≥ 1 pixel non-NA).
+- [ ] **AC.12.3** — Tests offline mockés mis à jour pour la nouvelle API ; **+ au moins 2 tests d'intégration** taggés `skip_if_no_fordead()` qui appellent réellement `fp$fit()` sur un fixture mini (5 dates, 100×100 pixels) et vérifient les artefacts sur disque.
+- [ ] **AC.12.4** — Indicateur R5 (`R/indicators-deperissement.R`) inchangé fonctionne sur la sortie 2.x du postprocess. Test de régression `test-indicators-deperissement.R` reste vert.
+- [ ] **AC.12.5** — Migration documentée : NEWS.md `0.23.0` section "Changed", PLAN.md journal, spec 008 §12 (ce document), plan 008 §9, ADR-013 amendement A1.
+
+### 12.8 Migration côté app `nemetonshiny`
+
+Hors scope cœur. À traiter dans un patch app séparé (probable `nemetonshiny@v0.32.0`) :
+
+- Wiring des noms de phases dans les toasts (`monitoring_fordead_phase_*` i18n keys).
+- Mise à jour du `Imports: nemeton (>= 0.23.0)` + `Remotes: pobsteta/nemeton@v0.23.0`.
+- Smoke shinytest2 inchangé (skip si fordead absent).
