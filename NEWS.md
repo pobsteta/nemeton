@@ -1,3 +1,53 @@
+# nemeton 0.22.3 (2026-05-16)
+
+### Fixed — `RETICULATE_PYTHON` silently shadowed the FORDEAD virtualenv
+
+After the v0.22.2 install fix, FORDEAD could still fail at runtime
+on machines where `RETICULATE_PYTHON` was set in `.Renviron` /
+`Renviron.site` for another project (typically conda envs for
+OpenCanopy CHM work, spec 005). Symptom :
+
+```
+Avis : The request to `use_python("...nemeton-fordead/bin/python")`
+will be ignored because the environment variable RETICULATE_PYTHON
+is set to "...miniforge3/envs/open_canopy/bin/python"
+✖ FORDEAD pipeline failed: ModuleNotFoundError: No module named 'fordead'
+```
+
+reticulate's `use_virtualenv()` / `use_python(..., required = TRUE)`
+defer to `RETICULATE_PYTHON` at init time even with `required = TRUE`.
+Install succeeded into the FORDEAD venv, but `import("fordead")` then
+ran against the conflicting (`open_canopy`) interpreter where fordead
+is absent.
+
+**Fix**: `.use_fordead_env()` now detects this conflict :
+
+* If Python is **not yet initialised**, the env var is temporarily
+  masked for the duration of `use_virtualenv()`. It's restored
+  immediately afterwards via `on.exit()` so other reticulate
+  consumers in the session (OpenCanopy CHM) still see their config.
+  reticulate's cached binding stays on the FORDEAD env for the rest
+  of the session.
+* If Python is **already initialised** to a different binary, the
+  switch is impossible (reticulate caches the binding once Python
+  is up). An actionable error tells the user to
+  `Sys.unsetenv("RETICULATE_PYTHON")` and restart R.
+
+Helper `.same_path()` added for symlink/trailing-slash-tolerant
+path comparison.
+
+### Tests
+
+* 3 new regression tests on the conflict logic :
+  conflict-masking path, already-bound error path, no-conflict
+  no-op path.
+* 1 test on `.same_path()` (normalisation + empty-string edge case).
+* Existing `.ensure_fordead_python` tests now `withr::local_envvar`
+  RETICULATE_PYTHON to keep them hermetic and add a
+  `virtualenv_python` mock.
+
+---
+
 # nemeton 0.22.2 (2026-05-15)
 
 ### Fixed — FORDEAD install failed because `fordead` is not on PyPI

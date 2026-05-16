@@ -116,11 +116,47 @@ NULL
 }
 
 
+#' Compare two filesystem paths for equality
+#'
+#' Robust to symlinks, trailing slashes, and `~` expansion via
+#' [normalizePath()] with `mustWork = FALSE` (so a non-existent
+#' path doesn't error — useful when comparing a configured value
+#' to a venv that may not be created yet).
+#'
+#' @param a,b Character paths.
+#' @return Logical(1).
+#' @keywords internal
+.same_path <- function(a, b) {
+  if (!nzchar(a) || !nzchar(b)) return(FALSE)
+  identical(
+    normalizePath(a, winslash = "/", mustWork = FALSE),
+    normalizePath(b, winslash = "/", mustWork = FALSE)
+  )
+}
+
+
 #' Switch reticulate to the FORDEAD virtualenv
 #'
 #' Calls [reticulate::use_virtualenv()] with `required = TRUE`. The
 #' virtualenv must already exist — see [.ensure_fordead_python()]
 #' which creates it on first use.
+#'
+#' Handles a notorious reticulate quirk: when the `RETICULATE_PYTHON`
+#' environment variable is set (e.g. by a user's `.Renviron` pointing
+#' at a conda env for another project), it silently overrides
+#' `use_python()` / `use_virtualenv()` even with `required = TRUE`.
+#' We work around this in two phases:
+#'
+#' * If Python is **not yet initialised** in the session, we mask
+#'   `RETICULATE_PYTHON` for the duration of the `use_virtualenv()`
+#'   call (the var is restored on exit so other reticulate consumers
+#'   — e.g. OpenCanopy CHM operations from spec 005 — are unaffected
+#'   for the rest of their work, though Python's binding is now
+#'   fixed for the session).
+#' * If Python is **already initialised** to a *different* binary,
+#'   the in-process switch is impossible (reticulate caches the
+#'   binding once Python is initialised). We surface a clear,
+#'   actionable error pointing the user at the env var.
 #'
 #' @param env_name Character. Name of the virtualenv. Defaults to
 #'   `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.
@@ -128,6 +164,31 @@ NULL
 #' @keywords internal
 .use_fordead_env <- function(env_name = .fordead_default_env()) {
   .assert_fordead_system()
+
+  fordead_py <- reticulate::virtualenv_python(env_name)
+  rp <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+  conflict <- nzchar(rp) && !.same_path(rp, fordead_py)
+
+  if (conflict) {
+    if (isTRUE(reticulate::py_available(initialize = FALSE))) {
+      current <- tryCatch(reticulate::py_config()$python,
+                          error = function(e) NA_character_)
+      if (!is.na(current) && !.same_path(current, fordead_py)) {
+        cli::cli_abort(c(
+          "Reticulate is already bound to {.path {current}}.",
+          i = "{.envvar RETICULATE_PYTHON} is set to {.val {rp}}.",
+          x = "Cannot switch to the FORDEAD venv {.path {fordead_py}} within this R session.",
+          i = "Action: {.code Sys.unsetenv(\"RETICULATE_PYTHON\")} (or remove the line from your {.path .Renviron}), then restart R."
+        ))
+      }
+    }
+    # Python not yet initialised — temporarily mask RETICULATE_PYTHON so
+    # use_virtualenv() takes effect. Restore the var on exit; reticulate's
+    # cached binding stays on the FORDEAD env for the rest of the session.
+    Sys.unsetenv("RETICULATE_PYTHON")
+    on.exit(Sys.setenv(RETICULATE_PYTHON = rp), add = TRUE)
+  }
+
   reticulate::use_virtualenv(env_name, required = TRUE)
   invisible(env_name)
 }

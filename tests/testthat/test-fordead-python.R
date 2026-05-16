@@ -78,6 +78,8 @@ test_that(".assert_fordead_system passes for Python >= 3.10", {
 test_that(".ensure_fordead_python is idempotent within a session", {
   skip_if_no_reticulate()
   nemeton:::.reset_fordead_state()
+  # Hermetic: hide any developer-set RETICULATE_PYTHON for the test.
+  withr::local_envvar(c(RETICULATE_PYTHON = ""))
 
   fake_module <- structure(list(tag = "fake-fordead"),
                            class = "python.builtin.module")
@@ -87,6 +89,7 @@ test_that(".ensure_fordead_python is idempotent within a session", {
   testthat::local_mocked_bindings(
     py_discover_config  = function() list(python = "/usr/bin/python3", version = "3.11"),
     virtualenv_exists   = function(env) FALSE,
+    virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
     virtualenv_install  = function(env, packages = NULL, requirements = NULL,
                                    ignore_installed = FALSE, ...) {
@@ -114,6 +117,7 @@ test_that(".ensure_fordead_python is idempotent within a session", {
 test_that(".ensure_fordead_python skips create when the venv already exists", {
   skip_if_no_reticulate()
   nemeton:::.reset_fordead_state()
+  withr::local_envvar(c(RETICULATE_PYTHON = ""))
 
   fake_module <- structure(list(tag = "fake-fordead-2"),
                            class = "python.builtin.module")
@@ -123,6 +127,7 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
   testthat::local_mocked_bindings(
     py_discover_config  = function() list(python = "/usr/bin/python3", version = "3.11"),
     virtualenv_exists   = function(env) TRUE,
+    virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
     virtualenv_install  = function(env, ...) { install_calls <<- install_calls + 1L; invisible() },
     use_virtualenv      = function(env, required = TRUE) invisible(env),
@@ -148,6 +153,7 @@ test_that(".ensure_fordead_python skips create when the venv already exists", {
 test_that(".ensure_fordead_python reinstalls when fordead is missing from existing venv", {
   skip_if_no_reticulate()
   nemeton:::.reset_fordead_state()
+  withr::local_envvar(c(RETICULATE_PYTHON = ""))
 
   fake_module <- structure(list(tag = "fake-fordead-3"),
                            class = "python.builtin.module")
@@ -157,6 +163,7 @@ test_that(".ensure_fordead_python reinstalls when fordead is missing from existi
   testthat::local_mocked_bindings(
     py_discover_config  = function() list(python = "/usr/bin/python3", version = "3.11"),
     virtualenv_exists   = function(env) TRUE,
+    virtualenv_python   = function(env) sprintf("~/.virtualenvs/%s/bin/python", env),
     virtualenv_create   = function(env, ...) { create_calls <<- create_calls + 1L; invisible() },
     virtualenv_install  = function(env, packages = NULL, requirements = NULL,
                                    ignore_installed = FALSE, ...) {
@@ -224,4 +231,96 @@ test_that(".fordead_is_installed reflects the python import probe", {
     .package = "nemeton"
   )
   expect_false(nemeton:::.fordead_is_installed("any-env"))
+})
+
+
+# ----- RETICULATE_PYTHON conflict handling ------------------------------
+
+test_that(".same_path normalises symlinks, trailing slashes, NA-ish inputs", {
+  expect_true(nemeton:::.same_path("/tmp/a", "/tmp/a/"))
+  expect_true(nemeton:::.same_path("/tmp/a", "/tmp/./a"))
+  expect_false(nemeton:::.same_path("/tmp/a", "/tmp/b"))
+  # Empty strings short-circuit to FALSE (avoids spurious match on "")
+  expect_false(nemeton:::.same_path("", "/tmp/a"))
+  expect_false(nemeton:::.same_path("/tmp/a", ""))
+  expect_false(nemeton:::.same_path("", ""))
+})
+
+
+test_that(".use_fordead_env masks RETICULATE_PYTHON on conflict when Python is not yet bound", {
+  skip_if_no_reticulate()
+
+  conflicting <- "/path/to/some/other/env/bin/python"
+  fordead_py  <- "/home/pascal/.virtualenvs/nemeton-fordead/bin/python"
+  withr::local_envvar(c(RETICULATE_PYTHON = conflicting))
+
+  seen_rp_during_use <- NA_character_
+
+  testthat::local_mocked_bindings(
+    py_discover_config = function() list(python = "/usr/bin/python3", version = "3.11"),
+    virtualenv_python  = function(env) fordead_py,
+    py_available       = function(initialize = FALSE) FALSE,
+    use_virtualenv     = function(env, required = TRUE) {
+      seen_rp_during_use <<- Sys.getenv("RETICULATE_PYTHON", unset = "")
+      invisible(env)
+    },
+    .package = "reticulate"
+  )
+
+  nemeton:::.use_fordead_env(env_name = "nemeton-fordead")
+
+  # During use_virtualenv(), the env var was masked (empty string).
+  expect_identical(seen_rp_during_use, "")
+  # After return, on.exit restored the original value.
+  expect_identical(Sys.getenv("RETICULATE_PYTHON", unset = ""), conflicting)
+})
+
+
+test_that(".use_fordead_env errors when Python is already bound to a different env", {
+  skip_if_no_reticulate()
+
+  conflicting <- "/path/to/some/other/env/bin/python"
+  fordead_py  <- "/home/pascal/.virtualenvs/nemeton-fordead/bin/python"
+  withr::local_envvar(c(RETICULATE_PYTHON = conflicting))
+
+  testthat::local_mocked_bindings(
+    py_discover_config = function() list(python = "/usr/bin/python3", version = "3.11"),
+    virtualenv_python  = function(env) fordead_py,
+    py_available       = function(initialize = FALSE) TRUE,
+    py_config          = function() list(python = conflicting),
+    use_virtualenv     = function(env, required = TRUE) invisible(env),
+    .package = "reticulate"
+  )
+
+  expect_error(
+    nemeton:::.use_fordead_env(env_name = "nemeton-fordead"),
+    "already bound|RETICULATE_PYTHON"
+  )
+})
+
+
+test_that(".use_fordead_env is a no-op when RETICULATE_PYTHON matches the fordead venv", {
+  skip_if_no_reticulate()
+
+  fordead_py <- "/home/pascal/.virtualenvs/nemeton-fordead/bin/python"
+  withr::local_envvar(c(RETICULATE_PYTHON = fordead_py))
+
+  seen_rp_during_use <- NA_character_
+
+  testthat::local_mocked_bindings(
+    py_discover_config = function() list(python = "/usr/bin/python3", version = "3.11"),
+    virtualenv_python  = function(env) fordead_py,
+    py_available       = function(initialize = FALSE) FALSE,
+    use_virtualenv     = function(env, required = TRUE) {
+      seen_rp_during_use <<- Sys.getenv("RETICULATE_PYTHON", unset = "")
+      invisible(env)
+    },
+    .package = "reticulate"
+  )
+
+  nemeton:::.use_fordead_env(env_name = "nemeton-fordead")
+
+  # No conflict → env var must NOT be masked.
+  expect_identical(seen_rp_during_use, fordead_py)
+  expect_identical(Sys.getenv("RETICULATE_PYTHON", unset = ""), fordead_py)
 })
