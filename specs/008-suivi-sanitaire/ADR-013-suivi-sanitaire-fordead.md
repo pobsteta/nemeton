@@ -262,3 +262,84 @@ Avant clôture v0.23.0 :
 3. R5 calculé sur une zone avec FORDEAD réel — valeur dans `[0, 100]`, status = `"calculated"`.
 
 Ces checks sont aussi listés en spec 008 §12.7 (AC.12.1-12.5).
+
+---
+
+## Amendement A2 — Intégration FORDEAD ↔ ingest FAST (2026-05-16, cible v0.24.0)
+
+**Statut** : approuvé (paperwork avant code).
+**Lien** : spec 008 §13, plan 008 §10, PLAN.md journal 2026-05-16.
+
+### Contexte de l'amendement
+
+L'amendement A1 (v0.23.0, livré le 2026-05-16) a sorti FORDEAD du gouffre 1.x / THEIA en migrant sur l'API `FordeadProcess` 2.x. À la **première utilisation app** (même jour), trois frictions sont apparues, toutes à la frontière entre le pipeline FAST (rolling-window NDVI/NBR) et le pipeline FORDEAD :
+
+1. **L'app a `con + zone_id` mais pas `scenes_df`**. Le scene_id Sentinel-2 est consommé pendant l'ingest FAST puis non persisté en DB (`obs_pixel` est indexée par `(plot_id, obs_date, band)`). La signature v0.23.0 forçait l'app à walker le cache disque pour reconstituer `scenes_df` — duplication de logique côté présentation.
+2. **FAST et FORDEAD partagent déjà le `cache_dir`** (`{projet}/cache/layers/sentinel2/`) mais FORDEAD n'utilise pas le downloader de FAST. Si FAST a tourné avec ses 3 bandes (B04, B08, B12) avant que l'utilisateur n'enchaîne sur FORDEAD, les 4 bandes additionnelles (B02, B05, B8A, B11) manquent — `.build_stac_collection_for_aoi()` skip toutes les scènes avec un warning agrégé, pipeline blocking sans message clair.
+3. **Aucun pont entre les deux pipelines**, alors qu'ils visent la même donnée d'entrée et le même cache. `ingest_sentinel2_timeseries()` est *partial-coverage-aware* depuis v0.21.3 (skip_cached vérifie `obs_pixel` band-par-scène) : appelée avec la liste FORDEAD complète et `skip_cached = TRUE`, elle ne descend que les bandes manquantes.
+
+### Décision
+
+**Refondre la signature publique** de `run_fordead_dieback()` pour qu'elle prenne `con + zone_id + cache_dir` (au lieu de `aoi + scenes_df + cache_dir`) **et** ajouter une phase 0 d'ingest interne qui délègue à `ingest_sentinel2_timeseries()`.
+
+Justification courte :
+
+- **Une seule porte d'entrée** côté app : tout est connu par `(con, zone_id, cache_dir)`. Le pipeline devient invocable depuis un bouton Shiny sans glue code.
+- **Réutilisation totale du downloader FAST** : pas de duplication, partial-coverage gratuit, plus de race condition cache.
+- **Cohérence d'événements** : `s2:*` et `fordead:*` se superposent dans le même `progress_callback` — l'app affiche déjà les toasts FAST depuis `nemetonshiny@v0.32.0`, donc 0 dev UI pour le feedback ingest.
+- **Breaking change assumé** : il n'y a qu'un seul caller (`nemetonshiny`). La migration est triviale (cf. spec 008 §13.8).
+
+### Ce que cet amendement modifie dans ADR-013 (post-A1)
+
+| Décision après A1 | Statut après A2 |
+|-------------------|-----------------|
+| §1 Méthode officielle = FORDEAD | ✅ inchangé |
+| §2 Stratégie hybride FORDEAD ⨯ rolling-window | ✅ inchangé — A2 rapproche les deux pipelines côté exécution, mais la logique de fusion (G2) reste identique. |
+| §3 G1 — classes 3-forte + 4-sol-nu par défaut | ✅ inchangé |
+| §3 G2 — fusion rolling-window × FORDEAD | ✅ inchangé (logique SQL côté `classify_disturbance()`) |
+| §3 G3 — bannières géo + essences | ✅ inchangé |
+| §3 G4 — workflow validation QField | ✅ inchangé |
+| §3 G5 — R5 pondéré, weights `(0.10, 0.30, 0.82, 0.70)` | ✅ inchangé |
+| §4 Architecture reticulate + STAC assembly | 🟨 **complété** : pipeline `run_fordead_dieback()` passe de 5 phases (v0.23.0) à 6 phases (v0.24.0). La nouvelle phase 0 `ingest` délègue à `ingest_sentinel2_timeseries()`. Voir plan 008 §10.2. |
+| §5 Persistance des limites dans code et doc | ✅ inchangé. Calibration toujours figée sur défauts fordead 2.x. |
+| A1 §1 STAC assembly côté R | ✅ inchangé. Le helper `.build_stac_collection_for_aoi()` reste, ré-utilisé par phase 1. |
+
+### Ce que cet amendement ajoute
+
+- **Une phase 0 d'ingest interne** dans `run_fordead_dieback()` qui appelle `ingest_sentinel2_timeseries()` avec `bands = FORDEAD_BANDS` et `skip_cached = TRUE`. Garantit que le cache contient les 6 bandes nécessaires avant la phase STAC assembly.
+- **Une constante exportée `FORDEAD_BANDS`** (`c("B02","B04","B05","B8A","B11","B12")`) — matérialise publiquement la liste de bandes spécifique à fordead 2.x (CRSWIR + masques), différente du triplet FAST (B04, B08, B12).
+- **Un helper `.get_zone_aoi(con, zone_id)`** qui dérive l'AOI sf depuis la table `monitoring_zone`. Erreur typée via `cli::cli_abort()` si zone_id inconnu.
+- **Tests offline mockés** : 4 nouveaux tests sur l'ordre des phases, la propagation des événements `s2:*`, et la gestion d'erreur sur zone_id manquant.
+
+### Ce que cet amendement RETIRE de l'API publique
+
+- ❌ `aoi` — dérivé de `monitoring_zone.aoi` via `.get_zone_aoi()`.
+- ❌ `scenes_df` — retourné par l'ingest interne, plus à fabriquer par le caller.
+- ❌ `forest_mask` — déjà deprecated en v0.23.0, supprimé définitivement.
+
+Breaking change pour `nemetonshiny` (un seul caller). Migration documentée spec 008 §13.8.
+
+### Conséquences
+
+**Positives** :
+- L'app devient invocable depuis un bouton "Lancer FORDEAD" sans logique de cache ou de scenes côté UI.
+- Plus de race condition possible entre cache FAST et cache FORDEAD — c'est le même cache, géré par le même downloader.
+- Régression future sur le partial-coverage de l'ingest serait détectée par les tests FORDEAD, ce qui augmente la couverture indirecte.
+
+**Coûts** :
+- Travail de migration : ~7 h (plan 008 §10.8).
+- Breaking change côté `nemetonshiny@v0.33.0` (1 call site).
+- Nouvelle clé i18n `monitoring_fordead_phase_ingest` à ajouter côté app.
+
+**Risque résiduel accepté** : la phase 0 ingest peut être longue si beaucoup de bandes manquent (4 bandes × N scènes). Mitigé par les événements `s2:scene_cached` / `s2:band_fetched` qui passent au `progress_callback` — l'utilisateur voit ce qui descend en temps réel.
+
+### Tests de validation de A2
+
+Avant clôture v0.24.0 :
+
+1. `Rscript -e 'devtools::test(filter = "fordead")'` → tous tests verts, dont les 4 nouveaux tests `test-fordead-pipeline.R` (ordre phases, propagation `s2:*`, zone_id inconnu, `FORDEAD_BANDS` contenu).
+2. AOI de référence (zone de prod de l'utilisateur, Vosges) — `run_fordead_dieback(con, zone_id, cache_dir, ...)` termine en `status = "success"` sans intervention manuelle (AC.13.1).
+3. `diagnose_s2_cache()` avant et après — nombre de bandes par scène passe de 3 (FAST) à 6+ (union FAST ∪ FORDEAD) (AC.13.2).
+4. Re-lancement immédiat sur la même zone — domination des événements `s2:scene_cached` dans les logs (AC.13.3).
+
+Ces checks sont aussi listés en spec 008 §13.7 (AC.13.1-13.6).

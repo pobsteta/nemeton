@@ -574,3 +574,163 @@ Hors scope cœur. À traiter dans un patch app séparé (probable `nemetonshiny@
 - Wiring des noms de phases dans les toasts (`monitoring_fordead_phase_*` i18n keys).
 - Mise à jour du `Imports: nemeton (>= 0.23.0)` + `Remotes: pobsteta/nemeton@v0.23.0`.
 - Smoke shinytest2 inchangé (skip si fordead absent).
+
+---
+
+## 13. Amendement v0.24.0 — Intégration FORDEAD ↔ ingest FAST (zone-as-input)
+
+**Date** : 2026-05-16
+**Statut** : approuvé (paperwork avant code)
+**Concerne** : §12 (amendement A1 / v0.23.0) — refonte de la signature publique de `run_fordead_dieback()` et ajout d'une phase d'ingest interne. Garde-fous G1-G5 (§5), indicateur R5 (§6), workflow validation QField, calibration ADR-013 — tous inchangés.
+
+### 13.1 Motivation
+
+La v0.23.0 (livrée 2026-05-16) a sorti FORDEAD du gouffre 1.x / THEIA mais a introduit une API verbose côté caller :
+
+```r
+res <- run_fordead_dieback(
+  aoi              = aoi,        # déjà connu par l'app
+  scenes_df        = ???,        # à fabriquer
+  cache_dir        = cache_dir,  # déjà connu par l'app
+  dates_training   = ...,
+  dates_monitoring = ...
+)
+```
+
+Trois frictions découvertes à la 1ʳᵉ utilisation app (cf. journal 2026-05-16 *« scenes_df is required and must be a data.frame »*) :
+
+1. **L'app a `con + zone_id` mais pas `scenes_df`**. Le scene_id est consommé pendant l'ingest puis n'est plus stocké en DB (la table `obs_pixel` est indexée par `(plot_id, obs_date, band)`, pas par scene_id). Reconstituer `scenes_df` impose de walker le cache disque depuis l'app, ce qui duplique de la logique côté présentation.
+2. **FAST et FORDEAD partagent déjà `cache_dir` (`{projet}/cache/layers/sentinel2/`)** mais FORDEAD n'utilise pas le downloader de FAST. Conséquence : si FAST a tourné avec ses 3 bandes NDVI/NBR (B04, B08, B12) mais l'utilisateur lance FORDEAD avant d'avoir téléchargé les 4 bandes additionnelles requises pour CRSWIR + masques (B02, B05, B8A, B11), `.build_stac_collection_for_aoi()` skip toutes les scènes avec un warning agrégé — pipeline blocking sans message clair sur comment réparer.
+3. **Aucun pont entre les deux pipelines** alors qu'ils visent la même donnée d'entrée et le même cache. `ingest_sentinel2_timeseries()` est déjà *partial-coverage-aware* depuis v0.21.3 (skip_cached vérifie l'`obs_pixel` au niveau band-par-scène) : si on l'appelle avec la liste de bandes FORDEAD complète et `skip_cached = TRUE`, elle se contente de descendre les bandes manquantes par scène, en ré-utilisant les COG cachés pour les bandes déjà là.
+
+### 13.2 Décision
+
+**Refondre la signature** de `run_fordead_dieback()` pour qu'elle prenne `con + zone_id + cache_dir` (au lieu de `aoi + scenes_df + cache_dir`) **et** délègue la garantie de disponibilité des bandes à `ingest_sentinel2_timeseries()` en première phase interne.
+
+```r
+res <- run_fordead_dieback(
+  con              = con,         # NEW required — DBI connection
+  zone_id          = zone_id,     # NEW required — monitoring_zone.id
+  cache_dir        = cache_dir,   # required — partagé FAST/FORDEAD
+  dates_training   = c("2016-01-01", "2017-12-31"),
+  dates_monitoring = c("2018-01-01", as.character(Sys.Date()))
+)
+```
+
+Tout le reste (`output_dir`, `vegetation_index`, `threshold_anomaly`, `min_pixels`, `connectivity`, `verbose`, `progress_callback`) inchangé.
+
+**Conséquences API publique** :
+
+- ❌ `aoi` supprimé (dérivé de `monitoring_zone.aoi`)
+- ❌ `scenes_df` supprimé (retourné par l'ingest interne)
+- ❌ `forest_mask` supprimé définitivement (était déjà deprecated / ignoré en v0.23.0)
+- ✅ `con` et `zone_id` deviennent requis (n'étaient qu'optionnels — pour la phase persist — en v0.23.0)
+
+**Breaking change** — tous les callers v0.23.0 doivent migrer. L'app fait `con + zone_id + cache_dir` au lieu de fabriquer scenes_df, donc en pratique c'est une simplification côté caller.
+
+### 13.3 Nouveau pipeline (§3.3 et §12.3 amendés)
+
+```
+                ┌─────────────────────────────────────────────┐
+                │ PHASE 0 — ingest (NOUVEAU)                  │
+                │   ingest_sentinel2_timeseries(              │
+                │     con, zone_id,                           │
+                │     bands     = c("B02","B04","B05",        │
+                │                   "B8A","B11","B12"),       │
+                │     date_from = dates_training[1],          │
+                │     date_to   = dates_monitoring[2],        │
+                │     cache_dir,                              │
+                │     skip_cached = TRUE,                     │
+                │     progress_callback                        │
+                │   )                                          │
+                │   → garantit le cache complet               │
+                │   → retourne scenes_df                      │
+                │   → re-utilise COGs partiels du cache FAST  │
+                │     sans re-télécharger                     │
+                └─────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌─────────────────────────────────────────────┐
+                │ PHASE 1 — stac_assembly (v0.23.0)           │
+                │   aoi <- .get_zone_aoi(con, zone_id)        │
+                │   .build_stac_collection_for_aoi(           │
+                │     aoi, scenes_df, cache_dir, bands)       │
+                │   .build_fordead_config(...)                │
+                └─────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌─────────────────────────────────────────────┐
+                │ PHASE 2 — fit (v0.23.0)                     │
+                │ PHASE 3 — predict (v0.23.0)                 │
+                │ PHASE 4 — postprocess (v0.23.0)             │
+                │ PHASE 5 — persist (optionnel, v0.23.0)      │
+                └─────────────────────────────────────────────┘
+```
+
+### 13.4 progress_callback — flux d'événements
+
+L'ingest interne émet ses propres événements (`s2:search`, `s2:scene`, `s2:scene_cached`, `s2:band_fetched`, `s2:complete`) — déjà connus de l'app pour FAST. La FORDEAD pipeline laisse ces événements traverser intacts vers le callback utilisateur, **en plus** des événements `fordead:*` à elle. L'app a donc deux flux superposés :
+
+- `fordead:phase` / `fordead:phase_done` — granularité pipeline (6 phases au lieu de 5 en v0.23.0 : ajout de `ingest` en tête)
+- `s2:*` — granularité scène-par-scène à l'intérieur de la phase ingest
+
+Avantage : les toasts de l'app (déjà génériques côté `nemetonshiny@v0.32.0`) gèrent les deux familles sans rework. Une nouvelle clé i18n `monitoring_fordead_phase_ingest` à ajouter côté app pour le label de la phase.
+
+### 13.5 Liste de bandes FORDEAD vs FAST
+
+| Pipeline | Bandes |
+|----------|--------|
+| FAST (rolling-window NDVI/NBR) | B04, B08, B12 |
+| FORDEAD (CRSWIR + masques) | B02, B04, B05, B8A, B11, B12 |
+| Union (cache rempli après FAST puis FORDEAD) | B02, B04, B05, B08, B8A, B11, B12 (7 bandes) |
+
+L'ingest FORDEAD demande l'union de SES bandes ; le `skip_cached = TRUE` partial-coverage-aware ne re-fetche que ce qui manque. Pas de duplication.
+
+Note : B08 n'est pas dans la liste FORDEAD (B8A est utilisé à la place, plus étroit, requis par la formule CRSWIR). Si FAST n'a tourné avant, B08 reste downloadable pour FAST mais FORDEAD ne le demande pas.
+
+### 13.6 Helpers à ajouter / modifier
+
+| Helper | Statut | Description |
+|--------|--------|-------------|
+| `.get_zone_aoi(con, zone_id)` | **nouveau** | Query `monitoring_zone` → retourne sf POLYGON en EPSG:2154. Erreur typée si zone_id inconnu. |
+| `FORDEAD_BANDS` | **nouveau** constante exportée | `c("B02","B04","B05","B8A","B11","B12")` — utilisée par run_fordead_dieback et documentée publique. |
+| `run_fordead_dieback()` | refondu | Nouvelle signature §13.2. Phase `ingest` ajoutée en tête du `phase_plan`. |
+| `.build_stac_collection_for_aoi()` | inchangé | Helper de session 1 v0.23.0 — toujours appelé en phase stac_assembly. |
+| `.build_fordead_config()` | inchangé | Idem. |
+| `.fordead_2x_status_to_classes()` | inchangé | Idem. |
+| `.postprocess_fordead_rasters()` | inchangé | Idem. |
+
+### 13.7 Critères d'acceptation v0.24.0
+
+- [ ] **AC.13.1** — `run_fordead_dieback(con, zone_id, cache_dir, dates_*)` aboutit en `status = "success"` sur la zone de test de l'utilisateur sans intervention manuelle.
+- [ ] **AC.13.2** — La phase `ingest` complète le cache (constatable par `diagnose_s2_cache()` avant et après — nombre de bandes par scène passe de 3 à 6+).
+- [ ] **AC.13.3** — Re-lancer `run_fordead_dieback()` sur la même zone avec le cache déjà rempli ne re-télécharge rien (vérifiable par les événements `s2:scene_cached` qui doivent dominer les logs).
+- [ ] **AC.13.4** — `FORDEAD_BANDS` est exporté et documenté (cf. NAMESPACE).
+- [ ] **AC.13.5** — Tests offline mockés mis à jour pour la nouvelle signature ; tests d'intégration `test-fordead-integration.R` mis à jour pour appeler la nouvelle API.
+- [ ] **AC.13.6** — Migration documentée : NEWS.md `0.24.0` section "Changed" (breaking), PLAN.md journal, spec 008 §13 (ce document), plan 008 §10, ADR-013 amendement A2.
+
+### 13.8 Migration côté app `nemetonshiny`
+
+Le call site dans `R/mod_monitoring.R` passe de :
+
+```r
+nemeton::run_fordead_dieback(
+  aoi              = aoi,
+  dates_training   = ...,
+  dates_monitoring = ...
+)
+```
+
+vers :
+
+```r
+nemeton::run_fordead_dieback(
+  con              = con,
+  zone_id          = zone_id,
+  cache_dir        = cache_dir,
+  dates_training   = ...,
+  dates_monitoring = ...
+)
+```
+
+`Imports: nemeton (>= 0.24.0)` + `Remotes: pobsteta/nemeton@v0.24.0`. Nouvelle clé i18n `monitoring_fordead_phase_ingest` à ajouter (FR `"Téléchargement des scènes"` / EN `"Scene download"`). Tout le wiring toast existant absorbe la nouvelle phase sans modification grâce au design générique de `nemetonshiny@v0.32.0`. Probable release `nemetonshiny@v0.33.0`.
