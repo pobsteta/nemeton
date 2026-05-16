@@ -161,38 +161,64 @@ NULL
 
 #' Run the FORDEAD dieback detection pipeline on an AOI
 #'
-#' Orchestrates the five FORDEAD steps via \pkg{reticulate}:
+#' Orchestrates fordead 2.x via \pkg{reticulate} on a STAC
+#' `ItemCollection` built locally from the nemeton Sentinel-2 COG
+#' cache. The pipeline runs in four phases :
 #'
 #' \enumerate{
-#'   \item Compute masked vegetation index (CRSWIR by default).
-#'   \item Train the per-pixel harmonic model.
-#'   \item Resolve / download the forest mask (BD Forêt v2 by
-#'     default; helper is a stub until E6.c.3).
-#'   \item Detect dieback anomalies.
-#'   \item Export raster results to \code{output_dir}.
+#'   \item **STAC assembly** ([.build_stac_collection_for_aoi()]) —
+#'     walk `cache_dir`, build a `pystac.Item` per scene with band
+#'     assets pointing at local COGs. Hrefs are local paths, so PC
+#'     SAS expiry during long runs (cf. v0.22.1) is a non-issue.
+#'   \item **fit** — `FordeadProcess.fit()` trains the per-pixel
+#'     harmonic model on the training window.
+#'   \item **predict** — `FordeadProcess.predict()` produces
+#'     `ANOMALY_CONFIRMED` / `ANOMALY_INDEX` / `CONSECUTIVE_DETECTIONS`
+#'     /`STOP_CONFIRMED` rasters under `<output_dir>/<LAYER>/`.
+#'   \item **postprocess** ([.postprocess_fordead_rasters()] reused) —
+#'     derive a 0-4 confidence-class raster from the 2.x layers, run
+#'     `terra::patches()` 8-neighbour, build cluster centroids with
+#'     `confidence_class`, `stress_index`, `trigger_date`, `n_pixels`.
 #' }
 #'
-#' Post-processing of the rasters into POINT clusters is performed
-#' inline by [.postprocess_fordead_rasters()] (chantier E6.c.2). When
-#' `con` and `zone_id` are both supplied, the centroids are persisted
-#' into the `alert` table via [.insert_fordead_alerts()] (each
-#' centroid is snapped to the nearest registered plot of the zone).
+#' When `con` and `zone_id` are both supplied, an additional **persist**
+#' phase snaps centroids to the nearest registered plot of the zone
+#' and inserts them via [.insert_fordead_alerts()] (idempotent
+#' ON CONFLICT DO NOTHING).
 #'
 #' Calibration is frozen on the ONF/DSF reference values
 #' (Bernard & Doridant 2024) and not exposed to the end user — see
-#' the package vignette and ADR-013 for the rationale.
+#' the package vignette and ADR-013 for the rationale. The fordead 2.x
+#' defaults match these values out of the box (cf. spec 008 §12.6).
 #'
 #' @param aoi An sf or sfc POLYGON in EPSG:2154.
-#' @param dates_training Length-2 character/Date vector defining the
+#' @param scenes_df A `data.frame` (or tibble) with at minimum the
+#'   columns `scene_id` (character) and `obs_date` (Date or
+#'   coercible). Typically produced upstream by
+#'   [ingest_sentinel2_timeseries()] (`scenes_df` output) or queried
+#'   from the `obs_pixel` table. Duplicate `scene_id`s are silently
+#'   dropped. Scenes whose `obs_date` falls outside
+#'   `c(dates_training[1], dates_monitoring[2])` are ignored.
+#' @param cache_dir Character(1). Root of the COG cache as written by
+#'   [ingest_sentinel2_timeseries()] — typically
+#'   `<project>/cache/layers/sentinel2`. Bands required by FORDEAD
+#'   (B02, B04, B05, B8A, B11, B12) must already be present under
+#'   `<cache_dir>/<safe_scene_id>/<band>.tif`. Scenes with missing
+#'   bands are skipped with an aggregated warning.
+#' @param dates_training Length-2 character vector defining the
 #'   training window (default `c("2016-01-01", "2017-12-31")`).
-#' @param dates_monitoring Length-2 character/Date vector defining
-#'   the monitoring window. Defaults to `c("2018-01-01", as.character(Sys.Date()))`.
+#' @param dates_monitoring Length-2 character vector defining the
+#'   monitoring window. The end may be `NA_character_` to mean
+#'   "open / latest". Default `c("2018-01-01", as.character(Sys.Date()))`.
 #' @param vegetation_index One of `"CRSWIR"`, `"NDVI"`, `"NDWI"`.
 #'   Default `"CRSWIR"`.
 #' @param threshold_anomaly Numeric in `[0.05, 0.50]`. Default
 #'   `0.16` (calibrated).
-#' @param forest_mask `NULL`, an sf object, or a path to an existing
-#'   raster. `NULL` triggers the BD Forêt v2 cached lookup.
+#' @param forest_mask Deprecated since v0.23.0 — kept for argument
+#'   compatibility but ignored. fordead 2.x's `FordeadProcess`
+#'   handles cloud/shadow/soil masking via its own `FordeadConfig`
+#'   defaults. The IGN BD Forêt v2 stub (which never fully landed in
+#'   1.x) is no longer wired.
 #' @param output_dir Character. Where FORDEAD writes its rasters.
 #'   Defaults to a fresh `tempfile("fordead_")`.
 #' @param python_env Character. Virtualenv name. Defaults to
@@ -215,9 +241,8 @@ NULL
 #'   `phase_name`. Phases emitted, in order:
 #'   \describe{
 #'     \item{`fordead:start`}{Once at the beginning — payload includes
-#'       `total` (number of scheduled phases, 6 without `con`/`zone_id`,
-#'       7 when persistence is requested), `python_env`,
-#'       `fordead_version`.}
+#'       `total` (4 without `con`/`zone_id`, 5 when persistence is
+#'       requested), `python_env`, `fordead_version`.}
 #'     \item{`fordead:phase`}{Before each phase — payload includes
 #'       `phase_name`, `completed = i - 1L`, `total`.}
 #'     \item{`fordead:phase_done`}{After each successful phase —
@@ -229,9 +254,8 @@ NULL
 #'       payload includes `phase_name`, `error_message`,
 #'       `duration_sec`.}
 #'   }
-#'   The `phase_name` values are, in order: `"vegetation_index"`,
-#'   `"train_model"`, `"forest_mask"`, `"dieback_detection"`,
-#'   `"export_results"`, `"postprocess"`, and (when applicable)
+#'   The `phase_name` values are, in order: `"stac_assembly"`,
+#'   `"fit"`, `"predict"`, `"postprocess"`, and (when applicable)
 #'   `"persist"`. The callback is invoked synchronously inside the
 #'   calling thread; exceptions raised inside it are swallowed so a
 #'   buggy UI never aborts the pipeline. Default `NULL` (silent).
@@ -268,6 +292,8 @@ NULL
 #'
 #' @export
 run_fordead_dieback <- function(aoi,
+                                scenes_df,
+                                cache_dir,
                                 dates_training   = c("2016-01-01", "2017-12-31"),
                                 dates_monitoring = c("2018-01-01", as.character(Sys.Date())),
                                 vegetation_index = "CRSWIR",
@@ -287,24 +313,44 @@ run_fordead_dieback <- function(aoi,
                          vegetation_index, threshold_anomaly,
                          forest_mask, output_dir)
 
+  # New required v0.23.0 arguments — validate here rather than in
+  # .validate_fordead_args() to keep that helper's signature stable
+  # for downstream tests.
+  if (missing(scenes_df) || !is.data.frame(scenes_df)) {
+    cli::cli_abort(c(
+      "{.arg scenes_df} is required and must be a data.frame.",
+      i = "Provide the scenes_df returned by {.fun ingest_sentinel2_timeseries}."
+    ))
+  }
+  if (missing(cache_dir) || !is.character(cache_dir) ||
+      length(cache_dir) != 1L || !dir.exists(cache_dir)) {
+    cli::cli_abort(c(
+      "{.arg cache_dir} is required and must point to an existing directory.",
+      i = "Typically {.path <project>/cache/layers/sentinel2}."
+    ))
+  }
+  if (!is.null(forest_mask) && isTRUE(verbose)) {
+    cli::cli_alert_warning(
+      "{.arg forest_mask} is ignored since v0.23.0 (fordead 2.x handles masks)."
+    )
+  }
+
   env_name <- if (is.null(python_env)) .fordead_default_env() else python_env
 
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
-  # Phase plan. "persist" is only scheduled when caller passes both
-  # `con` and `zone_id` — otherwise INSERT is skipped entirely.
+  # Phase plan — 4 phases (stac_assembly, fit, predict, postprocess)
+  # plus an optional `persist` when caller passes both `con` and
+  # `zone_id`. See spec 008 §12.5.
   will_persist <- !is.null(con) && !is.null(zone_id)
-  phase_plan <- c("vegetation_index", "train_model", "forest_mask",
-                  "dieback_detection", "export_results", "postprocess",
+  phase_plan <- c("stac_assembly", "fit", "predict", "postprocess",
                   if (will_persist) "persist")
   total_phases <- length(phase_plan)
   current_phase_idx <- 0L
   current_phase_name <- NA_character_
 
-  # Local emitter — no-op when no callback is set, swallows callback
-  # exceptions so a buggy UI never aborts the pipeline.
   emit <- function(payload) {
     if (is.null(progress_callback)) return(invisible(NULL))
     tryCatch(progress_callback(payload),
@@ -328,18 +374,21 @@ run_fordead_dieback <- function(aoi,
   result <- tryCatch({
     fd <- .ensure_fordead_python(env_name = env_name, verbose = verbose)
 
-    fordead_version <- tryCatch(
-      reticulate::py_get_attr(fd, "__version__", silent = TRUE),
-      error = function(e) NA_character_
-    )
-    fordead_version <- tryCatch(reticulate::py_to_r(fordead_version),
-                                error = function(e) NA_character_)
+    fordead_version <- tryCatch({
+      v <- reticulate::py_get_attr(fd, "version", silent = TRUE)
+      if (is.null(v)) {
+        v <- reticulate::py_get_attr(fd, "__version__", silent = TRUE)
+      }
+      reticulate::py_to_r(v)
+    }, error = function(e) NA_character_)
     if (is.null(fordead_version) || !is.character(fordead_version)) {
       fordead_version <- NA_character_
     }
 
     if (verbose) {
-      cli::cli_alert_info("FORDEAD pipeline starting (env={.val {env_name}}, fordead={.val {fordead_version}}).")
+      cli::cli_alert_info(
+        "FORDEAD pipeline starting (env={.val {env_name}}, fordead={.val {fordead_version}})."
+      )
     }
 
     emit(list(current         = "fordead:start",
@@ -356,65 +405,88 @@ run_fordead_dieback <- function(aoi,
       }
     }
 
-    # 1. Masked vegetation index
-    begin_phase("vegetation_index")
-    .capture("compute_masked_vegetationindex", {
-      fd$steps$step1_compute_masked_vegetationindex$compute_masked_vegetationindex(
-        input_directory  = output_dir,
-        vegetation_index = vegetation_index
-      )
-    })
-    end_phase("vegetation_index")
+    # Filter scenes to the [training_start, monitoring_end] window
+    # (the open-end case keeps everything after monitoring_start).
+    .scene_dates  <- as.Date(scenes_df$obs_date)
+    .train_start  <- as.Date(dates_training[1L])
+    .mon_end      <- if (is.na(dates_monitoring[2L]))
+                       max(.scene_dates, na.rm = TRUE) else
+                       as.Date(dates_monitoring[2L])
+    scenes_df <- scenes_df[!is.na(.scene_dates) &
+                             .scene_dates >= .train_start &
+                             .scene_dates <= .mon_end, , drop = FALSE]
 
-    # 2. Train model
-    begin_phase("train_model")
-    .capture("train_model", {
-      fd$steps$step2_train_model$train_model(
-        input_directory = output_dir,
-        nb_min_date     = 10L
-      )
-    })
-    end_phase("train_model")
+    # 1. STAC assembly
+    begin_phase("stac_assembly")
+    collection <- .build_stac_collection_for_aoi(
+      aoi            = aoi,
+      scenes_df      = scenes_df,
+      cache_dir      = cache_dir,
+      bands_required = c("B02", "B04", "B05", "B8A", "B11", "B12")
+    )
+    bbox_4326 <- .aoi_bbox_4326(aoi)
+    geom_py   <- .aoi_geometry_reticulate(aoi)
+    cfg       <- .build_fordead_config(
+      dates_training    = dates_training,
+      dates_monitoring  = dates_monitoring,
+      vegetation_index  = vegetation_index,
+      threshold_anomaly = threshold_anomaly
+    )
+    end_phase("stac_assembly")
 
-    # 3. Forest mask
-    begin_phase("forest_mask")
-    fmask <- forest_mask
-    if (is.null(fmask)) {
-      fmask <- .download_or_use_cached_bd_foret(aoi)
-    }
-    end_phase("forest_mask")
+    # 2. fit
+    begin_phase("fit")
+    # fp lives only inside this tryCatch scope; reticulate handles
+    # cleanup when R unbinds the reference.
+    fp <- fd$workflow$FordeadProcess(
+      collection = collection,
+      output_dir = output_dir,
+      bbox       = reticulate::r_to_py(as.list(bbox_4326)),
+      geometry   = geom_py,
+      config     = cfg
+    )
+    .capture("fit", { fp$fit() })
+    end_phase("fit")
 
-    # 4. Dieback detection
-    begin_phase("dieback_detection")
-    .capture("dieback_detection", {
-      fd$steps$step3_dieback_detection$dieback_detection(
-        input_directory   = output_dir,
-        threshold_anomaly = threshold_anomaly
-      )
-    })
-    end_phase("dieback_detection")
+    # 3. predict
+    begin_phase("predict")
+    .capture("predict", { fp$predict() })
+    end_phase("predict")
 
-    # 5. Export results
-    begin_phase("export_results")
-    .capture("export_results", {
-      fd$steps$step5_export_results$export_results(
-        input_directory = output_dir
-      )
-    })
-    end_phase("export_results")
-
+    # Locate the most recent fordead-written layers and build the
+    # `rasters` list the 1.x postprocess expects. The 0..4 class
+    # raster is derived from ANOMALY_CONFIRMED + CONSECUTIVE_DETECTIONS
+    # + STOP_CONFIRMED (see .fordead_2x_status_to_classes for the
+    # mapping table — to be empirically recalibrated in AC.12.3).
+    state_raster <- .fordead_2x_status_to_classes(output_dir)
+    fdd_raster   <- tryCatch(
+      .compute_first_dieback_date(output_dir, fd$utils),
+      error = function(e) {
+        cli::cli_alert_warning(
+          "first_dieback_date derivation failed: {conditionMessage(e)}"
+        )
+        NULL
+      }
+    )
     rasters <- list(
-      state              = file.path(output_dir, "DataAnomalies", "state.tif"),
-      first_dieback_date = file.path(output_dir, "DataAnomalies", "first_dieback_date.tif"),
-      stress_index       = file.path(output_dir, "DataAnomalies", "stress_index.tif")
+      state              = .latest_layer_file(output_dir, "ANOMALY_CONFIRMED"),
+      first_dieback_date = NA_character_,  # in-memory, not persisted
+      stress_index       = .latest_layer_file(output_dir, "ANOMALY_INDEX")
     )
 
-    # 6. Post-processing: rasters → POINT clusters → optional INSERT.
+    # 4. postprocess (1.x helper reused — input shape unchanged)
     begin_phase("postprocess")
     alerts_sf <- tryCatch(
-      .postprocess_fordead_rasters(rasters,
-                                   min_pixels   = as.integer(min_pixels),
-                                   connectivity = as.integer(connectivity)),
+      .postprocess_fordead_rasters(
+        rasters = list(
+          state              = state_raster,
+          first_dieback_date = fdd_raster,
+          stress_index       = if (!is.na(rasters$stress_index))
+                                 terra::rast(rasters$stress_index) else NULL
+        ),
+        min_pixels   = as.integer(min_pixels),
+        connectivity = as.integer(connectivity)
+      ),
       error = function(e) {
         cli::cli_alert_warning("Post-processing failed: {conditionMessage(e)}")
         NULL

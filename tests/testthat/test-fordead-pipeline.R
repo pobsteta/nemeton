@@ -1,11 +1,16 @@
-# test-fordead-pipeline.R — orchestrator run_fordead_dieback (E6.c.1)
+# test-fordead-pipeline.R — orchestrator run_fordead_dieback (spec 008 §12)
 #
-# All FORDEAD Python phases are mocked: we never touch reticulate
-# or a virtualenv. The fake module records the order and arguments
-# of the calls so we can assert on the orchestration contract.
+# All Python interaction is mocked. We never touch reticulate or a
+# real virtualenv. The fake `fd` module records the call order so we
+# can assert on the orchestration contract (4 phases by default,
+# 5 phases when persisting).
 
 skip_if_no_reticulate <- function() {
   testthat::skip_if_not_installed("reticulate")
+}
+
+skip_if_no_sf <- function() {
+  testthat::skip_if_not_installed("sf")
 }
 
 make_aoi <- function(crs = 2154) {
@@ -16,514 +21,438 @@ make_aoi <- function(crs = 2154) {
   sf::st_sf(geometry = sf::st_sfc(pol, crs = crs))
 }
 
-# Build a fake `fd` module recording the calls. Each step is a
-# nested function-of-function so calls look like:
-#   fd$steps$step1_compute_masked_vegetationindex$compute_masked_vegetationindex(...)
-make_fake_fordead_module <- function(env, fail_at = NULL) {
-  step <- function(label) {
-    list2 <- list()
-    list2[[label]] <- function(...) {
-      env$calls <- c(env$calls, label)
-      env$args[[label]] <- list(...)
-      if (!is.null(fail_at) && identical(fail_at, label)) {
-        stop(paste0("simulated FORDEAD error in ", label))
-      }
-      invisible(NULL)
-    }
-    list2
-  }
-  list(
-    `__version__` = "2.1.4",
-    steps = list(
-      step1_compute_masked_vegetationindex = step("compute_masked_vegetationindex"),
-      step2_train_model                    = step("train_model"),
-      step3_dieback_detection              = step("dieback_detection"),
-      step5_export_results                 = step("export_results")
-    )
+# A minimum scenes_df. Two scenes, both fall inside the training +
+# monitoring windows used by the success-path tests.
+make_scenes_df <- function() {
+  data.frame(
+    scene_id = c("S2A_FAKE_20160601", "S2A_FAKE_20180601"),
+    obs_date = as.Date(c("2016-06-01", "2018-06-01")),
+    stringsAsFactors = FALSE
   )
 }
+
+# A temporary cache_dir — the tests don't actually open the cached
+# files (we mock .build_stac_collection_for_aoi) but the path is
+# validated upstream by run_fordead_dieback.
+make_cache_dir <- function() {
+  d <- tempfile("fordead-test-cache-")
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  d
+}
+
+# Build a fake `fd` module recording the calls to fp$fit / fp$predict.
+# Returns the fake `fd` plus the env that captures call order.
+make_fake_fordead_2x_module <- function(fail_at = NULL) {
+  env <- new.env(parent = emptyenv())
+  env$calls <- character(0)
+
+  fp_factory <- function(collection, output_dir, bbox, geometry, config, ...) {
+    self <- new.env(parent = emptyenv())
+    self$fit <- function() {
+      env$calls <- c(env$calls, "fit")
+      if (identical(fail_at, "fit")) stop("simulated FORDEAD error in fit")
+      invisible(NULL)
+    }
+    self$predict <- function() {
+      env$calls <- c(env$calls, "predict")
+      if (identical(fail_at, "predict")) stop("simulated FORDEAD error in predict")
+      invisible(NULL)
+    }
+    self
+  }
+
+  fd <- list(
+    version  = "2.1.1",
+    `__version__` = "2.1.1",
+    workflow = list(FordeadProcess = fp_factory),
+    utils    = list(backward_start = function(...) NULL)
+  )
+  list(fd = fd, env = env)
+}
+
+# Mock the helpers that touch Python / sf to keep tests offline and
+# decoupled from the real reticulate-bound path. Returns a list of
+# bindings ready to be slipped into a `local_mocked_bindings` block.
+.mock_pipeline_helpers <- function(fake_class_raster = NULL,
+                                   alerts_sf         = NULL,
+                                   fail_postprocess  = FALSE) {
+  list(
+    .build_stac_collection_for_aoi = function(...) {
+      list(`__class__` = "ItemCollection", n = 2L)
+    },
+    .build_fordead_config = function(...) {
+      list(`__class__` = "FordeadConfig")
+    },
+    .aoi_bbox_4326 = function(...) c(0.0, 45.0, 1.0, 46.0),
+    .aoi_geometry_reticulate = function(...) {
+      list(`__class__` = "shapely.geometry.Polygon")
+    },
+    .fordead_2x_status_to_classes = function(...) fake_class_raster,
+    .compute_first_dieback_date    = function(...) NULL,
+    .latest_layer_file = function(output_dir, layer) NA_character_,
+    .ensure_fordead_python = function(env_name = ".", verbose = FALSE) {
+      stop("override per-test via the `fd` return value")
+    },
+    .postprocess_fordead_rasters = function(rasters, ...) {
+      if (isTRUE(fail_postprocess)) {
+        stop("simulated postprocess failure")
+      }
+      alerts_sf %||% structure(list(), class = "sf")
+    }
+  )
+}
+
+# %||% — null coalesce (rlang-free local copy)
+`%||%` <- function(x, y) if (is.null(x)) y else x
 
 
 # ---- argument validation ---------------------------------------------
 
 test_that("rejects non-sf aoi", {
-  expect_error(run_fordead_dieback(aoi = "not-sf"),
-               "must be an sf")
+  skip_if_no_sf()
+  expect_error(
+    run_fordead_dieback(aoi = "not-sf",
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir()),
+    "must be an sf"
+  )
 })
 
 test_that("rejects aoi in wrong CRS", {
+  skip_if_no_sf()
   aoi_4326 <- make_aoi(crs = 4326)
-  expect_error(run_fordead_dieback(aoi = aoi_4326),
-               "EPSG:2154|Lambert")
+  expect_error(
+    run_fordead_dieback(aoi_4326,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir()),
+    "EPSG:2154|Lambert"
+  )
 })
 
 test_that("rejects unknown vegetation_index", {
+  skip_if_no_sf()
   aoi <- make_aoi()
   expect_error(
-    run_fordead_dieback(aoi, vegetation_index = "EVI"),
+    run_fordead_dieback(aoi,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir(),
+                        vegetation_index = "EVI"),
     "vegetation_index"
   )
 })
 
 test_that("rejects threshold_anomaly out of [0.05, 0.50]", {
-  aoi <- make_aoi()
-  expect_error(run_fordead_dieback(aoi, threshold_anomaly = 0.0),
-               "threshold_anomaly")
-  expect_error(run_fordead_dieback(aoi, threshold_anomaly = 0.6),
-               "threshold_anomaly")
-})
-
-test_that("rejects non-chronological dates_training", {
+  skip_if_no_sf()
   aoi <- make_aoi()
   expect_error(
     run_fordead_dieback(aoi,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir(),
+                        threshold_anomaly = 0.0),
+    "threshold_anomaly"
+  )
+  expect_error(
+    run_fordead_dieback(aoi,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir(),
+                        threshold_anomaly = 0.6),
+    "threshold_anomaly"
+  )
+})
+
+test_that("rejects non-chronological dates_training", {
+  skip_if_no_sf()
+  aoi <- make_aoi()
+  expect_error(
+    run_fordead_dieback(aoi,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir(),
                         dates_training = c("2018-01-01", "2017-01-01")),
     "dates_training"
   )
 })
 
 test_that("rejects dates_monitoring starting before dates_training", {
+  skip_if_no_sf()
   aoi <- make_aoi()
   expect_error(
     run_fordead_dieback(aoi,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = make_cache_dir(),
                         dates_training   = c("2018-01-01", "2019-12-31"),
                         dates_monitoring = c("2017-06-01", "2024-01-01")),
     "dates_monitoring"
   )
 })
 
+test_that("rejects missing scenes_df", {
+  skip_if_no_sf()
+  aoi <- make_aoi()
+  expect_error(
+    run_fordead_dieback(aoi, cache_dir = make_cache_dir()),
+    "scenes_df"
+  )
+})
+
+test_that("rejects non-existent cache_dir", {
+  skip_if_no_sf()
+  aoi <- make_aoi()
+  expect_error(
+    run_fordead_dieback(aoi,
+                        scenes_df = make_scenes_df(),
+                        cache_dir = "/no/such/path"),
+    "cache_dir"
+  )
+})
+
 
 # ---- successful orchestration ----------------------------------------
 
-test_that("runs all five steps in order and returns success", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
+test_that("runs the 4 phases in order on the success path", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
 
   testthat::local_mocked_bindings(
-    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) {
-      sf::st_sf(
-        confidence_class = character(0),
-        stress_index     = numeric(0),
-        trigger_date     = as.Date(character(0)),
-        n_pixels         = integer(0),
-        area_m2          = numeric(0),
-        cluster_id       = integer(0),
-        geometry         = sf::st_sfc(crs = 2154)
-      )
-    },
+    !!!helpers,
     .package = "nemeton"
   )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
+
+  aoi <- make_aoi()
+  out <- run_fordead_dieback(
+    aoi              = aoi,
+    scenes_df        = make_scenes_df(),
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE
   )
 
-  res <- run_fordead_dieback(aoi, verbose = FALSE)
-
-  expect_equal(res$status, "success")
-  expect_equal(rec$calls, c("compute_masked_vegetationindex",
-                            "train_model",
-                            "dieback_detection",
-                            "export_results"))
-  expect_equal(res$fordead_version, "2.1.4")
-  expect_true(dir.exists(res$output_dir))
-  expect_named(res$rasters,
-               c("state", "first_dieback_date", "stress_index"))
-  expect_equal(res$n_alerts_inserted, 0L)
-  expect_null(res$alerts_sf)   # empty postprocess collapses to NULL
-  expect_true(is.numeric(res$duration_sec) && res$duration_sec >= 0)
+  expect_identical(out$status, "success")
+  expect_equal(fk$env$calls, c("fit", "predict"))
+  expect_identical(out$fordead_version, "2.1.1")
+  expect_null(out$alerts_sf)  # empty sf returned by mocked postprocess
 })
 
 
 test_that("propagates Python errors as status='error' with message", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec, fail_at = "dieback_detection")
+  skip_if_no_reticulate(); skip_if_no_sf()
 
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
+  fk <- make_fake_fordead_2x_module(fail_at = "fit")
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- run_fordead_dieback(
+    aoi              = make_aoi(),
+    scenes_df        = make_scenes_df(),
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE
   )
 
-  res <- run_fordead_dieback(aoi, verbose = FALSE)
-  expect_equal(res$status, "error")
-  expect_match(res$message, "dieback_detection")
-  # Pipeline stopped before export_results was called.
-  expect_false("export_results" %in% rec$calls)
+  expect_identical(out$status, "error")
+  expect_true(grepl("simulated FORDEAD error in fit", out$message, fixed = TRUE))
+  expect_equal(fk$env$calls, "fit")  # predict never ran
 })
 
 
-test_that("forest_mask = NULL routes through the BD Forêt stub", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
-
-  bd_called <- 0L
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .download_or_use_cached_bd_foret = function(aoi) {
-      bd_called <<- bd_called + 1L
-      NULL
-    },
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) {
-      sf::st_sf(
-        confidence_class = character(0),
-        stress_index     = numeric(0),
-        trigger_date     = as.Date(character(0)),
-        n_pixels         = integer(0),
-        area_m2          = numeric(0),
-        cluster_id       = integer(0),
-        geometry         = sf::st_sfc(crs = 2154)
-      )
-    },
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
-  )
-
-  res <- run_fordead_dieback(aoi, forest_mask = NULL, verbose = FALSE)
-  expect_equal(res$status, "success")
-  expect_equal(bd_called, 1L)
-})
-
-
-test_that("a user-supplied forest_mask path bypasses the BD Forêt stub", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
-
-  tmp_mask <- tempfile(fileext = ".tif")
-  file.create(tmp_mask)
-  on.exit(unlink(tmp_mask), add = TRUE)
-
-  bd_called <- 0L
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .download_or_use_cached_bd_foret = function(aoi) {
-      bd_called <<- bd_called + 1L
-      NULL
-    },
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) {
-      sf::st_sf(
-        confidence_class = character(0),
-        stress_index     = numeric(0),
-        trigger_date     = as.Date(character(0)),
-        n_pixels         = integer(0),
-        area_m2          = numeric(0),
-        cluster_id       = integer(0),
-        geometry         = sf::st_sfc(crs = 2154)
-      )
-    },
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
-  )
-
-  res <- run_fordead_dieback(aoi, forest_mask = tmp_mask, verbose = FALSE)
-  expect_equal(res$status, "success")
-  expect_equal(bd_called, 0L)
-})
-
-
-test_that("rejects a forest_mask path that does not exist", {
-  aoi <- make_aoi()
-  expect_error(
-    run_fordead_dieback(aoi, forest_mask = "/no/such/file.tif"),
-    "forest_mask"
-  )
-})
-
-
-test_that("non-empty postprocess sets alerts_sf, INSERT skipped without con", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
-
-  fake_alerts <- sf::st_sf(
-    confidence_class = c("3-forte", "4-sol-nu"),
-    stress_index     = c(1.5, 2.1),
-    trigger_date     = as.Date(c("2024-06-01", "2024-07-15")),
-    n_pixels         = c(10L, 20L),
-    area_m2          = c(1000, 2000),
-    cluster_id       = c(1L, 2L),
-    geometry         = sf::st_sfc(sf::st_point(c(700100, 6800100)),
-                                  sf::st_point(c(700500, 6800500)),
-                                  crs = 2154)
-  )
-  insert_called <- 0L
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) fake_alerts,
-    .insert_fordead_alerts       = function(con, alerts_sf, zone_id, ...) {
-      insert_called <<- insert_called + 1L
-      nrow(alerts_sf)
-    },
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
-  )
-
-  # Without con/zone_id : alerts_sf populated but no INSERT.
-  res <- run_fordead_dieback(aoi, verbose = FALSE)
-  expect_equal(nrow(res$alerts_sf), 2L)
-  expect_equal(res$n_alerts_inserted, 0L)
-  expect_equal(insert_called, 0L)
-
-  # With con + zone_id : insert is called and the count propagates.
-  res2 <- run_fordead_dieback(aoi, verbose = FALSE,
-                              con = "fake-con", zone_id = 42)
-  expect_equal(res2$n_alerts_inserted, 2L)
-  expect_equal(insert_called, 1L)
-})
-
-
-# ---- progress_callback (v0.21.2) -------------------------------------
+# ---- progress_callback wiring ----------------------------------------
 
 test_that("progress_callback receives ordered phase events (no persist)", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
+  skip_if_no_reticulate(); skip_if_no_sf()
 
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) {
-      sf::st_sf(
-        confidence_class = character(0),
-        stress_index     = numeric(0),
-        trigger_date     = as.Date(character(0)),
-        n_pixels         = integer(0),
-        area_m2          = numeric(0),
-        cluster_id       = integer(0),
-        geometry         = sf::st_sfc(crs = 2154)
-      )
-    },
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
+  events <- list()
+  cb <- function(payload) {
+    events[[length(events) + 1L]] <<- payload
+    invisible(NULL)
+  }
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- run_fordead_dieback(
+    aoi              = make_aoi(),
+    scenes_df        = make_scenes_df(),
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE,
+    progress_callback = cb
   )
 
-  seen <- list()
-  res <- run_fordead_dieback(
-    aoi, verbose = FALSE,
-    progress_callback = function(p) {
-      seen[[length(seen) + 1L]] <<- p
-    }
-  )
-  expect_equal(res$status, "success")
+  expect_identical(out$status, "success")
 
-  phases <- vapply(seen, function(p) p$current, character(1))
-  # start → (phase/phase_done) × 6 → complete  (no persist).
-  expect_identical(phases[1], "fordead:start")
-  expect_identical(phases[length(phases)], "fordead:complete")
-  expect_equal(sum(phases == "fordead:phase"), 6L)
-  expect_equal(sum(phases == "fordead:phase_done"), 6L)
+  phase_starts <- vapply(events, function(e) e$current %||% NA_character_, character(1))
+  phase_names  <- vapply(events,
+                         function(e) e$phase_name %||% NA_character_,
+                         character(1))
 
-  # First "phase" event refers to vegetation_index.
-  first_phase <- seen[[which(phases == "fordead:phase")[1]]]
-  expect_equal(first_phase$phase_name, "vegetation_index")
-  expect_equal(first_phase$completed, 0L)
-  expect_equal(first_phase$total, 6L)
+  # `fordead:start` first, then alternating phase / phase_done, then complete.
+  expect_identical(phase_starts[1L], "fordead:start")
+  expect_identical(phase_starts[length(phase_starts)], "fordead:complete")
+  # 4 phases × 2 events each + start + complete = 10 events
+  expect_equal(length(events), 4L * 2L + 2L)
 
-  # Phase names appear in the documented order, no "persist".
-  phase_names <- vapply(
-    seen[phases == "fordead:phase"],
-    function(p) p$phase_name, character(1)
-  )
-  expect_identical(
-    phase_names,
-    c("vegetation_index", "train_model", "forest_mask",
-      "dieback_detection", "export_results", "postprocess")
-  )
+  # Phase names in `:phase` events, in order:
+  begin_idx <- phase_starts == "fordead:phase"
+  expect_equal(phase_names[begin_idx],
+               c("stac_assembly", "fit", "predict", "postprocess"))
 
-  done <- seen[[length(seen)]]
-  expect_equal(done$completed, 6L)
-  expect_equal(done$total, 6L)
-  expect_equal(done$n_alerts_inserted, 0L)
-  expect_true(is.numeric(done$duration_sec) && done$duration_sec >= 0)
+  # Each phase emits one `:phase` and one `:phase_done`.
+  expect_equal(sum(phase_starts == "fordead:phase"),      4L)
+  expect_equal(sum(phase_starts == "fordead:phase_done"), 4L)
+
+  # `total` is consistent throughout.
+  totals <- vapply(events, function(e) e$total %||% NA_integer_, integer(1))
+  expect_true(all(totals[!is.na(totals)] == 4L))
 })
 
 
 test_that("progress_callback schedules a 'persist' phase with con/zone_id", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
+  skip_if_no_reticulate(); skip_if_no_sf()
 
-  fake_alerts <- sf::st_sf(
-    confidence_class = "3-forte",
-    stress_index     = 1.5,
-    trigger_date     = as.Date("2024-06-01"),
-    n_pixels         = 10L,
-    area_m2          = 1000,
-    cluster_id       = 1L,
-    geometry         = sf::st_sfc(sf::st_point(c(700100, 6800100)), crs = 2154)
-  )
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) fake_alerts,
-    .insert_fordead_alerts       = function(con, alerts_sf, zone_id, ...) nrow(alerts_sf),
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
-  )
+  events <- list()
+  cb <- function(payload) {
+    events[[length(events) + 1L]] <<- payload
+    invisible(NULL)
+  }
 
-  seen <- list()
-  res <- run_fordead_dieback(
-    aoi, verbose = FALSE,
-    con = "fake-con", zone_id = 42,
-    progress_callback = function(p) {
-      seen[[length(seen) + 1L]] <<- p
-    }
-  )
-  expect_equal(res$status, "success")
-  expect_equal(res$n_alerts_inserted, 1L)
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  helpers$.postprocess_fordead_rasters <- function(...) {
+    # Return a non-empty sf POINT so persist actually runs.
+    sf::st_sf(
+      confidence_class = "3-forte",
+      geometry = sf::st_sfc(sf::st_point(c(1, 1)), crs = 2154)
+    )
+  }
+  helpers$.insert_fordead_alerts <- function(con, alerts_sf, zone_id, ...) {
+    7L
+  }
 
-  phases <- vapply(seen, function(p) p$current, character(1))
-  phase_names <- vapply(
-    seen[phases == "fordead:phase"],
-    function(p) p$phase_name, character(1)
-  )
-  expect_identical(
-    phase_names,
-    c("vegetation_index", "train_model", "forest_mask",
-      "dieback_detection", "export_results", "postprocess", "persist")
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  fake_con <- structure(list(), class = c("FakeConnection", "DBIConnection"))
+  out <- run_fordead_dieback(
+    aoi              = make_aoi(),
+    scenes_df        = make_scenes_df(),
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    con              = fake_con,
+    zone_id          = 42L,
+    verbose          = FALSE,
+    progress_callback = cb
   )
 
-  # total = 7 everywhere it is emitted.
-  totals <- vapply(seen, function(p) {
-    if (is.null(p$total)) NA_integer_ else as.integer(p$total)
-  }, integer(1))
-  expect_true(all(totals[!is.na(totals)] == 7L))
+  expect_identical(out$status, "success")
+  expect_equal(out$n_alerts_inserted, 7L)
 
-  done <- seen[[length(seen)]]
-  expect_identical(done$current, "fordead:complete")
-  expect_equal(done$n_alerts_inserted, 1L)
+  phase_starts <- vapply(events, function(e) e$current %||% NA_character_, character(1))
+  phase_names  <- vapply(events,
+                         function(e) e$phase_name %||% NA_character_,
+                         character(1))
+  begin_idx <- phase_starts == "fordead:phase"
+  expect_equal(phase_names[begin_idx],
+               c("stac_assembly", "fit", "predict", "postprocess", "persist"))
+
+  totals <- vapply(events, function(e) e$total %||% NA_integer_, integer(1))
+  expect_true(all(totals[!is.na(totals)] == 5L))
 })
 
 
 test_that("progress_callback receives a 'fordead:error' event on failure", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec, fail_at = "dieback_detection")
+  skip_if_no_reticulate(); skip_if_no_sf()
 
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .package = "nemeton"
-  )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
+  events <- list()
+  cb <- function(payload) {
+    events[[length(events) + 1L]] <<- payload
+    invisible(NULL)
+  }
+
+  fk <- make_fake_fordead_2x_module(fail_at = "predict")
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- run_fordead_dieback(
+    aoi              = make_aoi(),
+    scenes_df        = make_scenes_df(),
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE,
+    progress_callback = cb
   )
 
-  seen <- list()
-  res <- run_fordead_dieback(
-    aoi, verbose = FALSE,
-    progress_callback = function(p) {
-      seen[[length(seen) + 1L]] <<- p
-    }
-  )
-  expect_equal(res$status, "error")
+  expect_identical(out$status, "error")
 
-  phases <- vapply(seen, function(p) p$current, character(1))
-  expect_true("fordead:error" %in% phases)
-  err <- seen[[which(phases == "fordead:error")[1]]]
-  expect_equal(err$phase_name, "dieback_detection")
-  expect_match(err$error_message, "dieback_detection")
-  expect_true(is.numeric(err$duration_sec))
-  # No "fordead:complete" emitted on error.
-  expect_false("fordead:complete" %in% phases)
+  err_event <- Filter(
+    function(e) identical(e$current, "fordead:error"),
+    events
+  )
+  expect_length(err_event, 1L)
+  expect_identical(err_event[[1L]]$phase_name, "predict")
+  expect_true(nzchar(err_event[[1L]]$error_message))
 })
 
 
 test_that("a buggy progress_callback does not abort the pipeline", {
-  skip_if_no_reticulate()
-  aoi <- make_aoi()
-  rec <- new.env(parent = emptyenv()); rec$calls <- character(0); rec$args <- list()
-  fake_fd <- make_fake_fordead_module(rec)
+  skip_if_no_reticulate(); skip_if_no_sf()
 
-  testthat::local_mocked_bindings(
-    .ensure_fordead_python       = function(env_name = "test", verbose = TRUE, ...) fake_fd,
-    .postprocess_fordead_rasters = function(rasters, min_pixels = 5L,
-                                            connectivity = 8L) {
-      sf::st_sf(
-        confidence_class = character(0),
-        stress_index     = numeric(0),
-        trigger_date     = as.Date(character(0)),
-        n_pixels         = integer(0),
-        area_m2          = numeric(0),
-        cluster_id       = integer(0),
-        geometry         = sf::st_sfc(crs = 2154)
+  buggy_cb <- function(payload) {
+    if (identical(payload$current, "fordead:phase") &&
+        identical(payload$phase_name, "fit")) {
+      stop("intentional callback failure")
+    }
+  }
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- expect_silent(
+    suppressMessages(
+      run_fordead_dieback(
+        aoi              = make_aoi(),
+        scenes_df        = make_scenes_df(),
+        cache_dir        = make_cache_dir(),
+        dates_training   = c("2016-01-01", "2017-12-31"),
+        dates_monitoring = c("2018-01-01", "2018-12-31"),
+        verbose          = FALSE,
+        progress_callback = buggy_cb
       )
-    },
-    .package = "nemeton"
+    )
   )
-  testthat::local_mocked_bindings(
-    py_capture_output = function(expr) { force(expr); "" },
-    py_get_attr       = function(x, name, silent = TRUE) x[[name]],
-    py_to_r           = function(x) x,
-    .package = "reticulate"
-  )
-
-  res <- run_fordead_dieback(
-    aoi, verbose = FALSE,
-    progress_callback = function(p) stop("boom from UI")
-  )
-  expect_equal(res$status, "success")
+  expect_identical(out$status, "success")
 })
 
 
+# ---- empty-result shape ----------------------------------------------
+
 test_that(".empty_fordead_result has the documented shape", {
-  out <- nemeton:::.empty_fordead_result(
-    output_dir = "/tmp/x", python_env = "env", status = "error",
-    message = "boom"
+  res <- nemeton:::.empty_fordead_result(
+    output_dir = "/tmp/x", python_env = "env",
+    status = "error", duration_sec = 1.5, message = "oops"
   )
-  expect_equal(out$status, "error")
-  expect_equal(out$message, "boom")
-  expect_equal(out$n_alerts_inserted, 0L)
-  expect_named(out$rasters, c("state", "first_dieback_date", "stress_index"))
+  expect_named(
+    res,
+    c("status", "message", "output_dir", "rasters", "alerts_sf",
+      "n_alerts_inserted", "duration_sec", "python_env", "fordead_version"),
+    ignore.order = TRUE
+  )
+  expect_identical(res$status, "error")
+  expect_identical(res$message, "oops")
 })
