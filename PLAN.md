@@ -144,6 +144,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 
 ## Journal
 
+- **2026-05-16** — Inversion sémantique checkbox « Cache COG » côté `nemetonshiny` (Suivi sanitaire). Décoché (défaut) = `skip_cached = FALSE` → vérif disque + delta only ; coché = wipe puis re-télécharge. Préalable nécessaire pour que FORDEAD trouve un cache COG peuplé au premier diagnostic. Tire parti du support cache de `nemeton@v0.21.4` + writeRaster fix `nemeton@v0.21.12` — aucune modif cœur requise. Livré dans `nemetonshiny@d518e2b` (release **v0.30.1**). Test de régression ajouté côté app pour verrouiller l'invariant.
+
 - **2026-05-16** — Carte pixel (Suivi sanitaire, spec 010) : (a) ajout couche UGF (`indicators_sf` du projet) en contour orange, troisième case dans le contrôle Leaflet à côté de NDVI/NBR et Placettes ; (b) refonte auto-zoom — l'`observeEvent(project$id)` de v0.29.1 ratait quand `indicators_sf` arrivait après `id` (chargement projet async), maintenant `observe()` + `reactiveVal .last_fitted_id` qui `fitBounds` dès que les deux conditions sont présentes. Hypothèse probable du bug Satellite-invisible : la carte restait sur la vue monde entier, raster + marqueurs à 1 pixel. Livré dans `nemetonshiny@31d6e7c` (release **v0.30.0**). Aucune modif cœur.
 
 - **2026-05-16** — Fix Carte pixel (Suivi sanitaire, spec 010) : auto-zoom sur l'emprise des UGF au chargement projet. Depuis le passage en `renderLeaflet` statique en v0.28.1, la carte restait sur la vue Leaflet par défaut. `observeEvent` sur `project$id` + `fitBounds()` via `leafletProxy()`. Pan/zoom manuel préservé. Livré dans `nemetonshiny@2f68831` (release **v0.29.1**). Aucune modif cœur.
