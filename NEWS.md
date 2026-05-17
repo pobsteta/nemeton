@@ -1,3 +1,66 @@
+# nemeton 0.25.0 (2026-05-17)
+
+### Added — FAST alerts + FORDEAD mask exporters
+
+Two new public functions powering the 4-subtabs Suivi sanitaire UI in
+`nemetonshiny@v0.34.0` (Alertes FAST / Carte FAST / Alertes FORDEAD /
+Carte FORDEAD).
+
+* **`list_fast_alerts_for_zone(con, zone_id, threshold_ndvi = 0.40,
+  threshold_nbr = 0.30, window_days = 30L, date_from, date_to)`** —
+  aggregates `obs_pixel` per plot over the last `window_days` of the
+  search window, classifies each plot by the worse of its NDVI / NBR
+  ratios against threshold :
+    - `critical` if either ratio `< 0.5`,
+    - `warning` if either ratio in `[0.5, 1.0)`,
+    - `info` if either ratio in `[1.0, 1.1)` (warning corridor),
+    - safe plots (both ratios `>= 1.1`) are not returned.
+  Returns an `sf` POINT layer in **EPSG:4326** with `plot_id`,
+  `last_obs_date`, `ndvi_value`, `nbr_value`, `ndvi_drop`, `nbr_drop`,
+  ordered factor `severity`. Empty-but-schema-stable `sf` when no
+  plot is in the alert zone (caller-safe for `rbind` / `bind_rows`).
+
+* **`read_fordead_dieback_mask(con, zone_id, run_id = NULL,
+  cache_dir = NULL)`** — reads the categorical 0-4 dieback mask
+  (`0 = sain`, `1 = faible`, `2 = moyenne`, `3 = forte`,
+  `4 = sol nu`, `NA = hors masque forestier`) written by
+  [`run_fordead_dieback()`] to
+  `<cache_dir>/zone_<zone_id>/dieback_mask_<run_id>.tif`. Without
+  `run_id`, the latest mask (filename order on the YYYYMMDDTHHMMSS
+  suffix) is returned. Returns a `terra::SpatRaster`, or `NULL`
+  when no mask is available.
+
+### Internal — spec deviations documented in roxygen
+
+* `list_fast_alerts_for_zone()` — severity is bucketed via *ratio*
+  (`value / threshold`) rather than absolute *drop* margin, so a same
+  `<= 50 %` shape works for both NDVI and NBR thresholds without
+  tuning. Documented in roxygen `@section Severity rules`.
+* `read_fordead_dieback_mask()` — the prompt-spec signature
+  `(con, zone_id, run_id)` cannot derive the project root from the
+  connection in this release (no `fordead_run` tracking table yet).
+  We widen the signature with a required `cache_dir` argument and
+  reserve `con` for forward compatibility. Documented in roxygen
+  `@section con parameter`.
+* Persist hook in `run_fordead_dieback()` — out of scope for v0.25.0.
+  The reader returns `NULL` until the postprocess phase is extended
+  to write the classified mask to the conventional path. App should
+  treat NULL as "no FORDEAD run yet" in the Carte FORDEAD subtab.
+
+### Tests
+
+* `test-fast_alerts.R` — 26 PASS. Severity classifier exercised via
+  mocked `DBI::dbGetQuery` returning synthetic rows. Covers : 4-plot
+  fixture with one of each severity (info / warning / critical /
+  safe), worse-of-two-bands rule, drop column logic, NA observation
+  exclusion, empty-result shape, input validation.
+* `test-fordead_mask.R` — 15 PASS. Filesystem fixtures (3 × 3
+  categorical GeoTIFFs via `terra::writeRaster`) under
+  `<tmp>/zone_<id>/dieback_mask_<ts>.tif`. Covers : NULL on missing
+  cache_dir / empty dir, value preservation 0..4 + NA, latest-run
+  pick, explicit run_id, NULL on unknown run_id.
+
+
 # nemeton 0.24.4 (2026-05-17)
 
 ### Fixed — pystac assets now carry `proj:*` / `raster:*` metadata
