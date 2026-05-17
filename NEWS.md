@@ -1,3 +1,40 @@
+# nemeton 0.24.4 (2026-05-17)
+
+### Fixed — pystac assets now carry `proj:*` / `raster:*` metadata
+
+Bug surfaced once v0.24.3 fixed the simplestac import: the pipeline
+got further but every Item logged "has no assets left after
+filtering" then `ValueError: Zero asset IDs requested`.
+
+Cause: `simplestac.utils.filter_assets()` drops every asset whose
+`extra_fields` doesn't contain at least one key matching
+`^proj:|^raster:`. Our hand-rolled `pystac.Asset(href, roles,
+media_type)` calls produced assets with empty `extra_fields` → 100 %
+of assets filtered out → fordead nothing to compute on.
+
+Fix in `R/fordead_stac.R::.build_stac_collection_for_aoi()` :
+delegate asset construction to
+`simplestac.local.stac_asset_info_from_raster(band_file)`, then
+build the asset via `pystac.Asset.from_dict(info)`. The helper
+reads each COG's header (no pixel read) and returns a dict with
+`href`, `type`, `roles`, `proj:epsg`, `proj:bbox`, `proj:shape`,
+`proj:transform`, `gsd`, `raster:bands` — exactly the metadata
+fordead 2.x needs.
+
+Cost: one COG header read per band per scene (cheap — terra and
+rasterio both stream the GeoTIFF directory only). For 100 scenes ×
+6 bands = 600 header reads, < 5 s on a warm cache.
+
+### Tests
+
+Mock `simplestac.local` module added (`stac_asset_info_from_raster`
+returns a minimal dict with `proj:epsg` / `proj:bbox` / `proj:shape`
+/ `proj:transform` / `raster:bands` for testability). Fake
+`pystac.Asset` widened from a constructor to a list exposing
+`from_dict()`. Three test switch blocks updated to wire the new
+module. 72 PASS / 2 pre-existing failures unchanged.
+
+
 # nemeton 0.24.3 (2026-05-17)
 
 ### Fixed — `simplestac.ItemCollection` import via the right submodule

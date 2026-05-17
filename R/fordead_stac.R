@@ -245,6 +245,12 @@ NULL
   # submodule directly avoids `simplestac$ItemCollection` AttributeError
   # at runtime (observed against v1.2.5 in 2026-05-17).
   simplestac <- reticulate::import("simplestac.utils", convert = FALSE)
+  # v0.24.4 — simplestac's filter_assets() drops assets whose
+  # extra_fields don't match `^proj:|^raster:`. We delegate the
+  # asset construction to `simplestac.local.stac_asset_info_from_raster()`
+  # which reads the COG header and returns a dict with the full
+  # proj:* / raster:* metadata that fordead 2.x expects.
+  simplestac_local <- reticulate::import("simplestac.local", convert = FALSE)
   pydt       <- reticulate::import("datetime",   convert = FALSE)
 
   items   <- list()
@@ -278,11 +284,10 @@ NULL
     for (b_idx in seq_along(bands_required)) {
       b    <- bands_required[b_idx]
       href <- band_paths[b_idx]
-      asset <- pystac$Asset(
-        href       = href,
-        roles      = list("data"),
-        media_type = "image/tiff; application=geotiff; profile=cloud-optimized"
-      )
+      # Reads the COG header (no pixel read) and returns a dict with
+      # proj:* + raster:* fields needed by simplestac's filter_assets.
+      asset_info <- simplestac_local$stac_asset_info_from_raster(href)
+      asset <- pystac$Asset$from_dict(asset_info)
       item$add_asset(b, asset)
     }
     items[[length(items) + 1L]] <- item

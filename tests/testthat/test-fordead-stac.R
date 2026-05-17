@@ -266,10 +266,19 @@ test_that(".build_fordead_config validates inputs", {
   state <- new.env(parent = emptyenv())
   state$items <- list()
 
-  Asset <- function(href, roles, media_type, ...) {
-    list(`__class__` = "Asset", href = href, roles = roles,
-         media_type = media_type)
-  }
+  # v0.24.4 — Asset is now built via pystac.Asset.from_dict(stac_info)
+  # where stac_info comes from simplestac.local.stac_asset_info_from_raster().
+  # We expose `from_dict` on the fake Asset so the production code path
+  # exercised here matches what reticulate sees against a real pystac.
+  Asset <- list(
+    from_dict = function(info) {
+      list(`__class__` = "Asset",
+           href       = info$href,
+           roles      = info$roles,
+           media_type = info$type,
+           extra      = info)
+    }
+  )
 
   Item <- function(id, geometry, bbox, datetime, properties) {
     self <- new.env(parent = emptyenv())
@@ -303,6 +312,27 @@ test_that(".build_fordead_config validates inputs", {
       }
     ),
     state = state
+  )
+}
+
+# Minimal fake for simplestac.local.stac_asset_info_from_raster.
+# Returns a dict shape with the proj:* / raster:* keys that fordead's
+# filter_assets requires. Values are placeholder integers since the
+# tests assert on R-side wiring, not on Python field correctness.
+.make_fake_simplestac_local_module <- function() {
+  list(
+    stac_asset_info_from_raster = function(band_file, band_fmt = NULL) {
+      list(
+        href              = as.character(band_file),
+        type              = "image/tiff; application=geotiff",
+        roles             = list("data"),
+        `proj:epsg`       = 32631L,
+        `proj:bbox`       = c(0, 0, 100, 100),
+        `proj:shape`      = c(10L, 10L),
+        `proj:transform`  = c(10, 0, 0, 0, -10, 100),
+        `raster:bands`    = list(list(nodata = 0))
+      )
+    }
   )
 }
 
@@ -346,6 +376,7 @@ test_that(".build_stac_collection_for_aoi builds one item per complete scene", {
 
   ps <- .make_fake_pystac_module()
   ss <- .make_fake_simplestac_module()
+  sl <- .make_fake_simplestac_local_module()
   dt <- .make_fake_datetime_module()
 
   testthat::local_mocked_bindings(
@@ -353,6 +384,7 @@ test_that(".build_stac_collection_for_aoi builds one item per complete scene", {
       switch(module,
         pystac     = ps$module,
         simplestac.utils = ss$module,
+        simplestac.local = sl,
         datetime   = dt,
         stop("unexpected: ", module)
       )
@@ -408,12 +440,13 @@ test_that(".build_stac_collection_for_aoi skips scenes with missing bands and wa
 
   ps <- .make_fake_pystac_module()
   ss <- .make_fake_simplestac_module()
+  sl <- .make_fake_simplestac_local_module()
   dt <- .make_fake_datetime_module()
 
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
       switch(module, pystac = ps$module, simplestac.utils = ss$module,
-             datetime = dt, stop("?"))
+             simplestac.local = sl, datetime = dt, stop("?"))
     },
     r_to_py = function(x) x, dict = function(...) list(),
     .package = "reticulate"
@@ -445,11 +478,12 @@ test_that(".build_stac_collection_for_aoi errors when no scene is complete", {
 
   ps <- .make_fake_pystac_module()
   ss <- .make_fake_simplestac_module()
+  sl <- .make_fake_simplestac_local_module()
   dt <- .make_fake_datetime_module()
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
       switch(module, pystac = ps$module, simplestac.utils = ss$module,
-             datetime = dt, stop("?"))
+             simplestac.local = sl, datetime = dt, stop("?"))
     },
     r_to_py = function(x) x, dict = function(...) list(),
     .package = "reticulate"
@@ -510,11 +544,12 @@ test_that(".build_stac_collection_for_aoi de-duplicates and orders by date", {
 
   ps <- .make_fake_pystac_module()
   ss <- .make_fake_simplestac_module()
+  sl <- .make_fake_simplestac_local_module()
   dt <- .make_fake_datetime_module()
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
       switch(module, pystac = ps$module, simplestac.utils = ss$module,
-             datetime = dt, stop("?"))
+             simplestac.local = sl, datetime = dt, stop("?"))
     },
     r_to_py = function(x) x, dict = function(...) list(),
     .package = "reticulate"
