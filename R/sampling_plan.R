@@ -181,10 +181,32 @@ NULL
     frame$strat_height <- "H0"
   }
 
-  # Type (BD Foret)
+  # Type (BD Foret).
+  # v0.25.2 — fix reported from nemetonshiny@v0.35.0 (after the v0.25.1
+  # NA-stratification fix landed): `sf::st_join(frame, forest_mask,
+  # left = TRUE)` returns ONE ROW PER (left, right) match. BD Forêt v2
+  # polygons can overlap (mixed-class areas), so a candidate that falls
+  # on 2 polygons produces 2 rows in the join — the result has more
+  # rows than `frame`, and `frame$strat_type <- tfv_too_long` crashes
+  # with the "replacement has X rows, data has Y rows" system error.
+  #
+  # Fix: use `st_intersects()` + first-match. The result is a list of
+  # length nrow(frame), and we pick the first matching polygon's tfv
+  # value per candidate. Picking the first match (arbitrary order from
+  # the spatial index) is a deliberate simplification — multi-class
+  # overlaps are documented as "join to BD Forêt typology by spatial
+  # majority is out of scope" in spec.md. Future refinement could pick
+  # the polygon with the largest overlap area, but is not necessary for
+  # the current stratification quality.
   if (!is.null(forest_mask) && "tfv" %in% names(forest_mask)) {
-    tfv <- sf::st_join(frame[, attr(frame, "sf_column")],
-                       forest_mask[, "tfv"], left = TRUE)$tfv
+    matches <- suppressMessages(
+      sf::st_intersects(frame, forest_mask)
+    )
+    tfv_vec <- forest_mask$tfv
+    tfv <- vapply(matches, function(i) {
+      if (length(i) == 0L) NA_character_
+      else as.character(tfv_vec[i[1L]])
+    }, character(1))
     frame$strat_type <- dplyr_case_simple(tfv)
   } else {
     frame$strat_type <- "AUT"

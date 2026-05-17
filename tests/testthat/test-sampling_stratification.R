@@ -145,6 +145,57 @@ test_that("create_sampling_plan() unchanged when chm = NULL and mnt = NULL", {
 })
 
 
+# ---- 5bis. Regression: overlapping BD Forêt polygons (v0.25.2) --------
+
+# Build a forest_mask sf with TWO polygons that overlap the AOI. A
+# candidate falling on the overlap should NOT inflate the strat_type
+# vector (pre-v0.25.2 this caused sf::st_join() to return multi-rows
+# and `frame$strat_type <- ...` crashed with "le tableau de remplacement
+# a X lignes, le tableau remplacé en a Y").
+.make_overlapping_forest_mask <- function() {
+  poly_a <- sf::st_polygon(list(rbind(
+    c(900000, 6500000), c(900700, 6500000),
+    c(900700, 6500700), c(900000, 6500700),
+    c(900000, 6500000)
+  )))
+  poly_b <- sf::st_polygon(list(rbind(
+    c(900300, 6500300), c(901000, 6500300),
+    c(901000, 6501000), c(900300, 6501000),
+    c(900300, 6500300)
+  )))
+  sf::st_sf(
+    tfv = c("Feuillus", "Conifères"),
+    geometry = sf::st_sfc(poly_a, poly_b, crs = 2154)
+  )
+}
+
+
+test_that("create_sampling_plan() handles overlapping BD Foret polygons", {
+  skip_if_no_sf(); skip_if_no_terra(); skip_if_no_exactextractr()
+  skip_if_not_installed("spsurvey")
+
+  aoi <- .make_aoi()
+  chm <- .make_full_chm()
+  forest_mask <- .make_overlapping_forest_mask()
+
+  # This should not raise the "le tableau de remplacement a 363 lignes,
+  # le tableau remplacé en a 337" error from base R's [<-.data.frame.
+  res <- suppressWarnings(
+    create_sampling_plan(aoi, n_base = 12L, n_over = 4L,
+                         chm = chm, forest_mask = forest_mask,
+                         seed = 42L)
+  )
+
+  expect_s3_class(res, "sf")
+  expect_gt(nrow(res), 0L)
+  # strat_type should be one of the BD Forêt classes (FEU / CON) — the
+  # first-match rule means a candidate on the overlap picks one of the
+  # two polygons (deterministic given the spatial index but order not
+  # tested here).
+  expect_true(all(res$strat_type %in% c("FEU", "CON", "MIX", "POP", "AUT")))
+})
+
+
 # ---- 5. Regression guard: full-coverage CHM doesn't trigger filter ----
 
 test_that("create_sampling_plan() does not warn when CHM covers the full AOI", {

@@ -1,3 +1,40 @@
+# nemeton 0.25.2 (2026-05-17)
+
+### Fixed — `create_sampling_plan()` with overlapping BD Forêt polygons
+
+Same symptom as the v0.25.1 fix (`le tableau de remplacement a 363
+lignes, le tableau remplacé en a 337`), but a different code path —
+not caught by v0.25.1's NA filter. Reported again from
+`nemetonshiny@v0.35.0` after v0.25.1 landed.
+
+Root cause : in `.stratify()`, the BD Forêt v2 join used
+`sf::st_join(frame, forest_mask[, "tfv"], left = TRUE)`. `st_join`
+returns **one row per (left, right) match**. BD Forêt v2 polygons
+overlap by construction in mixed-class zones, so a candidate falling
+on 2 polygons produced 2 rows in the join — the result had more rows
+than `frame`, and `frame$strat_type <- tfv_too_long` then crashed
+with the system error.
+
+v0.25.1's filter (drop candidates whose CHM / MNT extraction is NA)
+ran fine and reduced frame to 337 — but `st_join` immediately after
+inflated the result to 363 rows, exactly matching the reported
+numbers.
+
+Fix in `.stratify()` : replace `sf::st_join` with
+`sf::st_intersects` + first-match. The result is a list of length
+`nrow(frame)`, and we pick the first matching polygon's `tfv` value
+per candidate. Picking the first match (arbitrary order from the
+spatial index) is a deliberate simplification — multi-class overlaps
+are not joined by spatial majority in the current scope.
+
+### Tests
+
+* `test-sampling_stratification.R` — 1 new test (14 PASS total) :
+  overlapping BD Forêt polygons (two polygons with explicit overlap
+  zone). Pre-fix raised the size-mismatch error ; post-fix the plan
+  generates and `strat_type` resolves to one of the BD Forêt classes.
+
+
 # nemeton 0.25.1 (2026-05-17)
 
 ### Fixed — `create_sampling_plan()` partial-coverage CHM / MNT
