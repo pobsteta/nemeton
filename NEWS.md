@@ -1,3 +1,42 @@
+# nemeton 0.25.1 (2026-05-17)
+
+### Fixed — `create_sampling_plan()` partial-coverage CHM / MNT
+
+Bug reported from `nemetonshiny@v0.35.0`: `create_sampling_plan()`
+with CHM × MNT stratification on a partial-coverage raster failed
+with `le tableau de remplacement a 363 lignes, le tableau remplacé en
+a 337` when the AOI's edge candidates fell on NA pixels.
+
+Root cause : `.stratify()` produced strata strings like `"NA_FEU_BAS"`
+for candidates with `mean_height = NA` or `mean_tpi = NA`.
+`spsurvey::grts()` silently dropped those rows from the frame,
+leaving a downstream size mismatch on the `[<-` assignment that
+brought the size back to the full pool.
+
+Fix in `R/sampling_plan.R::create_sampling_plan()` : a new filter
+step runs **between** the forest-cover / slope filter and the clamp,
+**before** `.stratify()` is called. When `chm` / `mnt` is provided,
+candidates whose extracted value is NA are dropped so the pool that
+enters stratification is homogeneous on every requested dimension.
+Side effects :
+
+* When the filter removes more than 10 % of the pool, a
+  `cli::cli_warn()` reports the delta so the user knows their AOI
+  has bordering candidates outside the CHM-MNT coverage.
+* When the remaining pool is smaller than `n_base`, the function
+  aborts cleanly via `cli::cli_abort()` with a typed message and
+  remediation hints (rather than the previous silent grts failure).
+
+### Tests
+
+* `test-sampling_stratification.R` (new) — 11 PASS. Covers (1) the
+  exact bug reproducer (partial CHM, plan generated without error),
+  (2) the > 10 % reduction warning, (3) the under-`n_base` abort,
+  (4) the no-stratification regression guard (`chm = NULL` and
+  `mnt = NULL`), (5) full-coverage guard (no warning fires when CHM
+  covers the whole AOI).
+
+
 # nemeton 0.25.0 (2026-05-17)
 
 ### Added — FAST alerts + FORDEAD mask exporters

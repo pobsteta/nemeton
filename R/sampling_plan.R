@@ -490,6 +490,48 @@ create_sampling_plan <- function(zone,
     frame <- grid
   }
 
+  # --- Filter candidates against stratification rasters ----------------
+  # v0.25.1 — fix reported from nemetonshiny@v0.35.0: when CHM / MNT
+  # partially cover the AOI (edge candidates fall on NA pixels), the
+  # strata vector built downstream ended up containing "NA_*_*"
+  # entries. `spsurvey::grts()` silently dropped those rows, leaving a
+  # frame / stratum size mismatch ("replacement has X rows, data has Y
+  # rows"). We drop NA candidates here so the pool that enters
+  # `.stratify()` is homogeneous on every requested stratification
+  # dimension. Runs BEFORE the clamp so the clamp reasons about the
+  # actually-usable pool.
+  chm_ok  <- !is.null(chm)
+  mnt_ok  <- !is.null(mnt)
+  type_ok <- !is.null(forest_mask) && "tfv" %in% names(forest_mask)
+
+  if (chm_ok || mnt_ok) {
+    pool_before <- nrow(frame)
+    keep_strat  <- rep(TRUE, pool_before)
+    if (chm_ok) keep_strat <- keep_strat & !is.na(frame$mean_height)
+    if (mnt_ok) keep_strat <- keep_strat & !is.na(frame$mean_tpi)
+    frame <- frame[keep_strat, , drop = FALSE]
+    pool_after <- nrow(frame)
+    dropped <- pool_before - pool_after
+
+    if (pool_after < n_base) {
+      cli::cli_abort(c(
+        "Stratification-valid candidate pool ({pool_after}) is below {.arg n_base} ({n_base}).",
+        x = "{dropped} of {pool_before} candidates fell on NA pixels of the CHM / MNT rasters.",
+        i = "Reduce {.arg n_base} or widen the AOI / extend the CHM-MNT coverage."
+      ))
+    }
+
+    drop_ratio <- if (pool_before > 0L) dropped / pool_before else 0
+    if (drop_ratio > 0.10) {
+      pct <- round(100 * drop_ratio, 1)
+      cli::cli_warn(c(
+        "Stratification filter removed {dropped} of {pool_before} candidates ({pct} %).",
+        i = "Edge candidates fall on NA pixels of the CHM / MNT rasters.",
+        i = "Stratified pool: {pool_after} candidates."
+      ))
+    }
+  }
+
   # --- Clamp to frame capacity -----------------------------------------
   # GRTS (and any without-replacement draw) cannot return more points than
   # the candidate frame contains. If n_base + n_over exceeds the frame,
@@ -515,9 +557,6 @@ create_sampling_plan <- function(zone,
   }
 
   # --- Stratify ---------------------------------------------------------
-  chm_ok <- !is.null(chm)
-  mnt_ok <- !is.null(mnt)
-  type_ok <- !is.null(forest_mask) && "tfv" %in% names(forest_mask)
   frame <- .stratify(frame, chm_ok = chm_ok, mnt_ok = mnt_ok,
                      forest_mask = forest_mask)
 
