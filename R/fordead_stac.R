@@ -240,7 +240,11 @@ NULL
   geometry_gj <- .aoi_geojson_list(aoi)
 
   pystac     <- reticulate::import("pystac",     convert = FALSE)
-  simplestac <- reticulate::import("simplestac", convert = FALSE)
+  # simplestac 1.2.5 doesn't re-export ItemCollection at the package
+  # top level — the class lives in `simplestac.utils`. Importing the
+  # submodule directly avoids `simplestac$ItemCollection` AttributeError
+  # at runtime (observed against v1.2.5 in 2026-05-17).
+  simplestac <- reticulate::import("simplestac.utils", convert = FALSE)
   pydt       <- reticulate::import("datetime",   convert = FALSE)
 
   items   <- list()

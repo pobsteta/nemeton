@@ -1,3 +1,36 @@
+# nemeton 0.24.3 (2026-05-17)
+
+### Fixed — `simplestac.ItemCollection` import via the right submodule
+
+Bug surfaced once the v0.24.1 / v0.24.2 ingest path actually
+populated the cache successfully and the pipeline reached phase 1
+(STAC assembly):
+
+```
+FORDEAD pipeline failed: AttributeError: module 'simplestac' has
+no attribute 'ItemCollection'
+```
+
+`simplestac` 1.2.5 does not re-export `ItemCollection` at the
+package top level — the class lives in `simplestac.utils`. The
+v0.23.0 paperwork assumed a top-level export ; verified against the
+installed venv on 2026-05-17 (`dir(simplestac)` returns only
+`PackageNotFoundError` and `version`).
+
+Fix in `R/fordead_stac.R::.build_stac_collection_for_aoi()` :
+`reticulate::import("simplestac", convert = FALSE)` →
+`reticulate::import("simplestac.utils", convert = FALSE)`.
+`simplestac$ItemCollection(items)` resolves through the submodule
+unchanged after the import target swap.
+
+### Tests
+
+Mock import switch updated (`simplestac = ...` →
+`simplestac.utils = ...`) in `test-fordead-stac.R`. 72 PASS, 2 pre-
+existing failures unchanged (`charToDate` on synthetic fixtures —
+present on baseline v0.24.2).
+
+
 # nemeton 0.24.2 (2026-05-16)
 
 ### Improved — FORDEAD ingest now emits the same `s2:*` events as FAST

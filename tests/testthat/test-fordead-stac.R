@@ -352,7 +352,7 @@ test_that(".build_stac_collection_for_aoi builds one item per complete scene", {
     import = function(module, convert = FALSE) {
       switch(module,
         pystac     = ps$module,
-        simplestac = ss$module,
+        simplestac.utils = ss$module,
         datetime   = dt,
         stop("unexpected: ", module)
       )
@@ -412,7 +412,7 @@ test_that(".build_stac_collection_for_aoi skips scenes with missing bands and wa
 
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
-      switch(module, pystac = ps$module, simplestac = ss$module,
+      switch(module, pystac = ps$module, simplestac.utils = ss$module,
              datetime = dt, stop("?"))
     },
     r_to_py = function(x) x, dict = function(...) list(),
@@ -448,7 +448,7 @@ test_that(".build_stac_collection_for_aoi errors when no scene is complete", {
   dt <- .make_fake_datetime_module()
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
-      switch(module, pystac = ps$module, simplestac = ss$module,
+      switch(module, pystac = ps$module, simplestac.utils = ss$module,
              datetime = dt, stop("?"))
     },
     r_to_py = function(x) x, dict = function(...) list(),
@@ -513,7 +513,7 @@ test_that(".build_stac_collection_for_aoi de-duplicates and orders by date", {
   dt <- .make_fake_datetime_module()
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
-      switch(module, pystac = ps$module, simplestac = ss$module,
+      switch(module, pystac = ps$module, simplestac.utils = ss$module,
              datetime = dt, stop("?"))
     },
     r_to_py = function(x) x, dict = function(...) list(),
