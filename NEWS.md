@@ -1,3 +1,62 @@
+# nemeton 0.21.10 (2026-05-13)
+
+### Added — `resolve_project_dem()` / `resolve_project_chm()` discovery helpers
+
+Néméton projects accumulate digital terrain models (MNT / DEM /
+DTM) and canopy height models (MNH / CHM) from several sources —
+IGN RGE ALTI downloaded by tutorials, LiDAR HD MNT produced by
+`lidR`, `opencanopynemeton`'s `dtm.tif` at the project root,
+Open-Canopy CHM tiles under `cache/layers/chm/`. Each lands at
+its own location, and callers (`nemetonshiny`, scripts) ended up
+hard-coding paths that broke as soon as a different producer was
+used.
+
+Two new exported helpers walk a list of well-known locations in
+**priority order** (highest quality first) and return the first
+match:
+
+```r
+dem <- resolve_project_dem(project_path)   # highest-quality DEM
+chm <- resolve_project_chm(project_path)   # highest-quality CHM
+plan <- create_sampling_plan(zone, mnt = dem, chm = chm, ...)
+```
+
+Search order for DEM:
+
+1. `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)
+2. `<project>/cache/layers/dem/*.tif`        — generic DEM cache
+3. `<project>/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)
+4. `<project>/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)
+5. `<project>/cache/layers/dtm/*.tif`        — generic DTM cache
+6. `<project>/cache/layers/mnt/*.tif`        — generic MNT cache
+7. `<project>/dtm.tif`                        — `opencanopynemeton` convention
+8. `<project>/mnt.tif`                        — tutorial convention
+9. `<project>/data/dtm.tif` / `data/mnt.tif`  — alt project layouts
+
+Search order for CHM:
+
+1. `<project>/cache/layers/chm/*.tif`        — Open-Canopy
+2. `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
+3. `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
+4. `<project>/chm.tif`, `mnh.tif`, `data/chm.tif`, `data/mnh.tif`
+
+When several tiles sit in the same directory (e.g. multiple
+`BD ALTI` tiles), the returned `SpatRaster` is a virtual mosaic
+(`terra::vrt()`) — downstream `terra::extract` / `terra::crop`
+calls transparently cover the full footprint.
+
+Both helpers accept `load = FALSE` to return just the paths
+(diagnostic), `load = TRUE` (default) to return a `SpatRaster`,
+and `verbose = TRUE` to log every probed location with `cli`.
+The returned object carries the matched layer label as attribute
+`"nemeton_dem_layer"` / `"nemeton_chm_layer"`.
+
+11 new tests cover argument validation, single-file matches, the
+`cache/layers/` discovery path, priority order (LiDAR HD beats
+opencanopy DTM when both present), multi-tile VRT mosaicking,
+verbose / silent modes, and case-insensitive matching for
+`DTM.tif` vs `dtm.tif`.
+
 # nemeton 0.21.9 (2026-05-13)
 
 ### Fixed — transient DNS / network errors abort entire scenes
