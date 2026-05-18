@@ -23,9 +23,14 @@
 #'   \item `<project>/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)
 #'   \item `<project>/cache/layers/dtm/*.tif`        — generic DTM cache
 #'   \item `<project>/cache/layers/mnt/*.tif`        — generic MNT cache
+#'   \item `<project>/cache/layers/dem.tif`          — direct file (v0.25.5)
+#'   \item `<project>/cache/layers/dtm.tif`          — direct file (v0.25.5)
+#'   \item `<project>/cache/layers/mnt.tif`          — direct file (v0.25.5)
 #'   \item `<project>/dtm.tif`                        — `opencanopynemeton` convention
+#'   \item `<project>/dem.tif`                        — project root (v0.25.5)
 #'   \item `<project>/mnt.tif`                        — tutorial convention
 #'   \item `<project>/data/dtm.tif`                   — alt project layout
+#'   \item `<project>/data/dem.tif`                   — alt project layout (v0.25.5)
 #'   \item `<project>/data/mnt.tif`                   — alt project layout
 #' }
 #'
@@ -34,6 +39,8 @@
 #'   \item `<project>/cache/layers/chm/*.tif`        — Open-Canopy
 #'   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
 #'   \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
+#'   \item `<project>/cache/layers/chm.tif`          — direct file (v0.25.5)
+#'   \item `<project>/cache/layers/mnh.tif`          — direct file (v0.25.5)
 #'   \item `<project>/chm.tif`                        — single-file convention
 #'   \item `<project>/mnh.tif`                        — tutorial convention
 #'   \item `<project>/data/chm.tif`                   — alt project layout
@@ -156,15 +163,36 @@ resolve_project_dem <- function(project_path, load = TRUE, verbose = FALSE) {
          dir   = file.path(project_path, "cache", "layers", "dtm")),
     list(label = "generic MNT cache",
          dir   = file.path(project_path, "cache", "layers", "mnt")),
+    # v0.25.5 — files placed *directly* under cache/layers/ (no
+    # sub-directory). Some downloaders (opencanopynemeton's recent
+    # convention, manual pulls) drop the raster as
+    # <project>/cache/layers/{dem,dtm,mnt}.tif rather than under a
+    # named sub-directory. Probed before the project-root fallbacks
+    # because cache/ is the more discoverable convention.
+    list(label = "cache/layers/dem.tif",
+         dir   = file.path(project_path, "cache", "layers"),
+         file  = "dem.tif"),
+    list(label = "cache/layers/dtm.tif",
+         dir   = file.path(project_path, "cache", "layers"),
+         file  = "dtm.tif"),
+    list(label = "cache/layers/mnt.tif",
+         dir   = file.path(project_path, "cache", "layers"),
+         file  = "mnt.tif"),
     list(label = "opencanopy DTM",
          dir   = project_path,
          file  = "dtm.tif"),
+    list(label = "project DEM",
+         dir   = project_path,
+         file  = "dem.tif"),
     list(label = "tutorial MNT",
          dir   = project_path,
          file  = "mnt.tif"),
     list(label = "data/dtm.tif",
          dir   = file.path(project_path, "data"),
          file  = "dtm.tif"),
+    list(label = "data/dem.tif",
+         dir   = file.path(project_path, "data"),
+         file  = "dem.tif"),
     list(label = "data/mnt.tif",
          dir   = file.path(project_path, "data"),
          file  = "mnt.tif")
@@ -201,6 +229,14 @@ resolve_project_chm <- function(project_path, load = TRUE, verbose = FALSE) {
          dir   = file.path(project_path, "cache", "layers", "lidar_mnh")),
     list(label = "generic MNH cache",
          dir   = file.path(project_path, "cache", "layers", "mnh")),
+    # v0.25.5 — direct files under cache/layers/ (same rationale as
+    # the DEM version above).
+    list(label = "cache/layers/chm.tif",
+         dir   = file.path(project_path, "cache", "layers"),
+         file  = "chm.tif"),
+    list(label = "cache/layers/mnh.tif",
+         dir   = file.path(project_path, "cache", "layers"),
+         file  = "mnh.tif"),
     list(label = "single-file CHM",
          dir   = project_path,
          file  = "chm.tif"),

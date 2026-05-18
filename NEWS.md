@@ -1,3 +1,38 @@
+# nemeton 0.25.5 (2026-05-18)
+
+### Fixed — `resolve_project_dem()` / `resolve_project_chm()` missed direct files under `cache/layers/`
+
+v0.25.4 only probed `<project>/cache/layers/{lidar_mnt,dem,bd_alti,
+rge_alti,dtm,mnt}/*.tif` (i.e. inside *sub*-directories) and root-level
+files `<project>/{dtm,mnt,chm,mnh}.tif`. It did NOT probe
+`<project>/cache/layers/dem.tif` directly — a convention used by some
+downloaders that drop the raster flat in `cache/layers/` rather than
+under a named sub-directory.
+
+User report: a project with `<project>/cache/layers/dem.tif` returned
+`NULL` from `resolve_project_dem()`, and the sampling-plan tab
+re-emitted the v0.25.1 "Stratification-valid candidate pool (0)" abort.
+
+Search order extended (DEM):
+
+* `<project>/cache/layers/dem.tif` — direct file
+* `<project>/cache/layers/dtm.tif` — direct file
+* `<project>/cache/layers/mnt.tif` — direct file
+* `<project>/dem.tif`               — project root variant
+
+Search order extended (CHM):
+
+* `<project>/cache/layers/chm.tif` — direct file
+* `<project>/cache/layers/mnh.tif` — direct file
+
+The new direct-file probes sit just after the sub-directory probes and
+before the project-root fallbacks, so they take precedence over root
+`dtm.tif` / `mnt.tif` when both exist (cache/ is the more discoverable
+convention).
+
+5 new tests cover the direct-file matches and the priority between
+`cache/layers/dem.tif` and root `<project>/dtm.tif`.
+
 # nemeton 0.25.4 (2026-05-18)
 
 ### Added — `resolve_project_dem()` / `resolve_project_chm()` discovery helpers

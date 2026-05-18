@@ -54,9 +54,14 @@ When multiple tiles sit in the same directory (e.g. several
   \item \code{<project>/cache/layers/rge_alti/*.tif}   — IGN RGE ALTI (5 m)
   \item \code{<project>/cache/layers/dtm/*.tif}        — generic DTM cache
   \item \code{<project>/cache/layers/mnt/*.tif}        — generic MNT cache
+  \item \code{<project>/cache/layers/dem.tif}          — direct file (v0.25.5)
+  \item \code{<project>/cache/layers/dtm.tif}          — direct file (v0.25.5)
+  \item \code{<project>/cache/layers/mnt.tif}          — direct file (v0.25.5)
   \item \code{<project>/dtm.tif}                        — \code{opencanopynemeton} convention
+  \item \code{<project>/dem.tif}                        — project root (v0.25.5)
   \item \code{<project>/mnt.tif}                        — tutorial convention
   \item \code{<project>/data/dtm.tif}                   — alt project layout
+  \item \code{<project>/data/dem.tif}                   — alt project layout (v0.25.5)
   \item \code{<project>/data/mnt.tif}                   — alt project layout
 }
 }
@@ -67,6 +72,8 @@ When multiple tiles sit in the same directory (e.g. several
   \item \code{<project>/cache/layers/chm/*.tif}        — Open-Canopy
   \item \code{<project>/cache/layers/lidar_mnh/*.tif}  — LiDAR HD MNH
   \item \code{<project>/cache/layers/mnh/*.tif}        — generic MNH cache
+  \item \code{<project>/cache/layers/chm.tif}          — direct file (v0.25.5)
+  \item \code{<project>/cache/layers/mnh.tif}          — direct file (v0.25.5)
   \item \code{<project>/chm.tif}                        — single-file convention
   \item \code{<project>/mnh.tif}                        — tutorial convention
   \item \code{<project>/data/chm.tif}                   — alt project layout
