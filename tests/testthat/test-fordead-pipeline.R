@@ -269,6 +269,71 @@ test_that("propagates Python errors as status='error' with message", {
 })
 
 
+test_that("aborts when no scene falls in the training window (v0.25.7)", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  # Scenes only in 2025-2026, default training window is 2016-2017.
+  late_scenes <- data.frame(
+    scene_id  = c("S2A_F_20250403", "S2A_F_20260408"),
+    obs_date  = as.Date(c("2025-04-03", "2026-04-08")),
+    cloud_pct = c(5, 5),
+    source    = c("pc", "pc"),
+    stringsAsFactors = FALSE
+  )
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers(ingest_scenes = late_scenes)
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 1L,
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2026-12-31"),
+    verbose          = FALSE
+  )
+
+  expect_identical(out$status, "error")
+  expect_true(grepl("training", out$message))
+  # fordead's fit() must NOT have been called.
+  expect_length(fk$env$calls, 0L)
+})
+
+
+test_that("aborts when no scene falls in the monitoring window (v0.25.7)", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  # Scenes only in 2016, default monitoring window starts 2018.
+  early_scenes <- data.frame(
+    scene_id  = c("S2A_F_20160601", "S2A_F_20161015"),
+    obs_date  = as.Date(c("2016-06-01", "2016-10-15")),
+    cloud_pct = c(5, 5),
+    source    = c("pc", "pc"),
+    stringsAsFactors = FALSE
+  )
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers(ingest_scenes = early_scenes)
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 1L,
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2026-12-31"),
+    verbose          = FALSE
+  )
+
+  expect_identical(out$status, "error")
+  expect_true(grepl("monitoring", out$message))
+  expect_length(fk$env$calls, 0L)
+})
+
+
 test_that("aborts when ingest returns 0 scenes", {
   skip_if_no_reticulate(); skip_if_no_sf()
 

@@ -1,3 +1,50 @@
+# nemeton 0.25.7 (2026-05-18)
+
+### Fixed — pre-`fit()` gating against empty training / monitoring windows
+
+Bug surfaced once v0.25.6 unblocked CRS alignment and the user re-ran
+FORDEAD on a real cache. Phase 1 STAC assembly succeeded over 116
+scenes (2024-2026 envelope), but `fit()` crashed deep in stackstac
+with :
+
+```
+AssertionError: out_bounds=None
+```
+
+Root cause : the default `dates_training = c("2016-01-01", "2017-12-31")`
+selected **zero** scenes from a cache holding 2024+ data. fordead's
+`compute_spectral_index` ran on the empty time slice, wrote no
+CRSWIR layer files, and the subsequent `update_ds("CRSWIR")` call
+to `stackstac.stack(assets = ["CRSWIR"])` got an empty asset list →
+`out_bounds` stayed `None` → assertion failure with no actionable
+context for the caller.
+
+Fix in `R/fordead_pipeline.R::run_fordead_dieback()` : after the
+ingest phase populates `scenes_df`, count the scenes that fall in
+`[dates_training[1], dates_training[2]]` and
+`[dates_monitoring[1], dates_monitoring[2]]`. If either count is
+zero, abort with a typed message that reports the
+scene-date envelope and the requested windows so the caller can
+fix `dates_training` / `dates_monitoring`. Example output:
+
+```
+Error in `run_fordead_dieback()`:
+! No Sentinel-2 scene in the training window for zone 1.
+✖ Scenes available: 2024-02-03 → 2026-04-08 (116 scenes).
+✖ Training window: 2016-01-01 -> 2017-12-31 (0 scenes).
+✖ Monitoring window: 2018-01-01 -> 2026-05-18 (116 scenes).
+ℹ Adjust `dates_training` / `dates_monitoring` so both windows
+  contain at least 1 scene from the available envelope.
+```
+
+### Tests
+
+* `test-fordead-pipeline.R` — 2 new tests (+4 PASS, total 54) :
+  empty-training-window abort, empty-monitoring-window abort.
+  Asserts that fordead's `fit()` is never called when either window
+  is empty.
+
+
 # nemeton 0.25.6 (2026-05-18)
 
 ### Fixed — FORDEAD `fit()` crashed with `NoDataInBounds` on UTM tiles

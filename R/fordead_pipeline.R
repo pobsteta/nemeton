@@ -434,6 +434,44 @@ run_fordead_dieback <- function(con,
         i = "Check the STAC backends and {.arg max_cloud}."
       ))
     }
+
+    # v0.25.7 — pre-fit window gating. fordead's `fit()` runs over
+    # `[dates_training[1], dates_training[2]]` and `predict()` over
+    # `[dates_monitoring[1], dates_monitoring[2]]`. If the actual
+    # scenes_df has 0 dates inside either window, fordead silently
+    # writes 0 layer files in the postprocess of `compute_spectral_index`,
+    # and the subsequent `update_ds("CRSWIR")` call to_xarray(assets=
+    # ["CRSWIR"]) sees no asset and crashes deep in stackstac with
+    # `AssertionError: out_bounds=None`. Abort here with an actionable
+    # message including the scene-date envelope so the caller knows
+    # which window to use.
+    scene_dates <- as.Date(scenes_df$obs_date)
+    train_end   <- as.Date(dates_training[2L])
+    mon_start   <- as.Date(dates_monitoring[1L])
+    n_train <- sum(!is.na(scene_dates) &
+                     scene_dates >= .train_start &
+                     scene_dates <= train_end)
+    n_mon   <- sum(!is.na(scene_dates) &
+                     scene_dates >= mon_start &
+                     scene_dates <= .mon_end)
+    if (n_train == 0L || n_mon == 0L) {
+      scene_min <- format(min(scene_dates, na.rm = TRUE), "%Y-%m-%d")
+      scene_max <- format(max(scene_dates, na.rm = TRUE), "%Y-%m-%d")
+      train_win <- paste(as.character(.train_start), "->",
+                         as.character(train_end))
+      mon_win   <- paste(as.character(mon_start), "->",
+                         as.character(.mon_end))
+      what <- if (n_train == 0L && n_mon == 0L) "training and monitoring"
+              else if (n_train == 0L) "training"
+              else "monitoring"
+      cli::cli_abort(c(
+        "No Sentinel-2 scene in the {what} window for zone {.val {zone_id}}.",
+        x = "Scenes available: {.val {scene_min}} {cli::symbol$arrow_right} {.val {scene_max}} ({nrow(scenes_df)} scenes).",
+        x = "Training window: {.val {train_win}} ({n_train} scenes).",
+        x = "Monitoring window: {.val {mon_win}} ({n_mon} scenes).",
+        i = "Adjust {.arg dates_training} / {.arg dates_monitoring} so both windows contain at least 1 scene from the available envelope."
+      ))
+    }
     end_phase("ingest")
 
     # 1. STAC assembly
