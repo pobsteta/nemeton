@@ -1,3 +1,70 @@
+# nemeton 0.25.4 (2026-05-18)
+
+### Added — `resolve_project_dem()` / `resolve_project_chm()` discovery helpers
+
+Néméton projects accumulate digital terrain models (MNT / DEM /
+DTM) and canopy height models (MNH / CHM) from several producers,
+each landing under its own naming convention:
+
+* IGN RGE ALTI (tutorials): `<project>/mnt.tif`
+* LiDAR HD (`lidR` pipeline): `<project>/cache/layers/lidar_mnt/*.tif`
+* `opencanopynemeton`: `<project>/dtm.tif` at project root
+* Open-Canopy CHM: `<project>/cache/layers/chm/*.tif`
+* IGN BD ALTI / RGE ALTI: `<project>/cache/layers/{bd_alti,rge_alti}/*.tif`
+
+Callers (`nemetonshiny`, scripts) used to hard-code paths that
+broke as soon as a different producer was used. Most visibly, the
+`<project>/dtm.tif` convention from `opencanopynemeton` was
+recognised neither by `nemeton` nor by `nemetonshiny`, leading to
+the v0.25.1 "Stratification-valid candidate pool (0) is below
+`n_base`" failure even when the DTM was perfectly downloaded
+— the file was just never passed to `create_sampling_plan(mnt =)`.
+
+Two new exported helpers walk a priority-ordered list of well-known
+locations and return the first match:
+
+```r
+dem <- nemeton::resolve_project_dem(project_path)
+chm <- nemeton::resolve_project_chm(project_path)
+plan <- nemeton::create_sampling_plan(zone, mnt = dem, chm = chm, ...)
+```
+
+DEM search order (highest quality first):
+
+1. `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)
+2. `<project>/cache/layers/dem/*.tif`        — generic DEM cache
+3. `<project>/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)
+4. `<project>/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)
+5. `<project>/cache/layers/dtm/*.tif`        — generic DTM cache
+6. `<project>/cache/layers/mnt/*.tif`        — generic MNT cache
+7. `<project>/dtm.tif`                        — `opencanopynemeton`
+8. `<project>/mnt.tif`                        — tutorial convention
+9. `<project>/data/dtm.tif` / `data/mnt.tif`  — alt project layouts
+
+CHM search order:
+
+1. `<project>/cache/layers/chm/*.tif`        — Open-Canopy
+2. `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
+3. `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
+4. `<project>/chm.tif`, `mnh.tif`, `data/chm.tif`, `data/mnh.tif`
+
+When multiple tiles match in the same directory, the returned
+`SpatRaster` is a virtual mosaic (`terra::vrt()`), so downstream
+`terra::extract` / `terra::crop` calls transparently cover the
+full footprint.
+
+Both helpers accept `load = FALSE` (return paths only, useful for
+diagnostics), `load = TRUE` (default, return a `SpatRaster`) and
+`verbose = TRUE` (log every probed location). The returned object
+carries the matched layer label as attribute `"nemeton_dem_layer"`
+/ `"nemeton_chm_layer"` for traceability.
+
+11 new offline tests cover argument validation, single-file
+matches, the `cache/layers/` discovery path, priority order
+(LiDAR HD beats opencanopy DTM when both present), multi-tile
+VRT mosaicking, verbose/silent modes, and case-insensitive
+matching for `DTM.tif` vs `dtm.tif` on Windows.
+
 # nemeton 0.25.2 (2026-05-17)
 
 ### Fixed — `create_sampling_plan()` with overlapping BD Forêt polygons
