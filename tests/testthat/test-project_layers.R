@@ -167,6 +167,50 @@ test_that("resolve_project_dem warns when nothing is found and verbose = TRUE", 
 })
 
 
+# ---- direct files under cache/layers/ (v0.25.5) ----------------------
+
+test_that("resolve_project_dem finds cache/layers/dem.tif (direct file)", {
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
+  .write_tiny_tif(file.path(proj, "cache", "layers", "dem.tif"))
+  out <- resolve_project_dem(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_dem_layer"), "cache/layers/dem.tif")
+})
+
+test_that("resolve_project_dem finds cache/layers/dtm.tif (direct file)", {
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
+  .write_tiny_tif(file.path(proj, "cache", "layers", "dtm.tif"))
+  out <- resolve_project_dem(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_dem_layer"), "cache/layers/dtm.tif")
+})
+
+test_that("resolve_project_dem prefers cache/layers/dem.tif over <project>/dtm.tif", {
+  # Both present — cache/layers/dem.tif wins (it's higher in the list).
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
+  .write_tiny_tif(file.path(proj, "cache", "layers", "dem.tif"))
+  .write_tiny_tif(file.path(proj, "dtm.tif"))
+  out <- resolve_project_dem(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_dem_layer"), "cache/layers/dem.tif")
+})
+
+test_that("resolve_project_dem finds <project>/dem.tif at project root", {
+  proj <- withr::local_tempdir()
+  .write_tiny_tif(file.path(proj, "dem.tif"))
+  out <- resolve_project_dem(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_dem_layer"), "project DEM")
+})
+
+test_that("resolve_project_chm finds cache/layers/chm.tif (direct file)", {
+  proj <- withr::local_tempdir()
+  dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
+  .write_tiny_tif(file.path(proj, "cache", "layers", "chm.tif"))
+  out <- resolve_project_chm(proj, load = FALSE)
+  expect_identical(attr(out, "nemeton_chm_layer"), "cache/layers/chm.tif")
+})
+
+
 # ---- file matching is case-insensitive (Windows DTM.tif vs dtm.tif) --
 
 test_that("resolve_project_dem matches dtm.tif case-insensitively", {
