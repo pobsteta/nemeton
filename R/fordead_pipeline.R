@@ -444,9 +444,8 @@ run_fordead_dieback <- function(con,
       cache_dir      = cache_dir,
       bands_required = FORDEAD_BANDS
     )
-    bbox_4326 <- .aoi_bbox_4326(aoi)
-    geom_py   <- .aoi_geometry_reticulate(aoi)
-    cfg       <- .build_fordead_config(
+    geom_py <- .aoi_geometry_reticulate(aoi)  # GeoSeries(crs=4326) since v0.25.3
+    cfg     <- .build_fordead_config(
       dates_training    = dates_training,
       dates_monitoring  = dates_monitoring,
       vegetation_index  = vegetation_index,
@@ -456,12 +455,20 @@ run_fordead_dieback <- function(con,
 
     # 2. fit
     begin_phase("fit")
+    # v0.25.3 — pass `bbox = NULL` (Python None) so the FordeadProcess
+    # geometry setter doesn't pre-clip via a wrong-CRS bbox when it
+    # internally evaluates `self.crs = self.to_xarray().rio.crs`. The
+    # setter detects to_crs/total_bounds on the GeoSeries we pass and
+    # reprojects to the collection CRS (Sentinel-2 UTM EPSG:32631),
+    # then overrides self.bbox from `geometry.total_bounds` in the
+    # right CRS. Pre-v0.25.3 we passed bbox in degrees on a meter-CRS
+    # collection → rioxarray.NoDataInBounds during fit().
     # fp lives only inside this tryCatch scope; reticulate handles
     # cleanup when R unbinds the reference.
     fp <- fd$workflow$FordeadProcess(
       collection = collection,
       output_dir = output_dir,
-      bbox       = reticulate::r_to_py(as.list(bbox_4326)),
+      bbox       = NULL,
       geometry   = geom_py,
       config     = cfg
     )

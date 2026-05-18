@@ -53,14 +53,24 @@ NULL
 }
 
 
-#' Build a `shapely.geometry` from an `sf` AOI via WKT round-trip
+#' Build a `geopandas.GeoSeries` from an `sf` AOI
 #'
-#' `shapely.wkt.loads()` parses the WKT serialisation of an `sf`
-#' geometry — robust across sf, GEOS and Shapely versions. The
-#' returned object is suitable for `FordeadProcess(geometry=...)`.
+#' Returns a CRS-aware GeoSeries in EPSG:4326 wrapping a single
+#' (Multi)Polygon. fordead 2.x's `FordeadProcess.geometry` setter
+#' detects `to_crs` + `total_bounds` on the input and automatically:
+#'
+#' 1. reprojects to the collection's CRS via `value.to_crs(self.crs)`;
+#' 2. derives `self.bbox` from `value.total_bounds`.
+#'
+#' Pre-v0.25.3 this returned a raw `shapely.geometry.Polygon` (no
+#' `to_crs` / `total_bounds` attributes), so the setter could not
+#' reproject. When the collection was in EPSG:32631 (Sentinel-2 UTM
+#' tiles) but the geometry stayed in EPSG:4326, stackstac clipped to
+#' a degree-valued bbox on meter-valued data and raised
+#' `rioxarray.NoDataInBounds`.
 #'
 #' @param aoi An `sf` or `sfc` object. Reprojected to EPSG:4326.
-#' @return A Python `shapely.geometry.base.BaseGeometry`.
+#' @return A Python `geopandas.GeoSeries` with `crs = "EPSG:4326"`.
 #' @keywords internal
 .aoi_geometry_reticulate <- function(aoi) {
   if (!inherits(aoi, c("sf", "sfc"))) {
@@ -77,8 +87,15 @@ NULL
     geom <- sf::st_union(geom)
   }
   wkt_str <- sf::st_as_text(geom)
-  shapely_wkt <- reticulate::import("shapely.wkt", convert = FALSE)
-  shapely_wkt$loads(wkt_str)
+
+  shapely_wkt <- reticulate::import("shapely.wkt",  convert = FALSE)
+  geopandas   <- reticulate::import("geopandas",    convert = FALSE)
+  py_builtins <- reticulate::import_builtins(convert = FALSE)
+
+  shp <- shapely_wkt$loads(wkt_str)
+  # Build a length-1 GeoSeries so the setter recognises to_crs +
+  # total_bounds and triggers the automatic reprojection.
+  geopandas$GeoSeries(py_builtins$list(list(shp)), crs = "EPSG:4326")
 }
 
 

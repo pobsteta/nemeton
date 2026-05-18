@@ -1,3 +1,61 @@
+# nemeton 0.25.6 (2026-05-18)
+
+### Fixed — FORDEAD `fit()` crashed with `NoDataInBounds` on UTM tiles
+
+Bug surfaced once v0.25.2's sampling fix landed and the user re-ran
+FORDEAD on a real Sentinel-2 tile (T31TGM, EPSG:32631). The phase-0
+ingest populated the cache, phase-1 STAC assembly built an
+`ItemCollection` with the proper `proj:epsg = 32631` metadata, but
+phase-2 `fit()` crashed in stackstac with :
+
+```
+rioxarray.exceptions.NoDataInBounds: No data found in bounds.
+Data variable: stackstac-<hash>
+```
+
+Root cause : we passed `bbox` and `geometry` to
+`FordeadProcess(...)` in EPSG:4326 (degrees) but the Sentinel-2 tile
+cache is in EPSG:32631 (meters). FordeadProcess's `geometry` setter
+attempts `value.to_crs(self.crs)` — but only when the input has a
+`to_crs` attribute (GeoDataFrame / GeoSeries). Our previous
+implementation passed a raw `shapely.geometry.Polygon` which has no
+`to_crs`, so the setter could not reproject. The bbox stayed in
+degrees on the meter-CRS data cube, and `stackstac.clip_box()` found
+zero pixels in the (sub-degree) range.
+
+Fix in two parts :
+
+* `R/fordead_stac.R::.aoi_geometry_reticulate()` now returns a
+  `geopandas.GeoSeries(crs = "EPSG:4326")` instead of a raw shapely
+  Polygon. The setter's `to_crs` + `total_bounds` path now triggers
+  and reprojects the geometry to the collection CRS, while
+  overriding `self.bbox` from `geometry.total_bounds` in the right
+  CRS.
+* `R/fordead_pipeline.R::run_fordead_dieback()` no longer passes a
+  `bbox` argument to `FordeadProcess(...)` (pass `bbox = NULL`).
+  Previously the constructor stored the degree-valued bbox at line
+  95 of fordead's `workflow.py`, and the very next `geometry`
+  setter triggered `self.crs` which calls `to_xarray(bbox=...,
+  geometry=None)` — using the wrong-CRS bbox during an internal
+  evaluation, which could also raise `NoDataInBounds` before our
+  geometry override could take effect. With `bbox = None` the
+  collection is assembled un-clipped, `self.crs` resolves to the
+  collection's CRS, and the geometry setter finishes the job
+  cleanly.
+
+### Tests
+
+* `test-fordead-stac.R` — `.aoi_geometry_reticulate` test updated
+  to assert the returned object is a `geopandas.GeoSeries` with
+  `crs = "EPSG:4326"`. Mocks `geopandas$GeoSeries` and
+  `reticulate::import_builtins()` alongside `shapely.wkt`. 73 PASS
+  (baseline + new assertions ; 2 pre-existing failures on charToDate
+  fixtures unchanged).
+* `test-fordead-pipeline.R` (48 PASS) unchanged — those tests mock
+  `.aoi_geometry_reticulate` at the package level, so the internal
+  implementation swap is transparent.
+
+
 # nemeton 0.25.5 (2026-05-18)
 
 ### Fixed — `resolve_project_dem()` / `resolve_project_chm()` missed direct files under `cache/layers/`
@@ -99,7 +157,6 @@ matches, the `cache/layers/` discovery path, priority order
 (LiDAR HD beats opencanopy DTM when both present), multi-tile
 VRT mosaicking, verbose/silent modes, and case-insensitive
 matching for `DTM.tif` vs `dtm.tif` on Windows.
-
 # nemeton 0.25.2 (2026-05-17)
 
 ### Fixed — `create_sampling_plan()` with overlapping BD Forêt polygons

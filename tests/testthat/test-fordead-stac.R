@@ -60,22 +60,34 @@ test_that(".aoi_bbox_4326 accepts an sfc (not just sf)", {
 
 # ----- .aoi_geometry_reticulate ---------------------------------------
 
-test_that(".aoi_geometry_reticulate round-trips through shapely.wkt", {
+test_that(".aoi_geometry_reticulate wraps shapely in a geopandas GeoSeries", {
   skip_if_no_sf()
   skip_if_no_reticulate()
 
   captured_wkt <- NA_character_
+  captured_crs <- NA_character_
   fake_shapely <- list(
     loads = function(wkt_str) {
       captured_wkt <<- wkt_str
       list(`__class__` = "shapely.geometry.Polygon")
     }
   )
+  fake_geopandas <- list(
+    GeoSeries = function(geoms, crs = NULL, ...) {
+      captured_crs <<- crs
+      list(`__class__` = "geopandas.GeoSeries",
+           geoms = geoms,
+           crs   = crs)
+    }
+  )
+  fake_builtins <- list(list = function(x) x)
   testthat::local_mocked_bindings(
     import = function(module, convert = FALSE) {
       if (identical(module, "shapely.wkt")) return(fake_shapely)
+      if (identical(module, "geopandas"))   return(fake_geopandas)
       stop("unexpected import: ", module)
     },
+    import_builtins = function(convert = FALSE) fake_builtins,
     .package = "reticulate"
   )
 
@@ -83,7 +95,8 @@ test_that(".aoi_geometry_reticulate round-trips through shapely.wkt", {
   result <- nemeton:::.aoi_geometry_reticulate(aoi)
 
   expect_true(grepl("^POLYGON", captured_wkt))
-  expect_identical(result$`__class__`, "shapely.geometry.Polygon")
+  expect_identical(captured_crs, "EPSG:4326")
+  expect_identical(result$`__class__`, "geopandas.GeoSeries")
 })
 
 
