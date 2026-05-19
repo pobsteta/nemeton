@@ -1,3 +1,46 @@
+# nemeton 0.26.0 (2026-05-19)
+
+### New — BD Forêt V2 fallback in `check_fordead_validity()`
+
+Guard-rail G3 (spec 008, ADR-013) gains an automatic species
+resolution path. `check_fordead_validity()` now accepts two new
+arguments:
+
+- `bdforet`: an `sf` of BD Forêt V2 polygons (formation végétale
+  layer, IGN).
+- `layers`: a `nemeton_layers` object from which a `"bdforet"`
+  vector layer is resolved automatically via the existing
+  `resolve_vector_layer()` helper.
+
+When `units` carries no recognisable species column
+(`essence_dominante`, `essence`, `species_label`, `species`,
+`essence_principale`) AND a BD Forêt source is provided, the
+function derives the dominant essence per unit via the existing
+`enrich_parcels_bdforet()` helper (area-weighted intersection) and
+runs the species check normally. An informational `cli_alert_info`
+flags the fallback in the console.
+
+Order of precedence:
+
+1. Species column already on `units` → used directly (unchanged).
+2. Else `bdforet` argument → enrich.
+3. Else `layers$vectors$bdforet` → resolve, then enrich.
+4. Else → warning with hint to pass `bdforet =` or `layers =`,
+   species check skipped (`species_valid = NA`), same final
+   behaviour as before.
+
+The previous warning text ("No species column found on `units`…")
+is preserved when no fallback path succeeds, but now includes a
+hint line pointing to the new arguments.
+
+Backward compatibility: full. Callers that do not pass `bdforet`
+or `layers` get the v0.25.9 behaviour.
+
+Tests: 4 new scenarios in `test-fordead-validity.R` (direct
+`bdforet`, resolution via `layers`, empty/no-resolution warning,
+ignored when units already carries species). 63 PASS total on
+this file.
+
 # nemeton 0.25.9 (2026-05-19)
 
 ### Changed — calibrated rolling defaults for `run_fordead_dieback()`

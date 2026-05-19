@@ -128,7 +128,22 @@ load_fordead_validity_zones <- function() {
 #' @param units Optional `sf` of forest management units. Must carry
 #'   a species label column (one of `essence_dominante`, `essence`,
 #'   `species_label`, `species`, `essence_principale`). When `NULL`,
-#'   the species check is skipped (`species_valid = NA`).
+#'   the species check is skipped (`species_valid = NA`). When `units`
+#'   has no species column, the function falls back to deriving it
+#'   from BD Forêt V2 if either `bdforet` or `layers` is provided
+#'   (see below).
+#' @param bdforet Optional `sf` of BD Forêt V2 polygons (formation
+#'   végétale layer, IGN). Used as a species fallback when `units`
+#'   carries no recognisable species column. Each unit's dominant
+#'   essence is derived by area-weighted intersection via
+#'   [enrich_parcels_bdforet()]. Ignored when `units` already
+#'   carries a species column.
+#' @param layers Optional `nemeton_layers` object. When `bdforet`
+#'   is `NULL`, the function attempts to resolve a `"bdforet"`
+#'   vector layer from `layers` (`resolve_vector_layer(layers,
+#'   "bdforet")`) and uses it as the fallback species source.
+#'   Convenient when the caller already holds a project-wide
+#'   layer registry.
 #' @param threshold_geo Minimum fraction of `aoi` area that must
 #'   fall inside the validity zones. Default `0.5`.
 #' @param threshold_species Minimum fraction of `units` area that
@@ -152,6 +167,8 @@ load_fordead_validity_zones <- function() {
 #' @export
 check_fordead_validity <- function(aoi,
                                    units             = NULL,
+                                   bdforet           = NULL,
+                                   layers            = NULL,
                                    threshold_geo     = 0.5,
                                    threshold_species = 0.7,
                                    min_resineux      = 0.3) {
@@ -185,10 +202,39 @@ check_fordead_validity <- function(aoi,
 
   if (!is.null(units) && nrow(units) > 0L) {
     col <- .pick_species_column(units)
+
+    # Fallback : when units carries no species column, try to derive
+    # it from BD Forêt V2 (direct sf or resolved from layers).
+    if (is.na(col)) {
+      bdforet_fb <- bdforet
+      if (is.null(bdforet_fb) && !is.null(layers)) {
+        bdforet_fb <- tryCatch(
+          resolve_vector_layer(layers, "bdforet"),
+          error = function(e) NULL
+        )
+      }
+      if (!is.null(bdforet_fb) && inherits(bdforet_fb, "sf") &&
+          nrow(bdforet_fb) > 0L) {
+        enriched <- tryCatch(
+          enrich_parcels_bdforet(units, bdforet_fb),
+          error = function(e) NULL
+        )
+        if (!is.null(enriched) && "species" %in% names(enriched) &&
+            any(!is.na(enriched$species))) {
+          units$species <- enriched$species
+          col <- "species"
+          cli::cli_alert_info(
+            "Species column derived from BD Forêt V2 (no column on {.arg units})."
+          )
+        }
+      }
+    }
+
     if (is.na(col)) {
       cli::cli_warn(c(
         "No species column found on {.arg units}.",
         i = "Expected one of: essence_dominante, essence, species_label, species, essence_principale.",
+        i = "Pass {.arg bdforet} (sf of BD Forêt V2 polygons) or {.arg layers} to enable the BD Forêt fallback.",
         i = "Skipping species check."
       ))
     } else {

@@ -7,6 +7,8 @@
 check_fordead_validity(
   aoi,
   units = NULL,
+  bdforet = NULL,
+  layers = NULL,
   threshold_geo = 0.5,
   threshold_species = 0.7,
   min_resineux = 0.3
@@ -18,7 +20,24 @@ check_fordead_validity(
 \item{units}{Optional `sf` of forest management units. Must carry
 a species label column (one of `essence_dominante`, `essence`,
 `species_label`, `species`, `essence_principale`). When `NULL`,
-the species check is skipped (`species_valid = NA`).}
+the species check is skipped (`species_valid = NA`). When `units`
+has no species column, the function falls back to deriving it
+from BD Forêt V2 if either `bdforet` or `layers` is provided
+(see below).}
+
+\item{bdforet}{Optional `sf` of BD Forêt V2 polygons (formation
+végétale layer, IGN). Used as a species fallback when `units`
+carries no recognisable species column. Each unit's dominant
+essence is derived by area-weighted intersection via
+[enrich_parcels_bdforet()]. Ignored when `units` already
+carries a species column.}
+
+\item{layers}{Optional `nemeton_layers` object. When `bdforet`
+is `NULL`, the function attempts to resolve a `"bdforet"`
+vector layer from `layers` (`resolve_vector_layer(layers,
+"bdforet")`) and uses it as the fallback species source.
+Convenient when the caller already holds a project-wide
+layer registry.}
 
 \item{threshold_geo}{Minimum fraction of `aoi` area that must
 fall inside the validity zones. Default `0.5`.}

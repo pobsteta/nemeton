@@ -171,6 +171,97 @@ test_that("alternative species columns are picked up", {
   expect_true(res$species_valid)
 })
 
+test_that("BD Forêt fallback: derives species from `bdforet` when units lacks a column", {
+  aoi <- make_aoi(PT_VOSGES[1], PT_VOSGES[2], r = 8000)
+  # units without any species column
+  pt  <- sf::st_sfc(sf::st_point(PT_VOSGES), crs = 2154)
+  u   <- sf::st_sf(id = 1L, geometry = sf::st_buffer(pt, 800))
+  # BD Forêt-like polygons covering the unit with EPC dominance
+  bdf_pts <- sf::st_sfc(
+    sf::st_point(c(PT_VOSGES[1],       PT_VOSGES[2])),
+    sf::st_point(c(PT_VOSGES[1] + 300, PT_VOSGES[2])),
+    sf::st_point(c(PT_VOSGES[1] - 400, PT_VOSGES[2] + 200)),
+    crs = 2154
+  )
+  bdf <- sf::st_sf(
+    essence = c("EPC", "EPC", "Quercus"),
+    geometry = sf::st_buffer(bdf_pts, 200)
+  )
+
+  expect_message(
+    res <- check_fordead_validity(aoi, u, bdforet = bdf),
+    "BD For"
+  )
+  expect_true(res$geo_valid)
+  # EPC dominates 2/3 of overlapping fragments → species_valid = TRUE
+  # (the actual % depends on area-weighting; the key is it ran)
+  expect_false(is.na(res$species_valid))
+})
+
+test_that("BD Forêt fallback: layers= resolves bdforet via resolve_vector_layer", {
+  aoi <- make_aoi(PT_VOSGES[1], PT_VOSGES[2], r = 8000)
+  pt  <- sf::st_sfc(sf::st_point(PT_VOSGES), crs = 2154)
+  u   <- sf::st_sf(id = 1L, geometry = sf::st_buffer(pt, 800))
+  bdf_pts <- sf::st_sfc(
+    sf::st_point(c(PT_VOSGES[1], PT_VOSGES[2])),
+    crs = 2154
+  )
+  bdf <- sf::st_sf(
+    essence = "EPC",
+    geometry = sf::st_buffer(bdf_pts, 500)
+  )
+  layers <- structure(
+    list(vectors = list(bdforet = bdf)),
+    class = "nemeton_layers"
+  )
+
+  expect_message(
+    res <- check_fordead_validity(aoi, u, layers = layers),
+    "BD For"
+  )
+  expect_false(is.na(res$species_valid))
+})
+
+test_that("BD Forêt fallback: warning still emitted when neither path resolves", {
+  aoi <- make_aoi(PT_VOSGES[1], PT_VOSGES[2], r = 8000)
+  pt  <- sf::st_sfc(sf::st_point(PT_VOSGES), crs = 2154)
+  u   <- sf::st_sf(id = 1L, geometry = sf::st_buffer(pt, 200))
+
+  # layers is not a nemeton_layers → resolve returns NULL → warning path
+  expect_warning(
+    res <- check_fordead_validity(aoi, u, layers = list()),
+    "No species column"
+  )
+  expect_true(is.na(res$species_valid))
+
+  # bdforet is empty sf → enrich yields no species → warning path
+  empty_bdf <- sf::st_sf(
+    essence  = character(0),
+    geometry = sf::st_sfc(crs = 2154)
+  )
+  expect_warning(
+    res2 <- check_fordead_validity(aoi, u, bdforet = empty_bdf),
+    "No species column"
+  )
+  expect_true(is.na(res2$species_valid))
+})
+
+test_that("BD Forêt fallback: ignored when units already has a species column", {
+  aoi <- make_aoi(PT_VOSGES[1], PT_VOSGES[2], r = 8000)
+  u   <- make_units(c("EPC", "EPC"))  # has essence_dominante
+  bdf_pts <- sf::st_sfc(
+    sf::st_point(c(PT_VOSGES[1], PT_VOSGES[2])), crs = 2154
+  )
+  # A misleading bdforet (all Quercus) — must NOT be consulted
+  bdf <- sf::st_sf(essence = "Quercus", geometry = sf::st_buffer(bdf_pts, 500))
+
+  expect_no_message(
+    res <- check_fordead_validity(aoi, u, bdforet = bdf)
+  )
+  expect_true(res$species_valid)
+  expect_gt(res$species_resineux_pct, 0.95)
+})
+
 test_that("thresholds are echoed back in the result", {
   aoi <- make_aoi(PT_VOSGES[1], PT_VOSGES[2], r = 6000)
   res <- check_fordead_validity(aoi,
