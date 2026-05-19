@@ -9,7 +9,7 @@ Functions for calculating energy and climate mitigation indicators:
 - E2: Carbon emission avoidance through substitution
 }
 \seealso{
-Other indicators: 
+Other indicators:
 \code{\link{indicators-naturalness}},
 \code{\link{indicators-productive}},
 \code{\link{indicators-social}}

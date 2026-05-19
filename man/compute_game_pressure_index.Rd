@@ -77,8 +77,8 @@ high_pressure <- pressure[pressure$pressure_index > 75, ]
 }
 }
 \seealso{
-Other data-acquisition: 
-\code{\link{download_hunting_data}()},
-\code{\link{get_game_pressure_raster}()}
+Other data-acquisition:
+\code{\link[=download_hunting_data]{download_hunting_data()}},
+\code{\link[=get_game_pressure_raster]{get_game_pressure_raster()}}
 }
 \concept{data-acquisition}

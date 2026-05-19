@@ -5,12 +5,10 @@
 \title{Validate `run_fordead_dieback()` arguments}
 \usage{
 .validate_fordead_args(
-  aoi,
   dates_training,
   dates_monitoring,
   vegetation_index,
   threshold_anomaly,
-  forest_mask,
   output_dir
 )
 }

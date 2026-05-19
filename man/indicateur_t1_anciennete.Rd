@@ -78,7 +78,7 @@ result <- indicateur_t1_anciennete(units, age_field = "age")
 }
 }
 \seealso{
-Other temporal-indicators: 
-\code{\link{indicateur_t2_changement}()}
+Other temporal-indicators:
+\code{\link[=indicateur_t2_changement]{indicateur_t2_changement()}}
 }
 \concept{temporal-indicators}

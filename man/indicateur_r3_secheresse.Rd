@@ -58,9 +58,9 @@ summary(result$R3)
 }
 }
 \seealso{
-Other risk-indicators: 
-\code{\link{indicateur_r1_feu}()},
-\code{\link{indicateur_r2_tempete}()},
-\code{\link{indicateur_r4_abroutissement}()}
+Other risk-indicators:
+\code{\link[=indicateur_r1_feu]{indicateur_r1_feu()}},
+\code{\link[=indicateur_r2_tempete]{indicateur_r2_tempete()}},
+\code{\link[=indicateur_r4_abroutissement]{indicateur_r4_abroutissement()}}
 }
 \concept{risk-indicators}

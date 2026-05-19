@@ -53,8 +53,8 @@ gironde <- subset(all_data, code_dept == "33")
 }
 }
 \seealso{
-Other data-acquisition: 
-\code{\link{compute_game_pressure_index}()},
-\code{\link{get_game_pressure_raster}()}
+Other data-acquisition:
+\code{\link[=compute_game_pressure_index]{compute_game_pressure_index()}},
+\code{\link[=get_game_pressure_raster]{get_game_pressure_raster()}}
 }
 \concept{data-acquisition}

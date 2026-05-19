@@ -4,16 +4,13 @@
 \alias{db_migrate}
 \title{Apply pending SQL migrations}
 \usage{
-db_migrate(
-  con,
-  migrations_dir = system.file("db/migrations", package = "nemeton")
-)
+db_migrate(con, migrations_dir = NULL)
 }
 \arguments{
 \item{con}{A `DBIConnection` returned by [db_connect()].}
 
-\item{migrations_dir}{Character. Path to the migrations directory.
-Defaults to the bundled `inst/db/migrations/`.}
+\item{migrations_dir}{Character or `NULL`. Path to the migrations
+directory. Defaults to the bundled `inst/db/migrations/<driver>/`.}
 }
 \value{
 A character vector of versions applied during this call
@@ -26,6 +23,10 @@ files that have not yet been applied. The first run also creates
 `schema_migration` itself (handled by `0001_init.sql`).
 }
 \details{
+When `migrations_dir` is left `NULL`, the directory is picked
+automatically based on the connection's driver — `pg/` for
+Postgres, `duckdb/` for DuckDB.
+
 Migrations are executed in a single transaction per file and the
 filename (basename without extension) is recorded as the version
 identifier.

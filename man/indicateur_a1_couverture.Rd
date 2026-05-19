@@ -62,7 +62,7 @@ result <- indicateur_a1_couverture(units, land_cover = land_cover, buffer_radius
 }
 }
 \seealso{
-Other air-indicators: 
-\code{\link{indicateur_a2_qualite_air}()}
+Other air-indicators:
+\code{\link[=indicateur_a2_qualite_air]{indicateur_a2_qualite_air()}}
 }
 \concept{air-indicators}

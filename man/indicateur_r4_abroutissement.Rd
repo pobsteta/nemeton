@@ -68,9 +68,9 @@ summary(result$R4)
 }
 }
 \seealso{
-Other risk-indicators: 
-\code{\link{indicateur_r1_feu}()},
-\code{\link{indicateur_r2_tempete}()},
-\code{\link{indicateur_r3_secheresse}()}
+Other risk-indicators:
+\code{\link[=indicateur_r1_feu]{indicateur_r1_feu()}},
+\code{\link[=indicateur_r2_tempete]{indicateur_r2_tempete()}},
+\code{\link[=indicateur_r3_secheresse]{indicateur_r3_secheresse()}}
 }
 \concept{risk-indicators}

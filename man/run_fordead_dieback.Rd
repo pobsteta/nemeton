@@ -2,19 +2,20 @@
 % Please edit documentation in R/fordead_pipeline.R
 \name{run_fordead_dieback}
 \alias{run_fordead_dieback}
-\title{Run the FORDEAD dieback detection pipeline on an AOI}
+\title{Run the FORDEAD dieback detection pipeline on a monitoring zone}
 \usage{
 run_fordead_dieback(
-  aoi,
-  dates_training = c("2016-01-01", "2017-12-31"),
-  dates_monitoring = c("2018-01-01", as.character(Sys.Date())),
+  con,
+  zone_id,
+  cache_dir,
+  dates_training = c("2018-01-01", "2020-12-31"),
+  dates_monitoring = c(as.character(seq(Sys.Date(), by = "-18 months", length.out =
+    2)[2]), as.character(Sys.Date())),
   vegetation_index = "CRSWIR",
   threshold_anomaly = 0.16,
-  forest_mask = NULL,
+  max_cloud = 20,
   output_dir = tempfile("fordead_"),
   python_env = NULL,
-  con = NULL,
-  zone_id = NULL,
   min_pixels = 5L,
   connectivity = 8L,
   verbose = TRUE,
@@ -22,13 +23,32 @@ run_fordead_dieback(
 )
 }
 \arguments{
-\item{aoi}{An sf or sfc POLYGON in EPSG:2154.}
+\item{con}{A `DBIConnection`. Used to resolve the AOI (from
+`monitoring_zone.zone_wkt`) and, in the `persist` phase, to
+insert FORDEAD centroids into the `alert` table.}
 
-\item{dates_training}{Length-2 character/Date vector defining the
-training window (default `c("2016-01-01", "2017-12-31")`).}
+\item{zone_id}{Integer or character. Identifier of an existing row
+in `monitoring_zone`.}
 
-\item{dates_monitoring}{Length-2 character/Date vector defining
-the monitoring window. Defaults to `c("2018-01-01", as.character(Sys.Date()))`.}
+\item{cache_dir}{Character(1). Root of the COG cache, typically
+`<project>/cache/layers/sentinel2`. Created if absent. Shared with
+[ingest_sentinel2_timeseries()] (FAST pipeline) so already-cached
+bands are reused on repeat runs.}
+
+\item{dates_training}{Length-2 character vector defining the
+training window. Default `c("2018-01-01", "2020-12-31")` — a
+2-year calibrated baseline (ADR-013) anchored on the start of
+Sentinel-2 dense coverage, sufficient to fit the harmonic model
+without polluting the baseline with recent disturbances.}
+
+\item{dates_monitoring}{Length-2 character vector defining the
+monitoring window. The end may be `NA_character_` to mean
+"open / latest". Default is a rolling 18-month window ending
+today, i.e.
+`c(as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]), as.character(Sys.Date()))`.
+The 18-month span is long enough to capture a full vegetation
+cycle plus the early stages of a slow dieback, and short enough
+to keep the diagnostic actionable.}
 
 \item{vegetation_index}{One of `"CRSWIR"`, `"NDVI"`, `"NDWI"`.
 Default `"CRSWIR"`.}
@@ -36,22 +56,14 @@ Default `"CRSWIR"`.}
 \item{threshold_anomaly}{Numeric in `[0.05, 0.50]`. Default
 `0.16` (calibrated).}
 
-\item{forest_mask}{`NULL`, an sf object, or a path to an existing
-raster. `NULL` triggers the BD Forêt v2 cached lookup.}
+\item{max_cloud}{Numeric. Maximum scene cloud cover (%) passed to
+the phase-0 STAC search. Default 20.}
 
 \item{output_dir}{Character. Where FORDEAD writes its rasters.
 Defaults to a fresh `tempfile("fordead_")`.}
 
 \item{python_env}{Character. Virtualenv name. Defaults to
 `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.}
-
-\item{con}{Optional `DBIConnection`. When supplied together with
-`zone_id`, FORDEAD centroids are persisted into the `alert`
-table (idempotent ON CONFLICT DO NOTHING).}
-
-\item{zone_id}{Integer or `NULL`. Required to persist alerts.
-Centroids are snapped to the nearest registered plot of the
-zone (max 200 m).}
 
 \item{min_pixels}{Integer. Minimum FORDEAD patch size (in
 pixels) to be considered an alert. Default 5.}
@@ -61,33 +73,14 @@ pixels) to be considered an alert. Default 5.}
 \item{verbose}{Logical. Print progress via `cli`. Default `TRUE`.}
 
 \item{progress_callback}{Optional function called at each phase of
-the pipeline to allow callers (e.g. `nemetonshiny`) to report
-progress to the user. Receives a single named list argument with
-at least `current` (a short phase key) and, when meaningful,
-`completed` / `total` (number of phases done / scheduled) and
-`phase_name`. Phases emitted, in order:
-\describe{
-  \item{`fordead:start`}{Once at the beginning — payload includes
-    `total` (number of scheduled phases, 6 without `con`/`zone_id`,
-    7 when persistence is requested), `python_env`,
-    `fordead_version`.}
-  \item{`fordead:phase`}{Before each phase — payload includes
-    `phase_name`, `completed = i - 1L`, `total`.}
-  \item{`fordead:phase_done`}{After each successful phase —
-    payload includes `phase_name`, `completed = i`, `total`.}
-  \item{`fordead:complete`}{After the last phase — payload
-    includes `completed = total`, `total`, `n_alerts_inserted`,
-    `duration_sec`.}
-  \item{`fordead:error`}{When the pipeline aborts in a phase —
-    payload includes `phase_name`, `error_message`,
-    `duration_sec`.}
-}
-The `phase_name` values are, in order: `"vegetation_index"`,
-`"train_model"`, `"forest_mask"`, `"dieback_detection"`,
-`"export_results"`, `"postprocess"`, and (when applicable)
-`"persist"`. The callback is invoked synchronously inside the
-calling thread; exceptions raised inside it are swallowed so a
-buggy UI never aborts the pipeline. Default `NULL` (silent).}
+the pipeline. Receives a single named list with `current` (event
+key) and, when meaningful, `completed`, `total`, `phase_name`.
+Phases emitted, in order: `"ingest"`, `"stac_assembly"`, `"fit"`,
+`"predict"`, `"postprocess"`, `"persist"`. During `"ingest"` the
+`s2:*` events from [ingest_s2_raw_bands_to_cache()] also pass
+through verbatim (search / scene / band_cached / band_fetched /
+complete). Exceptions raised inside the callback are swallowed
+so a buggy UI never aborts the pipeline. Default `NULL` (silent).}
 }
 \value{
 A list with the following fields:
@@ -95,6 +88,8 @@ A list with the following fields:
     \item{status}{`"success"` or `"error"`.}
     \item{message}{Optional human-readable message.}
     \item{output_dir}{Path where FORDEAD wrote its rasters.}
+    \item{zone_id}{The zone id that was processed.}
+    \item{n_scenes}{Number of scenes considered.}
     \item{rasters}{Named list of GeoTIFF paths (`state`,
       `first_dieback_date`, `stress_index`).}
     \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
@@ -107,37 +102,64 @@ A list with the following fields:
   }
 }
 \description{
-Orchestrates the five FORDEAD steps via \pkg{reticulate}:
+Orchestrates fordead 2.x via \pkg{reticulate}. The pipeline derives
+its AOI from `monitoring_zone.zone_wkt`, ensures the Sentinel-2 COG
+cache contains every required band ([FORDEAD_BANDS]), assembles a
+STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
+`predict()` on top. Six phases :
 }
 \details{
 \enumerate{
-  \item Compute masked vegetation index (CRSWIR by default).
-  \item Train the per-pixel harmonic model.
-  \item Resolve / download the forest mask (BD Forêt v2 by
-    default; helper is a stub until E6.c.3).
-  \item Detect dieback anomalies.
-  \item Export raster results to \code{output_dir}.
+  \item **ingest** ([ingest_s2_raw_bands_to_cache()]) — partial-
+    coverage-aware download of missing raw bands into `cache_dir`.
+    Re-uses bands already cached by [ingest_sentinel2_timeseries()]
+    (FAST pipeline) so a zone with FAST already run skips the
+    three shared bands (B04, B12) and only fetches the four FORDEAD-
+    specific ones (B02, B05, B8A, B11). Propagates `s2:*` events
+    verbatim to the user's `progress_callback`.
+  \item **STAC assembly** ([.build_stac_collection_for_aoi()]) —
+    walk `cache_dir`, build a `pystac.Item` per scene with band
+    assets pointing at local COGs. Hrefs are local paths, so PC
+    SAS expiry during long runs is a non-issue.
+  \item **fit** — `FordeadProcess.fit()` trains the per-pixel
+    harmonic model on the training window.
+  \item **predict** — `FordeadProcess.predict()` produces
+    `ANOMALY_CONFIRMED` / `ANOMALY_INDEX` / `CONSECUTIVE_DETECTIONS`
+    /`STOP_CONFIRMED` rasters under `<output_dir>/<LAYER>/`.
+  \item **postprocess** ([.postprocess_fordead_rasters()] reused) —
+    derive a 0-4 confidence-class raster from the 2.x layers, run
+    `terra::patches()` 8-neighbour, build cluster centroids with
+    `confidence_class`, `stress_index`, `trigger_date`, `n_pixels`.
+  \item **persist** — snap centroids to the nearest registered plot
+    of the zone and insert them via [.insert_fordead_alerts()]
+    (idempotent `ON CONFLICT DO NOTHING`).
 }
-
-Post-processing of the rasters into POINT clusters is performed
-inline by [.postprocess_fordead_rasters()] (chantier E6.c.2). When
-`con` and `zone_id` are both supplied, the centroids are persisted
-into the `alert` table via [.insert_fordead_alerts()] (each
-centroid is snapped to the nearest registered plot of the zone).
 
 Calibration is frozen on the ONF/DSF reference values
 (Bernard & Doridant 2024) and not exposed to the end user — see
-the package vignette and ADR-013 for the rationale.
+ADR-013 for the rationale. The fordead 2.x defaults match these
+values out of the box (cf. spec 008 §12.6).
 }
+\section{Breaking changes since v0.23.0}{
+
+The signature is now `(con, zone_id, cache_dir, ...)`. Arguments
+`aoi`, `scenes_df` and `forest_mask` were removed (see
+spec 008 §13.2). Migrate callers by switching from supplying an
+explicit AOI + scenes_df to passing the `DBIConnection` + zone id
+that the pipeline uses to derive both internally.
+}
+
 \examples{
 \dontrun{
-library(sf)
-aoi <- st_read(system.file("extdata", "aoi_demo.gpkg",
-                           package = "nemeton"))
 res <- run_fordead_dieback(
-  aoi              = aoi,
-  dates_training   = c("2016-01-01", "2017-12-31"),
-  dates_monitoring = c("2018-01-01", as.character(Sys.Date()))
+  con              = con,
+  zone_id          = 1L,
+  cache_dir        = file.path(project_dir, "cache/layers/sentinel2"),
+  dates_training   = c("2018-01-01", "2020-12-31"),
+  dates_monitoring = c(
+    as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]),
+    as.character(Sys.Date())
+  )
 )
 res$status
 res$rasters

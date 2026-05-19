@@ -62,7 +62,7 @@ corr_subset <- compute_family_correlations(
 \seealso{
 [identify_hotspots()], [plot_correlation_matrix()]
 
-Other analysis: 
-\code{\link{identify_hotspots}()}
+Other analysis:
+\code{\link[=identify_hotspots]{identify_hotspots()}}
 }
 \concept{analysis}

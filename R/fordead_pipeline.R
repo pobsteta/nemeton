@@ -236,10 +236,18 @@ NULL
 #'   [ingest_sentinel2_timeseries()] (FAST pipeline) so already-cached
 #'   bands are reused on repeat runs.
 #' @param dates_training Length-2 character vector defining the
-#'   training window (default `c("2016-01-01", "2017-12-31")`).
+#'   training window. Default `c("2018-01-01", "2020-12-31")` — a
+#'   2-year calibrated baseline (ADR-013) anchored on the start of
+#'   Sentinel-2 dense coverage, sufficient to fit the harmonic model
+#'   without polluting the baseline with recent disturbances.
 #' @param dates_monitoring Length-2 character vector defining the
 #'   monitoring window. The end may be `NA_character_` to mean
-#'   "open / latest". Default `c("2018-01-01", as.character(Sys.Date()))`.
+#'   "open / latest". Default is a rolling 18-month window ending
+#'   today, i.e.
+#'   `c(as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]), as.character(Sys.Date()))`.
+#'   The 18-month span is long enough to capture a full vegetation
+#'   cycle plus the early stages of a slow dieback, and short enough
+#'   to keep the diagnostic actionable.
 #' @param vegetation_index One of `"CRSWIR"`, `"NDVI"`, `"NDWI"`.
 #'   Default `"CRSWIR"`.
 #' @param threshold_anomaly Numeric in `[0.05, 0.50]`. Default
@@ -288,8 +296,11 @@ NULL
 #'   con              = con,
 #'   zone_id          = 1L,
 #'   cache_dir        = file.path(project_dir, "cache/layers/sentinel2"),
-#'   dates_training   = c("2016-01-01", "2017-12-31"),
-#'   dates_monitoring = c("2018-01-01", as.character(Sys.Date()))
+#'   dates_training   = c("2018-01-01", "2020-12-31"),
+#'   dates_monitoring = c(
+#'     as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]),
+#'     as.character(Sys.Date())
+#'   )
 #' )
 #' res$status
 #' res$rasters
@@ -299,8 +310,11 @@ NULL
 run_fordead_dieback <- function(con,
                                 zone_id,
                                 cache_dir,
-                                dates_training   = c("2016-01-01", "2017-12-31"),
-                                dates_monitoring = c("2018-01-01", as.character(Sys.Date())),
+                                dates_training   = c("2018-01-01", "2020-12-31"),
+                                dates_monitoring = c(
+                                  as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]),
+                                  as.character(Sys.Date())
+                                ),
                                 vegetation_index = "CRSWIR",
                                 threshold_anomaly = 0.16,
                                 max_cloud = 20,

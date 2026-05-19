@@ -437,6 +437,8 @@ test_that("ingest phase propagates s2:* events verbatim to the user callback", {
     con      = make_fake_con(),
     zone_id  = 1L,
     cache_dir = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
     verbose  = FALSE,
     progress_callback = cb
   )

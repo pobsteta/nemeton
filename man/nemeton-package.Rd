@@ -6,7 +6,7 @@
 \alias{nemeton}
 \title{nemeton: Systemic Forest Analysis Using the Nemeton Method}
 \description{
-\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
 Implement the Nemeton method for systemic forest territory analysis. Calculate multi-family biophysical indicators across 12 ecosystem service families (carbon, water, soil, landscape, biodiversity, etc.), perform temporal analysis, normalize to composite indices, and visualize results. Includes nemetonApp, a Shiny application for interactive parcel selection and analysis. Designed for foresters, ecologists, and land managers.
 
@@ -220,6 +220,11 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Pascal Obstétar \email{pascal.obstetar@gmail.com}
+
+Authors:
+\itemize{
+  \item Pascal Obstétar \email{pascal.obstetar@gmail.com}
+}
 
 }
 \keyword{internal}

@@ -50,8 +50,8 @@ result <- indicateur_r4_abroutissement(
 }
 }
 \seealso{
-Other data-acquisition: 
-\code{\link{compute_game_pressure_index}()},
-\code{\link{download_hunting_data}()}
+Other data-acquisition:
+\code{\link[=compute_game_pressure_index]{compute_game_pressure_index()}},
+\code{\link[=download_hunting_data]{download_hunting_data()}}
 }
 \concept{data-acquisition}

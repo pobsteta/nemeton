@@ -37,15 +37,16 @@ A tibble with columns `scene_id`, `obs_date`,
 Façade around CDSE (priority) and Planetary Computer (fallback).
 Returns a tibble with one row per scene, holding the COG hrefs for
 bands B04, B08, B12 (used to derive NDVI and NBR downstream).
-
+}
+\details{
 Each backend request is automatically retried on transient HTTP
 errors (429, 500, 502, 503, 504) with exponential backoff capped
 at 60 s. Default budget is 4 attempts per backend; override with
-the \code{NEMETON_STAC_MAX_TRIES} environment variable. When every
+the `NEMETON_STAC_MAX_TRIES` environment variable. When every
 configured backend exhausts its retry budget the function emits
 a single \dQuote{All STAC backends failed} warning (in addition
 to the per-backend warnings) and returns the canonical empty
-tibble — callers (e.g. \code{nemetonshiny}) can use that aggregated
+tibble — callers (e.g. `nemetonshiny`) can use that aggregated
 warning to render one toast instead of stacking one per backend.
 }
 \examples{

@@ -10,7 +10,7 @@ Functions for calculating social and recreational use indicators:
 - S3: Population proximity (visitor pressure potential)
 }
 \seealso{
-Other indicators: 
+Other indicators:
 \code{\link{indicators-energy}},
 \code{\link{indicators-naturalness}},
 \code{\link{indicators-productive}}

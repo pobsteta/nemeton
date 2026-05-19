@@ -85,7 +85,7 @@ biodiversity_hotspots <- identify_hotspots(
 \seealso{
 [compute_family_correlations()], [plot_correlation_matrix()]
 
-Other analysis: 
-\code{\link{compute_family_correlations}()}
+Other analysis:
+\code{\link[=compute_family_correlations]{compute_family_correlations()}}
 }
 \concept{analysis}

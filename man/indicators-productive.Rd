@@ -10,7 +10,7 @@ Functions for calculating timber production and economic value indicators:
 - P3: Timber quality score (commercial value potential)
 }
 \seealso{
-Other indicators: 
+Other indicators:
 \code{\link{indicators-energy}},
 \code{\link{indicators-naturalness}},
 \code{\link{indicators-social}}

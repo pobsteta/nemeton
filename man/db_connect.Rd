@@ -7,21 +7,33 @@
 db_connect(url = Sys.getenv("NEMETON_DB_URL"))
 }
 \arguments{
-\item{url}{Character. PostgreSQL URL of the form
-`postgresql://user:password@host:port/dbname`. Defaults to
-`Sys.getenv("NEMETON_DB_URL")`.}
+\item{url}{Character. Connection URL. Two schemes are
+supported:
+* `postgresql://user:password@host:port/dbname` — opens a
+  [RPostgres::Postgres()] connection.
+* `duckdb:///absolute/path/to/file.duckdb` — opens a
+  [duckdb::duckdb()] connection on the given file. The
+  file is created if it does not exist. A bare path ending
+  in `.duckdb` is also accepted for convenience.
+Defaults to `Sys.getenv("NEMETON_DB_URL")`.}
 }
 \value{
 A `DBIConnection`.
 }
 \description{
 Reads the connection URL from `NEMETON_DB_URL` (or the `url`
-argument), parses it, and opens a `RPostgres::Postgres()`
+argument), inspects its scheme, and opens the matching
 connection. Use [db_disconnect()] to close it.
 }
 \examples{
 \dontrun{
+# Postgres (production)
 Sys.setenv(NEMETON_DB_URL = "postgresql://nemeton:secret@127.0.0.1:5432/nemeton")
+con <- db_connect()
+db_disconnect(con)
+
+# DuckDB (local mode)
+Sys.setenv(NEMETON_DB_URL = "duckdb:///tmp/my_project/monitoring.duckdb")
 con <- db_connect()
 db_disconnect(con)
 }

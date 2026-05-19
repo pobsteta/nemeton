@@ -8,24 +8,23 @@ diagnose_s2_cache(cache_dir, verbose = TRUE)
 }
 \arguments{
 \item{cache_dir}{Character. Path to the S2 cache root, e.g.
-\code{<project>/cache/layers/sentinel2}.}
+`<project>/cache/layers/sentinel2`.}
 
-\item{verbose}{Logical. When \code{TRUE} (default), print a \code{cli}
-summary; when \code{FALSE} only return the result list invisibly.}
+\item{verbose}{Logical. When `TRUE` (default), print a `cli`
+summary; when `FALSE` only return the result list invisibly.}
 }
 \value{
-Invisibly, a list with \code{cache_dir}, \code{n_scenes},
-  \code{n_populated}, \code{n_empty}, \code{total_bytes},
-  \code{bands_per_scene} (mean), and \code{empty_dirs} (character
-  vector of paths).
+Invisibly, a list with `cache_dir`, `n_scenes`,
+  `n_populated`, `n_empty`, `total_bytes`, `bands_per_scene`
+  (mean), and `empty_dirs` (character vector of paths).
 }
 \description{
-Walks \code{<cache_dir>/\{scene_id\}/} and reports how many scene
-directories are populated (contain at least one \code{.tif}) versus
-empty (no \code{.tif}). Empty dirs are typically leftovers from the
+Walks `<cache_dir>/{scene_id}/` and reports how many scene
+directories are populated (contain at least one `.tif`) versus
+empty (no `.tif`). Empty dirs are typically leftovers from the
 v0.21.4 eager-creation bug (fixed in v0.21.6) — they can be
 safely wiped. Use this as a one-shot sanity check after running
-\code{ingest_sentinel2_timeseries(..., cache_dir = ...)}.
+`ingest_sentinel2_timeseries(..., cache_dir = ...)`.
 }
 \examples{
 \dontrun{
@@ -35,4 +34,5 @@ diagnose_s2_cache(file.path(project_path, "cache", "layers", "sentinel2"))
 #   * Populated: 12 (3.4 MB)
 #   * Empty: 147   <- leftover from v0.21.4 or active fetch failures
 }
+
 }

@@ -17,114 +17,110 @@ ingest_sentinel2_timeseries(
 )
 }
 \arguments{
-\item{con}{A \code{DBIConnection}.}
+\item{con}{A `DBIConnection`.}
 
-\item{zone_id}{Integer. Existing zone in \code{monitoring_zone}.}
+\item{zone_id}{Integer. Existing zone in `monitoring_zone`.}
 
-\item{start, end}{Date or character \code{"YYYY-MM-DD"}.}
+\item{start, end}{Date or character `"YYYY-MM-DD"`.}
 
-\item{bands}{Character vector. Subset of \code{c("NDVI", "NBR")}.}
+\item{bands}{Character vector. Subset of `c("NDVI", "NBR")`.}
 
-\item{max_cloud}{Numeric. Maximum scene cloud cover (\%). Default 20.}
+\item{max_cloud}{Numeric. Maximum scene cloud cover (%). Default 20.}
 
-\item{skip_cached}{Logical. When \code{TRUE} (default since v0.21.3),
-query \code{obs_pixel} before the STAC loop and skip every scene
-whose \code{obs_date} already has a row for \strong{every} plot of the
-zone × \strong{every} requested band. Lets re-runs against an
+\item{skip_cached}{Logical. When `TRUE` (default since v0.21.3),
+query `obs_pixel` before the STAC loop and skip every scene
+whose `obs_date` already has a row for **every** plot of the
+zone × **every** requested band. Lets re-runs against an
 existing database avoid all the per-scene HTTP traffic. Set
-\code{FALSE} to force re-extraction (e.g. after invalidating
-\code{obs_pixel} manually).}
+`FALSE` to force re-extraction (e.g. after invalidating
+`obs_pixel` manually).}
 
 \item{cache_dir}{Optional path to a directory under which cropped
-band rasters are persisted as tiled GeoTIFF (COG-compatible
-layout) at \code{<cache_dir>/\{scene_id\}/\{band\}.tif}. On a
-cache hit the band is read locally (no HTTP); on a miss it is
-fetched via VSI, cropped, and written to the cache atomically.
-Cache write failures only warn — the pipeline continues with the
-in-memory raster. Cache reuse is \emph{extent-aware}: a cached
-file whose bounding box no longer covers the requested plots is
-silently overwritten. Default \code{NULL} (no on-disk cache,
-v0.21.3 behaviour). Combine with \code{skip_cached = FALSE} to
-force re-extraction from cached COGs without touching the
-network.
+  band rasters are persisted as tiled GeoTIFF (COG-compatible
+  layout) at `<cache_dir>/{scene_id}/{band}.tif`. On a cache hit
+  the band is read locally (no HTTP); on a miss it is fetched via
+  VSI, cropped, and written to the cache atomically. Cache write
+  failures only warn — the pipeline continues with the in-memory
+  raster. Cache reuse is *extent-aware*: a cached file whose
+  bounding box no longer covers the requested plots is silently
+  overwritten. Default `NULL` (no on-disk cache, v0.21.3
+  behaviour). Combine with `skip_cached = FALSE` to force
+  re-extraction from cached COGs without touching the network.
 
-Recommended layout for callers (e.g. \code{nemetonshiny}):
-\code{<project>/cache/layers/sentinel2/}, matching the
-\code{<project>/cache/layers/\{lidar_mnh,lidar_mnt,lidar_nuage,...\}}
-convention already used by \code{detect_ndp_from_cache()}. The
-\code{cache/} subtree is for derived, regeneratable artefacts and
-should be in \code{.gitignore}; do not use \code{<project>/data/}
-which is reserved for user-owned project data.
+  Recommended layout for callers (e.g. `nemetonshiny`):
+  `<project>/cache/layers/sentinel2/`, matching the
+  `<project>/cache/layers/{lidar_mnh,lidar_mnt,lidar_nuage,...}`
+  convention already used by `detect_ndp_from_cache()`. The
+  `cache/` subtree is for derived, regeneratable artefacts and
+  should be in `.gitignore`; do not use `<project>/data/` which
+  is reserved for user-owned project data.
 
-\strong{Priming the cache on an existing zone.} The two cache
-layers (\code{skip_cached} and \code{cache_dir}) are independent:
-when \code{skip_cached = TRUE} (default) finds an \code{obs_date}
-already covered in \code{obs_pixel}, the scene is skipped
-\emph{before} \code{.extract_scene_obs()} runs, so no COG is
-written. If you enable \code{cache_dir} on a zone whose
-\code{obs_pixel} is already populated, run the ingestion
-\emph{once} with \code{skip_cached = FALSE} to force re-extraction:
-scenes go through the full path and the COGs land on disk; SQL
-INSERTs are \code{ON CONFLICT DO NOTHING} so the DB stays
-bit-identical (no duplicate rows, no overwritten values).
-Subsequent runs can revert to \code{skip_cached = TRUE} — the
-COG cache will then kick in only when a genuine re-extraction is
-needed (a new band, a new metric, a manual \code{obs_pixel}
-wipe).}
+  \strong{Priming the cache on an existing zone.} The two cache
+  layers (`skip_cached` and `cache_dir`) are independent: when
+  `skip_cached = TRUE` (default) finds an `obs_date` already
+  covered in `obs_pixel`, the scene is skipped \emph{before}
+  `.extract_scene_obs()` runs, so no COG is written. If you
+  enable `cache_dir` on a zone whose `obs_pixel` is already
+  populated, run the ingestion \emph{once} with
+  `skip_cached = FALSE` to force re-extraction: scenes go through
+  the full path and the COGs land on disk; SQL INSERTs are
+  `ON CONFLICT DO NOTHING` so the DB stays bit-identical
+  (no duplicate rows, no overwritten values). Subsequent runs
+  can revert to `skip_cached = TRUE` — the COG cache will then
+  kick in only when a genuine re-extraction is needed
+  (a new band, a new metric, a manual `obs_pixel` wipe).}
 
 \item{progress_callback}{Optional function called at each step of
-the ingestion to allow callers (e.g. \code{nemetonshiny}) to report
+the ingestion to allow callers (e.g. `nemetonshiny`) to report
 download progress to the user. Receives a single named list
-argument with at least \code{current} (a short phase key, see below)
-and, when meaningful, \code{completed} and \code{total} (numeric units).
+argument with at least `current` (a short phase key, see below)
+and, when meaningful, `completed` and `total` (numeric units).
 Phases emitted, in order:
 \describe{
-  \item{\code{s2:search}}{Before the STAC query — payload includes
-    \code{start}, \code{end}, \code{n_plots}, \code{bands}.}
-  \item{\code{s2:search_done}}{After STAC — payload includes
-    \code{total} (number of scenes found) and \code{bands}.}
-  \item{\code{s2:cache_lookup}}{After the \code{obs_pixel} cache
-    query (only when \code{skip_cached = TRUE}) — payload includes
-    \code{n_cached} (scenes whose obs_date is already fully ingested
-    and will be skipped) and \code{n_to_process} (scenes that will
+  \item{`s2:search`}{Before the STAC query — payload includes
+    `start`, `end`, `n_plots`, `bands`.}
+  \item{`s2:search_done`}{After STAC — payload includes `total`
+    (number of scenes found) and `bands`.}
+  \item{`s2:cache_lookup`}{After the `obs_pixel` cache query
+    (only when `skip_cached = TRUE`) — payload includes
+    `n_cached` (scenes whose obs_date is already fully ingested
+    and will be skipped) and `n_to_process` (scenes that will
     hit the network).}
-  \item{\code{s2:scene_cached}}{For each scene skipped thanks to
-    the cache — payload includes \code{completed = i - 1L},
-    \code{total}, \code{scene_id}, \code{obs_date}, \code{cloud_pct},
-    \code{source}.}
-  \item{\code{s2:scene}}{Before processing each non-cached scene —
-    payload includes \code{completed = i - 1L}, \code{total}, plus
-    \code{scene_id}, \code{obs_date}, \code{cloud_pct}, \code{source}.}
-  \item{\code{s2:scene_skipped}}{When a scene fails extraction —
-    payload adds \code{error_message} to the \code{s2:scene} shape.}
-  \item{\code{s2:band_cached}}{Per-band hit on the local COG cache
-    (only when \code{cache_dir} is set) — payload: \code{scene_id},
-    \code{band}, \code{path}.}
-  \item{\code{s2:band_fetched}}{Per-band miss → VSI fetch + write
-    to the cache (only when \code{cache_dir} is set) — payload:
-    \code{scene_id}, \code{band}, \code{path}.}
-  \item{\code{s2:pc_token_refreshed}}{The Planetary Computer SAS
+  \item{`s2:scene_cached`}{For each scene skipped thanks to the
+    cache — payload includes `completed = i - 1L`, `total`,
+    `scene_id`, `obs_date`, `cloud_pct`, `source`.}
+  \item{`s2:scene`}{Before processing each non-cached scene —
+    payload includes `completed = i - 1L`, `total`, plus
+    `scene_id`, `obs_date`, `cloud_pct`, `source`.}
+  \item{`s2:scene_skipped`}{When a scene fails extraction —
+    payload adds `error_message` to the `s2:scene` shape.}
+  \item{`s2:band_cached`}{Per-band hit on the local COG cache
+    (only when `cache_dir` is set) — payload: `scene_id`,
+    `band`, `path`.}
+  \item{`s2:band_fetched`}{Per-band miss → VSI fetch + write
+    to the cache (only when `cache_dir` is set) — payload:
+    `scene_id`, `band`, `path`.}
+  \item{`s2:pc_token_refreshed`}{The Planetary Computer SAS
     token expired between STAC search and band read; the band
     open was retried with a fresh token — payload:
-    \code{scene_id}, \code{band}, \code{collection}.}
-  \item{\code{s2:band_fetch_retry}}{Transient network error (DNS,
+    `scene_id`, `band`, `collection`.}
+  \item{`s2:band_fetch_retry`}{Transient network error (DNS,
     timeout, connection refused, 5xx) on a band fetch; sleeping
-    and retrying — payload: \code{scene_id}, \code{band},
-    \code{attempt}, \code{max_tries}, \code{retry_in_sec},
-    \code{error_message}. Override the max-attempts budget with
-    the \code{NEMETON_S2_MAX_TRIES} env var (default 3).}
-  \item{\code{s2:band_fetch_failed}}{\code{terra::rast(href)}
-    raised an unrecoverable error (after the PC token refresh path
-    and transient-network retries if applicable) — payload:
-    \code{scene_id}, \code{band}, \code{href},
-    \code{error_message}. The scene is then skipped at scene level
-    (\code{s2:scene_skipped}).}
-  \item{\code{s2:complete}}{After the loop — payload includes
-    \code{completed = total}, \code{total}, \code{n_obs_inserted},
-    \code{n_scenes_cached}.}
+    and retrying — payload: `scene_id`, `band`, `attempt`,
+    `max_tries`, `retry_in_sec`, `error_message`. Override the
+    max-attempts budget with the `NEMETON_S2_MAX_TRIES` env var
+    (default 3).}
+  \item{`s2:band_fetch_failed`}{`terra::rast(href)` raised an
+    unrecoverable error (after the PC token refresh path and
+    transient-network retries if applicable) — payload:
+    `scene_id`, `band`, `href`, `error_message`. The scene is
+    then skipped at scene level (`s2:scene_skipped`).}
+  \item{`s2:complete`}{After the loop — payload includes
+    `completed = total`, `total`, `n_obs_inserted`,
+    `n_scenes_cached`.}
 }
 The callback is invoked synchronously inside the calling thread.
-Default \code{NULL} (silent — no callback emitted).}
+Default `NULL` (silent — no callback emitted).}
 }
 \value{
 A tibble summarising the ingestion: number of scenes
@@ -134,9 +130,9 @@ A tibble summarising the ingestion: number of scenes
 \description{
 Searches Sentinel-2 L2A scenes (CDSE then PC fallback), computes
 NDVI and/or NBR per scene, extracts the mean per plot over a
-circular buffer (\code{exactextractr::exact_extract}), and inserts
-the results into \code{obs_pixel} (idempotent on
-\code{(plot_id, obs_date, band)}).
+circular buffer (`exactextractr::exact_extract`), and inserts the
+results into `obs_pixel` (idempotent on
+`(plot_id, obs_date, band)`).
 }
 \examples{
 \dontrun{
@@ -160,4 +156,5 @@ ingest_sentinel2_timeseries(
   cache_dir = cache                    # skip_cached defaults to TRUE
 )
 }
+
 }

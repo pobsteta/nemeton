@@ -1,3 +1,39 @@
+# nemeton 0.25.9 (2026-05-19)
+
+### Changed — calibrated rolling defaults for `run_fordead_dieback()`
+
+The default training and monitoring windows of `run_fordead_dieback()`
+now reflect the ADR-013 calibration:
+
+- `dates_training` defaults to `c("2018-01-01", "2020-12-31")` — a
+  2-year baseline anchored on the start of Sentinel-2 dense coverage,
+  long enough to fit the harmonic model and short enough to keep
+  the baseline free from recent disturbances.
+- `dates_monitoring` defaults to a rolling 18-month window ending
+  today:
+
+  ```r
+  c(
+    as.character(seq(Sys.Date(), by = "-18 months", length.out = 2)[2]),
+    as.character(Sys.Date())
+  )
+  ```
+
+  18 months covers a full vegetation cycle plus the early stages of a
+  slow dieback, while staying short enough to keep the diagnostic
+  actionable.
+
+Previous defaults (`2016-2017` training / `2018→today` monitoring)
+required users to override the dates on every call to obtain a sensible
+window. The new defaults make `run_fordead_dieback(con, zone_id,
+cache_dir)` directly usable on production zones without further
+configuration. Roxygen docs and the example block are updated
+accordingly.
+
+No code change beyond the signature defaults and documentation. All
+54 existing FORDEAD tests pass unchanged: scenarios that exercise the
+date logic already pass explicit windows.
+
 # nemeton 0.25.8 (2026-05-19)
 
 ### Fixed — `fordead.utils` submodule access via reticulate

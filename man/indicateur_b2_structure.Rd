@@ -97,8 +97,8 @@ hist(result$B2, main = "Structural Diversity Distribution")
 }
 }
 \seealso{
-Other biodiversity-indicators: 
-\code{\link{indicateur_b1_protection}()},
-\code{\link{indicateur_b3_connectivite}()}
+Other biodiversity-indicators:
+\code{\link[=indicateur_b1_protection]{indicateur_b1_protection()}},
+\code{\link[=indicateur_b3_connectivite]{indicateur_b3_connectivite()}}
 }
 \concept{biodiversity-indicators}

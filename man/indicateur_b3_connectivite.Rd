@@ -50,8 +50,8 @@ Final score: B3 = 0.7 * B3_global + 0.3 * local_connectivity
 where local_connectivity is distance-based (sf) per-parcel adjustment.
 }
 \seealso{
-Other biodiversity-indicators: 
-\code{\link{indicateur_b1_protection}()},
-\code{\link{indicateur_b2_structure}()}
+Other biodiversity-indicators:
+\code{\link[=indicateur_b1_protection]{indicateur_b1_protection()}},
+\code{\link[=indicateur_b2_structure]{indicateur_b2_structure()}}
 }
 \concept{biodiversity-indicators}

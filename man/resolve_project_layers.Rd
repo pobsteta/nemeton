@@ -13,71 +13,71 @@ resolve_project_chm(project_path, load = TRUE, verbose = FALSE)
 \arguments{
 \item{project_path}{Character. Root of the Nemeton project tree.}
 
-\item{load}{Logical. When \code{TRUE} (default), open the raster via
-\code{terra::rast()} (or \code{terra::vrt()} for multi-tile dirs) and
-return the \code{SpatRaster}. When \code{FALSE}, return the matching
+\item{load}{Logical. When `TRUE` (default), open the raster via
+`terra::rast()` (or `terra::vrt()` for multi-tile dirs) and
+return the `SpatRaster`. When `FALSE`, return the matching
 path(s) as a character vector — useful for diagnostics and for
 callers that want to control how the raster is loaded.}
 
-\item{verbose}{Logical. When \code{TRUE}, log every probed location
-via \code{cli::cli_alert_info()}. Default \code{FALSE}.}
+\item{verbose}{Logical. When `TRUE`, log every probed location
+via `cli::cli_alert_info()`. Default `FALSE`.}
 }
 \value{
-When \code{load = TRUE}: a \code{SpatRaster}, or \code{NULL} if no
-  matching raster exists. When \code{load = FALSE}: a character vector
+When `load = TRUE`: a `SpatRaster`, or `NULL` if no
+  matching raster exists. When `load = FALSE`: a character vector
   of file paths (length 1 for single-file matches, longer for
-  tile directories), or \code{NULL}. The returned object also carries
-  the matched layer label as attribute \code{"nemeton_dem_layer"} /
-  \code{"nemeton_chm_layer"}.
+  tile directories), or `NULL`. The returned object also carries
+  the matched layer label as attribute `"nemeton_dem_layer"` /
+  `"nemeton_chm_layer"`.
 }
 \description{
 Néméton projects accumulate digital terrain models (MNT / DEM /
 DTM) and canopy height models (MNH / CHM) from several sources —
 IGN RGE ALTI downloaded by tutorials, LiDAR HD MNT produced by
-\code{lidR}, \code{opencanopynemeton}'s \code{dtm.tif}, Open-Canopy CHM
-tiles — each landing under its own naming convention. These helpers
-walk a list of well-known locations in \strong{priority order}
-(highest quality first) and return the first match, so callers
-don't have to hard-code paths.
+`lidR`, `opencanopynemeton`'s `dtm.tif`, Open-Canopy CHM tiles —
+each landing under its own naming convention. These helpers walk
+a list of well-known locations in **priority order** (highest
+quality first) and return the first match, so callers don't have
+to hard-code paths.
 
 When multiple tiles sit in the same directory (e.g. several
-\code{BD ALTI} tiles), the raster returned is a virtual mosaic
-(\code{terra::vrt()}), so downstream \code{terra::extract} /
-\code{terra::crop} calls transparently cover the full footprint.
+`BD ALTI` tiles), the raster returned is a virtual mosaic
+(`terra::vrt()`), so downstream `terra::extract` / `terra::crop`
+calls transparently cover the full footprint.
 }
 \section{Search order (DEM)}{
 
 \enumerate{
-  \item \code{<project>/cache/layers/lidar_mnt/*.tif}  — LiDAR HD (1 m)
-  \item \code{<project>/cache/layers/dem/*.tif}        — generic DEM cache
-  \item \code{<project>/cache/layers/bd_alti/*.tif}    — IGN BD ALTI (25 m)
-  \item \code{<project>/cache/layers/rge_alti/*.tif}   — IGN RGE ALTI (5 m)
-  \item \code{<project>/cache/layers/dtm/*.tif}        — generic DTM cache
-  \item \code{<project>/cache/layers/mnt/*.tif}        — generic MNT cache
-  \item \code{<project>/cache/layers/dem.tif}          — direct file (v0.25.5)
-  \item \code{<project>/cache/layers/dtm.tif}          — direct file (v0.25.5)
-  \item \code{<project>/cache/layers/mnt.tif}          — direct file (v0.25.5)
-  \item \code{<project>/dtm.tif}                        — \code{opencanopynemeton} convention
-  \item \code{<project>/dem.tif}                        — project root (v0.25.5)
-  \item \code{<project>/mnt.tif}                        — tutorial convention
-  \item \code{<project>/data/dtm.tif}                   — alt project layout
-  \item \code{<project>/data/dem.tif}                   — alt project layout (v0.25.5)
-  \item \code{<project>/data/mnt.tif}                   — alt project layout
+  \item `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)
+  \item `<project>/cache/layers/dem/*.tif`        — generic DEM cache
+  \item `<project>/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)
+  \item `<project>/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)
+  \item `<project>/cache/layers/dtm/*.tif`        — generic DTM cache
+  \item `<project>/cache/layers/mnt/*.tif`        — generic MNT cache
+  \item `<project>/cache/layers/dem.tif`          — direct file (v0.25.5)
+  \item `<project>/cache/layers/dtm.tif`          — direct file (v0.25.5)
+  \item `<project>/cache/layers/mnt.tif`          — direct file (v0.25.5)
+  \item `<project>/dtm.tif`                        — `opencanopynemeton` convention
+  \item `<project>/dem.tif`                        — project root (v0.25.5)
+  \item `<project>/mnt.tif`                        — tutorial convention
+  \item `<project>/data/dtm.tif`                   — alt project layout
+  \item `<project>/data/dem.tif`                   — alt project layout (v0.25.5)
+  \item `<project>/data/mnt.tif`                   — alt project layout
 }
 }
 
 \section{Search order (CHM)}{
 
 \enumerate{
-  \item \code{<project>/cache/layers/chm/*.tif}        — Open-Canopy
-  \item \code{<project>/cache/layers/lidar_mnh/*.tif}  — LiDAR HD MNH
-  \item \code{<project>/cache/layers/mnh/*.tif}        — generic MNH cache
-  \item \code{<project>/cache/layers/chm.tif}          — direct file (v0.25.5)
-  \item \code{<project>/cache/layers/mnh.tif}          — direct file (v0.25.5)
-  \item \code{<project>/chm.tif}                        — single-file convention
-  \item \code{<project>/mnh.tif}                        — tutorial convention
-  \item \code{<project>/data/chm.tif}                   — alt project layout
-  \item \code{<project>/data/mnh.tif}                   — alt project layout
+  \item `<project>/cache/layers/chm/*.tif`        — Open-Canopy
+  \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
+  \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
+  \item `<project>/cache/layers/chm.tif`          — direct file (v0.25.5)
+  \item `<project>/cache/layers/mnh.tif`          — direct file (v0.25.5)
+  \item `<project>/chm.tif`                        — single-file convention
+  \item `<project>/mnh.tif`                        — tutorial convention
+  \item `<project>/data/chm.tif`                   — alt project layout
+  \item `<project>/data/mnh.tif`                   — alt project layout
 }
 }
 
@@ -90,7 +90,8 @@ if (is.null(dem)) {
 }
 attr(dem, "nemeton_dem_layer")  # "opencanopy DTM"
 plan <- create_sampling_plan(zone, mnt = dem, ...)
-
+}
+\dontrun{
 chm <- resolve_project_chm("C:/.../projects/20260416_112240_gomv")
 plan <- create_sampling_plan(zone, mnt = dem, chm = chm, ...)
 }

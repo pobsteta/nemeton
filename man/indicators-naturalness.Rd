@@ -10,7 +10,7 @@ Functions for calculating naturalness and wilderness indicators:
 - N3: Composite naturalness index (integrating multiple dimensions)
 }
 \seealso{
-Other indicators: 
+Other indicators:
 \code{\link{indicators-energy}},
 \code{\link{indicators-productive}},
 \code{\link{indicators-social}}

@@ -45,7 +45,7 @@ t2 <- indicateur_t2_changement(units, t1_values = t1)
 }
 }
 \seealso{
-Other temporal-indicators: 
-\code{\link{indicateur_t1_anciennete}()}
+Other temporal-indicators:
+\code{\link[=indicateur_t1_anciennete]{indicateur_t1_anciennete()}}
 }
 \concept{temporal-indicators}

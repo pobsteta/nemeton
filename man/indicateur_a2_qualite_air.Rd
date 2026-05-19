@@ -71,7 +71,7 @@ result <- indicateur_a2_qualite_air(units, roads = roads, urban_areas = urban, m
 }
 }
 \seealso{
-Other air-indicators: 
-\code{\link{indicateur_a1_couverture}()}
+Other air-indicators:
+\code{\link[=indicateur_a1_couverture]{indicateur_a1_couverture()}}
 }
 \concept{air-indicators}
