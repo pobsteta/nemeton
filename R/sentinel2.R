@@ -78,8 +78,15 @@ NULL
 #'   Default 20.
 #' @param source Character vector. Order in which to try backends.
 #'   Default `c("cdse", "pc")`.
-#' @param limit Integer. Maximum number of scenes to return per
-#'   backend call. Default 100.
+#' @param limit Integer. Maximum total number of scenes to return
+#'   per backend (across all pagination pages). Default `10000L` —
+#'   covers ~10 years of Sentinel-2 revisit at one tile. The
+#'   backend page size is fixed internally at 1000 (the maximum
+#'   accepted by both CDSE and Planetary Computer); pagination
+#'   follows the STAC `links[rel=next]` convention until the
+#'   `limit` cap is hit or the backend stops returning a `next`
+#'   link. Use a smaller value to truncate (e.g. `limit = 50` for
+#'   a quick preview).
 #'
 #' @return A tibble with columns `scene_id`, `obs_date`,
 #'   `cloud_pct`, `href_B04`, `href_B08`, `href_B12`, `source`. Empty
@@ -98,7 +105,7 @@ stac_search_s2 <- function(zone,
                            start, end,
                            max_cloud = 20,
                            source = c("cdse", "pc"),
-                           limit = 100L) {
+                           limit = 10000L) {
   .assert_httr2()
   source <- match.arg(source, c("cdse", "pc"), several.ok = TRUE)
 
@@ -138,58 +145,129 @@ stac_search_s2 <- function(zone,
 }
 
 
+# Per-page size requested from the STAC backend. Both CDSE and PC
+# accept up to 1000 features per response; smaller values multiply
+# the number of round-trips for the same total. Override via the
+# env var `NEMETON_STAC_PAGE_SIZE` for backends with stricter caps.
+.stac_page_size <- function() {
+  v <- suppressWarnings(
+    as.integer(Sys.getenv("NEMETON_STAC_PAGE_SIZE", "1000"))
+  )
+  if (is.na(v) || v < 1L) 1000L else v
+}
+
+# Maximum number of pagination pages to fetch from a single
+# backend, regardless of `limit`. Guards against runaway loops
+# from a buggy backend that keeps returning a `next` link with
+# the same body. 100 pages × 1000 features = 100k scenes
+# (effectively unbounded for realistic AOIs).
+.STAC_MAX_PAGES <- 100L
+
+# Generic STAC paginator. Both CDSE and PC follow the STAC API
+# pagination extension: each response carries a `links` array
+# and a `next` link points at the following page. The link can
+# be GET (token baked into the href) or POST (full search body
+# echoed back with a `token` field added). This helper handles
+# both, accumulates features, and stops when:
+#   - no `next` link is returned,
+#   - the page yields 0 features (defensive),
+#   - the cumulative count reaches `max_total`,
+#   - we hit the `.STAC_MAX_PAGES` safety cap.
+.stac_search_paginate <- function(initial_url,
+                                  initial_body,
+                                  max_total = 10000L,
+                                  request_timeout = 60L) {
+  features <- list()
+  next_url    <- initial_url
+  next_method <- "POST"
+  next_body   <- initial_body
+
+  for (page_no in seq_len(.STAC_MAX_PAGES)) {
+    req <- httr2::request(next_url) |>
+      httr2::req_method(next_method) |>
+      httr2::req_headers(`Content-Type` = "application/json",
+                         Accept         = "application/json") |>
+      httr2::req_timeout(request_timeout) |>
+      .with_stac_retry()
+    if (identical(next_method, "POST") && !is.null(next_body)) {
+      req <- httr2::req_body_json(req, next_body)
+    }
+    resp <- httr2::req_perform(req)
+    parsed <- httr2::resp_body_json(resp)
+    page_features <- parsed$features %||% list()
+    if (!length(page_features)) break
+
+    features <- c(features, page_features)
+    if (length(features) >= max_total) {
+      features <- features[seq_len(max_total)]
+      return(features)
+    }
+
+    nl <- NULL
+    for (lnk in (parsed$links %||% list())) {
+      if (identical(lnk$rel, "next")) { nl <- lnk; break }
+    }
+    if (is.null(nl) || !nzchar(nl$href %||% "")) break
+
+    next_url    <- nl$href
+    next_method <- toupper(nl$method %||% "GET")
+    next_body   <- if (identical(next_method, "POST"))
+                     nl$body %||% nl$merge %||% NULL
+                   else NULL
+
+    if (page_no == .STAC_MAX_PAGES) {
+      cli::cli_warn(c(
+        "STAC pagination hit the {.STAC_MAX_PAGES}-page safety cap.",
+        i = "Result may be truncated. Narrow {.arg start}/{.arg end} or lower {.arg max_cloud}."
+      ))
+    }
+  }
+  features
+}
+
+
 #' @rdname sentinel2_stac
 #' @param bbox Numeric length 4: c(xmin, ymin, xmax, ymax) in WGS84.
 #' @export
-stac_search_s2_cdse <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
+stac_search_s2_cdse <- function(bbox, start, end, max_cloud = 20, limit = 10000L) {
   .assert_httr2()
   body <- list(
     collections = list("SENTINEL-2"),
     bbox        = as.numeric(bbox),
     datetime    = sprintf("%sT00:00:00Z/%sT23:59:59Z", start, end),
-    limit       = as.integer(limit),
+    limit       = .stac_page_size(),
     query       = list(
       "eo:cloud_cover" = list(lte = as.numeric(max_cloud)),
       "productType"     = list(eq = "S2MSI2A")
     )
   )
-  resp <- httr2::request("https://catalogue.dataspace.copernicus.eu/stac/search") |>
-    httr2::req_method("POST") |>
-    httr2::req_headers(`Content-Type` = "application/json",
-                       Accept         = "application/json") |>
-    httr2::req_body_json(body) |>
-    httr2::req_timeout(60) |>
-    .with_stac_retry() |>
-    httr2::req_perform()
-
-  features <- httr2::resp_body_json(resp)$features %||% list()
+  features <- .stac_search_paginate(
+    initial_url  = "https://catalogue.dataspace.copernicus.eu/stac/search",
+    initial_body = body,
+    max_total    = as.integer(limit)
+  )
   .features_to_tibble(features, source = "cdse")
 }
 
 
 #' @rdname sentinel2_stac
 #' @export
-stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 100L) {
+stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 10000L) {
   .assert_httr2()
   body <- list(
     collections = list("sentinel-2-l2a"),
     bbox        = as.numeric(bbox),
     datetime    = sprintf("%s/%s", start, end),
-    limit       = as.integer(limit),
+    limit       = .stac_page_size(),
     query       = list(
       "eo:cloud_cover" = list(lte = as.numeric(max_cloud))
     )
   )
-  resp <- httr2::request("https://planetarycomputer.microsoft.com/api/stac/v1/search") |>
-    httr2::req_method("POST") |>
-    httr2::req_headers(`Content-Type` = "application/json",
-                       Accept         = "application/json") |>
-    httr2::req_body_json(body) |>
-    httr2::req_timeout(60) |>
-    .with_stac_retry() |>
-    httr2::req_perform()
-
-  features <- httr2::resp_body_json(resp)$features %||% list()
+  features <- .stac_search_paginate(
+    initial_url  = "https://planetarycomputer.microsoft.com/api/stac/v1/search",
+    initial_body = body,
+    max_total    = as.integer(limit)
+  )
   out <- .features_to_tibble(features, source = "pc")
   if (nrow(out) > 0) {
     # Batched-token signing: one HTTP call gets a SAS query string for

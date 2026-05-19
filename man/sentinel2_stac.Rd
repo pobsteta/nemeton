@@ -6,9 +6,9 @@
 \alias{stac_search_s2_pc}
 \title{Sentinel-2 STAC Search Helpers (E6 monitoring)}
 \usage{
-stac_search_s2_cdse(bbox, start, end, max_cloud = 20, limit = 100L)
+stac_search_s2_cdse(bbox, start, end, max_cloud = 20, limit = 10000L)
 
-stac_search_s2_pc(bbox, start, end, max_cloud = 20, limit = 100L)
+stac_search_s2_pc(bbox, start, end, max_cloud = 20, limit = 10000L)
 }
 \arguments{
 \item{bbox}{Numeric length 4: c(xmin, ymin, xmax, ymax) in WGS84.}

@@ -10,7 +10,7 @@ stac_search_s2(
   end,
   max_cloud = 20,
   source = c("cdse", "pc"),
-  limit = 100L
+  limit = 10000L
 )
 }
 \arguments{
@@ -25,8 +25,15 @@ Default 20.}
 \item{source}{Character vector. Order in which to try backends.
 Default `c("cdse", "pc")`.}
 
-\item{limit}{Integer. Maximum number of scenes to return per
-backend call. Default 100.}
+\item{limit}{Integer. Maximum total number of scenes to return
+per backend (across all pagination pages). Default `10000L` —
+covers ~10 years of Sentinel-2 revisit at one tile. The
+backend page size is fixed internally at 1000 (the maximum
+accepted by both CDSE and Planetary Computer); pagination
+follows the STAC `links[rel=next]` convention until the
+`limit` cap is hit or the backend stops returning a `next`
+link. Use a smaller value to truncate (e.g. `limit = 50` for
+a quick preview).}
 }
 \value{
 A tibble with columns `scene_id`, `obs_date`,

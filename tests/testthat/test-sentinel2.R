@@ -146,6 +146,150 @@ test_that("stac_search_s2 emits an 'All STAC backends failed' warning when every
 })
 
 
+# ---- .stac_search_paginate (v0.27.0) ----------------------------------
+
+# Build a fake STAC feature list of `n` items with sequential
+# scene_ids and dates spread evenly across `date_start` → `date_end`.
+.fake_stac_features <- function(n, id_prefix = "S2A", date_start = "2025-01-01") {
+  d0 <- as.Date(date_start)
+  lapply(seq_len(n), function(i) {
+    list(
+      id = sprintf("%s_%04d", id_prefix, i),
+      properties = list(
+        datetime         = paste0(format(d0 + i - 1L), "T10:30:00Z"),
+        `eo:cloud_cover` = 5.0
+      ),
+      assets = list(
+        B04 = list(href = sprintf("https://example/%04d/b04.tif", i)),
+        B08 = list(href = sprintf("https://example/%04d/b08.tif", i)),
+        B12 = list(href = sprintf("https://example/%04d/b12.tif", i))
+      )
+    )
+  })
+}
+
+# Build a fake STAC response with optional `next` link.
+.fake_stac_resp <- function(features, next_url = NULL) {
+  body <- list(features = features)
+  if (!is.null(next_url)) {
+    body$links <- list(list(rel = "next", href = next_url, method = "POST",
+                             body = list(token = "FAKE_TOKEN")))
+  } else {
+    body$links <- list()
+  }
+  httr2::response(
+    status_code = 200L,
+    headers = list(`content-type` = "application/json"),
+    body = charToRaw(jsonlite::toJSON(body, auto_unbox = TRUE, force = TRUE))
+  )
+}
+
+test_that(".stac_search_paginate returns features from a single page when no next link", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+  features <- .fake_stac_features(3L)
+  httr2::with_mocked_responses(
+    function(req) .fake_stac_resp(features, next_url = NULL),
+    {
+      out <- nemeton:::.stac_search_paginate(
+        initial_url  = "https://example/search",
+        initial_body = list(collections = list("X"), limit = 1000L)
+      )
+    }
+  )
+  expect_length(out, 3L)
+  expect_equal(out[[1]]$id, "S2A_0001")
+  expect_equal(out[[3]]$id, "S2A_0003")
+})
+
+test_that(".stac_search_paginate follows next link across multiple pages", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+  page1 <- .fake_stac_features(2L, id_prefix = "P1")
+  page2 <- .fake_stac_features(2L, id_prefix = "P2")
+  page3 <- .fake_stac_features(1L, id_prefix = "P3")
+  call_n <- 0L
+  httr2::with_mocked_responses(
+    function(req) {
+      call_n <<- call_n + 1L
+      switch(as.character(call_n),
+        "1" = .fake_stac_resp(page1, next_url = "https://example/search?page=2"),
+        "2" = .fake_stac_resp(page2, next_url = "https://example/search?page=3"),
+        "3" = .fake_stac_resp(page3, next_url = NULL),
+        .fake_stac_resp(list(), next_url = NULL)
+      )
+    },
+    {
+      out <- nemeton:::.stac_search_paginate(
+        initial_url  = "https://example/search",
+        initial_body = list(collections = list("X"), limit = 1000L)
+      )
+    }
+  )
+  expect_equal(call_n, 3L)
+  expect_length(out, 5L)
+  expect_equal(vapply(out, function(f) f$id, character(1)),
+               c("P1_0001", "P1_0002", "P2_0001", "P2_0002", "P3_0001"))
+})
+
+test_that(".stac_search_paginate truncates at max_total", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+  page1 <- .fake_stac_features(3L, id_prefix = "P1")
+  page2 <- .fake_stac_features(3L, id_prefix = "P2")
+  call_n <- 0L
+  httr2::with_mocked_responses(
+    function(req) {
+      call_n <<- call_n + 1L
+      switch(as.character(call_n),
+        "1" = .fake_stac_resp(page1, next_url = "https://example/search?page=2"),
+        "2" = .fake_stac_resp(page2, next_url = "https://example/search?page=3"),
+        .fake_stac_resp(list(), next_url = NULL)
+      )
+    },
+    {
+      out <- nemeton:::.stac_search_paginate(
+        initial_url  = "https://example/search",
+        initial_body = list(),
+        max_total    = 4L
+      )
+    }
+  )
+  # Truncation happens after page 2 is accumulated → cap hit before page 3.
+  expect_equal(call_n, 2L)
+  expect_length(out, 4L)
+})
+
+test_that(".stac_search_paginate stops on empty page", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+  call_n <- 0L
+  httr2::with_mocked_responses(
+    function(req) {
+      call_n <<- call_n + 1L
+      .fake_stac_resp(list(), next_url = "https://example/search?page=2")
+    },
+    {
+      out <- nemeton:::.stac_search_paginate(
+        initial_url  = "https://example/search",
+        initial_body = list()
+      )
+    }
+  )
+  expect_equal(call_n, 1L)
+  expect_length(out, 0L)
+})
+
+test_that(".stac_page_size honours NEMETON_STAC_PAGE_SIZE env var", {
+  withr::local_envvar(NEMETON_STAC_PAGE_SIZE = "250")
+  expect_equal(nemeton:::.stac_page_size(), 250L)
+  withr::local_envvar(NEMETON_STAC_PAGE_SIZE = "bogus")
+  expect_equal(nemeton:::.stac_page_size(), 1000L)
+  withr::local_envvar(NEMETON_STAC_PAGE_SIZE = "0")
+  expect_equal(nemeton:::.stac_page_size(), 1000L)
+})
+
+
 # ---- .pc_apply_token ---------------------------------------------------
 
 test_that(".pc_apply_token appends a SAS token to bare hrefs", {

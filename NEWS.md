@@ -1,3 +1,76 @@
+# nemeton 0.27.0 (2026-05-19)
+
+### Fixed — STAC search silently capped at 100 features
+
+`stac_search_s2()` and its two backends (`stac_search_s2_cdse()`,
+`stac_search_s2_pc()`) had `limit = 100L` hardcoded, with no
+pagination. Any AOI × date-range request hitting more than 100
+matching scenes was silently truncated to the 100 most recent
+ones — which broke every FORDEAD run with a multi-year training
+window: the training window 2018-2020 saw 0 scenes because the
+search only ever returned the latest ~16 months.
+
+User-visible symptom (post v0.25.7 gating, still present in
+v0.26.0):
+
+```
+✖ FORDEAD pipeline failed: No Sentinel-2 scene in the training
+  window for zone 1.
+✖ Scenes available: "2024-02-03" → "2026-05-01" (100 scenes).
+✖ Training window: "2018-01-01 -> 2019-12-31" (0 scenes).
+```
+
+The garde-fou pointed at the dates, but the real cause was the
+search cap.
+
+### New — STAC pagination via `links[rel=next]`
+
+`R/sentinel2.R` now exposes `.stac_search_paginate()`, a generic
+paginator that:
+
+- follows the STAC API standard `links[rel=next]` mechanism
+  (both POST-with-body and GET-with-token variants),
+- per-page size is fixed at 1000 (the max accepted by both CDSE
+  and Planetary Computer); override via the env var
+  `NEMETON_STAC_PAGE_SIZE` for backends with stricter caps,
+- stops on (a) no `next` link, (b) empty page (defensive),
+  (c) cumulative count reaching the user `limit`, or (d) the
+  100-page safety cap (`.STAC_MAX_PAGES`) — the latter emits
+  an actionable `cli_warn` pointing at `start`/`end`/`max_cloud`.
+
+Both `stac_search_s2_cdse()` and `stac_search_s2_pc()` now route
+through this helper. The default `limit` is bumped from 100 to
+**10000** at the façade and at both backends — that's ~10 years
+of single-tile coverage, more than enough for FORDEAD's
+canonical 2-year training + 18-month monitoring window. Callers
+that want a quick preview can still pass `limit = 50`.
+
+Roxygen for the `limit` parameter rewritten with the new
+semantics (total cap across pages, not per-request page size).
+
+### Tests
+
+5 new scenarios in `test-sentinel2.R` covering the paginator
+(`with_mocked_responses`): single-page, multi-page traversal,
+`max_total` truncation, empty-page defensive stop, and
+`NEMETON_STAC_PAGE_SIZE` env var override. 101 PASS (+13).
+Two pre-existing failures in the same file (mocked-binding
+warnings test, unrelated to v0.27.0) are flagged for separate
+investigation.
+
+The FORDEAD pipeline test suite (`test-fordead-pipeline.R`,
+54 PASS) is unchanged: the mocks stub
+`ingest_s2_raw_bands_to_cache()` directly so the STAC swap is
+transparent.
+
+### Migration
+
+Backward compatibility: full. Callers that did not pass an
+explicit `limit` get more results (up to 10000 instead of 100)
+without any code change. Callers that passed `limit = N` keep
+the exact same upper-bound semantics — only the path to reach
+it changed.
+
 # nemeton 0.26.0 (2026-05-19)
 
 ### New — BD Forêt V2 fallback in `check_fordead_validity()`
