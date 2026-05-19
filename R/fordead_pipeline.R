@@ -524,8 +524,17 @@ run_fordead_dieback <- function(con,
     # + STOP_CONFIRMED (see .fordead_2x_status_to_classes for the
     # mapping table — to be empirically recalibrated in AC.12.3).
     state_raster <- .fordead_2x_status_to_classes(output_dir)
+    # v0.25.8 — Python's `import fordead` does NOT auto-import the
+    # `fordead.utils` submodule, so `fd$utils` raises AttributeError.
+    # Import the submodule explicitly. Failure here just warns
+    # (first_dieback_date is best-effort metadata).
+    fd_utils <- tryCatch(
+      reticulate::import("fordead.utils", convert = FALSE),
+      error = function(e) NULL
+    )
     fdd_raster   <- tryCatch(
-      .compute_first_dieback_date(output_dir, fd$utils),
+      if (is.null(fd_utils)) NULL else
+        .compute_first_dieback_date(output_dir, fd_utils),
       error = function(e) {
         cli::cli_alert_warning(
           "first_dieback_date derivation failed: {conditionMessage(e)}"

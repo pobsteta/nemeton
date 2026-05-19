@@ -1,3 +1,38 @@
+# nemeton 0.25.8 (2026-05-19)
+
+### Fixed — `fordead.utils` submodule access via reticulate
+
+Bug surfaced after v0.25.7 unblocked the training/monitoring gating.
+Pipeline progressed cleanly through ingest / stac_assembly / fit /
+predict, then `first_dieback_date` derivation warned with :
+
+```
+! first_dieback_date derivation failed: AttributeError: module
+  'fordead' has no attribute 'utils'
+```
+
+Root cause : Python's `import fordead` does NOT auto-import the
+`fordead.utils` submodule. We accessed `fd$utils$backward_start` on
+the top-level `fd <- reticulate::import("fordead", convert = FALSE)`
+handle, which raised AttributeError every time. The pipeline kept
+running thanks to the surrounding `tryCatch`, but `first_dieback_date`
+silently became `NA_character_` in the result.
+
+Fix in `R/fordead_pipeline.R::run_fordead_dieback()` : import
+`fordead.utils` explicitly via
+`reticulate::import("fordead.utils", convert = FALSE)` before calling
+`.compute_first_dieback_date()`. The import is wrapped in `tryCatch`
+so a missing submodule (older fordead pin) doesn't abort the
+pipeline — `first_dieback_date` falls back to `NULL` and the
+postprocess phase continues without the first-dieback-date raster.
+
+### Tests
+
+`test-fordead-pipeline.R` (54 PASS) unchanged — the mock stubs
+`.compute_first_dieback_date` directly so the internal swap from
+`fd$utils` to a dedicated `import("fordead.utils")` is transparent.
+
+
 # nemeton 0.25.7 (2026-05-18)
 
 ### Fixed — pre-`fit()` gating against empty training / monitoring windows
