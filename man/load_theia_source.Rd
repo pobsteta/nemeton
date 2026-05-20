@@ -8,6 +8,7 @@ load_theia_source(
   source_key,
   aoi,
   asset = NULL,
+  year = NULL,
   datetime = NULL,
   country = "FR",
   stac_api = NULL,
@@ -19,11 +20,17 @@ load_theia_source(
 \code{"forms_t"}). Its \code{access$stac_collection} field
 provides the STAC collection id.}
 
-\item{aoi}{An \code{sf}/\code{sfc} area of interest.}
+\item{aoi}{An \code{sf}/\code{sfc} area of interest. Used for the
+spatial search; ignored in year-targeting mode.}
 
-\item{asset}{Optional character. Name of the STAC asset to resolve
-(e.g. \code{"height"} for a multi-product source). When
-\code{NULL}, the first \code{"data"}-role asset is used.}
+\item{asset}{Optional character. Name of the STAC asset to resolve.
+When \code{NULL}: in year mode the \code{access$asset_template}
+(with \code{{year}} substituted) is used; otherwise the first
+\code{"data"}-role asset.}
+
+\item{year}{Optional integer. Target a single year of an annual
+time-series collection. Requires the datasource to declare
+\code{access$item_id_template}.}
 
 \item{datetime}{Optional character. STAC datetime filter (see
 \code{\link{stac_search_items}}).}
@@ -33,8 +40,8 @@ provides the STAC collection id.}
 \item{stac_api}{Optional character. Overrides the STAC API URL read
 from \code{services$theia_stac}.}
 
-\item{limit}{Integer. Maximum number of items to resolve. Default
-\code{50}.}
+\item{limit}{Integer. Maximum number of items to resolve in search
+mode. Default \code{50}.}
 }
 \value{
 A \code{SpatRaster} cropped to \code{aoi}.
@@ -52,6 +59,8 @@ that GDAL can authenticate the \code{/vsis3/} reads.
 }
 \examples{
 \dontrun{
-chm <- load_theia_source("forms_t", aoi, asset = "height")
+theia_configure_s3()
+# FORMSpoT canopy height for 2023 (year targeting)
+chm <- load_theia_source("formspot", aoi, year = 2023)
 }
 }

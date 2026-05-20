@@ -146,6 +146,42 @@ stac_search_items <- function(stac_api, collection, bbox,
 }
 
 
+#' Fetch a single STAC item by id
+#'
+#' Retrieves one item from a STAC API by its collection and item id
+#' (\code{<stac_api>/collections/<collection>/items/<item_id>}). Used
+#' to target a specific item — e.g. a given year of an annual
+#' time-series collection such as FORMSpoT.
+#'
+#' @param stac_api Character. Root URL of the STAC API.
+#' @param collection Character. STAC collection id.
+#' @param item_id Character. STAC item id.
+#'
+#' @return The STAC item feature (a parsed JSON object).
+#'
+#' @examples
+#' \dontrun{
+#' item <- stac_get_item("https://api.stac.teledetection.fr",
+#'                       "FORMSpoT", "FORMSpoT-2023")
+#' }
+#'
+#' @export
+stac_get_item <- function(stac_api, collection, item_id) {
+  .assert_httr2()
+  if (!nzchar(stac_api %||% "")) {
+    cli::cli_abort("{.arg stac_api} is required.")
+  }
+  url <- paste0(sub("/+$", "", stac_api), "/collections/",
+                collection, "/items/", item_id)
+  req <- httr2::request(url) |>
+    httr2::req_headers(Accept = "application/json") |>
+    httr2::req_timeout(60L) |>
+    .with_stac_retry()
+  resp <- httr2::req_perform(req)
+  httr2::resp_body_json(resp)
+}
+
+
 # Resolve the configured THEIA STAC API URL (argument overrides
 # config; aborts with an actionable message when still unset).
 .theia_stac_api <- function(country = "FR", stac_api = NULL) {
@@ -171,15 +207,17 @@ stac_search_items <- function(stac_api, collection, bbox,
 #' \code{\link{load_theia_source}}.
 #'
 #' Credentials are never stored in the package. They are read from
-#' the \env{THEIA_S3_ACCESS_KEY} and \env{THEIA_S3_SECRET_KEY}
-#' environment variables (set them in a gitignored \file{.Renviron}),
-#' or passed explicitly. The non-secret S3 endpoint and options are
-#' read from the \code{services$theia_s3} entry of the country
-#' configuration.
+#' the \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY} environment
+#' variables — the same THEIA API-key pair used by the
+#' \code{teledetection} SDK (create one at
+#' \url{https://gate.stac.teledetection.fr}, set it in a gitignored
+#' \file{.Renviron}) — or passed explicitly. The non-secret S3
+#' endpoint, region and options are read from the
+#' \code{services$theia_s3} entry of the country configuration.
 #'
-#' @param access_key,secret_key Character. S3 credentials. When
-#'   \code{NULL} (default) they are read from \env{THEIA_S3_ACCESS_KEY}
-#'   and \env{THEIA_S3_SECRET_KEY}.
+#' @param access_key,secret_key Character. THEIA S3 credentials.
+#'   When \code{NULL} (default) they are read from
+#'   \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY}.
 #' @param country Character. ISO country code. Default \code{"FR"}.
 #'
 #' @return \code{TRUE} invisibly on success.
@@ -194,15 +232,15 @@ stac_search_items <- function(stac_api, collection, bbox,
 theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
                                country = "FR") {
   if (is.null(access_key)) {
-    access_key <- Sys.getenv("THEIA_S3_ACCESS_KEY", "")
+    access_key <- Sys.getenv("TLD_ACCESS_KEY", "")
   }
   if (is.null(secret_key)) {
-    secret_key <- Sys.getenv("THEIA_S3_SECRET_KEY", "")
+    secret_key <- Sys.getenv("TLD_SECRET_KEY", "")
   }
   if (!nzchar(access_key) || !nzchar(secret_key)) {
     cli::cli_abort(c(
       "THEIA S3 credentials not found.",
-      i = "Set {.envvar THEIA_S3_ACCESS_KEY} and {.envvar THEIA_S3_SECRET_KEY} in a gitignored {.file .Renviron}, or pass {.arg access_key} / {.arg secret_key}."
+      i = "Set {.envvar TLD_ACCESS_KEY} and {.envvar TLD_SECRET_KEY} in a gitignored {.file .Renviron} (create an API key at {.url https://gate.stac.teledetection.fr}), or pass {.arg access_key} / {.arg secret_key}."
     ))
   }
 
@@ -219,7 +257,7 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
                        if (isTRUE(s3$virtual_hosting)) "TRUE" else "FALSE")
   terra::setGDALconfig("AWS_HTTPS",
                        if (isFALSE(s3$https)) "NO" else "YES")
-  terra::setGDALconfig("AWS_REGION", s3$region %||% "us-east-1")
+  terra::setGDALconfig("AWS_REGION", s3$region %||% "sm1")
 
   cli::cli_alert_success("THEIA S3 configured ({.val {s3$endpoint}}).")
   invisible(TRUE)
@@ -229,32 +267,48 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 #' Resolve THEIA datasource assets for an area of interest
 #'
 #' Looks up a Theia datasource declared in
-#' \code{inst/datasources/<country>.json}, searches the THEIA STAC API
-#' for items of its collection intersecting \code{aoi}, and returns the
-#' matching asset paths normalised to \code{/vsis3/} so that GDAL reads
-#' the objects directly from the S3 store (call
+#' \code{inst/datasources/<country>.json} and returns the matching
+#' asset paths normalised to \code{/vsis3/} so that GDAL reads the
+#' objects directly from the S3 store (call
 #' \code{\link{theia_configure_s3}} once first to authenticate).
+#'
+#' Two access modes:
+#' \itemize{
+#'   \item \strong{Year targeting} — when \code{year} is supplied and
+#'     the datasource declares an \code{access$item_id_template} (such
+#'     as FORMSpoT, one item per year), the matching item is fetched
+#'     directly by id and a single asset path is returned.
+#'   \item \strong{Spatial search} — otherwise, the THEIA STAC API is
+#'     searched for items of the collection intersecting \code{aoi}.
+#' }
 #'
 #' @param source_key Character. Theia datasource key (e.g.
 #'   \code{"forms_t"}). Its \code{access$stac_collection} field
 #'   provides the STAC collection id.
-#' @param aoi An \code{sf}/\code{sfc} area of interest.
-#' @param asset Optional character. Name of the STAC asset to resolve
-#'   (e.g. \code{"height"} for a multi-product source). When
-#'   \code{NULL}, the first \code{"data"}-role asset is used.
+#' @param aoi An \code{sf}/\code{sfc} area of interest. Used for the
+#'   spatial search; ignored in year-targeting mode.
+#' @param asset Optional character. Name of the STAC asset to resolve.
+#'   When \code{NULL}: in year mode the \code{access$asset_template}
+#'   (with \code{{year}} substituted) is used; otherwise the first
+#'   \code{"data"}-role asset.
+#' @param year Optional integer. Target a single year of an annual
+#'   time-series collection. Requires the datasource to declare
+#'   \code{access$item_id_template}.
 #' @param datetime Optional character. STAC datetime filter (see
 #'   \code{\link{stac_search_items}}).
 #' @param country Character. ISO country code. Default \code{"FR"}.
 #' @param stac_api Optional character. Overrides the STAC API URL read
 #'   from \code{services$theia_stac}.
-#' @param limit Integer. Maximum number of items to resolve. Default
-#'   \code{50}.
+#' @param limit Integer. Maximum number of items to resolve in search
+#'   mode. Default \code{50}.
 #'
-#' @return A character vector of \code{/vsis3/} asset paths.
+#' @return A character vector of \code{/vsis3/} asset paths (length 1
+#'   in year-targeting mode).
 #'
 #' @export
 resolve_theia_assets <- function(source_key, aoi, asset = NULL,
-                                 datetime = NULL, country = "FR",
+                                 year = NULL, datetime = NULL,
+                                 country = "FR",
                                  stac_api = NULL, limit = 50L) {
   src <- get_data_source(source_key, country)
   if (is.null(src)) {
@@ -269,6 +323,28 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
   }
 
   api <- .theia_stac_api(country, stac_api)
+
+  # ---- Year-targeting mode: fetch the item by id ----
+  if (!is.null(year)) {
+    tmpl <- src$access$item_id_template %||% ""
+    if (!nzchar(tmpl)) {
+      cli::cli_abort(c(
+        "Datasource {.val {source_key}} does not support year targeting.",
+        i = "It declares no {.field access.item_id_template}."
+      ))
+    }
+    item_id <- gsub("{year}", as.character(year), tmpl, fixed = TRUE)
+    if (is.null(asset)) {
+      atmpl <- src$access$asset_template %||% ""
+      if (nzchar(atmpl)) {
+        asset <- gsub("{year}", as.character(year), atmpl, fixed = TRUE)
+      }
+    }
+    item <- stac_get_item(api, collection, item_id)
+    return(.theia_href_to_gdal(.stac_pick_asset(item, asset = asset)))
+  }
+
+  # ---- Spatial-search mode ----
   bbox <- .theia_bbox_4326(aoi)
   items <- stac_search_items(api, collection, bbox,
                              datetime = datetime, limit = limit)
@@ -302,15 +378,19 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 #'
 #' @examples
 #' \dontrun{
-#' chm <- load_theia_source("forms_t", aoi, asset = "height")
+#' theia_configure_s3()
+#' # FORMSpoT canopy height for 2023 (year targeting)
+#' chm <- load_theia_source("formspot", aoi, year = 2023)
 #' }
 #'
 #' @export
 load_theia_source <- function(source_key, aoi, asset = NULL,
-                              datetime = NULL, country = "FR",
+                              year = NULL, datetime = NULL,
+                              country = "FR",
                               stac_api = NULL, limit = 50L) {
   hrefs <- resolve_theia_assets(source_key, aoi, asset = asset,
-                                datetime = datetime, country = country,
+                                year = year, datetime = datetime,
+                                country = country,
                                 stac_api = stac_api, limit = limit)
 
   rast <- if (length(hrefs) == 1L) {

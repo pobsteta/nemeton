@@ -8,6 +8,7 @@ resolve_theia_assets(
   source_key,
   aoi,
   asset = NULL,
+  year = NULL,
   datetime = NULL,
   country = "FR",
   stac_api = NULL,
@@ -19,11 +20,17 @@ resolve_theia_assets(
 \code{"forms_t"}). Its \code{access$stac_collection} field
 provides the STAC collection id.}
 
-\item{aoi}{An \code{sf}/\code{sfc} area of interest.}
+\item{aoi}{An \code{sf}/\code{sfc} area of interest. Used for the
+spatial search; ignored in year-targeting mode.}
 
-\item{asset}{Optional character. Name of the STAC asset to resolve
-(e.g. \code{"height"} for a multi-product source). When
-\code{NULL}, the first \code{"data"}-role asset is used.}
+\item{asset}{Optional character. Name of the STAC asset to resolve.
+When \code{NULL}: in year mode the \code{access$asset_template}
+(with \code{{year}} substituted) is used; otherwise the first
+\code{"data"}-role asset.}
+
+\item{year}{Optional integer. Target a single year of an annual
+time-series collection. Requires the datasource to declare
+\code{access$item_id_template}.}
 
 \item{datetime}{Optional character. STAC datetime filter (see
 \code{\link{stac_search_items}}).}
@@ -33,17 +40,28 @@ provides the STAC collection id.}
 \item{stac_api}{Optional character. Overrides the STAC API URL read
 from \code{services$theia_stac}.}
 
-\item{limit}{Integer. Maximum number of items to resolve. Default
-\code{50}.}
+\item{limit}{Integer. Maximum number of items to resolve in search
+mode. Default \code{50}.}
 }
 \value{
-A character vector of \code{/vsis3/} asset paths.
+A character vector of \code{/vsis3/} asset paths (length 1
+in year-targeting mode).
 }
 \description{
 Looks up a Theia datasource declared in
-\code{inst/datasources/<country>.json}, searches the THEIA STAC API
-for items of its collection intersecting \code{aoi}, and returns the
-matching asset paths normalised to \code{/vsis3/} so that GDAL reads
-the objects directly from the S3 store (call
+\code{inst/datasources/<country>.json} and returns the matching
+asset paths normalised to \code{/vsis3/} so that GDAL reads the
+objects directly from the S3 store (call
 \code{\link{theia_configure_s3}} once first to authenticate).
+}
+\details{
+Two access modes:
+\itemize{
+  \item \strong{Year targeting} — when \code{year} is supplied and
+    the datasource declares an \code{access$item_id_template} (such
+    as FORMSpoT, one item per year), the matching item is fetched
+    directly by id and a single asset path is returned.
+  \item \strong{Spatial search} — otherwise, the THEIA STAC API is
+    searched for items of the collection intersecting \code{aoi}.
+}
 }

@@ -7,9 +7,9 @@
 theia_configure_s3(access_key = NULL, secret_key = NULL, country = "FR")
 }
 \arguments{
-\item{access_key, secret_key}{Character. S3 credentials. When
-\code{NULL} (default) they are read from \env{THEIA_S3_ACCESS_KEY}
-and \env{THEIA_S3_SECRET_KEY}.}
+\item{access_key, secret_key}{Character. THEIA S3 credentials.
+When \code{NULL} (default) they are read from \env{TLD_ACCESS_KEY}
+and \env{TLD_SECRET_KEY}.}
 
 \item{country}{Character. ISO country code. Default \code{"FR"}.}
 }
@@ -25,11 +25,13 @@ with native SigV4 signing — call it once per session before
 }
 \details{
 Credentials are never stored in the package. They are read from
-the \env{THEIA_S3_ACCESS_KEY} and \env{THEIA_S3_SECRET_KEY}
-environment variables (set them in a gitignored \file{.Renviron}),
-or passed explicitly. The non-secret S3 endpoint and options are
-read from the \code{services$theia_s3} entry of the country
-configuration.
+the \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY} environment
+variables — the same THEIA API-key pair used by the
+\code{teledetection} SDK (create one at
+\url{https://gate.stac.teledetection.fr}, set it in a gitignored
+\file{.Renviron}) — or passed explicitly. The non-secret S3
+endpoint, region and options are read from the
+\code{services$theia_s3} entry of the country configuration.
 }
 \examples{
 \dontrun{

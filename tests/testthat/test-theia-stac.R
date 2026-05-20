@@ -186,7 +186,7 @@ test_that(".theia_href_to_gdal leaves a /vsi path untouched", {
 # ---- theia_configure_s3 ----
 
 test_that("theia_configure_s3 aborts when credentials are absent", {
-  withr::local_envvar(THEIA_S3_ACCESS_KEY = "", THEIA_S3_SECRET_KEY = "")
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
   expect_error(theia_configure_s3(), "credentials")
 })
 
@@ -206,5 +206,58 @@ test_that("load_theia_source propagates an unknown-datasource error", {
   expect_error(
     load_theia_source("does_not_exist", aoi, stac_api = "https://stac.example"),
     "Unknown datasource"
+  )
+})
+
+# ---- stac_get_item / year targeting ----
+
+test_that("stac_get_item rejects an empty stac_api", {
+  skip_if_not_installed("httr2")
+  expect_error(
+    stac_get_item("", "FORMSpoT", "FORMSpoT-2023"),
+    "stac_api"
+  )
+})
+
+test_that("resolve_theia_assets targets a single year via item id", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("jsonlite")
+
+  aoi <- create_test_units(n_features = 1)
+  item <- list(
+    id = "FORMSpoT-2023",
+    assets = list(
+      height_2023 = list(
+        href = paste0("https://s3-data.meso.umontpellier.fr/",
+                      "sm1-gdc-ext/FORMSpoT/2023/full_2023.vrt"),
+        roles = list("data")
+      )
+    )
+  )
+  resp <- httr2::response(
+    status_code = 200L,
+    headers = list(`content-type` = "application/json"),
+    body = charToRaw(jsonlite::toJSON(item, auto_unbox = TRUE, force = TRUE))
+  )
+  httr2::with_mocked_responses(
+    function(req) resp,
+    {
+      hrefs <- resolve_theia_assets("formspot", aoi, year = 2023,
+                                    stac_api = "https://stac.example")
+    }
+  )
+  expect_length(hrefs, 1L)
+  expect_equal(hrefs, "/vsis3/sm1-gdc-ext/FORMSpoT/2023/full_2023.vrt")
+})
+
+test_that("resolve_theia_assets year mode errors without an item template", {
+  skip_if_not_installed("sf")
+  aoi <- create_test_units(n_features = 1)
+  # theia_snow has a confirmed collection but no access$item_id_template
+  expect_error(
+    resolve_theia_assets("theia_snow", aoi, year = 2023,
+                         stac_api = "https://stac.example"),
+    "year targeting"
   )
 })
