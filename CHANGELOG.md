@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-05-20
+
+### Added
+
+- `stac_get_item()` — fetch a single STAC item by id.
+- `resolve_theia_assets()` / `load_theia_source()` gain a `year`
+  argument to target one year of an annual THEIA collection
+  (FORMSpoT). `formspot` in `FR.json` gains `item_id_template`,
+  `asset_template` and `years`.
+
 ## [0.38.0] - 2026-05-20
 
 ### Added

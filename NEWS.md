@@ -1,3 +1,26 @@
+# nemeton 0.39.0 (2026-05-20)
+
+### Added — year targeting for annual THEIA collections
+
+FORMSpoT (and similar annual time-series collections) publish one
+STAC item per year — `FORMSpoT-{year}` — each with a
+year-specific asset (`height_{year}`). A bbox search would return
+every yearly item, so a dedicated lookup is needed.
+
+- **New exported helper `stac_get_item(stac_api, collection,
+  item_id)`** — fetches a single STAC item by id.
+- **`resolve_theia_assets()` and `load_theia_source()` gain a
+  `year` argument.** When supplied and the datasource declares an
+  `access$item_id_template` (FORMSpoT does), the matching item is
+  fetched directly by id and the year-specific asset is resolved
+  — no spatial search. The asset name defaults to
+  `access$asset_template` with `{year}` substituted.
+- `inst/datasources/FR.json`: the `formspot` entry now carries
+  machine-usable `item_id_template` (`FORMSpoT-{year}`),
+  `asset_template` (`height_{year}`) and `years` ([2014, 2024]).
+
+Usage: `load_theia_source("formspot", aoi, year = 2023)`.
+
 # nemeton 0.38.0 (2026-05-20)
 
 ### Added — authenticated THEIA S3 reads
