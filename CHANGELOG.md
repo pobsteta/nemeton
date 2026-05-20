@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.36.1] - 2026-05-20
+
+### Fixed
+
+- `services.theia_stac.url` set to the verified THEIA MTD STAC API
+  root; `forms_t` gains `stac_collection: "forms-t"`.
+- Theia STAC resolver `"to confirm"` guard now uses a substring
+  match, correctly rejecting the `"to confirm at the Theia
+  catalogue"` placeholders.
+
 ## [0.36.0] - 2026-05-20
 
 ### Added

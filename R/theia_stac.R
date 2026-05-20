@@ -120,7 +120,7 @@ stac_search_items <- function(stac_api, collection, bbox,
   if (!is.null(stac_api) && nzchar(stac_api)) return(stac_api)
   config <- get_country_config(country)
   url <- config$services$theia_stac$url %||% ""
-  if (!nzchar(url) || identical(url, "to confirm")) {
+  if (!nzchar(url) || grepl("to confirm", url, ignore.case = TRUE)) {
     cli::cli_abort(c(
       "No THEIA STAC API endpoint configured for country {.val {country}}.",
       i = "Set {.field services.theia_stac.url} in the datasource JSON, or pass {.arg stac_api} explicitly."
@@ -164,7 +164,7 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
     cli::cli_abort("Unknown datasource key {.val {source_key}} for country {.val {country}}.")
   }
   collection <- src$access$stac_collection %||% ""
-  if (!nzchar(collection) || identical(collection, "to confirm")) {
+  if (!nzchar(collection) || grepl("to confirm", collection, ignore.case = TRUE)) {
     cli::cli_abort(c(
       "Datasource {.val {source_key}} has no confirmed STAC collection.",
       i = "Set {.field access.stac_collection} in the datasource JSON."

@@ -102,23 +102,25 @@ test_that("resolve_theia_assets errors on an unknown datasource", {
   )
 })
 
-test_that("resolve_theia_assets errors when no STAC API is configured", {
-  skip_if_not_installed("sf")
-  # theia_snow carries a confirmed stac_collection, but services$theia_stac$url
-  # is still "to confirm" — the resolver must abort with guidance.
-  aoi <- create_test_units(n_features = 1)
+test_that(".theia_stac_api resolves the configured FR endpoint", {
+  url <- nemeton:::.theia_stac_api("FR")
+  expect_match(url, "datastore-mtd.theia.data-terra.org")
+})
+
+test_that(".theia_stac_api aborts when no endpoint is configured", {
+  # EU.json carries no services$theia_stac entry.
   expect_error(
-    resolve_theia_assets("theia_snow", aoi),
+    nemeton:::.theia_stac_api("EU"),
     "STAC API"
   )
 })
 
 test_that("resolve_theia_assets errors on an unconfirmed STAC collection", {
   skip_if_not_installed("sf")
-  # forms_t still has access$stac_collection = "to confirm ..."
+  # s2_biophysical still has access$stac_collection = "to confirm ..."
   aoi <- create_test_units(n_features = 1)
   expect_error(
-    resolve_theia_assets("forms_t", aoi, stac_api = "https://stac.example"),
+    resolve_theia_assets("s2_biophysical", aoi, stac_api = "https://stac.example"),
     "STAC collection"
   )
 })
@@ -144,11 +146,11 @@ test_that("resolve_theia_assets returns vsicurl-prefixed hrefs", {
 
 # ---- load_theia_source ----
 
-test_that("load_theia_source propagates the no-STAC-API error", {
+test_that("load_theia_source propagates an unknown-datasource error", {
   skip_if_not_installed("sf")
   aoi <- create_test_units(n_features = 1)
   expect_error(
-    load_theia_source("theia_snow", aoi),
-    "STAC API"
+    load_theia_source("does_not_exist", aoi, stac_api = "https://stac.example"),
+    "Unknown datasource"
   )
 })

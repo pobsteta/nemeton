@@ -28,10 +28,11 @@
       "provider": "Etalab"
     },
     "theia_stac": {
-      "url": "to confirm",
+      "url": "https://api.datastore-mtd.theia.data-terra.org",
       "browser": "https://browser.datastore-mtd.theia.data-terra.org/",
+      "stac_version": "1.1.0",
       "provider": "Theia / DATA TERRA — datastore MTD",
-      "note": "STAC API root for the THEIA MTD datastore, consumed by load_theia_source() / resolve_theia_assets(). The browser URL is verified; the STAC API endpoint behind it must be confirmed and filled in `url` (or passed via the stac_api argument). Until then the Theia STAC resolver aborts with an actionable message."
+      "note": "STAC API root for the THEIA MTD datastore, consumed by load_theia_source() / resolve_theia_assets(). Anonymous access; STAC search at <url>/search."
     }
   },
 
@@ -172,9 +173,10 @@
       "augmented": "height_ml",
       "access": {
         "doi": "https://doi.theia.data-terra.org/FormsT/",
-        "stac_catalog": "https://browser-theia.stac.teledetection.fr/",
+        "stac_catalog": "https://browser.datastore-mtd.theia.data-terra.org/",
+        "stac_collection": "forms-t",
         "zenodo": "https://zenodo.org/records/15489231",
-        "note": "Distributed by DATA TERRA / THEIA (CDS-MTD diffusion service). COG assets are resolved per-tile and per-year from the STAC catalog, or downloaded as .tif from the Zenodo record. There is no single static URL, so load_raster_source() cannot fetch this source directly: the caller must resolve the STAC asset href (or a local download path) first."
+        "note": "Published as the THEIA STAC collection forms-t (api.datastore-mtd.theia.data-terra.org/collections/forms-t), or downloadable as .tif from the Zenodo record. Resolve and load it with load_theia_source('forms_t', aoi, asset = ...)."
       },
       "products": {
         "height": {

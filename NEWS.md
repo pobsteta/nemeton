@@ -1,3 +1,20 @@
+# nemeton 0.36.1 (2026-05-20)
+
+### Fixed — THEIA STAC endpoint confirmed
+
+- `services.theia_stac.url` in `inst/datasources/FR.json` is now
+  the verified THEIA MTD STAC API root
+  (`https://api.datastore-mtd.theia.data-terra.org`, STAC 1.1.0,
+  anonymous access) — no longer `"to confirm"`. The `forms_t`
+  entry gains the verified `stac_collection: "forms-t"` and its
+  `stac_catalog` host is corrected, so `load_theia_source("forms_t",
+  aoi, asset = ...)` resolves out of the box.
+- The Theia STAC resolver's `"to confirm"` guard now matches any
+  string containing `"to confirm"` (the FR.json placeholders read
+  `"to confirm at the Theia catalogue"`), instead of only the
+  exact literal — so sources with an unverified `stac_collection`
+  are still correctly rejected.
+
 # nemeton 0.36.0 (2026-05-20)
 
 ### Added — THEIA STAC resolver
