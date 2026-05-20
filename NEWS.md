@@ -1,3 +1,53 @@
+# nemeton 0.41.0 (2026-05-20)
+
+### New — FORDEAD dieback mask persisted to the project cache
+
+`run_fordead_dieback()` ran FORDEAD inside a bare
+`tempfile("fordead_")` directory, wiped when the session ended.
+Every diagnostic artefact — including the categorical 0-4
+dieback mask — was lost, and `read_fordead_dieback_mask()`
+(shipped in v0.25.0 with its path convention fully documented)
+always returned `NULL` because nothing ever wrote the mask.
+
+Two changes close the loop:
+
+- **Mask persist hook (always on).** After the `postprocess`
+  phase, the categorical 0-4 state raster is written to
+  `<mask_cache_dir>/zone_<zone_id>/dieback_mask_<YYYYMMDDTHHMMSS>.tif`
+  — the exact path `read_fordead_dieback_mask()` looks up. The
+  run timestamp doubles as the run id, so successive runs
+  accumulate as a history rather than overwriting. The write is
+  best-effort: a failure warns but never aborts the pipeline.
+
+- **New `mask_cache_dir` argument.** Root of the FORDEAD
+  persistent cache. `NULL` (default) derives it as the sibling
+  of `cache_dir`: `file.path(dirname(cache_dir), "fordead")`,
+  i.e. `<project>/cache/layers/fordead` for the conventional
+  layout.
+
+- **New `keep_output` argument (opt-in, default `FALSE`).**
+  When `TRUE` and `output_dir` is left at its default, FORDEAD
+  runs directly inside
+  `<mask_cache_dir>/zone_<zone_id>/run_<YYYYMMDDTHHMMSS>/` so the
+  full raster working set (≈1000+ GeoTIFFs) survives the
+  session — useful to re-run `postprocess` with different
+  `min_pixels` / `connectivity` without re-`fit`/`predict`. An
+  explicit `output_dir` always wins.
+
+The result list gains `rasters$dieback_mask` (path to the
+persisted mask, or `NA_character_` on write failure).
+
+Backward compatibility: full. With `keep_output = FALSE`
+(default) the working set still lands in a temporary directory
+exactly as before; only the small categorical mask is now
+additionally persisted.
+
+Tests: 3 new scenarios in `test-fordead-pipeline.R` (mask
+written to an explicit `mask_cache_dir` and round-tripped
+through `read_fordead_dieback_mask()`; default `mask_cache_dir`
+derivation; `keep_output = TRUE` redirecting `output_dir`).
+65 PASS.
+
 # nemeton 0.40.1 (2026-05-20)
 
 ### Fixed — silent post-`predict` phases in `run_fordead_dieback()`

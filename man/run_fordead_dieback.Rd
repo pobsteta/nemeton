@@ -15,6 +15,8 @@ run_fordead_dieback(
   threshold_anomaly = 0.16,
   max_cloud = 20,
   output_dir = tempfile("fordead_"),
+  mask_cache_dir = NULL,
+  keep_output = FALSE,
   python_env = NULL,
   min_pixels = 5L,
   connectivity = 8L,
@@ -59,8 +61,32 @@ Default `"CRSWIR"`.}
 \item{max_cloud}{Numeric. Maximum scene cloud cover (%) passed to
 the phase-0 STAC search. Default 20.}
 
-\item{output_dir}{Character. Where FORDEAD writes its rasters.
-Defaults to a fresh `tempfile("fordead_")`.}
+\item{output_dir}{Character. Where FORDEAD writes its full raster
+working set (≈1000+ GeoTIFFs: `ANOMALY_*`, `CRSWIR`,
+`PREDICTION`, masks, …). Defaults to a fresh
+`tempfile("fordead_")`, which is wiped when the session ends.
+See `keep_output` to retain the working set in the project
+cache instead.}
+
+\item{mask_cache_dir}{Character or `NULL`. Root of the FORDEAD
+persistent cache where the categorical 0-4 dieback mask is
+written (one small GeoTIFF per run). When `NULL` (default), it
+is derived as the sibling of `cache_dir`:
+`file.path(dirname(cache_dir), "fordead")` — i.e.
+`<project>/cache/layers/fordead` for the conventional layout.
+The mask is saved as
+`<mask_cache_dir>/zone_<zone_id>/dieback_mask_<YYYYMMDDTHHMMSS>.tif`,
+the exact path [read_fordead_dieback_mask()] looks up.}
+
+\item{keep_output}{Logical. When `TRUE` and `output_dir` is left
+at its default, FORDEAD runs directly inside the project cache
+(`<mask_cache_dir>/zone_<zone_id>/run_<YYYYMMDDTHHMMSS>/`) so the
+full raster working set survives the session — useful to re-run
+`postprocess` with different `min_pixels` / `connectivity`
+without re-`fit`/`predict`. Default `FALSE` (working set in a
+temporary directory). Ignored when `output_dir` is supplied
+explicitly. The categorical dieback mask is persisted regardless
+of this flag.}
 
 \item{python_env}{Character. Virtualenv name. Defaults to
 `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.}
@@ -91,7 +117,10 @@ A list with the following fields:
     \item{zone_id}{The zone id that was processed.}
     \item{n_scenes}{Number of scenes considered.}
     \item{rasters}{Named list of GeoTIFF paths (`state`,
-      `first_dieback_date`, `stress_index`).}
+      `first_dieback_date`, `stress_index`, `dieback_mask`).
+      `dieback_mask` is the persisted categorical 0-4 raster
+      under `mask_cache_dir` (or `NA_character_` when the
+      mask could not be written).}
     \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
       centroids (in EPSG:2154), or `NULL` when no anomaly was
       detected.}

@@ -170,7 +170,8 @@ NULL
     n_scenes          = as.integer(n_scenes),
     rasters           = list(state = NA_character_,
                              first_dieback_date = NA_character_,
-                             stress_index = NA_character_),
+                             stress_index = NA_character_,
+                             dieback_mask = NA_character_),
     alerts_sf         = NULL,
     n_alerts_inserted = 0L,
     duration_sec      = duration_sec,
@@ -254,8 +255,30 @@ NULL
 #'   `0.16` (calibrated).
 #' @param max_cloud Numeric. Maximum scene cloud cover (%) passed to
 #'   the phase-0 STAC search. Default 20.
-#' @param output_dir Character. Where FORDEAD writes its rasters.
-#'   Defaults to a fresh `tempfile("fordead_")`.
+#' @param output_dir Character. Where FORDEAD writes its full raster
+#'   working set (≈1000+ GeoTIFFs: `ANOMALY_*`, `CRSWIR`,
+#'   `PREDICTION`, masks, …). Defaults to a fresh
+#'   `tempfile("fordead_")`, which is wiped when the session ends.
+#'   See `keep_output` to retain the working set in the project
+#'   cache instead.
+#' @param mask_cache_dir Character or `NULL`. Root of the FORDEAD
+#'   persistent cache where the categorical 0-4 dieback mask is
+#'   written (one small GeoTIFF per run). When `NULL` (default), it
+#'   is derived as the sibling of `cache_dir`:
+#'   `file.path(dirname(cache_dir), "fordead")` — i.e.
+#'   `<project>/cache/layers/fordead` for the conventional layout.
+#'   The mask is saved as
+#'   `<mask_cache_dir>/zone_<zone_id>/dieback_mask_<YYYYMMDDTHHMMSS>.tif`,
+#'   the exact path [read_fordead_dieback_mask()] looks up.
+#' @param keep_output Logical. When `TRUE` and `output_dir` is left
+#'   at its default, FORDEAD runs directly inside the project cache
+#'   (`<mask_cache_dir>/zone_<zone_id>/run_<YYYYMMDDTHHMMSS>/`) so the
+#'   full raster working set survives the session — useful to re-run
+#'   `postprocess` with different `min_pixels` / `connectivity`
+#'   without re-`fit`/`predict`. Default `FALSE` (working set in a
+#'   temporary directory). Ignored when `output_dir` is supplied
+#'   explicitly. The categorical dieback mask is persisted regardless
+#'   of this flag.
 #' @param python_env Character. Virtualenv name. Defaults to
 #'   `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.
 #' @param min_pixels Integer. Minimum FORDEAD patch size (in
@@ -280,7 +303,10 @@ NULL
 #'     \item{zone_id}{The zone id that was processed.}
 #'     \item{n_scenes}{Number of scenes considered.}
 #'     \item{rasters}{Named list of GeoTIFF paths (`state`,
-#'       `first_dieback_date`, `stress_index`).}
+#'       `first_dieback_date`, `stress_index`, `dieback_mask`).
+#'       `dieback_mask` is the persisted categorical 0-4 raster
+#'       under `mask_cache_dir` (or `NA_character_` when the
+#'       mask could not be written).}
 #'     \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
 #'       centroids (in EPSG:2154), or `NULL` when no anomaly was
 #'       detected.}
@@ -319,6 +345,8 @@ run_fordead_dieback <- function(con,
                                 threshold_anomaly = 0.16,
                                 max_cloud = 20,
                                 output_dir = tempfile("fordead_"),
+                                mask_cache_dir = NULL,
+                                keep_output = FALSE,
                                 python_env = NULL,
                                 min_pixels = 5L,
                                 connectivity = 8L,
@@ -348,6 +376,28 @@ run_fordead_dieback <- function(con,
   }
 
   env_name <- if (is.null(python_env)) .fordead_default_env() else python_env
+
+  # Resolve the FORDEAD persistent cache root. By convention it is the
+  # sibling of the Sentinel-2 cache: `cache_dir` is typically
+  # `<project>/cache/layers/sentinel2`, so the FORDEAD cache is
+  # `<project>/cache/layers/fordead`. This is where the categorical
+  # 0-4 dieback mask is persisted so `read_fordead_dieback_mask()`
+  # can pick it up. `run_ts` doubles as the run identifier in the
+  # `dieback_mask_<YYYYMMDDTHHMMSS>.tif` filename.
+  if (is.null(mask_cache_dir)) {
+    mask_cache_dir <- file.path(dirname(cache_dir), "fordead")
+  }
+  run_ts   <- format(t0, "%Y%m%dT%H%M%S")
+  zone_dir <- file.path(mask_cache_dir, paste0("zone_", zone_id))
+
+  # When `keep_output` is requested and the caller left `output_dir`
+  # at its default tempfile, run FORDEAD directly inside the project
+  # cache so the full working set (≈1000+ rasters) survives the
+  # session instead of being wiped with `tempdir()`. An explicit
+  # `output_dir` always wins — the caller owns its persistence.
+  if (isTRUE(keep_output) && missing(output_dir)) {
+    output_dir <- file.path(zone_dir, paste0("run_", run_ts))
+  }
 
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -564,7 +614,8 @@ run_fordead_dieback <- function(con,
     rasters <- list(
       state              = .latest_layer_file(output_dir, "ANOMALY_CONFIRMED"),
       first_dieback_date = NA_character_,  # in-memory, not persisted
-      stress_index       = .latest_layer_file(output_dir, "ANOMALY_INDEX")
+      stress_index       = .latest_layer_file(output_dir, "ANOMALY_INDEX"),
+      dieback_mask       = NA_character_   # set in the persist phase
     )
 
     # 4. postprocess (1.x helper reused — input shape unchanged)
@@ -592,6 +643,30 @@ run_fordead_dieback <- function(con,
     n_inserted <- 0L
     begin_phase("persist")
     if (verbose) cli::cli_alert_info("Step: persist")
+
+    # Persist the categorical 0-4 dieback mask to the project cache
+    # under the convention read_fordead_dieback_mask() expects:
+    # <mask_cache_dir>/zone_<id>/dieback_mask_<YYYYMMDDTHHMMSS>.tif.
+    # Best-effort: a write failure warns but never aborts the run.
+    if (!is.null(state_raster)) {
+      dir.create(zone_dir, recursive = TRUE, showWarnings = FALSE)
+      mask_path <- file.path(zone_dir,
+                             paste0("dieback_mask_", run_ts, ".tif"))
+      rasters$dieback_mask <- tryCatch({
+        terra::writeRaster(state_raster, mask_path,
+                           overwrite = TRUE, datatype = "INT1U")
+        if (verbose) {
+          cli::cli_alert_info("Dieback mask persisted: {.path {mask_path}}")
+        }
+        mask_path
+      }, error = function(e) {
+        cli::cli_alert_warning(
+          "Dieback mask persist failed: {conditionMessage(e)}"
+        )
+        NA_character_
+      })
+    }
+
     if (!is.null(alerts_sf)) {
       n_inserted <- .insert_fordead_alerts(con, alerts_sf,
                                            zone_id = zone_id)

@@ -244,6 +244,114 @@ test_that("runs the 6 phases in order on the success path", {
 })
 
 
+test_that("persist phase writes the categorical dieback mask to mask_cache_dir", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+  skip_if_not_installed("terra")
+
+  class_r <- terra::rast(nrows = 4, ncols = 4,
+                         xmin = 0, xmax = 40, ymin = 0, ymax = 40,
+                         crs = "EPSG:2154")
+  terra::values(class_r) <- as.integer(c(0, 1, 2, 3,
+                                         0, 0, 1, 4,
+                                         rep(0, 8)))
+  names(class_r) <- "fordead_class"
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers(fake_class_raster = class_r)
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  mask_dir <- tempfile("fordead-mask-")
+
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 7L,
+    cache_dir        = make_cache_dir(),
+    mask_cache_dir   = mask_dir,
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE
+  )
+
+  expect_identical(out$status, "success")
+  mask_path <- out$rasters$dieback_mask
+  expect_false(is.na(mask_path))
+  expect_true(file.exists(mask_path))
+  # Convention: <mask_cache_dir>/zone_<id>/dieback_mask_<YYYYMMDDTHHMMSS>.tif
+  expect_match(mask_path,
+               file.path("zone_7",
+                         "dieback_mask_[0-9]{8}T[0-9]{6}\\.tif$"))
+  # The persisted mask is exactly what read_fordead_dieback_mask() picks up.
+  rr <- read_fordead_dieback_mask(con = NULL, zone_id = 7L,
+                                  cache_dir = mask_dir)
+  expect_s4_class(rr, "SpatRaster")
+  vals <- terra::values(rr)
+  expect_equal(sort(unique(vals[!is.na(vals)])), c(0, 1, 2, 3, 4))
+})
+
+test_that("mask_cache_dir defaults to the 'fordead' sibling of cache_dir", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+  skip_if_not_installed("terra")
+
+  class_r <- terra::rast(nrows = 2, ncols = 2,
+                         xmin = 0, xmax = 20, ymin = 0, ymax = 20,
+                         crs = "EPSG:2154")
+  terra::values(class_r) <- as.integer(c(0, 1, 2, 0))
+  names(class_r) <- "fordead_class"
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers(fake_class_raster = class_r)
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  # cache_dir = <root>/layers/sentinel2 → sibling = <root>/layers/fordead
+  root      <- tempfile("proj-")
+  cache_dir <- file.path(root, "layers", "sentinel2")
+  dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 1L,
+    cache_dir        = cache_dir,
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE
+  )
+
+  expect_identical(out$status, "success")
+  expect_true(startsWith(out$rasters$dieback_mask,
+                         file.path(root, "layers", "fordead")))
+})
+
+test_that("keep_output = TRUE runs FORDEAD inside the project cache", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+  skip_if_not_installed("terra")
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  mask_dir <- tempfile("fordead-mask-")
+
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 3L,
+    cache_dir        = make_cache_dir(),
+    mask_cache_dir   = mask_dir,
+    keep_output      = TRUE,
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE
+  )
+
+  expect_identical(out$status, "success")
+  # output_dir redirected under <mask_cache_dir>/zone_<id>/run_<ts>/
+  expect_match(out$output_dir,
+               file.path("zone_3", "run_[0-9]{8}T[0-9]{6}$"))
+  expect_true(dir.exists(out$output_dir))
+})
+
 test_that("propagates Python errors as status='error' with message", {
   skip_if_no_reticulate(); skip_if_no_sf()
 
