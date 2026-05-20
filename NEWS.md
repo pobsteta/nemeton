@@ -1,3 +1,26 @@
+# nemeton 0.34.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3c (indicator wiring: theia_snow)
+
+Phase 3c wires the Theia Snow collection product `theia_snow`
+into the drought-risk indicator R3.
+
+- **R3 — `indicateur_r3_secheresse()` gains a `snow` argument**
+  (plus a `snow_relief_strength` tuning parameter). When a
+  snow-cover-duration `SpatRaster` is supplied (the Theia
+  `theia_snow` `snow_cover_duration` product, in days/year), the
+  snowpack is treated as a seasonal water reserve: the per-unit
+  mean duration is rescaled to a 0-1 relief factor against a
+  180-day reference, and R3 is multiplied by
+  `1 - snow_relief_strength * relief` (default
+  `snow_relief_strength = 0.3`, i.e. up to a 30 % drought-stress
+  reduction for a 6-month snowpack). Units with no snow coverage
+  are left unchanged.
+
+`snow = NULL` (default) preserves the pre-existing climate +
+topography behaviour — no existing caller is affected. Phase 3d
+(the phase-1b sources) remains, scoped in `PLAN.md`.
+
 # nemeton 0.33.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 3b (indicator wiring: theia_soil)

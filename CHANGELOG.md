@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3c: `indicateur_r3_secheresse()`
+  gains `snow` and `snow_relief_strength` arguments — a Theia
+  `theia_snow` snow-cover-duration raster attenuates the drought
+  stress (snowpack as a seasonal water reserve). Backward-compatible.
+
 ## [0.33.0] - 2026-05-20
 
 ### Added
