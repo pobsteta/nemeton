@@ -1,3 +1,31 @@
+# nemeton 0.32.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3a (indicator wiring: s2_biophysical)
+
+Phase 3 of the "Theia data sources" chantier wires the declared
+sources into the indicator functions, one source at a time, with
+strictly backward-compatible optional arguments. Phase 3a wires
+the Sentinel-2 biophysical product `s2_biophysical` into two
+indicators:
+
+- **C2 — `indicateur_c2_ndvi()` gains a `fapar` argument.** When
+  a FAPAR `SpatRaster` is supplied (the Theia `s2_biophysical`
+  FAPAR product), the indicator returns the per-unit mean FAPAR
+  instead of NDVI. FAPAR is a physically grounded vitality
+  measure on the same `[0, 1]` scale as NDVI, so downstream
+  normalization is unchanged. `fapar = NULL` (default) preserves
+  the pre-existing NDVI behaviour.
+- **A1 — `indicateur_a1_couverture()` gains an `fvc` argument**,
+  and `land_cover` now defaults to `NULL`. When an FVC
+  `SpatRaster` is supplied (the Theia `s2_biophysical` FVC
+  product), A1 is the per-buffer mean FVC rescaled to a 0-100
+  percentage; `land_cover` is then ignored. `fvc = NULL`
+  (default) preserves the land-cover behaviour.
+
+Both arguments are purely additive — no existing caller is
+affected. Phase 3b (`theia_soil` → F1/F2), 3c (`theia_snow` →
+R3) and 3d (the phase-1b sources) remain, scoped in `PLAN.md`.
+
 # nemeton 0.31.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 2 (loaders)

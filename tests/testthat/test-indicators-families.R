@@ -2600,3 +2600,32 @@ test_that("source='gissol' reprojects RRP when CRSes differ", {
   expect_false(is.na(result))
   expect_equal(result, 90, tolerance = 1e-6)
 })
+
+# ==============================================================================
+# C2 — FAPAR mode (Theia s2_biophysical, phase 3a)
+# ==============================================================================
+
+test_that("indicateur_c2_ndvi FAPAR mode returns per-unit mean FAPAR", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  fapar <- create_test_raster(values = "constant", res = 10)
+  terra::values(fapar) <- runif(terra::ncell(fapar))
+
+  result <- suppressMessages(
+    indicateur_c2_ndvi(units, layers = make_mock_layers(), fapar = fapar)
+  )
+  expect_length(result, 3)
+  expect_type(result, "double")
+})
+
+test_that("indicateur_c2_ndvi FAPAR mode rejects a non-raster fapar", {
+  skip_if_not_installed("sf")
+
+  units <- create_test_units(n_features = 2)
+  expect_error(
+    indicateur_c2_ndvi(units, layers = make_mock_layers(), fapar = "not_a_raster"),
+    "fapar must be a terra SpatRaster"
+  )
+})

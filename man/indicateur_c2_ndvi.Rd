@@ -4,7 +4,7 @@
 \alias{indicateur_c2_ndvi}
 \title{NDVI Mean and Trend Analysis (C2)}
 \usage{
-indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = FALSE)
+indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = FALSE, fapar = NULL)
 }
 \arguments{
 \item{units}{nemeton_units object}
@@ -15,6 +15,13 @@ indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = FALSE)
 
 \item{trend}{Logical. Calculate temporal trend if multiple dates available?
 Default FALSE.}
+
+\item{fapar}{Optional \code{SpatRaster} of FAPAR values in
+\code{[0, 1]} (typically the Theia \code{s2_biophysical}
+FAPAR product, loaded via \code{\link{load_raster_source}}).
+When supplied, activates FAPAR mode: the function returns the
+per-unit mean FAPAR and ignores \code{ndvi_layer}. The raster
+is expected in the CRS of \code{units}.}
 }
 \value{
 Numeric vector of NDVI mean values (0-1 scale), or list with
@@ -23,6 +30,14 @@ Numeric vector of NDVI mean values (0-1 scale), or list with
 \description{
 Extracts mean NDVI from Sentinel-2 or equivalent satellite imagery.
 Optionally calculates NDVI trend over multiple dates (requires temporal rasters).
+
+In FAPAR mode (Theia \code{s2_biophysical}, phase 3a), when a
+FAPAR raster is supplied via \code{fapar}, the per-unit mean
+Fraction of Absorbed Photosynthetically Active Radiation is
+returned instead of NDVI. FAPAR is a physically grounded
+vitality measure on the same \code{[0, 1]} scale as NDVI, so
+downstream normalization is unchanged. When \code{fapar} is
+\code{NULL} the pre-existing NDVI behaviour is preserved.
 }
 \examples{
 \dontrun{
@@ -32,5 +47,9 @@ results <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi")
 
 # Multi-date NDVI with trend
 results <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)
+
+# FAPAR mode (Theia s2_biophysical)
+fapar <- load_raster_source("s2_biophysical", "FR", path = "fapar_2023.tif")
+results <- indicateur_c2_ndvi(units, layers, fapar = fapar)
 }
 }

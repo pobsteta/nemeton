@@ -336,11 +336,25 @@ indicateur_c1_biomasse <- function(units,
 #' Extracts mean NDVI from Sentinel-2 or equivalent satellite imagery.
 #' Optionally calculates NDVI trend over multiple dates (requires temporal rasters).
 #'
+#' In FAPAR mode (Theia \code{s2_biophysical}, phase 3a), when a
+#' FAPAR raster is supplied via \code{fapar}, the per-unit mean
+#' Fraction of Absorbed Photosynthetically Active Radiation is
+#' returned instead of NDVI. FAPAR is a physically grounded
+#' vitality measure on the same \code{[0, 1]} scale as NDVI, so
+#' downstream normalization is unchanged. When \code{fapar} is
+#' \code{NULL} the pre-existing NDVI behaviour is preserved.
+#'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing NDVI raster(s)
 #' @param ndvi_layer Character. Name of NDVI layer in layers object
 #' @param trend Logical. Calculate temporal trend if multiple dates available?
 #'   Default FALSE.
+#' @param fapar Optional \code{SpatRaster} of FAPAR values in
+#'   \code{[0, 1]} (typically the Theia \code{s2_biophysical}
+#'   FAPAR product, loaded via \code{\link{load_raster_source}}).
+#'   When supplied, activates FAPAR mode: the function returns the
+#'   per-unit mean FAPAR and ignores \code{ndvi_layer}. The raster
+#'   is expected in the CRS of \code{units}.
 #'
 #' @return Numeric vector of NDVI mean values (0-1 scale), or list with
 #'   mean and trend if trend = TRUE
@@ -354,11 +368,16 @@ indicateur_c1_biomasse <- function(units,
 #'
 #' # Multi-date NDVI with trend
 #' results <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)
+#'
+#' # FAPAR mode (Theia s2_biophysical)
+#' fapar <- load_raster_source("s2_biophysical", "FR", path = "fapar_2023.tif")
+#' results <- indicateur_c2_ndvi(units, layers, fapar = fapar)
 #' }
 indicateur_c2_ndvi <- function(units,
                                   layers,
                                   ndvi_layer = "ndvi",
-                                  trend = FALSE) {
+                                  trend = FALSE,
+                                  fapar = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -366,6 +385,22 @@ indicateur_c2_ndvi <- function(units,
 
   if (!inherits(layers, "nemeton_layers")) {
     stop("layers must be a nemeton_layers object", call. = FALSE)
+  }
+
+  # --- FAPAR mode (Theia s2_biophysical, phase 3a) --------------
+  if (!is.null(fapar)) {
+    if (!inherits(fapar, "SpatRaster")) {
+      stop("fapar must be a terra SpatRaster", call. = FALSE)
+    }
+    cli::cli_alert_info("C2: vitality from FAPAR (Theia s2_biophysical)")
+    fapar_mean <- safe_extract(
+      fapar,
+      as_pure_sf(units),
+      fun = "mean",
+      progress = FALSE
+    )
+    msg_info("indicateur_c2_ndvi")
+    return(fapar_mean)
   }
 
   # Get NDVI raster (resolve lazy-load)

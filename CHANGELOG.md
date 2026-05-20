@@ -10,6 +10,22 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3a: `indicateur_c2_ndvi()` gains a
+  `fapar` argument (FAPAR-based vitality) and
+  `indicateur_a1_couverture()` gains an `fvc` argument
+  (FVC-based tree coverage), wiring the Theia `s2_biophysical`
+  product into the C2 and A1 indicators. Both arguments are
+  optional and backward-compatible.
+
+### Changed
+
+- `indicateur_a1_couverture()`: `land_cover` now defaults to
+  `NULL` (required only in legacy mode, ignored in FVC mode).
+
 ## [0.31.0] - 2026-05-20
 
 ### Added
