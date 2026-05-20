@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.41.2] - 2026-05-20
+
+### Fixed
+
+- Sentinel-2 STAC searches returned ESA reprocessing duplicates (the
+  same acquisition republished under a new processing baseline) as
+  distinct scenes — doubling the cache footprint (~14 % of scenes on
+  a real zone) and feeding FORDEAD two items with the same
+  `datetime`. `stac_search_s2()` and `.build_stac_collection_for_aoi()`
+  now collapse such duplicates by acquisition identity (mission +
+  sensing time + orbit + MGRS tile), keeping the latest baseline.
+
+### Added
+
+- Internal helpers `.s2_split_product_id()` and
+  `.dedup_s2_reprocessed()` — Sentinel-2 reprocessing-duplicate
+  detection and removal.
+
 ## [0.41.1] - 2026-05-20
 
 ### Fixed

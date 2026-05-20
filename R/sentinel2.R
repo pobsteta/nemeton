@@ -128,7 +128,14 @@ stac_search_s2 <- function(zone,
       }
     )
     if (!is.null(res) && nrow(res) > 0) {
-      return(res)
+      deduped   <- .dedup_s2_reprocessed(res)
+      n_dropped <- nrow(res) - nrow(deduped)
+      if (n_dropped > 0L) {
+        cli::cli_alert_info(
+          "Dropped {n_dropped} Sentinel-2 reprocessing duplicate{?s} (kept the latest processing baseline)."
+        )
+      }
+      return(deduped)
     }
   }
   # All backends exhausted: surface a single, actionable warning so
@@ -368,6 +375,67 @@ stac_search_s2_pc <- function(bbox, start, end, max_cloud = 20, limit = 10000L) 
 .parse_stac_datetime <- function(dt) {
   if (is.null(dt) || is.na(dt) || !nzchar(dt)) return(as.Date(NA))
   as.Date(substr(dt, 1, 10))
+}
+
+
+# ---- Sentinel-2 reprocessing-duplicate handling ----------------------
+#
+# ESA periodically reprocesses the Sentinel-2 archive: an acquisition
+# is republished under a NEW product id whose only change is the
+# trailing processing-baseline timestamp (and, in the full ESA
+# naming, the `N#####` baseline field). A STAC search then returns
+# the same acquisition twice. Caching both wastes one download set
+# per duplicate and feeds FORDEAD two STAC items with an identical
+# `datetime`, which it flags ("Duplicas times found") and merges in
+# an undefined order.
+
+# Split a Sentinel-2 product id into its acquisition key + processing
+# timestamp. The acquisition is identified by mission + datatake
+# sensing time + relative orbit + MGRS tile — everything that is
+# physically the same observation; the trailing timestamp is the
+# processing discriminator. Recognises both the 6-field Planetary
+# Computer id and the 7-field ESA id (with or without a `.SAFE`
+# suffix). An id that does not parse becomes its own unique key and
+# is therefore never merged.
+.s2_split_product_id <- function(scene_id) {
+  sid     <- sub("\\.SAFE$", "", as.character(scene_id))
+  parts   <- strsplit(sid, "_", fixed = TRUE)[[1]]
+  ts      <- grepl("^[0-9]{8}T[0-9]{6}$", parts)
+  mission <- parts[grepl("^S2[A-D]$", parts)]
+  orbit   <- parts[grepl("^R[0-9]{3}$", parts)]
+  tile    <- parts[grepl("^T[0-9]{2}[A-Z]{3}$", parts)]
+  if (sum(ts) >= 2L && length(mission) == 1L &&
+      length(orbit) == 1L && length(tile) == 1L) {
+    sensing <- parts[ts][1L]          # first timestamp = datatake sensing
+    proc    <- parts[ts][sum(ts)]     # last timestamp  = processing baseline
+    list(key  = paste(mission, sensing, orbit, tile, sep = "_"),
+         proc = proc)
+  } else {
+    list(key = as.character(scene_id), proc = NA_character_)
+  }
+}
+
+# Drop Sentinel-2 reprocessing duplicates from a scenes data.frame,
+# keeping for each acquisition the row with the most recent
+# processing baseline. Rows whose `scene_id` is not a recognisable
+# S2 product id are always kept. Original row order is preserved.
+.dedup_s2_reprocessed <- function(scenes_df) {
+  if (!is.data.frame(scenes_df) || !nrow(scenes_df) ||
+      !"scene_id" %in% names(scenes_df)) {
+    return(scenes_df)
+  }
+  split <- lapply(scenes_df$scene_id, .s2_split_product_id)
+  key   <- vapply(split, `[[`, character(1), "key")
+  proc  <- vapply(split, `[[`, character(1), "proc")
+  keep  <- rep(TRUE, nrow(scenes_df))
+  for (k in unique(key[duplicated(key)])) {
+    idx <- which(key == k)
+    # Latest processing baseline wins. The timestamp is fixed-width
+    # (YYYYMMDDTHHMMSS) so a lexicographic max is chronological.
+    winner <- idx[order(proc[idx], decreasing = TRUE)][1L]
+    keep[setdiff(idx, winner)] <- FALSE
+  }
+  scenes_df[keep, , drop = FALSE]
 }
 
 .pc_sign_url <- function(url) {

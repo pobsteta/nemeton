@@ -210,7 +210,8 @@ NULL
 #'   `Item.bbox`, and as a per-item property. Reprojected to EPSG:4326.
 #' @param scenes_df A `data.frame` (or tibble) with at minimum the
 #'   columns `scene_id` (character) and `obs_date` (Date or coercible).
-#'   Duplicate `scene_id` rows are silently de-duplicated.
+#'   Exact `scene_id` duplicates and ESA reprocessing duplicates (same
+#'   acquisition, newer processing baseline) are silently removed.
 #' @param cache_dir Character(1). Root directory of the COG cache,
 #'   typically `<project>/cache/layers/sentinel2`.
 #' @param bands_required Character vector of band codes required by
@@ -247,6 +248,11 @@ NULL
   scenes_df <- scenes_df[!is.na(scenes_df$obs_date) &
                            !is.na(scenes_df$scene_id), , drop = FALSE]
   scenes_df <- scenes_df[!duplicated(scenes_df$scene_id), , drop = FALSE]
+  # Safety net: collapse ESA reprocessing duplicates (same acquisition,
+  # newer processing baseline) so FORDEAD never receives two items with
+  # an identical datetime. `stac_search_s2()` already does this, but
+  # callers may pass a scenes_df from another source.
+  scenes_df <- .dedup_s2_reprocessed(scenes_df)
   scenes_df <- scenes_df[order(scenes_df$obs_date), , drop = FALSE]
 
   if (nrow(scenes_df) == 0L) {

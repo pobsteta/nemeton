@@ -1,3 +1,34 @@
+# nemeton 0.41.2 (2026-05-20)
+
+### Fixed — Sentinel-2 reprocessing duplicates inflated the cache and FORDEAD
+
+ESA periodically reprocesses the Sentinel-2 archive: an acquisition
+is republished under a new product id whose only change is the
+trailing processing-baseline timestamp. A STAC search returned
+**both** the original and the reprocessed product as distinct
+scenes.
+
+On the user's monitoring zone this meant 47 of 342 acquisitions
+(~14 %) were cached twice — doubling the band downloads and disk
+footprint — and FORDEAD received two STAC items with an identical
+`datetime` ("Duplicas times found"), merging them in an undefined
+order that could let the older baseline win over the better-
+calibrated reprocessed one.
+
+- New internal helpers `.s2_split_product_id()` and
+  `.dedup_s2_reprocessed()` collapse reprocessing duplicates by
+  acquisition identity (mission + sensing time + relative orbit +
+  MGRS tile), keeping the most recent processing baseline. Both the
+  6-field Planetary Computer id and the 7-field ESA `.SAFE` id are
+  recognised; unrecognised ids are never merged.
+- `stac_search_s2()` now deduplicates every backend result, so all
+  consumers (FORDEAD ingestion, FAST NDVI/NBR) benefit.
+- `.build_stac_collection_for_aoi()` applies the same dedup as a
+  safety net before handing the collection to FORDEAD.
+
+Genuinely distinct same-day acquisitions (different orbit or
+mission) are never merged.
+
 # nemeton 0.41.1 (2026-05-20)
 
 ### Fixed — FORDEAD version probe no longer forces a reinstall every run

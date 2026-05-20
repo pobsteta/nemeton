@@ -17,7 +17,8 @@
 
 \item{scenes_df}{A `data.frame` (or tibble) with at minimum the
 columns `scene_id` (character) and `obs_date` (Date or coercible).
-Duplicate `scene_id` rows are silently de-duplicated.}
+Exact `scene_id` duplicates and ESA reprocessing duplicates (same
+acquisition, newer processing baseline) are silently removed.}
 
 \item{cache_dir}{Character(1). Root directory of the COG cache,
 typically `<project>/cache/layers/sentinel2`.}
