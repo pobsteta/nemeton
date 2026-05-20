@@ -1,3 +1,31 @@
+# nemeton 0.36.0 (2026-05-20)
+
+### Added — THEIA STAC resolver
+
+New module `R/theia_stac.R` closes the deferred Phase 2 item of
+the Theia chantier: the Theia datasources can now be materialised
+from the THEIA STAC API instead of requiring a manual download.
+
+- **`stac_search_items(stac_api, collection, bbox, datetime,
+  limit)`** — endpoint-agnostic STAC item search, built on the
+  project STAC paginator. Works against any STAC API.
+- **`resolve_theia_assets(source_key, aoi, asset, datetime,
+  country, stac_api, limit)`** — looks up a Theia datasource,
+  searches the THEIA STAC API for items of its collection
+  intersecting the AOI, and returns the matching asset hrefs
+  prefixed with `/vsicurl/`.
+- **`load_theia_source(source_key, aoi, asset, ...)`** — resolves
+  and loads a Theia datasource as a `SpatRaster` cropped to the
+  AOI (virtual mosaic when several items match).
+
+The THEIA STAC API endpoint is read from the new
+`services.theia_stac` entry of `inst/datasources/FR.json`. Its
+`url` field is shipped as `"to confirm"`: the STAC browser host
+(`browser.datastore-mtd.theia.data-terra.org`) is known, but the
+STAC API root behind it must be filled in (or passed via the
+`stac_api` argument). Until then the resolver aborts with an
+actionable message rather than guessing an endpoint.
+
 # nemeton 0.35.2 (2026-05-20)
 
 ### Changed — FORMSpoT wired into C1/P1/P2/B2 via the shared CHM interface

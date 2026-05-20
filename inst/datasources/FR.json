@@ -26,6 +26,12 @@
     "communes_api": {
       "url": "https://geo.api.gouv.fr",
       "provider": "Etalab"
+    },
+    "theia_stac": {
+      "url": "to confirm",
+      "browser": "https://browser.datastore-mtd.theia.data-terra.org/",
+      "provider": "Theia / DATA TERRA — datastore MTD",
+      "note": "STAC API root for the THEIA MTD datastore, consumed by load_theia_source() / resolve_theia_assets(). The browser URL is verified; the STAC API endpoint behind it must be confirmed and filled in `url` (or passed via the stac_api argument). Until then the Theia STAC resolver aborts with an actionable message."
     }
   },
 

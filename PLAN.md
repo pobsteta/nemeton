@@ -16,7 +16,7 @@
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
-| ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2**. Reliquat documenté (MUSCATE, LST, W1). |
+| ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0**. Reliquat documenté (MUSCATE, LST, W1). |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
@@ -80,18 +80,20 @@ Du moins au plus invasif :
   tests. Release **v0.30.0**. Phase 1 (catalogue) complète — 10 sources Theia
   déclarées.
 
-### Phase 2 — Loaders (Niveau 2) ✅ — release **v0.31.0**
+### Phase 2 — Loaders (Niveau 2) ✅ — releases **v0.31.0** + **v0.36.0**
 
-- **Décision d'accès** : faute d'identifiants de collection STAC vérifiés
-  (tous `"to confirm"` dans FR.json), Phase 2 standardise sur le workflow
-  *download-then-load*. La résolution STAC automatique contre le catalogue
-  Theia est reportée à la vérification des endpoints (cf. *Réserves*).
 - `load_raster_source()` gagne un argument `path` : les sources Theia
   (`raster_local` sans URL statique) deviennent chargeables en passant le
-  fichier téléchargé localement. Pas de nouveau `type` nécessaire.
+  fichier téléchargé localement. Pas de nouveau `type` nécessaire (v0.31.0).
 - Nouveau helper exporté `get_datasource_product()` : renvoie les
   métadonnées d'un sous-produit d'une source multi-produits (résolution,
-  unité, plage, notes de conversion — ex. la note cm→m de `forms_t`).
+  unité, plage, notes de conversion — ex. la note cm→m de `forms_t`) (v0.31.0).
+- **Résolveur STAC Theia** (v0.36.0, `R/theia_stac.R`) : `stac_search_items()`
+  (recherche STAC générique), `resolve_theia_assets()` (résolution des hrefs
+  COG d'une source Theia pour une AOI) et `load_theia_source()` (chargement
+  en `SpatRaster`). L'endpoint STAC Theia est lu dans `services.theia_stac`
+  de FR.json — son `url` reste `"to confirm"` (host browser connu, racine de
+  l'API STAC à confirmer).
 
 ### Phase 3 — Câblage indicateurs (Niveau 3, une sous-tâche par source)
 
@@ -257,6 +259,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-20** — Release **v0.36.0** (feat — résolveur STAC Theia). Lève le point reporté de la Phase 2 : la résolution STAC automatique. Nouveau module `R/theia_stac.R`, trois fonctions exportées. (1) `stac_search_items(stac_api, collection, bbox, datetime, limit)` — recherche STAC générique, agnostique à l'endpoint, bâtie sur le paginateur projet `.stac_search_paginate()` (réutilisé tel quel). (2) `resolve_theia_assets(source_key, aoi, asset, datetime, country, stac_api, limit)` — résout une source Theia : lit `access$stac_collection` dans FR.json, calcule la bbox WGS84 de l'AOI, interroge l'API STAC Theia, extrait les hrefs d'assets (helper `.stac_pick_asset()` : asset nommé, sinon rôle `data`, sinon premier) et les préfixe `/vsicurl/`. (3) `load_theia_source(source_key, aoi, asset, ...)` — résout puis charge en `SpatRaster` (mosaïque virtuelle `terra::vrt()` si plusieurs items), croppé à l'AOI. L'endpoint STAC est lu dans une nouvelle entrée `services.theia_stac` de FR.json. **Réserve** : son champ `url` est livré à `"to confirm"` — le host du browser STAC (`browser.datastore-mtd.theia.data-terra.org`) est vérifié mais la racine de l'API STAC derrière lui doit être confirmée et renseignée (ou passée via l'argument `stac_api`). Tant que c'est `"to confirm"`, le résolveur s'arrête avec un message actionnable plutôt que de deviner un endpoint. NAMESPACE + 4 `man/*.Rd` (3 fonctions + page `@name`). 11 `test_that` dans `test-theia-stac.R` (`.stac_pick_asset` 4 cas, `stac_search_items` validation + happy path mocké httr2, `resolve_theia_assets` erreurs source/endpoint/collection inconnus + happy path mocké, `load_theia_source` propagation d'erreur). Tests R non exécutés (runtime R absent). **Ce qu'il reste pour que `nemetonshiny` consomme Theia** : (a) renseigner `services.theia_stac.url` une fois l'API STAC Theia confirmée ; (b) côté app, appeler `load_theia_source()` et passer les rasters aux indicateurs (`chm`, `fapar`, `texture`, `snow`, ...). Le câblage app reste un chantier `nemetonshiny`.
 
 - **2026-05-20** — Release **v0.35.2** (FORMSpoT câblé dans les indicateurs). Suite à la confirmation de disponibilité (v0.35.1), FORMSpoT sort du reliquat de câblage. Constat d'architecture : FORMSpoT (produit hauteur au niveau de l'arbre, famille FORMS) n'a **pas besoin d'argument d'indicateur dédié** — il se branche sur l'argument `chm` déjà existant de `indicateur_c1_biomasse()`, `indicateur_p1_volume()`, `indicateur_p2_station()` et `indicateur_b2_structure()`, la même interface CHM que FORMS-T (`forms_t`) et `chm_opencanopy` (introduite spec 005). Workflow : `load_raster_source("formspot", path = ...)` puis passage en `chm`. Aucun code R nouveau. `inst/datasources/FR.json` mis à jour : `consumed_by` nomme désormais les fonctions précises (C1/P1/P2/B2 au lieu du vague C/P/T/R), `products` se scinde en `height` (compatible CHM) et `biomass`, et un nouveau champ `integration_note` documente le chemin d'intégration (avec la réserve : rastériser l'attribut hauteur si FORMSpoT est livré en couche vectorielle points-arbres). Le test `test-datasources.R` est mis à jour (vérifie `consumed_by` = C1/P1/P2/B2, présence du produit `height` et de `integration_note`). Les familles T (temporel) et R5 (dépérissement) ne sont volontairement pas câblées : elles ont leurs propres structures (analyse temporelle, pipeline FORDEAD), un câblage demanderait un vrai chantier dédié et la connaissance du schéma exact du produit. Bump patch (changement de métadonnées catalogue, pas de code R).
 

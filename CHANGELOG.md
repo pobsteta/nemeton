@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-05-20
+
+### Added
+
+- THEIA STAC resolver (`R/theia_stac.R`): `stac_search_items()`,
+  `resolve_theia_assets()` and `load_theia_source()` materialise
+  the Theia datasources from the THEIA STAC API. New
+  `services.theia_stac` entry in `FR.json` (STAC API URL still to
+  confirm). Closes the deferred Phase 2 STAC-resolution item.
+
 ## [0.35.2] - 2026-05-20
 
 ### Changed
