@@ -1,3 +1,33 @@
+# nemeton 0.40.1 (2026-05-20)
+
+### Fixed — silent post-`predict` phases in `run_fordead_dieback()`
+
+Only the `fit` and `predict` phases printed a `Step:` line (they
+are wrapped in the `.capture()` helper). Everything after
+`predict` — deriving the state raster, `first_dieback_date`,
+`postprocess` (anomaly clustering) and `persist` (DB insert) —
+ran with no console output at all. On a multi-year FORDEAD run
+the console stayed frozen on `ℹ Step: predict` for minutes,
+indistinguishable from a hang.
+
+`run_fordead_dieback()` now emits, when `verbose = TRUE`:
+
+- `FORDEAD output_dir: <path>` at startup — so the working
+  directory is discoverable without digging through
+  `tempdir()`.
+- `Step: derive state raster`
+- `Step: first_dieback_date`
+- `Step: postprocess`
+- `Step: persist`
+- `FORDEAD diagnostic complete: N alert(s) inserted in X s` on
+  success.
+
+No behaviour change beyond console output; the progress
+callback events (`fordead:phase` / `fordead:phase_done`) are
+untouched. `test-fordead-pipeline.R` unchanged (54 PASS) —
+`cli` console output is not a progress event so the
+event-count assertions still hold.
+
 # nemeton 0.40.0 (2026-05-20)
 
 ### Added — authenticated THEIA access via the teledetection SDK

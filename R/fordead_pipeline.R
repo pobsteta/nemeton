@@ -352,6 +352,9 @@ run_fordead_dieback <- function(con,
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
+  if (verbose) {
+    cli::cli_alert_info("FORDEAD output_dir: {.path {output_dir}}")
+  }
 
   # Phase plan — 6 phases (ingest, stac_assembly, fit, predict,
   # postprocess, persist). v0.24.0: ingest added as phase 0, persist
@@ -537,11 +540,13 @@ run_fordead_dieback <- function(con,
     # raster is derived from ANOMALY_CONFIRMED + CONSECUTIVE_DETECTIONS
     # + STOP_CONFIRMED (see .fordead_2x_status_to_classes for the
     # mapping table — to be empirically recalibrated in AC.12.3).
+    if (verbose) cli::cli_alert_info("Step: derive state raster")
     state_raster <- .fordead_2x_status_to_classes(output_dir)
     # v0.25.8 — Python's `import fordead` does NOT auto-import the
     # `fordead.utils` submodule, so `fd$utils` raises AttributeError.
     # Import the submodule explicitly. Failure here just warns
     # (first_dieback_date is best-effort metadata).
+    if (verbose) cli::cli_alert_info("Step: first_dieback_date")
     fd_utils <- tryCatch(
       reticulate::import("fordead.utils", convert = FALSE),
       error = function(e) NULL
@@ -564,6 +569,7 @@ run_fordead_dieback <- function(con,
 
     # 4. postprocess (1.x helper reused — input shape unchanged)
     begin_phase("postprocess")
+    if (verbose) cli::cli_alert_info("Step: postprocess")
     alerts_sf <- tryCatch(
       .postprocess_fordead_rasters(
         rasters = list(
@@ -585,6 +591,7 @@ run_fordead_dieback <- function(con,
 
     n_inserted <- 0L
     begin_phase("persist")
+    if (verbose) cli::cli_alert_info("Step: persist")
     if (!is.null(alerts_sf)) {
       n_inserted <- .insert_fordead_alerts(con, alerts_sf,
                                            zone_id = zone_id)
@@ -592,6 +599,11 @@ run_fordead_dieback <- function(con,
     end_phase("persist")
 
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    if (verbose) {
+      cli::cli_alert_success(
+        "FORDEAD diagnostic complete: {n_inserted} alert{?s} inserted in {round(duration_sec)} s."
+      )
+    }
     emit(list(current           = "fordead:complete",
               completed         = as.integer(total_phases),
               total             = as.integer(total_phases),
