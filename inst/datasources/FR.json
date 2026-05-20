@@ -154,6 +154,56 @@
         "derived": "CHM = double attribution IGN BD ORTHO + Fogel et al. 2024"
       }
     },
+    "forms_t": {
+      "type": "raster_local",
+      "format": "COG",
+      "description": "FORMS-T — Forest Multiple-Source height, wood volume and biomass time-series over metropolitan France (2018-present). Deep-learning fusion of Sentinel-1, Sentinel-2 and GEDI spaceborne lidar. Three products: canopy height (10 m), standing wood volume (30 m), aboveground biomass (30 m).",
+      "native_crs": "EPSG:2154",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "2018-present (annual)",
+      "ndp_level": 0,
+      "augmented": "height_ml",
+      "access": {
+        "doi": "https://doi.theia.data-terra.org/FormsT/",
+        "stac_catalog": "https://browser-theia.stac.teledetection.fr/",
+        "zenodo": "https://zenodo.org/records/15489231",
+        "note": "Distributed by DATA TERRA / THEIA (CDS-MTD diffusion service). COG assets are resolved per-tile and per-year from the STAC catalog, or downloaded as .tif from the Zenodo record. There is no single static URL, so load_raster_source() cannot fetch this source directly: the caller must resolve the STAC asset href (or a local download path) first."
+      },
+      "products": {
+        "height": {
+          "variable": "canopy_height",
+          "resolution_m": 10,
+          "unit": "cm",
+          "value_range": [0, 6000],
+          "note": "FORMS-T height is stored in centimetres (10^-2 m). The nemeton indicator `chm` argument expects metres: divide the raster by 100 before passing it to indicateur_p1_volume(), indicateur_p2_station(), indicateur_c1_biomasse() or indicateur_b2_structure()."
+        },
+        "volume": {
+          "variable": "growing_stock_volume",
+          "resolution_m": 30,
+          "unit": "m3/ha",
+          "value_range": [0, 1500]
+        },
+        "biomass": {
+          "variable": "aboveground_biomass",
+          "resolution_m": 30,
+          "unit": "Mg/ha",
+          "value_range": [0, 800]
+        }
+      },
+      "consumed_by": {
+        "C1": "indicateur_c1_biomasse(chm = forms_t_height / 100) — canopy height feeds the CHM biomass path V(D, H) x rho x BEF x C_frac.",
+        "P1": "indicateur_p1_volume(chm = forms_t_height / 100) — dominant height for the IFN volume tarif.",
+        "P2": "indicateur_p2_station(chm = forms_t_height / 100) — H_dom for the Duplat & Tran-Ha site index.",
+        "B2": "indicateur_b2_structure(chm = forms_t_height / 100) — CV(CHM) structural component."
+      },
+      "provenance": {
+        "producer": "Schwartz et al. (LSCE / Kayrros)",
+        "method": "Deep-learning multi-stream model fusing Sentinel-1, Sentinel-2 and GEDI lidar; biomass and volume via allometric equations fitted on French NFI plots.",
+        "reference": "Schwartz et al. (2023) FORMS: Forest Multiple Source height, wood volume, and biomass maps in France at 10 to 30 m resolution. Earth Syst. Sci. Data 15:4927-4945. doi:10.5194/essd-15-4927-2023"
+      },
+      "license": "CC-BY-4.0 (to confirm at the Zenodo record before redistribution)"
+    },
     "oso": {
       "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",
       "description": "OSO - Occupation du Sol (Theia/CESBIO)",
