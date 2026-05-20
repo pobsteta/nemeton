@@ -264,8 +264,100 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
 }
 
 
-#' Resolve THEIA datasource assets for an area of interest
+#' Resolve a signed THEIA asset URL via the teledetection SDK
 #'
+#' Returns a ready-to-read, signed URL for one asset of a THEIA
+#' datasource. THEIA asset objects require an authenticated,
+#' time-limited signed URL; the signing is delegated to the official
+#' \code{teledetection} Python SDK through \pkg{reticulate} (the
+#' \code{tld.sign_inplace} pystac modifier — a standard AWS SigV4
+#' presign). The returned URL is prefixed with \code{/vsicurl/} so
+#' that \code{terra::rast()} reads it directly.
+#'
+#' Requirements: \pkg{reticulate}, plus the Python packages
+#' \code{teledetection} and \code{pystac_client} (declared via
+#' \code{reticulate::py_require()} automatically), and a registered
+#' THEIA API key — see \code{\link{theia_configure_s3}} and
+#' \url{https://gate.stac.teledetection.fr}.
+#'
+#' @param source_key Character. Theia datasource key (e.g.
+#'   \code{"formspot"}).
+#' @param year Optional integer. Target year of an annual collection;
+#'   the item id and asset name are built from the datasource
+#'   \code{access$item_id_template} / \code{access$asset_template}.
+#' @param asset Optional character. Asset name. Overrides the
+#'   template-derived name.
+#' @param item_id Optional character. STAC item id. Overrides the
+#'   template-derived id (use instead of \code{year}).
+#' @param country Character. ISO country code. Default \code{"FR"}.
+#' @param stac_api Optional character. Overrides the STAC API URL.
+#'
+#' @return A character scalar: \code{/vsicurl/}-prefixed signed URL.
+#'
+#' @examples
+#' \dontrun{
+#' href <- theia_signed_href("formspot", year = 2023)
+#' chm <- terra::rast(href)
+#' }
+#'
+#' @export
+theia_signed_href <- function(source_key, year = NULL, asset = NULL,
+                              item_id = NULL, country = "FR",
+                              stac_api = NULL) {
+  if (!requireNamespace("reticulate", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg reticulate} is required for THEIA SDK signing.")
+  }
+  src <- get_data_source(source_key, country)
+  if (is.null(src)) {
+    cli::cli_abort("Unknown datasource key {.val {source_key}} for country {.val {country}}.")
+  }
+  collection <- src$access$stac_collection %||% ""
+  if (!nzchar(collection) || grepl("to confirm", collection, ignore.case = TRUE)) {
+    cli::cli_abort("Datasource {.val {source_key}} has no confirmed STAC collection.")
+  }
+  api <- .theia_stac_api(country, stac_api)
+
+  if (is.null(item_id)) {
+    if (is.null(year)) {
+      cli::cli_abort("Provide either {.arg year} or {.arg item_id}.")
+    }
+    tmpl <- src$access$item_id_template %||% ""
+    if (!nzchar(tmpl)) {
+      cli::cli_abort(c(
+        "Datasource {.val {source_key}} does not support year targeting.",
+        i = "It declares no {.field access.item_id_template}."
+      ))
+    }
+    item_id <- gsub("{year}", as.character(year), tmpl, fixed = TRUE)
+  }
+  if (is.null(asset) && !is.null(year)) {
+    atmpl <- src$access$asset_template %||% ""
+    if (nzchar(atmpl)) {
+      asset <- gsub("{year}", as.character(year), atmpl, fixed = TRUE)
+    }
+  }
+
+  reticulate::py_require(c("teledetection", "pystac_client"))
+  tld <- reticulate::import("teledetection")
+  psc <- reticulate::import("pystac_client")
+  client <- psc$Client$open(api, modifier = tld$sign_inplace)
+  item <- client$get_collection(collection)$get_item(item_id)
+  if (is.null(item)) {
+    cli::cli_abort("STAC item {.val {item_id}} not found in collection {.val {collection}}.")
+  }
+  assets <- item$get_assets()
+  if (is.null(asset)) {
+    asset <- names(assets)[1]
+  }
+  entry <- assets[[asset]]
+  if (is.null(entry) || !nzchar(entry$href %||% "")) {
+    cli::cli_abort(c(
+      "STAC item {.val {item_id}} has no asset {.val {asset}}.",
+      i = "Available assets: {.val {names(assets)}}."
+    ))
+  }
+  paste0("/vsicurl/", entry$href)
+}
 #' Looks up a Theia datasource declared in
 #' \code{inst/datasources/<country>.json} and returns the matching
 #' asset paths normalised to \code{/vsis3/} so that GDAL reads the
@@ -362,15 +454,18 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 
 #' Load a THEIA datasource as a SpatRaster
 #'
-#' Resolves a Theia datasource for an area of interest via the THEIA
-#' STAC API (see \code{\link{resolve_theia_assets}}), loads the
-#' matching Cloud-Optimised GeoTIFF / VRT asset(s) and crops them to
-#' the AOI. When several items match, they are assembled into a
-#' virtual raster mosaic — this assumes the assets share a CRS, which
-#' holds for national products such as FORMS-T.
-#'
-#' Call \code{\link{theia_configure_s3}} once per session first so
-#' that GDAL can authenticate the \code{/vsis3/} reads.
+#' Loads a Theia datasource for an area of interest and crops it to
+#' the AOI. Two modes:
+#' \itemize{
+#'   \item \strong{Year targeting} (\code{year} supplied) — the
+#'     asset URL is signed through the \code{teledetection} SDK (see
+#'     \code{\link{theia_signed_href}}) and read via \code{/vsicurl/}.
+#'     This is the authenticated path that THEIA assets require.
+#'   \item \strong{Spatial search} — resolves \code{/vsis3/} asset
+#'     paths via \code{\link{resolve_theia_assets}}; call
+#'     \code{\link{theia_configure_s3}} first. Reserved for direct-S3
+#'     setups.
+#' }
 #'
 #' @inheritParams resolve_theia_assets
 #'
@@ -378,8 +473,7 @@ resolve_theia_assets <- function(source_key, aoi, asset = NULL,
 #'
 #' @examples
 #' \dontrun{
-#' theia_configure_s3()
-#' # FORMSpoT canopy height for 2023 (year targeting)
+#' # FORMSpoT canopy height for 2023 (signed via the teledetection SDK)
 #' chm <- load_theia_source("formspot", aoi, year = 2023)
 #' }
 #'
@@ -388,15 +482,21 @@ load_theia_source <- function(source_key, aoi, asset = NULL,
                               year = NULL, datetime = NULL,
                               country = "FR",
                               stac_api = NULL, limit = 50L) {
-  hrefs <- resolve_theia_assets(source_key, aoi, asset = asset,
-                                year = year, datetime = datetime,
-                                country = country,
-                                stac_api = stac_api, limit = limit)
-
-  rast <- if (length(hrefs) == 1L) {
-    terra::rast(hrefs)
+  if (!is.null(year)) {
+    # Authenticated path: teledetection SDK signs the asset URL.
+    rast <- terra::rast(
+      theia_signed_href(source_key, year = year, asset = asset,
+                        country = country, stac_api = stac_api)
+    )
   } else {
-    terra::vrt(hrefs)
+    hrefs <- resolve_theia_assets(source_key, aoi, asset = asset,
+                                  datetime = datetime, country = country,
+                                  stac_api = stac_api, limit = limit)
+    rast <- if (length(hrefs) == 1L) {
+      terra::rast(hrefs)
+    } else {
+      terra::vrt(hrefs)
+    }
   }
 
   aoi_v <- terra::vect(aoi)
