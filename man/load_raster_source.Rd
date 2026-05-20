@@ -25,12 +25,14 @@ raster is cropped to this AOI (reprojected to the raster's CRS,
 \item{section}{Character. Configuration section to search in. See
 \code{\link{get_data_source}}.}
 
-\item{path}{Optional character. Explicit path (or GDAL source
-string) to a locally available raster. Required for
-\code{raster_local} datasources that carry no declared
-\code{path} — typically a Theia product downloaded to disk. When
-supplied, the file must exist. Ignored for \code{raster_remote}
-datasources.}
+\item{path}{Optional character. Explicit path to a raster.
+Required for \code{raster_local} datasources that carry no
+declared \code{path}. It may be a local file (which must exist),
+or a remote / GDAL-virtual path: an \code{s3://bucket/key} URI,
+an \code{http(s)://} COG URL, or a \code{/vsi*} path — these are
+normalised (\code{s3://} to \code{/vsis3/}, \code{http(s)://} to
+\code{/vsicurl/}) and handed straight to GDAL. Ignored for
+\code{raster_remote} datasources.}
 }
 \value{
 A \code{SpatRaster}.

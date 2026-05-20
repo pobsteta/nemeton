@@ -32,8 +32,17 @@
       "browser": "https://browser.datastore-mtd.theia.data-terra.org/",
       "stac_version": "1.1.0",
       "provider": "Maison de la Télédétection (MTD) / Theia — DATA TERRA",
-      "auth": "API key required for asset download. The teledetection Python SDK (`pip install teledetection`; `tld apikey register` via DataTerra + ORCID) signs the STAC asset hrefs (`tld.sign_inplace`). Catalogue browsing is anonymous, but a COG asset can only be read once its href is signed.",
-      "note": "STAC API root consumed by load_theia_source() / resolve_theia_assets(). The asset hrefs returned by the API must be signed before GDAL can read them — see `auth`. The R resolver does not yet implement teledetection signing."
+      "auth": "Catalogue browsing (collections, items, search) is anonymous. Asset download is authenticated: the COG/VRT objects live on the S3 store declared in `theia_s3`. The teledetection Python SDK signs hrefs via a download gateway; the R side instead reads the objects directly with GDAL /vsis3/ using the S3 credentials (see theia_s3 and theia_configure_s3()).",
+      "note": "STAC API root consumed by load_theia_source() / resolve_theia_assets()."
+    },
+    "theia_s3": {
+      "endpoint": "s3-data.meso.umontpellier.fr",
+      "bucket": "sm1-gdc-ext",
+      "provider": "Mésocentre MESO@UM (Université de Montpellier) — THEIA MTD object store",
+      "virtual_hosting": false,
+      "https": true,
+      "region": "us-east-1",
+      "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets. Credentials are NOT stored here: set THEIA_S3_ACCESS_KEY and THEIA_S3_SECRET_KEY in a gitignored .Renviron, then call theia_configure_s3() once per session. GDAL then reads the assets via /vsis3/ with native SigV4 signing."
     }
   },
 

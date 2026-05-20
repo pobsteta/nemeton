@@ -1,3 +1,35 @@
+# nemeton 0.38.0 (2026-05-20)
+
+### Added — authenticated THEIA S3 reads
+
+The THEIA / FORMS COG and VRT assets live on an S3-compatible
+(MinIO) object store. Rather than reimplementing the
+`teledetection` SDK's URL signing, `nemeton` reads the objects
+directly with GDAL's `/vsis3/` virtual filesystem, which signs
+each request natively.
+
+- **New exported helper `theia_configure_s3(access_key,
+  secret_key, country)`** — sets the GDAL `/vsis3/` configuration
+  (endpoint, path-style hosting, region) for the session.
+  Credentials are read from the `THEIA_S3_ACCESS_KEY` /
+  `THEIA_S3_SECRET_KEY` environment variables (a gitignored
+  `.Renviron`) — never stored in the package.
+- **`resolve_theia_assets()` now returns `/vsis3/` paths.** Asset
+  hrefs are normalised by a new internal helper handling the
+  teledetection download-gateway form
+  (`gate.../download?url=...`), `s3://` URIs and path-style
+  `https://` object URLs.
+- **`load_raster_source()` accepts remote paths.** Its `path`
+  argument now takes `s3://`, `http(s)://` and `/vsi*` paths in
+  addition to local files (`s3://` is normalised to `/vsis3/`,
+  `http(s)://` to `/vsicurl/`).
+- New `services.theia_s3` entry in `FR.json` declaring the
+  (non-secret) S3 endpoint `s3-data.meso.umontpellier.fr` and
+  bucket `sm1-gdc-ext`.
+
+Workflow: `theia_configure_s3()` once per session, then
+`load_theia_source("formspot", aoi, asset = "height_2023")`.
+
 # nemeton 0.37.0 (2026-05-20)
 
 ### Changed — THEIA STAC endpoint corrected, FORMSpoT metadata verified

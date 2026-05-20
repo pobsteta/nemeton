@@ -37,12 +37,13 @@ from \code{services$theia_stac}.}
 \code{50}.}
 }
 \value{
-A character vector of \code{/vsicurl/}-prefixed asset hrefs.
+A character vector of \code{/vsis3/} asset paths.
 }
 \description{
 Looks up a Theia datasource declared in
 \code{inst/datasources/<country>.json}, searches the THEIA STAC API
 for items of its collection intersecting \code{aoi}, and returns the
-matching asset hrefs prefixed with \code{/vsicurl/} so that GDAL can
-read them directly.
+matching asset paths normalised to \code{/vsis3/} so that GDAL reads
+the objects directly from the S3 store (call
+\code{\link{theia_configure_s3}} once first to authenticate).
 }

@@ -405,6 +405,33 @@ test_that("load_raster_source still refuses path-less raster_local with no path 
   )
 })
 
+test_that("load_raster_source accepts a remote s3:// path", {
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  out <- load_raster_source("forms_t", "FR",
+                            path = "s3://sm1-gdc-ext/FORMSpoT/x.tif")
+  expect_s3_class(out, "SpatRaster")
+  expect_equal(captured, "/vsis3/sm1-gdc-ext/FORMSpoT/x.tif")
+})
+
+test_that("load_raster_source accepts a remote https path", {
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  out <- load_raster_source("forms_t", "FR", path = "https://h.example/x.tif")
+  expect_s3_class(out, "SpatRaster")
+  expect_true(startsWith(captured, "/vsicurl/https://"))
+})
+
 # ---- get_datasource_product ----
 
 test_that("get_datasource_product returns a sub-product", {

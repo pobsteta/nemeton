@@ -18,6 +18,18 @@ NULL
 .datasource_cache <- new.env(parent = emptyenv())
 
 
+# Normalise a remote path to a GDAL virtual filesystem path:
+#   s3://bucket/key   -> /vsis3/bucket/key
+#   http(s)://...     -> /vsicurl/http(s)://...
+#   /vsi... or local  -> unchanged
+.to_gdal_path <- function(p) {
+  if (grepl("^/vsi", p)) return(p)
+  if (grepl("^s3://", p)) return(paste0("/vsis3/", sub("^s3://", "", p)))
+  if (grepl("^https?://", p)) return(paste0("/vsicurl/", p))
+  p
+}
+
+
 #' Get country data source configuration
 #'
 #' Loads and caches the JSON configuration for a given country.
@@ -189,12 +201,14 @@ get_datasource_product <- function(source_key, product, country = "FR") {
 #'   \code{snap = "out"}).
 #' @param section Character. Configuration section to search in. See
 #'   \code{\link{get_data_source}}.
-#' @param path Optional character. Explicit path (or GDAL source
-#'   string) to a locally available raster. Required for
-#'   \code{raster_local} datasources that carry no declared
-#'   \code{path} — typically a Theia product downloaded to disk. When
-#'   supplied, the file must exist. Ignored for \code{raster_remote}
-#'   datasources.
+#' @param path Optional character. Explicit path to a raster.
+#'   Required for \code{raster_local} datasources that carry no
+#'   declared \code{path}. It may be a local file (which must exist),
+#'   or a remote / GDAL-virtual path: an \code{s3://bucket/key} URI,
+#'   an \code{http(s)://} COG URL, or a \code{/vsi*} path — these are
+#'   normalised (\code{s3://} to \code{/vsis3/}, \code{http(s)://} to
+#'   \code{/vsicurl/}) and handed straight to GDAL. Ignored for
+#'   \code{raster_remote} datasources.
 #'
 #' @return A \code{SpatRaster}.
 #'
@@ -245,13 +259,17 @@ load_raster_source <- function(source_key, country = "FR",
     if (!nzchar(resolved_path)) {
       cli::cli_abort(c(
         "Datasource {.val {source_key}} is {.val raster_local} but carries no declared path.",
-        i = "Pass an explicit {.arg path} to a locally downloaded file (e.g. a Theia product), or load it from its producing package."
+        i = "Pass an explicit {.arg path} to a locally downloaded file or a remote object (e.g. a Theia {.val /vsis3/} path), or load it from its producing package."
       ))
     }
-    if (nzchar(path %||% "") && !file.exists(path)) {
+    # A remote / GDAL-virtual path (S3 object, HTTP COG, /vsi*) is
+    # handed straight to GDAL; only genuine local files are checked
+    # for existence.
+    is_remote <- grepl("^(/vsi|s3://|https?://)", resolved_path)
+    if (nzchar(path %||% "") && !is_remote && !file.exists(path)) {
       cli::cli_abort("Datasource {.val {source_key}}: file {.path {path}} does not exist.")
     }
-    gdal_src <- resolved_path
+    gdal_src <- if (is_remote) .to_gdal_path(resolved_path) else resolved_path
   }
 
   rast <- terra::rast(gdal_src)

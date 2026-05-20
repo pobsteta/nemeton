@@ -10,6 +10,22 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-05-20
+
+### Added
+
+- `theia_configure_s3()` — configures GDAL `/vsis3/` for
+  authenticated reads of the THEIA S3 object store; credentials
+  from `THEIA_S3_ACCESS_KEY` / `THEIA_S3_SECRET_KEY` env vars.
+- `services.theia_s3` entry in `FR.json` (endpoint, bucket).
+
+### Changed
+
+- `resolve_theia_assets()` returns `/vsis3/` paths (gateway /
+  `s3://` / `https://` hrefs are normalised).
+- `load_raster_source()` `path` argument accepts remote
+  (`s3://`, `http(s)://`, `/vsi*`) paths, not only local files.
+
 ## [0.37.0] - 2026-05-20
 
 ### Changed

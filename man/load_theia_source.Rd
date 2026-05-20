@@ -42,12 +42,13 @@ A \code{SpatRaster} cropped to \code{aoi}.
 \description{
 Resolves a Theia datasource for an area of interest via the THEIA
 STAC API (see \code{\link{resolve_theia_assets}}), loads the
-matching Cloud-Optimised GeoTIFF asset(s) and crops them to the
-AOI. When several items match, they are assembled into a virtual
-raster mosaic — this assumes the assets share a CRS, which holds
-for national products such as FORMS-T; for per-tile UTM products
-resolve the assets with \code{\link{resolve_theia_assets}} and
-mosaic them explicitly.
+matching Cloud-Optimised GeoTIFF / VRT asset(s) and crops them to
+the AOI. When several items match, they are assembled into a
+virtual raster mosaic — this assumes the assets share a CRS, which
+holds for national products such as FORMS-T.
+
+Call \code{\link{theia_configure_s3}} once per session first so
+that GDAL can authenticate the \code{/vsis3/} reads.
 }
 \examples{
 \dontrun{

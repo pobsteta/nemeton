@@ -8,7 +8,10 @@
     id = id,
     assets = list(
       height = list(
-        href  = sprintf("https://theia.example/%s_height.tif", id),
+        href  = sprintf(
+          "https://s3-data.meso.umontpellier.fr/sm1-gdc-ext/FORMSpoT/%s_height.tif",
+          id
+        ),
         roles = list("data"),
         type  = "image/tiff; application=geotiff; profile=cloud-optimized"
       ),
@@ -125,7 +128,7 @@ test_that("resolve_theia_assets errors on an unconfirmed STAC collection", {
   )
 })
 
-test_that("resolve_theia_assets returns vsicurl-prefixed hrefs", {
+test_that("resolve_theia_assets returns /vsis3/ paths", {
   skip_if_not_installed("sf")
   skip_if_not_installed("httr2")
   skip_if_not_installed("jsonlite")
@@ -140,8 +143,59 @@ test_that("resolve_theia_assets returns vsicurl-prefixed hrefs", {
     }
   )
   expect_length(hrefs, 2L)
-  expect_true(all(startsWith(hrefs, "/vsicurl/")))
-  expect_match(hrefs[1], "S1_height.tif")
+  expect_true(all(startsWith(hrefs, "/vsis3/")))
+  expect_match(hrefs[1], "/vsis3/sm1-gdc-ext/FORMSpoT/S1_height.tif", fixed = TRUE)
+})
+
+# ---- .theia_href_to_gdal ----
+
+test_that(".theia_href_to_gdal normalises the download-gateway form", {
+  href <- paste0(
+    "https://gate.stac.teledetection.fr/download?url=",
+    utils::URLencode(
+      "https://s3-data.meso.umontpellier.fr/sm1-gdc-ext/FORMSpoT/2023/full_2023.vrt",
+      reserved = TRUE
+    )
+  )
+  expect_equal(
+    nemeton:::.theia_href_to_gdal(href),
+    "/vsis3/sm1-gdc-ext/FORMSpoT/2023/full_2023.vrt"
+  )
+})
+
+test_that(".theia_href_to_gdal normalises s3:// and https object URLs", {
+  expect_equal(
+    nemeton:::.theia_href_to_gdal("s3://sm1-gdc-ext/FORMSpoT/x.tif"),
+    "/vsis3/sm1-gdc-ext/FORMSpoT/x.tif"
+  )
+  expect_equal(
+    nemeton:::.theia_href_to_gdal(
+      "https://s3-data.meso.umontpellier.fr/sm1-gdc-ext/FORMSpoT/x.tif"
+    ),
+    "/vsis3/sm1-gdc-ext/FORMSpoT/x.tif"
+  )
+})
+
+test_that(".theia_href_to_gdal leaves a /vsi path untouched", {
+  expect_equal(
+    nemeton:::.theia_href_to_gdal("/vsis3/sm1-gdc-ext/x.tif"),
+    "/vsis3/sm1-gdc-ext/x.tif"
+  )
+})
+
+# ---- theia_configure_s3 ----
+
+test_that("theia_configure_s3 aborts when credentials are absent", {
+  withr::local_envvar(THEIA_S3_ACCESS_KEY = "", THEIA_S3_SECRET_KEY = "")
+  expect_error(theia_configure_s3(), "credentials")
+})
+
+test_that("theia_configure_s3 succeeds with explicit credentials", {
+  skip_if_not_installed("terra")
+  expect_invisible(
+    res <- theia_configure_s3(access_key = "AKfake", secret_key = "SKfake")
+  )
+  expect_true(res)
 })
 
 # ---- load_theia_source ----
