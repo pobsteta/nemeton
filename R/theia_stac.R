@@ -207,15 +207,17 @@ stac_get_item <- function(stac_api, collection, item_id) {
 #' \code{\link{load_theia_source}}.
 #'
 #' Credentials are never stored in the package. They are read from
-#' the \env{THEIA_S3_ACCESS_KEY} and \env{THEIA_S3_SECRET_KEY}
-#' environment variables (set them in a gitignored \file{.Renviron}),
-#' or passed explicitly. The non-secret S3 endpoint and options are
-#' read from the \code{services$theia_s3} entry of the country
-#' configuration.
+#' the \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY} environment
+#' variables — the same THEIA API-key pair used by the
+#' \code{teledetection} SDK (create one at
+#' \url{https://gate.stac.teledetection.fr}, set it in a gitignored
+#' \file{.Renviron}) — or passed explicitly. The non-secret S3
+#' endpoint, region and options are read from the
+#' \code{services$theia_s3} entry of the country configuration.
 #'
-#' @param access_key,secret_key Character. S3 credentials. When
-#'   \code{NULL} (default) they are read from \env{THEIA_S3_ACCESS_KEY}
-#'   and \env{THEIA_S3_SECRET_KEY}.
+#' @param access_key,secret_key Character. THEIA S3 credentials.
+#'   When \code{NULL} (default) they are read from
+#'   \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY}.
 #' @param country Character. ISO country code. Default \code{"FR"}.
 #'
 #' @return \code{TRUE} invisibly on success.
@@ -230,15 +232,15 @@ stac_get_item <- function(stac_api, collection, item_id) {
 theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
                                country = "FR") {
   if (is.null(access_key)) {
-    access_key <- Sys.getenv("THEIA_S3_ACCESS_KEY", "")
+    access_key <- Sys.getenv("TLD_ACCESS_KEY", "")
   }
   if (is.null(secret_key)) {
-    secret_key <- Sys.getenv("THEIA_S3_SECRET_KEY", "")
+    secret_key <- Sys.getenv("TLD_SECRET_KEY", "")
   }
   if (!nzchar(access_key) || !nzchar(secret_key)) {
     cli::cli_abort(c(
       "THEIA S3 credentials not found.",
-      i = "Set {.envvar THEIA_S3_ACCESS_KEY} and {.envvar THEIA_S3_SECRET_KEY} in a gitignored {.file .Renviron}, or pass {.arg access_key} / {.arg secret_key}."
+      i = "Set {.envvar TLD_ACCESS_KEY} and {.envvar TLD_SECRET_KEY} in a gitignored {.file .Renviron} (create an API key at {.url https://gate.stac.teledetection.fr}), or pass {.arg access_key} / {.arg secret_key}."
     ))
   }
 
@@ -255,7 +257,7 @@ theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
                        if (isTRUE(s3$virtual_hosting)) "TRUE" else "FALSE")
   terra::setGDALconfig("AWS_HTTPS",
                        if (isFALSE(s3$https)) "NO" else "YES")
-  terra::setGDALconfig("AWS_REGION", s3$region %||% "us-east-1")
+  terra::setGDALconfig("AWS_REGION", s3$region %||% "sm1")
 
   cli::cli_alert_success("THEIA S3 configured ({.val {s3$endpoint}}).")
   invisible(TRUE)

@@ -1,3 +1,23 @@
+# nemeton 0.39.1 (2026-05-20)
+
+### Fixed — correct THEIA S3 credentials and region
+
+A live test against the THEIA store showed the v0.38.0
+`theia_configure_s3()` config was wrong on two points, now fixed:
+
+- **Environment variables**: the THEIA API key (created at
+  <https://gate.stac.teledetection.fr>) is a standard S3 SigV4
+  key pair. `theia_configure_s3()` now reads `TLD_ACCESS_KEY` /
+  `TLD_SECRET_KEY` (the same names the `teledetection` SDK uses),
+  not `THEIA_S3_*`.
+- **Region**: the S3 region is `sm1` (visible in the
+  `X-Amz-Credential` scope of a signed URL), not `us-east-1`.
+  `services.theia_s3.region` in `FR.json` is corrected.
+
+With the correct key pair and region, GDAL reads the THEIA
+assets directly via `/vsis3/` with native SigV4 signing — no
+Python / `teledetection` SDK required.
+
 # nemeton 0.39.0 (2026-05-20)
 
 ### Added — year targeting for annual THEIA collections

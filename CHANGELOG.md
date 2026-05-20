@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.39.1] - 2026-05-20
+
+### Fixed
+
+- `theia_configure_s3()` reads `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`
+  (the THEIA API-key pair) instead of `THEIA_S3_*`, and the S3
+  region is `sm1` (not `us-east-1`). GDAL `/vsis3/` reads the
+  THEIA assets directly — no Python SDK needed.
+
 ## [0.39.0] - 2026-05-20
 
 ### Added

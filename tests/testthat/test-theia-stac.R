@@ -186,7 +186,7 @@ test_that(".theia_href_to_gdal leaves a /vsi path untouched", {
 # ---- theia_configure_s3 ----
 
 test_that("theia_configure_s3 aborts when credentials are absent", {
-  withr::local_envvar(THEIA_S3_ACCESS_KEY = "", THEIA_S3_SECRET_KEY = "")
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
   expect_error(theia_configure_s3(), "credentials")
 })
 

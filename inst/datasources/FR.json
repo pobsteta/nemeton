@@ -41,8 +41,8 @@
       "provider": "Mésocentre MESO@UM (Université de Montpellier) — THEIA MTD object store",
       "virtual_hosting": false,
       "https": true,
-      "region": "us-east-1",
-      "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets. Credentials are NOT stored here: set THEIA_S3_ACCESS_KEY and THEIA_S3_SECRET_KEY in a gitignored .Renviron, then call theia_configure_s3() once per session. GDAL then reads the assets via /vsis3/ with native SigV4 signing."
+      "region": "sm1",
+      "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets, served by the MESO@UM datacentre. Credentials are NOT stored here: the THEIA API key (access + secret, created at https://gate.stac.teledetection.fr) is a standard S3 SigV4 key pair. Set TLD_ACCESS_KEY and TLD_SECRET_KEY in a gitignored .Renviron, call theia_configure_s3() once per session, then GDAL reads /vsis3/ paths with native SigV4 signing — no Python / teledetection SDK needed."
     }
   },
 
