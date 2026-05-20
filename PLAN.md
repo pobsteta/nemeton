@@ -16,19 +16,25 @@
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
-| 🟨 | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d à venir. |
+| ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0**. Reliquat documenté (MUSCATE, LST, FORMSpoT, W1). |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
-# Chantier en cours — Sources de données Theia (catalogue DATA TERRA)
+# Chantier clos — Sources de données Theia (catalogue DATA TERRA)
 
-**Démarré** : 2026-05-20. **Objectif** : intégrer le catalogue Theia / DATA TERRA
-comme sources de données pour le calcul des 12 familles d'indicateurs. FORMS-T a
-ouvert la voie (release v0.28.0) ; ce chantier généralise l'approche aux autres
-produits Theia pertinents.
+**Démarré** : 2026-05-20. **Clôturé** : 2026-05-20 (release v0.35.0).
+**Objectif** : intégrer le catalogue Theia / DATA TERRA comme sources de
+données pour le calcul des 12 familles d'indicateurs. FORMS-T a ouvert la voie
+(release v0.28.0) ; ce chantier a généralisé l'approche aux autres produits
+Theia pertinents.
+
+**Bilan** : 10 sources cataloguées (Phase 1, v0.28.0-v0.30.0), loaders
+(Phase 2, v0.31.0), câblage de 4 sources dans 6 indicateurs + 1 helper
+(Phase 3, v0.32.0-v0.35.0). Reliquat de 4 câblages documenté ci-dessous
+(Phase 3d).
 
 ## Principe d'architecture — 3 niveaux d'intégration
 
@@ -101,7 +107,20 @@ Du moins au plus invasif :
 - **3c** ✅ — `theia_snow` → R3 (arguments `snow` + `snow_relief_strength` :
   le manteau neigeux atténue le stress de sécheresse, jusqu'à -30 % pour 6 mois
   d'enneigement). Release **v0.34.0**.
-- **3d** — sources 1b → indicateurs cible respectifs.
+- **3d** ✅ — sources 1b. Release **v0.35.0**. Câblages retenus (sains) :
+  `theia_water` → W2 (argument `water_occurrence` : 4ᵉ source de couverture
+  zones humides) ; `theia_soil_moisture` → R3 (argument `soil_moisture` :
+  atténuation du stress de sécheresse, même mécanique que `snow`) ;
+  `theia_species` → nouveau helper `units_add_species_from_raster()` (remplit
+  une colonne `species` pour P/C/B, en amont des indicateurs). **Reliquat
+  documenté (non câblé volontairement)** : `s2_l2a_muscate` = donnée de base
+  S2, son point d'intégration est le pipeline d'ingestion S2 existant, pas un
+  argument d'indicateur ; `theia_lst` → A2 = inadéquation sémantique (A2 est
+  un indice de qualité de l'air / pollution, pas de microclimat — câblage
+  nécessiterait un sous-indicateur microclimat dédié) ; `theia_water` → W1 =
+  W1 est une densité de réseau linéaire (m/ha), un masque raster ne s'y mappe
+  pas ; `formspot` = source provisoire (preprint, disponibilité Theia non
+  confirmée). Ces 4 points pourront faire l'objet d'un chantier ultérieur.
 
 ## Réserves / dette à lever
 
@@ -236,6 +255,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-20** — Release **v0.35.0** (feat — sources Theia phase 3d, **clôture du chantier Sources Theia**). Câblage des sources 1b, livré en une seule release à la demande. Trois câblages sains retenus. (1) **W2** — `indicateur_w2_zones_humides()` gagne `water_occurrence = NULL` + `occurrence_threshold = 25` : quand le raster d'occurrence d'eau Theia `theia_water` est fourni, les pixels dont la fréquence d'occurrence dépasse le seuil ajoutent à la couverture zones humides — 4ᵉ source additive, s'insère proprement dans le design multi-sources existant de W2. (2) **R3** — `indicateur_r3_secheresse()` gagne `soil_moisture = NULL` + `sm_relief_strength = 0.3` : le sol humide atténue le stress de sécheresse contre une référence 0.3 m³/m³ (capacité au champ), même mécanique de « relief » que l'argument `snow` de v0.34.0. R3 a donc maintenant 4 arguments optionnels Theia (snow, soil_moisture + leurs forces) — tous NULL par défaut. (3) **theia_species** — nouveau helper exporté `units_add_species_from_raster(units, species_raster, class_map, species_col)` dans `R/utils.R` : résout la classe dominante pondérée par couverture par UGF et la mappe vers un code essence via un crosswalk fourni par l'utilisateur (le mapping classes→essences est spécifique au produit, non devinable) ; remplit la colonne `species` consommée en amont par P1/P2/C1 et les indicateurs biodiversité. **Reliquat documenté — 4 câblages volontairement non faits** : `s2_l2a_muscate` est une donnée de base (réflectance S2 brute) dont le point d'intégration est le pipeline d'ingestion S2 existant, pas un argument d'indicateur ; `theia_lst` → A2 est une inadéquation sémantique (A2 = qualité de l'air / pollution, la LST est une température — câbler reviendrait à dénaturer A2, il faudrait un sous-indicateur microclimat dédié) ; `theia_water` → W1 non fait (W1 = densité de réseau linéaire m/ha, un masque raster ne s'y mappe pas) ; `formspot` non câblé (source provisoire, preprint arXiv:2512.17021, disponibilité Theia non confirmée). NAMESPACE + 3 `man/*.Rd` (1 créé, 2 mis à jour). 6 nouveaux `test_that` (2 W2, 2 R3, 2 helper espèces). Tests R non exécutés (runtime R absent). **Chantier Sources Theia clos** : 10 sources cataloguées (Phase 1), loaders (Phase 2), 4 sources câblées dans 6 indicateurs + 1 helper (Phase 3) ; reliquat de 4 câblages documenté pour un éventuel chantier ultérieur.
 
 - **2026-05-20** — Release **v0.34.0** (feat — sources Theia phase 3c, câblage `theia_snow`). Câblage du produit neige Theia dans l'indicateur de risque sécheresse R3, rétrocompatible. `indicateur_r3_secheresse()` gagne deux arguments : `snow = NULL` (un `SpatRaster` de durée d'enneigement en jours/an — produit `snow_cover_duration` de `theia_snow`) et `snow_relief_strength = 0.3` (réduction fractionnaire max de R3). Logique : le manteau neigeux est une réserve hydrique saisonnière — sa fonte alimente le sol en début de saison de végétation et réduit le stress de sécheresse estival. Quand `snow` est fourni, la durée d'enneigement moyenne par UGF est extraite, rééchelonnée 0-1 contre une référence 180 jours (6 mois), et R3 est multiplié par `1 - snow_relief_strength * relief` (donc jusqu'à -30 % pour 6 mois d'enneigement). Les UGF hors couverture neige (`NA`) reçoivent `relief = 0` → R3 inchangé (pas de pénalité ni de bonus, comportement sûr). Le bloc neige est placé après le calcul climat+topo, avant l'affectation `units$R3`. `snow = NULL` (défaut) → comportement v0.33.x strictement préservé. `man/indicateur_r3_secheresse.Rd` mis à jour à la main. 2 nouveaux `test_that` (la neige n'augmente jamais R3 vs sans neige ; rejet d'un `snow` non-raster). Le test existant `simplified signature` reste vert (vérifie la présence de 4 params, pas l'exclusivité). Tests R non exécutés (runtime R absent). **Suite** : 3d (sources 1b — `theia_water`→W1/W2, `theia_soil_moisture`→W3/R3/F1, `s2_l2a_muscate`→C2/T2/R5, `theia_species`→B/P/C, `theia_lst`→A2, `formspot`→C/P/T/R).
 

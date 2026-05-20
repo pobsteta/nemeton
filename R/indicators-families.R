@@ -539,12 +539,25 @@ indicateur_w1_reseau <- function(units,
 #' Wetland Coverage (W2)
 #'
 #' Calculates percentage of parcel area classified as wetland or riparian zone.
+#' Coverage is summed over several optional sources: BD TOPO water surfaces,
+#' a TWI threshold, OSO land-cover wetland codes, and — when supplied — the
+#' Theia \code{theia_water} water-occurrence product.
 #'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing land cover raster or wetland vector
 #' @param wetland_layer Character. Name of wetland layer in layers object
 #' @param wetland_values Numeric vector. Land cover codes representing wetlands.
 #'   Default NULL (auto-detect if possible).
+#' @param water_occurrence Optional \code{SpatRaster} of water-occurrence
+#'   frequency in percent (0-100) — the Theia \code{theia_water}
+#'   \code{water_occurrence} product, loaded via
+#'   \code{\link{load_raster_source}}. When supplied, pixels whose
+#'   occurrence reaches \code{occurrence_threshold} contribute to the
+#'   wetland coverage. Default \code{NULL}.
+#' @param occurrence_threshold Numeric in \code{[0, 100]}. Minimum
+#'   water-occurrence frequency (percent of observations) for a pixel to
+#'   count as wetland. Default \code{25}. Ignored when
+#'   \code{water_occurrence} is \code{NULL}.
 #'
 #' @return Numeric vector of wetland coverage (0-100\%)
 #'
@@ -557,7 +570,9 @@ indicateur_w1_reseau <- function(units,
 indicateur_w2_zones_humides <- function(units,
                                      layers,
                                      wetland_layer = "wetlands",
-                                     wetland_values = NULL) {
+                                     wetland_values = NULL,
+                                     water_occurrence = NULL,
+                                     occurrence_threshold = 25) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -643,6 +658,33 @@ indicateur_w2_zones_humides <- function(units,
         total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
         if (total_fraction > 0) {
           coverage[i] <- coverage[i] + (wetland_fraction / total_fraction) * 100
+        }
+      }
+    }
+  }
+
+  # Source 4: Theia theia_water occurrence frequency (phase 3d)
+  if (!is.null(water_occurrence)) {
+    if (!inherits(water_occurrence, "SpatRaster")) {
+      stop("water_occurrence must be a terra SpatRaster", call. = FALSE)
+    }
+    cli::cli_alert_info("W2: Adding Theia theia_water occurrence coverage")
+    has_any_source <- TRUE
+
+    for (i in seq_len(nrow(units))) {
+      occ <- safe_extract(
+        water_occurrence,
+        as_pure_sf(units[i, ]),
+        fun = NULL,
+        progress = FALSE
+      )[[1]]
+
+      if (!is.null(occ) && nrow(occ) > 0) {
+        wet_mask <- occ$value >= occurrence_threshold
+        wet_frac <- sum(occ$coverage_fraction[wet_mask], na.rm = TRUE)
+        total_frac <- sum(occ$coverage_fraction, na.rm = TRUE)
+        if (total_frac > 0) {
+          coverage[i] <- coverage[i] + (wet_frac / total_frac) * 100
         }
       }
     }

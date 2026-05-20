@@ -1,3 +1,41 @@
+# nemeton 0.35.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3d (indicator wiring: phase-1b sources)
+
+Phase 3d wires the phase-1b Theia sources into the indicators
+and closes Phase 3 of the "Theia data sources" chantier.
+
+- **W2 — `indicateur_w2_zones_humides()` gains a
+  `water_occurrence` argument** (plus `occurrence_threshold`,
+  default 25 %). When the Theia `theia_water` water-occurrence
+  raster is supplied, pixels whose occurrence frequency reaches
+  the threshold add to the wetland coverage — a fourth source
+  alongside BD TOPO water surfaces, the TWI threshold and OSO
+  land-cover codes.
+- **R3 — `indicateur_r3_secheresse()` gains `soil_moisture` and
+  `sm_relief_strength` arguments.** When the Theia
+  `theia_soil_moisture` raster is supplied, moist soil attenuates
+  drought stress against a 0.3 m³/m³ field-capacity reference
+  (same relief mechanism as the `snow` argument added in 0.34.0).
+- **New exported helper `units_add_species_from_raster()`.** It
+  fills a species column on `units` from a tree-species
+  classification raster (the Theia `theia_species` product) and a
+  user-supplied class-to-species crosswalk, resolving the
+  coverage-weighted dominant class per unit. This is the upstream
+  integration point for the P / C / biodiversity indicators,
+  which read a species column.
+
+All additions are backward-compatible.
+
+**Deferred wirings** (documented in `PLAN.md`): `s2_l2a_muscate`
+is base Sentinel-2 reflectance — its integration point is the
+existing S2 ingestion pipeline, not an indicator argument;
+`theia_lst` → A2 is a semantic mismatch (A2 is an air-quality
+index, not a microclimate one); `theia_water` → W1 is deferred
+(W1 is a linear-network density, a raster mask does not map to
+it); `formspot` wiring waits until the product is confirmed on
+the Theia catalogue.
+
 # nemeton 0.34.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 3c (indicator wiring: theia_snow)

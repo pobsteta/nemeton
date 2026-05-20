@@ -10,7 +10,9 @@ indicateur_r3_secheresse(
   dem = NULL,
   climate_data = NULL,
   snow = NULL,
-  snow_relief_strength = 0.3
+  snow_relief_strength = 0.3,
+  soil_moisture = NULL,
+  sm_relief_strength = 0.3
 )
 }
 \arguments{
@@ -36,6 +38,18 @@ unchanged. Default \code{NULL}.}
 fractional reduction of R3 applied when the snow-cover
 duration reaches the 180-day (6-month) reference. Default
 \code{0.3}. Ignored when \code{snow} is \code{NULL}.}
+
+\item{soil_moisture}{Optional \code{SpatRaster} of surface soil
+moisture in \eqn{m^3/m^3} (the Theia \code{theia_soil_moisture}
+product, loaded via \code{\link{load_raster_source}}). When
+supplied, moist soil attenuates drought stress — see Details.
+Default \code{NULL}.}
+
+\item{sm_relief_strength}{Numeric in \code{[0, 1]}. Maximum
+fractional reduction of R3 applied when the soil moisture
+reaches the \eqn{0.3\;m^3/m^3} field-capacity reference.
+Default \code{0.3}. Ignored when \code{soil_moisture} is
+\code{NULL}.}
 }
 \value{
 The input sf object with added column:
@@ -72,6 +86,13 @@ reference, and R3 is multiplied by
 \code{1 - snow_relief_strength * relief}. A forest with a
 long-lasting snowpack carries a meltwater reserve into the
 growing season and is therefore less drought-stressed.
+
+**Soil-moisture attenuation** (Theia \code{theia_soil_moisture},
+optional): when \code{soil_moisture} is supplied, the per-unit
+mean surface soil moisture is rescaled to a 0-1 relief factor
+against the \eqn{0.3\;m^3/m^3} field-capacity reference, and
+R3 is multiplied by \code{1 - sm_relief_strength * relief}.
+Moist soil buffers drought stress.
 }
 \examples{
 \dontrun{

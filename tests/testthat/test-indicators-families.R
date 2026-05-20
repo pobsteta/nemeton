@@ -2728,3 +2728,38 @@ test_that("indicateur_f2_erosion accepts a Theia theia_soil texture", {
     expect_true(all(non_na >= 0 & non_na <= 100))
   }
 })
+
+# ==============================================================================
+# Phase 3d — theia_water wiring: W2 occurrence coverage
+# ==============================================================================
+
+test_that("indicateur_w2_zones_humides adds Theia water-occurrence coverage", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  units <- create_test_units(n_features = 3)
+  wo <- create_test_raster(values = "constant")
+  terra::values(wo) <- 50  # 50% occurrence everywhere, above the 25% threshold
+
+  result <- suppressMessages(
+    indicateur_w2_zones_humides(units, layers = make_mock_layers(),
+                                water_occurrence = wo)
+  )
+  expect_length(result, 3)
+  expect_type(result, "double")
+  expect_true(all(result >= 0 & result <= 100, na.rm = TRUE))
+})
+
+test_that("indicateur_w2_zones_humides rejects a non-raster water_occurrence", {
+  skip_if_not_installed("sf")
+
+  units <- create_test_units(n_features = 2)
+  expect_error(
+    suppressMessages(
+      indicateur_w2_zones_humides(units, layers = make_mock_layers(),
+                                  water_occurrence = "not_a_raster")
+    ),
+    "water_occurrence must be a terra SpatRaster"
+  )
+})

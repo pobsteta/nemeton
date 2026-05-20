@@ -355,6 +355,16 @@ indicateur_r2_tempete <- function(units,
 #'   fractional reduction of R3 applied when the snow-cover
 #'   duration reaches the 180-day (6-month) reference. Default
 #'   \code{0.3}. Ignored when \code{snow} is \code{NULL}.
+#' @param soil_moisture Optional \code{SpatRaster} of surface soil
+#'   moisture in \eqn{m^3/m^3} (the Theia \code{theia_soil_moisture}
+#'   product, loaded via \code{\link{load_raster_source}}). When
+#'   supplied, moist soil attenuates drought stress — see Details.
+#'   Default \code{NULL}.
+#' @param sm_relief_strength Numeric in \code{[0, 1]}. Maximum
+#'   fractional reduction of R3 applied when the soil moisture
+#'   reaches the \eqn{0.3\;m^3/m^3} field-capacity reference.
+#'   Default \code{0.3}. Ignored when \code{soil_moisture} is
+#'   \code{NULL}.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -386,6 +396,13 @@ indicateur_r2_tempete <- function(units,
 #' long-lasting snowpack carries a meltwater reserve into the
 #' growing season and is therefore less drought-stressed.
 #'
+#' **Soil-moisture attenuation** (Theia \code{theia_soil_moisture},
+#' optional): when \code{soil_moisture} is supplied, the per-unit
+#' mean surface soil moisture is rescaled to a 0-1 relief factor
+#' against the \eqn{0.3\;m^3/m^3} field-capacity reference, and
+#' R3 is multiplied by \code{1 - sm_relief_strength * relief}.
+#' Moist soil buffers drought stress.
+#'
 #' @family risk-indicators
 #' @export
 #'
@@ -405,7 +422,9 @@ indicateur_r3_secheresse <- function(units,
                                    dem = NULL,
                                    climate_data = NULL,
                                    snow = NULL,
-                                   snow_relief_strength = 0.3) {
+                                   snow_relief_strength = 0.3,
+                                   soil_moisture = NULL,
+                                   sm_relief_strength = 0.3) {
   # Validate inputs
   validate_sf(units)
 
@@ -528,6 +547,21 @@ indicateur_r3_secheresse <- function(units,
     relief[is.na(relief)] <- 0
     attenuation <- 1 - snow_relief_strength * relief
     r3_score <- pmin(pmax(r3_score * attenuation, 0), 100)
+  }
+
+  # --- Soil-moisture attenuation (Theia theia_soil_moisture, phase 3d) ---
+  if (!is.null(soil_moisture)) {
+    if (!inherits(soil_moisture, "SpatRaster")) {
+      stop("soil_moisture must be a terra SpatRaster", call. = FALSE)
+    }
+    cli::cli_alert_info("R3: drought stress attenuated by soil moisture (Theia theia_soil_moisture)")
+    sm_vals <- safe_extract(soil_moisture,
+      as_pure_sf(units), fun = "mean", progress = FALSE)
+    # Relief 0-1 against a 0.3 m3/m3 field-capacity reference;
+    # units with no coverage (NA) get no attenuation.
+    sm_relief <- pmin(pmax(sm_vals / 0.3, 0), 1)
+    sm_relief[is.na(sm_relief)] <- 0
+    r3_score <- pmin(pmax(r3_score * (1 - sm_relief_strength * sm_relief), 0), 100)
   }
 
   units$R3 <- r3_score

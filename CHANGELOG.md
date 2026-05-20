@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3d: `indicateur_w2_zones_humides()`
+  gains a `water_occurrence` argument (Theia `theia_water`);
+  `indicateur_r3_secheresse()` gains `soil_moisture` /
+  `sm_relief_strength` arguments (Theia `theia_soil_moisture`);
+  new exported helper `units_add_species_from_raster()` fills a
+  species column from the Theia `theia_species` product. Closes
+  Phase 3 of the Theia chantier. Backward-compatible.
+
 ## [0.34.0] - 2026-05-20
 
 ### Added
