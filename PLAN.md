@@ -16,13 +16,92 @@
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
+| 🟨 | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a (catalogue, 3 sources prioritaires) → **v0.29.0** ; phase 1b + 2 + 3 à venir. |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
-# Chantier en cours — Carte pixel (spec 010) livrée / cadrage E7
+# Chantier en cours — Sources de données Theia (catalogue DATA TERRA)
+
+**Démarré** : 2026-05-20. **Objectif** : intégrer le catalogue Theia / DATA TERRA
+comme sources de données pour le calcul des 12 familles d'indicateurs. FORMS-T a
+ouvert la voie (release v0.28.0) ; ce chantier généralise l'approche aux autres
+produits Theia pertinents.
+
+## Principe d'architecture — 3 niveaux d'intégration
+
+Du moins au plus invasif :
+
+- **Niveau 1 — Catalogue** (déclaratif) : chaque source est déclarée dans
+  `inst/datasources/FR.json` (section `datasets`) avec type, résolution, unité,
+  CRS, accès (DOI / STAC / catalogue), licence, `ndp_level`, et un bloc
+  `consumed_by` documentant les indicateurs cible. Aucune modification du code
+  cœur. C'est le pattern FORMS-T (v0.28.0). Risque nul, rétrocompatible.
+- **Niveau 2 — Loaders** : extension de `load_raster_source()` (et, si besoin,
+  un résolveur d'asset STAC) pour que l'app puisse réellement matérialiser les
+  rasters Theia. Touche `R/datasources.R` uniquement.
+- **Niveau 3 — Câblage indicateurs** : ajout d'arguments optionnels aux
+  fonctions `indicateur_*()` pour consommer ces nouvelles entrées. Conçu
+  indicateur par indicateur, strictement rétrocompatible (argument `NULL` par
+  défaut = comportement v0.28.x inchangé). Niveau à plus haut risque — chaque
+  source y est traitée séparément, avec ses propres tests.
+
+## Sources visées
+
+| Clé FR.json | Produit Theia | Familles / indicateurs cible | Phase |
+|---|---|---|---|
+| `forms_t` | FORMS-T hauteur/volume/biomasse | C1, P1, P2, B2 | ✅ livré (v0.28.0) |
+| `s2_biophysical` | Variables biophysiques S2 — LAI / FAPAR / FVC | C2, A1, B2 | 1a |
+| `theia_soil` | Cartes de sol France — granulométrie + éléments grossiers | F1, F2 | 1a |
+| `theia_snow` | Theia Snow collection (Let-it-snow / LIS) | R3, W | 1a |
+| `theia_water` | Eaux de surface / Surfwater | W1, W2 | 1b |
+| `theia_soil_moisture` | Humidité du sol (SMOS L3 / dérivés S1) | W3, R3, F1 | 1b |
+| `s2_l2a_muscate` | Sentinel-2 L2A réflectance de surface (MUSCATE) | C2, T2, R5 | 1b |
+| `theia_species` | Classification d'essences | B1, B2, intrants P/C | 1b |
+| `theia_lst` | Thermocity — Land Surface Temperature | A2 | 1b |
+| `formspot` | FORMSpoT — suivi forestier au niveau de l'arbre | C, P, T, R | 1b |
+
+## Découpage
+
+### Phase 1 — Catalogue (Niveau 1, déclaratif)
+
+- **1a — sources prioritaires** : `s2_biophysical`, `theia_soil`, `theia_snow`.
+  Entrées FR.json + tests. Release **v0.29.0**.
+- **1b — sources complémentaires** : `theia_water`, `theia_soil_moisture`,
+  `s2_l2a_muscate`, `theia_species`, `theia_lst`, `formspot`. Entrées FR.json +
+  tests.
+
+### Phase 2 — Loaders (Niveau 2)
+
+- Décider, source par source, si l'accès passe par un résolveur STAC
+  (catalogue `catalogue.theia.data-terra.org`) ou par un download local.
+- Étendre `load_raster_source()` si un nouveau `type` est nécessaire.
+
+### Phase 3 — Câblage indicateurs (Niveau 3, une sous-tâche par source)
+
+- **3a** — `s2_biophysical` → C2 (signal de vitalité FAPAR/LAI en complément du
+  NDVI), A1 (couverture arborée via FVC).
+- **3b** — `theia_soil` → F1 (texture comme proxy de fertilité, alternative
+  France à SoilGrids CEC), F2 (érodibilité).
+- **3c** — `theia_snow` → R3 (manteau neigeux comme réserve hydrique saisonnière
+  modulant le stress de sécheresse).
+- **3d** — sources 1b → indicateurs cible respectifs.
+
+## Réserves / dette à lever
+
+- Pour chaque source, les métadonnées exactes (URL STAC, identifiant de
+  collection, licence précise, CRS natif, résolution) sont à **vérifier
+  source par source** : tant que ce n'est pas fait, les champs concernés
+  portent un marqueur `"to confirm"` dans FR.json (même convention que
+  `chm_opencanopy` et `forms_t`).
+- Un éventuel **spec 011** pourra formaliser ce chantier si le câblage
+  indicateurs (Phase 3) s'avère plus large que prévu.
+
+---
+
+# Chantier précédent — Carte pixel (spec 010) livrée / cadrage E7
 
 **État au 2026-05-15 (post-v0.22.1)** : 4 fonctions API publiques exposent le cache S2 pixel-par-pixel pour permettre la construction côté app d'une carte interactive NDVI/NBR avec time series au clic. Spec 010 close côté cœur. Patch **v0.22.1** ajoute un refresh proactif du SAS token PC avant chaque FETCH pour éliminer le 403/retry systématique observé sur les runs > 30 min. Implémentation côté `nemetonshiny` à venir (sous-onglet *Carte pixel* dans `mod_monitoring` — repo séparé).
 
@@ -143,6 +222,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-20** — Release **v0.29.0** (feat — sources Theia phase 1a). Ouverture du chantier *Sources de données Theia* (cf. table d'avancement + section *Chantier en cours*). Phase 1a : déclaration de trois produits Theia / DATA TERRA prioritaires dans `inst/datasources/FR.json`, section `datasets`, sur le modèle déclaratif de `forms_t` (v0.28.0) — **aucune modif du code cœur des indicateurs**. (1) `s2_biophysical` — variables biophysiques Sentinel-2 (LAI / FAPAR / FVC) à 10 m, `consumed_by` C2 (vitalité, complément du NDVI) / A1 (couverture arborée via FVC) / B2 (hétérogénéité LAI). (2) `theia_soil` — cartes de sol France métropolitaine (fractions argile / limon / sable + éléments grossiers), `consumed_by` F1 (texture = proxy de fertilité, alternative France au SoilGrids CEC global) / F2 (érodibilité). (3) `theia_snow` — collection Theia Snow (Let-it-snow / LIS), couverture neigeuse + phénologie annuelle à 20 m, `consumed_by` R3 (manteau neigeux = réserve hydrique modulant le stress de sécheresse) / W. Chaque entrée : `type: "raster_local"` sans URL statique (→ `load_raster_source()` refuse de charger, comme `forms_t` / `chm_opencanopy`), `ndp_level: 0`, bloc `provenance`, et marqueurs `"to confirm"` explicites sur les métadonnées non encore vérifiées (id de collection STAC, résolution exacte, licence). 4 nouveaux `test_that` dans `test-datasources.R` (un par source + un test transversal provenance). Tests R non exécutés ici (runtime R absent de l'environnement) — JSON validé syntaxiquement. **Suite du chantier** : phase 1b (6 sources complémentaires : `theia_water`, `theia_soil_moisture`, `s2_l2a_muscate`, `theia_species`, `theia_lst`, `formspot`), puis phase 2 (loaders) et phase 3 (câblage indicateurs).
 
 - **2026-05-20** — Release **v0.28.0** (feat — FORMS-T déclarée comme source de données). Demande utilisateur : intégrer la donnée Theia FORMS-T (`https://doi.theia.data-terra.org/FormsT/`) comme source pour le calcul des indicateurs C1, P1, P2 et B2. FORMS-T est une série temporelle (2018-présent) de cartes d'attributs forestiers sur la France métropolitaine — hauteur de canopée (10 m), volume de bois sur pied (30 m), biomasse aérienne (30 m) — produite par deep learning à partir de Sentinel-1/2 + GEDI (Schwartz et al. 2023, ESSD, doi:10.5194/essd-15-4927-2023). **Implémentation** : nouvelle entrée `forms_t` dans `inst/datasources/FR.json` (section `datasets`), `type: "raster_local"`, `format: "COG"`, `native_crs: EPSG:2154`, `ndp_level: 0`, `augmented: "height_ml"` (cohérent ADR-011 amendé spec 005 — granularité satellite+ML, pas de montée de niveau NDP). Trois sous-produits décrits dans `products` avec résolution / unité / `value_range` plausible ; un bloc `access` (DOI Theia, catalogue STAC `browser-theia.stac.teledetection.fr`, record Zenodo 15489231) ; un bloc `consumed_by` documentant le câblage du produit hauteur dans le chemin CHM des quatre indicateurs `indicateur_c1_biomasse()` / `indicateur_p1_volume()` / `indicateur_p2_station()` / `indicateur_b2_structure()` (déjà dotés d'un argument `chm` depuis spec 005). **Point d'attention** documenté dans le JSON : la hauteur FORMS-T est stockée en centimètres — l'appelant divise le raster par 100 avant de le passer en argument `chm` (qui attend des mètres). Pas de code indicateur modifié : les quatre fonctions consomment déjà un `SpatRaster` via `chm`, l'intégration est purement déclarative (catalogue de sources). `forms_t` ne porte volontairement pas d'URL statique (diffusion par tuile/année via STAC ou Zenodo) → `load_raster_source()` refuse de le charger directement, comme `chm_opencanopy`. 4 nouveaux `test_that` dans `test-datasources.R` (déclaration, trois produits + unités, `value_range` plausibles, `consumed_by` + provenance). Tests R non exécutés ici (runtime R absent de l'environnement d'exécution) — JSON validé syntaxiquement. Aucune modif cœur des indicateurs.
 

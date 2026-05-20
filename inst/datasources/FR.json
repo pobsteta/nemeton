@@ -204,6 +204,140 @@
       },
       "license": "CC-BY-4.0 (to confirm at the Zenodo record before redistribution)"
     },
+    "s2_biophysical": {
+      "type": "raster_local",
+      "format": "COG",
+      "description": "Sentinel-2 biophysical variables (Theia): Leaf Area Index (LAI), Fraction of Absorbed Photosynthetically Active Radiation (FAPAR) and Fractional Vegetation Cover (FVC), retrieved at decametric resolution from Sentinel-2 L2A surface reflectance.",
+      "native_crs": "UTM (per Sentinel-2 tile)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "Sentinel-2 era (2017-present), per acquisition",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "note": "Theia value-added product distributed per Sentinel-2 tile. There is no single static URL, so load_raster_source() cannot fetch this source directly: the caller resolves the catalogue/STAC asset href (or a local download path) first.",
+        "stac_collection": "to confirm at the Theia catalogue"
+      },
+      "products": {
+        "lai": {
+          "variable": "leaf_area_index",
+          "resolution_m": 10,
+          "unit": "m2/m2",
+          "value_range": [0, 8]
+        },
+        "fapar": {
+          "variable": "fapar",
+          "resolution_m": 10,
+          "unit": "fraction",
+          "value_range": [0, 1]
+        },
+        "fvc": {
+          "variable": "fractional_vegetation_cover",
+          "resolution_m": 10,
+          "unit": "fraction",
+          "value_range": [0, 1]
+        }
+      },
+      "consumed_by": {
+        "C2": "vitality signal complementing NDVI: FAPAR and LAI track canopy photosynthetic activity.",
+        "A1": "tree canopy cover derived from FVC (fractional vegetation cover).",
+        "B2": "structural heterogeneity via the per-unit coefficient of variation of LAI."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA value-added product chain",
+        "method": "Neural-network inversion of a radiative-transfer model on Sentinel-2 L2A reflectance (SNAP biophysical processor lineage).",
+        "reference": "Weiss & Baret (2016) S2ToolBox Level-2 products: LAI, FAPAR, FVC; Bochenek et al. / Theia documentation."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
+    "theia_soil": {
+      "type": "raster_local",
+      "format": "GeoTIFF",
+      "description": "Theia soil maps for metropolitan France: topsoil particle-size fractions (clay, silt, sand) and coarse-element content, mapped by combining satellite imagery with soil-sample databases.",
+      "native_crs": "EPSG:2154",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "resolution_m": "to confirm at the Theia catalogue",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "note": "Theia 'Soil' theme product (metropolitan France). No single static URL: the caller resolves the catalogue download path first."
+      },
+      "products": {
+        "clay": {
+          "variable": "clay_fraction",
+          "unit": "g/kg (to confirm: g/kg or percent)",
+          "value_range": [0, 1000]
+        },
+        "silt": {
+          "variable": "silt_fraction",
+          "unit": "g/kg (to confirm: g/kg or percent)",
+          "value_range": [0, 1000]
+        },
+        "sand": {
+          "variable": "sand_fraction",
+          "unit": "g/kg (to confirm: g/kg or percent)",
+          "value_range": [0, 1000]
+        },
+        "coarse_elements": {
+          "variable": "coarse_element_content",
+          "unit": "percent",
+          "value_range": [0, 100]
+        }
+      },
+      "consumed_by": {
+        "F1": "soil texture as a direct fertility proxy — a France-wide alternative to the global SoilGrids CEC layer (soilgrids_cec).",
+        "F2": "soil erodibility derived from the silt/sand/clay balance."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — Soil scientific expertise centre",
+        "method": "Digital soil mapping from multi-temporal satellite imagery and soil-profile databases."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
+    "theia_snow": {
+      "type": "raster_local",
+      "format": "COG / GeoTIFF",
+      "description": "Theia Snow collection (Let-it-snow / LIS): high-resolution snow-cover maps from Sentinel-2 and Landsat-8, plus annual snow-cover phenology syntheses (snow-cover duration, onset and melt-out dates).",
+      "native_crs": "UTM (per Sentinel-2 tile)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "2017-present (per scene) + yearly synthesis",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "stac_collection": "LIS_SNT_YEARLY",
+        "reference": "Gascoin et al. (2019) Theia Snow collection: high-resolution operational snow cover maps. Earth Syst. Sci. Data 11:493-514. doi:10.5194/essd-11-493-2019"
+      },
+      "products": {
+        "snow_cover": {
+          "variable": "snow_cover",
+          "resolution_m": 20,
+          "unit": "class",
+          "classes": {
+            "0": "no-snow",
+            "100": "snow",
+            "205": "cloud",
+            "254": "no-data"
+          }
+        },
+        "snow_cover_duration": {
+          "variable": "snow_cover_duration",
+          "resolution_m": 20,
+          "unit": "days/year",
+          "value_range": [0, 366]
+        }
+      },
+      "consumed_by": {
+        "R3": "snowpack as a seasonal soil-water reserve that modulates summer drought stress, especially in mountain massifs.",
+        "W": "winter water-input proxy for the water-regulation family."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — CESBIO (Let-it-snow processing chain)",
+        "method": "Normalized Difference Snow Index thresholding constrained by a digital elevation model."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
     "oso": {
       "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",
       "description": "OSO - Occupation du Sol (Theia/CESBIO)",

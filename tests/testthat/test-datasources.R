@@ -198,6 +198,51 @@ test_that("forms_t documents the C1/P1/P2/B2 wiring and provenance", {
   expect_true(nzchar(forms$access$stac_catalog))
 })
 
+# ---- Theia sources phase 1a (s2_biophysical / theia_soil / theia_snow) ----
+
+test_that("FR config exposes s2_biophysical with LAI/FAPAR/FVC", {
+  bio <- get_data_source("s2_biophysical", "FR")
+  expect_type(bio, "list")
+  expect_equal(bio$type, "raster_local")
+  expect_equal(bio$ndp_level, 0)
+  expect_true(all(c("lai", "fapar", "fvc") %in% names(bio$products)))
+  expect_equal(bio$products$fapar$unit, "fraction")
+  expect_equal(bio$products$fvc$value_range[[2]], 1)
+  expect_true(all(c("C2", "A1", "B2") %in% names(bio$consumed_by)))
+})
+
+test_that("FR config exposes theia_soil with texture fractions", {
+  soil <- get_data_source("theia_soil", "FR")
+  expect_type(soil, "list")
+  expect_equal(soil$type, "raster_local")
+  expect_equal(soil$native_crs, "EPSG:2154")
+  expect_true(all(c("clay", "silt", "sand", "coarse_elements") %in%
+                    names(soil$products)))
+  expect_true(all(c("F1", "F2") %in% names(soil$consumed_by)))
+})
+
+test_that("FR config exposes theia_snow with cover and phenology", {
+  snow <- get_data_source("theia_snow", "FR")
+  expect_type(snow, "list")
+  expect_equal(snow$type, "raster_local")
+  expect_equal(snow$ndp_level, 0)
+  expect_true(all(c("snow_cover", "snow_cover_duration") %in%
+                    names(snow$products)))
+  expect_equal(snow$products$snow_cover$resolution_m, 20)
+  expect_true("R3" %in% names(snow$consumed_by))
+  expect_match(snow$access$reference, "essd-11-493-2019")
+})
+
+test_that("Theia phase-1a sources all declare provenance", {
+  for (key in c("s2_biophysical", "theia_soil", "theia_snow")) {
+    src <- get_data_source(key, "FR")
+    expect_true(!is.null(src$provenance),
+                info = paste("missing provenance:", key))
+    expect_true(nzchar(src$provenance$producer),
+                info = paste("empty producer:", key))
+  }
+})
+
 # ---- load_raster_source ----
 
 test_that("load_raster_source errors on unknown key", {

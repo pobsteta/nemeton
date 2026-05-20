@@ -1,3 +1,36 @@
+# nemeton 0.29.0 (2026-05-20)
+
+### Added — Theia data sources, phase 1a (catalogue declarations)
+
+First batch of the "Theia data sources" chantier (see `PLAN.md`).
+Three priority Theia / DATA TERRA products are now declared in
+`inst/datasources/FR.json` (section `datasets`), following the
+declarative pattern established by `forms_t` in v0.28.0 — no core
+indicator code is modified:
+
+- **`s2_biophysical`** — Sentinel-2 biophysical variables (LAI,
+  FAPAR, FVC) at 10 m. `consumed_by`: C2 (vitality, complements
+  NDVI), A1 (canopy cover via FVC), B2 (LAI heterogeneity).
+- **`theia_soil`** — metropolitan-France soil maps: clay, silt,
+  sand fractions and coarse-element content. `consumed_by`: F1
+  (texture as a fertility proxy, a France-wide alternative to the
+  global SoilGrids CEC layer), F2 (erodibility).
+- **`theia_snow`** — Theia Snow collection (Let-it-snow / LIS):
+  snow-cover maps and annual phenology at 20 m. `consumed_by`: R3
+  (snowpack as a seasonal water reserve modulating drought
+  stress), W (winter water input).
+
+Each entry carries `ndp_level: 0`, a `consumed_by` block, a
+`provenance` block and explicit `"to confirm"` markers on
+metadata not yet verified (STAC collection id, exact resolution,
+licence). All three are `type: "raster_local"` with no static URL
+— `load_raster_source()` deliberately refuses to fetch them, as
+for `forms_t` and `chm_opencanopy`.
+
+This release covers Phase 1a only. Phase 1b (six further Theia
+sources), Phase 2 (loaders) and Phase 3 (indicator wiring) are
+scoped in `PLAN.md`.
+
 # nemeton 0.28.0 (2026-05-20)
 
 ### Added — FORMS-T (Theia) declared as a forest data source

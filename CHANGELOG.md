@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 1a: `s2_biophysical` (LAI/FAPAR/FVC),
+  `theia_soil` (texture fractions) and `theia_snow` (Let-it-snow
+  collection) declared in `inst/datasources/FR.json`, with
+  `consumed_by` wiring to the C2/A1/B2, F1/F2 and R3/W indicators
+  respectively. Declarative only — no core indicator code changed.
+
 ## [0.28.0] - 2026-05-20
 
 ### Added
