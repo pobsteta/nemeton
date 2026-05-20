@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3b: exported helpers
+  `texture_to_fertility_score()` and
+  `texture_to_erosion_resistance()`; `indicateur_f1_fertilite()`
+  gains a `"theia_soil"` source + `texture` argument;
+  `indicateur_f2_erosion()` gains a `texture` argument. Wires the
+  Theia `theia_soil` product into the F1/F2 indicators.
+
 ## [0.32.0] - 2026-05-20
 
 ### Added

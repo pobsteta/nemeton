@@ -9,9 +9,10 @@ indicateur_f1_fertilite(
   layers = NULL,
   soil_layer = "soil",
   fertility_col = "fertility",
-  source = c("layer", "soilgrids", "gissol"),
+  source = c("layer", "soilgrids", "gissol", "theia_soil"),
   country = "FR",
-  rpf_code_col = "rpf_code"
+  rpf_code_col = "rpf_code",
+  texture = NULL
 )
 }
 \arguments{
@@ -28,7 +29,7 @@ in \code{"layer"} mode. Unused when \code{source} is
 \code{"soilgrids"} or \code{"gissol"}.}
 
 \item{source}{Character. One of \code{"layer"} (default),
-\code{"soilgrids"}, or \code{"gissol"}.}
+\code{"soilgrids"}, \code{"gissol"}, or \code{"theia_soil"}.}
 
 \item{country}{Character. Country code used to resolve the SoilGrids
 datasource entry. Default \code{"FR"}.}
@@ -37,6 +38,12 @@ datasource entry. Default \code{"FR"}.}
 the AFES 2008 code (matching the \code{rpf_code} primary key of
 \code{\link{read_uts_fertility_table}}). Default
 \code{"rpf_code"}. Only used when \code{source = "gissol"}.}
+
+\item{texture}{Optional named list of \code{SpatRaster}s with
+elements \code{clay}, \code{silt}, \code{sand} and optionally
+\code{coarse_elements} (the Theia \code{theia_soil} products,
+loaded via \code{\link{load_raster_source}}). Required when
+\code{source = "theia_soil"}, ignored otherwise.}
 }
 \value{
 Numeric vector of fertility scores (0-100 scale, higher = more fertile)
@@ -48,7 +55,7 @@ polygon layer joined to the UTS → fertility crosswalk shipped in
 \code{inst/extdata/uts_fertilite_fr.csv}.
 }
 \details{
-Three data sources are supported via \code{source}:
+Four data sources are supported via \code{source}:
 \itemize{
   \item \code{"layer"} (default) — read a raster or polygon layer from
     \code{layers}, min-max normalised per call (relative score).
@@ -66,6 +73,13 @@ Three data sources are supported via \code{source}:
     area-weighted fertility score per unit on the 0-100 scale.
     France metropolitan only. Unknown codes are silently dropped;
     units whose polygons carry only unknown codes return NA.
+  \item \code{"theia_soil"} — derive fertility from a Theia
+    \code{theia_soil} texture raster set passed via \code{texture}
+    (a named list of clay / silt / sand, optionally
+    \code{coarse_elements}, \code{SpatRaster}s). The per-unit mean
+    texture is mapped to a 0-100 score via
+    \code{\link{texture_to_fertility_score}}. No inventory layer
+    is needed.
 }
 
 SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
@@ -85,5 +99,14 @@ layers <- nemeton_layers(vectors = list(soil = "rrp_departement.gpkg"))
 results <- indicateur_f1_fertilite(units, layers,
                                    source = "gissol",
                                    rpf_code_col = "UTSDom")
+
+# Theia theia_soil path: texture rasters
+texture <- list(
+  clay = load_raster_source("theia_soil", "FR", path = "clay.tif"),
+  silt = load_raster_source("theia_soil", "FR", path = "silt.tif"),
+  sand = load_raster_source("theia_soil", "FR", path = "sand.tif")
+)
+results <- indicateur_f1_fertilite(units, source = "theia_soil",
+                                   texture = texture)
 }
 }

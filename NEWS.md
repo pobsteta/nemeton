@@ -1,3 +1,36 @@
+# nemeton 0.33.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3b (indicator wiring: theia_soil)
+
+Phase 3b wires the Theia soil-texture product `theia_soil` into
+the soil family (F1, F2).
+
+- **Two exported texture helpers.**
+  `texture_to_fertility_score(clay, silt, sand, coarse_elements)`
+  maps a soil-texture composition to a 0-100 forest-fertility
+  score (proximity to the loam optimum in the texture triangle,
+  with a coarse-element penalty).
+  `texture_to_erosion_resistance(clay, silt, sand)` maps texture
+  to a 0-100 erosion-resistance score (USLE erodibility logic:
+  silt erodes, clay resists). Both are calibratable first-pass
+  heuristics, exported for pedologist audit; the texture triplet
+  is renormalised internally, so inputs may be in any consistent
+  unit (g/kg, percent, fraction).
+- **F1 — `indicateur_f1_fertilite()` gains a `"theia_soil"`
+  source** and a `texture` argument (a named list of clay / silt
+  / sand, optionally coarse_elements, `SpatRaster`s). In that
+  mode F1 derives fertility from the per-unit mean texture via
+  `texture_to_fertility_score()`.
+- **F2 — `indicateur_f2_erosion()` gains a `texture` argument.**
+  When supplied, a texture erosion-resistance component is
+  averaged into F2 alongside the TWI and slope components
+  (F2 = mean of the three). `texture = NULL` (default) preserves
+  the pre-existing TWI + slope behaviour.
+
+All additions are backward-compatible: existing F1/F2 callers are
+unaffected. Phase 3c (`theia_snow` → R3) and 3d (the phase-1b
+sources) remain, scoped in `PLAN.md`.
+
 # nemeton 0.32.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 3a (indicator wiring: s2_biophysical)

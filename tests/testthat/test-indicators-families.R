@@ -2629,3 +2629,102 @@ test_that("indicateur_c2_ndvi FAPAR mode rejects a non-raster fapar", {
     "fapar must be a terra SpatRaster"
   )
 })
+
+# ==============================================================================
+# Phase 3b — theia_soil wiring: texture helpers + F1/F2
+# ==============================================================================
+
+test_that("texture_to_fertility_score favours loam over sand and clay", {
+  loam <- texture_to_fertility_score(20, 40, 40)
+  clay <- texture_to_fertility_score(90, 5, 5)
+  sand <- texture_to_fertility_score(5, 5, 90)
+  expect_gt(loam, sand)
+  expect_gt(loam, clay)
+  expect_true(all(c(loam, clay, sand) >= 0 & c(loam, clay, sand) <= 100))
+})
+
+test_that("texture_to_fertility_score penalises coarse elements", {
+  base <- texture_to_fertility_score(20, 40, 40)
+  stony <- texture_to_fertility_score(20, 40, 40, coarse_elements = 50)
+  expect_lt(stony, base)
+  expect_equal(stony, base * 0.5, tolerance = 1e-6)
+})
+
+test_that("texture_to_fertility_score is unit-agnostic for the triplet", {
+  pct <- texture_to_fertility_score(20, 40, 40)
+  gkg <- texture_to_fertility_score(200, 400, 400)
+  expect_equal(pct, gkg, tolerance = 1e-6)
+})
+
+test_that("texture_to_erosion_resistance: clay resists, silt erodes", {
+  clay <- texture_to_erosion_resistance(90, 5, 5)
+  silt <- texture_to_erosion_resistance(5, 90, 5)
+  expect_gt(clay, silt)
+  expect_true(all(c(clay, silt) >= 0 & c(clay, silt) <= 100))
+})
+
+test_that("indicateur_f1_fertilite theia_soil mode returns 0-100 scores", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  mk <- function(v) {
+    r <- create_test_raster(values = "constant")
+    terra::values(r) <- v
+    r
+  }
+  texture <- list(clay = mk(20), silt = mk(40), sand = mk(40))
+
+  result <- suppressMessages(
+    indicateur_f1_fertilite(units, source = "theia_soil", texture = texture)
+  )
+  expect_length(result, 3)
+  expect_type(result, "double")
+  non_na <- result[!is.na(result)]
+  if (length(non_na) > 0) {
+    expect_true(all(non_na >= 0 & non_na <= 100))
+  }
+})
+
+test_that("indicateur_f1_fertilite theia_soil mode requires texture", {
+  skip_if_not_installed("sf")
+
+  units <- create_test_units(n_features = 2)
+  expect_error(
+    indicateur_f1_fertilite(units, source = "theia_soil"),
+    "requires a 'texture'"
+  )
+})
+
+test_that("indicateur_f2_erosion accepts a Theia theia_soil texture", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  units <- create_test_units(n_features = 3)
+
+  dem <- create_test_raster(values = "random", res = 10)
+  vals <- matrix(
+    rep(seq(200, 500, length.out = terra::ncol(dem)), each = terra::nrow(dem)),
+    nrow = terra::nrow(dem), ncol = terra::ncol(dem)
+  )
+  terra::values(dem) <- as.vector(vals)
+  layers <- make_mock_layers(rasters = list(dem = dem))
+
+  mk <- function(v) {
+    r <- create_test_raster(values = "constant")
+    terra::values(r) <- v
+    r
+  }
+  texture <- list(clay = mk(20), silt = mk(40), sand = mk(40))
+
+  result <- suppressMessages(
+    nemeton:::indicateur_f2_erosion(units, layers = layers, texture = texture)
+  )
+  expect_length(result, 3)
+  expect_type(result, "double")
+  non_na <- result[!is.na(result)]
+  if (length(non_na) > 0) {
+    expect_true(all(non_na >= 0 & non_na <= 100))
+  }
+})
