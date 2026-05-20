@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-05-20
+
+### Changed
+
+- THEIA STAC API endpoint corrected to
+  `https://api.stac.teledetection.fr` (verified against the
+  FORMSpoT data-access notebook). `services.theia_stac` documents
+  the required teledetection API-key authentication.
+- FORMSpoT metadata verified: collection `FORMSpoT`, yearly items
+  `FORMSpoT-{year}` (2014-2024), `height_{year}` assets, height in
+  decimetres.
+
+### Added
+
+- New datasource `formspot_delta` — FORMSpoT-∆ forest-disturbance
+  polygons (`consumed_by`: R5, T2).
+
 ## [0.36.1] - 2026-05-20
 
 ### Fixed

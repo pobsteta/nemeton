@@ -104,7 +104,7 @@ test_that("resolve_theia_assets errors on an unknown datasource", {
 
 test_that(".theia_stac_api resolves the configured FR endpoint", {
   url <- nemeton:::.theia_stac_api("FR")
-  expect_match(url, "datastore-mtd.theia.data-terra.org")
+  expect_match(url, "api.stac.teledetection.fr")
 })
 
 test_that(".theia_stac_api aborts when no endpoint is configured", {

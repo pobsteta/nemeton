@@ -1,3 +1,28 @@
+# nemeton 0.37.0 (2026-05-20)
+
+### Changed — THEIA STAC endpoint corrected, FORMSpoT metadata verified
+
+Verified against the official FORMSpoT data-access notebook
+(Schwartz, gist) and the `teledetection` Python SDK:
+
+- **STAC API endpoint corrected** to `https://api.stac.teledetection.fr`
+  (the MTD STAC API behind the `teledetection` SDK). The previous
+  `api.datastore-mtd.theia.data-terra.org` value was the metadata
+  document host shown in the browser, not the programmatic API.
+- **Authentication required**: asset download needs a teledetection
+  API key — the SDK's `tld.sign_inplace` signs the STAC asset
+  hrefs. `services.theia_stac` now documents this in an `auth`
+  field. The R STAC resolver does **not** yet implement
+  teledetection signing (see `PLAN.md`).
+- **FORMSpoT metadata verified**: collection `FORMSpoT`, one item
+  per year `FORMSpoT-{year}` (2014-2024), height asset
+  `height_{year}`. The height is stored in **decimetres** —
+  divide by 10 before passing it as `chm`.
+- **New datasource `formspot_delta`** — the companion FORMSpoT-∆
+  forest-disturbance polygons (collection `FORMSpoT-delta`, item
+  `FORMSpoT-delta_2014-2024`, asset `disturbance_polygons`, each
+  polygon carrying the disturbance `year`). `consumed_by`: R5, T2.
+
 # nemeton 0.36.1 (2026-05-20)
 
 ### Fixed — THEIA STAC endpoint confirmed
