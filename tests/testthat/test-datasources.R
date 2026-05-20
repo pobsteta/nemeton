@@ -356,3 +356,67 @@ test_that("load_raster_source rejects bad aoi argument", {
     "aoi.*sf"
   )
 })
+
+# ---- load_raster_source: explicit path (Theia sources, phase 2) ----
+
+test_that("load_raster_source loads a path-less raster_local via path", {
+  # Theia sources (forms_t, theia_soil, ...) are raster_local with no
+  # declared path: the caller supplies a locally downloaded file.
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  tmp <- withr::local_tempfile(fileext = ".tif")
+  file.create(tmp)
+
+  out <- load_raster_source("forms_t", "FR", path = tmp)
+  expect_s3_class(out, "SpatRaster")
+  expect_identical(captured, tmp)
+})
+
+test_that("load_raster_source errors when explicit path is missing", {
+  expect_error(
+    load_raster_source("forms_t", "FR", path = "/no/such/file_xyz.tif"),
+    "does not exist"
+  )
+})
+
+test_that("load_raster_source still refuses path-less raster_local with no path arg", {
+  expect_error(
+    load_raster_source("theia_soil", "FR"),
+    "no.*path"
+  )
+})
+
+# ---- get_datasource_product ----
+
+test_that("get_datasource_product returns a sub-product", {
+  h <- get_datasource_product("forms_t", "height", "FR")
+  expect_type(h, "list")
+  expect_equal(h$unit, "cm")
+  expect_equal(h$resolution_m, 10)
+})
+
+test_that("get_datasource_product errors on unknown product", {
+  expect_error(
+    get_datasource_product("forms_t", "nonexistent", "FR"),
+    "no product"
+  )
+})
+
+test_that("get_datasource_product errors on a source with no products", {
+  expect_error(
+    get_datasource_product("soilgrids_cec", "anything", "FR"),
+    "no .*products"
+  )
+})
+
+test_that("get_datasource_product errors on unknown datasource", {
+  expect_error(
+    get_datasource_product("does_not_exist", "height", "FR"),
+    "Unknown datasource"
+  )
+})

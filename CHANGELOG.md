@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-05-20
+
+### Added
+
+- `load_raster_source()` gains a `path` argument so path-less
+  `raster_local` datasources (the Theia products) can be loaded
+  from a locally downloaded file.
+- New exported helper `get_datasource_product()` returning the
+  metadata of one sub-product of a multi-product datasource
+  (e.g. `forms_t` height/volume/biomass).
+
 ## [0.30.0] - 2026-05-20
 
 ### Added

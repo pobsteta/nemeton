@@ -1,3 +1,37 @@
+# nemeton 0.31.0 (2026-05-20)
+
+### Added — Theia data sources, phase 2 (loaders)
+
+Phase 2 of the "Theia data sources" chantier (see `PLAN.md`)
+makes the catalogue entries declared in Phases 1a/1b actually
+loadable.
+
+- **`load_raster_source()` gains a `path` argument.** The Theia
+  datasources (`forms_t`, `theia_soil`, `theia_snow`, ...) are
+  `type: "raster_local"` with no static URL — they are
+  distributed per tile/year via the Theia catalogue and
+  downloaded by the user. `load_raster_source()` now accepts an
+  explicit `path` to the downloaded file, so these sources become
+  loadable through the normal datasource API (CRS harmonisation,
+  AOI cropping). Path-less `raster_local` sources still error
+  cleanly when no `path` is supplied, and the file must exist.
+- **New exported helper `get_datasource_product()`.** Multi-product
+  datasources (e.g. `forms_t` with `height` / `volume` /
+  `biomass`, `theia_soil` with `clay` / `silt` / `sand` /
+  `coarse_elements`) bundle several rasters under a `products`
+  block. `get_datasource_product(source_key, product)` returns
+  one sub-product's metadata (resolution, unit, value range,
+  conversion notes — e.g. the FORMS-T cm-to-m note), so a caller
+  can pick the right product and apply the documented unit
+  conversion before feeding it to an indicator.
+
+A STAC auto-resolution path against the Theia catalogue is
+deliberately *not* implemented yet: the per-source STAC
+collection identifiers are still marked `"to confirm"` in
+`FR.json`. Phase 2 therefore standardises on the
+download-then-load workflow; STAC resolution is deferred until
+those endpoints are verified. Phase 3 (indicator wiring) remains.
+
 # nemeton 0.30.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 1b (catalogue declarations)
