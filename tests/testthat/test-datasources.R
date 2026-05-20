@@ -293,7 +293,10 @@ test_that("FR config exposes formspot with its THEIA STAC collection", {
   expect_match(fs$access$preprint, "2512.17021")
   expect_equal(fs$access$stac_collection, "FORMSpoT")
   expect_match(fs$access$stac_catalog, "theia.data-terra.org")
-  expect_true(all(c("C", "P", "T", "R") %in% names(fs$consumed_by)))
+  # Wired through the shared CHM interface of C1/P1/P2/B2.
+  expect_true(all(c("C1", "P1", "P2", "B2") %in% names(fs$consumed_by)))
+  expect_true("height" %in% names(fs$products))
+  expect_match(fs$integration_note, "chm")
 })
 
 test_that("all Theia phase-1b sources are raster_local at NDP 0", {

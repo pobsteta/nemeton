@@ -16,7 +16,7 @@
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
-| ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0**. Reliquat documenté (MUSCATE, LST, FORMSpoT, W1). |
+| ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2**. Reliquat documenté (MUSCATE, LST, W1). |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
@@ -119,10 +119,10 @@ Du moins au plus invasif :
   un indice de qualité de l'air / pollution, pas de microclimat — câblage
   nécessiterait un sous-indicateur microclimat dédié) ; `theia_water` → W1 =
   W1 est une densité de réseau linéaire (m/ha), un masque raster ne s'y mappe
-  pas ; `formspot` = disponibilité Theia confirmée (collection STAC `FORMSpoT`,
-  v0.35.1) mais câblage indicateurs non fait (granularité au niveau de
-  l'arbre — nécessite la définition d'un mapping attributs dédié). Ces
-  4 points pourront faire l'objet d'un chantier ultérieur.
+  pas. Ces 3 points pourront faire l'objet d'un chantier ultérieur.
+  `formspot` a été sorti du reliquat en v0.35.2 : il se câble dans
+  C1/P1/P2/B2 via l'argument `chm` existant (interface CHM partagée
+  avec FORMS-T), sans code dédié.
 
 ## Réserves / dette à lever
 
@@ -257,6 +257,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-20** — Release **v0.35.2** (FORMSpoT câblé dans les indicateurs). Suite à la confirmation de disponibilité (v0.35.1), FORMSpoT sort du reliquat de câblage. Constat d'architecture : FORMSpoT (produit hauteur au niveau de l'arbre, famille FORMS) n'a **pas besoin d'argument d'indicateur dédié** — il se branche sur l'argument `chm` déjà existant de `indicateur_c1_biomasse()`, `indicateur_p1_volume()`, `indicateur_p2_station()` et `indicateur_b2_structure()`, la même interface CHM que FORMS-T (`forms_t`) et `chm_opencanopy` (introduite spec 005). Workflow : `load_raster_source("formspot", path = ...)` puis passage en `chm`. Aucun code R nouveau. `inst/datasources/FR.json` mis à jour : `consumed_by` nomme désormais les fonctions précises (C1/P1/P2/B2 au lieu du vague C/P/T/R), `products` se scinde en `height` (compatible CHM) et `biomass`, et un nouveau champ `integration_note` documente le chemin d'intégration (avec la réserve : rastériser l'attribut hauteur si FORMSpoT est livré en couche vectorielle points-arbres). Le test `test-datasources.R` est mis à jour (vérifie `consumed_by` = C1/P1/P2/B2, présence du produit `height` et de `integration_note`). Les familles T (temporel) et R5 (dépérissement) ne sont volontairement pas câblées : elles ont leurs propres structures (analyse temporelle, pipeline FORDEAD), un câblage demanderait un vrai chantier dédié et la connaissance du schéma exact du produit. Bump patch (changement de métadonnées catalogue, pas de code R).
 
 - **2026-05-20** — Release **v0.35.1** (fix — métadonnées FORMSpoT). L'utilisateur confirme que FORMSpoT est publié comme collection STAC THEIA `FORMSpoT` sur `browser.datastore-mtd.theia.data-terra.org`. L'entrée `formspot` de `inst/datasources/FR.json`, déclarée provisoire en v0.30.0 (stade preprint), gagne les champs vérifiés `stac_catalog` + `stac_collection` ; la note « provisoire / disponibilité à confirmer » est remplacée par la description de diffusion réelle. Le test `test-datasources.R` correspondant est renforcé (vérifie `stac_collection == "FORMSpoT"`) et renommé. Le **câblage indicateurs** de FORMSpoT reste un reliquat (granularité au niveau de l'arbre — mapping d'attributs dédié à définir).
 

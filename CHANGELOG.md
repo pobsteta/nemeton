@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.35.2] - 2026-05-20
+
+### Changed
+
+- `formspot` datasource entry: FORMSpoT is wired into the
+  C1/P1/P2/B2 indicators through the existing `chm` argument (the
+  shared CHM interface used by FORMS-T and chm_opencanopy). The
+  `consumed_by` block now names the precise indicator functions,
+  `products` splits into `height` / `biomass`, and an
+  `integration_note` documents the integration path.
+
 ## [0.35.1] - 2026-05-20
 
 ### Fixed

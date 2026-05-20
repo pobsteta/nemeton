@@ -537,24 +537,31 @@
         "note": "Published as the THEIA STAC collection FORMSpoT (browser.datastore-mtd.theia.data-terra.org/collections/FORMSpoT). Distributed per tile/year via STAC, so load_raster_source() cannot fetch it directly: resolve the STAC asset href (or a local download path) first."
       },
       "products": {
-        "tree_attributes": {
-          "variable": "tree_level_height_biomass",
-          "resolution_m": "tree-level (variable)",
+        "height": {
+          "variable": "tree_canopy_height",
+          "resolution_m": "tree-level (sub-metric)",
+          "unit": "to confirm (m or cm — check the FORMSpoT collection metadata)",
+          "note": "Consumed as a high-resolution Canopy Height Model through the `chm` argument of the C1/P1/P2/B2 indicators. Convert to metres first if the collection delivers heights in centimetres."
+        },
+        "biomass": {
+          "variable": "tree_aboveground_biomass",
+          "resolution_m": "tree-level (sub-metric)",
           "unit": "to confirm"
         }
       },
       "consumed_by": {
-        "C": "tree-level biomass / carbon refinement (C1).",
-        "P": "tree-level volume and stand structure (P1, P2).",
-        "T": "decade-long temporal dynamics (T1, T2).",
-        "R": "tree-level mortality and dieback signal (R5)."
+        "C1": "indicateur_c1_biomasse(chm = ...) — tree-level canopy height fed as a high-resolution CHM.",
+        "P1": "indicateur_p1_volume(chm = ...) — dominant height for the IFN volume tarif.",
+        "P2": "indicateur_p2_station(chm = ...) — H_dom for the Duplat & Tran-Ha site index.",
+        "B2": "indicateur_b2_structure(chm = ...) — CV(CHM) structural component."
       },
+      "integration_note": "FORMSpoT integrates through the existing `chm` argument of C1/P1/P2/B2 — the same Canopy Height Model interface already used by FORMS-T (forms_t) and chm_opencanopy. No dedicated indicator argument is required: load the height product via load_raster_source('formspot', path = ...) and pass it as `chm`. If FORMSpoT is distributed as a vector tree-point layer rather than a height raster, rasterise the tree-height attribute first.",
       "provenance": {
         "producer": "FORMS product family (Schwartz et al. lineage)",
         "method": "Deep-learning tree-level monitoring from multi-source satellite imagery.",
         "reference": "FORMSpoT: A Decade of Tree-Level, Country-Scale Forest Monitoring. arXiv:2512.17021."
       },
-      "license": "to confirm (preprint stage)"
+      "license": "to confirm at the THEIA collection record"
     },
     "oso": {
       "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",

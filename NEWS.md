@@ -1,3 +1,27 @@
+# nemeton 0.35.2 (2026-05-20)
+
+### Changed — FORMSpoT wired into C1/P1/P2/B2 via the shared CHM interface
+
+The `formspot` datasource entry is no longer a deferred reliquat:
+FORMSpoT integrates into the indicators through the **existing
+`chm` argument** of `indicateur_c1_biomasse()`,
+`indicateur_p1_volume()`, `indicateur_p2_station()` and
+`indicateur_b2_structure()` — the same Canopy Height Model
+interface already used by FORMS-T (`forms_t`) and
+`chm_opencanopy`. No new indicator code is required: the
+FORMSpoT tree-level canopy-height product is loaded with
+`load_raster_source("formspot", path = ...)` and passed as
+`chm`.
+
+`inst/datasources/FR.json` is updated accordingly: the
+`formspot` `consumed_by` block now names the precise indicator
+functions (C1/P1/P2/B2 instead of the vague C/P/T/R), the
+`products` block splits into `height` (CHM-compatible) and
+`biomass`, and a new `integration_note` documents the
+shared-`chm` integration path (including the caveat to rasterise
+the height attribute if FORMSpoT is delivered as a vector
+tree-point layer).
+
 # nemeton 0.35.1 (2026-05-20)
 
 ### Fixed — FORMSpoT confirmed as a THEIA STAC collection
