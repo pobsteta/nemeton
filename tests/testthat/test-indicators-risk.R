@@ -1006,3 +1006,89 @@ test_that("R2 CHM mode rejects a non-SpatRaster chm", {
     regexp = "SpatRaster"
   )
 })
+
+# ==============================================================================
+# Phase 3c — theia_snow wiring: R3 snow attenuation
+# ==============================================================================
+
+test_that("indicateur_r3_secheresse snow attenuates drought stress", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 5)
+  dem <- create_test_raster()
+
+  base <- suppressMessages(indicateur_r3_secheresse(units, dem = dem))
+
+  snow <- create_test_raster()
+  terra::values(snow) <- 180  # 6-month snowpack everywhere
+  snowy <- suppressMessages(
+    indicateur_r3_secheresse(units, dem = dem, snow = snow)
+  )
+
+  expect_s3_class(snowy, "sf")
+  expect_true("R3" %in% names(snowy))
+  expect_true(all(snowy$R3 >= 0 & snowy$R3 <= 100, na.rm = TRUE))
+
+  # A snowpack can only lower (or leave equal) the drought stress.
+  ok <- !is.na(base$R3) & !is.na(snowy$R3)
+  if (any(ok)) {
+    expect_true(all(snowy$R3[ok] <= base$R3[ok] + 1e-9))
+  }
+})
+
+test_that("indicateur_r3_secheresse rejects a non-raster snow", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 2)
+  dem <- create_test_raster()
+  expect_error(
+    suppressMessages(
+      indicateur_r3_secheresse(units, dem = dem, snow = "not_a_raster")
+    ),
+    "snow must be a terra SpatRaster"
+  )
+})
+
+# ==============================================================================
+# Phase 3d — theia_soil_moisture wiring: R3 soil-moisture attenuation
+# ==============================================================================
+
+test_that("indicateur_r3_secheresse soil moisture attenuates drought stress", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 5)
+  dem <- create_test_raster()
+
+  base <- suppressMessages(indicateur_r3_secheresse(units, dem = dem))
+
+  sm <- create_test_raster()
+  terra::values(sm) <- 0.3  # field capacity everywhere
+  wet <- suppressMessages(
+    indicateur_r3_secheresse(units, dem = dem, soil_moisture = sm)
+  )
+
+  expect_s3_class(wet, "sf")
+  expect_true(all(wet$R3 >= 0 & wet$R3 <= 100, na.rm = TRUE))
+
+  ok <- !is.na(base$R3) & !is.na(wet$R3)
+  if (any(ok)) {
+    expect_true(all(wet$R3[ok] <= base$R3[ok] + 1e-9))
+  }
+})
+
+test_that("indicateur_r3_secheresse rejects a non-raster soil_moisture", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 2)
+  dem <- create_test_raster()
+  expect_error(
+    suppressMessages(
+      indicateur_r3_secheresse(units, dem = dem, soil_moisture = "not_a_raster")
+    ),
+    "soil_moisture must be a terra SpatRaster"
+  )
+})

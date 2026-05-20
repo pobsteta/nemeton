@@ -4,7 +4,16 @@
 \alias{indicateur_r3_secheresse}
 \title{Calculate Drought Stress Index (R3)}
 \usage{
-indicateur_r3_secheresse(units, layers = NULL, dem = NULL, climate_data = NULL)
+indicateur_r3_secheresse(
+  units,
+  layers = NULL,
+  dem = NULL,
+  climate_data = NULL,
+  snow = NULL,
+  snow_relief_strength = 0.3,
+  soil_moisture = NULL,
+  sm_relief_strength = 0.3
+)
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
@@ -16,6 +25,31 @@ indicateur_r3_secheresse(units, layers = NULL, dem = NULL, climate_data = NULL)
 \item{climate_data}{Optional list with \code{precip} (monthly precipitation
 vector in mm) and \code{temp} (list with \code{tmin} and \code{tmax}
 monthly vectors in degrees C). If NULL, uses simulated data.}
+
+\item{snow}{Optional \code{SpatRaster} of snow-cover duration in
+days per year (the Theia \code{theia_snow}
+\code{snow_cover_duration} product, loaded via
+\code{\link{load_raster_source}}). When supplied, the snowpack
+acts as a seasonal water reserve that attenuates drought
+stress — see Details. Units with no snow coverage are left
+unchanged. Default \code{NULL}.}
+
+\item{snow_relief_strength}{Numeric in \code{[0, 1]}. Maximum
+fractional reduction of R3 applied when the snow-cover
+duration reaches the 180-day (6-month) reference. Default
+\code{0.3}. Ignored when \code{snow} is \code{NULL}.}
+
+\item{soil_moisture}{Optional \code{SpatRaster} of surface soil
+moisture in \eqn{m^3/m^3} (the Theia \code{theia_soil_moisture}
+product, loaded via \code{\link{load_raster_source}}). When
+supplied, moist soil attenuates drought stress — see Details.
+Default \code{NULL}.}
+
+\item{sm_relief_strength}{Numeric in \code{[0, 1]}. Maximum
+fractional reduction of R3 applied when the soil moisture
+reaches the \eqn{0.3\;m^3/m^3} field-capacity reference.
+Default \code{0.3}. Ignored when \code{soil_moisture} is
+\code{NULL}.}
 }
 \value{
 The input sf object with added column:
@@ -44,6 +78,21 @@ Falls back to 0.5 without \pkg{SPEI}.
 topo_risk = 0.4*aspect_risk + 0.3*slope_risk + 0.3*twi_risk
 
 R3 = (0.6 * climate + 0.4 * topo) * 100
+
+**Snow attenuation** (Theia \code{theia_snow}, optional):
+when \code{snow} is supplied, the per-unit mean snow-cover
+duration is rescaled to a 0-1 relief factor against a 180-day
+reference, and R3 is multiplied by
+\code{1 - snow_relief_strength * relief}. A forest with a
+long-lasting snowpack carries a meltwater reserve into the
+growing season and is therefore less drought-stressed.
+
+**Soil-moisture attenuation** (Theia \code{theia_soil_moisture},
+optional): when \code{soil_moisture} is supplied, the per-unit
+mean surface soil moisture is rescaled to a 0-1 relief factor
+against the \eqn{0.3\;m^3/m^3} field-capacity reference, and
+R3 is multiplied by \code{1 - sm_relief_strength * relief}.
+Moist soil buffers drought stress.
 }
 \examples{
 \dontrun{

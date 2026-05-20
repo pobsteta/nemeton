@@ -1169,6 +1169,68 @@ enrich_parcels_bdforet <- function(parcels, bdforet_sf) {
   result[, c("species", "age", "density")]
 }
 
+#' Add a dominant-species column from a classification raster
+#'
+#' Fills a species column on \code{units} from a tree-species
+#' classification raster (typically the Theia \code{theia_species}
+#' product) and a user-supplied class-to-species crosswalk. For each
+#' unit the coverage-weighted dominant raster class is resolved, then
+#' mapped to a species code via \code{class_map}. This is an upstream
+#' helper for indicators that read a species column —
+#' \code{indicateur_p1_volume()}, \code{indicateur_p2_station()},
+#' \code{indicateur_c1_biomasse()} and the biodiversity indicators.
+#'
+#' The class-to-species crosswalk is product-specific (it depends on
+#' the legend of the classification raster), so it must be supplied
+#' explicitly rather than guessed.
+#'
+#' @param units sf object. Unit geometries to enrich.
+#' @param species_raster A \code{SpatRaster} of integer tree-species
+#'   classes.
+#' @param class_map Named vector or list mapping raster class values
+#'   (names, as character) to species codes (values). Classes absent
+#'   from the map yield \code{NA}.
+#' @param species_col Character. Name of the column to add. Default
+#'   \code{"species"}.
+#'
+#' @return The input \code{units} sf with the species column added
+#'   (or overwritten). Units with no raster coverage get \code{NA}.
+#' @export
+units_add_species_from_raster <- function(units, species_raster, class_map,
+                                          species_col = "species") {
+  if (!inherits(units, "sf")) {
+    stop("units must be an sf object", call. = FALSE)
+  }
+  if (!inherits(species_raster, "SpatRaster")) {
+    stop("species_raster must be a terra SpatRaster", call. = FALSE)
+  }
+  if (missing(class_map) || length(class_map) == 0L) {
+    stop("class_map must be a non-empty named vector or list", call. = FALSE)
+  }
+
+  per_unit <- safe_extract(
+    species_raster,
+    as_pure_sf(units),
+    fun = NULL,
+    progress = FALSE
+  )
+
+  dominant <- vapply(per_unit, function(df) {
+    if (is.null(df) || nrow(df) == 0) return(NA_character_)
+    w <- df$coverage_fraction
+    if (is.null(w)) w <- rep(1, nrow(df))
+    agg <- tapply(w, df$value, sum, na.rm = TRUE)
+    agg <- agg[!is.na(agg)]
+    if (length(agg) == 0) return(NA_character_)
+    mode_class <- names(agg)[which.max(agg)]
+    code <- class_map[[mode_class]]
+    if (is.null(code) || is.na(code)) NA_character_ else as.character(code)
+  }, character(1))
+
+  units[[species_col]] <- dominant
+  units
+}
+
 #' Map IGN BD Forêt Essence Codes to Allometric Species Names
 #'
 #' @param essence Character vector of raw essence labels from BD Forêt V2.

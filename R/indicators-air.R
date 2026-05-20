@@ -19,10 +19,19 @@ NULL
 #'
 #' @param units An sf object with forest parcels.
 #' @param land_cover A SpatRaster with land cover classification.
+#'   Required in legacy mode; may be \code{NULL} when \code{fvc} is
+#'   supplied.
 #' @param forest_classes Numeric vector. Land cover class codes for forests
 #'   (OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
 #'   Default c(16, 17, 18).
 #' @param buffer_radius Numeric. Buffer radius in meters. Default 1000.
+#' @param fvc Optional \code{SpatRaster} of Fractional Vegetation
+#'   Cover in \code{[0, 1]} (typically the Theia
+#'   \code{s2_biophysical} FVC product, loaded via
+#'   \code{\link{load_raster_source}}). When supplied, activates
+#'   FVC mode: A1 is the per-buffer mean FVC rescaled to a 0-100
+#'   percentage, and \code{land_cover} is ignored. The raster is
+#'   expected in the CRS of \code{units}.
 #'
 #' @return The input sf object with added column:
 #'   \itemize{
@@ -30,7 +39,10 @@ NULL
 #'   }
 #'
 #' @details
-#' **Formula**: A1 = (forest_area_in_buffer / total_buffer_area) × 100
+#' **Formula** (legacy mode): A1 = (forest_area_in_buffer / total_buffer_area) × 100
+#'
+#' **FVC mode** (Theia \code{s2_biophysical}, phase 3a): A1 = mean(FVC) × 100
+#' over the buffer.
 #'
 #' **Interpretation**:
 #' \itemize{
@@ -61,15 +73,12 @@ NULL
 #' result <- indicateur_a1_couverture(units, land_cover = land_cover, buffer_radius = 500)
 #' }
 indicateur_a1_couverture <- function(units,
-                                   land_cover,
+                                   land_cover = NULL,
                                    forest_classes = c(16, 17, 18),
-                                   buffer_radius = 1000) {
+                                   buffer_radius = 1000,
+                                   fvc = NULL) {
   # Validate inputs
   validate_sf(units)
-
-  if (!inherits(land_cover, "SpatRaster")) {
-    stop("land_cover must be a SpatRaster object", call. = FALSE)
-  }
 
   if (buffer_radius <= 0) {
     stop("buffer_radius must be positive", call. = FALSE)
@@ -77,6 +86,28 @@ indicateur_a1_couverture <- function(units,
 
   # Create buffers around each parcel
   buffers <- sf::st_buffer(units, dist = buffer_radius)
+
+  # --- FVC mode (Theia s2_biophysical, phase 3a) ----------------
+  if (!is.null(fvc)) {
+    if (!inherits(fvc, "SpatRaster")) {
+      stop("fvc must be a SpatRaster object", call. = FALSE)
+    }
+    cli::cli_alert_info("A1: tree coverage from FVC (Theia s2_biophysical)")
+    fvc_mean <- safe_extract(
+      fvc,
+      as_pure_sf(buffers),
+      fun = "mean",
+      progress = FALSE
+    )
+    units$A1 <- fvc_mean * 100
+    msg_info("indicateur_a1_couverture")
+    return(units)
+  }
+
+  # Legacy mode requires a land-cover raster
+  if (!inherits(land_cover, "SpatRaster")) {
+    stop("land_cover must be a SpatRaster object", call. = FALSE)
+  }
 
   # Extract land cover classes within each buffer
   coverage_pct <- numeric(nrow(units))

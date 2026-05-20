@@ -2821,3 +2821,41 @@ test_that("get_species_flammability returns 50 for unknown species", {
   result <- nemeton:::get_species_flammability("UnknownSpeciesXYZ")
   expect_equal(result, 50)
 })
+
+# ==============================================================================
+# Phase 3d — theia_species wiring: units_add_species_from_raster
+# ==============================================================================
+
+test_that("units_add_species_from_raster fills a species column", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("exactextractr")
+
+  units <- create_test_units(n_features = 3)
+  sp <- create_test_raster(values = "constant")
+  terra::values(sp) <- sample(c(1, 2), terra::ncell(sp), replace = TRUE)
+
+  result <- units_add_species_from_raster(
+    units, sp, class_map = c("1" = "QUPE", "2" = "FASY")
+  )
+  expect_s3_class(result, "sf")
+  expect_true("species" %in% names(result))
+  expect_true(all(result$species %in% c("QUPE", "FASY", NA)))
+})
+
+test_that("units_add_species_from_raster validates its inputs", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 2)
+  sp <- create_test_raster(values = "constant")
+  expect_error(
+    units_add_species_from_raster(units, "not_a_raster",
+                                  class_map = c("1" = "QUPE")),
+    "species_raster must be a terra SpatRaster"
+  )
+  expect_error(
+    units_add_species_from_raster(units, sp, class_map = list()),
+    "class_map must be"
+  )
+})

@@ -115,6 +115,54 @@ get_data_source <- function(source_key, country = "FR", section = NULL) {
 }
 
 
+#' Get a sub-product of a multi-product datasource
+#'
+#' Several datasources (e.g. the Theia products \code{forms_t},
+#' \code{theia_soil}, \code{theia_snow}) bundle more than one raster
+#' product under a \code{products} block — for \code{forms_t}, the
+#' \code{height}, \code{volume} and \code{biomass} sub-products. This
+#' helper returns the metadata of one named sub-product (resolution,
+#' unit, value range, conversion notes), so a caller can pick the
+#' right product and apply any documented unit conversion before
+#' feeding it to an indicator.
+#'
+#' @param source_key Character. The datasource key (e.g.,
+#'   \code{"forms_t"}).
+#' @param product Character. The sub-product name (e.g.,
+#'   \code{"height"}).
+#' @param country Character. ISO country code. Default \code{"FR"}.
+#'
+#' @return A list with the sub-product configuration.
+#'
+#' @examples
+#' h <- get_datasource_product("forms_t", "height", "FR")
+#' h$unit          # "cm"
+#' h$resolution_m  # 10
+#'
+#' @export
+get_datasource_product <- function(source_key, product, country = "FR") {
+  src <- get_data_source(source_key, country)
+  if (is.null(src)) {
+    cli::cli_abort("Unknown datasource key {.val {source_key}} for country {.val {country}}.")
+  }
+
+  products <- src$products
+  if (is.null(products) || length(products) == 0L) {
+    cli::cli_abort("Datasource {.val {source_key}} declares no {.field products} block.")
+  }
+
+  entry <- products[[product]]
+  if (is.null(entry)) {
+    cli::cli_abort(c(
+      "Datasource {.val {source_key}} has no product {.val {product}}.",
+      i = "Available products: {.val {names(products)}}."
+    ))
+  }
+
+  entry
+}
+
+
 #' Load a raster datasource as a SpatRaster
 #'
 #' Resolves a datasource key declared in \code{inst/datasources/<country>.json}
@@ -127,9 +175,11 @@ get_data_source <- function(source_key, country = "FR", section = NULL) {
 #'
 #' Supported \code{type} values: \code{"raster_remote"} (an \code{url}
 #' field is required), \code{"raster_local"} (a \code{path} field is
-#' required). \code{"raster_local"} entries with no path (such as
-#' \code{chm_opencanopy}, which is materialised on the fly by another
-#' package) must be loaded by their producing package.
+#' required, or an explicit \code{path} argument). \code{"raster_local"}
+#' entries with no declared path (such as \code{chm_opencanopy} or the
+#' Theia datasources \code{forms_t}, \code{theia_soil}, ...) are produced
+#' or distributed externally: pass the downloaded file via the
+#' \code{path} argument, or load them from their producing package.
 #'
 #' @param source_key Character. The datasource key (e.g.,
 #'   \code{"soilgrids_cec"}).
@@ -139,6 +189,12 @@ get_data_source <- function(source_key, country = "FR", section = NULL) {
 #'   \code{snap = "out"}).
 #' @param section Character. Configuration section to search in. See
 #'   \code{\link{get_data_source}}.
+#' @param path Optional character. Explicit path (or GDAL source
+#'   string) to a locally available raster. Required for
+#'   \code{raster_local} datasources that carry no declared
+#'   \code{path} — typically a Theia product downloaded to disk. When
+#'   supplied, the file must exist. Ignored for \code{raster_remote}
+#'   datasources.
 #'
 #' @return A \code{SpatRaster}.
 #'
@@ -153,11 +209,18 @@ get_data_source <- function(source_key, country = "FR", section = NULL) {
 #'   ))), crs = 2154
 #' ))
 #' cec <- load_raster_source("soilgrids_cec", "FR", aoi = aoi)
+#'
+#' # A Theia product downloaded locally (no declared path)
+#' chm <- load_raster_source(
+#'   "forms_t", "FR",
+#'   path = "~/data/theia/FORMS-T_height_2023.tif"
+#' )
 #' }
 #'
 #' @export
 load_raster_source <- function(source_key, country = "FR",
-                               aoi = NULL, section = NULL) {
+                               aoi = NULL, section = NULL,
+                               path = NULL) {
   src <- get_data_source(source_key, country, section)
   if (is.null(src)) {
     cli::cli_abort("Unknown datasource key {.val {source_key}} for country {.val {country}}.")
@@ -177,14 +240,18 @@ load_raster_source <- function(source_key, country = "FR",
     }
     gdal_src <- paste0("/vsicurl/", src$url)
   } else {
-    path <- src$path %||% src$url %||% ""
-    if (!nzchar(path)) {
+    declared_path <- src$path %||% src$url %||% ""
+    resolved_path <- if (nzchar(path %||% "")) path else declared_path
+    if (!nzchar(resolved_path)) {
       cli::cli_abort(c(
-        "Datasource {.val {source_key}} is {.val raster_local} but carries no {.field path}.",
-        i = "Entries produced dynamically (e.g. {.val chm_opencanopy}) must be loaded by their producing package."
+        "Datasource {.val {source_key}} is {.val raster_local} but carries no declared path.",
+        i = "Pass an explicit {.arg path} to a locally downloaded file (e.g. a Theia product), or load it from its producing package."
       ))
     }
-    gdal_src <- path
+    if (nzchar(path %||% "") && !file.exists(path)) {
+      cli::cli_abort("Datasource {.val {source_key}}: file {.path {path}} does not exist.")
+    }
+    gdal_src <- resolved_path
   }
 
   rast <- terra::rast(gdal_src)

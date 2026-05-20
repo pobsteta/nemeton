@@ -4,7 +4,7 @@
 \alias{indicateur_f2_erosion}
 \title{Soil Fertility Index (F2)}
 \usage{
-indicateur_f2_erosion(units, layers, dem_layer = "dem")
+indicateur_f2_erosion(units, layers, dem_layer = "dem", texture = NULL)
 }
 \arguments{
 \item{units}{nemeton_units object}
@@ -12,6 +12,13 @@ indicateur_f2_erosion(units, layers, dem_layer = "dem")
 \item{layers}{nemeton_layers object containing DEM raster}
 
 \item{dem_layer}{Character. Name of DEM layer}
+
+\item{texture}{Optional named list of \code{SpatRaster}s with
+elements \code{clay}, \code{silt}, \code{sand} (the Theia
+\code{theia_soil} products, loaded via
+\code{\link{load_raster_source}}). When supplied, adds the
+texture erosion-resistance component. Default \code{NULL}
+(pre-existing TWI + slope behaviour).}
 }
 \value{
 Numeric vector of fertility scores (0-100, higher = more fertile)
@@ -24,6 +31,13 @@ F2 = (twi_norm + slope_norm) / 2
 \details{
 TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
 Higher values indicate more fertile soil conditions.
+
+When a Theia \code{theia_soil} texture raster set is supplied via
+\code{texture} (chantier sources Theia phase 3b), a third
+component — texture-based erosion resistance, see
+\code{\link{texture_to_erosion_resistance}} — is averaged in:
+F2 = (twi_norm + slope_norm + resistance_norm) / 3. Silt-rich soils
+are more erodible and lower the score.
 }
 \examples{
 \dontrun{

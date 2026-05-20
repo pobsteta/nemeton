@@ -6,21 +6,32 @@
 \usage{
 indicateur_a1_couverture(
   units,
-  land_cover,
+  land_cover = NULL,
   forest_classes = c(16, 17, 18),
-  buffer_radius = 1000
+  buffer_radius = 1000,
+  fvc = NULL
 )
 }
 \arguments{
 \item{units}{An sf object with forest parcels.}
 
-\item{land_cover}{A SpatRaster with land cover classification.}
+\item{land_cover}{A SpatRaster with land cover classification.
+Required in legacy mode; may be \code{NULL} when \code{fvc} is
+supplied.}
 
 \item{forest_classes}{Numeric vector. Land cover class codes for forests
 (OSO codes: 16 = coniferous, 17 = broadleaf, 18 = mixed).
 Default c(16, 17, 18).}
 
 \item{buffer_radius}{Numeric. Buffer radius in meters. Default 1000.}
+
+\item{fvc}{Optional \code{SpatRaster} of Fractional Vegetation
+Cover in \code{[0, 1]} (typically the Theia
+\code{s2_biophysical} FVC product, loaded via
+\code{\link{load_raster_source}}). When supplied, activates
+FVC mode: A1 is the per-buffer mean FVC rescaled to a 0-100
+percentage, and \code{land_cover} is ignored. The raster is
+expected in the CRS of \code{units}.}
 }
 \value{
 The input sf object with added column:
@@ -33,7 +44,10 @@ Computes forest coverage percentage within a buffer around each parcel
 to assess local air quality and microclimate regulation potential.
 }
 \details{
-**Formula**: A1 = (forest_area_in_buffer / total_buffer_area) × 100
+**Formula** (legacy mode): A1 = (forest_area_in_buffer / total_buffer_area) × 100
+
+**FVC mode** (Theia \code{s2_biophysical}, phase 3a): A1 = mean(FVC) × 100
+over the buffer.
 
 **Interpretation**:
 \itemize{
@@ -59,6 +73,10 @@ summary(result$A1)
 
 # Calculate with 500m buffer
 result <- indicateur_a1_couverture(units, land_cover = land_cover, buffer_radius = 500)
+
+# FVC mode (Theia s2_biophysical)
+fvc <- load_raster_source("s2_biophysical", "FR", path = "fvc_2023.tif")
+result <- indicateur_a1_couverture(units, fvc = fvc)
 }
 }
 \seealso{

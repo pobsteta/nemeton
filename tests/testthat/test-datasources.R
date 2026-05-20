@@ -198,6 +198,119 @@ test_that("forms_t documents the C1/P1/P2/B2 wiring and provenance", {
   expect_true(nzchar(forms$access$stac_catalog))
 })
 
+# ---- Theia sources phase 1a (s2_biophysical / theia_soil / theia_snow) ----
+
+test_that("FR config exposes s2_biophysical with LAI/FAPAR/FVC", {
+  bio <- get_data_source("s2_biophysical", "FR")
+  expect_type(bio, "list")
+  expect_equal(bio$type, "raster_local")
+  expect_equal(bio$ndp_level, 0)
+  expect_true(all(c("lai", "fapar", "fvc") %in% names(bio$products)))
+  expect_equal(bio$products$fapar$unit, "fraction")
+  expect_equal(bio$products$fvc$value_range[[2]], 1)
+  expect_true(all(c("C2", "A1", "B2") %in% names(bio$consumed_by)))
+})
+
+test_that("FR config exposes theia_soil with texture fractions", {
+  soil <- get_data_source("theia_soil", "FR")
+  expect_type(soil, "list")
+  expect_equal(soil$type, "raster_local")
+  expect_equal(soil$native_crs, "EPSG:2154")
+  expect_true(all(c("clay", "silt", "sand", "coarse_elements") %in%
+                    names(soil$products)))
+  expect_true(all(c("F1", "F2") %in% names(soil$consumed_by)))
+})
+
+test_that("FR config exposes theia_snow with cover and phenology", {
+  snow <- get_data_source("theia_snow", "FR")
+  expect_type(snow, "list")
+  expect_equal(snow$type, "raster_local")
+  expect_equal(snow$ndp_level, 0)
+  expect_true(all(c("snow_cover", "snow_cover_duration") %in%
+                    names(snow$products)))
+  expect_equal(snow$products$snow_cover$resolution_m, 20)
+  expect_true("R3" %in% names(snow$consumed_by))
+  expect_match(snow$access$reference, "essd-11-493-2019")
+})
+
+test_that("Theia phase-1a sources all declare provenance", {
+  for (key in c("s2_biophysical", "theia_soil", "theia_snow")) {
+    src <- get_data_source(key, "FR")
+    expect_true(!is.null(src$provenance),
+                info = paste("missing provenance:", key))
+    expect_true(nzchar(src$provenance$producer),
+                info = paste("empty producer:", key))
+  }
+})
+
+# ---- Theia sources phase 1b ----
+
+test_that("FR config exposes theia_water with mask and occurrence", {
+  water <- get_data_source("theia_water", "FR")
+  expect_type(water, "list")
+  expect_equal(water$type, "raster_local")
+  expect_true(all(c("water_mask", "water_occurrence") %in%
+                    names(water$products)))
+  expect_true(all(c("W1", "W2") %in% names(water$consumed_by)))
+})
+
+test_that("FR config exposes theia_soil_moisture with both variants", {
+  sm <- get_data_source("theia_soil_moisture", "FR")
+  expect_type(sm, "list")
+  expect_true(all(c("soil_moisture_smos", "soil_moisture_s1") %in%
+                    names(sm$products)))
+  expect_equal(sm$products$soil_moisture_smos$unit, "m3/m3")
+  expect_true(all(c("W3", "R3", "F1") %in% names(sm$consumed_by)))
+})
+
+test_that("FR config exposes s2_l2a_muscate with bands", {
+  s2 <- get_data_source("s2_l2a_muscate", "FR")
+  expect_type(s2, "list")
+  expect_equal(s2$type, "raster_local")
+  expect_true("B8A" %in% unlist(s2$products$surface_reflectance$bands))
+  expect_true(all(c("C2", "T2", "R5") %in% names(s2$consumed_by)))
+})
+
+test_that("FR config exposes theia_species tagged species_ml", {
+  sp <- get_data_source("theia_species", "FR")
+  expect_type(sp, "list")
+  expect_equal(sp$augmented, "species_ml")
+  expect_true("dominant_species" %in% names(sp$products))
+  expect_true(all(c("B1", "B2", "P", "C") %in% names(sp$consumed_by)))
+})
+
+test_that("FR config exposes theia_lst for the A2 indicator", {
+  lst <- get_data_source("theia_lst", "FR")
+  expect_type(lst, "list")
+  expect_equal(lst$products$land_surface_temperature$unit, "degC")
+  expect_true("A2" %in% names(lst$consumed_by))
+})
+
+test_that("FR config exposes formspot with its THEIA STAC collection", {
+  fs <- get_data_source("formspot", "FR")
+  expect_type(fs, "list")
+  expect_equal(fs$type, "raster_local")
+  expect_match(fs$access$preprint, "2512.17021")
+  expect_equal(fs$access$stac_collection, "FORMSpoT")
+  expect_match(fs$access$stac_catalog, "theia.data-terra.org")
+  # Wired through the shared CHM interface of C1/P1/P2/B2.
+  expect_true(all(c("C1", "P1", "P2", "B2") %in% names(fs$consumed_by)))
+  expect_true("height" %in% names(fs$products))
+  expect_match(fs$integration_note, "chm")
+})
+
+test_that("all Theia phase-1b sources are raster_local at NDP 0", {
+  for (key in c("theia_water", "theia_soil_moisture", "s2_l2a_muscate",
+                "theia_species", "theia_lst", "formspot")) {
+    src <- get_data_source(key, "FR")
+    expect_equal(src$type, "raster_local",
+                 info = paste("wrong type:", key))
+    expect_equal(src$ndp_level, 0, info = paste("wrong ndp:", key))
+    expect_true(!is.null(src$provenance),
+                info = paste("missing provenance:", key))
+  }
+})
+
 # ---- load_raster_source ----
 
 test_that("load_raster_source errors on unknown key", {
@@ -246,5 +359,69 @@ test_that("load_raster_source rejects bad aoi argument", {
   expect_error(
     load_raster_source("soilgrids_cec", "FR", aoi = "not_an_sf"),
     "aoi.*sf"
+  )
+})
+
+# ---- load_raster_source: explicit path (Theia sources, phase 2) ----
+
+test_that("load_raster_source loads a path-less raster_local via path", {
+  # Theia sources (forms_t, theia_soil, ...) are raster_local with no
+  # declared path: the caller supplies a locally downloaded file.
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  tmp <- withr::local_tempfile(fileext = ".tif")
+  file.create(tmp)
+
+  out <- load_raster_source("forms_t", "FR", path = tmp)
+  expect_s3_class(out, "SpatRaster")
+  expect_identical(captured, tmp)
+})
+
+test_that("load_raster_source errors when explicit path is missing", {
+  expect_error(
+    load_raster_source("forms_t", "FR", path = "/no/such/file_xyz.tif"),
+    "does not exist"
+  )
+})
+
+test_that("load_raster_source still refuses path-less raster_local with no path arg", {
+  expect_error(
+    load_raster_source("theia_soil", "FR"),
+    "no.*path"
+  )
+})
+
+# ---- get_datasource_product ----
+
+test_that("get_datasource_product returns a sub-product", {
+  h <- get_datasource_product("forms_t", "height", "FR")
+  expect_type(h, "list")
+  expect_equal(h$unit, "cm")
+  expect_equal(h$resolution_m, 10)
+})
+
+test_that("get_datasource_product errors on unknown product", {
+  expect_error(
+    get_datasource_product("forms_t", "nonexistent", "FR"),
+    "no product"
+  )
+})
+
+test_that("get_datasource_product errors on a source with no products", {
+  expect_error(
+    get_datasource_product("soilgrids_cec", "anything", "FR"),
+    "no .*products"
+  )
+})
+
+test_that("get_datasource_product errors on unknown datasource", {
+  expect_error(
+    get_datasource_product("does_not_exist", "height", "FR"),
+    "Unknown datasource"
   )
 })

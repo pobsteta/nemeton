@@ -8,7 +8,9 @@ indicateur_w2_zones_humides(
   units,
   layers,
   wetland_layer = "wetlands",
-  wetland_values = NULL
+  wetland_values = NULL,
+  water_occurrence = NULL,
+  occurrence_threshold = 25
 )
 }
 \arguments{
@@ -20,12 +22,27 @@ indicateur_w2_zones_humides(
 
 \item{wetland_values}{Numeric vector. Land cover codes representing wetlands.
 Default NULL (auto-detect if possible).}
+
+\item{water_occurrence}{Optional \code{SpatRaster} of water-occurrence
+frequency in percent (0-100) — the Theia \code{theia_water}
+\code{water_occurrence} product, loaded via
+\code{\link{load_raster_source}}. When supplied, pixels whose
+occurrence reaches \code{occurrence_threshold} contribute to the
+wetland coverage. Default \code{NULL}.}
+
+\item{occurrence_threshold}{Numeric in \code{[0, 100]}. Minimum
+water-occurrence frequency (percent of observations) for a pixel to
+count as wetland. Default \code{25}. Ignored when
+\code{water_occurrence} is \code{NULL}.}
 }
 \value{
 Numeric vector of wetland coverage (0-100\%)
 }
 \description{
 Calculates percentage of parcel area classified as wetland or riparian zone.
+Coverage is summed over several optional sources: BD TOPO water surfaces,
+a TWI threshold, OSO land-cover wetland codes, and — when supplied — the
+Theia \code{theia_water} water-occurrence product.
 }
 \examples{
 \dontrun{

@@ -336,11 +336,25 @@ indicateur_c1_biomasse <- function(units,
 #' Extracts mean NDVI from Sentinel-2 or equivalent satellite imagery.
 #' Optionally calculates NDVI trend over multiple dates (requires temporal rasters).
 #'
+#' In FAPAR mode (Theia \code{s2_biophysical}, phase 3a), when a
+#' FAPAR raster is supplied via \code{fapar}, the per-unit mean
+#' Fraction of Absorbed Photosynthetically Active Radiation is
+#' returned instead of NDVI. FAPAR is a physically grounded
+#' vitality measure on the same \code{[0, 1]} scale as NDVI, so
+#' downstream normalization is unchanged. When \code{fapar} is
+#' \code{NULL} the pre-existing NDVI behaviour is preserved.
+#'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing NDVI raster(s)
 #' @param ndvi_layer Character. Name of NDVI layer in layers object
 #' @param trend Logical. Calculate temporal trend if multiple dates available?
 #'   Default FALSE.
+#' @param fapar Optional \code{SpatRaster} of FAPAR values in
+#'   \code{[0, 1]} (typically the Theia \code{s2_biophysical}
+#'   FAPAR product, loaded via \code{\link{load_raster_source}}).
+#'   When supplied, activates FAPAR mode: the function returns the
+#'   per-unit mean FAPAR and ignores \code{ndvi_layer}. The raster
+#'   is expected in the CRS of \code{units}.
 #'
 #' @return Numeric vector of NDVI mean values (0-1 scale), or list with
 #'   mean and trend if trend = TRUE
@@ -354,11 +368,16 @@ indicateur_c1_biomasse <- function(units,
 #'
 #' # Multi-date NDVI with trend
 #' results <- indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = TRUE)
+#'
+#' # FAPAR mode (Theia s2_biophysical)
+#' fapar <- load_raster_source("s2_biophysical", "FR", path = "fapar_2023.tif")
+#' results <- indicateur_c2_ndvi(units, layers, fapar = fapar)
 #' }
 indicateur_c2_ndvi <- function(units,
                                   layers,
                                   ndvi_layer = "ndvi",
-                                  trend = FALSE) {
+                                  trend = FALSE,
+                                  fapar = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -366,6 +385,22 @@ indicateur_c2_ndvi <- function(units,
 
   if (!inherits(layers, "nemeton_layers")) {
     stop("layers must be a nemeton_layers object", call. = FALSE)
+  }
+
+  # --- FAPAR mode (Theia s2_biophysical, phase 3a) --------------
+  if (!is.null(fapar)) {
+    if (!inherits(fapar, "SpatRaster")) {
+      stop("fapar must be a terra SpatRaster", call. = FALSE)
+    }
+    cli::cli_alert_info("C2: vitality from FAPAR (Theia s2_biophysical)")
+    fapar_mean <- safe_extract(
+      fapar,
+      as_pure_sf(units),
+      fun = "mean",
+      progress = FALSE
+    )
+    msg_info("indicateur_c2_ndvi")
+    return(fapar_mean)
   }
 
   # Get NDVI raster (resolve lazy-load)
@@ -504,12 +539,25 @@ indicateur_w1_reseau <- function(units,
 #' Wetland Coverage (W2)
 #'
 #' Calculates percentage of parcel area classified as wetland or riparian zone.
+#' Coverage is summed over several optional sources: BD TOPO water surfaces,
+#' a TWI threshold, OSO land-cover wetland codes, and — when supplied — the
+#' Theia \code{theia_water} water-occurrence product.
 #'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing land cover raster or wetland vector
 #' @param wetland_layer Character. Name of wetland layer in layers object
 #' @param wetland_values Numeric vector. Land cover codes representing wetlands.
 #'   Default NULL (auto-detect if possible).
+#' @param water_occurrence Optional \code{SpatRaster} of water-occurrence
+#'   frequency in percent (0-100) — the Theia \code{theia_water}
+#'   \code{water_occurrence} product, loaded via
+#'   \code{\link{load_raster_source}}. When supplied, pixels whose
+#'   occurrence reaches \code{occurrence_threshold} contribute to the
+#'   wetland coverage. Default \code{NULL}.
+#' @param occurrence_threshold Numeric in \code{[0, 100]}. Minimum
+#'   water-occurrence frequency (percent of observations) for a pixel to
+#'   count as wetland. Default \code{25}. Ignored when
+#'   \code{water_occurrence} is \code{NULL}.
 #'
 #' @return Numeric vector of wetland coverage (0-100\%)
 #'
@@ -522,7 +570,9 @@ indicateur_w1_reseau <- function(units,
 indicateur_w2_zones_humides <- function(units,
                                      layers,
                                      wetland_layer = "wetlands",
-                                     wetland_values = NULL) {
+                                     wetland_values = NULL,
+                                     water_occurrence = NULL,
+                                     occurrence_threshold = 25) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -608,6 +658,33 @@ indicateur_w2_zones_humides <- function(units,
         total_fraction <- sum(lc_values$coverage_fraction, na.rm = TRUE)
         if (total_fraction > 0) {
           coverage[i] <- coverage[i] + (wetland_fraction / total_fraction) * 100
+        }
+      }
+    }
+  }
+
+  # Source 4: Theia theia_water occurrence frequency (phase 3d)
+  if (!is.null(water_occurrence)) {
+    if (!inherits(water_occurrence, "SpatRaster")) {
+      stop("water_occurrence must be a terra SpatRaster", call. = FALSE)
+    }
+    cli::cli_alert_info("W2: Adding Theia theia_water occurrence coverage")
+    has_any_source <- TRUE
+
+    for (i in seq_len(nrow(units))) {
+      occ <- safe_extract(
+        water_occurrence,
+        as_pure_sf(units[i, ]),
+        fun = NULL,
+        progress = FALSE
+      )[[1]]
+
+      if (!is.null(occ) && nrow(occ) > 0) {
+        wet_mask <- occ$value >= occurrence_threshold
+        wet_frac <- sum(occ$coverage_fraction[wet_mask], na.rm = TRUE)
+        total_frac <- sum(occ$coverage_fraction, na.rm = TRUE)
+        if (total_frac > 0) {
+          coverage[i] <- coverage[i] + (wet_frac / total_frac) * 100
         }
       }
     }
@@ -843,6 +920,13 @@ calculate_twi_grass <- function(dem) {
 #'     area-weighted fertility score per unit on the 0-100 scale.
 #'     France metropolitan only. Unknown codes are silently dropped;
 #'     units whose polygons carry only unknown codes return NA.
+#'   \item \code{"theia_soil"} — derive fertility from a Theia
+#'     \code{theia_soil} texture raster set passed via \code{texture}
+#'     (a named list of clay / silt / sand, optionally
+#'     \code{coarse_elements}, \code{SpatRaster}s). The per-unit mean
+#'     texture is mapped to a 0-100 score via
+#'     \code{\link{texture_to_fertility_score}}. No inventory layer
+#'     is needed.
 #' }
 #'
 #' SoilGrids is global — the \code{"soilgrids"} mode works for any AOI,
@@ -857,13 +941,18 @@ calculate_twi_grass <- function(dem) {
 #'   in \code{"layer"} mode. Unused when \code{source} is
 #'   \code{"soilgrids"} or \code{"gissol"}.
 #' @param source Character. One of \code{"layer"} (default),
-#'   \code{"soilgrids"}, or \code{"gissol"}.
+#'   \code{"soilgrids"}, \code{"gissol"}, or \code{"theia_soil"}.
 #' @param country Character. Country code used to resolve the SoilGrids
 #'   datasource entry. Default \code{"FR"}.
 #' @param rpf_code_col Character. Column in the RRP layer that carries
 #'   the AFES 2008 code (matching the \code{rpf_code} primary key of
 #'   \code{\link{read_uts_fertility_table}}). Default
 #'   \code{"rpf_code"}. Only used when \code{source = "gissol"}.
+#' @param texture Optional named list of \code{SpatRaster}s with
+#'   elements \code{clay}, \code{silt}, \code{sand} and optionally
+#'   \code{coarse_elements} (the Theia \code{theia_soil} products,
+#'   loaded via \code{\link{load_raster_source}}). Required when
+#'   \code{source = "theia_soil"}, ignored otherwise.
 #'
 #' @return Numeric vector of fertility scores (0-100 scale, higher = more fertile)
 #'
@@ -887,9 +976,11 @@ indicateur_f1_fertilite <- function(units,
                                      layers = NULL,
                                      soil_layer = "soil",
                                      fertility_col = "fertility",
-                                     source = c("layer", "soilgrids", "gissol"),
+                                     source = c("layer", "soilgrids", "gissol",
+                                                "theia_soil"),
                                      country = "FR",
-                                     rpf_code_col = "rpf_code") {
+                                     rpf_code_col = "rpf_code",
+                                     texture = NULL) {
   source <- match.arg(source)
 
   if (!inherits(units, "sf")) {
@@ -898,6 +989,17 @@ indicateur_f1_fertilite <- function(units,
 
   if (identical(source, "soilgrids")) {
     fertility <- extract_fertility_from_soilgrids(units, country = country)
+    msg_info("indicateur_f1_fertilite")
+    return(fertility)
+  }
+
+  if (identical(source, "theia_soil")) {
+    if (is.null(texture)) {
+      stop("source = 'theia_soil' requires a 'texture' list of rasters",
+           call. = FALSE)
+    }
+    cli::cli_alert_info("F1: fertility from soil texture (Theia theia_soil)")
+    fertility <- extract_fertility_from_theia_soil(units, texture)
     msg_info("indicateur_f1_fertilite")
     return(fertility)
   }
@@ -1057,6 +1159,123 @@ extract_fertility_from_soilgrids <- function(units, country = "FR") {
   cec_to_fertility_score(cec_values)
 }
 
+#' Map soil texture to a 0-100 fertility score
+#'
+#' First-pass heuristic converting a soil-texture composition into a
+#' forest-fertility score on the 0-100 scale, used by
+#' \code{\link{indicateur_f1_fertilite}} in \code{"theia_soil"} mode
+#' (Theia \code{theia_soil} product, chantier sources Theia phase 3b).
+#'
+#' The texture triplet \code{clay} / \code{silt} / \code{sand} is
+#' normalised internally to fractions summing to 1, so the inputs may
+#' be given in any consistent unit (g/kg, percent, fraction). The
+#' score is the proximity of the texture to the loam optimum
+#' (clay 0.20, silt 0.40, sand 0.40) in the texture triangle: loam
+#' scores ~100, pure sand ~50, pure silt ~30, heavy clay ~0
+#' (waterlogging, root constraints). When \code{coarse_elements} is
+#' supplied (percent of coarse fragments, 0-100), the score is
+#' multiplied by \code{(1 - coarse/100)} — a stony soil has less fine
+#' earth and retains fewer nutrients.
+#'
+#' This is a calibratable heuristic, not a validated pedotransfer
+#' function; it is exported so a pedologist can audit and tune it.
+#' NA in, NA out.
+#'
+#' @param clay,silt,sand Numeric vectors of the clay, silt and sand
+#'   contents (any consistent unit — they are renormalised).
+#' @param coarse_elements Optional numeric vector of coarse-element
+#'   content in percent (0-100). Default \code{NULL} (no penalty).
+#' @return Numeric vector on the 0-100 scale (higher = more fertile).
+#' @export
+texture_to_fertility_score <- function(clay, silt, sand,
+                                       coarse_elements = NULL) {
+  total <- clay + silt + sand
+  clay_f <- clay / total
+  silt_f <- silt / total
+  # Distance to the loam optimum (clay 0.20, silt 0.40) in the
+  # (clay, silt) plane; sand is the dependent third coordinate.
+  d <- sqrt((clay_f - 0.20)^2 + (silt_f - 0.40)^2)
+  score <- (1 - d / 0.9) * 100
+  score <- pmin(pmax(score, 0), 100)
+
+  if (!is.null(coarse_elements)) {
+    coarse_frac <- pmin(pmax(coarse_elements / 100, 0), 1)
+    score <- score * (1 - coarse_frac)
+  }
+  score
+}
+
+#' Map soil texture to a 0-100 erosion-resistance score
+#'
+#' First-pass heuristic converting a soil-texture composition into an
+#' erosion-resistance score on the 0-100 scale (higher = more
+#' resistant, less erodible), used by \code{\link{indicateur_f2_erosion}}
+#' when a Theia \code{theia_soil} texture is supplied (chantier sources
+#' Theia phase 3b).
+#'
+#' Following the USLE soil-erodibility logic, silt (and very fine
+#' sand) is the most erodible fraction, clay resists through
+#' aggregate cohesion, and coarse sand drains. The triplet is
+#' renormalised to fractions; erodibility is
+#' \code{(silt_f + 0.4 * sand_f) * (1 - 0.6 * clay_f)} on the 0-1
+#' scale, and resistance is \code{100 * (1 - erodibility)}.
+#'
+#' Calibratable heuristic, exported for audit. NA in, NA out.
+#'
+#' @param clay,silt,sand Numeric vectors of the clay, silt and sand
+#'   contents (any consistent unit — they are renormalised).
+#' @return Numeric vector on the 0-100 scale (higher = more resistant
+#'   to erosion).
+#' @export
+texture_to_erosion_resistance <- function(clay, silt, sand) {
+  total <- clay + silt + sand
+  clay_f <- clay / total
+  silt_f <- silt / total
+  sand_f <- sand / total
+  erodibility <- (silt_f + 0.4 * sand_f) * (1 - 0.6 * clay_f)
+  resistance <- (1 - pmin(pmax(erodibility, 0), 1)) * 100
+  pmin(pmax(resistance, 0), 100)
+}
+
+#' Extract per-unit mean texture from a Theia theia_soil raster set
+#' @keywords internal
+#' @noRd
+.extract_texture_means <- function(units, texture) {
+  if (!is.list(texture)) {
+    stop("texture must be a named list of SpatRasters", call. = FALSE)
+  }
+  required <- c("clay", "silt", "sand")
+  missing <- setdiff(required, names(texture))
+  if (length(missing) > 0) {
+    stop(sprintf("texture is missing raster(s): %s",
+                 paste(missing, collapse = ", ")), call. = FALSE)
+  }
+  units_sf <- as_pure_sf(units)
+  pick <- function(key) {
+    r <- texture[[key]]
+    if (is.null(r)) return(NULL)
+    if (!inherits(r, "SpatRaster")) {
+      stop(sprintf("texture$%s must be a SpatRaster", key), call. = FALSE)
+    }
+    safe_extract(r, units_sf, fun = "mean", progress = FALSE)
+  }
+  list(
+    clay = pick("clay"),
+    silt = pick("silt"),
+    sand = pick("sand"),
+    coarse_elements = pick("coarse_elements")
+  )
+}
+
+#' Extract fertility from a Theia theia_soil texture raster set
+#' @keywords internal
+#' @noRd
+extract_fertility_from_theia_soil <- function(units, texture) {
+  tm <- .extract_texture_means(units, texture)
+  texture_to_fertility_score(tm$clay, tm$silt, tm$sand,
+                             coarse_elements = tm$coarse_elements)
+}
+
 #' Read the UTS → fertility crosswalk shipped with the package
 #'
 #' Loads \code{inst/extdata/uts_fertilite_fr.csv}, the V1 French
@@ -1154,9 +1373,22 @@ extract_fertility_from_gissol <- function(units, layers,
 #' TWI is computed via GRASS (fasterRaster) when available, terra D8 otherwise.
 #' Higher values indicate more fertile soil conditions.
 #'
+#' When a Theia \code{theia_soil} texture raster set is supplied via
+#' \code{texture} (chantier sources Theia phase 3b), a third
+#' component — texture-based erosion resistance, see
+#' \code{\link{texture_to_erosion_resistance}} — is averaged in:
+#' F2 = (twi_norm + slope_norm + resistance_norm) / 3. Silt-rich soils
+#' are more erodible and lower the score.
+#'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing DEM raster
 #' @param dem_layer Character. Name of DEM layer
+#' @param texture Optional named list of \code{SpatRaster}s with
+#'   elements \code{clay}, \code{silt}, \code{sand} (the Theia
+#'   \code{theia_soil} products, loaded via
+#'   \code{\link{load_raster_source}}). When supplied, adds the
+#'   texture erosion-resistance component. Default \code{NULL}
+#'   (pre-existing TWI + slope behaviour).
 #'
 #' @return Numeric vector of fertility scores (0-100, higher = more fertile)
 #'
@@ -1168,7 +1400,8 @@ extract_fertility_from_gissol <- function(units, layers,
 #' }
 indicateur_f2_erosion <- function(units,
                                    layers,
-                                   dem_layer = "dem") {
+                                   dem_layer = "dem",
+                                   texture = NULL) {
   # Validate inputs
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
@@ -1206,8 +1439,16 @@ indicateur_f2_erosion <- function(units,
   # 4. Normalize slope: [0°, 45°] -> [100, 0] (flatter = more fertile)
   slope_norm <- pmax(pmin(100 - (slope_mean / 45) * 100, 100), 0)
 
-  # 5. F2 = average of TWI and slope components
-  fertility <- round((twi_norm + slope_norm) / 2, 1)
+  # 5. F2 = average of TWI and slope components, plus an optional
+  #    texture-based erosion-resistance component (Theia theia_soil)
+  if (!is.null(texture)) {
+    cli::cli_alert_info("F2: adding texture erosion-resistance (Theia theia_soil)")
+    tm <- .extract_texture_means(units, texture)
+    resistance <- texture_to_erosion_resistance(tm$clay, tm$silt, tm$sand)
+    fertility <- round((twi_norm + slope_norm + resistance) / 3, 1)
+  } else {
+    fertility <- round((twi_norm + slope_norm) / 2, 1)
+  }
 
   # Log calculation
   msg_info("indicateur_f2_erosion")

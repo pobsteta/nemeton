@@ -4,7 +4,13 @@
 \alias{load_raster_source}
 \title{Load a raster datasource as a SpatRaster}
 \usage{
-load_raster_source(source_key, country = "FR", aoi = NULL, section = NULL)
+load_raster_source(
+  source_key,
+  country = "FR",
+  aoi = NULL,
+  section = NULL,
+  path = NULL
+)
 }
 \arguments{
 \item{source_key}{Character. The datasource key (e.g.,
@@ -18,6 +24,13 @@ raster is cropped to this AOI (reprojected to the raster's CRS,
 
 \item{section}{Character. Configuration section to search in. See
 \code{\link{get_data_source}}.}
+
+\item{path}{Optional character. Explicit path (or GDAL source
+string) to a locally available raster. Required for
+\code{raster_local} datasources that carry no declared
+\code{path} — typically a Theia product downloaded to disk. When
+supplied, the file must exist. Ignored for \code{raster_remote}
+datasources.}
 }
 \value{
 A \code{SpatRaster}.
@@ -34,9 +47,11 @@ SoilGrids, where reading the full grid is never desirable.
 \details{
 Supported \code{type} values: \code{"raster_remote"} (an \code{url}
 field is required), \code{"raster_local"} (a \code{path} field is
-required). \code{"raster_local"} entries with no path (such as
-\code{chm_opencanopy}, which is materialised on the fly by another
-package) must be loaded by their producing package.
+required, or an explicit \code{path} argument). \code{"raster_local"}
+entries with no declared path (such as \code{chm_opencanopy} or the
+Theia datasources \code{forms_t}, \code{theia_soil}, ...) are produced
+or distributed externally: pass the downloaded file via the
+\code{path} argument, or load them from their producing package.
 }
 \examples{
 \dontrun{
@@ -49,6 +64,12 @@ aoi <- sf::st_as_sf(data.frame(id = 1), geom = sf::st_sfc(
   ))), crs = 2154
 ))
 cec <- load_raster_source("soilgrids_cec", "FR", aoi = aoi)
+
+# A Theia product downloaded locally (no declared path)
+chm <- load_raster_source(
+  "forms_t", "FR",
+  path = "~/data/theia/FORMS-T_height_2023.tif"
+)
 }
 
 }

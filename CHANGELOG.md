@@ -10,6 +10,106 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.35.2] - 2026-05-20
+
+### Changed
+
+- `formspot` datasource entry: FORMSpoT is wired into the
+  C1/P1/P2/B2 indicators through the existing `chm` argument (the
+  shared CHM interface used by FORMS-T and chm_opencanopy). The
+  `consumed_by` block now names the precise indicator functions,
+  `products` splits into `height` / `biomass`, and an
+  `integration_note` documents the integration path.
+
+## [0.35.1] - 2026-05-20
+
+### Fixed
+
+- `formspot` datasource entry: FORMSpoT is confirmed published as
+  the THEIA STAC collection `FORMSpoT`; the entry now carries the
+  verified `stac_catalog` / `stac_collection` fields instead of
+  the provisional preprint-stage note.
+
+## [0.35.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3d: `indicateur_w2_zones_humides()`
+  gains a `water_occurrence` argument (Theia `theia_water`);
+  `indicateur_r3_secheresse()` gains `soil_moisture` /
+  `sm_relief_strength` arguments (Theia `theia_soil_moisture`);
+  new exported helper `units_add_species_from_raster()` fills a
+  species column from the Theia `theia_species` product. Closes
+  Phase 3 of the Theia chantier. Backward-compatible.
+
+## [0.34.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3c: `indicateur_r3_secheresse()`
+  gains `snow` and `snow_relief_strength` arguments — a Theia
+  `theia_snow` snow-cover-duration raster attenuates the drought
+  stress (snowpack as a seasonal water reserve). Backward-compatible.
+
+## [0.33.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3b: exported helpers
+  `texture_to_fertility_score()` and
+  `texture_to_erosion_resistance()`; `indicateur_f1_fertilite()`
+  gains a `"theia_soil"` source + `texture` argument;
+  `indicateur_f2_erosion()` gains a `texture` argument. Wires the
+  Theia `theia_soil` product into the F1/F2 indicators.
+
+## [0.32.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 3a: `indicateur_c2_ndvi()` gains a
+  `fapar` argument (FAPAR-based vitality) and
+  `indicateur_a1_couverture()` gains an `fvc` argument
+  (FVC-based tree coverage), wiring the Theia `s2_biophysical`
+  product into the C2 and A1 indicators. Both arguments are
+  optional and backward-compatible.
+
+### Changed
+
+- `indicateur_a1_couverture()`: `land_cover` now defaults to
+  `NULL` (required only in legacy mode, ignored in FVC mode).
+
+## [0.31.0] - 2026-05-20
+
+### Added
+
+- `load_raster_source()` gains a `path` argument so path-less
+  `raster_local` datasources (the Theia products) can be loaded
+  from a locally downloaded file.
+- New exported helper `get_datasource_product()` returning the
+  metadata of one sub-product of a multi-product datasource
+  (e.g. `forms_t` height/volume/biomass).
+
+## [0.30.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 1b: `theia_water`,
+  `theia_soil_moisture`, `s2_l2a_muscate`, `theia_species`,
+  `theia_lst` and `formspot` declared in
+  `inst/datasources/FR.json`, completing Phase 1 (catalogue) of
+  the Theia chantier. Declarative only — no core indicator code
+  changed.
+
+## [0.29.0] - 2026-05-20
+
+### Added
+
+- Theia data sources, phase 1a: `s2_biophysical` (LAI/FAPAR/FVC),
+  `theia_soil` (texture fractions) and `theia_snow` (Let-it-snow
+  collection) declared in `inst/datasources/FR.json`, with
+  `consumed_by` wiring to the C2/A1/B2, F1/F2 and R3/W indicators
+  respectively. Declarative only — no core indicator code changed.
+
 ## [0.28.0] - 2026-05-20
 
 ### Added

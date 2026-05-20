@@ -1,3 +1,261 @@
+# nemeton 0.35.2 (2026-05-20)
+
+### Changed — FORMSpoT wired into C1/P1/P2/B2 via the shared CHM interface
+
+The `formspot` datasource entry is no longer a deferred reliquat:
+FORMSpoT integrates into the indicators through the **existing
+`chm` argument** of `indicateur_c1_biomasse()`,
+`indicateur_p1_volume()`, `indicateur_p2_station()` and
+`indicateur_b2_structure()` — the same Canopy Height Model
+interface already used by FORMS-T (`forms_t`) and
+`chm_opencanopy`. No new indicator code is required: the
+FORMSpoT tree-level canopy-height product is loaded with
+`load_raster_source("formspot", path = ...)` and passed as
+`chm`.
+
+`inst/datasources/FR.json` is updated accordingly: the
+`formspot` `consumed_by` block now names the precise indicator
+functions (C1/P1/P2/B2 instead of the vague C/P/T/R), the
+`products` block splits into `height` (CHM-compatible) and
+`biomass`, and a new `integration_note` documents the
+shared-`chm` integration path (including the caveat to rasterise
+the height attribute if FORMSpoT is delivered as a vector
+tree-point layer).
+
+# nemeton 0.35.1 (2026-05-20)
+
+### Fixed — FORMSpoT confirmed as a THEIA STAC collection
+
+The `formspot` datasource entry in `inst/datasources/FR.json` was
+declared provisional in v0.30.0 (preprint stage, Theia
+availability unconfirmed). FORMSpoT is in fact published as the
+THEIA STAC collection `FORMSpoT`
+(`browser.datastore-mtd.theia.data-terra.org/collections/FORMSpoT`).
+The entry now carries the verified `stac_catalog` and
+`stac_collection` fields, and the provisional note is replaced by
+the actual distribution description. Indicator wiring for
+FORMSpoT remains deferred (see `PLAN.md`).
+
+# nemeton 0.35.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3d (indicator wiring: phase-1b sources)
+
+Phase 3d wires the phase-1b Theia sources into the indicators
+and closes Phase 3 of the "Theia data sources" chantier.
+
+- **W2 — `indicateur_w2_zones_humides()` gains a
+  `water_occurrence` argument** (plus `occurrence_threshold`,
+  default 25 %). When the Theia `theia_water` water-occurrence
+  raster is supplied, pixels whose occurrence frequency reaches
+  the threshold add to the wetland coverage — a fourth source
+  alongside BD TOPO water surfaces, the TWI threshold and OSO
+  land-cover codes.
+- **R3 — `indicateur_r3_secheresse()` gains `soil_moisture` and
+  `sm_relief_strength` arguments.** When the Theia
+  `theia_soil_moisture` raster is supplied, moist soil attenuates
+  drought stress against a 0.3 m³/m³ field-capacity reference
+  (same relief mechanism as the `snow` argument added in 0.34.0).
+- **New exported helper `units_add_species_from_raster()`.** It
+  fills a species column on `units` from a tree-species
+  classification raster (the Theia `theia_species` product) and a
+  user-supplied class-to-species crosswalk, resolving the
+  coverage-weighted dominant class per unit. This is the upstream
+  integration point for the P / C / biodiversity indicators,
+  which read a species column.
+
+All additions are backward-compatible.
+
+**Deferred wirings** (documented in `PLAN.md`): `s2_l2a_muscate`
+is base Sentinel-2 reflectance — its integration point is the
+existing S2 ingestion pipeline, not an indicator argument;
+`theia_lst` → A2 is a semantic mismatch (A2 is an air-quality
+index, not a microclimate one); `theia_water` → W1 is deferred
+(W1 is a linear-network density, a raster mask does not map to
+it); `formspot` wiring waits until the product is confirmed on
+the Theia catalogue.
+
+# nemeton 0.34.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3c (indicator wiring: theia_snow)
+
+Phase 3c wires the Theia Snow collection product `theia_snow`
+into the drought-risk indicator R3.
+
+- **R3 — `indicateur_r3_secheresse()` gains a `snow` argument**
+  (plus a `snow_relief_strength` tuning parameter). When a
+  snow-cover-duration `SpatRaster` is supplied (the Theia
+  `theia_snow` `snow_cover_duration` product, in days/year), the
+  snowpack is treated as a seasonal water reserve: the per-unit
+  mean duration is rescaled to a 0-1 relief factor against a
+  180-day reference, and R3 is multiplied by
+  `1 - snow_relief_strength * relief` (default
+  `snow_relief_strength = 0.3`, i.e. up to a 30 % drought-stress
+  reduction for a 6-month snowpack). Units with no snow coverage
+  are left unchanged.
+
+`snow = NULL` (default) preserves the pre-existing climate +
+topography behaviour — no existing caller is affected. Phase 3d
+(the phase-1b sources) remains, scoped in `PLAN.md`.
+
+# nemeton 0.33.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3b (indicator wiring: theia_soil)
+
+Phase 3b wires the Theia soil-texture product `theia_soil` into
+the soil family (F1, F2).
+
+- **Two exported texture helpers.**
+  `texture_to_fertility_score(clay, silt, sand, coarse_elements)`
+  maps a soil-texture composition to a 0-100 forest-fertility
+  score (proximity to the loam optimum in the texture triangle,
+  with a coarse-element penalty).
+  `texture_to_erosion_resistance(clay, silt, sand)` maps texture
+  to a 0-100 erosion-resistance score (USLE erodibility logic:
+  silt erodes, clay resists). Both are calibratable first-pass
+  heuristics, exported for pedologist audit; the texture triplet
+  is renormalised internally, so inputs may be in any consistent
+  unit (g/kg, percent, fraction).
+- **F1 — `indicateur_f1_fertilite()` gains a `"theia_soil"`
+  source** and a `texture` argument (a named list of clay / silt
+  / sand, optionally coarse_elements, `SpatRaster`s). In that
+  mode F1 derives fertility from the per-unit mean texture via
+  `texture_to_fertility_score()`.
+- **F2 — `indicateur_f2_erosion()` gains a `texture` argument.**
+  When supplied, a texture erosion-resistance component is
+  averaged into F2 alongside the TWI and slope components
+  (F2 = mean of the three). `texture = NULL` (default) preserves
+  the pre-existing TWI + slope behaviour.
+
+All additions are backward-compatible: existing F1/F2 callers are
+unaffected. Phase 3c (`theia_snow` → R3) and 3d (the phase-1b
+sources) remain, scoped in `PLAN.md`.
+
+# nemeton 0.32.0 (2026-05-20)
+
+### Added — Theia data sources, phase 3a (indicator wiring: s2_biophysical)
+
+Phase 3 of the "Theia data sources" chantier wires the declared
+sources into the indicator functions, one source at a time, with
+strictly backward-compatible optional arguments. Phase 3a wires
+the Sentinel-2 biophysical product `s2_biophysical` into two
+indicators:
+
+- **C2 — `indicateur_c2_ndvi()` gains a `fapar` argument.** When
+  a FAPAR `SpatRaster` is supplied (the Theia `s2_biophysical`
+  FAPAR product), the indicator returns the per-unit mean FAPAR
+  instead of NDVI. FAPAR is a physically grounded vitality
+  measure on the same `[0, 1]` scale as NDVI, so downstream
+  normalization is unchanged. `fapar = NULL` (default) preserves
+  the pre-existing NDVI behaviour.
+- **A1 — `indicateur_a1_couverture()` gains an `fvc` argument**,
+  and `land_cover` now defaults to `NULL`. When an FVC
+  `SpatRaster` is supplied (the Theia `s2_biophysical` FVC
+  product), A1 is the per-buffer mean FVC rescaled to a 0-100
+  percentage; `land_cover` is then ignored. `fvc = NULL`
+  (default) preserves the land-cover behaviour.
+
+Both arguments are purely additive — no existing caller is
+affected. Phase 3b (`theia_soil` → F1/F2), 3c (`theia_snow` →
+R3) and 3d (the phase-1b sources) remain, scoped in `PLAN.md`.
+
+# nemeton 0.31.0 (2026-05-20)
+
+### Added — Theia data sources, phase 2 (loaders)
+
+Phase 2 of the "Theia data sources" chantier (see `PLAN.md`)
+makes the catalogue entries declared in Phases 1a/1b actually
+loadable.
+
+- **`load_raster_source()` gains a `path` argument.** The Theia
+  datasources (`forms_t`, `theia_soil`, `theia_snow`, ...) are
+  `type: "raster_local"` with no static URL — they are
+  distributed per tile/year via the Theia catalogue and
+  downloaded by the user. `load_raster_source()` now accepts an
+  explicit `path` to the downloaded file, so these sources become
+  loadable through the normal datasource API (CRS harmonisation,
+  AOI cropping). Path-less `raster_local` sources still error
+  cleanly when no `path` is supplied, and the file must exist.
+- **New exported helper `get_datasource_product()`.** Multi-product
+  datasources (e.g. `forms_t` with `height` / `volume` /
+  `biomass`, `theia_soil` with `clay` / `silt` / `sand` /
+  `coarse_elements`) bundle several rasters under a `products`
+  block. `get_datasource_product(source_key, product)` returns
+  one sub-product's metadata (resolution, unit, value range,
+  conversion notes — e.g. the FORMS-T cm-to-m note), so a caller
+  can pick the right product and apply the documented unit
+  conversion before feeding it to an indicator.
+
+A STAC auto-resolution path against the Theia catalogue is
+deliberately *not* implemented yet: the per-source STAC
+collection identifiers are still marked `"to confirm"` in
+`FR.json`. Phase 2 therefore standardises on the
+download-then-load workflow; STAC resolution is deferred until
+those endpoints are verified. Phase 3 (indicator wiring) remains.
+
+# nemeton 0.30.0 (2026-05-20)
+
+### Added — Theia data sources, phase 1b (catalogue declarations)
+
+Second batch of the "Theia data sources" chantier (see
+`PLAN.md`). Six further Theia / DATA TERRA products are declared
+in `inst/datasources/FR.json`, completing Phase 1 (catalogue).
+Declarative only — no core indicator code is modified:
+
+- **`theia_water`** — surface-water extent and occurrence
+  (Surfwater lineage). `consumed_by`: W1, W2.
+- **`theia_soil_moisture`** — SMOS L3 (coarse, regional context)
+  and Sentinel-1-derived surface soil moisture. `consumed_by`:
+  W3, R3, F1.
+- **`s2_l2a_muscate`** — Sentinel-2 Level-2A surface reflectance
+  (MUSCATE / MAJA), a French national alternative to the CDSE /
+  Planetary Computer feed. `consumed_by`: C2, T2, R5.
+- **`theia_species`** — tree-species classification, tagged
+  `augmented: "species_ml"`. `consumed_by`: B1, B2, P, C.
+- **`theia_lst`** — land-surface temperature (Thermocity
+  lineage). `consumed_by`: A2.
+- **`formspot`** — FORMSpoT tree-level forest monitoring;
+  declared as a provisional entry (preprint arXiv:2512.17021,
+  Theia availability to confirm). `consumed_by`: C, P, T, R.
+
+As in Phase 1a, every entry is `type: "raster_local"` with no
+static URL, `ndp_level: 0`, and carries `consumed_by`,
+`provenance` and explicit `"to confirm"` markers. Phase 1
+(catalogue) is now complete; Phase 2 (loaders) and Phase 3
+(indicator wiring) remain, scoped in `PLAN.md`.
+
+# nemeton 0.29.0 (2026-05-20)
+
+### Added — Theia data sources, phase 1a (catalogue declarations)
+
+First batch of the "Theia data sources" chantier (see `PLAN.md`).
+Three priority Theia / DATA TERRA products are now declared in
+`inst/datasources/FR.json` (section `datasets`), following the
+declarative pattern established by `forms_t` in v0.28.0 — no core
+indicator code is modified:
+
+- **`s2_biophysical`** — Sentinel-2 biophysical variables (LAI,
+  FAPAR, FVC) at 10 m. `consumed_by`: C2 (vitality, complements
+  NDVI), A1 (canopy cover via FVC), B2 (LAI heterogeneity).
+- **`theia_soil`** — metropolitan-France soil maps: clay, silt,
+  sand fractions and coarse-element content. `consumed_by`: F1
+  (texture as a fertility proxy, a France-wide alternative to the
+  global SoilGrids CEC layer), F2 (erodibility).
+- **`theia_snow`** — Theia Snow collection (Let-it-snow / LIS):
+  snow-cover maps and annual phenology at 20 m. `consumed_by`: R3
+  (snowpack as a seasonal water reserve modulating drought
+  stress), W (winter water input).
+
+Each entry carries `ndp_level: 0`, a `consumed_by` block, a
+`provenance` block and explicit `"to confirm"` markers on
+metadata not yet verified (STAC collection id, exact resolution,
+licence). All three are `type: "raster_local"` with no static URL
+— `load_raster_source()` deliberately refuses to fetch them, as
+for `forms_t` and `chm_opencanopy`.
+
+This release covers Phase 1a only. Phase 1b (six further Theia
+sources), Phase 2 (loaders) and Phase 3 (indicator wiring) are
+scoped in `PLAN.md`.
+
 # nemeton 0.28.0 (2026-05-20)
 
 ### Added — FORMS-T (Theia) declared as a forest data source

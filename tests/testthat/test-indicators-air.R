@@ -412,3 +412,45 @@ test_that("indicateur_a2_qualite_air without roads returns default", {
   expect_s3_class(result, "sf")
   expect_true("A2" %in% names(result))
 })
+
+# ==============================================================================
+# A1 — FVC mode (Theia s2_biophysical, phase 3a)
+# ==============================================================================
+
+test_that("indicateur_a1_couverture FVC mode returns A1 in 0-100", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 3)
+  fvc <- create_test_raster(values = "constant")
+  terra::values(fvc) <- runif(terra::ncell(fvc), 0, 1)
+
+  result <- suppressMessages(indicateur_a1_couverture(units, fvc = fvc))
+  expect_s3_class(result, "sf")
+  expect_true("A1" %in% names(result))
+  expect_true(all(result$A1 >= 0 & result$A1 <= 100, na.rm = TRUE))
+})
+
+test_that("indicateur_a1_couverture FVC mode ignores a NULL land_cover", {
+  skip_if_not_installed("sf")
+  skip_if_not_installed("terra")
+
+  units <- create_test_units(n_features = 2)
+  fvc <- create_test_raster(values = "constant")
+  terra::values(fvc) <- runif(terra::ncell(fvc), 0, 1)
+
+  expect_s3_class(
+    suppressMessages(indicateur_a1_couverture(units, land_cover = NULL, fvc = fvc)),
+    "sf"
+  )
+})
+
+test_that("indicateur_a1_couverture rejects a non-raster fvc", {
+  skip_if_not_installed("sf")
+
+  units <- create_test_units(n_features = 2)
+  expect_error(
+    indicateur_a1_couverture(units, fvc = "not_a_raster"),
+    "fvc must be a SpatRaster"
+  )
+})
