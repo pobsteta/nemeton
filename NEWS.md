@@ -1,3 +1,29 @@
+# nemeton 0.41.1 (2026-05-20)
+
+### Fixed — FORDEAD version probe no longer forces a reinstall every run
+
+The FORDEAD pipeline reinstalled its Python dependencies
+(`pip install --upgrade -r requirements.txt`, git clones and all)
+on **every** `run_fordead_dieback()` call, and reported
+`fordead=NA` in the start banner.
+
+Root cause: the version probe read the `fordead.version`
+attribute, which is a *function* — not a version string. Printing
+it yielded a `<function …>` repr that never matched the pinned
+`2.1.1`, so `.fordead_is_installed()` always returned `FALSE` and
+`.ensure_fordead_python()` re-ran pip.
+
+- `.fordead_python_version()` now reads the canonical distribution
+  version via `importlib.metadata.version("fordead")`.
+- `run_fordead_dieback()` reuses that same probe for its start
+  banner instead of poking module attributes, so `fordead_version`
+  is now reported correctly.
+- New internal helper `.python_capture_stdout()` wraps the
+  `system2()` call so the probe is unit-testable.
+
+With a correctly pinned venv, FORDEAD runs now skip the pip step
+entirely, shaving the reinstall time off every diagnostic.
+
 # nemeton 0.41.0 (2026-05-20)
 
 ### New — FORDEAD dieback mask persisted to the project cache

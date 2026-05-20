@@ -13,8 +13,13 @@
 Character(1) — installed version, or `NA`.
 }
 \description{
-Runs `<venv-python> -c "import fordead; print(fordead.version)"`
-and returns the version string. Returns `NA_character_` if fordead
-isn't importable or the call fails.
+Reads the *distribution* version via
+`importlib.metadata.version("fordead")` — the canonical source.
+Note: the `fordead.version` attribute is a *function*, not a
+version string, so `print(fordead.version)` yields a
+`<function …>` repr. Probing that made the installed version
+never match the pin, triggering a spurious `pip install` on every
+pipeline run. Returns `NA_character_` when fordead isn't installed
+or the call fails.
 }
 \keyword{internal}

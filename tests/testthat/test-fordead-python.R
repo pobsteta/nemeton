@@ -409,6 +409,63 @@ test_that(".fordead_version_pinned returns NA when nothing matches", {
 })
 
 
+test_that(".fordead_python_version reads the importlib.metadata version", {
+  skip_if_no_reticulate()
+  fake_py <- tempfile("fake-py-"); file.create(fake_py)
+  on.exit(unlink(fake_py), add = TRUE)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) fake_py,
+    .package = "reticulate"
+  )
+
+  captured_code <- NULL
+  testthat::local_mocked_bindings(
+    .python_capture_stdout = function(py_path, code) {
+      captured_code <<- code
+      "2.1.1"
+    },
+    .package = "nemeton"
+  )
+
+  expect_identical(nemeton:::.fordead_python_version("any-env"), "2.1.1")
+  # Regression guard: the probe must query the distribution metadata,
+  # never the `fordead.version` attribute (which is a function, so
+  # printing it used to feed garbage into the version comparison and
+  # force a `pip install` on every pipeline run).
+  expect_match(captured_code, "importlib\\.metadata")
+  expect_no_match(captured_code, "fordead\\.version")
+})
+
+
+test_that(".fordead_python_version returns NA when the probe yields nothing", {
+  skip_if_no_reticulate()
+  fake_py <- tempfile("fake-py-"); file.create(fake_py)
+  on.exit(unlink(fake_py), add = TRUE)
+
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) fake_py,
+    .package = "reticulate"
+  )
+  testthat::local_mocked_bindings(
+    .python_capture_stdout = function(py_path, code) character(),
+    .package = "nemeton"
+  )
+
+  expect_true(is.na(nemeton:::.fordead_python_version("any-env")))
+})
+
+
+test_that(".fordead_python_version returns NA when the venv python is absent", {
+  skip_if_no_reticulate()
+  testthat::local_mocked_bindings(
+    virtualenv_python = function(env) "/no/such/python",
+    .package = "reticulate"
+  )
+  expect_true(is.na(nemeton:::.fordead_python_version("phantom-env")))
+})
+
+
 test_that(".fordead_is_installed flags a version mismatch as not-installed", {
   skip_if_no_reticulate()
   fake_py <- tempfile("fake-py-"); file.create(fake_py)

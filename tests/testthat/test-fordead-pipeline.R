@@ -109,6 +109,7 @@ make_fake_fordead_2x_module <- function(fail_at = NULL) {
     .ensure_fordead_python = function(env_name = ".", verbose = FALSE) {
       stop("override per-test via the `fd` return value")
     },
+    .fordead_python_version = function(env_name) "2.1.1",
     .postprocess_fordead_rasters = function(rasters, ...) {
       if (isTRUE(fail_postprocess)) {
         stop("simulated postprocess failure")
@@ -235,9 +236,9 @@ test_that("runs the 6 phases in order on the success path", {
 
   expect_identical(out$status, "success")
   expect_equal(fk$env$calls, c("fit", "predict"))
-  # fordead_version is read via reticulate::py_get_attr() — on our fake
-  # R list it falls back to NA_character_. We only check it's a string.
-  expect_type(out$fordead_version, "character")
+  # fordead_version is read via .fordead_python_version() (mocked in
+  # .mock_pipeline_helpers() to the pinned "2.1.1").
+  expect_identical(out$fordead_version, "2.1.1")
   expect_null(out$alerts_sf)
   expect_identical(out$zone_id, 1L)
   expect_equal(out$n_scenes, 2L)

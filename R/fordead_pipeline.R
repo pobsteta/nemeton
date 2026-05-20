@@ -439,14 +439,13 @@ run_fordead_dieback <- function(con,
   result <- tryCatch({
     fd <- .ensure_fordead_python(env_name = env_name, verbose = verbose)
 
-    fordead_version <- tryCatch({
-      v <- reticulate::py_get_attr(fd, "version", silent = TRUE)
-      if (is.null(v)) {
-        v <- reticulate::py_get_attr(fd, "__version__", silent = TRUE)
-      }
-      reticulate::py_to_r(v)
-    }, error = function(e) NA_character_)
-    if (is.null(fordead_version) || !is.character(fordead_version)) {
+    # `fordead.version` is a *function* (not a string) and `__version__`
+    # is unreliable across fordead releases; read the installed
+    # distribution version through the same canonical probe the
+    # installer uses (`importlib.metadata.version`).
+    fordead_version <- .fordead_python_version(env_name)
+    if (is.null(fordead_version) || !is.character(fordead_version) ||
+        length(fordead_version) != 1L) {
       fordead_version <- NA_character_
     }
 

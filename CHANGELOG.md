@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.41.1] - 2026-05-20
+
+### Fixed
+
+- FORDEAD version probe read the `fordead.version` *attribute* (a
+  function, not a string), so the installed version never matched
+  the pin and `pip install --upgrade` ran on every
+  `run_fordead_dieback()` call. `.fordead_python_version()` now
+  reads `importlib.metadata.version("fordead")`; the pipeline start
+  banner reuses the same probe, so `fordead_version` is reported
+  correctly instead of `NA`.
+
+### Added
+
+- Internal helper `.python_capture_stdout()` — mockable `system2()`
+  wrapper used by the FORDEAD version probe.
+
 ## [0.40.0] - 2026-05-20
 
 ### Added

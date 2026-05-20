@@ -161,10 +161,14 @@ NULL
 #'   otherwise (non-zero exit, signal, or any error).
 #' @keywords internal
 .fordead_python_import_ok <- function(py_path, module = "fordead") {
+  # `system2()` does not quote `args`: without shQuote() the shell
+  # word-splits `import fordead` into the bare statement `import`,
+  # which is a SyntaxError — the probe then always reports FALSE and
+  # forces a needless `pip install` on every pipeline run.
   rc <- tryCatch(
     suppressWarnings(system2(
       py_path,
-      c("-c", paste0("import ", module)),
+      c("-c", shQuote(paste0("import ", module))),
       stdout = FALSE, stderr = FALSE
     )),
     error = function(e) -1L
@@ -201,11 +205,42 @@ NULL
 }
 
 
+#' Run `python -c <code>` and capture stdout
+#'
+#' Thin wrapper over [base::system2()] with `stdout = TRUE`. Exists so
+#' tests can mock the captured output without dealing with `system2`
+#' directly (mirrors [.fordead_python_import_ok()]).
+#'
+#' `system2()` pastes `args` into a single shell command line without
+#' quoting, so `code` MUST be [shQuote()]d here — otherwise spaces,
+#' `;` and `()` in the Python snippet are word-split / interpreted by
+#' the shell and the snippet never reaches the interpreter intact.
+#'
+#' @param py_path Character path to a Python interpreter.
+#' @param code    Character. Python statement(s) to execute.
+#' @return Character vector of stdout lines (possibly empty on error).
+#' @keywords internal
+.python_capture_stdout <- function(py_path, code) {
+  tryCatch(
+    suppressWarnings(system2(
+      py_path, c("-c", shQuote(code)),
+      stdout = TRUE, stderr = FALSE
+    )),
+    error = function(e) character()
+  )
+}
+
+
 #' Probe the installed fordead version in a virtualenv
 #'
-#' Runs `<venv-python> -c "import fordead; print(fordead.version)"`
-#' and returns the version string. Returns `NA_character_` if fordead
-#' isn't importable or the call fails.
+#' Reads the *distribution* version via
+#' `importlib.metadata.version("fordead")` — the canonical source.
+#' Note: the `fordead.version` attribute is a *function*, not a
+#' version string, so `print(fordead.version)` yields a
+#' `<function …>` repr. Probing that made the installed version
+#' never match the pin, triggering a spurious `pip install` on every
+#' pipeline run. Returns `NA_character_` when fordead isn't installed
+#' or the call fails.
 #'
 #' @param env_name Character. Virtualenv name.
 #' @return Character(1) — installed version, or `NA`.
@@ -214,15 +249,13 @@ NULL
   py <- tryCatch(reticulate::virtualenv_python(env_name),
                  error = function(e) NA_character_)
   if (is.na(py) || !nzchar(py) || !file.exists(py)) return(NA_character_)
-  out <- tryCatch(
-    suppressWarnings(system2(
-      py, c("-c", "import fordead; print(fordead.version)"),
-      stdout = TRUE, stderr = FALSE
-    )),
-    error = function(e) character()
+  out <- .python_capture_stdout(
+    py, "import importlib.metadata as m; print(m.version('fordead'))"
   )
   if (length(out) == 0L) return(NA_character_)
-  trimws(out[1])
+  ver <- trimws(out[1])
+  if (!nzchar(ver)) return(NA_character_)
+  ver
 }
 
 
