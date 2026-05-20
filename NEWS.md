@@ -1,3 +1,17 @@
+# nemeton 0.35.1 (2026-05-20)
+
+### Fixed — FORMSpoT confirmed as a THEIA STAC collection
+
+The `formspot` datasource entry in `inst/datasources/FR.json` was
+declared provisional in v0.30.0 (preprint stage, Theia
+availability unconfirmed). FORMSpoT is in fact published as the
+THEIA STAC collection `FORMSpoT`
+(`browser.datastore-mtd.theia.data-terra.org/collections/FORMSpoT`).
+The entry now carries the verified `stac_catalog` and
+`stac_collection` fields, and the provisional note is replaced by
+the actual distribution description. Indicator wiring for
+FORMSpoT remains deferred (see `PLAN.md`).
+
 # nemeton 0.35.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 3d (indicator wiring: phase-1b sources)

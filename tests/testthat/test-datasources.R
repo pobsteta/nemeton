@@ -286,11 +286,13 @@ test_that("FR config exposes theia_lst for the A2 indicator", {
   expect_true("A2" %in% names(lst$consumed_by))
 })
 
-test_that("FR config exposes formspot as a provisional entry", {
+test_that("FR config exposes formspot with its THEIA STAC collection", {
   fs <- get_data_source("formspot", "FR")
   expect_type(fs, "list")
   expect_equal(fs$type, "raster_local")
   expect_match(fs$access$preprint, "2512.17021")
+  expect_equal(fs$access$stac_collection, "FORMSpoT")
+  expect_match(fs$access$stac_catalog, "theia.data-terra.org")
   expect_true(all(c("C", "P", "T", "R") %in% names(fs$consumed_by)))
 })
 

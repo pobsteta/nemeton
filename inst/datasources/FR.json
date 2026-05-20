@@ -531,8 +531,10 @@
       "ndp_level": 0,
       "access": {
         "catalogue": "https://catalogue.theia.data-terra.org/",
+        "stac_catalog": "https://browser.datastore-mtd.theia.data-terra.org/",
+        "stac_collection": "FORMSpoT",
         "preprint": "arXiv:2512.17021",
-        "note": "Availability on the Theia catalogue is to be confirmed: FORMSpoT is described in a recent preprint and may not yet be a published Theia collection. Treat this entry as provisional."
+        "note": "Published as the THEIA STAC collection FORMSpoT (browser.datastore-mtd.theia.data-terra.org/collections/FORMSpoT). Distributed per tile/year via STAC, so load_raster_source() cannot fetch it directly: resolve the STAC asset href (or a local download path) first."
       },
       "products": {
         "tree_attributes": {

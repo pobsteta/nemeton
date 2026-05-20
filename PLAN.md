@@ -119,8 +119,10 @@ Du moins au plus invasif :
   un indice de qualité de l'air / pollution, pas de microclimat — câblage
   nécessiterait un sous-indicateur microclimat dédié) ; `theia_water` → W1 =
   W1 est une densité de réseau linéaire (m/ha), un masque raster ne s'y mappe
-  pas ; `formspot` = source provisoire (preprint, disponibilité Theia non
-  confirmée). Ces 4 points pourront faire l'objet d'un chantier ultérieur.
+  pas ; `formspot` = disponibilité Theia confirmée (collection STAC `FORMSpoT`,
+  v0.35.1) mais câblage indicateurs non fait (granularité au niveau de
+  l'arbre — nécessite la définition d'un mapping attributs dédié). Ces
+  4 points pourront faire l'objet d'un chantier ultérieur.
 
 ## Réserves / dette à lever
 
@@ -255,6 +257,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-20** — Release **v0.35.1** (fix — métadonnées FORMSpoT). L'utilisateur confirme que FORMSpoT est publié comme collection STAC THEIA `FORMSpoT` sur `browser.datastore-mtd.theia.data-terra.org`. L'entrée `formspot` de `inst/datasources/FR.json`, déclarée provisoire en v0.30.0 (stade preprint), gagne les champs vérifiés `stac_catalog` + `stac_collection` ; la note « provisoire / disponibilité à confirmer » est remplacée par la description de diffusion réelle. Le test `test-datasources.R` correspondant est renforcé (vérifie `stac_collection == "FORMSpoT"`) et renommé. Le **câblage indicateurs** de FORMSpoT reste un reliquat (granularité au niveau de l'arbre — mapping d'attributs dédié à définir).
 
 - **2026-05-20** — Release **v0.35.0** (feat — sources Theia phase 3d, **clôture du chantier Sources Theia**). Câblage des sources 1b, livré en une seule release à la demande. Trois câblages sains retenus. (1) **W2** — `indicateur_w2_zones_humides()` gagne `water_occurrence = NULL` + `occurrence_threshold = 25` : quand le raster d'occurrence d'eau Theia `theia_water` est fourni, les pixels dont la fréquence d'occurrence dépasse le seuil ajoutent à la couverture zones humides — 4ᵉ source additive, s'insère proprement dans le design multi-sources existant de W2. (2) **R3** — `indicateur_r3_secheresse()` gagne `soil_moisture = NULL` + `sm_relief_strength = 0.3` : le sol humide atténue le stress de sécheresse contre une référence 0.3 m³/m³ (capacité au champ), même mécanique de « relief » que l'argument `snow` de v0.34.0. R3 a donc maintenant 4 arguments optionnels Theia (snow, soil_moisture + leurs forces) — tous NULL par défaut. (3) **theia_species** — nouveau helper exporté `units_add_species_from_raster(units, species_raster, class_map, species_col)` dans `R/utils.R` : résout la classe dominante pondérée par couverture par UGF et la mappe vers un code essence via un crosswalk fourni par l'utilisateur (le mapping classes→essences est spécifique au produit, non devinable) ; remplit la colonne `species` consommée en amont par P1/P2/C1 et les indicateurs biodiversité. **Reliquat documenté — 4 câblages volontairement non faits** : `s2_l2a_muscate` est une donnée de base (réflectance S2 brute) dont le point d'intégration est le pipeline d'ingestion S2 existant, pas un argument d'indicateur ; `theia_lst` → A2 est une inadéquation sémantique (A2 = qualité de l'air / pollution, la LST est une température — câbler reviendrait à dénaturer A2, il faudrait un sous-indicateur microclimat dédié) ; `theia_water` → W1 non fait (W1 = densité de réseau linéaire m/ha, un masque raster ne s'y mappe pas) ; `formspot` non câblé (source provisoire, preprint arXiv:2512.17021, disponibilité Theia non confirmée). NAMESPACE + 3 `man/*.Rd` (1 créé, 2 mis à jour). 6 nouveaux `test_that` (2 W2, 2 R3, 2 helper espèces). Tests R non exécutés (runtime R absent). **Chantier Sources Theia clos** : 10 sources cataloguées (Phase 1), loaders (Phase 2), 4 sources câblées dans 6 indicateurs + 1 helper (Phase 3) ; reliquat de 4 câblages documenté pour un éventuel chantier ultérieur.
 

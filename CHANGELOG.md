@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.35.1] - 2026-05-20
+
+### Fixed
+
+- `formspot` datasource entry: FORMSpoT is confirmed published as
+  the THEIA STAC collection `FORMSpoT`; the entry now carries the
+  verified `stac_catalog` / `stac_collection` fields instead of
+  the provisional preprint-stage note.
+
 ## [0.35.0] - 2026-05-20
 
 ### Added
