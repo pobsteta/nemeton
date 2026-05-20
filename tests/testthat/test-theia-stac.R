@@ -261,3 +261,30 @@ test_that("resolve_theia_assets year mode errors without an item template", {
     "year targeting"
   )
 })
+
+# ---- theia_signed_href (validation, offline) ----
+
+test_that("theia_signed_href errors on an unknown datasource", {
+  skip_if_not_installed("reticulate")
+  expect_error(
+    theia_signed_href("does_not_exist", year = 2023),
+    "Unknown datasource"
+  )
+})
+
+test_that("theia_signed_href requires year or item_id", {
+  skip_if_not_installed("reticulate")
+  expect_error(
+    theia_signed_href("formspot"),
+    "year.*item_id"
+  )
+})
+
+test_that("theia_signed_href year mode needs an item template", {
+  skip_if_not_installed("reticulate")
+  # theia_snow has a confirmed collection but no item_id_template
+  expect_error(
+    theia_signed_href("theia_snow", year = 2023),
+    "year targeting"
+  )
+})

@@ -1,3 +1,30 @@
+# nemeton 0.40.0 (2026-05-20)
+
+### Added — authenticated THEIA access via the teledetection SDK
+
+A live test confirmed THEIA assets require an authenticated,
+time-limited **signed URL**: the THEIA API key signs the asset
+href (a standard AWS SigV4 presign), and the signed URL is then
+read by GDAL via `/vsicurl/`. Direct `/vsis3/` access with the API
+key is *not* possible (the gateway signs with its own account).
+
+- **New exported helper `theia_signed_href(source_key, year,
+  asset, item_id, ...)`** — returns a ready-to-read,
+  `/vsicurl/`-prefixed signed URL. The signing is delegated to the
+  official `teledetection` Python SDK through `reticulate`
+  (`tld.sign_inplace`); `reticulate::py_require()` declares the
+  Python packages automatically.
+- **`load_theia_source()` year mode now uses SDK signing.** When
+  `year` is supplied, the asset URL is signed via
+  `theia_signed_href()` and read through `/vsicurl/` — the
+  validated, working path for THEIA assets. The spatial-search
+  mode (`/vsis3/`) is kept but reserved for direct-S3 setups.
+
+Workflow: `load_theia_source("formspot", aoi, year = 2023)` —
+requires `reticulate` plus the Python `teledetection` /
+`pystac_client` packages and a registered THEIA API key
+(<https://gate.stac.teledetection.fr>).
+
 # nemeton 0.39.1 (2026-05-20)
 
 ### Fixed — correct THEIA S3 credentials and region

@@ -47,20 +47,22 @@ mode. Default \code{50}.}
 A \code{SpatRaster} cropped to \code{aoi}.
 }
 \description{
-Resolves a Theia datasource for an area of interest via the THEIA
-STAC API (see \code{\link{resolve_theia_assets}}), loads the
-matching Cloud-Optimised GeoTIFF / VRT asset(s) and crops them to
-the AOI. When several items match, they are assembled into a
-virtual raster mosaic — this assumes the assets share a CRS, which
-holds for national products such as FORMS-T.
-
-Call \code{\link{theia_configure_s3}} once per session first so
-that GDAL can authenticate the \code{/vsis3/} reads.
+Loads a Theia datasource for an area of interest and crops it to
+the AOI. Two modes:
+\itemize{
+  \item \strong{Year targeting} (\code{year} supplied) — the
+    asset URL is signed through the \code{teledetection} SDK (see
+    \code{\link{theia_signed_href}}) and read via \code{/vsicurl/}.
+    This is the authenticated path that THEIA assets require.
+  \item \strong{Spatial search} — resolves \code{/vsis3/} asset
+    paths via \code{\link{resolve_theia_assets}}; call
+    \code{\link{theia_configure_s3}} first. Reserved for direct-S3
+    setups.
+}
 }
 \examples{
 \dontrun{
-theia_configure_s3()
-# FORMSpoT canopy height for 2023 (year targeting)
+# FORMSpoT canopy height for 2023 (signed via the teledetection SDK)
 chm <- load_theia_source("formspot", aoi, year = 2023)
 }
 }

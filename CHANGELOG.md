@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-05-20
+
+### Added
+
+- `theia_signed_href()` — resolves a `/vsicurl/`-prefixed signed
+  THEIA asset URL via the `teledetection` Python SDK (reticulate).
+- `load_theia_source()` year mode now signs the asset URL through
+  the SDK and reads it via `/vsicurl/` — the validated
+  authenticated path for THEIA assets.
+
 ## [0.39.1] - 2026-05-20
 
 ### Fixed
