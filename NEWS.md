@@ -1,3 +1,37 @@
+# nemeton 0.28.0 (2026-05-20)
+
+### Added — FORMS-T (Theia) declared as a forest data source
+
+`inst/datasources/FR.json` now declares the `forms_t` dataset:
+the FORMS-T time-series of forest attribute maps over
+metropolitan France (2018-present), produced by Theia / DATA
+TERRA from a deep-learning fusion of Sentinel-1, Sentinel-2 and
+GEDI lidar (Schwartz et al. 2023, ESSD,
+doi:10.5194/essd-15-4927-2023).
+
+Three products are described, each with resolution, unit and a
+plausible value range:
+
+- **height** — canopy height, 10 m, stored in centimetres;
+- **volume** — growing stock volume, 30 m, m3/ha;
+- **biomass** — aboveground biomass, 30 m, Mg/ha.
+
+The entry carries a `consumed_by` block documenting how the
+height product feeds the existing CHM path of four indicators —
+`indicateur_c1_biomasse()` (C1), `indicateur_p1_volume()` (P1),
+`indicateur_p2_station()` (P2) and `indicateur_b2_structure()`
+(B2). FORMS-T height is in centimetres, so callers divide the
+raster by 100 before passing it as the `chm` argument (which
+expects metres).
+
+The source is `type: "raster_local"` and carries no static URL
+(distribution is per-tile/per-year via the THEIA STAC catalog or
+the Zenodo record), so `load_raster_source()` deliberately
+refuses to fetch it — the caller resolves the STAC asset href or
+a local download path first. It is tagged `ndp_level: 0` and
+`augmented: "height_ml"`, consistent with ADR-011 amended
+(satellite + ML granularity, no NDP level change).
+
 # nemeton 0.27.0 (2026-05-19)
 
 ### Fixed — STAC search silently capped at 100 features

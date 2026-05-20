@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-05-20
+
+### Added
+
+- `forms_t` dataset declared in `inst/datasources/FR.json`: the
+  FORMS-T Theia time-series of canopy height (10 m), growing
+  stock volume (30 m) and aboveground biomass (30 m) maps over
+  metropolitan France (Schwartz et al. 2023, ESSD). Documents the
+  `consumed_by` wiring of the height product into the CHM path of
+  the C1, P1, P2 and B2 indicators.
+
 ## [0.21.1] - 2026-05-12
 
 ### Fixed

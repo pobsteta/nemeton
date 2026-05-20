@@ -156,6 +156,48 @@ test_that("chm_opencanopy declares provenance and license", {
                     names(chm$license)))
 })
 
+# ---- forms_t (FORMS-T Theia time-series) ----
+
+test_that("FR config exposes forms_t dataset", {
+  forms <- get_data_source("forms_t", "FR")
+  expect_type(forms, "list")
+  expect_equal(forms$type, "raster_local")
+  expect_equal(forms$format, "COG")
+  expect_equal(forms$native_crs, "EPSG:2154")
+  expect_equal(forms$augmented, "height_ml")
+  expect_equal(forms$ndp_level, 0)
+})
+
+test_that("forms_t declares the three products with units", {
+  forms <- get_data_source("forms_t", "FR")
+  expect_true(all(c("height", "volume", "biomass") %in%
+                    names(forms$products)))
+  expect_equal(forms$products$height$unit, "cm")
+  expect_equal(forms$products$height$resolution_m, 10)
+  expect_equal(forms$products$volume$unit, "m3/ha")
+  expect_equal(forms$products$volume$resolution_m, 30)
+  expect_equal(forms$products$biomass$unit, "Mg/ha")
+  expect_equal(forms$products$biomass$resolution_m, 30)
+})
+
+test_that("forms_t products have plausible value ranges", {
+  forms <- get_data_source("forms_t", "FR")
+  for (p in c("height", "volume", "biomass")) {
+    rng <- forms$products[[p]]$value_range
+    expect_length(rng, 2)
+    expect_true(rng[[1]] >= 0)
+    expect_true(rng[[2]] > rng[[1]])
+  }
+})
+
+test_that("forms_t documents the C1/P1/P2/B2 wiring and provenance", {
+  forms <- get_data_source("forms_t", "FR")
+  expect_true(all(c("C1", "P1", "P2", "B2") %in%
+                    names(forms$consumed_by)))
+  expect_match(forms$provenance$reference, "essd-15-4927-2023")
+  expect_true(nzchar(forms$access$stac_catalog))
+})
+
 # ---- load_raster_source ----
 
 test_that("load_raster_source errors on unknown key", {
