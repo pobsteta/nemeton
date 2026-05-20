@@ -26,6 +26,23 @@
     "communes_api": {
       "url": "https://geo.api.gouv.fr",
       "provider": "Etalab"
+    },
+    "theia_stac": {
+      "url": "https://api.stac.teledetection.fr",
+      "browser": "https://browser.datastore-mtd.theia.data-terra.org/",
+      "stac_version": "1.1.0",
+      "provider": "Maison de la Télédétection (MTD) / Theia — DATA TERRA",
+      "auth": "Catalogue browsing (collections, items, search) is anonymous. Asset download is authenticated: the COG/VRT objects live on the S3 store declared in `theia_s3`. The teledetection Python SDK signs hrefs via a download gateway; the R side instead reads the objects directly with GDAL /vsis3/ using the S3 credentials (see theia_s3 and theia_configure_s3()).",
+      "note": "STAC API root consumed by load_theia_source() / resolve_theia_assets()."
+    },
+    "theia_s3": {
+      "endpoint": "s3-data.meso.umontpellier.fr",
+      "bucket": "sm1-gdc-ext",
+      "provider": "Mésocentre MESO@UM (Université de Montpellier) — THEIA MTD object store",
+      "virtual_hosting": false,
+      "https": true,
+      "region": "us-east-1",
+      "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets. Credentials are NOT stored here: set THEIA_S3_ACCESS_KEY and THEIA_S3_SECRET_KEY in a gitignored .Renviron, then call theia_configure_s3() once per session. GDAL then reads the assets via /vsis3/ with native SigV4 signing."
     }
   },
 
@@ -166,9 +183,10 @@
       "augmented": "height_ml",
       "access": {
         "doi": "https://doi.theia.data-terra.org/FormsT/",
-        "stac_catalog": "https://browser-theia.stac.teledetection.fr/",
+        "stac_catalog": "https://browser.datastore-mtd.theia.data-terra.org/",
+        "stac_collection": "forms-t",
         "zenodo": "https://zenodo.org/records/15489231",
-        "note": "Distributed by DATA TERRA / THEIA (CDS-MTD diffusion service). COG assets are resolved per-tile and per-year from the STAC catalog, or downloaded as .tif from the Zenodo record. There is no single static URL, so load_raster_source() cannot fetch this source directly: the caller must resolve the STAC asset href (or a local download path) first."
+        "note": "Published as the THEIA STAC collection forms-t (api.datastore-mtd.theia.data-terra.org/collections/forms-t), or downloadable as .tif from the Zenodo record. Resolve and load it with load_theia_source('forms_t', aoi, asset = ...)."
       },
       "products": {
         "height": {
@@ -523,42 +541,70 @@
     "formspot": {
       "type": "raster_local",
       "format": "COG",
-      "description": "FORMSpoT — tree-level, country-scale forest monitoring over roughly a decade, from the FORMS product family. Individual-tree detection and attributes (height/biomass lineage), finer than the FORMS-T 10-30 m grids.",
+      "description": "FORMSpoT — annual tree-level canopy-height maps over France (2014-2024), from the FORMS product family. Sub-metric individual-tree detection, finer than the FORMS-T 10-30 m grids.",
       "native_crs": "EPSG:2154",
       "required_crs": "EPSG:2154",
       "fallback_crs": "EPSG:3035",
-      "temporal_coverage": "~10-year time series (to confirm)",
+      "temporal_coverage": "2014-2024 (annual)",
       "ndp_level": 0,
       "access": {
-        "catalogue": "https://catalogue.theia.data-terra.org/",
-        "stac_catalog": "https://browser.datastore-mtd.theia.data-terra.org/",
+        "stac_catalog": "https://api.stac.teledetection.fr",
         "stac_collection": "FORMSpoT",
         "preprint": "arXiv:2512.17021",
-        "note": "Published as the THEIA STAC collection FORMSpoT (browser.datastore-mtd.theia.data-terra.org/collections/FORMSpoT). Distributed per tile/year via STAC, so load_raster_source() cannot fetch it directly: resolve the STAC asset href (or a local download path) first."
+        "item_pattern": "One item per year, id `FORMSpoT-{year}` for year in 2014..2024.",
+        "asset_pattern": "Each item carries a height asset named `height_{year}`.",
+        "note": "Hosted on the MTD STAC API (api.stac.teledetection.fr). Asset hrefs must be signed with a teledetection API key before GDAL can read them (see services.theia_stac.auth)."
       },
       "products": {
         "height": {
           "variable": "tree_canopy_height",
           "resolution_m": "tree-level (sub-metric)",
-          "unit": "to confirm (m or cm — check the FORMSpoT collection metadata)",
-          "note": "Consumed as a high-resolution Canopy Height Model through the `chm` argument of the C1/P1/P2/B2 indicators. Convert to metres first if the collection delivers heights in centimetres."
-        },
-        "biomass": {
-          "variable": "tree_aboveground_biomass",
-          "resolution_m": "tree-level (sub-metric)",
-          "unit": "to confirm"
+          "unit": "dm",
+          "note": "FORMSpoT height is stored in DECIMETRES. Asset name is `height_{year}`. Consumed as a Canopy Height Model through the `chm` argument of C1/P1/P2/B2 — divide the raster by 10 to convert to metres first."
         }
       },
       "consumed_by": {
-        "C1": "indicateur_c1_biomasse(chm = ...) — tree-level canopy height fed as a high-resolution CHM.",
-        "P1": "indicateur_p1_volume(chm = ...) — dominant height for the IFN volume tarif.",
-        "P2": "indicateur_p2_station(chm = ...) — H_dom for the Duplat & Tran-Ha site index.",
-        "B2": "indicateur_b2_structure(chm = ...) — CV(CHM) structural component."
+        "C1": "indicateur_c1_biomasse(chm = formspot_height / 10) — tree-level canopy height fed as a high-resolution CHM.",
+        "P1": "indicateur_p1_volume(chm = formspot_height / 10) — dominant height for the IFN volume tarif.",
+        "P2": "indicateur_p2_station(chm = formspot_height / 10) — H_dom for the Duplat & Tran-Ha site index.",
+        "B2": "indicateur_b2_structure(chm = formspot_height / 10) — CV(CHM) structural component."
       },
-      "integration_note": "FORMSpoT integrates through the existing `chm` argument of C1/P1/P2/B2 — the same Canopy Height Model interface already used by FORMS-T (forms_t) and chm_opencanopy. No dedicated indicator argument is required: load the height product via load_raster_source('formspot', path = ...) and pass it as `chm`. If FORMSpoT is distributed as a vector tree-point layer rather than a height raster, rasterise the tree-height attribute first.",
+      "integration_note": "FORMSpoT integrates through the existing `chm` argument of C1/P1/P2/B2 — the same Canopy Height Model interface used by FORMS-T and chm_opencanopy. No dedicated indicator argument is required. Heights are in decimetres: pass `chm = raster / 10`.",
+      "related": "See `formspot_delta` for the companion disturbance-polygon product.",
       "provenance": {
         "producer": "FORMS product family (Schwartz et al. lineage)",
         "method": "Deep-learning tree-level monitoring from multi-source satellite imagery.",
+        "reference": "FORMSpoT: A Decade of Tree-Level, Country-Scale Forest Monitoring. arXiv:2512.17021."
+      },
+      "license": "to confirm at the THEIA collection record"
+    },
+    "formspot_delta": {
+      "type": "vector_remote",
+      "format": "vector polygons",
+      "description": "FORMSpoT-delta — forest-disturbance polygons over France, companion to FORMSpoT. Each polygon carries the year of the detected disturbance (canopy loss / dieback) over 2014-2024.",
+      "native_crs": "EPSG:2154",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "2014-2024",
+      "ndp_level": 0,
+      "access": {
+        "stac_catalog": "https://api.stac.teledetection.fr",
+        "stac_collection": "FORMSpoT-delta",
+        "preprint": "arXiv:2512.17021",
+        "item_pattern": "Single item, id `FORMSpoT-delta_2014-2024`.",
+        "asset_pattern": "Asset `disturbance_polygons` (read with sf::st_read once the href is signed).",
+        "note": "Hosted on the MTD STAC API; asset hrefs must be signed with a teledetection API key (see services.theia_stac.auth)."
+      },
+      "attributes": {
+        "year": "Year of the detected disturbance (integer, 2015-2024)."
+      },
+      "consumed_by": {
+        "R5": "observed canopy-loss / dieback polygons, complementary to the FORDEAD signal.",
+        "T2": "decade-scale change footprint for the temporal-dynamics family."
+      },
+      "provenance": {
+        "producer": "FORMS product family (Schwartz et al. lineage)",
+        "method": "Deep-learning tree-level disturbance detection from multi-source satellite imagery.",
         "reference": "FORMSpoT: A Decade of Tree-Level, Country-Scale Forest Monitoring. arXiv:2512.17021."
       },
       "license": "to confirm at the THEIA collection record"

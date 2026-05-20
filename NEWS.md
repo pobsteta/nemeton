@@ -1,3 +1,105 @@
+# nemeton 0.38.0 (2026-05-20)
+
+### Added — authenticated THEIA S3 reads
+
+The THEIA / FORMS COG and VRT assets live on an S3-compatible
+(MinIO) object store. Rather than reimplementing the
+`teledetection` SDK's URL signing, `nemeton` reads the objects
+directly with GDAL's `/vsis3/` virtual filesystem, which signs
+each request natively.
+
+- **New exported helper `theia_configure_s3(access_key,
+  secret_key, country)`** — sets the GDAL `/vsis3/` configuration
+  (endpoint, path-style hosting, region) for the session.
+  Credentials are read from the `THEIA_S3_ACCESS_KEY` /
+  `THEIA_S3_SECRET_KEY` environment variables (a gitignored
+  `.Renviron`) — never stored in the package.
+- **`resolve_theia_assets()` now returns `/vsis3/` paths.** Asset
+  hrefs are normalised by a new internal helper handling the
+  teledetection download-gateway form
+  (`gate.../download?url=...`), `s3://` URIs and path-style
+  `https://` object URLs.
+- **`load_raster_source()` accepts remote paths.** Its `path`
+  argument now takes `s3://`, `http(s)://` and `/vsi*` paths in
+  addition to local files (`s3://` is normalised to `/vsis3/`,
+  `http(s)://` to `/vsicurl/`).
+- New `services.theia_s3` entry in `FR.json` declaring the
+  (non-secret) S3 endpoint `s3-data.meso.umontpellier.fr` and
+  bucket `sm1-gdc-ext`.
+
+Workflow: `theia_configure_s3()` once per session, then
+`load_theia_source("formspot", aoi, asset = "height_2023")`.
+
+# nemeton 0.37.0 (2026-05-20)
+
+### Changed — THEIA STAC endpoint corrected, FORMSpoT metadata verified
+
+Verified against the official FORMSpoT data-access notebook
+(Schwartz, gist) and the `teledetection` Python SDK:
+
+- **STAC API endpoint corrected** to `https://api.stac.teledetection.fr`
+  (the MTD STAC API behind the `teledetection` SDK). The previous
+  `api.datastore-mtd.theia.data-terra.org` value was the metadata
+  document host shown in the browser, not the programmatic API.
+- **Authentication required**: asset download needs a teledetection
+  API key — the SDK's `tld.sign_inplace` signs the STAC asset
+  hrefs. `services.theia_stac` now documents this in an `auth`
+  field. The R STAC resolver does **not** yet implement
+  teledetection signing (see `PLAN.md`).
+- **FORMSpoT metadata verified**: collection `FORMSpoT`, one item
+  per year `FORMSpoT-{year}` (2014-2024), height asset
+  `height_{year}`. The height is stored in **decimetres** —
+  divide by 10 before passing it as `chm`.
+- **New datasource `formspot_delta`** — the companion FORMSpoT-∆
+  forest-disturbance polygons (collection `FORMSpoT-delta`, item
+  `FORMSpoT-delta_2014-2024`, asset `disturbance_polygons`, each
+  polygon carrying the disturbance `year`). `consumed_by`: R5, T2.
+
+# nemeton 0.36.1 (2026-05-20)
+
+### Fixed — THEIA STAC endpoint confirmed
+
+- `services.theia_stac.url` in `inst/datasources/FR.json` is now
+  the verified THEIA MTD STAC API root
+  (`https://api.datastore-mtd.theia.data-terra.org`, STAC 1.1.0,
+  anonymous access) — no longer `"to confirm"`. The `forms_t`
+  entry gains the verified `stac_collection: "forms-t"` and its
+  `stac_catalog` host is corrected, so `load_theia_source("forms_t",
+  aoi, asset = ...)` resolves out of the box.
+- The Theia STAC resolver's `"to confirm"` guard now matches any
+  string containing `"to confirm"` (the FR.json placeholders read
+  `"to confirm at the Theia catalogue"`), instead of only the
+  exact literal — so sources with an unverified `stac_collection`
+  are still correctly rejected.
+
+# nemeton 0.36.0 (2026-05-20)
+
+### Added — THEIA STAC resolver
+
+New module `R/theia_stac.R` closes the deferred Phase 2 item of
+the Theia chantier: the Theia datasources can now be materialised
+from the THEIA STAC API instead of requiring a manual download.
+
+- **`stac_search_items(stac_api, collection, bbox, datetime,
+  limit)`** — endpoint-agnostic STAC item search, built on the
+  project STAC paginator. Works against any STAC API.
+- **`resolve_theia_assets(source_key, aoi, asset, datetime,
+  country, stac_api, limit)`** — looks up a Theia datasource,
+  searches the THEIA STAC API for items of its collection
+  intersecting the AOI, and returns the matching asset hrefs
+  prefixed with `/vsicurl/`.
+- **`load_theia_source(source_key, aoi, asset, ...)`** — resolves
+  and loads a Theia datasource as a `SpatRaster` cropped to the
+  AOI (virtual mosaic when several items match).
+
+The THEIA STAC API endpoint is read from the new
+`services.theia_stac` entry of `inst/datasources/FR.json`. Its
+`url` field is shipped as `"to confirm"`: the STAC browser host
+(`browser.datastore-mtd.theia.data-terra.org`) is known, but the
+STAC API root behind it must be filled in (or passed via the
+`stac_api` argument). Until then the resolver aborts with an
+actionable message rather than guessing an endpoint.
+
 # nemeton 0.35.2 (2026-05-20)
 
 ### Changed — FORMSpoT wired into C1/P1/P2/B2 via the shared CHM interface

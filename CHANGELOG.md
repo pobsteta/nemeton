@@ -10,6 +10,59 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-05-20
+
+### Added
+
+- `theia_configure_s3()` — configures GDAL `/vsis3/` for
+  authenticated reads of the THEIA S3 object store; credentials
+  from `THEIA_S3_ACCESS_KEY` / `THEIA_S3_SECRET_KEY` env vars.
+- `services.theia_s3` entry in `FR.json` (endpoint, bucket).
+
+### Changed
+
+- `resolve_theia_assets()` returns `/vsis3/` paths (gateway /
+  `s3://` / `https://` hrefs are normalised).
+- `load_raster_source()` `path` argument accepts remote
+  (`s3://`, `http(s)://`, `/vsi*`) paths, not only local files.
+
+## [0.37.0] - 2026-05-20
+
+### Changed
+
+- THEIA STAC API endpoint corrected to
+  `https://api.stac.teledetection.fr` (verified against the
+  FORMSpoT data-access notebook). `services.theia_stac` documents
+  the required teledetection API-key authentication.
+- FORMSpoT metadata verified: collection `FORMSpoT`, yearly items
+  `FORMSpoT-{year}` (2014-2024), `height_{year}` assets, height in
+  decimetres.
+
+### Added
+
+- New datasource `formspot_delta` — FORMSpoT-∆ forest-disturbance
+  polygons (`consumed_by`: R5, T2).
+
+## [0.36.1] - 2026-05-20
+
+### Fixed
+
+- `services.theia_stac.url` set to the verified THEIA MTD STAC API
+  root; `forms_t` gains `stac_collection: "forms-t"`.
+- Theia STAC resolver `"to confirm"` guard now uses a substring
+  match, correctly rejecting the `"to confirm at the Theia
+  catalogue"` placeholders.
+
+## [0.36.0] - 2026-05-20
+
+### Added
+
+- THEIA STAC resolver (`R/theia_stac.R`): `stac_search_items()`,
+  `resolve_theia_assets()` and `load_theia_source()` materialise
+  the Theia datasources from the THEIA STAC API. New
+  `services.theia_stac` entry in `FR.json` (STAC API URL still to
+  confirm). Closes the deferred Phase 2 STAC-resolution item.
+
 ## [0.35.2] - 2026-05-20
 
 ### Changed

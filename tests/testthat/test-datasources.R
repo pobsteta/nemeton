@@ -292,11 +292,20 @@ test_that("FR config exposes formspot with its THEIA STAC collection", {
   expect_equal(fs$type, "raster_local")
   expect_match(fs$access$preprint, "2512.17021")
   expect_equal(fs$access$stac_collection, "FORMSpoT")
-  expect_match(fs$access$stac_catalog, "theia.data-terra.org")
+  expect_match(fs$access$stac_catalog, "teledetection.fr")
   # Wired through the shared CHM interface of C1/P1/P2/B2.
   expect_true(all(c("C1", "P1", "P2", "B2") %in% names(fs$consumed_by)))
   expect_true("height" %in% names(fs$products))
+  expect_equal(fs$products$height$unit, "dm")
   expect_match(fs$integration_note, "chm")
+})
+
+test_that("FR config exposes formspot_delta disturbance polygons", {
+  fd <- get_data_source("formspot_delta", "FR")
+  expect_type(fd, "list")
+  expect_equal(fd$type, "vector_remote")
+  expect_equal(fd$access$stac_collection, "FORMSpoT-delta")
+  expect_true(all(c("R5", "T2") %in% names(fd$consumed_by)))
 })
 
 test_that("all Theia phase-1b sources are raster_local at NDP 0", {
@@ -394,6 +403,33 @@ test_that("load_raster_source still refuses path-less raster_local with no path 
     load_raster_source("theia_soil", "FR"),
     "no.*path"
   )
+})
+
+test_that("load_raster_source accepts a remote s3:// path", {
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  out <- load_raster_source("forms_t", "FR",
+                            path = "s3://sm1-gdc-ext/FORMSpoT/x.tif")
+  expect_s3_class(out, "SpatRaster")
+  expect_equal(captured, "/vsis3/sm1-gdc-ext/FORMSpoT/x.tif")
+})
+
+test_that("load_raster_source accepts a remote https path", {
+  captured <- NULL
+  fake_rast <- function(x, ...) {
+    captured <<- x
+    structure(list(), class = "SpatRaster")
+  }
+  testthat::local_mocked_bindings(rast = fake_rast, .package = "terra")
+
+  out <- load_raster_source("forms_t", "FR", path = "https://h.example/x.tif")
+  expect_s3_class(out, "SpatRaster")
+  expect_true(startsWith(captured, "/vsicurl/https://"))
 })
 
 # ---- get_datasource_product ----
