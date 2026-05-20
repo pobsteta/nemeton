@@ -1,3 +1,34 @@
+# nemeton 0.30.0 (2026-05-20)
+
+### Added — Theia data sources, phase 1b (catalogue declarations)
+
+Second batch of the "Theia data sources" chantier (see
+`PLAN.md`). Six further Theia / DATA TERRA products are declared
+in `inst/datasources/FR.json`, completing Phase 1 (catalogue).
+Declarative only — no core indicator code is modified:
+
+- **`theia_water`** — surface-water extent and occurrence
+  (Surfwater lineage). `consumed_by`: W1, W2.
+- **`theia_soil_moisture`** — SMOS L3 (coarse, regional context)
+  and Sentinel-1-derived surface soil moisture. `consumed_by`:
+  W3, R3, F1.
+- **`s2_l2a_muscate`** — Sentinel-2 Level-2A surface reflectance
+  (MUSCATE / MAJA), a French national alternative to the CDSE /
+  Planetary Computer feed. `consumed_by`: C2, T2, R5.
+- **`theia_species`** — tree-species classification, tagged
+  `augmented: "species_ml"`. `consumed_by`: B1, B2, P, C.
+- **`theia_lst`** — land-surface temperature (Thermocity
+  lineage). `consumed_by`: A2.
+- **`formspot`** — FORMSpoT tree-level forest monitoring;
+  declared as a provisional entry (preprint arXiv:2512.17021,
+  Theia availability to confirm). `consumed_by`: C, P, T, R.
+
+As in Phase 1a, every entry is `type: "raster_local"` with no
+static URL, `ndp_level: 0`, and carries `consumed_by`,
+`provenance` and explicit `"to confirm"` markers. Phase 1
+(catalogue) is now complete; Phase 2 (loaders) and Phase 3
+(indicator wiring) remain, scoped in `PLAN.md`.
+
 # nemeton 0.29.0 (2026-05-20)
 
 ### Added — Theia data sources, phase 1a (catalogue declarations)

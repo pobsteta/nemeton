@@ -243,6 +243,69 @@ test_that("Theia phase-1a sources all declare provenance", {
   }
 })
 
+# ---- Theia sources phase 1b ----
+
+test_that("FR config exposes theia_water with mask and occurrence", {
+  water <- get_data_source("theia_water", "FR")
+  expect_type(water, "list")
+  expect_equal(water$type, "raster_local")
+  expect_true(all(c("water_mask", "water_occurrence") %in%
+                    names(water$products)))
+  expect_true(all(c("W1", "W2") %in% names(water$consumed_by)))
+})
+
+test_that("FR config exposes theia_soil_moisture with both variants", {
+  sm <- get_data_source("theia_soil_moisture", "FR")
+  expect_type(sm, "list")
+  expect_true(all(c("soil_moisture_smos", "soil_moisture_s1") %in%
+                    names(sm$products)))
+  expect_equal(sm$products$soil_moisture_smos$unit, "m3/m3")
+  expect_true(all(c("W3", "R3", "F1") %in% names(sm$consumed_by)))
+})
+
+test_that("FR config exposes s2_l2a_muscate with bands", {
+  s2 <- get_data_source("s2_l2a_muscate", "FR")
+  expect_type(s2, "list")
+  expect_equal(s2$type, "raster_local")
+  expect_true("B8A" %in% unlist(s2$products$surface_reflectance$bands))
+  expect_true(all(c("C2", "T2", "R5") %in% names(s2$consumed_by)))
+})
+
+test_that("FR config exposes theia_species tagged species_ml", {
+  sp <- get_data_source("theia_species", "FR")
+  expect_type(sp, "list")
+  expect_equal(sp$augmented, "species_ml")
+  expect_true("dominant_species" %in% names(sp$products))
+  expect_true(all(c("B1", "B2", "P", "C") %in% names(sp$consumed_by)))
+})
+
+test_that("FR config exposes theia_lst for the A2 indicator", {
+  lst <- get_data_source("theia_lst", "FR")
+  expect_type(lst, "list")
+  expect_equal(lst$products$land_surface_temperature$unit, "degC")
+  expect_true("A2" %in% names(lst$consumed_by))
+})
+
+test_that("FR config exposes formspot as a provisional entry", {
+  fs <- get_data_source("formspot", "FR")
+  expect_type(fs, "list")
+  expect_equal(fs$type, "raster_local")
+  expect_match(fs$access$preprint, "2512.17021")
+  expect_true(all(c("C", "P", "T", "R") %in% names(fs$consumed_by)))
+})
+
+test_that("all Theia phase-1b sources are raster_local at NDP 0", {
+  for (key in c("theia_water", "theia_soil_moisture", "s2_l2a_muscate",
+                "theia_species", "theia_lst", "formspot")) {
+    src <- get_data_source(key, "FR")
+    expect_equal(src$type, "raster_local",
+                 info = paste("wrong type:", key))
+    expect_equal(src$ndp_level, 0, info = paste("wrong ndp:", key))
+    expect_true(!is.null(src$provenance),
+                info = paste("missing provenance:", key))
+  }
+})
+
 # ---- load_raster_source ----
 
 test_that("load_raster_source errors on unknown key", {

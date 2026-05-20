@@ -16,7 +16,7 @@
 | ✅ | E5 | Intégrations & NDP — Open-Canopy CHM (spec 005) + QField export/ingest + sizing échantillon + flag `height_lidar` | v0.16.0 → v0.19.12 |
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
-| 🟨 | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a (catalogue, 3 sources prioritaires) → **v0.29.0** ; phase 1b + 2 + 3 à venir. |
+| 🟨 | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** (Phase 1 catalogue complète, 10 sources) ; phases 2 (loaders) + 3 (câblage) à venir. |
 | ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
@@ -67,11 +67,12 @@ Du moins au plus invasif :
 
 ### Phase 1 — Catalogue (Niveau 1, déclaratif)
 
-- **1a — sources prioritaires** : `s2_biophysical`, `theia_soil`, `theia_snow`.
-  Entrées FR.json + tests. Release **v0.29.0**.
-- **1b — sources complémentaires** : `theia_water`, `theia_soil_moisture`,
+- **1a — sources prioritaires** ✅ : `s2_biophysical`, `theia_soil`,
+  `theia_snow`. Entrées FR.json + tests. Release **v0.29.0**.
+- **1b — sources complémentaires** ✅ : `theia_water`, `theia_soil_moisture`,
   `s2_l2a_muscate`, `theia_species`, `theia_lst`, `formspot`. Entrées FR.json +
-  tests.
+  tests. Release **v0.30.0**. Phase 1 (catalogue) complète — 10 sources Theia
+  déclarées.
 
 ### Phase 2 — Loaders (Niveau 2)
 
@@ -222,6 +223,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-20** — Release **v0.30.0** (feat — sources Theia phase 1b). Six produits Theia / DATA TERRA complémentaires déclarés dans `inst/datasources/FR.json`, **clôturant la Phase 1 (catalogue)** du chantier — 10 sources Theia au total. Toujours sur le modèle déclaratif `forms_t`, **aucune modif du code cœur**. (1) `theia_water` — étendue et fréquence d'occurrence des eaux de surface (lignée Surfwater), `consumed_by` W1 / W2. (2) `theia_soil_moisture` — humidité de surface SMOS L3 (grossière, contexte régional) + variante dérivée Sentinel-1, `consumed_by` W3 / R3 / F1, avec note explicite que SMOS (~25-43 km) est inexploitable au parcellaire. (3) `s2_l2a_muscate` — réflectance de surface Sentinel-2 L2A (MUSCATE / MAJA), alternative nationale au flux CDSE/PC, `consumed_by` C2 / T2 / R5. (4) `theia_species` — classification d'essences, taggé `augmented: "species_ml"`, `consumed_by` B1 / B2 / P / C (note : mapping classes → codes essences nemeton à aligner avec `R/species-config.R`). (5) `theia_lst` — température de surface (lignée Thermocity), `consumed_by` A2. (6) `formspot` — FORMSpoT suivi forestier au niveau de l'arbre, déclaré comme **entrée provisoire** (preprint arXiv:2512.17021, disponibilité Theia à confirmer), `consumed_by` C / P / T / R. 7 nouveaux `test_that` dans `test-datasources.R` (un par source + un transversal type/ndp/provenance). Tests R non exécutés (runtime R absent) — JSON validé syntaxiquement (15 datasets). **Suite** : Phase 2 (loaders — résolveur STAC / extension `load_raster_source()`) puis Phase 3 (câblage indicateurs, une sous-tâche par source).
 
 - **2026-05-20** — Release **v0.29.0** (feat — sources Theia phase 1a). Ouverture du chantier *Sources de données Theia* (cf. table d'avancement + section *Chantier en cours*). Phase 1a : déclaration de trois produits Theia / DATA TERRA prioritaires dans `inst/datasources/FR.json`, section `datasets`, sur le modèle déclaratif de `forms_t` (v0.28.0) — **aucune modif du code cœur des indicateurs**. (1) `s2_biophysical` — variables biophysiques Sentinel-2 (LAI / FAPAR / FVC) à 10 m, `consumed_by` C2 (vitalité, complément du NDVI) / A1 (couverture arborée via FVC) / B2 (hétérogénéité LAI). (2) `theia_soil` — cartes de sol France métropolitaine (fractions argile / limon / sable + éléments grossiers), `consumed_by` F1 (texture = proxy de fertilité, alternative France au SoilGrids CEC global) / F2 (érodibilité). (3) `theia_snow` — collection Theia Snow (Let-it-snow / LIS), couverture neigeuse + phénologie annuelle à 20 m, `consumed_by` R3 (manteau neigeux = réserve hydrique modulant le stress de sécheresse) / W. Chaque entrée : `type: "raster_local"` sans URL statique (→ `load_raster_source()` refuse de charger, comme `forms_t` / `chm_opencanopy`), `ndp_level: 0`, bloc `provenance`, et marqueurs `"to confirm"` explicites sur les métadonnées non encore vérifiées (id de collection STAC, résolution exacte, licence). 4 nouveaux `test_that` dans `test-datasources.R` (un par source + un test transversal provenance). Tests R non exécutés ici (runtime R absent de l'environnement) — JSON validé syntaxiquement. **Suite du chantier** : phase 1b (6 sources complémentaires : `theia_water`, `theia_soil_moisture`, `s2_l2a_muscate`, `theia_species`, `theia_lst`, `formspot`), puis phase 2 (loaders) et phase 3 (câblage indicateurs).
 

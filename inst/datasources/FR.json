@@ -338,6 +338,222 @@
       },
       "license": "to confirm at the Theia catalogue record"
     },
+    "theia_water": {
+      "type": "raster_local",
+      "format": "COG / GeoTIFF",
+      "description": "Theia surface-water product (Surfwater lineage): open-water extent masks and water-occurrence frequency derived from Sentinel-2 (and Sentinel-1) time series.",
+      "native_crs": "UTM (per Sentinel-2 tile)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "2017-present (per scene) + multi-temporal occurrence",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "note": "Theia 'Continental waters' theme product. No single static URL: the caller resolves the catalogue/STAC asset href first.",
+        "stac_collection": "to confirm at the Theia catalogue"
+      },
+      "products": {
+        "water_mask": {
+          "variable": "open_water_extent",
+          "resolution_m": 10,
+          "unit": "class",
+          "classes": {
+            "0": "no-water",
+            "1": "water"
+          }
+        },
+        "water_occurrence": {
+          "variable": "water_occurrence_frequency",
+          "resolution_m": 10,
+          "unit": "percent",
+          "value_range": [0, 100]
+        }
+      },
+      "consumed_by": {
+        "W1": "satellite-observed hydrographic network, complementing the BD TOPO water layer.",
+        "W2": "wetland detection via seasonal water-occurrence frequency."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — Continental waters scientific expertise centre",
+        "method": "Multi-temporal classification of Sentinel-2/Sentinel-1 surface reflectance and backscatter."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
+    "theia_soil_moisture": {
+      "type": "raster_local",
+      "format": "GeoTIFF",
+      "description": "Theia soil-moisture products: a coarse SMOS L3 surface soil-moisture map (regional context only) and, where available, a finer Sentinel-1-derived surface soil-moisture map.",
+      "native_crs": "to confirm (EPSG:4326 for SMOS L3)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "daily (SMOS) / per Sentinel-1 revisit",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "smos_collection": "CATDS-PDC L3SM",
+        "note": "The SMOS L3 variant (~25-43 km) is far too coarse for parcel-level analysis: use it only as regional drought context. The Sentinel-1-derived variant, when available, is the one usable per unit."
+      },
+      "products": {
+        "soil_moisture_smos": {
+          "variable": "surface_soil_moisture",
+          "resolution_m": "to confirm (~25000-43000, SMOS)",
+          "unit": "m3/m3",
+          "value_range": [0, 1]
+        },
+        "soil_moisture_s1": {
+          "variable": "surface_soil_moisture",
+          "resolution_m": "to confirm (Sentinel-1 derived)",
+          "unit": "m3/m3",
+          "value_range": [0, 1]
+        }
+      },
+      "consumed_by": {
+        "W3": "observed surface soil moisture, complementing the topographic wetness index (TWI).",
+        "R3": "soil-water deficit signal feeding the drought-risk indicator.",
+        "F1": "moisture regime as a secondary fertility modifier."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — CATDS (SMOS) and Sentinel-1 soil-moisture chains",
+        "method": "Microwave radiometry (SMOS) and radar backscatter inversion (Sentinel-1)."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
+    "s2_l2a_muscate": {
+      "type": "raster_local",
+      "format": "GeoTIFF",
+      "description": "Sentinel-2 Level-2A surface reflectance (Theia MUSCATE production): ortho-rectified, atmospherically corrected reflectance with cloud, cloud-shadow, water and snow masks. A French national alternative to the CDSE / Planetary Computer Sentinel-2 feed already ingested by nemeton.",
+      "native_crs": "UTM (per Sentinel-2 tile)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "2015-present, per acquisition",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "note": "MUSCATE Sentinel-2 L2A is distributed per tile and per date. No single static URL: the caller resolves the catalogue download path first.",
+        "stac_collection": "to confirm at the Theia catalogue"
+      },
+      "products": {
+        "surface_reflectance": {
+          "variable": "surface_reflectance",
+          "resolution_m": 10,
+          "unit": "reflectance (scaled)",
+          "bands": ["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]
+        },
+        "masks": {
+          "variable": "cloud_shadow_water_snow_masks",
+          "resolution_m": 10,
+          "unit": "class"
+        }
+      },
+      "consumed_by": {
+        "C2": "NDVI / vitality computation from corrected surface reflectance.",
+        "T2": "change detection on multi-date reflectance composites.",
+        "R5": "alternative Sentinel-2 input for the rolling-window and FORDEAD health pipelines."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — MUSCATE production centre (CNES)",
+        "method": "MAJA atmospheric correction and cloud screening on Sentinel-2 Level-1C."
+      },
+      "license": "Etalab Open Licence 2.0 (to confirm at the Theia catalogue record)"
+    },
+    "theia_species": {
+      "type": "raster_local",
+      "format": "COG / GeoTIFF",
+      "description": "Theia tree-species classification: dominant forest-species maps derived from Sentinel-1/Sentinel-2 time series. Provides a species input layer for indicators that otherwise rely on a user-supplied species column.",
+      "native_crs": "to confirm (EPSG:2154 expected)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "ndp_level": 0,
+      "augmented": "species_ml",
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "note": "Theia 'Land cover / Biodiversity' theme product. No single static URL: the caller resolves the catalogue/STAC asset href first.",
+        "stac_collection": "to confirm at the Theia catalogue"
+      },
+      "products": {
+        "dominant_species": {
+          "variable": "dominant_tree_species",
+          "resolution_m": 10,
+          "unit": "class",
+          "note": "Class-to-species mapping is product-specific and must be aligned with nemeton species codes (see R/species-config.R) before use."
+        }
+      },
+      "consumed_by": {
+        "B1": "species-composition input for the protection indicator.",
+        "B2": "species diversity component of the structure indicator.",
+        "P": "species input for the productive family (P1 volume, P2 site index, P3 quality) when no field species column is present.",
+        "C": "species input for the carbon family (C1 biomass allometry)."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — Land cover scientific expertise centre",
+        "method": "Supervised classification of Sentinel-1/Sentinel-2 time series."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
+    "theia_lst": {
+      "type": "raster_local",
+      "format": "GeoTIFF",
+      "description": "Theia land-surface-temperature product (Thermocity lineage): satellite-derived land-surface temperature, usable as a microclimate / heat-stress proxy.",
+      "native_crs": "to confirm",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "stac_collection": "thermocity-lst",
+        "note": "Thermocity is urban-oriented; spatial coverage and resolution are to be confirmed against the analysis area of interest."
+      },
+      "products": {
+        "land_surface_temperature": {
+          "variable": "land_surface_temperature",
+          "resolution_m": "to confirm at the Theia catalogue",
+          "unit": "degC",
+          "value_range": [-30, 70]
+        }
+      },
+      "consumed_by": {
+        "A2": "land-surface temperature as a microclimate and heat-stress proxy for the air-quality / microclimate indicator."
+      },
+      "provenance": {
+        "producer": "Theia / DATA TERRA — Thermocity processing chain",
+        "method": "Thermal-infrared satellite retrieval of land-surface temperature."
+      },
+      "license": "to confirm at the Theia catalogue record"
+    },
+    "formspot": {
+      "type": "raster_local",
+      "format": "COG",
+      "description": "FORMSpoT — tree-level, country-scale forest monitoring over roughly a decade, from the FORMS product family. Individual-tree detection and attributes (height/biomass lineage), finer than the FORMS-T 10-30 m grids.",
+      "native_crs": "EPSG:2154",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "temporal_coverage": "~10-year time series (to confirm)",
+      "ndp_level": 0,
+      "access": {
+        "catalogue": "https://catalogue.theia.data-terra.org/",
+        "preprint": "arXiv:2512.17021",
+        "note": "Availability on the Theia catalogue is to be confirmed: FORMSpoT is described in a recent preprint and may not yet be a published Theia collection. Treat this entry as provisional."
+      },
+      "products": {
+        "tree_attributes": {
+          "variable": "tree_level_height_biomass",
+          "resolution_m": "tree-level (variable)",
+          "unit": "to confirm"
+        }
+      },
+      "consumed_by": {
+        "C": "tree-level biomass / carbon refinement (C1).",
+        "P": "tree-level volume and stand structure (P1, P2).",
+        "T": "decade-long temporal dynamics (T1, T2).",
+        "R": "tree-level mortality and dieback signal (R5)."
+      },
+      "provenance": {
+        "producer": "FORMS product family (Schwartz et al. lineage)",
+        "method": "Deep-learning tree-level monitoring from multi-source satellite imagery.",
+        "reference": "FORMSpoT: A Decade of Tree-Level, Country-Scale Forest Monitoring. arXiv:2512.17021."
+      },
+      "license": "to confirm (preprint stage)"
+    },
     "oso": {
       "url": "https://entrepot.recherche.data.gouv.fr/api/access/datafile/:persistentId?persistentId=doi:10.57745/8M1AN1",
       "description": "OSO - Occupation du Sol (Theia/CESBIO)",
