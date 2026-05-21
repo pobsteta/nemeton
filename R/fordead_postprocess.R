@@ -349,7 +349,22 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
     stress_index     = alerts_sf$stress_index[keep],
     stringsAsFactors = FALSE
   )
-  staging <- staging[!is.na(staging$trigger_date), , drop = FALSE]
+  # A NULL `first_dieback_date` raster upstream leaves every centroid
+  # with `trigger_date = NA`. Such rows cannot be inserted (the column
+  # is part of the UNIQUE key). Dropping them is correct, but doing it
+  # in silence hid a real bug once: a run that detected dieback still
+  # reported "0 alerts". Always warn when rows are discarded this way.
+  n_before  <- nrow(staging)
+  staging   <- staging[!is.na(staging$trigger_date), , drop = FALSE]
+  n_dropped <- n_before - nrow(staging)
+  if (n_dropped > 0L) {
+    cli::cli_warn(c(
+      "Dropped {n_dropped} FORDEAD alert{?s} with a missing {.field trigger_date}.",
+      x = "{cli::qty(n_dropped)}{?This cluster was/These clusters were} detected but cannot be inserted.",
+      i = "Usual cause: the {.field first_dieback_date} raster could not be \\
+           derived (check the {.pkg fordead.utils} import step)."
+    ))
+  }
   if (!nrow(staging)) return(0L)
 
   is_duckdb <- inherits(con, "duckdb_connection")

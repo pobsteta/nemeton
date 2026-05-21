@@ -596,9 +596,24 @@ run_fordead_dieback <- function(con,
     # Import the submodule explicitly. Failure here just warns
     # (first_dieback_date is best-effort metadata).
     if (verbose) cli::cli_alert_info("Step: first_dieback_date")
+    # The `fordead.utils` import is *not* benign best-effort: without it
+    # `first_dieback_date` is NULL, every cluster centroid gets
+    # `trigger_date = NA`, and .insert_fordead_alerts() then silently
+    # drops every staging row (NA trigger_date) — a real run with
+    # confirmed dieback can report "0 alerts" for that reason alone.
+    # So a failed import must WARN loudly, not pass in silence.
     fd_utils <- tryCatch(
       reticulate::import("fordead.utils", convert = FALSE),
-      error = function(e) NULL
+      error = function(e) {
+        cli::cli_alert_warning(c(
+          "Cannot import {.pkg fordead.utils}: {conditionMessage(e)}",
+          x = "{.field trigger_date} cannot be derived for FORDEAD clusters.",
+          x = "Every detected cluster will be dropped at insertion (NA trigger_date).",
+          i = "Install the missing Python dependency in env {.val {env_name}} \\
+               (e.g. {.code reticulate::virtualenv_install(\"{env_name}\", \"geocube\")})."
+        ))
+        NULL
+      }
     )
     fdd_raster   <- tryCatch(
       if (is.null(fd_utils)) NULL else

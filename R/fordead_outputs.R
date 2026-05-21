@@ -126,12 +126,21 @@ NULL
   np <- reticulate::import("numpy", convert = FALSE)
   xr <- reticulate::import("xarray", convert = FALSE)
 
-  vals <- terra::values(rast_stack)              # matrix: n_cells × n_layers
   n_layers <- terra::nlyr(rast_stack)
   n_rows   <- terra::nrow(rast_stack)
   n_cols   <- terra::ncol(rast_stack)
-  arr <- aperm(array(vals, dim = c(n_rows, n_cols, n_layers)),
-               c(3, 1, 2))                       # → (time, y, x)
+  vals <- terra::values(rast_stack)              # matrix: n_cells × n_layers
+  # terra's cell order is ROW-major (cell = (row-1)*ncol + col), but
+  # R's array() fills COLUMN-major. Feeding `vals` straight into
+  # array(dim = c(n_rows, n_cols, n_layers)) therefore transposes the
+  # y/x axes whenever n_rows != n_cols — the first-dieback dates would
+  # land on the wrong pixels. Reshape each layer with byrow = TRUE so
+  # the axes are an honest (time, y, x).
+  arr <- array(NA_real_, dim = c(n_layers, n_rows, n_cols))
+  for (l in seq_len(n_layers)) {
+    arr[l, , ] <- matrix(vals[, l], nrow = n_rows, ncol = n_cols,
+                         byrow = TRUE)
+  }
   np_arr <- np$asarray(reticulate::r_to_py(arr))
 
   da <- xr$DataArray(
@@ -142,11 +151,34 @@ NULL
     )
   )
   fdd <- fd_utils$backward_start(da)
-  # fdd is an xarray DataArray of shape (y, x), values = days since epoch.
+  # `backward_start` returns an xarray DataArray of shape (y, x).
+  # When the `time` coordinate is passed as date strings (as we do
+  # above), its values come back as an **object-dtype** numpy array:
+  # an ISO date string on every confirmed pixel and a float `NaN`
+  # everywhere else. `py_to_r()` turns that into an R *list-matrix*,
+  # which `terra::rast()` cannot ingest. Coerce explicitly to a
+  # numeric matrix of days since 1970-01-01 — the unit
+  # [.cluster_to_centroids()] expects. A plain numeric array (other
+  # fordead versions / datetime-typed coords) is passed through.
   fdd_np <- fdd$to_numpy()
   fdd_r  <- reticulate::py_to_r(fdd_np)
+  dims   <- dim(fdd_r)
+  if (is.null(dims) || length(dims) != 2L) {
+    cli::cli_abort("Unexpected {.fn backward_start} output shape.")
+  }
+  if (is.numeric(fdd_r)) {
+    fdd_mat <- matrix(as.numeric(fdd_r), nrow = dims[1L], ncol = dims[2L])
+  } else {
+    # object-dtype: ISO date strings on confirmed pixels, NaN elsewhere.
+    chr <- vapply(as.vector(fdd_r),
+                  function(x) if (is.character(x) && length(x) == 1L)
+                                x else NA_character_,
+                  character(1))
+    fdd_mat <- matrix(as.numeric(as.Date(chr)),
+                      nrow = dims[1L], ncol = dims[2L])
+  }
 
-  out <- terra::rast(fdd_r,
+  out <- terra::rast(fdd_mat,
                      extent = terra::ext(rast_stack),
                      crs    = terra::crs(rast_stack))
   names(out) <- "first_dieback_date"

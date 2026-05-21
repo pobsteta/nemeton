@@ -1,3 +1,34 @@
+# nemeton 0.41.3 (2026-05-21)
+
+### Fixed — FORDEAD reported "0 alerts" while detecting 32 ha of dieback
+
+A FORDEAD diagnostic run on a real monitoring zone confirmed dieback
+on 3 228 pixels (~32 ha, class `4-sol-nu`) yet inserted **0 alerts**,
+with no warning. Three independent defects combined to swallow the
+result:
+
+- `.compute_first_dieback_date()` reshaped the `ANOMALY_CONFIRMED`
+  layer stack with `array(values, dim = c(n_rows, n_cols, ...))`.
+  `terra::values()` is row-major while `array()` fills column-major,
+  so the `(time, y, x)` cube fed to `fordead.utils.backward_start()`
+  was spatially transposed whenever `n_rows != n_cols` — first-dieback
+  dates landed on the wrong pixels. Each layer is now reshaped with
+  `byrow = TRUE`.
+- `.compute_first_dieback_date()` also assumed `backward_start()`
+  returned a numeric "days since epoch" array. It actually returns an
+  object-dtype array (ISO date strings on confirmed pixels, `NaN`
+  elsewhere), which `terra::rast()` cannot ingest — the step crashed
+  and was caught as a benign best-effort failure. The output is now
+  coerced explicitly to a numeric day-since-1970 matrix.
+- With `first_dieback_date` thus lost, every alert centroid carried
+  `trigger_date = NA`, and `.insert_fordead_alerts()` silently
+  dropped every such row (the column is part of the UNIQUE key).
+  It now emits a `cli_warn` reporting how many alerts were discarded.
+- `run_fordead_dieback()` treated a failed `fordead.utils` import as
+  silent best-effort. It now warns loudly that `trigger_date` cannot
+  be derived and that every detected cluster will be dropped at
+  insertion, pointing at the missing Python dependency.
+
 # nemeton 0.41.2 (2026-05-20)
 
 ### Fixed — Sentinel-2 reprocessing duplicates inflated the cache and FORDEAD
