@@ -55,4 +55,5 @@ THEIA API key — see \code{\link{theia_configure_s3}} and
 href <- theia_signed_href("formspot", year = 2023)
 chm <- terra::rast(href)
 }
+
 }

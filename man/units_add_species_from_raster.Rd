@@ -4,8 +4,12 @@
 \alias{units_add_species_from_raster}
 \title{Add a dominant-species column from a classification raster}
 \usage{
-units_add_species_from_raster(units, species_raster, class_map,
-  species_col = "species")
+units_add_species_from_raster(
+  units,
+  species_raster,
+  class_map,
+  species_col = "species"
+)
 }
 \arguments{
 \item{units}{sf object. Unit geometries to enrich.}
@@ -22,7 +26,7 @@ from the map yield \code{NA}.}
 }
 \value{
 The input \code{units} sf with the species column added
-(or overwritten). Units with no raster coverage get \code{NA}.
+  (or overwritten). Units with no raster coverage get \code{NA}.
 }
 \description{
 Fills a species column on \code{units} from a tree-species

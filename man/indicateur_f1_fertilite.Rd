@@ -55,7 +55,7 @@ polygon layer joined to the UTS → fertility crosswalk shipped in
 \code{inst/extdata/uts_fertilite_fr.csv}.
 }
 \details{
-Four data sources are supported via \code{source}:
+Three data sources are supported via \code{source}:
 \itemize{
   \item \code{"layer"} (default) — read a raster or polygon layer from
     \code{layers}, min-max normalised per call (relative score).
@@ -99,14 +99,5 @@ layers <- nemeton_layers(vectors = list(soil = "rrp_departement.gpkg"))
 results <- indicateur_f1_fertilite(units, layers,
                                    source = "gissol",
                                    rpf_code_col = "UTSDom")
-
-# Theia theia_soil path: texture rasters
-texture <- list(
-  clay = load_raster_source("theia_soil", "FR", path = "clay.tif"),
-  silt = load_raster_source("theia_soil", "FR", path = "silt.tif"),
-  sand = load_raster_source("theia_soil", "FR", path = "sand.tif")
-)
-results <- indicateur_f1_fertilite(units, source = "theia_soil",
-                                   texture = texture)
 }
 }

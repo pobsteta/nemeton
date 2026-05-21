@@ -4,7 +4,13 @@
 \alias{indicateur_c2_ndvi}
 \title{NDVI Mean and Trend Analysis (C2)}
 \usage{
-indicateur_c2_ndvi(units, layers, ndvi_layer = "ndvi", trend = FALSE, fapar = NULL)
+indicateur_c2_ndvi(
+  units,
+  layers,
+  ndvi_layer = "ndvi",
+  trend = FALSE,
+  fapar = NULL
+)
 }
 \arguments{
 \item{units}{nemeton_units object}
@@ -30,7 +36,8 @@ Numeric vector of NDVI mean values (0-1 scale), or list with
 \description{
 Extracts mean NDVI from Sentinel-2 or equivalent satellite imagery.
 Optionally calculates NDVI trend over multiple dates (requires temporal rasters).
-
+}
+\details{
 In FAPAR mode (Theia \code{s2_biophysical}, phase 3a), when a
 FAPAR raster is supplied via \code{fapar}, the per-unit mean
 Fraction of Absorbed Photosynthetically Active Radiation is

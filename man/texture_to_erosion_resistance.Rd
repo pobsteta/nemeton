@@ -12,7 +12,7 @@ contents (any consistent unit — they are renormalised).}
 }
 \value{
 Numeric vector on the 0-100 scale (higher = more resistant
-to erosion).
+  to erosion).
 }
 \description{
 First-pass heuristic converting a soil-texture composition into an

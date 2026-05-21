@@ -37,4 +37,5 @@ items <- stac_search_items(
   bbox = c(6.0, 47.8, 6.3, 48.0), datetime = "2023-01-01/2023-12-31"
 )
 }
+
 }

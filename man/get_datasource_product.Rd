@@ -8,12 +8,12 @@ get_datasource_product(source_key, product, country = "FR")
 }
 \arguments{
 \item{source_key}{Character. The datasource key (e.g.,
-"forms_t").}
+\code{"forms_t"}).}
 
 \item{product}{Character. The sub-product name (e.g.,
-"height").}
+\code{"height"}).}
 
-\item{country}{Character. ISO country code. Default "FR".}
+\item{country}{Character. ISO country code. Default \code{"FR"}.}
 }
 \value{
 A list with the sub-product configuration.

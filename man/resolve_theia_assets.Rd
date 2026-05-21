@@ -2,7 +2,11 @@
 % Please edit documentation in R/theia_stac.R
 \name{resolve_theia_assets}
 \alias{resolve_theia_assets}
-\title{Resolve THEIA datasource assets for an area of interest}
+\title{Looks up a Theia datasource declared in
+\code{inst/datasources/<country>.json} and returns the matching
+asset paths normalised to \code{/vsis3/} so that GDAL reads the
+objects directly from the S3 store (call
+\code{\link{theia_configure_s3}} once first to authenticate).}
 \usage{
 resolve_theia_assets(
   source_key,
@@ -45,16 +49,9 @@ mode. Default \code{50}.}
 }
 \value{
 A character vector of \code{/vsis3/} asset paths (length 1
-in year-targeting mode).
+  in year-targeting mode).
 }
 \description{
-Looks up a Theia datasource declared in
-\code{inst/datasources/<country>.json} and returns the matching
-asset paths normalised to \code{/vsis3/} so that GDAL reads the
-objects directly from the S3 store (call
-\code{\link{theia_configure_s3}} once first to authenticate).
-}
-\details{
 Two access modes:
 \itemize{
   \item \strong{Year targeting} — when \code{year} is supplied and

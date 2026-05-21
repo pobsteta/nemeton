@@ -8,8 +8,8 @@ theia_configure_s3(access_key = NULL, secret_key = NULL, country = "FR")
 }
 \arguments{
 \item{access_key, secret_key}{Character. THEIA S3 credentials.
-When \code{NULL} (default) they are read from \env{TLD_ACCESS_KEY}
-and \env{TLD_SECRET_KEY}.}
+When \code{NULL} (default) they are read from
+\env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY}.}
 
 \item{country}{Character. ISO country code. Default \code{"FR"}.}
 }
@@ -38,4 +38,5 @@ endpoint, region and options are read from the
 theia_configure_s3()
 chm <- load_theia_source("formspot", aoi, asset = "height_2023")
 }
+
 }

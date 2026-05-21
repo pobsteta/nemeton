@@ -27,4 +27,5 @@ time-series collection such as FORMSpoT.
 item <- stac_get_item("https://api.stac.teledetection.fr",
                       "FORMSpoT", "FORMSpoT-2023")
 }
+
 }

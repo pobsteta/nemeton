@@ -65,4 +65,5 @@ the AOI. Two modes:
 # FORMSpoT canopy height for 2023 (signed via the teledetection SDK)
 chm <- load_theia_source("formspot", aoi, year = 2023)
 }
+
 }

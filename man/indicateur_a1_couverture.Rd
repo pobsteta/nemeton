@@ -73,10 +73,6 @@ summary(result$A1)
 
 # Calculate with 500m buffer
 result <- indicateur_a1_couverture(units, land_cover = land_cover, buffer_radius = 500)
-
-# FVC mode (Theia s2_biophysical)
-fvc <- load_raster_source("s2_biophysical", "FR", path = "fvc_2023.tif")
-result <- indicateur_a1_couverture(units, fvc = fvc)
 }
 }
 \seealso{
