@@ -343,3 +343,70 @@ Avant clôture v0.24.0 :
 4. Re-lancement immédiat sur la même zone — domination des événements `s2:scene_cached` dans les logs (AC.13.3).
 
 Ces checks sont aussi listés en spec 008 §13.7 (AC.13.1-13.6).
+
+## Amendement A3 — Persistance du modèle harmonique pour le diagnostic pixel (2026-05-20, cible v0.42.0–v0.43.0)
+
+**Statut** : approuvé (paperwork avant code).
+**Lien** : spec 008 §14, PLAN.md journal 2026-05-20.
+
+### Contexte de l'amendement
+
+La Carte FORDEAD de l'app n'affiche que le masque catégoriel 0-4 ; un clic n'y déclenche rien. La Carte pixel FAST (spec 010), elle, offre un diagnostic au clic — série temporelle NDVI/NBR en modal plotly. Le forestier réclame l'équivalent FORDEAD : voir, pour un pixel flaggé, le **signal CRSWIR observé**, la **courbe du modèle harmonique** et le **seuil d'anomalie** qui a déclenché la détection.
+
+Ces bornes ne peuvent pas être recalculées côté R : ADR-013 §1 fait de FORDEAD la méthode officielle, et l'alternative D (fork / ré-implémentation R) a été explicitement écartée. Les bornes affichées doivent donc être *celles du run FORDEAD réel*. Or le working set FORDEAD (CRSWIR, `coeff_model`, masques) vit dans un `output_dir` temporaire effacé en fin de session — seul le masque 0-4 est persisté (v0.41.0). Sans persistance du modèle harmonique, le diagnostic pixel est impossible.
+
+### Décision
+
+**Persister un bundle diagnostic curé** à la fin du run FORDEAD, et **exposer une API de lecture** qui reconstruit la prédiction harmonique par parité stricte avec FORDEAD.
+
+Justification courte :
+
+- **Fidélité méthodologique** : les bornes proviennent du `coeff_model` réellement fitté par FORDEAD — pas d'une 2ᵉ implémentation. Cohérent avec ADR-013 §1 et le rejet de l'alternative D.
+- **Empreinte maîtrisée** : on ne persiste pas les ~1000 rasters du working set, mais un bundle curé (`coeff_model` 5 bandes, stack CRSWIR masqué, `first_anomaly`, `run_meta.json`) — quelques Mo. `keep_output = TRUE` reste l'option « tout garder ».
+- **Parité par reticulate** : la prédiction est calculée en appelant `fordead.modeling.HarmonicModel` (Python), pas une base harmonique réécrite en R. Zéro risque de dérive.
+- **Best-effort** : la persistance du bundle, comme le persist-hook du masque (v0.41.0), `warn` en cas d'échec mais n'aborte jamais le run.
+
+### Ce que cet amendement modifie dans ADR-013 (post-A2)
+
+| Décision après A2 | Statut après A3 |
+|-------------------|-----------------|
+| §1 Méthode officielle = FORDEAD | ✅ inchangé — A3 renforce le principe : la viz consomme les sorties FORDEAD, ne les recalcule pas. |
+| §2 Stratégie hybride FORDEAD ⨯ rolling-window | ✅ inchangé |
+| §3 G1-G5 (garde-fous, R5, weights) | ✅ inchangé |
+| §4 Architecture reticulate + STAC assembly | 🟨 **complété** : la phase `persist` écrit en plus un bundle modèle ; un nouveau lecteur cœur `read_fordead_pixel_series()` rappelle `fordead.modeling` via reticulate pour la prédiction. Pas de nouvelle phase pipeline (6 phases, A2, inchangé). |
+| §5 Persistance des limites dans code et doc | ✅ inchangé — A3 persiste des *artefacts de run*, distincts des *limites de calibration* figées du §5. |
+| A1 §1 STAC assembly côté R | ✅ inchangé |
+| A2 — signature `con + zone_id + cache_dir`, 6 phases | ✅ inchangé |
+
+### Ce que cet amendement ajoute
+
+- **Un bundle diagnostic persistant** écrit par la phase `persist` sous `<mask_cache_dir>/zone_<id>/model_<run_id>/` : `coeff_model.tif`, `crswir_stack.tif`, `first_anomaly.tif`, `run_meta.json` (cf. spec 008 §14.3). Best-effort.
+- **Une fonction de lecture exportée `read_fordead_pixel_series(con, zone_id, xy, crs, run_id, cache_dir)`** — retourne la série CRSWIR observée + prédite + seuil + flag d'anomalie d'un pixel, sur le modèle de `read_fordead_dieback_mask()` et `extract_pixel_timeseries()` (cf. spec 008 §14.4).
+- **La reconstruction de la prédiction harmonique via reticulate** (`fordead.modeling.HarmonicModel`), garantissant la parité avec le run (cf. spec 008 §14.5).
+- **Tests offline** : ≥ 8 tests (`test-fordead-pixel-series.R`) avec fixture `coeff_model` synthétique.
+
+### Conséquences
+
+**Positives** :
+- La Carte FORDEAD devient un véritable outil de diagnostic, à parité fonctionnelle avec la Carte pixel FAST.
+- Le `coeff_model` persistant ouvre la voie à d'autres usages (re-jeu de `postprocess`, comparaison de pixels, export) sans re-`fit`/`predict`.
+- Les bornes affichées sont auditables : elles sont exactement celles du run, traçables via `run_meta.json`.
+
+**Coûts** :
+- Empreinte disque additionnelle : quelques Mo par run et par zone (le `crswir_stack` domine).
+- Dépendance de la viz à `reticulate` + un venv FORDEAD valide au moment de la lecture (pas seulement au moment du run).
+- 3 sous-livraisons (2 releases cœur + 1 app), cf. spec 008 §14.2.
+
+**Risque résiduel accepté** : la lecture nécessite que le venv `nemeton-fordead` soit disponible côté lecteur (la prédiction harmonique passe par Python). Mitigé : le venv est déjà requis pour exécuter FORDEAD ; si un run a produit le bundle, le venv était présent. `read_fordead_pixel_series()` `warn` + retourne `NULL` proprement si le venv manque.
+
+### Tests de validation de A3
+
+Avant clôture des releases v0.42.0 / v0.43.0 :
+
+1. `Rscript -e 'devtools::test(filter = "fordead")'` → tous tests verts, dont les ≥ 8 nouveaux tests `test-fordead-pixel-series.R`.
+2. Après un run réel (zone Mouthe), `<mask_cache_dir>/zone_<id>/model_<run_id>/` contient les 4 artefacts du bundle (AC.14.1).
+3. `read_fordead_pixel_series()` sur un pixel connu — `crswir_pred` égale (tolérance 1e-6) la prédiction de `fordead.modeling.HarmonicModel` sur les mêmes coefficients (AC.14.2).
+4. Cohérence `anomalie` ⨯ masque 0-4 : un pixel classe ≥ 1 a au moins une date `anomalie = TRUE` (AC.14.4).
+5. Persistance best-effort : `model_dir` non inscriptible → `warn`, run `status = "success"` (AC.14.5).
+
+Ces checks sont aussi listés en spec 008 §14.7 (AC.14.1-14.8).

@@ -734,3 +734,121 @@ nemeton::run_fordead_dieback(
 ```
 
 `Imports: nemeton (>= 0.24.0)` + `Remotes: pobsteta/nemeton@v0.24.0`. Nouvelle clé i18n `monitoring_fordead_phase_ingest` à ajouter (FR `"Téléchargement des scènes"` / EN `"Scene download"`). Tout le wiring toast existant absorbe la nouvelle phase sans modification grâce au design générique de `nemetonshiny@v0.32.0`. Probable release `nemetonshiny@v0.33.0`.
+
+## 14. Amendement v0.42.0 — Diagnostic pixel CRSWIR au clic (Carte FORDEAD)
+
+**Date** : 2026-05-20
+**Statut** : approuvé (paperwork avant code)
+**Concerne** : §3.3 / §12.3 / §13.3 (pipeline `run_fordead_dieback()` — phase `persist`). Ajoute une API de lecture cœur et une interaction app. Garde-fous G1-G5 (§5), indicateur R5 (§7), calibration (§4), workflow QField (§6) — tous inchangés.
+
+### 14.1 Motivation
+
+La Carte FORDEAD (`nemetonshiny::mod_monitoring_fordead_map`) n'affiche aujourd'hui que le raster catégoriel 0-4 du masque de dépérissement. Un clic ne déclenche rien.
+
+Sur la voie rapide, la Carte pixel FAST (spec 010) offre déjà un diagnostic au clic : `observeEvent(input$map_click)` → `nemeton::extract_pixel_timeseries()` → modal plotly de la série NDVI/NBR. C'est l'outil d'investigation « pourquoi ce pixel est-il flaggé ? ».
+
+L'équivalent FORDEAD manque. Le forestier qui voit une tache rouge (classe 3-forte) sur la Carte FORDEAD ne peut pas inspecter le **signal CRSWIR** sous-jacent : sa série observée, la courbe du modèle harmonique fitté sur la période d'entraînement, et le seuil d'anomalie qui a déclenché la détection. C'est pourtant le diagnostic le plus parlant de la méthode FORDEAD (cf. les figures pixel des tutoriels INRAE fordead).
+
+### 14.2 Décision
+
+Ajouter un **diagnostic pixel CRSWIR au clic** sur la Carte FORDEAD, calqué sur le patron Carte pixel FAST. Le graphique superpose :
+
+1. **CRSWIR observé** — la série temporelle masquée (nuage / ombre / sol) telle que FORDEAD l'a vue.
+2. **Prédiction du modèle harmonique** — la courbe saisonnière fittée sur la période d'entraînement.
+3. **Bande de seuil d'anomalie** — l'aire `prédiction → prédiction + threshold_anomaly` ; un CRSWIR observé au-dessus = anomalie (le CRSWIR monte sous stress hydrique).
+4. **Marqueur de première détection** — `vline` à la date de première anomalie confirmée sur ce pixel.
+
+**Contrainte d'architecture** : les bornes affichées doivent provenir du **run FORDEAD réel** (ADR-013 §1 — FORDEAD est la méthode officielle). On **ne re-fitte pas** le modèle côté R. Cela impose de **persister les artefacts du modèle harmonique**, aujourd'hui perdus avec l'`output_dir` temporaire.
+
+Trois sous-livraisons :
+
+- **L1 (cœur, v0.42.0)** — persistance d'un *bundle diagnostic* léger dans la phase `persist`.
+- **L2 (cœur, v0.43.0)** — fonction de lecture exportée `read_fordead_pixel_series()`.
+- **L3 (app, `nemetonshiny`)** — handler de clic + modal plotly sur `mod_monitoring_fordead_map`.
+
+### 14.3 Artefacts persistés — le bundle diagnostic (L1)
+
+Aujourd'hui, seul le masque 0-4 `dieback_mask_<ts>.tif` est persisté (v0.41.0) ; le reste du working set FORDEAD (~1000 rasters) vit dans un `output_dir` temporaire effacé en fin de session, sauf `keep_output = TRUE`.
+
+La phase `persist` écrit en plus, sous `<mask_cache_dir>/zone_<id>/model_<run_id>/` (le `run_id` = timestamp du run, identique à celui du masque) :
+
+| Artefact | Fichier | Contenu |
+|---|---|---|
+| Coefficients harmoniques | `coeff_model.tif` | Raster 5 bandes — les 5 coefficients du `HarmonicModel` fordead par pixel. Empreinte négligeable. |
+| CRSWIR observé masqué | `crswir_stack.tif` | Raster multibande, une bande par date (`terra::time()` posé), valeurs masquées nuage / ombre / sol — tel que FORDEAD l'a modélisé. |
+| Date de première anomalie | `first_anomaly.tif` | Raster 1 bande — date (jours depuis l'époque) de la première anomalie confirmée. |
+| Métadonnées du run | `run_meta.json` | `vegetation_index`, `threshold_anomaly`, `dates_training`, `dates_monitoring`, `run_id`, version fordead, CRS. |
+
+Écriture **best-effort** : un échec `warn` mais n'aborte jamais le run — même contrat que le persist-hook du masque (v0.41.0). Empreinte attendue sur une AOI de monitoring : quelques Mo (`coeff_model` négligeable, `crswir_stack` ≈ N dates × petit raster).
+
+`keep_output = TRUE` reste l'échappatoire « tout garder » ; le bundle curé est le chemin nominal toujours actif.
+
+### 14.4 API cœur — `read_fordead_pixel_series()` (L2)
+
+```r
+read_fordead_pixel_series(
+  con,                         # DBI — réservé (lien run↔projet futur)
+  zone_id,
+  xy,                          # numeric(2) — coordonnées du pixel cliqué
+  crs       = 4326,            # EPSG d'origine de xy (convention leaflet)
+  run_id    = NULL,            # NULL → run le plus récent
+  cache_dir                    # racine cache projet (cf. read_fordead_dieback_mask)
+)
+```
+
+**Retour** : `data.frame` trié par `obs_date`, colonnes :
+
+| Colonne | Type | Description |
+|---|---|---|
+| `obs_date` | Date | Date d'observation. |
+| `crswir_obs` | numeric | CRSWIR observé masqué (NA si date masquée — conservé, pas filtré). |
+| `crswir_pred` | numeric | CRSWIR prédit par le modèle harmonique. |
+| `seuil_haut` | numeric | `crswir_pred + threshold_anomaly`. |
+| `anomalie` | logical | `crswir_obs > seuil_haut`. |
+
+Attributs portés sur le `data.frame` : `threshold_anomaly`, `premiere_detection` (Date ou `NA`), `dans_zone_validite` (logical, via `check_fordead_validity()`), `vegetation_index`.
+
+Conventions de chemin et de sélection `run_id` alignées sur `read_fordead_dieback_mask()` (v0.25.0). Retourne `NULL` proprement si aucun run trouvé ou pixel hors emprise. Modelée sur `extract_pixel_timeseries()` (spec 010 §4.4).
+
+### 14.5 Reconstruction de la prédiction harmonique — parité FORDEAD
+
+`crswir_pred` doit être **identique** à ce que FORDEAD calcule en interne. La prédiction = `(coeff_model · termes_harmoniques(date)).sum()`, où `termes_harmoniques` est la base 5-termes de `fordead.modeling.compute_HarmonicTerms`.
+
+**Décision D3** : ne PAS réimplémenter la base harmonique en R. `read_fordead_pixel_series()` appelle, via `reticulate`, `fordead.modeling.HarmonicModel` (ou directement `compute_HarmonicTerms` / `dates_to_days`) sur les coefficients lus au pixel. Garantit la parité bit-à-bit avec le run et évite la dérive d'une 2ᵉ implémentation (cf. ADR-013 alternative D — fork R écarté). `reticulate` est déjà en `Suggests` (FORDEAD).
+
+### 14.6 Pipeline persist amendé
+
+`run_fordead_dieback()` — la phase `persist` (la dernière) gagne, après l'écriture du masque 0-4 :
+
+```
+PHASE 5 — persist
+  ├─ écrit dieback_mask_<run_id>.tif        (v0.41.0, inchangé)
+  └─ écrit model_<run_id>/                  (NOUVEAU — L1)
+       ├─ coeff_model.tif
+       ├─ crswir_stack.tif
+       ├─ first_anomaly.tif
+       └─ run_meta.json
+```
+
+Pas de nouvelle phase, pas de changement de signature, pas de nouvel événement `progress_callback`. Le résultat de `run_fordead_dieback()` gagne `rasters$model_dir` (chemin du bundle, ou `NA_character_` si l'écriture a échoué).
+
+### 14.7 Critères d'acceptation
+
+- [ ] **AC.14.1** — Après `run_fordead_dieback()`, `<mask_cache_dir>/zone_<id>/model_<run_id>/` contient les 4 artefacts (§14.3).
+- [ ] **AC.14.2** — `read_fordead_pixel_series()` sur un pixel connu retourne un `data.frame` au schéma §14.4 ; `crswir_pred` égale (tolérance 1e-6) la prédiction de `fordead.modeling.HarmonicModel` sur les mêmes coefficients.
+- [ ] **AC.14.3** — `read_fordead_pixel_series()` retourne `NULL` sans erreur si aucun run / pixel hors emprise.
+- [ ] **AC.14.4** — La colonne `anomalie` est cohérente avec le masque 0-4 (un pixel classe ≥ 1 a au moins une date `anomalie = TRUE`).
+- [ ] **AC.14.5** — Persistance best-effort : un `model_dir` non inscriptible `warn` mais le run termine `status = "success"`.
+- [ ] **AC.14.6** — `read_fordead_pixel_series()` exporté + roxygen complet ; ≥ 8 tests offline (`test-fordead-pixel-series.R`) avec fixture `coeff_model` synthétique.
+- [ ] **AC.14.7** — `devtools::check()` sans nouveau ERROR / WARNING / NOTE.
+- [ ] **AC.14.8** — Doc : NEWS.md, PLAN.md journal, spec 008 §14 (ce document), ADR-013 amendement A3.
+
+### 14.8 Migration / intégration côté app `nemetonshiny` (L3 — pour mémoire, hors repo cœur)
+
+`mod_monitoring_fordead_map.R` gagne :
+
+- `observeEvent(input$map_click)` → `nemeton::read_fordead_pixel_series(con, zone_id, xy = c(lng, lat), cache_dir = ...)` → `showModal` + `plotlyOutput`.
+- Graphique plotly : `crswir_obs` (points), `crswir_pred` (ligne), bande `seuil_haut` (aire remplie), `vline` à `premiere_detection`. Bannière d'avertissement si `dans_zone_validite = FALSE`.
+- Patron strictement calqué sur le modal de `mod_monitoring_pixel_map.R` (lignes 669-754).
+- Nouvelles clés i18n FR/EN : `monitoring_fordead_pixel_modal_title_fmt`, `monitoring_fordead_crswir_observed`, `monitoring_fordead_crswir_model`, `monitoring_fordead_anomaly_band`, `monitoring_fordead_first_detection`, `monitoring_fordead_outside_validity`.
+- `Imports: nemeton (>= 0.43.0)`. Release probable `nemetonshiny@vX.Y.0`.
