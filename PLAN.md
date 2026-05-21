@@ -41,7 +41,7 @@ la Carte pixel FAST. Trois sous-livraisons (spec 008 §14.2) :
 
 | État | Sous-chantier | Release |
 |------|---------------|---------|
-| 🟨 | L1 — bundle diagnostic persistant | v0.42.0 |
+| ✅ | L1 — bundle diagnostic persistant | v0.42.0 (2026-05-21) |
 | ⬜ | L2 — `read_fordead_pixel_series()` | v0.43.0 |
 | ⬜ | L3 — modal plotly (nemetonshiny) | app |
 
@@ -51,14 +51,15 @@ observé dans `<output_dir>/CRSWIR/fordead_<date>_CRSWIR.tif` (163 dates), les
 masques pixel dans `<output_dir>/INVALID_PIXEL_MASK/`. `first_anomaly` est le
 raster déjà dérivé par `.compute_first_dieback_date()`.
 
-**L1 — code livré (2026-05-21, en attente de release v0.42.0)** :
+**L1 — livré (release v0.42.0, 2026-05-21)** :
 helpers `.build_crswir_masked_stack()` + `.write_fordead_model_bundle()`
 (`fordead_outputs.R`), appelés en phase `persist` de `run_fordead_dieback()` ;
 résultat enrichi de `rasters$model_dir`. Best-effort. Tests : `test-fordead-outputs.R`
 41 ✔ (8 neufs), `test-fordead-pipeline.R` 69 ✔ (bundle + best-effort AC.14.5).
 
-**Prochaine étape** : pousser la release v0.42.0, puis attaquer L2
-(`read_fordead_pixel_series()`, v0.43.0).
+**Prochaine étape** : L2 — `read_fordead_pixel_series()` (v0.43.0) :
+reconstruction de la prédiction harmonique via reticulate
+(`fordead.modeling.HarmonicModel`), lecture du bundle persisté par L1.
 
 ---
 
@@ -298,6 +299,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-21** — Release **v0.42.0** (feat — bundle diagnostic FORDEAD persistant, spec 008 §14 L1). Démarrage du chantier « Diagnostic pixel CRSWIR » (ADR-013 amendement A3). L1 rend la Carte FORDEAD diagnosable au clic en persistant les artefacts du modèle harmonique, aujourd'hui perdus avec l'`output_dir` temporaire. La phase `persist` de `run_fordead_dieback()` écrit, en plus du masque 0-4, un bundle curé sous `<mask_cache_dir>/zone_<id>/model_<run_id>/` : `coeff_model.tif` (raster 5 bandes = les coefficients harmoniques, copie de `fit/model.tif`), `crswir_stack.tif` (CRSWIR observé multibande, une bande par date avec `terra::time()`, masqué par `INVALID_PIXEL_MASK` nuage/ombre/sol), `first_anomaly.tif` (date de première anomalie confirmée), `run_meta.json` (calibration + provenance). Deux helpers internes neufs dans `fordead_outputs.R` : `.build_crswir_masked_stack()` et `.write_fordead_model_bundle()`. Layout FORDEAD 2.x confirmé sur le run réel de la zone villards (`fit/model.tif` 5 bandes, `CRSWIR/` 163 dates, `INVALID_PIXEL_MASK/` 163 dates). Résultat de `run_fordead_dieback()` enrichi de `rasters$model_dir` (ou `NA_character_` si l'écriture échoue). Écriture **best-effort** comme le persist-hook du masque (v0.41.0) : un échec `warn` mais n'aborte jamais le run — pas de nouvelle phase, pas de changement de signature. Tests : `test-fordead-outputs.R` 41 ✔ (8 neufs — fixture FORDEAD synthétique, AC.14.1 les 4 artefacts, masquage des pixels invalides, `run_meta.json` round-trip, abort si `fit/model.tif` manquant) ; `test-fordead-pipeline.R` 69 ✔ (`model_dir` câblé dans le résultat + AC.14.5 best-effort : échec de bundle → `warn`, run `status = "success"`). `devtools::check()` sans *nouveau* ERROR/WARNING/NOTE (l'ERROR `test-sentinel2.R:135` et les NOTES `setNames`/Rd/CITATION sont préexistants, hors chantier). L2 (`read_fordead_pixel_series()`) suit en v0.43.0.
 
 - **2026-05-21** — Release **v0.41.3** (fix — FORDEAD rapportait « 0 alertes » alors qu'il détectait 32 ha de dépérissement). L'utilisateur signale un run FORDEAD terminé « 0 alertes insérées en 49605 s » sur la zone villards. Investigation : le masque catégoriel persisté contenait pourtant **3 228 pixels classe 4-sol-nu (≈32 ha)** — le pipeline avait bien détecté du dépérissement. **Trois défauts indépendants** se combinaient pour faire disparaître le résultat sans le moindre avertissement. (1) `.compute_first_dieback_date()` (`fordead_outputs.R`) reshapait la pile `ANOMALY_CONFIRMED` via `array(values, dim = c(n_rows, n_cols, …))` : `terra::values()` est *row-major* alors que `array()` remplit *column-major* → le cube `(time, y, x)` passé à `fordead.utils.backward_start()` était transposé y/x dès que `n_rows ≠ n_cols` (ici 192 ≠ 129), les dates de premier dépérissement atterrissaient sur les mauvais pixels ; corrigé par un reshape couche par couche `byrow = TRUE`. (2) la même fonction supposait que `backward_start()` renvoie un tableau numérique « jours depuis epoch » ; il renvoie en réalité un tableau *object-dtype* (chaînes de dates ISO sur les pixels confirmés, `NaN` ailleurs) que `terra::rast()` ne peut pas ingérer → l'étape plantait, attrapée comme un échec best-effort bénin ; corrigé par une coercition explicite en matrice numérique de jours-depuis-1970. (3) `first_dieback_date` ainsi perdu, tous les centroïdes d'alerte portaient `trigger_date = NA`, et `.insert_fordead_alerts()` (`fordead_postprocess.R`) écartait silencieusement chaque ligne concernée (colonne de la clé UNIQUE) → désormais un `cli_warn` rapporte le nombre d'alertes jetées. En complément, `run_fordead_dieback()` (`fordead_pipeline.R`) traitait l'échec d'import `fordead.utils` comme un best-effort silencieux → il avertit maintenant explicitement que `trigger_date` ne pourra pas être dérivé et que tout cluster sera perdu à l'insertion, en pointant la dépendance Python manquante (`geocube`). **Validation terrain end-to-end** : `geocube` installé dans le venv `nemeton-fordead`, postprocess relancé sur les rasters survivants (sans refaire les 13 h de fit/predict) → **24 alertes `fordead_dieback` classe 4-sol-nu** (déclenchements 2018-06-02 → 2019-08-31, ≈32 ha) **persistées dans le Postgres de production** (zone villards id 1, 155 placettes). Première validation terrain complète du pipeline de suivi sanitaire. Tests : `fordead-pipeline` 65 ✔, `fordead-postprocess` 56 ✔, `fordead-outputs` 20 ✔, `fordead-integration` 2 skip.
 
