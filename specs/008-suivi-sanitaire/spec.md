@@ -834,14 +834,14 @@ Pas de nouvelle phase, pas de changement de signature, pas de nouvel événement
 
 ### 14.7 Critères d'acceptation
 
-- [ ] **AC.14.1** — Après `run_fordead_dieback()`, `<mask_cache_dir>/zone_<id>/model_<run_id>/` contient les 4 artefacts (§14.3).
-- [ ] **AC.14.2** — `read_fordead_pixel_series()` sur un pixel connu retourne un `data.frame` au schéma §14.4 ; `crswir_pred` égale (tolérance 1e-6) la prédiction de `fordead.modeling.HarmonicModel` sur les mêmes coefficients.
-- [ ] **AC.14.3** — `read_fordead_pixel_series()` retourne `NULL` sans erreur si aucun run / pixel hors emprise.
-- [ ] **AC.14.4** — La colonne `anomalie` est cohérente avec le masque 0-4 (un pixel classe ≥ 1 a au moins une date `anomalie = TRUE`).
-- [ ] **AC.14.5** — Persistance best-effort : un `model_dir` non inscriptible `warn` mais le run termine `status = "success"`.
-- [ ] **AC.14.6** — `read_fordead_pixel_series()` exporté + roxygen complet ; ≥ 8 tests offline (`test-fordead-pixel-series.R`) avec fixture `coeff_model` synthétique.
-- [ ] **AC.14.7** — `devtools::check()` sans nouveau ERROR / WARNING / NOTE.
-- [ ] **AC.14.8** — Doc : NEWS.md, PLAN.md journal, spec 008 §14 (ce document), ADR-013 amendement A3.
+- [x] **AC.14.1** — Après `run_fordead_dieback()`, `<mask_cache_dir>/zone_<id>/model_<run_id>/` contient les 4 artefacts (§14.3). *(L1, v0.42.0)*
+- [x] **AC.14.2** — `read_fordead_pixel_series()` retourne un `data.frame` au schéma §14.4 ; `crswir_pred` égale (tolérance 1e-6) la prédiction de `fordead.modeling` (`compute_HarmonicTerms`) sur les mêmes coefficients. *(L2, v0.43.0 — test parité testé contre le venv réel)*
+- [x] **AC.14.3** — `read_fordead_pixel_series()` retourne `NULL` sans erreur si aucun run / pixel hors emprise / venv absent. *(L2, v0.43.0)*
+- [ ] **AC.14.4** — La colonne `anomalie` est cohérente avec le masque 0-4 (un pixel classe ≥ 1 a au moins une date `anomalie = TRUE`). *(propriété d'intégration — à vérifier sur un run réel ; la logique `anomalie = crswir_obs > seuil_haut` est en place et testée unitairement)*
+- [x] **AC.14.5** — Persistance best-effort : un `model_dir` non inscriptible `warn` mais le run termine `status = "success"`. *(L1, v0.42.0)*
+- [x] **AC.14.6** — `read_fordead_pixel_series()` exporté + roxygen complet ; ≥ 8 tests offline (`test-fordead-pixel-series.R`, 13 blocs / 32 assertions) avec fixture bundle synthétique. *(L2, v0.43.0)*
+- [x] **AC.14.7** — `devtools::check()` sans nouveau ERROR / WARNING / NOTE. *(v0.42.0 + v0.43.0)*
+- [x] **AC.14.8** — Doc : NEWS.md, PLAN.md journal, spec 008 §14 (ce document), ADR-013 amendement A3.
 
 ### 14.8 Migration / intégration côté app `nemetonshiny` (L3 — pour mémoire, hors repo cœur)
 

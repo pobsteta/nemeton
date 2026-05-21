@@ -1,3 +1,34 @@
+# nemeton 0.43.0 (2026-05-21)
+
+### Added — `read_fordead_pixel_series()`: CRSWIR pixel diagnostic (spec 008 §14, L2)
+
+Reader side of the FORDEAD diagnostic bundle (L1, v0.42.0). The new
+exported `read_fordead_pixel_series(con, zone_id, xy, crs, run_id,
+cache_dir)` returns, for a clicked pixel, the time series behind a
+FORDEAD detection — the data the upcoming click-to-diagnose plot of
+the FORDEAD map needs:
+
+- `crswir_obs` — the observed (cloud / shadow / soil masked) CRSWIR;
+- `crswir_pred` — the harmonic-model prediction;
+- `seuil_haut` — the anomaly threshold band (`pred + threshold`);
+- `anomalie` — the per-date anomaly flag.
+
+The data frame also carries `threshold_anomaly`, `premiere_detection`,
+`dans_zone_validite` (guard-rail G3) and `vegetation_index` as
+attributes.
+
+Per ADR-013 amendment A3 (decision D3), the harmonic basis is **not**
+re-implemented in R: `crswir_pred` is rebuilt from
+`fordead.modeling.compute_HarmonicTerms` via \pkg{reticulate}, which
+guarantees bit-level parity with the run that produced the bundle. A
+parity test (AC.14.2) checks this against `fordead.modeling` within
+`1e-6`. The function returns `NULL` cleanly — no error — when no
+bundle is found, the pixel is outside the modelled extent, or the
+FORDEAD Python environment is unavailable.
+
+New file `R/fordead_pixel_series.R`; ≥ 13 offline tests in
+`test-fordead-pixel-series.R` with a synthetic bundle fixture.
+
 # nemeton 0.42.0 (2026-05-21)
 
 ### Added — FORDEAD diagnostic bundle persisted for pixel diagnostics (spec 008 §14, L1)

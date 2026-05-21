@@ -42,7 +42,7 @@ la Carte pixel FAST. Trois sous-livraisons (spec 008 §14.2) :
 | État | Sous-chantier | Release |
 |------|---------------|---------|
 | ✅ | L1 — bundle diagnostic persistant | v0.42.0 (2026-05-21) |
-| ⬜ | L2 — `read_fordead_pixel_series()` | v0.43.0 |
+| ✅ | L2 — `read_fordead_pixel_series()` | v0.43.0 (2026-05-21) |
 | ⬜ | L3 — modal plotly (nemetonshiny) | app |
 
 **Layout FORDEAD 2.x confirmé** (run réel zone villards) : les coefficients
@@ -57,9 +57,21 @@ helpers `.build_crswir_masked_stack()` + `.write_fordead_model_bundle()`
 résultat enrichi de `rasters$model_dir`. Best-effort. Tests : `test-fordead-outputs.R`
 41 ✔ (8 neufs), `test-fordead-pipeline.R` 69 ✔ (bundle + best-effort AC.14.5).
 
-**Prochaine étape** : L2 — `read_fordead_pixel_series()` (v0.43.0) :
-reconstruction de la prédiction harmonique via reticulate
-(`fordead.modeling.HarmonicModel`), lecture du bundle persisté par L1.
+**L2 — livré (release v0.43.0, 2026-05-21)** : fonction exportée
+`read_fordead_pixel_series(con, zone_id, xy, crs, run_id, cache_dir)` —
+lit le bundle L1, extrait le pixel cliqué, reconstruit la prédiction
+harmonique via `fordead.modeling.compute_HarmonicTerms` (reticulate,
+décision D3 — parité bit-à-bit, `dates_to_days` recalculé en R car
+simple soustraction depuis `REF_DAY = 2015-01-01`). Nouveau fichier
+`R/fordead_pixel_series.R` (+ helpers `.locate_fordead_model_bundle()`,
+`.crswir_stack_dates()`, `.fordead_harmonic_predict()`). Tests :
+`test-fordead-pixel-series.R` 32 ✔ (13 blocs, fixture bundle
+synthétique, prédiction mockée pour l'offline ; parité AC.14.2 testée
+contre le venv réel, tolérance 1e-6).
+
+**Prochaine étape** : L3 — handler de clic + modal plotly sur
+`mod_monitoring_fordead_map` (côté `nemetonshiny`, hors repo cœur).
+Le chantier « Diagnostic pixel CRSWIR » est clos côté cœur.
 
 ---
 
@@ -299,6 +311,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 ---
 
 ## Journal
+
+- **2026-05-21** — Release **v0.43.0** (feat — `read_fordead_pixel_series()`, diagnostic pixel CRSWIR, spec 008 §14 L2). Clôture côté cœur du chantier « Diagnostic pixel CRSWIR » (ADR-013 amendement A3). L2 est le côté lecture du bundle persisté par L1 : la nouvelle fonction exportée `read_fordead_pixel_series(con, zone_id, xy, crs = 4326, run_id = NULL, cache_dir)` retourne, pour un pixel cliqué, le `data.frame` trié par `obs_date` avec `crswir_obs` (CRSWIR observé masqué), `crswir_pred` (prédiction du modèle harmonique), `seuil_haut` (`crswir_pred + threshold_anomaly`) et `anomalie` (`crswir_obs > seuil_haut`) ; attributs `threshold_anomaly`, `premiere_detection`, `dans_zone_validite` (garde-fou G3 via `check_fordead_validity()` sur la cellule du pixel), `vegetation_index`. Conventions de chemin et de sélection `run_id` calquées sur `read_fordead_dieback_mask()` (`<cache_dir>/zone_<id>/model_<run_id>/`, plus récent si `run_id = NULL`). **Décision D3 (ADR-013 A3)** : la base harmonique n'est PAS réimplémentée en R — `crswir_pred` est reconstruit via `fordead.modeling.compute_HarmonicTerms` (base 5 termes `[1, sin, cos, sin2, cos2]`, période 365.25) appelée par reticulate, garantissant la parité bit-à-bit avec le run ; seul `dates_to_days` (soustraction depuis `REF_DAY = 2015-01-01`) est fait côté R. Dégradation propre : `read_fordead_pixel_series()` retourne `NULL` sans erreur si aucun bundle, pixel hors emprise/non modélisé, ou venv FORDEAD indisponible (risque résiduel accepté en ADR-013 A3). Nouveau fichier `R/fordead_pixel_series.R` (fonction exportée + helpers internes `.locate_fordead_model_bundle()`, `.crswir_stack_dates()`, `.fordead_harmonic_predict()`). Tests : `test-fordead-pixel-series.R` 32 ✔ sur 13 blocs `test_that` (fixture bundle synthétique, prédiction harmonique mockée pour l'offline — AC.14.6 ; AC.14.2 parité testée contre le venv réel à 1e-6 ; AC.14.3 `NULL` propre hors emprise / sans run ; schéma du `data.frame`, calcul `seuil_haut`/`anomalie`, attributs, sélection `run_id`). Aucune régression sur la suite FORDEAD (les 6 échecs `test-fordead-python.R`/`stac.R` restent préexistants). Reste L3 (modal plotly) côté `nemetonshiny`.
 
 - **2026-05-21** — Release **v0.42.0** (feat — bundle diagnostic FORDEAD persistant, spec 008 §14 L1). Démarrage du chantier « Diagnostic pixel CRSWIR » (ADR-013 amendement A3). L1 rend la Carte FORDEAD diagnosable au clic en persistant les artefacts du modèle harmonique, aujourd'hui perdus avec l'`output_dir` temporaire. La phase `persist` de `run_fordead_dieback()` écrit, en plus du masque 0-4, un bundle curé sous `<mask_cache_dir>/zone_<id>/model_<run_id>/` : `coeff_model.tif` (raster 5 bandes = les coefficients harmoniques, copie de `fit/model.tif`), `crswir_stack.tif` (CRSWIR observé multibande, une bande par date avec `terra::time()`, masqué par `INVALID_PIXEL_MASK` nuage/ombre/sol), `first_anomaly.tif` (date de première anomalie confirmée), `run_meta.json` (calibration + provenance). Deux helpers internes neufs dans `fordead_outputs.R` : `.build_crswir_masked_stack()` et `.write_fordead_model_bundle()`. Layout FORDEAD 2.x confirmé sur le run réel de la zone villards (`fit/model.tif` 5 bandes, `CRSWIR/` 163 dates, `INVALID_PIXEL_MASK/` 163 dates). Résultat de `run_fordead_dieback()` enrichi de `rasters$model_dir` (ou `NA_character_` si l'écriture échoue). Écriture **best-effort** comme le persist-hook du masque (v0.41.0) : un échec `warn` mais n'aborte jamais le run — pas de nouvelle phase, pas de changement de signature. Tests : `test-fordead-outputs.R` 41 ✔ (8 neufs — fixture FORDEAD synthétique, AC.14.1 les 4 artefacts, masquage des pixels invalides, `run_meta.json` round-trip, abort si `fit/model.tif` manquant) ; `test-fordead-pipeline.R` 69 ✔ (`model_dir` câblé dans le résultat + AC.14.5 best-effort : échec de bundle → `warn`, run `status = "success"`). `devtools::check()` sans *nouveau* ERROR/WARNING/NOTE (l'ERROR `test-sentinel2.R:135` et les NOTES `setNames`/Rd/CITATION sont préexistants, hors chantier). L2 (`read_fordead_pixel_series()`) suit en v0.43.0.
 
