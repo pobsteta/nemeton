@@ -171,7 +171,8 @@ NULL
     rasters           = list(state = NA_character_,
                              first_dieback_date = NA_character_,
                              stress_index = NA_character_,
-                             dieback_mask = NA_character_),
+                             dieback_mask = NA_character_,
+                             model_dir = NA_character_),
     alerts_sf         = NULL,
     n_alerts_inserted = 0L,
     duration_sec      = duration_sec,
@@ -210,9 +211,12 @@ NULL
 #'     derive a 0-4 confidence-class raster from the 2.x layers, run
 #'     `terra::patches()` 8-neighbour, build cluster centroids with
 #'     `confidence_class`, `stress_index`, `trigger_date`, `n_pixels`.
-#'   \item **persist** — snap centroids to the nearest registered plot
-#'     of the zone and insert them via [.insert_fordead_alerts()]
-#'     (idempotent `ON CONFLICT DO NOTHING`).
+#'   \item **persist** — write the categorical 0-4 dieback mask and
+#'     the diagnostic bundle (`model_<run_id>/`: harmonic coefficients,
+#'     masked CRSWIR stack, first-anomaly date, `run_meta.json` — spec
+#'     008 §14.3) to the project cache, then snap centroids to the
+#'     nearest registered plot of the zone and insert them via
+#'     [.insert_fordead_alerts()] (idempotent `ON CONFLICT DO NOTHING`).
 #' }
 #'
 #' Calibration is frozen on the ONF/DSF reference values
@@ -303,10 +307,12 @@ NULL
 #'     \item{zone_id}{The zone id that was processed.}
 #'     \item{n_scenes}{Number of scenes considered.}
 #'     \item{rasters}{Named list of GeoTIFF paths (`state`,
-#'       `first_dieback_date`, `stress_index`, `dieback_mask`).
-#'       `dieback_mask` is the persisted categorical 0-4 raster
-#'       under `mask_cache_dir` (or `NA_character_` when the
-#'       mask could not be written).}
+#'       `first_dieback_date`, `stress_index`, `dieback_mask`,
+#'       `model_dir`). `dieback_mask` is the persisted categorical
+#'       0-4 raster under `mask_cache_dir` (or `NA_character_` when
+#'       the mask could not be written). `model_dir` is the diagnostic
+#'       bundle directory `model_<run_id>/` (spec 008 §14.3), or
+#'       `NA_character_` when the bundle could not be written.}
 #'     \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
 #'       centroids (in EPSG:2154), or `NULL` when no anomaly was
 #'       detected.}
@@ -629,7 +635,8 @@ run_fordead_dieback <- function(con,
       state              = .latest_layer_file(output_dir, "ANOMALY_CONFIRMED"),
       first_dieback_date = NA_character_,  # in-memory, not persisted
       stress_index       = .latest_layer_file(output_dir, "ANOMALY_INDEX"),
-      dieback_mask       = NA_character_   # set in the persist phase
+      dieback_mask       = NA_character_,  # set in the persist phase
+      model_dir          = NA_character_   # set in the persist phase
     )
 
     # 4. postprocess (1.x helper reused — input shape unchanged)
@@ -680,6 +687,40 @@ run_fordead_dieback <- function(con,
         NA_character_
       })
     }
+
+    # Persist the diagnostic bundle (spec 008 §14.3, L1): harmonic
+    # coefficients + masked CRSWIR stack + first-anomaly date +
+    # run_meta, under <zone_dir>/model_<run_id>/. Feeds the future
+    # read_fordead_pixel_series() (L2). Best-effort — same contract as
+    # the dieback mask above: a failure warns but never aborts.
+    rasters$model_dir <- tryCatch({
+      crs_epsg <- if (inherits(state_raster, "SpatRaster")) {
+        suppressWarnings(as.integer(
+          terra::crs(state_raster, describe = TRUE)$code))
+      } else NA_integer_
+      .write_fordead_model_bundle(
+        output_dir    = output_dir,
+        model_dir     = file.path(zone_dir, paste0("model_", run_ts)),
+        first_anomaly = fdd_raster,
+        run_meta      = list(
+          run_id            = run_ts,
+          zone_id           = zone_id,
+          vegetation_index  = vegetation_index,
+          threshold_anomaly = threshold_anomaly,
+          dates_training    = as.character(dates_training),
+          dates_monitoring  = as.character(dates_monitoring),
+          fordead_version   = fordead_version,
+          crs_epsg          = crs_epsg,
+          n_scenes          = nrow(scenes_df)
+        ),
+        verbose       = verbose
+      )
+    }, error = function(e) {
+      cli::cli_alert_warning(
+        "FORDEAD model bundle persist failed: {conditionMessage(e)}"
+      )
+      NA_character_
+    })
 
     if (!is.null(alerts_sf)) {
       n_inserted <- .insert_fordead_alerts(con, alerts_sf,

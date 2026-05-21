@@ -117,10 +117,12 @@ A list with the following fields:
     \item{zone_id}{The zone id that was processed.}
     \item{n_scenes}{Number of scenes considered.}
     \item{rasters}{Named list of GeoTIFF paths (`state`,
-      `first_dieback_date`, `stress_index`, `dieback_mask`).
-      `dieback_mask` is the persisted categorical 0-4 raster
-      under `mask_cache_dir` (or `NA_character_` when the
-      mask could not be written).}
+      `first_dieback_date`, `stress_index`, `dieback_mask`,
+      `model_dir`). `dieback_mask` is the persisted categorical
+      0-4 raster under `mask_cache_dir` (or `NA_character_` when
+      the mask could not be written). `model_dir` is the diagnostic
+      bundle directory `model_<run_id>/` (spec 008 §14.3), or
+      `NA_character_` when the bundle could not be written.}
     \item{alerts_sf}{An sf POINT layer of FORDEAD cluster
       centroids (in EPSG:2154), or `NULL` when no anomaly was
       detected.}
@@ -159,9 +161,12 @@ STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
     derive a 0-4 confidence-class raster from the 2.x layers, run
     `terra::patches()` 8-neighbour, build cluster centroids with
     `confidence_class`, `stress_index`, `trigger_date`, `n_pixels`.
-  \item **persist** — snap centroids to the nearest registered plot
-    of the zone and insert them via [.insert_fordead_alerts()]
-    (idempotent `ON CONFLICT DO NOTHING`).
+  \item **persist** — write the categorical 0-4 dieback mask and
+    the diagnostic bundle (`model_<run_id>/`: harmonic coefficients,
+    masked CRSWIR stack, first-anomaly date, `run_meta.json` — spec
+    008 §14.3) to the project cache, then snap centroids to the
+    nearest registered plot of the zone and insert them via
+    [.insert_fordead_alerts()] (idempotent `ON CONFLICT DO NOTHING`).
 }
 
 Calibration is frozen on the ONF/DSF reference values

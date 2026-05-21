@@ -23,6 +23,45 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
+# Chantier en cours — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
+
+**Démarré** : 2026-05-21. **Cible** : v0.42.0 (L1) puis v0.43.0 (L2).
+**Objectif** : rendre la Carte FORDEAD diagnostique au clic, à parité avec
+la Carte pixel FAST. Trois sous-livraisons (spec 008 §14.2) :
+
+- **L1 — cœur, v0.42.0** : la phase `persist` de `run_fordead_dieback()`
+  écrit un *bundle diagnostic* curé sous `<mask_cache_dir>/zone_<id>/model_<run_id>/`
+  (`coeff_model.tif`, `crswir_stack.tif`, `first_anomaly.tif`,
+  `run_meta.json`). Best-effort. Résultat enrichi de `rasters$model_dir`.
+- **L2 — cœur, v0.43.0** : fonction exportée `read_fordead_pixel_series()`
+  reconstruisant la prédiction harmonique via reticulate (`fordead.modeling`).
+- **L3 — app `nemetonshiny`** : handler de clic + modal plotly.
+
+## Avancement du chantier
+
+| État | Sous-chantier | Release |
+|------|---------------|---------|
+| 🟨 | L1 — bundle diagnostic persistant | v0.42.0 |
+| ⬜ | L2 — `read_fordead_pixel_series()` | v0.43.0 |
+| ⬜ | L3 — modal plotly (nemetonshiny) | app |
+
+**Layout FORDEAD 2.x confirmé** (run réel zone villards) : les coefficients
+harmoniques vivent dans `<output_dir>/fit/model.tif` (5 bandes), le CRSWIR
+observé dans `<output_dir>/CRSWIR/fordead_<date>_CRSWIR.tif` (163 dates), les
+masques pixel dans `<output_dir>/INVALID_PIXEL_MASK/`. `first_anomaly` est le
+raster déjà dérivé par `.compute_first_dieback_date()`.
+
+**L1 — code livré (2026-05-21, en attente de release v0.42.0)** :
+helpers `.build_crswir_masked_stack()` + `.write_fordead_model_bundle()`
+(`fordead_outputs.R`), appelés en phase `persist` de `run_fordead_dieback()` ;
+résultat enrichi de `rasters$model_dir`. Best-effort. Tests : `test-fordead-outputs.R`
+41 ✔ (8 neufs), `test-fordead-pipeline.R` 69 ✔ (bundle + best-effort AC.14.5).
+
+**Prochaine étape** : pousser la release v0.42.0, puis attaquer L2
+(`read_fordead_pixel_series()`, v0.43.0).
+
+---
+
 # Chantier clos — Sources de données Theia (catalogue DATA TERRA)
 
 **Démarré** : 2026-05-20. **Clôturé** : 2026-05-20 (release v0.35.0).

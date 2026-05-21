@@ -188,3 +188,152 @@ test_that(".compute_first_dieback_date returns NULL when no layer present", {
   )
   expect_null(out)
 })
+
+
+# ---- diagnostic bundle (spec 008 §14.3, L1) --------------------------
+
+# Build a synthetic FordeadProcess output dir: a 5-band fit/model.tif,
+# `n` dated CRSWIR rasters and their INVALID_PIXEL_MASK counterparts.
+# Pixel (1,1) is flagged invalid on the first date so masking can be
+# asserted. Returns the output dir path and the dates used.
+.make_fake_fordead_src <- function(n = 3L, with_masks = TRUE,
+                                   with_model = TRUE) {
+  d <- withr::local_tempdir(.local_envir = parent.frame())
+  dates <- seq(as.Date("2019-01-01"), by = "30 days", length.out = n)
+  tmpl  <- terra::rast(nrows = 4, ncols = 5,
+                       xmin = 0, xmax = 50, ymin = 0, ymax = 40,
+                       crs = "EPSG:32631")
+
+  if (with_model) {
+    dir.create(file.path(d, "fit"), recursive = TRUE, showWarnings = FALSE)
+    model <- terra::rast(lapply(1:5, function(i) {
+      r <- tmpl; terra::values(r) <- as.numeric(seq_len(20) + i); r
+    }))
+    names(model) <- paste0("model_", 1:5)
+    terra::writeRaster(model, file.path(d, "fit", "model.tif"))
+  }
+
+  for (i in seq_len(n)) {
+    ds <- format(dates[i], "%Y%m%d")
+    cr <- tmpl; terra::values(cr) <- as.numeric(seq_len(20)) / 20
+    dd <- file.path(d, "CRSWIR")
+    dir.create(dd, showWarnings = FALSE)
+    terra::writeRaster(cr,
+      file.path(dd, sprintf("fordead_%s_CRSWIR.tif", ds)))
+    if (with_masks) {
+      mk <- tmpl
+      v  <- rep(0L, 20L)
+      if (i == 1L) v[1L] <- 1L          # pixel 1 invalid on date 1
+      terra::values(mk) <- v
+      md <- file.path(d, "INVALID_PIXEL_MASK")
+      dir.create(md, showWarnings = FALSE)
+      terra::writeRaster(mk,
+        file.path(md, sprintf("fordead_%s_INVALID_PIXEL_MASK.tif", ds)))
+    }
+  }
+  list(dir = d, dates = dates)
+}
+
+
+test_that(".build_crswir_masked_stack stacks dated CRSWIR with terra::time()", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 3L)
+  st <- nemeton:::.build_crswir_masked_stack(fx$dir)
+  expect_s4_class(st, "SpatRaster")
+  expect_equal(terra::nlyr(st), 3L)
+  expect_equal(as.Date(terra::time(st)), fx$dates)
+})
+
+
+test_that(".build_crswir_masked_stack blanks invalid pixels", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 3L)
+  st <- nemeton:::.build_crswir_masked_stack(fx$dir)
+  # Pixel 1 is flagged invalid on date 1 only.
+  expect_true(is.na(terra::values(st)[1L, 1L]))
+  expect_false(is.na(terra::values(st)[1L, 2L]))
+})
+
+
+test_that(".build_crswir_masked_stack warns + returns NULL with no CRSWIR layer", {
+  skip_if_no_terra()
+  d <- withr::local_tempdir()
+  expect_warning(
+    out <- nemeton:::.build_crswir_masked_stack(d),
+    "CRSWIR"
+  )
+  expect_null(out)
+})
+
+
+test_that(".build_crswir_masked_stack tolerates a missing mask layer", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 2L, with_masks = FALSE)
+  st <- nemeton:::.build_crswir_masked_stack(fx$dir)
+  expect_s4_class(st, "SpatRaster")
+  expect_equal(terra::nlyr(st), 2L)
+  # No mask → nothing blanked.
+  expect_false(anyNA(terra::values(st)))
+})
+
+
+test_that(".write_fordead_model_bundle writes the 4 artefacts (AC.14.1)", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 3L)
+  md <- file.path(withr::local_tempdir(), "model_20190101T120000")
+  fa <- terra::rast(nrows = 4, ncols = 5, xmin = 0, xmax = 50,
+                    ymin = 0, ymax = 40, crs = "EPSG:32631")
+  terra::values(fa) <- as.numeric(seq_len(20)) + 18000
+
+  res <- nemeton:::.write_fordead_model_bundle(
+    fx$dir, md, first_anomaly = fa,
+    run_meta = list(run_id = "20190101T120000", zone_id = 1L,
+                    threshold_anomaly = 0.16), verbose = FALSE)
+
+  expect_identical(res, md)
+  expect_true(all(file.exists(file.path(md,
+    c("coeff_model.tif", "crswir_stack.tif",
+      "first_anomaly.tif", "run_meta.json")))))
+  expect_equal(terra::nlyr(terra::rast(file.path(md, "coeff_model.tif"))), 5L)
+  expect_equal(terra::nlyr(terra::rast(file.path(md, "crswir_stack.tif"))), 3L)
+})
+
+
+test_that(".write_fordead_model_bundle run_meta.json round-trips", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 2L)
+  md <- file.path(withr::local_tempdir(), "model_x")
+  meta <- list(run_id = "20190101T120000", zone_id = 4L,
+               vegetation_index = "CRSWIR", threshold_anomaly = 0.16,
+               dates_training = c("2016-01-01", "2017-12-31"))
+  nemeton:::.write_fordead_model_bundle(fx$dir, md, run_meta = meta,
+                                        verbose = FALSE)
+  back <- jsonlite::read_json(file.path(md, "run_meta.json"),
+                              simplifyVector = TRUE)
+  expect_identical(back$run_id, "20190101T120000")
+  expect_identical(back$zone_id, 4L)
+  expect_identical(back$threshold_anomaly, 0.16)
+  expect_identical(back$dates_training, c("2016-01-01", "2017-12-31"))
+})
+
+
+test_that(".write_fordead_model_bundle skips first_anomaly.tif when NULL", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 2L)
+  md <- file.path(withr::local_tempdir(), "model_noanom")
+  nemeton:::.write_fordead_model_bundle(fx$dir, md, first_anomaly = NULL,
+                                        verbose = FALSE)
+  expect_false(file.exists(file.path(md, "first_anomaly.tif")))
+  expect_true(file.exists(file.path(md, "coeff_model.tif")))
+})
+
+
+test_that(".write_fordead_model_bundle aborts when fit/model.tif is missing", {
+  skip_if_no_terra()
+  fx <- .make_fake_fordead_src(n = 2L, with_model = FALSE)
+  md <- file.path(withr::local_tempdir(), "model_nomodel")
+  expect_error(
+    nemeton:::.write_fordead_model_bundle(fx$dir, md, verbose = FALSE),
+    "model.tif"
+  )
+})

@@ -120,7 +120,11 @@ make_fake_fordead_2x_module <- function(fail_at = NULL) {
         geometry = sf::st_sfc(crs = 2154)
       )
     },
-    .insert_fordead_alerts = function(con, alerts_sf, zone_id, ...) 0L
+    .insert_fordead_alerts = function(con, alerts_sf, zone_id, ...) 0L,
+    .write_fordead_model_bundle = function(output_dir, model_dir, ...) {
+      dir.create(model_dir, recursive = TRUE, showWarnings = FALSE)
+      invisible(model_dir)
+    }
   )
 }
 
@@ -242,6 +246,43 @@ test_that("runs the 6 phases in order on the success path", {
   expect_null(out$alerts_sf)
   expect_identical(out$zone_id, 1L)
   expect_equal(out$n_scenes, 2L)
+  # Persist phase wires the diagnostic bundle dir into the result
+  # (spec 008 §14.6 — model_<run_id>/ under zone_<id>/).
+  expect_match(out$rasters$model_dir, "model_[0-9]{8}T[0-9]{6}$")
+})
+
+
+test_that("model bundle persist is best-effort: a failure warns, run succeeds", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  # Simulate an unwritable model_dir / missing fit artefact.
+  helpers$.write_fordead_model_bundle <- function(...) {
+    stop("simulated bundle write failure")
+  }
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  # The failure is surfaced via cli::cli_alert_warning (not an R
+  # warning condition — project-wide convention); capture cli output.
+  out  <- NULL
+  msgs <- cli::cli_fmt(
+    out <- run_fordead_dieback(
+      con              = make_fake_con(),
+      zone_id          = 1L,
+      cache_dir        = make_cache_dir(),
+      dates_training   = c("2016-01-01", "2017-12-31"),
+      dates_monitoring = c("2018-01-01", "2018-12-31"),
+      verbose          = TRUE
+    ),
+    collapse = TRUE
+  )
+  # AC.14.5 — the run still completes successfully; model_dir is NA;
+  # the best-effort failure is reported.
+  expect_identical(out$status, "success")
+  expect_true(is.na(out$rasters$model_dir))
+  expect_match(msgs, "model bundle persist failed")
 })
 
 

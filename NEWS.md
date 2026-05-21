@@ -1,3 +1,31 @@
+# nemeton 0.42.0 (2026-05-21)
+
+### Added — FORDEAD diagnostic bundle persisted for pixel diagnostics (spec 008 §14, L1)
+
+Groundwork for the upcoming click-to-diagnose interaction on the
+FORDEAD map (amendment A3 / spec 008 §14). The `persist` phase of
+`run_fordead_dieback()` now writes, alongside the 0-4 dieback mask, a
+curated *diagnostic bundle* under
+`<mask_cache_dir>/zone_<id>/model_<run_id>/`:
+
+- `coeff_model.tif` — the 5-band harmonic coefficient raster
+  (`fit/model.tif`), the model FORDEAD actually fitted.
+- `crswir_stack.tif` — the observed CRSWIR series, one band per date
+  with `terra::time()` set, masked by `INVALID_PIXEL_MASK`
+  (cloud / shadow / soil) exactly as FORDEAD modelled it.
+- `first_anomaly.tif` — first confirmed-anomaly date per pixel.
+- `run_meta.json` — calibration and provenance of the run
+  (`vegetation_index`, `threshold_anomaly`, training / monitoring
+  windows, fordead version, CRS).
+
+The result of `run_fordead_dieback()` gains `rasters$model_dir`. As
+with the dieback-mask persist hook (v0.41.0), the write is
+best-effort: a failure emits a `cli` warning but never aborts the
+run. No new pipeline phase, no signature change.
+
+Two internal helpers back this: `.build_crswir_masked_stack()` and
+`.write_fordead_model_bundle()` (`R/fordead_outputs.R`).
+
 # nemeton 0.41.3 (2026-05-21)
 
 ### Fixed — FORDEAD reported "0 alerts" while detecting 32 ha of dieback

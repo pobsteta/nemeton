@@ -262,3 +262,132 @@ NULL
   names(out) <- "fordead_class"
   out
 }
+
+
+#' Assemble the masked observed-CRSWIR stack (spec 008 §14.3)
+#'
+#' Stacks every per-date `CRSWIR` raster fordead 2.x wrote into one
+#' multiband `SpatRaster`, masks each band with the matching
+#' `INVALID_PIXEL_MASK` (cloud / shadow / soil — values `> 0` become
+#' `NA`), and tags `terra::time()` with the observation dates. This is
+#' the CRSWIR series exactly as FORDEAD modelled it, ready to be
+#' persisted as `crswir_stack.tif` in the diagnostic bundle.
+#'
+#' Dates with no `INVALID_PIXEL_MASK` counterpart are persisted
+#' unmasked (best-effort — the raw CRSWIR is still informative) with a
+#' warning.
+#'
+#' @param output_dir Character(1). Root FordeadProcess output dir.
+#' @return A `terra::SpatRaster`, one band per observation date with
+#'   `terra::time()` set, or `NULL` when no `CRSWIR` layer exists.
+#' @keywords internal
+.build_crswir_masked_stack <- function(output_dir) {
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg terra} is required.")
+  }
+  cr_files <- .list_layer_files(output_dir, "CRSWIR")
+  if (!length(cr_files)) {
+    cli::cli_warn("No {.val CRSWIR} layer in {.path {output_dir}}.")
+    return(NULL)
+  }
+  layer_date <- function(f) {
+    as.Date(regmatches(basename(f), regexpr("[0-9]{8}", basename(f))),
+            format = "%Y%m%d")
+  }
+  cr_dates <- layer_date(cr_files)
+  crswir   <- terra::rast(cr_files)
+
+  # Pair each CRSWIR date with its INVALID_PIXEL_MASK counterpart and
+  # blank out invalid pixels (cloud / shadow / soil).
+  mk_files <- .list_layer_files(output_dir, "INVALID_PIXEL_MASK")
+  if (length(mk_files)) {
+    idx <- match(cr_dates, layer_date(mk_files))
+    if (!anyNA(idx)) {
+      crswir <- terra::ifel(terra::rast(mk_files[idx]) > 0, NA, crswir)
+    } else {
+      cli::cli_warn(
+        "{sum(is.na(idx))} CRSWIR date{?s} have no INVALID_PIXEL_MASK; \\
+         those bands are persisted unmasked."
+      )
+      ok <- which(!is.na(idx))
+      if (length(ok)) {
+        crswir[[ok]] <- terra::ifel(
+          terra::rast(mk_files[idx[ok]]) > 0, NA, crswir[[ok]]
+        )
+      }
+    }
+  }
+  terra::time(crswir) <- cr_dates
+  names(crswir)       <- format(cr_dates, "%Y-%m-%d")
+  crswir
+}
+
+
+#' Persist the FORDEAD diagnostic bundle (spec 008 §14.3, L1)
+#'
+#' Writes the curated model bundle a later `read_fordead_pixel_series()`
+#' (L2, spec 008 §14.4) will consume: the 5-band harmonic coefficient
+#' raster, the masked observed-CRSWIR stack, the first-anomaly date
+#' raster and a `run_meta.json`. Best-effort by contract — the caller
+#' wraps this in a `tryCatch` so a write failure warns but never
+#' aborts the FORDEAD run.
+#'
+#' @param output_dir Character(1). Root FordeadProcess output dir — the
+#'   working set, source of `fit/model.tif` and the `CRSWIR` layers.
+#' @param model_dir Character(1). Destination bundle directory,
+#'   conventionally `<mask_cache_dir>/zone_<id>/model_<run_id>/`.
+#'   Created (with parents) if absent.
+#' @param first_anomaly A `terra::SpatRaster` of first-anomaly dates
+#'   (days since epoch), typically the raster returned by
+#'   [.compute_first_dieback_date()]. May be `NULL` (then
+#'   `first_anomaly.tif` is skipped).
+#' @param run_meta A named list serialised verbatim to `run_meta.json`.
+#' @param verbose Logical. Emit a `cli` line when the bundle is written.
+#' @return `model_dir` (invisibly) on success; throws on failure.
+#' @keywords internal
+.write_fordead_model_bundle <- function(output_dir, model_dir,
+                                        first_anomaly = NULL,
+                                        run_meta = list(),
+                                        verbose = TRUE) {
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg terra} is required.")
+  }
+  dir.create(model_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # 1. coeff_model.tif — the 5-band harmonic coefficient raster.
+  #    Re-read + re-write rather than file.copy() so the band names
+  #    and compression are normalised.
+  model_src <- file.path(output_dir, "fit", "model.tif")
+  if (!file.exists(model_src)) {
+    cli::cli_abort("Missing {.path fit/model.tif} in {.path {output_dir}}.")
+  }
+  terra::writeRaster(terra::rast(model_src),
+                     file.path(model_dir, "coeff_model.tif"),
+                     overwrite = TRUE)
+
+  # 2. crswir_stack.tif — masked observed CRSWIR, one band per date.
+  crswir <- .build_crswir_masked_stack(output_dir)
+  if (is.null(crswir)) {
+    cli::cli_abort("Cannot assemble the CRSWIR stack.")
+  }
+  terra::writeRaster(crswir, file.path(model_dir, "crswir_stack.tif"),
+                     overwrite = TRUE)
+
+  # 3. first_anomaly.tif — first confirmed-anomaly date (days since
+  #    epoch). Best-effort: skipped when the raster is unavailable.
+  if (!is.null(first_anomaly) && inherits(first_anomaly, "SpatRaster")) {
+    terra::writeRaster(first_anomaly,
+                       file.path(model_dir, "first_anomaly.tif"),
+                       overwrite = TRUE)
+  }
+
+  # 4. run_meta.json — calibration + provenance of this run.
+  jsonlite::write_json(run_meta,
+                       file.path(model_dir, "run_meta.json"),
+                       auto_unbox = TRUE, pretty = TRUE, null = "null")
+
+  if (verbose) {
+    cli::cli_alert_info("FORDEAD model bundle written: {.path {model_dir}}")
+  }
+  invisible(model_dir)
+}
