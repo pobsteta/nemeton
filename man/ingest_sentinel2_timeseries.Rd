@@ -25,7 +25,7 @@ ingest_sentinel2_timeseries(
 
 \item{bands}{Character vector. Subset of `c("NDVI", "NBR")`.}
 
-\item{max_cloud}{Numeric. Maximum scene cloud cover (%). Default 20.}
+\item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
 
 \item{skip_cached}{Logical. When `TRUE` (default since v0.21.3),
 query `obs_pixel` before the STAC loop and skip every scene
@@ -37,7 +37,7 @@ existing database avoid all the per-scene HTTP traffic. Set
 
 \item{cache_dir}{Optional path to a directory under which cropped
   band rasters are persisted as tiled GeoTIFF (COG-compatible
-  layout) at `<cache_dir>/{scene_id}/{band}.tif`. On a cache hit
+  layout) at `<cache_dir>/<scene_id>/<band>.tif`. On a cache hit
   the band is read locally (no HTTP); on a miss it is fetched via
   VSI, cropped, and written to the cache atomically. Cache write
   failures only warn — the pipeline continues with the in-memory
@@ -49,8 +49,9 @@ existing database avoid all the per-scene HTTP traffic. Set
 
   Recommended layout for callers (e.g. `nemetonshiny`):
   `<project>/cache/layers/sentinel2/`, matching the
-  `<project>/cache/layers/{lidar_mnh,lidar_mnt,lidar_nuage,...}`
-  convention already used by `detect_ndp_from_cache()`. The
+  `<project>/cache/layers/<layer>` convention (with `<layer>` one of
+  `lidar_mnh`, `lidar_mnt`, `lidar_nuage`, etc.) already used by
+  `detect_ndp_from_cache()`. The
   `cache/` subtree is for derived, regeneratable artefacts and
   should be in `.gitignore`; do not use `<project>/data/` which
   is reserved for user-owned project data.

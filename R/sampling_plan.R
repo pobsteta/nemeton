@@ -236,7 +236,7 @@ dplyr_case_simple <- function(tfv) {
   out <- rep("AUT", length(tfv))
   out[is.na(tfv)] <- "AUT"
   out[grepl("Feuillus",           tfv, ignore.case = TRUE)] <- "FEU"
-  out[grepl("Conif(è|e)res",      tfv, ignore.case = TRUE)] <- "CON"
+  out[grepl("Conif(\u00e8|e)res",      tfv, ignore.case = TRUE)] <- "CON"
   out[grepl("Mixte",              tfv, ignore.case = TRUE)] <- "MIX"
   out[grepl("Peupleraie",         tfv, ignore.case = TRUE)] <- "POP"
   out

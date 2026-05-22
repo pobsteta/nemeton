@@ -132,16 +132,15 @@ test_that("stac_search_s2 emits an 'All STAC backends failed' warning when every
     stac_search_s2_cdse = function(...) stop("CDSE 504"),
     stac_search_s2_pc   = function(...) stop("PC 504")
   )
-  expect_warning(
-    expect_warning(
-      expect_warning(
-        out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30"),
-        "All STAC backends"
-      ),
-      "STAC backend.*pc.*failed"
-    ),
-    "STAC backend.*cdse.*failed"
+  # testthat edition 3: capture all warnings at once (the 2e nested
+  # expect_warning() idiom no longer works -- the innermost call
+  # absorbs every warning).
+  w <- testthat::capture_warnings(
+    out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30")
   )
+  expect_match(w, "STAC backend.*cdse.*failed", all = FALSE)
+  expect_match(w, "STAC backend.*pc.*failed", all = FALSE)
+  expect_match(w, "All STAC backends", all = FALSE)
   expect_equal(nrow(out), 0)
 })
 

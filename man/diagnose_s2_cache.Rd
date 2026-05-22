@@ -19,7 +19,7 @@ Invisibly, a list with `cache_dir`, `n_scenes`,
   (mean), and `empty_dirs` (character vector of paths).
 }
 \description{
-Walks `<cache_dir>/{scene_id}/` and reports how many scene
+Walks `<cache_dir>/<scene_id>/` and reports how many scene
 directories are populated (contain at least one `.tif`) versus
 empty (no `.tif`). Empty dirs are typically leftovers from the
 v0.21.4 eager-creation bug (fixed in v0.21.6) — they can be

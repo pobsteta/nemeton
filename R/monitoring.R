@@ -88,7 +88,7 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param zone_id Integer. Existing zone in `monitoring_zone`.
 #' @param start,end Date or character `"YYYY-MM-DD"`.
 #' @param bands Character vector. Subset of `c("NDVI", "NBR")`.
-#' @param max_cloud Numeric. Maximum scene cloud cover (%). Default 20.
+#' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
 #' @param skip_cached Logical. When `TRUE` (default since v0.21.3),
 #'   query `obs_pixel` before the STAC loop and skip every scene
 #'   whose `obs_date` already has a row for **every** plot of the
@@ -98,7 +98,7 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   `obs_pixel` manually).
 #' @param cache_dir Optional path to a directory under which cropped
 #'   band rasters are persisted as tiled GeoTIFF (COG-compatible
-#'   layout) at `<cache_dir>/{scene_id}/{band}.tif`. On a cache hit
+#'   layout) at `<cache_dir>/<scene_id>/<band>.tif`. On a cache hit
 #'   the band is read locally (no HTTP); on a miss it is fetched via
 #'   VSI, cropped, and written to the cache atomically. Cache write
 #'   failures only warn — the pipeline continues with the in-memory
@@ -110,8 +110,9 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'
 #'   Recommended layout for callers (e.g. `nemetonshiny`):
 #'   `<project>/cache/layers/sentinel2/`, matching the
-#'   `<project>/cache/layers/{lidar_mnh,lidar_mnt,lidar_nuage,...}`
-#'   convention already used by `detect_ndp_from_cache()`. The
+#'   `<project>/cache/layers/<layer>` convention (with `<layer>` one of
+#'   `lidar_mnh`, `lidar_mnt`, `lidar_nuage`, etc.) already used by
+#'   `detect_ndp_from_cache()`. The
 #'   `cache/` subtree is for derived, regeneratable artefacts and
 #'   should be in `.gitignore`; do not use `<project>/data/` which
 #'   is reserved for user-owned project data.
@@ -397,7 +398,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
 #' Diagnose an S2 band cache directory
 #'
-#' Walks `<cache_dir>/{scene_id}/` and reports how many scene
+#' Walks `<cache_dir>/<scene_id>/` and reports how many scene
 #' directories are populated (contain at least one `.tif`) versus
 #' empty (no `.tif`). Empty dirs are typically leftovers from the
 #' v0.21.4 eager-creation bug (fixed in v0.21.6) — they can be

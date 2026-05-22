@@ -129,7 +129,7 @@ NULL
   n_layers <- terra::nlyr(rast_stack)
   n_rows   <- terra::nrow(rast_stack)
   n_cols   <- terra::ncol(rast_stack)
-  vals <- terra::values(rast_stack)              # matrix: n_cells × n_layers
+  vals <- terra::values(rast_stack)              # matrix: n_cells x n_layers
   # terra's cell order is ROW-major (cell = (row-1)*ncol + col), but
   # R's array() fills COLUMN-major. Feeding `vals` straight into
   # array(dim = c(n_rows, n_cols, n_layers)) therefore transposes the
@@ -221,7 +221,7 @@ NULL
   ac_file <- .latest_layer_file(output_dir, "ANOMALY_CONFIRMED")
   if (is.na(ac_file)) {
     cli::cli_warn(
-      "No {.val ANOMALY_CONFIRMED} layer in {.path {output_dir}} — ",
+      "No {.val ANOMALY_CONFIRMED} layer in {.path {output_dir}} -- ",
       "cannot derive confidence classes."
     )
     return(NULL)

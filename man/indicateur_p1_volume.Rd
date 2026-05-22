@@ -51,6 +51,11 @@ Optionally, the fraction of the CHM that was masked by
 \code{\link{sanitize_chm}} upstream. When supplied and
 greater than \code{0.3}, a warning is emitted: a
 heavily-masked CHM is unreliable for volume estimation.}
+
+\item{use_climate_drift}{Logical. When \code{TRUE}, the estimated
+volume is scaled by the per-species climate-driven BAI drift
+factor (Charru et al. 2017, see \code{\link{charru_bai_drift}}).
+Default \code{FALSE} (raw synthetic-inventory volume).}
 }
 \value{
 sf object with added column: P1 (standing volume in m3/ha)

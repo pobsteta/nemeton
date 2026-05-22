@@ -235,6 +235,9 @@ stac_search_s2 <- function(zone,
 
 #' @rdname sentinel2_stac
 #' @param bbox Numeric length 4: c(xmin, ymin, xmax, ymax) in WGS84.
+#' @param start,end Character or Date. Search window bounds, `"YYYY-MM-DD"`.
+#' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
+#' @param limit Integer. Maximum number of scenes to return. Default `10000L`.
 #' @export
 stac_search_s2_cdse <- function(bbox, start, end, max_cloud = 20, limit = 10000L) {
   .assert_httr2()

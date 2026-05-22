@@ -12,6 +12,12 @@ stac_search_s2_pc(bbox, start, end, max_cloud = 20, limit = 10000L)
 }
 \arguments{
 \item{bbox}{Numeric length 4: c(xmin, ymin, xmax, ymax) in WGS84.}
+
+\item{start, end}{Character or Date. Search window bounds, `"YYYY-MM-DD"`.}
+
+\item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
+
+\item{limit}{Integer. Maximum number of scenes to return. Default `10000L`.}
 }
 \description{
 Thin STAC clients for Sentinel-2 L2A imagery. Two backends are

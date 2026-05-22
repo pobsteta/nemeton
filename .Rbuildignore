@@ -37,3 +37,9 @@
 ^inst/extdata/aba\.model$
 ^inst/extdata/coregistration$
 ^\.positai$
+^\.env$
+^\.env\.example$
+^CHANGELOG\.md$
+^CITATION\.cff$
+^docker-compose\.yml$
+^PLAN\.md$

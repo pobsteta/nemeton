@@ -71,7 +71,7 @@ load_fordead_validity_zones <- function() {
   s_low <- tolower(s)
   hit <- grepl("\\bepc\\b", s, ignore.case = TRUE) |
     grepl("epic", s_low, fixed = FALSE) |
-    grepl("épic", s_low, fixed = FALSE) |
+    grepl("\u00e9pic", s_low, fixed = FALSE) |
     grepl("picea", s_low, fixed = FALSE)
   out[m] <- hit
   out
@@ -93,7 +93,7 @@ load_fordead_validity_zones <- function() {
   is_douglas <- grepl("douglas", s_low, fixed = TRUE) |
     grepl("pseudotsuga", s_low, fixed = TRUE)
   is_picea <- grepl("picea", s_low, fixed = TRUE) |
-    grepl("épic", s_low, fixed = FALSE) |
+    grepl("\u00e9pic", s_low, fixed = FALSE) |
     grepl("epicea", s_low, fixed = TRUE)
   hit <- (
     grepl("\\bsap\\b", s, ignore.case = TRUE) |
@@ -224,7 +224,7 @@ check_fordead_validity <- function(aoi,
           units$species <- enriched$species
           col <- "species"
           cli::cli_alert_info(
-            "Species column derived from BD Forêt V2 (no column on {.arg units})."
+            "Species column derived from BD For\u00eat V2 (no column on {.arg units})."
           )
         }
       }
@@ -234,7 +234,7 @@ check_fordead_validity <- function(aoi,
       cli::cli_warn(c(
         "No species column found on {.arg units}.",
         i = "Expected one of: essence_dominante, essence, species_label, species, essence_principale.",
-        i = "Pass {.arg bdforet} (sf of BD Forêt V2 polygons) or {.arg layers} to enable the BD Forêt fallback.",
+        i = "Pass {.arg bdforet} (sf of BD For\u00eat V2 polygons) or {.arg layers} to enable the BD For\u00eat fallback.",
         i = "Skipping species check."
       ))
     } else {

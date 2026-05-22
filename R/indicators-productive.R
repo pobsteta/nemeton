@@ -42,6 +42,10 @@ NULL
 #'   \code{\link{sanitize_chm}} upstream. When supplied and
 #'   greater than \code{0.3}, a warning is emitted: a
 #'   heavily-masked CHM is unreliable for volume estimation.
+#' @param use_climate_drift Logical. When \code{TRUE}, the estimated
+#'   volume is scaled by the per-species climate-driven BAI drift
+#'   factor (Charru et al. 2017, see \code{\link{charru_bai_drift}}).
+#'   Default \code{FALSE} (raw synthetic-inventory volume).
 #'
 #' @return sf object with added column: P1 (standing volume in m3/ha)
 #'
@@ -441,6 +445,9 @@ indicateur_p2_station <- function(units,
 #' @param weights Named numeric vector. Component weights: c(form = 0.4, diameter = 0.4, defects = 0.2). Default balanced.
 #' @param column_name Character. Name for output column. Default "P3".
 #' @param lang Character. Message language. Default "en".
+#' @param chm Optional `terra::SpatRaster` canopy height model (spec 005).
+#'   Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
+#'   CHM when the diameter field is missing. Default `NULL`.
 #'
 #' @return sf object with added column: P3 (timber quality score 0-100)
 #'

@@ -198,7 +198,7 @@ build_index_stack <- function(cache_dir, scenes_df,
 
   layers <- lapply(seq_len(nrow(scenes_df)), function(i) {
     sid <- scenes_df$scene_id[i]
-    rs  <- setNames(
+    rs  <- stats::setNames(
       lapply(bands_needed, function(b) read_s2_band_raster(cache_dir, sid, b)),
       bands_needed
     )
@@ -321,7 +321,7 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
     sid     <- scenes_df$scene_id[i]
     date_i  <- as.Date(scenes_df$obs_date[i])
 
-    rs <- setNames(
+    rs <- stats::setNames(
       lapply(bands_needed, function(b) read_s2_band_raster(cache_dir, sid, b)),
       bands_needed
     )

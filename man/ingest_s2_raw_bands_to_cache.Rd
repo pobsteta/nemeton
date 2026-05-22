@@ -20,16 +20,16 @@ ingest_s2_raw_bands_to_cache(
 
 \item{zone_id}{Integer. Existing zone in `monitoring_zone`.}
 
-\item{bands}{Character vector of raw band codes. Must match
-`^B[0-9]{1,2}A?$` (e.g. `c("B02","B04","B8A","B12")`). At least
-one band required.}
+\item{bands}{Character vector of raw band codes -- the letter `B`
+followed by one or two digits and an optional trailing `A`
+(e.g. `c("B02", "B04", "B8A", "B12")`). At least one band required.}
 
 \item{start, end}{Date or character `"YYYY-MM-DD"`.}
 
 \item{cache_dir}{Character(1). Root of the COG cache, typically
 `<project>/cache/layers/sentinel2`. Created if absent. Required.}
 
-\item{max_cloud}{Numeric. Maximum scene cloud cover (%). Default 20.}
+\item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
 
 \item{progress_callback}{Optional. `function(payload)` receiving
 `s2:*` event lists.}
@@ -53,7 +53,7 @@ A list with:
 Companion of [ingest_sentinel2_timeseries()] for callers that need
 raw Sentinel-2 bands (e.g. `c("B02", "B04", "B05", "B8A", "B11", "B12")`
 for FORDEAD CRSWIR + masks) rather than the derived NDVI / NBR
-indices. Searches STAC, then for each scene × band calls the same
+indices. Searches STAC, then for each scene x band calls the same
 cache-aware fetcher used by the FAST pipeline ([.get_s2_band_raster()]),
 so:
 }

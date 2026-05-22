@@ -1,3 +1,35 @@
+# nemeton 0.43.1 (2026-05-22)
+
+### Fixed — `R CMD check` debt cleanup
+
+Maintenance release that clears the accumulated `devtools::check()`
+warnings and notes (no functional change):
+
+- **Corrupt Rd files** — `man/ingest_s2_raw_bands_to_cache.Rd` and
+  `man/ingest_sentinel2_timeseries.Rd` were stale, hand-edited
+  artefacts (unbalanced braces from an unescaped `%`, unknown
+  `\item` macros). Regenerated cleanly from roxygen; the
+  `@param max_cloud` text now says "percent" instead of "(%)".
+- **Non-ASCII in code** — replaced non-ASCII characters in string
+  literals of `fordead_outputs.R`, `fordead_validity.R`,
+  `health_validation.R`, `qgis_export.R` and `sampling_plan.R`
+  with `\uxxxx` escapes (or ASCII), keeping runtime behaviour
+  identical.
+- **Undocumented arguments** — added the missing `@param` tags for
+  `indicateur_e1_bois_energie()`, `indicateur_p1_volume()`,
+  `indicateur_p3_qualite_bois()` and the `stac_search_s2_*()` family.
+- **Misc Rd** — fixed `charru_bai_drift`'s empty `\details` section
+  and `diagnose_s2_cache`'s lost braces.
+- **`setNames`** — qualified as `stats::setNames()` in
+  `health_validation.R` and `pixel-map.R`.
+- **`.Rbuildignore`** — excluded non-standard top-level / hidden
+  files (`.env`, `CHANGELOG.md`, `CITATION.cff`, `docker-compose.yml`,
+  `PLAN.md`) from the build.
+- **`xml2`** — declared in `Suggests` (used by `test-qgis-export.R`).
+- **Test fix** — `test-sentinel2.R` "All STAC backends failed"
+  rewritten for testthat edition 3 (the nested `expect_warning()`
+  idiom no longer works).
+
 # nemeton 0.43.0 (2026-05-21)
 
 ### Added — `read_fordead_pixel_series()`: CRSWIR pixel diagnostic (spec 008 §14, L2)

@@ -32,6 +32,10 @@ indicateur_p3_qualite_bois(
 \item{column_name}{Character. Name for output column. Default "P3".}
 
 \item{lang}{Character. Message language. Default "en".}
+
+\item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
+Passed to `ensure_inventory_fields()` to auto-fill `dbh` from the
+CHM when the diameter field is missing. Default `NULL`.}
 }
 \value{
 sf object with added column: P3 (timber quality score 0-100)

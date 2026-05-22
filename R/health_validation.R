@@ -165,17 +165,17 @@ get_health_validation_schema <- function(region = "BFC", lang = "fr") {
 .allocate_health_strata <- function(counts, n_total) {
   n_total <- as.integer(n_total)
   total_avail <- sum(counts)
-  if (total_avail == 0L) return(setNames(integer(0), character(0)))
+  if (total_avail == 0L) return(stats::setNames(integer(0), character(0)))
   n_total <- min(n_total, total_avail)
   k <- length(counts)
   if (n_total <= k) {
     # Not enough budget for the floor: keep the k_top largest classes.
     keep <- order(counts, decreasing = TRUE)[seq_len(n_total)]
-    out  <- setNames(rep(0L, k), names(counts))
+    out  <- stats::setNames(rep(0L, k), names(counts))
     out[keep] <- 1L
     return(out)
   }
-  base <- setNames(pmin(rep(1L, k), counts), names(counts))
+  base <- stats::setNames(pmin(rep(1L, k), counts), names(counts))
   remaining <- n_total - sum(base)
   if (remaining > 0L) {
     cap <- counts - base
@@ -230,7 +230,7 @@ generate_health_validation_plots <- function(alerts_sf,
     cli::cli_abort("{.arg alerts_sf} must be an sf object.")
   }
   if (nrow(alerts_sf) == 0L) {
-    cli::cli_warn("Empty {.arg alerts_sf} — returning an empty layer.")
+    cli::cli_warn("Empty {.arg alerts_sf} -- returning an empty layer.")
     return(alerts_sf[0L, ])
   }
   required <- c("confidence_class")
@@ -374,7 +374,7 @@ ingest_health_validation <- function(con,
     params = list(as.integer(zone_id)))
 
   if (!nrow(alerts_q)) {
-    cli::cli_warn("Zone {zone_id} has no alerts — nothing to validate.")
+    cli::cli_warn("Zone {zone_id} has no alerts -- nothing to validate.")
     return(list(
       n_updated = 0L, n_confirmed = 0L, n_false_positive = 0L,
       n_unmatched = nrow(plots), n_skipped = 0L,

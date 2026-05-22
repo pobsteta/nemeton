@@ -32,6 +32,10 @@ indicateur_e1_bois_energie(
 \item{column_name}{Character. Name for output column. Default "E1".}
 
 \item{lang}{Character. Message language. Default "en".}
+
+\item{chm}{Optional `terra::SpatRaster` canopy height model (spec 005).
+When supplied and `volume_field` is absent, standing volume is
+auto-estimated by running P1 internally. Default `NULL`.}
 }
 \value{
 sf object with added columns: E1 (fuelwood potential tonnes DM/yr), E1_residues, E1_coppice

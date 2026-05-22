@@ -443,7 +443,7 @@ create_qgis_project <- function(placettes,
   )
   if (!is.null(zone_etude)) {
     layers_meta <- c(layers_meta, list(list(
-      id = "zone_etude_01", name = "Zone d'étude", gpkg_rel = gpkg_rel,
+      id = "zone_etude_01", name = "Zone d'\u00e9tude", gpkg_rel = gpkg_rel,
       layername = "zone_etude", geometry = "Polygon",
       schema = NULL,
       bbox = tryCatch(sf::st_bbox(zone_etude), error = function(e) placettes_bbox),

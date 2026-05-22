@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.43.0
+Version: 0.43.1
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -85,7 +85,8 @@ Suggests:
     maptiles (>= 0.6.0),
     png,
     jpeg,
-    reticulate (>= 1.34.0)
+    reticulate (>= 1.34.0),
+    xml2
 VignetteBuilder: knitr
 URL: https://pobsteta.github.io/nemeton/, https://github.com/pobsteta/nemeton
 BugReports: https://github.com/pobsteta/nemeton/issues
