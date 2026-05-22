@@ -312,6 +312,29 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
 
 ## Journal
 
+  - 2026-05-21 — nemetonshiny v0.39.0 (cycle dev 0.38.8.9000) — E6 contexte
+    santé : canal de notification ntfy pour les runs FORDEAD longs (émis
+    côté worker `future`, indépendant de la session Shiny) + réconciliation
+    des onglets « Alertes/Carte FORDEAD » depuis le masque persisté après un
+    run hors-session. nemetonshiny@38bafc2. Livraison portée app — aucune
+    modification cœur.
+  - 2026-05-21 — nemetonshiny v0.39.1 (cycle dev 0.39.0.9001) — E6 :
+    réparation de 20 tests préexistants (suites monitoring + sampling) + 3
+    correctifs de production (icône bsicons `folder2-open`, `suppressWarnings`
+    dans `.build_progress_writer`, dé-classage `json` dans
+    `audit_to_dataframe`). nemetonshiny@f7bed92. Livraison portée app.
+  - 2026-05-21 — nemetonshiny v0.40.0 (cycle dev 0.39.1.9000) — E6 : verrou
+    croisé FAST ↔ FORDEAD (lancement mutuellement exclusif — cache
+    Sentinel-2 partagé) + renommage `ingest_task` → `fast_task`.
+    nemetonshiny@de2e0b7. Livraison portée app.
+  - 2026-05-22 — Spec « échantillonnage de validation piloté par raster
+    d'alerte » rédigée, 6 décisions arrêtées
+    (nemetonshiny/design/validation-sampling.md). Phase A = travail cœur
+    `nemeton` à venir : `fordead_alert_mask()`, GRTS pondéré
+    (`priority_raster`), `create_validation_sampling_plan()`, raster
+    d'alerte FAST + `read_fast_alert_raster()`. Cahier des charges :
+    nemetonshiny/design/nemeton-phase-a-brief.md.
+
 - **2026-05-22** — Release **v0.43.1** (fix — nettoyage de la dette `R CMD check`). Release de maintenance, aucun changement fonctionnel. Le `devtools::check()` accumulait 1 ERROR, 5 WARNINGS, 5 NOTES. **WARNINGS/NOTES traités** : (1) deux `.Rd` corrompus (`ingest_s2_raw_bands_to_cache`, `ingest_sentinel2_timeseries`) — artefacts périmés édités à la main, accolades déséquilibrées par un `%` non échappé — régénérés proprement depuis roxygen, `@param max_cloud` reformulé « percent » ; (2) caractères non-ASCII dans des littéraux de chaîne de 5 fichiers (`fordead_outputs.R`, `fordead_validity.R`, `health_validation.R`, `qgis_export.R`, `sampling_plan.R`) remplacés par des échappements `\uxxxx` (comportement runtime identique) ; (3) arguments non documentés — `@param` ajoutés pour `indicateur_e1_bois_energie`/`p1_volume`/`p3_qualite_bois` et la famille `stac_search_s2_*` ; (4) `charru_bai_drift` `\details` vide + `diagnose_s2_cache` accolades — corrigés ; (5) `setNames` qualifié `stats::setNames` ; (6) `.Rbuildignore` étendu (`.env`, `CHANGELOG.md`, `CITATION.cff`, `docker-compose.yml`, `PLAN.md`) ; (7) `xml2` déclaré en `Suggests`. **ERROR partiellement traité** : `test-sentinel2.R` « All STAC backends failed » réécrit pour testthat edition 3 (l'idiome `expect_warning()` imbriqué ne fonctionne plus en 3e). Reste **~13 échecs de tests** (`test-monitoring.R` 7, `test-fordead-stac.R` 2, `test-fordead-python.R` 4) — schéma d'événement progress, validateurs, conflit de binding Python reticulate en process unique — documentés comme chantier dédié « stabilisation de la suite de tests ».
 
 - **2026-05-21** — Release **v0.43.0** (feat — `read_fordead_pixel_series()`, diagnostic pixel CRSWIR, spec 008 §14 L2). Clôture côté cœur du chantier « Diagnostic pixel CRSWIR » (ADR-013 amendement A3). L2 est le côté lecture du bundle persisté par L1 : la nouvelle fonction exportée `read_fordead_pixel_series(con, zone_id, xy, crs = 4326, run_id = NULL, cache_dir)` retourne, pour un pixel cliqué, le `data.frame` trié par `obs_date` avec `crswir_obs` (CRSWIR observé masqué), `crswir_pred` (prédiction du modèle harmonique), `seuil_haut` (`crswir_pred + threshold_anomaly`) et `anomalie` (`crswir_obs > seuil_haut`) ; attributs `threshold_anomaly`, `premiere_detection`, `dans_zone_validite` (garde-fou G3 via `check_fordead_validity()` sur la cellule du pixel), `vegetation_index`. Conventions de chemin et de sélection `run_id` calquées sur `read_fordead_dieback_mask()` (`<cache_dir>/zone_<id>/model_<run_id>/`, plus récent si `run_id = NULL`). **Décision D3 (ADR-013 A3)** : la base harmonique n'est PAS réimplémentée en R — `crswir_pred` est reconstruit via `fordead.modeling.compute_HarmonicTerms` (base 5 termes `[1, sin, cos, sin2, cos2]`, période 365.25) appelée par reticulate, garantissant la parité bit-à-bit avec le run ; seul `dates_to_days` (soustraction depuis `REF_DAY = 2015-01-01`) est fait côté R. Dégradation propre : `read_fordead_pixel_series()` retourne `NULL` sans erreur si aucun bundle, pixel hors emprise/non modélisé, ou venv FORDEAD indisponible (risque résiduel accepté en ADR-013 A3). Nouveau fichier `R/fordead_pixel_series.R` (fonction exportée + helpers internes `.locate_fordead_model_bundle()`, `.crswir_stack_dates()`, `.fordead_harmonic_predict()`). Tests : `test-fordead-pixel-series.R` 32 ✔ sur 13 blocs `test_that` (fixture bundle synthétique, prédiction harmonique mockée pour l'offline — AC.14.6 ; AC.14.2 parité testée contre le venv réel à 1e-6 ; AC.14.3 `NULL` propre hors emprise / sans run ; schéma du `data.frame`, calcul `seuil_haut`/`anomalie`, attributs, sélection `run_id`). Aucune régression sur la suite FORDEAD (les 6 échecs `test-fordead-python.R`/`stac.R` restent préexistants). Reste L3 (modal plotly) côté `nemetonshiny`.
