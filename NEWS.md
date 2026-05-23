@@ -1,3 +1,36 @@
+# nemeton 0.44.0 (2026-05-23)
+
+### Added — `project_uuid` binding for `monitoring_zone` (spec 011)
+
+Stable link between a `nemetonshiny` project and the monitoring zone
+it registered. Lets the app re-hydrate `monitoring_zone_id` from the
+core DB when a project is reloaded but its `metadata.json` does not
+carry the id — fixes the user-visible bug where opening a recent
+project ("villards", etc.) leaves the *Suivi sanitaire* dropdown
+empty even though the zone exists in DB.
+
+- **Migration `0003_project_uuid`** (PG + DuckDB) — adds
+  `monitoring_zone.project_uuid TEXT` plus a partial UNIQUE index on
+  non-NULL values. Idempotent. Zones registered before this migration
+  keep working (NULL allowed; no `name` fallback in the lookup).
+- **`register_monitoring_zone(..., project_uuid = NULL)`** — new
+  optional argument. When non-NULL, persisted on the zone row.
+  Strictly backwards-compatible: existing callers that don't pass it
+  take the same code path as before.
+- **`find_zone_by_project(con, project_uuid)`** — new exported
+  function. Returns the zone id bound to a project UUID, or
+  `integer(0)` if no zone matches. Does **not** fall back to a
+  `name`-based lookup (deliberate — `name` matching was brittle and
+  is now considered legacy).
+- 9 new tests in `test-project-zone-binding.R` covering input
+  validation (offline), migration shape, round-trip, missing match,
+  UNIQUE rejection of duplicate `project_uuid`, and preservation of
+  multiple NULL legacy rows.
+
+Spec 011 §3 is fully delivered core-side. App-side wiring
+(`mod_home` post-load hook + `register_project_as_zone` passing
+`project_uuid`) is a `nemetonshiny` chantier.
+
 # nemeton 0.43.2 (2026-05-23)
 
 ### Fixed — test-suite stabilisation (chip 1)

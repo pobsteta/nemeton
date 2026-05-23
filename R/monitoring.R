@@ -31,12 +31,20 @@ NULL
 #'   `plot_id` (character) and optionally `type`.
 #' @param radius_m Numeric. Sampling radius around each placette in
 #'   metres. Default 15.
+#' @param project_uuid Optional character scalar (or `NULL`, default).
+#'   Opaque project identifier used by callers (`nemetonshiny`) to
+#'   stably bind a project to its monitoring zone. When non-`NULL`,
+#'   stored on `monitoring_zone.project_uuid` and queryable via
+#'   [find_zone_by_project()]. UNIQUE on non-`NULL` values — registering
+#'   a second zone with the same `project_uuid` raises a DB error.
+#'   Available since spec 011 (migration `0003_project_uuid`).
 #'
 #' @return The `zone_id` (integer) of the registered zone.
 #'
 #' @export
 register_monitoring_zone <- function(con, zone_name, zone_polygon,
-                                     placettes, radius_m = 15) {
+                                     placettes, radius_m = 15,
+                                     project_uuid = NULL) {
   .assert_db_pkgs()
   if (!inherits(zone_polygon, c("sf", "sfc"))) {
     cli::cli_abort("{.arg zone_polygon} must be an sf/sfc object.")
@@ -44,17 +52,33 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
   if (!inherits(placettes, "sf") || !"plot_id" %in% names(placettes)) {
     cli::cli_abort("{.arg placettes} must be an sf object with a {.val plot_id} column.")
   }
+  if (!is.null(project_uuid)) {
+    if (!is.character(project_uuid) || length(project_uuid) != 1L ||
+        is.na(project_uuid) || !nzchar(project_uuid)) {
+      cli::cli_abort("{.arg project_uuid} must be a non-empty character scalar or {.code NULL}.")
+    }
+  }
 
   zone_4326 <- sf::st_transform(zone_polygon, 4326)
   zone_wkt  <- sf::st_as_text(sf::st_geometry(zone_4326)[[1]])
 
   zone_id <- DBI::dbWithTransaction(con, {
-    DBI::dbExecute(con,
-      "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
-      params = list(zone_name, zone_wkt))
-    rs <- DBI::dbGetQuery(con,
-      "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
-      params = list(zone_name))
+    if (is.null(project_uuid)) {
+      DBI::dbExecute(con,
+        "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
+        params = list(zone_name, zone_wkt))
+      rs <- DBI::dbGetQuery(con,
+        "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
+        params = list(zone_name))
+    } else {
+      DBI::dbExecute(con,
+        paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
+               "VALUES ($1, $2, 4326, $3)"),
+        params = list(zone_name, zone_wkt, project_uuid))
+      rs <- DBI::dbGetQuery(con,
+        "SELECT id FROM monitoring_zone WHERE project_uuid = $1",
+        params = list(project_uuid))
+    }
     rs$id[1]
   })
 

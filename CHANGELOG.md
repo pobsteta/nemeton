@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-05-23
+
+### Added
+
+- Migration `0003_project_uuid` (PG + DuckDB) adding
+  `monitoring_zone.project_uuid TEXT` and a partial UNIQUE index on
+  non-NULL values. Spec 011.
+- `register_monitoring_zone(..., project_uuid = NULL)` — optional new
+  argument, persisted on the zone row when non-NULL.
+- `find_zone_by_project(con, project_uuid)` — new exported function
+  returning the bound zone id or `integer(0)`. Does **not** fall back
+  to a `name`-based lookup.
+
 ## [0.43.2] - 2026-05-23
 
 ### Fixed

@@ -9,7 +9,8 @@ register_monitoring_zone(
   zone_name,
   zone_polygon,
   placettes,
-  radius_m = 15
+  radius_m = 15,
+  project_uuid = NULL
 )
 }
 \arguments{
@@ -25,6 +26,14 @@ internally for storage).}
 
 \item{radius_m}{Numeric. Sampling radius around each placette in
 metres. Default 15.}
+
+\item{project_uuid}{Optional character scalar (or `NULL`, default).
+Opaque project identifier used by callers (`nemetonshiny`) to
+stably bind a project to its monitoring zone. When non-`NULL`,
+stored on `monitoring_zone.project_uuid` and queryable via
+[find_zone_by_project()]. UNIQUE on non-`NULL` values — registering
+a second zone with the same `project_uuid` raises a DB error.
+Available since spec 011 (migration `0003_project_uuid`).}
 }
 \value{
 The `zone_id` (integer) of the registered zone.
