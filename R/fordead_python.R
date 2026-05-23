@@ -309,10 +309,16 @@ NULL
 #' @keywords internal
 .same_path <- function(a, b) {
   if (!nzchar(a) || !nzchar(b)) return(FALSE)
-  identical(
-    normalizePath(a, winslash = "/", mustWork = FALSE),
-    normalizePath(b, winslash = "/", mustWork = FALSE)
-  )
+  # normalizePath() resolves symlinks for *existing* paths; it leaves
+  # non-existent paths untouched, so also collapse "." components,
+  # repeated slashes and a trailing slash by hand.
+  clean <- function(p) {
+    p <- normalizePath(p, winslash = "/", mustWork = FALSE)
+    p <- gsub("/\\.(?=/)", "", p, perl = TRUE)
+    p <- gsub("/+", "/", p)
+    sub("(.)/$", "\\1", p)
+  }
+  identical(clean(a), clean(b))
 }
 
 

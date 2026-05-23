@@ -926,7 +926,10 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       remaining <- list.files(scene_dir, all.files = FALSE,
                               no.. = TRUE)
       if (length(remaining) == 0L) {
-        unlink(scene_dir, recursive = FALSE, force = FALSE)
+        # `recursive = TRUE` is required: unlink() never removes a
+        # directory with recursive = FALSE, even an empty one. The
+        # emptiness guard above makes this safe.
+        unlink(scene_dir, recursive = TRUE, force = FALSE)
         .s2_cache_log("WRITE cleanup removed empty ", scene_dir)
       }
     })

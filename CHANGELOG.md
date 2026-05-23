@@ -10,6 +10,25 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.43.2] - 2026-05-23
+
+### Fixed
+
+- `.same_path()` (`R/fordead_python.R`) collapses `/./`, duplicate
+  slashes and a trailing slash before comparing — `normalizePath(mustWork
+  = FALSE)` leaves non-existent paths untouched, so the identity test
+  produced false negatives whenever one input had a redundant segment.
+- `.validate_date_range()` (`R/fordead_stac.R`) wraps `as.Date()` in
+  `tryCatch`: recent R errors on an unparseable string instead of
+  returning `NA` with a warning, which was swallowing the actionable
+  "must parse as a date (ISO yyyy-mm-dd)" message.
+- `diagnose_s2_cache()` (`R/monitoring.R`) orphan cleanup uses `unlink(
+  recursive = TRUE)` — `recursive = FALSE` never removes a directory,
+  even an empty one, so the cleanup branch was a silent no-op.
+- `test-monitoring.R` progress-callback assertion expects the
+  `s2:cache_lookup` event introduced earlier and indexes events by
+  `current` key rather than by position.
+
 ## [0.41.2] - 2026-05-20
 
 ### Fixed

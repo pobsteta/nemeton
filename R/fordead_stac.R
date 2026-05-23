@@ -343,8 +343,15 @@ NULL
   if (!is.character(x) || length(x) != 2L) {
     cli::cli_abort("{.arg {arg_name}} must be a length-2 character vector.")
   }
-  start <- suppressWarnings(as.Date(x[1L]))
-  end   <- suppressWarnings(as.Date(x[2L]))
+  # Recent R makes as.Date() *error* on an unparseable string (older R
+  # returned NA with a warning). Catch both so the actionable
+  # "must parse" message below fires instead of R's opaque error.
+  .parse_date <- function(v) {
+    tryCatch(suppressWarnings(as.Date(v)),
+             error = function(e) as.Date(NA))
+  }
+  start <- .parse_date(x[1L])
+  end   <- .parse_date(x[2L])
   if (is.na(start)) {
     cli::cli_abort("{.arg {arg_name}[1]} must parse as a date (ISO yyyy-mm-dd).")
   }

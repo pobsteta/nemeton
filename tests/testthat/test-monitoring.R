@@ -320,20 +320,25 @@ test_that("ingest_sentinel2_timeseries emits progress callbacks across phases", 
     expect_equal(out$n_obs_inserted, 4L)
 
     phases <- vapply(seen, function(p) p$current, character(1))
-    # Expected order: search → search_done → scene(×2) → complete.
+    # Expected order: search -> search_done -> cache_lookup -> scene(x2)
+    # -> complete. (s2:cache_lookup added in v0.24.2.)
     expect_identical(
       phases,
-      c("s2:search", "s2:search_done", "s2:scene", "s2:scene", "s2:complete")
+      c("s2:search", "s2:search_done", "s2:cache_lookup",
+        "s2:scene", "s2:scene", "s2:complete")
     )
 
-    search <- seen[[1]]
+    # Locate events by their `current` key rather than by position so
+    # the test survives further phase additions.
+    first_of <- function(key) seen[[which(phases == key)[1L]]]
+
+    search <- first_of("s2:search")
     expect_equal(search$n_plots, 2L)
     expect_equal(search$bands, "NDVI")
 
-    search_done <- seen[[2]]
-    expect_equal(search_done$total, 2L)
+    expect_equal(first_of("s2:search_done")$total, 2L)
 
-    scene_evt <- seen[[3]]
+    scene_evt <- first_of("s2:scene")
     expect_equal(scene_evt$completed, 0L)
     expect_equal(scene_evt$total, 2L)
     expect_true(nzchar(scene_evt$scene_id))

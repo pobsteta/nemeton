@@ -1,3 +1,30 @@
+# nemeton 0.43.2 (2026-05-23)
+
+### Fixed — test-suite stabilisation (chip 1)
+
+First slice of the « ~13 échecs préexistants » documented in v0.43.1.
+No production behaviour change; all fixes are defensive against R
+runtime drift and a latent `unlink()` bug.
+
+- **`R/fordead_python.R`** — `.same_path()` now collapses `/./`,
+  duplicate slashes and a trailing slash by hand before comparing,
+  because `normalizePath(mustWork = FALSE)` leaves *non-existent*
+  paths untouched (so the previous identity test produced false
+  negatives whenever one input had a redundant `/.` segment).
+- **`R/fordead_stac.R`** — `.validate_date_range()` wraps `as.Date()`
+  in a `tryCatch`: recent R *errors* on an unparseable string where
+  older R returned `NA` with a warning, which used to swallow the
+  actionable "must parse as a date (ISO yyyy-mm-dd)" message.
+- **`R/monitoring.R`** — `diagnose_s2_cache()` orphan cleanup uses
+  `unlink(scene_dir, recursive = TRUE)`. With `recursive = FALSE`,
+  `unlink()` never removes a directory — not even an empty one — so
+  the cleanup branch was a silent no-op. The emptiness guard
+  immediately above keeps the call safe.
+- **`tests/testthat/test-monitoring.R`** — progress-callback assertion
+  expects the `s2:cache_lookup` event introduced earlier and looks up
+  events by `current` key rather than by position, so future phase
+  insertions don't shift indices.
+
 # nemeton 0.43.1 (2026-05-22)
 
 ### Fixed — `R CMD check` debt cleanup
