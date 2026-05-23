@@ -285,7 +285,23 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             n_plots = nrow(plots),
             bands   = bands))
 
-  bbox <- sf::st_as_sfc(sf::st_bbox(plots))
+  # spec 012 — the STAC search bbox AND the COG crop are driven by
+  # `monitoring_zone.zone_wkt` (the UGF envelope registered by the
+  # app), not by the per-plot bbox. This is what makes the on-disk S2
+  # cache shareable between FAST and FORDEAD: both pipelines now ask
+  # the COG for the same crop. Fallback to the plot bbox (v0.43.x
+  # behaviour) when the zone has no WKT — typically a zone created by
+  # a script that bypassed `register_monitoring_zone()`.
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  if (is.null(aoi_zone)) {
+    cli::cli_warn(c(
+      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
+      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
+    ))
+    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
+                          crs = sf::st_crs(plots))
+  }
+  bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))
   scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
   if (!nrow(scenes)) {
     cli::cli_alert_info("No Sentinel-2 scene found for zone_id {zone_id} between {start} and {end} (max_cloud = {max_cloud}%).")
@@ -337,7 +353,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
               cloud_pct = sc$cloud_pct,
               source    = sc$source))
     obs <- tryCatch(
-      .extract_scene_obs(sc, plots, bands,
+      .extract_scene_obs(sc, plots, bands, crop_aoi = aoi_zone,
                          cache_dir = cache_dir, emit = emit),
       error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
@@ -538,15 +554,21 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   sf::st_sf(rs, geometry = geom_sfc, crs = 4326)
 }
 
-.extract_scene_obs <- function(scene, plots, bands,
+.extract_scene_obs <- function(scene, plots, bands, crop_aoi = NULL,
                                cache_dir = NULL, emit = NULL) {
   # Buffer plots in their native projected CRS (Lambert-93 by default
   # for FR; in 4326 we'd buffer in degrees, which is wrong).
   plots_proj <- sf::st_transform(plots, 2154)
   buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)
 
-  rB04 <- .get_s2_band_raster(scene, "B04", buf, cache_dir, emit)
-  rB08 <- .get_s2_band_raster(scene, "B08", buf, cache_dir, emit)
+  # spec 012 — crop the COG to the zone envelope (`crop_aoi`) so the
+  # cache key matches between FAST and FORDEAD; the per-plot buffer
+  # `buf` is only used downstream for `exact_extract`. When `crop_aoi`
+  # is NULL (legacy caller), fall back to the buffer bbox.
+  crop_geom <- if (is.null(crop_aoi)) buf else crop_aoi
+
+  rB04 <- .get_s2_band_raster(scene, "B04", crop_geom, cache_dir, emit)
+  rB08 <- .get_s2_band_raster(scene, "B08", crop_geom, cache_dir, emit)
   buf_in_raster_crs_08 <- sf::st_transform(buf, terra::crs(rB08))
   # B04 and B08 share resolution (10 m), no resample needed.
 
@@ -569,7 +591,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   }
 
   if ("NBR" %in% bands) {
-    rB12 <- .get_s2_band_raster(scene, "B12", buf, cache_dir, emit)
+    rB12 <- .get_s2_band_raster(scene, "B12", crop_geom, cache_dir, emit)
     # B12 is 20 m — resample to B08 grid for the formula.
     rB12r <- terra::resample(rB12, rB08, method = "bilinear")
     nbr <- (rB08 - rB12r) / (rB08 + rB12r)
@@ -799,6 +821,13 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 # `cache_dir` if a usable cached file exists; otherwise fetches via
 # VSI, crops, and writes to cache (best-effort, write failures only
 # warn).
+#
+# Since spec 012 the third argument is the zone AOI (an sf polygon)
+# rather than the per-plot buffer — same shape, but now the cache key
+# is stable across FAST and FORDEAD runs against the same zone. The
+# parameter name `buf_plots` is preserved for back-compat with mocks
+# that name it explicitly (`local_mocked_bindings(.get_s2_band_raster
+# = function(scene, band, buf_plots, ...))`).
 .get_s2_band_raster <- function(scene, band, buf_plots,
                                 cache_dir = NULL, emit = NULL) {
   scene_id <- as.character(scene$scene_id)

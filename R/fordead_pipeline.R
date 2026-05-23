@@ -23,43 +23,8 @@
 FORDEAD_BANDS <- c("B02", "B04", "B05", "B8A", "B11", "B12")
 
 
-#' Resolve the AOI sf POLYGON of a monitoring zone (EPSG:2154)
-#'
-#' Queries `monitoring_zone` for the zone's WKT + CRS, parses it via
-#' `sf::st_as_sfc()`, and reprojects to Lambert-93 if needed.
-#' Errors out with a typed message when the zone is unknown so the
-#' caller (typically [run_fordead_dieback()]) surfaces an actionable
-#' message rather than an empty sf.
-#'
-#' @keywords internal
-.get_zone_aoi <- function(con, zone_id) {
-  if (!inherits(con, "DBIConnection")) {
-    cli::cli_abort("{.arg con} must be a {.cls DBIConnection}.")
-  }
-  if (length(zone_id) != 1L || is.na(zone_id)) {
-    cli::cli_abort("{.arg zone_id} must be a scalar non-NA identifier.")
-  }
-
-  row <- DBI::dbGetQuery(con,
-    "SELECT id, zone_wkt, crs_epsg FROM monitoring_zone WHERE id = $1",
-    params = list(zone_id))
-
-  if (!nrow(row)) {
-    cli::cli_abort(c(
-      "Unknown monitoring zone.",
-      x = "zone_id = {.val {zone_id}}",
-      i = "Check with {.fn register_monitoring_zone}."
-    ))
-  }
-
-  srid <- as.integer(row$crs_epsg[[1L]])
-  geom <- sf::st_as_sfc(row$zone_wkt[[1L]], crs = srid)
-  aoi  <- sf::st_sf(geometry = geom, crs = srid)
-  if (!identical(sf::st_crs(aoi)$epsg, 2154L)) {
-    aoi <- sf::st_transform(aoi, 2154L)
-  }
-  aoi
-}
+# `.get_zone_aoi()` moved to `R/zone_aoi.R` in spec 012 so both
+# FORDEAD and FAST share a single AOI resolver.
 
 
 #' FORDEAD Dieback Detection Pipeline (E6.c.1, spec 008)

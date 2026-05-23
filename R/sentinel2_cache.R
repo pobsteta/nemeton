@@ -111,7 +111,20 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
             n_plots = nrow(plots),
             bands   = bands))
 
-  bbox <- sf::st_as_sfc(sf::st_bbox(plots))
+  # spec 012 — share the AOI semantics with FAST: STAC bbox + COG crop
+  # come from `monitoring_zone.zone_wkt`, not from the per-plot bbox.
+  # Same cache key as FAST → a FORDEAD pre-fetch warms the FAST cache
+  # and vice versa.
+  aoi_zone <- tryCatch(.get_zone_aoi(con, zone_id), error = function(e) NULL)
+  if (is.null(aoi_zone)) {
+    cli::cli_warn(c(
+      "Zone {.val {zone_id}} has no usable {.field zone_wkt}; falling back to per-plot bbox (legacy behaviour).",
+      i = "Re-register the zone via {.fn register_monitoring_zone} so FAST and FORDEAD share the same cache."
+    ))
+    aoi_zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(plots)),
+                          crs = sf::st_crs(plots))
+  }
+  bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))
   scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
   if (!nrow(scenes)) {
     cli::cli_alert_info("No Sentinel-2 scene found between {start} and {end}.")
@@ -140,8 +153,13 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
             n_cached     = as.integer(n_cached_scenes),
             n_to_process = as.integer(total_scenes - n_cached_scenes)))
 
+  # `buf` is kept for compatibility with downstream extract paths,
+  # but the crop passed to .get_s2_band_raster() is now the zone AOI
+  # (spec 012). FORDEAD doesn't use `buf` after this — only the cache
+  # write is what matters here.
   plots_proj <- sf::st_transform(plots, 2154)
   buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)
+  crop_geom <- aoi_zone  # spec 012
 
   n_bands_fetched <- 0L
   n_bands_cached  <- 0L
@@ -186,7 +204,7 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
     scene_failed <- FALSE
     for (b in bands) {
       ok <- tryCatch({
-        .get_s2_band_raster(sc, b, buf, cache_dir, band_emit)
+        .get_s2_band_raster(sc, b, crop_geom, cache_dir, band_emit)
         TRUE
       }, error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} band {.val {b}} skipped: {conditionMessage(e)}")

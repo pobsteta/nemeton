@@ -1,3 +1,44 @@
+# nemeton 0.45.0 (2026-05-23)
+
+### Changed — FAST and FORDEAD share the same AOI (spec 012)
+
+Both pipelines now resolve their Sentinel-2 AOI through the
+registered `monitoring_zone.zone_wkt` (the UGF envelope set by
+[register_monitoring_zone()]), instead of computing a per-plot bbox
+on the fly. The on-disk COG cache (`<cache_dir>/<scene_id>/<band>.tif`)
+therefore lives at the same extent for both pipelines, so a FORDEAD
+ingest pre-warms the FAST cache and vice versa. Spec 012, motivated
+by hours-long FAST re-fetches observed on villards.
+
+- `.get_zone_aoi()` moved from `R/fordead_pipeline.R` to a neutral
+  `R/zone_aoi.R` so both pipelines share a single resolver.
+- `ingest_sentinel2_timeseries()` (FAST entry point) and
+  `ingest_s2_raw_bands_to_cache()` (the ingest FORDEAD calls in
+  phase 0) now read `zone_wkt` and pass it as the crop geometry to
+  `.get_s2_band_raster()`. The STAC search bbox is computed from the
+  zone AOI (re-projected to WGS84) too.
+- `.extract_scene_obs()` gains an optional `crop_aoi` argument; the
+  per-plot buffer `buf` is still used downstream for
+  `exactextractr::exact_extract()` (per-plot mean).
+- `.get_s2_band_raster()`'s `buf_plots` argument keeps its name to
+  preserve mock compatibility, but semantically now accepts any sf
+  whose bbox defines the crop (a polygon AOI or the legacy buffer).
+- **Fallback** — when `monitoring_zone.zone_wkt` is empty or unreadable
+  (e.g. zone created by a script that bypassed
+  `register_monitoring_zone()`), both pipelines warn explicitly and
+  fall back to the v0.44.x behaviour (per-plot bbox). Re-register the
+  zone via [register_monitoring_zone()] to unlock the shared cache.
+- 6 new tests in `test-aoi-alignment.R` (15 assertions): `.get_zone_aoi`
+  shape, bbox passed to STAC matches zone (FAST + FORDEAD-ingest),
+  fallback warn path. Existing tests in `test-sentinel2-cache.R`
+  updated to mock `.get_zone_aoi()` alongside `.fetch_plots_sf()`.
+
+**Operational note** — caches populated by v0.44.x or earlier hold
+crops at the per-plot bbox and will trigger one wave of CACHE-STALE
+re-fetches the first time spec 012 runs against them. This is
+expected and ponctuel; optional cleanup is `unlink(
+"<project>/cache/layers/sentinel2", recursive = TRUE)`.
+
 # nemeton 0.44.0 (2026-05-23)
 
 ### Added — `project_uuid` binding for `monitoring_zone` (spec 011)

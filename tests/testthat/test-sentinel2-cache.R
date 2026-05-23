@@ -21,6 +21,16 @@ make_fake_plots <- function() {
             radius_m = 15, geometry = pt)
 }
 
+# spec 012 — make_fake_aoi() returns a small sf POLYGON in EPSG:2154
+# centered roughly on make_fake_plots() so unit tests can mock
+# `.get_zone_aoi()` without touching the DB.
+make_fake_aoi <- function() {
+  pol <- sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 1000000, ymin = 6800000,
+      xmax = 1001000, ymax = 6801000), crs = 2154))
+  sf::st_sf(geometry = pol, crs = 2154)
+}
+
 make_fake_scenes <- function(n = 2) {
   data.frame(
     scene_id  = sprintf("S2A_FAKE_%02d", seq_len(n)),
@@ -80,6 +90,7 @@ test_that("creates cache_dir when absent", {
 
   testthat::local_mocked_bindings(
     .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) data.frame(),
     .get_s2_band_raster = function(...) NULL,
     .package = "nemeton"
@@ -110,6 +121,7 @@ test_that("emits s2:* events in order and returns scenes_df", {
 
   testthat::local_mocked_bindings(
     .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) make_fake_scenes(2L),
     .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) {
       fetched <<- c(fetched, paste(scene$scene_id, band, sep = "/"))
@@ -148,6 +160,7 @@ test_that("cached bands are counted but not fetched", {
 
   testthat::local_mocked_bindings(
     .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) make_fake_scenes(1L),
     .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) {
       emit(list(current = "s2:band_cached", scene_id = scene$scene_id,
@@ -174,6 +187,7 @@ test_that("scene fetch failure is counted as scene_skipped", {
 
   testthat::local_mocked_bindings(
     .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) make_fake_scenes(2L),
     .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) {
       if (scene$scene_id == "S2A_FAKE_01" && band == "B04") {
@@ -219,6 +233,7 @@ test_that("fully cached scenes emit s2:scene_cached and skip the band loop", {
   fetched <- character(0)
   testthat::local_mocked_bindings(
     .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) make_fake_scenes(2L),
     .get_s2_band_raster = function(scene, band, buf_plots, cache_dir, emit) {
       fetched <<- c(fetched, paste(scene$scene_id, band, sep = "/"))
@@ -258,6 +273,7 @@ test_that("empty STAC search yields zero-row scenes_df with stable shape", {
 
   testthat::local_mocked_bindings(
     .fetch_plots_sf = function(con, zone_id) make_fake_plots(),
+    .get_zone_aoi   = function(con, zone_id) make_fake_aoi(),
     stac_search_s2  = function(...) data.frame(),
     .package = "nemeton"
   )

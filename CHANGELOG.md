@@ -10,6 +10,24 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-05-23
+
+### Changed
+
+- FAST (`ingest_sentinel2_timeseries()`) and FORDEAD-ingest
+  (`ingest_s2_raw_bands_to_cache()`) now resolve their Sentinel-2
+  AOI through `monitoring_zone.zone_wkt` via the new shared helper
+  `.get_zone_aoi()` (moved to `R/zone_aoi.R`). Both pipelines crop
+  the COG to the same extent → the on-disk cache is reusable across
+  them. Spec 012.
+- `.extract_scene_obs()` gains an optional `crop_aoi` argument.
+- Defensive fallback to per-plot bbox + warn when `zone_wkt` is
+  empty or unparseable.
+
+### Added
+
+- `R/zone_aoi.R` — shared resolver `.get_zone_aoi(con, zone_id)`.
+
 ## [0.44.0] - 2026-05-23
 
 ### Added

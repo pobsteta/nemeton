@@ -1109,7 +1109,8 @@ test_that("ingest_sentinel2_timeseries forwards cache_dir to .extract_scene_obs"
     zid <- register_monitoring_zone(con, "Zforward", pol, placettes)
 
     seen_cache_dir <- NA_character_
-    fake_obs <- function(scene, plots, bands, cache_dir = NULL, emit = NULL) {
+    fake_obs <- function(scene, plots, bands, crop_aoi = NULL,
+                         cache_dir = NULL, emit = NULL) {
       seen_cache_dir <<- if (is.null(cache_dir)) NA_character_ else cache_dir
       data.frame(
         plot_id  = plots$id, obs_date = scene$obs_date, band = "NDVI",
