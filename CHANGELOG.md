@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-05-24
+
+### Added
+
+- `read_fast_alert_raster(con, zone_id, threshold_ndvi, threshold_nbr,
+  date_from, date_to, mode, window_days, cache_dir)` — exported.
+  Produces a single-band `SpatRaster` (EPSG:2154) of FAST alerts at
+  native S2 pixel resolution. Two modes: `"count"` (integer per-pixel
+  alert-day count) and `"rolling"` (continuous deficit magnitude on
+  the trailing window). Multi-tile MGRS AOIs handled via per-tile
+  compute + mosaic. Spec 013.
+- Internal helpers `.compute_alert_count()`, `.compute_alert_rolling()`,
+  `.s2_mgrs_tile()` in `R/fast_alert_raster.R`.
+
 ## [0.45.0] - 2026-05-23
 
 ### Changed

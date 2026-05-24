@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 0.45.0
+Version: 0.46.0
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )

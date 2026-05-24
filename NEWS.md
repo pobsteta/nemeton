@@ -1,3 +1,42 @@
+# nemeton 0.46.0 (2026-05-24)
+
+### Added — `read_fast_alert_raster()` pixel-level FAST alerts (spec 013)
+
+New exported function that produces a single-band SpatRaster (EPSG:2154)
+of FAST alerts at native Sentinel-2 pixel resolution, built from the
+on-disk COG cache populated by [ingest_sentinel2_timeseries()]. Two
+semantics in parallel via the `mode` argument:
+
+- **`mode = "count"`** — per-pixel integer count of dates within
+  `[date_from, date_to]` where `NDVI < threshold_ndvi` **or**
+  `NBR < threshold_nbr`. Output layer name `alert_count`.
+- **`mode = "rolling"`** — continuous deficit magnitude on the trailing
+  `window_days`. Returns `max(deficit_ndvi, deficit_nbr)` where
+  `deficit_x = max(0, threshold_x - mean_x_over_window)`. Output 0 =
+  pixel not in alert, > 0 = magnitude of the alert. Layer name
+  `alert_deficit`.
+
+Multi-tile AOIs are handled transparently: scenes are grouped by their
+MGRS tile (5th `_`-field of the scene id), one raster is computed per
+tile in its native CRS (typically EPSG:32631), each is projected to
+EPSG:2154, and the per-tile rasters are mosaicked with `fun = "max"`.
+Tested end-to-end on villards (zone 1, 155 plots, 55 dates spanning
+T31TFM + T31TGM).
+
+This replaces the per-plot semantics of [list_fast_alerts_for_zone()]
+with a pixel-level raster suitable for the app's *Alertes FAST* tab
+(à la `addRasterImage` + classified legend), and unblocks the
+validation-sampling design (`priority_raster` argument of the future
+GRTS-weighted sampler).
+
+- New `R/fast_alert_raster.R` (function + internal helpers
+  `.compute_alert_count()`, `.compute_alert_rolling()`,
+  `.s2_mgrs_tile()`).
+- 20 new tests in `test-fast-alert-raster.R`: input validation,
+  synthetic stack assertions for both modes, NULL on empty window,
+  end-to-end smoke against the real villards DB.
+- Spec : `specs/013-fast-alert-raster/spec.md`.
+
 # nemeton 0.45.0 (2026-05-23)
 
 ### Changed — FAST and FORDEAD share the same AOI (spec 012)
