@@ -1,3 +1,44 @@
+# nemeton 0.47.3 (2026-05-25)
+
+### Fixed — `.ext_contains()` 1-pixel tolerance kills the CACHE-STALE storm
+
+The Sentinel-2 cache (`.get_s2_band_raster()`) declared CACHE-STALE
+**every time** the cached extent missed the AOI by a sub-pixel amount
+— typically a 5-10 m float-point drift introduced by
+`sf::st_transform(buf, raster_crs)` + `terra::crop(snap = "out")`
+between two runs against the **same** zone. Result on villards
+(2026-05-25): a re-ingest projected to **~4 h** to refetch 118 scenes
+whose cached `B04.tif` was ~20 KB and whose refetched `B04.tif` was
+~20 KB (differing by < 50 bytes).
+
+Fix : `.ext_contains(outer, inner, tolerance = 0)` gains a `tolerance`
+argument. The cache-hit call site in `.get_s2_band_raster()` now
+passes `tolerance = max(terra::res(r_cached))` — exactly one pixel of
+the cached raster (10 m for B04/B08, 20 m for B12). Any other caller
+keeps the strict pre-v0.47.3 semantics via the default `tolerance =
+0`.
+
+When tolerance lets a CACHE-STALE through, the subsequent
+`terra::crop(r_cached, needed_ext, snap = "out")` returns a raster
+that may be missing edge pixels of the AOI. In practice these are at
+the AOI envelope and don't fall on `exactextractr::exact_extract`
+buffer footprints (the per-plot 15 m buffers are well inside the
+AOI). `exact_extract` itself silently handles missing cells (weight 0
+contribution).
+
+Verbose log message updated:
+`CACHE-STALE extent does not cover AOI (tol=10m), refetching` —
+makes the tolerance value visible when stale fires anyway.
+
+8 new test assertions in `test-monitoring.R` (`.ext_contains
+tolerance ...`). Suite : `test-monitoring.R` 216 ✓ (was 208, +8).
+No production regression on other monitoring tests.
+
+Expected impact on the villards run currently in flight: ~4 h
+projection drops to ~10-30 min (most CACHE-STALE become CACHE-HIT
+since the cached file's extent IS off by ≤ 1 pixel from the new
+AOI).
+
 # nemeton 0.47.2 (2026-05-25)
 
 ### Fixed — `with_clean_db()` guard-rail against wiping production data

@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.47.3] - 2026-05-25
+
+### Fixed
+
+- `.ext_contains(outer, inner, tolerance = 0)` gains a `tolerance`
+  argument (CRS units). The cache-hit lookup in
+  `.get_s2_band_raster()` now passes `tolerance =
+  max(terra::res(r_cached))` so a sub-pixel mismatch between the
+  cached extent and the AOI doesn't trigger a CACHE-STALE. Closes
+  the villards CACHE-STALE storm — projected refetch from ~4 h to
+  ~10-30 min. Strict (`tolerance = 0`) default for back-compat.
+- `[s2_cache]` verbose log now reports the tolerance value when
+  CACHE-STALE fires anyway: `… (tol=10m), refetching`.
+
 ## [0.47.2] - 2026-05-25
 
 ### Fixed

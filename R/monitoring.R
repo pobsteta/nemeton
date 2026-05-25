@@ -680,10 +680,19 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 # Geometric predicate: does `outer` (xmin, xmax, ymin, ymax) contain
 # `inner`? Accepts terra::ext() results or 4-numeric vectors. Robust
 # to terra S4 indexing quirks since v0.21.8.
-.ext_contains <- function(outer, inner) {
+#
+# `tolerance` (CRS units, typically metres for EPSG:32631) relaxes
+# each bound by that amount, so a sub-pixel mismatch — typical of the
+# `sf::st_transform(buf, raster_crs)` + `terra::crop(snap = "out")`
+# pipeline run-to-run — does not trigger a spurious CACHE-STALE.
+# Caller passes `max(terra::res(r_cached))` so that the slack is
+# exactly one pixel of the cached raster. Default 0 = strict
+# (back-compat for older callers). Spec « solution A » (v0.47.3).
+.ext_contains <- function(outer, inner, tolerance = 0) {
   o <- .ext_as_numeric(outer)
   i <- .ext_as_numeric(inner)
-  o[1] <= i[1] && o[2] >= i[2] && o[3] <= i[3] && o[4] >= i[4]
+  (o[1] - tolerance) <= i[1] && (o[2] + tolerance) >= i[2] &&
+    (o[3] - tolerance) <= i[3] && (o[4] + tolerance) >= i[4]
 }
 
 # Open a Sentinel-2 band href with `terra::rast()`, retrying on the
@@ -871,7 +880,15 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     if (!is.null(r_cached)) {
       buf_native <- sf::st_transform(buf_plots, terra::crs(r_cached))
       needed_ext <- terra::ext(terra::vect(buf_native))
-      if (.ext_contains(terra::ext(r_cached), needed_ext)) {
+      # Tolerance = 1 pixel of the cached raster. Absorbs the
+      # sub-pixel jitter introduced by `sf::st_transform()` + `snap =
+      # "out"` between two runs against the SAME zone (spec « solution
+      # A » v0.47.3): cf. villards CACHE-STALE storm where the cached
+      # 19 939 B / 7 295 B files differed by < 50 bytes from the
+      # refetched ones yet triggered a 4 h re-download.
+      tol <- max(terra::res(r_cached))
+      if (.ext_contains(terra::ext(r_cached), needed_ext,
+                        tolerance = tol)) {
         # Re-crop to today's AOI so callers that arithmetic two
         # cached bands together (NDVI = (B08 - B04) / (B08 + B04))
         # see identical extents on both. snap = "out" rounds to the
@@ -885,7 +902,9 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
                      path     = cached_path))
         return(r_cached)
       }
-      .s2_cache_log("CACHE-STALE extent does not cover AOI, refetching")
+      .s2_cache_log(sprintf(
+        "CACHE-STALE extent does not cover AOI (tol=%.0fm), refetching",
+        tol))
     }
   } else if (!is.null(cached_path)) {
     .s2_cache_log("CACHE-MISS file does not exist yet")

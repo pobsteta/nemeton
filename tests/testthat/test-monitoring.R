@@ -634,6 +634,39 @@ test_that(".ext_contains accepts terra::ext SpatExtent objects (S4)", {
   expect_true(nemeton:::.ext_contains(c(0, 100, 0, 100), inner_se))
 })
 
+test_that(".ext_contains tolerance argument absorbs sub-pixel jitter (v0.47.3)", {
+  # spec « solution A » — at the cache-hit call site we pass
+  # `tolerance = max(terra::res(r_cached))` so a sub-pixel mismatch
+  # between the cached extent and the AOI does not trigger a
+  # spurious CACHE-STALE. Default `tolerance = 0` preserves the
+  # strict pre-v0.47.3 behaviour for any other caller.
+  outer <- c(0, 100, 0, 100)
+
+  # Default (strict) — pre-v0.47.3 behaviour.
+  expect_false(nemeton:::.ext_contains(outer, c(-5, 90, 10, 50)))
+  expect_false(nemeton:::.ext_contains(outer, c(10, 105, 10, 50)))
+
+  # With tolerance, sub-pixel overshoot is accepted.
+  expect_true(nemeton:::.ext_contains(outer, c(-5, 90, 10, 50),
+                                      tolerance = 10))
+  expect_true(nemeton:::.ext_contains(outer, c(10, 105, 10, 50),
+                                      tolerance = 10))
+  expect_true(nemeton:::.ext_contains(outer, c(-10, 110, -10, 110),
+                                      tolerance = 10))
+
+  # Beyond tolerance still fails.
+  expect_false(nemeton:::.ext_contains(outer, c(-11, 90, 10, 50),
+                                       tolerance = 10))
+  expect_false(nemeton:::.ext_contains(outer, c(10, 111, 10, 50),
+                                       tolerance = 10))
+
+  # Negative tolerance is allowed (= more strict); validate it works
+  # symmetrically though we never use it.
+  expect_false(nemeton:::.ext_contains(outer, c(0, 100, 0, 100),
+                                       tolerance = -1))
+})
+
+
 test_that(".ext_as_numeric returns (xmin, xmax, ymin, ymax) for both shapes", {
   skip_if_not_installed("terra")
   out_se   <- nemeton:::.ext_as_numeric(terra::ext(c(1, 2, 3, 4)))
