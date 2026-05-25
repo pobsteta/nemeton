@@ -20,8 +20,37 @@ skip_if_no_timescaledb <- function() {
 # Open a fresh connection for an integration test, drop the four tables
 # (and schema_migration) at the *start* and end of each test so the test
 # is idempotent and doesn't leak state into other tests.
+#
+# Safety guard-rail (v0.47.2, incident 2026-05-25) : refuse to run when
+# `NEMETON_DB_URL_TEST` resolves to the same URL as `NEMETON_DB_URL`
+# unless the caller explicitly opts in with
+# `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`. The `reset_schema()`
+# below DROPs the entire monitoring schema; if the test DB == prod DB,
+# every integration test wipes the user's villards / plots /
+# obs_pixel / alert rows. The incident burned 17 050 obs_pixel rows.
 with_clean_db <- function(code) {
-  url <- Sys.getenv("NEMETON_DB_URL_TEST", Sys.getenv("NEMETON_DB_URL", ""))
+  url_test <- Sys.getenv("NEMETON_DB_URL_TEST", "")
+  url_main <- Sys.getenv("NEMETON_DB_URL",      "")
+  url      <- if (nzchar(url_test)) url_test else url_main
+
+  # Hard guard : refuse when the test URL points to the production
+  # URL (either by being equal, or by `NEMETON_DB_URL_TEST` being
+  # unset so the helper falls back to `NEMETON_DB_URL`).
+  same_url      <- nzchar(url_main) && identical(url_test, url_main)
+  fellback_main <- !nzchar(url_test) && nzchar(url_main)
+  allow_destr   <- identical(toupper(Sys.getenv("NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE", "")),
+                             "TRUE")
+  if ((same_url || fellback_main) && !allow_destr) {
+    testthat::skip(paste0(
+      "with_clean_db() refused to run: NEMETON_DB_URL_TEST is not set ",
+      "or equals NEMETON_DB_URL. Each integration test DROPs the ",
+      "monitoring schema, which would wipe production data. ",
+      "Point NEMETON_DB_URL_TEST at a *separate* test DB, ",
+      "or set NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE to override ",
+      "(in CI on an empty DB, for example)."
+    ))
+  }
+
   con <- db_connect(url)
   reset_schema <- function() {
     DBI::dbExecute(con, "DROP TABLE IF EXISTS alert CASCADE")

@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.47.2] - 2026-05-25
+
+### Fixed
+
+- `tests/testthat/helper-monitoring.R::with_clean_db()` now refuses to
+  run when `NEMETON_DB_URL_TEST` is unset or equal to `NEMETON_DB_URL`
+  (the helper's `reset_schema()` would otherwise wipe the user's
+  production monitoring data). Override via
+  `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE` for CI on an empty DB.
+  Closes the gap that destroyed villards on 2026-05-25.
+
 ## [0.47.1] - 2026-05-25
 
 ### Fixed

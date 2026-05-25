@@ -1,3 +1,35 @@
+# nemeton 0.47.2 (2026-05-25)
+
+### Fixed — `with_clean_db()` guard-rail against wiping production data
+
+Adds a hard safety check in the integration-test helper. Each
+integration test using `with_clean_db()` calls a `reset_schema()`
+that `DROP`s the entire monitoring schema (`alert`, `obs_pixel`,
+`plot`, `monitoring_zone`, `schema_migration`) at start and end of
+the test, so the test is idempotent. The catch: when
+`NEMETON_DB_URL_TEST` is unset (or equal to `NEMETON_DB_URL`), every
+integration test wipes the user's production data.
+
+This actually happened on 2026-05-25 while running the cœur
+integration tests against the user's local DB. The villards zone
+(id=1, 155 plots), 17 050 `obs_pixel` rows and ~24 FORDEAD alerts
+were lost. The user re-registered the zone via the app (spec 011 hook
+took care of the binding automatically).
+
+Guard now refuses to run when either:
+
+- `NEMETON_DB_URL_TEST` is not set and the helper would fall back to
+  `NEMETON_DB_URL`, or
+- `NEMETON_DB_URL_TEST` equals `NEMETON_DB_URL`.
+
+It calls `testthat::skip()` with an actionable message instead.
+Override : set `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`. Intended
+for CI on an empty test DB where the wipe is harmless.
+
+No production code change. Adds 23 lines to
+`tests/testthat/helper-monitoring.R`. All FAST / FORDEAD integration
+tests gracefully skip when the guard fires.
+
 # nemeton 0.47.1 (2026-05-25)
 
 ### Fixed — test-suite stabilisation (chip 2-3)
