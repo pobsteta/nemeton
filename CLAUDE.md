@@ -114,7 +114,7 @@ Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml` avec de
 
 ## ADR (Architecture Decision Records)
 
-ADR documentés dans `platform_nemeton/docs/` (sauf ADR-013 dont le draft vit dans `specs/008-suivi-sanitaire/`, à porter vers `platform_nemeton`) :
+ADR documentés dans `platform_nemeton/docs/` :
 
 | ADR | Décision |
 |-----|----------|
