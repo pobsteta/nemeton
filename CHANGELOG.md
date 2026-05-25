@@ -10,6 +10,34 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-05-25
+
+### Added
+
+- `fordead_alert_mask(alert_raster, classes, buffer_m)` — exported.
+  Extracts alert cells from a categorical 0-4 SpatRaster (FORDEAD
+  `dieback_mask` or FAST mask), preserves their class value (NA
+  elsewhere), with optional metric buffer dilation. Output is suitable
+  both as mask AND as priority raster.
+- `compute_fast_alert_mask(con, zone_id, ..., cache_dir, mask_cache_dir,
+  breaks)` — exported. Discretises [read_fast_alert_raster()] (v0.46.0)
+  to the 0-4 scale aligned with FORDEAD, persists under
+  `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.
+- `read_fast_alert_mask(con, zone_id, run_id, cache_dir)` — exported.
+  Strict mirror of [read_fordead_dieback_mask()] reading the persisted
+  0-4 mask, NULL when no file matches.
+- `create_validation_sampling_plan(zone, alert_raster, n_validation,
+  n_control, classes, buffer_m, source, seed)` — exported. Single
+  entry point returning an `sf` POINT (EPSG:2154) combining
+  validation plots (unequal-probability GRTS on the alert mask) +
+  control plots (equiprobable GRTS on healthy class 0), with TSP
+  visit order. Spec 014 phase A.
+
+### Internal
+
+- Helpers `.draw_grts_weighted()`, `.draw_grts_equiprobable()`,
+  `.compute_visit_order()` in `R/validation_sampling.R`.
+
 ## [0.46.0] - 2026-05-24
 
 ### Added

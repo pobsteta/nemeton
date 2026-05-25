@@ -1,3 +1,65 @@
+# nemeton 0.47.0 (2026-05-25)
+
+### Added — Validation sampling plan (spec 014, phase A)
+
+Three new exported functions that let the app generate a **validation
+sampling plan** concentrated on the dieback foci detected by FORDEAD or
+FAST — solving the gap where the systemic GRTS sample misses an alert
+when no plot happens to sit on a detected spot.
+
+- **`fordead_alert_mask(alert_raster, classes = c(3L, 4L), buffer_m = 0)`**
+  — Pure raster utility. Takes a categorical 0-4 SpatRaster (FORDEAD
+  `dieback_mask` or FAST mask, see below), keeps the cells in `classes`
+  with their value (so the output doubles as a *priority raster*), NA
+  elsewhere. Optional metric dilation around alert cells (buffer cells
+  get `min(classes)`).
+
+- **`compute_fast_alert_mask(con, zone_id, ..., cache_dir, mask_cache_dir,
+  breaks = NULL)`** — Discretises the continuous output of
+  [read_fast_alert_raster()] (v0.46.0) to the **0-4 categorical scale
+  aligned with FORDEAD's `dieback_mask`**, and persists it under
+  `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif` (GeoTIFF DEFLATE
+  INT1U). Defaults for `breaks`: `c(0, 2, 5, 10, Inf)` in `"count"`
+  mode, `c(0, 0.05, 0.10, 0.20, Inf)` in `"rolling"` mode.
+
+- **`read_fast_alert_mask(con, zone_id, run_id = NULL, cache_dir)`** —
+  Strict mirror of [read_fordead_dieback_mask()]. Reads back the
+  persisted 0-4 mask, returns `NULL` when no file matches.
+
+- **`create_validation_sampling_plan(zone, alert_raster, n_validation,
+  n_control, classes, buffer_m, source, seed)`** — The single
+  user-facing entry point. Returns an `sf` POINT object in EPSG:2154
+  combining:
+  * **Validation plots** drawn from the alert cells via
+    **unequal-probability GRTS** (`spsurvey::grts(caty_var, caty_n)`):
+    a cell of class 4 has a higher inclusion probability than class 3
+    (allocation by largest-remainder rounding).
+  * **Control plots** drawn equiprobably from the healthy zone
+    (class 0).
+  * `visit_order` column from a TSP tour over the union.
+
+  Raises a typed error `nemeton_empty_alert_mask` when no alert cell
+  matches `classes`, so the app can show « zone saine, rien à valider »
+  cleanly instead of crashing.
+
+The FAST and FORDEAD masks consume the same downstream pipeline
+([fordead_alert_mask()] → [create_validation_sampling_plan()]) by
+construction: the 0-4 scale is the contract.
+
+Naming: kept [read_fast_alert_raster()] (v0.46.0) as the live
+continuous compute for UI exploration ; new [read_fast_alert_mask()]
+parallels [read_fordead_dieback_mask()] for the persisted categorical
+mask. No breaking change.
+
+49 new tests in `test-alert-mask.R` (13), `test-fast-alert-mask.R`
+(18), `test-validation-sampling.R` (18) — input validation, raster
+arithmetic on synthetic stacks, end-to-end round-trip on the real
+villards DB.
+
+Spec : `specs/014-validation-sampling/` (mirrors the design in
+`nemetonshiny/design/validation-sampling.md` and
+`nemeton-phase-a-brief.md`).
+
 # nemeton 0.46.0 (2026-05-24)
 
 ### Added — `read_fast_alert_raster()` pixel-level FAST alerts (spec 013)
