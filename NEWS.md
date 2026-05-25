@@ -1,3 +1,25 @@
+# nemeton 0.47.4 (2026-05-25)
+
+### Fixed — bump cache tolerance from 1 to 4 pixels
+
+v0.47.3 set the cache-hit tolerance to `1 * max(terra::res(r_cached))`
+(10 m for B04/B08, 20 m for B12). Production retry on villards showed
+that cache files written by *previous app sessions* (before today's
+zone re-registration after the DB wipe) can differ by more than 1
+pixel from today's AOI — `sf::st_union(parcels)` is not byte-stable
+across runs, and the zone polygon was effectively re-generated. The
+1-pixel tolerance therefore continued to declare CACHE-STALE on
+~half the scenes.
+
+Bumped to `4 * max(terra::res(r_cached))` = 40 m for B04/B08, 80 m
+for B12. Generous for realistic zone drift, still negligible
+relative to a 2 km AOI. Post-crop NA at AOI edges (< 4 px wide) is
+silently handled by `exactextractr::exact_extract` (weight 0
+contribution).
+
+No new test (the existing `.ext_contains tolerance ...` suite covers
+the parametrised behaviour). No API change.
+
 # nemeton 0.47.3 (2026-05-25)
 
 ### Fixed — `.ext_contains()` 1-pixel tolerance kills the CACHE-STALE storm

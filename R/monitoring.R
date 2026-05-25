@@ -880,13 +880,17 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     if (!is.null(r_cached)) {
       buf_native <- sf::st_transform(buf_plots, terra::crs(r_cached))
       needed_ext <- terra::ext(terra::vect(buf_native))
-      # Tolerance = 1 pixel of the cached raster. Absorbs the
-      # sub-pixel jitter introduced by `sf::st_transform()` + `snap =
-      # "out"` between two runs against the SAME zone (spec « solution
-      # A » v0.47.3): cf. villards CACHE-STALE storm where the cached
-      # 19 939 B / 7 295 B files differed by < 50 bytes from the
-      # refetched ones yet triggered a 4 h re-download.
-      tol <- max(terra::res(r_cached))
+      # Tolerance = 4 pixels of the cached raster. v0.47.3 first set
+      # this to 1 pixel ; the villards test (2026-05-25) showed that
+      # cache files written by previous app sessions can differ by
+      # more (zone re-registration after a wipe, slightly different
+      # `sf::st_union(parcels)` output, etc.). 4 px ≈ 40 m for
+      # B04/B08, 80 m for B12 — generous for realistic zone drift,
+      # still negligible relative to a 2 km AOI. Edge-cell data loss
+      # (post-crop NA at AOI border, < 4 px wide) is silently
+      # tolerated by `exactextractr::exact_extract` (weight 0
+      # contribution).
+      tol <- 4 * max(terra::res(r_cached))
       if (.ext_contains(terra::ext(r_cached), needed_ext,
                         tolerance = tol)) {
         # Re-crop to today's AOI so callers that arithmetic two

@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.47.4] - 2026-05-25
+
+### Fixed
+
+- Bump cache-hit tolerance from `1 * max(res)` (10/20 m) to
+  `4 * max(res)` (40/80 m). 1-pixel tolerance still triggered
+  CACHE-STALE on villards because previous-session cache files were
+  written for a slightly different `sf::st_union(parcels)` polygon.
+
 ## [0.47.3] - 2026-05-25
 
 ### Fixed
