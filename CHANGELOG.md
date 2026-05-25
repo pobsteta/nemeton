@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.47.1] - 2026-05-25
+
+### Fixed
+
+- `.fordead_is_installed()` and `.ensure_fordead_python()` swap
+  `cli::cli_alert_warning()` / `cli::cli_alert_info()` for
+  `cli::cli_warn()` / `cli::cli_inform()` so the emitted warning /
+  message condition is catchable by `expect_warning()` /
+  `expect_message()` (the `_alert_*` family is cosmetic only). No
+  user-visible change.
+- `test-fordead-python.R` — `.assert_fordead_system` test captures
+  `base::requireNamespace` before mocking so the mock's else-branch
+  doesn't recurse into itself.
+
+Suite `test-fordead-python.R` 57 ✓ (was 3 fails). Closes the « ~9
+échecs préexistants » documented in v0.43.2.
+
 ## [0.47.0] - 2026-05-25
 
 ### Added

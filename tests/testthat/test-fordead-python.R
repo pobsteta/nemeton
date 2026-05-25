@@ -31,9 +31,16 @@ test_that(".fordead_requirements_path resolves the shipped requirements", {
 
 test_that(".assert_fordead_system aborts when reticulate is missing", {
   skip_if_no_reticulate()
+  # Capture the original `requireNamespace` *before* mocking, so the
+  # else-branch of the mock doesn't recurse into itself
+  # (`base::requireNamespace` from inside the mock body resolves to
+  # the mock again because `local_mocked_bindings(.package = "base")`
+  # replaces the namespace binding).
+  real_require <- base::requireNamespace
   testthat::local_mocked_bindings(
     requireNamespace = function(pkg, quietly = FALSE, ...) {
-      if (identical(pkg, "reticulate")) FALSE else base::requireNamespace(pkg, quietly = quietly)
+      if (identical(pkg, "reticulate")) return(FALSE)
+      real_require(pkg, quietly = quietly)
     },
     .package = "base"
   )

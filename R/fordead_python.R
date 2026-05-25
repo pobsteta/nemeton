@@ -286,7 +286,12 @@ NULL
     pinned    <- .fordead_version_pinned(requirements_path)
     installed <- .fordead_python_version(env_name)
     if (!is.na(pinned) && !is.na(installed) && !identical(pinned, installed)) {
-      cli::cli_alert_warning(c(
+      # `cli_warn` raises a proper R warning condition (which
+      # `expect_warning` catches) AND uses cli formatting. The pure-
+      # cosmetic `cli_alert_warning()` would only print to the console
+      # without raising a condition — see spec stabilisation tests
+      # chip 2-3.
+      cli::cli_warn(c(
         "{.pkg fordead} {.val {installed}} installed in {.val {env_name}}, ",
         "but {.path {basename(requirements_path)}} pins {.val {pinned}}."
       ))
@@ -418,7 +423,9 @@ NULL
   needs_install <- FALSE
   if (!reticulate::virtualenv_exists(env_name)) {
     if (verbose) {
-      cli::cli_alert_info(
+      # `cli_inform` raises a proper `message` condition catchable by
+      # `expect_message()`, where `cli_alert_info` is cosmetic only.
+      cli::cli_inform(
         "Creating Python virtualenv {.val {env_name}} (first FORDEAD use)."
       )
     }
@@ -431,9 +438,10 @@ NULL
     # a warning when the cause is a version mismatch (so we don't
     # duplicate the message here for that case).
     if (verbose) {
-      cli::cli_alert_warning(c(
-        "Reinstalling FORDEAD dependencies into {.val {env_name}} ",
-        "from {.path {basename(requirements)}}."
+      cli::cli_inform(c(
+        "i" = "Reinstalling FORDEAD dependencies into {.val {env_name}} ",
+              "(fordead is missing or out-of-date) ",
+              "from {.path {basename(requirements)}}."
       ))
     }
     needs_install <- TRUE
@@ -441,7 +449,7 @@ NULL
 
   if (needs_install) {
     if (verbose) {
-      cli::cli_alert_info(
+      cli::cli_inform(
         "Installing FORDEAD dependencies from {.path {basename(requirements)}}."
       )
     }

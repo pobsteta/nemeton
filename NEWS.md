@@ -1,3 +1,33 @@
+# nemeton 0.47.1 (2026-05-25)
+
+### Fixed — test-suite stabilisation (chip 2-3)
+
+Closes the « ~9 échecs préexistants » documented in v0.43.2. Two cœur
+fixes + one test fix; no behaviour change for end users.
+
+- **`R/fordead_python.R`** — `.fordead_is_installed()` and
+  `.ensure_fordead_python()` swap `cli::cli_alert_warning()` /
+  `cli::cli_alert_info()` for `cli::cli_warn()` / `cli::cli_inform()`.
+  The `_alert_*` family only prints styled text to the console; the
+  `_warn` / `_inform` family additionally raises a proper R
+  `warning` / `message` condition that `expect_warning()` /
+  `expect_message()` can catch in tests (and that downstream callers
+  can capture with `withCallingHandlers` if needed). User-facing
+  output is identical.
+- **`tests/testthat/test-fordead-python.R`** — the « reticulate
+  missing » test captured a stable reference to `base::requireNamespace`
+  **before** calling `local_mocked_bindings(.package = "base")` so the
+  else-branch of the mock doesn't recurse into itself
+  (`base::requireNamespace` inside the mock body resolves to the
+  mock, not the original, in recent testthat).
+
+Suite `test-fordead-python.R` : 57 ✓ / 0 FAIL (was 3 fails). Suite
+`test-fordead-stac.R` was already 100 % green from a prior chip.
+No regression on the FORDEAD-adjacent suites
+(`test-fordead-pipeline.R` 69, `test-fordead-postprocess.R` 56,
+`test-fordead-outputs.R` 41, `test-fordead-pixel-series.R` 31,
+`test-fordead-validity-zones.R` 10 = 207 ✓).
+
 # nemeton 0.47.0 (2026-05-25)
 
 ### Added — Validation sampling plan (spec 014, phase A)
