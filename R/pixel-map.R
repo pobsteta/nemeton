@@ -227,7 +227,47 @@ build_index_stack <- function(cache_dir, scenes_df,
   }
   if (!any(ok)) return(NULL)
 
-  out <- terra::rast(layers[ok])
+  valid_layers <- layers[ok]
+
+  # spec 013 / v0.47.5 — align all per-scene layers to the smallest
+  # common extent before stacking. Cached files for the same band
+  # written by separate app sessions (e.g. across a zone
+  # re-registration) can have sub-pixel-to-many-pixel extent drift,
+  # which makes `terra::rast(layers)` fail with
+  # `[rast] extents do not match`. We crop every layer to the
+  # intersection of all extents — slightly less spatial coverage,
+  # but a coherent stack that downstream consumers
+  # (`read_fast_alert_raster`, etc.) can build on.
+  common_ext <- terra::ext(valid_layers[[1L]])
+  if (length(valid_layers) > 1L) {
+    for (lyr in valid_layers[-1L]) {
+      common_ext <- terra::intersect(common_ext, terra::ext(lyr))
+      if (is.null(common_ext)) break
+    }
+  }
+  if (is.null(common_ext)) {
+    cli::cli_warn(c(
+      "build_index_stack: per-scene cached extents have no common
+       overlap; cannot stack.",
+      i = "Run {.fn diagnose_s2_cache} and consider purging the cache to
+           force a coherent rewrite."
+    ))
+    return(NULL)
+  }
+  needs_align <- !all(vapply(valid_layers, function(l) {
+    e <- terra::ext(l)
+    isTRUE(all.equal(c(terra::xmin(e), terra::xmax(e),
+                       terra::ymin(e), terra::ymax(e)),
+                     c(terra::xmin(common_ext), terra::xmax(common_ext),
+                       terra::ymin(common_ext), terra::ymax(common_ext)),
+                     tolerance = 1e-6))
+  }, logical(1)))
+  if (needs_align) {
+    valid_layers <- lapply(valid_layers,
+                           function(l) terra::crop(l, common_ext, snap = "in"))
+  }
+
+  out <- terra::rast(valid_layers)
   names(out)       <- as.character(scenes_df$obs_date[ok])
   terra::time(out) <- as.Date(scenes_df$obs_date[ok])
   attr(out, "index") <- index

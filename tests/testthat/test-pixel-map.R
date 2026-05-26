@@ -267,6 +267,85 @@ test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped silently
   expect_equal(terra::nlyr(stack_ndvi), 3L)
 })
 
+test_that("build_index_stack: aligns per-scene layers with different extents (v0.47.5)", {
+  # spec 013 / v0.47.5 — production villards run hit
+  # `[rast] extents do not match` because cached files for the same
+  # band, written by separate app sessions across a zone
+  # re-registration, had sub-pixel-to-many-pixel extent drift.
+  # build_index_stack now crops every layer to the smallest common
+  # extent (intersection) before stacking.
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+
+  # Two scenes for the same band : same CRS, same resolution,
+  # extents shifted by 30 m (= 3 pixels at 10 m).
+  for (i in seq_len(2L)) {
+    sid <- sprintf("S2_ALIGN_%02d", i)
+    dir.create(file.path(cache, sid), recursive = TRUE)
+    for (b in c("B04", "B08")) {
+      val <- if (b == "B04") 0.10 else 0.40
+      shift <- (i - 1L) * 30  # scene 1 at origin, scene 2 shifted +30m
+      r <- terra::rast(
+        nrows = 10, ncols = 10,
+        xmin  = 0  + shift, xmax = 100 + shift,
+        ymin  = 0  + shift, ymax = 100 + shift,
+        crs   = "EPSG:2154",
+        vals  = rep(val, 100))
+      terra::writeRaster(r, file.path(cache, sid, paste0(b, ".tif")),
+                         filetype = "GTiff", overwrite = TRUE)
+    }
+  }
+  scenes <- data.frame(
+    scene_id = c("S2_ALIGN_01", "S2_ALIGN_02"),
+    obs_date = as.Date(c("2026-03-01", "2026-03-15")),
+    stringsAsFactors = FALSE)
+
+  # Pre-fix v0.47.5 this would throw `[rast] extents do not match`.
+  stack <- build_index_stack(cache, scenes, "NDVI")
+  expect_s4_class(stack, "SpatRaster")
+  expect_equal(terra::nlyr(stack), 2L)
+  # Common extent = intersection = (30, 100, 30, 100) = 7x7 px area.
+  e <- terra::ext(stack)
+  expect_true(terra::xmin(e) >= 30 - 1e-6)
+  expect_true(terra::xmax(e) <= 100 + 1e-6)
+  expect_true(terra::ymin(e) >= 30 - 1e-6)
+  expect_true(terra::ymax(e) <= 100 + 1e-6)
+})
+
+
+test_that("build_index_stack: returns NULL when extents have no overlap", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+
+  # Two scenes whose extents are fully disjoint — no common ground.
+  for (i in seq_len(2L)) {
+    sid <- sprintf("S2_DISJ_%02d", i)
+    dir.create(file.path(cache, sid), recursive = TRUE)
+    for (b in c("B04", "B08")) {
+      val <- if (b == "B04") 0.10 else 0.40
+      shift <- (i - 1L) * 1000  # scene 2 shifted 1000m → no overlap
+      r <- terra::rast(
+        nrows = 10, ncols = 10,
+        xmin  = 0 + shift, xmax = 100 + shift,
+        ymin  = 0 + shift, ymax = 100 + shift,
+        crs   = "EPSG:2154", vals = rep(val, 100))
+      terra::writeRaster(r, file.path(cache, sid, paste0(b, ".tif")),
+                         filetype = "GTiff", overwrite = TRUE)
+    }
+  }
+  scenes <- data.frame(
+    scene_id = c("S2_DISJ_01", "S2_DISJ_02"),
+    obs_date = as.Date(c("2026-03-01", "2026-03-15")),
+    stringsAsFactors = FALSE)
+
+  expect_warning(
+    stack <- build_index_stack(cache, scenes, "NDVI"),
+    "no common overlap"
+  )
+  expect_null(stack)
+})
+
+
 # ---- extract_pixel_timeseries() ---------------------------------------
 
 # Build a single-scene fixture with all bands holding fixed values so

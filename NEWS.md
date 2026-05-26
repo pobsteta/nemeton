@@ -1,3 +1,39 @@
+# nemeton 0.47.5 (2026-05-26)
+
+### Fixed — `build_index_stack()` aligns per-scene layers (spec 010 + 013)
+
+`build_index_stack(cache_dir, scenes_df, index)` (spec 010 v0.22.0)
+read each scene's cached COG via `read_s2_band_raster()` and then
+called `terra::rast(layers)`. When cached files for the same band
+had been written by **separate app sessions** (cross zone
+re-registration, separate AOI snapping), the per-scene extents
+diverged by sub-pixel to multi-pixel amounts and the stack call
+failed with:
+
+```
+build_index_stack failed: [rast] extents do not match
+```
+
+Reproduced in production on villards (2026-05-26 ~01:14 UTC) right
+after the 118/118 FAST ingestion finished, when the app's
+*Carte FAST* (pixel map) and *Alertes FAST* (raster d'alerte via
+`read_fast_alert_raster()`) tried to stack the freshly-cached
+scenes.
+
+Fix : `build_index_stack()` now computes the **intersection of all
+per-scene extents** and crops every layer to that common extent
+before calling `terra::rast()`. Slightly less spatial coverage (the
+common ground), but a coherent stack that all downstream consumers
+can build on. Falls back to `NULL` with a `cli_warn` when the
+intersection is empty (no common ground at all).
+
+2 new tests in `test-pixel-map.R` cover the alignment of layers
+shifted by 30 m (3 px) and the no-overlap edge case. Total suite
+remains green.
+
+Impact on the app : *Carte FAST*, *Alertes FAST* and the validation-
+sampling FAST path stop erroring out on a mixed-vintage cache.
+
 # nemeton 0.47.4 (2026-05-25)
 
 ### Fixed — bump cache tolerance from 1 to 4 pixels

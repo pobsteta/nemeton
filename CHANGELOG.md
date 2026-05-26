@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.47.5] - 2026-05-26
+
+### Fixed
+
+- `build_index_stack()` (spec 010) now computes the intersection of
+  per-scene extents and crops each layer to that common extent
+  before `terra::rast(layers)`. Fixes `[rast] extents do not match`
+  triggered by mixed-vintage cache files (different AOI snapping
+  across app sessions). Returns `NULL` with a warn if no overlap.
+  Unblocks Carte FAST, Alertes FAST, FAST validation sampling.
+
 ## [0.47.4] - 2026-05-25
 
 ### Fixed
