@@ -1,3 +1,44 @@
+# nemeton 0.48.0 (2026-05-26)
+
+### Added — `lasR` fallback : dériver MNT/MNH depuis les `.laz` quand IGN refuse les dalles dérivées
+
+Quand les téléchargements IGN LiDAR HD MNH / MNT échouent (production
+dérivée non encore publiée, 404 sur les dalles dérivées alors que les
+nuages COPC sont disponibles, blocage réseau), `nemeton` se rabattait
+sur "CHM non trouvé — stratification sans hauteur" même si les
+`.copc.laz` correspondants traînaient dans
+`<project>/cache/layers/lidar_nuage/`. La nouvelle fonction
+exportée [`compute_dtm_chm_from_laz()`] dérive en local le DTM et le
+CHM via un pipeline `lasR` minimal (`reader_las()` →
+`triangulate(filter = keep_class(2L))` → `rasterize(res, tri,
+ofile = dtm.tif)` → `transform_with(tri)` → `rasterize(res, "max",
+ofile = chm.tif)`), écrit dans `cache/layers/lidar_mnt/dtm.tif` et
+`cache/layers/lidar_mnh/chm.tif` — chemins exactement compatibles
+avec le moteur de découverte existant.
+
+Intégration : [`resolve_project_dem()`] et [`resolve_project_chm()`]
+gagnent un paramètre `try_compute_from_laz = TRUE` (défaut) qui
+déclenche le fallback de façon **opportuniste** quand aucun raster
+pré-calculé n'est trouvé mais que des `.laz` existent. `lasR` absent
+≠ erreur : le fallback est skippé silencieusement, l'appelant
+récupère un `NULL` comme aujourd'hui. Opt-out d'un seul flag pour
+ceux qui veulent garder la sémantique stricte.
+
+Ajout d'un helper de diagnostic [`probe_ign_lidar_tile()`] (et son
+batch [`probe_ign_lidar_tiles()`]) pour classer les échecs de
+téléchargement IGN par catégorie (`not_found` = production retardée
+côté IGN, `forbidden` = auth/quota, `timeout` = surcharge serveur,
+`dns` / `connection` = réseau client). Utilisable depuis
+`nemetonshiny` pour expliquer à l'utilisateur pourquoi un download
+a échoué plutôt que d'afficher un simple `failed`.
+
+`lasR (>= 0.10.0)` ajouté en `Suggests`. Installation hors CRAN :
+`install.packages("lasR", repos = "https://r-lidar.r-universe.dev")`.
+
+Tests : `tests/testthat/test-lidar_processing.R` couvre la
+validation d'arguments, l'absence silencieuse de `lasR`, l'opt-out,
+et la classification offline du diagnostic.
+
 # nemeton 0.47.5 (2026-05-26)
 
 ### Fixed — `build_index_stack()` aligns per-scene layers (spec 010 + 013)

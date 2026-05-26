@@ -6,9 +6,19 @@
 \alias{resolve_project_chm}
 \title{Discover the best available DEM / CHM raster in a Nemeton project}
 \usage{
-resolve_project_dem(project_path, load = TRUE, verbose = FALSE)
+resolve_project_dem(
+  project_path,
+  load = TRUE,
+  verbose = FALSE,
+  try_compute_from_laz = TRUE
+)
 
-resolve_project_chm(project_path, load = TRUE, verbose = FALSE)
+resolve_project_chm(
+  project_path,
+  load = TRUE,
+  verbose = FALSE,
+  try_compute_from_laz = TRUE
+)
 }
 \arguments{
 \item{project_path}{Character. Root of the Nemeton project tree.}
@@ -21,6 +31,13 @@ callers that want to control how the raster is loaded.}
 
 \item{verbose}{Logical. When `TRUE`, log every probed location
 via `cli::cli_alert_info()`. Default `FALSE`.}
+
+\item{try_compute_from_laz}{Logical. When no pre-rasterized MNT /
+MNH is found *and* `<project>/cache/layers/lidar_nuage/*.laz`
+tiles are present, attempt to derive them on the fly with
+\code{\link{compute_dtm_chm_from_laz}} (via `lasR`) and re-probe. Default
+`TRUE`. The fallback is opportunistic: missing `lasR` simply skips
+it without erroring.}
 }
 \value{
 When `load = TRUE`: a `SpatRaster`, or `NULL` if no

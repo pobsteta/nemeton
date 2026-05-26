@@ -55,6 +55,12 @@
 #'   callers that want to control how the raster is loaded.
 #' @param verbose Logical. When `TRUE`, log every probed location
 #'   via `cli::cli_alert_info()`. Default `FALSE`.
+#' @param try_compute_from_laz Logical. When no pre-rasterized MNT /
+#'   MNH is found *and* `<project>/cache/layers/lidar_nuage/*.laz`
+#'   tiles are present, attempt to derive them on the fly with
+#'   [`compute_dtm_chm_from_laz()`] (via `lasR`) and re-probe. Default
+#'   `TRUE`. The fallback is opportunistic: missing `lasR` simply skips
+#'   it without erroring.
 #'
 #' @return When `load = TRUE`: a `SpatRaster`, or `NULL` if no
 #'   matching raster exists. When `load = FALSE`: a character vector
@@ -147,7 +153,10 @@ NULL
 #' plan <- create_sampling_plan(zone, mnt = dem, ...)
 #' }
 #' @export
-resolve_project_dem <- function(project_path, load = TRUE, verbose = FALSE) {
+resolve_project_dem <- function(project_path,
+                                load                 = TRUE,
+                                verbose              = FALSE,
+                                try_compute_from_laz = TRUE) {
   .validate_project_path(project_path)
 
   candidates <- list(
@@ -205,6 +214,20 @@ resolve_project_dem <- function(project_path, load = TRUE, verbose = FALSE) {
                                  attr_name = "nemeton_dem_layer"))
     }
   }
+
+  # Fallback: derive MNT from <project>/cache/layers/lidar_nuage via lasR.
+  if (isTRUE(try_compute_from_laz) &&
+      .maybe_compute_lidar_rasters(project_path, target = "dtm",
+                                   verbose = verbose)) {
+    for (cand in candidates) {
+      hits <- .probe_raster_candidate(cand, verbose = verbose)
+      if (!is.null(hits)) {
+        return(.materialise_raster(hits, load, cand$label,
+                                   attr_name = "nemeton_dem_layer"))
+      }
+    }
+  }
+
   if (verbose) {
     cli::cli_alert_warning("No DEM found anywhere under {.path {project_path}}.")
   }
@@ -219,7 +242,10 @@ resolve_project_dem <- function(project_path, load = TRUE, verbose = FALSE) {
 #' plan <- create_sampling_plan(zone, mnt = dem, chm = chm, ...)
 #' }
 #' @export
-resolve_project_chm <- function(project_path, load = TRUE, verbose = FALSE) {
+resolve_project_chm <- function(project_path,
+                                load                 = TRUE,
+                                verbose              = FALSE,
+                                try_compute_from_laz = TRUE) {
   .validate_project_path(project_path)
 
   candidates <- list(
@@ -258,6 +284,20 @@ resolve_project_chm <- function(project_path, load = TRUE, verbose = FALSE) {
                                  attr_name = "nemeton_chm_layer"))
     }
   }
+
+  # Fallback: derive MNH from <project>/cache/layers/lidar_nuage via lasR.
+  if (isTRUE(try_compute_from_laz) &&
+      .maybe_compute_lidar_rasters(project_path, target = "chm",
+                                   verbose = verbose)) {
+    for (cand in candidates) {
+      hits <- .probe_raster_candidate(cand, verbose = verbose)
+      if (!is.null(hits)) {
+        return(.materialise_raster(hits, load, cand$label,
+                                   attr_name = "nemeton_chm_layer"))
+      }
+    }
+  }
+
   if (verbose) {
     cli::cli_alert_warning("No CHM found anywhere under {.path {project_path}}.")
   }
