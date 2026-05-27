@@ -2,7 +2,7 @@
 
 **Statut** : draft, à valider.
 **Démarré** : 2026-05-27.
-**Cible cœur** : `nemeton` v0.48.0 (minor — nouveau paramètre + nouveau comportement par défaut).
+**Cible cœur** : minor à fixer au moment du code (v0.48.0 déjà publiée pour le lasR fallback ; vraisemblablement **v0.49.0** ou ultérieure quand spec 015 sera activée).
 **Précédents** : spec 010 (cache COG initial v0.22.0), spec 012 (AOI alignment FAST/FORDEAD v0.45.0), v0.47.3-5 (tolérance + alignment).
 
 ## 1. Problème
@@ -253,8 +253,9 @@ L'ENV gagne sur l'argument.
 
 Si la spec est validée :
 
-- Release **minor v0.48.0** (changement de comportement par défaut,
-  argument nouveau exporté).
+- Release **minor** (changement de comportement par défaut, argument
+  nouveau exporté). Numéro à fixer au moment du code — v0.48.0 déjà
+  utilisée pour le lasR fallback.
 - DESCRIPTION + NEWS + CHANGELOG + PLAN + README badge bumpés.
 - Aucun changement côté `nemetonshiny` requis — le default 500 m
   prend automatiquement. Possibilité de surfacer le paramètre côté
