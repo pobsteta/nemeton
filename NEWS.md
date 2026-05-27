@@ -1,3 +1,53 @@
+# nemeton 0.48.2 (2026-05-27)
+
+### Fixed — Cache S2 : tile-aware second chance pour les AOIs multi-tuile MGRS
+
+v0.48.1 a installé le snap-to-grid mais le diagnostic enrichi a
+révélé que sur villards, le predicate flaggait encore STALE non
+pas à cause de jitter sub-pixel mais à cause d'un **vrai débord
+géographique** :
+
+```
+CACHE-STALE … : cached_snap=(709360,709800,5143470,5145480)
+                needed_snap=(709360,710700,5143470,5145480)
+                delta_m=(10,-890,10,10)
+```
+
+890 m de débord sur xmax = 89 pixels. L'AOI villards (~1340 m × 2010 m)
+chevauche les tuiles MGRS T31TFM et T31TGM. Le cache T31TFM B04 a
+été écrit par un run précédent avec un crop **naturellement clippé**
+à la frontière FM/GM (xmax = 709800). Aujourd'hui le code demande
+l'AOI complète (xmax = 710700), qui déborde de 890 m sur l'EST —
+mais cette portion **n'existe pas dans T31TFM**, elle est sur T31TGM.
+
+Le refetch « pour rien » récupère exactement les mêmes pixels que le
+cache déjà sur disque. C'est la cause majeure du CACHE-STALE storm
+sur les AOIs multi-tuile.
+
+**Fix** : quand le predicate snap-to-grid dit STALE, une *deuxième
+chance tile-aware* lit les headers natifs du COG via `terra::rast(href)`
+(lazy, GET range seulement, pas de pixel decode, ~1 s), clippe
+`needed_ext` à l'extent natif de la tuile, et re-teste la
+containment. Si OK, CACHE-HIT.
+
+Coût : ~1 s de header GET par cas ambigu. N'est invoqué QUE quand le
+predicate simple a échoué, donc à coût quasi-nul pour les cache-hit
+nets.
+
+Log dédié quand cette branche réussit :
+```
+CACHE-HIT served from disk (needed clipped to tile native extent)
+```
+
+Tests : aucune nouvelle assertion (le predicate snap-to-grid v0.48.1
+reste le path principal, la branche tile-aware n'est testable
+qu'avec un COG distant donc skip in-CI). Suite test-monitoring.R
+inchangée : 229 ✓.
+
+**Impact attendu villards** : sur les ~50 % de scènes T31TFM
+multi-tuile, le second-chance va matcher → ~30 s d'ingest warm
+au lieu des ~3 h résiduels après v0.48.1.
+
 # nemeton 0.48.1 (2026-05-27)
 
 ### Fixed — Cache S2 validation : snap-to-grid kills the per-ingest re-fetch storm

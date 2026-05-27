@@ -983,6 +983,49 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
                      path     = cached_path))
         return(r_cached)
       }
+
+      # v0.48.2 tile-aware second chance — when the simple predicate
+      # says STALE, the most common cause on multi-tile AOIs is that
+      # the cached file was naturally clipped to the COG's MGRS tile
+      # extent (e.g. villards spans T31TFM + T31TGM ; the T31TFM
+      # cached file ends at xmax = 709800 = the FM/GM frontier).
+      # Today's `needed_ext` covers the whole AOI (xmax = 710700),
+      # which legitimately overshoots T31TFM by 90 px — but the
+      # cached file holds ALL of T31TFM's contribution. Refetching
+      # ramène RIEN de plus. Solution : lazy-read the COG headers
+      # (cheap GET range, no pixel decode), clip `needed_ext` to the
+      # tile's native extent, retry the predicate. Adds ~1 s per
+      # ambiguous case but only fires when the simple check fails.
+      tile_cont <- NULL
+      tile_ext_native <- tryCatch({
+        r_full <- terra::rast(.pc_ensure_fresh_href(href))
+        terra::ext(r_full)
+      }, error = function(e) {
+        .s2_cache_log("Tile-aware retry: terra::rast(href) failed: ",
+                      conditionMessage(e))
+        NULL
+      })
+      if (!is.null(tile_ext_native)) {
+        needed_in_tile <- tryCatch(
+          terra::intersect(needed_ext, tile_ext_native),
+          error = function(e) NULL)
+        if (!is.null(needed_in_tile) &&
+            !is.na(terra::xmin(needed_in_tile))) {
+          tile_cont <- .ext_contains_at_grid(
+            terra::ext(r_cached), needed_in_tile,
+            res = res, tol_pixels = 1L)
+        }
+      }
+      if (!is.null(tile_cont) && tile_cont$ok) {
+        r_cached <- terra::crop(r_cached, needed_in_tile, snap = "out")
+        .s2_cache_log("CACHE-HIT served from disk (needed clipped to tile native extent)")
+        emit_fn(list(current  = "s2:band_cached",
+                     scene_id = scene_id,
+                     band     = band,
+                     path     = cached_path))
+        return(r_cached)
+      }
+
       # v0.48.1 diagnostic — log the snapped extents AND the per-side
       # margin so the user can see *which* boundary is failing and by
       # how many pixels. Negative delta = inner overshoots outer.

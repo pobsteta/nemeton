@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.48.2] - 2026-05-27
+
+### Fixed
+
+- Cache S2 predicate gains a tile-aware second chance : when the
+  snap-to-grid check (v0.48.1) says STALE, the COG header is read
+  lazily (`terra::rast(href)`, ~1 s, no pixel decode) to obtain the
+  tile's native extent, `needed_ext` is clipped to that extent, and
+  the predicate is retried. Fires CACHE-HIT when the cached file is
+  the legitimate clip of the AOI to the MGRS tile boundary (the
+  common case on multi-tile AOIs like villards spanning T31TFM +
+  T31TGM). Eliminates the residual "fake STALE" after v0.48.1's
+  snap-to-grid.
+
 ## [0.48.1] - 2026-05-27
 
 ### Fixed
