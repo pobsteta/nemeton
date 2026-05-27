@@ -10,6 +10,39 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.48.1] - 2026-05-27
+
+### Fixed
+
+- Cache S2 validation predicate switches from raw-float
+  `.ext_contains(tol = 40m)` to pixel-grid-aware
+  `.ext_contains_at_grid(res, tol_pixels = 1)`. Snaps both extents to
+  the COG's pixel grid before comparison → sub-pixel jitter from
+  `sf::st_transform(zone_polygon, raster_crs)` is eliminated at the
+  source. Resolves villards CACHE-STALE storm (~6 h ingest → ~30 s
+  on a warm cache).
+- New ENV bypass `NEMETON_S2_CACHE_SKIP_VALIDATION` (`"TRUE"` or
+  `"1"`) — emergency escape hatch to trust every cached file
+  blindly.
+- Diagnostic log on CACHE-STALE now shows snapped extents +
+  signed per-side margin (`delta_m`) for quick triage.
+
+### Added
+
+- Internal helpers `.snap_ext_to_grid(ext, res)` and
+  `.ext_contains_at_grid(outer, inner, res, tol_pixels)`.
+- Internal helper `.cache_skip_validation()` (env var check).
+
+## [0.48.0] - 2026-05-26
+
+### Added
+
+- `lasR` fallback to derive MNT/MNH from cached `.laz` tiles when
+  IGN pre-rasterized downloads fail. See `compute_dtm_chm_from_laz()`,
+  `resolve_project_dem/chm(try_compute_from_laz = TRUE)`. Diagnostic
+  helpers `probe_ign_lidar_tile()` / `probe_ign_lidar_tiles()`
+  classify IGN failures. `lasR (>= 0.10.0)` in Suggests.
+
 ## [0.47.5] - 2026-05-26
 
 ### Fixed

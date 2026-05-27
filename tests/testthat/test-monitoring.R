@@ -667,6 +667,74 @@ test_that(".ext_contains tolerance argument absorbs sub-pixel jitter (v0.47.3)",
 })
 
 
+test_that(".snap_ext_to_grid floors xmin/ymin, ceils xmax/ymax (v0.48.1)", {
+  # 10 m grid (S2 B04/B08)
+  expect_equal(nemeton:::.snap_ext_to_grid(c(709356.7, 709802.3,
+                                             5143468.1, 5145481.9), 10),
+               c(709350, 709810, 5143460, 5145490))
+  # Already on grid → no change
+  expect_equal(nemeton:::.snap_ext_to_grid(c(709360, 709800,
+                                             5143470, 5145480), 10),
+               c(709360, 709800, 5143470, 5145480))
+  # 20 m grid (B12)
+  expect_equal(nemeton:::.snap_ext_to_grid(c(709353, 709797,
+                                             5143461, 5145477), 20),
+               c(709340, 709800, 5143460, 5145480))
+})
+
+
+test_that(".ext_contains_at_grid: identical extents → ok (v0.48.1)", {
+  ext <- c(709360, 709800, 5143470, 5145480)
+  cont <- nemeton:::.ext_contains_at_grid(ext, ext, res = 10)
+  expect_true(cont$ok)
+  # Margins all = 1 pixel (the default tolerance)
+  expect_equal(cont$delta_m, c(10, 10, 10, 10))
+})
+
+
+test_that(".ext_contains_at_grid: sub-pixel jitter is absorbed (v0.48.1)", {
+  # cached on the grid
+  cached <- c(709360, 709800, 5143470, 5145480)
+  # needed shifted by a tiny amount that still snaps to the SAME grid
+  # cells (the floor/ceil rounds to identical values)
+  needed <- c(709360.4, 709799.6, 5143470.4, 5145479.6)
+  cont   <- nemeton:::.ext_contains_at_grid(cached, needed, res = 10)
+  expect_true(cont$ok)
+})
+
+
+test_that(".ext_contains_at_grid: 2-pixel overshoot in xmax → STALE (v0.48.1)", {
+  cached <- c(709360, 709800, 5143470, 5145480)
+  # needed.xmax = 709825 → snaps to 709830 → outer + tol = 709810
+  # → 709830 > 709810 → STALE on xmax
+  needed <- c(709360, 709825, 5143470, 5145480)
+  cont   <- nemeton:::.ext_contains_at_grid(cached, needed, res = 10)
+  expect_false(cont$ok)
+  # delta_m on xmax = (709810 - 709830) = -20 → < 0 = overshoot
+  expect_lt(cont$delta_m[2], 0)
+})
+
+
+test_that(".cache_skip_validation honours the env var (v0.48.1)", {
+  withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = ""), {
+    expect_false(nemeton:::.cache_skip_validation())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = "1"), {
+    expect_true(nemeton:::.cache_skip_validation())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = "TRUE"), {
+    expect_true(nemeton:::.cache_skip_validation())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = "true"), {
+    expect_true(nemeton:::.cache_skip_validation())
+  })
+  withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = "yes"), {
+    # Only "TRUE" / "1" trigger ; "yes" stays strict-FALSE.
+    expect_false(nemeton:::.cache_skip_validation())
+  })
+})
+
+
 test_that(".ext_as_numeric returns (xmin, xmax, ymin, ymax) for both shapes", {
   skip_if_not_installed("terra")
   out_se   <- nemeton:::.ext_as_numeric(terra::ext(c(1, 2, 3, 4)))

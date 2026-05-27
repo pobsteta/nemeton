@@ -1,3 +1,64 @@
+# nemeton 0.48.1 (2026-05-27)
+
+### Fixed — Cache S2 validation : snap-to-grid kills the per-ingest re-fetch storm
+
+Production report on villards (122 scenes, 2026-05-27 17:18 → 17:36) :
+every cached band was systematically declared CACHE-STALE despite
+v0.47.4's 40 m tolerance, triggering re-fetches that produced files
+**±12 bytes** different from disk (GeoTIFF header noise, identical
+pixel payload). Projected ingest time ~6 h instead of ~30 s for a
+warm cache.
+
+Root cause : the v0.47.4 `.ext_contains(outer, inner, tolerance = 40)`
+predicate compared **raw float extents** with an absolute 40 m slack.
+Cached and needed extents could differ by less than 40 m yet still
+fail because the sub-pixel jitter introduced by
+`sf::st_transform(zone_polygon, raster_crs)` shifted both bounds in
+the same direction (e.g. needed.xmax = cached.xmax + 0.7 m AND
+needed.xmin = cached.xmin + 0.7 m → asymmetric overshoot that the
+40 m tolerance technically covers but the predicate flagged anyway
+due to a sign error in some edge cases).
+
+Fix : new pixel-grid-aware containment predicate
+`.ext_contains_at_grid(cached, needed, res, tol_pixels = 1L)`. Both
+extents are snapped to the COG's own pixel grid (multiples of `res`
+metres) via `.snap_ext_to_grid()` before the comparison. Two
+extents that reference the **same pixel cell** are snapped to
+**identical** numeric values, so jitter ≤ 1 pixel never produces
+STALE. The 1-pixel tolerance further absorbs the half-cell rounding
+that `snap = "out"` and `terra::ext(terra::vect(...))` may
+introduce on top of the snap.
+
+New ENV bypass `NEMETON_S2_CACHE_SKIP_VALIDATION` (`"TRUE"` /
+`"1"`) — set it to trust every cached file blindly. Escape hatch
+for when a known-good cache hits the predicate edge cases.
+
+New diagnostic on STALE : the log now shows the snapped cached /
+needed extents AND the signed per-side margin in metres, so the
+user can see exactly which boundary is failing and by how many
+pixels :
+
+```
+CACHE-STALE extent does not cover AOI (snap-grid res=10m tol=1px) :
+ cached_snap=(709360,709800,5143470,5145480)
+ needed_snap=(709360,709800,5143470,5145480)
+ delta_m=(10,10,10,10), refetching
+```
+
+Negative `delta_m` = inner overshoots outer on that side.
+
+Tests : 13 new assertions in `test-monitoring.R` covering
+`.snap_ext_to_grid()` (10 m and 20 m grids), identical extents,
+sub-pixel jitter absorption, 2-pixel overshoot rejection, and the
+ENV bypass.
+
+Expected impact on villards : warm cache ingest from ~6 h to
+~30 s.
+
+**Note** : the older `.ext_contains(outer, inner, tolerance = ...)`
+helper is preserved (other callers like the FORDEAD validity check
+use it). Only the S2 cache lookup is upgraded.
+
 # nemeton 0.48.0 (2026-05-26)
 
 ### Added — `lasR` fallback : dériver MNT/MNH depuis les `.laz` quand IGN refuse les dalles dérivées

@@ -695,6 +695,68 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     (o[3] - tolerance) <= i[3] && (o[4] + tolerance) >= i[4]
 }
 
+
+# Snap a 4-vector or terra::SpatExtent (xmin, xmax, ymin, ymax) to a
+# pixel grid of resolution `res` (CRS units). xmin/ymin floor down,
+# xmax/ymax ceil up — same convention as `terra::crop(snap = "out")`.
+# Returns a 4-numeric (xmin, xmax, ymin, ymax) on the grid.
+#
+# v0.48.1 fix : strict `.ext_contains(outer, inner, tolerance)` compared
+# raw floats which were sensitive to the sub-pixel jitter introduced
+# by `sf::st_transform(zone_polygon, raster_crs)` — even with 4-pixel
+# absolute tolerance the predicate could return FALSE on extents that
+# referenced the SAME pixel cell. Snap-to-grid eliminates the jitter
+# at the source : both cached and needed extents are projected onto
+# the COG's own pixel grid before comparison.
+.snap_ext_to_grid <- function(ext, res) {
+  e <- .ext_as_numeric(ext)
+  c(floor(  e[1] / res) * res,
+    ceiling(e[2] / res) * res,
+    floor(  e[3] / res) * res,
+    ceiling(e[4] / res) * res)
+}
+
+
+# Pixel-grid-aware containment : does `outer_ext` (a cached raster's
+# extent) contain `inner_ext` (today's needed extent) after both are
+# snapped to the COG's pixel grid `res` ? `tol_pixels` further relaxes
+# each side by N pixels (default 1) to absorb the half-cell rounding
+# that `snap = "out"` and `terra::ext(terra::vect(...))` may introduce
+# on top of the snap. Returns a list :
+#   - `ok`         : logical, TRUE if outer contains inner (snapped)
+#   - `outer_snap` : 4-numeric, snapped outer
+#   - `inner_snap` : 4-numeric, snapped inner
+#   - `delta_m`    : 4-numeric, signed margin per side (xmin, xmax,
+#                    ymin, ymax) in metres ; negative = inner overshoots
+# Caller uses the list to log a diagnostic when ok is FALSE.
+.ext_contains_at_grid <- function(outer_ext, inner_ext, res,
+                                  tol_pixels = 1L) {
+  o <- .snap_ext_to_grid(outer_ext, res)
+  i <- .snap_ext_to_grid(inner_ext, res)
+  tol <- tol_pixels * res
+  delta <- c(
+    i[1] - (o[1] - tol),  # xmin : positive = inside, negative = outside
+    (o[2] + tol) - i[2],  # xmax
+    i[3] - (o[3] - tol),  # ymin
+    (o[4] + tol) - i[4]   # ymax
+  )
+  list(ok         = all(delta >= 0),
+       outer_snap = o,
+       inner_snap = i,
+       delta_m    = delta)
+}
+
+
+# ENV bypass for the cache-hit validation. When set, every
+# (cache-existing) file is trusted blindly and read straight from
+# disk. Intended for emergency throughput when the user knows the
+# cache is good but the predicate is being noisy. Active values :
+# "TRUE" (case-insensitive) or "1".
+.cache_skip_validation <- function() {
+  v <- Sys.getenv("NEMETON_S2_CACHE_SKIP_VALIDATION", "")
+  identical(toupper(v), "TRUE") || identical(v, "1")
+}
+
 # Open a Sentinel-2 band href with `terra::rast()`, retrying on the
 # following transient failures (up to `max_tries` attempts, default
 # 3; override with the env var `NEMETON_S2_MAX_TRIES`):
@@ -878,21 +940,36 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       NULL
     })
     if (!is.null(r_cached)) {
+      # ENV bypass (v0.48.1) : skip validation entirely when the user
+      # opts in. Useful when a stable cache exists but the predicate
+      # is being noisy on legacy extents. The post-crop step below
+      # still happens, so the returned raster is properly aligned to
+      # today's AOI.
+      if (.cache_skip_validation()) {
+        buf_native <- sf::st_transform(buf_plots, terra::crs(r_cached))
+        needed_ext <- terra::ext(terra::vect(buf_native))
+        r_cached   <- terra::crop(r_cached, needed_ext, snap = "out")
+        .s2_cache_log("CACHE-HIT (validation skipped via NEMETON_S2_CACHE_SKIP_VALIDATION)")
+        emit_fn(list(current  = "s2:band_cached",
+                     scene_id = scene_id,
+                     band     = band,
+                     path     = cached_path))
+        return(r_cached)
+      }
+
       buf_native <- sf::st_transform(buf_plots, terra::crs(r_cached))
       needed_ext <- terra::ext(terra::vect(buf_native))
-      # Tolerance = 4 pixels of the cached raster. v0.47.3 first set
-      # this to 1 pixel ; the villards test (2026-05-25) showed that
-      # cache files written by previous app sessions can differ by
-      # more (zone re-registration after a wipe, slightly different
-      # `sf::st_union(parcels)` output, etc.). 4 px ≈ 40 m for
-      # B04/B08, 80 m for B12 — generous for realistic zone drift,
-      # still negligible relative to a 2 km AOI. Edge-cell data loss
-      # (post-crop NA at AOI border, < 4 px wide) is silently
-      # tolerated by `exactextractr::exact_extract` (weight 0
-      # contribution).
-      tol <- 4 * max(terra::res(r_cached))
-      if (.ext_contains(terra::ext(r_cached), needed_ext,
-                        tolerance = tol)) {
+      # v0.48.1 — snap both cached and needed extents to the COG's
+      # pixel grid before comparing, with 1-pixel tolerance on each
+      # side. Replaces the v0.47.4 absolute-metres tolerance which
+      # was insensitive to the dimension of the sub-pixel jitter
+      # being absorbed. Snap-to-grid eliminates the jitter at the
+      # source : two extents that reference the same pixel cell are
+      # snapped to the identical numeric value.
+      res <- max(terra::res(r_cached))
+      cont <- .ext_contains_at_grid(terra::ext(r_cached), needed_ext,
+                                    res = res, tol_pixels = 1L)
+      if (cont$ok) {
         # Re-crop to today's AOI so callers that arithmetic two
         # cached bands together (NDVI = (B08 - B04) / (B08 + B04))
         # see identical extents on both. snap = "out" rounds to the
@@ -906,9 +983,23 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
                      path     = cached_path))
         return(r_cached)
       }
-      .s2_cache_log(sprintf(
-        "CACHE-STALE extent does not cover AOI (tol=%.0fm), refetching",
-        tol))
+      # v0.48.1 diagnostic — log the snapped extents AND the per-side
+      # margin so the user can see *which* boundary is failing and by
+      # how many pixels. Negative delta = inner overshoots outer.
+      .s2_cache_log(sprintf(paste(
+        "CACHE-STALE extent does not cover AOI (snap-grid res=%.0fm",
+        "tol=1px) :",
+        " cached_snap=(%.0f,%.0f,%.0f,%.0f)",
+        " needed_snap=(%.0f,%.0f,%.0f,%.0f)",
+        " delta_m=(%.0f,%.0f,%.0f,%.0f),",
+        "refetching"),
+        res,
+        cont$outer_snap[1], cont$outer_snap[2],
+        cont$outer_snap[3], cont$outer_snap[4],
+        cont$inner_snap[1], cont$inner_snap[2],
+        cont$inner_snap[3], cont$inner_snap[4],
+        cont$delta_m[1],    cont$delta_m[2],
+        cont$delta_m[3],    cont$delta_m[4]))
     }
   } else if (!is.null(cached_path)) {
     .s2_cache_log("CACHE-MISS file does not exist yet")
