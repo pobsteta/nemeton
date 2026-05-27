@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pobsteta/nemeton/actions/workflows/r.yml/badge.svg)](https://github.com/pobsteta/nemeton/actions/workflows/r.yml)
-[![Version](https://img.shields.io/badge/version-0.48.2-blue.svg?logo=github)](https://github.com/pobsteta/nemeton/releases/tag/v0.48.2)
+[![Version](https://img.shields.io/badge/version-0.48.3-blue.svg?logo=github)](https://github.com/pobsteta/nemeton/releases/tag/v0.48.3)
 [![pkgdown](https://github.com/pobsteta/nemeton/actions/workflows/pkgdown.yaml/badge.svg)](https://pobsteta.github.io/nemeton/)
 [![codecov](https://codecov.io/gh/pobsteta/nemeton/graph/badge.svg)](https://codecov.io/gh/pobsteta/nemeton)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative)](https://opensource.org/licenses/MIT)

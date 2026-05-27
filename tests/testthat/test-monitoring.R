@@ -715,6 +715,59 @@ test_that(".ext_contains_at_grid: 2-pixel overshoot in xmax → STALE (v0.48.1)"
 })
 
 
+test_that(".s2_tile_ext_memoize caches per-tile native extent (v0.48.3)", {
+  skip_if_not_installed("terra")
+  # Set up a fake "COG" on disk that terra::rast() can open without
+  # network. Mock .pc_ensure_fresh_href to return the local path so
+  # the memoization helper exercises the real terra::rast() path.
+  tmp <- withr::local_tempfile(fileext = ".tif")
+  r <- terra::rast(nrows = 10, ncols = 10,
+                   xmin = 700000, xmax = 700100,
+                   ymin = 5140000, ymax = 5140100,
+                   crs = "EPSG:32631", vals = 1:100)
+  terra::writeRaster(r, tmp, filetype = "GTiff", overwrite = TRUE)
+
+  nemeton:::.s2_tile_ext_cache_clear()
+  call_count <- 0L
+  testthat::local_mocked_bindings(
+    .pc_ensure_fresh_href = function(href) {
+      call_count <<- call_count + 1L
+      tmp
+    },
+    .package = "nemeton"
+  )
+
+  # First call → fetches, populates memo
+  e1 <- nemeton:::.s2_tile_ext_memoize("T31TFM",
+                                       "https://fake/T31TFM/B04.tif")
+  expect_s4_class(e1, "SpatExtent")
+  expect_equal(call_count, 1L)
+
+  # Second call same tile → memo hit, no extra .pc_ensure_fresh_href
+  e2 <- nemeton:::.s2_tile_ext_memoize("T31TFM",
+                                       "https://fake/T31TFM/B08.tif")
+  expect_equal(call_count, 1L)  # unchanged
+  expect_equal(as.vector(e1), as.vector(e2))
+
+  # Different tile → new fetch
+  e3 <- nemeton:::.s2_tile_ext_memoize("T31TGM",
+                                       "https://fake/T31TGM/B04.tif")
+  expect_equal(call_count, 2L)
+
+  # Clear empties the memo
+  nemeton:::.s2_tile_ext_cache_clear()
+  e4 <- nemeton:::.s2_tile_ext_memoize("T31TFM",
+                                       "https://fake/T31TFM/B04.tif")
+  expect_equal(call_count, 3L)
+})
+
+
+test_that(".s2_tile_ext_memoize returns NULL on bad tile_code (v0.48.3)", {
+  expect_null(nemeton:::.s2_tile_ext_memoize("", "x"))
+  expect_null(nemeton:::.s2_tile_ext_memoize(NA_character_, "x"))
+})
+
+
 test_that(".cache_skip_validation honours the env var (v0.48.1)", {
   withr::with_envvar(c(NEMETON_S2_CACHE_SKIP_VALIDATION = ""), {
     expect_false(nemeton:::.cache_skip_validation())

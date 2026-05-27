@@ -1,3 +1,41 @@
+# nemeton 0.48.3 (2026-05-27)
+
+### Fixed — Cache S2 : memoization du tile_ext_native par MGRS code
+
+v0.48.2 a fait fonctionner le tile-aware second chance, mais le test
+villards (122 scènes) montre que chaque bande T31TFM payait ~10-25 s
+de GET range pour relire les headers natifs du COG. Sur 61 scènes
+T31TFM × 3 bandes × ~20 s = **~1 h** rien que pour la validation,
+même quand 100 % des données sont déjà en cache.
+
+Observation clé : **un même code MGRS** (`T31TFM`, `T31TGM`, …) **a
+toujours le même extent natif** (100 km × 100 km, coin SW fixé par la
+spec MGRS). Aucune raison de relire le header pour chaque date et
+chaque bande de la même tuile.
+
+Fix : `.s2_tile_ext_memoize(tile_code, href)` met en cache l'extent
+natif par code MGRS dans un environment R session-scoped. Première
+scène d'une tuile = 1 GET range (~10-25 s), scènes suivantes =
+lookup mémo instantané. Clé extraite via `.s2_mgrs_tile(scene_id)`
+(le helper livré en spec 013).
+
+Impact attendu villards : ~1 h → **~50 s** total tile-header cost
+(25 s × 2 tuiles uniques).
+
+Helpers ajoutés :
+- `.s2_tile_ext_cache` (environment session-scoped)
+- `.s2_tile_ext_memoize(tile_code, href)` (lookup + populate)
+- `.s2_tile_ext_cache_clear()` (test helper, vide le memo)
+
+8 nouvelles assertions dans `test-monitoring.R` :
+- premier appel fetche, deuxième même tuile mémo-hit (call_count
+  unchanged)
+- tuile différente déclenche un fetch neuf
+- clear() vide le memo
+- tile_code "" ou NA → NULL (no-op)
+
+Suite test-monitoring.R : 237 ✔ (était 229, +8).
+
 # nemeton 0.48.2 (2026-05-27)
 
 ### Fixed — Cache S2 : tile-aware second chance pour les AOIs multi-tuile MGRS

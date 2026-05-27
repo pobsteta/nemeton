@@ -10,6 +10,23 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.48.3] - 2026-05-27
+
+### Fixed
+
+- Cache S2 : memoize the COG tile native extent per MGRS code in a
+  session-scoped environment. The tile-aware second chance
+  introduced in v0.48.2 was paying ~10-25 s per band per scene for
+  the GET range that reads the COG header, even though all bands of
+  all dates of the same MGRS tile share the same native extent.
+  Villards full re-validation drops from ~1 h to ~50 s.
+
+### Added
+
+- Internal helpers `.s2_tile_ext_cache` (environment),
+  `.s2_tile_ext_memoize(tile_code, href)`, and
+  `.s2_tile_ext_cache_clear()` (test helper).
+
 ## [0.48.2] - 2026-05-27
 
 ### Fixed

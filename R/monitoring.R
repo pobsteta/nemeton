@@ -757,6 +757,44 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   identical(toupper(v), "TRUE") || identical(v, "1")
 }
 
+
+# v0.48.3 — per-MGRS-tile native extent memoization. The tile-aware
+# second-chance in `.get_s2_band_raster()` reads the COG header via
+# `terra::rast(href)` to obtain the tile's footprint ; that GET range
+# call costs ~10-25 s per band. An MGRS tile's footprint is identical
+# for all bands of all dates of that tile (B04/B08/B12 cover the same
+# 100 km × 100 km area, only the resolution differs). Cache it once
+# per tile key (e.g. "T31TFM") per R session.
+.s2_tile_ext_cache <- new.env(parent = emptyenv())
+
+.s2_tile_ext_memoize <- function(tile_code, href) {
+  if (!nzchar(tile_code) || is.na(tile_code)) return(NULL)
+  if (exists(tile_code, envir = .s2_tile_ext_cache, inherits = FALSE)) {
+    return(get(tile_code, envir = .s2_tile_ext_cache))
+  }
+  ext_native <- tryCatch({
+    r_full <- terra::rast(.pc_ensure_fresh_href(href))
+    terra::ext(r_full)
+  }, error = function(e) {
+    .s2_cache_log("Tile-ext memoize: terra::rast(href) failed for ",
+                  tile_code, ": ", conditionMessage(e))
+    NULL
+  })
+  if (!is.null(ext_native)) {
+    assign(tile_code, ext_native, envir = .s2_tile_ext_cache)
+  }
+  ext_native
+}
+
+# Test helper — clears the in-session memo. Mostly useful for
+# integration tests that want to assert the tile_ext_native is
+# actually fetched, not served from a stale memo.
+.s2_tile_ext_cache_clear <- function() {
+  rm(list = ls(envir = .s2_tile_ext_cache),
+     envir = .s2_tile_ext_cache)
+  invisible(TRUE)
+}
+
 # Open a Sentinel-2 band href with `terra::rast()`, retrying on the
 # following transient failures (up to `max_tries` attempts, default
 # 3; override with the env var `NEMETON_S2_MAX_TRIES`):
@@ -994,17 +1032,21 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       # cached file holds ALL of T31TFM's contribution. Refetching
       # ramène RIEN de plus. Solution : lazy-read the COG headers
       # (cheap GET range, no pixel decode), clip `needed_ext` to the
-      # tile's native extent, retry the predicate. Adds ~1 s per
-      # ambiguous case but only fires when the simple check fails.
+      # tile's native extent, retry the predicate.
+      #
+      # v0.48.3 — memoize the tile's native extent per MGRS code
+      # (key = "T31TFM", "T31TGM", ...). An MGRS tile's footprint is
+      # identical for B04, B08, B12 (same SW corner, same 100 km
+      # span ; only the cell resolution differs). The first scene of
+      # a tile pays the ~25 s GET range cost ; all subsequent scenes
+      # of the same tile (and any band) lookup is instant. Villards
+      # paid ~1 h on the full re-validation pass ; with memoization,
+      # ~25 s × 2 tiles = ~50 s total tile-header cost.
       tile_cont <- NULL
-      tile_ext_native <- tryCatch({
-        r_full <- terra::rast(.pc_ensure_fresh_href(href))
-        terra::ext(r_full)
-      }, error = function(e) {
-        .s2_cache_log("Tile-aware retry: terra::rast(href) failed: ",
-                      conditionMessage(e))
-        NULL
-      })
+      tile_code <- .s2_mgrs_tile(scene_id)
+      tile_ext_native <- if (!is.null(tile_code) && !is.na(tile_code)) {
+        .s2_tile_ext_memoize(tile_code, href)
+      } else NULL
       if (!is.null(tile_ext_native)) {
         needed_in_tile <- tryCatch(
           terra::intersect(needed_ext, tile_ext_native),
