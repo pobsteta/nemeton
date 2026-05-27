@@ -10,6 +10,7 @@ create_validation_sampling_plan(
   n_validation = 20L,
   n_control = 5L,
   classes = c(3L, 4L),
+  control_classes = c(0L),
   buffer_m = 0,
   source = c("FORDEAD", "FAST"),
   seed = NULL

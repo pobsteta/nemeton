@@ -85,12 +85,13 @@
 #' @export
 create_validation_sampling_plan <- function(zone,
                                             alert_raster,
-                                            n_validation = 20L,
-                                            n_control    = 5L,
-                                            classes      = c(3L, 4L),
-                                            buffer_m     = 0,
-                                            source       = c("FORDEAD", "FAST"),
-                                            seed         = NULL) {
+                                            n_validation    = 20L,
+                                            n_control       = 5L,
+                                            classes         = c(3L, 4L),
+                                            control_classes = c(0L),
+                                            buffer_m        = 0,
+                                            source          = c("FORDEAD", "FAST"),
+                                            seed            = NULL) {
   source <- match.arg(source)
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -142,17 +143,37 @@ create_validation_sampling_plan <- function(zone,
     )
   }
 
-  # --- 3. Equiprobable GRTS draw on the healthy zone (class 0) -----
+  # --- 3. Equiprobable GRTS draw on the "control" cells ------------
+  # `control_classes` (v0.49.1) defines which raster classes are
+  # eligible for the control plots. Default `c(0L)` = strictly
+  # healthy (the cell never crossed the alert threshold). On heavily
+  # disturbed AOIs or with permissive thresholds, no class-0 cell
+  # may exist — relax to e.g. `c(0L, 1L)` to allow lightly-alerted
+  # cells as controls.
   control_pts <- if (n_control > 0L) {
+    if (!is.numeric(control_classes) || length(control_classes) < 1L ||
+        any(is.na(control_classes))) {
+      cli::cli_abort("{.arg control_classes} must be a non-empty integer vector with no NA.")
+    }
+    control_classes <- as.integer(control_classes)
+
     healthy <- alert_raster
     h_vals  <- terra::values(healthy)
-    h_vals[h_vals != 0 | is.na(h_vals)] <- NA
+    cls_dist <- table(h_vals, useNA = "no")
+    is_control <- !is.na(h_vals) & h_vals %in% control_classes
+    h_vals[!is_control] <- NA
     terra::values(healthy) <- h_vals
+
     if (sum(!is.na(terra::values(healthy))) == 0L) {
-      cli::cli_warn(
-        c("No healthy cell (class 0) found in {.arg alert_raster}.",
-          i = "Skipping control plots ({n_control} requested).")
-      )
+      dist_str <- if (length(cls_dist)) {
+        paste(names(cls_dist), "=", cls_dist, collapse = ", ")
+      } else "raster fully NA"
+      cli::cli_warn(c(
+        "No cell matching {.arg control_classes} = {.val {control_classes}} found in {.arg alert_raster}.",
+        i = "Class distribution: {dist_str}.",
+        i = "Try relaxing {.arg control_classes} (e.g. {.code c(0L, 1L)}) or adjust thresholds/window.",
+        i = "Skipping control plots ({n_control} requested)."
+      ))
       NULL
     } else {
       .draw_grts_equiprobable(healthy, n_control, seed = seed)
@@ -163,9 +184,16 @@ create_validation_sampling_plan <- function(zone,
   validation_pts$plot_id     <- sprintf("V%02d", seq_len(nrow(validation_pts)))
   validation_pts$type        <- "Validation"
   if (!is.null(control_pts) && nrow(control_pts) > 0L) {
-    control_pts$plot_id     <- sprintf("T%02d", seq_len(nrow(control_pts)))
-    control_pts$type        <- "Temoin"
-    control_pts$alert_class <- 0L
+    control_pts$plot_id <- sprintf("T%02d", seq_len(nrow(control_pts)))
+    control_pts$type    <- "Temoin"
+    # v0.49.1 — alert_class reflects the actual raster value at the
+    # control point (was hard-coded to 0L). With `control_classes =
+    # c(0L)` this is still 0 in practice, but with relaxed values
+    # like c(0L, 1L) the column reports the real class of the cell.
+    control_pts$alert_class <- as.integer(
+      terra::extract(alert_raster,
+                     terra::vect(control_pts$geometry),
+                     ID = FALSE)[[1L]])
     plan <- rbind(validation_pts, control_pts)
   } else {
     plan <- validation_pts

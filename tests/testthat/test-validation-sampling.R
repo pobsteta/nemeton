@@ -121,6 +121,53 @@ test_that("create_validation_sampling_plan weighting favours higher classes", {
 })
 
 
+test_that("create_validation_sampling_plan warns when no cell in control_classes (v0.49.1)", {
+  testthat::skip_if_not_installed("spsurvey")
+  # Raster with only classes 3 and 4 (no class 0/1/2 at all).
+  m <- matrix(0L, 10, 10)
+  m[1:5, ] <- 3L
+  m[6:10, ] <- 4L
+  r <- terra::rast(m, crs = "EPSG:2154")
+  terra::ext(r) <- terra::ext(0, 100, 0, 100)
+
+  zone <- sf::st_as_sfc(sf::st_bbox(c(xmin = 0, ymin = 0,
+                                      xmax = 100, ymax = 100), crs = 2154))
+  zone <- sf::st_sf(geometry = zone)
+
+  expect_warning(
+    plan <- create_validation_sampling_plan(
+      zone, r, n_validation = 4L, n_control = 3L,
+      classes = c(3L, 4L), control_classes = c(0L), seed = 42L),
+    regexp = "control_classes"
+  )
+  # Validation plots still drawn ; témoins absent.
+  expect_true(all(plan$type == "Validation"))
+})
+
+
+test_that("create_validation_sampling_plan accepts relaxed control_classes (v0.49.1)", {
+  testthat::skip_if_not_installed("spsurvey")
+  # Same raster (only classes 3, 4), but with control_classes = c(3L)
+  # → the lower-priority alert cells become the controls.
+  m <- matrix(0L, 10, 10)
+  m[1:5, ] <- 3L
+  m[6:10, ] <- 4L
+  r <- terra::rast(m, crs = "EPSG:2154")
+  terra::ext(r) <- terra::ext(0, 100, 0, 100)
+
+  zone <- sf::st_as_sfc(sf::st_bbox(c(xmin = 0, ymin = 0,
+                                      xmax = 100, ymax = 100), crs = 2154))
+  zone <- sf::st_sf(geometry = zone)
+
+  plan <- create_validation_sampling_plan(
+    zone, r, n_validation = 4L, n_control = 3L,
+    classes = c(4L), control_classes = c(3L), seed = 42L)
+  expect_true(all(c("Validation", "Temoin") %in% unique(plan$type)))
+  # alert_class of témoin rows should be 3 (the real cell value).
+  expect_true(all(plan$alert_class[plan$type == "Temoin"] == 3L))
+})
+
+
 test_that("create_validation_sampling_plan with n_control=0 yields no Temoin", {
   testthat::skip_if_not_installed("spsurvey")
   r <- make_alert_raster_20x20()

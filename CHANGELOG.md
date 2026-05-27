@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.49.1] - 2026-05-27
+
+### Added
+
+- `create_validation_sampling_plan(..., control_classes = c(0L))` —
+  new argument to relax the strict "class 0 = healthy" filter for
+  control plots. Useful on heavily disturbed zones where no
+  class-0 cell exists (villards FAST: all 8471 UGF pixels were
+  class 4).
+- Enriched warning when no control candidates : the message now
+  reports the alert raster's class distribution to help the user
+  pick a relaxed `control_classes` value.
+- `alert_class` column of control plots now reflects the actual
+  cell value (was hard-coded to `0L`).
+
 ## [0.49.0] - 2026-05-27
 
 ### Changed

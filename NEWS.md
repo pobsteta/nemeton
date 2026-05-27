@@ -1,3 +1,50 @@
+# nemeton 0.49.1 (2026-05-27)
+
+### Added — `control_classes` argument on `create_validation_sampling_plan()`
+
+Production diagnostic on villards (after v0.49.0 release) showed
+that **0 control plots** were generated for FAST validation. Cause :
+on villards with default FAST thresholds (NDVI < 0.40 / NBR < 0.30)
+over 122 dates, **every pixel** has at least one date below
+threshold → `count > 0` → no pixel in class 0. The hard-coded
+`alert_raster == 0` filter for control plots returned an empty
+candidate set → typed `cli_warn("No healthy cell...")` → no control
+plots.
+
+Fix : `create_validation_sampling_plan(..., control_classes = c(0L))`
+gains the new `control_classes` argument. The user can relax to
+`c(0L, 1L)` or `c(0L, 1L, 2L)` to allow lightly-alerted pixels as
+controls. Useful on disturbed zones or with permissive thresholds.
+
+The `cli_warn` message is enriched : it now reports the **class
+distribution** of the alert raster, so the user knows immediately
+which class values are present and can pick a relaxed
+`control_classes` accordingly. Example output on villards :
+
+```
+Warning: No cell matching `control_classes` = c(0) found in
+`alert_raster`.
+ℹ Class distribution: 4 = 8471.
+ℹ Try relaxing `control_classes` (e.g. `c(0L, 1L)`) or adjust
+  thresholds/window.
+ℹ Skipping control plots (5 requested).
+```
+
+The `alert_class` column of control plots now reflects the
+**actual cell value** under each point (was hard-coded to `0L`).
+With strict `control_classes = c(0L)`, this is still 0 ; with
+relaxed values, the column reports the real class.
+
+4 new tests in `test-validation-sampling.R` covering :
+- warn fires when no cell matches `control_classes`
+- relaxed `control_classes = c(3L)` allows drawing on a
+  raster with only classes 3, 4
+- `alert_class` of control plots = actual raster value
+- back-compat : default `c(0L)` keeps the pre-v0.49.1 behaviour
+  exactly
+
+Suite `test-validation-sampling.R` : 22 PASS (was 18, +4).
+
 # nemeton 0.49.0 (2026-05-27)
 
 ### Changed — Mask UGF par défaut sur le pipeline raster (spec 016)
