@@ -78,7 +78,9 @@ read_fast_alert_raster <- function(con, zone_id,
                                    date_from, date_to,
                                    mode           = c("count", "rolling"),
                                    window_days    = 30L,
-                                   cache_dir) {
+                                   cache_dir,
+                                   apply_zone_mask = TRUE,
+                                   mask_polygon    = NULL) {
   mode <- match.arg(mode)
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -183,6 +185,16 @@ read_fast_alert_raster <- function(con, zone_id,
 
   names(out)        <- if (mode == "count") "alert_count" else "alert_deficit"
   attr(out, "mode") <- mode
+
+  # spec 016 (v0.49.0) — apply UGF zone mask by default. Pixels
+  # outside the UGFs (= the polygon stored in monitoring_zone.zone_wkt)
+  # become NA, so downstream counts / displays reflect only the
+  # forest area actually managed by the user.
+  if (isTRUE(apply_zone_mask)) {
+    poly <- mask_polygon %||% tryCatch(.get_zone_aoi(con, zid),
+                                       error = function(e) NULL)
+    out <- .apply_zone_mask(out, poly)
+  }
   out
 }
 

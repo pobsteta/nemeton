@@ -10,6 +10,40 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-05-27
+
+### Changed
+
+- All raster readers in the FAST / FORDEAD pipeline mask their
+  outputs to the UGF polygon by default (`apply_zone_mask = TRUE`).
+  Pixels outside the UGFs become `NA`. The on-disk COG cache is
+  unchanged (still a rectangle aligned to the pixel grid) ; the
+  mask is applied after read, before return. Spec 016.
+- `read_fast_alert_raster()`, `compute_fast_alert_mask()`,
+  `read_fast_alert_mask()`, `read_fordead_dieback_mask()` gain
+  `apply_zone_mask = TRUE` / `mask_polygon = NULL` arguments. Pass
+  `apply_zone_mask = FALSE` for the pre-v0.49.0 rectangle output.
+- `build_index_stack()` gains `mask_polygon = NULL`. Lower-level
+  helper without `con` / `zone_id`, the polygon must be passed
+  explicitly.
+- `extract_pixel_timeseries()` gains `zone_polygon = NULL` /
+  `warn_outside_zone = TRUE`. No raster mask (single-point query),
+  only a warning when the click sits outside the UGFs.
+
+### Added
+
+- Internal helper `.apply_zone_mask(raster, zone_polygon)` in
+  `R/zone_aoi.R`. Wraps `terra::mask()` with CRS reprojection and
+  a defensive `tryCatch` (failure → unmask with `cli_warn`).
+
+### Notes
+
+- `read_obs_pixel()` is unchanged. The existing
+  `plot.zone_id = $zone_id` filter IS the UGF membership filter
+  de facto (plots are registered inside the UGFs by
+  `register_monitoring_zone()`). No spatial `ST_Within` post-filter
+  added.
+
 ## [0.48.3] - 2026-05-27
 
 ### Fixed

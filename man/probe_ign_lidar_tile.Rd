@@ -45,15 +45,15 @@ classifies the failure mode by issuing a lightweight HEAD request
 Typical patterns observed in production:
 
 \itemize{
-  \item \strong{HTTP 404} — the dalle exists in the WFS catalogue but the
+  \item **HTTP 404** — the dalle exists in the WFS catalogue but the
         derived raster has not yet been published (IGN publishes
         NUAGE first; MNT/MNH dérivés arrivent souvent semaines à
         mois plus tard).
-  \item \strong{HTTP 403 / 401} — quota or auth issue on the download host.
-  \item \strong{`timeout`} — the host is reachable but the response did
+  \item **HTTP 403 / 401** — quota or auth issue on the download host.
+  \item **`timeout`** — the host is reachable but the response did
         not complete in `timeout` seconds; usually a temporary
         server-side load issue.
-  \item \strong{`dns` / `connect`} — host unreachable: check VPN /
+  \item **`dns` / `connect`** — host unreachable: check VPN /
         outbound firewall.
 }
 }

@@ -4,7 +4,14 @@
 \alias{read_fast_alert_mask}
 \title{Read the most recent FAST alert mask for a monitoring zone}
 \usage{
-read_fast_alert_mask(con, zone_id, run_id = NULL, cache_dir = NULL)
+read_fast_alert_mask(
+  con,
+  zone_id,
+  run_id = NULL,
+  cache_dir = NULL,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL
+)
 }
 \arguments{
 \item{con}{A `DBIConnection`. Currently unused (the function reads

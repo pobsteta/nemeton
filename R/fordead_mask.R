@@ -62,7 +62,9 @@
 read_fordead_dieback_mask <- function(con,
                                       zone_id,
                                       run_id    = NULL,
-                                      cache_dir = NULL) {
+                                      cache_dir = NULL,
+                                      apply_zone_mask = TRUE,
+                                      mask_polygon    = NULL) {
   if (length(zone_id) != 1L || is.na(zone_id) ||
       !is.finite(suppressWarnings(as.numeric(zone_id)))) {
     stop("`zone_id` must be a single non-NA integer.", call. = FALSE)
@@ -79,20 +81,31 @@ read_fordead_dieback_mask <- function(con,
   zone_dir <- file.path(cache_dir, sprintf("zone_%d", zid))
   if (!dir.exists(zone_dir)) return(NULL)
 
-  if (!is.null(run_id)) {
+  out <- if (!is.null(run_id)) {
     rid <- as.character(run_id)
     fp  <- file.path(zone_dir, sprintf("dieback_mask_%s.tif", rid))
     if (!file.exists(fp)) return(NULL)
-    return(terra::rast(fp))
+    terra::rast(fp)
+  } else {
+    files <- list.files(zone_dir,
+                        pattern = "^dieback_mask_[A-Za-z0-9._-]+\\.tif$",
+                        full.names = TRUE)
+    if (!length(files)) return(NULL)
+    # Filename order on YYYYMMDDTHHMMSS is chronological. Fall back to
+    # mtime if the suffix doesn't sort cleanly (e.g. mixed conventions).
+    files <- sort(files)
+    terra::rast(files[length(files)])
   }
 
-  files <- list.files(zone_dir,
-                      pattern = "^dieback_mask_[A-Za-z0-9._-]+\\.tif$",
-                      full.names = TRUE)
-  if (!length(files)) return(NULL)
-
-  # Filename order on YYYYMMDDTHHMMSS is chronological. Fall back to
-  # mtime if the suffix doesn't sort cleanly (e.g. mixed conventions).
-  files <- sort(files)
-  terra::rast(files[length(files)])
+  # spec 016 (v0.49.0) — apply UGF zone mask by default. FORDEAD's
+  # output is filtered through the national BD Forêt v2 mask (Python
+  # side), which is a *superset* of the user-managed UGFs. This re-mask
+  # restricts the dieback_mask to the user's actual perimeter.
+  if (isTRUE(apply_zone_mask)) {
+    poly <- mask_polygon %||%
+      (if (!is.null(con)) tryCatch(.get_zone_aoi(con, zid),
+                                   error = function(e) NULL) else NULL)
+    out <- .apply_zone_mask(out, poly)
+  }
+  out
 }

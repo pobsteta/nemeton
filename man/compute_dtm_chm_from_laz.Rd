@@ -57,7 +57,7 @@ be downloaded (404 on derived products, bandwidth issues, dalles
 produced but tiles not yet published) but the raw COPC point cloud
 tiles **are** present under `cache/layers/lidar_nuage/`.
 
-Wraps a minimal \href{https://r-lidar.github.io/lasR/}{lasR} pipeline:
+Wraps a minimal [`lasR`](https://r-lidar.github.io/lasR/) pipeline:
 
 \enumerate{
   \item read all `.copc.laz` / `.laz` tiles in `laz_dir`,
@@ -68,16 +68,16 @@ Wraps a minimal \href{https://r-lidar.github.io/lasR/}{lasR} pipeline:
 }
 
 Outputs are written under the exact directory layout expected by
-\code{\link{resolve_project_dem}} / \code{\link{resolve_project_chm}}, so calling
+[`resolve_project_dem()`] / [`resolve_project_chm()`], so calling
 code that already discovers MNT/MNH rasters via those helpers picks
 the derived products up transparently.
 }
 \section{Installation}{
 
 `lasR` is not on CRAN. Install it from r-universe:
-\preformatted{
+```r
 install.packages("lasR", repos = "https://r-lidar.r-universe.dev")
-}
+```
 }
 
 \examples{

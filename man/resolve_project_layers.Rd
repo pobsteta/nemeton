@@ -35,7 +35,7 @@ via `cli::cli_alert_info()`. Default `FALSE`.}
 \item{try_compute_from_laz}{Logical. When no pre-rasterized MNT /
 MNH is found *and* `<project>/cache/layers/lidar_nuage/*.laz`
 tiles are present, attempt to derive them on the fly with
-\code{\link{compute_dtm_chm_from_laz}} (via `lasR`) and re-probe. Default
+[`compute_dtm_chm_from_laz()`] (via `lasR`) and re-probe. Default
 `TRUE`. The fallback is opportunistic: missing `lasR` simply skips
 it without erroring.}
 }

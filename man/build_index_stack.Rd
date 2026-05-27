@@ -4,7 +4,12 @@
 \alias{build_index_stack}
 \title{Build a multi-temporal NDVI or NBR stack from cached Sentinel-2 bands}
 \usage{
-build_index_stack(cache_dir, scenes_df, index = c("NDVI", "NBR"))
+build_index_stack(
+  cache_dir,
+  scenes_df,
+  index = c("NDVI", "NBR"),
+  mask_polygon = NULL
+)
 }
 \arguments{
 \item{cache_dir}{Character(1). Path to the S2 cache root.}

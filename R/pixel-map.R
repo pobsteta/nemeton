@@ -185,7 +185,8 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' @seealso [read_s2_band_stack()], [extract_pixel_timeseries()].
 #' @export
 build_index_stack <- function(cache_dir, scenes_df,
-                              index = c("NDVI", "NBR")) {
+                              index = c("NDVI", "NBR"),
+                              mask_polygon = NULL) {
   index <- match.arg(index)
   .validate_scenes_df(scenes_df)
 
@@ -271,6 +272,15 @@ build_index_stack <- function(cache_dir, scenes_df,
   names(out)       <- as.character(scenes_df$obs_date[ok])
   terra::time(out) <- as.Date(scenes_df$obs_date[ok])
   attr(out, "index") <- index
+
+  # spec 016 (v0.49.0) — optional UGF zone mask. Pixels outside the
+  # polygon become NA on every layer. Unlike the read_*() functions,
+  # build_index_stack() has no `con` / `zone_id` so the polygon must
+  # be passed explicitly. Callers like `read_fast_alert_raster()`
+  # already resolve it and propagate.
+  if (!is.null(mask_polygon)) {
+    out <- .apply_zone_mask(out, mask_polygon)
+  }
   out
 }
 
@@ -331,7 +341,9 @@ build_index_stack <- function(cache_dir, scenes_df,
 #' @export
 extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
                                      crs = 4326,
-                                     indices = c("NDVI", "NBR")) {
+                                     indices = c("NDVI", "NBR"),
+                                     zone_polygon = NULL,
+                                     warn_outside_zone = TRUE) {
   .validate_scenes_df(scenes_df)
   if (!is.numeric(xy) || length(xy) != 2L || anyNA(xy)) {
     stop("`xy` must be a length-2 numeric, no NA.", call. = FALSE)
@@ -342,6 +354,30 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
 
   # Build the point sf once, reproject per-scene to the raster's CRS.
   pt_in <- sf::st_sfc(sf::st_point(xy), crs = crs)
+
+  # spec 016 (v0.49.0) — optional warn when the requested point sits
+  # outside the UGF polygon. The series is still returned (the
+  # underlying COG covers a wider area), but the user is informed
+  # that the pixel is outside their managed perimeter. No raster
+  # mask here — `extract_pixel_timeseries()` is a 1-point query, not
+  # an area op.
+  if (isTRUE(warn_outside_zone) && !is.null(zone_polygon)) {
+    poly_in <- tryCatch(
+      sf::st_transform(zone_polygon, crs),
+      error = function(e) NULL)
+    if (!is.null(poly_in)) {
+      inside <- suppressMessages(
+        lengths(sf::st_intersects(pt_in, poly_in)) > 0L)
+      if (!isTRUE(inside)) {
+        cli::cli_warn(c(
+          "extract_pixel_timeseries: requested point is outside the
+           UGF zone.",
+          i = "Series is returned, but values may not be relevant to
+               the user's managed forest."
+        ))
+      }
+    }
+  }
 
   # Bands the union of indices needs.
   bands_needed <- unique(unlist(lapply(indices, function(idx) {

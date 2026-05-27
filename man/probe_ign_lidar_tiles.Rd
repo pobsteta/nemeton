@@ -16,7 +16,7 @@ A `data.frame` with columns `url`, `status`, `category`,
   `message`, `content_length`.
 }
 \description{
-Convenience wrapper around \code{\link{probe_ign_lidar_tile}} for the
+Convenience wrapper around [`probe_ign_lidar_tile()`] for the
 "4/4 tiles failed" diagnostic scenario. Returns a `data.frame`
 with one row per URL and a summary classification, ready to be
 rendered in the app.

@@ -62,8 +62,10 @@ compute_fast_alert_mask <- function(con, zone_id,
                                     mode           = c("count", "rolling"),
                                     window_days    = 30L,
                                     cache_dir,
-                                    mask_cache_dir = NULL,
-                                    breaks         = NULL) {
+                                    mask_cache_dir  = NULL,
+                                    breaks          = NULL,
+                                    apply_zone_mask = TRUE,
+                                    mask_polygon    = NULL) {
   mode <- match.arg(mode)
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -98,16 +100,22 @@ compute_fast_alert_mask <- function(con, zone_id,
     cli::cli_abort("{.arg breaks} must be a numeric vector of length 5 (5 cut points).")
   }
 
+  # spec 016 — propagate the UGF mask to the underlying continuous
+  # raster *before* discretisation. The persisted 0-4 mask thus
+  # already has NA outside the UGFs (compact on disk via DEFLATE,
+  # and the reader doesn't need to re-mask).
   cont <- read_fast_alert_raster(
-    con            = con,
-    zone_id        = zid,
-    threshold_ndvi = threshold_ndvi,
-    threshold_nbr  = threshold_nbr,
-    date_from      = date_from,
-    date_to        = date_to,
-    mode           = mode,
-    window_days    = window_days,
-    cache_dir      = cache_dir
+    con             = con,
+    zone_id         = zid,
+    threshold_ndvi  = threshold_ndvi,
+    threshold_nbr   = threshold_nbr,
+    date_from       = date_from,
+    date_to         = date_to,
+    mode            = mode,
+    window_days     = window_days,
+    cache_dir       = cache_dir,
+    apply_zone_mask = apply_zone_mask,
+    mask_polygon    = mask_polygon
   )
   if (is.null(cont)) {
     cli::cli_alert_info("No FAST alert raster to persist for zone {.val {zid}}.")
@@ -178,7 +186,9 @@ compute_fast_alert_mask <- function(con, zone_id,
 read_fast_alert_mask <- function(con,
                                  zone_id,
                                  run_id    = NULL,
-                                 cache_dir = NULL) {
+                                 cache_dir = NULL,
+                                 apply_zone_mask = TRUE,
+                                 mask_polygon    = NULL) {
   if (length(zone_id) != 1L || is.na(zone_id) ||
       !is.finite(suppressWarnings(as.numeric(zone_id)))) {
     cli::cli_abort("{.arg zone_id} must be a single non-NA integer.")
@@ -195,17 +205,29 @@ read_fast_alert_mask <- function(con,
   zone_dir <- file.path(cache_dir, sprintf("zone_%d", zid))
   if (!dir.exists(zone_dir)) return(NULL)
 
-  if (!is.null(run_id)) {
+  out <- if (!is.null(run_id)) {
     rid <- as.character(run_id)
     fp  <- file.path(zone_dir, sprintf("fast_alert_%s.tif", rid))
     if (!file.exists(fp)) return(NULL)
-    return(terra::rast(fp))
+    terra::rast(fp)
+  } else {
+    files <- list.files(zone_dir,
+                        pattern    = "^fast_alert_[A-Za-z0-9._-]+\\.tif$",
+                        full.names = TRUE)
+    if (!length(files)) return(NULL)
+    files <- sort(files)
+    terra::rast(files[length(files)])
   }
 
-  files <- list.files(zone_dir,
-                      pattern    = "^fast_alert_[A-Za-z0-9._-]+\\.tif$",
-                      full.names = TRUE)
-  if (!length(files)) return(NULL)
-  files <- sort(files)
-  terra::rast(files[length(files)])
+  # spec 016 (v0.49.0) — re-mask at read time for back-compat with
+  # TIFs written by compute_fast_alert_mask() before v0.49.0 (which
+  # were not masked at write). A re-mask on an already-masked raster
+  # is a no-op (NAs stay NAs).
+  if (isTRUE(apply_zone_mask)) {
+    poly <- mask_polygon %||%
+      (if (!is.null(con)) tryCatch(.get_zone_aoi(con, zid),
+                                   error = function(e) NULL) else NULL)
+    out <- .apply_zone_mask(out, poly)
+  }
+  out
 }

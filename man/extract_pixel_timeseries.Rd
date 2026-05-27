@@ -9,7 +9,9 @@ extract_pixel_timeseries(
   scenes_df,
   xy,
   crs = 4326,
-  indices = c("NDVI", "NBR")
+  indices = c("NDVI", "NBR"),
+  zone_polygon = NULL,
+  warn_outside_zone = TRUE
 )
 }
 \arguments{

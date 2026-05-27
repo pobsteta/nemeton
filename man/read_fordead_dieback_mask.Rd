@@ -4,7 +4,14 @@
 \alias{read_fordead_dieback_mask}
 \title{Read the FORDEAD dieback classified raster for a zone}
 \usage{
-read_fordead_dieback_mask(con, zone_id, run_id = NULL, cache_dir = NULL)
+read_fordead_dieback_mask(
+  con,
+  zone_id,
+  run_id = NULL,
+  cache_dir = NULL,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL
+)
 }
 \arguments{
 \item{con}{A `DBI` connection. Reserved (see above) — pass it for

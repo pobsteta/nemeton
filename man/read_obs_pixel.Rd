@@ -67,6 +67,19 @@ interpolated into the query — same pattern as the private
 string unescaped.
 }
 
+\section{UGF zone filter (spec 016)}{
+
+The function already filters by `plot.zone_id = zone_id`, which
+is **the de-facto UGF membership filter** since plots are
+registered inside the UGF polygon by
+[register_monitoring_zone()]. No spatial `ST_Within` post-filter
+is added — it would be redundant (and would require PostGIS
+geometry casts that wouldn't survive on the DuckDB backend). If a
+plot has somehow drifted out of its zone polygon (data integrity
+issue), that is reported by [register_monitoring_zone()]'s
+validation, not at read time.
+}
+
 \examples{
 \dontrun{
   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))

@@ -15,7 +15,9 @@ compute_fast_alert_mask(
   window_days = 30L,
   cache_dir,
   mask_cache_dir = NULL,
-  breaks = NULL
+  breaks = NULL,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL
 )
 }
 \arguments{

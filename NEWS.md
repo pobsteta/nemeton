@@ -1,3 +1,70 @@
+# nemeton 0.49.0 (2026-05-27)
+
+### Changed — Mask UGF par défaut sur le pipeline raster (spec 016)
+
+Tous les readers raster du pipeline FAST/FORDEAD masquent désormais
+**par défaut** leurs outputs au polygone des UGFs (le zone_wkt stocké
+dans `monitoring_zone`). Les pixels hors UGF deviennent `NA`. Le
+calcul des compteurs et l'affichage de la carte gagnent en
+pertinence (plus de pollution par les pixels village / route /
+prairie hors gestion forestière).
+
+**Mécanique** : le cache COG sur disque reste **un rectangle
+pixel-aligné** à la bbox UGF (compatible avec snap-to-grid v0.48.1,
+tile-aware v0.48.2, memoization v0.48.3 — aucun changement de
+contrat cache). Le mask est appliqué **après** la lecture cache,
+**avant** le retour au caller, via le nouveau helper interne
+`.apply_zone_mask(raster, zone_polygon)`.
+
+**Fonctions impactées** (6 exports + 1 helper) :
+
+- `read_fast_alert_raster(con, zone_id, ...)` — +2 args
+  `apply_zone_mask = TRUE`, `mask_polygon = NULL`.
+- `compute_fast_alert_mask(con, zone_id, ...)` — idem ; le TIF
+  persisté est désormais masqué (DEFLATE compresse bien les NA, le
+  fichier reste compact).
+- `read_fast_alert_mask(con, zone_id, ...)` — idem ; back-compat
+  re-mask au read pour les TIFs écrits par compute_fast_alert_mask
+  pré-v0.49.0 (re-mask sur NA = no-op).
+- `read_fordead_dieback_mask(con, zone_id, ...)` — idem ; FORDEAD
+  produit un raster filtré par BD Forêt v2 (national), v0.49.0
+  restreint en plus aux UGFs spécifiques du projet.
+- `build_index_stack(cache_dir, scenes_df, index, mask_polygon =
+  NULL)` — pas de `con`/`zone_id` ici (helper bas niveau), le caller
+  passe `mask_polygon` explicitement (cf.
+  `read_fast_alert_raster()`).
+- `extract_pixel_timeseries(..., zone_polygon = NULL,
+  warn_outside_zone = TRUE)` — pas de mask raster (c'est une
+  requête à 1 pixel), seulement un warn quand le clic est hors UGF.
+
+Pour récupérer le comportement pré-v0.49.0 (rectangle complet),
+passer `apply_zone_mask = FALSE`. Pour fournir un polygone custom,
+passer `mask_polygon = sf_polygon`.
+
+**`read_obs_pixel()` (SQL, no raster)** : pas de nouveau filtre
+spatial. La fonction filtrait déjà par `plot.zone_id = $zone_id`,
+ce qui **est** le filtre UGF de facto puisque les plots sont
+inscrits par `register_monitoring_zone()` dans le polygone UGF.
+Une `@section` roxygen documente cette équivalence.
+
+Pour villards (AOI 264 ha rectangle, 77 ha UGFs réelles) :
+**~70 % des pixels deviennent NA** dans les outputs raster. La
+compression DEFLATE absorbe largement ce changement (le TIF
+persisté de `compute_fast_alert_mask()` est plus petit).
+
+14 nouvelles assertions dans `test-zone-mask.R` :
+- `.apply_zone_mask` no-op sur NULL polygon
+- no-op sur non-SpatRaster
+- NA sets correctement hors polygone (fixture 4×4 avec
+  polygone couvrant le quart NW → 4 cells non-NA, 12 NA)
+- reprojection automatique de la CRS du polygone à celle du raster
+- smoke test villards : `apply_zone_mask = TRUE` produit plus de
+  NA cells que `apply_zone_mask = FALSE`, même extent
+
+Aucune régression sur les suites voisines (379 PASS au total :
+test-zone-mask 14 + fast-alert-raster 20 + fast-alert-mask 18 +
+pixel-map 62 + aoi-alignment 15 + monitoring 237 + alert-mask 13).
+
 # nemeton 0.48.3 (2026-05-27)
 
 ### Fixed — Cache S2 : memoization du tile_ext_native par MGRS code

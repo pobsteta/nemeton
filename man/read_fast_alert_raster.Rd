@@ -13,7 +13,9 @@ read_fast_alert_raster(
   date_to,
   mode = c("count", "rolling"),
   window_days = 30L,
-  cache_dir
+  cache_dir,
+  apply_zone_mask = TRUE,
+  mask_polygon = NULL
 )
 }
 \arguments{
