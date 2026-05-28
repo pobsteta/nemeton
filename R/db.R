@@ -98,18 +98,21 @@ NULL
 }
 
 # Apply the PRAGMAs that make a file-backed SQLite usable as a local
-# monitoring backend. `dbGetQuery` is used uniformly because some PRAGMAs
-# (journal_mode, busy_timeout) return a row while others return none.
+# monitoring backend. RSQLite is strict about the result API and warns
+# ("dbGetQuery()/dbSendQuery()/dbFetch() should only be used with SELECT
+# queries") when a non-row-returning statement goes through dbGetQuery.
+# So route each PRAGMA to the matching call: busy_timeout and
+# journal_mode return their (new) value -> dbGetQuery; foreign_keys and
+# synchronous return nothing -> dbExecute.
 .sqlite_apply_pragmas <- function(con, read_only) {
-  pragma <- function(p) invisible(DBI::dbGetQuery(con, paste("PRAGMA", p)))
-  pragma("busy_timeout = 10000")   # ms — wait instead of erroring on a locked write
-  pragma("foreign_keys = ON")      # SQLite does not enforce FKs otherwise
+  invisible(DBI::dbGetQuery(con, "PRAGMA busy_timeout = 10000"))  # ms — wait instead of erroring on a locked write
+  DBI::dbExecute(con, "PRAGMA foreign_keys = ON")                 # SQLite does not enforce FKs otherwise
   if (!read_only) {
     # WAL is a persistent property of the database file; only a writer
     # can set it, and it enables one writer + many concurrent readers
     # across processes (the Shiny session + the future worker).
-    pragma("journal_mode = WAL")
-    pragma("synchronous = NORMAL")  # safe under WAL, much faster than FULL
+    invisible(DBI::dbGetQuery(con, "PRAGMA journal_mode = WAL"))
+    DBI::dbExecute(con, "PRAGMA synchronous = NORMAL")            # safe under WAL, much faster than FULL
   }
   invisible(con)
 }
