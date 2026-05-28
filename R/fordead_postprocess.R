@@ -306,7 +306,7 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   .assert_db_pkgs()
   if (!inherits(alerts_sf, "sf") || !nrow(alerts_sf)) return(0L)
 
-  plots <- DBI::dbGetQuery(con,
+  plots <- .db_get_query(con,
     "SELECT id, plot_id, geom_wkt FROM plot WHERE zone_id = $1",
     params = list(as.integer(zone_id)))
   if (!nrow(plots)) {
@@ -367,25 +367,10 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
   }
   if (!nrow(staging)) return(0L)
 
-  is_duckdb <- inherits(con, "duckdb_connection")
+  is_pg <- inherits(con, "PqConnection")
   inserted <- DBI::dbWithTransaction(con, {
-    if (is_duckdb) {
-      # DuckDB has no `ON COMMIT DROP`; drop any leftover from a
-      # previous failed run, create, use, and drop manually.
-      DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_fordead_alert_staging")
-      DBI::dbExecute(con,
-        "CREATE TEMP TABLE tmp_fordead_alert_staging (
-           plot_id          INTEGER,
-           alert_type       TEXT,
-           trigger_date     DATE,
-           value_before     DOUBLE,
-           value_after      DOUBLE,
-           delta            DOUBLE,
-           confidence_class TEXT,
-           stress_index     DOUBLE
-         )")
-    } else {
-      DBI::dbExecute(con,
+    if (is_pg) {
+      .db_execute(con,
         "CREATE TEMP TABLE tmp_fordead_alert_staging (
            plot_id          INTEGER,
            alert_type       TEXT,
@@ -396,9 +381,24 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
            confidence_class TEXT,
            stress_index     DOUBLE PRECISION
          ) ON COMMIT DROP")
+    } else {
+      # DuckDB / SQLite have no `ON COMMIT DROP`; drop any leftover from
+      # a previous failed run, create, use, and drop manually.
+      .db_execute(con, "DROP TABLE IF EXISTS tmp_fordead_alert_staging")
+      .db_execute(con,
+        "CREATE TEMP TABLE tmp_fordead_alert_staging (
+           plot_id          INTEGER,
+           alert_type       TEXT,
+           trigger_date     DATE,
+           value_before     DOUBLE,
+           value_after      DOUBLE,
+           delta            DOUBLE,
+           confidence_class TEXT,
+           stress_index     DOUBLE
+         )")
     }
     DBI::dbAppendTable(con, "tmp_fordead_alert_staging", staging)
-    n <- DBI::dbExecute(con,
+    n <- .db_execute(con,
       "INSERT INTO alert (plot_id, alert_type, trigger_date,
                           value_before, value_after, delta,
                           confidence_class, stress_index)
@@ -407,8 +407,8 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
               confidence_class, stress_index
          FROM tmp_fordead_alert_staging
        ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING")
-    if (is_duckdb) {
-      DBI::dbExecute(con, "DROP TABLE tmp_fordead_alert_staging")
+    if (!is_pg) {
+      .db_execute(con, "DROP TABLE tmp_fordead_alert_staging")
     }
     as.integer(n)
   })
@@ -570,7 +570,7 @@ list_alerts <- function(con, zone_id,
       ORDER BY a.trigger_date DESC, a.plot_id",
     paste(where, collapse = " AND ")
   )
-  rs <- DBI::dbGetQuery(con, sql, params = pars)
+  rs <- .db_get_query(con, sql, params = pars)
 
   if (!nrow(rs)) {
     return(sf::st_sf(

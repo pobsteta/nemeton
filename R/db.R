@@ -35,19 +35,27 @@ NULL
 
 # Inspect a URL and return the backend identifier. Recognised values:
 #   "pg"     for postgres:// or postgresql://
+#   "sqlite" for sqlite: (any number of slashes) or a bare path
+#            ending in ".sqlite" / ".db"
 #   "duckdb" for duckdb: (any number of slashes) or a bare path
-#            ending in ".duckdb"
+#            ending in ".duckdb" (deprecated, see db_connect())
 .detect_driver <- function(url) {
   if (grepl("^postgres(?:ql)?://", url, ignore.case = TRUE)) {
     return("pg")
   }
+  # DuckDB is checked before the generic ".db"-ish SQLite rule so that a
+  # ".duckdb" path is never mis-classified.
   if (grepl("^duckdb:", url, ignore.case = TRUE) ||
       grepl("\\.duckdb$", url, ignore.case = TRUE)) {
     return("duckdb")
   }
+  if (grepl("^sqlite:", url, ignore.case = TRUE) ||
+      grepl("\\.sqlite$|\\.db$", url, ignore.case = TRUE)) {
+    return("sqlite")
+  }
   cli::cli_abort(c(
     "Unrecognised DB URL: {.val {url}}.",
-    "i" = "Expected {.val postgresql://...} or {.val duckdb:///path.duckdb}."
+    "i" = "Expected {.val postgresql://...}, {.val sqlite:///path.sqlite} or {.val duckdb:///path.duckdb}."
   ))
 }
 
@@ -59,6 +67,13 @@ NULL
     if (!requireNamespace("RPostgres", quietly = TRUE)) {
       cli::cli_abort("Package {.pkg RPostgres} required. Install with {.code install.packages('RPostgres')}.")
     }
+  } else if (identical(driver, "sqlite")) {
+    if (!requireNamespace("RSQLite", quietly = TRUE)) {
+      cli::cli_abort(c(
+        "Package {.pkg RSQLite} required for the local monitoring backend.",
+        "i" = "Install with {.code install.packages('RSQLite')}."
+      ))
+    }
   } else if (identical(driver, "duckdb")) {
     if (!requireNamespace("duckdb", quietly = TRUE)) {
       cli::cli_abort(c(
@@ -69,6 +84,36 @@ NULL
   }
 }
 
+# One-shot (per session) deprecation notice for the DuckDB local backend.
+.nemeton_db_state <- new.env(parent = emptyenv())
+.warn_duckdb_deprecated_once <- function() {
+  if (isTRUE(.nemeton_db_state$duckdb_warned)) return(invisible(NULL))
+  .nemeton_db_state$duckdb_warned <- TRUE
+  cli::cli_warn(c(
+    "The DuckDB local monitoring backend is deprecated.",
+    "i" = "Prefer {.val sqlite:///path/to/file.sqlite}: SQLite in WAL mode is multi-process safe, so the Shiny session and the ingestion worker can use the file concurrently.",
+    "i" = "DuckDB remains supported for now but will be removed in a future release."
+  ))
+  invisible(NULL)
+}
+
+# Apply the PRAGMAs that make a file-backed SQLite usable as a local
+# monitoring backend. `dbGetQuery` is used uniformly because some PRAGMAs
+# (journal_mode, busy_timeout) return a row while others return none.
+.sqlite_apply_pragmas <- function(con, read_only) {
+  pragma <- function(p) invisible(DBI::dbGetQuery(con, paste("PRAGMA", p)))
+  pragma("busy_timeout = 10000")   # ms — wait instead of erroring on a locked write
+  pragma("foreign_keys = ON")      # SQLite does not enforce FKs otherwise
+  if (!read_only) {
+    # WAL is a persistent property of the database file; only a writer
+    # can set it, and it enables one writer + many concurrent readers
+    # across processes (the Shiny session + the future worker).
+    pragma("journal_mode = WAL")
+    pragma("synchronous = NORMAL")  # safe under WAL, much faster than FULL
+  }
+  invisible(con)
+}
+
 
 #' Connect to the monitoring database
 #'
@@ -76,29 +121,38 @@ NULL
 #' argument), inspects its scheme, and opens the matching
 #' connection. Use [db_disconnect()] to close it.
 #'
-#' @param url Character. Connection URL. Two schemes are
+#' @param url Character. Connection URL. Three schemes are
 #'   supported:
 #'   * `postgresql://user:password@host:port/dbname` — opens a
 #'     [RPostgres::Postgres()] connection.
+#'   * `sqlite:///absolute/path/to/file.sqlite` — opens a
+#'     [RSQLite::SQLite()] connection on the given file in WAL mode
+#'     (the recommended local backend). The file is created if it does
+#'     not exist. A bare path ending in `.sqlite` or `.db` is also
+#'     accepted for convenience.
 #'   * `duckdb:///absolute/path/to/file.duckdb` — opens a
-#'     [duckdb::duckdb()] connection on the given file. The
-#'     file is created if it does not exist. A bare path ending
-#'     in `.duckdb` is also accepted for convenience.
+#'     [duckdb::duckdb()] connection (**deprecated**, see Details). A
+#'     bare path ending in `.duckdb` is also accepted.
 #'   Defaults to `Sys.getenv("NEMETON_DB_URL")`.
 #' @param read_only Logical. Open the connection in read-only mode.
-#'   Defaults to `FALSE`.
+#'   Defaults to `FALSE`. Relevant only for the file backends (SQLite,
+#'   DuckDB); the file must already exist and its parent directory is
+#'   *not* created. For **PostgreSQL** the flag is a no-op (it manages
+#'   concurrent readers and writers natively).
 #'
-#'   This matters for the **DuckDB** backend: a file-backed DuckDB
-#'   database allows only a *single* read-write process at a time, but
-#'   *several* read-only connections may share the file concurrently.
-#'   Readers (e.g. a Shiny session that only renders alerts) should
-#'   therefore open with `read_only = TRUE` so they do not clash with —
-#'   or get locked out by — a `future` worker that ingests data in a
-#'   separate process. In read-only mode the file must already exist;
-#'   the parent directory is *not* created.
+#' @details
+#' **SQLite is the recommended local backend.** Opened in WAL
+#' (write-ahead logging) mode, a file-backed SQLite database supports a
+#' single writer plus several concurrent readers *across processes* — so
+#' a Shiny session and a `future` ingestion worker can use the same file
+#' at once. `busy_timeout` is set so a momentarily locked write waits
+#' instead of erroring, and `foreign_keys` is enabled.
 #'
-#'   For **PostgreSQL** the flag is a no-op: Postgres handles
-#'   concurrent readers and writers natively, so no file lock applies.
+#' **DuckDB is deprecated.** A file-backed DuckDB database allows only a
+#' single read-write process and locks the file exclusively, which breaks
+#' the Shiny-session-plus-worker pattern. Existing `duckdb:///` URLs keep
+#' working (with a one-time deprecation warning) but new deployments
+#' should use `sqlite:///`.
 #'
 #' @return A `DBIConnection`.
 #'
@@ -109,13 +163,13 @@ NULL
 #' con <- db_connect()
 #' db_disconnect(con)
 #'
-#' # DuckDB (local mode)
-#' Sys.setenv(NEMETON_DB_URL = "duckdb:///tmp/my_project/monitoring.duckdb")
+#' # SQLite (recommended local mode, WAL)
+#' Sys.setenv(NEMETON_DB_URL = "sqlite:///tmp/my_project/monitoring.sqlite")
 #' con <- db_connect()
 #' db_disconnect(con)
 #'
-#' # DuckDB read-only reader, safe to open while a worker writes
-#' ro <- db_connect("duckdb:///tmp/my_project/monitoring.duckdb",
+#' # SQLite read-only reader, safe to open while a worker writes
+#' ro <- db_connect("sqlite:///tmp/my_project/monitoring.sqlite",
 #'                  read_only = TRUE)
 #' db_disconnect(ro)
 #' }
@@ -128,7 +182,7 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
       "No database URL provided.",
       "i" = "Set {.envvar NEMETON_DB_URL} or pass {.arg url} explicitly.",
       "i" = "Format: {.val postgresql://user:password@host:port/dbname}",
-      "i" = "Or local: {.val duckdb:///path/to/file.duckdb}"
+      "i" = "Or local: {.val sqlite:///path/to/file.sqlite}"
     ))
   }
   if (!is.logical(read_only) || length(read_only) != 1L || is.na(read_only)) {
@@ -151,7 +205,32 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
         password = parts$password
       )
     },
+    sqlite = {
+      path <- .parse_sqlite_url(url)
+      if (read_only) {
+        # A read-only SQLite connection cannot create the file.
+        if (!file.exists(path)) {
+          cli::cli_abort(c(
+            "Cannot open SQLite database read-only: file does not exist.",
+            "x" = "{.path {path}}",
+            "i" = "Open it read-write once to create it, or drop {.code read_only = TRUE}."
+          ))
+        }
+        con <- DBI::dbConnect(RSQLite::SQLite(), dbname = path,
+                              flags = RSQLite::SQLITE_RO)
+      } else {
+        parent <- dirname(path)
+        if (!dir.exists(parent)) {
+          dir.create(parent, recursive = TRUE, showWarnings = FALSE)
+        }
+        con <- DBI::dbConnect(RSQLite::SQLite(), dbname = path,
+                              flags = RSQLite::SQLITE_RWC)
+      }
+      .sqlite_apply_pragmas(con, read_only)
+      con
+    },
     duckdb = {
+      .warn_duckdb_deprecated_once()
       path <- .parse_duckdb_url(url)
       if (read_only) {
         # A read-only DuckDB connection cannot create the file; the
@@ -209,7 +288,13 @@ db_disconnect <- function(con) {
 # nemeton: if the new `pg/` subdir does not exist, treat the
 # top-level dir as the PG migrations.
 .default_migrations_dir <- function(con) {
-  driver <- if (inherits(con, "duckdb_connection")) "duckdb" else "pg"
+  driver <- if (inherits(con, "duckdb_connection")) {
+    "duckdb"
+  } else if (inherits(con, "SQLiteConnection")) {
+    "sqlite"
+  } else {
+    "pg"
+  }
   pkg_root <- system.file("db/migrations", package = "nemeton")
   candidate <- file.path(pkg_root, driver)
   if (dir.exists(candidate)) candidate else pkg_root
@@ -225,7 +310,7 @@ db_disconnect <- function(con) {
 #'
 #' When `migrations_dir` is left `NULL`, the directory is picked
 #' automatically based on the connection's driver — `pg/` for
-#' Postgres, `duckdb/` for DuckDB.
+#' Postgres, `sqlite/` for SQLite, `duckdb/` for DuckDB.
 #'
 #' Migrations are executed in a single transaction per file and the
 #' filename (basename without extension) is recorded as the version
@@ -263,38 +348,30 @@ db_migrate <- function(con,
     return(character(0))
   }
 
-  is_duckdb <- inherits(con, "duckdb_connection")
+  # PostgreSQL accepts a whole multi-statement file in one round-trip via
+  # the simple-query protocol (`immediate = TRUE`). DuckDB and SQLite do
+  # not, so we split the file on `;` and run statements one at a time.
+  is_pg <- inherits(con, "PqConnection")
   newly_applied <- character(0)
   for (f in to_apply) {
     version <- .migration_version(f)
     sql <- paste(readLines(f, warn = FALSE), collapse = "\n")
     DBI::dbWithTransaction(con, {
-      if (is_duckdb) {
-        # DuckDB does not implement the simple-query protocol /
-        # `immediate` flag the same way PG does. The driver does
-        # accept multi-statement strings via `dbExecute`, but the
-        # safest portable path is to split on `;` outside of
-        # string/identifier literals and run statements one at a
-        # time. The migration files are hand-written and use no
-        # exotic literal forms, so a naive split is sufficient.
+      if (is_pg) {
+        # Without immediate = TRUE, RPostgres prepares the statement and
+        # PostgreSQL rejects it with "cannot insert multiple commands into
+        # a prepared statement".
+        DBI::dbExecute(con, sql, immediate = TRUE)
+      } else {
+        # The migration files are hand-written and use no exotic literal
+        # forms, so a naive split on `;` is sufficient.
         for (stmt in .split_sql_statements(sql)) {
           if (nzchar(stmt)) DBI::dbExecute(con, stmt)
         }
-        DBI::dbExecute(con,
-          "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
-          params = list(version))
-      } else {
-        # immediate = TRUE uses the simple-query protocol so a single .sql
-        # file with multiple statements (CREATE TABLE; CREATE INDEX; SELECT
-        # create_hypertable(...); …) is executed in one round-trip.
-        # Without it, RPostgres prepares the statement and PostgreSQL
-        # rejects it with "cannot insert multiple commands into a prepared
-        # statement".
-        DBI::dbExecute(con, sql, immediate = TRUE)
-        DBI::dbExecute(con,
-          "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
-          params = list(version))
       }
+      .db_execute(con,
+        "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
+        params = list(version))
     })
     cli::cli_alert_success("Applied migration {.val {version}}.")
     newly_applied <- c(newly_applied, version)
@@ -334,6 +411,61 @@ db_migrate <- function(con,
     cli::cli_abort("Empty DuckDB path in URL: {.val {url}}.")
   }
   path
+}
+
+# Extract the filesystem path from a SQLite URL. Same scheme handling as
+# the DuckDB variant. A bare path (no scheme) ending in .sqlite/.db is
+# also accepted by .detect_driver() and passes through unchanged here.
+.parse_sqlite_url <- function(url) {
+  path <- sub("^sqlite:(?://)?", "", url, ignore.case = TRUE)
+  if (!nzchar(path)) {
+    cli::cli_abort("Empty SQLite path in URL: {.val {url}}.")
+  }
+  path
+}
+
+# ---- Backend-portable parametrised queries ---------------------------
+#
+# The monitoring code binds parameters with Postgres/DuckDB-style `$n`
+# placeholders and an *unnamed* `params = list(...)`. RSQLite treats `$n`
+# as a *named* parameter ("n") and would not bind it from an unnamed
+# list, so for SQLite connections we rewrite `$n` to the anonymous `?`
+# form (which RSQLite binds positionally) and reorder `params` to match
+# each placeholder's textual position. PostgreSQL and DuckDB are passed
+# through unchanged.
+
+.sqlite_translate_params <- function(sql, params) {
+  toks <- regmatches(sql, gregexpr("\\$[0-9]+", sql))[[1]]
+  if (!length(toks)) {
+    return(list(sql = sql, params = params))
+  }
+  idx <- as.integer(sub("^\\$", "", toks))
+  list(
+    sql    = gsub("\\$[0-9]+", "?", sql),
+    params = params[idx]
+  )
+}
+
+.db_execute <- function(con, sql, params = NULL) {
+  if (is.null(params)) {
+    return(DBI::dbExecute(con, sql))
+  }
+  if (inherits(con, "SQLiteConnection")) {
+    tr <- .sqlite_translate_params(sql, params)
+    return(DBI::dbExecute(con, tr$sql, params = tr$params))
+  }
+  DBI::dbExecute(con, sql, params = params)
+}
+
+.db_get_query <- function(con, sql, params = NULL) {
+  if (is.null(params)) {
+    return(DBI::dbGetQuery(con, sql))
+  }
+  if (inherits(con, "SQLiteConnection")) {
+    tr <- .sqlite_translate_params(sql, params)
+    return(DBI::dbGetQuery(con, tr$sql, params = tr$params))
+  }
+  DBI::dbGetQuery(con, sql, params = params)
 }
 
 # Split a SQL script into individual statements. Honours

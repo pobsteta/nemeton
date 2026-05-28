@@ -73,14 +73,14 @@ detect_alerts <- function(con, zone_id,
     ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING
   ", as.integer(window_days))
 
-  DBI::dbExecute(con, sql_detect,
+  .db_execute(con, sql_detect,
                  params = list(as.integer(zone_id),
                                as.numeric(threshold_ndvi_drop),
                                as.numeric(threshold_nbr_drop)))
 
   # Return all alerts for the zone (not just newly inserted ones; the
   # caller usually wants the full current state).
-  rs <- DBI::dbGetQuery(con,
+  rs <- .db_get_query(con,
     "SELECT a.plot_id, p.plot_id AS plot_label, a.alert_type,
             a.trigger_date, a.value_before, a.value_after, a.delta,
             p.geom_wkt

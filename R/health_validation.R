@@ -366,7 +366,7 @@ ingest_health_validation <- function(con,
 
   # Pull every alert of this zone (id + geometry only). Snap is in
   # metres so we project everything to Lambert-93.
-  alerts_q <- DBI::dbGetQuery(con,
+  alerts_q <- .db_get_query(con,
     "SELECT a.id, a.confidence_class, p.geom_wkt
        FROM alert a
        JOIN plot p ON p.id = a.plot_id
@@ -436,7 +436,7 @@ ingest_health_validation <- function(con,
       map$cause
     }
 
-    DBI::dbExecute(con,
+    .db_execute(con,
       "UPDATE alert
           SET validation_status = $2,
               validation_cause  = $3,

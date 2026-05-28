@@ -43,8 +43,37 @@ test_that(".detect_driver classifies URLs correctly", {
   expect_equal(nemeton:::.detect_driver("postgres://u:p@h/db"),   "pg")
   expect_equal(nemeton:::.detect_driver("duckdb:///tmp/x.duckdb"), "duckdb")
   expect_equal(nemeton:::.detect_driver("/tmp/x.duckdb"),          "duckdb")
+  expect_equal(nemeton:::.detect_driver("sqlite:///tmp/x.sqlite"), "sqlite")
+  expect_equal(nemeton:::.detect_driver("/tmp/x.sqlite"),          "sqlite")
+  expect_equal(nemeton:::.detect_driver("/tmp/x.db"),              "sqlite")
   expect_error(nemeton:::.detect_driver("redis://x"),
                "Unrecognised DB URL")
+})
+
+test_that(".parse_sqlite_url strips the scheme and keeps the path", {
+  expect_equal(nemeton:::.parse_sqlite_url("sqlite:///tmp/x.sqlite"),
+               "/tmp/x.sqlite")
+  expect_equal(nemeton:::.parse_sqlite_url("sqlite://./rel.sqlite"),
+               "./rel.sqlite")
+  expect_equal(nemeton:::.parse_sqlite_url("sqlite:/abs/path.db"),
+               "/abs/path.db")
+})
+
+test_that(".sqlite_translate_params rewrites $n to ? and reorders params", {
+  tr <- nemeton:::.sqlite_translate_params(
+    "INSERT INTO t (a, b, c) VALUES ($1, $2, $3)", list("A", "B", "C"))
+  expect_equal(tr$sql, "INSERT INTO t (a, b, c) VALUES (?, ?, ?)")
+  expect_equal(tr$params, list("A", "B", "C"))
+
+  # Out-of-order placeholders must reorder params to textual position.
+  tr2 <- nemeton:::.sqlite_translate_params(
+    "SELECT * FROM t WHERE a = $2 AND b = $1", list("first", "second"))
+  expect_equal(tr2$sql, "SELECT * FROM t WHERE a = ? AND b = ?")
+  expect_equal(tr2$params, list("second", "first"))
+
+  # No placeholders -> passthrough.
+  tr3 <- nemeton:::.sqlite_translate_params("SELECT 1", list())
+  expect_equal(tr3$sql, "SELECT 1")
 })
 
 test_that("db_connect aborts when no URL is provided", {
@@ -264,6 +293,139 @@ test_that("a read-only DuckDB reader can coexist with a read-write owner", {
     on.exit(db_disconnect(ro), add = TRUE)
     expect_s4_class(ro, "duckdb_connection")
     expect_true(DBI::dbExistsTable(ro, "monitoring_zone"))
+  })
+})
+
+
+# ---- SQLite local backend (recommended, WAL) -------------------------
+#
+# SQLite tests use a per-test temp file, always fresh, no external
+# server. Skipped only when RSQLite is not installed.
+
+test_that("db_connect opens a SQLite file in WAL mode", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    expect_s4_class(con, "SQLiteConnection")
+    expect_true(DBI::dbIsValid(con))
+    mode <- DBI::dbGetQuery(con, "PRAGMA journal_mode")[[1]]
+    expect_identical(tolower(mode), "wal")
+  })
+})
+
+test_that("db_connect creates the parent directory if missing (SQLite)", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    target <- file.path("nested", "subdir", "monitoring.sqlite")
+    expect_false(dir.exists(dirname(target)))
+    con <- db_connect(paste0("sqlite:///", normalizePath(".", winslash = "/"),
+                             "/", target))
+    on.exit(db_disconnect(con), add = TRUE)
+    expect_true(dir.exists(dirname(target)))
+    expect_true(file.exists(target))
+  })
+})
+
+test_that("db_migrate applies the SQLite migrations on a fresh file", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+
+    applied <- db_migrate(con)
+    expect_true("0001_init"         %in% applied)
+    expect_true("0002_fordead"      %in% applied)
+    expect_true("0003_project_uuid" %in% applied)
+
+    for (tbl in c("monitoring_zone", "plot", "obs_pixel", "alert",
+                  "schema_migration")) {
+      expect_true(DBI::dbExistsTable(con, tbl), info = tbl)
+    }
+    # FORDEAD columns + project_uuid present.
+    acols <- DBI::dbListFields(con, "alert")
+    for (c in c("confidence_class", "stress_index", "validation_status",
+                "validation_cause", "validated_by", "validated_at")) {
+      expect_true(c %in% acols, info = c)
+    }
+    expect_true("project_uuid" %in% DBI::dbListFields(con, "monitoring_zone"))
+
+    # Re-running is a no-op.
+    expect_length(db_migrate(con), 0)
+  })
+})
+
+test_that("SQLite $n placeholders round-trip through the db wrappers", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con)
+
+    n <- nemeton:::.db_execute(con,
+      "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg)
+         VALUES ($1, $2, 4326)",
+      params = list("zone-A", "POLYGON((0 0,0 1,1 1,1 0,0 0))"))
+    expect_equal(n, 1L)
+
+    rs <- nemeton:::.db_get_query(con,
+      "SELECT id, name FROM monitoring_zone WHERE name = $1",
+      params = list("zone-A"))
+    expect_equal(nrow(rs), 1L)
+    expect_equal(rs$name, "zone-A")
+  })
+})
+
+test_that("SQLite project_uuid partial index tolerates NULLs, rejects dup", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con)
+
+    ins <- function(uuid) {
+      nemeton:::.db_execute(con,
+        "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid)
+           VALUES ($1, 'POLYGON((0 0,0 1,1 1,1 0,0 0))', 4326, $2)",
+        params = list(paste0("z-", if (is.na(uuid)) "null" else uuid), uuid))
+    }
+    expect_equal(ins(NA_character_), 1L)
+    expect_equal(ins(NA_character_), 1L)
+    expect_equal(ins("proj-A"), 1L)
+    expect_error(ins("proj-A"))
+  })
+})
+
+test_that("db_connect read_only on a missing SQLite file is a clear error", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    missing <- file.path(normalizePath(".", winslash = "/"), "nope.sqlite")
+    expect_error(
+      db_connect(paste0("sqlite:///", missing), read_only = TRUE),
+      "does not exist"
+    )
+  })
+})
+
+test_that("a read-only SQLite reader coexists with a read-write owner (WAL)", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    url <- paste0("sqlite:///", dbf)
+    rw <- db_connect(url)
+    on.exit(db_disconnect(rw), add = TRUE)
+    db_migrate(rw)
+    nemeton:::.db_execute(rw,
+      "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg)
+         VALUES ($1, 'POLYGON((0 0,0 1,1 1,1 0,0 0))', 4326)",
+      params = list("zone-A"))
+
+    # A concurrent read-only reader (the Shiny-session pattern) must open
+    # and see committed data while the writer connection is still open.
+    ro <- db_connect(url, read_only = TRUE)
+    on.exit(db_disconnect(ro), add = TRUE)
+    expect_s4_class(ro, "SQLiteConnection")
+    cnt <- DBI::dbGetQuery(ro, "SELECT COUNT(*) AS n FROM monitoring_zone")$n
+    expect_equal(cnt, 1L)
   })
 })
 
