@@ -1,3 +1,19 @@
+# nemeton 0.50.1 (2026-05-28)
+
+### Fixed — warnings RSQLite `result_fetch` à la connexion SQLite
+
+`db_connect()` sur le backend SQLite émettait, à chaque connexion, des
+avertissements `dbGetQuery()/dbSendQuery()/dbFetch() should only be used
+with SELECT queries`. Cause : `.sqlite_apply_pragmas()` routait *tous*
+les PRAGMA via `dbGetQuery()`, or `PRAGMA foreign_keys = ON` et
+`PRAGMA synchronous = NORMAL` ne renvoient aucune ligne — RSQLite est
+strict sur l'API de résultat. Les PRAGMA sans résultat passent désormais
+par `dbExecute()`, ceux qui renvoient une valeur (`busy_timeout`,
+`journal_mode`) restent sur `dbGetQuery()`. Purement cosmétique : la
+connexion et les migrations fonctionnaient déjà (`db_migrate()` utilise
+`dbExecute()` pour le DDL) ; seul le log était pollué. PostgreSQL et
+DuckDB ne sont pas concernés.
+
 # nemeton 0.50.0 (2026-05-28)
 
 ### Added — backend monitoring local SQLite/WAL (remplace DuckDB), Bug #2 résolu à la racine

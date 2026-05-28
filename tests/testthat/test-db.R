@@ -314,6 +314,19 @@ test_that("db_connect opens a SQLite file in WAL mode", {
   })
 })
 
+test_that("SQLite connect + migrate emit no RSQLite result_fetch warning", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    # The PRAGMA setters that return no row (foreign_keys, synchronous)
+    # must go through dbExecute, not dbGetQuery, or RSQLite warns.
+    expect_no_warning({
+      con <- db_connect(paste0("sqlite:///", dbf))
+      db_migrate(con)
+      db_disconnect(con)
+    })
+  })
+})
+
 test_that("db_connect creates the parent directory if missing (SQLite)", {
   skip_if_not_installed("RSQLite")
   withr::with_tempdir({
