@@ -180,6 +180,93 @@ test_that("DuckDB schema carries the FORDEAD validation columns", {
   })
 })
 
+# ---- 0003 project_uuid migration (DuckDB partial-index fix) ----------
+#
+# Regression test for the Windows DuckDB crash: migration 0003 used a
+# partial UNIQUE index (WHERE project_uuid IS NOT NULL) which DuckDB
+# rejects with "Creating partial indexes is not supported currently".
+# The DuckDB variant now uses a full UNIQUE index that relies on the
+# SQL-standard NULLS DISTINCT semantics.
+
+test_that("db_migrate applies 0003_project_uuid on DuckDB without error", {
+  skip_if_not_installed("duckdb")
+  withr::with_tempfile("dbf", fileext = ".duckdb", {
+    con <- db_connect(paste0("duckdb:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+
+    applied <- db_migrate(con)
+    expect_true("0003_project_uuid" %in% applied)
+
+    cols <- DBI::dbGetQuery(con,
+      "SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'monitoring_zone'")
+    expect_true("project_uuid" %in% cols$column_name)
+  })
+})
+
+test_that("DuckDB project_uuid index tolerates multiple NULLs, rejects dup non-NULL", {
+  skip_if_not_installed("duckdb")
+  withr::with_tempfile("dbf", fileext = ".duckdb", {
+    con <- db_connect(paste0("duckdb:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    db_migrate(con)
+
+    ins <- function(uuid) {
+      label <- if (is.na(uuid)) "null" else uuid
+      DBI::dbExecute(con,
+        "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid)
+           VALUES ($1, 'POLYGON((0 0,0 1,1 1,1 0,0 0))', 4326, $2)",
+        params = list(paste0("z-", label), uuid))
+    }
+
+    # Multiple NULL project_uuid rows are allowed (legacy zones).
+    expect_equal(ins(NA_character_), 1L)
+    expect_equal(ins(NA_character_), 1L)
+
+    # First non-NULL value inserts fine.
+    expect_equal(ins("proj-A"), 1L)
+    # A duplicate non-NULL value violates the UNIQUE index.
+    expect_error(ins("proj-A"))
+  })
+})
+
+
+# ---- read-only connections (DuckDB single-writer work-around) --------
+
+test_that("db_connect read_only must be a single logical", {
+  expect_error(db_connect("duckdb:///tmp/x.duckdb", read_only = NA),
+               "single")
+  expect_error(db_connect("duckdb:///tmp/x.duckdb", read_only = "yes"),
+               "single")
+})
+
+test_that("db_connect read_only on a missing DuckDB file is a clear error", {
+  skip_if_not_installed("duckdb")
+  withr::with_tempdir({
+    missing <- file.path(normalizePath(".", winslash = "/"), "nope.duckdb")
+    expect_error(
+      db_connect(paste0("duckdb:///", missing), read_only = TRUE),
+      "does not exist"
+    )
+  })
+})
+
+test_that("a read-only DuckDB reader can coexist with a read-write owner", {
+  skip_if_not_installed("duckdb")
+  withr::with_tempfile("dbf", fileext = ".duckdb", {
+    url <- paste0("duckdb:///", dbf)
+    rw <- db_connect(url)
+    on.exit(db_disconnect(rw), add = TRUE)
+    db_migrate(rw)
+
+    # Second connection from the same process, read-only, must open.
+    ro <- db_connect(url, read_only = TRUE)
+    on.exit(db_disconnect(ro), add = TRUE)
+    expect_s4_class(ro, "duckdb_connection")
+    expect_true(DBI::dbExistsTable(ro, "monitoring_zone"))
+  })
+})
+
 
 # ---- SQL splitter (DuckDB migration helper) --------------------------
 

@@ -4,7 +4,7 @@
 \alias{db_connect}
 \title{Connect to the monitoring database}
 \usage{
-db_connect(url = Sys.getenv("NEMETON_DB_URL"))
+db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
 }
 \arguments{
 \item{url}{Character. Connection URL. Two schemes are
@@ -16,6 +16,21 @@ supported:
   file is created if it does not exist. A bare path ending
   in `.duckdb` is also accepted for convenience.
 Defaults to `Sys.getenv("NEMETON_DB_URL")`.}
+
+\item{read_only}{Logical. Open the connection in read-only mode.
+Defaults to `FALSE`.
+
+This matters for the **DuckDB** backend: a file-backed DuckDB
+database allows only a *single* read-write process at a time, but
+*several* read-only connections may share the file concurrently.
+Readers (e.g. a Shiny session that only renders alerts) should
+therefore open with `read_only = TRUE` so they do not clash with —
+or get locked out by — a `future` worker that ingests data in a
+separate process. In read-only mode the file must already exist;
+the parent directory is *not* created.
+
+For **PostgreSQL** the flag is a no-op: Postgres handles
+concurrent readers and writers natively, so no file lock applies.}
 }
 \value{
 A `DBIConnection`.
@@ -36,6 +51,11 @@ db_disconnect(con)
 Sys.setenv(NEMETON_DB_URL = "duckdb:///tmp/my_project/monitoring.duckdb")
 con <- db_connect()
 db_disconnect(con)
+
+# DuckDB read-only reader, safe to open while a worker writes
+ro <- db_connect("duckdb:///tmp/my_project/monitoring.duckdb",
+                 read_only = TRUE)
+db_disconnect(ro)
 }
 
 }
