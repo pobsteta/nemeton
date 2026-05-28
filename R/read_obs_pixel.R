@@ -17,7 +17,7 @@
 #' `nemetonshiny` rule §1: no business logic in the app).
 #'
 #' @param con A `DBI` connection to the `nemeton` schema (PostgreSQL +
-#'   TimescaleDB or DuckDB). The connection must already have the
+#'   TimescaleDB or SQLite). The connection must already have the
 #'   `monitoring_zone` / `plot` / `obs_pixel` tables (cf. migration
 #'   `0001_init.sql`).
 #' @param zone_id Integer. The `monitoring_zone.id` to read from.
@@ -68,7 +68,7 @@
 #' registered inside the UGF polygon by
 #' [register_monitoring_zone()]. No spatial `ST_Within` post-filter
 #' is added — it would be redundant (and would require PostGIS
-#' geometry casts that wouldn't survive on the DuckDB backend). If a
+#' geometry casts that wouldn't survive on the SQLite backend). If a
 #' plot has somehow drifted out of its zone polygon (data integrity
 #' issue), that is reported by [register_monitoring_zone()]'s
 #' validation, not at read time.

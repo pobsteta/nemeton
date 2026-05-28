@@ -382,8 +382,8 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
            stress_index     DOUBLE PRECISION
          ) ON COMMIT DROP")
     } else {
-      # DuckDB / SQLite have no `ON COMMIT DROP`; drop any leftover from
-      # a previous failed run, create, use, and drop manually.
+      # SQLite has no `ON COMMIT DROP`; drop any leftover from a previous
+      # failed run, create, use, and drop manually.
       .db_execute(con, "DROP TABLE IF EXISTS tmp_fordead_alert_staging")
       .db_execute(con,
         "CREATE TEMP TABLE tmp_fordead_alert_staging (
@@ -527,9 +527,9 @@ list_alerts <- function(con, zone_id,
   }
   # Generate a portable `IN ($n, $n+1, ...)` clause and append one
   # parameter per value. Replaces the previous PG-only
-  # `ANY($n::text[])` form which relied on a server-side cast — DuckDB
-  # has no `text[]` type and parameter-binds the array literal as a
-  # scalar string, producing an empty result set instead of erroring.
+  # `ANY($n::text[])` form which relied on a server-side cast — the
+  # SQLite backend has no `text[]` type and would parameter-bind the
+  # array literal as a scalar string, producing an empty result set.
   add_in_clause <- function(values) {
     vals <- as.character(values)
     placeholders <- vapply(vals, add_param, character(1))

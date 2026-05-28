@@ -27,7 +27,7 @@
 #' [read_obs_pixel()].
 #'
 #' @param con A `DBI` connection to the `nemeton` monitoring schema
-#'   (PostgreSQL + TimescaleDB or DuckDB).
+#'   (PostgreSQL + TimescaleDB or SQLite).
 #' @param zone_id Integer. `monitoring_zone.id`.
 #' @param threshold_ndvi Numeric. Default `0.40`.
 #' @param threshold_nbr Numeric. Default `0.30`.

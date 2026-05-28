@@ -1,3 +1,30 @@
+# nemeton 0.51.0 (2026-05-28)
+
+### Removed — backend monitoring DuckDB (BREAKING)
+
+Le backend monitoring local **DuckDB est retiré**. Il avait été remplacé
+par SQLite/WAL en v0.50.0 (DuckDB fichier est mono-process en écriture
+exclusif, incompatible avec la coexistence session Shiny + worker
+`future` ; SQLite/WAL gère la concurrence multi-process) puis laissé en
+mode déprécié. On coupe net : les backends restants sont **PostgreSQL**
+(prod) et **SQLite** (local).
+
+- `db_connect()` / `.detect_driver()` ne reconnaissent plus le scheme
+  `duckdb:///` ni les chemins `.duckdb` : une telle URL lève désormais
+  une erreur explicite renvoyant vers `sqlite:///`.
+- Suppression du driver DuckDB (`.parse_duckdb_url()`, case `duckdb` du
+  switch, avertissement de déprécation), des migrations
+  `inst/db/migrations/duckdb/`, et de `duckdb` dans les Suggests.
+- `db_disconnect()` n'a plus de branche `shutdown = TRUE` spécifique
+  DuckDB ; `.default_migrations_dir()` ne mappe plus que `pg/` et
+  `sqlite/`.
+
+**Pas de migration automatique** des données : une base monitoring
+DuckDB locale existante n'est pas convertie — pointer l'app sur un
+fichier `sqlite:///` et ré-ingérer (les données locales sont
+re-générables). Côté `nemetonshiny`, émettre une URL `sqlite:///` (cf.
+chantier app dédié).
+
 # nemeton 0.50.1 (2026-05-28)
 
 ### Fixed — warnings RSQLite `result_fetch` à la connexion SQLite
