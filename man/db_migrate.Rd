@@ -25,7 +25,7 @@ files that have not yet been applied. The first run also creates
 \details{
 When `migrations_dir` is left `NULL`, the directory is picked
 automatically based on the connection's driver — `pg/` for
-Postgres, `sqlite/` for SQLite, `duckdb/` for DuckDB.
+Postgres, `sqlite/` for SQLite.
 
 Migrations are executed in a single transaction per file and the
 filename (basename without extension) is recorded as the version

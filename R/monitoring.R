@@ -1195,8 +1195,8 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   # The CREATE must live INSIDE the same transaction as the
   # dbAppendTable / INSERT: under PG, `ON COMMIT DROP` fires at the end
   # of the enclosing transaction, so a CREATE outside dbWithTransaction
-  # would drop the table immediately. DuckDB and SQLite have no
-  # `ON COMMIT DROP` clause — their TEMP tables are connection-scoped —
+  # would drop the table immediately. SQLite has no
+  # `ON COMMIT DROP` clause — its TEMP tables are connection-scoped —
   # so for those backends we drop the table manually after the INSERT.
   staging <- "tmp_obs_pixel_staging"
   is_pg <- inherits(con, "PqConnection")

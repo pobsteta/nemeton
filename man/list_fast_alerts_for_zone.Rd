@@ -16,7 +16,7 @@ list_fast_alerts_for_zone(
 }
 \arguments{
 \item{con}{A `DBI` connection to the `nemeton` monitoring schema
-(PostgreSQL + TimescaleDB or DuckDB).}
+(PostgreSQL + TimescaleDB or SQLite).}
 
 \item{zone_id}{Integer. `monitoring_zone.id`.}
 

@@ -7,25 +7,25 @@
 db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
 }
 \arguments{
-\item{url}{Character. Connection URL. Three schemes are
+\item{url}{Character. Connection URL. Two schemes are
 supported:
 * `postgresql://user:password@host:port/dbname` — opens a
   [RPostgres::Postgres()] connection.
 * `sqlite:///absolute/path/to/file.sqlite` — opens a
   [RSQLite::SQLite()] connection on the given file in WAL mode
-  (the recommended local backend). The file is created if it does
-  not exist. A bare path ending in `.sqlite` or `.db` is also
-  accepted for convenience.
-* `duckdb:///absolute/path/to/file.duckdb` — opens a
-  [duckdb::duckdb()] connection (**deprecated**, see Details). A
-  bare path ending in `.duckdb` is also accepted.
-Defaults to `Sys.getenv("NEMETON_DB_URL")`.}
+  (the local backend). The file is created if it does not exist. A
+  bare path ending in `.sqlite` or `.db` is also accepted for
+  convenience.
+Defaults to `Sys.getenv("NEMETON_DB_URL")`.
+
+The DuckDB backend was removed in 0.51.0; a `duckdb:///` URL now
+raises an error pointing at `sqlite:///`.}
 
 \item{read_only}{Logical. Open the connection in read-only mode.
-Defaults to `FALSE`. Relevant only for the file backends (SQLite,
-DuckDB); the file must already exist and its parent directory is
-*not* created. For **PostgreSQL** the flag is a no-op (it manages
-concurrent readers and writers natively).}
+Defaults to `FALSE`. Relevant only for the SQLite file backend; the
+file must already exist and its parent directory is *not* created.
+For **PostgreSQL** the flag is a no-op (it manages concurrent
+readers and writers natively).}
 }
 \value{
 A `DBIConnection`.
@@ -36,18 +36,12 @@ argument), inspects its scheme, and opens the matching
 connection. Use [db_disconnect()] to close it.
 }
 \details{
-**SQLite is the recommended local backend.** Opened in WAL
-(write-ahead logging) mode, a file-backed SQLite database supports a
-single writer plus several concurrent readers *across processes* — so
-a Shiny session and a `future` ingestion worker can use the same file
-at once. `busy_timeout` is set so a momentarily locked write waits
-instead of erroring, and `foreign_keys` is enabled.
-
-**DuckDB is deprecated.** A file-backed DuckDB database allows only a
-single read-write process and locks the file exclusively, which breaks
-the Shiny-session-plus-worker pattern. Existing `duckdb:///` URLs keep
-working (with a one-time deprecation warning) but new deployments
-should use `sqlite:///`.
+**SQLite is the local backend.** Opened in WAL (write-ahead logging)
+mode, a file-backed SQLite database supports a single writer plus
+several concurrent readers *across processes* — so a Shiny session and
+a `future` ingestion worker can use the same file at once.
+`busy_timeout` is set so a momentarily locked write waits instead of
+erroring, and `foreign_keys` is enabled.
 }
 \examples{
 \dontrun{
