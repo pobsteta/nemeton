@@ -64,18 +64,18 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 
   zone_id <- DBI::dbWithTransaction(con, {
     if (is.null(project_uuid)) {
-      DBI::dbExecute(con,
+      .db_execute(con,
         "INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg) VALUES ($1, $2, 4326)",
         params = list(zone_name, zone_wkt))
-      rs <- DBI::dbGetQuery(con,
+      rs <- .db_get_query(con,
         "SELECT id FROM monitoring_zone WHERE name = $1 ORDER BY id DESC LIMIT 1",
         params = list(zone_name))
     } else {
-      DBI::dbExecute(con,
+      .db_execute(con,
         paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
                "VALUES ($1, $2, 4326, $3)"),
         params = list(zone_name, zone_wkt, project_uuid))
-      rs <- DBI::dbGetQuery(con,
+      rs <- .db_get_query(con,
         "SELECT id FROM monitoring_zone WHERE project_uuid = $1",
         params = list(project_uuid))
     }
@@ -86,7 +86,7 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
   geoms <- sf::st_geometry(pts)
   type <- if ("type" %in% names(pts)) as.character(pts$type) else rep(NA_character_, nrow(pts))
   for (i in seq_len(nrow(pts))) {
-    DBI::dbExecute(con,
+    .db_execute(con,
       paste0("INSERT INTO plot (zone_id, plot_id, plot_type, geom_wkt, radius_m) ",
              "VALUES ($1, $2, $3, $4, $5) ",
              "ON CONFLICT (zone_id, plot_id) DO NOTHING"),
@@ -425,7 +425,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
     plot_list, band_list, expected
   )
   rs <- tryCatch(
-    DBI::dbGetQuery(con, sql,
+    .db_get_query(con, sql,
                     params = list(as.character(start), as.character(end))),
     error = function(e) {
       cli::cli_warn("Cache lookup against {.code obs_pixel} failed: {conditionMessage(e)}. Re-extracting all scenes.")
@@ -540,7 +540,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 }
 
 .fetch_plots_sf <- function(con, zone_id) {
-  rs <- DBI::dbGetQuery(con,
+  rs <- .db_get_query(con,
     "SELECT id, plot_id, plot_type, geom_wkt, radius_m
        FROM plot
       WHERE zone_id = $1
@@ -1195,25 +1195,14 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   # The CREATE must live INSIDE the same transaction as the
   # dbAppendTable / INSERT: under PG, `ON COMMIT DROP` fires at the end
   # of the enclosing transaction, so a CREATE outside dbWithTransaction
-  # would drop the table immediately. DuckDB has no `ON COMMIT DROP`
-  # clause — its TEMP tables are session-scoped — so we branch on the
-  # driver and drop the table manually after the INSERT.
+  # would drop the table immediately. DuckDB and SQLite have no
+  # `ON COMMIT DROP` clause — their TEMP tables are connection-scoped —
+  # so for those backends we drop the table manually after the INSERT.
   staging <- "tmp_obs_pixel_staging"
-  is_duckdb <- inherits(con, "duckdb_connection")
+  is_pg <- inherits(con, "PqConnection")
   DBI::dbWithTransaction(con, {
-    if (is_duckdb) {
-      DBI::dbExecute(con, paste0("DROP TABLE IF EXISTS ", staging))
-      DBI::dbExecute(con,
-        paste0("CREATE TEMP TABLE ", staging, " (",
-               "plot_id   INTEGER, ",
-               "obs_date  DATE, ",
-               "band      TEXT, ",
-               "value     DOUBLE, ",
-               "cloud_pct NUMERIC, ",
-               "source    TEXT, ",
-               "scene_id  TEXT)"))
-    } else {
-      DBI::dbExecute(con,
+    if (is_pg) {
+      .db_execute(con,
         paste0("CREATE TEMP TABLE IF NOT EXISTS ", staging, " (",
                "plot_id   INTEGER, ",
                "obs_date  DATE, ",
@@ -1222,16 +1211,27 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
                "cloud_pct NUMERIC, ",
                "source    TEXT, ",
                "scene_id  TEXT) ON COMMIT DROP"))
+    } else {
+      .db_execute(con, paste0("DROP TABLE IF EXISTS ", staging))
+      .db_execute(con,
+        paste0("CREATE TEMP TABLE ", staging, " (",
+               "plot_id   INTEGER, ",
+               "obs_date  DATE, ",
+               "band      TEXT, ",
+               "value     DOUBLE, ",
+               "cloud_pct NUMERIC, ",
+               "source    TEXT, ",
+               "scene_id  TEXT)"))
     }
     DBI::dbAppendTable(con, staging, obs)
-    rs <- DBI::dbExecute(con, sprintf(
+    rs <- .db_execute(con, sprintf(
       "INSERT INTO obs_pixel (plot_id, obs_date, band, value, cloud_pct, source, scene_id)
          SELECT plot_id, obs_date, band, value, cloud_pct, source, scene_id
          FROM %s
        ON CONFLICT (plot_id, obs_date, band) DO NOTHING",
       staging))
-    if (is_duckdb) {
-      DBI::dbExecute(con, paste0("DROP TABLE ", staging))
+    if (!is_pg) {
+      .db_execute(con, paste0("DROP TABLE ", staging))
     }
     rs
   })

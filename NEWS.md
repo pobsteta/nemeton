@@ -1,3 +1,55 @@
+# nemeton 0.50.0 (2026-05-28)
+
+### Added — backend monitoring local SQLite/WAL (remplace DuckDB), Bug #2 résolu à la racine
+
+Le monitoring local (mode mono-poste, sans PostgreSQL) peut désormais
+tourner sur un fichier **SQLite en mode WAL**, qui devient le backend
+local **recommandé**. C'est la résolution de fond du Bug #2 (v0.49.2 ne
+le contournait que partiellement) : un fichier DuckDB est mono-process
+en écriture *exclusif*, si bien que la session Shiny et le worker
+`future::multisession` d'ingestion ne peuvent pas l'ouvrir en même temps
+(`File is already open in Rscript.exe`). SQLite en WAL autorise **un
+writer + plusieurs lecteurs concurrents entre processus** : la session
+et le worker coexistent nativement.
+
+- **Nouveau scheme d'URL** `sqlite:///chemin/fichier.sqlite` (ou chemin
+  nu finissant en `.sqlite` / `.db`). `db_connect()` ouvre la connexion
+  RSQLite et applique `PRAGMA journal_mode = WAL`,
+  `busy_timeout = 10000` (attend au lieu d'échouer sur un verrou
+  d'écriture momentané), `foreign_keys = ON` et
+  `synchronous = NORMAL`. `read_only = TRUE` ouvre en lecture seule
+  (le fichier doit préexister).
+- **Migrations SQLite** `inst/db/migrations/sqlite/` (0001/0002/0003),
+  schéma identique aux variantes PG/DuckDB en dialecte SQLite
+  (`INTEGER PRIMARY KEY AUTOINCREMENT` au lieu de séquences). SQLite
+  supportant les index partiels, le 0003 garde la clause
+  `WHERE project_uuid IS NOT NULL`.
+- **Requêtes portables** : un wrapper interne traduit les placeholders
+  `$n` (style PostgreSQL/DuckDB) en `?` pour RSQLite, qui ne les lie pas
+  positionnellement depuis une liste non nommée. PostgreSQL et DuckDB
+  restent inchangés.
+- **Shims backend généralisés** : les branches `inherits(con,
+  "duckdb_connection")` (TEMP TABLE sans `ON COMMIT DROP`) deviennent
+  `inherits(con, "PqConnection")` inversées, si bien que SQLite emprunte
+  le même chemin portable que DuckDB.
+- **RSQLite** est déjà une dépendance déclarée (Suggests, via l'I/O
+  GeoPackage) — aucune nouvelle dépendance.
+
+### Deprecated — backend monitoring local DuckDB
+
+Le backend DuckDB (`duckdb:///`) reste fonctionnel mais est **déprécié**
+au profit de SQLite/WAL : un `cli_warn` one-shot est émis à la connexion.
+Les fichiers `.duckdb` existants continuent de fonctionner ; il n'y a pas
+de migration automatique des données (les données monitoring locales sont
+re-générables par ré-ingestion). DuckDB sera retiré dans une version
+ultérieure.
+
+**Côté `nemetonshiny`** : pour bénéficier de WAL, l'app devra émettre une
+URL `sqlite:///` au lieu de `duckdb:///` quand `NEMETON_DB_LOCAL` est
+actif. Ce changement rend par ailleurs **caduc** le garde-fou « Option D »
+(interdire l'ingestion en local) : avec SQLite/WAL la coexistence
+session + worker fonctionne.
+
 # nemeton 0.49.2 (2026-05-28)
 
 ### Fixed — monitoring DuckDB local utilisable sous Windows (mono-utilisateur)

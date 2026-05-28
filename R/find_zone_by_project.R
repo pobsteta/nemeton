@@ -30,7 +30,7 @@ find_zone_by_project <- function(con, project_uuid) {
       is.na(project_uuid) || !nzchar(project_uuid)) {
     cli::cli_abort("{.arg project_uuid} must be a non-empty character scalar.")
   }
-  rs <- DBI::dbGetQuery(con,
+  rs <- .db_get_query(con,
     "SELECT id FROM monitoring_zone WHERE project_uuid = $1",
     params = list(project_uuid))
   if (!nrow(rs)) {

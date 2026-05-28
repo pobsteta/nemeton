@@ -26,7 +26,7 @@
     cli::cli_abort("{.arg zone_id} must be a scalar non-NA identifier.")
   }
 
-  row <- DBI::dbGetQuery(con,
+  row <- .db_get_query(con,
     "SELECT id, zone_wkt, crs_epsg FROM monitoring_zone WHERE id = $1",
     params = list(zone_id))
 

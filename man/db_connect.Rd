@@ -7,30 +7,25 @@
 db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
 }
 \arguments{
-\item{url}{Character. Connection URL. Two schemes are
+\item{url}{Character. Connection URL. Three schemes are
 supported:
 * `postgresql://user:password@host:port/dbname` — opens a
   [RPostgres::Postgres()] connection.
+* `sqlite:///absolute/path/to/file.sqlite` — opens a
+  [RSQLite::SQLite()] connection on the given file in WAL mode
+  (the recommended local backend). The file is created if it does
+  not exist. A bare path ending in `.sqlite` or `.db` is also
+  accepted for convenience.
 * `duckdb:///absolute/path/to/file.duckdb` — opens a
-  [duckdb::duckdb()] connection on the given file. The
-  file is created if it does not exist. A bare path ending
-  in `.duckdb` is also accepted for convenience.
+  [duckdb::duckdb()] connection (**deprecated**, see Details). A
+  bare path ending in `.duckdb` is also accepted.
 Defaults to `Sys.getenv("NEMETON_DB_URL")`.}
 
 \item{read_only}{Logical. Open the connection in read-only mode.
-Defaults to `FALSE`.
-
-This matters for the **DuckDB** backend: a file-backed DuckDB
-database allows only a *single* read-write process at a time, but
-*several* read-only connections may share the file concurrently.
-Readers (e.g. a Shiny session that only renders alerts) should
-therefore open with `read_only = TRUE` so they do not clash with —
-or get locked out by — a `future` worker that ingests data in a
-separate process. In read-only mode the file must already exist;
-the parent directory is *not* created.
-
-For **PostgreSQL** the flag is a no-op: Postgres handles
-concurrent readers and writers natively, so no file lock applies.}
+Defaults to `FALSE`. Relevant only for the file backends (SQLite,
+DuckDB); the file must already exist and its parent directory is
+*not* created. For **PostgreSQL** the flag is a no-op (it manages
+concurrent readers and writers natively).}
 }
 \value{
 A `DBIConnection`.
@@ -40,6 +35,20 @@ Reads the connection URL from `NEMETON_DB_URL` (or the `url`
 argument), inspects its scheme, and opens the matching
 connection. Use [db_disconnect()] to close it.
 }
+\details{
+**SQLite is the recommended local backend.** Opened in WAL
+(write-ahead logging) mode, a file-backed SQLite database supports a
+single writer plus several concurrent readers *across processes* — so
+a Shiny session and a `future` ingestion worker can use the same file
+at once. `busy_timeout` is set so a momentarily locked write waits
+instead of erroring, and `foreign_keys` is enabled.
+
+**DuckDB is deprecated.** A file-backed DuckDB database allows only a
+single read-write process and locks the file exclusively, which breaks
+the Shiny-session-plus-worker pattern. Existing `duckdb:///` URLs keep
+working (with a one-time deprecation warning) but new deployments
+should use `sqlite:///`.
+}
 \examples{
 \dontrun{
 # Postgres (production)
@@ -47,13 +56,13 @@ Sys.setenv(NEMETON_DB_URL = "postgresql://nemeton:secret@127.0.0.1:5432/nemeton"
 con <- db_connect()
 db_disconnect(con)
 
-# DuckDB (local mode)
-Sys.setenv(NEMETON_DB_URL = "duckdb:///tmp/my_project/monitoring.duckdb")
+# SQLite (recommended local mode, WAL)
+Sys.setenv(NEMETON_DB_URL = "sqlite:///tmp/my_project/monitoring.sqlite")
 con <- db_connect()
 db_disconnect(con)
 
-# DuckDB read-only reader, safe to open while a worker writes
-ro <- db_connect("duckdb:///tmp/my_project/monitoring.duckdb",
+# SQLite read-only reader, safe to open while a worker writes
+ro <- db_connect("sqlite:///tmp/my_project/monitoring.sqlite",
                  read_only = TRUE)
 db_disconnect(ro)
 }
