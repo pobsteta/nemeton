@@ -85,6 +85,20 @@ NULL
 #'     file is created if it does not exist. A bare path ending
 #'     in `.duckdb` is also accepted for convenience.
 #'   Defaults to `Sys.getenv("NEMETON_DB_URL")`.
+#' @param read_only Logical. Open the connection in read-only mode.
+#'   Defaults to `FALSE`.
+#'
+#'   This matters for the **DuckDB** backend: a file-backed DuckDB
+#'   database allows only a *single* read-write process at a time, but
+#'   *several* read-only connections may share the file concurrently.
+#'   Readers (e.g. a Shiny session that only renders alerts) should
+#'   therefore open with `read_only = TRUE` so they do not clash with —
+#'   or get locked out by — a `future` worker that ingests data in a
+#'   separate process. In read-only mode the file must already exist;
+#'   the parent directory is *not* created.
+#'
+#'   For **PostgreSQL** the flag is a no-op: Postgres handles
+#'   concurrent readers and writers natively, so no file lock applies.
 #'
 #' @return A `DBIConnection`.
 #'
@@ -99,10 +113,16 @@ NULL
 #' Sys.setenv(NEMETON_DB_URL = "duckdb:///tmp/my_project/monitoring.duckdb")
 #' con <- db_connect()
 #' db_disconnect(con)
+#'
+#' # DuckDB read-only reader, safe to open while a worker writes
+#' ro <- db_connect("duckdb:///tmp/my_project/monitoring.duckdb",
+#'                  read_only = TRUE)
+#' db_disconnect(ro)
 #' }
 #'
 #' @export
-db_connect <- function(url = Sys.getenv("NEMETON_DB_URL")) {
+db_connect <- function(url = Sys.getenv("NEMETON_DB_URL"),
+                       read_only = FALSE) {
   if (!nzchar(url)) {
     cli::cli_abort(c(
       "No database URL provided.",
@@ -111,11 +131,17 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL")) {
       "i" = "Or local: {.val duckdb:///path/to/file.duckdb}"
     ))
   }
+  if (!is.logical(read_only) || length(read_only) != 1L || is.na(read_only)) {
+    cli::cli_abort("{.arg read_only} must be a single {.code TRUE}/{.code FALSE}.")
+  }
   driver <- .detect_driver(url)
   .assert_db_pkgs(driver)
   switch(driver,
     pg = {
       parts <- .parse_pg_url(url)
+      # `read_only` is intentionally ignored for Postgres: it manages
+      # concurrent readers/writers natively, there is no file lock to
+      # work around.
       DBI::dbConnect(
         RPostgres::Postgres(),
         host     = parts$host,
@@ -127,13 +153,26 @@ db_connect <- function(url = Sys.getenv("NEMETON_DB_URL")) {
     },
     duckdb = {
       path <- .parse_duckdb_url(url)
-      # Make sure the parent directory exists — DuckDB will not
-      # create it for us and silently errors instead.
-      parent <- dirname(path)
-      if (!dir.exists(parent)) {
-        dir.create(parent, recursive = TRUE, showWarnings = FALSE)
+      if (read_only) {
+        # A read-only DuckDB connection cannot create the file; the
+        # caller must point at an existing database.
+        if (!file.exists(path)) {
+          cli::cli_abort(c(
+            "Cannot open DuckDB database read-only: file does not exist.",
+            "x" = "{.path {path}}",
+            "i" = "Open it read-write once to create it, or drop {.code read_only = TRUE}."
+          ))
+        }
+        DBI::dbConnect(duckdb::duckdb(), dbdir = path, read_only = TRUE)
+      } else {
+        # Make sure the parent directory exists — DuckDB will not
+        # create it for us and silently errors instead.
+        parent <- dirname(path)
+        if (!dir.exists(parent)) {
+          dir.create(parent, recursive = TRUE, showWarnings = FALSE)
+        }
+        DBI::dbConnect(duckdb::duckdb(), dbdir = path)
       }
-      DBI::dbConnect(duckdb::duckdb(), dbdir = path)
     }
   )
 }

@@ -1,3 +1,33 @@
+# nemeton 0.49.2 (2026-05-28)
+
+### Fixed — monitoring DuckDB local utilisable sous Windows (mono-utilisateur)
+
+Sur une machine sans PostgreSQL accessible (fallback DuckDB local via
+`NEMETON_DB_LOCAL`), le monitoring était cassé par deux bugs cœur
+distincts. Les deux sont corrigés.
+
+- **Index partiel rejeté par DuckDB.** La migration
+  `inst/db/migrations/duckdb/0003_project_uuid.sql` créait un index
+  UNIQUE *partiel* (`WHERE project_uuid IS NOT NULL`). DuckDB ne
+  supporte pas les index partiels et faisait échouer la migration
+  (`Not implemented Error: Creating partial indexes is not supported
+  currently`), laissant le schéma monitoring incomplet. La variante
+  DuckDB utilise désormais un index UNIQUE *complet* : DuckDB suit le
+  standard SQL (NULLs distincts), donc plusieurs zones historiques avec
+  `project_uuid` NULL restent tolérées tandis que les valeurs non-NULL
+  restent uniques — sémantique identique à l'index partiel PostgreSQL,
+  qui reste inchangé.
+
+- **Fichier DuckDB verrouillé entre processus.** Un fichier DuckDB
+  n'autorise qu'un seul processus en read-write, mais plusieurs
+  connexions read-only simultanées. `db_connect()` gagne un argument
+  `read_only = FALSE` : les lecteurs (session Shiny qui ne fait
+  qu'afficher les alertes) peuvent désormais ouvrir en
+  `read_only = TRUE` sans entrer en conflit avec un worker `future`
+  qui ingère dans un processus séparé. Pour PostgreSQL le flag est
+  sans effet (concurrence native). En mode read-only le fichier doit
+  préexister (le répertoire parent n'est pas créé).
+
 # nemeton 0.49.1 (2026-05-27)
 
 ### Added — `control_classes` argument on `create_validation_sampling_plan()`
