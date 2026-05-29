@@ -195,15 +195,15 @@ existent et sont justes.
 - **Réévaluation licences** : si Néméton change de statut
   (personnel → service), re-filtrer sur `license_commercial_ok`.
 
-## 10. Décisions à acter avant le travail de curation
+## 10. Décisions actées (2026-05-29, via AskUserQuestion)
 
-| # | Décision | Proposition |
+| # | Décision | Choix acté |
 |---|---|---|
-| **D1** | Autorise-t-on les corpus CC-BY-NC en V1 ? | **Oui**, avec flag `license_commercial_ok = FALSE` pour purge future |
-| **D2** | Corpus FR-only ou FR+EN dès V1 ? | **FR+EN** (spec 009 prévoit déjà le multilingue ; les papiers méthode FORDEAD/allométrie sont en EN) |
-| **D3** | Où stocke-t-on les PDF téléchargés ? | **Pas dans le repo** (poids + licences). `data-raw/knowledge_pdfs/` gitignoré ; le manifest CSV (packagé) suffit à reconstituer |
-| **D4** | Combien de documents pour la V1 livrable ? | **8-14** (les ingérables intégralement d'abord), le reste en lien-seul ou en 009.x |
-| **D5** | Qui fait la vérification juridique des licences `to confirm` ? | L'utilisateur (Pascal) tranche source par source ; Claude propose l'analyse mais ne décide pas du juridique |
+| **D1** | Corpus CC-BY-NC en V1 ? | ✅ **Oui**, avec flag `license_commercial_ok = FALSE` par document pour purge/re-filtrage si Néméton change de statut commercial. Débloque les guides CNPF/CRPF régionaux (forte valeur métier). |
+| **D2** | FR-only ou FR+EN ? | ✅ **FR + EN dès V1**. Les papiers méthode (Mouret 2022, Forrester 2017, Larrieu 2018, IPCC) sont en EN ; le RAG multilingue de spec 009 gère la requête cross-langue + citation dans la langue source. |
+| **D3** | Stockage des PDF ? | ✅ **Hors repo, gitignoré** : `data-raw/knowledge_pdfs/` dans `.gitignore`. Le manifest CSV (packagé, versionné) suffit à reconstituer le corpus via le pipeline. Pas de PDF dans git (poids + redistribution). |
+| **D4** | Taille V1 ? | ✅ **8-14 documents, ingérables d'abord** : prioriser les 6-8 full-ingestion (domaine public + LO + CC-BY + autorisation), le reste en lien-seul. Valide la chaîne complète sans noyer la curation. Extension en 009.x. |
+| **D5** | Vérification juridique des `to confirm` ? | ✅ **Mode de travail acté** : Claude produit l'analyse de licence par document (présomption + où vérifier la source canonique), **l'utilisateur (Pascal) tranche le statut juridique source par source**. Claude ne décide jamais du juridique. Tant qu'une licence n'est pas tranchée, le document reste marqueur `to confirm` et **n'est pas ingéré** (ou en lien-seul). |
 
 ## 11. Livrables 009.1
 
