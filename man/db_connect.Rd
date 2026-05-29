@@ -8,18 +8,18 @@ db_connect(url = Sys.getenv("NEMETON_DB_URL"), read_only = FALSE)
 }
 \arguments{
 \item{url}{Character. Connection URL. Two schemes are
-supported:
-* `postgresql://user:password@host:port/dbname` — opens a
-  [RPostgres::Postgres()] connection.
-* `sqlite:///absolute/path/to/file.sqlite` — opens a
-  [RSQLite::SQLite()] connection on the given file in WAL mode
-  (the local backend). The file is created if it does not exist. A
-  bare path ending in `.sqlite` or `.db` is also accepted for
-  convenience.
-Defaults to `Sys.getenv("NEMETON_DB_URL")`.
+  supported:
+  * `postgresql://user:password@host:port/dbname` — opens a
+    [RPostgres::Postgres()] connection.
+  * `sqlite:///absolute/path/to/file.sqlite` — opens a
+    [RSQLite::SQLite()] connection on the given file in WAL mode
+    (the local backend). The file is created if it does not exist. A
+    bare path ending in `.sqlite` or `.db` is also accepted for
+    convenience.
+  Defaults to `Sys.getenv("NEMETON_DB_URL")`.
 
-The DuckDB backend was removed in 0.51.0; a `duckdb:///` URL now
-raises an error pointing at `sqlite:///`.}
+  The DuckDB backend was removed in 0.51.0; a `duckdb:///` URL now
+  raises an error pointing at `sqlite:///`.}
 
 \item{read_only}{Logical. Open the connection in read-only mode.
 Defaults to `FALSE`. Relevant only for the SQLite file backend; the

@@ -17,7 +17,7 @@
 | ✅ | **E6** | **Suivi sanitaire** — surveillance rapide (NDVI/NBR rolling-window) + diagnostic FORDEAD (CRSWIR + harmonique). Spec 008 + amendement A1, ADR-013 + amendement A1. Indicateur **R5 dépérissement**. | E6.a → v0.20.0 ; E6.c.1-4 + E6.d → v0.21.0 (1.x stack) ; durcissement S2 → v0.21.1..v0.22.1 ; **migration FORDEAD 2.x** (spec 008 §12, plan 008 §9) → **v0.23.0** (2026-05-16). **Backend monitoring local** (Bug #2 verrou fichier) : DuckDB → SQLite/WAL → **v0.50.0** ; fix warning → **v0.50.1** ; retrait DuckDB → **v0.51.0** (2026-05-28). Côté app : `nemetonshiny@v0.49.0`→`v0.50.0`. |
 | ✅ | **Carte pixel** *(hors-skeleton, entre E6 et E7)* | API publique cœur pour exposer le cache S2 pixel-par-pixel (10 m natif) + extraction time-series à un clic. Spec 010. Débloque le sous-onglet *Carte pixel* dans `nemetonshiny` (séparé). | 4 fonctions exportées (`read_s2_band_raster`, `read_s2_band_stack`, `build_index_stack`, `extract_pixel_timeseries`) — release **v0.22.0** (2026-05-15). |
 | ✅ | **Sources Theia** *(hors-skeleton)* | Intégration du catalogue Theia / DATA TERRA comme sources de données pour les 12 familles d'indicateurs : FORMS-T, variables biophysiques S2 (LAI/FAPAR/FVC), neige LIS, sols France, humidité du sol, eaux de surface, S2 L2A MUSCATE, classification d'essences, LST Thermocity, FORMSpoT. | FORMS-T → **v0.28.0** ; phase 1a → **v0.29.0** ; phase 1b → **v0.30.0** ; phase 2 (loaders) → **v0.31.0** ; phase 3a (`s2_biophysical` → C2/A1) → **v0.32.0** ; phase 3b (`theia_soil` → F1/F2) → **v0.33.0** ; phase 3c (`theia_snow` → R3) → **v0.34.0** ; phase 3d (`theia_water`/`theia_soil_moisture`/`theia_species`) → **v0.35.0** ; FORMSpoT câblé via l'interface CHM → **v0.35.2** ; résolveur STAC Theia → **v0.36.0** ; endpoint corrigé + FORMSpoT vérifié → **v0.37.0** ; auth S3 `/vsis3/` → **v0.38.0** ; ciblage par année → **v0.39.0** ; credentials S3 corrigés → **v0.39.1** ; signature SDK teledetection (`theia_signed_href`) → **v0.40.0** — chaîne validée en réel. Reliquat : MUSCATE, LST, W1. |
-| ⬜ | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | non démarré — image `timescaledb-ha:pg16` embarque déjà pgvector (cf. journal 2026-05-05). Spec 009 à rédiger. |
+| 🟨 | E7 | RAG perspectives IA (pgvector + base de connaissances forestière, ADR-012) | **Machinerie livrée** → **v0.52.0** (2026-05-29) : 7 fonctions exportées (`enable_rag`, `ingest_knowledge_document`, `embed_query`, `retrieve_knowledge`, `list_knowledge_documents`, `delete_knowledge_document`, `format_citations`), schéma opt-in `knowledge_document`/`knowledge_chunk`, dual-backend pgvector `<=>` (PG) / cosinus R (SQLite). Spec 009 codée. **Reliquat** : corpus (spec fille 009.1 — décisions D1-D5 actées le 2026-05-29) + wiring `nemetonshiny`. |
 
 Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
@@ -273,9 +273,22 @@ Spec 008 §7.
 - [x] Intégration radar : `INDICATOR_FAMILIES$R` étendu à 5 indicateurs (`R1..R5`) — `create_family_index()` détecte R5 via la regex `^R[0-9]` existante.
 - [x] 18 tests : cas vide, mono-classe (50 % × 3-forte → R5 = 41), multi-classes, Quercus skipped, G1 (exclusion 1-faible / 2-moyenne par défaut), `include_low_classes = TRUE`, plafonnement, clusters hors UGF, `resineux_col` custom, `min_resineux`, `weights` custom, sf vide, erreurs typées, intégration radar.
 
-### E7 — RAG perspectives IA — **non démarré**
+### E7 — RAG perspectives IA — **machinerie livrée (v0.52.0), corpus en attente**
 
-Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaissances forestière (ADR-012). pgvector déjà disponible dans la stack depuis le 2026-05-05 (image `timescaledb-ha:pg16`). Cible probable `v0.22.0`.
+Spec `specs/009-rag-perspectives-ia/` **codée** (v0.52.0, 2026-05-29). La
+*machinerie* RAG est livrée et testée (40 tests sur SQLite temporaire,
+embedder mocké). Schéma opt-in `knowledge_document`/`knowledge_chunk`
+(`enable_rag()`, hors séquence `db_migrate()` auto car pgvector exigé côté
+PG), dual-backend (pgvector `<=>` sur PostgreSQL, cosinus R sur SQLite),
+providers Mistral/OpenAI/Voyage.
+
+**Reliquat avant clôture E7** :
+1. **Corpus** — spec fille `specs/009.1-corpus-connaissances-forestieres/`
+   (décisions D1-D5 actées le 2026-05-29) : manifest CSV + pipeline
+   `data-raw/build_knowledge_corpus.R` + curation/licences (l'utilisateur
+   tranche le juridique source par source).
+2. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
+   bloc UI « Sources » (hors repo cœur).
 
 ---
 
@@ -334,6 +347,8 @@ Spec à rédiger (`specs/009-rag-perspectives-ia/`). pgvector + base de connaiss
     (`priority_raster`), `create_validation_sampling_plan()`, raster
     d'alerte FAST + `read_fast_alert_raster()`. Cahier des charges :
     nemetonshiny/design/nemeton-phase-a-brief.md.
+
+- **2026-05-29** — Release **v0.52.0** (feat — **machinerie RAG perspectives IA**, E7, spec 009). Première brique de E7 : la *machinerie* de récupération augmentée (le corpus est livré séparément par la spec fille 009.1, décisions D1-D5 actées le même jour). **7 fonctions exportées** dans `R/rag.R` : `enable_rag()`, `ingest_knowledge_document()`, `embed_query()`, `retrieve_knowledge()`, `list_knowledge_documents()`, `delete_knowledge_document()`, `format_citations()`. **Schéma opt-in** `knowledge_document` + `knowledge_chunk` (`inst/db/migrations/{pg,sqlite}/rag/0004_rag.sql`), appliqué par `enable_rag()` et **délibérément hors de la séquence `db_migrate()` automatique** : la variante PG exige l'extension `pgvector` (présente dans l'image prod `timescaledb-ha:pg16` mais pas garantie partout) ; la fondre dans la séquence auto ferait planter `db_migrate()` sur une base sans pgvector. **Dual-backend** : sur PostgreSQL la similarité utilise l'opérateur `<=>` pgvector ; sur SQLite les embeddings sont stockés en JSON (`TEXT`) et le cosinus est calculé en R (adapté à un corpus mono-projet). **Providers d'embeddings** : Mistral (défaut, ADR-004), OpenAI, Voyage AI — tous via endpoint compatible OpenAI ; `retrieve_knowledge()` avertit si le corpus mélange plusieurs providers. **Écart assumé vs spec** : colonne `embedding vector(3072)` (choix « provider le plus large ») mais pgvector plafonne ses index ivfflat/hnsw à **2000 dims** → pas d'index ANN, KNN **exact** (`<=>` seq scan), parfait pour quelques milliers de chunks ; bascule `halfvec(3072)`+`hnsw` reportée à ADR-012. **40 tests** (`test-rag.R`) : chunking, cosinus, encodage, validation métadonnées, citations + intégration sur **SQLite temporaire** (jamais une base externe) avec embedder mocké déterministe — toujours exécutables sans `NEMETON_DB_URL_TEST`. `pdftools` ajouté en Suggests. `reset_schema()` du helper de test étend le drop aux tables `knowledge_*`. **Reliquat E7** : corpus (spec 009.1) + wiring `nemetonshiny` (injection chunks dans le prompt + bloc UI « Sources »). **NON TESTÉ EN CI ICI** au-delà de `test-rag.R` chargé via `load_all` — `devtools::check()` complet lancé en parallèle, à confirmer.
 
 - **2026-05-28** — **Chantier « backend monitoring local » CLOS sur les deux repos** (Bug #2 : verrou de fichier `File is already open in Rscript.exe` quand la session Shiny et le worker `future::multisession` ouvraient le même fichier local). Résolution de fond : abandon de DuckDB (écrivain mono-process exclusif) au profit de **SQLite/WAL** (1 writer + N lecteurs concurrents inter-process). **Cœur `nemeton`** : v0.50.0 (SQLite/WAL introduit + dépréciation DuckDB), v0.50.1 (fix warning RSQLite `result_fetch` — PRAGMA sans résultat routés via `dbExecute`), v0.51.0 (retrait complet de DuckDB ; backends restants PostgreSQL + SQLite ; une URL `duckdb:///` lève désormais une erreur d'orientation). **App `nemetonshiny`** : v0.49.0 (merge `85d3119`) bascule le backend local par défaut DuckDB → SQLite/WAL en consommant `nemeton@v0.50.0` ; v0.50.0 (merge `701babc`) coupe nette côté app — `.resolve_monitoring_db_url()` émet toujours `sqlite://<projet>/data/monitoring.sqlite`, suppression de la branche back-compat `monitoring.duckdb` et du helper `.nemeton_supports_duckdb()`, `duckdb` retiré des Suggests, plancher `Imports: nemeton (>= 0.51.0)`, zéro référence `duckdb` dans `R/`. Cycle dev app `0.48.2 → 0.49.0 → 0.50.0`. **Note de migration des données** : un `monitoring.duckdb` local n'est plus lu ni migré ; le suivi local repart sur un `monitoring.sqlite` neuf — les séries `obs_pixel` sont ré-ingérables depuis le cache Sentinel-2. Plus aucun reliquat « backend local » ouvert.
 

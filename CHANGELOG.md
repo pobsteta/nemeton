@@ -10,6 +10,29 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-05-29
+
+### Added
+
+- RAG knowledge base for AI perspectives (E7, spec 009) — seven exported
+  functions in `R/rag.R`: `enable_rag()`, `ingest_knowledge_document()`,
+  `embed_query()`, `retrieve_knowledge()`, `list_knowledge_documents()`,
+  `delete_knowledge_document()`, `format_citations()`.
+- Opt-in RAG migration `inst/db/migrations/{pg,sqlite}/rag/0004_rag.sql`
+  (`knowledge_document` + `knowledge_chunk`), applied by `enable_rag()`
+  rather than the default `db_migrate()` sequence (PostgreSQL needs
+  pgvector; ADR-012).
+- Dual-backend retrieval: pgvector `<=>` on PostgreSQL, R-side cosine on
+  SQLite (JSON-encoded embeddings). Embedding providers: Mistral
+  (default), OpenAI, Voyage AI.
+- `pdftools` added to Suggests (offline PDF ingestion).
+
+### Changed
+
+- `vector(3072)` embedding column carries **no** ivfflat index (pgvector
+  caps ivfflat/hnsw at 2000 dims); PostgreSQL retrieval is exact KNN.
+  halfvec(3072)+hnsw deferred to ADR-012 when the corpus grows.
+
 ## [0.49.1] - 2026-05-27
 
 ### Added

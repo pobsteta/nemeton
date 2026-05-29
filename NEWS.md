@@ -1,3 +1,46 @@
+# nemeton 0.52.0 (2026-05-29)
+
+### Added — base de connaissances RAG pour les perspectives IA (E7, spec 009)
+
+Première brique du chantier **E7 — RAG perspectives IA** : la *machinerie*
+de récupération augmentée (le corpus lui-même est livré séparément par la
+spec fille 009.1). Sept fonctions exportées dans `R/rag.R` :
+
+- `enable_rag(con)` — migration **opt-in** qui crée `knowledge_document`
+  + `knowledge_chunk`. Volontairement **hors de la séquence
+  `db_migrate()` automatique** : la variante PostgreSQL exige l'extension
+  `pgvector`, que toutes les bases TimescaleDB n'ont pas forcément
+  activée (ADR-012). On active le RAG explicitement quand le serveur est
+  prêt. Migrations dans `inst/db/migrations/{pg,sqlite}/rag/0004_rag.sql`.
+- `ingest_knowledge_document(con, source, metadata, ...)` — PDF / `.txt` /
+  `.md` / texte brut → découpage en chunks (fenêtre glissante par tokens
+  estimés) → embeddings → insertion transactionnelle. PDF découpé par page
+  (`page_number` conservé). Métadonnées validées (titre/langue/type
+  requis), `family_codes` / `profile_codes` pour le filtrage thématique.
+- `embed_query(text, provider)` — embedding d'une requête. Providers :
+  Mistral (défaut, ADR-004 souveraineté FR), OpenAI, Voyage AI
+  (écosystème Anthropic) — tous via endpoint compatible OpenAI.
+- `retrieve_knowledge(con, query, top_k, family_codes, profile_codes,
+  min_similarity, lang)` — KNN cosinus top-k filtré. **Dual-backend** :
+  opérateur `<=>` pgvector sur PostgreSQL, cosinus calculé en R sur
+  SQLite (embeddings stockés en JSON). Avertit si le corpus mélange
+  plusieurs providers d'embeddings.
+- `list_knowledge_documents()`, `delete_knowledge_document()` (cascade
+  FK vers les chunks), `format_citations()` (bloc Markdown / HTML
+  « Sources documentaires » prêt à concaténer à une perspective).
+
+**Écart assumé par rapport à la spec** : la colonne `embedding` est
+`vector(3072)` (choix « provider le plus large »), mais pgvector limite
+ses index ivfflat/hnsw à **2000 dimensions** — un `vector(3072)` ne peut
+donc pas porter d'index ivfflat. La recherche PG se fait en **KNN exact**
+(`<=>` sur seq scan), parfaitement adapté à un corpus V1 de quelques
+milliers de chunks. Bascule vers `halfvec(3072)` + `hnsw` prévue quand le
+corpus grossit (ADR-012).
+
+40 tests dans `test-rag.R` (chunking, cosinus, encodage, validation,
+citations + intégration sur SQLite temporaire avec embedder mocké
+déterministe). `pdftools` ajouté en Suggests (ingestion PDF offline).
+
 # nemeton 0.51.0 (2026-05-28)
 
 ### Removed — backend monitoring DuckDB (BREAKING)

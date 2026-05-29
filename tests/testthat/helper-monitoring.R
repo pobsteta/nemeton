@@ -53,6 +53,8 @@ with_clean_db <- function(code) {
 
   con <- db_connect(url)
   reset_schema <- function() {
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_chunk CASCADE")
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_document CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS alert CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS obs_pixel CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS plot CASCADE")
