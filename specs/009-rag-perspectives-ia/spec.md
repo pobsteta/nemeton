@@ -1,10 +1,10 @@
 # Spécification Fonctionnelle : RAG pour perspectives IA (E7)
 
-**Version** : 0.1.0 (draft)
-**Date**    : 2026-05-15
+**Version** : 0.1.1 (draft)
+**Date**    : 2026-05-15 (cible version actualisée 2026-05-29)
 **Statut**  : Draft — en attente de validation pour `plan.md`
 **Auteur**  : Pascal Obstétar (via Claude)
-**Cible**   : `nemeton` v0.23.0 + `nemetonshiny` v0.29.0
+**Cible**   : à fixer au démarrage du chantier (les versions v0.23.0 / v0.29.0 mentionnées à la rédaction initiale 2026-05-15 sont périmées — le cœur est à v0.51.0 et l'app à v0.50.1 au 2026-05-29 ; cibler vraisemblablement `nemeton` v0.52.0+). Dépend de la **spec fille 009.1** (constitution du corpus) qui doit livrer le manifest + le pipeline d'ingestion avant que le RAG ait quelque chose à interroger.
 **Lien**    : ferme l'épaississement **E7** du walking skeleton (PLAN.md). Préfigure ADR-012 (extensions PG futures — pgvector). Aboutissement de la chaîne *acteur → indicateurs → perspective IA* déjà câblée pour les 13 profils experts (E3, livré).
 
 ---
