@@ -50,3 +50,9 @@ Rplots.pdf
 # (large PDFs; download links listed in data-raw/references/README.md)
 data-raw/references/*.pdf
 .positai
+
+# RAG knowledge corpus (spec 009.1 D3): downloaded PDFs + local corpus DB
+# are not committed; the manifest CSV (inst/extdata/knowledge_corpus_v1.csv)
+# is enough to reconstitute the corpus via data-raw/build_knowledge_corpus.R
+data-raw/knowledge_pdfs/
+data-raw/knowledge_corpus.sqlite*

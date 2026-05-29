@@ -103,11 +103,42 @@ règles de licence — marqueur `to confirm`, l'utilisateur tranche (D5).
 | 20 | Beverly et al. — modèle d'exposition au feu (`fireexposuR`) | R1 | naturaliste, élu local | CC-BY (`to confirm`) | intégrale si CC-BY |
 | 21 | Cochran 1977 — *Sampling Techniques* (Wiley) | méthodo échantillonnage (spec 014) | chercheur | copyright (livre, `to confirm`) | lien-seul |
 
-**Pool de candidats V1 : ~21 sources** (14 cœur métier + 7
-méthodologiques). Le **livrable V1 reste 8-14 ingérables d'abord** (D4) :
-on priorise les CC-BY / LO / domaine public / autorisation (intégrale),
-le reste en lien-seul. Au moins **6-8 ingérables intégralement**
-(domaine public + LO + CC-BY + autorisation).
+### 4.2 Documents de gestion forestière CNPF / ONF / OFB (ajout 2026-05-29)
+
+Documents de gouvernance forestière française — ancrent les perspectives
+des profils **propriétaire privé, gestionnaire (ONF/coop/expert),
+naturaliste, élu**. Recherche web (sources officielles cnpf.fr, onf.fr,
+ofb.gouv.fr, espaces-naturels.fr). Beaucoup d'organismes publics → souvent
+Licence Ouverte Etalab ou actes réglementaires réutilisables ; licences
+non explicites marquées `to confirm` (D5).
+
+| # | Document | Familles | Profils | Licence présumée | Ingestion |
+|---|---|---|---|---|---|
+| 22 | CNPF — Documents de gestion durable (portail PSG/CBPS/RTG) | Toutes, S, P | propriétaire privé, coop, expert | admin, non explicite (`to confirm`) | intégrale si LO |
+| 23 | PSG — Plan Simple de Gestion (contenu fixé par décret 19/07/2012 ; obligatoire >20 ha) | Toutes | propriétaire privé | admin (`to confirm`) | intégrale si LO — *modèles régionaux CRPF, pas de guide national unique* |
+| 24 | CBPS — Code des Bonnes Pratiques Sylvicoles (8 fiches, <20-25 ha) | P, C, R | petit propriétaire privé | admin (`to confirm`) | intégrale si LO |
+| 25 | RTG — Règlement Type de Gestion (coop / experts agréés) | P | coop, expert forestier | admin (`to confirm`) | intégrale si LO |
+| 26 | SRGS Bourgogne-Franche-Comté (arrêté nov. 2023, en vigueur 15/04/2024) | Toutes | tous (forêt privée) | acte réglementaire (réutilisable) | intégrale |
+| 27 | ONF — Manuel d'aménagement forestier (cadre d'écriture des aménagements) | Toutes | gestionnaire ONF | `to confirm` (PDF non vérifié) | intégrale si LO |
+| 28 | ONF/MASA — Instruction aménagements (OS 2017-441, cadre risque) | R, Toutes | ONF, élu | acte administratif, Etalab probable (`to confirm`) | intégrale si LO |
+| 29 | DRA / SRA — cadres régionaux des forêts publiques | Toutes | propriétaire public, ONF, élu | acte réglementaire | intégrale |
+| 30 | ONF — Guides des sylvicultures / ITTS par essence | P, C | ONF, technicien, coop | `to confirm` | intégrale si LO |
+| 31 | OFB — Guide d'élaboration des plans de gestion d'espaces naturels (CT88, 2021) | B, N, Toutes | naturaliste, propriétaire public, élu | **LO Etalab 2.0** (portail vérifié) | intégrale |
+| 32 | OFB/ATEN — Guide méthodologique DOCOB Natura 2000 (CT82) | B1, N | naturaliste, élu, ONF | **LO Etalab 2.0** (portail) | intégrale |
+
+**Pool de candidats V1 : ~32 sources** (14 cœur métier + 7
+méthodologiques tutoriels + 11 gouvernance CNPF/ONF/OFB). Le **livrable
+V1 reste 8-14 ingérables d'abord** (D4) : on priorise CC-BY / LO /
+domaine public / autorisation (intégrale), le reste en lien-seul.
+
+**Amorçage recommandé — contenu interne d'abord** : avant tout PDF
+externe, ingérer le contenu *déjà rédigé par l'auteur* (licence MIT, zéro
+risque juridique, déjà bilingue, parfaitement aligné sur le moteur) :
+les **10 tutoriels** `inst/tutorials/`, les **specs** (008 suivi
+sanitaire, 005 open-canopy/site index) et la doc roxygen. C'est le
+premier lot du manifest, ingérable sans aucun arbitrage de licence ; les
+sources externes (1-32) se débloquent au fil des validations `to confirm`
+→ `cleared` (D5).
 
 ## 5. Mode « lien-seul » (documents non redistribuables)
 
