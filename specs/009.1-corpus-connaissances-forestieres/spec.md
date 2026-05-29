@@ -86,10 +86,28 @@ convention que `chm_opencanopy` / sources Theia).
 | 13 | RMT AFORCE — fiches adaptation changement climatique | R, C, T | tous | LO (`to confirm`) | intégrale si LO |
 | 14 | Mercuriales bois (FNB, indicateurs filière) | P1, P3, E1 | industrie, bûcheron, investisseur | copyright FNB (`to confirm`) | lien-seul ou agrégats |
 
-**~14 sources prioritaires V1** (vs 20-30 visées par spec 009 — on
-démarre serré, on étend en 009.x). Au moins **6-8 ingérables
-intégralement** (domaine public + LO + CC-BY + autorisation), le reste
-en lien-seul.
+### 4.1 Références méthodologiques issues des tutoriels (ajout 2026-05-29)
+
+Récupérées des 10 tutoriels `inst/tutorials/` : ce sont les **papiers
+méthodologiques derrière des indicateurs** que la liste 1-14 ne couvrait
+pas (LiDAR ABA, érosion, hydrologie, feu, échantillonnage). Mêmes
+règles de licence — marqueur `to confirm`, l'utilisateur tranche (D5).
+
+| # | Document | Familles | Profils | Licence présumée | Ingestion |
+|---|---|---|---|---|---|
+| 15 | Monnet & Mermin 2014 — co-recalage inventaire/ALS (doi:10.3390/rs6087628) | P, C (LiDAR ABA) | gestionnaire, technicien, chercheur | CC-BY (MDPI *Remote Sensing*, `to confirm`) | intégrale si CC-BY |
+| 16 | Fassnacht et al. 2016 — review classification d'essences par télédétection (doi:10.1016/j.rse.2016.08.013) | cartographie → B, P | chercheur, technicien | copyright (Elsevier RSE, `to confirm`) | lien-seul + abstract |
+| 17 | Monnet 2011 — thèse LiDAR forêt | P, C | chercheur | HAL (`to confirm`) | intégrale si dépôt HAL libre |
+| 18 | McCool et al. 1987 — RUSLE, facteur topographique LS (érosion) | F2 | technicien, chercheur | copyright (ASAE, `to confirm`) | lien-seul / agrégats |
+| 19 | Beven & Kirkby 1979 — TWI (indice d'humidité topographique) | W3 | chercheur | copyright (`to confirm`) | lien-seul + abstract |
+| 20 | Beverly et al. — modèle d'exposition au feu (`fireexposuR`) | R1 | naturaliste, élu local | CC-BY (`to confirm`) | intégrale si CC-BY |
+| 21 | Cochran 1977 — *Sampling Techniques* (Wiley) | méthodo échantillonnage (spec 014) | chercheur | copyright (livre, `to confirm`) | lien-seul |
+
+**Pool de candidats V1 : ~21 sources** (14 cœur métier + 7
+méthodologiques). Le **livrable V1 reste 8-14 ingérables d'abord** (D4) :
+on priorise les CC-BY / LO / domaine public / autorisation (intégrale),
+le reste en lien-seul. Au moins **6-8 ingérables intégralement**
+(domaine public + LO + CC-BY + autorisation).
 
 ## 5. Mode « lien-seul » (documents non redistribuables)
 
