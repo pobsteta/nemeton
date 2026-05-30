@@ -10,6 +10,30 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.52.1] - 2026-05-30
+
+### Fixed
+
+- `build_index_stack()` now aligns per-scene layers onto the **union** of
+  their extents (NA-padding via `terra::extend()`) instead of cropping to
+  the intersection. Fixes multi-tile MGRS AOIs (e.g. villards on
+  T31TFM ⊂ T31TGM) where the pixel NDVI/NBR map was silently trimmed to
+  the narrowest tile's strip.
+- Multi-CRS guard in `build_index_stack()`: layers in a different CRS are
+  reprojected onto the first layer's CRS before the union; non-coinciding
+  grids fall back to a single `terra::resample()` onto the widest layer.
+- The FAST alert path (`read_fast_alert_raster()` /
+  `compute_fast_alert_mask()`) is unchanged — its per-MGRS-tile grouping
+  + `mosaic(fun = "max")` already covers multi-tile AOIs and avoids
+  double-counting the S2 overlap strip; rationale comment updated.
+
+### Changed
+
+- `build_index_stack()` "Skipped N/total scenes (incomplete cache)"
+  message downgraded from a per-call `cli_warn` to
+  `rlang::inform(.frequency = "once")` (was spamming ~12 identical lines
+  per Shiny load).
+
 ## [0.52.0] - 2026-05-29
 
 ### Added
