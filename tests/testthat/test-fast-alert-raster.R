@@ -189,6 +189,74 @@ test_that(".compute_alert_rolling deficit = 0 when all means are above threshold
 })
 
 
+# ---- multi-tile AOI coverage (mocked read_obs_pixel) -----------------
+
+test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosaic)", {
+  # spec 010 / v0.52.x regression — an AOI straddling two overlapping
+  # MGRS tiles (villards on T31TFM narrow ⊂ T31TGM wide) must render the
+  # WHOLE AOI, not just the overlap strip. The per-tile grouping +
+  # `mosaic(fun = "max")` already unions the two footprints; this test
+  # pins that coverage. read_obs_pixel is mocked so no DB is needed.
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+
+  # Write one scene per tile, sharing the same acquisition date. Both
+  # UTM 31N. NDVI/NBR are well above threshold (no alert) — the point is
+  # the EXTENT of the mosaic, not the counts.
+  write_tile_scene <- function(sid, xmax) {
+    d <- file.path(cache, .s2_safe_scene_id(sid))
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+    for (b in c("B04", "B08", "B12")) {
+      res <- if (b == "B12") 20 else 10
+      ncx <- xmax / res
+      ncy <- 100 / res
+      val <- switch(b, B04 = 0.05, B08 = 0.50, B12 = 0.05)
+      r <- terra::rast(nrows = ncy, ncols = ncx,
+                       xmin = 0, xmax = xmax, ymin = 0, ymax = 100,
+                       crs = "EPSG:32631", vals = rep(val, ncx * ncy))
+      terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                         filetype = "GTiff", overwrite = TRUE)
+    }
+  }
+  sid_fm <- "S2A_MSIL2A_20250530T103041_R108_T31TFM_20250530T180000"
+  sid_gm <- "S2A_MSIL2A_20250530T103041_R108_T31TGM_20250530T180000"
+  write_tile_scene(sid_fm, xmax = 60)    # narrow (overlap strip)
+  write_tile_scene(sid_gm, xmax = 120)   # wide (full AOI), FM ⊂ GM
+
+  fake_obs <- data.frame(
+    scene_id = c(sid_fm, sid_gm),
+    obs_date = as.Date(c("2025-05-30", "2025-05-30")),
+    stringsAsFactors = FALSE)
+  testthat::local_mocked_bindings(read_obs_pixel = function(...) fake_obs)
+
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  r <- suppressMessages(read_fast_alert_raster(
+    con, zone_id = 1L,
+    date_from = "2025-05-01", date_to = "2025-06-01",
+    mode = "count", cache_dir = cache,
+    apply_zone_mask = FALSE))
+
+  expect_s4_class(r, "SpatRaster")
+  expect_equal(sf::st_crs(r)$epsg, 2154L)
+
+  # The mosaic must span the WIDE footprint, not just the narrow strip.
+  # Project both native footprints to EPSG:2154 and compare widths.
+  to_2154_width <- function(xmax) {
+    p <- terra::project(
+      terra::rast(xmin = 0, xmax = xmax, ymin = 0, ymax = 100,
+                  crs = "EPSG:32631"),
+      "EPSG:2154")
+    e <- terra::ext(p)
+    terra::xmax(e) - terra::xmin(e)
+  }
+  w_narrow <- to_2154_width(60)
+  w_mosaic <- terra::xmax(terra::ext(r)) - terra::xmin(terra::ext(r))
+  # Strictly wider than the narrow-only footprint (the old intersection
+  # bug would have clamped the mosaic to ~the narrow strip).
+  expect_gt(w_mosaic, w_narrow * 1.5)
+})
+
+
 # ---- integration: smoke test against the real villards DB ------------
 
 test_that("end-to-end smoke test against villards (count mode)", {
