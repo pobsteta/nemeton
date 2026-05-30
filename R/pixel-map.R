@@ -221,51 +221,98 @@ build_index_stack <- function(cache_dir, scenes_df,
   n_missing <- sum(!ok)
 
   if (n_missing > 0L) {
-    cli::cli_warn(c(
-      "Skipped {n_missing}/{n_total} scene{?s} (incomplete cache for {.field {index}}).",
-      i = "Run {.fn diagnose_s2_cache} to find the gaps."
-    ))
+    # Deduplicated to once-per-session: a Shiny reactive re-evaluates
+    # build_index_stack() ~12x per load, and the old `cli_warn` spammed
+    # the console with N identical lines. The skip itself is benign
+    # (e.g. FORDEAD-only dates that carry B8A but no B08 never render
+    # NDVI/NBR by construction), so an informational note is enough.
+    rlang::inform(
+      cli::format_inline(
+        "build_index_stack: skipped {n_missing}/{n_total} scene{?s} \\
+         (incomplete cache for {.field {index}}); run \\
+         {.fn diagnose_s2_cache} to find the gaps."),
+      .frequency    = "once",
+      .frequency_id = "build_index_stack_skipped")
   }
   if (!any(ok)) return(NULL)
 
   valid_layers <- layers[ok]
 
-  # spec 013 / v0.47.5 — align all per-scene layers to the smallest
-  # common extent before stacking. Cached files for the same band
-  # written by separate app sessions (e.g. across a zone
-  # re-registration) can have sub-pixel-to-many-pixel extent drift,
-  # which makes `terra::rast(layers)` fail with
-  # `[rast] extents do not match`. We crop every layer to the
-  # intersection of all extents — slightly less spatial coverage,
-  # but a coherent stack that downstream consumers
-  # (`read_fast_alert_raster`, etc.) can build on.
-  common_ext <- terra::ext(valid_layers[[1L]])
-  if (length(valid_layers) > 1L) {
-    for (lyr in valid_layers[-1L]) {
-      common_ext <- terra::intersect(common_ext, terra::ext(lyr))
-      if (is.null(common_ext)) break
-    }
+  # spec 010 / v0.52.x — align all per-scene layers onto the UNION of
+  # their extents before stacking, padding the uncovered margins with
+  # NA. An AOI that straddles two overlapping MGRS tiles (e.g. villards
+  # on T31TFM ⊂ T31TGM) yields per-scene rasters with heterogeneous
+  # extents: the narrow tile only covers the overlap strip, the wide
+  # tile covers the whole AOI. Cropping to the intersection (the old
+  # v0.47.5 behaviour) silently dropped the half of the AOI only the
+  # wide tile reached. We now `terra::extend` every layer to the union,
+  # so the stack covers the full footprint and the dates whose scene
+  # only partially covers it carry honest NA outside their reach — no
+  # invented pixels. Downstream consumers (the app's per-date mosaic,
+  # `.apply_zone_mask`) are unchanged.
+  ref <- valid_layers[[1L]]
+
+  # Guard: layers in a different CRS (rare — an AOI spanning two UTM
+  # zones at a zone border) are reprojected onto the reference layer's
+  # CRS *before* the union. Same-CRS layers (the nominal case: a single
+  # S2 tile grid) are left untouched, so the common path only pads.
+  n_reproj <- sum(crs_mismatch <- !vapply(
+    valid_layers, function(l) terra::same.crs(l, ref), logical(1)))
+  if (n_reproj > 0L) {
+    rlang::inform(
+      cli::format_inline(
+        "build_index_stack: reprojecting {n_reproj} layer{?s} onto the \\
+         reference CRS before stacking (multi-zone AOI)."),
+      .frequency    = "once",
+      .frequency_id = "build_index_stack_reproject")
+    valid_layers[crs_mismatch] <- lapply(
+      valid_layers[crs_mismatch],
+      function(l) terra::project(l, terra::crs(ref), method = "bilinear"))
   }
-  if (is.null(common_ext)) {
-    cli::cli_warn(c(
-      "build_index_stack: per-scene cached extents have no common
-       overlap; cannot stack.",
-      i = "Run {.fn diagnose_s2_cache} and consider purging the cache to
-           force a coherent rewrite."
-    ))
-    return(NULL)
+
+  # Union extent = outer bounding box of every (possibly reprojected)
+  # layer's extent.
+  exts <- lapply(valid_layers, terra::ext)
+  target_ext <- terra::ext(
+    min(vapply(exts, terra::xmin, numeric(1))),
+    max(vapply(exts, terra::xmax, numeric(1))),
+    min(vapply(exts, terra::ymin, numeric(1))),
+    max(vapply(exts, terra::ymax, numeric(1))))
+
+  # Do all layers share the reference grid (same resolution, origin
+  # offset an integer number of pixels)? If so, the cheap `extend`
+  # (pad NA, values preserved exactly) is enough. Otherwise — sub-pixel
+  # origin/res drift, or a reprojected layer — fall back to a single
+  # `resample` onto the widest layer's grid extended to the union.
+  ref_res  <- terra::res(ref)
+  ref_xmin <- terra::xmin(ref)
+  ref_ymin <- terra::ymin(ref)
+  on_ref_grid <- function(l) {
+    rr <- terra::res(l)
+    if (!isTRUE(all.equal(rr, ref_res, tolerance = 1e-6))) return(FALSE)
+    dx <- (terra::xmin(l) - ref_xmin) / ref_res[1L]
+    dy <- (terra::ymin(l) - ref_ymin) / ref_res[2L]
+    isTRUE(all.equal(dx, round(dx), tolerance = 1e-4)) &&
+      isTRUE(all.equal(dy, round(dy), tolerance = 1e-4))
   }
-  needs_align <- !all(vapply(valid_layers, function(l) {
-    e <- terra::ext(l)
-    isTRUE(all.equal(c(terra::xmin(e), terra::xmax(e),
-                       terra::ymin(e), terra::ymax(e)),
-                     c(terra::xmin(common_ext), terra::xmax(common_ext),
-                       terra::ymin(common_ext), terra::ymax(common_ext)),
-                     tolerance = 1e-6))
-  }, logical(1)))
-  if (needs_align) {
+
+  if (all(vapply(valid_layers, on_ref_grid, logical(1)))) {
     valid_layers <- lapply(valid_layers,
-                           function(l) terra::crop(l, common_ext, snap = "in"))
+                           function(l) terra::extend(l, target_ext))
+  } else {
+    rlang::inform(
+      cli::format_inline(
+        "build_index_stack: resampling layers onto a common grid \\
+         (extents/origins do not coincide)."),
+      .frequency    = "once",
+      .frequency_id = "build_index_stack_resample")
+    areas <- vapply(exts, function(e) {
+      (terra::xmax(e) - terra::xmin(e)) * (terra::ymax(e) - terra::ymin(e))
+    }, numeric(1))
+    template <- terra::extend(valid_layers[[which.max(areas)]], target_ext)
+    valid_layers <- lapply(valid_layers,
+                           function(l) terra::resample(l, template,
+                                                       method = "bilinear"))
   }
 
   out <- terra::rast(valid_layers)

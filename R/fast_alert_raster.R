@@ -148,11 +148,23 @@ read_fast_alert_raster <- function(con, zone_id,
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
   # Multi-tile AOI: an AOI that straddles MGRS tile boundaries (e.g.
-  # villards on T31TFM + T31TGM) produces per-scene rasters with
-  # incompatible extents that `build_index_stack` can't `terra::rast()`
-  # together. Group scenes by their MGRS tile (5th `_`-field of the
-  # scene_id), compute one alert raster per tile in its native CRS,
-  # project each to EPSG:2154, then mosaic.
+  # villards on T31TFM + T31TGM) is handled per-tile, NOT by handing all
+  # scenes to a single `build_index_stack` call. Two reasons survive
+  # build_index_stack's union+pad (v0.52.x):
+  #   1. Double-counting. The ~10 km S2 tile overlap means the SAME
+  #      acquisition date is present in both tiles' scenes. Unioning
+  #      them into one stack and `count`-ing would tally each overlap
+  #      date twice. Per-tile counting + `mosaic(fun = "max")` keeps the
+  #      overlap strip bounded by a single tile's date count.
+  #   2. Multi-CRS. Neighbouring tiles can sit in different UTM zones;
+  #      computing each in its native CRS then projecting the *alert*
+  #      raster (integers, `near`) is cleaner than bilinear-resampling
+  #      raw NDVI across zones.
+  # Group scenes by their MGRS tile (5th `_`-field of the scene_id),
+  # compute one alert raster per tile in its native CRS, project each to
+  # EPSG:2154, then mosaic. (Within a tile, build_index_stack now pads
+  # to the union rather than cropping to the intersection, so intra-tile
+  # extent drift no longer trims coverage either.)
   scenes_df$mgrs <- vapply(as.character(scenes_df$scene_id),
                            .s2_mgrs_tile, character(1))
   tiles <- unique(scenes_df$mgrs[!is.na(scenes_df$mgrs)])

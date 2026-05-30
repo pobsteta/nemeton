@@ -250,99 +250,158 @@ test_that("build_index_stack: NA in a source band propagates to the index", {
   expect_equal(sum(is.na(vals)), 1L)
 })
 
-test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped silently with warning", {
+test_that("build_index_stack(NBR): incomplete scene (no B12) is skipped, never warns", {
   skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   scenes <- make_fixture_s2_cache(cache, scenes = 3L, with_b12 = TRUE)
   # Remove B12 from one scene
   unlink(file.path(cache, scenes$scene_id[2], "B12.tif"))
 
-  expect_warning(
-    stack <- build_index_stack(cache, scenes, "NBR"),
-    "Skipped 1/3 scene"
-  )
+  # v0.52.x — the skip is reported via `rlang::inform` (a message), not
+  # a warning, so the Shiny reactive no longer spams the console.
+  expect_no_warning(
+    stack <- suppressMessages(build_index_stack(cache, scenes, "NBR")))
   expect_equal(terra::nlyr(stack), 2L)
   # And NDVI on the same fixture sees 3 (because B04 + B08 are intact)
+  # and emits nothing (no missing scene).
   expect_silent(stack_ndvi <- build_index_stack(cache, scenes, "NDVI"))
   expect_equal(terra::nlyr(stack_ndvi), 3L)
 })
 
-test_that("build_index_stack: aligns per-scene layers with different extents (v0.47.5)", {
-  # spec 013 / v0.47.5 — production villards run hit
-  # `[rast] extents do not match` because cached files for the same
-  # band, written by separate app sessions across a zone
-  # re-registration, had sub-pixel-to-many-pixel extent drift.
-  # build_index_stack now crops every layer to the smallest common
-  # extent (intersection) before stacking.
+test_that("build_index_stack: repeated call with incomplete cache emits no warning (dedupe)", {
+  # Regression: the old `cli_warn` fired on every reactive evaluation
+  # (~12x per app load → 12 identical console lines for villards).
   skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
+  scenes <- make_fixture_s2_cache(cache, scenes = 3L, with_b12 = TRUE)
+  unlink(file.path(cache, scenes$scene_id[2], "B12.tif"))
 
-  # Two scenes for the same band : same CRS, same resolution,
-  # extents shifted by 30 m (= 3 pixels at 10 m).
-  for (i in seq_len(2L)) {
-    sid <- sprintf("S2_ALIGN_%02d", i)
-    dir.create(file.path(cache, sid), recursive = TRUE)
-    for (b in c("B04", "B08")) {
-      val <- if (b == "B04") 0.10 else 0.40
-      shift <- (i - 1L) * 30  # scene 1 at origin, scene 2 shifted +30m
-      r <- terra::rast(
-        nrows = 10, ncols = 10,
-        xmin  = 0  + shift, xmax = 100 + shift,
-        ymin  = 0  + shift, ymax = 100 + shift,
-        crs   = "EPSG:2154",
-        vals  = rep(val, 100))
-      terra::writeRaster(r, file.path(cache, sid, paste0(b, ".tif")),
-                         filetype = "GTiff", overwrite = TRUE)
-    }
-  }
-  scenes <- data.frame(
-    scene_id = c("S2_ALIGN_01", "S2_ALIGN_02"),
-    obs_date = as.Date(c("2026-03-01", "2026-03-15")),
-    stringsAsFactors = FALSE)
-
-  # Pre-fix v0.47.5 this would throw `[rast] extents do not match`.
-  stack <- build_index_stack(cache, scenes, "NDVI")
-  expect_s4_class(stack, "SpatRaster")
-  expect_equal(terra::nlyr(stack), 2L)
-  # Common extent = intersection = (30, 100, 30, 100) = 7x7 px area.
-  e <- terra::ext(stack)
-  expect_true(terra::xmin(e) >= 30 - 1e-6)
-  expect_true(terra::xmax(e) <= 100 + 1e-6)
-  expect_true(terra::ymin(e) >= 30 - 1e-6)
-  expect_true(terra::ymax(e) <= 100 + 1e-6)
+  # First call may inform once; it must never warn.
+  suppressMessages(build_index_stack(cache, scenes, "NBR"))
+  # A repeated call must not raise a warning.
+  expect_no_warning(
+    suppressMessages(build_index_stack(cache, scenes, "NBR")))
 })
 
+# Helper: write a single scene (B04 + B08 only) with an explicit
+# extent and constant band values, on the EPSG:2154 10 m grid. Used by
+# the v0.52.x union tests below. `crs` lets the multi-CRS test place a
+# scene in a different UTM zone.
+write_scene_ext <- function(cache, sid, xmin, xmax, ymin, ymax,
+                            b04, b08, crs = "EPSG:2154") {
+  d <- file.path(cache, sid)
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  ncx <- round((xmax - xmin) / 10)
+  ncy <- round((ymax - ymin) / 10)
+  for (b in c("B04", "B08")) {
+    v <- if (b == "B04") b04 else b08
+    r <- terra::rast(nrows = ncy, ncols = ncx,
+                     xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,
+                     crs = crs, vals = rep(v, ncx * ncy))
+    terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+}
 
-test_that("build_index_stack: returns NULL when extents have no overlap", {
+test_that("build_index_stack: stacks to the UNION of extents, padding NA (v0.52.x)", {
+  # spec 010 / v0.52.x — an AOI straddling two overlapping MGRS tiles
+  # yields a WIDE scene (covers the whole AOI) and a NARROW scene
+  # (covers only the overlap strip ⊂ WIDE). The old behaviour cropped
+  # to the intersection (= the narrow strip), silently dropping half
+  # the AOI. We now pad to the union with NA.
   skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
 
-  # Two scenes whose extents are fully disjoint — no common ground.
-  for (i in seq_len(2L)) {
-    sid <- sprintf("S2_DISJ_%02d", i)
-    dir.create(file.path(cache, sid), recursive = TRUE)
-    for (b in c("B04", "B08")) {
-      val <- if (b == "B04") 0.10 else 0.40
-      shift <- (i - 1L) * 1000  # scene 2 shifted 1000m → no overlap
-      r <- terra::rast(
-        nrows = 10, ncols = 10,
-        xmin  = 0 + shift, xmax = 100 + shift,
-        ymin  = 0 + shift, ymax = 100 + shift,
-        crs   = "EPSG:2154", vals = rep(val, 100))
-      terra::writeRaster(r, file.path(cache, sid, paste0(b, ".tif")),
-                         filetype = "GTiff", overwrite = TRUE)
-    }
-  }
+  # WIDE: x in [0, 100], NDVI = (0.4-0.1)/(0.4+0.1) = 0.6.
+  write_scene_ext(cache, "S2_WIDE",   0, 100, 0, 100, b04 = 0.1, b08 = 0.4)
+  # NARROW ⊂ WIDE: x in [0, 50], NDVI = 0 (distinct so we can tell apart).
+  write_scene_ext(cache, "S2_NARROW", 0,  50, 0, 100, b04 = 0.2, b08 = 0.2)
+
   scenes <- data.frame(
-    scene_id = c("S2_DISJ_01", "S2_DISJ_02"),
-    obs_date = as.Date(c("2026-03-01", "2026-03-15")),
+    scene_id = c("S2_WIDE", "S2_NARROW"),
+    obs_date = as.Date(c("2026-03-01", "2026-03-01")),  # same acquisition
     stringsAsFactors = FALSE)
 
-  expect_warning(
-    stack <- build_index_stack(cache, scenes, "NDVI"),
-    "no common overlap"
-  )
-  expect_null(stack)
+  stack <- build_index_stack(cache, scenes, "NDVI")
+  expect_s4_class(stack, "SpatRaster")
+  # Union extent = the WIDE footprint, NOT the narrow intersection.
+  e <- terra::ext(stack)
+  expect_equal(c(terra::xmin(e), terra::xmax(e),
+                 terra::ymin(e), terra::ymax(e)),
+               c(0, 100, 0, 100))
+  # Both dates/layers are kept.
+  expect_equal(terra::nlyr(stack), 2L)
+  # The narrow layer is NA-padded over x in [50, 100]: 5 cols x 10 rows
+  # = 50 NA cells. The wide layer is fully covered (0 NA).
+  nas <- terra::global(stack, fun = "isNA")$isNA
+  expect_setequal(nas, c(0, 50))
+})
+
+test_that("build_index_stack: independent dates each keep their own layer over the union", {
+  # 4 scenes = 2 dates x 2 tiles (each date has a narrow + a wide
+  # scene). The per-date mosaic is the app consumer's job; the core
+  # builder must return all 4 layers over the union extent with the
+  # right dates.
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+
+  write_scene_ext(cache, "S2_D1_WIDE",   0, 100, 0, 100, 0.1, 0.4)
+  write_scene_ext(cache, "S2_D1_NARROW", 0,  50, 0, 100, 0.2, 0.2)
+  write_scene_ext(cache, "S2_D2_WIDE",   0, 100, 0, 100, 0.1, 0.4)
+  write_scene_ext(cache, "S2_D2_NARROW", 0,  50, 0, 100, 0.2, 0.2)
+
+  scenes <- data.frame(
+    scene_id = c("S2_D1_WIDE", "S2_D1_NARROW", "S2_D2_WIDE", "S2_D2_NARROW"),
+    obs_date = as.Date(c("2026-03-01", "2026-03-01",
+                         "2026-03-11", "2026-03-11")),
+    stringsAsFactors = FALSE)
+
+  stack <- build_index_stack(cache, scenes, "NDVI")
+  expect_equal(terra::nlyr(stack), 4L)
+  e <- terra::ext(stack)
+  expect_equal(c(terra::xmin(e), terra::xmax(e)), c(0, 100))
+  expect_equal(sort(unique(as.Date(terra::time(stack)))),
+               as.Date(c("2026-03-01", "2026-03-11")))
+  # Two narrow layers padded (50 NA each), two wide layers full (0 NA).
+  nas <- terra::global(stack, fun = "isNA")$isNA
+  expect_equal(sort(nas), c(0, 0, 50, 50))
+})
+
+test_that("build_index_stack: layers in different CRS are reprojected then unioned", {
+  # Rare multi-zone AOI (two UTM zones at a zone border). The reference
+  # layer (first by date) fixes the output CRS; the other is
+  # reprojected onto it before the union, so the stack still covers
+  # both footprints.
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+
+  # Scene 1 in UTM 31N on a realistic France footprint.
+  write_scene_ext(cache, "S2_UTM31",
+                  700000, 700100, 5200000, 5200100,
+                  b04 = 0.1, b08 = 0.4, crs = "EPSG:32631")
+  # Scene 2 in UTM 32N — derive a geographically-overlapping extent by
+  # projecting scene 1's grid into 32632 (keeps the union small).
+  r1 <- terra::rast(nrows = 10, ncols = 10,
+                    xmin = 700000, xmax = 700100,
+                    ymin = 5200000, ymax = 5200100,
+                    crs = "EPSG:32631", vals = rep(0, 100))
+  r2 <- terra::project(r1, "EPSG:32632")
+  e2 <- terra::ext(r2)
+  write_scene_ext(cache, "S2_UTM32",
+                  terra::xmin(e2), terra::xmax(e2),
+                  terra::ymin(e2), terra::ymax(e2),
+                  b04 = 0.2, b08 = 0.2, crs = "EPSG:32632")
+
+  scenes <- data.frame(
+    scene_id = c("S2_UTM31", "S2_UTM32"),
+    obs_date = as.Date(c("2026-03-01", "2026-03-02")),
+    stringsAsFactors = FALSE)
+
+  stack <- suppressMessages(build_index_stack(cache, scenes, "NDVI"))
+  expect_s4_class(stack, "SpatRaster")
+  expect_equal(terra::nlyr(stack), 2L)
+  # Reference CRS = the first layer's CRS (UTM 31N).
+  expect_true(terra::same.crs(stack, "EPSG:32631"))
 })
 
 

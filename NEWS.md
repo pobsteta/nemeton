@@ -1,3 +1,41 @@
+# nemeton 0.52.1 (2026-05-30)
+
+### Fixed — `build_index_stack()` & FAST alert : couverture des AOI multi-tuiles MGRS
+
+Quand un AOI chevauche deux tuiles MGRS qui se recouvrent (cas Sentinel-2
+nominal en bordure de tuile), les scènes cachées portent des emprises
+hétérogènes : la tuile étroite ne couvre que la bande de recouvrement, la
+large couvre tout l'AOI. `build_index_stack()` réduisait alors la pile à
+l'**intersection** des emprises (`terra::intersect` + `terra::crop`), si
+bien que la moitié de l'AOI n'était jamais rendue alors que les scènes
+larges existaient dans le cache (carte pixel NDVI/NBR côté
+`nemetonshiny`).
+
+- **Union + padding NA** : `build_index_stack()` aligne désormais chaque
+  couche sur l'**union** des emprises via `terra::extend()` (les marges
+  non couvertes deviennent NA — honnête, aucun pixel inventé) au lieu de
+  cropper à l'intersection. La pile garde toutes les dates et couvre la
+  tuile la plus large. Le `terra::time()`, les `names()`, l'attribut
+  `index` et le masque de zone aval sont conservés.
+- **Garde-fou multi-CRS** : si des couches sont dans des CRS différents
+  (AOI rare à cheval sur deux zones UTM), elles sont reprojetées sur la
+  grille de la 1re couche **avant** l'union. Cas nominal (même tuile,
+  même grille) : pas de resample, seulement du padding. Si les grilles ne
+  coïncident pas (dérive origine/résolution au-delà de 1e-6), repli sur
+  un `terra::resample()` vers la couche la plus large — signalé par un
+  `rlang::inform`.
+- **FAST alert (`read_fast_alert_raster()` / `compute_fast_alert_mask()`)
+  inchangé** : le chemin alertes groupe déjà les scènes par tuile MGRS et
+  mosaïque avec `fun = "max"` (spec 013). Ce regroupement reste
+  nécessaire pour **ne pas double-compter** la bande de recouvrement S2
+  (la même date d'acquisition existe dans les deux tuiles) et pour gérer
+  le multi-CRS. Il bénéficie du correctif union+pad au sein de chaque
+  tuile (la dérive d'emprise intra-tuile ne rogne plus la couverture).
+- **Bruit console** : l'avertissement « Skipped N/total scenes (incomplete
+  cache) » de `build_index_stack()`, émis ~12× par chargement par le
+  réactif Shiny, est rétrogradé en `rlang::inform(.frequency = "once")` —
+  une seule ligne par session, plus jamais de warning.
+
 # nemeton 0.52.0 (2026-05-29)
 
 ### Added — base de connaissances RAG pour les perspectives IA (E7, spec 009)
