@@ -237,6 +237,39 @@ Rscript -e 'cat(covr::percent_coverage(covr::package_coverage(quiet=TRUE)))'
 - `shinytest2::AppDriver` pour les tests E2E (ne contribue pas à covr)
 - `on.exit(app$stop())` obligatoire après chaque AppDriver$new()
 
+### DB de test isolée — `NEMETON_DB_URL_TEST` (v0.54.0)
+
+Les tests d'intégration (`tests/testthat/test-monitoring.R`,
+`test-read_obs_pixel.R`, `test-project-zone-binding.R`, etc.)
+**DROP-CASCADE** les tables monitoring entre chaque cas via
+`helper-monitoring.R::with_clean_db()`. Pour éviter l'écrasement d'une DB
+de production (incidents villards 2026-05-25 et 2026-05-31), tout accès
+DB d'intégration passe par `.guard_test_db()` + `.test_db_connect()`, qui
+**exigent** `NEMETON_DB_URL_TEST` :
+
+1. non défini → tests d'intégration **skip** (pas fail) ;
+2. égal à `NEMETON_DB_URL` → **skip** (copier-coller de la prod) ;
+3. base contenant des tables applicatives (`projects`/`users`/`parcels`)
+   → **skip** (c'est la vraie base, pas une base jetable — seule couche
+   qui rattrape le cas « TEST pointe sur la prod alors que
+   `NEMETON_DB_URL` est vide »).
+
+Override (CI sur base jetable uniquement) : `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`.
+
+Setup local (`.Renviron`, cf. `.Renviron.example`) :
+```bash
+NEMETON_DB_URL=postgresql://nemeton@127.0.0.1:5432/nemeton          # prod / app
+NEMETON_DB_URL_TEST=postgresql://nemeton@127.0.0.1:5432/nemeton_test # dédiée, jetable
+```
+Création de la base jetable :
+```bash
+createdb -U nemeton -h 127.0.0.1 nemeton_test
+psql -U nemeton -h 127.0.0.1 -d nemeton_test \
+  -c "CREATE EXTENSION IF NOT EXISTS timescaledb; CREATE EXTENSION IF NOT EXISTS postgis;"
+```
+Sans `NEMETON_DB_URL_TEST`, `devtools::test()` reste **vert** (les tests
+d'intégration sont *skipped*, comptés dans la sortie testthat).
+
 ### Données de test
 - `data(massif_demo_units)` : 20 unités forestières avec 12 familles
 - `withr::with_tempdir()` pour les fichiers temporaires

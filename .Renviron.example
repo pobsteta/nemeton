@@ -1,0 +1,23 @@
+# .Renviron.example — copy to .Renviron and fill in.
+# `.Renviron` is gitignored; never commit real credentials.
+
+# === DB principale (app / prod) ===
+# Utilisée par db_connect() par défaut et par l'application.
+NEMETON_DB_URL=postgresql://nemeton@127.0.0.1:5432/nemeton
+
+# === DB de test (intégration) ===
+# DOIT être distincte de NEMETON_DB_URL. helper-monitoring.R DROP-CASCADE
+# les tables monitoring entre chaque test ; il refuse de tourner si cette
+# variable est absente, égale à NEMETON_DB_URL, ou pointe sur une base
+# contenant des tables applicatives (projects/users/parcels). Sans elle,
+# les tests d'intégration sont skipped (pas fail).
+#
+# Créer la base jetable une fois :
+#   createdb -U nemeton -h 127.0.0.1 nemeton_test
+#   psql -U nemeton -h 127.0.0.1 -d nemeton_test \
+#     -c "CREATE EXTENSION IF NOT EXISTS timescaledb; CREATE EXTENSION IF NOT EXISTS postgis;"
+NEMETON_DB_URL_TEST=postgresql://nemeton@127.0.0.1:5432/nemeton_test
+
+# Dernier recours, base réellement jetable uniquement (CI) : autorise les
+# DROP même si les garde-fous ci-dessus déclencheraient un skip.
+# NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE

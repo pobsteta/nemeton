@@ -1,3 +1,32 @@
+# nemeton 0.54.0 (2026-05-31)
+
+### Changed — isolation de la DB de test (`NEMETON_DB_URL_TEST`)
+
+Garde-fou anti-écrasement de la base de production dans le harnais de
+tests. Le helper d'intégration `tests/testthat/helper-monitoring.R`
+exécute des `DROP TABLE … CASCADE` sur le schéma monitoring entre chaque
+cas ; lancé contre une DB de production il a **détruit deux fois** les
+données utilisateur réelles (incidents villards 2026-05-25 et
+2026-05-31 : zone, plots, `obs_pixel`, alertes).
+
+- Tout accès DB d'intégration passe désormais par `.guard_test_db()` +
+  `.test_db_connect()` (helper de test). Protection en couches :
+  1. `NEMETON_DB_URL_TEST` doit être **défini** (sinon les tests
+     d'intégration sont *skipped*, pas *failed*) ;
+  2. il doit **différer** de `NEMETON_DB_URL` (erreur de copier-coller) ;
+  3. la base cible ne doit **pas** contenir de tables applicatives
+     (`projects`/`users`/`parcels`) — la seule couche qui rattrape le cas
+     réel « TEST pointe sur la prod alors que `NEMETON_DB_URL` est vide »,
+     que la comparaison d'URL ne peut pas détecter.
+  Override (CI sur base jetable) : `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`.
+- Nouveau `tests/testthat/test-helper-guards.R` (4 tests offline du
+  garde-fou). Nouveau `.Renviron.example`. Section dédiée ajoutée à
+  `CLAUDE.md` (setup `nemeton_test`).
+- **Breaking côté setup dev** : `devtools::test()` exige maintenant un
+  `NEMETON_DB_URL_TEST` dédié pour faire tourner les tests d'intégration.
+  Sans lui, ils sont skippés (la suite reste verte). Aucun changement
+  d'API publique — rien à faire côté `nemetonshiny`.
+
 # nemeton 0.53.0 (2026-05-31)
 
 ### Added — annulation coopérative des workers FAST / FORDEAD

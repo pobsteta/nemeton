@@ -1,75 +1,63 @@
 # Helpers shared by the E6 monitoring test files.
 
-skip_if_no_timescaledb <- function() {
-  url <- Sys.getenv("NEMETON_DB_URL_TEST", Sys.getenv("NEMETON_DB_URL", ""))
-  if (!nzchar(url)) {
-    testthat::skip("NEMETON_DB_URL_TEST not set — TimescaleDB integration test skipped.")
-  }
-  if (!requireNamespace("DBI", quietly = TRUE) ||
-      !requireNamespace("RPostgres", quietly = TRUE)) {
-    testthat::skip("DBI / RPostgres not installed.")
-  }
-  con <- tryCatch(db_connect(url), error = function(e) NULL)
-  if (is.null(con)) {
-    testthat::skip(sprintf("Cannot connect to TimescaleDB at %s.", url))
-  }
-  db_disconnect(con)
-}
-
-
-# Open a fresh connection for an integration test, drop the four tables
-# (and schema_migration) at the *start* and end of each test so the test
-# is idempotent and doesn't leak state into other tests.
+# ---- Test DB isolation (v0.54.0) -------------------------------------
 #
-# Safety guard-rail (v0.47.2, incident 2026-05-25) : refuse to run when
-# `NEMETON_DB_URL_TEST` resolves to the same URL as `NEMETON_DB_URL`
-# unless the caller explicitly opts in with
-# `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`. The `reset_schema()`
-# below DROPs the entire monitoring schema; if the test DB == prod DB,
-# every integration test wipes the user's villards / plots /
-# obs_pixel / alert rows. The incident burned 17 050 obs_pixel rows.
-with_clean_db <- function(code) {
-  url_test <- Sys.getenv("NEMETON_DB_URL_TEST", "")
-  url_main <- Sys.getenv("NEMETON_DB_URL",      "")
-  url      <- if (nzchar(url_test)) url_test else url_main
+# The integration tests DROP-CASCADE the monitoring schema
+# (`reset_schema()` in `with_clean_db()`), which has TWICE destroyed real
+# user data when run against a production DB (incidents 2026-05-25 and
+# 2026-05-31 — the villards zone/plots/obs_pixel wipe). ALL integration
+# DB access therefore goes through `.guard_test_db()` + `.test_db_connect()`.
+#
+# Layered protection:
+#   1. `NEMETON_DB_URL_TEST` MUST be set, else the integration tests skip.
+#   2. It must NOT equal `NEMETON_DB_URL` (copy-paste-the-prod-URL guard).
+#   3. The target DB must NOT carry the nemetonshiny application's own
+#      tables (`projects` / `users` / `parcels`). This is the layer that
+#      actually caught the real incident: TEST pointed at the prod DB
+#      while `NEMETON_DB_URL` was unset, so the URL equality check (2)
+#      could not fire. A clean throwaway test DB has none of these tables
+#      (integration tests only ever create the monitoring schema via
+#      `db_migrate()`).
+# Override every layer only with `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`.
 
-  # Hard guard : refuse when the test URL points to the production
-  # URL (either by being equal, or by `NEMETON_DB_URL_TEST` being
-  # unset so the helper falls back to `NEMETON_DB_URL`).
-  same_url      <- nzchar(url_main) && identical(url_test, url_main)
-  fellback_main <- !nzchar(url_test) && nzchar(url_main)
-  allow_destr   <- identical(toupper(Sys.getenv("NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE", "")),
-                             "TRUE")
-  if ((same_url || fellback_main) && !allow_destr) {
-    testthat::skip(paste0(
-      "with_clean_db() refused to run: NEMETON_DB_URL_TEST is not set ",
-      "or equals NEMETON_DB_URL. Each integration test DROPs the ",
-      "monitoring schema, which would wipe production data. ",
-      "Point NEMETON_DB_URL_TEST at a *separate* test DB, ",
-      "or set NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE to override ",
-      "(in CI on an empty DB, for example)."
+# Validate the test-DB env contract. Returns the test URL (invisibly) or
+# signals a testthat `skip`. Pure env logic — opens NO connection, so it
+# is unit-testable without a database (see test-helper-guards.R).
+.guard_test_db <- function() {
+  test_url <- Sys.getenv("NEMETON_DB_URL_TEST", "")
+  if (!nzchar(test_url)) {
+    testthat::skip(paste(
+      "Integration tests skipped: set NEMETON_DB_URL_TEST to a DEDICATED",
+      "test database (a separate DB from NEMETON_DB_URL)."
     ))
   }
+  prod_url <- Sys.getenv("NEMETON_DB_URL", "")
+  if (nzchar(prod_url) && identical(test_url, prod_url)) {
+    testthat::skip(paste(
+      "Integration tests skipped: NEMETON_DB_URL_TEST equals",
+      "NEMETON_DB_URL. Refusing destructive ops on the production DB."
+    ))
+  }
+  invisible(test_url)
+}
 
-  con <- db_connect(url)
+# Open a GUARDED connection to the dedicated test DB. Every integration
+# call site must use this instead of `db_connect(Sys.getenv(...))`.
+.test_db_connect <- function(read_only = FALSE) {
+  url <- .guard_test_db()
+  con <- db_connect(url, read_only = read_only)
 
-  # Defence in depth (incidents 2026-05-25 AND 2026-05-31): the URL
-  # comparison above CANNOT catch the case where NEMETON_DB_URL is unset
-  # and NEMETON_DB_URL_TEST happens to point at the real application
-  # database. reset_schema() DROPs the monitoring tables, so additionally
-  # refuse to run against any DB that carries the nemetonshiny
-  # application's own tables (projects / users / parcels) — a clean
-  # throwaway test DB has none of these (the integration tests only ever
-  # create the monitoring schema via db_migrate()). Only
-  # NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE overrides (CI on a
-  # disposable DB).
+  # Layer 3 (see header): a "distinct" URL can still point at a DB that
+  # holds real data. Refuse any DB carrying the application's own tables.
+  allow_destr <- identical(
+    toupper(Sys.getenv("NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE", "")), "TRUE")
   app_tables <- tryCatch(
     intersect(c("projects", "users", "parcels"), DBI::dbListTables(con)),
     error = function(e) character(0))
   if (length(app_tables) && !allow_destr) {
     db_disconnect(con)
     testthat::skip(paste0(
-      "with_clean_db() refused to run: the target DB carries application ",
+      ".test_db_connect() refused: the target DB carries application ",
       "table(s) {", paste(app_tables, collapse = ", "), "} — it looks ",
       "like the real Nemeton database, not a throwaway test DB. Point ",
       "NEMETON_DB_URL_TEST at a separate empty DB (e.g. 'nemeton_test'), ",
@@ -77,6 +65,33 @@ with_clean_db <- function(code) {
       "is genuinely disposable."
     ))
   }
+  con
+}
+
+skip_if_no_timescaledb <- function() {
+  if (!requireNamespace("DBI", quietly = TRUE) ||
+      !requireNamespace("RPostgres", quietly = TRUE)) {
+    testthat::skip("DBI / RPostgres not installed.")
+  }
+  # `.test_db_connect()` signals a skip (unset / == prod / app-DB) or
+  # errors if the server is unreachable — either way the integration
+  # test is skipped, never run against an unguarded DB.
+  con <- tryCatch(
+    .test_db_connect(),
+    error = function(e)
+      testthat::skip(sprintf("Cannot connect to test DB: %s",
+                             conditionMessage(e))))
+  db_disconnect(con)
+}
+
+
+# Open a fresh GUARDED connection for an integration test, dropping the
+# monitoring tables (and schema_migration) at the *start* and end of each
+# test so the test is idempotent and doesn't leak state into other tests.
+# The DROP block is harmless because `.test_db_connect()` guarantees the
+# connection targets a dedicated, app-data-free test DB.
+with_clean_db <- function(code) {
+  con <- .test_db_connect()
 
   reset_schema <- function() {
     DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_chunk CASCADE")

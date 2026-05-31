@@ -10,6 +10,25 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-05-31
+
+### Changed
+
+- Test-DB isolation guard. Integration DB access now goes through
+  `.guard_test_db()` + `.test_db_connect()` in `helper-monitoring.R`,
+  which require `NEMETON_DB_URL_TEST` to be set, distinct from
+  `NEMETON_DB_URL`, and free of application tables
+  (`projects`/`users`/`parcels`). This prevents the destructive
+  `DROP TABLE … CASCADE` integration helper from wiping a production DB
+  (villards incidents 2026-05-25 & 2026-05-31). Without
+  `NEMETON_DB_URL_TEST`, integration tests skip (suite stays green).
+  Override with `NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE`.
+
+### Added
+
+- `tests/testthat/test-helper-guards.R` — offline tests for the guard.
+- `.Renviron.example` documenting `NEMETON_DB_URL` / `NEMETON_DB_URL_TEST`.
+
 ## [0.53.0] - 2026-05-31
 
 ### Added
