@@ -175,14 +175,28 @@ test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
   skip_if_no_sf()
 
   pts <- make_sample_plots()
-  withr::with_tempdir({
-    create_qgis_project(pts, output_dir = ".", project_name = "once")
-    expect_error(
-      create_qgis_project(pts, output_dir = ".", project_name = "once",
-                            overwrite = FALSE),
-      "already exists"
-    )
-  })
+  # Use an ABSOLUTE output_dir rather than "." inside with_tempdir:
+  # create_qgis_project() does an internal setwd(stage) for the zip
+  # step, so a cwd-relative output_dir makes this test depend on every
+  # prior test perfectly restoring the process working directory. An
+  # absolute path is immune to that cross-test coupling.
+  out  <- withr::local_tempdir()
+  qgz  <- file.path(out, "once.qgz")
+
+  create_qgis_project(pts, output_dir = out, project_name = "once")
+  # The first write must have produced the file — assert it explicitly
+  # so a genuine write failure can't masquerade as a wrong overwrite
+  # error below.
+  expect_true(file.exists(qgz))
+
+  # `cli` line-wraps the abort message, so "already exists" may be split
+  # by a newline when the (absolute) path is long — match across any
+  # whitespace rather than a literal space.
+  expect_error(
+    create_qgis_project(pts, output_dir = out, project_name = "once",
+                        overwrite = FALSE),
+    "already\\s+exists"
+  )
 })
 
 test_that("create_qgis_project rejects non-sf placettes", {
