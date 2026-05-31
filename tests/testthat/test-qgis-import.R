@@ -64,40 +64,40 @@ write_demo_gpkg <- function(dir, include_bad = TRUE) {
 # Import
 # ------------------------------------------------------------
 
+# Use ABSOLUTE paths (withr::local_tempdir()) rather than "." inside
+# with_tempdir: a cwd-relative GPKG path makes GDAL/SQLite emit
+# "GDAL Error 4: sqlite3_open(./demo.gpkg) failed" when the process
+# working directory is polluted by a sibling test. Absolute paths are
+# immune to that cross-test coupling.
 test_that("import_qgis_gpkg returns placettes + arbres sf objects", {
   skip_if_not_installed("sf")
-  withr::with_tempdir({
-    gpkg <- write_demo_gpkg(".")
-    res <- import_qgis_gpkg(gpkg)
-    expect_true(inherits(res$placettes, "sf"))
-    expect_equal(nrow(res$placettes), 3)
-    expect_true(inherits(res$arbres, "sf"))
-    expect_gt(nrow(res$arbres), 0)
-  })
+  gpkg <- write_demo_gpkg(withr::local_tempdir())
+  res <- import_qgis_gpkg(gpkg)
+  expect_true(inherits(res$placettes, "sf"))
+  expect_equal(nrow(res$placettes), 3)
+  expect_true(inherits(res$arbres, "sf"))
+  expect_gt(nrow(res$arbres), 0)
 })
 
 test_that("import_qfield_gpkg still works as a deprecated alias", {
   skip_if_not_installed("sf")
-  withr::with_tempdir({
-    gpkg <- write_demo_gpkg(".")
-    expect_warning(res <- import_qfield_gpkg(gpkg), "deprecated")
-    expect_true(inherits(res$placettes, "sf"))
-    expect_equal(nrow(res$placettes), 3)
-  })
+  gpkg <- write_demo_gpkg(withr::local_tempdir())
+  expect_warning(res <- import_qfield_gpkg(gpkg), "deprecated")
+  expect_true(inherits(res$placettes, "sf"))
+  expect_equal(nrow(res$placettes), 3)
 })
 
 test_that("import_qgis_gpkg errors when the file is missing or malformed", {
   expect_error(import_qgis_gpkg("/no/such/file.gpkg"), "File not found")
 
   skip_if_not_installed("sf")
-  withr::with_tempdir({
-    # GPKG with only a different layer
-    sf::st_write(
-      sf::st_sf(geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)),
-      "bogus.gpkg", layer = "something_else", quiet = TRUE
-    )
-    expect_error(import_qgis_gpkg("bogus.gpkg"), "placettes")
-  })
+  bogus <- file.path(withr::local_tempdir(), "bogus.gpkg")
+  # GPKG with only a different layer
+  sf::st_write(
+    sf::st_sf(geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)),
+    bogus, layer = "something_else", quiet = TRUE
+  )
+  expect_error(import_qgis_gpkg(bogus), "placettes")
 })
 
 

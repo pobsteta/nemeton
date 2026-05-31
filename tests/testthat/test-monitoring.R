@@ -1220,11 +1220,17 @@ test_that(".terra_rast_with_pc_retry: NEMETON_S2_MAX_TRIES env var overrides def
     rast = function(x, ...) { n_calls <<- n_calls + 1L; stop("Connection timed out") },
     .package = "terra"
   )
-  expect_error(
-    nemeton:::.terra_rast_with_pc_retry(
-      "https://x.example/B04.tif", scene_id = "S", band = "B04"
+  # The retry path emits a "gave up" cli_warn before erroring — consume
+  # it with expect_warning() so it doesn't leak as an uncaught test
+  # warning (the sibling test above already covers the warning text).
+  expect_warning(
+    expect_error(
+      nemeton:::.terra_rast_with_pc_retry(
+        "https://x.example/B04.tif", scene_id = "S", band = "B04"
+      ),
+      "Connection timed out"
     ),
-    "Connection timed out"
+    "gave up"
   )
   # Only one attempt — no retry on Sys.sleep.
   expect_equal(n_calls, 1L)

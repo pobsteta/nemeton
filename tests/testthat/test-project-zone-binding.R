@@ -151,10 +151,15 @@ test_that("project_uuid UNIQUE constraint blocks a second binding", {
     register_monitoring_zone(con, "Z1", pol, placettes,
                              project_uuid = "dup")
     # Second registration with the same project_uuid is rejected by
-    # the partial UNIQUE index on project_uuid (not NULL).
-    expect_error(
-      register_monitoring_zone(con, "Z2", pol, placettes,
-                               project_uuid = "dup")
+    # the partial UNIQUE index on project_uuid (not NULL). The aborted
+    # transaction leaves an open result set, so RPostgres emits a benign
+    # "Closing open result set" warning — suppress it (the assertion is
+    # the error, not the warning).
+    suppressWarnings(
+      expect_error(
+        register_monitoring_zone(con, "Z2", pol, placettes,
+                                 project_uuid = "dup")
+      )
     )
   })
 })

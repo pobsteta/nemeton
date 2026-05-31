@@ -52,6 +52,32 @@ with_clean_db <- function(code) {
   }
 
   con <- db_connect(url)
+
+  # Defence in depth (incidents 2026-05-25 AND 2026-05-31): the URL
+  # comparison above CANNOT catch the case where NEMETON_DB_URL is unset
+  # and NEMETON_DB_URL_TEST happens to point at the real application
+  # database. reset_schema() DROPs the monitoring tables, so additionally
+  # refuse to run against any DB that carries the nemetonshiny
+  # application's own tables (projects / users / parcels) — a clean
+  # throwaway test DB has none of these (the integration tests only ever
+  # create the monitoring schema via db_migrate()). Only
+  # NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE overrides (CI on a
+  # disposable DB).
+  app_tables <- tryCatch(
+    intersect(c("projects", "users", "parcels"), DBI::dbListTables(con)),
+    error = function(e) character(0))
+  if (length(app_tables) && !allow_destr) {
+    db_disconnect(con)
+    testthat::skip(paste0(
+      "with_clean_db() refused to run: the target DB carries application ",
+      "table(s) {", paste(app_tables, collapse = ", "), "} — it looks ",
+      "like the real Nemeton database, not a throwaway test DB. Point ",
+      "NEMETON_DB_URL_TEST at a separate empty DB (e.g. 'nemeton_test'), ",
+      "or set NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE only if this DB ",
+      "is genuinely disposable."
+    ))
+  }
+
   reset_schema <- function() {
     DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_chunk CASCADE")
     DBI::dbExecute(con, "DROP TABLE IF EXISTS knowledge_document CASCADE")
@@ -63,8 +89,14 @@ with_clean_db <- function(code) {
   }
   reset_schema()
   on.exit({
-    tryCatch(reset_schema(), error = function(e) NULL)
-    db_disconnect(con)
+    # Teardown is not an assertion target. RPostgres can emit a benign
+    # "Closing open result set, cancelling previous query" warning when
+    # the connection is dropped with an un-finalised result still open;
+    # mute teardown warnings so that noise doesn't leak into the report.
+    suppressWarnings({
+      tryCatch(reset_schema(), error = function(e) NULL)
+      db_disconnect(con)
+    })
   }, add = TRUE)
   force(code)(con)
 }

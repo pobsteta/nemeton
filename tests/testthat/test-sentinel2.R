@@ -60,7 +60,13 @@ test_that("stac_search_s2 falls back from CDSE to PC on error", {
                  stringsAsFactors = FALSE)
     }
   )
-  out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30")
+  # The CDSE failure emits a "STAC backend cdse failed" cli_warn before
+  # falling back to PC — consume it with expect_warning() so it doesn't
+  # leak as an uncaught test warning.
+  expect_warning(
+    out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30"),
+    "cdse"
+  )
   expect_equal(nrow(out), 1)
   expect_equal(out$source, "pc")
 })
