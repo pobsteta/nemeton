@@ -1,3 +1,42 @@
+# nemeton 0.53.0 (2026-05-31)
+
+### Added — annulation coopérative des workers FAST / FORDEAD
+
+Les workers longs tournent dans un process `future::multisession` séparé
+et `shiny::ExtendedTask` n'a pas d'API d'annulation : jusqu'ici le bouton
+« Libérer l'interface » de `nemetonshiny` ne pouvait que ré-activer l'UI,
+sans canal pour arrêter le worker, qui continuait téléchargements +
+INSERTs pendant 30-60 tuiles. Nouveau mécanisme de cancel coopératif
+basé sur un fichier-flag, symétrique sur les deux points d'entrée cœur.
+
+- **`ingest_sentinel2_timeseries(..., cancel_path = NULL)`** : nouveau
+  paramètre optionnel. Quand un chemin est fourni, le worker teste
+  `file.exists(cancel_path)` **entre chaque tuile** ; si le fichier
+  apparaît en cours de run, la boucle sort proprement après la tuile
+  courante. Chaque `.insert_obs_pixel()` possédant sa propre
+  transaction, les tuiles déjà ingérées restent **commitées** (reprise
+  possible). Le résumé retourné porte désormais une colonne `status`
+  (`"success"` ou `"cancelled"`) et un événement `s2:cancelled` est
+  émis via `progress_callback`.
+- **`run_fordead_dieback(..., cancel_path = NULL)`** : idem, mais le
+  poll se fait **aux frontières de phase** (après ingest, fit, predict)
+  — granularité plus grossière car les phases reticulate ne sont pas
+  interruptibles sans SIGINT fragile dans le sous-process Python. Sur
+  annulation, la phase courante finit, puis le pipeline retourne
+  `status = "cancelled"` + un champ `phase` (phase atteinte) ; un
+  événement `fordead:cancelled` est émis. Aucun kill brutal du Python.
+- **Garde-fous** : `cancel_path = NULL` → aucun poll, comportement et
+  perfs strictement identiques à avant (aucun appel `file.exists`). Un
+  flag déjà présent **à l'entrée** est traité comme un résidu d'un run
+  précédent et **ignoré** pour tout le run (avec un avertissement) — le
+  caller doit supprimer le flag avant chaque `invoke()`. Un chemin
+  invalide lit « pas d'annulation », jamais de crash.
+
+Aucune signature publique cassée (`cancel_path` est optionnel). Côté
+`nemetonshiny` : câbler `cancel_path` aux `*_task$invoke()`, écrire le
+flag dans l'observer du bouton d'annulation, et le supprimer avant
+chaque nouveau lancement.
+
 # nemeton 0.52.1 (2026-05-30)
 
 ### Fixed — `build_index_stack()` & FAST alert : couverture des AOI multi-tuiles MGRS

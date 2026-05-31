@@ -21,7 +21,8 @@ run_fordead_dieback(
   min_pixels = 5L,
   connectivity = 8L,
   verbose = TRUE,
-  progress_callback = NULL
+  progress_callback = NULL,
+  cancel_path = NULL
 )
 }
 \arguments{
@@ -107,12 +108,25 @@ Phases emitted, in order: `"ingest"`, `"stac_assembly"`, `"fit"`,
 through verbatim (search / scene / band_cached / band_fetched /
 complete). Exceptions raised inside the callback are swallowed
 so a buggy UI never aborts the pipeline. Default `NULL` (silent).}
+
+\item{cancel_path}{Optional character path to a cooperative
+cancellation flag file. When `NULL` (default) no polling happens.
+When a path is given, the worker checks `file.exists(cancel_path)`
+at each phase boundary (after ingest, fit, predict); if the file
+appears the current phase is allowed to finish, then the pipeline
+exits with `status = "cancelled"` and a `phase` field naming the
+phase reached. The Python subprocess is **not** force-killed
+(reticulate has no reliable interrupt). A flag already present at
+entry is ignored as a stale leftover — the caller must delete it
+before each call. A `fordead:cancelled` progress event is emitted.}
 }
 \value{
 A list with the following fields:
   \describe{
-    \item{status}{`"success"` or `"error"`.}
+    \item{status}{`"success"`, `"cancelled"`, or `"error"`.}
     \item{message}{Optional human-readable message.}
+    \item{phase}{Present only on a `"cancelled"` result — the phase
+      (`"ingest"`, `"fit"`, `"predict"`) after which the run stopped.}
     \item{output_dir}{Path where FORDEAD wrote its rasters.}
     \item{zone_id}{The zone id that was processed.}
     \item{n_scenes}{Number of scenes considered.}

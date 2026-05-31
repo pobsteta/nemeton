@@ -200,16 +200,31 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       transient-network retries if applicable) — payload:
 #'       `scene_id`, `band`, `href`, `error_message`. The scene is
 #'       then skipped at scene level (`s2:scene_skipped`).}
+#'     \item{`s2:cancelled`}{Cooperative cancellation was requested
+#'       (see `cancel_path`) — payload includes `tile_index` (the
+#'       1-based index of the scene that would have been processed
+#'       next) and `n_total`. Emitted just before the loop breaks.}
 #'     \item{`s2:complete`}{After the loop — payload includes
 #'       `completed = total`, `total`, `n_obs_inserted`,
 #'       `n_scenes_cached`.}
 #'   }
 #'   The callback is invoked synchronously inside the calling thread.
 #'   Default `NULL` (silent — no callback emitted).
+#' @param cancel_path Optional character path to a cooperative
+#'   cancellation flag file. When `NULL` (default) no polling happens
+#'   and behaviour is identical to before. When a path is given, the
+#'   worker checks `file.exists(cancel_path)` between tiles; if the file
+#'   appears mid-run the loop exits cleanly after the current tile,
+#'   leaving every already-inserted tile committed (each tile owns its
+#'   own transaction), and the returned summary carries
+#'   `status = "cancelled"`. A flag already present at entry is ignored
+#'   as a stale leftover — the caller must delete it before each call.
 #'
-#' @return A tibble summarising the ingestion: number of scenes
-#'   considered, number of scenes skipped thanks to the cache,
-#'   number of observations inserted, bands ingested.
+#' @return A one-row `data.frame` summarising the ingestion: number of
+#'   scenes considered (`n_scenes`), scenes skipped thanks to the cache
+#'   (`n_scenes_cached`), observations inserted (`n_obs_inserted`),
+#'   plots (`n_plots`), bands (`bands`), and `status`
+#'   (`"success"` or `"cancelled"`).
 #'
 #' @examples
 #' \dontrun{
@@ -241,7 +256,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                                         max_cloud = 20,
                                         skip_cached = TRUE,
                                         cache_dir = NULL,
-                                        progress_callback = NULL) {
+                                        progress_callback = NULL,
+                                        cancel_path = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -272,6 +288,9 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   emit <- function(payload) {
     if (!is.null(progress_callback)) progress_callback(payload)
   }
+
+  # Cooperative cancellation checker (no-op when cancel_path is NULL).
+  cancelled <- .make_cancel_checker(cancel_path)
 
   plots <- .fetch_plots_sf(con, zone_id)
   if (!nrow(plots)) {
@@ -332,10 +351,24 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
   total_inserted <- 0L
   total_cached   <- 0L
+  n_processed    <- 0L
+  was_cancelled  <- FALSE
   for (i in seq_len(total_scenes)) {
+    # Cooperative cancel: poll between tiles, just before starting the
+    # next one. INSERTs for tiles 1..i-1 are already committed (each
+    # .insert_obs_pixel() owns its own transaction), so breaking here
+    # leaves a clean partial ingest the user can resume.
+    if (cancelled()) {
+      was_cancelled <- TRUE
+      emit(list(current    = "s2:cancelled",
+                tile_index = as.integer(i),
+                n_total    = as.integer(total_scenes)))
+      break
+    }
     sc <- scenes[i, , drop = FALSE]
     if (as.character(sc$obs_date) %in% cached_dates) {
       total_cached <- total_cached + 1L
+      n_processed  <- n_processed + 1L
       emit(list(current   = "s2:scene_cached",
                 completed = as.integer(i - 1L),
                 total     = as.integer(total_scenes),
@@ -368,9 +401,23 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
         NULL
       }
     )
-    if (is.null(obs) || !nrow(obs)) next
-    inserted <- .insert_obs_pixel(con, obs)
-    total_inserted <- total_inserted + inserted
+    if (!is.null(obs) && nrow(obs)) {
+      inserted <- .insert_obs_pixel(con, obs)
+      total_inserted <- total_inserted + inserted
+    }
+    n_processed <- n_processed + 1L
+  }
+
+  if (was_cancelled) {
+    # n_scenes reflects the tiles actually processed (committed), not
+    # the total found — symmetric with the FORDEAD cancelled result.
+    return(.ingest_summary(
+      n_scenes        = n_processed,
+      n_scenes_cached = total_cached,
+      n_obs_inserted  = total_inserted,
+      n_plots         = nrow(plots),
+      bands           = bands,
+      status          = "cancelled"))
   }
 
   emit(list(current         = "s2:complete",
@@ -379,25 +426,35 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             n_obs_inserted  = as.integer(total_inserted),
             n_scenes_cached = as.integer(total_cached)))
 
-  data.frame(
+  .ingest_summary(
     n_scenes        = total_scenes,
     n_scenes_cached = total_cached,
     n_obs_inserted  = total_inserted,
     n_plots         = nrow(plots),
-    bands           = paste(bands, collapse = "+"),
-    stringsAsFactors = FALSE
-  )
+    bands           = bands,
+    status          = "success")
 }
 
 
 # ---- Internal helpers ------------------------------------------------
 
-.empty_ingest_summary <- function() {
+# Canonical one-row ingest summary. `status` is "success" on a normal
+# (or empty) run and "cancelled" when cooperative cancellation fired.
+.ingest_summary <- function(n_scenes, n_scenes_cached, n_obs_inserted,
+                            n_plots, bands, status = "success") {
   data.frame(
-    n_scenes = 0L, n_scenes_cached = 0L, n_obs_inserted = 0L,
-    n_plots = 0L, bands = "",
+    n_scenes        = as.integer(n_scenes),
+    n_scenes_cached = as.integer(n_scenes_cached),
+    n_obs_inserted  = as.integer(n_obs_inserted),
+    n_plots         = as.integer(n_plots),
+    bands           = paste(bands, collapse = "+"),
+    status          = status,
     stringsAsFactors = FALSE
   )
+}
+
+.empty_ingest_summary <- function() {
+  .ingest_summary(0L, 0L, 0L, 0L, "", status = "success")
 }
 
 # Return the Date vector of obs_dates whose `obs_pixel` rows already

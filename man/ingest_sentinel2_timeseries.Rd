@@ -13,7 +13,8 @@ ingest_sentinel2_timeseries(
   max_cloud = 20,
   skip_cached = TRUE,
   cache_dir = NULL,
-  progress_callback = NULL
+  progress_callback = NULL,
+  cancel_path = NULL
 )
 }
 \arguments{
@@ -116,17 +117,33 @@ Phases emitted, in order:
     transient-network retries if applicable) — payload:
     `scene_id`, `band`, `href`, `error_message`. The scene is
     then skipped at scene level (`s2:scene_skipped`).}
+  \item{`s2:cancelled`}{Cooperative cancellation was requested
+    (see `cancel_path`) — payload includes `tile_index` (the
+    1-based index of the scene that would have been processed
+    next) and `n_total`. Emitted just before the loop breaks.}
   \item{`s2:complete`}{After the loop — payload includes
     `completed = total`, `total`, `n_obs_inserted`,
     `n_scenes_cached`.}
 }
 The callback is invoked synchronously inside the calling thread.
 Default `NULL` (silent — no callback emitted).}
+
+\item{cancel_path}{Optional character path to a cooperative
+cancellation flag file. When `NULL` (default) no polling happens
+and behaviour is identical to before. When a path is given, the
+worker checks `file.exists(cancel_path)` between tiles; if the file
+appears mid-run the loop exits cleanly after the current tile,
+leaving every already-inserted tile committed (each tile owns its
+own transaction), and the returned summary carries
+`status = "cancelled"`. A flag already present at entry is ignored
+as a stale leftover — the caller must delete it before each call.}
 }
 \value{
-A tibble summarising the ingestion: number of scenes
-  considered, number of scenes skipped thanks to the cache,
-  number of observations inserted, bands ingested.
+A one-row `data.frame` summarising the ingestion: number of
+  scenes considered (`n_scenes`), scenes skipped thanks to the cache
+  (`n_scenes_cached`), observations inserted (`n_obs_inserted`),
+  plots (`n_plots`), bands (`bands`), and `status`
+  (`"success"` or `"cancelled"`).
 }
 \description{
 Searches Sentinel-2 L2A scenes (CDSE then PC fallback), computes

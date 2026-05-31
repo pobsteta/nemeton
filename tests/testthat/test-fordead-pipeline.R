@@ -252,6 +252,84 @@ test_that("runs the 6 phases in order on the success path", {
 })
 
 
+# ---- cooperative cancellation ----------------------------------------
+
+test_that("cooperative cancel stops the run after fit, before predict", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  flag <- withr::local_tempfile(fileext = ".flag")
+
+  # The fake fit() drops the cancel flag — mimicking the app writing it
+  # while the (long) training phase runs. The post-fit checkpoint then
+  # aborts the pipeline before predict() is ever called.
+  fk  <- make_fake_fordead_2x_module()
+  orig_fp_factory <- fk$fd$workflow$FordeadProcess
+  fk$fd$workflow$FordeadProcess <- function(...) {
+    self <- orig_fp_factory(...)
+    base_fit <- self$fit
+    self$fit <- function() {
+      base_fit()
+      file.create(flag)   # cancel requested during training
+      invisible(NULL)
+    }
+    self
+  }
+
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  events <- list()
+  out <- run_fordead_dieback(
+    con              = make_fake_con(),
+    zone_id          = 1L,
+    cache_dir        = make_cache_dir(),
+    dates_training   = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose          = FALSE,
+    cancel_path      = flag,
+    progress_callback = function(ev) events[[length(events) + 1L]] <<- ev
+  )
+
+  expect_identical(out$status, "cancelled")
+  expect_identical(out$phase, "fit")
+  # predict() must never have run.
+  expect_equal(fk$env$calls, "fit")
+  expect_equal(out$n_scenes, 2L)        # scenes_df from the mocked ingest
+  expect_equal(out$n_alerts_inserted, 0L)
+  # The cancellation event was emitted.
+  currents <- vapply(events,
+                     function(e) if (is.null(e$current)) "" else e$current,
+                     character(1))
+  expect_true("fordead:cancelled" %in% currents)
+})
+
+test_that("a stale cancel flag at entry is ignored; the FORDEAD run completes", {
+  skip_if_no_reticulate(); skip_if_no_sf()
+
+  flag <- withr::local_tempfile(fileext = ".flag")
+  file.create(flag)   # leftover the caller forgot to clear
+
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton")
+
+  expect_warning(
+    out <- run_fordead_dieback(
+      con              = make_fake_con(),
+      zone_id          = 1L,
+      cache_dir        = make_cache_dir(),
+      dates_training   = c("2016-01-01", "2017-12-31"),
+      dates_monitoring = c("2018-01-01", "2018-12-31"),
+      verbose          = FALSE,
+      cancel_path      = flag),
+    "already present at entry")
+  expect_identical(out$status, "success")
+  expect_equal(fk$env$calls, c("fit", "predict"))
+})
+
+
 test_that("model bundle persist is best-effort: a failure warns, run succeeds", {
   skip_if_no_reticulate(); skip_if_no_sf()
 

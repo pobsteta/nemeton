@@ -12,7 +12,7 @@ test_that(".empty_ingest_summary returns the canonical shape", {
   out <- nemeton:::.empty_ingest_summary()
   expect_s3_class(out, "data.frame")
   expect_named(out, c("n_scenes", "n_scenes_cached", "n_obs_inserted",
-                      "n_plots", "bands"))
+                      "n_plots", "bands", "status"))
   expect_equal(nrow(out), 1)
   expect_equal(out$n_scenes, 0L)
   expect_equal(out$n_scenes_cached, 0L)

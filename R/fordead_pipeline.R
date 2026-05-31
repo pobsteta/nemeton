@@ -263,11 +263,23 @@ NULL
 #'   through verbatim (search / scene / band_cached / band_fetched /
 #'   complete). Exceptions raised inside the callback are swallowed
 #'   so a buggy UI never aborts the pipeline. Default `NULL` (silent).
+#' @param cancel_path Optional character path to a cooperative
+#'   cancellation flag file. When `NULL` (default) no polling happens.
+#'   When a path is given, the worker checks `file.exists(cancel_path)`
+#'   at each phase boundary (after ingest, fit, predict); if the file
+#'   appears the current phase is allowed to finish, then the pipeline
+#'   exits with `status = "cancelled"` and a `phase` field naming the
+#'   phase reached. The Python subprocess is **not** force-killed
+#'   (reticulate has no reliable interrupt). A flag already present at
+#'   entry is ignored as a stale leftover — the caller must delete it
+#'   before each call. A `fordead:cancelled` progress event is emitted.
 #'
 #' @return A list with the following fields:
 #'   \describe{
-#'     \item{status}{`"success"` or `"error"`.}
+#'     \item{status}{`"success"`, `"cancelled"`, or `"error"`.}
 #'     \item{message}{Optional human-readable message.}
+#'     \item{phase}{Present only on a `"cancelled"` result — the phase
+#'       (`"ingest"`, `"fit"`, `"predict"`) after which the run stopped.}
 #'     \item{output_dir}{Path where FORDEAD wrote its rasters.}
 #'     \item{zone_id}{The zone id that was processed.}
 #'     \item{n_scenes}{Number of scenes considered.}
@@ -322,7 +334,8 @@ run_fordead_dieback <- function(con,
                                 min_pixels = 5L,
                                 connectivity = 8L,
                                 verbose = TRUE,
-                                progress_callback = NULL) {
+                                progress_callback = NULL,
+                                cancel_path = NULL) {
   t0 <- Sys.time()
 
   .validate_fordead_args(dates_training, dates_monitoring,
@@ -345,6 +358,10 @@ run_fordead_dieback <- function(con,
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
   }
+
+  # Cooperative cancellation checker (no-op when cancel_path is NULL).
+  # Polled at phase boundaries only — see .signal_cancel_fordead().
+  cancelled <- .make_cancel_checker(cancel_path)
 
   env_name <- if (is.null(python_env)) .fordead_default_env() else python_env
 
@@ -510,6 +527,7 @@ run_fordead_dieback <- function(con,
       ))
     }
     end_phase("ingest")
+    .signal_cancel_fordead(cancelled, "ingest", nrow(scenes_df))
 
     # 1. STAC assembly
     begin_phase("stac_assembly")
@@ -549,11 +567,13 @@ run_fordead_dieback <- function(con,
     )
     .capture("fit", { fp$fit() })
     end_phase("fit")
+    .signal_cancel_fordead(cancelled, "fit", nrow(scenes_df))
 
     # 3. predict
     begin_phase("predict")
     .capture("predict", { fp$predict() })
     end_phase("predict")
+    .signal_cancel_fordead(cancelled, "predict", nrow(scenes_df))
 
     # Locate the most recent fordead-written layers and build the
     # `rasters` list the 1.x postprocess expects. The 0..4 class
@@ -718,6 +738,31 @@ run_fordead_dieback <- function(con,
       python_env        = env_name,
       fordead_version   = fordead_version
     )
+  }, nemeton_cancelled = function(cnd) {
+    # Cooperative cancellation requested at a phase boundary. The
+    # current phase was allowed to finish; we exit before the next one.
+    # Whatever was already persisted (e.g. cached bands) stays on disk;
+    # no FORDEAD alerts are inserted on a mid-run cancel.
+    duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    if (verbose) {
+      cli::cli_alert_info(
+        "FORDEAD run cancelled after phase {.val {cnd$phase}}."
+      )
+    }
+    emit(list(current      = "fordead:cancelled",
+              phase_name   = cnd$phase,
+              completed    = as.integer(current_phase_idx),
+              total        = as.integer(total_phases),
+              duration_sec = duration_sec))
+    res <- .empty_fordead_result(output_dir   = output_dir,
+                                 python_env   = env_name,
+                                 status       = "cancelled",
+                                 duration_sec = duration_sec,
+                                 message      = conditionMessage(cnd),
+                                 zone_id      = zone_id,
+                                 n_scenes     = cnd$n_scenes)
+    res$phase <- cnd$phase
+    res
   }, error = function(e) {
     if (verbose) cli::cli_alert_danger("FORDEAD pipeline failed: {conditionMessage(e)}")
     duration_sec <- as.numeric(difftime(Sys.time(), t0, units = "secs"))

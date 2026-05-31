@@ -10,6 +10,28 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-05-31
+
+### Added
+
+- `ingest_sentinel2_timeseries(..., cancel_path = NULL)` — cooperative
+  file-based cancellation. The worker polls `file.exists(cancel_path)`
+  between tiles; when the flag appears it exits cleanly after the
+  current tile, keeping already-committed tiles. The summary gains a
+  `status` column (`"success"` / `"cancelled"`) and an `s2:cancelled`
+  progress event.
+- `run_fordead_dieback(..., cancel_path = NULL)` — same, polled at phase
+  boundaries (after ingest / fit / predict). Returns `status =
+  "cancelled"` with a `phase` field; emits `fordead:cancelled`. The
+  Python subprocess is not force-killed.
+- A cancel flag already present at entry is ignored as a stale leftover
+  (with a warning); `cancel_path = NULL` performs zero filesystem polls.
+
+### Changed
+
+- The `ingest_sentinel2_timeseries()` summary `data.frame` now carries a
+  trailing `status` column (additive; by-name access unaffected).
+
 ## [0.52.1] - 2026-05-30
 
 ### Fixed
