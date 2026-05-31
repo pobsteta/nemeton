@@ -31,12 +31,18 @@
 #' so a scene that hasn't been ingested into `obs_pixel` yet is ignored
 #' even if its COG happens to be on disk.
 #'
-#' @param con A `DBIConnection`.
+#' @param con A `DBIConnection`. Used only to resolve the UGF zone
+#'   polygon for the optional mask (spec 016) — **not** for scene
+#'   enumeration (spec 017: scenes come from the COG cache, so the
+#'   diagnostic is independent of `obs_pixel` / placettes).
 #' @param zone_id Integer scalar. Existing zone in `monitoring_zone`.
-#' @param threshold_ndvi Numeric scalar in `(0, 1)`. Alert if NDVI is
-#'   strictly below this value. Default 0.40.
-#' @param threshold_nbr Numeric scalar in `(0, 1)`. Alert if NBR is
-#'   strictly below this value. Default 0.30.
+#' @param index Character scalar. The single spectral index the alert
+#'   map is built from: `"NDVI"` (default) or `"NBR"`. Spec 017 (v0.55.0)
+#'   dropped the previous "NDVI OR NBR" combination — the map is now
+#'   mono-index.
+#' @param threshold Numeric scalar in `(0, 1)`, or `NULL`. Alert if the
+#'   chosen `index` is strictly below this value. When `NULL` (default)
+#'   it resolves to `0.40` for `"NDVI"` and `0.30` for `"NBR"`.
 #' @param date_from,date_to Date (or character `"YYYY-MM-DD"`) bounding
 #'   the analysis window.
 #' @param mode Character scalar. One of `"count"` or `"rolling"`.
@@ -53,9 +59,9 @@
 #'   Attribute `mode` carries the requested mode for downstream
 #'   styling.
 #'
-#' @seealso [build_index_stack()] (the underlying NDVI / NBR stack
-#'   builder, spec 010), [.get_zone_aoi()] (the shared AOI resolver,
-#'   spec 012), [read_obs_pixel()] (the scene enumerator),
+#' @seealso [build_index_stack()] (the underlying index stack builder,
+#'   spec 010), [.get_zone_aoi()] (the shared AOI resolver, spec 012),
+#'   [compute_fast_alert_mask()] (the 0-4 quartile discretiser),
 #'   [list_fast_alerts_for_zone()] (the legacy per-plot alert table).
 #'
 #' @examples
@@ -73,15 +79,16 @@
 #'
 #' @export
 read_fast_alert_raster <- function(con, zone_id,
-                                   threshold_ndvi = 0.40,
-                                   threshold_nbr  = 0.30,
+                                   index          = c("NDVI", "NBR"),
+                                   threshold      = NULL,
                                    date_from, date_to,
                                    mode           = c("count", "rolling"),
                                    window_days    = 30L,
                                    cache_dir,
                                    apply_zone_mask = TRUE,
                                    mask_polygon    = NULL) {
-  mode <- match.arg(mode)
+  mode  <- match.arg(mode)
+  index <- match.arg(index)
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -93,13 +100,15 @@ read_fast_alert_raster <- function(con, zone_id,
   }
   zid <- as.integer(zone_id)
 
-  .validate_threshold <- function(x, name) {
-    if (!is.numeric(x) || length(x) != 1L || is.na(x) || x <= 0 || x >= 1) {
-      cli::cli_abort("{.arg {name}} must be a single numeric in (0, 1).")
-    }
+  # spec 017 — a single threshold for the chosen index. NULL resolves to
+  # the historical per-index default (NDVI 0.40, NBR 0.30).
+  if (is.null(threshold)) {
+    threshold <- if (index == "NDVI") 0.40 else 0.30
   }
-  .validate_threshold(threshold_ndvi, "threshold_ndvi")
-  .validate_threshold(threshold_nbr,  "threshold_nbr")
+  if (!is.numeric(threshold) || length(threshold) != 1L ||
+      is.na(threshold) || threshold <= 0 || threshold >= 1) {
+    cli::cli_abort("{.arg threshold} must be a single numeric in (0, 1).")
+  }
 
   if (missing(date_from) || missing(date_to)) {
     cli::cli_abort("{.arg date_from} and {.arg date_to} are required.")
@@ -133,19 +142,16 @@ read_fast_alert_raster <- function(con, zone_id,
   }
   wd <- as.integer(window_days)
 
-  # Resolve scenes via obs_pixel — same source of truth as the rest of
-  # the FAST pipeline. A scene whose COGs are on disk but whose obs
-  # weren't ingested into obs_pixel yet is ignored on purpose.
-  obs <- read_obs_pixel(con, zid,
-                        bands     = c("NDVI", "NBR"),
-                        date_from = df,
-                        date_to   = dt)
-  if (!nrow(obs)) {
-    cli::cli_alert_info("No FAST observation in [{.val {df}}, {.val {dt}}] for zone {.val {zid}}.")
+  # spec 017 (v0.55.0) — enumerate scenes from the COG cache, not from
+  # `obs_pixel`. The diagnostic is a per-pixel raster computed before any
+  # placette exists, so it must not depend on `obs_pixel` (which is a
+  # per-plot, placette-keyed table). We list the cached scenes that carry
+  # the bands the chosen `index` needs and fall in [date_from, date_to].
+  scenes_df <- .enumerate_cache_scenes(cache_dir, index, df, dt)
+  if (!nrow(scenes_df)) {
+    cli::cli_alert_info("No cached {.field {index}} scene in [{.val {df}}, {.val {dt}}] under {.path {cache_dir}}.")
     return(NULL)
   }
-  scenes_df <- unique(obs[, c("scene_id", "obs_date"), drop = FALSE])
-  scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
   # Multi-tile AOI: an AOI that straddles MGRS tile boundaries (e.g.
   # villards on T31TFM + T31TGM) is handled per-tile, NOT by handing all
@@ -173,30 +179,29 @@ read_fast_alert_raster <- function(con, zone_id,
   per_tile <- lapply(tiles, function(tile) {
     sub <- scenes_df[!is.na(scenes_df$mgrs) & scenes_df$mgrs == tile, ,
                      drop = FALSE]
-    ndvi <- suppressWarnings(build_index_stack(cache_dir, sub, "NDVI"))
-    nbr  <- suppressWarnings(build_index_stack(cache_dir, sub, "NBR"))
-    if (is.null(ndvi) || is.null(nbr)) return(NULL)
+    # spec 017 — a single index stack (NDVI *or* NBR), not both.
+    stk <- suppressWarnings(build_index_stack(cache_dir, sub, index))
+    if (is.null(stk)) return(NULL)
 
     rn <- if (mode == "count") {
-      .compute_alert_count(ndvi, nbr, threshold_ndvi, threshold_nbr)
+      .compute_alert_count(stk, threshold)
     } else {
-      .compute_alert_rolling(ndvi, nbr,
-                             threshold_ndvi, threshold_nbr,
-                             window_days = wd, date_to = dt)
+      .compute_alert_rolling(stk, threshold, window_days = wd, date_to = dt)
     }
     if (is.null(rn)) return(NULL)
     terra::project(rn, "EPSG:2154", method = method)
   })
   per_tile <- Filter(Negate(is.null), per_tile)
   if (!length(per_tile)) {
-    cli::cli_alert_info("No usable per-tile NDVI/NBR stack for zone {.val {zid}}.")
+    cli::cli_alert_info("No usable per-tile {.field {index}} stack for zone {.val {zid}}.")
     return(NULL)
   }
   out <- if (length(per_tile) == 1L) per_tile[[1L]] else
     do.call(terra::mosaic, c(per_tile, list(fun = "max")))
 
-  names(out)        <- if (mode == "count") "alert_count" else "alert_deficit"
-  attr(out, "mode") <- mode
+  names(out)         <- if (mode == "count") "alert_count" else "alert_deficit"
+  attr(out, "mode")  <- mode
+  attr(out, "index") <- index
 
   # spec 016 (v0.49.0) — apply UGF zone mask by default. Pixels
   # outside the UGFs (= the polygon stored in monitoring_zone.zone_wkt)
@@ -213,50 +218,73 @@ read_fast_alert_raster <- function(con, zone_id,
 
 # ---- internal helpers ------------------------------------------------
 
-# `"count"` mode — sum of per-date boolean (NDVI < tN | NBR < tB).
+# spec 017 — enumerate the cached scenes usable for `index` in the date
+# window, straight from disk (no DB, no obs_pixel). A scene qualifies
+# when its cache directory holds every band the index needs:
+#   NDVI -> B04 + B08,  NBR -> B08 + B12.
+# The directory name is the (sanitised) scene_id, which carries both the
+# sensing date (3rd `_`-field, YYYYMMDD...) and the MGRS tile (5th field).
+.enumerate_cache_scenes <- function(cache_dir, index, date_from, date_to) {
+  bands <- switch(index, NDVI = c("B04", "B08"), NBR = c("B08", "B12"))
+  scene_dirs <- list.dirs(cache_dir, recursive = FALSE)
+  empty <- data.frame(scene_id = character(0), obs_date = as.Date(character(0)),
+                      stringsAsFactors = FALSE)
+  if (!length(scene_dirs)) return(empty)
+  has_bands <- vapply(scene_dirs, function(d)
+    all(file.exists(file.path(d, paste0(bands, ".tif")))), logical(1))
+  scene_dirs <- scene_dirs[has_bands]
+  if (!length(scene_dirs)) return(empty)
+  sid <- basename(scene_dirs)
+  od  <- .s2_scene_date(sid)
+  keep <- !is.na(od) & od >= as.Date(date_from) & od <= as.Date(date_to)
+  out <- data.frame(scene_id = sid[keep], obs_date = od[keep],
+                    stringsAsFactors = FALSE)
+  out[order(out$obs_date), , drop = FALSE]
+}
+
+# Parse the sensing date (3rd `_`-field, first 8 chars = YYYYMMDD) from
+# one or more S2 scene ids. Returns Date (NA when the field is absent).
+.s2_scene_date <- function(scene_id) {
+  parts <- strsplit(as.character(scene_id), "_", fixed = TRUE)
+  ymd <- vapply(parts, function(p)
+    if (length(p) >= 3L) substr(p[[3L]], 1L, 8L) else NA_character_,
+    character(1))
+  as.Date(ymd, format = "%Y%m%d")
+}
+
+# `"count"` mode — count of per-date alerts (index < threshold).
 # NA pixels (cloud mask, no-data) are counted as 0 by `sum(..., na.rm)`.
-.compute_alert_count <- function(ndvi_stack, nbr_stack,
-                                 threshold_ndvi, threshold_nbr) {
-  in_ndvi <- ndvi_stack < threshold_ndvi  # SpatRaster boolean (0/1/NA)
-  in_nbr  <- nbr_stack  < threshold_nbr
-  # Layer-wise OR via max (boolean -> integer arithmetic).
-  in_any  <- max(in_ndvi, in_nbr, na.rm = TRUE)
-  # sum across layers, NA -> 0 contribution.
-  sum(in_any, na.rm = TRUE)
+.compute_alert_count <- function(stack, threshold) {
+  # spec 017 — mono-index. Per date a pixel is "in alert" when the index
+  # is strictly below the threshold; the result is the count of alert
+  # dates per pixel (NA dates contribute 0 via `na.rm`).
+  in_alert <- stack < threshold          # SpatRaster boolean (0/1/NA)
+  sum(in_alert, na.rm = TRUE)
 }
 
 
 # `"rolling"` mode — continuous deficit magnitude on the trailing window.
 # Returns a single-layer SpatRaster aligned with the input stacks, or
 # NULL if no scene falls in the trailing window.
-.compute_alert_rolling <- function(ndvi_stack, nbr_stack,
-                                   threshold_ndvi, threshold_nbr,
-                                   window_days, date_to) {
-  dates <- terra::time(ndvi_stack)
+.compute_alert_rolling <- function(stack, threshold, window_days, date_to) {
+  dates <- terra::time(stack)
   if (length(dates) == 0L) return(NULL)
   win_start <- as.Date(date_to) - as.integer(window_days) + 1L
   in_win    <- dates >= win_start & dates <= as.Date(date_to)
   if (!any(in_win)) return(NULL)
 
-  # Average NDVI / NBR over the trailing window via terra::app — `mean()`
+  # Average the index over the trailing window via terra::app — `mean()`
   # on a SpatRaster returns a global scalar, not a cell-wise reduction.
   # `app` ignores NA per-pixel (so a pixel masked on some dates still
   # gets a value if at least one date is clear).
-  mean_ndvi <- terra::app(ndvi_stack[[which(in_win)]],
-                          fun = mean, na.rm = TRUE)
-  mean_nbr  <- terra::app(nbr_stack[[which(in_win)]],
-                          fun = mean, na.rm = TRUE)
+  mean_x <- terra::app(stack[[which(in_win)]], fun = mean, na.rm = TRUE)
 
-  # Deficit = max(0, threshold - mean) per band, then max across bands.
-  # `terra::clamp(..., lower = 0, values = TRUE)` is robust whether the
-  # values are all non-negative (no clamp needed) or all non-positive
-  # (the `[< 0] <- 0` subset-assignment idiom is fragile in that case
-  # and can collapse the SpatRaster to a numeric).
-  deficit_ndvi <- terra::clamp(threshold_ndvi - mean_ndvi,
-                               lower = 0, values = TRUE)
-  deficit_nbr  <- terra::clamp(threshold_nbr  - mean_nbr,
-                               lower = 0, values = TRUE)
-  max(deficit_ndvi, deficit_nbr, na.rm = FALSE)
+  # Deficit = max(0, threshold - mean). `terra::clamp(..., lower = 0,
+  # values = TRUE)` is robust whether the values are all non-negative
+  # (no clamp needed) or all non-positive (the `[< 0] <- 0`
+  # subset-assignment idiom is fragile in that case and can collapse the
+  # SpatRaster to a numeric).
+  terra::clamp(threshold - mean_x, lower = 0, values = TRUE)
 }
 
 

@@ -26,8 +26,11 @@
 #'
 #' @param con A `DBIConnection`. Passed to [read_fast_alert_raster()].
 #' @param zone_id Integer scalar.
-#' @param threshold_ndvi,threshold_nbr Numeric in `(0, 1)`. Passed
-#'   through to [read_fast_alert_raster()].
+#' @param index Character scalar `"NDVI"` (default) or `"NBR"` — the
+#'   single index the alert map is built from (spec 017).
+#' @param threshold Numeric in `(0, 1)` or `NULL`. Passed through to
+#'   [read_fast_alert_raster()]; `NULL` resolves per `index`
+#'   (NDVI 0.40, NBR 0.30).
 #' @param date_from,date_to Date (or character `"YYYY-MM-DD"`) bounding
 #'   the analysis window.
 #' @param mode One of `"count"` or `"rolling"`. Default `"count"`.
@@ -41,9 +44,14 @@
 #' @param breaks Numeric vector of break points to discretise the
 #'   continuous alert raster into the 0-4 scale. **5 cut points** are
 #'   expected (defines bins `(-Inf, b1], (b1, b2], ..., (b4, Inf]`).
-#'   Default depends on `mode`:
-#'   * `"count"`   : `c(0, 2, 5, 10, Inf)` (cumulative day counts).
-#'   * `"rolling"` : `c(0, 0.05, 0.10, 0.20, Inf)` (deficit magnitude).
+#'   When `NULL` (default, spec 017) the breaks are computed as
+#'   **quartiles of the strictly-positive pixels**: class 0 = no alert
+#'   (value 0), classes 1-4 = the quartile bins
+#'   `c(0, q25, q50, q75, Inf)` of pixels with at least one alert. This
+#'   adaptive scheme applies to **both** `"count"` and `"rolling"`.
+#'   Degenerate distributions (tied quantiles) collapse to fewer
+#'   occupied classes rather than erroring; an all-zero raster maps
+#'   entirely to class 0.
 #'
 #' @return Invisibly, the absolute path to the persisted TIF, or
 #'   `NULL` if [read_fast_alert_raster()] returned `NULL` (no scene
@@ -56,8 +64,8 @@
 #'
 #' @export
 compute_fast_alert_mask <- function(con, zone_id,
-                                    threshold_ndvi = 0.40,
-                                    threshold_nbr  = 0.30,
+                                    index          = c("NDVI", "NBR"),
+                                    threshold      = NULL,
                                     date_from, date_to,
                                     mode           = c("count", "rolling"),
                                     window_days    = 30L,
@@ -66,7 +74,8 @@ compute_fast_alert_mask <- function(con, zone_id,
                                     breaks          = NULL,
                                     apply_zone_mask = TRUE,
                                     mask_polygon    = NULL) {
-  mode <- match.arg(mode)
+  mode  <- match.arg(mode)
+  index <- match.arg(index)
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
@@ -89,14 +98,9 @@ compute_fast_alert_mask <- function(con, zone_id,
     dir.create(zone_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
-  # Default breaks per mode.
-  if (is.null(breaks)) {
-    breaks <- switch(mode,
-      count   = c(0, 2, 5, 10, Inf),
-      rolling = c(0, 0.05, 0.10, 0.20, Inf)
-    )
-  }
-  if (!is.numeric(breaks) || length(breaks) != 5L) {
+  # An explicitly-supplied `breaks` is validated up front; the default
+  # (quartiles) is computed below, once the continuous raster exists.
+  if (!is.null(breaks) && (!is.numeric(breaks) || length(breaks) != 5L)) {
     cli::cli_abort("{.arg breaks} must be a numeric vector of length 5 (5 cut points).")
   }
 
@@ -107,8 +111,8 @@ compute_fast_alert_mask <- function(con, zone_id,
   cont <- read_fast_alert_raster(
     con             = con,
     zone_id         = zid,
-    threshold_ndvi  = threshold_ndvi,
-    threshold_nbr   = threshold_nbr,
+    index           = index,
+    threshold       = threshold,
     date_from       = date_from,
     date_to         = date_to,
     mode            = mode,
@@ -120,6 +124,14 @@ compute_fast_alert_mask <- function(con, zone_id,
   if (is.null(cont)) {
     cli::cli_alert_info("No FAST alert raster to persist for zone {.val {zid}}.")
     return(invisible(NULL))
+  }
+
+  # spec 017 (D2) — adaptive quartile breaks on the strictly-positive
+  # pixels. Class 0 = no alert (value 0); classes 1-4 = the quartile
+  # bins of pixels that have at least one alert. Same scheme for count
+  # and rolling.
+  if (is.null(breaks)) {
+    breaks <- .fast_alert_quartile_breaks(cont)
   }
 
   # Discretise: 0 for value <= breaks[1] (= 0 by default), then 1..4
@@ -150,6 +162,23 @@ compute_fast_alert_mask <- function(con, zone_id,
     }
   )
   invisible(out_path)
+}
+
+
+# spec 017 (D2) — 0-4 discretisation breaks from quartiles of the
+# strictly-positive pixels of `cont`. Returns 5 cut points
+# `c(0, q25, q50, q75, Inf)`: the bin `(-Inf, 0]` is class 0 (no alert),
+# then the four quartile bins are classes 1-4. An all-zero / all-NA
+# raster yields `c(0, 1, 2, 3, Inf)` (every pixel falls in class 0).
+# Tied quantiles are kept as-is — they make the corresponding upper
+# bins empty (fewer occupied classes), never an error.
+.fast_alert_quartile_breaks <- function(cont) {
+  vals <- terra::values(cont, mat = FALSE)
+  pos  <- vals[!is.na(vals) & vals > 0]
+  if (!length(pos)) return(c(0, 1, 2, 3, Inf))
+  qs <- as.numeric(stats::quantile(pos, probs = c(.25, .5, .75),
+                                   names = FALSE, type = 7))
+  c(0, qs, Inf)
 }
 
 

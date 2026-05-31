@@ -7,8 +7,8 @@
 read_fast_alert_raster(
   con,
   zone_id,
-  threshold_ndvi = 0.4,
-  threshold_nbr = 0.3,
+  index = c("NDVI", "NBR"),
+  threshold = NULL,
   date_from,
   date_to,
   mode = c("count", "rolling"),
@@ -19,15 +19,21 @@ read_fast_alert_raster(
 )
 }
 \arguments{
-\item{con}{A `DBIConnection`.}
+\item{con}{A `DBIConnection`. Used only to resolve the UGF zone
+polygon for the optional mask (spec 016) — **not** for scene
+enumeration (spec 017: scenes come from the COG cache, so the
+diagnostic is independent of `obs_pixel` / placettes).}
 
 \item{zone_id}{Integer scalar. Existing zone in `monitoring_zone`.}
 
-\item{threshold_ndvi}{Numeric scalar in `(0, 1)`. Alert if NDVI is
-strictly below this value. Default 0.40.}
+\item{index}{Character scalar. The single spectral index the alert
+map is built from: `"NDVI"` (default) or `"NBR"`. Spec 017 (v0.55.0)
+dropped the previous "NDVI OR NBR" combination — the map is now
+mono-index.}
 
-\item{threshold_nbr}{Numeric scalar in `(0, 1)`. Alert if NBR is
-strictly below this value. Default 0.30.}
+\item{threshold}{Numeric scalar in `(0, 1)`, or `NULL`. Alert if the
+chosen `index` is strictly below this value. When `NULL` (default)
+it resolves to `0.40` for `"NDVI"` and `0.30` for `"NBR"`.}
 
 \item{date_from, date_to}{Date (or character `"YYYY-MM-DD"`) bounding
 the analysis window.}
@@ -97,8 +103,8 @@ even if its COG happens to be on disk.
 
 }
 \seealso{
-[build_index_stack()] (the underlying NDVI / NBR stack
-  builder, spec 010), [.get_zone_aoi()] (the shared AOI resolver,
-  spec 012), [read_obs_pixel()] (the scene enumerator),
+[build_index_stack()] (the underlying index stack builder,
+  spec 010), [.get_zone_aoi()] (the shared AOI resolver, spec 012),
+  [compute_fast_alert_mask()] (the 0-4 quartile discretiser),
   [list_fast_alerts_for_zone()] (the legacy per-plot alert table).
 }

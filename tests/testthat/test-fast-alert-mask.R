@@ -84,6 +84,45 @@ test_that("compute_fast_alert_mask validates inputs", {
 })
 
 
+# ---- spec 017: quartile discretisation -------------------------------
+
+test_that(".fast_alert_quartile_breaks: quartiles of strictly-positive pixels", {
+  skip_if_not_installed("terra")
+  r  <- terra::rast(nrows = 1, ncols = 8, vals = c(0, 0, 1, 2, 3, 4, 5, 6))
+  br <- nemeton:::.fast_alert_quartile_breaks(r)
+  expect_length(br, 5L)
+  expect_equal(br[1], 0)
+  expect_identical(br[5], Inf)
+  expect_equal(br[2:4],
+               as.numeric(stats::quantile(1:6, c(.25, .5, .75), names = FALSE)))
+})
+
+test_that(".fast_alert_quartile_breaks: all-zero raster maps to class 0", {
+  skip_if_not_installed("terra")
+  r <- terra::rast(nrows = 1, ncols = 4, vals = c(0, 0, 0, 0))
+  expect_equal(nemeton:::.fast_alert_quartile_breaks(r), c(0, 1, 2, 3, Inf))
+})
+
+test_that(".fast_alert_quartile_breaks: NA ignored, tied quantiles tolerated", {
+  skip_if_not_installed("terra")
+  r  <- terra::rast(nrows = 1, ncols = 5, vals = c(NA, 0, 1, 1, 1))
+  expect_equal(nemeton:::.fast_alert_quartile_breaks(r), c(0, 1, 1, 1, Inf))
+})
+
+test_that("0-4 classify tolerates tied quartile breaks (degenerate)", {
+  skip_if_not_installed("terra")
+  r  <- terra::rast(nrows = 1, ncols = 5, vals = c(0, 1, 1, 1, 2))
+  br <- c(0, 1, 1, 1, Inf)
+  rcl <- matrix(c(-Inf, br[1], 0, br[1], br[2], 1, br[2], br[3], 2,
+                  br[3], br[4], 3, br[4], br[5], 4), ncol = 3, byrow = TRUE)
+  m <- terra::classify(r, rcl, include.lowest = TRUE, right = TRUE)
+  vals <- as.vector(terra::values(m))
+  expect_true(all(vals %in% 0:4))
+  expect_equal(vals[1], 0)    # value 0 -> class 0
+  expect_equal(vals[5], 4)    # value 2 (> 1) -> class 4
+})
+
+
 # ---- integration: end-to-end compute + read --------------------------
 
 test_that("compute_fast_alert_mask + read round-trip on villards", {
@@ -101,8 +140,7 @@ test_that("compute_fast_alert_mask + read round-trip on villards", {
 
   td <- withr::local_tempdir()
   out_path <- compute_fast_alert_mask(
-    con, zone_id = 1L,
-    threshold_ndvi = 0.40, threshold_nbr = 0.30,
+    con, zone_id = 1L, index = "NDVI",
     date_from = "2025-05-23", date_to = "2026-05-23",
     mode = "count",
     cache_dir = cache, mask_cache_dir = td)

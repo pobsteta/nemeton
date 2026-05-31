@@ -1,3 +1,42 @@
+# nemeton 0.55.0 (2026-05-31)
+
+### Changed — carte d'alertes FAST : indicateur unique, classes quartiles, énumération cache (spec 017, phase sémantique)
+
+Le **Diagnostic FAST** est la **carte d'alertes raster per-pixel**
+(`read_fast_alert_raster()`), pas l'ingestion per-placette. Trois
+changements de fond (BREAKING comportement, MINOR en 0.x) :
+
+- **Indicateur unique** (D1) : nouveau paramètre `index = c("NDVI",
+  "NBR")` (défaut `NDVI`). La carte est fonction d'**un seul** indice au
+  choix ; le « NDVI OU NBR » combiné est **supprimé**. Les paramètres
+  `threshold_ndvi` / `threshold_nbr` sont remplacés par un unique
+  `threshold` (NULL → 0.40 pour NDVI, 0.30 pour NBR). Bonus perf : une
+  seule pile d'indice au lieu de deux.
+- **Classes en quartiles** (D2) : `compute_fast_alert_mask()` discrétise
+  désormais le raster continu en quartiles des **pixels en alerte** —
+  classe 0 = pas d'alerte (valeur 0), classes 1-4 = quartiles des valeurs
+  strictement positives (`c(0, q25, q50, q75, Inf)`), pour **count ET
+  rolling**. Remplace les seuils fixes (`c(0,2,5,10,Inf)` /
+  `c(0,0.05,0.10,0.20,Inf)`). `breaks` reste surchargeable ; les
+  distributions dégénérées (quantiles égaux, raster tout-à-zéro) sont
+  gérées sans erreur.
+- **Énumération des scènes depuis le cache COG** (D3) :
+  `read_fast_alert_raster()` liste ses scènes directement dans
+  `cache_dir` (répertoires possédant les bandes de l'`index`, filtrés par
+  date), **sans passer par `obs_pixel`**. Le diagnostic est donc
+  **indépendant des placettes** (qui sont construites *après*). `con` /
+  `zone_id` ne servent plus qu'au masque UGF (spec 016).
+
+Helpers internes : `.enumerate_cache_scenes()`, `.s2_scene_date()`,
+`.fast_alert_quartile_breaks()`. `.compute_alert_count()` /
+`.compute_alert_rolling()` réécrits en mono-indice.
+
+**Côté app `nemetonshiny`** (à venir) : exposer un toggle indicateur
+NDVI/NBR ; et corriger le désalignement du bouton « Diagnostic FAST »
+(il appelle l'ingest per-placette au lieu de `read_fast_alert_raster()`).
+Plancher `Imports: nemeton (>= 0.55.0)`. Spec 017 (phases perf à suivre :
+persistance content-addressed v0.56.0, parallélisation v0.57.0).
+
 # nemeton 0.54.0 (2026-05-31)
 
 ### Changed — isolation de la DB de test (`NEMETON_DB_URL_TEST`)

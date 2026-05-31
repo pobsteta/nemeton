@@ -10,6 +10,29 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-05-31
+
+### Changed
+
+- FAST alert map (`read_fast_alert_raster`) is now **mono-index**: new
+  `index = c("NDVI","NBR")` (default NDVI) and a single `threshold`
+  replace `threshold_ndvi`/`threshold_nbr`; the NDVI-OR-NBR combination
+  is dropped (spec 017 D1).
+- `compute_fast_alert_mask` discretises into **quartiles of the
+  strictly-positive pixels** (class 0 = no alert; classes 1-4 =
+  `c(0, q25, q50, q75, Inf)`) for both `count` and `rolling`, replacing
+  the fixed breaks (spec 017 D2). `breaks` stays overridable.
+- `read_fast_alert_raster` enumerates scenes **from the COG cache**, not
+  from `obs_pixel` — the raster diagnostic is now independent of
+  placettes (spec 017 D3). `con`/`zone_id` are used only for the UGF mask.
+
+### Added
+
+- Internal helpers `.enumerate_cache_scenes()`, `.s2_scene_date()`,
+  `.fast_alert_quartile_breaks()`.
+- `specs/017-fast-alert-raster-perf/spec.md` (D1-D6; perf phases D6/D4
+  follow in v0.56.0 / v0.57.0).
+
 ## [0.54.0] - 2026-05-31
 
 ### Changed

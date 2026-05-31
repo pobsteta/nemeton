@@ -7,8 +7,8 @@
 compute_fast_alert_mask(
   con,
   zone_id,
-  threshold_ndvi = 0.4,
-  threshold_nbr = 0.3,
+  index = c("NDVI", "NBR"),
+  threshold = NULL,
   date_from,
   date_to,
   mode = c("count", "rolling"),
@@ -25,8 +25,12 @@ compute_fast_alert_mask(
 
 \item{zone_id}{Integer scalar.}
 
-\item{threshold_ndvi, threshold_nbr}{Numeric in `(0, 1)`. Passed
-through to [read_fast_alert_raster()].}
+\item{index}{Character scalar `"NDVI"` (default) or `"NBR"` — the
+single index the alert map is built from (spec 017).}
+
+\item{threshold}{Numeric in `(0, 1)` or `NULL`. Passed through to
+[read_fast_alert_raster()]; `NULL` resolves per `index`
+(NDVI 0.40, NBR 0.30).}
 
 \item{date_from, date_to}{Date (or character `"YYYY-MM-DD"`) bounding
 the analysis window.}
@@ -46,9 +50,14 @@ Defaults to a `fast/` sibling of `cache_dir` (i.e.
 \item{breaks}{Numeric vector of break points to discretise the
 continuous alert raster into the 0-4 scale. **5 cut points** are
 expected (defines bins `(-Inf, b1], (b1, b2], ..., (b4, Inf]`).
-Default depends on `mode`:
-* `"count"`   : `c(0, 2, 5, 10, Inf)` (cumulative day counts).
-* `"rolling"` : `c(0, 0.05, 0.10, 0.20, Inf)` (deficit magnitude).}
+When `NULL` (default, spec 017) the breaks are computed as
+**quartiles of the strictly-positive pixels**: class 0 = no alert
+(value 0), classes 1-4 = the quartile bins
+`c(0, q25, q50, q75, Inf)` of pixels with at least one alert. This
+adaptive scheme applies to **both** `"count"` and `"rolling"`.
+Degenerate distributions (tied quantiles) collapse to fewer
+occupied classes rather than erroring; an all-zero raster maps
+entirely to class 0.}
 }
 \value{
 Invisibly, the absolute path to the persisted TIF, or

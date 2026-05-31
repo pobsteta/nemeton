@@ -1,17 +1,7 @@
-# test-fast-alert-raster.R — spec 013: pixel-level FAST alert raster.
+# test-fast-alert-raster.R — spec 013 (pixel-level FAST alert raster) +
+# spec 017 (mono-index, quartile classes, cache-based scene enumeration).
 
 # ---- unit: input validation ------------------------------------------
-
-test_that("read_fast_alert_raster rejects non-DBIConnection", {
-  # The DBI check is enforced downstream by read_obs_pixel() whose
-  # message is "`con` must be a DBI connection." (space, lowercase c).
-  expect_error(
-    read_fast_alert_raster("not-a-con", 1L,
-                           date_from = "2025-01-01", date_to = "2025-12-31",
-                           cache_dir = tempdir()),
-    regexp = "DBI"
-  )
-})
 
 test_that("read_fast_alert_raster rejects bad zone_id", {
   expect_error(
@@ -23,21 +13,29 @@ test_that("read_fast_alert_raster rejects bad zone_id", {
   )
 })
 
-test_that("read_fast_alert_raster rejects bad thresholds", {
+test_that("read_fast_alert_raster rejects a bad threshold", {
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   expect_error(
-    read_fast_alert_raster(con, 1L,
-                           threshold_ndvi = -0.1,
+    read_fast_alert_raster(con, 1L, threshold = -0.1,
                            date_from = "2025-01-01", date_to = "2025-12-31",
                            cache_dir = tempdir()),
     regexp = "in \\(0, 1\\)"
   )
   expect_error(
-    read_fast_alert_raster(con, 1L,
-                           threshold_nbr = 1.5,
+    read_fast_alert_raster(con, 1L, threshold = 1.5,
                            date_from = "2025-01-01", date_to = "2025-12-31",
                            cache_dir = tempdir()),
     regexp = "in \\(0, 1\\)"
+  )
+})
+
+test_that("read_fast_alert_raster rejects a bad index", {
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  expect_error(
+    read_fast_alert_raster(con, 1L, index = "EVI",
+                           date_from = "2025-01-01", date_to = "2025-12-31",
+                           cache_dir = tempdir()),
+    regexp = "should be one of"
   )
 })
 
@@ -79,6 +77,62 @@ test_that("rolling mode rejects bad window_days", {
 })
 
 
+# ---- spec 017: cache enumeration + mono-index ------------------------
+
+test_that(".enumerate_cache_scenes selects by index bands and date window", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  mk <- function(sid, bands) {
+    d <- file.path(cache, sid)
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+    for (b in bands) file.create(file.path(d, paste0(b, ".tif")))
+  }
+  mk("S2A_MSIL2A_20250115T103041_R108_T31TFM_x", c("B04", "B08"))         # NDVI, in window
+  mk("S2A_MSIL2A_20250220T103041_R108_T31TGM_x", c("B08", "B12"))         # NBR only, in window
+  mk("S2A_MSIL2A_20240101T103041_R108_T31TFM_x", c("B04", "B08"))         # NDVI, OUT of window
+  mk("S2A_MSIL2A_20250301T103041_R108_T31TFM_x", c("B08"))               # incomplete
+
+  ndvi <- nemeton:::.enumerate_cache_scenes(
+    cache, "NDVI", as.Date("2025-01-01"), as.Date("2025-12-31"))
+  expect_equal(nrow(ndvi), 1L)
+  expect_match(ndvi$scene_id, "20250115")
+  expect_equal(ndvi$obs_date, as.Date("2025-01-15"))
+
+  nbr <- nemeton:::.enumerate_cache_scenes(
+    cache, "NBR", as.Date("2025-01-01"), as.Date("2025-12-31"))
+  expect_equal(nrow(nbr), 1L)
+  expect_match(nbr$scene_id, "20250220")
+})
+
+test_that("read_fast_alert_raster(index=NDVI) needs no B12; index=NBR needs B12", {
+  skip_if_not_installed("terra")
+  cache <- withr::local_tempdir()
+  # A single scene with only B04 + B08 (NDVI-renderable, NOT NBR).
+  sid <- "S2A_MSIL2A_20250530T103041_R108_T31TFM_x"
+  d <- file.path(cache, sid); dir.create(d, recursive = TRUE)
+  for (b in c("B04", "B08")) {
+    val <- if (b == "B04") 0.6 else 0.1   # NDVI = (0.1-0.6)/(0.7) < 0 < 0.4 -> alert
+    r <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 100,
+                     ymin = 0, ymax = 100, crs = "EPSG:32631", vals = rep(val, 100))
+    terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+
+  rn <- suppressMessages(read_fast_alert_raster(
+    con, 1L, index = "NDVI", date_from = "2025-05-01", date_to = "2025-06-01",
+    mode = "count", cache_dir = cache, apply_zone_mask = FALSE))
+  expect_s4_class(rn, "SpatRaster")
+  expect_identical(attr(rn, "index"), "NDVI")
+
+  # NBR needs B12 (absent) -> no usable scene -> NULL.
+  rb <- suppressMessages(read_fast_alert_raster(
+    con, 1L, index = "NBR", date_from = "2025-05-01", date_to = "2025-06-01",
+    mode = "count", cache_dir = cache, apply_zone_mask = FALSE))
+  expect_null(rb)
+})
+
+
 # ---- unit: helpers against synthetic stacks --------------------------
 
 make_synthetic_stack <- function(values_per_layer, dates) {
@@ -95,95 +149,60 @@ make_synthetic_stack <- function(values_per_layer, dates) {
   out
 }
 
-test_that(".compute_alert_count counts per-pixel days in alert", {
-  # 4x4 pixels, 3 dates. Pixel (1,1) below NDVI threshold on dates 1 and 3.
-  # Pixel (1,2) below NBR on date 2 only. Others well above.
-  ndvi_layers <- list(
-    matrix(c(0.2, 0.6, rep(0.6, 14)), nrow = 4, byrow = TRUE),  # date 1: pixel(1,1) at 0.2
-    matrix(0.6, nrow = 4, ncol = 4),                            # date 2: nothing
-    matrix(c(0.2, 0.6, rep(0.6, 14)), nrow = 4, byrow = TRUE)   # date 3: pixel(1,1) at 0.2
+test_that(".compute_alert_count counts per-pixel dates in alert (mono-index)", {
+  # 4x4 pixels, 3 dates. Pixel (1,1) below threshold on dates 1 and 3.
+  # Pixel (1,2) below threshold on date 2 only. Others well above.
+  layers <- list(
+    matrix(c(0.2, 0.6, rep(0.6, 14)), nrow = 4, byrow = TRUE),  # date 1: (1,1)
+    matrix(c(0.6, 0.2, rep(0.6, 14)), nrow = 4, byrow = TRUE),  # date 2: (1,2)
+    matrix(c(0.2, 0.6, rep(0.6, 14)), nrow = 4, byrow = TRUE)   # date 3: (1,1)
   )
-  nbr_layers <- list(
-    matrix(0.5, nrow = 4, ncol = 4),
-    matrix(c(0.5, 0.1, rep(0.5, 14)), nrow = 4, byrow = TRUE),  # date 2: pixel(1,2) at 0.1
-    matrix(0.5, nrow = 4, ncol = 4)
-  )
-  dates <- as.Date(c("2025-06-01", "2025-06-10", "2025-06-20"))
-  ndvi <- make_synthetic_stack(ndvi_layers, dates)
-  nbr  <- make_synthetic_stack(nbr_layers,  dates)
-
-  out <- .compute_alert_count(ndvi, nbr,
-                              threshold_ndvi = 0.4, threshold_nbr = 0.3)
-  # `terra::values(out)` is an ncell × nlyr matrix; for a single-layer
-  # raster, index cells with `[i]` (raster row-major from top-left).
+  stk <- make_synthetic_stack(layers,
+                              as.Date(c("2025-06-01", "2025-06-10", "2025-06-20")))
+  out  <- .compute_alert_count(stk, threshold = 0.4)
   vals <- as.vector(terra::values(out))
 
-  expect_equal(vals[1], 2)  # cell #1 = pixel (row 1, col 1): NDVI alert dates 1 & 3
-  expect_equal(vals[2], 1)  # cell #2 = pixel (row 1, col 2): NBR alert date 2
-  rest <- vals[-c(1, 2)]
-  expect_true(all(rest == 0))
+  expect_equal(vals[1], 2)  # pixel (1,1): alert dates 1 & 3
+  expect_equal(vals[2], 1)  # pixel (1,2): alert date 2
+  expect_true(all(vals[-c(1, 2)] == 0))
 })
 
-test_that(".compute_alert_count is bounded by the number of layers", {
-  # All-zero stack -> every pixel in alert on every date -> max = N_dates.
-  ndvi <- make_synthetic_stack(list(matrix(0, 4, 4), matrix(0, 4, 4)),
-                               as.Date(c("2025-06-01", "2025-06-10")))
-  nbr  <- make_synthetic_stack(list(matrix(0, 4, 4), matrix(0, 4, 4)),
-                               as.Date(c("2025-06-01", "2025-06-10")))
-  out <- .compute_alert_count(ndvi, nbr, 0.4, 0.3)
+test_that(".compute_alert_count is bounded by the number of dates", {
+  stk <- make_synthetic_stack(list(matrix(0, 4, 4), matrix(0, 4, 4)),
+                              as.Date(c("2025-06-01", "2025-06-10")))
+  out <- .compute_alert_count(stk, threshold = 0.4)
   expect_true(all(terra::values(out) == 2))
 })
 
 
 test_that(".compute_alert_rolling returns deficit magnitude on trailing window", {
-  # 3 dates, window = 15 days. Only dates 2 & 3 fall in trailing window
-  # (date_to = 2025-06-20, win_start = 2025-06-06).
-  ndvi_layers <- list(
-    matrix(0.10, 4, 4),  # date 1 (outside window): deep alert
-    matrix(0.30, 4, 4),  # date 2 (in window): deficit = 0.4 - 0.30 = 0.10
-    matrix(0.30, 4, 4)   # date 3 (in window): deficit = 0.4 - 0.30 = 0.10
+  # 3 dates, window = 15 days. Only dates 2 & 3 fall in trailing window.
+  layers <- list(
+    matrix(0.10, 4, 4),  # date 1 (outside window)
+    matrix(0.30, 4, 4),  # date 2 (in window): deficit = 0.40 - 0.30 = 0.10
+    matrix(0.30, 4, 4)   # date 3 (in window): deficit = 0.10
   )
-  nbr_layers <- list(
-    matrix(0.40, 4, 4),  # all OK NBR
-    matrix(0.40, 4, 4),
-    matrix(0.40, 4, 4)
-  )
-  dates <- as.Date(c("2025-05-01", "2025-06-10", "2025-06-20"))
-  ndvi <- make_synthetic_stack(ndvi_layers, dates)
-  nbr  <- make_synthetic_stack(nbr_layers,  dates)
-
-  out <- .compute_alert_rolling(ndvi, nbr,
-                                threshold_ndvi = 0.40, threshold_nbr = 0.30,
+  stk <- make_synthetic_stack(layers,
+                              as.Date(c("2025-05-01", "2025-06-10", "2025-06-20")))
+  out <- .compute_alert_rolling(stk, threshold = 0.40,
                                 window_days = 15L, date_to = as.Date("2025-06-20"))
-  vals <- terra::values(out)
-
-  # mean NDVI over window = (0.30 + 0.30)/2 = 0.30, deficit = 0.40 - 0.30 = 0.10
-  # mean NBR  over window = 0.40, deficit = 0
-  # output = max(0.10, 0) = 0.10
-  expect_true(all(abs(vals - 0.10) < 1e-9))
+  # mean over window = 0.30, deficit = 0.40 - 0.30 = 0.10
+  expect_true(all(abs(terra::values(out) - 0.10) < 1e-9))
 })
 
 
 test_that(".compute_alert_rolling returns NULL when no scene in window", {
-  ndvi <- make_synthetic_stack(list(matrix(0.5, 4, 4)),
-                               as.Date("2025-01-01"))
-  nbr  <- make_synthetic_stack(list(matrix(0.5, 4, 4)),
-                               as.Date("2025-01-01"))
-  out <- .compute_alert_rolling(ndvi, nbr,
-                                threshold_ndvi = 0.40, threshold_nbr = 0.30,
-                                window_days = 15L,
-                                date_to = as.Date("2025-12-01"))
+  stk <- make_synthetic_stack(list(matrix(0.5, 4, 4)), as.Date("2025-01-01"))
+  out <- .compute_alert_rolling(stk, threshold = 0.40,
+                                window_days = 15L, date_to = as.Date("2025-12-01"))
   expect_null(out)
 })
 
 
-test_that(".compute_alert_rolling deficit = 0 when all means are above thresholds", {
-  ndvi <- make_synthetic_stack(list(matrix(0.60, 4, 4), matrix(0.60, 4, 4)),
-                               as.Date(c("2025-06-10", "2025-06-20")))
-  nbr  <- make_synthetic_stack(list(matrix(0.50, 4, 4), matrix(0.50, 4, 4)),
-                               as.Date(c("2025-06-10", "2025-06-20")))
-  out <- .compute_alert_rolling(ndvi, nbr,
-                                threshold_ndvi = 0.40, threshold_nbr = 0.30,
+test_that(".compute_alert_rolling deficit = 0 when the mean is above threshold", {
+  stk <- make_synthetic_stack(list(matrix(0.60, 4, 4), matrix(0.60, 4, 4)),
+                              as.Date(c("2025-06-10", "2025-06-20")))
+  out <- .compute_alert_rolling(stk, threshold = 0.40,
                                 window_days = 30L, date_to = as.Date("2025-06-20"))
   expect_true(all(terra::values(out) == 0))
 })
@@ -223,15 +242,12 @@ test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosai
   write_tile_scene(sid_fm, xmax = 60)    # narrow (overlap strip)
   write_tile_scene(sid_gm, xmax = 120)   # wide (full AOI), FM ⊂ GM
 
-  fake_obs <- data.frame(
-    scene_id = c(sid_fm, sid_gm),
-    obs_date = as.Date(c("2025-05-30", "2025-05-30")),
-    stringsAsFactors = FALSE)
-  testthat::local_mocked_bindings(read_obs_pixel = function(...) fake_obs)
-
+  # spec 017 — scenes are enumerated straight from the cache (the two
+  # dirs above), no obs_pixel / DB involved. apply_zone_mask = FALSE so
+  # `con` is never touched.
   con <- structure(list(), class = c("FakeConn", "DBIConnection"))
   r <- suppressMessages(read_fast_alert_raster(
-    con, zone_id = 1L,
+    con, zone_id = 1L, index = "NDVI",
     date_from = "2025-05-01", date_to = "2025-06-01",
     mode = "count", cache_dir = cache,
     apply_zone_mask = FALSE))
@@ -274,15 +290,15 @@ test_that("end-to-end smoke test against villards (count mode)", {
   if (!has_zone) testthat::skip("zone_id=1 not in DB on this machine")
 
   r <- read_fast_alert_raster(
-    con, zone_id = 1L,
-    threshold_ndvi = 0.40, threshold_nbr = 0.30,
+    con, zone_id = 1L, index = "NDVI",
     date_from = "2025-05-23", date_to = "2026-05-23",
     mode = "count", cache_dir = cache)
 
   expect_s4_class(r, "SpatRaster")
   expect_equal(sf::st_crs(r)$epsg, 2154L)
   expect_equal(names(r), "alert_count")
+  expect_identical(attr(r, "index"), "NDVI")
   rng <- terra::minmax(r)
   expect_true(rng[1, 1] >= 0)
-  expect_true(rng[2, 1] <= 60)  # not more than the # of scenes (55 in villards)
+  expect_true(rng[2, 1] <= 130)  # bounded by the # of NDVI scenes in window
 })

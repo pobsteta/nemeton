@@ -103,9 +103,18 @@ test_that("read_fast_alert_raster(apply_zone_mask = FALSE) skips mask", {
   expect_equal(terra::xmax(r_masked), terra::xmax(r_full))
   expect_equal(terra::ymin(r_masked), terra::ymin(r_full))
   expect_equal(terra::ymax(r_masked), terra::ymax(r_full))
-  # But masked has more NA cells than the un-masked one (villards is
-  # ~30 % of its bbox, so ~70 % of pixels should turn NA).
+  # Masking can only ADD NA, never remove. It strictly adds NA only when
+  # the UGF polygon is meaningfully smaller than its bbox (non-rectangular
+  # zones). villards' geometry can be ~rectangular after a
+  # re-registration, in which case masking removes nothing — so the
+  # strict assertion is guarded on the polygon-to-bbox ratio.
   n_na_masked <- sum(is.na(terra::values(r_masked)))
   n_na_full   <- sum(is.na(terra::values(r_full)))
-  expect_gt(n_na_masked, n_na_full)
+  expect_gte(n_na_masked, n_na_full)
+
+  poly <- nemeton:::.get_zone_aoi(con, 1L)
+  bb   <- sf::st_bbox(sf::st_transform(poly, 2154))
+  frac <- as.numeric(sum(sf::st_area(sf::st_transform(poly, 2154)))) /
+          as.numeric((bb["xmax"] - bb["xmin"]) * (bb["ymax"] - bb["ymin"]))
+  if (frac < 0.95) expect_gt(n_na_masked, n_na_full)  # non-rectangular UGF
 })
