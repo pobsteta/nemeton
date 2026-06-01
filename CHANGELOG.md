@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.55.2] - 2026-06-01
+
+### Fixed
+
+- `db_migrate()` : `INSERT INTO schema_migration … ON CONFLICT DO NOTHING`
+  (sans colonne cible) n'est valide que sur SQLite ≥ 3.35.0 ; routage par
+  backend vers `INSERT OR IGNORE` sur SQLite (no-op sous PostgreSQL).
+- `.insert_fordead_alerts()` et `detect_alerts()` : ajout de `WHERE 1=1`
+  sur le `SELECT` des `INSERT … SELECT … ON CONFLICT` pour lever
+  l'ambiguïté d'analyse UPSERT/jointure de SQLite (`near "DO": syntax
+  error`). Complète le correctif `.insert_obs_pixel()` de la v0.55.1.
+- Tests de non-régression SQLite ajoutés (`test-fordead-alert-insert-sqlite.R`,
+  `helper-sqlite.R`).
+
 ## [0.55.1] - 2026-06-01
 
 ### Fixed
