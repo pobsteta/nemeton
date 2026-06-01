@@ -1282,9 +1282,16 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     }
     DBI::dbAppendTable(con, staging, obs)
     rs <- .db_execute(con, sprintf(
+      # The `WHERE 1=1` is mandatory, not cosmetic: when an INSERT draws
+      # its rows from a SELECT, SQLite cannot tell whether the trailing
+      # `ON` opens the UPSERT clause or a join's `ON`. It mis-parses
+      # `ON CONFLICT (...)` as a join condition and then fails at `DO`
+      # (`near \"DO\": syntax error`). A WHERE clause on the SELECT
+      # disambiguates the grammar. Harmless and a no-op under Postgres.
       "INSERT INTO obs_pixel (plot_id, obs_date, band, value, cloud_pct, source, scene_id)
          SELECT plot_id, obs_date, band, value, cloud_pct, source, scene_id
          FROM %s
+         WHERE 1=1
        ON CONFLICT (plot_id, obs_date, band) DO NOTHING",
       staging))
     if (!is_pg) {
