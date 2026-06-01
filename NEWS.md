@@ -1,3 +1,19 @@
+# nemeton 0.55.1 (2026-06-01)
+
+### Fixed — worker fatal `near "DO": syntax error` sur le backend SQLite local
+
+L'ingestion Sentinel-2 plantait (`Worker fatal error … near "DO":
+syntax error`) dès le premier `INSERT` de pixels sur le backend SQLite
+local. `.insert_obs_pixel()` charge en masse via une table de staging
+avec `INSERT INTO obs_pixel … SELECT … FROM staging ON CONFLICT (…) DO
+NOTHING`. Quand un `INSERT` tire ses lignes d'un `SELECT`, l'analyseur
+SQLite ne peut pas distinguer si le `ON` final ouvre la clause UPSERT
+ou le `ON` d'une jointure : il interprète mal `ON CONFLICT (…)` et
+échoue sur `DO`. Conformément à la documentation SQLite, une clause
+`WHERE 1=1` sur le `SELECT` lève l'ambiguïté grammaticale. Correctif
+sans effet sous PostgreSQL (no-op). Nouveau test de non-régression sur
+le backend SQLite réel (`test-insert-obs-pixel-sqlite.R`).
+
 # nemeton 0.55.0 (2026-05-31)
 
 ### Changed — carte d'alertes FAST : indicateur unique, classes quartiles, énumération cache (spec 017, phase sémantique)

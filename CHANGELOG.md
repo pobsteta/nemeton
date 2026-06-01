@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.55.1] - 2026-06-01
+
+### Fixed
+
+- `.insert_obs_pixel()` : correction d'une erreur fatale `near "DO":
+  syntax error` sur le backend SQLite local. L'`INSERT … SELECT … ON
+  CONFLICT … DO NOTHING` souffrait de l'ambiguïté d'analyse UPSERT/jointure
+  de SQLite ; ajout d'une clause `WHERE 1=1` sur le `SELECT` pour lever
+  l'ambiguïté (no-op sous PostgreSQL). Test de non-régression SQLite ajouté.
+
 ## [0.55.0] - 2026-05-31
 
 ### Changed
