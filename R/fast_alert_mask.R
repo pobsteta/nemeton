@@ -52,6 +52,9 @@
 #'   Degenerate distributions (tied quantiles) collapse to fewer
 #'   occupied classes rather than erroring; an all-zero raster maps
 #'   entirely to class 0.
+#' @param cache_result,result_cache_dir Passed through to
+#'   [read_fast_alert_raster()] (spec 017 D6): whether to persist the
+#'   underlying continuous raster as a content-addressed COG, and where.
 #'
 #' @return Invisibly, the absolute path to the persisted TIF, or
 #'   `NULL` if [read_fast_alert_raster()] returned `NULL` (no scene
@@ -73,7 +76,9 @@ compute_fast_alert_mask <- function(con, zone_id,
                                     mask_cache_dir  = NULL,
                                     breaks          = NULL,
                                     apply_zone_mask = TRUE,
-                                    mask_polygon    = NULL) {
+                                    mask_polygon    = NULL,
+                                    cache_result     = TRUE,
+                                    result_cache_dir = NULL) {
   mode  <- match.arg(mode)
   index <- match.arg(index)
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -116,10 +121,12 @@ compute_fast_alert_mask <- function(con, zone_id,
     date_from       = date_from,
     date_to         = date_to,
     mode            = mode,
-    window_days     = window_days,
-    cache_dir       = cache_dir,
-    apply_zone_mask = apply_zone_mask,
-    mask_polygon    = mask_polygon
+    window_days      = window_days,
+    cache_dir        = cache_dir,
+    apply_zone_mask  = apply_zone_mask,
+    mask_polygon     = mask_polygon,
+    cache_result     = cache_result,
+    result_cache_dir = result_cache_dir
   )
   if (is.null(cont)) {
     cli::cli_alert_info("No FAST alert raster to persist for zone {.val {zid}}.")

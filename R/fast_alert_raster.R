@@ -52,12 +52,24 @@
 #'   Default 30.
 #' @param cache_dir Character scalar. Path to the COG cache root
 #'   (typically `<project>/cache/layers/sentinel2`). Must exist.
+#' @param cache_result Logical. When `TRUE` (default, spec 017 D6) the
+#'   continuous result raster is persisted as a content-addressed COG
+#'   and a subsequent call with the same inputs is served instantly from
+#'   disk (zero recompute). A new scene in `cache_dir`, any parameter
+#'   change, or a zone re-registration changes the content hash and
+#'   triggers a fresh compute. `FALSE` disables the persistence entirely.
+#' @param result_cache_dir Character scalar or `NULL`. Root of the result
+#'   COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
+#'   "fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
+#'   fast_<index>_<mode>_<hash>.tif`. At most
+#'   `getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.
 #'
 #' @return A `terra::SpatRaster` (single layer, EPSG:2154) when at least
 #'   one usable scene is found, or `NULL` when no scene matches. The
-#'   layer name is `alert_count` or `alert_deficit` depending on `mode`.
-#'   Attribute `mode` carries the requested mode for downstream
-#'   styling.
+#'   layer name is `alert_count` or `alert_deficit` depending on `mode`;
+#'   attribute `mode` carries the mode, `index` the spectral index, and
+#'   `cached = TRUE` is set when the raster was read from the result
+#'   cache.
 #'
 #' @seealso [build_index_stack()] (the underlying index stack builder,
 #'   spec 010), [.get_zone_aoi()] (the shared AOI resolver, spec 012),
@@ -85,8 +97,10 @@ read_fast_alert_raster <- function(con, zone_id,
                                    mode           = c("count", "rolling"),
                                    window_days    = 30L,
                                    cache_dir,
-                                   apply_zone_mask = TRUE,
-                                   mask_polygon    = NULL) {
+                                   apply_zone_mask  = TRUE,
+                                   mask_polygon     = NULL,
+                                   cache_result     = TRUE,
+                                   result_cache_dir = NULL) {
   mode  <- match.arg(mode)
   index <- match.arg(index)
   .assert_db_pkgs()
@@ -153,6 +167,38 @@ read_fast_alert_raster <- function(con, zone_id,
     return(NULL)
   }
 
+  # spec 017 D6 — resolve the UGF mask polygon now (cheap DB read), both
+  # to apply it at the end AND to fold it into the content hash so a zone
+  # re-registration invalidates the cached raster.
+  poly <- if (isTRUE(apply_zone_mask)) {
+    mask_polygon %||% tryCatch(.get_zone_aoi(con, zid), error = function(e) NULL)
+  } else NULL
+
+  # Content-addressed result cache. The diagnostic is expensive and
+  # re-viewed often; persisting the continuous raster keyed by its inputs
+  # makes a revisit instant and self-invalidates when a new scene lands in
+  # the cache or any parameter changes (the content IS the key).
+  if (is.null(result_cache_dir)) {
+    result_cache_dir <- file.path(dirname(cache_dir), "fast_raster")
+  }
+  mask_wkt <- if (!is.null(poly))
+    tryCatch(sf::st_as_text(sf::st_geometry(poly)[[1L]]),
+             error = function(e) NULL) else NULL
+  rhash <- .fast_raster_hash(scenes_df$scene_id, index, threshold, mode,
+                             wd, df, dt, mask_wkt)
+  cpath <- .fast_raster_cache_path(result_cache_dir, zid, index, mode, rhash)
+
+  if (isTRUE(cache_result) && file.exists(cpath)) {
+    cached <- tryCatch(terra::rast(cpath), error = function(e) NULL)
+    if (!is.null(cached)) {
+      names(cached)         <- if (mode == "count") "alert_count" else "alert_deficit"
+      attr(cached, "mode")  <- mode
+      attr(cached, "index") <- index
+      attr(cached, "cached") <- TRUE
+      return(cached)
+    }
+  }
+
   # Multi-tile AOI: an AOI that straddles MGRS tile boundaries (e.g.
   # villards on T31TFM + T31TGM) is handled per-tile, NOT by handing all
   # scenes to a single `build_index_stack` call. Two reasons survive
@@ -203,20 +249,74 @@ read_fast_alert_raster <- function(con, zone_id,
   attr(out, "mode")  <- mode
   attr(out, "index") <- index
 
-  # spec 016 (v0.49.0) — apply UGF zone mask by default. Pixels
-  # outside the UGFs (= the polygon stored in monitoring_zone.zone_wkt)
-  # become NA, so downstream counts / displays reflect only the
-  # forest area actually managed by the user.
+  # spec 016 (v0.49.0) — apply the UGF zone mask (resolved above). Pixels
+  # outside the UGFs become NA, so downstream counts / displays reflect
+  # only the forest area actually managed by the user.
   if (isTRUE(apply_zone_mask)) {
-    poly <- mask_polygon %||% tryCatch(.get_zone_aoi(con, zid),
-                                       error = function(e) NULL)
     out <- .apply_zone_mask(out, poly)
+  }
+
+  # spec 017 D6 — persist the continuous result as a content-addressed
+  # COG. Best-effort: a write failure warns but still returns the raster.
+  if (isTRUE(cache_result)) {
+    zone_dir <- dirname(cpath)
+    if (!dir.exists(zone_dir)) {
+      dir.create(zone_dir, recursive = TRUE, showWarnings = FALSE)
+    }
+    tryCatch({
+      terra::writeRaster(out, cpath, filetype = "GTiff", overwrite = TRUE,
+                         gdal = c("COMPRESS=DEFLATE", "PREDICTOR=2",
+                                  "TILED=YES"))
+      .fast_raster_gc(zone_dir)
+    }, error = function(e) {
+      cli::cli_warn("Failed to cache FAST alert raster at {.path {cpath}}: {conditionMessage(e)}")
+    })
   }
   out
 }
 
 
 # ---- internal helpers ------------------------------------------------
+
+# spec 017 D6 — content hash of every input that determines the FAST
+# alert raster. A new scene in the cache, a parameter change, or a zone
+# re-registration (mask geometry) all change the hash, so the cached COG
+# self-invalidates. Uses `rlang::hash` (already an Import) — no `digest`
+# dependency. `window_days` only matters in rolling mode; the mask WKT is
+# NA when no mask is applied.
+.fast_raster_hash <- function(scene_ids, index, threshold, mode,
+                              window_days, date_from, date_to, mask_wkt) {
+  rlang::hash(list(
+    scenes      = sort(as.character(scene_ids)),
+    index       = index,
+    threshold   = round(as.numeric(threshold), 6L),
+    mode        = mode,
+    window_days = if (identical(mode, "rolling"))
+                    as.integer(window_days) else NA_integer_,
+    date_from   = as.character(date_from),
+    date_to     = as.character(date_to),
+    mask        = if (is.null(mask_wkt)) NA_character_ else mask_wkt
+  ))
+}
+
+# Absolute path of the cached COG: <result_cache_dir>/zone_<id>/
+# fast_<index>_<mode>_<hash>.tif. The `fast_<index>_<mode>_` prefix keeps
+# it distinct from the 0-4 mask cache (`fast/zone_<id>/fast_alert_<ts>.tif`,
+# read by `read_fast_alert_mask`), so the two never collide.
+.fast_raster_cache_path <- function(result_cache_dir, zid, index, mode, hash) {
+  file.path(result_cache_dir, sprintf("zone_%d", zid),
+            sprintf("fast_%s_%s_%s.tif", index, mode, hash))
+}
+
+# Keep at most `keep` cached COGs per zone directory (LRU by mtime).
+.fast_raster_gc <- function(zone_dir, keep = getOption("nemeton.fast_raster_keep", 20L)) {
+  files <- list.files(zone_dir, pattern = "^fast_.*\\.tif$", full.names = TRUE)
+  if (length(files) <= keep) return(invisible(NULL))
+  mt  <- file.info(files)$mtime
+  old <- files[order(mt, decreasing = TRUE)][-seq_len(keep)]
+  unlink(old)
+  invisible(NULL)
+}
 
 # spec 017 — enumerate the cached scenes usable for `index` in the date
 # window, straight from disk (no DB, no obs_pixel). A scene qualifies

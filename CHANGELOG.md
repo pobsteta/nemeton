@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-06-01
+
+### Added
+
+- Content-addressed persistence of the FAST alert raster (spec 017 D6).
+  `read_fast_alert_raster()` gains `cache_result = TRUE` and
+  `result_cache_dir = NULL`: the continuous raster is written as a COG
+  keyed by a hash of its inputs (scenes + index + threshold + mode +
+  window_days + dates + mask WKT), so a same-input revisit is served
+  instantly from disk and the cache self-invalidates on any change. At
+  most `getOption("nemeton.fast_raster_keep", 20)` COGs kept per zone.
+- `compute_fast_alert_mask()` passes `cache_result` / `result_cache_dir`
+  through; quartiles are recomputed from the persisted COG without a
+  raster recompute. Hash via `rlang::hash` (no `digest` dependency).
+
 ## [0.55.2] - 2026-06-01
 
 ### Fixed
@@ -33,7 +48,6 @@ For a narrative, per-feature description of each release, see
   CONFLICT … DO NOTHING` souffrait de l'ambiguïté d'analyse UPSERT/jointure
   de SQLite ; ajout d'une clause `WHERE 1=1` sur le `SELECT` pour lever
   l'ambiguïté (no-op sous PostgreSQL). Test de non-régression SQLite ajouté.
-
 ## [0.55.0] - 2026-05-31
 
 ### Changed

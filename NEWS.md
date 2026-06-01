@@ -1,3 +1,33 @@
+# nemeton 0.56.0 (2026-06-01)
+
+### Added — persistance content-addressed du raster d'alertes FAST (spec 017 D6, phase perf)
+
+`read_fast_alert_raster()` persiste désormais le **raster continu**
+résultat en **COG adressé par contenu** : une revisite avec les mêmes
+entrées est servie **instantanément** depuis le disque (zéro recalcul).
+C'est le plus gros levier perf UX — le diagnostic est coûteux et
+re-consulté souvent (navigation, re-rendu, reclassement quartiles).
+
+- Deux nouveaux paramètres : `cache_result = TRUE` (défaut) et
+  `result_cache_dir = NULL` (défaut
+  `file.path(dirname(cache_dir), "fast_raster")`). COGs sous
+  `<result_cache_dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`.
+- **Auto-invalidation par le contenu** : le `hash` digère scènes triées
+  + index + threshold + mode + window_days + dates + WKT du masque. Une
+  nouvelle scène dans le cache, tout changement de paramètre, ou une
+  ré-inscription de zone change le hash → recalcul ; sinon → lecture
+  disque. Pas de logique de *staleness* fragile.
+- L'attribut `cached = TRUE` est posé quand le raster vient du cache.
+- **GC** : au plus `getOption("nemeton.fast_raster_keep", 20)` COGs
+  conservés par zone (LRU par mtime).
+- `compute_fast_alert_mask()` expose aussi `cache_result` /
+  `result_cache_dir` (passe-plat) : les **quartiles se recalculent
+  depuis le COG persisté** sans recalcul raster.
+- Hash via `rlang::hash` (déjà en Imports) — **pas** de dépendance
+  `digest` ajoutée (écart assumé vs spec, plus léger).
+
+Prochaine phase perf : parallélisation `furrr` (D4 → v0.57.0).
+
 # nemeton 0.55.2 (2026-06-01)
 
 ### Fixed — incompatibilités SQLite résiduelles dans les UPSERT (`ON CONFLICT`)
@@ -45,7 +75,6 @@ ou le `ON` d'une jointure : il interprète mal `ON CONFLICT (…)` et
 `WHERE 1=1` sur le `SELECT` lève l'ambiguïté grammaticale. Correctif
 sans effet sous PostgreSQL (no-op). Nouveau test de non-régression sur
 le backend SQLite réel (`test-insert-obs-pixel-sqlite.R`).
-
 # nemeton 0.55.0 (2026-05-31)
 
 ### Changed — carte d'alertes FAST : indicateur unique, classes quartiles, énumération cache (spec 017, phase sémantique)

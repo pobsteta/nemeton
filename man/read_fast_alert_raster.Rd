@@ -15,7 +15,9 @@ read_fast_alert_raster(
   window_days = 30L,
   cache_dir,
   apply_zone_mask = TRUE,
-  mask_polygon = NULL
+  mask_polygon = NULL,
+  cache_result = TRUE,
+  result_cache_dir = NULL
 )
 }
 \arguments{
@@ -47,13 +49,27 @@ Default 30.}
 
 \item{cache_dir}{Character scalar. Path to the COG cache root
 (typically `<project>/cache/layers/sentinel2`). Must exist.}
+
+\item{cache_result}{Logical. When `TRUE` (default, spec 017 D6) the
+continuous result raster is persisted as a content-addressed COG
+and a subsequent call with the same inputs is served instantly from
+disk (zero recompute). A new scene in `cache_dir`, any parameter
+change, or a zone re-registration changes the content hash and
+triggers a fresh compute. `FALSE` disables the persistence entirely.}
+
+\item{result_cache_dir}{Character scalar or `NULL`. Root of the result
+COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
+"fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
+fast_<index>_<mode>_<hash>.tif`. At most
+`getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.}
 }
 \value{
 A `terra::SpatRaster` (single layer, EPSG:2154) when at least
   one usable scene is found, or `NULL` when no scene matches. The
-  layer name is `alert_count` or `alert_deficit` depending on `mode`.
-  Attribute `mode` carries the requested mode for downstream
-  styling.
+  layer name is `alert_count` or `alert_deficit` depending on `mode`;
+  attribute `mode` carries the mode, `index` the spectral index, and
+  `cached = TRUE` is set when the raster was read from the result
+  cache.
 }
 \description{
 Computes a single-band raster of FAST alerts for a monitoring zone,

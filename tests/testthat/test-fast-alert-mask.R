@@ -143,7 +143,7 @@ test_that("compute_fast_alert_mask + read round-trip on villards", {
     con, zone_id = 1L, index = "NDVI",
     date_from = "2025-05-23", date_to = "2026-05-23",
     mode = "count",
-    cache_dir = cache, mask_cache_dir = td)
+    cache_dir = cache, mask_cache_dir = td, cache_result = FALSE)
 
   expect_true(!is.null(out_path) && !is.na(out_path))
   expect_true(file.exists(out_path))

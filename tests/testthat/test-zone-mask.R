@@ -86,14 +86,14 @@ test_that("read_fast_alert_raster(apply_zone_mask = FALSE) skips mask", {
     con, zone_id = 1L,
     date_from = "2025-05-23", date_to = "2026-05-23",
     mode = "count", cache_dir = cache,
-    apply_zone_mask = TRUE)
+    apply_zone_mask = TRUE, cache_result = FALSE)
 
   # Without mask
   r_full <- read_fast_alert_raster(
     con, zone_id = 1L,
     date_from = "2025-05-23", date_to = "2026-05-23",
     mode = "count", cache_dir = cache,
-    apply_zone_mask = FALSE)
+    apply_zone_mask = FALSE, cache_result = FALSE)
 
   expect_s4_class(r_masked, "SpatRaster")
   expect_s4_class(r_full,   "SpatRaster")

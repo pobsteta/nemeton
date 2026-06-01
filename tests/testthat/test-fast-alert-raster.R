@@ -133,6 +133,86 @@ test_that("read_fast_alert_raster(index=NDVI) needs no B12; index=NBR needs B12"
 })
 
 
+# ---- spec 017 D6: content-addressed result cache ---------------------
+
+test_that(".fast_raster_hash is deterministic and input-sensitive", {
+  h <- function(...) nemeton:::.fast_raster_hash(...)
+  base <- h(c("b", "a"), "NDVI", 0.4, "count", 30L, "2025-01-01", "2025-12-31", NA)
+  # scene order does not matter (sorted inside)
+  expect_identical(base,
+    h(c("a", "b"), "NDVI", 0.4, "count", 30L, "2025-01-01", "2025-12-31", NA))
+  # index / threshold / dates / scene-set change the hash
+  expect_false(identical(base,
+    h(c("a", "b"), "NBR",  0.4, "count", 30L, "2025-01-01", "2025-12-31", NA)))
+  expect_false(identical(base,
+    h(c("a", "b"), "NDVI", 0.3, "count", 30L, "2025-01-01", "2025-12-31", NA)))
+  expect_false(identical(base,
+    h(c("a"),      "NDVI", 0.4, "count", 30L, "2025-01-01", "2025-12-31", NA)))
+  expect_false(identical(base,
+    h(c("a", "b"), "NDVI", 0.4, "count", 30L, "2025-01-01", "2025-12-31", "POLYGON(...)")))
+  # window_days is irrelevant in count mode but matters in rolling
+  expect_identical(base,
+    h(c("a", "b"), "NDVI", 0.4, "count", 99L, "2025-01-01", "2025-12-31", NA))
+  expect_false(identical(
+    h(c("a"), "NDVI", 0.4, "rolling", 30L, "2025-01-01", "2025-12-31", NA),
+    h(c("a"), "NDVI", 0.4, "rolling", 60L, "2025-01-01", "2025-12-31", NA)))
+})
+
+# Write a one-scene NDVI-renderable cache (B04 + B08) for the D6 tests.
+.write_one_ndvi_scene <- function(cache) {
+  sid <- "S2A_MSIL2A_20250530T103041_R108_T31TFM_x"
+  d <- file.path(cache, sid); dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  for (b in c("B04", "B08")) {
+    val <- if (b == "B04") 0.6 else 0.1   # NDVI < 0 < threshold -> alert
+    r <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 100,
+                     ymin = 0, ymax = 100, crs = "EPSG:32631", vals = rep(val, 100))
+    terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+  invisible(sid)
+}
+
+test_that("read_fast_alert_raster persists + serves a content-addressed COG", {
+  skip_if_not_installed("terra")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  .write_one_ndvi_scene(cache)
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  args <- list(con, 1L, index = "NDVI", date_from = "2025-05-01",
+               date_to = "2025-06-01", mode = "count", cache_dir = cache,
+               apply_zone_mask = FALSE, result_cache_dir = rcache)
+
+  r1 <- suppressMessages(do.call(read_fast_alert_raster, args))
+  zone_dir <- file.path(rcache, "zone_1")
+  cogs <- list.files(zone_dir, pattern = "^fast_NDVI_count_.*\\.tif$")
+  expect_length(cogs, 1L)               # written on first compute
+  expect_null(attr(r1, "cached"))       # first call computed
+
+  r2 <- suppressMessages(do.call(read_fast_alert_raster, args))
+  expect_true(isTRUE(attr(r2, "cached")))           # served from cache
+  expect_equal(terra::values(r1), terra::values(r2))
+
+  # A parameter change -> different hash -> a second COG (recompute).
+  args2 <- args; args2$threshold <- 0.6
+  suppressMessages(do.call(read_fast_alert_raster, args2))
+  expect_length(list.files(zone_dir, pattern = "^fast_NDVI_count_.*\\.tif$"), 2L)
+})
+
+test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
+  skip_if_not_installed("terra")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  .write_one_ndvi_scene(cache)
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  r <- suppressMessages(read_fast_alert_raster(
+    con, 1L, index = "NDVI", date_from = "2025-05-01", date_to = "2025-06-01",
+    mode = "count", cache_dir = cache, apply_zone_mask = FALSE,
+    cache_result = FALSE, result_cache_dir = rcache))
+  expect_s4_class(r, "SpatRaster")
+  expect_false(dir.exists(file.path(rcache, "zone_1")))
+})
+
+
 # ---- unit: helpers against synthetic stacks --------------------------
 
 make_synthetic_stack <- function(values_per_layer, dates) {
@@ -292,7 +372,8 @@ test_that("end-to-end smoke test against villards (count mode)", {
   r <- read_fast_alert_raster(
     con, zone_id = 1L, index = "NDVI",
     date_from = "2025-05-23", date_to = "2026-05-23",
-    mode = "count", cache_dir = cache)
+    mode = "count", cache_dir = cache,
+    cache_result = FALSE)
 
   expect_s4_class(r, "SpatRaster")
   expect_equal(sf::st_crs(r)$epsg, 2154L)

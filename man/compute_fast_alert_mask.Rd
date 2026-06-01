@@ -17,7 +17,9 @@ compute_fast_alert_mask(
   mask_cache_dir = NULL,
   breaks = NULL,
   apply_zone_mask = TRUE,
-  mask_polygon = NULL
+  mask_polygon = NULL,
+  cache_result = TRUE,
+  result_cache_dir = NULL
 )
 }
 \arguments{
@@ -58,6 +60,10 @@ adaptive scheme applies to **both** `"count"` and `"rolling"`.
 Degenerate distributions (tied quantiles) collapse to fewer
 occupied classes rather than erroring; an all-zero raster maps
 entirely to class 0.}
+
+\item{cache_result, result_cache_dir}{Passed through to
+[read_fast_alert_raster()] (spec 017 D6): whether to persist the
+underlying continuous raster as a content-addressed COG, and where.}
 }
 \value{
 Invisibly, the absolute path to the persisted TIF, or
