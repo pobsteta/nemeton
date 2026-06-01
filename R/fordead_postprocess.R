@@ -398,6 +398,11 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
          )")
     }
     DBI::dbAppendTable(con, "tmp_fordead_alert_staging", staging)
+    # The `WHERE 1=1` is mandatory, not cosmetic: when an INSERT draws
+    # its rows from a SELECT, SQLite cannot tell whether the trailing
+    # `ON` opens the UPSERT clause or a join's `ON`, mis-parses
+    # `ON CONFLICT (...)` and fails at `DO` (`near "DO": syntax error`).
+    # A WHERE clause on the SELECT disambiguates the grammar; no-op on PG.
     n <- .db_execute(con,
       "INSERT INTO alert (plot_id, alert_type, trigger_date,
                           value_before, value_after, delta,
@@ -406,6 +411,7 @@ FORDEAD_CONFIDENCE_WEIGHTS <- c(
               value_before, value_after, delta,
               confidence_class, stress_index
          FROM tmp_fordead_alert_staging
+         WHERE 1=1
        ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING")
     if (!is_pg) {
       .db_execute(con, "DROP TABLE tmp_fordead_alert_staging")

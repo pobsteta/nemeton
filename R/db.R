@@ -310,9 +310,20 @@ db_migrate <- function(con,
           if (nzchar(stmt)) DBI::dbExecute(con, stmt)
         }
       }
-      .db_execute(con,
-        "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
-        params = list(version))
+      # `ON CONFLICT DO NOTHING` with no conflict-target is valid on
+      # PostgreSQL but only on SQLite >= 3.35.0; older SQLite engines
+      # raise `near "DO": syntax error`. `INSERT OR IGNORE` is the
+      # portable SQLite-native form and behaves identically on every
+      # 3.x. Branch by backend so each engine gets its own idiom.
+      if (is_pg) {
+        .db_execute(con,
+          "INSERT INTO schema_migration (version) VALUES ($1) ON CONFLICT DO NOTHING",
+          params = list(version))
+      } else {
+        .db_execute(con,
+          "INSERT OR IGNORE INTO schema_migration (version) VALUES ($1)",
+          params = list(version))
+      }
     })
     cli::cli_alert_success("Applied migration {.val {version}}.")
     newly_applied <- c(newly_applied, version)

@@ -1,3 +1,35 @@
+# nemeton 0.55.2 (2026-06-01)
+
+### Fixed — incompatibilités SQLite résiduelles dans les UPSERT (`ON CONFLICT`)
+
+Audit complet des `ON CONFLICT … DO NOTHING` du cœur après le correctif
+v0.55.1 (qui ne couvrait qu'un des trois `INSERT … SELECT`). Trois sites
+restaient incompatibles avec le backend SQLite local :
+
+- **`db_migrate()`** (`R/db.R`) : l'`INSERT INTO schema_migration …
+  ON CONFLICT DO NOTHING` **sans colonne cible** n'est valide que sur
+  SQLite ≥ 3.35.0 ; les moteurs antérieurs lèvent `near "DO": syntax
+  error`. Branché par backend → `INSERT OR IGNORE` (forme SQLite native,
+  valable sur tout SQLite 3.x), PostgreSQL conserve sa syntaxe.
+- **`.insert_fordead_alerts()`** (`R/fordead_postprocess.R`) : même
+  ambiguïté d'analyse UPSERT/jointure que `.insert_obs_pixel()` —
+  `INSERT … SELECT … FROM tmp_fordead_alert_staging ON CONFLICT (…) DO
+  NOTHING` échouait sur **toutes** les versions de SQLite. Ajout d'un
+  `WHERE 1=1` sur le `SELECT`. C'est le crash qui aurait suivi côté
+  diagnostic FORDEAD sur une install SQLite locale.
+- **`detect_alerts()`** (`R/alerts.R`) : même classe d'ambiguïté
+  durcie par cohérence (`WHERE 1=1`). Note : cette requête reste
+  PostgreSQL-only par ailleurs (fenêtres `RANGE BETWEEN INTERVAL`), donc
+  l'`ON CONFLICT` n'y était pas encore atteint en pratique sous SQLite.
+
+Tous les correctifs sont des no-op sous PostgreSQL. Les autres
+`ON CONFLICT (…) DO NOTHING` du repo (`rag.R`, insert `plot`) utilisent
+`VALUES` (pas de `SELECT`) → déjà SQLite-safe, non touchés. Nouveaux
+tests de non-régression sur backend SQLite réel
+(`test-fordead-alert-insert-sqlite.R`, `helper-sqlite.R` mutualisé) :
+insertion FORDEAD, idempotence `DO NOTHING`, et `db_migrate` via
+`INSERT OR IGNORE`.
+
 # nemeton 0.55.1 (2026-06-01)
 
 ### Fixed — worker fatal `near "DO": syntax error` sur le backend SQLite local

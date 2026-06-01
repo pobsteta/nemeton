@@ -70,6 +70,7 @@ detect_alerts <- function(con, zone_id,
            CASE WHEN band = 'NDVI' THEN 'ndvi_drop' ELSE 'nbr_drop' END,
            obs_date, avg_prev, value, drop_val
       FROM flagged
+     WHERE 1=1
     ON CONFLICT (plot_id, alert_type, trigger_date) DO NOTHING
   ", as.integer(window_days))
 

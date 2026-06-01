@@ -12,45 +12,10 @@
 # Unlike the rest of the monitoring suite (which is Postgres-only via
 # skip_if_no_timescaledb), this runs on the file-backed SQLite backend
 # — the backend that was actually broken — so it needs no external DB.
+# Shared fixtures (`with_sqlite_monitoring_db`, `sqlite_obs_row`,
+# `skip_if_no_sqlite`) live in helper-sqlite.R.
 
-skip_if_no_sqlite <- function() {
-  if (!requireNamespace("RSQLite", quietly = TRUE) ||
-      !requireNamespace("DBI", quietly = TRUE)) {
-    testthat::skip("RSQLite / DBI not installed.")
-  }
-}
-
-# Spin up a fresh, migrated SQLite monitoring DB with one zone + one plot
-# so obs_pixel's FK is satisfiable, then hand the open connection to
-# `code`. Everything lives in a tempdir that withr cleans up.
-with_sqlite_monitoring_db <- function(code) {
-  skip_if_no_sqlite()
-  withr::with_tempdir({
-    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "mon.sqlite")))
-    on.exit(db_disconnect(con), add = TRUE)
-    db_migrate(con)
-    DBI::dbExecute(con, paste0(
-      "INSERT INTO monitoring_zone (id, name, zone_wkt) ",
-      "VALUES (1, 'z', 'POINT(0 0)')"))
-    DBI::dbExecute(con, paste0(
-      "INSERT INTO plot (id, zone_id, plot_id, geom_wkt) ",
-      "VALUES (1, 1, 'p1', 'POINT(0 0)')"))
-    force(code)(con)
-  })
-}
-
-obs_row <- function(date, band, value) {
-  data.frame(
-    plot_id   = 1L,
-    obs_date  = as.Date(date),
-    band      = band,
-    value     = value,
-    cloud_pct = 3,
-    source    = "cdse",
-    scene_id  = "S2A_FAKE",
-    stringsAsFactors = FALSE
-  )
-}
+obs_row <- sqlite_obs_row
 
 test_that(".insert_obs_pixel does not raise SQLite 'near DO' syntax error", {
   with_sqlite_monitoring_db(function(con) {
