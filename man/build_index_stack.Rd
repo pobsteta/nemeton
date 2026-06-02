@@ -8,7 +8,8 @@ build_index_stack(
   cache_dir,
   scenes_df,
   index = c("NDVI", "NBR"),
-  mask_polygon = NULL
+  mask_polygon = NULL,
+  parallel = FALSE
 )
 }
 \arguments{
@@ -17,6 +18,16 @@ build_index_stack(
 \item{scenes_df}{See [read_s2_band_stack()].}
 
 \item{index}{Character(1). One of `"NDVI"` (default) or `"NBR"`.}
+
+\item{mask_polygon}{Optional `sf`/`sfc` polygon. When supplied, pixels
+outside it become NA on every layer.}
+
+\item{parallel}{Logical (spec 017 D4). When `TRUE` and \pkg{furrr} is
+installed, the per-scene index computation runs in
+`furrr::future_map()` (set a `future::plan()` first); workers return
+`terra::wrap()`-ed rasters that the main process unwraps. Default
+`FALSE` (sequential, identical results). Falls back to sequential if
+\pkg{furrr} is absent.}
 }
 \value{
 A multi-layer [terra::SpatRaster] in source CRS at 10 m,

@@ -156,6 +156,14 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' @param cache_dir Character(1). Path to the S2 cache root.
 #' @param scenes_df See [read_s2_band_stack()].
 #' @param index Character(1). One of `"NDVI"` (default) or `"NBR"`.
+#' @param mask_polygon Optional `sf`/`sfc` polygon. When supplied, pixels
+#'   outside it become NA on every layer.
+#' @param parallel Logical (spec 017 D4). When `TRUE` and \pkg{furrr} is
+#'   installed, the per-scene index computation runs in
+#'   `furrr::future_map()` (set a `future::plan()` first); workers return
+#'   `terra::wrap()`-ed rasters that the main process unwraps. Default
+#'   `FALSE` (sequential, identical results). Falls back to sequential if
+#'   \pkg{furrr} is absent.
 #'
 #' @return A multi-layer [terra::SpatRaster] in source CRS at 10 m,
 #'   values in `[-1, 1]` (NAs preserved), layers named by `obs_date`
@@ -186,7 +194,8 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' @export
 build_index_stack <- function(cache_dir, scenes_df,
                               index = c("NDVI", "NBR"),
-                              mask_polygon = NULL) {
+                              mask_polygon = NULL,
+                              parallel = FALSE) {
   index <- match.arg(index)
   .validate_scenes_df(scenes_df)
 
@@ -197,7 +206,9 @@ build_index_stack <- function(cache_dir, scenes_df,
 
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
-  layers <- lapply(seq_len(nrow(scenes_df)), function(i) {
+  # Per-scene index raster: open the cached bands, compute the index.
+  # Pure compute, no DB — safe to run concurrently (spec 017 D4).
+  one_layer <- function(i) {
     sid <- scenes_df$scene_id[i]
     rs  <- stats::setNames(
       lapply(bands_needed, function(b) read_s2_band_raster(cache_dir, sid, b)),
@@ -214,7 +225,29 @@ build_index_stack <- function(cache_dir, scenes_df,
       b12_10m <- terra::resample(rs$B12, rs$B08, method = "bilinear")
       (rs$B08 - b12_10m) / (rs$B08 + b12_10m)
     }
-  })
+  }
+
+  # spec 017 D4 — optional multi-core scene processing. A SpatRaster is
+  # an external pointer that can't cross a process boundary, so workers
+  # return `terra::wrap()`-ed rasters that the main process unwraps. Off
+  # by default; opt-in `parallel = TRUE` (needs the `furrr` Suggest and a
+  # `future::plan()` set by the caller). Falls back to sequential
+  # `lapply` when `furrr` is absent.
+  if (isTRUE(parallel) && requireNamespace("furrr", quietly = TRUE)) {
+    packed <- furrr::future_map(
+      seq_len(nrow(scenes_df)),
+      function(i) { r <- one_layer(i); if (is.null(r)) NULL else terra::wrap(r) },
+      .options = furrr::furrr_options(seed = TRUE, packages = "nemeton"))
+    layers <- lapply(packed,
+                     function(p) if (is.null(p)) NULL else terra::unwrap(p))
+  } else {
+    if (isTRUE(parallel)) {
+      rlang::inform(
+        "build_index_stack: `parallel = TRUE` ignored ({.pkg furrr} not installed); running sequentially.",
+        .frequency = "once", .frequency_id = "build_index_stack_no_furrr")
+    }
+    layers <- lapply(seq_len(nrow(scenes_df)), one_layer)
+  }
 
   ok <- !vapply(layers, is.null, logical(1))
   n_total   <- nrow(scenes_df)

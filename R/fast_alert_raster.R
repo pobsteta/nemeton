@@ -63,6 +63,10 @@
 #'   "fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
 #'   fast_<index>_<mode>_<hash>.tif`. At most
 #'   `getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.
+#' @param parallel Logical (spec 017 D4). Passed to [build_index_stack()]:
+#'   when `TRUE` and \pkg{furrr} is installed, the per-scene raster
+#'   compute fans across cores (set a `future::plan()` first). Default
+#'   `FALSE`; results are identical to sequential.
 #'
 #' @return A `terra::SpatRaster` (single layer, EPSG:2154) when at least
 #'   one usable scene is found, or `NULL` when no scene matches. The
@@ -100,7 +104,8 @@ read_fast_alert_raster <- function(con, zone_id,
                                    apply_zone_mask  = TRUE,
                                    mask_polygon     = NULL,
                                    cache_result     = TRUE,
-                                   result_cache_dir = NULL) {
+                                   result_cache_dir = NULL,
+                                   parallel         = FALSE) {
   mode  <- match.arg(mode)
   index <- match.arg(index)
   .assert_db_pkgs()
@@ -226,7 +231,9 @@ read_fast_alert_raster <- function(con, zone_id,
     sub <- scenes_df[!is.na(scenes_df$mgrs) & scenes_df$mgrs == tile, ,
                      drop = FALSE]
     # spec 017 — a single index stack (NDVI *or* NBR), not both.
-    stk <- suppressWarnings(build_index_stack(cache_dir, sub, index))
+    # `parallel` (D4) fans the per-scene compute across cores.
+    stk <- suppressWarnings(
+      build_index_stack(cache_dir, sub, index, parallel = parallel))
     if (is.null(stk)) return(NULL)
 
     rn <- if (mode == "count") {

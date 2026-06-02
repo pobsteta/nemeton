@@ -405,6 +405,39 @@ test_that("build_index_stack: layers in different CRS are reprojected then union
 })
 
 
+test_that("build_index_stack(parallel = TRUE) matches sequential (spec 017 D4)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("furrr")
+  skip_if_not_installed("future")
+  cache <- withr::local_tempdir()
+  sids <- sprintf("S2A_MSIL2A_2025%02d15T103041_R108_T31TFM_x", 1:3)
+  for (i in 1:3) {
+    d <- file.path(cache, sids[i]); dir.create(d, recursive = TRUE)
+    for (b in c("B04", "B08")) {
+      val <- if (b == "B04") 0.1 * i else 0.4
+      r <- terra::rast(nrows = 8, ncols = 8, xmin = 0, xmax = 80,
+                       ymin = 0, ymax = 80, crs = "EPSG:32631", vals = rep(val, 64))
+      terra::writeRaster(r, file.path(d, paste0(b, ".tif")),
+                         filetype = "GTiff", overwrite = TRUE)
+    }
+  }
+  scenes <- data.frame(scene_id = sids,
+                       obs_date = as.Date(sprintf("2025-%02d-15", 1:3)),
+                       stringsAsFactors = FALSE)
+
+  seq_stk <- build_index_stack(cache, scenes, "NDVI", parallel = FALSE)
+  # A sequential future plan runs furrr in-process, exercising the
+  # future_map + terra::wrap()/unwrap() path without a fork dependency.
+  withr::defer(future::plan(future::sequential))
+  future::plan(future::sequential)
+  par_stk <- build_index_stack(cache, scenes, "NDVI", parallel = TRUE)
+
+  expect_equal(terra::nlyr(par_stk), terra::nlyr(seq_stk))
+  expect_equal(terra::values(par_stk), terra::values(seq_stk))
+  expect_equal(as.Date(terra::time(par_stk)), as.Date(terra::time(seq_stk)))
+})
+
+
 # ---- extract_pixel_timeseries() ---------------------------------------
 
 # Build a single-scene fixture with all bands holding fixed values so

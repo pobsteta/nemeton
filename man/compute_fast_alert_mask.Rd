@@ -19,7 +19,8 @@ compute_fast_alert_mask(
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
   cache_result = TRUE,
-  result_cache_dir = NULL
+  result_cache_dir = NULL,
+  parallel = FALSE
 )
 }
 \arguments{
@@ -64,6 +65,9 @@ entirely to class 0.}
 \item{cache_result, result_cache_dir}{Passed through to
 [read_fast_alert_raster()] (spec 017 D6): whether to persist the
 underlying continuous raster as a content-addressed COG, and where.}
+
+\item{parallel}{Passed through to [read_fast_alert_raster()] (spec 017
+D4): optional multi-core per-scene raster compute via \pkg{furrr}.}
 }
 \value{
 Invisibly, the absolute path to the persisted TIF, or

@@ -17,7 +17,8 @@ read_fast_alert_raster(
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
   cache_result = TRUE,
-  result_cache_dir = NULL
+  result_cache_dir = NULL,
+  parallel = FALSE
 )
 }
 \arguments{
@@ -62,6 +63,11 @@ COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
 "fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
 fast_<index>_<mode>_<hash>.tif`. At most
 `getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.}
+
+\item{parallel}{Logical (spec 017 D4). Passed to [build_index_stack()]:
+when `TRUE` and \pkg{furrr} is installed, the per-scene raster
+compute fans across cores (set a `future::plan()` first). Default
+`FALSE`; results are identical to sequential.}
 }
 \value{
 A `terra::SpatRaster` (single layer, EPSG:2154) when at least

@@ -1,3 +1,30 @@
+# nemeton 0.57.0 (2026-06-02)
+
+### Added — calcul raster multi-cœur opt-in (spec 017 D4, dernière phase perf)
+
+`build_index_stack()` et `read_fast_alert_raster()` /
+`compute_fast_alert_mask()` acceptent un paramètre **`parallel = FALSE`**.
+Quand `parallel = TRUE` et que \pkg{furrr} est installé, le calcul
+**par scène** de l'indice (ouverture des COG + band-math) est réparti sur
+plusieurs cœurs via `furrr::future_map()` — c'est la phase dominante du
+diagnostic FAST. Le `future::plan()` est choisi par l'appelant
+(`multisession` en prod, `multicore` en fork Unix).
+
+- Un `SpatRaster` étant un pointeur externe non sérialisable entre
+  process, les workers renvoient des rasters `terra::wrap()`-és que le
+  process principal `unwrap()`. Aucune écriture concurrente (band-math
+  pur, sans DB).
+- **Repli séquentiel transparent** : `parallel = TRUE` sans \pkg{furrr}
+  retombe sur `lapply` (avertissement une fois par session). Résultats
+  **strictement identiques** au mode séquentiel.
+- `furrr` / `future` déjà en Suggests — pas de nouvelle dépendance.
+
+**Spec 017 close** (D1-D6 + D4) : indicateur unique + quartiles +
+énumération cache (v0.55.0), persistance content-addressed (v0.56.0),
+parallélisation (v0.57.0). Côté app `nemetonshiny` : exposer un toggle
+« Mode rapide (multi-cœur) » → `parallel = TRUE`, et corriger l'appel
+`read_fast_alert_raster()` (signature v0.55 `index`/`threshold`).
+
 # nemeton 0.56.0 (2026-06-01)
 
 ### Added — persistance content-addressed du raster d'alertes FAST (spec 017 D6, phase perf)

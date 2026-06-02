@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-06-02
+
+### Added
+
+- Opt-in multi-core scene processing (spec 017 D4). `build_index_stack()`
+  and `read_fast_alert_raster()` / `compute_fast_alert_mask()` gain a
+  `parallel = FALSE` argument; when `TRUE` and `furrr` is installed the
+  per-scene index compute runs in `furrr::future_map()` (caller sets the
+  `future::plan()`). Workers return `terra::wrap()`-ed rasters that the
+  main process unwraps; results are identical to sequential. Falls back
+  to sequential when `furrr` is absent. Closes spec 017.
+
 ## [0.56.0] - 2026-06-01
 
 ### Added

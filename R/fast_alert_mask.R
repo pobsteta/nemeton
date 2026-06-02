@@ -55,6 +55,8 @@
 #' @param cache_result,result_cache_dir Passed through to
 #'   [read_fast_alert_raster()] (spec 017 D6): whether to persist the
 #'   underlying continuous raster as a content-addressed COG, and where.
+#' @param parallel Passed through to [read_fast_alert_raster()] (spec 017
+#'   D4): optional multi-core per-scene raster compute via \pkg{furrr}.
 #'
 #' @return Invisibly, the absolute path to the persisted TIF, or
 #'   `NULL` if [read_fast_alert_raster()] returned `NULL` (no scene
@@ -78,7 +80,8 @@ compute_fast_alert_mask <- function(con, zone_id,
                                     apply_zone_mask = TRUE,
                                     mask_polygon    = NULL,
                                     cache_result     = TRUE,
-                                    result_cache_dir = NULL) {
+                                    result_cache_dir = NULL,
+                                    parallel         = FALSE) {
   mode  <- match.arg(mode)
   index <- match.arg(index)
   if (!requireNamespace("terra", quietly = TRUE)) {
@@ -126,7 +129,8 @@ compute_fast_alert_mask <- function(con, zone_id,
     apply_zone_mask  = apply_zone_mask,
     mask_polygon     = mask_polygon,
     cache_result     = cache_result,
-    result_cache_dir = result_cache_dir
+    result_cache_dir = result_cache_dir,
+    parallel         = parallel
   )
   if (is.null(cont)) {
     cli::cli_alert_info("No FAST alert raster to persist for zone {.val {zid}}.")

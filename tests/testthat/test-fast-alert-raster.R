@@ -212,6 +212,27 @@ test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
   expect_false(dir.exists(file.path(rcache, "zone_1")))
 })
 
+test_that("read_fast_alert_raster(parallel = TRUE) matches sequential (spec 017 D4)", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("furrr")
+  skip_if_not_installed("future")
+  cache <- withr::local_tempdir()
+  .write_one_ndvi_scene(cache)
+  con  <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  args <- list(con, 1L, index = "NDVI", date_from = "2025-05-01",
+               date_to = "2025-06-01", mode = "count", cache_dir = cache,
+               apply_zone_mask = FALSE, cache_result = FALSE)
+
+  seq_r <- suppressMessages(do.call(read_fast_alert_raster,
+                                    c(args, list(parallel = FALSE))))
+  withr::defer(future::plan(future::sequential))
+  future::plan(future::sequential)
+  par_r <- suppressMessages(do.call(read_fast_alert_raster,
+                                    c(args, list(parallel = TRUE))))
+
+  expect_equal(terra::values(par_r), terra::values(seq_r))
+})
+
 
 # ---- unit: helpers against synthetic stacks --------------------------
 

@@ -1,6 +1,6 @@
 # Spec 017 — `read_fast_alert_raster` : indicateur unique, classes quartiles, énumération cache, perf
 
-**Statut** : **validée 2026-05-31**. **Livré** : phase sémantique D1-D3/D5 → **v0.55.0** ; persistance D6 → **v0.56.0** (2026-06-01). **Reste** : parallèle D4 → v0.57.0. Phasage : sémantique → persistance → parallèle.
+**Statut** : **CLOSE 2026-06-02**. **Livré** : sémantique D1-D3/D5 → **v0.55.0** ; persistance D6 → **v0.56.0** ; parallélisation D4 → **v0.57.0**. Toutes les décisions implémentées.
 **Démarré** : 2026-05-31.
 **Cible cœur** : v0.55.0 (sémantique) puis v0.56.0 (perf parallèle), ou combinées.
 **Précédents** : spec 010 (carte pixel / `build_index_stack` v0.22.0), spec 013 (FAST alert raster v0.46.0), spec 014 (validation sampling v0.47.0), spec 016 (mask UGF v0.49.0), correctif union+pad multi-tuiles (v0.52.1).
