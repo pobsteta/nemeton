@@ -12,8 +12,8 @@ read_s2_band_stack(cache_dir, scenes_df, band)
 \item{scenes_df}{A `data.frame` with at minimum columns
 `scene_id` (character) and `obs_date` (Date, or coercible). Extra
 columns are ignored. Rows are re-ordered by `obs_date` internally.
-In practice this is what the app gets from
-`SELECT DISTINCT scene_id, obs_date FROM obs_pixel JOIN plot ...`.}
+In practice this is the listing of scenes present in the COG cache
+directory for the zone.}
 
 \item{band}{Character(1). One of `"B04"`, `"B08"`, `"B12"`.}
 }
@@ -37,8 +37,11 @@ per missing scene. Returns `NULL` if every scene is missing.
 \examples{
 \dontrun{
   cache <- "/proj/cache/layers/sentinel2"
-  scenes <- read_obs_pixel(con, zone_id = 1L)
-  scenes <- unique(scenes[, c("scene_id", "obs_date")])
+  # scenes is a data.frame of (scene_id, obs_date); typically the
+  # cache directory listing for the zone.
+  scenes <- data.frame(
+    scene_id = "S2A_MSIL2A_20250610T103031_R108_T31TGM",
+    obs_date = as.Date("2025-06-10"))
   stack  <- read_s2_band_stack(cache, scenes, "B04")
   terra::time(stack)        # the dates as a vector
   terra::plot(stack[[1]])   # first scene

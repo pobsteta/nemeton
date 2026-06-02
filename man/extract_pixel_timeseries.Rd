@@ -64,7 +64,9 @@ off `build_index_stack()` by a sub-pixel amount.
 \examples{
 \dontrun{
   cache <- "/proj/cache/layers/sentinel2"
-  scenes <- unique(read_obs_pixel(con, 1L)[, c("scene_id", "obs_date")])
+  scenes <- data.frame(
+    scene_id = "S2A_MSIL2A_20250610T103031_R108_T31TGM",
+    obs_date = as.Date("2025-06-10"))
   # A point clicked on the leaflet map at (lng, lat) = (5.0, 47.5)
   ts <- extract_pixel_timeseries(cache, scenes, c(5.0, 47.5))
   library(ggplot2)
@@ -73,7 +75,5 @@ off `build_index_stack()` by a sub-pixel amount.
 
 }
 \seealso{
-[build_index_stack()], [read_s2_band_stack()],
-  [read_obs_pixel()] for the per-plot equivalent already aggregated
-  in the DB.
+[build_index_stack()], [read_s2_band_stack()].
 }

@@ -71,7 +71,9 @@ documented and intentional.
 \examples{
 \dontrun{
   cache <- "/proj/cache/layers/sentinel2"
-  scenes <- unique(read_obs_pixel(con, 1L)[, c("scene_id", "obs_date")])
+  scenes <- data.frame(
+    scene_id = "S2A_MSIL2A_20250610T103031_R108_T31TGM",
+    obs_date = as.Date("2025-06-10"))
   ndvi_stack <- build_index_stack(cache, scenes, "NDVI")
   terra::plot(ndvi_stack[[1]])
 }

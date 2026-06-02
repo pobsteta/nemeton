@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.60.0] - 2026-06-02
+
+### Removed
+
+- `read_obs_pixel()`, `list_fast_alerts_for_zone()` and `detect_alerts()`
+  (deprecated in v0.58.0) are removed. Use `build_index_stack()` /
+  `extract_pixel_timeseries()` and `read_fast_alert_raster()` /
+  `compute_fast_alert_mask()` instead. Files `R/read_obs_pixel.R`,
+  `R/fast_alerts.R`, `R/alerts.R` and their `man/` pages deleted; exports
+  removed from `NAMESPACE`.
+- `CREATE TABLE obs_pixel` (and the PG `create_hypertable` call) removed
+  from `0001_init.sql` (PG + SQLite): fresh databases never create the
+  table. Migration `0004_drop_obs_pixel.sql` is kept for existing
+  databases (idempotent DROP, no-op on a fresh DB).
+
 ## [0.58.0] - 2026-06-02
 
 ### Removed
