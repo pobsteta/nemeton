@@ -10,6 +10,21 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.61.0] - 2026-06-02
+
+### Added
+
+- `ingest_sentinel2_timeseries()` gains opt-in `prewarm_alerts = FALSE` +
+  `prewarm_mask_cache_dir = NULL` (spec 018). When `prewarm_alerts = TRUE`,
+  a successful ingestion chains on four `read_fast_alert_raster()` calls
+  (`NDVI`/`NBR` × `count`/`rolling`, default threshold, `window_days = 30`)
+  so the four usual FAST alert maps land in the D6 result cache and the
+  app's FAST tab is instant on first visit. Per-combination failures warn
+  and are skipped (the others still complete); the pre-warm polls
+  `cancel_path` between combinations and never starts on a cancelled
+  ingestion. New internal helper `.prewarm_fast_alerts()`. Progress
+  heartbeat events `fast_prewarm:<index>_<mode>` / `_done` / `_failed`.
+
 ## [0.60.0] - 2026-06-02
 
 ### Removed

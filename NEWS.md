@@ -1,3 +1,37 @@
+# nemeton 0.61.0 (2026-06-02)
+
+### Added — pré-calcul des 4 cartes FAST en fin d'ingestion (spec 018)
+
+`ingest_sentinel2_timeseries()` accepte un paramètre opt-in
+**`prewarm_alerts = FALSE`**. Quand `prewarm_alerts = TRUE` (et qu'un
+répertoire de cache résultat est fourni via `prewarm_mask_cache_dir`), la
+fonction enchaîne en fin d'ingestion réussie sur **4 appels**
+`read_fast_alert_raster()` couvrant les combinaisons usuelles
+`NDVI`/`NBR` × `count`/`rolling`, au threshold par défaut (0.40 NDVI /
+0.30 NBR) et `window_days = 30`. Les 4 COG résultats atterrissent dans le
+cache D6 (`<dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`) → l'onglet
+Alertes FAST de l'app devient instantané au premier affichage, et les
+bascules NDVI↔NBR / Fréquence↔Intensité ne déclenchent plus de recalcul.
+
+- **Tolérant aux échecs partiels** : les 4 combinaisons sont
+  indépendantes. Une combinaison qui échoue (p. ex. `NBR` sur une zone
+  dont le cache n'a pas de bande B12) émet un avertissement et est
+  ignorée — les autres aboutissent quand même. La combinaison manquante
+  est simplement recalculée à la volée à la première visite.
+- **Cancel coopératif respecté** : le pré-calcul interroge `cancel_path`
+  entre chaque combinaison ; un cancel arrivant en cours de route s'arrête
+  proprement après la combinaison courante (les COG déjà écrits restent
+  valides). Une ingestion annulée ne démarre jamais le pré-calcul.
+- **Heartbeat progress** : 4 phases émises via `progress_callback`
+  (`fast_prewarm:<index>_<mode>` / `_done` / `_failed`), chacune portant
+  `index` et `mode` pour un toast localisable côté app.
+- **Non-breaking** : `prewarm_alerts = FALSE` par défaut → les workflows
+  existants sont inchangés.
+
+Côté app `nemetonshiny` (à venir, `v0.54.0`) : `service_monitoring.R`
+forwarde `prewarm_alerts = TRUE` + `prewarm_mask_cache_dir =
+<projet>/cache/layers/fast_alert`, plancher `Imports: nemeton (>= 0.61.0)`.
+
 # nemeton 0.60.0 (2026-06-02)
 
 ### Removed — retrait définitif des trois lecteurs `obs_pixel` (Phase B)

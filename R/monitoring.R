@@ -199,6 +199,12 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       next) and `n_total`. Emitted just before the loop breaks.}
 #'     \item{`s2:complete`}{After the loop — payload includes
 #'       `completed = total`, `total`, `n_scenes_cached`.}
+#'     \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
+#'       `prewarm_alerts = TRUE`) emitted at the start / end of each of
+#'       the four pre-computed FAST maps. The bare key signals "started",
+#'       a `_done` suffix "map ready", a `_failed` suffix "skipped"
+#'       (with `error_message`). Every event carries `index` and `mode`
+#'       so the caller can localise the toast.}
 #'   }
 #'   The callback is invoked synchronously inside the calling thread.
 #'   Default `NULL` (silent — no callback emitted).
@@ -211,6 +217,23 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   own transaction), and the returned summary carries
 #'   `status = "cancelled"`. A flag already present at entry is ignored
 #'   as a stale leftover — the caller must delete it before each call.
+#' @param prewarm_alerts Logical (spec 018). When `TRUE`, after a
+#'   successful ingestion the worker chains on four
+#'   [read_fast_alert_raster()] calls — `NDVI`/`NBR` × `count`/`rolling`,
+#'   default threshold (0.40 NDVI / 0.30 NBR) and `window_days = 30` —
+#'   so the four usual FAST alert maps land in the D6 result cache and
+#'   the app's FAST tab is instant on first visit. Each combination is
+#'   independent: a failure on one (e.g. no B12 scene for `NBR`) warns
+#'   and is skipped, never aborting the others. The pre-warm polls
+#'   `cancel_path` between combinations. Default `FALSE` (no extra work,
+#'   identical to the historical behaviour). A cancelled ingestion never
+#'   starts the pre-warm.
+#' @param prewarm_mask_cache_dir Character path, **required when
+#'   `prewarm_alerts = TRUE`**. Root of the FAST alert result (D6) cache,
+#'   forwarded to [read_fast_alert_raster()] as `result_cache_dir`;
+#'   COGs land under `<dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`.
+#'   Point it at `<project>/cache/layers/fast_alert`. Ignored when
+#'   `prewarm_alerts = FALSE`.
 #'
 #' @return A one-row `data.frame` summarising the ingestion: number of
 #'   scenes considered (`n_scenes`), scenes skipped thanks to the COG
@@ -248,12 +271,32 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                                         skip_cached = TRUE,
                                         cache_dir = NULL,
                                         progress_callback = NULL,
-                                        cancel_path = NULL) {
+                                        cancel_path = NULL,
+                                        prewarm_alerts = FALSE,
+                                        prewarm_mask_cache_dir = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
   bands <- match.arg(bands, c("NDVI", "NBR"), several.ok = TRUE)
+
+  # spec 018 — FAST-alert pre-warming is opt-in and needs both a band
+  # cache to read from (`cache_dir`) and a destination for the result
+  # COGs (`prewarm_mask_cache_dir`). Fail fast on a mis-wired caller
+  # rather than silently running the whole ingestion and pre-warming
+  # nothing at the end.
+  if (isTRUE(prewarm_alerts)) {
+    if (is.null(cache_dir) || !nzchar(cache_dir)) {
+      cli::cli_abort(c(
+        "{.arg prewarm_alerts = TRUE} requires a non-empty {.arg cache_dir}.",
+        i = "The FAST alert maps are built from the on-disk S2 COG cache."))
+    }
+    if (is.null(prewarm_mask_cache_dir) || !nzchar(prewarm_mask_cache_dir)) {
+      cli::cli_abort(c(
+        "{.arg prewarm_alerts = TRUE} requires {.arg prewarm_mask_cache_dir}.",
+        i = "Point it at {.path <project>/cache/layers/fast_alert} (the D6 result cache)."))
+    }
+  }
 
   # Always-on cache status banner. Catches the most common wiring bug
   # ("I forgot to pass cache_dir") at the very first line of output, so
@@ -409,6 +452,18 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             total           = as.integer(total_scenes),
             n_scenes_cached = as.integer(total_cached)))
 
+  # spec 018 — opt-in pre-computation of the 4 usual FAST alert maps
+  # (NDVI/NBR × count/rolling). Runs only on the success path: a
+  # cancelled ingestion returned above, so we never start a long
+  # pre-warm the user just asked to stop. The helper polls `cancel_path`
+  # between combinations, so a cancel arriving during pre-warm still
+  # exits cleanly (the COGs already written stay valid in the D6 cache).
+  if (isTRUE(prewarm_alerts)) {
+    .prewarm_fast_alerts(con, zone_id, start, end,
+                         cache_dir, prewarm_mask_cache_dir,
+                         emit, cancelled)
+  }
+
   .ingest_summary(
     n_scenes        = total_scenes,
     n_scenes_cached = total_cached,
@@ -436,6 +491,85 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
 .empty_ingest_summary <- function() {
   .ingest_summary(0L, 0L, 0L, "", status = "success")
+}
+
+# spec 018 — pre-compute the 4 usual FAST alert maps at the end of an
+# ingestion so the app's FAST tab is instant on first visit (no 5-30 s
+# wait on each NDVI<->NBR / count<->rolling switch). Each combination is
+# content-addressed and persisted by `read_fast_alert_raster()` (D6
+# cache) under `<result_cache_dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`.
+#
+# Robustness: the four combinations are independent. A failure on one
+# (e.g. a zone whose cache has no B12 scene, so NBR has no usable scene)
+# warns and is skipped, NEVER aborting the others — a partial pre-warm is
+# strictly better than none, and the missing combinations are simply
+# recomputed lazily on first visit. Cooperative cancellation is polled
+# between combinations: a cancel arriving mid-pre-warm stops cleanly after
+# the current combination, leaving the already-written COGs valid.
+#
+# `emit` / `cancelled` are the closures already built by the caller
+# (`ingest_sentinel2_timeseries()`), so the stale-flag semantics and the
+# no-op-when-NULL progress behaviour are shared verbatim. Threshold is
+# left NULL (core defaults: 0.40 NDVI / 0.30 NBR) and `window_days` is the
+# standard 30 — a caller with custom values gets a cache miss and a lazy
+# recompute on visit, an accepted limitation (~90% keep the defaults).
+#
+# Progress contract — one event per combination, all carrying
+# `index` / `mode` so the app can build a localized toast:
+#   * `fast_prewarm:<index>_<mode>`         — combination started
+#   * `fast_prewarm:<index>_<mode>_done`    — map ready (COG written)
+#   * `fast_prewarm:<index>_<mode>_failed`  — skipped; `error_message` set
+.prewarm_fast_alerts <- function(con, zone_id, date_from, date_to,
+                                 cache_dir, result_cache_dir,
+                                 emit, cancelled) {
+  combos <- expand.grid(
+    index = c("NDVI", "NBR"),
+    mode  = c("count", "rolling"),
+    stringsAsFactors = FALSE)
+
+  for (i in seq_len(nrow(combos))) {
+    if (cancelled()) break
+    idx  <- combos$index[i]
+    mode <- combos$mode[i]
+    emit(list(current = sprintf("fast_prewarm:%s_%s", idx, mode),
+              index = idx, mode = mode))
+
+    err_msg <- NULL
+    res <- tryCatch(
+      read_fast_alert_raster(
+        con,
+        zone_id          = zone_id,
+        index            = idx,
+        threshold        = NULL,        # core defaults: 0.40 NDVI / 0.30 NBR
+        date_from        = date_from,
+        date_to          = date_to,
+        mode             = mode,
+        window_days      = 30L,
+        cache_dir        = cache_dir,
+        cache_result     = TRUE,
+        result_cache_dir = result_cache_dir),
+      error = function(e) {
+        err_msg <<- conditionMessage(e)
+        NULL
+      })
+
+    # NULL covers both a hard error (caught above) and the soft
+    # "no usable scene for this index" case (e.g. NBR with no B12 in the
+    # cache): either way no COG was written, so report it as a skip.
+    if (is.null(res)) {
+      if (is.null(err_msg)) {
+        err_msg <- sprintf("no usable %s scene in the cache for this window",
+                           idx)
+      }
+      cli::cli_warn("FAST prewarm {idx}/{mode} skipped: {err_msg}")
+      emit(list(current = sprintf("fast_prewarm:%s_%s_failed", idx, mode),
+                index = idx, mode = mode, error_message = err_msg))
+    } else {
+      emit(list(current = sprintf("fast_prewarm:%s_%s_done", idx, mode),
+                index = idx, mode = mode))
+    }
+  }
+  invisible(NULL)
 }
 
 # Map the requested indices to the Sentinel-2 COG bands they need.

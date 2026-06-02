@@ -14,7 +14,9 @@ ingest_sentinel2_timeseries(
   skip_cached = TRUE,
   cache_dir = NULL,
   progress_callback = NULL,
-  cancel_path = NULL
+  cancel_path = NULL,
+  prewarm_alerts = FALSE,
+  prewarm_mask_cache_dir = NULL
 )
 }
 \arguments{
@@ -112,6 +114,12 @@ Phases emitted, in order:
     next) and `n_total`. Emitted just before the loop breaks.}
   \item{`s2:complete`}{After the loop — payload includes
     `completed = total`, `total`, `n_scenes_cached`.}
+  \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
+    `prewarm_alerts = TRUE`) emitted at the start / end of each of
+    the four pre-computed FAST maps. The bare key signals "started",
+    a `_done` suffix "map ready", a `_failed` suffix "skipped"
+    (with `error_message`). Every event carries `index` and `mode`
+    so the caller can localise the toast.}
 }
 The callback is invoked synchronously inside the calling thread.
 Default `NULL` (silent — no callback emitted).}
@@ -125,6 +133,27 @@ leaving every already-cached tile on disk, and the returned summary
 carries `status = "cancelled"`. A flag already present at entry is
 ignored as a stale leftover — the caller must delete it before each
 call.}
+
+\item{prewarm_alerts}{Logical (spec 018). When `TRUE`, after a
+successful ingestion the worker chains on four
+\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} calls
+— `NDVI`/`NBR` × `count`/`rolling`, default threshold (0.40 NDVI /
+0.30 NBR) and `window_days = 30` — so the four usual FAST alert maps
+land in the D6 result cache and the app's FAST tab is instant on
+first visit. Each combination is independent: a failure on one (e.g.
+no B12 scene for `NBR`) warns and is skipped, never aborting the
+others. The pre-warm polls `cancel_path` between combinations.
+Default `FALSE` (no extra work, identical to the historical
+behaviour). A cancelled ingestion never starts the pre-warm.}
+
+\item{prewarm_mask_cache_dir}{Character path, \strong{required when
+`prewarm_alerts = TRUE`}. Root of the FAST alert result (D6) cache,
+forwarded to
+\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} as
+`result_cache_dir`; COGs land under
+`<dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`. Point it at
+`<project>/cache/layers/fast_alert`. Ignored when
+`prewarm_alerts = FALSE`.}
 }
 \value{
 A one-row `data.frame` summarising the ingestion: number of
