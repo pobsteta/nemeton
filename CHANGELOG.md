@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.61.2] - 2026-06-02
+
+### Changed
+
+- RAG corpus manifest: license arbitration (spec 009.1 D5, decided by
+  Pascal). `bernard_doridant_2024_fordead` (ONF/DSF, basis of the R5
+  guardrails) cleared as Licence Ouverte; `set_revue_foret_croissance_climat`
+  cleared as open/CC-BY (the only `to_confirm` row with a local PDF, now
+  ingestible). The four copyright papers (Mouret 2022, Fassnacht 2016,
+  McCool 1987, Beven & Kirkby 1979) stay `to_confirm`. Manifest is now
+  35 cleared / 4 to_confirm.
+
 ## [0.61.1] - 2026-06-02
 
 ### Fixed

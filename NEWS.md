@@ -1,3 +1,24 @@
+# nemeton 0.61.2 (2026-06-02)
+
+### Changed — arbitrage des licences du corpus RAG (spec 009.1 D5)
+
+Décisions de licence prises par Pascal (D5 — Claude n'arbitre jamais le
+juridique) sur les documents `to_confirm` du manifest
+`inst/extdata/knowledge_corpus_v1.csv` :
+
+- **Bernard & Doridant 2024** (rapport ONF/DSF, fonde les garde-fous R5
+  de la spec 008) → **Licence Ouverte confirmée**, `status = cleared`.
+  Reste à attacher le PDF/URL DSF pour l'ingestion effective.
+- **Revue SET « Forêt, croissance et changement climatique »** (seul doc
+  avec un PDF local présent) → **licence ouverte/CC-BY confirmée**,
+  `status = cleared` → s'ingérera au prochain build du corpus.
+- **4 papiers copyright** (Mouret 2022, Fassnacht 2016, McCool 1987,
+  Beven & Kirkby 1979) → laissés `to_confirm` (copyright → jamais
+  full-text, abstract/lien-seul à câbler ultérieurement).
+
+Bilan manifest : **35 `cleared` / 4 `to_confirm`**. Le test
+`test-knowledge-corpus-manifest.R` reste vert (invariants D5/§5).
+
 # nemeton 0.61.1 (2026-06-02)
 
 ### Fixed — cohérence du manifest corpus RAG + garde-fous (spec 009.1)
