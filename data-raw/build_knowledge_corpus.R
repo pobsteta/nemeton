@@ -13,17 +13,33 @@
 # is the project's OWN content (tutorials + specs, MIT) — fully ingestible
 # with zero legal arbitration.
 #
+# The embedding API key is resolved by the core: NEMETON_MISTRAL_API_KEY
+# first, then MISTRAL_API_KEY (so an existing MISTRAL_API_KEY works — but it
+# must be visible from THIS repo, i.e. in ~/.Renviron or exported, not only
+# in nemetonshiny's project .Renviron).
+#
 # Usage:
 #   # dry run (no API calls) — validate manifest + print the ingestion plan
 #   NEMETON_CORPUS_DRY_RUN=TRUE Rscript data-raw/build_knowledge_corpus.R
 #
 #   # real build into a local SQLite corpus (needs an embedding API key)
-#   export NEMETON_MISTRAL_API_KEY=...
+#   export MISTRAL_API_KEY=...
 #   export NEMETON_KNOWLEDGE_DB_URL="sqlite:///$(pwd)/data-raw/knowledge_corpus.sqlite"
 #   Rscript data-raw/build_knowledge_corpus.R
 #
+#   # real build into the SHARED prod corpus (same PG as the app)
+#   # NOTE: there is NO automatic fallback to NEMETON_DB_URL — you point the
+#   # knowledge URL at it ON PURPOSE, so the build can never write the corpus
+#   # into prod by accident (cf. the NEMETON_DB_URL_TEST safety rules).
+#   export MISTRAL_API_KEY=...
+#   export NEMETON_KNOWLEDGE_DB_URL="$NEMETON_DB_URL"
+#   Rscript data-raw/build_knowledge_corpus.R
+#
 # Env vars:
-#   NEMETON_KNOWLEDGE_DB_URL   DB url (default: sqlite in data-raw/)
+#   NEMETON_KNOWLEDGE_DB_URL   DB url for the corpus. Default: a LOCAL SQLite
+#                              in data-raw/ (safe default — never NEMETON_DB_URL).
+#                              Set it to "$NEMETON_DB_URL" to build the shared
+#                              prod corpus.
 #   NEMETON_CORPUS_PROVIDER    embed provider: mistral (default) | openai | voyage
 #   NEMETON_CORPUS_DRY_RUN     TRUE -> parse + plan only, no DB, no embedding
 #   NEMETON_CORPUS_FRESH       TRUE -> delete every existing document first

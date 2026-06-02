@@ -54,7 +54,10 @@ lang)`, `embed_query()`.
 **Prérequis (hors code, une fois)** :
 - `enable_rag(con)` sur la base prod (pgvector).
 - Corpus construit : `Rscript data-raw/build_knowledge_corpus.R` (repo
-  `nemeton`).
+  `nemeton`). ⚠️ Le build **ne** retombe **pas** automatiquement sur
+  `NEMETON_DB_URL` (défaut sûr = SQLite local). Pour peupler la prod il
+  faut le pointer **explicitement** : `export NEMETON_KNOWLEDGE_DB_URL="$NEMETON_DB_URL"`
+  (évite toute écriture prod accidentelle, cf. garde-fous `NEMETON_DB_URL_TEST`).
 - Clé d'embedding : `MISTRAL_API_KEY` (fallback reconnu — **pas** besoin de
   `NEMETON_MISTRAL_API_KEY`). Attention : le build tourne depuis le repo
   `nemeton`, donc la clé doit être dans `~/.Renviron` (utilisateur) ou
@@ -66,8 +69,15 @@ En prod : pointer cette URL sur le **même PG** que `NEMETON_DB_URL` (les
 tables `knowledge_*` cohabitent ; pgvector). BD séparée = optionnel
 (cycle de vie indépendant). **Ne jamais** mettre le corpus dans un SQLite
 *par-projet* (duplication) — si backend local, un seul SQLite knowledge
-partagé. Le `service_rag.R` résout : `NEMETON_KNOWLEDGE_DB_URL` sinon
-`NEMETON_DB_URL`.
+partagé.
+
+> **À écrire côté app** : il n'existe **aucun** fallback automatique
+> `NEMETON_KNOWLEDGE_DB_URL → NEMETON_DB_URL` dans le cœur (les fonctions RAG
+> prennent un `con` explicite ; le build retombe sur SQLite local). C'est
+> donc à `service_rag.R` de le faire : utiliser la connexion dédiée si
+> `NEMETON_KNOWLEDGE_DB_URL` est définie, sinon **réutiliser la connexion
+> existante de l'app** (déjà ouverte sur `NEMETON_DB_URL`) — trivial et sûr
+> en lecture.
 
 **À faire (app)** :
 - `R/service_rag.R` (nouveau, orchestration mince — appelle seulement le
