@@ -46,6 +46,11 @@ au switch radio.
 
 ## 2. Perspectives IA sourcées — RAG (`feat`, MINOR)
 
+> 📋 **Brief détaillé, prêt à coller** : `BRIEF-nemetonshiny-rag.md` (racine) —
+> code par fichier, mapping profils, piège des sous-codes familles, dédup
+> citations, dégradation gracieuse, tests, checklist. **Corpus prod déjà
+> peuplé** (19 docs / 1845 chunks dans `NEMETON_DB_URL`, 2026-06-02).
+
 **Cœur** : `nemeton@v0.62.0` (machinerie close). Fonctions :
 `retrieve_knowledge(con, query, top_k, family_codes, profile_codes,
 min_similarity, lang, embed_provider)`, `format_citations(chunks, format,
