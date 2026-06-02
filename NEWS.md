@@ -1,3 +1,32 @@
+# nemeton 0.61.1 (2026-06-02)
+
+### Fixed — cohérence du manifest corpus RAG + garde-fous (spec 009.1)
+
+Durcissement du livrable corpus E7 (sans toucher le code RAG ni
+arbitrer de licence) :
+
+- **Correction manifest** `inst/extdata/knowledge_corpus_v1.csv` : la
+  ligne `set_revue_foret_croissance_climat` portait `status = cleared`
+  alors que sa `license` est littéralement `to-confirm` — le pipeline
+  l'aurait donc ingérée malgré une licence non confirmée, en
+  contradiction avec la décision D5 (« pas d'ingestion tant que la
+  licence n'est pas tranchée »). Statut remis à `to_confirm` (aucune
+  décision juridique prise — simple retour du côté sûr).
+- **Nouveau test de validation** `test-knowledge-corpus-manifest.R`
+  (20 assertions) : le manifest packagé — source unique de vérité du
+  corpus — est désormais gardé sur sa structure (colonnes, `doc_id`
+  uniques et slug), ses énumérations (`license`, `status`,
+  `ingest_strategy`, `lang`, `doc_type`, `license_commercial_ok`), la
+  validité des codes familles/profils, et deux invariants de sécurité
+  D5/§5 : un document `cleared` ne peut pas avoir de licence vide ou
+  `to-confirm`, et un document `copyright` ne peut jamais être ingéré
+  en `full`.
+- **`inst/NOTICE`** : nouvelle section « RAG knowledge corpus » listant
+  les attributions par classe de licence (Légifrance, EUR-Lex, IPCC,
+  Etalab OFB/ONF/CNPF, CC-BY, dépôts HAL, autorisation Tran-Ha) et
+  rappelant que les sources copyright ne sont jamais redistribuées
+  (abstract-only / link-only).
+
 # nemeton 0.61.0 (2026-06-02)
 
 ### Added — pré-calcul des 4 cartes FAST en fin d'ingestion (spec 018)

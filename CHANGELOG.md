@@ -10,6 +10,27 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.61.1] - 2026-06-02
+
+### Fixed
+
+- RAG corpus manifest (`inst/extdata/knowledge_corpus_v1.csv`): the
+  `set_revue_foret_croissance_climat` row was `status = cleared` while
+  its `license` was the literal `to-confirm` placeholder, which would
+  have let `build_knowledge_corpus.R` ingest it despite an unconfirmed
+  license (contrary to spec 009.1 D5). Status reset to `to_confirm`.
+
+### Added
+
+- `tests/testthat/test-knowledge-corpus-manifest.R` — integrity guards
+  for the packaged corpus manifest: column set, unique slug `doc_id`,
+  controlled enums (`license` / `status` / `ingest_strategy` / `lang` /
+  `doc_type` / `license_commercial_ok`), valid family/profile codes, and
+  the D5/§5 safety invariants (a `cleared` row needs a confirmed license;
+  a `copyright` document is never `full`-ingested).
+- `inst/NOTICE`: a "RAG knowledge corpus" section attributing the corpus
+  sources by license class.
+
 ## [0.61.0] - 2026-06-02
 
 ### Added

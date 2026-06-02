@@ -101,6 +101,46 @@ License  : The site-index curves tabulated in
 Usage    : Site-index estimation (P2 indicator) when a Canopy
            Height Model is available (spec 005 phase 2).
 
+RAG knowledge corpus (spec 009.1)
+---------------------------------
+The retrieval-augmented knowledge base (E7, specs 009 / 009.1) is
+declared by the manifest `inst/extdata/knowledge_corpus_v1.csv`, the
+single source of truth for which documents may be ingested, under
+which license, and with which ingestion strategy. The corpus itself
+(embedded chunks) is NOT bundled with the package: it is rebuilt from
+the manifest by `data-raw/build_knowledge_corpus.R`. Each document
+carries its license in the `license` column; a document is only
+full-text ingested once its license is personally confirmed
+(`status = cleared`), per decision D5 of spec 009.1.
+
+Sources currently declared in the manifest, by license class:
+  - Project-own content (MIT): the 10 tutorials under inst/tutorials/
+    and the internal specs — fully ingestible, no third-party rights.
+  - Public domain / law: French Code forestier via Légifrance
+    (https://www.legifrance.gouv.fr).
+  - EU reusable: EU Forest Strategy COM(2021) 572 via EUR-Lex
+    (reuse authorised, https://eur-lex.europa.eu).
+  - Open Licence / Etalab 2.0: IGN BD Forêt® (see above); OFB guides
+    CT88 / CT82 (https://espaces-naturels.fr); ONF and CNPF/CRPF
+    regulatory documents (PSG, CBPS, RTG, SRGS, DRA/SRA) — Etalab or
+    reusable administrative acts.
+  - Free-use: IPCC 2019 Refinement, AFOLU volume
+    (https://www.ipcc-nggip.iges.or.jp).
+  - Explicit authorisation: Duplat & Tran-Ha site-index work (see the
+    dedicated section above).
+  - CC-BY (to confirm per source): Forrester et al. 2017, Larrieu
+    et al. 2018, Monnet & Mermin 2014.
+  - HAL deposits: Bontemps et al. 2006/2007/2009, Charru et al.
+    2012/2017 (deposit license verified per record).
+Copyrighted papers (e.g. Mouret et al. 2022, Fassnacht et al. 2016,
+McCool et al. 1987, Beven & Kirkby 1979) are NEVER full-text ingested:
+they are referenced abstract-only or link-only so the assistant can
+cite them without redistributing protected text (spec 009.1 §5).
+
+Each cited chunk surfaced in an AI perspective carries its source
+document's attribution back to the user; the manifest's `license`
+and `notes` columns are the audit trail.
+
 Third-party attributions in source code
 ---------------------------------------
 All data-source metadata (URLs, providers, licenses) are declared in
