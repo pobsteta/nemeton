@@ -77,15 +77,30 @@ split_codes <- function(x) {
   x[nzchar(x)]
 }
 
-# Which rows are eligible to ingest this run?
+is_reference <- function(strategy) strategy %in% c("abstract_only", "link_only")
+
+# Optional `abstract` column (forward-compatible): when the manifest grows
+# an `abstract` column it feeds abstract_only ingestion; absent today, so
+# reference rows currently ingest as link_only.
+abstract_of <- function(row) {
+  if ("abstract" %in% names(row) && nzchar(row$abstract)) row$abstract else NULL
+}
+
+# Which rows are eligible to ingest this run? `full` rows ingest their
+# body; `abstract_only` / `link_only` rows ingest a reference-only chunk
+# (spec 009.1 §5) — both are gated by the same cleared/to_confirm license
+# gate (D5).
+known_strategy <- man$ingest_strategy %in% c("full", "abstract_only", "link_only")
 eligible <- (man$status == "cleared") | (incl_tbc & man$status == "to_confirm")
-eligible <- eligible & (man$ingest_strategy == "full")
+eligible <- eligible & known_strategy
 
 cli::cli_inform(c(
   "Manifest rows : {nrow(man)}",
   "Cleared       : {sum(man$status == 'cleared')}",
   "To confirm    : {sum(man$status == 'to_confirm')}",
-  "Eligible now  : {sum(eligible)}{if (incl_tbc) ' (incl. to_confirm)' else ''}"
+  "Eligible now  : {sum(eligible)}{if (incl_tbc) ' (incl. to_confirm)' else ''}",
+  "  full        : {sum(eligible & man$ingest_strategy == 'full')}",
+  "  reference   : {sum(eligible & man$ingest_strategy %in% c('abstract_only','link_only'))}"
 ))
 
 # ---- text resolution -------------------------------------------------
@@ -135,9 +150,13 @@ if (dry_run) {
   plan <- man[eligible, , drop = FALSE]
   for (i in seq_len(nrow(plan))) {
     r <- plan[i, ]
-    src <- resolve_source(r)
-    kind <- if (is.null(src)) "NO SOURCE" else if (file.exists(src) &&
-      grepl("\\.pdf$", src, TRUE)) "pdf" else "text"
+    if (is_reference(r$ingest_strategy)) {
+      kind <- if (!is.null(abstract_of(r))) "abstract_only" else "link_only"
+    } else {
+      src <- resolve_source(r)
+      kind <- if (is.null(src)) "NO SOURCE" else if (file.exists(src) &&
+        grepl("\\.pdf$", src, TRUE)) "pdf" else "text"
+    }
     cli::cli_inform("- {r$doc_id} [{kind}] {r$title}")
   }
   cli::cli_alert_info("Dry run only: no DB connection, no embedding API calls.")
@@ -166,8 +185,10 @@ for (i in seq_len(nrow(man))) {
     cli::cli_alert_info("skip (already ingested): {r$doc_id}")
     n_skip <- n_skip + 1L; next
   }
-  src <- resolve_source(r)
-  if (is.null(src)) {
+  reference <- is_reference(r$ingest_strategy)
+  # A `full` row needs an ingestible body; a reference row never does.
+  src <- if (reference) NULL else resolve_source(r)
+  if (!reference && is.null(src)) {
     cli::cli_alert_warning("skip (no ingestible source): {r$doc_id}")
     n_skip <- n_skip + 1L; next
   }
@@ -187,11 +208,18 @@ for (i in seq_len(nrow(man))) {
                          license_commercial_ok = identical(toupper(r$license_commercial_ok), "TRUE"))
   )
   res <- tryCatch(
-    ingest_knowledge_document(con, src, metadata = meta, embed_provider = provider),
+    if (reference) {
+      ingest_knowledge_reference(con, metadata = meta,
+                                 abstract = abstract_of(r),
+                                 embed_provider = provider)
+    } else {
+      ingest_knowledge_document(con, src, metadata = meta, embed_provider = provider)
+    },
     error = function(e) { cli::cli_alert_danger("error {r$doc_id}: {conditionMessage(e)}"); NULL }
   )
   if (is.null(res)) { n_err <- n_err + 1L; next }
-  cli::cli_alert_success("ingested {r$doc_id}: {res$n_chunks} chunk{?s}")
+  mode_tag <- if (reference) sprintf(" [%s]", res$ingestion_mode) else ""
+  cli::cli_alert_success("ingested {r$doc_id}: {res$n_chunks} chunk{?s}{mode_tag}")
   n_ok <- n_ok + 1L
 }
 

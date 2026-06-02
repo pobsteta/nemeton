@@ -596,6 +596,113 @@ ingest_knowledge_document <- function(con,
 }
 
 
+# Build the single embeddable chunk for a reference-only document: a
+# compact bibliographic citation (title, author, year, publisher, URL),
+# followed either by the abstract (when available) or a notice that the
+# full text is deliberately not redistributed. The citation words make
+# the reference retrievable; the body is never the protected full text.
+.build_reference_text <- function(meta, abstract = NULL) {
+  g <- function(k) {
+    v <- meta[[k]]
+    if (is.null(v) || length(v) != 1L || is.na(v) || !nzchar(as.character(v)))
+      "" else as.character(v)
+  }
+  yr <- ""
+  pd <- meta$pub_date
+  if (!is.null(pd) && length(pd) == 1L && !is.na(pd)) {
+    yr <- tryCatch(format(as.Date(pd), "%Y"), error = function(e) "")
+  }
+  byline <- paste(c(g("author"), yr)[nzchar(c(g("author"), yr))], collapse = ", ")
+  pieces <- c(
+    g("title"),
+    if (nzchar(byline))         byline                       else NULL,
+    if (nzchar(g("publisher"))) g("publisher")               else NULL,
+    if (nzchar(g("source_url"))) paste0("Source: ", g("source_url")) else NULL)
+  cite <- paste(pieces[nzchar(pieces)], collapse = ". ")
+
+  has_abstract <- !is.null(abstract) && length(abstract) == 1L &&
+                  !is.na(abstract) && nzchar(abstract)
+  tail <- if (has_abstract) {
+    paste0("Abstract: ", abstract)
+  } else {
+    sprintf("[Reference only — full text not redistributed (license: %s).]",
+            if (nzchar(g("license"))) g("license") else "unknown")
+  }
+  paste0(cite, ".\n\n", tail)
+}
+
+
+#' Ingest a reference-only document into the RAG knowledge base
+#'
+#' For documents whose full text cannot be redistributed (paywalled
+#' papers, all-rights-reserved reports), spec 009.1 §5 stores only a
+#' citable reference: the assistant can cite « Author, year, title,
+#' doi:… » without ever holding the protected body. This is the
+#' `link_only` / `abstract_only` counterpart of
+#' [ingest_knowledge_document()].
+#'
+#' A single chunk is built and embedded: a compact bibliographic
+#' citation, followed by the `abstract` when one is supplied
+#' (`ingestion_mode = "abstract_only"`) or a "full text not
+#' redistributed" notice otherwise (`ingestion_mode = "link_only"`). The
+#' chosen mode is recorded under `metadata.ingestion_mode` (the JSON
+#' `metadata` column — no schema change), so a corpus can be audited for
+#' which documents are full-text versus reference-only.
+#'
+#' @param con A `DBIConnection`. RAG schema must be enabled
+#'   ([enable_rag()]).
+#' @param metadata Named list, same fields as [ingest_knowledge_document()].
+#'   `title` is required; `author`, `pub_date`, `publisher`,
+#'   `source_url`, `license`, `family_codes`, `profile_codes` feed the
+#'   citation and the hybrid retrieval filter.
+#' @param abstract Character scalar or `NULL`. When supplied, the
+#'   abstract becomes the chunk body (`abstract_only`); otherwise a
+#'   reference-only chunk is stored (`link_only`).
+#' @param embed_provider,api_key See [ingest_knowledge_document()].
+#'
+#' @return Invisibly, the list returned by [ingest_knowledge_document()]
+#'   (`document_id`, `n_chunks = 1`, `n_tokens_est`, `duration_sec`) plus
+#'   `ingestion_mode`.
+#'
+#' @seealso [ingest_knowledge_document()] (full-text ingestion),
+#'   [retrieve_knowledge()], [format_citations()].
+#' @export
+ingest_knowledge_reference <- function(con,
+                                       metadata = list(),
+                                       abstract = NULL,
+                                       embed_provider = c("mistral", "openai", "voyage"),
+                                       api_key = NULL) {
+  embed_provider <- match.arg(embed_provider)
+  if (!is.list(metadata)) {
+    cli::cli_abort("{.arg metadata} must be a named list.")
+  }
+  has_title <- !is.null(metadata$title) && length(metadata$title) == 1L &&
+               !is.na(metadata$title) && nzchar(as.character(metadata$title))
+  if (!has_title) {
+    cli::cli_abort("{.arg metadata$title} is required for a reference ingestion.")
+  }
+  has_abstract <- !is.null(abstract) && length(abstract) == 1L &&
+                  !is.na(abstract) && nzchar(abstract)
+  mode <- if (has_abstract) "abstract_only" else "link_only"
+
+  ref_text <- .build_reference_text(metadata, if (has_abstract) abstract else NULL)
+
+  # Record the ingestion mode in the JSON metadata column (no migration).
+  extra <- if (is.list(metadata$extra)) metadata$extra else list()
+  extra$ingestion_mode <- mode
+  metadata$extra <- extra
+
+  # Delegate the embed + insert to the full-text path: a short reference
+  # string is just a one-chunk text source, so the whole pipeline (chunk,
+  # embed, transactional insert) is reused verbatim.
+  res <- ingest_knowledge_document(
+    con, source = ref_text, metadata = metadata,
+    embed_provider = embed_provider, api_key = api_key)
+  res$ingestion_mode <- mode
+  invisible(res)
+}
+
+
 #' Embed a query string into a numeric vector
 #'
 #' Thin wrapper over the configured embedding provider. Exported mainly

@@ -363,3 +363,86 @@ test_that("ingest + retrieve + format_citations compose end to end", {
   expect_match(cit, "## Sources documentaires")
   expect_match(cit, "FORDEAD R5")
 })
+
+
+# ---- reference-only ingestion (spec 009.1 §5, link_only/abstract_only) ----
+
+test_that(".build_reference_text cites metadata and flags reference-only", {
+  txt <- nemeton:::.build_reference_text(list(
+    title = "TWI model", author = "Beven & Kirkby", pub_date = "1979-01-01",
+    publisher = "Hydrological Sciences Bulletin",
+    source_url = "https://doi.org/x", license = "copyright"))
+  expect_match(txt, "TWI model")
+  expect_match(txt, "Beven & Kirkby, 1979")
+  expect_match(txt, "Source: https://doi.org/x")
+  expect_match(txt, "Reference only")
+  expect_match(txt, "copyright")
+})
+
+test_that(".build_reference_text uses the abstract when provided", {
+  txt <- nemeton:::.build_reference_text(
+    list(title = "T", author = "A", pub_date = "2020-01-01"),
+    abstract = "A short abstract about bark beetles.")
+  expect_match(txt, "Abstract: A short abstract about bark beetles\\.")
+  expect_false(grepl("Reference only", txt))
+})
+
+test_that("ingest_knowledge_reference stores one link_only chunk + records the mode", {
+  con <- local_rag_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) fake_embed(texts), .package = "nemeton")
+  res <- ingest_knowledge_reference(con, metadata = list(
+    title = "Fassnacht 2016 review", author = "Fassnacht et al.",
+    pub_date = "2016-01-01", lang = "en", doc_type = "paper",
+    license = "copyright", source_url = "https://doi.org/10.1016/j.rse.2016.08.013",
+    family_codes = c("B", "P"), profile_codes = "chercheur"))
+  expect_equal(res$n_chunks, 1L)
+  expect_identical(res$ingestion_mode, "link_only")
+
+  # The chunk holds the citation, never a full body.
+  chunk <- DBI::dbGetQuery(con, "SELECT text FROM knowledge_chunk")$text
+  expect_length(chunk, 1L)
+  expect_match(chunk, "Fassnacht 2016 review")
+  expect_match(chunk, "Reference only")
+
+  # ingestion_mode is recorded in the JSON metadata column (no schema change).
+  meta <- DBI::dbGetQuery(con, "SELECT metadata FROM knowledge_document")$metadata
+  expect_match(meta, "link_only")
+})
+
+test_that("ingest_knowledge_reference with an abstract is abstract_only", {
+  con <- local_rag_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) fake_embed(texts), .package = "nemeton")
+  res <- ingest_knowledge_reference(con,
+    metadata = list(title = "Mouret 2022", lang = "en", doc_type = "paper",
+                    license = "copyright", family_codes = "R5"),
+    abstract = "FORDEAD detects dieback from CRSWIR anomalies on Sentinel-2.")
+  expect_identical(res$ingestion_mode, "abstract_only")
+  chunk <- DBI::dbGetQuery(con, "SELECT text FROM knowledge_chunk")$text
+  expect_match(chunk, "FORDEAD detects dieback")
+})
+
+test_that("ingest_knowledge_reference requires a title", {
+  con <- local_rag_con()
+  expect_error(
+    ingest_knowledge_reference(con, metadata = list(lang = "en", doc_type = "paper")),
+    "title")
+})
+
+test_that("a reference-only document is retrievable and cites cleanly", {
+  con <- local_rag_con()
+  testthat::local_mocked_bindings(
+    .embed_texts = function(texts, ...) fake_embed(texts), .package = "nemeton")
+  ingest_knowledge_reference(con, metadata = list(
+    title = "Beven Kirkby TWI 1979", author = "Beven & Kirkby",
+    pub_date = "1979-01-01", lang = "en", doc_type = "paper",
+    license = "copyright", source_url = "https://doi.org/twi",
+    family_codes = "W", profile_codes = "chercheur"))
+  res <- retrieve_knowledge(con, "topographic wetness index hydrology",
+                            min_similarity = 0)
+  expect_gt(nrow(res), 0L)
+  cit <- format_citations(res, format = "markdown")
+  expect_match(cit, "Beven & Kirkby")
+  expect_match(cit, "https://doi.org/twi", fixed = TRUE)
+})

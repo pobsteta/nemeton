@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.62.0] - 2026-06-02
+
+### Added
+
+- `ingest_knowledge_reference()` — exported reference-only ingestion for
+  the RAG corpus (spec 009.1 §5). Stores a single citation chunk (title,
+  author, year, URL + optional abstract) without the protected full
+  text; records `link_only` / `abstract_only` under the JSON
+  `metadata.ingestion_mode` (no schema change). Delegates chunk/embed/
+  insert to `ingest_knowledge_document()` (DRY).
+- `data-raw/build_knowledge_corpus.R` now routes `abstract_only` /
+  `link_only` manifest rows (previously skipped) through
+  `ingest_knowledge_reference()`, under the same D5 license gate.
+
 ## [0.61.2] - 2026-06-02
 
 ### Changed

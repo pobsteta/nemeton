@@ -1,3 +1,34 @@
+# nemeton 0.62.0 (2026-06-02)
+
+### Added — ingestion « référence seule » (link_only / abstract_only) du corpus RAG (spec 009.1 §5)
+
+Nouvelle fonction exportée **`ingest_knowledge_reference()`** : pour les
+documents dont le texte intégral n'est pas redistribuable (papiers sous
+paywall, rapports tous droits réservés), elle n'ingère qu'**une
+référence citable** — jamais le corps protégé.
+
+- Un seul chunk est construit et embeddé : une **citation
+  bibliographique** compacte (titre, auteur, année, éditeur, URL),
+  suivie de l'**abstract** s'il est fourni (`ingestion_mode =
+  "abstract_only"`) ou d'une mention « texte intégral non redistribué »
+  sinon (`ingestion_mode = "link_only"`).
+- Le mode est enregistré dans `metadata.ingestion_mode` (colonne JSON
+  `metadata` — **aucune migration**), si bien qu'un corpus peut être
+  audité : full-text vs référence seule.
+- Implémentation **DRY** : elle délègue le chunk → embed → insert
+  transactionnel à `ingest_knowledge_document()` (une référence courte
+  est juste une source-texte d'un chunk), donc zéro duplication de
+  pipeline et comportement existant inchangé.
+- **`data-raw/build_knowledge_corpus.R`** câble les lignes
+  `abstract_only` / `link_only` du manifest (auparavant ignorées) vers
+  `ingest_knowledge_reference()`, sous le même verrou de licence D5. Les
+  4 papiers copyright (Mouret, Fassnacht, McCool, Beven & Kirkby)
+  deviennent ainsi des références citables (titre + DOI) sans
+  redistribution — dès que leur statut est levé.
+
+Débloque le dernier morceau de machinerie corpus côté cœur : le RAG peut
+désormais **citer** une source sans en détenir le texte.
+
 # nemeton 0.61.2 (2026-06-02)
 
 ### Changed — arbitrage des licences du corpus RAG (spec 009.1 D5)

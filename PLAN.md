@@ -41,19 +41,21 @@ effectivement citées-sourcées.
 | ✅ | Manifest (39 docs) + pipeline `build_knowledge_corpus.R` | cœur | (commités) |
 | ✅ | Validation manifest (`test-knowledge-corpus-manifest.R`) + `inst/NOTICE` corpus + fix cohérence D5 | cœur | v0.61.1 (2026-06-02) |
 | 🟨 | **Arbitrage licences** — Bernard&Doridant + revue SET → `cleared` (v0.61.2) ; 4 papiers copyright restent `to_confirm` (abstract/lien-seul à câbler) | cœur | v0.61.2 (2026-06-02) |
+| ✅ | Ingestion référence seule (`ingest_knowledge_reference()`, link_only/abstract_only) + câblage pipeline | cœur | v0.62.0 (2026-06-02) |
 | 🟨 | **Build corpus réel** — embeddings via clé API (action locale `data-raw/`) | cœur | local |
 | ⬜ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » | `nemetonshiny` | app |
 
-**Reliquat détaillé** (cf. section E7 plus bas) :
-1. **Arbitrage licences (D5)** — 6 docs en `to_confirm` (Bernard&Doridant,
-   Mouret, Fassnacht, McCool, Beven&Kirkby, set_revue) : l'utilisateur
-   tranche le juridique source par source ; tant que non tranché, pas
-   d'ingestion `full`.
-2. **Build du corpus réel** — `Rscript data-raw/build_knowledge_corpus.R`
+**Machinerie cœur — close** : machinerie RAG (v0.52.0), manifest +
+pipeline + validation + NOTICE (v0.61.1), arbitrage licences (v0.61.2 —
+4 papiers copyright laissés `to_confirm`), ingestion référence seule
+`link_only`/`abstract_only` (v0.62.0). **Reliquat détaillé** :
+1. **Build du corpus réel** — `Rscript data-raw/build_knowledge_corpus.R`
    avec une clé API d'embedding (Mistral par défaut) → peuple le pgvector
    prod. Action locale, pas un livrable de code.
-3. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
+2. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
    bloc UI « Sources » (hors repo cœur).
+3. *(optionnel)* lever le statut `to_confirm` des 4 papiers copyright si
+   tu valides leur référence (D5) — ils s'ingéreront alors en `link_only`.
 
 **Note** : plusieurs follow-ups app indépendants de E7 attendent aussi un
 bump `nemetonshiny` — pré-calcul FAST (v0.61.0), modal diagnostic pixel
@@ -365,6 +367,8 @@ providers Mistral/OpenAI/Voyage.
 ---
 
 ## Journal
+
+- **2026-06-02** — Release **v0.62.0** (feat — **ingestion « référence seule » du corpus RAG**, spec 009.1 §5, **clôt la machinerie corpus côté cœur**). Nouvelle fonction exportée **`ingest_knowledge_reference()`** : pour les documents non redistribuables (papiers paywall, tous droits réservés), elle n'ingère qu'une **référence citable** — jamais le corps protégé. Un seul chunk = citation bibliographique (titre, auteur, année, éditeur, URL) + abstract si fourni (`ingestion_mode = "abstract_only"`) ou mention « texte intégral non redistribué » sinon (`ingestion_mode = "link_only"`). Le mode est stocké dans `metadata.ingestion_mode` (colonne JSON `metadata` — **aucune migration**, le schéma 0004 a déjà `metadata`). **DRY** : délègue chunk→embed→insert transactionnel à `ingest_knowledge_document()` (une référence courte = source-texte d'un chunk), comportement existant inchangé. Helper `.build_reference_text()`. **Build script** `data-raw/build_knowledge_corpus.R` : les lignes `abstract_only`/`link_only` (auparavant exclues par `eligible & ingest_strategy=='full'`) sont désormais routées vers `ingest_knowledge_reference()`, sous le même verrou D5 ; colonne `abstract` optionnelle lue si présente (forward-compatible, absente aujourd'hui → link_only). Dry-run vérifié : les 4 papiers copyright planifiés en `[link_only]`. Export ajouté à la main au NAMESPACE + `man/ingest_knowledge_reference.Rd` écrit à la main (style raw-markdown du repo) pour **ne pas** lancer `document()` qui dégrade les 16 `.Rd` en `\link` (markdown non activé dans l'env). Tests : `test-rag.R` 84 PASS (+19 : `.build_reference_text` citation/abstract, `ingest_knowledge_reference` link_only/abstract_only, `ingestion_mode` en metadata JSON, titre requis, doc référence retrouvable + citée proprement via `retrieve_knowledge`/`format_citations`). **Machinerie corpus E7 close côté cœur** (machinerie v0.52.0 + manifest/validation/NOTICE v0.61.1 + arbitrage v0.61.2 + référence seule v0.62.0). **Reliquat E7** : build réel des embeddings (clé API, local) ; wiring `nemetonshiny` (chunks dans le prompt + bloc UI « Sources ») ; optionnellement lever le `to_confirm` des 4 copyright pour les ingérer en référence.
 
 - **2026-06-02** — Release **v0.61.2** (changed — **arbitrage des licences du corpus RAG**, spec 009.1 D5). Décisions juridiques prises par Pascal (Claude n'arbitre jamais le juridique — il a livré présomption + où vérifier + effet pipeline, l'utilisateur a tranché) sur les docs `to_confirm` du manifest : (1) **Bernard & Doridant 2024** (rapport ONF/DSF, fonde les garde-fous R5 spec 008) → Licence Ouverte confirmée, `status = cleared` (PDF/URL DSF à attacher pour ingestion réelle) ; (2) **revue SET « Forêt, croissance et changement climatique »** (seul `to_confirm` avec un PDF local présent dans `data-raw/references/`) → licence ouverte/CC-BY confirmée, `status = cleared`, `license = CC-BY` (variante exacte CC-BY vs CC-BY-NC à reconfirmer avant usage commercial — noté dans `notes`) → s'ingérera au prochain build ; (3) **4 papiers copyright** (Mouret 2022, Fassnacht 2016, McCool 1987, Beven & Kirkby 1979) laissés `to_confirm` (copyright ⇒ jamais full ; pas d'abstract sourcé ; mode `link_only` à câbler dans un petit chantier pipeline ultérieur). Bilan manifest : **35 `cleared` / 4 `to_confirm`**. `test-knowledge-corpus-manifest.R` reste vert (20 assertions, invariants D5/§5 préservés). **Reliquat E7 corpus** : câblage `link_only`/abstract dans `build_knowledge_corpus.R` (pour exploiter les 4 copyright en référence) ; build réel des embeddings (clé API, local) ; wiring `nemetonshiny` (chunks dans le prompt + bloc UI « Sources »).
 
