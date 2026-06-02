@@ -51,6 +51,16 @@ An `sf` POINT layer in **EPSG:4326** with columns:
   alert zone.
 }
 \description{
+\strong{Deprecated since v0.58.0; scheduled for removal in v0.60.0.}
+This is the legacy per-placette rolling-window FAST path. Since spec
+017 the FAST diagnostic is a pure per-pixel raster computed from the
+COG cache by
+\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} /
+\code{\link[=compute_fast_alert_mask]{compute_fast_alert_mask()}},
+independent of the validation sampling plan. The `obs_pixel` table it
+aggregates was dropped in v0.58.0, so this function will fail at the
+SQL stage.
+
 Aggregates the `obs_pixel` hypertable over the last `window_days`
 of observations within `[date_from, date_to]` and returns the plots
 whose NDVI / NBR rolling-window mean fell into the alert zone of
@@ -90,3 +100,4 @@ aggregation happen server-side. Filter values are inlined via
 [read_obs_pixel()] for the raw per-observation table,
   [register_monitoring_zone()] to obtain `zone_id`.
 }
+\keyword{internal}

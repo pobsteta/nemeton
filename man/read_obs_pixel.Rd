@@ -42,6 +42,15 @@ A `data.frame` with columns `plot_id` (character),
   `dplyr::bind_rows()` safely.
 }
 \description{
+\strong{Deprecated since v0.58.0; scheduled for removal in v0.60.0.}
+The `obs_pixel` table was dropped in v0.58.0 (the FAST diagnostic is
+now a pure per-pixel computation over the COG band cache), so this
+reader has no backing table and will fail at the SQL stage. Use the
+per-pixel COG cache via
+\code{\link[=build_index_stack]{build_index_stack()}} or
+\code{\link[=extract_pixel_timeseries]{extract_pixel_timeseries()}}
+instead.
+
 Returns the per-plot, per-band, per-date Sentinel-2 reflectance / index
 values stored in the `obs_pixel` hypertable, with the plot identifier
 surfaced as the human-readable `plot.plot_id` (TEXT) — not the internal
@@ -54,17 +63,16 @@ means \emph{no filter on that dimension}. The result is sorted
 deterministically by `(plot_id, obs_date, band)` so callers that hash
 or diff the table get stable output.
 
-This function is the read-side counterpart of the (private) write path
-in [ingest_sentinel2_timeseries()] / `.insert_obs_pixel()`. Exposing it
-as part of the `nemeton` API keeps the SQL out of caller code (cf.
-`nemetonshiny` rule §1: no business logic in the app).
+This function was the read-side counterpart of the per-plot write
+path that [ingest_sentinel2_timeseries()] used before v0.58.0.
+Exposing it as part of the `nemeton` API kept the SQL out of caller
+code (cf. `nemetonshiny` rule §1: no business logic in the app).
 }
 \section{SQL injection}{
 
 All filter values are quoted via [DBI::dbQuoteLiteral()] before being
-interpolated into the query — same pattern as the private
-`.find_cached_obs_dates()` helper. No user input reaches the SQL
-string unescaped.
+interpolated into the query. No user input reaches the SQL string
+unescaped.
 }
 
 \section{UGF zone filter (spec 016)}{
@@ -105,3 +113,4 @@ validation, not at read time.
   [extract_pixel_timeseries()] for the per-pixel (not per-plot)
   time series counterpart.
 }
+\keyword{internal}

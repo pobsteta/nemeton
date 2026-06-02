@@ -1,7 +1,7 @@
 # test-fordead-alert-insert-sqlite.R — regression for the SQLite UPSERT
 # parsing ambiguity in .insert_fordead_alerts().
 #
-# Like .insert_obs_pixel(), .insert_fordead_alerts() bulk-loads via a
+# .insert_fordead_alerts() bulk-loads via a
 # staging table and then runs `INSERT INTO alert ... SELECT ... FROM
 # tmp_fordead_alert_staging ON CONFLICT (...) DO NOTHING`. The same
 # INSERT-from-SELECT ambiguity bites SQLite: it mis-parses the trailing

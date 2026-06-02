@@ -309,14 +309,15 @@ test_that(".compute_alert_rolling deficit = 0 when the mean is above threshold",
 })
 
 
-# ---- multi-tile AOI coverage (mocked read_obs_pixel) -----------------
+# ---- multi-tile AOI coverage (cache-only, no DB) ---------------------
 
 test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosaic)", {
   # spec 010 / v0.52.x regression — an AOI straddling two overlapping
   # MGRS tiles (villards on T31TFM narrow ⊂ T31TGM wide) must render the
   # WHOLE AOI, not just the overlap strip. The per-tile grouping +
   # `mosaic(fun = "max")` already unions the two footprints; this test
-  # pins that coverage. read_obs_pixel is mocked so no DB is needed.
+  # pins that coverage. Scenes are enumerated from the COG cache (spec
+  # 017), so no DB / obs_pixel is involved.
   skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
 

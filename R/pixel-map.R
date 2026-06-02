@@ -145,8 +145,7 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' * **NBR** = (B08 − B12) / (B08 + B12) — proxy of vegetation /
 #'   burned-area discrimination. B12 is natively 20 m, so it is
 #'   resampled to the B08 10 m grid via [terra::resample()] with
-#'   `method = "bilinear"` — same idiom as the per-plot ingestion path
-#'   in `.extract_scene_obs()`.
+#'   `method = "bilinear"`.
 #'
 #' Scenes with incomplete cached bands (missing B04, B08, or — for NBR
 #' — B12) are skipped silently with a single aggregated warning. NAs
@@ -219,9 +218,7 @@ build_index_stack <- function(cache_dir, scenes_df,
     if (index == "NDVI") {
       (rs$B08 - rs$B04) / (rs$B08 + rs$B04)
     } else {
-      # B12 at 20 m onto B08's 10 m grid. method = "bilinear" matches
-      # `.extract_scene_obs` in R/monitoring.R so per-pixel NBR is
-      # numerically consistent with per-plot NBR aggregates.
+      # B12 at 20 m onto B08's 10 m grid via bilinear resampling.
       b12_10m <- terra::resample(rs$B12, rs$B08, method = "bilinear")
       (rs$B08 - b12_10m) / (rs$B08 + b12_10m)
     }

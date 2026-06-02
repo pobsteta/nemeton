@@ -19,6 +19,15 @@ NULL
 
 #' Detect drops in NDVI / NBR time series
 #'
+#' @description
+#' \strong{Deprecated since v0.58.0; scheduled for removal in v0.60.0.}
+#' This is the legacy per-placette rolling-window alert detector. Since
+#' spec 017 the FAST diagnostic is a pure per-pixel raster from the COG
+#' cache ([read_fast_alert_raster()] / [compute_fast_alert_mask()]),
+#' independent of the validation sampling plan. The `obs_pixel` table it
+#' reads was dropped in v0.58.0, so this function will fail at the SQL
+#' stage.
+#'
 #' @param con A `DBIConnection` returned by [db_connect()].
 #' @param zone_id Integer. Restrict detection to plots of this zone.
 #' @param threshold_ndvi_drop Numeric. Minimum drop in NDVI (rolling
@@ -31,11 +40,17 @@ NULL
 #'   columns `plot_id`, `alert_type`, `trigger_date`, `value_before`,
 #'   `value_after`, `delta`. Empty sf when no alert is found.
 #'
+#' @keywords internal
 #' @export
 detect_alerts <- function(con, zone_id,
                           threshold_ndvi_drop = 0.15,
                           threshold_nbr_drop  = 0.25,
                           window_days         = 30) {
+  cli::cli_warn(paste(
+    "{.fn detect_alerts} is deprecated and will be removed in v0.60.0 ;",
+    "use the per-pixel {.fn read_fast_alert_raster} /",
+    "{.fn compute_fast_alert_mask} instead."
+  ))
   .assert_db_pkgs()
 
   # Detection: window function over (plot, band) computing the rolling

@@ -97,19 +97,10 @@ test_that("ingest_sentinel2_timeseries uses zone AOI for the STAC bbox", {
         captured_bbox <<- bbox
         fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
       },
-      .extract_scene_obs = function(scene, plots, bands, crop_aoi = NULL,
+      .cache_scene_bands = function(scene, req_bands, crop_aoi = NULL,
                                     cache_dir = NULL, emit = NULL) {
-        # Empty data.frame (shape `do.call(rbind, list(NDVI))` yields).
-        data.frame(
-          plot_id   = character(0),
-          obs_date  = as.Date(character(0)),
-          band      = character(0),
-          value     = numeric(0),
-          cloud_pct = numeric(0),
-          source    = character(0),
-          scene_id  = character(0),
-          stringsAsFactors = FALSE
-        )
+        # No-op: the test only asserts the STAC bbox, not any fetch.
+        length(req_bands)
       }
     )
 

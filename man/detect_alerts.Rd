@@ -31,5 +31,13 @@ An sf POINT object (CRS WGS84) with one row per alert,
   `value_after`, `delta`. Empty sf when no alert is found.
 }
 \description{
-Detect drops in NDVI / NBR time series
+\strong{Deprecated since v0.58.0; scheduled for removal in v0.60.0.}
+This is the legacy per-placette rolling-window alert detector. Since
+spec 017 the FAST diagnostic is a pure per-pixel raster from the COG
+cache (\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} /
+\code{\link[=compute_fast_alert_mask]{compute_fast_alert_mask()}}),
+independent of the validation sampling plan. The `obs_pixel` table it
+reads was dropped in v0.58.0, so this function will fail at the SQL
+stage.
 }
+\keyword{internal}
