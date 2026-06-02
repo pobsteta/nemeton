@@ -23,7 +23,42 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 
 ---
 
-# Chantier en cours — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
+# Chantier en cours — E7 : corpus de connaissances RAG (spec 009 / 009.1, ADR-012)
+
+**Cadré** : 2026-05-29 (décisions D1-D5). **Cible cœur** : la prochaine
+release qui livre le corpus (machinerie déjà à `v0.52.0`).
+**Objectif** : clore E7 — la *machinerie* RAG est livrée (v0.52.0,
+7 fonctions exportées, schéma opt-in `knowledge_*`, dual-backend
+pgvector/cosinus), il reste à **alimenter** et **brancher** la base de
+connaissances forestière pour que les perspectives IA soient
+effectivement citées-sourcées.
+
+## Avancement du chantier
+
+| État | Sous-chantier | Repo | Release |
+|------|---------------|------|---------|
+| ✅ | Machinerie RAG (`enable_rag()`, ingestion, retrieval, citations) | cœur | v0.52.0 (2026-05-29) |
+| ⬜ | **Corpus** — manifest CSV + `data-raw/build_knowledge_corpus.R` + curation/licences | cœur | à venir |
+| ⬜ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » | `nemetonshiny` | app |
+
+**Reliquat détaillé** (cf. section E7 plus bas) :
+1. **Corpus** — spec fille `specs/009.1-corpus-connaissances-forestieres/`
+   (décisions D1-D5 actées le 2026-05-29) : manifest CSV + pipeline
+   `data-raw/build_knowledge_corpus.R` + curation/licences (l'utilisateur
+   tranche le juridique source par source).
+2. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
+   bloc UI « Sources » (hors repo cœur).
+
+**Note** : plusieurs follow-ups app indépendants de E7 attendent aussi un
+bump `nemetonshiny` — pré-calcul FAST (v0.61.0), modal diagnostic pixel
+CRSWIR (L3 ci-dessous), toggle multi-cœur + toggle NDVI/NBR (spec 017).
+
+---
+
+# Chantier clos (côté cœur) — Diagnostic pixel CRSWIR (spec 008 §14, ADR-013 A3)
+
+> **L1 + L2 livrés** (v0.42.0 / v0.43.0). Seul **L3** (modal plotly,
+> côté `nemetonshiny`) reste ouvert — voir le brief app.
 
 **Démarré** : 2026-05-21. **Cible** : v0.42.0 (L1) puis v0.43.0 (L2).
 **Objectif** : rendre la Carte FORDEAD diagnostique au clic, à parité avec
