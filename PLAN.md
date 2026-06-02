@@ -58,8 +58,11 @@ pipeline + validation + NOTICE (v0.61.1), arbitrage licences (v0.61.2 —
    tu valides leur référence (D5) — ils s'ingéreront alors en `link_only`.
 
 **Note** : plusieurs follow-ups app indépendants de E7 attendent aussi un
-bump `nemetonshiny` — pré-calcul FAST (v0.61.0), modal diagnostic pixel
-CRSWIR (L3 ci-dessous), toggle multi-cœur + toggle NDVI/NBR (spec 017).
+bump `nemetonshiny` — pré-calcul FAST (v0.61.0), wiring RAG (v0.62.0),
+modal diagnostic pixel CRSWIR (L3 ci-dessous), toggle multi-cœur + toggle
+NDVI/NBR (spec 017). **Suivi consolidé** : `TODO-nemetonshiny.md` à la
+racine (note de hand-off cœur → app, avec planchers `Imports` et fichiers
+à toucher par chantier).
 
 ---
 
