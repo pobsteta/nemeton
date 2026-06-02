@@ -1,5 +1,14 @@
 #' List FAST surveillance alerts for a monitoring zone
 #'
+#' @description
+#' \strong{Deprecated since v0.58.0; scheduled for removal in v0.60.0.}
+#' This is the legacy per-placette rolling-window FAST path. Since spec
+#' 017 the FAST diagnostic is a pure per-pixel raster computed from the
+#' COG cache by [read_fast_alert_raster()] / [compute_fast_alert_mask()],
+#' independent of the validation sampling plan. The `obs_pixel` table it
+#' aggregates was dropped in v0.58.0, so this function will fail at the
+#' SQL stage.
+#'
 #' Aggregates the `obs_pixel` hypertable over the last `window_days`
 #' of observations within `[date_from, date_to]` and returns the plots
 #' whose NDVI / NBR rolling-window mean fell into the alert zone of
@@ -70,12 +79,18 @@
 #'   table(alerts$severity)
 #' }
 #'
+#' @keywords internal
 #' @export
 list_fast_alerts_for_zone <- function(con, zone_id,
                                       threshold_ndvi = 0.40,
                                       threshold_nbr  = 0.30,
                                       window_days    = 30L,
                                       date_from, date_to) {
+  cli::cli_warn(paste(
+    "{.fn list_fast_alerts_for_zone} is deprecated and will be removed in",
+    "v0.60.0 ; use the per-pixel {.fn read_fast_alert_raster} /",
+    "{.fn compute_fast_alert_mask} instead."
+  ))
   if (!inherits(con, "DBIConnection")) {
     stop("`con` must be a DBI connection.", call. = FALSE)
   }

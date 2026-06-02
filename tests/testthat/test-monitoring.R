@@ -2,21 +2,21 @@
 #
 # Pure unit tests cover argument validation and the canonical shape of
 # the empty summary. Integration tests (skip_if_no_timescaledb) cover
-# the full insertion + idempotence + STAC orchestration path, with the
-# STAC backend and per-scene extraction mocked so the test stays fast
-# and offline.
+# the COG band-cache priming + skip + STAC orchestration path, with the
+# STAC backend and per-scene band caching mocked so the test stays fast
+# and offline. Since v0.58.0 the pipeline writes no per-plot rows (the
+# `obs_pixel` table was dropped) — it only primes the on-disk COG cache.
 
 # ---- pure helpers ----------------------------------------------------
 
 test_that(".empty_ingest_summary returns the canonical shape", {
   out <- nemeton:::.empty_ingest_summary()
   expect_s3_class(out, "data.frame")
-  expect_named(out, c("n_scenes", "n_scenes_cached", "n_obs_inserted",
+  expect_named(out, c("n_scenes", "n_scenes_cached",
                       "n_plots", "bands", "status"))
   expect_equal(nrow(out), 1)
   expect_equal(out$n_scenes, 0L)
   expect_equal(out$n_scenes_cached, 0L)
-  expect_equal(out$n_obs_inserted, 0L)
   expect_equal(out$n_plots, 0L)
   expect_equal(out$bands, "")
 })
@@ -148,7 +148,6 @@ test_that("ingest_sentinel2_timeseries warns when zone has no plots", {
                                          "2025-06-01", "2025-06-30"),
       "No plots registered"
     )
-    expect_equal(out$n_obs_inserted, 0L)
     expect_equal(out$n_scenes, 0L)
     expect_equal(out$n_plots, 0L)
   })
@@ -171,15 +170,11 @@ test_that("ingest_sentinel2_timeseries returns empty summary when STAC silent", 
     out <- ingest_sentinel2_timeseries(con, zid,
                                        "2025-06-01", "2025-06-30")
     expect_equal(out$n_scenes, 0L)
-    expect_equal(out$n_obs_inserted, 0L)
-
-    # Nothing was inserted into obs_pixel.
-    n <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM obs_pixel")$n
-    expect_equal(as.integer(n), 0L)
+    expect_equal(out$n_scenes_cached, 0L)
   })
 })
 
-test_that("ingest_sentinel2_timeseries inserts obs from mocked scenes", {
+test_that("ingest_sentinel2_timeseries caches bands from mocked scenes", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -197,22 +192,17 @@ test_that("ingest_sentinel2_timeseries inserts obs from mocked scenes", {
       dates = as.Date(c("2025-06-10", "2025-06-25")),
       cloud = c(5, 8))
 
-    fake_obs <- function(scene, plots, bands, ...) {
-      data.frame(
-        plot_id   = plots$id,
-        obs_date  = scene$obs_date,
-        band      = "NDVI",
-        value     = rep(0.80, nrow(plots)),
-        cloud_pct = scene$cloud_pct,
-        source    = scene$source,
-        scene_id  = scene$scene_id,
-        stringsAsFactors = FALSE
-      )
+    # The pipeline no longer writes to the DB; it only primes the COG
+    # cache via .cache_scene_bands(). Count how many scenes are cached.
+    n_cached <- 0L
+    fake_cache <- function(scene, req_bands, ...) {
+      n_cached <<- n_cached + 1L
+      length(req_bands)
     }
 
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = fake_cache
     )
 
     out <- ingest_sentinel2_timeseries(con, zid,
@@ -221,31 +211,13 @@ test_that("ingest_sentinel2_timeseries inserts obs from mocked scenes", {
     expect_equal(out$n_scenes, 2L)
     expect_equal(out$n_plots, 2L)
     expect_equal(out$bands, "NDVI")
-    expect_equal(out$n_obs_inserted, 4L)  # 2 scenes × 2 plots
-
-    rows <- DBI::dbGetQuery(con,
-      "SELECT band, value, source FROM obs_pixel
-        WHERE plot_id IN (SELECT id FROM plot WHERE zone_id = $1)",
-      params = list(zid))
-    expect_equal(nrow(rows), 4)
-    expect_true(all(rows$band == "NDVI"))
-    expect_true(all(abs(rows$value - 0.80) < 1e-9))
-
-    # Re-running is idempotent: PRIMARY KEY (plot_id, obs_date, band)
-    # + ON CONFLICT DO NOTHING in .insert_obs_pixel.
-    out2 <- ingest_sentinel2_timeseries(con, zid,
-                                        "2025-06-01", "2025-07-01",
-                                        bands = "NDVI")
-    expect_equal(out2$n_obs_inserted, 0L)
-    n2 <- DBI::dbGetQuery(con,
-      "SELECT COUNT(*) AS n FROM obs_pixel
-        WHERE plot_id IN (SELECT id FROM plot WHERE zone_id = $1)",
-      params = list(zid))$n
-    expect_equal(as.integer(n2), 4L)
+    expect_equal(out$n_scenes_cached, 0L)  # nothing on disk yet
+    expect_equal(n_cached, 2L)             # both scenes processed
+    expect_false("n_obs_inserted" %in% names(out))
   })
 })
 
-test_that("ingest_sentinel2_timeseries skips scenes that fail extraction", {
+test_that("ingest_sentinel2_timeseries skips scenes that fail band caching", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -259,7 +231,7 @@ test_that("ingest_sentinel2_timeseries skips scenes that fail extraction", {
     scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = function(...) stop("boom")
+      .cache_scene_bands = function(...) stop("boom")
     )
 
     expect_warning(
@@ -268,7 +240,6 @@ test_that("ingest_sentinel2_timeseries skips scenes that fail extraction", {
                                          bands = "NDVI"),
       "skipped"
     )
-    expect_equal(out$n_obs_inserted, 0L)
     expect_equal(out$n_scenes, 1L)
   })
 })
@@ -291,22 +262,9 @@ test_that("ingest_sentinel2_timeseries emits progress callbacks across phases", 
       dates = as.Date(c("2025-06-10", "2025-06-25")),
       cloud = c(5, 8))
 
-    fake_obs <- function(scene, plots, bands, ...) {
-      data.frame(
-        plot_id   = plots$id,
-        obs_date  = scene$obs_date,
-        band      = "NDVI",
-        value     = rep(0.7, nrow(plots)),
-        cloud_pct = scene$cloud_pct,
-        source    = scene$source,
-        scene_id  = scene$scene_id,
-        stringsAsFactors = FALSE
-      )
-    }
-
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = function(scene, req_bands, ...) length(req_bands)
     )
 
     seen <- list()
@@ -317,11 +275,11 @@ test_that("ingest_sentinel2_timeseries emits progress callbacks across phases", 
         seen[[length(seen) + 1L]] <<- p
       }
     )
-    expect_equal(out$n_obs_inserted, 4L)
+    expect_equal(out$n_scenes, 2L)
 
     phases <- vapply(seen, function(p) p$current, character(1))
     # Expected order: search -> search_done -> cache_lookup -> scene(x2)
-    # -> complete. (s2:cache_lookup added in v0.24.2.)
+    # -> complete. (s2:cache_lookup emitted whenever skip_cached = TRUE.)
     expect_identical(
       phases,
       c("s2:search", "s2:search_done", "s2:cache_lookup",
@@ -348,7 +306,7 @@ test_that("ingest_sentinel2_timeseries emits progress callbacks across phases", 
     done <- seen[[length(seen)]]
     expect_equal(done$completed, 2L)
     expect_equal(done$total, 2L)
-    expect_equal(done$n_obs_inserted, 4L)
+    expect_equal(done$n_scenes_cached, 0L)
   })
 })
 
@@ -366,7 +324,7 @@ test_that("ingest_sentinel2_timeseries reports skipped scenes via callback", {
     scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = function(...) stop("fake extraction failure")
+      .cache_scene_bands = function(...) stop("fake extraction failure")
     )
 
     seen <- list()
@@ -419,9 +377,28 @@ test_that("ingest_sentinel2_timeseries emits search_done when STAC silent", {
 })
 
 
-# ---- skip_cached (v0.21.3) -------------------------------------------
+# ---- skip_cached: COG-cache scene skip (v0.58.0) ---------------------
+#
+# Since v0.58.0 skip_cached operates on the on-disk COG band cache, not
+# on obs_pixel (dropped). A scene is skipped when every required band
+# COG already exists under cache_dir.
 
-test_that("skip_cached skips scenes whose obs_dates are already complete", {
+# Mock for .cache_scene_bands that records how many scenes it processed
+# and "writes" the required band COGs to the cache (empty placeholder
+# files) so a subsequent run finds them and skips the scene.
+.make_caching_mock <- function(counter_env) {
+  function(scene, req_bands, crop_aoi = NULL, cache_dir = NULL, emit = NULL) {
+    counter_env$n <- counter_env$n + 1L
+    for (b in req_bands) {
+      p <- nemeton:::.s2_band_cache_path(cache_dir, scene$scene_id, b)
+      dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+      file.create(p)
+    }
+    length(req_bands)
+  }
+}
+
+test_that("skip_cached skips scenes whose band COGs are already cached", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -435,49 +412,35 @@ test_that("skip_cached skips scenes whose obs_dates are already complete", {
         crs = 4326))
     zid <- register_monitoring_zone(con, "Zcache", pol, placettes)
 
+    cache  <- withr::local_tempdir()
     scenes <- fake_scenes(
       dates = as.Date(c("2025-06-10", "2025-06-25", "2025-07-10")),
       cloud = c(5, 8, 10))
 
-    n_extracted <- 0L
-    fake_obs <- function(scene, plots, bands, ...) {
-      n_extracted <<- n_extracted + 1L
-      data.frame(
-        plot_id   = plots$id,
-        obs_date  = scene$obs_date,
-        band      = "NDVI",
-        value     = rep(0.7, nrow(plots)),
-        cloud_pct = scene$cloud_pct,
-        source    = scene$source,
-        scene_id  = scene$scene_id,
-        stringsAsFactors = FALSE
-      )
-    }
+    counter <- new.env(); counter$n <- 0L
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = .make_caching_mock(counter)
     )
 
-    # First run: cold cache, 3 scenes processed.
+    # First run: cold cache, 3 scenes processed and their COGs written.
     out1 <- ingest_sentinel2_timeseries(con, zid, "2025-06-01", "2025-07-15",
-                                        bands = "NDVI")
+                                        bands = "NDVI", cache_dir = cache)
     expect_equal(out1$n_scenes, 3L)
     expect_equal(out1$n_scenes_cached, 0L)
-    expect_equal(out1$n_obs_inserted, 6L)
-    expect_equal(n_extracted, 3L)
+    expect_equal(counter$n, 3L)
 
-    # Second run: all 3 obs_dates fully covered → all skipped, no
-    # .extract_scene_obs call. Counter does not increase.
+    # Second run: every required band COG is on disk → all skipped, no
+    # .cache_scene_bands call. Counter does not increase.
     seen <- list()
     out2 <- ingest_sentinel2_timeseries(
       con, zid, "2025-06-01", "2025-07-15",
-      bands = "NDVI",
+      bands = "NDVI", cache_dir = cache,
       progress_callback = function(p) seen[[length(seen) + 1L]] <<- p
     )
     expect_equal(out2$n_scenes, 3L)
     expect_equal(out2$n_scenes_cached, 3L)
-    expect_equal(out2$n_obs_inserted, 0L)
-    expect_equal(n_extracted, 3L)   # unchanged
+    expect_equal(counter$n, 3L)   # unchanged
 
     # Progress payloads: cache_lookup + 3× scene_cached + complete.
     phases <- vapply(seen, function(p) p$current, character(1))
@@ -493,60 +456,44 @@ test_that("skip_cached skips scenes whose obs_dates are already complete", {
   })
 })
 
-test_that("skip_cached only skips dates with complete (plot × band) coverage", {
+test_that("skip_cached only skips scenes whose every required band is cached", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
     pol <- sf::st_as_sfc(sf::st_bbox(
       c(xmin = 4, ymin = 47, xmax = 5, ymax = 48), crs = 4326))
     placettes <- sf::st_sf(
-      plot_id  = c("P01", "P02"),
-      geometry = sf::st_sfc(
-        sf::st_point(c(4.5, 47.5)),
-        sf::st_point(c(4.6, 47.6)),
-        crs = 4326))
+      plot_id  = "P01",
+      geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
     zid <- register_monitoring_zone(con, "Zpartial", pol, placettes)
 
+    cache  <- withr::local_tempdir()
     scenes <- fake_scenes(
       dates = as.Date(c("2025-06-10", "2025-06-25")),
       cloud = c(5, 8))
 
-    fake_obs <- function(scene, plots, bands, ...) {
-      do.call(rbind, lapply(bands, function(b) {
-        data.frame(
-          plot_id   = plots$id,
-          obs_date  = scene$obs_date,
-          band      = b,
-          value     = rep(0.7, nrow(plots)),
-          cloud_pct = scene$cloud_pct,
-          source    = scene$source,
-          scene_id  = scene$scene_id,
-          stringsAsFactors = FALSE
-        )
-      }))
-    }
+    counter <- new.env(); counter$n <- 0L
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = .make_caching_mock(counter)
     )
 
-    # First run inserts NDVI only — 2 scenes × 2 plots = 4 rows.
-    out1 <- ingest_sentinel2_timeseries(con, zid, "2025-06-01", "2025-07-15",
-                                        bands = "NDVI")
-    expect_equal(out1$n_obs_inserted, 4L)
+    # First run caches NDVI bands only (B04, B08).
+    ingest_sentinel2_timeseries(con, zid, "2025-06-01", "2025-07-15",
+                                bands = "NDVI", cache_dir = cache)
+    expect_equal(counter$n, 2L)
 
-    # Second run asks for NDVI + NBR. NBR is missing for every plot
-    # at every obs_date → no cache hit, both scenes re-extracted.
+    # Second run asks for NDVI + NBR. NBR needs B12, which is missing
+    # for every scene → no cache hit, both scenes re-processed.
     out2 <- ingest_sentinel2_timeseries(con, zid, "2025-06-01", "2025-07-15",
-                                        bands = c("NDVI", "NBR"))
+                                        bands = c("NDVI", "NBR"),
+                                        cache_dir = cache)
     expect_equal(out2$n_scenes_cached, 0L)
-    # 2 scenes × 2 plots × 2 bands = 8 rows in fake_obs output, but
-    # NDVI 4 rows already exist → only 4 new (NBR) rows inserted.
-    expect_equal(out2$n_obs_inserted, 4L)
+    expect_equal(counter$n, 4L)   # 2 more scenes processed
   })
 })
 
-test_that("skip_cached = FALSE forces re-extraction even when DB is fully covered", {
+test_that("skip_cached = FALSE forces a re-fetch even when COGs are cached", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -557,50 +504,48 @@ test_that("skip_cached = FALSE forces re-extraction even when DB is fully covere
       geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
     zid <- register_monitoring_zone(con, "Zforce", pol, placettes)
 
+    cache  <- withr::local_tempdir()
     scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
-    n_extracted <- 0L
-    fake_obs <- function(scene, plots, bands, ...) {
-      n_extracted <<- n_extracted + 1L
-      data.frame(
-        plot_id   = plots$id,
-        obs_date  = scene$obs_date,
-        band      = "NDVI",
-        value     = rep(0.7, nrow(plots)),
-        cloud_pct = scene$cloud_pct,
-        source    = scene$source,
-        scene_id  = scene$scene_id,
-        stringsAsFactors = FALSE
-      )
-    }
+
+    counter <- new.env(); counter$n <- 0L
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = .make_caching_mock(counter)
     )
 
     ingest_sentinel2_timeseries(con, zid, "2025-06-01", "2025-07-01",
-                                bands = "NDVI")
-    expect_equal(n_extracted, 1L)
+                                bands = "NDVI", cache_dir = cache)
+    expect_equal(counter$n, 1L)
 
     out <- ingest_sentinel2_timeseries(con, zid, "2025-06-01", "2025-07-01",
-                                       bands = "NDVI", skip_cached = FALSE)
+                                       bands = "NDVI", cache_dir = cache,
+                                       skip_cached = FALSE)
     expect_equal(out$n_scenes_cached, 0L)
-    expect_equal(n_extracted, 2L)   # extraction ran again
+    expect_equal(counter$n, 2L)   # processed again despite cache hit
   })
 })
 
-test_that(".find_cached_obs_dates returns empty for empty inputs", {
-  # No DB call expected — short-circuits on length(plot_ids) == 0
-  # or length(bands) == 0.
-  expect_length(
-    nemeton:::.find_cached_obs_dates(NULL, integer(0), c("NDVI"),
-                                     "2025-01-01", "2025-12-31"),
-    0L
-  )
-  expect_length(
-    nemeton:::.find_cached_obs_dates(NULL, 1L, character(0),
-                                     "2025-01-01", "2025-12-31"),
-    0L
-  )
+test_that(".s2_required_bands maps indices to the COG bands they need", {
+  expect_setequal(nemeton:::.s2_required_bands("NDVI"), c("B04", "B08"))
+  expect_setequal(nemeton:::.s2_required_bands("NBR"),  c("B08", "B12"))
+  expect_setequal(nemeton:::.s2_required_bands(c("NDVI", "NBR")),
+                  c("B04", "B08", "B12"))
+})
+
+test_that(".scene_cogs_cached is FALSE without a cache dir and TRUE once all bands exist", {
+  expect_false(nemeton:::.scene_cogs_cached(NULL, "S2_X", c("B04", "B08")))
+  expect_false(nemeton:::.scene_cogs_cached("", "S2_X", c("B04", "B08")))
+  cache <- withr::local_tempdir()
+  expect_false(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08")))
+  for (b in c("B04", "B08")) {
+    p <- nemeton:::.s2_band_cache_path(cache, "S2_X", b)
+    dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+    file.create(p)
+  }
+  expect_true(nemeton:::.scene_cogs_cached(cache, "S2_X", c("B04", "B08")))
+  # A missing band keeps the scene un-cached.
+  expect_false(nemeton:::.scene_cogs_cached(cache, "S2_X",
+                                            c("B04", "B08", "B12")))
 })
 
 
@@ -1257,7 +1202,7 @@ test_that(".get_s2_band_raster: cache_dir = NULL bypasses the cache entirely", {
   expect_length(events, 0L)
 })
 
-test_that("ingest_sentinel2_timeseries forwards cache_dir to .extract_scene_obs", {
+test_that("ingest_sentinel2_timeseries forwards cache_dir to .cache_scene_bands", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -1269,20 +1214,16 @@ test_that("ingest_sentinel2_timeseries forwards cache_dir to .extract_scene_obs"
     zid <- register_monitoring_zone(con, "Zforward", pol, placettes)
 
     seen_cache_dir <- NA_character_
-    fake_obs <- function(scene, plots, bands, crop_aoi = NULL,
-                         cache_dir = NULL, emit = NULL) {
+    fake_cache <- function(scene, req_bands, crop_aoi = NULL,
+                           cache_dir = NULL, emit = NULL) {
       seen_cache_dir <<- if (is.null(cache_dir)) NA_character_ else cache_dir
-      data.frame(
-        plot_id  = plots$id, obs_date = scene$obs_date, band = "NDVI",
-        value = 0.7, cloud_pct = scene$cloud_pct,
-        source = scene$source, scene_id = scene$scene_id,
-        stringsAsFactors = FALSE)
+      length(req_bands)
     }
 
     scenes <- fake_scenes(dates = as.Date("2025-06-10"), cloud = 5)
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = fake_cache
     )
 
     cache <- withr::local_tempdir()
@@ -1327,14 +1268,6 @@ test_that(".fetch_plots_sf round-trips geometry via WKT", {
     expect_equal(sf::st_crs(out)$epsg, 4326L)
     coords <- sf::st_coordinates(out)
     expect_equal(sort(coords[, "X"]), c(4.5, 4.6))
-  })
-})
-
-test_that(".insert_obs_pixel returns 0 on empty input", {
-  skip_if_no_timescaledb()
-  with_clean_db(function(con) {
-    db_migrate(con)
-    expect_equal(nemeton:::.insert_obs_pixel(con, data.frame()), 0L)
   })
 })
 

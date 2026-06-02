@@ -6,8 +6,8 @@
 # has to stop a running ingest/diagnostic is an out-of-band file. The
 # app drops a flag file at a known path; the worker polls it between
 # tiles / phases and, when it appears, exits cleanly — keeping whatever
-# was already committed (each `.insert_obs_pixel()` owns its own
-# transaction, so tiles 1..i-1 are durably persisted).
+# was already produced (for the S2 ingest, the COG bands cached for
+# tiles 1..i-1 are durably on disk; for FORDEAD, the committed phases).
 #
 # Contract:
 #  * `cancel_path = NULL` / `""` -> no polling at all, zero filesystem

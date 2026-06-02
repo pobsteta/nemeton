@@ -10,6 +10,34 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.58.0] - 2026-06-02
+
+### Removed
+
+- `ingest_sentinel2_timeseries()` no longer extracts per-plot means nor
+  inserts into `obs_pixel`; it only primes the COG band cache
+  (B04/B08/B12). STAC resolution, the on-disk band cache and the `s2:*`
+  heartbeats are unchanged. The `n_obs_inserted` summary field is gone;
+  `skip_cached` now operates on the COG cache (a scene is skipped when
+  all its required band COGs already exist on disk).
+- Internal helpers `.insert_obs_pixel()` and `.find_cached_obs_dates()`
+  removed; `.extract_scene_obs()` replaced by `.cache_scene_bands()`.
+
+### Changed
+
+- Migration `0004_drop_obs_pixel.sql` (PG + SQLite) drops the `obs_pixel`
+  table (idempotent). The pure per-pixel FAST diagnostic
+  (`read_fast_alert_raster()`, spec 017) has been its only path since
+  v0.55.0.
+
+### Deprecated
+
+- `read_obs_pixel()`, `list_fast_alerts_for_zone()` and `detect_alerts()`
+  (all legacy `obs_pixel` consumers) are deprecated and emit a
+  `cli::cli_warn`; scheduled for removal in v0.60.0. Use the per-pixel
+  COG cache (`build_index_stack()` / `extract_pixel_timeseries()`) and
+  `read_fast_alert_raster()` / `compute_fast_alert_mask()` instead.
+
 ## [0.57.0] - 2026-06-02
 
 ### Added

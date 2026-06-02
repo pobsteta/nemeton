@@ -15,7 +15,7 @@ skip_if_no_sqlite <- function() {
 }
 
 # Spin up a fresh, migrated SQLite monitoring DB with one zone + one plot
-# (so obs_pixel / alert foreign keys are satisfiable), then hand the open
+# (so the `alert` foreign key is satisfiable), then hand the open
 # connection to `code`. Everything lives in a tempdir withr cleans up.
 with_sqlite_monitoring_db <- function(code) {
   skip_if_no_sqlite()
@@ -31,18 +31,4 @@ with_sqlite_monitoring_db <- function(code) {
       "VALUES (1, 1, 'p1', 'POINT(0 0)')"))
     force(code)(con)
   })
-}
-
-# One obs_pixel row in the shape dbAppendTable expects.
-sqlite_obs_row <- function(date, band, value) {
-  data.frame(
-    plot_id   = 1L,
-    obs_date  = as.Date(date),
-    band      = band,
-    value     = value,
-    cloud_pct = 3,
-    source    = "cdse",
-    scene_id  = "S2A_FAKE",
-    stringsAsFactors = FALSE
-  )
 }

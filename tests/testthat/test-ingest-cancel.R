@@ -75,21 +75,19 @@ test_that("ingest_sentinel2_timeseries cancels mid-run and commits the processed
       dates = as.Date(c("2025-06-10", "2025-06-25", "2025-07-10")),
       cloud = c(5, 8, 3))
 
-    fake_obs <- function(scene, plots, bands, ...) {
-      data.frame(
-        plot_id   = plots$id,
-        obs_date  = scene$obs_date,
-        band      = "NDVI",
-        value     = rep(0.80, nrow(plots)),
-        cloud_pct = scene$cloud_pct,
-        source    = scene$source,
-        scene_id  = scene$scene_id,
-        stringsAsFactors = FALSE
-      )
+    cache <- withr::local_tempdir()
+    fake_cache <- function(scene, req_bands, crop_aoi = NULL,
+                           cache_dir = NULL, emit = NULL) {
+      for (b in req_bands) {
+        p <- nemeton:::.s2_band_cache_path(cache_dir, scene$scene_id, b)
+        dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+        file.create(p)
+      }
+      length(req_bands)
     }
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs
+      .cache_scene_bands = fake_cache
     )
 
     flag   <- withr::local_tempfile(fileext = ".flag")
@@ -107,21 +105,19 @@ test_that("ingest_sentinel2_timeseries cancels mid-run and commits the processed
       con, zid, "2025-06-01", "2025-08-01",
       bands             = "NDVI",
       progress_callback = cb,
-      cancel_path       = flag)
+      cancel_path       = flag,
+      cache_dir         = cache)
 
-    # Summary reflects the cancel and the 2 committed tiles.
+    # Summary reflects the cancel and the 2 processed tiles.
     expect_identical(out$status, "cancelled")
     expect_equal(out$n_scenes, 2L)
 
-    # obs_pixel holds exactly the first 2 scenes (partial commit).
-    rows <- DBI::dbGetQuery(con,
-      "SELECT DISTINCT obs_date FROM obs_pixel
-        WHERE plot_id IN (SELECT id FROM plot WHERE zone_id = $1)
-        ORDER BY obs_date",
-      params = list(zid))
-    expect_equal(nrow(rows), 2L)
-    expect_equal(as.Date(rows$obs_date),
-                 as.Date(c("2025-06-10", "2025-06-25")))
+    # The COG cache holds exactly the first 2 scenes (partial priming).
+    scene_dirs <- list.dirs(cache, recursive = FALSE)
+    expect_equal(length(scene_dirs), 2L)
+    expect_setequal(
+      basename(scene_dirs),
+      nemeton:::.s2_safe_scene_id(scenes$scene_id[1:2]))
 
     # A cancellation event was emitted.
     currents <- vapply(events,
@@ -144,16 +140,9 @@ test_that("ingest_sentinel2_timeseries with cancel_path = NULL behaves exactly a
 
     scenes <- fake_scenes(dates = as.Date(c("2025-06-10", "2025-06-25")),
                           cloud = c(5, 8))
-    fake_obs <- function(scene, plots, bands, ...) {
-      data.frame(
-        plot_id = plots$id, obs_date = scene$obs_date, band = "NDVI",
-        value = rep(0.7, nrow(plots)), cloud_pct = scene$cloud_pct,
-        source = scene$source, scene_id = scene$scene_id,
-        stringsAsFactors = FALSE)
-    }
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs)
+      .cache_scene_bands = function(scene, req_bands, ...) length(req_bands))
 
     out <- ingest_sentinel2_timeseries(
       con, zid, "2025-06-01", "2025-07-01",
@@ -161,7 +150,6 @@ test_that("ingest_sentinel2_timeseries with cancel_path = NULL behaves exactly a
 
     expect_identical(out$status, "success")
     expect_equal(out$n_scenes, 2L)
-    expect_equal(out$n_obs_inserted, 2L)  # 2 scenes × 1 plot × 1 band
   })
 })
 
@@ -178,16 +166,9 @@ test_that("a stale flag present at entry does not cancel the run", {
 
     scenes <- fake_scenes(dates = as.Date(c("2025-06-10", "2025-06-25")),
                           cloud = c(5, 8))
-    fake_obs <- function(scene, plots, bands, ...) {
-      data.frame(
-        plot_id = plots$id, obs_date = scene$obs_date, band = "NDVI",
-        value = rep(0.7, nrow(plots)), cloud_pct = scene$cloud_pct,
-        source = scene$source, scene_id = scene$scene_id,
-        stringsAsFactors = FALSE)
-    }
     testthat::local_mocked_bindings(
       stac_search_s2     = function(...) scenes,
-      .extract_scene_obs = fake_obs)
+      .cache_scene_bands = function(scene, req_bands, ...) length(req_bands))
 
     flag <- withr::local_tempfile(fileext = ".flag")
     file.create(flag)            # leftover, never cleared by the caller

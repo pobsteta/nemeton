@@ -28,13 +28,11 @@ ingest_sentinel2_timeseries(
 
 \item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
 
-\item{skip_cached}{Logical. When `TRUE` (default since v0.21.3),
-query `obs_pixel` before the STAC loop and skip every scene
-whose `obs_date` already has a row for **every** plot of the
-zone × **every** requested band. Lets re-runs against an
-existing database avoid all the per-scene HTTP traffic. Set
-`FALSE` to force re-extraction (e.g. after invalidating
-`obs_pixel` manually).}
+\item{skip_cached}{Logical. When `TRUE` (default), skip every scene
+whose required band COGs are all already present under `cache_dir`,
+so re-runs avoid redundant HTTP traffic. Has no effect when
+`cache_dir` is `NULL` (there is no on-disk cache to consult). Set
+`FALSE` to force a re-fetch of every scene.}
 
 \item{cache_dir}{Optional path to a directory under which cropped
   band rasters are persisted as tiled GeoTIFF (COG-compatible
@@ -57,20 +55,11 @@ existing database avoid all the per-scene HTTP traffic. Set
   should be in `.gitignore`; do not use `<project>/data/` which
   is reserved for user-owned project data.
 
-  \strong{Priming the cache on an existing zone.} The two cache
-  layers (`skip_cached` and `cache_dir`) are independent: when
-  `skip_cached = TRUE` (default) finds an `obs_date` already
-  covered in `obs_pixel`, the scene is skipped \emph{before}
-  `.extract_scene_obs()` runs, so no COG is written. If you
-  enable `cache_dir` on a zone whose `obs_pixel` is already
-  populated, run the ingestion \emph{once} with
-  `skip_cached = FALSE` to force re-extraction: scenes go through
-  the full path and the COGs land on disk; SQL INSERTs are
-  `ON CONFLICT DO NOTHING` so the DB stays bit-identical
-  (no duplicate rows, no overwritten values). Subsequent runs
-  can revert to `skip_cached = TRUE` — the COG cache will then
-  kick in only when a genuine re-extraction is needed
-  (a new band, a new metric, a manual `obs_pixel` wipe).}
+  \strong{Priming the cache.} Since v0.58.0 the COG band cache is the
+  single cache layer: `skip_cached` and `cache_dir` act on the same
+  on-disk store. A scene is skipped when all its required band COGs
+  already exist under `cache_dir`; `skip_cached = FALSE` forces a
+  re-fetch even on a cache hit (e.g. to repair a truncated download).}
 
 \item{progress_callback}{Optional function called at each step of
 the ingestion to allow callers (e.g. `nemetonshiny`) to report
@@ -83,11 +72,11 @@ Phases emitted, in order:
     `start`, `end`, `n_plots`, `bands`.}
   \item{`s2:search_done`}{After STAC — payload includes `total`
     (number of scenes found) and `bands`.}
-  \item{`s2:cache_lookup`}{After the `obs_pixel` cache query
-    (only when `skip_cached = TRUE`) — payload includes
-    `n_cached` (scenes whose obs_date is already fully ingested
-    and will be skipped) and `n_to_process` (scenes that will
-    hit the network).}
+  \item{`s2:cache_lookup`}{After the COG cache scan (only when
+    `skip_cached = TRUE`) — payload includes `n_cached` (scenes
+    whose required band COGs are already on disk and will be
+    skipped) and `n_to_process` (scenes that will hit the
+    network).}
   \item{`s2:scene_cached`}{For each scene skipped thanks to the
     cache — payload includes `completed = i - 1L`, `total`,
     `scene_id`, `obs_date`, `cloud_pct`, `source`.}
@@ -122,8 +111,7 @@ Phases emitted, in order:
     1-based index of the scene that would have been processed
     next) and `n_total`. Emitted just before the loop breaks.}
   \item{`s2:complete`}{After the loop — payload includes
-    `completed = total`, `total`, `n_obs_inserted`,
-    `n_scenes_cached`.}
+    `completed = total`, `total`, `n_scenes_cached`.}
 }
 The callback is invoked synchronously inside the calling thread.
 Default `NULL` (silent — no callback emitted).}
@@ -133,41 +121,43 @@ cancellation flag file. When `NULL` (default) no polling happens
 and behaviour is identical to before. When a path is given, the
 worker checks `file.exists(cancel_path)` between tiles; if the file
 appears mid-run the loop exits cleanly after the current tile,
-leaving every already-inserted tile committed (each tile owns its
-own transaction), and the returned summary carries
-`status = "cancelled"`. A flag already present at entry is ignored
-as a stale leftover — the caller must delete it before each call.}
+leaving every already-cached tile on disk, and the returned summary
+carries `status = "cancelled"`. A flag already present at entry is
+ignored as a stale leftover — the caller must delete it before each
+call.}
 }
 \value{
 A one-row `data.frame` summarising the ingestion: number of
-  scenes considered (`n_scenes`), scenes skipped thanks to the cache
-  (`n_scenes_cached`), observations inserted (`n_obs_inserted`),
-  plots (`n_plots`), bands (`bands`), and `status`
+  scenes considered (`n_scenes`), scenes skipped thanks to the COG
+  cache (`n_scenes_cached`), plots used for the zone AOI fallback
+  (`n_plots`), bands (`bands`), and `status`
   (`"success"` or `"cancelled"`).
 }
 \description{
-Searches Sentinel-2 L2A scenes (CDSE then PC fallback), computes
-NDVI and/or NBR per scene, extracts the mean per plot over a
-circular buffer (`exactextractr::exact_extract`), and inserts the
-results into `obs_pixel` (idempotent on
-`(plot_id, obs_date, band)`).
+Searches Sentinel-2 L2A scenes (CDSE then PC fallback) and downloads
+the COG bands required for the requested indices (B04 / B08 for NDVI,
+B08 / B12 for NBR) into the on-disk band cache. Since spec 017 the
+FAST diagnostic is computed per-pixel straight from this COG cache by
+\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}}, so this
+pipeline no longer derives any per-plot observation nor writes to the
+database — the `obs_pixel` table was dropped in v0.58.0. It is purely a
+cache-priming step, independent of the validation sampling plan
+(placettes).
 }
 \examples{
 \dontrun{
 # Typical wiring from nemetonshiny's monitoring worker.
 cache <- file.path(project_path, "cache", "layers", "sentinel2")
 
-# First run on an already-populated zone, to prime the COG cache.
-# SQL INSERTs are ON CONFLICT DO NOTHING -> DB stays bit-identical.
+# First run to prime the COG cache (no DB write since v0.58.0).
 ingest_sentinel2_timeseries(
   con, zone_id, "2020-01-01", "2025-12-31",
   bands       = c("NDVI", "NBR"),
-  skip_cached = FALSE,                 # force re-extraction
+  skip_cached = FALSE,                 # force a re-fetch
   cache_dir   = cache
 )
 
-# Subsequent runs: skip_cached short-circuits at the DB level,
-# cache_dir only kicks in when a genuine re-extraction is needed.
+# Subsequent runs: cache hits skip already-primed scenes.
 ingest_sentinel2_timeseries(
   con, zone_id, "2026-01-01", "2026-06-30",
   bands     = c("NDVI", "NBR"),

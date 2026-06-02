@@ -87,10 +87,12 @@ test_that("db_migrate applies all bundled migrations on a fresh DB (PG)", {
     applied <- db_migrate(con)
     expect_true("0001_init"    %in% applied)
     expect_true("0002_fordead" %in% applied)
-    # The four tables should now exist
-    for (tbl in c("monitoring_zone", "plot", "obs_pixel", "alert")) {
+    expect_true("0004_drop_obs_pixel" %in% applied)
+    # The core tables exist; obs_pixel was dropped by migration 0004.
+    for (tbl in c("monitoring_zone", "plot", "alert")) {
       expect_true(DBI::dbExistsTable(con, tbl), info = tbl)
     }
+    expect_false(DBI::dbExistsTable(con, "obs_pixel"))
     # Re-running is a no-op
     again <- db_migrate(con)
     expect_length(again, 0)
@@ -126,14 +128,18 @@ test_that("0002_fordead adds the validation columns on alert (idempotent, PG)", 
   })
 })
 
-test_that("db_migrate creates a TimescaleDB hypertable for obs_pixel", {
+test_that("0004 drops obs_pixel and is safe to re-run (PG)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
-    rs <- DBI::dbGetQuery(con,
-      "SELECT hypertable_name FROM timescaledb_information.hypertables
-        WHERE hypertable_name = 'obs_pixel'")
-    expect_equal(nrow(rs), 1)
+    expect_false(DBI::dbExistsTable(con, "obs_pixel"))
+    # Re-applying 0004 manually is a no-op (DROP TABLE IF EXISTS).
+    sql <- paste(readLines(
+      system.file("db/migrations/pg/0004_drop_obs_pixel.sql",
+                  package = "nemeton"),
+      warn = FALSE), collapse = "\n")
+    expect_no_error(DBI::dbExecute(con, sql, immediate = TRUE))
+    expect_false(DBI::dbExistsTable(con, "obs_pixel"))
   })
 })
 
@@ -201,11 +207,14 @@ test_that("db_migrate applies the SQLite migrations on a fresh file", {
     expect_true("0001_init"         %in% applied)
     expect_true("0002_fordead"      %in% applied)
     expect_true("0003_project_uuid" %in% applied)
+    expect_true("0004_drop_obs_pixel" %in% applied)
 
-    for (tbl in c("monitoring_zone", "plot", "obs_pixel", "alert",
+    for (tbl in c("monitoring_zone", "plot", "alert",
                   "schema_migration")) {
       expect_true(DBI::dbExistsTable(con, tbl), info = tbl)
     }
+    # obs_pixel was dropped by migration 0004 (SQLite variant).
+    expect_false(DBI::dbExistsTable(con, "obs_pixel"))
     # FORDEAD columns + project_uuid present.
     acols <- DBI::dbListFields(con, "alert")
     for (c in c("confidence_class", "stress_index", "validation_status",

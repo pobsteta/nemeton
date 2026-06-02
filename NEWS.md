@@ -1,3 +1,61 @@
+# nemeton 0.58.0 (2026-06-02)
+
+### Removed — insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (suite spec 017 v0.55.0)
+
+Le diagnostic FAST est désormais **100 % pur raster per-pixel** : depuis
+la spec 017 (v0.55.0), `read_fast_alert_raster()` énumère les scènes
+directement depuis le cache COG, indépendamment de `obs_pixel` /
+placettes. La table `obs_pixel` (observations per-placette NDVI/NBR)
+n'a plus aucun consommateur applicatif depuis `nemetonshiny@v0.52.16`
+(plus de `read_obs_pixel()`, plus de modale per-placette, plus de
+`CircleMarkers` placettes sur la Carte FAST).
+
+**Phase A (cette release) :**
+
+- **`ingest_sentinel2_timeseries()`** n'extrait plus la moyenne
+  per-placette ni n'insère dans `obs_pixel`. Le pipeline se réduit à
+  **amorcer le cache COG** : résolution STAC inchangée, download/cache
+  des bandes B04/B08/B12 sous `<cache_dir>/<scene_id>/<band>.tif`
+  inchangé, heartbeats `s2:*` conservés. Le champ `n_obs_inserted`
+  disparaît du résumé retour ; `skip_cached` opère désormais sur le
+  cache COG (scène ignorée quand toutes ses bandes requises sont déjà
+  sur disque) au lieu de `obs_pixel`. Gain : ~5-15 s/scène économisés
+  sur les zones à nombreuses placettes ; un seul stockage à maintenir.
+- **Migration `0004_drop_obs_pixel.sql`** (PG + SQLite) :
+  `DROP TABLE IF EXISTS obs_pixel CASCADE` (PG) / `DROP TABLE IF EXISTS
+  obs_pixel` (SQLite). Idempotente, sûre à re-jouer.
+- **Dépréciation** des trois derniers lecteurs `obs_pixel`,
+  `@keywords internal` + avertissement `cli::cli_warn` (retrait prévu
+  en **v0.60.0**) :
+  - `read_obs_pixel()` — utiliser `build_index_stack()` /
+    `extract_pixel_timeseries()` (cache COG per-pixel) ;
+  - `list_fast_alerts_for_zone()` — FAST per-placette legacy, remplacé
+    par `read_fast_alert_raster()` / `compute_fast_alert_mask()` ;
+  - `detect_alerts()` — détection d'alertes per-placette legacy, idem.
+- Helpers internes retirés : `.insert_obs_pixel()`,
+  `.find_cached_obs_dates()` ; `.extract_scene_obs()` remplacé par
+  `.cache_scene_bands()` (cache des bandes COG uniquement) + helpers
+  `.s2_required_bands()` / `.scene_cogs_cached()`.
+
+**Non breaking côté app** (`nemetonshiny@v0.52.16` ne lit plus
+`obs_pixel`, aucun bump `Imports` requis) ; **breaking pour quiconque
+appelle directement** `read_obs_pixel()` / `list_fast_alerts_for_zone()`
+/ `detect_alerts()` (dépréquation + warning maintenant, retrait
+v0.60.0).
+
+**Tests** : `test-monitoring.R` réécrit (amorçage cache COG + skip
+COG-based, plus aucune assertion `obs_pixel` / `n_obs_inserted`) ;
+`test-db.R` vérifie que `0004` supprime `obs_pixel` (PG + SQLite,
+idempotent) ; `test-ingest-cancel.R` assertion partielle sur le cache
+COG ; `test-obs_pixel-deprecation.R` (nouveau) couvre les 3
+avertissements. Suites supprimées : `test-read_obs_pixel.R`,
+`test-fast_alerts.R`, `test-alerts.R`, `test-insert-obs-pixel-sqlite.R`
+(toutes adossées à `obs_pixel`). **NON TESTÉ EN CI ICI** (pas de R dans
+l'environnement) — à rejouer sur machine avec R sur les **deux backends**
+(Postgres + SQLite) via `NEMETON_DB_URL_TEST` (rappel v0.54.0), et
+`devtools::document()` à exécuter (les `man/*.Rd` ont été mis à jour à
+la main).
+
 # nemeton 0.57.0 (2026-06-02)
 
 ### Added — calcul raster multi-cœur opt-in (spec 017 D4, dernière phase perf)

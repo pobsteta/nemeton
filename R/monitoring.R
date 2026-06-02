@@ -1,10 +1,11 @@
 #' Sentinel-2 Time Series Ingestion (E6 monitoring)
 #'
 #' @description
-#' Fetch Sentinel-2 L2A scenes covering a set of plots over a date
-#' range, derive NDVI and NBR per scene, extract the per-plot mean
-#' value over a circular buffer, and persist into the `obs_pixel`
-#' hypertable of the monitoring database.
+#' Fetch Sentinel-2 L2A scenes covering a monitoring zone over a date
+#' range and prime the on-disk COG band cache (B04 / B08 / B12) that the
+#' per-pixel FAST diagnostic ([read_fast_alert_raster()]) consumes. Since
+#' v0.58.0 nothing is written to the database (the `obs_pixel` table was
+#' dropped).
 #'
 #' Triggered on demand: no cron worker is started by this function.
 #' One call = one ingestion window.
@@ -102,24 +103,25 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 
 #' Ingest a Sentinel-2 time series for the plots of a monitoring zone
 #'
-#' Searches Sentinel-2 L2A scenes (CDSE then PC fallback), computes
-#' NDVI and/or NBR per scene, extracts the mean per plot over a
-#' circular buffer (`exactextractr::exact_extract`), and inserts the
-#' results into `obs_pixel` (idempotent on
-#' `(plot_id, obs_date, band)`).
+#' Searches Sentinel-2 L2A scenes (CDSE then PC fallback) and downloads
+#' the COG bands required for the requested indices (B04 / B08 for NDVI,
+#' B08 / B12 for NBR) into the on-disk band cache. Since spec 017 the
+#' FAST diagnostic is computed per-pixel straight from this COG cache by
+#' [read_fast_alert_raster()], so this pipeline no longer derives any
+#' per-plot observation nor writes to the database — the `obs_pixel`
+#' table was dropped in v0.58.0. It is purely a cache-priming step,
+#' independent of the validation sampling plan (placettes).
 #'
 #' @param con A `DBIConnection`.
 #' @param zone_id Integer. Existing zone in `monitoring_zone`.
 #' @param start,end Date or character `"YYYY-MM-DD"`.
 #' @param bands Character vector. Subset of `c("NDVI", "NBR")`.
 #' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
-#' @param skip_cached Logical. When `TRUE` (default since v0.21.3),
-#'   query `obs_pixel` before the STAC loop and skip every scene
-#'   whose `obs_date` already has a row for **every** plot of the
-#'   zone × **every** requested band. Lets re-runs against an
-#'   existing database avoid all the per-scene HTTP traffic. Set
-#'   `FALSE` to force re-extraction (e.g. after invalidating
-#'   `obs_pixel` manually).
+#' @param skip_cached Logical. When `TRUE` (default), skip every scene
+#'   whose required band COGs are all already present under `cache_dir`,
+#'   so re-runs avoid redundant HTTP traffic. Has no effect when
+#'   `cache_dir` is `NULL` (there is no on-disk cache to consult). Set
+#'   `FALSE` to force a re-fetch of every scene.
 #' @param cache_dir Optional path to a directory under which cropped
 #'   band rasters are persisted as tiled GeoTIFF (COG-compatible
 #'   layout) at `<cache_dir>/<scene_id>/<band>.tif`. On a cache hit
@@ -141,20 +143,11 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   should be in `.gitignore`; do not use `<project>/data/` which
 #'   is reserved for user-owned project data.
 #'
-#'   \strong{Priming the cache on an existing zone.} The two cache
-#'   layers (`skip_cached` and `cache_dir`) are independent: when
-#'   `skip_cached = TRUE` (default) finds an `obs_date` already
-#'   covered in `obs_pixel`, the scene is skipped \emph{before}
-#'   `.extract_scene_obs()` runs, so no COG is written. If you
-#'   enable `cache_dir` on a zone whose `obs_pixel` is already
-#'   populated, run the ingestion \emph{once} with
-#'   `skip_cached = FALSE` to force re-extraction: scenes go through
-#'   the full path and the COGs land on disk; SQL INSERTs are
-#'   `ON CONFLICT DO NOTHING` so the DB stays bit-identical
-#'   (no duplicate rows, no overwritten values). Subsequent runs
-#'   can revert to `skip_cached = TRUE` — the COG cache will then
-#'   kick in only when a genuine re-extraction is needed
-#'   (a new band, a new metric, a manual `obs_pixel` wipe).
+#'   \strong{Priming the cache.} Since v0.58.0 the COG band cache is the
+#'   single cache layer: `skip_cached` and `cache_dir` act on the same
+#'   on-disk store. A scene is skipped when all its required band COGs
+#'   already exist under `cache_dir`; `skip_cached = FALSE` forces a
+#'   re-fetch even on a cache hit (e.g. to repair a truncated download).
 #' @param progress_callback Optional function called at each step of
 #'   the ingestion to allow callers (e.g. `nemetonshiny`) to report
 #'   download progress to the user. Receives a single named list
@@ -166,11 +159,11 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       `start`, `end`, `n_plots`, `bands`.}
 #'     \item{`s2:search_done`}{After STAC — payload includes `total`
 #'       (number of scenes found) and `bands`.}
-#'     \item{`s2:cache_lookup`}{After the `obs_pixel` cache query
-#'       (only when `skip_cached = TRUE`) — payload includes
-#'       `n_cached` (scenes whose obs_date is already fully ingested
-#'       and will be skipped) and `n_to_process` (scenes that will
-#'       hit the network).}
+#'     \item{`s2:cache_lookup`}{After the COG cache scan (only when
+#'       `skip_cached = TRUE`) — payload includes `n_cached` (scenes
+#'       whose required band COGs are already on disk and will be
+#'       skipped) and `n_to_process` (scenes that will hit the
+#'       network).}
 #'     \item{`s2:scene_cached`}{For each scene skipped thanks to the
 #'       cache — payload includes `completed = i - 1L`, `total`,
 #'       `scene_id`, `obs_date`, `cloud_pct`, `source`.}
@@ -205,8 +198,7 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       1-based index of the scene that would have been processed
 #'       next) and `n_total`. Emitted just before the loop breaks.}
 #'     \item{`s2:complete`}{After the loop — payload includes
-#'       `completed = total`, `total`, `n_obs_inserted`,
-#'       `n_scenes_cached`.}
+#'       `completed = total`, `total`, `n_scenes_cached`.}
 #'   }
 #'   The callback is invoked synchronously inside the calling thread.
 #'   Default `NULL` (silent — no callback emitted).
@@ -221,9 +213,9 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   as a stale leftover — the caller must delete it before each call.
 #'
 #' @return A one-row `data.frame` summarising the ingestion: number of
-#'   scenes considered (`n_scenes`), scenes skipped thanks to the cache
-#'   (`n_scenes_cached`), observations inserted (`n_obs_inserted`),
-#'   plots (`n_plots`), bands (`bands`), and `status`
+#'   scenes considered (`n_scenes`), scenes skipped thanks to the COG
+#'   cache (`n_scenes_cached`), plots used for the zone AOI fallback
+#'   (`n_plots`), bands (`bands`), and `status`
 #'   (`"success"` or `"cancelled"`).
 #'
 #' @examples
@@ -231,12 +223,11 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' # Typical wiring from nemetonshiny's monitoring worker.
 #' cache <- file.path(project_path, "cache", "layers", "sentinel2")
 #'
-#' # First run on an already-populated zone, to prime the COG cache.
-#' # SQL INSERTs are ON CONFLICT DO NOTHING -> DB stays bit-identical.
+#' # First run to prime the COG cache (no DB write since v0.58.0).
 #' ingest_sentinel2_timeseries(
 #'   con, zone_id, "2020-01-01", "2025-12-31",
 #'   bands       = c("NDVI", "NBR"),
-#'   skip_cached = FALSE,                 # force re-extraction
+#'   skip_cached = FALSE,                 # force a re-fetch
 #'   cache_dir   = cache
 #' )
 #'
@@ -261,9 +252,6 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
-  }
-  if (!requireNamespace("exactextractr", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg exactextractr} required.")
   }
   bands <- match.arg(bands, c("NDVI", "NBR"), several.ok = TRUE)
 
@@ -335,29 +323,30 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             total   = total_scenes,
             bands   = bands))
 
-  # Cache lookup: which obs_dates are already fully covered for
-  # *every* plot × *every* requested band? Those scenes never need
-  # to hit the network. Cheap one-shot query against the local DB.
-  cached_dates <- character(0)
+  # COG band cache scan: which scenes already have every required band
+  # on disk? Those never need to hit the network. Cheap, DB-free — the
+  # `obs_pixel` table was dropped in v0.58.0, so the on-disk COG cache
+  # is now the only cache layer.
+  req_bands <- .s2_required_bands(bands)
+  cached_scene <- rep(FALSE, total_scenes)
   if (isTRUE(skip_cached)) {
-    cached_dates <- as.character(
-      .find_cached_obs_dates(con, plots$id, bands, start, end)
-    )
-    n_cached_scenes <- sum(as.character(scenes$obs_date) %in% cached_dates)
+    cached_scene <- vapply(
+      seq_len(total_scenes),
+      function(i) .scene_cogs_cached(cache_dir, scenes$scene_id[i], req_bands),
+      logical(1))
+    n_cached_scenes <- sum(cached_scene)
     emit(list(current      = "s2:cache_lookup",
               n_cached     = as.integer(n_cached_scenes),
               n_to_process = as.integer(total_scenes - n_cached_scenes)))
   }
 
-  total_inserted <- 0L
   total_cached   <- 0L
   n_processed    <- 0L
   was_cancelled  <- FALSE
   for (i in seq_len(total_scenes)) {
     # Cooperative cancel: poll between tiles, just before starting the
-    # next one. INSERTs for tiles 1..i-1 are already committed (each
-    # .insert_obs_pixel() owns its own transaction), so breaking here
-    # leaves a clean partial ingest the user can resume.
+    # next one. COGs for tiles 1..i-1 are already on disk, so breaking
+    # here leaves a clean partial cache the user can resume.
     if (cancelled()) {
       was_cancelled <- TRUE
       emit(list(current    = "s2:cancelled",
@@ -366,7 +355,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
       break
     }
     sc <- scenes[i, , drop = FALSE]
-    if (as.character(sc$obs_date) %in% cached_dates) {
+    if (cached_scene[i]) {
       total_cached <- total_cached + 1L
       n_processed  <- n_processed + 1L
       emit(list(current   = "s2:scene_cached",
@@ -385,8 +374,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
               obs_date  = sc$obs_date,
               cloud_pct = sc$cloud_pct,
               source    = sc$source))
-    obs <- tryCatch(
-      .extract_scene_obs(sc, plots, bands, crop_aoi = aoi_zone,
+    tryCatch(
+      .cache_scene_bands(sc, req_bands, crop_aoi = aoi_zone,
                          cache_dir = cache_dir, emit = emit),
       error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
@@ -401,20 +390,15 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
         NULL
       }
     )
-    if (!is.null(obs) && nrow(obs)) {
-      inserted <- .insert_obs_pixel(con, obs)
-      total_inserted <- total_inserted + inserted
-    }
     n_processed <- n_processed + 1L
   }
 
   if (was_cancelled) {
-    # n_scenes reflects the tiles actually processed (committed), not
-    # the total found — symmetric with the FORDEAD cancelled result.
+    # n_scenes reflects the tiles actually processed, not the total
+    # found — symmetric with the FORDEAD cancelled result.
     return(.ingest_summary(
       n_scenes        = n_processed,
       n_scenes_cached = total_cached,
-      n_obs_inserted  = total_inserted,
       n_plots         = nrow(plots),
       bands           = bands,
       status          = "cancelled"))
@@ -423,13 +407,11 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   emit(list(current         = "s2:complete",
             completed       = as.integer(total_scenes),
             total           = as.integer(total_scenes),
-            n_obs_inserted  = as.integer(total_inserted),
             n_scenes_cached = as.integer(total_cached)))
 
   .ingest_summary(
     n_scenes        = total_scenes,
     n_scenes_cached = total_cached,
-    n_obs_inserted  = total_inserted,
     n_plots         = nrow(plots),
     bands           = bands,
     status          = "success")
@@ -440,12 +422,11 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 
 # Canonical one-row ingest summary. `status` is "success" on a normal
 # (or empty) run and "cancelled" when cooperative cancellation fired.
-.ingest_summary <- function(n_scenes, n_scenes_cached, n_obs_inserted,
+.ingest_summary <- function(n_scenes, n_scenes_cached,
                             n_plots, bands, status = "success") {
   data.frame(
     n_scenes        = as.integer(n_scenes),
     n_scenes_cached = as.integer(n_scenes_cached),
-    n_obs_inserted  = as.integer(n_obs_inserted),
     n_plots         = as.integer(n_plots),
     bands           = paste(bands, collapse = "+"),
     status          = status,
@@ -454,43 +435,33 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 }
 
 .empty_ingest_summary <- function() {
-  .ingest_summary(0L, 0L, 0L, 0L, "", status = "success")
+  .ingest_summary(0L, 0L, 0L, "", status = "success")
 }
 
-# Return the Date vector of obs_dates whose `obs_pixel` rows already
-# cover *every* plot in `plot_ids` × *every* band in `bands`. Used by
-# `ingest_sentinel2_timeseries()` to short-circuit scenes that would
-# only re-download data we already have.
-#
-# Inlines `plot_ids` and `bands` into the SQL: both come from
-# trusted sources (our own `plot.id` integers + a whitelist of
-# bands enforced by `match.arg`), so injection is impossible.
-.find_cached_obs_dates <- function(con, plot_ids, bands, start, end) {
-  if (!length(plot_ids) || !length(bands)) {
-    return(as.Date(character(0)))
+# Map the requested indices to the Sentinel-2 COG bands they need.
+# NDVI = (B08 - B04) / (B08 + B04) ; NBR = (B08 - B12) / (B08 + B12).
+# `read_fast_alert_raster()` recomputes the index per-pixel from these
+# cached bands, so the ingest pipeline only has to make sure they land
+# on disk.
+.s2_required_bands <- function(bands) {
+  out <- character(0)
+  if ("NDVI" %in% bands) out <- c(out, "B04", "B08")
+  if ("NBR"  %in% bands) out <- c(out, "B08", "B12")
+  unique(out)
+}
+
+# TRUE when every required band COG for `scene_id` already exists under
+# `cache_dir`. DB-free scene-level skip used by
+# `ingest_sentinel2_timeseries()` to avoid re-fetching scenes whose
+# bands are already cached. Always FALSE without an on-disk cache.
+.scene_cogs_cached <- function(cache_dir, scene_id, req_bands) {
+  if (is.null(cache_dir) || !nzchar(cache_dir) || !length(req_bands)) {
+    return(FALSE)
   }
-  expected <- length(plot_ids) * length(bands)
-  plot_list <- paste(as.integer(plot_ids), collapse = ", ")
-  band_list <- paste(sprintf("'%s'", bands),    collapse = ", ")
-  sql <- sprintf(
-    "SELECT obs_date FROM obs_pixel
-      WHERE plot_id IN (%s)
-        AND band IN (%s)
-        AND obs_date BETWEEN $1 AND $2
-      GROUP BY obs_date
-     HAVING COUNT(*) = %d",
-    plot_list, band_list, expected
-  )
-  rs <- tryCatch(
-    .db_get_query(con, sql,
-                    params = list(as.character(start), as.character(end))),
-    error = function(e) {
-      cli::cli_warn("Cache lookup against {.code obs_pixel} failed: {conditionMessage(e)}. Re-extracting all scenes.")
-      NULL
-    }
-  )
-  if (is.null(rs) || !nrow(rs)) return(as.Date(character(0)))
-  as.Date(rs$obs_date)
+  all(vapply(req_bands, function(b) {
+    p <- .s2_band_cache_path(cache_dir, scene_id, b)
+    !is.null(p) && file.exists(p)
+  }, logical(1)))
 }
 
 #' Diagnose an S2 band cache directory
@@ -611,62 +582,25 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   sf::st_sf(rs, geometry = geom_sfc, crs = 4326)
 }
 
-.extract_scene_obs <- function(scene, plots, bands, crop_aoi = NULL,
+# Download (and cache) the COG bands required for `bands` over the
+# `crop_aoi` envelope. Since v0.58.0 this is the only side effect of
+# scene processing: the per-pixel FAST diagnostic
+# ([read_fast_alert_raster()]) recomputes NDVI / NBR straight from the
+# cached bands, so no per-plot mean is extracted and nothing is written
+# to the database. `.get_s2_band_raster()` performs the cache-hit /
+# VSI-fetch / atomic-write logic and emits the `s2:band_*` heartbeats.
+#
+# spec 012 — crop to the zone envelope (`crop_aoi`) so the cache key
+# matches between FAST and FORDEAD. Returns the number of bands cached.
+.cache_scene_bands <- function(scene, req_bands, crop_aoi = NULL,
                                cache_dir = NULL, emit = NULL) {
-  # Buffer plots in their native projected CRS (Lambert-93 by default
-  # for FR; in 4326 we'd buffer in degrees, which is wrong).
-  plots_proj <- sf::st_transform(plots, 2154)
-  buf <- sf::st_buffer(plots_proj, dist = plots_proj$radius_m)
-
-  # spec 012 — crop the COG to the zone envelope (`crop_aoi`) so the
-  # cache key matches between FAST and FORDEAD; the per-plot buffer
-  # `buf` is only used downstream for `exact_extract`. When `crop_aoi`
-  # is NULL (legacy caller), fall back to the buffer bbox.
-  crop_geom <- if (is.null(crop_aoi)) buf else crop_aoi
-
-  rB04 <- .get_s2_band_raster(scene, "B04", crop_geom, cache_dir, emit)
-  rB08 <- .get_s2_band_raster(scene, "B08", crop_geom, cache_dir, emit)
-  buf_in_raster_crs_08 <- sf::st_transform(buf, terra::crs(rB08))
-  # B04 and B08 share resolution (10 m), no resample needed.
-
-  out <- list()
-
-  if ("NDVI" %in% bands) {
-    ndvi <- (rB08 - rB04) / (rB08 + rB04)
-    vals <- exactextractr::exact_extract(ndvi, buf_in_raster_crs_08, "mean",
-                                         progress = FALSE)
-    out$NDVI <- data.frame(
-      plot_id   = plots$id,
-      obs_date  = scene$obs_date,
-      band      = "NDVI",
-      value     = as.numeric(vals),
-      cloud_pct = scene$cloud_pct,
-      source    = scene$source,
-      scene_id  = scene$scene_id,
-      stringsAsFactors = FALSE
-    )
+  if (is.null(crop_aoi)) {
+    cli::cli_abort("Internal error: {.fn .cache_scene_bands} requires a crop AOI.")
   }
-
-  if ("NBR" %in% bands) {
-    rB12 <- .get_s2_band_raster(scene, "B12", crop_geom, cache_dir, emit)
-    # B12 is 20 m — resample to B08 grid for the formula.
-    rB12r <- terra::resample(rB12, rB08, method = "bilinear")
-    nbr <- (rB08 - rB12r) / (rB08 + rB12r)
-    vals <- exactextractr::exact_extract(nbr, buf_in_raster_crs_08, "mean",
-                                         progress = FALSE)
-    out$NBR <- data.frame(
-      plot_id   = plots$id,
-      obs_date  = scene$obs_date,
-      band      = "NBR",
-      value     = as.numeric(vals),
-      cloud_pct = scene$cloud_pct,
-      source    = scene$source,
-      scene_id  = scene$scene_id,
-      stringsAsFactors = FALSE
-    )
+  for (band in req_bands) {
+    .get_s2_band_raster(scene, band, crop_aoi, cache_dir, emit)
   }
-
-  do.call(rbind, out)
+  length(req_bands)
 }
 
 
@@ -1246,57 +1180,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   r
 }
 
-.insert_obs_pixel <- function(con, obs) {
-  if (!nrow(obs)) return(0L)
-  # Bulk insert via a temp staging table to avoid per-row round-trips.
-  # The CREATE must live INSIDE the same transaction as the
-  # dbAppendTable / INSERT: under PG, `ON COMMIT DROP` fires at the end
-  # of the enclosing transaction, so a CREATE outside dbWithTransaction
-  # would drop the table immediately. SQLite has no
-  # `ON COMMIT DROP` clause — its TEMP tables are connection-scoped —
-  # so for those backends we drop the table manually after the INSERT.
-  staging <- "tmp_obs_pixel_staging"
-  is_pg <- inherits(con, "PqConnection")
-  DBI::dbWithTransaction(con, {
-    if (is_pg) {
-      .db_execute(con,
-        paste0("CREATE TEMP TABLE IF NOT EXISTS ", staging, " (",
-               "plot_id   INTEGER, ",
-               "obs_date  DATE, ",
-               "band      TEXT, ",
-               "value     DOUBLE PRECISION, ",
-               "cloud_pct NUMERIC, ",
-               "source    TEXT, ",
-               "scene_id  TEXT) ON COMMIT DROP"))
-    } else {
-      .db_execute(con, paste0("DROP TABLE IF EXISTS ", staging))
-      .db_execute(con,
-        paste0("CREATE TEMP TABLE ", staging, " (",
-               "plot_id   INTEGER, ",
-               "obs_date  DATE, ",
-               "band      TEXT, ",
-               "value     DOUBLE, ",
-               "cloud_pct NUMERIC, ",
-               "source    TEXT, ",
-               "scene_id  TEXT)"))
-    }
-    DBI::dbAppendTable(con, staging, obs)
-    rs <- .db_execute(con, sprintf(
-      # The `WHERE 1=1` is mandatory, not cosmetic: when an INSERT draws
-      # its rows from a SELECT, SQLite cannot tell whether the trailing
-      # `ON` opens the UPSERT clause or a join's `ON`. It mis-parses
-      # `ON CONFLICT (...)` as a join condition and then fails at `DO`
-      # (`near \"DO\": syntax error`). A WHERE clause on the SELECT
-      # disambiguates the grammar. Harmless and a no-op under Postgres.
-      "INSERT INTO obs_pixel (plot_id, obs_date, band, value, cloud_pct, source, scene_id)
-         SELECT plot_id, obs_date, band, value, cloud_pct, source, scene_id
-         FROM %s
-         WHERE 1=1
-       ON CONFLICT (plot_id, obs_date, band) DO NOTHING",
-      staging))
-    if (!is_pg) {
-      .db_execute(con, paste0("DROP TABLE ", staging))
-    }
-    rs
-  })
-}
+# `.insert_obs_pixel()` was removed in v0.58.0: the FAST pipeline no
+# longer writes per-plot observations (the `obs_pixel` table was
+# dropped — see migration 0004). The per-pixel diagnostic reads the COG
+# band cache directly via `read_fast_alert_raster()`.
