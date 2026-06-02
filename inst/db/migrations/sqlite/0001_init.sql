@@ -10,8 +10,8 @@
 -- Differences from the PG variant:
 --
 --   * No `CREATE EXTENSION` / `create_hypertable()` — SQLite has none.
---     `obs_pixel` stays a plain table with a composite primary key; at
---     the volumes we target (one forestry project) that is fine.
+--     (The PG variant used a hypertable only for the now-removed
+--     `obs_pixel`; the remaining tables are plain on both backends.)
 --   * `SERIAL` → `INTEGER PRIMARY KEY AUTOINCREMENT` (SQLite's rowid
 --     alias). No sequences.
 --   * `ON DELETE CASCADE` is dropped from FOREIGN KEY clauses (the
@@ -59,22 +59,14 @@ CREATE TABLE IF NOT EXISTS plot (
 
 CREATE INDEX IF NOT EXISTS plot_zone_idx ON plot (zone_id);
 
--- -----------------------------------------------------------------------
--- obs_pixel — Sentinel-2 derived observations (NDVI, NBR per plot per date)
--- -----------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS obs_pixel (
-    plot_id   INTEGER NOT NULL REFERENCES plot(id),
-    obs_date  DATE    NOT NULL,
-    band      TEXT    NOT NULL,
-    value     DOUBLE,
-    cloud_pct NUMERIC,
-    source    TEXT    NOT NULL,
-    scene_id  TEXT,
-    PRIMARY KEY (plot_id, obs_date, band)
-);
+-- obs_pixel (per-placette NDVI/NBR table) was retired in v0.60.0: the
+-- FAST diagnostic is now pure per-pixel over the COG cache
+-- (read_fast_alert_raster, spec 017). Fresh databases never create the
+-- table; existing databases drop it via migration 0004_drop_obs_pixel.
 
 -- -----------------------------------------------------------------------
--- alert — drops detected by detect_alerts()
+-- alert — drops detected by the legacy detect_alerts() (removed v0.60.0);
+-- still written by the FORDEAD post-processing pipeline.
 -- -----------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS alert (
     id            INTEGER   PRIMARY KEY AUTOINCREMENT,

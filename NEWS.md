@@ -1,3 +1,43 @@
+# nemeton 0.60.0 (2026-06-02)
+
+### Removed — retrait définitif des trois lecteurs `obs_pixel` (Phase B)
+
+Suite de la v0.58.0 (Phase A, dépréciation). Le diagnostic FAST étant
+100 % pur raster per-pixel depuis la spec 017, et `obs_pixel` ayant été
+supprimée (migration 0004), les trois fonctions dépréciées sont
+**retirées du package** :
+
+- `read_obs_pixel()` — utiliser `build_index_stack()` /
+  `extract_pixel_timeseries()` (cache COG per-pixel) ;
+- `list_fast_alerts_for_zone()` — utiliser `read_fast_alert_raster()` /
+  `compute_fast_alert_mask()` (FAST pur raster) ;
+- `detect_alerts()` — idem (le suivi sanitaire passe par FORDEAD +
+  `read_fast_alert_raster()`).
+
+Fichiers `R/read_obs_pixel.R`, `R/fast_alerts.R`, `R/alerts.R` et leurs
+`man/*.Rd` supprimés ; exports retirés du `NAMESPACE`. Les helpers
+internes associés partent avec (`.empty_obs_pixel()`, `.coerce_obs_date()`,
+`.empty_fast_alerts()`, `.coerce_alert_date()`). La table `alert` reste
+en place : elle est toujours alimentée par le post-traitement FORDEAD
+(`list_alerts()` la lit).
+
+**Simplification du schéma** : le `CREATE TABLE obs_pixel`
+(+ `create_hypertable` PG) est retiré des migrations `0001_init.sql`
+(PG + SQLite) — les **nouvelles** bases ne créent plus jamais la table.
+La migration `0004_drop_obs_pixel.sql` est conservée pour les bases
+**existantes** (DROP idempotent ; no-op sur une base neuve).
+
+**Breaking** pour tout appel direct aux trois fonctions retirées (elles
+émettaient déjà un `cli_warn` de dépréciation en v0.58.0). Côté app :
+`nemetonshiny@v0.52.16` ne les consomme plus → aucun impact.
+
+**Tests** : `test-obs_pixel-deprecation.R` supprimé (fonctions parties) ;
+`test-db.R` vérifie l'absence de `obs_pixel` après migration sur une
+base neuve (PG + SQLite) ; suites `obs_pixel` legacy déjà retirées en
+v0.58.0. **NON TESTÉ EN CI ICI** (pas de R) — rejouer sur les deux
+backends + `devtools::document()` (les `man/*.Rd` ont été ajustés à la
+main).
+
 # nemeton 0.58.0 (2026-06-02)
 
 ### Removed — insertion `obs_pixel` dans `ingest_sentinel2_timeseries()` (suite spec 017 v0.55.0)

@@ -105,10 +105,10 @@ downstream if a different output CRS is needed.
 
 Source data: this function reads from the on-disk COG cache populated
 by [ingest_sentinel2_timeseries()] (or [ingest_s2_raw_bands_to_cache()]
-on the FORDEAD path). The list of scenes to process is resolved via
-[read_obs_pixel()] filtered by `(zone_id, [date_from, date_to])`,
-so a scene that hasn't been ingested into `obs_pixel` yet is ignored
-even if its COG happens to be on disk.
+on the FORDEAD path). The list of scenes to process is enumerated
+directly from the cache directory and filtered by
+`(date_from, date_to)` (spec 017), so the diagnostic is fully
+independent of any per-placette table.
 }
 \examples{
 \dontrun{
@@ -127,6 +127,5 @@ even if its COG happens to be on disk.
 \seealso{
 [build_index_stack()] (the underlying index stack builder,
   spec 010), [.get_zone_aoi()] (the shared AOI resolver, spec 012),
-  [compute_fast_alert_mask()] (the 0-4 quartile discretiser),
-  [list_fast_alerts_for_zone()] (the legacy per-plot alert table).
+  [compute_fast_alert_mask()] (the 0-4 quartile discretiser).
 }
