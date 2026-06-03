@@ -40,7 +40,9 @@
 #' @param mask_cache_dir Path to the FAST mask cache root. The mask is
 #'   written under `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.
 #'   Defaults to a `fast/` sibling of `cache_dir` (i.e.
-#'   `<project>/cache/layers/fast/`).
+#'   `<project>/cache/layers/fast/`). Masks are timestamped (one file per
+#'   call); at most `getOption("nemeton.fast_mask_keep", 20)` are kept per
+#'   zone (LRU by mtime), so the directory does not grow unbounded.
 #' @param breaks Numeric vector of break points to discretise the
 #'   continuous alert raster into the 0-4 scale. **5 cut points** are
 #'   expected (defines bins `(-Inf, b1], (b1, b2], ..., (b4, Inf]`).
@@ -172,7 +174,27 @@ compute_fast_alert_mask <- function(con, zone_id,
       out_path <<- NA_character_
     }
   )
+  # Unlike the content-addressed continuous cache, masks are timestamped
+  # (`fast_alert_<ts>.tif`) so every call writes a new file and the dir
+  # grows unbounded. Trim to the most recent `keep` masks (LRU by mtime),
+  # mirroring `.fast_raster_gc()` for the continuous COGs.
+  if (!is.na(out_path)) .fast_alert_mask_gc(zone_dir)
   invisible(out_path)
+}
+
+# Keep at most `keep` discretised 0-4 masks per zone directory (LRU by
+# mtime). Targets ONLY `fast_alert_<ts>.tif` files, so it never touches the
+# continuous COGs (`fast_<INDEX>_*`) that share the directory when
+# `mask_cache_dir == result_cache_dir` (the validation-sampling case).
+.fast_alert_mask_gc <- function(zone_dir,
+                                keep = getOption("nemeton.fast_mask_keep", 20L)) {
+  files <- list.files(zone_dir, pattern = "^fast_alert_.*\\.tif$",
+                      full.names = TRUE)
+  if (length(files) <= keep) return(invisible(NULL))
+  mt  <- file.info(files)$mtime
+  old <- files[order(mt, decreasing = TRUE)][-seq_len(keep)]
+  unlink(old)
+  invisible(NULL)
 }
 
 

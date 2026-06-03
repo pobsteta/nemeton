@@ -48,7 +48,9 @@ the analysis window.}
 \item{mask_cache_dir}{Path to the FAST mask cache root. The mask is
 written under `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.
 Defaults to a `fast/` sibling of `cache_dir` (i.e.
-`<project>/cache/layers/fast/`).}
+`<project>/cache/layers/fast/`). Masks are timestamped (one file per
+call); at most `getOption("nemeton.fast_mask_keep", 20)` are kept per
+zone (LRU by mtime), so the directory does not grow unbounded.}
 
 \item{breaks}{Numeric vector of break points to discretise the
 continuous alert raster into the 0-4 scale. **5 cut points** are

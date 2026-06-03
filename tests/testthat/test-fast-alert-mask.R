@@ -156,3 +156,63 @@ test_that("compute_fast_alert_mask + read round-trip on villards", {
   vals <- vals[!is.na(vals)]
   expect_true(all(vals %in% 0:4))
 })
+
+
+# ---- mask cache GC (.fast_alert_mask_gc) -----------------------------
+
+# Create `n` mask files with strictly increasing mtimes so LRU ordering
+# is deterministic; return their paths oldest-first.
+.write_dummy_masks <- function(dir, n, prefix = "fast_alert_") {
+  paths <- file.path(dir, sprintf("%s2026010%dT0000%02d.tif", prefix,
+                                   (seq_len(n) %% 9) + 1L, seq_len(n)))
+  base <- as.POSIXct("2026-01-01 00:00:00", tz = "UTC")
+  for (k in seq_len(n)) {
+    writeLines("x", paths[k])
+    Sys.setFileTime(paths[k], base + k)   # k seconds apart -> stable order
+  }
+  paths
+}
+
+test_that(".fast_alert_mask_gc keeps the newest `keep` masks (LRU)", {
+  d <- withr::local_tempdir()
+  .write_dummy_masks(d, 25L)
+  nemeton:::.fast_alert_mask_gc(d, keep = 20L)
+  left <- list.files(d, pattern = "^fast_alert_.*\\.tif$")
+  expect_length(left, 20L)
+  # the 5 oldest (k = 1..5) were removed; the newest survive
+  expect_false(any(grepl("T000001\\.tif$", left)))
+  expect_true(any(grepl("T000025\\.tif$", left)))
+})
+
+test_that(".fast_alert_mask_gc is a no-op at or under `keep`", {
+  d <- withr::local_tempdir()
+  .write_dummy_masks(d, 10L)
+  nemeton:::.fast_alert_mask_gc(d, keep = 20L)
+  expect_length(list.files(d, pattern = "^fast_alert_.*\\.tif$"), 10L)
+})
+
+test_that(".fast_alert_mask_gc never touches continuous COGs (shared dir)", {
+  # validation-sampling case: masks (`fast_alert_*`) and continuous
+  # (`fast_<INDEX>_*`) live in the same `fast_sampling/zone_<id>` dir.
+  d <- withr::local_tempdir()
+  .write_dummy_masks(d, 25L)                 # 25 masks
+  cont <- file.path(d, c("fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_aaaaaaaa.tif",
+                         "fast_NDMI_rolling_thr0.30_2025-05-23_2026-05-23_w30_bbbbbbbb.tif"))
+  for (p in cont) writeLines("x", p)
+  nemeton:::.fast_alert_mask_gc(d, keep = 20L)
+  expect_length(list.files(d, pattern = "^fast_alert_.*\\.tif$"), 20L)  # masks trimmed
+  expect_true(all(file.exists(cont)))                                   # continuous untouched
+})
+
+test_that(".fast_raster_gc never touches 0-4 masks (shared dir)", {
+  skip_if_not_installed("withr")
+  d <- withr::local_tempdir()
+  # 22 continuous COGs + 3 masks in the same dir.
+  cont <- file.path(d, sprintf("fast_NDVI_count_thr0.40_2025-05-23_2026-05-23_w30_%08x.tif",
+                               seq_len(22)))
+  for (p in cont) writeLines("x", p)
+  masks <- .write_dummy_masks(d, 3L)
+  nemeton:::.fast_raster_gc(d, keep = 20L)
+  expect_length(list.files(d, pattern = "^fast_NDVI_.*\\.tif$"), 20L)   # continuous trimmed
+  expect_true(all(file.exists(masks)))                                  # masks untouched
+})

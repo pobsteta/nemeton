@@ -10,6 +10,25 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.65.3] - 2026-06-03
+
+### Added
+
+- LRU GC for the FAST 0-4 mask cache: `compute_fast_alert_mask()` writes a
+  timestamped `fast_alert_<ts>.tif` per call, so the mask directory grew
+  unbounded. `.fast_alert_mask_gc()` now keeps at most
+  `getOption("nemeton.fast_mask_keep", 20)` masks per zone (LRU by mtime),
+  mirroring `.fast_raster_gc()` for the continuous COGs.
+
+### Fixed
+
+- The continuous-cache GC no longer deletes 0-4 masks. `.fast_raster_gc()`
+  matched `^fast_.*\.tif$`, which caught `fast_alert_*` masks when
+  `result_cache_dir == mask_cache_dir` (validation sampling on
+  `fast_sampling/`). Tightened to `^fast_[A-Z].*\.tif$` (continuous
+  `fast_NDVI_`/`fast_NBR_`/`fast_NDMI_` only), so the two caches are GC'd
+  independently.
+
 ## [0.65.2] - 2026-06-03
 
 ### Changed

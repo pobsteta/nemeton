@@ -429,9 +429,14 @@ read_fast_alert_rasters <- function(con, zone_id,
                                   date_from, date_to, window_days, hash))
 }
 
-# Keep at most `keep` cached COGs per zone directory (LRU by mtime).
+# Keep at most `keep` cached continuous COGs per zone directory (LRU by
+# mtime). The `^fast_[A-Z]` pattern matches the continuous files
+# (`fast_NDVI_*`, `fast_NBR_*`, `fast_NDMI_*`) but NOT the 0-4 masks
+# (`fast_alert_*`, lowercase), so when `result_cache_dir == mask_cache_dir`
+# (validation sampling on `fast_sampling/`) the two caches are GC'd
+# independently and never delete each other's files.
 .fast_raster_gc <- function(zone_dir, keep = getOption("nemeton.fast_raster_keep", 20L)) {
-  files <- list.files(zone_dir, pattern = "^fast_.*\\.tif$", full.names = TRUE)
+  files <- list.files(zone_dir, pattern = "^fast_[A-Z].*\\.tif$", full.names = TRUE)
   if (length(files) <= keep) return(invisible(NULL))
   mt  <- file.info(files)$mtime
   old <- files[order(mt, decreasing = TRUE)][-seq_len(keep)]

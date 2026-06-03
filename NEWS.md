@@ -1,3 +1,27 @@
+# nemeton 0.65.3 (2026-06-03)
+
+### Added — GC LRU du cache des masques FAST 0-4
+
+`compute_fast_alert_mask()` écrit un masque **horodaté**
+(`fast_alert_<ts>.tif`) à chaque appel — contrairement au cache continu
+content-addressed, le dossier des masques grossissait donc indéfiniment.
+Nouvelle GC `.fast_alert_mask_gc()` appelée après chaque écriture : ne
+garde que les `getOption("nemeton.fast_mask_keep", 20)` masques les plus
+récents par zone (LRU par mtime), comme `.fast_raster_gc()` le fait déjà
+pour les COG continus (`nemeton.fast_raster_keep`).
+
+### Fixed — la GC continue ne touche plus aux masques
+
+`.fast_raster_gc()` (cache continu) globait `^fast_.*\.tif$`, ce qui
+incluait les masques `fast_alert_*.tif` quand `result_cache_dir ==
+mask_cache_dir` (cas de la validation sampling sur `fast_sampling/`) —
+les deux caches se disputaient le même quota et pouvaient se supprimer
+mutuellement. Le motif est resserré à `^fast_[A-Z].*\.tif$` (les COG
+continus `fast_NDVI_`/`fast_NBR_`/`fast_NDMI_`, jamais les masques
+`fast_alert_` en minuscule) : les deux caches sont désormais ramassés
+indépendamment.
+
+
 # nemeton 0.65.2 (2026-06-03)
 
 ### Changed — naming verbose et lisible du cache D6 FAST
