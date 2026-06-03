@@ -37,12 +37,13 @@
 #'   diagnostic is independent of `obs_pixel` / placettes).
 #' @param zone_id Integer scalar. Existing zone in `monitoring_zone`.
 #' @param index Character scalar. The single spectral index the alert
-#'   map is built from: `"NDVI"` (default) or `"NBR"`. Spec 017 (v0.55.0)
-#'   dropped the previous "NDVI OR NBR" combination — the map is now
-#'   mono-index.
+#'   map is built from: `"NDVI"` (default), `"NBR"` or `"NDMI"` (moisture,
+#'   spec 019). Spec 017 (v0.55.0) dropped the previous "NDVI OR NBR"
+#'   combination — the map is now mono-index.
 #' @param threshold Numeric scalar in `(0, 1)`, or `NULL`. Alert if the
 #'   chosen `index` is strictly below this value. When `NULL` (default)
-#'   it resolves to `0.40` for `"NDVI"` and `0.30` for `"NBR"`.
+#'   it resolves to `0.40` for `"NDVI"` and `0.30` otherwise (`"NBR"`,
+#'   `"NDMI"`).
 #' @param date_from,date_to Date (or character `"YYYY-MM-DD"`) bounding
 #'   the analysis window.
 #' @param mode Character scalar. One of `"count"` or `"rolling"`.
@@ -94,7 +95,7 @@
 #'
 #' @export
 read_fast_alert_raster <- function(con, zone_id,
-                                   index          = c("NDVI", "NBR"),
+                                   index          = c("NDVI", "NBR", "NDMI"),
                                    threshold      = NULL,
                                    date_from, date_to,
                                    mode           = c("count", "rolling"),
@@ -119,7 +120,9 @@ read_fast_alert_raster <- function(con, zone_id,
   zid <- as.integer(zone_id)
 
   # spec 017 — a single threshold for the chosen index. NULL resolves to
-  # the historical per-index default (NDVI 0.40, NBR 0.30).
+  # the historical per-index default (NDVI 0.40, NBR 0.30). NDMI (spec
+  # 019) reuses the generic non-NDVI default (0.30); the 0-4 mask stays
+  # adaptive (quartiles) so no NDMI-specific calibration is needed.
   if (is.null(threshold)) {
     threshold <- if (index == "NDVI") 0.40 else 0.30
   }

@@ -1,3 +1,39 @@
+# nemeton 0.64.0 (2026-06-03)
+
+### Added — indice NDMI dans le suivi sanitaire FAST (spec 019)
+
+Nouvel index calculable du suivi rapide **FAST**, à côté de NDVI et NBR :
+
+**NDMI = (B08 − B11) / (B08 + B11)** (NIR − SWIR1) — proxy de l'**humidité
+de la végétation**, qui baisse sous stress hydrique. Il s'intègre tel quel
+dans la machinerie d'alerte FAST (déclin sous seuil = alerte, modes
+`count`/`rolling`, classification 0-4 par quartiles).
+
+- `build_index_stack()` et `extract_pixel_timeseries()` acceptent
+  `index/indices = "NDMI"` ; B11 (SWIR1, 20 m) est rééchantillonnée
+  bilinéairement à la grille 10 m de B08, exactement comme B12 pour NBR.
+- `read_s2_band_raster()` / `read_s2_band_stack()` acceptent la bande
+  `"B11"`.
+- `read_fast_alert_raster()` et `compute_fast_alert_mask()` acceptent
+  `index = "NDMI"` ; le COG résultat est `fast_NDMI_<mode>_<hash>.tif`
+  (le hash D6 inclut l'index → aucune collision avec les caches
+  NDVI/NBR existants). Le **défaut reste NDVI** (rétro-compatible).
+- Seuil NDMI : reprend le défaut générique non-NDVI (0.30, comme NBR) ;
+  la classification 0-4 reste **adaptative** (quartiles) — aucune
+  calibration NDMI dédiée (décision D2).
+- `ingest_sentinel2_timeseries()` accepte `bands = "NDMI"` et met
+  **B11 en cache systématiquement** (best-effort, décision D3) : NDMI est
+  disponible sur les futurs ingests sans le demander explicitement. Une
+  scène dépourvue de B11 est ignorée sans faire échouer l'ingestion
+  NDVI/NBR.
+
+B11 est déjà recherchée sur STAC (`.S2_STAC_BANDS`) — aucune modification
+de la requête STAC. Les caches NDVI/NBR existants sont intacts ; pour
+calculer NDMI sur des scènes déjà cachées, ré-ingérer la zone
+(`skip_cached = FALSE`) afin de peupler B11.
+
+Plan détaillé : `specs/019-ndmi-fast-index/spec.md`.
+
 # nemeton 0.63.0 (2026-06-03)
 
 ### Added — API publique d'administration du corpus RAG (spec 009.2)

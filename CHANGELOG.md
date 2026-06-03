@@ -10,6 +10,27 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.64.0] - 2026-06-03
+
+### Added
+
+- NDMI index in the FAST health-monitoring subsystem (spec 019):
+  `NDMI = (B08 - B11) / (B08 + B11)` (NIR − SWIR1), a vegetation-moisture
+  proxy. `build_index_stack()`, `extract_pixel_timeseries()`,
+  `read_fast_alert_raster()` and `compute_fast_alert_mask()` accept
+  `index/indices = "NDMI"`; `read_s2_band_raster()` /
+  `read_s2_band_stack()` accept band `"B11"`. The FAST default stays NDVI
+  (back-compatible); the D6 cache key includes the index, so NDMI COGs
+  (`fast_NDMI_*`) never collide with existing NDVI/NBR caches.
+
+### Changed
+
+- `ingest_sentinel2_timeseries()` accepts `bands = "NDMI"` and now caches
+  B11 systematically (best-effort, spec 019 D3): a scene lacking the B11
+  asset is skipped without failing NDVI/NBR ingestion. `.s2_required_bands()`
+  maps `NDMI -> B08, B11`; `.cache_scene_bands()` gains an
+  `optional_bands` argument.
+
 ## [0.63.0] - 2026-06-03
 
 ### Added

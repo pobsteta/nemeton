@@ -115,7 +115,9 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param con A `DBIConnection`.
 #' @param zone_id Integer. Existing zone in `monitoring_zone`.
 #' @param start,end Date or character `"YYYY-MM-DD"`.
-#' @param bands Character vector. Subset of `c("NDVI", "NBR")`.
+#' @param bands Character vector. Subset of `c("NDVI", "NBR", "NDMI")`.
+#'   B11 (needed by NDMI) is also cached best-effort on every ingest
+#'   (spec 019 D3), so NDMI works on future scenes without requesting it.
 #' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
 #' @param skip_cached Logical. When `TRUE` (default), skip every scene
 #'   whose required band COGs are all already present under `cache_dir`,
@@ -278,7 +280,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
-  bands <- match.arg(bands, c("NDVI", "NBR"), several.ok = TRUE)
+  bands <- match.arg(bands, c("NDVI", "NBR", "NDMI"), several.ok = TRUE)
 
   # spec 018 — FAST-alert pre-warming is opt-in and needs both a band
   # cache to read from (`cache_dir`) and a destination for the result
@@ -418,8 +420,11 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
               cloud_pct = sc$cloud_pct,
               source    = sc$source))
     tryCatch(
+      # spec 019 D3 — cache B11 systematically (best-effort) so NDMI is
+      # available on future ingests without an explicit `bands = "NDMI"`.
       .cache_scene_bands(sc, req_bands, crop_aoi = aoi_zone,
-                         cache_dir = cache_dir, emit = emit),
+                         cache_dir = cache_dir, emit = emit,
+                         optional_bands = "B11"),
       error = function(e) {
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
@@ -573,14 +578,15 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 }
 
 # Map the requested indices to the Sentinel-2 COG bands they need.
-# NDVI = (B08 - B04) / (B08 + B04) ; NBR = (B08 - B12) / (B08 + B12).
-# `read_fast_alert_raster()` recomputes the index per-pixel from these
-# cached bands, so the ingest pipeline only has to make sure they land
-# on disk.
+# NDVI = (B08 - B04) / (B08 + B04) ; NBR = (B08 - B12) / (B08 + B12) ;
+# NDMI = (B08 - B11) / (B08 + B11). `read_fast_alert_raster()` recomputes
+# the index per-pixel from these cached bands, so the ingest pipeline
+# only has to make sure they land on disk.
 .s2_required_bands <- function(bands) {
   out <- character(0)
   if ("NDVI" %in% bands) out <- c(out, "B04", "B08")
   if ("NBR"  %in% bands) out <- c(out, "B08", "B12")
+  if ("NDMI" %in% bands) out <- c(out, "B08", "B11")
   unique(out)
 }
 
@@ -727,14 +733,26 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 # spec 012 — crop to the zone envelope (`crop_aoi`) so the cache key
 # matches between FAST and FORDEAD. Returns the number of bands cached.
 .cache_scene_bands <- function(scene, req_bands, crop_aoi = NULL,
-                               cache_dir = NULL, emit = NULL) {
+                               cache_dir = NULL, emit = NULL,
+                               optional_bands = character(0)) {
   if (is.null(crop_aoi)) {
     cli::cli_abort("Internal error: {.fn .cache_scene_bands} requires a crop AOI.")
   }
   for (band in req_bands) {
     .get_s2_band_raster(scene, band, crop_aoi, cache_dir, emit)
   }
-  length(req_bands)
+  # spec 019 D3 — best-effort bands (e.g. B11 for NDMI): cache them when
+  # the scene exposes them, but never fail the ingestion of the required
+  # bands if a scene lacks the asset (`.get_s2_band_raster()` aborts on a
+  # missing/empty href, so each optional band is tried independently).
+  n_opt <- 0L
+  for (band in setdiff(optional_bands, req_bands)) {
+    ok <- tryCatch({
+      .get_s2_band_raster(scene, band, crop_aoi, cache_dir, emit); TRUE
+    }, error = function(e) FALSE)
+    if (isTRUE(ok)) n_opt <- n_opt + 1L
+  }
+  length(req_bands) + n_opt
 }
 
 

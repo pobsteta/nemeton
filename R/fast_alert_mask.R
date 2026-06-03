@@ -26,11 +26,11 @@
 #'
 #' @param con A `DBIConnection`. Passed to [read_fast_alert_raster()].
 #' @param zone_id Integer scalar.
-#' @param index Character scalar `"NDVI"` (default) or `"NBR"` — the
-#'   single index the alert map is built from (spec 017).
+#' @param index Character scalar `"NDVI"` (default), `"NBR"` or `"NDMI"`
+#'   — the single index the alert map is built from (spec 017 / 019).
 #' @param threshold Numeric in `(0, 1)` or `NULL`. Passed through to
 #'   [read_fast_alert_raster()]; `NULL` resolves per `index`
-#'   (NDVI 0.40, NBR 0.30).
+#'   (NDVI 0.40, NBR/NDMI 0.30).
 #' @param date_from,date_to Date (or character `"YYYY-MM-DD"`) bounding
 #'   the analysis window.
 #' @param mode One of `"count"` or `"rolling"`. Default `"count"`.
@@ -69,7 +69,7 @@
 #'
 #' @export
 compute_fast_alert_mask <- function(con, zone_id,
-                                    index          = c("NDVI", "NBR"),
+                                    index          = c("NDVI", "NBR", "NDMI"),
                                     threshold      = NULL,
                                     date_from, date_to,
                                     mode           = c("count", "rolling"),

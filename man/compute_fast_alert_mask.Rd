@@ -7,7 +7,7 @@
 compute_fast_alert_mask(
   con,
   zone_id,
-  index = c("NDVI", "NBR"),
+  index = c("NDVI", "NBR", "NDMI"),
   threshold = NULL,
   date_from,
   date_to,

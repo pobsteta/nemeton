@@ -7,7 +7,7 @@
 build_index_stack(
   cache_dir,
   scenes_df,
-  index = c("NDVI", "NBR"),
+  index = c("NDVI", "NBR", "NDMI"),
   mask_polygon = NULL,
   parallel = FALSE
 )
