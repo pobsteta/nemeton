@@ -1,3 +1,36 @@
+# nemeton 0.65.2 (2026-06-03)
+
+### Changed — naming verbose et lisible du cache D6 FAST
+
+Les COG du cache content-addressed (spec 017 D6) passent du nom opaque
+`fast_<INDEX>_<MODE>_<hash>.tif` à un nom **verbeux et déterministe** :
+
+```
+fast_<INDEX>_<MODE>_thr<seuil>_<from>_<to>_w<window>_<hash8>.tif
+ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif
+```
+
+Les paramètres clés (seuil, fenêtre temporelle, `window_days`) sont
+désormais lisibles directement dans le nom de fichier — deux cartes de
+même `INDEX`/`MODE` dans une même `zone_<id>` se distinguent à l'œil sans
+recalcul. Un extrait de 8 caractères du hash D6 (inchangé) continue de
+discriminer les entrées qui ne tiennent pas dans un nom : la liste des
+scènes S2 (change après ré-ingestion) et le polygone de masque UGF.
+
+**Idempotence préservée** : mêmes paramètres → même nom → hit cache. Le
+hash sous-jacent (`.fast_raster_hash()`) est inchangé.
+
+**Anciens fichiers** : les COG au format pré-0.65.2
+(`fast_<index>_<mode>_<hash_long>.tif`) ne sont plus reconnus comme hits ;
+ils sont simplement recalculés à la 1re demande (cache idempotent) puis
+ramassés par la GC LRU (`nemeton.fast_raster_keep`). Pour récupérer
+l'espace tout de suite sur un projet existant :
+
+```bash
+rm -f <projet>/cache/layers/fast_alert/zone_*/fast_*_[0-9a-f][0-9a-f]*.tif
+```
+
+
 # nemeton 0.65.1 (2026-06-03)
 
 ### Fixed — le prewarm FAST couvre désormais les 6 cartes (oubli de v0.65.0)

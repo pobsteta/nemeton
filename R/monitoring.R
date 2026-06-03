@@ -235,7 +235,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param prewarm_mask_cache_dir Character path, **required when
 #'   `prewarm_alerts = TRUE`**. Root of the FAST alert result (D6) cache,
 #'   forwarded to [read_fast_alert_raster()] as `result_cache_dir`;
-#'   COGs land under `<dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`.
+#'   COGs land under `<dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_
+#'   <from>_<to>_w<window>_<hash8>.tif`.
 #'   Point it at `<project>/cache/layers/fast_alert`. Ignored when
 #'   `prewarm_alerts = FALSE`.
 #'
@@ -503,8 +504,9 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 # spec 018 — pre-compute the 4 usual FAST alert maps at the end of an
 # ingestion so the app's FAST tab is instant on first visit (no 5-30 s
 # wait on each NDVI<->NBR / count<->rolling switch). Each combination is
-# content-addressed and persisted by `read_fast_alert_raster()` (D6
-# cache) under `<result_cache_dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`.
+# content-addressed and persisted by `read_fast_alert_raster()` (D6 cache)
+# under `<result_cache_dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_
+# <from>_<to>_w<window>_<hash8>.tif`.
 #
 # Robustness: the four combinations are independent. A failure on one
 # (e.g. a zone whose cache has no B12 scene, so NBR has no usable scene)

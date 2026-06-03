@@ -196,6 +196,50 @@ test_that("read_fast_alert_raster persists + serves a content-addressed COG", {
   args2 <- args; args2$threshold <- 0.6
   suppressMessages(do.call(read_fast_alert_raster, args2))
   expect_length(list.files(zone_dir, pattern = "^fast_NDVI_count_.*\\.tif$"), 2L)
+
+  # The persisted name is verbose: the key parameters are legible.
+  nm <- list.files(zone_dir, pattern = "^fast_NDVI_count_.*\\.tif$")
+  expect_true(all(grepl("_thr[0-9.]+_2025-05-01_2025-06-01_w30_[0-9a-f]{8}\\.tif$",
+                        nm)))
+  expect_true(any(grepl("_thr0\\.60_", nm)))   # the threshold = 0.6 recompute
+})
+
+
+# ---- verbose, deterministic cache filename (.fast_raster_filename) ---
+
+test_that(".fast_raster_filename has the documented verbose format", {
+  fn <- nemeton:::.fast_raster_filename(
+    "NBR", "count", 0.30, "2025-05-23", "2026-05-23", 30L,
+    "fd9ca32a4c778e475955448b4c00c8c6")
+  expect_identical(
+    fn, "fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif")
+})
+
+test_that(".fast_raster_filename is deterministic (same inputs -> same name)", {
+  a <- nemeton:::.fast_raster_filename("NDMI", "rolling", 0.30,
+                                       "2025-01-01", "2026-01-01", 15L, "8e2a01ffdeadbeef")
+  b <- nemeton:::.fast_raster_filename("NDMI", "rolling", 0.30,
+                                       "2025-01-01", "2026-01-01", 15L, "8e2a01ffdeadbeef")
+  expect_identical(a, b)
+  expect_match(a, "^fast_NDMI_rolling_thr0\\.30_2025-01-01_2026-01-01_w15_8e2a01ff\\.tif$")
+})
+
+test_that(".fast_raster_filename discriminates threshold / window / hash", {
+  base <- list("NBR", "count", 0.30, "2025-05-23", "2026-05-23", 30L, "aaaaaaaa0000")
+  fn   <- function(l) do.call(nemeton:::.fast_raster_filename, l)
+  thr  <- base; thr[[3]]  <- 0.45
+  win  <- base; win[[6]]  <- 15L
+  hsh  <- base; hsh[[7]]  <- "bbbbbbbb1111"
+  expect_false(identical(fn(base), fn(thr)))   # threshold differs
+  expect_false(identical(fn(base), fn(win)))   # window differs
+  expect_false(identical(fn(base), fn(hsh)))   # underlying hash differs
+})
+
+test_that(".fast_raster_filename normalises index/mode case", {
+  expect_match(
+    nemeton:::.fast_raster_filename("ndvi", "COUNT", 0.4,
+                                    "2025-05-23", "2026-05-23", 30L, "00ff00ff"),
+    "^fast_NDVI_count_")
 })
 
 test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {

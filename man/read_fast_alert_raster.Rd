@@ -61,7 +61,9 @@ triggers a fresh compute. `FALSE` disables the persistence entirely.}
 \item{result_cache_dir}{Character scalar or `NULL`. Root of the result
 COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
 "fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
-fast_<index>_<mode>_<hash>.tif`. At most
+fast_<INDEX>_<MODE>_thr<threshold>_<from>_<to>_w<window>_<hash8>.tif`
+(verbose, deterministic — same parameters yield the same name, so the
+cache hit is preserved). At most
 `getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.}
 
 \item{parallel}{Logical (spec 017 D4). Passed to [build_index_stack()]:

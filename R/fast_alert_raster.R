@@ -62,7 +62,9 @@
 #' @param result_cache_dir Character scalar or `NULL`. Root of the result
 #'   COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
 #'   "fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
-#'   fast_<index>_<mode>_<hash>.tif`. At most
+#'   fast_<INDEX>_<MODE>_thr<threshold>_<from>_<to>_w<window>_<hash8>.tif`
+#'   (verbose, deterministic — same parameters yield the same name, so the
+#'   cache hit is preserved). At most
 #'   `getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.
 #' @param parallel Logical (spec 017 D4). Passed to [build_index_stack()]:
 #'   when `TRUE` and \pkg{furrr} is installed, the per-scene raster
@@ -193,7 +195,8 @@ read_fast_alert_raster <- function(con, zone_id,
              error = function(e) NULL) else NULL
   rhash <- .fast_raster_hash(scenes_df$scene_id, index, threshold, mode,
                              wd, df, dt, mask_wkt)
-  cpath <- .fast_raster_cache_path(result_cache_dir, zid, index, mode, rhash)
+  cpath <- .fast_raster_cache_path(result_cache_dir, zid, index, mode,
+                                   threshold, df, dt, wd, rhash)
 
   if (isTRUE(cache_result) && file.exists(cpath)) {
     cached <- tryCatch(terra::rast(cpath), error = function(e) NULL)
@@ -393,13 +396,37 @@ read_fast_alert_rasters <- function(con, zone_id,
   ))
 }
 
+# Verbose, deterministic cache filename for a FAST alert raster:
+#   fast_<INDEX>_<MODE>_thr<seuil>_<from>_<to>_w<window>_<hash8>.tif
+# The key parameters (threshold, date window, rolling window) are legible
+# straight from the name, so two same-prefix files in one zone dir are
+# distinguishable at a glance. An 8-char slice of the D6 hash still
+# discriminates the inputs that don't fit a filename — the scene-id list
+# (changes after a re-ingest) and the mask WKT (changes with the zone).
+# Same parameters -> identical name, so the D6 cache hit is preserved.
+.fast_raster_filename <- function(index, mode, threshold,
+                                  date_from, date_to, window_days, hash) {
+  sprintf(
+    "fast_%s_%s_thr%.2f_%s_%s_w%d_%s.tif",
+    toupper(index), tolower(mode),
+    as.numeric(threshold),
+    format(as.Date(date_from), "%Y-%m-%d"),
+    format(as.Date(date_to),   "%Y-%m-%d"),
+    as.integer(window_days),
+    substr(as.character(hash), 1L, 8L))
+}
+
 # Absolute path of the cached COG: <result_cache_dir>/zone_<id>/
-# fast_<index>_<mode>_<hash>.tif. The `fast_<index>_<mode>_` prefix keeps
-# it distinct from the 0-4 mask cache (`fast/zone_<id>/fast_alert_<ts>.tif`,
-# read by `read_fast_alert_mask`), so the two never collide.
-.fast_raster_cache_path <- function(result_cache_dir, zid, index, mode, hash) {
+# fast_<INDEX>_<MODE>_thr<seuil>_<from>_<to>_w<window>_<hash8>.tif. The
+# `fast_<INDEX>_` prefix keeps it distinct from the 0-4 mask cache
+# (`fast/zone_<id>/fast_alert_<ts>.tif`, read by `read_fast_alert_mask`),
+# so the two never collide.
+.fast_raster_cache_path <- function(result_cache_dir, zid, index, mode,
+                                    threshold, date_from, date_to,
+                                    window_days, hash) {
   file.path(result_cache_dir, sprintf("zone_%d", zid),
-            sprintf("fast_%s_%s_%s.tif", index, mode, hash))
+            .fast_raster_filename(index, mode, threshold,
+                                  date_from, date_to, window_days, hash))
 }
 
 # Keep at most `keep` cached COGs per zone directory (LRU by mtime).

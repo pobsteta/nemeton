@@ -10,6 +10,20 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.65.2] - 2026-06-03
+
+### Changed
+
+- FAST D6 cache COGs now use a verbose, deterministic filename
+  `fast_<INDEX>_<MODE>_thr<threshold>_<from>_<to>_w<window>_<hash8>.tif`
+  (was `fast_<index>_<mode>_<hash>.tif`). Key parameters are legible
+  straight from the name; an 8-char slice of the unchanged D6 hash still
+  discriminates the scene-id list and mask polygon. Same parameters yield
+  the same name, so cache idempotence is preserved. Pre-0.65.2 files are
+  no longer matched as hits — they recompute on first demand and are
+  reclaimed by the LRU GC; remove them manually to free disk at once
+  (see NEWS).
+
 ## [0.65.1] - 2026-06-03
 
 ### Fixed

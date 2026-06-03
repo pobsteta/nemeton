@@ -154,7 +154,7 @@ behaviour). A cancelled ingestion never starts the pre-warm.}
 forwarded to
 \code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} as
 `result_cache_dir`; COGs land under
-`<dir>/zone_<id>/fast_<index>_<mode>_<hash>.tif`. Point it at
+`<dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_<from>_<to>_w<window>_<hash8>.tif`. Point it at
 `<project>/cache/layers/fast_alert`. Ignored when
 `prewarm_alerts = FALSE`.}
 }
