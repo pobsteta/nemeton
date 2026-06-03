@@ -44,7 +44,7 @@ effectivement citées-sourcées.
 | ✅ | Ingestion référence seule (`ingest_knowledge_reference()`, link_only/abstract_only) + câblage pipeline | cœur | v0.62.0 (2026-06-02) |
 | ✅ | **API administration corpus** (manifest éditable + import) — `knowledge_manifest_vocab/path`, `read/validate/write_knowledge_manifest`, `build_knowledge_corpus()` ; débloque l'onglet RAG des paramètres app (spec 009.2) | cœur | v0.63.0 (2026-06-03) |
 | 🟨 | **Build corpus réel** — embeddings via clé API (action locale `data-raw/`) | cœur | local |
-| ⬜ | **Onglet RAG** (paramètres) — éditeur manifest + import via l'API 009.2 | `nemetonshiny` | app |
+| ✅ | **Onglet RAG** (paramètres) — éditeur manifest + import via l'API 009.2 | `nemetonshiny` | nemetonshiny@8c6696b (v0.62.0, 2026-06-03) |
 | ⬜ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » | `nemetonshiny` | app |
 
 **Machinerie cœur — close** : machinerie RAG (v0.52.0), manifest +
@@ -57,13 +57,13 @@ détaillé** :
 1. **Build du corpus réel** — `Rscript data-raw/build_knowledge_corpus.R`
    avec une clé API d'embedding (Mistral par défaut) → peuple le pgvector
    prod. Action locale, pas un livrable de code.
-2. **Onglet RAG `nemetonshiny`** — éditeur du manifest + import via
-   l'API 009.2 (`read/validate/write_knowledge_manifest`,
-   `build_knowledge_corpus(con, …, progress=)` en `ExtendedTask`).
-3. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
-   bloc UI « Sources » (hors repo cœur).
-4. *(optionnel)* lever le statut `to_confirm` des 4 papiers copyright si
+2. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
+   bloc UI « Sources » via `retrieve_knowledge()` + `format_citations()`
+   (hors repo cœur).
+3. *(optionnel)* lever le statut `to_confirm` des 4 papiers copyright si
    tu valides leur référence (D5) — ils s'ingéreront alors en `link_only`.
+
+*(L'onglet RAG `nemetonshiny` est livré — cf. journal 2026-06-03.)*
 
 **Journal** — *2026-06-03* : livré l'API d'administration du corpus
 (spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
@@ -71,9 +71,15 @@ détaillé** :
 (`R/knowledge-corpus.R`), le script devient un wrapper CLI. Tests :
 `test-knowledge-manifest-api.R` + `test-build-corpus.R` ajoutés,
 `test-knowledge-corpus-manifest.R` refactoré pour consommer
-`knowledge_manifest_vocab()`. ⚠️ `devtools::document()/test()/check()`
-non exécutés (R absent de l'environnement d'exécution) — à lancer en
-local avant de poser le tag `v0.63.0` + la release GitHub.
+`knowledge_manifest_vocab()`. `devtools::document()/test()/check()`
+verts en local ; tag `v0.63.0` + release GitHub posés ; mergé sur `main`.
+
+**Journal** — *2026-06-03* : **E7 — Onglet RAG ✅ livré**.
+`nemetonshiny@8c6696b` (release v0.62.0, 2026-06-03). Onglet admin
+« RAG / Corpus de connaissances » consommant l'API spec 009.2
+(`knowledge_manifest_*`, `build_knowledge_corpus`,
+`list/delete_knowledge_document`). Reliquat E7 distinct : wiring
+`retrieve_knowledge()` + bloc « Sources » dans le prompt.
 
 **Note** : plusieurs follow-ups app indépendants de E7 attendent aussi un
 bump `nemetonshiny` — pré-calcul FAST (v0.61.0), wiring RAG (v0.62.0),
