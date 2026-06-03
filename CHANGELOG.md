@@ -10,6 +10,30 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.63.0] - 2026-06-03
+
+### Added
+
+- `R/knowledge-corpus.R` — public API for RAG corpus administration
+  (spec 009.2), so a `nemetonshiny` admin tab can edit the manifest and
+  import the corpus without re-implementing business logic:
+  `knowledge_manifest_vocab()` (single source of truth for the
+  controlled vocabularies), `knowledge_manifest_path(writable)` (packaged
+  seed vs writable project copy, D1), `read_knowledge_manifest()`,
+  `validate_knowledge_manifest()` (structured issues incl. license-gate
+  D5 invariants), `write_knowledge_manifest()` (deterministic minimal
+  quoting), and `build_knowledge_corpus(con, …, dry_run, progress)`
+  (ingestion orchestrator returning a structured per-document report).
+
+### Changed
+
+- `data-raw/build_knowledge_corpus.R` reduced to a thin CLI wrapper over
+  `build_knowledge_corpus()`; environment-variable semantics (including
+  the "no fallback to `NEMETON_DB_URL`" safety rule) preserved.
+- `tests/testthat/test-knowledge-corpus-manifest.R` now consumes
+  `knowledge_manifest_vocab()` instead of duplicating the controlled
+  vocabularies.
+
 ## [0.62.0] - 2026-06-02
 
 ### Added

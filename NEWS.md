@@ -1,3 +1,51 @@
+# nemeton 0.63.0 (2026-06-03)
+
+### Added — API publique d'administration du corpus RAG (spec 009.2)
+
+Promotion en **API publique** de l'orchestration « manifest → base »
+qui ne vivait jusqu'ici que dans `data-raw/build_knowledge_corpus.R`.
+Objectif : permettre à un **onglet RAG** côté `nemetonshiny` d'éditer le
+manifest et de lancer l'import **sans réimplémenter de logique métier**
+(règles 1-3 de CLAUDE.md). Nouveau fichier `R/knowledge-corpus.R`,
+six fonctions exportées :
+
+- **`knowledge_manifest_vocab()`** — vocabulaires contrôlés (colonnes,
+  licences, statuts, stratégies, langues, doc_types, profils, regex
+  famille). Désormais **source unique de vérité** : le test d'intégrité
+  `test-knowledge-corpus-manifest.R` les consomme au lieu de les
+  dupliquer.
+- **`knowledge_manifest_path(writable)`** — résout le **seed packagé**
+  (lecture seule) ou la **copie projet inscriptible** (décision D1),
+  amorcée par recopie du seed au premier accès
+  (`NEMETON_KNOWLEDGE_MANIFEST` ou défaut sous `tools::R_user_dir()`).
+- **`read_knowledge_manifest()`** — CSV → data.frame typé (16 colonnes).
+- **`validate_knowledge_manifest()`** — renvoie un data.frame d'anomalies
+  (`row`, `doc_id`, `severity`, `field`, `message`) : structure, enums,
+  codes famille/profil, **garde-fous licence D5** (`cleared` jamais
+  `to-confirm`, `copyright` jamais `full`, extension `local_path`
+  ingérable). 0 ligne = valide. N'avorte pas → affichage inline côté app.
+- **`write_knowledge_manifest()`** — valide puis écrit le CSV avec un
+  quoting minimal déterministe (diffs git propres) ; refuse un manifest
+  porteur d'erreurs bloquantes.
+- **`build_knowledge_corpus(con, manifest, …, dry_run, progress)`** —
+  l'orchestrateur d'ingestion extrait du script : garde-fou licence,
+  éligibilité, idempotence (skip si titre déjà en base), `full` vs
+  `abstract_only`/`link_only`, `fresh`, `dry_run`. **Fonction R bloquante
+  pure** retournant un **rapport structuré** (une ligne par document :
+  `action ∈ {ingested, skipped, error, planned}`, `reason`, `mode`,
+  `n_chunks`, `document_id`, `duration_sec`) et acceptant un callback
+  `progress` — pilotable en asynchrone (`ExtendedTask`) côté app.
+
+### Changed
+
+- `data-raw/build_knowledge_corpus.R` réduit à un **mince wrapper CLI**
+  par-dessus `build_knowledge_corpus()` : il ne lit que les variables
+  d'environnement et imprime le rapport. CLI et sémantique des env vars
+  (dont la règle de sécurité « pas de fallback vers `NEMETON_DB_URL` »)
+  strictement préservées.
+
+Plan détaillé : `specs/009.2-administration-corpus-rag/spec.md`.
+
 # nemeton 0.62.0 (2026-06-02)
 
 ### Added — ingestion « référence seule » (link_only / abstract_only) du corpus RAG (spec 009.1 §5)
