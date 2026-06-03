@@ -1,6 +1,6 @@
 # test-prewarm-fast-alerts.R — spec 018: opt-in pre-computation of the
-# four usual FAST alert maps (NDVI/NBR × count/rolling) at the end of
-# `ingest_sentinel2_timeseries()`.
+# six usual FAST alert maps (NDVI/NBR/NDMI × count/rolling, NDMI added in
+# spec 019) at the end of `ingest_sentinel2_timeseries()`.
 #
 # The pre-warm helper `.prewarm_fast_alerts()` is exercised directly with
 # on-disk COG fixtures (no DB, no STAC) — same pattern as the D6 result
@@ -9,14 +9,15 @@
 
 # ---- fixtures --------------------------------------------------------
 
-# A single scene carrying B04+B08+B12 -> renderable for BOTH NDVI and NBR.
-# NDVI = (B08-B04)/(B08+B04) and NBR = (B08-B12)/(B08+B12); the values are
-# chosen so each index sits clearly below its default threshold (alert).
+# A single scene carrying B04+B08+B12+B11 -> renderable for the THREE
+# indices. NDVI = (B08-B04)/(B08+B04), NBR = (B08-B12)/(B08+B12),
+# NDMI = (B08-B11)/(B08+B11); the values are chosen so each index sits
+# clearly below its default threshold (alert). B11 is native 20 m.
 .write_ndvi_nbr_scene <- function(cache, date = "20250530") {
   sid <- sprintf("S2A_MSIL2A_%sT103041_R108_T31TFM_x", date)
   d <- file.path(cache, sid)
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
-  vals <- c(B04 = 0.6, B08 = 0.1, B12 = 0.6)  # NDVI<0, NBR<0 -> both alert
+  vals <- c(B04 = 0.6, B08 = 0.1, B12 = 0.6, B11 = 0.6)  # all 3 < threshold
   for (b in names(vals)) {
     r <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 100,
                      ymin = 0, ymax = 100, crs = "EPSG:32631",
@@ -47,9 +48,9 @@
 .noop_emit    <- function(payload) invisible(NULL)
 
 
-# ---- .prewarm_fast_alerts(): the four combinations -------------------
+# ---- .prewarm_fast_alerts(): the six combinations --------------------
 
-test_that(".prewarm_fast_alerts precomputes the 4 combinations", {
+test_that(".prewarm_fast_alerts precomputes the 6 combinations", {
   skip_if_not_installed("terra")
   cache  <- withr::local_tempdir()
   rcache <- withr::local_tempdir()
@@ -66,14 +67,16 @@ test_that(".prewarm_fast_alerts precomputes the 4 combinations", {
       cache_dir = cache, result_cache_dir = rcache,
       emit = emit, cancelled = .never_cancel))
 
-  # Four content-addressed COGs: NDVI/NBR × count/rolling.
+  # Six content-addressed COGs: NDVI/NBR/NDMI × count/rolling (spec 019).
   cogs <- list.files(file.path(rcache, "zone_1"), pattern = "\\.tif$")
-  expect_length(cogs, 4L)
+  expect_length(cogs, 6L)
   expect_true(all(c(
     any(grepl("^fast_NDVI_count_",   cogs)),
     any(grepl("^fast_NDVI_rolling_", cogs)),
     any(grepl("^fast_NBR_count_",    cogs)),
-    any(grepl("^fast_NBR_rolling_",  cogs)))))
+    any(grepl("^fast_NBR_rolling_",  cogs)),
+    any(grepl("^fast_NDMI_count_",   cogs)),
+    any(grepl("^fast_NDMI_rolling_", cogs)))))
 
   # Every combination emitted a start + a _done heartbeat, none _failed.
   currents <- vapply(events, function(e) e$current %||% "", character(1))
@@ -82,7 +85,9 @@ test_that(".prewarm_fast_alerts precomputes the 4 combinations", {
     c("fast_prewarm:NDVI_count",   "fast_prewarm:NDVI_count_done",
       "fast_prewarm:NDVI_rolling", "fast_prewarm:NDVI_rolling_done",
       "fast_prewarm:NBR_count",    "fast_prewarm:NBR_count_done",
-      "fast_prewarm:NBR_rolling",  "fast_prewarm:NBR_rolling_done"))
+      "fast_prewarm:NBR_rolling",  "fast_prewarm:NBR_rolling_done",
+      "fast_prewarm:NDMI_count",   "fast_prewarm:NDMI_count_done",
+      "fast_prewarm:NDMI_rolling", "fast_prewarm:NDMI_rolling_done"))
   expect_false(any(grepl("_failed$", currents)))
 })
 
@@ -99,7 +104,8 @@ test_that(".prewarm_fast_alerts continues on a per-combination failure", {
   events <- list()
   emit <- function(p) events[[length(events) + 1L]] <<- p
 
-  # NBR has no usable scene -> two warnings (NBR count + rolling skipped).
+  # Neither NBR (no B12) nor NDMI (no B11) has a usable scene -> four
+  # warnings (NBR + NDMI, each count + rolling). NDVI still renders.
   expect_warning(
     suppressMessages(
       nemeton:::.prewarm_fast_alerts(
@@ -107,18 +113,20 @@ test_that(".prewarm_fast_alerts continues on a per-combination failure", {
         date_from = "2025-05-01", date_to = "2025-06-01",
         cache_dir = cache, result_cache_dir = rcache,
         emit = emit, cancelled = .never_cancel)),
-    "FAST prewarm NBR")
+    "FAST prewarm")
 
-  # Only the two NDVI maps were written; NBR skipped.
+  # Only the two NDVI maps were written; NBR and NDMI skipped.
   cogs <- list.files(file.path(rcache, "zone_1"), pattern = "\\.tif$")
   expect_length(cogs, 2L)
   expect_true(all(grepl("^fast_NDVI_", cogs)))
 
   currents <- vapply(events, function(e) e$current %||% "", character(1))
-  expect_true("fast_prewarm:NDVI_count_done"   %in% currents)
-  expect_true("fast_prewarm:NDVI_rolling_done" %in% currents)
-  expect_true("fast_prewarm:NBR_count_failed"  %in% currents)
+  expect_true("fast_prewarm:NDVI_count_done"    %in% currents)
+  expect_true("fast_prewarm:NDVI_rolling_done"  %in% currents)
+  expect_true("fast_prewarm:NBR_count_failed"   %in% currents)
   expect_true("fast_prewarm:NBR_rolling_failed" %in% currents)
+  expect_true("fast_prewarm:NDMI_count_failed"  %in% currents)
+  expect_true("fast_prewarm:NDMI_rolling_failed" %in% currents)
 })
 
 

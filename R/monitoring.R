@@ -203,7 +203,8 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'       `completed = total`, `total`, `n_scenes_cached`.}
 #'     \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
 #'       `prewarm_alerts = TRUE`) emitted at the start / end of each of
-#'       the four pre-computed FAST maps. The bare key signals "started",
+#'       the six pre-computed FAST maps (3 indices x 2 modes, spec 019).
+#'       The bare key signals "started",
 #'       a `_done` suffix "map ready", a `_failed` suffix "skipped"
 #'       (with `error_message`). Every event carries `index` and `mode`
 #'       so the caller can localise the toast.}
@@ -220,13 +221,14 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #'   `status = "cancelled"`. A flag already present at entry is ignored
 #'   as a stale leftover — the caller must delete it before each call.
 #' @param prewarm_alerts Logical (spec 018). When `TRUE`, after a
-#'   successful ingestion the worker chains on four
-#'   [read_fast_alert_raster()] calls — `NDVI`/`NBR` × `count`/`rolling`,
-#'   default threshold (0.40 NDVI / 0.30 NBR) and `window_days = 30` —
-#'   so the four usual FAST alert maps land in the D6 result cache and
+#'   successful ingestion the worker chains on six
+#'   [read_fast_alert_raster()] calls — `NDVI`/`NBR`/`NDMI` ×
+#'   `count`/`rolling` (spec 019), default threshold (0.40 NDVI /
+#'   0.30 NBR / 0.30 NDMI) and `window_days = 30` — so the six usual
+#'   FAST alert maps land in the D6 result cache and
 #'   the app's FAST tab is instant on first visit. Each combination is
-#'   independent: a failure on one (e.g. no B12 scene for `NBR`) warns
-#'   and is skipped, never aborting the others. The pre-warm polls
+#'   independent: a failure on one (e.g. no B12 scene for `NBR`, no B11
+#'   for `NDMI`) warns and is skipped, never aborting the others. The pre-warm polls
 #'   `cancel_path` between combinations. Default `FALSE` (no extra work,
 #'   identical to the historical behaviour). A cancelled ingestion never
 #'   starts the pre-warm.
@@ -527,8 +529,13 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
 .prewarm_fast_alerts <- function(con, zone_id, date_from, date_to,
                                  cache_dir, result_cache_dir,
                                  emit, cancelled) {
+  # spec 019 — the public orchestrator builds 3 indices x 2 modes; the
+  # prewarm must cover the same 6 combos so the first NDMI selection in
+  # the app is a cache hit, not a cold compute. NDMI with no B11 in the
+  # cache is handled by the soft-skip path below (read_fast_alert_raster
+  # returns NULL), exactly like NBR with no B12.
   combos <- expand.grid(
-    index = c("NDVI", "NBR"),
+    index = c("NDVI", "NBR", "NDMI"),
     mode  = c("count", "rolling"),
     stringsAsFactors = FALSE)
 

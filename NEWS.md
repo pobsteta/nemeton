@@ -1,3 +1,19 @@
+# nemeton 0.65.1 (2026-06-03)
+
+### Fixed — le prewarm FAST couvre désormais les 6 cartes (oubli de v0.65.0)
+
+`.prewarm_fast_alerts()` (pré-calcul optionnel en fin
+d'`ingest_sentinel2_timeseries()`, spec 018) ne pré-chauffait que **4**
+combinaisons (NDVI/NBR × count/rolling), alors que l'orchestrateur public
+`read_fast_alert_rasters()` en expose **6** (NDMI ajouté en v0.65.0,
+spec 019). Conséquence : la 1re sélection **NDMI** côté app déclenchait un
+calcul à froid au lieu d'un hit cache D6 instantané. La boucle couvre
+maintenant les 3 indices × 2 modes. Une scène sans B11 (nécessaire à
+NDMI) emprunte le chemin de skip best-effort existant (`tryCatch` +
+`cli_warn`, événement `fast_prewarm:NDMI_<mode>_failed`), comme NBR sans
+B12 — aucune exception, aucun changement d'API.
+
+
 # nemeton 0.65.0 (2026-06-03)
 
 ### Fixed — cartes d'alerte NDMI absentes (régression spec 019)

@@ -116,7 +116,8 @@ Phases emitted, in order:
     `completed = total`, `total`, `n_scenes_cached`.}
   \item{`fast_prewarm:<index>_<mode>`}{(spec 018, only when
     `prewarm_alerts = TRUE`) emitted at the start / end of each of
-    the four pre-computed FAST maps. The bare key signals "started",
+    the six pre-computed FAST maps (3 indices x 2 modes, spec 019).
+    The bare key signals "started",
     a `_done` suffix "map ready", a `_failed` suffix "skipped"
     (with `error_message`). Every event carries `index` and `mode`
     so the caller can localise the toast.}
@@ -135,13 +136,15 @@ ignored as a stale leftover — the caller must delete it before each
 call.}
 
 \item{prewarm_alerts}{Logical (spec 018). When `TRUE`, after a
-successful ingestion the worker chains on four
+successful ingestion the worker chains on six
 \code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} calls
-— `NDVI`/`NBR` × `count`/`rolling`, default threshold (0.40 NDVI /
-0.30 NBR) and `window_days = 30` — so the four usual FAST alert maps
+— `NDVI`/`NBR`/`NDMI` × `count`/`rolling` (spec 019), default
+threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and `window_days = 30` —
+so the six usual FAST alert maps
 land in the D6 result cache and the app's FAST tab is instant on
 first visit. Each combination is independent: a failure on one (e.g.
-no B12 scene for `NBR`) warns and is skipped, never aborting the
+no B12 scene for `NBR`, no B11 for `NDMI`) warns and is skipped,
+never aborting the
 others. The pre-warm polls `cancel_path` between combinations.
 Default `FALSE` (no extra work, identical to the historical
 behaviour). A cancelled ingestion never starts the pre-warm.}

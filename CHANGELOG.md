@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.65.1] - 2026-06-03
+
+### Fixed
+
+- `.prewarm_fast_alerts()` now pre-warms the 6 FAST combinations
+  (NDVI/NBR/NDMI × count/rolling) instead of 4, matching the public
+  `read_fast_alert_rasters()` orchestrator. NDMI was added in 0.65.0 but
+  the prewarm loop still skipped it, so the first NDMI selection in the
+  app paid a cold compute instead of a D6 cache hit. A scene without B11
+  (NDMI) takes the existing best-effort skip path (warn + `_failed`
+  event), like NBR without B12. No API change.
+
 ## [0.65.0] - 2026-06-03
 
 ### Added
