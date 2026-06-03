@@ -12,43 +12,20 @@
 # falling back to the source tree), so they also catch a manifest that
 # ships malformed.
 
-# ---- controlled vocabularies (keep in sync with spec 009.1 §6.1) -----
+# ---- controlled vocabularies (single source of truth) ----------------
 
-# Canonical license strings used across the project. Extending the corpus
-# with a genuinely new license class means adding it here on purpose —
-# that deliberate step is the point of the guard.
-.LICENSES <- c(
-  "public-domain", "domaine-public", "MIT", "HAL",
-  "LO-Etalab", "LO-Etalab-2.0", "OGL-Etalab",
-  "CC-BY", "CC-BY-NC", "CC-BY-SA",
-  "EUR-Lex-reutilisable", "usage-libre-IPCC",
-  "autorisation-explicite", "explicit-auth",
-  "acte-reglementaire", "admin",
-  "copyright", "to-confirm")
-
-.STATUSES   <- c("cleared", "to_confirm")
-.STRATEGIES <- c("full", "abstract_only", "link_only")
-.LANGS      <- c("fr", "en")
-.DOC_TYPES  <- c("manual", "note", "paper", "regulation", "report",
-                 "guide", "law", "dataset_doc")
-
-# The 15 acteur profiles (short forms, cf. CLAUDE.md) + the wildcard.
-.PROFILES <- c(
-  "proprietaire_prive", "proprietaire_public",
-  "gestionnaire_onf", "gestionnaire_coop", "gestionnaire_expert",
-  "technicien", "naturaliste", "elu_local", "elu_regional",
-  "chasseur", "industrie_bois", "bucheron", "chercheur",
-  "citoyen", "investisseur", "tous")
-
-# A valid family token is the wildcard "Toutes" or one of the 12 family
-# letters optionally followed by a sub-indicator digit (e.g. R, R5, C1).
-.FAMILY_RE <- "^(Toutes|[BCWAFLTRSPEN][0-9]?)$"
-
-.REQUIRED_COLS <- c(
-  "doc_id", "title", "author", "publisher", "pub_date", "lang",
-  "doc_type", "source_url", "license", "license_commercial_ok",
-  "family_codes", "profile_codes", "ingest_strategy", "local_path",
-  "status", "notes")
+# Consume the package's controlled vocabularies instead of duplicating
+# them here (spec 009.2 A2): knowledge_manifest_vocab() is now the single
+# source of truth, shared with validate_knowledge_manifest().
+.vocab      <- knowledge_manifest_vocab()
+.LICENSES   <- .vocab$licenses
+.STATUSES   <- .vocab$statuses
+.STRATEGIES <- .vocab$strategies
+.LANGS      <- .vocab$langs
+.DOC_TYPES  <- .vocab$doc_types
+.PROFILES   <- .vocab$profiles
+.FAMILY_RE  <- .vocab$family_regex
+.REQUIRED_COLS <- .vocab$columns
 
 .read_manifest <- function() {
   path <- system.file("extdata", "knowledge_corpus_v1.csv", package = "nemeton")

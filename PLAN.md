@@ -42,20 +42,38 @@ effectivement citées-sourcées.
 | ✅ | Validation manifest (`test-knowledge-corpus-manifest.R`) + `inst/NOTICE` corpus + fix cohérence D5 | cœur | v0.61.1 (2026-06-02) |
 | 🟨 | **Arbitrage licences** — Bernard&Doridant + revue SET → `cleared` (v0.61.2) ; 4 papiers copyright restent `to_confirm` (abstract/lien-seul à câbler) | cœur | v0.61.2 (2026-06-02) |
 | ✅ | Ingestion référence seule (`ingest_knowledge_reference()`, link_only/abstract_only) + câblage pipeline | cœur | v0.62.0 (2026-06-02) |
+| ✅ | **API administration corpus** (manifest éditable + import) — `knowledge_manifest_vocab/path`, `read/validate/write_knowledge_manifest`, `build_knowledge_corpus()` ; débloque l'onglet RAG des paramètres app (spec 009.2) | cœur | v0.63.0 (2026-06-03) |
 | 🟨 | **Build corpus réel** — embeddings via clé API (action locale `data-raw/`) | cœur | local |
+| ⬜ | **Onglet RAG** (paramètres) — éditeur manifest + import via l'API 009.2 | `nemetonshiny` | app |
 | ⬜ | **Wiring** — injection chunks dans le prompt LLM + bloc UI « Sources » | `nemetonshiny` | app |
 
 **Machinerie cœur — close** : machinerie RAG (v0.52.0), manifest +
 pipeline + validation + NOTICE (v0.61.1), arbitrage licences (v0.61.2 —
 4 papiers copyright laissés `to_confirm`), ingestion référence seule
-`link_only`/`abstract_only` (v0.62.0). **Reliquat détaillé** :
+`link_only`/`abstract_only` (v0.62.0), **API administration corpus**
+(v0.63.0 — spec 009.2 : manifest éditable + `build_knowledge_corpus()`,
+l'orchestration n'est plus enfermée dans `data-raw/`). **Reliquat
+détaillé** :
 1. **Build du corpus réel** — `Rscript data-raw/build_knowledge_corpus.R`
    avec une clé API d'embedding (Mistral par défaut) → peuple le pgvector
    prod. Action locale, pas un livrable de code.
-2. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
+2. **Onglet RAG `nemetonshiny`** — éditeur du manifest + import via
+   l'API 009.2 (`read/validate/write_knowledge_manifest`,
+   `build_knowledge_corpus(con, …, progress=)` en `ExtendedTask`).
+3. **Wiring `nemetonshiny`** — injection des chunks dans le prompt LLM +
    bloc UI « Sources » (hors repo cœur).
-3. *(optionnel)* lever le statut `to_confirm` des 4 papiers copyright si
+4. *(optionnel)* lever le statut `to_confirm` des 4 papiers copyright si
    tu valides leur référence (D5) — ils s'ingéreront alors en `link_only`.
+
+**Journal** — *2026-06-03* : livré l'API d'administration du corpus
+(spec 009.2, v0.63.0). Refactor : la logique « manifest → base » de
+`data-raw/build_knowledge_corpus.R` est promue en 6 fonctions exportées
+(`R/knowledge-corpus.R`), le script devient un wrapper CLI. Tests :
+`test-knowledge-manifest-api.R` + `test-build-corpus.R` ajoutés,
+`test-knowledge-corpus-manifest.R` refactoré pour consommer
+`knowledge_manifest_vocab()`. ⚠️ `devtools::document()/test()/check()`
+non exécutés (R absent de l'environnement d'exécution) — à lancer en
+local avant de poser le tag `v0.63.0` + la release GitHub.
 
 **Note** : plusieurs follow-ups app indépendants de E7 attendent aussi un
 bump `nemetonshiny` — pré-calcul FAST (v0.61.0), wiring RAG (v0.62.0),
