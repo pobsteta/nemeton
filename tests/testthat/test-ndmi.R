@@ -88,3 +88,76 @@ test_that("default FAST index is still NDVI (back-compat)", {
   # match.arg() takes the first element -> NDVI remains the default.
   expect_identical(eval(formals(read_fast_alert_raster)$index)[1], "NDVI")
 })
+
+
+# A real S2 scene id so `.s2_scene_date` (3rd `_`-field) parses the date.
+.ndmi_scene_id <- "S2A_MSIL2A_20260115T103421_N0510_R108_T31TFM_20260115T140012"
+
+
+test_that(".enumerate_cache_scenes resolves NDMI scenes (spec 019 regression)", {
+  # Regression: before the NDMI branch was added to the switch, an NDMI
+  # request matched NO cached scene (NULL bands -> file ".tif" -> never
+  # exists), so the alert map was always empty even with B08+B11 cached.
+  skip_if_not_installed("terra")
+  skip_if_not_installed("withr")
+  cache <- withr::local_tempdir()
+  sd <- file.path(cache, .ndmi_scene_id)
+  dir.create(sd, recursive = TRUE, showWarnings = FALSE)
+  for (b in c("B08", "B11")) {           # the two bands NDMI needs
+    r <- terra::rast(nrows = 4, ncols = 4, vals = 1)
+    terra::writeRaster(r, file.path(sd, paste0(b, ".tif")), overwrite = TRUE)
+  }
+  df <- nemeton:::.enumerate_cache_scenes(cache, "NDMI",
+                                          "2026-01-01", "2026-02-01")
+  expect_equal(nrow(df), 1L)
+  expect_equal(df$scene_id[1], .ndmi_scene_id)
+})
+
+
+test_that(".enumerate_cache_scenes drops a scene missing an NDMI band", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("withr")
+  cache <- withr::local_tempdir()
+  sd <- file.path(cache, .ndmi_scene_id)
+  dir.create(sd, recursive = TRUE, showWarnings = FALSE)
+  r <- terra::rast(nrows = 4, ncols = 4, vals = 1)
+  terra::writeRaster(r, file.path(sd, "B08.tif"), overwrite = TRUE)  # B11 absent
+  df <- nemeton:::.enumerate_cache_scenes(cache, "NDMI",
+                                          "2026-01-01", "2026-02-01")
+  expect_equal(nrow(df), 0L)
+})
+
+
+test_that("read_fast_alert_rasters returns the 6 maps keyed <index>_<mode>", {
+  seen <- character(0)
+  testthat::local_mocked_bindings(
+    read_fast_alert_raster = function(con, zone_id, index, mode, ...) {
+      seen <<- c(seen, paste(index, mode, sep = "_"))
+      paste(index, mode, sep = "_")   # stand-in for a SpatRaster
+    },
+    .package = "nemeton")
+  maps <- read_fast_alert_rasters(
+    con = NULL, zone_id = 1L,
+    date_from = "2026-01-01", date_to = "2026-02-01",
+    cache_dir = "/tmp/unused")
+  expect_length(maps, 6L)
+  expect_setequal(
+    names(maps),
+    c("NDVI_count", "NDVI_rolling", "NBR_count", "NBR_rolling",
+      "NDMI_count", "NDMI_rolling"))
+  expect_identical(maps[["NDMI_rolling"]], "NDMI_rolling")
+  expect_length(seen, 6L)            # each (index, mode) built exactly once
+})
+
+
+test_that("read_fast_alert_rasters honours a restricted index/mode subset", {
+  testthat::local_mocked_bindings(
+    read_fast_alert_raster = function(con, zone_id, index, mode, ...)
+      paste(index, mode, sep = "_"),
+    .package = "nemeton")
+  maps <- read_fast_alert_rasters(
+    con = NULL, zone_id = 1L,
+    date_from = "2026-01-01", date_to = "2026-02-01",
+    indices = "NDMI", modes = "rolling", cache_dir = "/tmp/unused")
+  expect_identical(names(maps), "NDMI_rolling")
+})

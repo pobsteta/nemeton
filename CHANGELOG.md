@@ -10,6 +10,26 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.65.0] - 2026-06-03
+
+### Added
+
+- `read_fast_alert_rasters()`: convenience orchestrator that builds the
+  full FAST diagnostic in one call — the three indices (NDVI, NBR, NDMI)
+  in both modes (count, rolling), i.e. up to six rasters. Returns a named
+  list keyed `"<index>_<mode>"`; each map shares the COG cache, the
+  content-addressed result cache (spec 017 D6) and the zone mask. Missing
+  index → `NULL` slot (stable shape). `indices`/`modes` restrict the set.
+
+### Fixed
+
+- NDMI FAST alert maps were never produced: `.enumerate_cache_scenes()`
+  had no `NDMI` branch in its `index` switch, so an NDMI request matched
+  zero cached scenes and `read_fast_alert_raster(index = "NDMI")` /
+  `compute_fast_alert_mask()` always returned `NULL` despite B08 + B11
+  being cached. The switch now maps `NDMI -> B08 + B11` and aborts on an
+  unknown index instead of failing silently (spec 019 regression).
+
 ## [0.64.0] - 2026-06-03
 
 ### Added

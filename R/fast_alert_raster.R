@@ -285,6 +285,91 @@ read_fast_alert_raster <- function(con, zone_id,
 }
 
 
+#' Build the full FAST alert raster set (3 indices x 2 modes, spec 019)
+#'
+#' Convenience wrapper over [read_fast_alert_raster()] that builds the
+#' complete FAST diagnostic in a single call: the three spectral indices
+#' (`NDVI`, `NBR`, `NDMI`) each in both semantics (`count` and
+#' `rolling`) — up to six rasters. Every element is produced exactly as a
+#' direct [read_fast_alert_raster()] call would be, sharing the same COG
+#' cache, content-addressed result cache and zone mask, so a revisit of
+#' any one map stays instant (spec 017 D6).
+#'
+#' The bands each index needs are cached by [ingest_sentinel2_timeseries()]
+#' (B11 for NDMI is cached best-effort, spec 019 D3). A map whose index has
+#' no cached scene carrying its bands in the window is returned as `NULL`
+#' rather than dropping the slot, so the result always has a stable shape.
+#'
+#' @inheritParams read_fast_alert_raster
+#' @param indices Character vector, subset of `c("NDVI", "NBR", "NDMI")`.
+#'   Default: all three.
+#' @param modes Character vector, subset of `c("count", "rolling")`.
+#'   Default: both.
+#' @param threshold Numeric scalar in `(0, 1)` applied to every requested
+#'   index, or `NULL` (default) to let each index resolve its own default
+#'   (`0.40` for NDVI, `0.30` for NBR / NDMI). Pass `NULL` unless you
+#'   deliberately want one shared cut-off across indices.
+#'
+#' @return A named `list` of length `length(indices) * length(modes)`
+#'   (six by default), keyed `"<index>_<mode>"` (e.g. `"NDMI_rolling"`).
+#'   Each element is a `terra::SpatRaster` (EPSG:2154) or `NULL` when no
+#'   cached scene matched for that index in the window.
+#'
+#' @seealso [read_fast_alert_raster()] (the per-map builder),
+#'   [compute_fast_alert_mask()] (0-4 quartile discretiser).
+#'
+#' @examples
+#' \dontrun{
+#'   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))
+#'   on.exit(db_disconnect(con), add = TRUE)
+#'   maps <- read_fast_alert_rasters(
+#'     con, zone_id = 1L,
+#'     date_from = "2025-05-23", date_to = "2026-05-23",
+#'     cache_dir = "/proj/cache/layers/sentinel2")
+#'   names(maps)             # "NDVI_count" ... "NDMI_rolling"
+#'   terra::plot(maps$NDMI_rolling)
+#' }
+#'
+#' @export
+read_fast_alert_rasters <- function(con, zone_id,
+                                    date_from, date_to,
+                                    indices     = c("NDVI", "NBR", "NDMI"),
+                                    modes       = c("count", "rolling"),
+                                    threshold   = NULL,
+                                    window_days = 30L,
+                                    cache_dir,
+                                    apply_zone_mask  = TRUE,
+                                    mask_polygon     = NULL,
+                                    cache_result     = TRUE,
+                                    result_cache_dir = NULL,
+                                    parallel         = FALSE) {
+  indices <- match.arg(indices, c("NDVI", "NBR", "NDMI"), several.ok = TRUE)
+  modes   <- match.arg(modes, c("count", "rolling"), several.ok = TRUE)
+
+  out <- list()
+  for (idx in indices) {
+    for (md in modes) {
+      key <- paste(idx, md, sep = "_")
+      out[[key]] <- read_fast_alert_raster(
+        con, zone_id,
+        index            = idx,
+        threshold        = threshold,
+        date_from        = date_from,
+        date_to          = date_to,
+        mode             = md,
+        window_days      = window_days,
+        cache_dir        = cache_dir,
+        apply_zone_mask  = apply_zone_mask,
+        mask_polygon     = mask_polygon,
+        cache_result     = cache_result,
+        result_cache_dir = result_cache_dir,
+        parallel         = parallel)
+    }
+  }
+  out
+}
+
+
 # ---- internal helpers ------------------------------------------------
 
 # spec 017 D6 — content hash of every input that determines the FAST
@@ -330,11 +415,15 @@ read_fast_alert_raster <- function(con, zone_id,
 # spec 017 — enumerate the cached scenes usable for `index` in the date
 # window, straight from disk (no DB, no obs_pixel). A scene qualifies
 # when its cache directory holds every band the index needs:
-#   NDVI -> B04 + B08,  NBR -> B08 + B12.
+#   NDVI -> B04 + B08,  NBR -> B08 + B12,  NDMI -> B08 + B11 (spec 019).
 # The directory name is the (sanitised) scene_id, which carries both the
 # sensing date (3rd `_`-field, YYYYMMDD...) and the MGRS tile (5th field).
 .enumerate_cache_scenes <- function(cache_dir, index, date_from, date_to) {
-  bands <- switch(index, NDVI = c("B04", "B08"), NBR = c("B08", "B12"))
+  bands <- switch(index,
+                  NDVI = c("B04", "B08"),
+                  NBR  = c("B08", "B12"),
+                  NDMI = c("B08", "B11"),
+                  cli::cli_abort("Unknown index {.val {index}}."))
   scene_dirs <- list.dirs(cache_dir, recursive = FALSE)
   empty <- data.frame(scene_id = character(0), obs_date = as.Date(character(0)),
                       stringsAsFactors = FALSE)

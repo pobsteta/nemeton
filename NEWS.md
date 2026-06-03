@@ -1,3 +1,30 @@
+# nemeton 0.65.0 (2026-06-03)
+
+### Fixed — cartes d'alerte NDMI absentes (régression spec 019)
+
+`.enumerate_cache_scenes()` (le sélecteur de scènes du diagnostic FAST
+raster) ne connaissait pas l'index **NDMI** : son `switch(index, ...)`
+n'avait que les branches `NDVI` et `NBR`, et renvoyait `NULL` pour NDMI.
+Conséquence — `read_fast_alert_raster(index = "NDMI")` (et
+`compute_fast_alert_mask()` en NDMI) ne trouvait **jamais** de scène, même
+avec B08 + B11 en cache, et retournait toujours `NULL`. L'ingestion NDMI
+fonctionnait, mais la carte d'alerte ne sortait pas. Le `switch` gère
+désormais `NDMI -> B08 + B11` (et lève une erreur explicite sur un index
+inconnu plutôt que d'échouer silencieusement).
+
+### Added — orchestrateur des 6 cartes FAST
+
+Nouvelle fonction exportée `read_fast_alert_rasters()` : construit en un
+seul appel l'ensemble du diagnostic FAST — les 3 indices (`NDVI`, `NBR`,
+`NDMI`) dans les 2 sémantiques (`count`, `rolling`), soit **6 rasters**.
+Retourne une `list` nommée `"<index>_<mode>"` (ex. `"NDMI_rolling"`) ;
+chaque carte est produite exactement comme un appel direct à
+`read_fast_alert_raster()` (même cache COG, même cache résultat
+content-addressé spec 017 D6, même masque de zone). Une carte sans scène
+en cache pour son index reste `NULL` (forme de sortie stable). Les
+arguments `indices`/`modes` permettent de restreindre le sous-ensemble.
+
+
 # nemeton 0.64.0 (2026-06-03)
 
 ### Added — indice NDMI dans le suivi sanitaire FAST (spec 019)
