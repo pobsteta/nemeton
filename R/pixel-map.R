@@ -32,7 +32,8 @@
 #'   directory name is its sanitized form (cf.
 #'   `nemeton:::.s2_safe_scene_id`).
 #' @param band Character(1). One of `"B04"` (Red, 10 m), `"B08"`
-#'   (NIR, 10 m) or `"B12"` (SWIR, 20 m).
+#'   (NIR, 10 m), `"B12"` (SWIR2, 20 m) or `"B11"` (SWIR1, 20 m, used by
+#'   NDMI).
 #'
 #' @return A 1-layer [terra::SpatRaster] in the source CRS (typically
 #'   EPSG:32631 or 32632 — UTM zones over France), or `NULL` if the
@@ -64,7 +65,7 @@ read_s2_band_raster <- function(cache_dir, scene_id, band) {
     stop("`scene_id` must be a single non-empty character.",
          call. = FALSE)
   }
-  band <- match.arg(band, c("B04", "B08", "B12"))
+  band <- match.arg(band, c("B04", "B08", "B12", "B11"))
 
   path <- file.path(cache_dir, .s2_safe_scene_id(scene_id),
                     paste0(band, ".tif"))
@@ -89,7 +90,7 @@ read_s2_band_raster <- function(cache_dir, scene_id, band) {
 #'   columns are ignored. Rows are re-ordered by `obs_date` internally.
 #'   In practice this is the listing of scenes present in the COG cache
 #'   directory for the zone.
-#' @param band Character(1). One of `"B04"`, `"B08"`, `"B12"`.
+#' @param band Character(1). One of `"B04"`, `"B08"`, `"B12"`, `"B11"`.
 #'
 #' @return A multi-layer [terra::SpatRaster] in source CRS, with
 #'   `names(out)` = `as.character(obs_date)` and `terra::time(out)`
@@ -114,7 +115,7 @@ read_s2_band_raster <- function(cache_dir, scene_id, band) {
 #' @export
 read_s2_band_stack <- function(cache_dir, scenes_df, band) {
   .validate_scenes_df(scenes_df)
-  band <- match.arg(band, c("B04", "B08", "B12"))
+  band <- match.arg(band, c("B04", "B08", "B12", "B11"))
 
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
@@ -146,18 +147,25 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #'
 #' * **NDVI** = (B08 − B04) / (B08 + B04) — proxy of vegetation vigour
 #' * **NBR** = (B08 − B12) / (B08 + B12) — proxy of vegetation /
-#'   burned-area discrimination. B12 is natively 20 m, so it is
+#'   burned-area discrimination.
+#' * **NDMI** = (B08 − B11) / (B08 + B11) — vegetation moisture proxy
+#'   (drops under water stress). B11 is natively 20 m, so it is
+#'   resampled to the B08 10 m grid like B12.
+#'
+#'   B12 (NBR) is natively 20 m, so it is
 #'   resampled to the B08 10 m grid via [terra::resample()] with
 #'   `method = "bilinear"`.
 #'
-#' Scenes with incomplete cached bands (missing B04, B08, or — for NBR
-#' — B12) are skipped silently with a single aggregated warning. NAs
+#' Scenes with incomplete cached bands (missing B04, B08, B12 for NBR,
+#' or B11 for NDMI) are skipped silently with a single aggregated
+#' warning. NAs
 #' propagate naturally through the arithmetic: a NA in any source
 #' pixel yields NA in the index.
 #'
 #' @param cache_dir Character(1). Path to the S2 cache root.
 #' @param scenes_df See [read_s2_band_stack()].
-#' @param index Character(1). One of `"NDVI"` (default) or `"NBR"`.
+#' @param index Character(1). One of `"NDVI"` (default), `"NBR"` or
+#'   `"NDMI"`.
 #' @param mask_polygon Optional `sf`/`sfc` polygon. When supplied, pixels
 #'   outside it become NA on every layer.
 #' @param parallel Logical (spec 017 D4). When `TRUE` and \pkg{furrr} is
@@ -197,7 +205,7 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' @seealso [read_s2_band_stack()], [extract_pixel_timeseries()].
 #' @export
 build_index_stack <- function(cache_dir, scenes_df,
-                              index = c("NDVI", "NBR"),
+                              index = c("NDVI", "NBR", "NDMI"),
                               mask_polygon = NULL,
                               parallel = FALSE) {
   index <- match.arg(index)
@@ -205,7 +213,8 @@ build_index_stack <- function(cache_dir, scenes_df,
 
   bands_needed <- switch(index,
     NDVI = c("B04", "B08"),
-    NBR  = c("B08", "B12")
+    NBR  = c("B08", "B12"),
+    NDMI = c("B08", "B11")
   )
 
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
@@ -222,10 +231,15 @@ build_index_stack <- function(cache_dir, scenes_df,
 
     if (index == "NDVI") {
       (rs$B08 - rs$B04) / (rs$B08 + rs$B04)
-    } else {
+    } else if (index == "NBR") {
       # B12 at 20 m onto B08's 10 m grid via bilinear resampling.
       b12_10m <- terra::resample(rs$B12, rs$B08, method = "bilinear")
       (rs$B08 - b12_10m) / (rs$B08 + b12_10m)
+    } else {
+      # NDMI = (B08 - B11) / (B08 + B11). B11 is native 20 m, resampled
+      # to B08's 10 m grid bilinearly, exactly like B12 for NBR.
+      b11_10m <- terra::resample(rs$B11, rs$B08, method = "bilinear")
+      (rs$B08 - b11_10m) / (rs$B08 + b11_10m)
     }
   }
 
@@ -400,8 +414,8 @@ build_index_stack <- function(cache_dir, scenes_df,
 #'   [sf::st_crs()] understands: an EPSG integer (default `4326`), a
 #'   PROJ string, a WKT. The transformation to each scene's source CRS
 #'   happens internally on a per-scene basis.
-#' @param indices Character. A non-empty subset of `c("NDVI", "NBR")`.
-#'   Default: both.
+#' @param indices Character. A non-empty subset of
+#'   `c("NDVI", "NBR", "NDMI")`. Default: `c("NDVI", "NBR")`.
 #'
 #' @return A `data.frame` with columns `obs_date` (Date), `index`
 #'   (character) and `value` (numeric, possibly NA), sorted by
@@ -430,7 +444,7 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
   if (!is.numeric(xy) || length(xy) != 2L || anyNA(xy)) {
     stop("`xy` must be a length-2 numeric, no NA.", call. = FALSE)
   }
-  indices <- match.arg(indices, c("NDVI", "NBR"), several.ok = TRUE)
+  indices <- match.arg(indices, c("NDVI", "NBR", "NDMI"), several.ok = TRUE)
 
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
@@ -463,7 +477,10 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
 
   # Bands the union of indices needs.
   bands_needed <- unique(unlist(lapply(indices, function(idx) {
-    if (idx == "NDVI") c("B04", "B08") else c("B08", "B12")
+    switch(idx,
+      NDVI = c("B04", "B08"),
+      NBR  = c("B08", "B12"),
+      NDMI = c("B08", "B11"))
   })))
 
   na_row <- function(date_i) {
@@ -499,12 +516,19 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
         b08 <- terra::extract(rs$B08, pt_vect)[1L, 2L]
         if (is.na(b04) || is.na(b08) || (b04 + b08) == 0) return(NA_real_)
         (b08 - b04) / (b08 + b04)
-      } else { # NBR
+      } else if (idx == "NBR") {
         b08 <- terra::extract(rs$B08, pt_vect)[1L, 2L]
         # Native 20 m B12 — no resample for a single-point extraction.
         b12 <- terra::extract(rs$B12, pt_vect)[1L, 2L]
         if (is.na(b08) || is.na(b12) || (b08 + b12) == 0) return(NA_real_)
         (b08 - b12) / (b08 + b12)
+      } else { # NDMI
+        b08 <- terra::extract(rs$B08, pt_vect)[1L, 2L]
+        # Native 20 m B11 — no resample for a single-point extraction,
+        # mirroring the B12 treatment for NBR above.
+        b11 <- terra::extract(rs$B11, pt_vect)[1L, 2L]
+        if (is.na(b08) || is.na(b11) || (b08 + b11) == 0) return(NA_real_)
+        (b08 - b11) / (b08 + b11)
       }
     }, numeric(1L))
 
