@@ -271,3 +271,88 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
   }
   ids
 }
+
+
+#' Remove cache directories of monitoring zones that no longer exist
+#'
+#' Scans the per-zone cache directories under `cache_root` and removes
+#' every `zone_<id>/` folder whose `id` is no longer present in
+#' `monitoring_zone`. Such orphans appear after a zone upsert (spec 020,
+#' [build_project_monitoring_zones()] with `replace = TRUE`): re-created
+#' zones get **new** ids, so the previous `zone_<old_id>/` caches are
+#' stranded. The per-zone LRU GCs (`nemeton.fast_raster_keep`,
+#' `nemeton.fast_mask_keep`) only trim *within* a live zone dir, never a
+#' whole stale dir — hence this housekeeping helper.
+#'
+#' Only directories named exactly `zone_<integer>` under the listed
+#' `subdirs` are considered; everything else (shared `sentinel2/`,
+#' `lidar_*`, …) is left untouched.
+#'
+#' @param con A `DBIConnection` returned by [db_connect()].
+#' @param cache_root Character scalar. Path to `<project>/cache/layers`
+#'   (the parent of the per-zone cache subdirs).
+#' @param subdirs Character vector of cache subdirectory names that hold
+#'   `zone_<id>/` folders. Default covers the FAST continuous
+#'   (`fast_alert`, `fast_raster`), FAST 0-4 mask (`fast_alert_mask`,
+#'   `fast`), validation-sampling (`fast_sampling`) and FORDEAD
+#'   (`fordead`) caches.
+#' @param dry_run Logical. When `TRUE`, report what would be removed
+#'   without deleting anything. Default `FALSE`.
+#'
+#' @return A `data.frame` (`path`, `zone_id`, `removed`) of the orphan
+#'   directories found, invisibly. `removed` is `FALSE` on a dry-run or a
+#'   failed unlink.
+#'
+#' @seealso [build_project_monitoring_zones()] (the upsert that strands
+#'   the caches), [find_zones_by_project()].
+#'
+#' @export
+prune_orphan_zone_caches <- function(con, cache_root,
+                                     subdirs = c("fast_alert", "fast_alert_mask",
+                                                 "fast_sampling", "fast",
+                                                 "fast_raster", "fordead"),
+                                     dry_run = FALSE) {
+  .assert_db_pkgs()
+  if (!is.character(cache_root) || length(cache_root) != 1L ||
+      is.na(cache_root) || !nzchar(cache_root)) {
+    cli::cli_abort("{.arg cache_root} must be a non-empty path.")
+  }
+  empty <- data.frame(path = character(0), zone_id = integer(0),
+                      removed = logical(0), stringsAsFactors = FALSE)
+  if (!dir.exists(cache_root)) return(invisible(empty))
+
+  rs <- .db_get_query(con, "SELECT id FROM monitoring_zone")
+  valid <- if (nrow(rs)) as.integer(rs$id) else integer(0)
+
+  found <- empty
+  for (sd in subdirs) {
+    root <- file.path(cache_root, sd)
+    if (!dir.exists(root)) next
+    dirs <- list.dirs(root, recursive = FALSE, full.names = TRUE)
+    zdirs <- dirs[grepl("^zone_[0-9]+$", basename(dirs))]
+    if (!length(zdirs)) next
+    ids    <- as.integer(sub("^zone_", "", basename(zdirs)))
+    orphan <- !(ids %in% valid)
+    if (!any(orphan)) next
+    found <- rbind(found, data.frame(path = zdirs[orphan],
+                                     zone_id = ids[orphan],
+                                     removed = FALSE,
+                                     stringsAsFactors = FALSE))
+  }
+
+  if (!nrow(found)) {
+    cli::cli_alert_info("No orphan zone cache under {.path {cache_root}}.")
+    return(invisible(found))
+  }
+  if (!isTRUE(dry_run)) {
+    for (i in seq_len(nrow(found))) {
+      found$removed[i] <- tryCatch(
+        unlink(found$path[i], recursive = TRUE, force = TRUE) == 0L,
+        error = function(e) FALSE)
+    }
+  }
+  n <- if (isTRUE(dry_run)) nrow(found) else sum(found$removed)
+  verb <- if (isTRUE(dry_run)) "Would prune" else "Pruned"
+  cli::cli_alert_info("{verb} {n} orphan zone cache dir{?s} under {.path {cache_root}}.")
+  invisible(found)
+}

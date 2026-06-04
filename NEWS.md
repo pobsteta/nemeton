@@ -1,3 +1,19 @@
+# nemeton 0.67.0 (2026-06-04)
+
+### Added — nettoyage des caches de zones orphelines (spec 020)
+
+`prune_orphan_zone_caches(con, cache_root, dry_run = FALSE)` : supprime les
+dossiers `zone_<id>/` (sous `fast_alert/`, `fast_alert_mask/`,
+`fast_sampling/`, `fast/`, `fast_raster/`, `fordead/`) dont le `zone_id`
+n'existe plus dans `monitoring_zone`. Ces orphelins apparaissent après un
+upsert de zones (`build_project_monitoring_zones(replace = TRUE)`) : les
+zones recréées reçoivent de nouveaux id, laissant les caches
+`zone_<ancien_id>/` orphelins (la GC LRU par zone ne purge qu'à l'intérieur
+d'un dossier vivant, jamais un dossier entier périmé). `dry_run = TRUE`
+prévisualise sans supprimer ; les dossiers partagés (`sentinel2/`,
+`lidar_*`) ne sont jamais touchés.
+
+
 # nemeton 0.66.0 (2026-06-04)
 
 ### Added — zones de suivi par strates BD Forêt v2 (spec 020)

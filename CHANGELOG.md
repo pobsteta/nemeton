@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.67.0] - 2026-06-04
+
+### Added
+
+- `prune_orphan_zone_caches()`: removes `zone_<id>/` cache directories
+  whose zone no longer exists in `monitoring_zone` (orphaned by the
+  spec-020 zone upsert, which assigns new ids). Covers the FAST / FORDEAD
+  / sampling per-zone caches; `dry_run = TRUE` previews; shared caches
+  (`sentinel2/`, `lidar_*`) are never touched.
+
 ## [0.66.0] - 2026-06-04
 
 ### Added

@@ -2,7 +2,7 @@
 
 **Version** : 0.1.0
 **Date**    : 2026-06-04
-**Statut**  : **Cœur implémenté** (`nemeton@v0.66.0`, étapes 1-4) ; wiring app (D6) en attente.
+**Statut**  : **Cœur implémenté** (`nemeton@v0.66.0` étapes 1-4 + `prune_orphan_zone_caches()` `v0.67.0` étape 5) ; wiring app (D6) en attente.
 **Auteur**  : Pascal Obstétar (via Claude)
 **Cible cœur** : `nemeton` (minor — nouvelles fonctions + migration 0005).
 **Cible app**  : `nemetonshiny` (sélecteur de zone peuplé des zones du projet).

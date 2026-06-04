@@ -163,3 +163,60 @@ test_that("build_project_monitoring_zones is end-to-end and idempotent (upsert)"
     expect_equal(nrow(find_zones_by_project(con, "u-m")), 3L)
   })
 })
+
+
+# ---- prune_orphan_zone_caches ----------------------------------------
+
+.mk_zone_dir <- function(root, sub, id) {
+  d <- file.path(root, sub, sprintf("zone_%d", id))
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  writeLines("x", file.path(d, "f.tif"))
+  d
+}
+
+test_that("prune_orphan_zone_caches removes only stale zone dirs", {
+  root <- withr::local_tempdir()
+  keep1 <- .mk_zone_dir(root, "fast_alert", 1L)
+  keep2 <- .mk_zone_dir(root, "fast_alert_mask", 2L)
+  orph7 <- .mk_zone_dir(root, "fast_alert", 7L)
+  orph9 <- .mk_zone_dir(root, "fordead", 9L)
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(NULL),
+    .db_get_query   = function(con, sql, ...) data.frame(id = c(1L, 2L)),
+    .package = "nemeton")
+
+  res <- prune_orphan_zone_caches(NULL, root)
+  expect_setequal(res$zone_id, c(7L, 9L))
+  expect_true(all(res$removed))
+  expect_false(dir.exists(orph7)); expect_false(dir.exists(orph9))
+  expect_true(dir.exists(keep1));  expect_true(dir.exists(keep2))
+})
+
+test_that("prune_orphan_zone_caches dry_run reports without deleting", {
+  root <- withr::local_tempdir()
+  d <- .mk_zone_dir(root, "fast_alert", 99L)
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(NULL),
+    .db_get_query   = function(con, sql, ...) data.frame(id = integer(0)),
+    .package = "nemeton")
+
+  res <- prune_orphan_zone_caches(NULL, root, dry_run = TRUE)
+  expect_equal(res$zone_id, 99L)
+  expect_false(any(res$removed))
+  expect_true(dir.exists(d))           # untouched on dry-run
+})
+
+test_that("prune_orphan_zone_caches ignores non-zone dirs and a missing root", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "sentinel2", "S2A_xyz"), recursive = TRUE)
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(NULL),
+    .db_get_query   = function(con, sql, ...) data.frame(id = integer(0)),
+    .package = "nemeton")
+  expect_equal(nrow(prune_orphan_zone_caches(NULL, root)), 0L)   # sentinel2 untouched
+  expect_true(dir.exists(file.path(root, "sentinel2", "S2A_xyz")))
+
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function(...) invisible(NULL), .package = "nemeton")
+  expect_equal(nrow(prune_orphan_zone_caches(NULL, file.path(root, "nope-xyz"))), 0L)
+})
