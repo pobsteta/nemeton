@@ -1,3 +1,39 @@
+# nemeton 0.66.0 (2026-06-04)
+
+### Added — zones de suivi par strates BD Forêt v2 (spec 020)
+
+Un projet peut désormais porter **jusqu'à 4 zones de suivi** construites
+par croisement de l'**union des UGFs** avec les **strates de BD Forêt v2** :
+
+| Zone | Géométrie |
+|------|-----------|
+| `<projet>_tot` | union des UGFs |
+| `<projet>_feu` | union des UGFs ∩ feuillus |
+| `<projet>_res` | union des UGFs ∩ résineux |
+| `<projet>_mix` | union des UGFs ∩ forêts mixtes |
+
+Strates classées via le champ **`tfv_g11`** de BD Forêt (repli `essence`).
+
+- **`build_project_monitoring_zones(con, project_name, project_uuid, ugf,
+  bdforet, …)`** : construit et enregistre les zones. Strate vide →
+  zone non créée (avertissement). `replace = TRUE` (défaut) : upsert
+  idempotent (supprime puis recrée les zones du projet).
+- **`create_monitoring_zone(con, zone_name, zone_polygon, project_uuid)`** :
+  insert zone-seule, **sans placette** (depuis spec 017 le diagnostic
+  FAST/FORDEAD est pur raster, placette-indépendant).
+- **`find_zones_by_project(con, project_uuid)`** : liste les zones (id,
+  name) d'un projet (un projet peut en avoir plusieurs).
+- **Migration 0005** (pg + sqlite) : unicité `monitoring_zone` relâchée de
+  `project_uuid` seul à **`(project_uuid, name)`** → N zones par projet.
+
+### Fixed
+
+- `register_monitoring_zone(project_uuid = …)` récupérait l'id de la zone
+  insérée via `WHERE project_uuid = $1` seul ; avec le modèle multi-zones
+  (spec 020) cela pouvait renvoyer le mauvais id. Corrigé en
+  `WHERE project_uuid = $1 AND name = $2`.
+
+
 # nemeton 0.65.3 (2026-06-03)
 
 ### Added — GC LRU du cache des masques FAST 0-4

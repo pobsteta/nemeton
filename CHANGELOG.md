@@ -10,6 +10,26 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [0.66.0] - 2026-06-04
+
+### Added
+
+- Monitoring zones from UGF × BD Forêt v2 strata (spec 020): a project can
+  own up to 4 zones `<project>_tot/_feu/_res/_mix` (UGF union, and its
+  intersection with broadleaf / conifer / mixed strata classified via
+  `tfv_g11`). New exports `build_project_monitoring_zones()`,
+  `create_monitoring_zone()` (zone-only, no placettes — spec 017),
+  `find_zones_by_project()`. Empty strata are skipped with a warning;
+  `replace = TRUE` performs an idempotent upsert.
+- Migration 0005 (pg + sqlite): `monitoring_zone` uniqueness relaxed from
+  `project_uuid` to `(project_uuid, name)` — N zones per project.
+
+### Fixed
+
+- `register_monitoring_zone(project_uuid = …)` fetched the inserted zone
+  id by `project_uuid` alone, which could return the wrong id under the
+  spec-020 multi-zone model. Now keyed by `(project_uuid, name)`.
+
 ## [0.65.3] - 2026-06-03
 
 ### Added

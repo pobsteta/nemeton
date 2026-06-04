@@ -138,7 +138,7 @@ test_that("find_zone_by_project does NOT fall back to name lookup", {
 })
 
 
-test_that("project_uuid UNIQUE constraint blocks a second binding", {
+test_that("(project_uuid, name) is unique; same uuid + new name coexist (spec 020)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -148,19 +148,20 @@ test_that("project_uuid UNIQUE constraint blocks a second binding", {
       plot_id  = "P01",
       geometry = sf::st_sfc(sf::st_point(c(4.5, 47.5)), crs = 4326))
 
-    register_monitoring_zone(con, "Z1", pol, placettes,
-                             project_uuid = "dup")
-    # Second registration with the same project_uuid is rejected by
-    # the partial UNIQUE index on project_uuid (not NULL). The aborted
-    # transaction leaves an open result set, so RPostgres emits a benign
-    # "Closing open result set" warning — suppress it (the assertion is
-    # the error, not the warning).
+    register_monitoring_zone(con, "Z1", pol, placettes, project_uuid = "dup")
+    # Spec 020 (migration 0005) relaxes uniqueness from project_uuid alone
+    # to (project_uuid, name): a project may now own several strata zones.
+    # A second zone with the SAME project_uuid but a DIFFERENT name is OK.
+    expect_no_error(
+      register_monitoring_zone(con, "Z2", pol, placettes, project_uuid = "dup"))
+    expect_equal(nrow(find_zones_by_project(con, "dup")), 2L)
+
+    # But re-using the SAME (project_uuid, name) is still rejected. The
+    # aborted transaction leaves an open result set -> benign RPostgres
+    # warning, suppressed (the assertion is the error).
     suppressWarnings(
       expect_error(
-        register_monitoring_zone(con, "Z2", pol, placettes,
-                                 project_uuid = "dup")
-      )
-    )
+        register_monitoring_zone(con, "Z1", pol, placettes, project_uuid = "dup")))
   })
 })
 

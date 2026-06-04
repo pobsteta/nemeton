@@ -76,9 +76,12 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
         paste0("INSERT INTO monitoring_zone (name, zone_wkt, crs_epsg, project_uuid) ",
                "VALUES ($1, $2, 4326, $3)"),
         params = list(zone_name, zone_wkt, project_uuid))
+      # Since spec 020 a project may own several zones (different names),
+      # so the id of the row just inserted must be fetched by the full
+      # (project_uuid, name) key, not by project_uuid alone.
       rs <- .db_get_query(con,
-        "SELECT id FROM monitoring_zone WHERE project_uuid = $1",
-        params = list(project_uuid))
+        "SELECT id FROM monitoring_zone WHERE project_uuid = $1 AND name = $2",
+        params = list(project_uuid, zone_name))
     }
     rs$id[1]
   })
