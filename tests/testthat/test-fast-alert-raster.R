@@ -105,6 +105,7 @@ test_that(".enumerate_cache_scenes selects by index bands and date window", {
 })
 
 test_that("read_fast_alert_raster(index=NDVI) needs no B12; index=NBR needs B12", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   cache <- withr::local_tempdir()
   # A single scene with only B04 + B08 (NDVI-renderable, NOT NBR).
@@ -173,6 +174,7 @@ test_that(".fast_raster_hash is deterministic and input-sensitive", {
 }
 
 test_that("read_fast_alert_raster persists + serves a content-addressed COG", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   cache  <- withr::local_tempdir()
   rcache <- withr::local_tempdir()
@@ -243,6 +245,7 @@ test_that(".fast_raster_filename normalises index/mode case", {
 })
 
 test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   cache  <- withr::local_tempdir()
   rcache <- withr::local_tempdir()
@@ -257,6 +260,7 @@ test_that("read_fast_alert_raster(cache_result = FALSE) writes nothing", {
 })
 
 test_that("read_fast_alert_raster(parallel = TRUE) matches sequential (spec 017 D4)", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("furrr")
   skip_if_not_installed("future")
@@ -356,6 +360,7 @@ test_that(".compute_alert_rolling deficit = 0 when the mean is above threshold",
 # ---- multi-tile AOI coverage (cache-only, no DB) ---------------------
 
 test_that("read_fast_alert_raster covers the full multi-tile AOI (per-tile mosaic)", {
+  skip_if_terra_write_broken()
   # spec 010 / v0.52.x regression — an AOI straddling two overlapping
   # MGRS tiles (villards on T31TFM narrow ⊂ T31TGM wide) must render the
   # WHOLE AOI, not just the overlap strip. The per-tile grouping +

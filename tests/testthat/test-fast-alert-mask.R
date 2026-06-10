@@ -22,6 +22,7 @@ test_that("read_fast_alert_mask rejects bad zone_id", {
 })
 
 test_that("read_fast_alert_mask returns the most recent file by default", {
+  skip_if_terra_write_broken()
   td <- withr::local_tempdir()
   zone_dir <- file.path(td, "zone_1")
   dir.create(zone_dir, recursive = TRUE)
@@ -51,6 +52,7 @@ test_that("read_fast_alert_mask returns the most recent file by default", {
 })
 
 test_that("read_fast_alert_mask returns NULL when no matching file", {
+  skip_if_terra_write_broken()
   td <- withr::local_tempdir()
   zone_dir <- file.path(td, "zone_1")
   dir.create(zone_dir, recursive = TRUE)

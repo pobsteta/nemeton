@@ -158,6 +158,7 @@ test_that(".fast_raster_trend: out-of-season scenes are excluded", {
 
 
 test_that("read_fast_alert_raster(mode='trend') returns a cached EPSG:2154 raster", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   cache  <- withr::local_tempdir()
@@ -191,6 +192,7 @@ test_that("read_fast_alert_raster(mode='trend') returns a cached EPSG:2154 raste
 
 
 test_that("compute_fast_alert_mask(mode='trend') writes a 0-4 mask unchanged", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   cache <- withr::local_tempdir()
@@ -212,6 +214,7 @@ test_that("compute_fast_alert_mask(mode='trend') writes a 0-4 mask unchanged", {
 
 
 test_that("trend default index is NDMI (mode-dependent default)", {
+  skip_if_terra_write_broken()
   skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   cache  <- withr::local_tempdir()
