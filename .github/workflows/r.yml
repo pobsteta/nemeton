@@ -177,11 +177,22 @@ jobs:
             if (inherits(terra::rast(pf), "SpatRaster")) "OK" else "not-SpatRaster"
           }, error = function(e) paste("ERR:", conditionMessage(e)))
           cat("rast(pkg tif) after load_all:", rl, "\n")
-          cat("terra lib path:", find.package("terra"), "\n")
-          cat("terra ns ver:", as.character(getNamespaceVersion("terra")), "\n")
-          cat("loaded ns of interest:",
-              paste(grep("terra|Rcpp|raster|stars|sp$|fasterRaster|lidR|lidaR",
-                         loadedNamespaces(), value = TRUE), collapse = ", "), "\n")
+          # 5) EPSG-code CRS (needs proj.db) — the FAST tests create rasters
+          #    with crs = "EPSG:32631", unlike the embedded-WKT package tifs.
+          cat("PROJ_DATA env:", Sys.getenv("PROJ_DATA"),
+              "| PROJ_LIB env:", Sys.getenv("PROJ_LIB"), "\n")
+          cat("proj.db found:", paste(Sys.glob(c("/usr/share/proj*/proj.db",
+              "/usr/share/proj/proj.db", "/usr/local/share/proj/proj.db")),
+              collapse = ", "), "\n")
+          re <- tryCatch({
+            tf2 <- tempfile(fileext = ".tif")
+            terra::writeRaster(terra::rast(nrows = 10, ncols = 10,
+              xmin = 0, xmax = 100, ymin = 0, ymax = 100,
+              crs = "EPSG:32631", vals = rep(0.5, 100)),
+              tf2, filetype = "GTiff", overwrite = TRUE)
+            "OK"
+          }, error = function(e) paste("ERR:", conditionMessage(e)))
+          cat("writeRaster(crs=EPSG:32631):", re, "\n")
         shell: Rscript {0}
 
       # Vrais tests, via load_all (comme en local où tout passe), plutôt que
