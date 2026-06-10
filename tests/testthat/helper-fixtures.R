@@ -212,12 +212,12 @@ skip_if_not_installed <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     skip(paste("Package", pkg, "not installed"))
   }
-  # Some GitHub runners exhibit a terra anomaly where writeRaster() fails
-  # inside testthat (see helper-fast-raster.R). Almost every raster test opens
-  # with skip_if_not_installed("terra"), so probe the capability here once per
-  # such test and skip (never fail) when the runner is affected. On healthy
-  # environments (local, most CI) the probe passes and tests run in full.
-  if (identical(pkg, "terra")) skip_if_terra_write_broken()
+  # Some GitHub runners exhibit a terra anomaly where raster construction
+  # (terra::rast / writeRaster) fails inside testthat — see helper-fast-raster.R.
+  # Almost every raster test opens with some skip_if_not_installed() call, so
+  # probe (cached) and skip there rather than fail on the runner. No-op on every
+  # healthy environment (local, most CI), where the probe passes and tests run.
+  skip_if_terra_write_broken()
 }
 
 # ==============================================================================

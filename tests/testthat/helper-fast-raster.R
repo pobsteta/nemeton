@@ -17,16 +17,23 @@
 # healthy environment the probe passes and the tests run in full.
 skip_if_terra_write_broken <- function() {
   testthat::skip_if_not_installed("terra")
-  ok <- tryCatch({
-    f <- tempfile(fileext = ".tif")
-    on.exit(unlink(f), add = TRUE)
-    terra::writeRaster(
-      terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 2, ymin = 0, ymax = 2,
-                  crs = "EPSG:32631", vals = 1),
-      f, filetype = "GTiff", overwrite = TRUE)
-    TRUE
-  }, error = function(e) FALSE)
-  if (!isTRUE(ok)) {
+  # Probe once per process and cache: the anomaly is present from process
+  # start (it fails every terra raster test on an affected runner), so a
+  # single probe is sufficient and avoids writing a tif on every call.
+  broken <- getOption("nemeton.terra_write_broken")
+  if (is.null(broken)) {
+    broken <- tryCatch({
+      f <- tempfile(fileext = ".tif")
+      on.exit(unlink(f), add = TRUE)
+      terra::writeRaster(
+        terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 2, ymin = 0, ymax = 2,
+                    crs = "EPSG:32631", vals = 1),
+        f, filetype = "GTiff", overwrite = TRUE)
+      FALSE
+    }, error = function(e) TRUE)
+    options(nemeton.terra_write_broken = broken)
+  }
+  if (isTRUE(broken)) {
     testthat::skip(
       "terra::writeRaster(crs=EPSG) unavailable in this runtime (runner-specific terra anomaly)")
   }

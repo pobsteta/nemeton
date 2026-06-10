@@ -153,6 +153,7 @@ test_that("indicateur_c1_biomasse scales with age and density", {
 # ==============================================================================
 
 test_that("indicateur_c2_ndvi extracts mean NDVI from raster", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -197,6 +198,7 @@ test_that("indicateur_c2_ndvi errors when NDVI layer missing", {
 })
 
 test_that("indicateur_c2_ndvi handles edge NDVI values", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -219,6 +221,7 @@ test_that("indicateur_c2_ndvi handles edge NDVI values", {
 })
 
 test_that("indicateur_c2_ndvi with trend option (future implementation)", {
+  skip_if_not_installed("terra")
   # Note: Trend calculation requires multi-date NDVI rasters
   # This is a placeholder for future temporal NDVI support
 
@@ -245,6 +248,7 @@ test_that("indicateur_c2_ndvi with trend option (future implementation)", {
 # ==============================================================================
 
 test_that("nemeton_compute works with new carbon indicators", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -317,6 +321,7 @@ test_that("C1 CHM mode propagates NA on missing inputs", {
 })
 
 test_that("C1 CHM mode and age-based mode are positively correlated", {
+  skip_if_not_installed("terra")
   set.seed(3)
   n  <- 8
   dbh_vals <- c(20, 30, 25, 40, 50, 35, 45, 55)
