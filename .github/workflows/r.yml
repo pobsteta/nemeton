@@ -63,13 +63,22 @@ jobs:
             any::remotes
           needs: check
 
-      # Le binaire terra RSPM (build 2026-05) est incompatible ABI avec le
-      # Rcpp 1.1.1 servi plus récemment : terra::rast() lève « no valid
-      # constructor available for the argument list » (Rcpp module mismatch),
-      # ce qui faisait échouer les exemples/tests/vignettes. On recompile terra
-      # depuis les sources contre le Rcpp installé pour réaligner l'ABI.
-      - name: Rebuild terra from source (Rcpp ABI match)
-        run: install.packages("terra", type = "source", repos = "https://packagemanager.posit.co/cran/latest")
+      # terra (binaire) fonctionne sur le runner, MAIS un paquet `LinkingTo:
+      # terra` (p.ex. fasterRaster) installé en binaire contre un AUTRE terra
+      # corrompt le module Rcpp de terra une fois chargé : tout terra::rast()
+      # ultérieur lève « no valid constructor available for the argument list ».
+      # On recompile ces paquets depuis les sources contre le terra installé.
+      - name: Rebuild terra-linking packages from source (ABI match)
+        run: |
+          ip <- installed.packages()
+          lt <- ip[, "LinkingTo"]
+          culprits <- setdiff(rownames(ip)[!is.na(lt) & grepl("terra", lt)], "terra")
+          cat("LinkingTo terra:", paste(culprits, collapse = ", "), "\n")
+          repos <- c("https://r-lidar.r-universe.dev",
+                     "https://packagemanager.posit.co/cran/latest")
+          for (p in culprits) tryCatch(
+            install.packages(p, type = "source", repos = repos),
+            error = function(e) cat("skip", p, ":", conditionMessage(e), "\n"))
         shell: Rscript {0}
 
       - name: Check package
@@ -120,6 +129,22 @@ jobs:
         with:
           extra-packages: any::testthat, any::remotes, any::devtools
           needs: check
+
+      # Un paquet `LinkingTo: terra` (p.ex. fasterRaster) installé en binaire
+      # contre un autre terra corrompt le module Rcpp de terra au chargement →
+      # « no valid constructor » sur terra::rast(). On les recompile source.
+      - name: Rebuild terra-linking packages from source (ABI match)
+        run: |
+          ip <- installed.packages()
+          lt <- ip[, "LinkingTo"]
+          culprits <- setdiff(rownames(ip)[!is.na(lt) & grepl("terra", lt)], "terra")
+          cat("LinkingTo terra:", paste(culprits, collapse = ", "), "\n")
+          repos <- c("https://r-lidar.r-universe.dev",
+                     "https://packagemanager.posit.co/cran/latest")
+          for (p in culprits) tryCatch(
+            install.packages(p, type = "source", repos = repos),
+            error = function(e) cat("skip", p, ":", conditionMessage(e), "\n"))
+        shell: Rscript {0}
 
       # Diagnostic : terra::rast() peut-il construire un SpatRaster sur ce
       # runner ? (le sandbox `R CMD check` lève « no valid constructor » ;
