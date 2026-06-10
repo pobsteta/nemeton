@@ -129,11 +129,23 @@ jobs:
           cat("Rcpp:", as.character(packageVersion("Rcpp")),
               "terra:", as.character(packageVersion("terra")), "\n")
           cat("GDAL:", terra::gdal(), "\n")
+          # 1) construction en mémoire
           r <- tryCatch(terra::rast(nrows = 2, ncols = 2, vals = 1),
                         error = function(e) conditionMessage(e))
           cat("rast(in-memory):", if (inherits(r, "SpatRaster")) "OK" else r, "\n")
-          f <- system.file("extdata", "massif_demo_dem.tif", package = "terra")
-          cat("terra demo file:", f, "\n")
+          # 2) round-trip fichier (écrit puis relit un .tif neuf)
+          tf <- tempfile(fileext = ".tif")
+          rt <- tryCatch({
+            terra::writeRaster(terra::rast(nrows = 4, ncols = 4, vals = 1:16), tf)
+            x <- terra::rast(tf); paste("OK", paste(dim(x), collapse = "x"))
+          }, error = function(e) paste("ERR:", conditionMessage(e)))
+          cat("rast(round-trip file):", rt, "\n")
+          # 3) lecture d'un .tif embarqué du package (depuis le checkout source)
+          pf <- "inst/extdata/massif_demo_dem.tif"
+          cat("pkg tif exists:", file.exists(pf), "\n")
+          rp <- tryCatch({ x <- terra::rast(pf); "OK" },
+                         error = function(e) paste("ERR:", conditionMessage(e)))
+          cat("rast(pkg tif):", rp, "\n")
         shell: Rscript {0}
 
       # Vrais tests, via load_all (comme en local où tout passe), plutôt que
