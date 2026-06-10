@@ -45,14 +45,13 @@ A named `list` mapping each created stratum (`"tot"`, `"feu"`,
 }
 \description{
 Creates up to four monitoring zones for a project (spec 020):
-\itemize{
-  \item `<project>_tot` — union of the UGFs;
-  \item `<project>_feu` — that union intersected with BD Forêt v2 broadleaf;
-  \item `<project>_res` — intersected with BD Forêt v2 conifer;
-  \item `<project>_mix` — intersected with BD Forêt v2 mixed forest.
-}
 }
 \details{
+* `<project>_tot` — union of the UGFs;
+* `<project>_feu` — that union intersected with BD Forêt v2 broadleaf;
+* `<project>_res` — intersected with BD Forêt v2 conifer;
+* `<project>_mix` — intersected with BD Forêt v2 mixed forest.
+
 `<project>` is the project name as an NMT slug (lowercase, accents
 transliterated). BD Forêt polygons are classified by their `tfv_g11`
 field (fallback `essence`). A stratum with no surface is **skipped**

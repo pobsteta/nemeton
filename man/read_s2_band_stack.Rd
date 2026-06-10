@@ -15,7 +15,7 @@ columns are ignored. Rows are re-ordered by `obs_date` internally.
 In practice this is the listing of scenes present in the COG cache
 directory for the zone.}
 
-\item{band}{Character(1). One of `"B04"`, `"B08"`, `"B12"`.}
+\item{band}{Character(1). One of `"B04"`, `"B08"`, `"B12"`, `"B11"`.}
 }
 \value{
 A multi-layer [terra::SpatRaster] in source CRS, with

@@ -7,8 +7,8 @@
 prune_orphan_zone_caches(
   con,
   cache_root,
-  subdirs = c("fast_alert", "fast_alert_mask", "fast_sampling", "fast",
-    "fast_raster", "fordead"),
+  subdirs = c("fast_alert", "fast_alert_mask", "fast_sampling", "fast", "fast_raster",
+    "fordead"),
   dry_run = FALSE
 )
 }

@@ -7,12 +7,16 @@
 read_fast_alert_raster(
   con,
   zone_id,
-  index = c("NDVI", "NBR", "NDMI"),
+  index = c("NDVI", "NBR", "NDMI", "NDRE"),
   threshold = NULL,
   date_from,
   date_to,
-  mode = c("count", "rolling"),
+  mode = c("count", "rolling", "trend"),
   window_days = 30L,
+  months = 6:9,
+  min_years = 4L,
+  min_obs_per_year = 2L,
+  alpha = 0.05,
   cache_dir,
   apply_zone_mask = TRUE,
   mask_polygon = NULL,
@@ -30,23 +34,44 @@ diagnostic is independent of `obs_pixel` / placettes).}
 \item{zone_id}{Integer scalar. Existing zone in `monitoring_zone`.}
 
 \item{index}{Character scalar. The single spectral index the alert
-map is built from: `"NDVI"` (default) or `"NBR"`. Spec 017 (v0.55.0)
-dropped the previous "NDVI OR NBR" combination — the map is now
-mono-index.}
+map is built from: `"NDVI"`, `"NBR"`, `"NDMI"` (moisture, spec 019)
+or `"NDRE"` (red-edge, spec 022). The default is **mode-dependent**
+when `index` is not supplied: `"NDVI"` for `count` / `rolling`
+(back-compat), `"NDMI"` for `trend` (moisture decouples first under
+chronic stress). Spec 017 (v0.55.0) dropped the previous "NDVI OR
+NBR" combination — the map is mono-index.}
 
 \item{threshold}{Numeric scalar in `(0, 1)`, or `NULL`. Alert if the
 chosen `index` is strictly below this value. When `NULL` (default)
-it resolves to `0.40` for `"NDVI"` and `0.30` for `"NBR"`.}
+it resolves to `0.40` for `"NDVI"` and `0.30` otherwise (`"NBR"`,
+`"NDMI"`, `"NDRE"`). **Ignored when `mode = "trend"`** (the trend
+paradigm is relative, not threshold-based).}
 
 \item{date_from, date_to}{Date (or character `"YYYY-MM-DD"`) bounding
 the analysis window.}
 
-\item{mode}{Character scalar. One of `"count"` or `"rolling"`.
-Default `"count"`.}
+\item{mode}{Character scalar. One of `"count"`, `"rolling"` or
+`"trend"` (spec 023). Default `"count"`.}
 
 \item{window_days}{Integer scalar. Length of the trailing window in
-calendar days for `mode = "rolling"`. Ignored in `"count"` mode.
-Default 30.}
+calendar days for `mode = "rolling"`. Ignored in `"count"` /
+`"trend"` mode. Default 30.}
+
+\item{months}{Integer vector in `1:12`. Trend mode only: the seasonal
+window kept for the yearly composite. Default `6:9` (summer, when
+water stress is most legible).}
+
+\item{min_years}{Integer scalar. Trend mode only: minimum number of
+valid composite years a pixel needs, else it is `NA`. Default `4`.}
+
+\item{min_obs_per_year}{Integer scalar. Trend mode only: minimum
+number of clear observations a pixel needs within a year for that
+year's median to count (else that year is `NA` for the pixel).
+Default `2`.}
+
+\item{alpha}{Numeric scalar in `(0, 1)`. Trend mode only: the
+Mann-Kendall two-sided significance level above which a pixel's
+decline is treated as noise (output `0`). Default `0.05`.}
 
 \item{cache_dir}{Character scalar. Path to the COG cache root
 (typically `<project>/cache/layers/sentinel2`). Must exist.}
@@ -98,6 +123,21 @@ via `mode`:
   `deficit_x = max(0, threshold_x - mean_x)`. Value 0 = pixel not in
   alert, value > 0 = magnitude of the alert. Robust to brief noise,
   but insensitive to short shocks.
+* **`"trend"`** — multi-year monotonic decline (spec 023). A
+  *relative* paradigm: each pixel is its own baseline, no absolute
+  `threshold`. Builds a seasonal yearly composite (median of the
+  `months` window per year, dropping years with fewer than
+  `min_obs_per_year` clear observations), requires at least
+  `min_years` valid years, then fits a Theil-Sen slope and a
+  Mann-Kendall significance test per pixel. Returns `abs(slope)`
+  where the slope is negative **and** the Mann-Kendall p-value is
+  below `alpha`, otherwise `0`; pixels with too few valid years are
+  `NA`. The output is the same kind of continuous raster as the
+  other modes (`0` = no alert, `> 0` = magnitude), so
+  [compute_fast_alert_mask()] discretises it unchanged — Mann-Kendall
+  plays the gate that the absolute threshold plays for count /
+  rolling. Built for chronic dieback (slow multi-year decline, e.g.
+  broadleaf oak / beech) that the short-horizon modes cannot see.
 
 The raster is computed in the native Sentinel-2 CRS (typically
 EPSG:32631 for tiles T31xxx) for numerical accuracy, then

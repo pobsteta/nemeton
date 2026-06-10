@@ -17,7 +17,7 @@ A data.frame with the manifest columns.
 Reads the manifest CSV into a typed (all-character) data.frame with
 `NA` normalised to `""`, matching the contract of the ingestion
 pipeline. Performs no semantic validation beyond requiring the 16
-expected columns -- use [validate_knowledge_manifest()] for that.
+expected columns — use [validate_knowledge_manifest()] for that.
 }
 \seealso{
 [validate_knowledge_manifest()], [write_knowledge_manifest()],

@@ -7,12 +7,16 @@
 compute_fast_alert_mask(
   con,
   zone_id,
-  index = c("NDVI", "NBR", "NDMI"),
+  index = c("NDVI", "NBR", "NDMI", "NDRE"),
   threshold = NULL,
   date_from,
   date_to,
-  mode = c("count", "rolling"),
+  mode = c("count", "rolling", "trend"),
   window_days = 30L,
+  months = 6:9,
+  min_years = 4L,
+  min_obs_per_year = 2L,
+  alpha = 0.05,
   cache_dir,
   mask_cache_dir = NULL,
   breaks = NULL,
@@ -28,20 +32,29 @@ compute_fast_alert_mask(
 
 \item{zone_id}{Integer scalar.}
 
-\item{index}{Character scalar `"NDVI"` (default) or `"NBR"` — the
-single index the alert map is built from (spec 017).}
+\item{index}{Character scalar `"NDVI"`, `"NBR"`, `"NDMI"` or `"NDRE"`
+— the single index the alert map is built from (spec 017 / 019 /
+022). Default is mode-dependent when omitted: `"NDVI"` for count /
+rolling, `"NDMI"` for trend (mirror of [read_fast_alert_raster()]).}
 
 \item{threshold}{Numeric in `(0, 1)` or `NULL`. Passed through to
 [read_fast_alert_raster()]; `NULL` resolves per `index`
-(NDVI 0.40, NBR 0.30).}
+(NDVI 0.40, NBR/NDMI/NDRE 0.30). Ignored when `mode = "trend"`.}
 
 \item{date_from, date_to}{Date (or character `"YYYY-MM-DD"`) bounding
 the analysis window.}
 
-\item{mode}{One of `"count"` or `"rolling"`. Default `"count"`.}
+\item{mode}{One of `"count"`, `"rolling"` or `"trend"` (spec 023).
+Default `"count"`.}
 
 \item{window_days}{Integer. Trailing window length, used in
 `"rolling"` mode. Default `30L`.}
+
+\item{months, min_years, min_obs_per_year, alpha}{Trend-mode parameters
+(spec 023), passed through to [read_fast_alert_raster()]. Seasonal
+month window (default `6:9`), minimum valid composite years
+(`4L`), minimum clear observations per year (`2L`), and Mann-Kendall
+significance level (`0.05`). Ignored in count / rolling mode.}
 
 \item{cache_dir}{Path to the S2 COG cache.}
 
@@ -59,7 +72,9 @@ When `NULL` (default, spec 017) the breaks are computed as
 **quartiles of the strictly-positive pixels**: class 0 = no alert
 (value 0), classes 1-4 = the quartile bins
 `c(0, q25, q50, q75, Inf)` of pixels with at least one alert. This
-adaptive scheme applies to **both** `"count"` and `"rolling"`.
+adaptive scheme applies to **all** modes (`"count"`, `"rolling"`,
+`"trend"`) — for trend the strictly-positive pixels are the
+significant-decline magnitudes.
 Degenerate distributions (tied quantiles) collapse to fewer
 occupied classes rather than erroring; an all-zero raster maps
 entirely to class 0.}

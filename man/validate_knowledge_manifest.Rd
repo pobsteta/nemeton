@@ -20,7 +20,8 @@ structure, controlled enums, recognised family / profile codes, and the
 license-gate safety rules (a `cleared` row never carries an unconfirmed
 license; a `copyright` document is never full-text ingested; a declared
 `local_path` has an ingestible extension).
-
+}
+\details{
 Returns the issues as data rather than aborting, so a caller (e.g. a
 `nemetonshiny` editor) can surface them inline.
 }

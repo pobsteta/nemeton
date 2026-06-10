@@ -44,26 +44,31 @@ index, or `NULL` (default) to let each index resolve its own default
 deliberately want one shared cut-off across indices.}
 
 \item{window_days}{Integer scalar. Length of the trailing window in
-calendar days for `mode = "rolling"`. Ignored in `"count"` mode.
-Default 30.}
+calendar days for `mode = "rolling"`. Ignored in `"count"` /
+`"trend"` mode. Default 30.}
 
 \item{cache_dir}{Character scalar. Path to the COG cache root
 (typically `<project>/cache/layers/sentinel2`). Must exist.}
 
-\item{apply_zone_mask}{Logical. Passed to [read_fast_alert_raster()].}
+\item{cache_result}{Logical. When `TRUE` (default, spec 017 D6) the
+continuous result raster is persisted as a content-addressed COG
+and a subsequent call with the same inputs is served instantly from
+disk (zero recompute). A new scene in `cache_dir`, any parameter
+change, or a zone re-registration changes the content hash and
+triggers a fresh compute. `FALSE` disables the persistence entirely.}
 
-\item{mask_polygon}{Optional mask polygon. Passed to
-[read_fast_alert_raster()].}
+\item{result_cache_dir}{Character scalar or `NULL`. Root of the result
+COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
+"fast_raster")`; COGs land under `<result_cache_dir>/zone_<id>/
+fast_<INDEX>_<MODE>_thr<threshold>_<from>_<to>_w<window>_<hash8>.tif`
+(verbose, deterministic — same parameters yield the same name, so the
+cache hit is preserved). At most
+`getOption("nemeton.fast_raster_keep", 20)` COGs are kept per zone.}
 
-\item{cache_result}{Logical. Passed to [read_fast_alert_raster()]
-(spec 017 D6): whether to persist each continuous result raster as a
-content-addressed COG.}
-
-\item{result_cache_dir}{Character scalar or `NULL`. Passed to
-[read_fast_alert_raster()].}
-
-\item{parallel}{Logical (spec 017 D4). Passed to
-[read_fast_alert_raster()].}
+\item{parallel}{Logical (spec 017 D4). Passed to [build_index_stack()]:
+when `TRUE` and \pkg{furrr} is installed, the per-scene raster
+compute fans across cores (set a `future::plan()` first). Default
+`FALSE`; results are identical to sequential.}
 }
 \value{
 A named `list` of length `length(indices) * length(modes)`
