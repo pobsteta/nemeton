@@ -24,13 +24,17 @@ knitr::opts_chunk$set(
 # le même code passe dans les tests testthat. On sonde cette capacité une fois ;
 # si elle manque, les chunks de calcul spatial sont rendus sans être évalués
 # (pas de plantage du build). En local et sur un terra sain, tout s'exécute.
-.nemeton_terra_ok <- tryCatch(
+.nemeton_terra_ok <- tryCatch({
+  tf <- tempfile(fileext = ".tif")
+  terra::writeRaster(
+    terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 2, ymin = 0, ymax = 2,
+                crs = "EPSG:32631", vals = 1),
+    tf, filetype = "GTiff", overwrite = TRUE)
+  unlink(tf)
   inherits(
     terra::rast(system.file("extdata", "massif_demo_dem.tif", package = "nemeton")),
-    "SpatRaster"
-  ),
-  error = function(e) FALSE
-)
+    "SpatRaster")
+}, error = function(e) FALSE)
 ```
 
 # Introduction
