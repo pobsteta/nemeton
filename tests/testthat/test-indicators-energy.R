@@ -24,6 +24,7 @@ make_energy_sf <- function(n = 1, extra_cols = list(), crs = 2154) {
 # ==============================================================================
 
 test_that("indicateur_e1_bois_energie (E1) calculates biomass potential", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(3, list(
@@ -44,6 +45,7 @@ test_that("indicateur_e1_bois_energie (E1) calculates biomass potential", {
 })
 
 test_that("indicateur_e1_bois_energie validates input is sf", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_e1_bois_energie(data.frame(x = 1:3)),
     "must be an sf object"
@@ -59,6 +61,7 @@ test_that("indicateur_e1_bois_energie validates input is sf", {
 })
 
 test_that("indicateur_e1_bois_energie requires volume field", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1)
@@ -74,6 +77,7 @@ test_that("indicateur_e1_bois_energie requires volume field", {
 })
 
 test_that("indicateur_e1_bois_energie handles NA volume values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(3, list(
@@ -92,6 +96,7 @@ test_that("indicateur_e1_bois_energie handles NA volume values", {
 })
 
 test_that("indicateur_e1_bois_energie uses species-specific density when species field present", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(
@@ -112,6 +117,7 @@ test_that("indicateur_e1_bois_energie uses species-specific density when species
 })
 
 test_that("indicateur_e1_bois_energie falls back to BROADLEAF_GENUS when species field absent", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # No 'species' column at all -- should use "BROADLEAF_GENUS" fallback
@@ -128,6 +134,7 @@ test_that("indicateur_e1_bois_energie falls back to BROADLEAF_GENUS when species
 })
 
 test_that("indicateur_e1_bois_energie uses default density 550 when lookup returns NA", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(
@@ -194,6 +201,7 @@ test_that("indicateur_e1_bois_energie uses default density 550 when lookup retur
 })
 
 test_that("indicateur_e1_bois_energie uses custom harvest rate and residue fraction", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 200, species = "FASY"))
@@ -220,6 +228,7 @@ test_that("indicateur_e1_bois_energie uses custom harvest rate and residue fract
 })
 
 test_that("indicateur_e1_bois_energie uses coppice area if provided", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -244,6 +253,7 @@ test_that("indicateur_e1_bois_energie uses coppice area if provided", {
 })
 
 test_that("indicateur_e1_bois_energie handles NA coppice_fraction", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -266,6 +276,7 @@ test_that("indicateur_e1_bois_energie handles NA coppice_fraction", {
 })
 
 test_that("indicateur_e1_bois_energie ignores coppice when field not in data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(
@@ -285,6 +296,7 @@ test_that("indicateur_e1_bois_energie ignores coppice when field not in data", {
 })
 
 test_that("indicateur_e1_bois_energie uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 200))
@@ -301,6 +313,7 @@ test_that("indicateur_e1_bois_energie uses custom column name", {
 })
 
 test_that("indicateur_e1_bois_energie preserves original sf columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -317,6 +330,7 @@ test_that("indicateur_e1_bois_energie preserves original sf columns", {
 })
 
 test_that("indicateur_e1_bois_energie handles zero volume", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(volume = 0, species = "FASY"))
@@ -332,6 +346,7 @@ test_that("indicateur_e1_bois_energie handles zero volume", {
 # ==============================================================================
 
 test_that("indicateur_e2_evitement (E2) calculates CO2 substitution", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(E1 = c(5.0, 3.5)))
@@ -351,6 +366,7 @@ test_that("indicateur_e2_evitement (E2) calculates CO2 substitution", {
 })
 
 test_that("indicateur_e2_evitement validates input is sf", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_e2_evitement(data.frame(x = 1:3)),
     "must be an sf object"
@@ -366,6 +382,7 @@ test_that("indicateur_e2_evitement validates input is sf", {
 })
 
 test_that("indicateur_e2_evitement handles missing fuelwood field gracefully", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1)
@@ -379,6 +396,7 @@ test_that("indicateur_e2_evitement handles missing fuelwood field gracefully", {
 })
 
 test_that("indicateur_e2_evitement handles NA fuelwood values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(3, list(E1 = c(5.0, NA, 3.0)))
@@ -391,6 +409,7 @@ test_that("indicateur_e2_evitement handles NA fuelwood values", {
 })
 
 test_that("indicateur_e2_evitement E2 total = E2_energy + E2_material", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -411,6 +430,7 @@ test_that("indicateur_e2_evitement E2 total = E2_energy + E2_material", {
 })
 
 test_that("indicateur_e2_evitement works with material substitution", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -432,6 +452,7 @@ test_that("indicateur_e2_evitement works with material substitution", {
 })
 
 test_that("indicateur_e2_evitement handles NA construction volume in material calc", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -453,6 +474,7 @@ test_that("indicateur_e2_evitement handles NA construction volume in material ca
 })
 
 test_that("indicateur_e2_evitement with unknown energy scenario warns and uses default", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
@@ -475,6 +497,7 @@ test_that("indicateur_e2_evitement with unknown energy scenario warns and uses d
 })
 
 test_that("indicateur_e2_evitement with material_scenario but missing volume_field in data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
@@ -493,6 +516,7 @@ test_that("indicateur_e2_evitement with material_scenario but missing volume_fie
 })
 
 test_that("indicateur_e2_evitement uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
@@ -509,6 +533,7 @@ test_that("indicateur_e2_evitement uses custom column name", {
 })
 
 test_that("indicateur_e2_evitement handles different energy scenarios", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0))
@@ -525,6 +550,7 @@ test_that("indicateur_e2_evitement handles different energy scenarios", {
 })
 
 test_that("indicateur_e2_evitement preserves original sf columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 5.0, extra = "hello"))
@@ -536,6 +562,7 @@ test_that("indicateur_e2_evitement preserves original sf columns", {
 })
 
 test_that("indicateur_e2_evitement with zero fuelwood produces zero CO2 avoidance", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(1, list(E1 = 0))
@@ -551,6 +578,7 @@ test_that("indicateur_e2_evitement with zero fuelwood produces zero CO2 avoidanc
 # ==============================================================================
 
 test_that("Energy family integrates: E1 piped into E2", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -568,6 +596,7 @@ test_that("Energy family integrates: E1 piped into E2", {
 })
 
 test_that("E1 + E2 chain with coppice and material substitution", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -598,6 +627,7 @@ test_that("E1 + E2 chain with coppice and material substitution", {
 })
 
 test_that("Energy family integrates with family system", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_energy_sf(2, list(
@@ -621,6 +651,7 @@ test_that("Energy family integrates with family system", {
 # ==============================================================================
 
 test_that("indicateur_e1_bois_energie returns E1", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$volume <- c(100, 200, 300)
@@ -636,6 +667,7 @@ test_that("indicateur_e1_bois_energie returns E1", {
 })
 
 test_that("indicateur_e1_bois_energie errors without volume field", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -643,6 +675,7 @@ test_that("indicateur_e1_bois_energie errors without volume field", {
 })
 
 test_that("indicateur_e1_bois_energie with custom harvest_rate", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   units$volume <- c(100, 200)
@@ -655,6 +688,7 @@ test_that("indicateur_e1_bois_energie with custom harvest_rate", {
 })
 
 test_that("indicateur_e2_evitement returns E2", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$E1 <- c(50, 100, 150)
@@ -670,6 +704,7 @@ test_that("indicateur_e2_evitement returns E2", {
 })
 
 test_that("indicateur_e2_evitement with default fields", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -679,6 +714,7 @@ test_that("indicateur_e2_evitement with default fields", {
 })
 
 test_that("indicateur_e2_evitement with custom column_name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 

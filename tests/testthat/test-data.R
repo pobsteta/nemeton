@@ -202,12 +202,14 @@ test_that("massif_demo_layers works with nemeton_compute", {
 })
 
 test_that("massif_demo_layers print method works", {
+  skip_if_not_installed("terra")
   layers <- massif_demo_layers()
 
   expect_output(print(layers), "nemeton_layers")
 })
 
 test_that("massif_demo_layers summary method works", {
+  skip_if_not_installed("terra")
   layers <- massif_demo_layers()
 
   # summary should return a summary

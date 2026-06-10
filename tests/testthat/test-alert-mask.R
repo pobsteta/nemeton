@@ -15,11 +15,13 @@ make_fake_alert_raster <- function() {
 
 
 test_that("fordead_alert_mask rejects non-SpatRaster", {
+  skip_if_not_installed("terra")
   expect_error(fordead_alert_mask(matrix(1, 4, 4)),
                regexp = "SpatRaster")
 })
 
 test_that("fordead_alert_mask rejects multi-layer raster", {
+  skip_if_not_installed("terra")
   r1 <- make_fake_alert_raster()
   multi <- terra::rast(list(r1, r1))
   expect_error(fordead_alert_mask(multi),
@@ -27,6 +29,7 @@ test_that("fordead_alert_mask rejects multi-layer raster", {
 })
 
 test_that("fordead_alert_mask rejects bad classes / buffer_m", {
+  skip_if_not_installed("terra")
   r <- make_fake_alert_raster()
   expect_error(fordead_alert_mask(r, classes = NA),
                regexp = "non-empty")
@@ -37,6 +40,7 @@ test_that("fordead_alert_mask rejects bad classes / buffer_m", {
 })
 
 test_that("fordead_alert_mask keeps class values, NA elsewhere", {
+  skip_if_not_installed("terra")
   r <- make_fake_alert_raster()
   out <- fordead_alert_mask(r, classes = c(3L, 4L), buffer_m = 0)
 
@@ -50,6 +54,7 @@ test_that("fordead_alert_mask keeps class values, NA elsewhere", {
 })
 
 test_that("fordead_alert_mask returns all-NA when no cell matches classes", {
+  skip_if_not_installed("terra")
   r <- make_fake_alert_raster()
   out <- fordead_alert_mask(r, classes = c(99L), buffer_m = 0)
   vals <- as.vector(terra::values(out))
@@ -57,6 +62,7 @@ test_that("fordead_alert_mask returns all-NA when no cell matches classes", {
 })
 
 test_that("fordead_alert_mask buffer dilates alert cells", {
+  skip_if_not_installed("terra")
   # A single alert cell at (row=1, col=1), buffer should add 8 neighbours.
   m <- matrix(0, 4, 4)
   m[1, 1] <- 3L

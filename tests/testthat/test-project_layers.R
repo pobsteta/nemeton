@@ -25,6 +25,7 @@ skip_if_no_terra <- function() {
 # ---- argument validation ---------------------------------------------
 
 test_that("resolve_project_dem rejects invalid project_path", {
+  skip_if_not_installed("terra")
   expect_error(resolve_project_dem(NULL), "must be a single non-empty path")
   expect_error(resolve_project_dem(""), "must be a single non-empty path")
   expect_error(resolve_project_dem(c("a", "b")), "must be a single non-empty path")
@@ -32,6 +33,7 @@ test_that("resolve_project_dem rejects invalid project_path", {
 })
 
 test_that("resolve_project_chm rejects invalid project_path", {
+  skip_if_not_installed("terra")
   expect_error(resolve_project_chm(NULL), "must be a single non-empty path")
   expect_error(resolve_project_chm("/no/such/dir"), "does not exist")
 })
@@ -40,12 +42,14 @@ test_that("resolve_project_chm rejects invalid project_path", {
 # ---- empty project ---------------------------------------------------
 
 test_that("resolve_project_dem returns NULL when no DEM is present", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   expect_null(resolve_project_dem(proj))
   expect_null(resolve_project_dem(proj, load = FALSE))
 })
 
 test_that("resolve_project_chm returns NULL when no CHM is present", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   expect_null(resolve_project_chm(proj))
 })
@@ -54,6 +58,7 @@ test_that("resolve_project_chm returns NULL when no CHM is present", {
 # ---- single-file conventions -----------------------------------------
 
 test_that("resolve_project_dem finds <project>/dtm.tif (opencanopy)", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   .write_tiny_tif(file.path(proj, "dtm.tif"))
   out <- resolve_project_dem(proj, load = FALSE)
@@ -64,6 +69,7 @@ test_that("resolve_project_dem finds <project>/dtm.tif (opencanopy)", {
 })
 
 test_that("resolve_project_dem finds <project>/mnt.tif (tutorial)", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   .write_tiny_tif(file.path(proj, "mnt.tif"))
   out <- resolve_project_dem(proj, load = FALSE)
@@ -71,6 +77,7 @@ test_that("resolve_project_dem finds <project>/mnt.tif (tutorial)", {
 })
 
 test_that("resolve_project_dem finds <project>/data/dtm.tif", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "data"))
   .write_tiny_tif(file.path(proj, "data", "dtm.tif"))
@@ -79,6 +86,7 @@ test_that("resolve_project_dem finds <project>/data/dtm.tif", {
 })
 
 test_that("resolve_project_chm finds <project>/chm.tif", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   .write_tiny_tif(file.path(proj, "chm.tif"))
   out <- resolve_project_chm(proj, load = FALSE)
@@ -89,6 +97,7 @@ test_that("resolve_project_chm finds <project>/chm.tif", {
 # ---- cache/layers conventions ----------------------------------------
 
 test_that("resolve_project_dem finds cache/layers/lidar_mnt/*.tif", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "cache", "layers", "lidar_mnt"), recursive = TRUE)
   .write_tiny_tif(file.path(proj, "cache", "layers", "lidar_mnt", "tile_001.tif"))
@@ -98,6 +107,7 @@ test_that("resolve_project_dem finds cache/layers/lidar_mnt/*.tif", {
 })
 
 test_that("resolve_project_chm finds cache/layers/chm/*.tif", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "cache", "layers", "chm"), recursive = TRUE)
   .write_tiny_tif(file.path(proj, "cache", "layers", "chm", "T31TFN.tif"))
@@ -109,6 +119,7 @@ test_that("resolve_project_chm finds cache/layers/chm/*.tif", {
 # ---- priority order --------------------------------------------------
 
 test_that("resolve_project_dem prefers LiDAR HD MNT over opencanopy DTM", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   # Both present — LiDAR HD wins (it's #1 in the search order).
   dir.create(file.path(proj, "cache", "layers", "lidar_mnt"), recursive = TRUE)
@@ -119,6 +130,7 @@ test_that("resolve_project_dem prefers LiDAR HD MNT over opencanopy DTM", {
 })
 
 test_that("resolve_project_dem falls back from BD ALTI to opencanopy DTM", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   # No LiDAR / DEM / BD ALTI / etc. — only opencanopy DTM.
   .write_tiny_tif(file.path(proj, "dtm.tif"))
@@ -150,6 +162,7 @@ test_that("resolve_project_dem returns a VRT when multiple tiles match", {
 # ---- verbose mode ----------------------------------------------------
 
 test_that("resolve_project_dem logs probed paths when verbose = TRUE", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   .write_tiny_tif(file.path(proj, "dtm.tif"))
   # Should at minimum emit one "Found … opencanopy DTM" message.
@@ -160,6 +173,7 @@ test_that("resolve_project_dem logs probed paths when verbose = TRUE", {
 })
 
 test_that("resolve_project_dem warns when nothing is found and verbose = TRUE", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   expect_message(
     resolve_project_dem(proj, verbose = TRUE),
@@ -171,6 +185,7 @@ test_that("resolve_project_dem warns when nothing is found and verbose = TRUE", 
 # ---- direct files under cache/layers/ (v0.25.5) ----------------------
 
 test_that("resolve_project_dem finds cache/layers/dem.tif (direct file)", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
   .write_tiny_tif(file.path(proj, "cache", "layers", "dem.tif"))
@@ -179,6 +194,7 @@ test_that("resolve_project_dem finds cache/layers/dem.tif (direct file)", {
 })
 
 test_that("resolve_project_dem finds cache/layers/dtm.tif (direct file)", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
   .write_tiny_tif(file.path(proj, "cache", "layers", "dtm.tif"))
@@ -187,6 +203,7 @@ test_that("resolve_project_dem finds cache/layers/dtm.tif (direct file)", {
 })
 
 test_that("resolve_project_dem prefers cache/layers/dem.tif over <project>/dtm.tif", {
+  skip_if_not_installed("terra")
   # Both present — cache/layers/dem.tif wins (it's higher in the list).
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
@@ -197,6 +214,7 @@ test_that("resolve_project_dem prefers cache/layers/dem.tif over <project>/dtm.t
 })
 
 test_that("resolve_project_dem finds <project>/dem.tif at project root", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   .write_tiny_tif(file.path(proj, "dem.tif"))
   out <- resolve_project_dem(proj, load = FALSE)
@@ -204,6 +222,7 @@ test_that("resolve_project_dem finds <project>/dem.tif at project root", {
 })
 
 test_that("resolve_project_chm finds cache/layers/chm.tif (direct file)", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   dir.create(file.path(proj, "cache", "layers"), recursive = TRUE)
   .write_tiny_tif(file.path(proj, "cache", "layers", "chm.tif"))
@@ -215,6 +234,7 @@ test_that("resolve_project_chm finds cache/layers/chm.tif (direct file)", {
 # ---- file matching is case-insensitive (Windows DTM.tif vs dtm.tif) --
 
 test_that("resolve_project_dem matches dtm.tif case-insensitively", {
+  skip_if_not_installed("terra")
   proj <- withr::local_tempdir()
   .write_tiny_tif(file.path(proj, "DTM.tif"))  # uppercase
   out <- resolve_project_dem(proj, load = FALSE)

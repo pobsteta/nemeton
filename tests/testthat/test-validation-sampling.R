@@ -18,6 +18,7 @@ make_alert_raster_20x20 <- function(crs = "EPSG:2154") {
 # ---- unit: create_validation_sampling_plan input validation ----------
 
 test_that("create_validation_sampling_plan rejects bad inputs", {
+  skip_if_not_installed("terra")
   r <- make_alert_raster_20x20()
   zone <- sf::st_as_sfc(sf::st_bbox(c(xmin = 0, ymin = 0,
                                       xmax = 200, ymax = 200), crs = 2154))
@@ -49,6 +50,7 @@ test_that("create_validation_sampling_plan rejects bad inputs", {
 # ---- integration: GRTS-based draws (requires spsurvey) ---------------
 
 test_that("create_validation_sampling_plan returns Validation + Temoin", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")
   r <- make_alert_raster_20x20()
   zone <- sf::st_as_sfc(sf::st_bbox(c(xmin = 0, ymin = 0,
@@ -80,6 +82,7 @@ test_that("create_validation_sampling_plan returns Validation + Temoin", {
 
 
 test_that("create_validation_sampling_plan errors on empty alert mask", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")
   # Healthy zone — no class 3 or 4 anywhere.
   m <- matrix(0L, 10, 10)
@@ -97,6 +100,7 @@ test_that("create_validation_sampling_plan errors on empty alert mask", {
 
 
 test_that("create_validation_sampling_plan weighting favours higher classes", {
+  skip_if_not_installed("terra")
   # On a frame with equal counts of class 3 and class 4, the weighted
   # GRTS allocates n proportionally to class value: 4 / (3+4) for
   # class 4. With n = 14, expect ~6 class-3 and ~8 class-4.
@@ -122,6 +126,7 @@ test_that("create_validation_sampling_plan weighting favours higher classes", {
 
 
 test_that("create_validation_sampling_plan warns when no cell in control_classes (v0.49.1)", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")
   # Raster with only classes 3 and 4 (no class 0/1/2 at all).
   m <- matrix(0L, 10, 10)
@@ -146,6 +151,7 @@ test_that("create_validation_sampling_plan warns when no cell in control_classes
 
 
 test_that("create_validation_sampling_plan accepts relaxed control_classes (v0.49.1)", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")
   # Same raster (only classes 3, 4), but with control_classes = c(3L)
   # → the lower-priority alert cells become the controls.
@@ -169,6 +175,7 @@ test_that("create_validation_sampling_plan accepts relaxed control_classes (v0.4
 
 
 test_that("create_validation_sampling_plan with n_control=0 yields no Temoin", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")
   r <- make_alert_raster_20x20()
   zone <- sf::st_as_sfc(sf::st_bbox(c(xmin = 0, ymin = 0,
@@ -183,6 +190,7 @@ test_that("create_validation_sampling_plan with n_control=0 yields no Temoin", {
 
 
 test_that("create_validation_sampling_plan is reproducible with seed", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("spsurvey")
   r <- make_alert_raster_20x20()
   zone <- sf::st_as_sfc(sf::st_bbox(c(xmin = 0, ymin = 0,

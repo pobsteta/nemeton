@@ -26,6 +26,7 @@ skip_if_no_terra <- function() {
 
 
 test_that(".list_layer_files returns empty character on missing dir", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   expect_identical(
     nemeton:::.list_layer_files(d, "ANOMALY_CONFIRMED"),
@@ -35,6 +36,7 @@ test_that(".list_layer_files returns empty character on missing dir", {
 
 
 test_that(".list_layer_files returns paths sorted by embedded date", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   # Intentionally write in reverse chronological order.
   .touch_layer_files(d, "ANOMALY_CONFIRMED",
@@ -51,6 +53,7 @@ test_that(".list_layer_files returns paths sorted by embedded date", {
 
 
 test_that(".list_layer_files ignores files that don't match the convention", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   .touch_layer_files(d, "ANOMALY_CONFIRMED", "20210101")
   # Files that should NOT be picked up:
@@ -66,12 +69,14 @@ test_that(".list_layer_files ignores files that don't match the convention", {
 
 
 test_that(".latest_layer_file returns NA when no files match", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   expect_true(is.na(nemeton:::.latest_layer_file(d, "ANOMALY_CONFIRMED")))
 })
 
 
 test_that(".latest_layer_file picks the latest date", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   .touch_layer_files(d, "ANOMALY_CONFIRMED",
                      c("20200101", "20240315", "20221101"))
@@ -81,6 +86,7 @@ test_that(".latest_layer_file picks the latest date", {
 
 
 test_that(".latest_layer_file validates inputs", {
+  skip_if_not_installed("terra")
   expect_error(nemeton:::.latest_layer_file("", "X"),       "non-empty")
   expect_error(nemeton:::.latest_layer_file(NULL, "X"),     "non-empty")
   expect_error(nemeton:::.latest_layer_file(".", ""),       "non-empty")

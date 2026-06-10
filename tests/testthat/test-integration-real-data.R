@@ -1,4 +1,5 @@
 test_that("Real cadastral parcel can be loaded as nemeton_units", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
 
   # Load as nemeton_units
@@ -18,6 +19,7 @@ test_that("Real cadastral parcel can be loaded as nemeton_units", {
 })
 
 test_that("Real cadastral parcel has valid geometry", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
   units <- nemeton_units(cadastral_path)
 
@@ -37,6 +39,7 @@ test_that("Real cadastral parcel has valid geometry", {
 })
 
 test_that("Real cadastral parcel can use custom ID column", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
 
   # Use geo_parcelle as ID
@@ -51,6 +54,7 @@ test_that("Real cadastral parcel can use custom ID column", {
 })
 
 test_that("Real cadastral parcel preserves original attributes", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
   units <- nemeton_units(cadastral_path)
 
@@ -63,6 +67,7 @@ test_that("Real cadastral parcel preserves original attributes", {
 })
 
 test_that("Full workflow with real parcel and synthetic layers", {
+  skip_if_not_installed("terra")
   # Load real cadastral parcel
   cadastral_path <- get_cadastral_test_file()
   units <- nemeton_units(
@@ -127,6 +132,7 @@ test_that("Full workflow with real parcel and synthetic layers", {
 })
 
 test_that("Real parcel with subset of indicators", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("here")
 
   cadastral_path <- get_cadastral_test_file()
@@ -171,6 +177,7 @@ test_that("Real parcel with subset of indicators", {
 })
 
 test_that("Real parcel survives CRS harmonization", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
   units <- nemeton_units(cadastral_path)
 
@@ -207,6 +214,7 @@ test_that("Real parcel survives CRS harmonization", {
 })
 
 test_that("Real parcel metadata is preserved through computation", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
 
   units <- nemeton_units(
@@ -238,6 +246,7 @@ test_that("Real parcel metadata is preserved through computation", {
 })
 
 test_that("Real parcel prints and summarizes correctly", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
 
   units <- nemeton_units(
@@ -256,6 +265,7 @@ test_that("Real parcel prints and summarizes correctly", {
 })
 
 test_that("Real parcel area calculation is sensible", {
+  skip_if_not_installed("terra")
   cadastral_path <- get_cadastral_test_file()
   units <- nemeton_units(cadastral_path)
 

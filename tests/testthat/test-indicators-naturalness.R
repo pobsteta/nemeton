@@ -6,6 +6,7 @@
 # ==============================================================================
 
 test_that("indicateur_n1_distance (N1) works with roads + buildings", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Create test units: one near infrastructure, one far
@@ -73,6 +74,7 @@ test_that("indicateur_n1_distance (N1) works with roads + buildings", {
 })
 
 test_that("indicateur_n1_distance (N1) returns default scores without roads/buildings", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -94,6 +96,7 @@ test_that("indicateur_n1_distance (N1) returns default scores without roads/buil
 })
 
 test_that("indicateur_n1_distance validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_n1_distance(data.frame(x = 1:3)),
     "must be an sf object"
@@ -101,6 +104,7 @@ test_that("indicateur_n1_distance validates input", {
 })
 
 test_that("indicateur_n1_distance uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -118,6 +122,7 @@ test_that("indicateur_n1_distance uses custom column name", {
 })
 
 test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
+  skip_if_not_installed("terra")
 
   skip_if_not_installed("sf")
 
@@ -159,6 +164,7 @@ test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
 })
 
 test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -197,6 +203,7 @@ test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
 })
 
 test_that("indicateur_n1_distance (N1) handles non-sf roads/buildings (ignored)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -221,6 +228,7 @@ test_that("indicateur_n1_distance (N1) handles non-sf roads/buildings (ignored)"
 })
 
 test_that("indicateur_n1_distance (N1) resolves layers via nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -286,6 +294,7 @@ test_that("indicateur_n1_distance (N1) resolves layers via nemeton_layers", {
 })
 
 test_that("indicateur_n1_distance (N1) with layers but no matching vector names", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -317,6 +326,7 @@ test_that("indicateur_n1_distance (N1) with layers but no matching vector names"
 })
 
 test_that("indicateur_n1_distance (N1) roads/buildings override layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -369,6 +379,7 @@ test_that("indicateur_n1_distance (N1) roads/buildings override layers", {
 })
 
 test_that("indicateur_n1_distance (N1) transforms CRS for roads in different CRS", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Units in Lambert 93 (EPSG:2154)
@@ -407,6 +418,7 @@ test_that("indicateur_n1_distance (N1) transforms CRS for roads in different CRS
 })
 
 test_that("indicateur_n1_distance (N1) handles multiple units", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 5)
@@ -419,6 +431,7 @@ test_that("indicateur_n1_distance (N1) handles multiple units", {
 })
 
 test_that("indicateur_n1_distance (N1) normalization caps at 100", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Unit far from everything -- default dist_urbain = 2000 -> 2000/20 = 100 (capped)
@@ -463,6 +476,7 @@ test_that("indicateur_n1_distance (N1) normalization caps at 100", {
 # ==============================================================================
 
 test_that("indicateur_n2_continuite (N2) works with bdforet", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Test unit
@@ -500,6 +514,7 @@ test_that("indicateur_n2_continuite (N2) works with bdforet", {
 })
 
 test_that("indicateur_n2_continuite (N2) with ancient forest", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -537,6 +552,7 @@ test_that("indicateur_n2_continuite (N2) with ancient forest", {
 })
 
 test_that("indicateur_n2_continuite (N2) returns 50 without data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -553,6 +569,7 @@ test_that("indicateur_n2_continuite (N2) returns 50 without data", {
 })
 
 test_that("indicateur_n2_continuite validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_n2_continuite(data.frame(x = 1:3)),
     "must be an sf object"
@@ -560,6 +577,7 @@ test_that("indicateur_n2_continuite validates input", {
 })
 
 test_that("indicateur_n2_continuite uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -577,6 +595,7 @@ test_that("indicateur_n2_continuite uses custom column name", {
 })
 
 test_that("indicateur_n2_continuite (N2) handles empty bdforet sf (0 rows)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -608,6 +627,7 @@ test_that("indicateur_n2_continuite (N2) handles empty bdforet sf (0 rows)", {
 })
 
 test_that("indicateur_n2_continuite (N2) handles empty foret_ancienne sf (0 rows)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -645,6 +665,7 @@ test_that("indicateur_n2_continuite (N2) handles empty foret_ancienne sf (0 rows
 })
 
 test_that("indicateur_n2_continuite (N2) with partial bdforet coverage", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Unit is 100x100
@@ -677,6 +698,7 @@ test_that("indicateur_n2_continuite (N2) with partial bdforet coverage", {
 })
 
 test_that("indicateur_n2_continuite (N2) with partial ancient forest", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Unit is 100x100
@@ -717,6 +739,7 @@ test_that("indicateur_n2_continuite (N2) with partial ancient forest", {
 })
 
 test_that("indicateur_n2_continuite (N2) with foret_ancienne only (no bdforet)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -747,6 +770,7 @@ test_that("indicateur_n2_continuite (N2) with foret_ancienne only (no bdforet)",
 })
 
 test_that("indicateur_n2_continuite (N2) resolves bdforet from nemeton_layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -783,6 +807,7 @@ test_that("indicateur_n2_continuite (N2) resolves bdforet from nemeton_layers", 
 })
 
 test_that("indicateur_n2_continuite (N2) bdforet arg overrides layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -828,6 +853,7 @@ test_that("indicateur_n2_continuite (N2) bdforet arg overrides layers", {
 })
 
 test_that("indicateur_n2_continuite (N2) with CRS transform", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -860,6 +886,7 @@ test_that("indicateur_n2_continuite (N2) with CRS transform", {
 })
 
 test_that("indicateur_n2_continuite (N2) non-sf bdforet treated as NULL", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -886,6 +913,7 @@ test_that("indicateur_n2_continuite (N2) non-sf bdforet treated as NULL", {
 })
 
 test_that("indicateur_n2_continuite (N2) multiple units different coverages", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # 3 units: unit1 fully covered by ancient forest, unit2 half covered by bdforet, unit3 no forest
@@ -937,6 +965,7 @@ test_that("indicateur_n2_continuite (N2) multiple units different coverages", {
 # ==============================================================================
 
 test_that("indicateur_n3_naturalite (N3) combines N1 and N2", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -967,6 +996,7 @@ test_that("indicateur_n3_naturalite (N3) combines N1 and N2", {
 })
 
 test_that("indicateur_n3_naturalite (N3) uses L1 and B3 when available", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -989,6 +1019,7 @@ test_that("indicateur_n3_naturalite (N3) uses L1 and B3 when available", {
 })
 
 test_that("indicateur_n3_naturalite (N3) without N1/N2 uses fallback 50", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1006,6 +1037,7 @@ test_that("indicateur_n3_naturalite (N3) without N1/N2 uses fallback 50", {
 })
 
 test_that("indicateur_n3_naturalite validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_n3_naturalite(data.frame(x = 1:3)),
     "must be an sf object"
@@ -1013,6 +1045,7 @@ test_that("indicateur_n3_naturalite validates input", {
 })
 
 test_that("indicateur_n3_naturalite uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1032,6 +1065,7 @@ test_that("indicateur_n3_naturalite uses custom column name", {
 })
 
 test_that("indicateur_n3_naturalite (N3) with only N1 (no N2)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1051,6 +1085,7 @@ test_that("indicateur_n3_naturalite (N3) with only N1 (no N2)", {
 })
 
 test_that("indicateur_n3_naturalite (N3) with only N2 (no N1)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1070,6 +1105,7 @@ test_that("indicateur_n3_naturalite (N3) with only N2 (no N1)", {
 })
 
 test_that("indicateur_n3_naturalite (N3) with only L1 (no B3)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1091,6 +1127,7 @@ test_that("indicateur_n3_naturalite (N3) with only L1 (no B3)", {
 })
 
 test_that("indicateur_n3_naturalite (N3) with only B3 (no L1)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1112,6 +1149,7 @@ test_that("indicateur_n3_naturalite (N3) with only B3 (no L1)", {
 })
 
 test_that("indicateur_n3_naturalite (N3) all columns present", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1139,6 +1177,7 @@ test_that("indicateur_n3_naturalite (N3) all columns present", {
 })
 
 test_that("indicateur_n3_naturalite (N3) handles NA in N1/N2 columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1164,6 +1203,7 @@ test_that("indicateur_n3_naturalite (N3) handles NA in N1/N2 columns", {
 # ==============================================================================
 
 test_that("Naturalness indicators integrate with family system", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1186,6 +1226,7 @@ test_that("Naturalness indicators integrate with family system", {
 })
 
 test_that("Full pipeline with spatial data and L1/B3 produces valid N3", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1235,6 +1276,7 @@ test_that("Full pipeline with spatial data and L1/B3 produces valid N3", {
 # ==============================================================================
 
 test_that("indicateur_n1_distance returns N1", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   roads <- create_test_vector(type = "lines")
@@ -1245,6 +1287,7 @@ test_that("indicateur_n1_distance returns N1", {
 })
 
 test_that("indicateur_n1_distance without roads returns default", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -1254,6 +1297,7 @@ test_that("indicateur_n1_distance without roads returns default", {
 })
 
 test_that("indicateur_n1_distance with custom column_name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -1262,6 +1306,7 @@ test_that("indicateur_n1_distance with custom column_name", {
 })
 
 test_that("indicateur_n2_continuite returns N2", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -1271,6 +1316,7 @@ test_that("indicateur_n2_continuite returns N2", {
 })
 
 test_that("indicateur_n2_continuite with bdforet", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -1286,6 +1332,7 @@ test_that("indicateur_n2_continuite with bdforet", {
 })
 
 test_that("indicateur_n3_naturalite returns N3", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$N1 <- c(60, 70, 80)
@@ -1297,6 +1344,7 @@ test_that("indicateur_n3_naturalite returns N3", {
 })
 
 test_that("indicateur_n3_naturalite without N1/N2 returns default", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -1312,6 +1360,7 @@ test_that("indicateur_n3_naturalite without N1/N2 returns default", {
 # --- N1: indicateur_n1_distance ---
 
 test_that("N1 with layers that have no roads or buildings keys returns defaults", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1341,6 +1390,7 @@ test_that("N1 with layers that have no roads or buildings keys returns defaults"
 })
 
 test_that("N1 layers argument ignored when not nemeton_layers class", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1373,6 +1423,7 @@ test_that("N1 layers argument ignored when not nemeton_layers class", {
 })
 
 test_that("N1 with lang = 'fr' works correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
@@ -1383,6 +1434,7 @@ test_that("N1 with lang = 'fr' works correctly", {
 })
 
 test_that("N1 correctly transforms buildings in different CRS", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1428,6 +1480,7 @@ test_that("N1 correctly transforms buildings in different CRS", {
 # --- N2: indicateur_n2_continuite ---
 
 test_that("N2 intersection error handling: tryCatch returns NULL on error", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1464,6 +1517,7 @@ test_that("N2 intersection error handling: tryCatch returns NULL on error", {
 })
 
 test_that("N2 with foret_ancienne in different CRS", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1494,6 +1548,7 @@ test_that("N2 with foret_ancienne in different CRS", {
 })
 
 test_that("N2 with non-overlapping bdforet returns score 15", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1525,6 +1580,7 @@ test_that("N2 with non-overlapping bdforet returns score 15", {
 })
 
 test_that("N2 with non-overlapping foret_ancienne but overlapping bdforet", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1566,6 +1622,7 @@ test_that("N2 with non-overlapping foret_ancienne but overlapping bdforet", {
 })
 
 test_that("N2 with both bdforet and foret_ancienne having multiple features", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1607,6 +1664,7 @@ test_that("N2 with both bdforet and foret_ancienne having multiple features", {
 })
 
 test_that("N2 lang = 'fr' works correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
@@ -1618,6 +1676,7 @@ test_that("N2 lang = 'fr' works correctly", {
 # --- N3: indicateur_n3_naturalite ---
 
 test_that("N3 with pre-computed N1, N2, L1, and B3 columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1645,6 +1704,7 @@ test_that("N3 with pre-computed N1, N2, L1, and B3 columns", {
 })
 
 test_that("N3 lang = 'fr' works correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1665,6 +1725,7 @@ test_that("N3 lang = 'fr' works correctly", {
 })
 
 test_that("N3 preserves original columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(

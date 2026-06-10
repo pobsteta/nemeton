@@ -5,6 +5,7 @@
 # ==============================================================================
 
 test_that("indicateur_c1_biomasse calculates biomass with BD Forêt attributes", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   # Add BD Forêt attributes
@@ -29,6 +30,7 @@ test_that("indicateur_c1_biomasse calculates biomass with BD Forêt attributes",
 })
 
 test_that("indicateur_c1_biomasse uses Generic model for unknown species", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -43,6 +45,7 @@ test_that("indicateur_c1_biomasse uses Generic model for unknown species", {
 })
 
 test_that("indicateur_c1_biomasse returns NA when required columns missing", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -73,6 +76,7 @@ test_that("indicateur_c1_biomasse returns NA when required columns missing", {
 })
 
 test_that("indicateur_c1_biomasse handles NA values appropriately", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:4, ]
@@ -92,6 +96,7 @@ test_that("indicateur_c1_biomasse handles NA values appropriately", {
 })
 
 test_that("indicateur_c1_biomasse respects custom column names", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:3, ]
@@ -111,6 +116,7 @@ test_that("indicateur_c1_biomasse respects custom column names", {
 })
 
 test_that("indicateur_c1_biomasse produces consistent results", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   units <- massif_demo_units[1:2, ]
@@ -125,6 +131,7 @@ test_that("indicateur_c1_biomasse produces consistent results", {
 })
 
 test_that("indicateur_c1_biomasse scales with age and density", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   # Test age scaling
@@ -186,6 +193,7 @@ test_that("indicateur_c2_ndvi extracts mean NDVI from raster", {
 })
 
 test_that("indicateur_c2_ndvi errors when NDVI layer missing", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
 
@@ -277,6 +285,7 @@ test_that("nemeton_compute works with new carbon indicators", {
 # ============================================================
 
 test_that("C1 CHM mode returns positive biomass for 3 species", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 30, ncols = 30,
                      xmin = 0, xmax = 300, ymin = 0, ymax = 300,
                      crs = "EPSG:2154",
@@ -301,6 +310,7 @@ test_that("C1 CHM mode returns positive biomass for 3 species", {
 })
 
 test_that("C1 CHM mode propagates NA on missing inputs", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 0, xmax = 200, ymin = 0, ymax = 200,
                      crs = "EPSG:2154",
@@ -369,6 +379,7 @@ test_that("C1 CHM mode and age-based mode are positively correlated", {
 })
 
 test_that("C1 CHM mode respects the bef argument", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 0, xmax = 200, ymin = 0, ymax = 200,
                      crs = "EPSG:2154",
@@ -386,6 +397,7 @@ test_that("C1 CHM mode respects the bef argument", {
 })
 
 test_that("C1 CHM mode requires dbh_col and species_col", {
+  skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 20, ncols = 20,
                      xmin = 0, xmax = 200, ymin = 0, ymax = 200,
                      crs = "EPSG:2154",

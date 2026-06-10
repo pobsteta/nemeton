@@ -10,6 +10,7 @@ library(terra)
 # ==============================================================================
 
 test_that("indicateur_b1_protection calculates overlap correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   # Load demo data
@@ -37,6 +38,7 @@ test_that("indicateur_b1_protection calculates overlap correctly", {
 })
 
 test_that("indicateur_b1_protection handles missing data gracefully", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -57,6 +59,7 @@ test_that("indicateur_b1_protection handles missing data gracefully", {
 # ==============================================================================
 
 test_that("indicateur_b2_structure calculates Shannon diversity", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -86,6 +89,7 @@ test_that("indicateur_b2_structure calculates Shannon diversity", {
 })
 
 test_that("indicateur_b2_structure handles monoculture", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -108,6 +112,7 @@ test_that("indicateur_b2_structure handles monoculture", {
 # ==============================================================================
 
 test_that("indicateur_b3_connectivite calculates with bdforet data", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -146,6 +151,7 @@ test_that("indicateur_b3_connectivite calculates with bdforet data", {
 })
 
 test_that("indicateur_b3_connectivite returns fallback when no bdforet", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -164,6 +170,7 @@ test_that("indicateur_b3_connectivite returns fallback when no bdforet", {
 # ==============================================================================
 
 test_that("B family workflow: B1-B3 → normalize → famille_biodiversite composite", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units, package = "nemeton")
@@ -218,6 +225,7 @@ test_that("B family workflow: B1-B3 → normalize → famille_biodiversite compo
 # ==============================================================================
 
 test_that("indicateur_b1_protection validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_b1_protection(data.frame(x = 1:3), source = "local"),
     "must be an.*sf.*object"
@@ -225,6 +233,7 @@ test_that("indicateur_b1_protection validates input", {
 })
 
 test_that("indicateur_b1_protection returns 0 when source='local' and no protected_areas", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -236,6 +245,7 @@ test_that("indicateur_b1_protection returns 0 when source='local' and no protect
 })
 
 test_that("indicateur_b1_protection handles WFS source with fallback", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -252,6 +262,7 @@ test_that("indicateur_b1_protection handles WFS source with fallback", {
 })
 
 test_that("indicateur_b1_protection transforms CRS when needed", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -280,6 +291,7 @@ test_that("indicateur_b1_protection transforms CRS when needed", {
 })
 
 test_that("indicateur_b2_structure validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_b2_structure(data.frame(x = 1:3)),
     "must be an.*sf.*object"
@@ -287,6 +299,7 @@ test_that("indicateur_b2_structure validates input", {
 })
 
 test_that("indicateur_b2_structure returns NA when required fields missing", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -302,6 +315,7 @@ test_that("indicateur_b2_structure returns NA when required fields missing", {
 })
 
 test_that("indicateur_b2_structure uses species field when provided", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -319,6 +333,7 @@ test_that("indicateur_b2_structure uses species field when provided", {
 })
 
 test_that("indicateur_b3_connectivite validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_b3_connectivite(data.frame(x = 1:3)),
     "must be an.*sf.*object"
@@ -326,6 +341,7 @@ test_that("indicateur_b3_connectivite validates input", {
 })
 
 test_that("indicateur_b3_connectivite handles empty bdforet", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -345,6 +361,7 @@ test_that("indicateur_b3_connectivite handles empty bdforet", {
 })
 
 test_that("indicateur_b3_connectivite scores vary with forest proximity", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
@@ -376,6 +393,7 @@ test_that("indicateur_b3_connectivite scores vary with forest proximity", {
 # --- B1: indicateur_b1_protection additional coverage ---
 
 test_that("indicateur_b1_protection with type_protection column exercises weighted scoring", {
+  skip_if_not_installed("terra")
   # Create test units
   units <- create_test_units(n_features = 3)
 
@@ -406,6 +424,7 @@ test_that("indicateur_b1_protection with type_protection column exercises weight
 })
 
 test_that("indicateur_b1_protection without type column uses simple coverage", {
+  skip_if_not_installed("terra")
   # Create test units
   units <- create_test_units(n_features = 2)
 
@@ -432,6 +451,7 @@ test_that("indicateur_b1_protection without type column uses simple coverage", {
 })
 
 test_that("indicateur_b1_protection with WFS source and provided protected_areas", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
 
   # Protected areas with type column, CRS matches
@@ -457,6 +477,7 @@ test_that("indicateur_b1_protection with WFS source and provided protected_areas
 # --- B2: indicateur_b2_structure additional coverage ---
 
 test_that("indicateur_b2_structure with strata and age and species fields", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$strata <- c("Emergent", "Dominant", "Intermediate", "Suppressed", "Dominant")
   units$age_class <- c("Young", "Mature", "Old", "Ancient", "Young")
@@ -478,6 +499,7 @@ test_that("indicateur_b2_structure with strata and age and species fields", {
 })
 
 test_that("indicateur_b2_structure without strata/age falls back to NA (no layers)", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   # No strata or age fields, no layers -> should return NA
@@ -494,6 +516,7 @@ test_that("indicateur_b2_structure without strata/age falls back to NA (no layer
 })
 
 test_that("indicateur_b2_structure monoculture with species", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$strata <- rep("Dominant", 3)
   units$age_class <- rep("Mature", 3)
@@ -515,6 +538,7 @@ test_that("indicateur_b2_structure monoculture with species", {
 # --- B3: indicateur_b3_connectivite sub-component coverage ---
 
 test_that(".b3_local calculates distance-based local connectivity", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   # Create bdforet near units using st_buffer on sfc geometry
@@ -556,6 +580,7 @@ test_that(".b3_cost_distance returns numeric score", {
 })
 
 test_that(".b3_structural returns numeric score", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("landscapemetrics")
   skip_if_not_installed("terra")
 
@@ -581,6 +606,7 @@ test_that(".b3_structural returns numeric score", {
 })
 
 test_that(".b3_graph returns numeric score", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("igraph")
 
   units <- create_test_units(n_features = 3)
@@ -606,6 +632,7 @@ test_that(".b3_graph returns numeric score", {
 })
 
 test_that(".b3_graph returns 100 for single patch", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("igraph")
 
   units <- create_test_units(n_features = 2)
@@ -629,6 +656,7 @@ test_that(".b3_graph returns 100 for single patch", {
 })
 
 test_that(".b3_kernel returns score or 50 for too few parcels", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("adehabitatHR")
   skip_if_not_installed("sp")
 
@@ -653,6 +681,7 @@ test_that(".b3_kernel returns score or 50 for too few parcels", {
 })
 
 test_that(".b3_kernel computes kernel with enough intersecting parcels", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("adehabitatHR")
   skip_if_not_installed("sp")
 
@@ -679,6 +708,7 @@ test_that(".b3_kernel computes kernel with enough intersecting parcels", {
 })
 
 test_that("indicateur_b3_connectivite rejects non-sf bdforet", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
 
   expect_error(
@@ -695,6 +725,7 @@ test_that("indicateur_b3_connectivite rejects non-sf bdforet", {
 # --- B1: indicateur_b1_protection batch8 tests ---
 
 test_that("B1 with typed protection areas computes weighted score", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   # Create protected areas with different protection types
   pa <- sf::st_sf(
@@ -726,6 +757,7 @@ test_that("B1 with typed protection areas computes weighted score", {
 })
 
 test_that("B1 with no type column uses default weight", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   # No zone_type column — triggers default weight path
   pa <- sf::st_sf(
@@ -745,6 +777,7 @@ test_that("B1 with no type column uses default weight", {
 })
 
 test_that("B1 with WFS source and NULL areas returns 0", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   suppressWarnings({
     result <- nemeton::indicateur_b1_protection(units, source = "wfs")
@@ -753,12 +786,14 @@ test_that("B1 with WFS source and NULL areas returns 0", {
 })
 
 test_that("B1 with NULL protected_areas in local mode returns 0", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   result <- nemeton::indicateur_b1_protection(units, protected_areas = NULL, source = "local")
   expect_true(all(result$B1 == 0))
 })
 
 test_that("B1 with CRS mismatch preprocesses correctly", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   # Create PA in WGS84
   pa <- sf::st_sf(
@@ -778,6 +813,7 @@ test_that("B1 with CRS mismatch preprocesses correctly", {
 # --- B2: indicateur_b2_structure batch8 tests ---
 
 test_that("B2 with strata and age fields computes score", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 4)
   units$strata <- c("Emergent", "Dominant", "Intermediate", "Suppressed")
   units$age_class <- c("young", "mature", "old", "ancient")
@@ -788,6 +824,7 @@ test_that("B2 with strata and age fields computes score", {
 })
 
 test_that("B2 with species field uses 3-component weighting", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 4)
   units$strata <- c("Emergent", "Dominant", "Intermediate", "Suppressed")
   units$age_class <- c("young", "mature", "old", "ancient")
@@ -798,6 +835,7 @@ test_that("B2 with species field uses 3-component weighting", {
 })
 
 test_that("B2 monoculture capped at 20", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$strata <- rep("Dominant", 3)
   units$age_class <- rep("mature", 3)
@@ -807,6 +845,7 @@ test_that("B2 monoculture capped at 20", {
 })
 
 test_that("B2 falls back to NDVI when no strata/age fields", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   ndvi_raster <- create_test_raster(values = "random")
   terra::values(ndvi_raster) <- runif(terra::ncell(ndvi_raster), 0.2, 0.9)
@@ -823,6 +862,7 @@ test_that("B2 falls back to NDVI when no strata/age fields", {
 })
 
 test_that("B2 falls back to LiDAR MNH", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   mnh_raster <- create_test_raster(values = "random")
   terra::values(mnh_raster) <- runif(terra::ncell(mnh_raster), 5, 25)
@@ -838,6 +878,7 @@ test_that("B2 falls back to LiDAR MNH", {
 })
 
 test_that("B2 returns NA when no data available at all", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   result <- nemeton::indicateur_b2_structure(units, layers = NULL)
   expect_true(all(is.na(result$B2)))
@@ -846,6 +887,7 @@ test_that("B2 returns NA when no data available at all", {
 # --- B3: indicateur_b3_connectivite batch8 tests ---
 
 test_that("B3 with NULL bdforet returns fallback 50", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   suppressWarnings({
     result <- nemeton::indicateur_b3_connectivite(units, bdforet = NULL)
@@ -854,6 +896,7 @@ test_that("B3 with NULL bdforet returns fallback 50", {
 })
 
 test_that("B3 with bdforet computes connectivity", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   # Create forest patches covering the test area
   bdforet <- sf::st_sf(
@@ -879,6 +922,7 @@ test_that("B3 with bdforet computes connectivity", {
 # ==============================================================================
 
 test_that("indicateur_b1_protection with mock protected areas", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -896,6 +940,7 @@ test_that("indicateur_b1_protection with mock protected areas", {
 })
 
 test_that("indicateur_b1_protection without protected areas returns NA", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
   result <- indicateur_b1_protection(units, protected_areas = NULL)
@@ -904,6 +949,7 @@ test_that("indicateur_b1_protection without protected areas returns NA", {
 })
 
 test_that("indicateur_b1_protection with protection_types filter", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 2)
 
@@ -924,6 +970,7 @@ test_that("indicateur_b1_protection with protection_types filter", {
 })
 
 test_that("indicateur_b2_structure returns valid structure index", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -935,6 +982,7 @@ test_that("indicateur_b2_structure returns valid structure index", {
 })
 
 test_that("indicateur_b2_structure with strata_field", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
   units$strate <- c("futaie", "taillis", "mixte")
@@ -945,6 +993,7 @@ test_that("indicateur_b2_structure with strata_field", {
 })
 
 test_that("indicateur_b3_connectivite returns B3", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -954,6 +1003,7 @@ test_that("indicateur_b3_connectivite returns B3", {
 })
 
 test_that("indicateur_b3_connectivite with bdforet", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   units <- create_test_units(n_features = 3)
 
@@ -982,6 +1032,7 @@ test_that("indicateur_b3_connectivite with bdforet", {
 # ============================================================
 
 test_that("B2 CHM mode increases score on heterogeneous stands", {
+  skip_if_not_installed("terra")
   set.seed(12)
   # Heterogeneous CHM: wide range of heights -> high CV
   chm_het <- terra::rast(nrows = 30, ncols = 30,
@@ -1012,6 +1063,7 @@ test_that("B2 CHM mode increases score on heterogeneous stands", {
 })
 
 test_that("B2 CHM mode respects cv_chm_weight", {
+  skip_if_not_installed("terra")
   set.seed(3)
   chm <- terra::rast(nrows = 30, ncols = 30,
                      xmin = 0, xmax = 300, ymin = 0, ymax = 300,
@@ -1037,6 +1089,7 @@ test_that("B2 CHM mode respects cv_chm_weight", {
 })
 
 test_that("B2 rejects invalid cv_chm_weight", {
+  skip_if_not_installed("terra")
   poly <- sf::st_polygon(list(rbind(c(10,10), c(50,10),
                                     c(50,50), c(10,50),
                                     c(10,10))))
@@ -1056,6 +1109,7 @@ test_that("B2 rejects invalid cv_chm_weight", {
 })
 
 test_that("B2 without strata uses CHM directly when supplied", {
+  skip_if_not_installed("terra")
   set.seed(7)
   chm_het <- terra::rast(nrows = 30, ncols = 30,
                          xmin = 0, xmax = 300, ymin = 0, ymax = 300,
@@ -1078,6 +1132,7 @@ test_that("B2 without strata uses CHM directly when supplied", {
 })
 
 test_that("B2 CHM mode is backward-compatible without chm arg", {
+  skip_if_not_installed("terra")
   poly <- sf::st_polygon(list(rbind(c(10,10), c(50,10),
                                     c(50,50), c(10,50),
                                     c(10,10))))

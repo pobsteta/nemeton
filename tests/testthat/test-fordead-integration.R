@@ -53,6 +53,7 @@ skip_if_no_fordead_integration <- function() {
 
 
 test_that("FORDEAD 2.x pipeline runs end-to-end on a registered zone and emits ANOMALY_CONFIRMED", {
+  skip_if_not_installed("terra")
   skip_if_no_fordead_integration()
 
   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))
@@ -85,6 +86,7 @@ test_that("FORDEAD 2.x pipeline runs end-to-end on a registered zone and emits A
 
 
 test_that("FORDEAD 2.x reports a clear error when zone_id is unknown", {
+  skip_if_not_installed("terra")
   skip_if_no_fordead_integration()
 
   con <- db_connect(Sys.getenv("NEMETON_DB_URL"))

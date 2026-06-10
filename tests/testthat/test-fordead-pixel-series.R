@@ -71,6 +71,7 @@ skip_if_no_sf    <- function() testthat::skip_if_not_installed("sf")
 # ---- .locate_fordead_model_bundle ------------------------------------
 
 test_that(".locate_fordead_model_bundle returns NULL when nothing exists", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   expect_null(nemeton:::.locate_fordead_model_bundle(d, 1L))
   expect_null(nemeton:::.locate_fordead_model_bundle(NULL, 1L))
@@ -126,6 +127,7 @@ test_that("read_fordead_pixel_series returns NULL when no bundle found", {
 
 
 test_that("read_fordead_pixel_series rejects bad zone_id / xy", {
+  skip_if_not_installed("terra")
   d <- withr::local_tempdir()
   expect_error(read_fordead_pixel_series(NULL, NA, c(6.2, 46.2),
                                          cache_dir = d), "zone_id")
@@ -255,6 +257,7 @@ test_that("read_fordead_pixel_series selects a bundle by explicit run_id", {
 # ---- AC.14.2 — harmonic-prediction parity with fordead ---------------
 
 test_that(".fordead_harmonic_predict matches fordead.modeling (AC.14.2)", {
+  skip_if_not_installed("terra")
   testthat::skip_if_not_installed("reticulate")
   skip_if_not(
     tryCatch({

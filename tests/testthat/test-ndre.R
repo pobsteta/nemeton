@@ -66,6 +66,7 @@ test_that("extract_pixel_timeseries returns an NDRE series", {
 
 
 test_that("extract_pixel_timeseries(NDRE-only) works without B08 in cache", {
+  skip_if_not_installed("terra")
   # Regression (spec 022): the native-CRS reference was hard-coded to
   # rs[["B08"]], which is NULL for an NDRE-only request (only B8A/B05 are
   # loaded) -> terra::crs(NULL) crashed before the NDRE calculation. A
@@ -95,6 +96,7 @@ test_that("extract_pixel_timeseries(NDRE-only) works without B08 in cache", {
 
 
 test_that(".s2_required_bands maps NDRE to B05 + B8A", {
+  skip_if_not_installed("terra")
   expect_setequal(nemeton:::.s2_required_bands("NDRE"), c("B05", "B8A"))
   expect_setequal(nemeton:::.s2_required_bands(c("NDVI", "NDRE")),
                   c("B04", "B08", "B05", "B8A"))
@@ -123,6 +125,7 @@ test_that("build_index_stack(NDRE) aborts when no scene carries B05/B8A", {
 
 
 test_that(".assert_cache_has_bands aborts on an empty / missing cache", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("withr")
   expect_error(nemeton:::.assert_cache_has_bands(tempfile(), c("B05", "B8A")),
                "cache directory not found")

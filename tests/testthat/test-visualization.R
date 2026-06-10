@@ -1,4 +1,5 @@
 test_that("plot_indicators_map creates ggplot for single indicator", {
+  skip_if_not_installed("terra")
   # Create test data
   units <- nemeton_units(create_test_units(n_features = 5))
   units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
@@ -11,6 +12,7 @@ test_that("plot_indicators_map creates ggplot for single indicator", {
 })
 
 test_that("plot_indicators_map creates faceted plot for multiple indicators", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
   units$indicateur_w3_humidite <- c(10, 20, 30, 40, 50)
@@ -28,6 +30,7 @@ test_that("plot_indicators_map creates faceted plot for multiple indicators", {
 })
 
 test_that("plot_indicators_map auto-detects indicators", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$indicateur_c1_biomasse <- c(100, 200, 300)
   units$indicateur_b1_protection <- c(10, 20, 30)
@@ -39,6 +42,7 @@ test_that("plot_indicators_map auto-detects indicators", {
 })
 
 test_that("plot_indicators_map accepts different palettes", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -55,6 +59,7 @@ test_that("plot_indicators_map accepts different palettes", {
 })
 
 test_that("plot_indicators_map accepts custom title and legend", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -72,6 +77,7 @@ test_that("plot_indicators_map accepts custom title and legend", {
 })
 
 test_that("plot_indicators_map accepts custom breaks and labels", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$indicateur_c1_biomasse <- c(0, 25, 50, 75, 100)
 
@@ -86,6 +92,7 @@ test_that("plot_indicators_map accepts custom breaks and labels", {
 })
 
 test_that("plot_indicators_map handles normalized indicators", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -99,6 +106,7 @@ test_that("plot_indicators_map handles normalized indicators", {
 })
 
 test_that("plot_indicators_map works with composite index", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$indicateur_c1_biomasse_norm <- c(0, 25, 50, 75, 100)
   units$indicateur_w3_humidite_norm <- c(0, 25, 50, 75, 100)
@@ -117,6 +125,7 @@ test_that("plot_indicators_map works with composite index", {
 })
 
 test_that("plot_indicators_map errors on non-sf input", {
+  skip_if_not_installed("terra")
   df <- data.frame(carbon = c(1, 2, 3))
 
   expect_error(
@@ -126,6 +135,7 @@ test_that("plot_indicators_map errors on non-sf input", {
 })
 
 test_that("plot_indicators_map errors on missing indicators", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -136,6 +146,7 @@ test_that("plot_indicators_map errors on missing indicators", {
 })
 
 test_that("plot_indicators_map errors when no indicators found", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   # No indicator columns
 
@@ -146,6 +157,7 @@ test_that("plot_indicators_map errors when no indicators found", {
 })
 
 test_that("plot_comparison_map creates side-by-side comparison", {
+  skip_if_not_installed("terra")
   # Create two datasets
   units1 <- nemeton_units(create_test_units(n_features = 3))
   units1$indicateur_c1_biomasse <- c(100, 200, 300)
@@ -168,6 +180,7 @@ test_that("plot_comparison_map creates side-by-side comparison", {
 })
 
 test_that("plot_comparison_map errors on non-sf inputs", {
+  skip_if_not_installed("terra")
   df1 <- data.frame(carbon = c(1, 2, 3))
   df2 <- data.frame(carbon = c(4, 5, 6))
 
@@ -178,6 +191,7 @@ test_that("plot_comparison_map errors on non-sf inputs", {
 })
 
 test_that("plot_comparison_map errors when indicator missing", {
+  skip_if_not_installed("terra")
   units1 <- nemeton_units(create_test_units(n_features = 3))
   units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -191,6 +205,7 @@ test_that("plot_comparison_map errors when indicator missing", {
 })
 
 test_that("plot_difference_map creates absolute difference map", {
+  skip_if_not_installed("terra")
   units1 <- nemeton_units(create_test_units(n_features = 3))
   units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -208,6 +223,7 @@ test_that("plot_difference_map creates absolute difference map", {
 })
 
 test_that("plot_difference_map creates relative difference map", {
+  skip_if_not_installed("terra")
   units1 <- nemeton_units(create_test_units(n_features = 3))
   units1$indicateur_c1_biomasse <- c(100, 200, 300)
 
@@ -225,6 +241,7 @@ test_that("plot_difference_map creates relative difference map", {
 })
 
 test_that("plot_difference_map errors on non-sf inputs", {
+  skip_if_not_installed("terra")
   df1 <- data.frame(carbon = c(1, 2, 3))
   df2 <- data.frame(carbon = c(4, 5, 6))
 
@@ -235,6 +252,7 @@ test_that("plot_difference_map errors on non-sf inputs", {
 })
 
 test_that("clean_indicator_name formats names correctly", {
+  skip_if_not_installed("terra")
   # Test internal function through plotting
   units <- nemeton_units(create_test_units(n_features = 3))
   units$indicateur_c1_biomasse_norm <- c(0, 50, 100)
@@ -248,6 +266,7 @@ test_that("clean_indicator_name formats names correctly", {
 })
 
 test_that("visualization works with real cadastral data", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("here")
 
   cadastral_path <- get_cadastral_test_file()
@@ -272,6 +291,7 @@ test_that("visualization works with real cadastral data", {
 })
 
 test_that("full visualization workflow works end-to-end", {
+  skip_if_not_installed("terra")
   # Create test data
   units <- nemeton_units(create_test_units(n_features = 10))
   units$indicateur_c1_biomasse <- seq(100, 1000, length.out = 10)
@@ -335,6 +355,7 @@ test_that("full visualization workflow works end-to-end", {
 })
 
 test_that("plots can be saved to file", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
 
@@ -356,6 +377,7 @@ test_that("plots can be saved to file", {
 # Radar charts -----------------------------------------------------------
 
 test_that("nemeton_radar creates a ggplot object for average", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
   results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
@@ -368,6 +390,7 @@ test_that("nemeton_radar creates a ggplot object for average", {
 })
 
 test_that("nemeton_radar creates a ggplot object for specific unit", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
   results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
@@ -380,6 +403,7 @@ test_that("nemeton_radar creates a ggplot object for specific unit", {
 })
 
 test_that("nemeton_radar works with explicit indicators", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
   results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
@@ -397,6 +421,7 @@ test_that("nemeton_radar works with explicit indicators", {
 })
 
 test_that("nemeton_radar errors on invalid input", {
+  skip_if_not_installed("terra")
   # Non-sf object
   expect_error(
     nemeton_radar(data.frame(x = 1:3, carbon = c(10, 20, 30))),
@@ -405,6 +430,7 @@ test_that("nemeton_radar errors on invalid input", {
 })
 
 test_that("nemeton_radar errors on missing indicators", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
 
   expect_error(
@@ -414,6 +440,7 @@ test_that("nemeton_radar errors on missing indicators", {
 })
 
 test_that("nemeton_radar errors on invalid unit_id", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   layers <- massif_demo_layers()
   results <- suppressWarnings(nemeton_compute(massif_demo_units, layers, indicators = "all", forest_values = c(1, 2, 3)))
@@ -430,6 +457,7 @@ test_that("nemeton_radar errors on invalid unit_id", {
 # ==============================================================================
 
 test_that("nemeton_radar supports 9-family axes (v0.3.0)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("nemeton")
 
   data(massif_demo_units)
@@ -464,6 +492,7 @@ test_that("nemeton_radar supports 9-family axes (v0.3.0)", {
 })
 
 test_that("nemeton_radar scales correctly with 9-12 axes", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
@@ -498,6 +527,7 @@ test_that("nemeton_radar scales correctly with 9-12 axes", {
 })
 
 test_that("nemeton_radar handles new family names correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:2, ]
 
@@ -522,6 +552,7 @@ test_that("nemeton_radar handles new family names correctly", {
 })
 
 test_that("nemeton_radar displays correct scaling with mixed v0.2.0 and v0.3.0 families", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
@@ -551,6 +582,7 @@ test_that("nemeton_radar displays correct scaling with mixed v0.2.0 and v0.3.0 f
 })
 
 test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   units <- massif_demo_units[1:3, ]
 
@@ -583,28 +615,33 @@ test_that("nemeton_radar supports comparison mode with v0.3.0 families", {
 # --- clean_indicator_name (internal) -----------------------------------------
 
 test_that("clean_indicator_name transforms famille_ prefix correctly", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
   expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
   expect_equal(nemeton:::clean_indicator_name("famille_eau"), "W")
 })
 
 test_that("clean_indicator_name handles _norm suffix", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("carbon_norm")
   expect_true(grepl("Normalized", result))
 })
 
 test_that("clean_indicator_name handles _inv suffix", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("risk_inv")
   expect_true(grepl("Inverted", result))
 })
 
 test_that("clean_indicator_name replaces underscores with spaces", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("indicateur_c1_biomasse")
   # The function capitalizes the first letter and replaces _ with spaces
   expect_equal(result, "Indicateur c1 biomasse")
 })
 
 test_that("clean_indicator_name capitalizes first letter", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("water")
   expect_equal(result, "Water")
 })
@@ -612,6 +649,7 @@ test_that("clean_indicator_name capitalizes first letter", {
 # --- reshape_for_facet (internal) --------------------------------------------
 
 test_that("reshape_for_facet converts wide to long with nemeton_id", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 3))
   units$ind1 <- c(10, 20, 30)
   units$ind2 <- c(40, 50, 60)
@@ -623,6 +661,7 @@ test_that("reshape_for_facet converts wide to long with nemeton_id", {
 })
 
 test_that("reshape_for_facet works without nemeton_id column", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3) # plain sf, no nemeton_id
   units$ind1 <- c(10, 20, 30)
   units$ind2 <- c(40, 50, 60)
@@ -636,6 +675,7 @@ test_that("reshape_for_facet works without nemeton_id column", {
 # --- nemeton_radar: family mode ----------------------------------------------
 
 test_that("nemeton_radar works in family mode with auto-detected family indicators", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$C1 <- runif(5, 30, 80)
   units$B1 <- runif(5, 30, 80)
@@ -650,6 +690,7 @@ test_that("nemeton_radar works in family mode with auto-detected family indicato
 # --- nemeton_radar: comparison mode (multiple unit_ids) ----------------------
 
 test_that("nemeton_radar comparison mode works with row indices", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$C1 <- runif(5, 30, 80)
   units$W1 <- runif(5, 30, 80)
@@ -660,6 +701,7 @@ test_that("nemeton_radar comparison mode works with row indices", {
 # --- nemeton_radar: normalize=FALSE ------------------------------------------
 
 test_that("nemeton_radar works without normalization", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$C1 <- c(100, 200, 300, 400, 500)
   units$W1 <- c(10, 20, 30, 40, 50)
@@ -670,6 +712,7 @@ test_that("nemeton_radar works without normalization", {
 # --- nemeton_radar: single unit by row index ---------------------------------
 
 test_that("nemeton_radar single unit by numeric row index", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5) # no nemeton_id
   units$C1 <- c(100, 200, 300, 400, 500)
   units$W1 <- c(10, 20, 30, 40, 50)
@@ -680,6 +723,7 @@ test_that("nemeton_radar single unit by numeric row index", {
 # --- plot_comparison_map -----------------------------------------------------
 
 test_that("plot_comparison_map creates comparison plot with default labels", {
+  skip_if_not_installed("terra")
   units1 <- create_test_units(n_features = 3)
   units1$value <- c(10, 20, 30)
   units2 <- create_test_units(n_features = 3)
@@ -692,6 +736,7 @@ test_that("plot_comparison_map creates comparison plot with default labels", {
 # --- plot_difference_map: absolute -------------------------------------------
 
 test_that("plot_difference_map shows absolute differences with default legend", {
+  skip_if_not_installed("terra")
   units1 <- create_test_units(n_features = 3)
   units1$value <- c(10, 20, 30)
   units2 <- create_test_units(n_features = 3)
@@ -703,6 +748,7 @@ test_that("plot_difference_map shows absolute differences with default legend", 
 # --- plot_difference_map: relative -------------------------------------------
 
 test_that("plot_difference_map shows relative differences with default legend", {
+  skip_if_not_installed("terra")
   units1 <- create_test_units(n_features = 3)
   units1$value <- c(10, 20, 30)
   units2 <- create_test_units(n_features = 3)
@@ -714,6 +760,7 @@ test_that("plot_difference_map shows relative differences with default legend", 
 # --- plot_temporal_trend -----------------------------------------------------
 
 test_that("plot_temporal_trend works with single indicator", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -727,6 +774,7 @@ test_that("plot_temporal_trend works with single indicator", {
 })
 
 test_that("plot_temporal_trend works with multiple indicators", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -742,6 +790,7 @@ test_that("plot_temporal_trend works with multiple indicators", {
 })
 
 test_that("plot_temporal_trend with show_mean adds mean line", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -759,6 +808,7 @@ test_that("plot_temporal_trend with show_mean adds mean line", {
 # --- plot_temporal_heatmap ---------------------------------------------------
 
 test_that("plot_temporal_heatmap works", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -772,6 +822,7 @@ test_that("plot_temporal_heatmap works", {
 })
 
 test_that("plot_temporal_heatmap with normalize=TRUE", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -787,6 +838,7 @@ test_that("plot_temporal_heatmap with normalize=TRUE", {
 })
 
 test_that("plot_temporal_heatmap errors on missing unit", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -799,6 +851,7 @@ test_that("plot_temporal_heatmap errors on missing unit", {
 })
 
 test_that("plot_temporal_heatmap errors on non-temporal input", {
+  skip_if_not_installed("terra")
   expect_error(
     plot_temporal_heatmap(data.frame(x = 1), unit_id = "P1"),
     "nemeton_temporal"
@@ -808,6 +861,7 @@ test_that("plot_temporal_heatmap errors on non-temporal input", {
 # --- plot_indicators_map: risk indicators auto-palette -----------------------
 
 test_that("plot_indicators_map auto-selects YlOrRd for risk indicators", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$R1 <- c(10, 20, 30)
   p <- plot_indicators_map(units, indicators = "R1")
@@ -818,6 +872,7 @@ test_that("plot_indicators_map auto-selects YlOrRd for risk indicators", {
 })
 
 test_that("plot_indicators_map auto-selects YlOrRd for famille_risque indicator", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$famille_risque <- c(10, 20, 30)
   p <- plot_indicators_map(units, indicators = "famille_risque")
@@ -825,6 +880,7 @@ test_that("plot_indicators_map auto-selects YlOrRd for famille_risque indicator"
 })
 
 test_that("plot_indicators_map auto-selects YlOrRd for risk_norm indicators", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$R1_norm <- c(0.1, 0.5, 0.9)
   p <- plot_indicators_map(units, indicators = "R1_norm")
@@ -834,6 +890,7 @@ test_that("plot_indicators_map auto-selects YlOrRd for risk_norm indicators", {
 # --- plot_temporal_trend: errors ---------------------------------------------
 
 test_that("plot_temporal_trend errors on non-temporal input", {
+  skip_if_not_installed("terra")
   expect_error(
     plot_temporal_trend(data.frame(x = 1), indicator = "C1"),
     "nemeton_temporal"
@@ -841,6 +898,7 @@ test_that("plot_temporal_trend errors on non-temporal input", {
 })
 
 test_that("plot_temporal_trend errors on missing indicator in period", {
+  skip_if_not_installed("terra")
   data(massif_demo_units)
   u1 <- massif_demo_units[1:3, ]
   u1$C1 <- c(50, 60, 70)
@@ -855,6 +913,7 @@ test_that("plot_temporal_trend errors on missing indicator in period", {
 # --- nemeton_radar: comparison mode with normalize=TRUE ----------------------
 
 test_that("nemeton_radar comparison mode normalizes correctly", {
+  skip_if_not_installed("terra")
   units <- nemeton_units(create_test_units(n_features = 5))
   units$C1 <- c(100, 200, 300, 400, 500)
   units$W1 <- c(10, 20, 30, 40, 50)
@@ -871,23 +930,28 @@ test_that("nemeton_radar comparison mode normalizes correctly", {
 # --- clean_indicator_name() ---
 
 test_that("clean_indicator_name works for family indices", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
   expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
 })
 
 test_that("clean_indicator_name strips _norm suffix", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("carbon_norm"), "Carbon (Normalized)")
 })
 
 test_that("clean_indicator_name strips _inv suffix", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("risk_inv"), "Risk (Inverted)")
 })
 
 test_that("clean_indicator_name capitalizes and replaces underscores", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("carbon_stock"), "Carbon stock")
 })
 
 test_that("clean_indicator_name works as vector", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name(c("famille_carbone", "carbon_norm", "C1"))
   expect_equal(length(result), 3)
   expect_equal(result[1], "C")
@@ -898,6 +962,7 @@ test_that("clean_indicator_name works as vector", {
 # --- plot_indicators_map() ---
 
 test_that("plot_indicators_map works with single indicator", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   p <- plot_indicators_map(units, indicators = "C1")
@@ -905,11 +970,13 @@ test_that("plot_indicators_map works with single indicator", {
 })
 
 test_that("plot_indicators_map errors on non-sf data", {
+  skip_if_not_installed("terra")
   df <- data.frame(C1 = 1:5)
   expect_error(plot_indicators_map(df, indicators = "C1"), regexp = NULL)
 })
 
 test_that("plot_indicators_map errors on missing indicator", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   expect_error(
     plot_indicators_map(units, indicators = "nonexistent"),
@@ -918,6 +985,7 @@ test_that("plot_indicators_map errors on missing indicator", {
 })
 
 test_that("plot_indicators_map with palette option", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   p <- plot_indicators_map(units, indicators = "C1", palette = "RdYlGn")
@@ -925,6 +993,7 @@ test_that("plot_indicators_map with palette option", {
 })
 
 test_that("plot_indicators_map with multiple indicators", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   units$W1 <- c(20, 40, 60, 80, 50)
@@ -933,6 +1002,7 @@ test_that("plot_indicators_map with multiple indicators", {
 })
 
 test_that("plot_indicators_map with custom breaks and labels", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   p <- plot_indicators_map(units, indicators = "C1",
@@ -944,6 +1014,7 @@ test_that("plot_indicators_map with custom breaks and labels", {
 # --- nemeton_radar() ---
 
 test_that("nemeton_radar works in family mode", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$famille_carbone <- c(80, 60, 40, 20, 50)
   units$famille_biodiversite <- c(70, 50, 30, 10, 40)
@@ -954,6 +1025,7 @@ test_that("nemeton_radar works in family mode", {
 })
 
 test_that("nemeton_radar works in mean mode", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$famille_carbone <- c(80, 60, 40, 20, 50)
   units$famille_biodiversite <- c(70, 50, 30, 10, 40)
@@ -964,6 +1036,7 @@ test_that("nemeton_radar works in mean mode", {
 })
 
 test_that("nemeton_radar comparison mode with multiple units", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$famille_carbone <- c(80, 60, 40, 20, 50)
   units$famille_biodiversite <- c(70, 50, 30, 10, 40)
@@ -974,11 +1047,13 @@ test_that("nemeton_radar comparison mode with multiple units", {
 })
 
 test_that("nemeton_radar errors on non-sf", {
+  skip_if_not_installed("terra")
   df <- data.frame(famille_carbone = 1:5)
   expect_error(nemeton_radar(df), "sf")
 })
 
 test_that("nemeton_radar errors on no family columns in family mode", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   expect_error(nemeton_radar(units, mode = "family"), "family")
 })
@@ -986,6 +1061,7 @@ test_that("nemeton_radar errors on no family columns in family mode", {
 # --- reshape_for_facet() ---
 
 test_that("reshape_for_facet creates long format", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$C1 <- c(80, 60, 40)
   units$W1 <- c(20, 40, 60)
@@ -997,6 +1073,7 @@ test_that("reshape_for_facet creates long format", {
 })
 
 test_that("reshape_for_facet with nemeton_id", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$nemeton_id <- paste0("P", 1:3)
   units$C1 <- c(80, 60, 40)
@@ -1008,6 +1085,7 @@ test_that("reshape_for_facet with nemeton_id", {
 # --- add_color_scale() ---
 
 test_that("add_color_scale viridis works", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   p <- ggplot2::ggplot(units) +
@@ -1019,6 +1097,7 @@ test_that("add_color_scale viridis works", {
 })
 
 test_that("add_color_scale with ColorBrewer palette works", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   p <- ggplot2::ggplot(units) +
@@ -1030,6 +1109,7 @@ test_that("add_color_scale with ColorBrewer palette works", {
 })
 
 test_that("add_color_scale with breaks works", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   units$C1 <- c(80, 60, 40, 20, 50)
   p <- ggplot2::ggplot(units) +
@@ -1049,22 +1129,27 @@ test_that("add_color_scale with breaks works", {
 # --- clean_indicator_name (internal) ------------------------------------------
 
 test_that("clean_indicator_name converts famille_carbone to C", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("famille_carbone"), "C")
 })
 
 test_that("clean_indicator_name converts famille_biodiversite to B", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("famille_biodiversite"), "B")
 })
 
 test_that("clean_indicator_name converts famille_eau to W", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("famille_eau"), "W")
 })
 
 test_that("clean_indicator_name converts famille_risque to R", {
+  skip_if_not_installed("terra")
   expect_equal(nemeton:::clean_indicator_name("famille_risque"), "R")
 })
 
 test_that("clean_indicator_name does NOT strip family_ when followed by lowercase", {
+  skip_if_not_installed("terra")
 
   # The regex only matches famille_[a-z] (single uppercase letter)
   result <- nemeton:::clean_indicator_name("family_carbon")
@@ -1073,23 +1158,27 @@ test_that("clean_indicator_name does NOT strip family_ when followed by lowercas
 })
 
 test_that("clean_indicator_name removes _norm suffix and adds (Normalized)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("indicateur_c1_biomasse_norm")
   expect_true(grepl("\\(Normalized\\)", result))
   expect_false(grepl("_norm", result))
 })
 
 test_that("clean_indicator_name removes _inv suffix and adds (Inverted)", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("indicateur_r1_feu_inv")
   expect_true(grepl("\\(Inverted\\)", result))
   expect_false(grepl("_inv", result))
 })
 
 test_that("clean_indicator_name handles already-capitalized names", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name("Carbon")
   expect_equal(result, "Carbon")
 })
 
 test_that("clean_indicator_name vectorized over multiple names", {
+  skip_if_not_installed("terra")
   result <- nemeton:::clean_indicator_name(c("famille_carbone", "indicateur_w3_humidite_norm", "risk_inv"))
   expect_length(result, 3)
   expect_equal(result[1], "C")
@@ -1100,6 +1189,7 @@ test_that("clean_indicator_name vectorized over multiple names", {
 # --- reshape_for_facet (internal) ---------------------------------------------
 
 test_that("reshape_for_facet with nemeton_id keeps id and replicates geometry", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$nemeton_id <- c("U1", "U2", "U3")
   units$ind_a <- c(10, 20, 30)
@@ -1118,6 +1208,7 @@ test_that("reshape_for_facet with nemeton_id keeps id and replicates geometry", 
 })
 
 test_that("reshape_for_facet without nemeton_id creates row_id", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 4)
   units$x1 <- c(1, 2, 3, 4)
   units$x2 <- c(5, 6, 7, 8)
@@ -1135,6 +1226,7 @@ test_that("reshape_for_facet without nemeton_id creates row_id", {
 })
 
 test_that("reshape_for_facet preserves CRS", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2, crs = 2154)
   units$val1 <- c(10, 20)
   units$val2 <- c(30, 40)
@@ -1144,6 +1236,7 @@ test_that("reshape_for_facet preserves CRS", {
 })
 
 test_that("reshape_for_facet values match original data", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 2)
   units$alpha <- c(100, 200)
   units$beta <- c(300, 400)
@@ -1158,6 +1251,7 @@ test_that("reshape_for_facet values match original data", {
 # --- add_color_scale (internal) -----------------------------------------------
 
 test_that("add_color_scale adds viridis scale when palette = viridis", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$val <- c(10, 50, 90)
   p <- ggplot2::ggplot(data) +
@@ -1174,6 +1268,7 @@ test_that("add_color_scale adds viridis scale when palette = viridis", {
 })
 
 test_that("add_color_scale adds distiller scale when palette = RdYlGn", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$val <- c(10, 50, 90)
   p <- ggplot2::ggplot(data) +
@@ -1189,6 +1284,7 @@ test_that("add_color_scale adds distiller scale when palette = RdYlGn", {
 })
 
 test_that("add_color_scale with breaks and labels for viridis", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$val <- c(0, 25, 50, 75, 100)
   p <- ggplot2::ggplot(data) +
@@ -1203,6 +1299,7 @@ test_that("add_color_scale with breaks and labels for viridis", {
 })
 
 test_that("add_color_scale with breaks and labels for non-viridis", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$val <- c(0, 25, 50, 75, 100)
   p <- ggplot2::ggplot(data) +
@@ -1217,6 +1314,7 @@ test_that("add_color_scale with breaks and labels for non-viridis", {
 })
 
 test_that("add_color_scale with direction = -1 reversed", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$val <- c(10, 50, 90)
   p <- ggplot2::ggplot(data) +
@@ -1232,6 +1330,7 @@ test_that("add_color_scale with direction = -1 reversed", {
 # --- plot_indicators_map (exported) -------------------------------------------
 
 test_that("plot_indicators_map returns ggplot for single indicator", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(data, indicators = "indicateur_c1_biomasse")
@@ -1239,6 +1338,7 @@ test_that("plot_indicators_map returns ggplot for single indicator", {
 })
 
 test_that("plot_indicators_map auto-detects known indicators", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w1_reseau <- c(30, 40, 50)
@@ -1248,6 +1348,7 @@ test_that("plot_indicators_map auto-detects known indicators", {
 })
 
 test_that("plot_indicators_map auto-detects _norm indicators", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse_norm <- c(0.2, 0.5, 0.8)
 
@@ -1256,6 +1357,7 @@ test_that("plot_indicators_map auto-detects _norm indicators", {
 })
 
 test_that("plot_indicators_map auto-detects family indices", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$famille_carbone <- c(50, 60, 70)
   data$famille_eau <- c(40, 50, 60)
@@ -1265,6 +1367,7 @@ test_that("plot_indicators_map auto-detects family indices", {
 })
 
 test_that("plot_indicators_map auto-detects composite_index", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$composite_index <- c(55, 65, 75)
 
@@ -1273,6 +1376,7 @@ test_that("plot_indicators_map auto-detects composite_index", {
 })
 
 test_that("plot_indicators_map auto-selects YlOrRd for R1-R4 indicators", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$R1 <- c(10, 50, 90)
 
@@ -1281,6 +1385,7 @@ test_that("plot_indicators_map auto-selects YlOrRd for R1-R4 indicators", {
 })
 
 test_that("plot_indicators_map uses user palette even for risk indicators", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_r1_feu <- c(10, 50, 90)
 
@@ -1292,6 +1397,7 @@ test_that("plot_indicators_map uses user palette even for risk indicators", {
 })
 
 test_that("plot_indicators_map with custom title and legend_title", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
@@ -1305,6 +1411,7 @@ test_that("plot_indicators_map with custom title and legend_title", {
 })
 
 test_that("plot_indicators_map with custom alpha, border_color, border_size", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
@@ -1319,6 +1426,7 @@ test_that("plot_indicators_map with custom alpha, border_color, border_size", {
 })
 
 test_that("plot_indicators_map errors on missing indicator column", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   expect_error(
@@ -1328,6 +1436,7 @@ test_that("plot_indicators_map errors on missing indicator column", {
 })
 
 test_that("plot_indicators_map errors when no indicators can be detected", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   # Only has id, area, geometry -- no indicator columns
   expect_error(
@@ -1337,6 +1446,7 @@ test_that("plot_indicators_map errors when no indicators can be detected", {
 })
 
 test_that("plot_indicators_map single indicator auto-generates title", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(data, indicators = "indicateur_c1_biomasse")
@@ -1344,6 +1454,7 @@ test_that("plot_indicators_map single indicator auto-generates title", {
 })
 
 test_that("plot_indicators_map multiple indicators auto-generates title", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1355,6 +1466,7 @@ test_that("plot_indicators_map multiple indicators auto-generates title", {
 })
 
 test_that("plot_indicators_map multiple indicators with facet=TRUE (default) works", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1369,6 +1481,7 @@ test_that("plot_indicators_map multiple indicators with facet=TRUE (default) wor
 })
 
 test_that("plot_indicators_map with custom breaks and labels", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(0, 25, 50, 75, 100)
   p <- nemeton::plot_indicators_map(
@@ -1381,6 +1494,7 @@ test_that("plot_indicators_map with custom breaks and labels", {
 })
 
 test_that("plot_indicators_map with RdYlGn palette (non-viridis)", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
@@ -1392,6 +1506,7 @@ test_that("plot_indicators_map with RdYlGn palette (non-viridis)", {
 })
 
 test_that("plot_indicators_map with direction=-1 reverses scale", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   p <- nemeton::plot_indicators_map(
@@ -1403,6 +1518,7 @@ test_that("plot_indicators_map with direction=-1 reverses scale", {
 })
 
 test_that("plot_indicators_map with ncol parameter for facets", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1419,6 +1535,7 @@ test_that("plot_indicators_map with ncol parameter for facets", {
 # --- plot_comparison_map (exported) -------------------------------------------
 
 test_that("plot_comparison_map returns ggplot with faceted comparison", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
@@ -1430,6 +1547,7 @@ test_that("plot_comparison_map returns ggplot with faceted comparison", {
 })
 
 test_that("plot_comparison_map auto-generates title when title=NULL", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1440,6 +1558,7 @@ test_that("plot_comparison_map auto-generates title when title=NULL", {
 })
 
 test_that("plot_comparison_map with custom title", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1453,6 +1572,7 @@ test_that("plot_comparison_map with custom title", {
 })
 
 test_that("plot_comparison_map with custom labels", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1466,6 +1586,7 @@ test_that("plot_comparison_map with custom labels", {
 })
 
 test_that("plot_comparison_map with default labels (Scenario 1 / Scenario 2)", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1477,6 +1598,7 @@ test_that("plot_comparison_map with default labels (Scenario 1 / Scenario 2)", {
 })
 
 test_that("plot_comparison_map with non-viridis palette", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1490,6 +1612,7 @@ test_that("plot_comparison_map with non-viridis palette", {
 })
 
 test_that("plot_comparison_map errors when data1 is not sf", {
+  skip_if_not_installed("terra")
   d1 <- data.frame(val = c(10, 20))
   d2 <- create_test_units(n_features = 2)
   d2$val <- c(15, 25)
@@ -1501,6 +1624,7 @@ test_that("plot_comparison_map errors when data1 is not sf", {
 })
 
 test_that("plot_comparison_map errors when indicator missing from data2", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
@@ -1515,6 +1639,7 @@ test_that("plot_comparison_map errors when indicator missing from data2", {
 # --- plot_difference_map (exported) -------------------------------------------
 
 test_that("plot_difference_map absolute type returns ggplot", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
@@ -1527,6 +1652,7 @@ test_that("plot_difference_map absolute type returns ggplot", {
 })
 
 test_that("plot_difference_map relative type returns ggplot", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
@@ -1539,6 +1665,7 @@ test_that("plot_difference_map relative type returns ggplot", {
 })
 
 test_that("plot_difference_map absolute auto-generates legend title", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1550,6 +1677,7 @@ test_that("plot_difference_map absolute auto-generates legend title", {
 })
 
 test_that("plot_difference_map relative auto-generates legend title", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1560,6 +1688,7 @@ test_that("plot_difference_map relative auto-generates legend title", {
 })
 
 test_that("plot_difference_map auto-generates title when title=NULL", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1570,6 +1699,7 @@ test_that("plot_difference_map auto-generates title when title=NULL", {
 })
 
 test_that("plot_difference_map with custom title and legend", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$val <- c(10, 20, 30)
   d2 <- create_test_units(n_features = 3)
@@ -1584,6 +1714,7 @@ test_that("plot_difference_map with custom title and legend", {
 })
 
 test_that("plot_difference_map errors on non-sf input", {
+  skip_if_not_installed("terra")
   d1 <- data.frame(val = c(10, 20))
   d2 <- data.frame(val = c(15, 25))
 
@@ -1594,6 +1725,7 @@ test_that("plot_difference_map errors on non-sf input", {
 })
 
 test_that("plot_difference_map errors when indicator missing", {
+  skip_if_not_installed("terra")
   d1 <- create_test_units(n_features = 3)
   d1$indicateur_c1_biomasse <- c(100, 200, 300)
   d2 <- create_test_units(n_features = 3)
@@ -1608,6 +1740,7 @@ test_that("plot_difference_map errors when indicator missing", {
 # --- nemeton_radar (exported) -------------------------------------------------
 
 test_that("nemeton_radar single unit in indicator mode returns ggplot", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1618,6 +1751,7 @@ test_that("nemeton_radar single unit in indicator mode returns ggplot", {
 })
 
 test_that("nemeton_radar single unit in family mode returns ggplot", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$famille_carbone <- c(80, 60, 70, 50, 90)
   data$famille_biodiversite <- c(70, 50, 60, 40, 80)
@@ -1629,6 +1763,7 @@ test_that("nemeton_radar single unit in family mode returns ggplot", {
 })
 
 test_that("nemeton_radar family mode auto-detects famille_ columns", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$famille_carbone <- c(80, 60, 70)
   data$famille_eau <- c(65, 75, 85)
@@ -1641,6 +1776,7 @@ test_that("nemeton_radar family mode auto-detects famille_ columns", {
 })
 
 test_that("nemeton_radar family mode errors when no family columns found", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
 
@@ -1651,6 +1787,7 @@ test_that("nemeton_radar family mode errors when no family columns found", {
 })
 
 test_that("nemeton_radar mean of all units (unit_id=NULL)", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1661,6 +1798,7 @@ test_that("nemeton_radar mean of all units (unit_id=NULL)", {
 })
 
 test_that("nemeton_radar multiple unit_ids comparison mode", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1673,6 +1811,7 @@ test_that("nemeton_radar multiple unit_ids comparison mode", {
 })
 
 test_that("nemeton_radar comparison mode with 3 units", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1684,6 +1823,7 @@ test_that("nemeton_radar comparison mode with 3 units", {
 })
 
 test_that("nemeton_radar auto-detects numeric indicators in indicator mode", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1693,6 +1833,7 @@ test_that("nemeton_radar auto-detects numeric indicators in indicator mode", {
 })
 
 test_that("nemeton_radar errors on missing indicator", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
 
@@ -1703,6 +1844,7 @@ test_that("nemeton_radar errors on missing indicator", {
 })
 
 test_that("nemeton_radar errors on non-sf input", {
+  skip_if_not_installed("terra")
   df <- data.frame(x = 1:3, y = 4:6)
   expect_error(
     nemeton::nemeton_radar(df),
@@ -1711,6 +1853,7 @@ test_that("nemeton_radar errors on non-sf input", {
 })
 
 test_that("nemeton_radar with normalize=TRUE scales to 0-100", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
   data$indicateur_w3_humidite <- c(10, 20, 30, 40, 50)
@@ -1722,6 +1865,7 @@ test_that("nemeton_radar with normalize=TRUE scales to 0-100", {
 })
 
 test_that("nemeton_radar with normalize=FALSE keeps raw values", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(100, 200, 300, 400, 500)
   data$indicateur_w3_humidite <- c(10, 20, 30, 40, 50)
@@ -1735,6 +1879,7 @@ test_that("nemeton_radar with normalize=FALSE keeps raw values", {
 })
 
 test_that("nemeton_radar normalize handles all-equal values (max == min)", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(50, 50, 50) # all same
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1747,6 +1892,7 @@ test_that("nemeton_radar normalize handles all-equal values (max == min)", {
 })
 
 test_that("nemeton_radar single unit with custom title", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1758,6 +1904,7 @@ test_that("nemeton_radar single unit with custom title", {
 })
 
 test_that("nemeton_radar single unit auto-generates title with unit label", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1767,6 +1914,7 @@ test_that("nemeton_radar single unit auto-generates title with unit label", {
 })
 
 test_that("nemeton_radar comparison mode auto-generates title", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1776,6 +1924,7 @@ test_that("nemeton_radar comparison mode auto-generates title", {
 })
 
 test_that("nemeton_radar comparison mode with custom title", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1787,6 +1936,7 @@ test_that("nemeton_radar comparison mode with custom title", {
 })
 
 test_that("nemeton_radar comparison mode normalize handles constant indicator", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(50, 50, 50) # all same
   data$indicateur_w3_humidite <- c(10, 20, 30)
@@ -1799,6 +1949,7 @@ test_that("nemeton_radar comparison mode normalize handles constant indicator", 
 })
 
 test_that("nemeton_radar with custom fill_color and fill_alpha", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$indicateur_w3_humidite <- c(30, 40, 50)
@@ -1812,6 +1963,7 @@ test_that("nemeton_radar with custom fill_color and fill_alpha", {
 })
 
 test_that("nemeton_radar with explicit indicators parameter", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 5)
   data$indicateur_c1_biomasse <- c(80, 60, 70, 50, 90)
   data$indicateur_w3_humidite <- c(30, 40, 50, 60, 20)
@@ -1827,6 +1979,7 @@ test_that("nemeton_radar with explicit indicators parameter", {
 })
 
 test_that("nemeton_radar errors on invalid unit_id (string not found)", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
 
@@ -1837,6 +1990,7 @@ test_that("nemeton_radar errors on invalid unit_id (string not found)", {
 })
 
 test_that("nemeton_radar indicator mode excludes famille_ columns from auto-detect", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$indicateur_c1_biomasse <- c(80, 60, 70)
   data$famille_carbone <- c(50, 60, 70)
@@ -1849,6 +2003,7 @@ test_that("nemeton_radar indicator mode excludes famille_ columns from auto-dete
 })
 
 test_that("nemeton_radar indicator mode errors when no numeric indicators", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   # Only has id (character), area (numeric but excluded), geometry
   # Remove the area column to leave only non-indicator numerics
@@ -1861,6 +2016,7 @@ test_that("nemeton_radar indicator mode errors when no numeric indicators", {
 })
 
 test_that("nemeton_radar lookup by nemeton_id column", {
+  skip_if_not_installed("terra")
   data <- create_test_units(n_features = 3)
   data$nemeton_id <- c("P01", "P02", "P03")
   data$indicateur_c1_biomasse <- c(80, 60, 70)

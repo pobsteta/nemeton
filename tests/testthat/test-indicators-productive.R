@@ -21,6 +21,7 @@ make_sf <- function(data, n = NULL) {
 # ==============================================================================
 
 test_that("indicateur_p1_volume (P1) calculates with IFN equations", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -47,6 +48,7 @@ test_that("indicateur_p1_volume (P1) calculates with IFN equations", {
 })
 
 test_that("indicateur_p1_volume (P1) handles missing height with estimation", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -70,6 +72,7 @@ test_that("indicateur_p1_volume (P1) handles missing height with estimation", {
 })
 
 test_that("indicateur_p1_volume validates input is sf", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_p1_volume(data.frame(x = 1:3)),
     "must be an sf object"
@@ -77,6 +80,7 @@ test_that("indicateur_p1_volume validates input is sf", {
 })
 
 test_that("indicateur_p1_volume errors on missing required fields", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(id = 1L), n = 1)
@@ -95,6 +99,7 @@ test_that("indicateur_p1_volume errors on missing required fields", {
 })
 
 test_that("indicateur_p1_volume handles NA species, dbh, and density", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -119,6 +124,7 @@ test_that("indicateur_p1_volume handles NA species, dbh, and density", {
 })
 
 test_that("indicateur_p1_volume uses height when present but handles NA height", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -145,6 +151,7 @@ test_that("indicateur_p1_volume uses height when present but handles NA height",
 })
 
 test_that("indicateur_p1_volume handles unknown species with fallback", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -169,6 +176,7 @@ test_that("indicateur_p1_volume handles unknown species with fallback", {
 })
 
 test_that("indicateur_p1_volume uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -191,6 +199,7 @@ test_that("indicateur_p1_volume uses custom column name", {
 })
 
 test_that("indicateur_p1_volume works with zero-row sf", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   empty_sf <- sf::st_sf(
@@ -213,6 +222,7 @@ test_that("indicateur_p1_volume works with zero-row sf", {
 })
 
 test_that("indicateur_p1_volume volume differs for different species", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Same DBH and density, different species should give different volumes
@@ -237,6 +247,7 @@ test_that("indicateur_p1_volume volume differs for different species", {
 })
 
 test_that("indicateur_p1_volume scales linearly with density", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -260,6 +271,7 @@ test_that("indicateur_p1_volume scales linearly with density", {
 })
 
 test_that("indicateur_p1_volume handles conifer species correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -287,6 +299,7 @@ test_that("indicateur_p1_volume handles conifer species correctly", {
 # ==============================================================================
 
 test_that("indicateur_p2_station (P2) looks up productivity tables", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -310,6 +323,7 @@ test_that("indicateur_p2_station (P2) looks up productivity tables", {
 })
 
 test_that("indicateur_p2_station validates input is sf", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_p2_station(data.frame(x = 1:3)),
     "must be an sf object"
@@ -317,6 +331,7 @@ test_that("indicateur_p2_station validates input is sf", {
 })
 
 test_that("indicateur_p2_station errors on missing required fields", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(id = 1L), n = 1)
@@ -335,6 +350,7 @@ test_that("indicateur_p2_station errors on missing required fields", {
 })
 
 test_that("indicateur_p2_station handles NA in all key fields", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -358,6 +374,7 @@ test_that("indicateur_p2_station handles NA in all key fields", {
 })
 
 test_that("indicateur_p2_station uses custom productivity_table", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   custom_table <- data.frame(
@@ -388,6 +405,7 @@ test_that("indicateur_p2_station uses custom productivity_table", {
 })
 
 test_that("indicateur_p2_station falls back to genus average when species/combo not found", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Use a species+climate combo that does NOT exist in the bundled table
@@ -420,6 +438,7 @@ test_that("indicateur_p2_station falls back to genus average when species/combo 
 })
 
 test_that("indicateur_p2_station returns NA when no fallback available", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Custom table with no matching rows at all
@@ -451,6 +470,7 @@ test_that("indicateur_p2_station returns NA when no fallback available", {
 })
 
 test_that("indicateur_p2_station uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -473,6 +493,7 @@ test_that("indicateur_p2_station uses custom column name", {
 })
 
 test_that("indicateur_p2_station works with zero-row sf", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   empty_sf <- sf::st_sf(
@@ -495,6 +516,7 @@ test_that("indicateur_p2_station works with zero-row sf", {
 })
 
 test_that("indicateur_p2_station returns correct values for known species", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # FASY fertility=1 temperate_oceanic should be 8.5 according to bundled table
@@ -516,6 +538,7 @@ test_that("indicateur_p2_station returns correct values for known species", {
 })
 
 test_that("indicateur_p2_station handles lowercase species codes", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # The function uses toupper() so lowercase should work
@@ -541,6 +564,7 @@ test_that("indicateur_p2_station handles lowercase species codes", {
 # ==============================================================================
 
 test_that("indicateur_p3_qualite_bois (P3) scores timber quality", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -568,6 +592,7 @@ test_that("indicateur_p3_qualite_bois (P3) scores timber quality", {
 })
 
 test_that("indicateur_p3_qualite_bois validates input is sf", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_p3_qualite_bois(data.frame(x = 1:3)),
     "must be an sf object"
@@ -575,6 +600,7 @@ test_that("indicateur_p3_qualite_bois validates input is sf", {
 })
 
 test_that("indicateur_p3_qualite_bois errors on missing dbh field", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(id = 1L), n = 1)
@@ -586,6 +612,7 @@ test_that("indicateur_p3_qualite_bois errors on missing dbh field", {
 })
 
 test_that("indicateur_p3_qualite_bois handles NA in dbh", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -605,6 +632,7 @@ test_that("indicateur_p3_qualite_bois handles NA in dbh", {
 })
 
 test_that("indicateur_p3_qualite_bois uses generic thresholds when no species field", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # species_field not in the data => generic sawlog=35, pulp=18
@@ -627,6 +655,7 @@ test_that("indicateur_p3_qualite_bois uses generic thresholds when no species fi
 })
 
 test_that("indicateur_p3_qualite_bois applies conifer thresholds for pine species", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Conifer species matching ^P[IML] pattern
@@ -654,6 +683,7 @@ test_that("indicateur_p3_qualite_bois applies conifer thresholds for pine specie
 })
 
 test_that("indicateur_p3_qualite_bois applies broadleaf thresholds for non-conifer species", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -685,6 +715,7 @@ test_that("indicateur_p3_qualite_bois applies broadleaf thresholds for non-conif
 })
 
 test_that("indicateur_p3_qualite_bois handles all three diameter score ranges", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Use broadleaf (FASY): sawlog=40, pulp=20
@@ -718,6 +749,7 @@ test_that("indicateur_p3_qualite_bois handles all three diameter score ranges", 
 })
 
 test_that("indicateur_p3_qualite_bois uses provided form_score and handles NA", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -746,6 +778,7 @@ test_that("indicateur_p3_qualite_bois uses provided form_score and handles NA", 
 })
 
 test_that("indicateur_p3_qualite_bois handles defects field values and NA", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -774,6 +807,7 @@ test_that("indicateur_p3_qualite_bois handles defects field values and NA", {
 })
 
 test_that("indicateur_p3_qualite_bois handles missing optional fields entirely", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -794,6 +828,7 @@ test_that("indicateur_p3_qualite_bois handles missing optional fields entirely",
 })
 
 test_that("indicateur_p3_qualite_bois uses custom weights", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -850,6 +885,7 @@ test_that("indicateur_p3_qualite_bois uses custom weights", {
 })
 
 test_that("indicateur_p3_qualite_bois uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -874,6 +910,7 @@ test_that("indicateur_p3_qualite_bois uses custom column name", {
 })
 
 test_that("indicateur_p3_qualite_bois works with zero-row sf", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   empty_sf <- sf::st_sf(
@@ -898,6 +935,7 @@ test_that("indicateur_p3_qualite_bois works with zero-row sf", {
 # ==============================================================================
 
 test_that("Productive indicators handle missing data correctly", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -933,6 +971,7 @@ test_that("Productive indicators handle missing data correctly", {
 })
 
 test_that("Productive family indicators integrate with family system", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(
@@ -979,6 +1018,7 @@ test_that("Productive family indicators integrate with family system", {
 })
 
 test_that("indicateur_p2_station with species not in table but genus in table", {
+  skip_if_not_installed("terra")
 
   skip_if_not_installed("sf")
 
@@ -1004,6 +1044,7 @@ test_that("indicateur_p2_station with species not in table but genus in table", 
 })
 
 test_that("indicateur_p1_volume result preserves original columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- make_sf(list(

@@ -6,6 +6,7 @@
 # ==============================================================================
 
 test_that("indicateur_s1_routes (S1) works with DEM + roads", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -67,6 +68,7 @@ test_that("indicateur_s1_routes (S1) works with DEM + roads", {
 })
 
 test_that("indicateur_s1_routes (S1) returns NA without DEM", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -85,6 +87,7 @@ test_that("indicateur_s1_routes (S1) returns NA without DEM", {
 })
 
 test_that("indicateur_s1_routes (S1) returns NA without roads", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -108,6 +111,7 @@ test_that("indicateur_s1_routes (S1) returns NA without roads", {
 })
 
 test_that("indicateur_s1_routes (S1) returns NA with empty roads (0 rows)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -139,6 +143,7 @@ test_that("indicateur_s1_routes (S1) returns NA with empty roads (0 rows)", {
 })
 
 test_that("indicateur_s1_routes validates input types", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s1_routes(data.frame(x = 1:3)),
     "must be an sf object"
@@ -146,6 +151,7 @@ test_that("indicateur_s1_routes validates input types", {
 })
 
 test_that("indicateur_s1_routes uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -166,6 +172,7 @@ test_that("indicateur_s1_routes uses custom column name", {
 })
 
 test_that("indicateur_s1_routes resolves roads and DEM from layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -216,6 +223,7 @@ test_that("indicateur_s1_routes resolves roads and DEM from layers", {
 })
 
 test_that("indicateur_s1_routes resolves DEM from lidar_mnt fallback in layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -264,6 +272,7 @@ test_that("indicateur_s1_routes resolves DEM from lidar_mnt fallback in layers",
 })
 
 test_that("indicateur_s1_routes returns NA when layers has no roads", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -296,6 +305,7 @@ test_that("indicateur_s1_routes returns NA when layers has no roads", {
 })
 
 test_that("indicateur_s1_routes preserves original columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -322,6 +332,7 @@ test_that("indicateur_s1_routes preserves original columns", {
 })
 
 test_that("indicateur_s1_routes uses helper test fixtures", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -350,6 +361,7 @@ test_that("indicateur_s1_routes uses helper test fixtures", {
 # ==============================================================================
 
 test_that("indicateur_s2_bati (S2) works with DEM + buildings", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -417,6 +429,7 @@ test_that("indicateur_s2_bati (S2) works with DEM + buildings", {
 })
 
 test_that("indicateur_s2_bati (S2) returns NA without DEM", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -435,6 +448,7 @@ test_that("indicateur_s2_bati (S2) returns NA without DEM", {
 })
 
 test_that("indicateur_s2_bati (S2) returns NA without buildings", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -458,6 +472,7 @@ test_that("indicateur_s2_bati (S2) returns NA without buildings", {
 })
 
 test_that("indicateur_s2_bati (S2) returns NA with empty buildings (0 rows)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -493,6 +508,7 @@ test_that("indicateur_s2_bati (S2) returns NA with empty buildings (0 rows)", {
 })
 
 test_that("indicateur_s2_bati validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s2_bati(data.frame(x = 1:3)),
     "must be an sf object"
@@ -500,6 +516,7 @@ test_that("indicateur_s2_bati validates input", {
 })
 
 test_that("indicateur_s2_bati uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -520,6 +537,7 @@ test_that("indicateur_s2_bati uses custom column name", {
 })
 
 test_that("indicateur_s2_bati resolves buildings and DEM from layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -574,6 +592,7 @@ test_that("indicateur_s2_bati resolves buildings and DEM from layers", {
 })
 
 test_that("indicateur_s2_bati resolves DEM from lidar_mnt fallback", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -628,6 +647,7 @@ test_that("indicateur_s2_bati resolves DEM from lidar_mnt fallback", {
 })
 
 test_that("indicateur_s2_bati returns NA when layers has no buildings", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -659,6 +679,7 @@ test_that("indicateur_s2_bati returns NA when layers has no buildings", {
 })
 
 test_that("indicateur_s2_bati preserves original columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -685,6 +706,7 @@ test_that("indicateur_s2_bati preserves original columns", {
 # ==============================================================================
 
 test_that("indicateur_s3_population (S3) calculates population buffers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -716,6 +738,7 @@ test_that("indicateur_s3_population (S3) calculates population buffers", {
 })
 
 test_that("indicateur_s3_population validates input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s3_population(data.frame(x = 1:3)),
     "must be an sf object"
@@ -723,6 +746,7 @@ test_that("indicateur_s3_population validates input", {
 })
 
 test_that("indicateur_s3_population uses buffer_radii parameter", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Use properly sized units with real coordinates
@@ -741,6 +765,7 @@ test_that("indicateur_s3_population uses buffer_radii parameter", {
 })
 
 test_that("indicateur_s3_population uses custom column name", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -761,6 +786,7 @@ test_that("indicateur_s3_population uses custom column name", {
 })
 
 test_that("indicateur_s3_population S3 equals S3_5km (primary = first buffer)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -784,6 +810,7 @@ test_that("indicateur_s3_population S3 equals S3_5km (primary = first buffer)", 
 })
 
 test_that("indicateur_s3_population rejects invalid method", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -801,6 +828,7 @@ test_that("indicateur_s3_population rejects invalid method", {
 })
 
 test_that("indicateur_s3_population produces positive population values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -825,6 +853,7 @@ test_that("indicateur_s3_population produces positive population values", {
 })
 
 test_that("indicateur_s3_population preserves original columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -846,6 +875,7 @@ test_that("indicateur_s3_population preserves original columns", {
 })
 
 test_that("indicateur_s3_population with custom buffer_radii", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -875,6 +905,7 @@ test_that("indicateur_s3_population with custom buffer_radii", {
 })
 
 test_that("indicateur_s3_population accepts method 'insee'", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -893,6 +924,7 @@ test_that("indicateur_s3_population accepts method 'insee'", {
 })
 
 test_that("indicateur_s3_population accepts method 'local'", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -911,6 +943,7 @@ test_that("indicateur_s3_population accepts method 'local'", {
 })
 
 test_that("indicateur_s3_population with multiple units computes per-unit values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 5)
@@ -938,6 +971,7 @@ test_that("indicateur_s3_population with multiple units computes per-unit values
 # ==============================================================================
 
 test_that("Social indicators integrate with family system", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -960,6 +994,7 @@ test_that("Social indicators integrate with family system", {
 })
 
 test_that("Social indicators can be chained on units with existing columns", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Start with units that already have other indicator columns
@@ -988,6 +1023,7 @@ test_that("Social indicators can be chained on units with existing columns", {
 })
 
 test_that("indicateur_s1_routes returns correct number of NA for multi-unit input without DEM", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1013,6 +1049,7 @@ test_that("indicateur_s1_routes returns correct number of NA for multi-unit inpu
 })
 
 test_that("indicateur_s2_bati returns correct number of NA for multi-unit input without DEM", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- sf::st_sf(
@@ -1038,6 +1075,7 @@ test_that("indicateur_s2_bati returns correct number of NA for multi-unit input 
 })
 
 test_that("indicateur_s1_routes rejects NULL input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s1_routes(NULL),
     "must be an sf object"
@@ -1045,6 +1083,7 @@ test_that("indicateur_s1_routes rejects NULL input", {
 })
 
 test_that("indicateur_s2_bati rejects NULL input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s2_bati(NULL),
     "must be an sf object"
@@ -1052,6 +1091,7 @@ test_that("indicateur_s2_bati rejects NULL input", {
 })
 
 test_that("indicateur_s3_population rejects NULL input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s3_population(NULL),
     "must be an sf object"
@@ -1059,6 +1099,7 @@ test_that("indicateur_s3_population rejects NULL input", {
 })
 
 test_that("indicateur_s1_routes rejects character input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s1_routes("not an sf object"),
     "must be an sf object"
@@ -1066,6 +1107,7 @@ test_that("indicateur_s1_routes rejects character input", {
 })
 
 test_that("indicateur_s2_bati rejects character input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s2_bati("not an sf object"),
     "must be an sf object"
@@ -1073,6 +1115,7 @@ test_that("indicateur_s2_bati rejects character input", {
 })
 
 test_that("indicateur_s3_population rejects character input", {
+  skip_if_not_installed("terra")
   expect_error(
     indicateur_s3_population("not an sf object"),
     "must be an sf object"
@@ -1080,6 +1123,7 @@ test_that("indicateur_s3_population rejects character input", {
 })
 
 test_that("indicateur_s1_routes directly provided roads override layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1131,6 +1175,7 @@ test_that("indicateur_s1_routes directly provided roads override layers", {
 })
 
 test_that("indicateur_s2_bati directly provided buildings override layers", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
 
@@ -1193,6 +1238,7 @@ test_that("indicateur_s2_bati directly provided buildings override layers", {
 # --- S1: indicateur_s1_routes ---
 
 test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1244,6 +1290,7 @@ test_that("S1 with layers resolving DEM from lidar_mnt when dem key absent", {
 })
 
 test_that("S1 with lang = 'fr' produces a valid result", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
@@ -1255,6 +1302,7 @@ test_that("S1 with lang = 'fr' produces a valid result", {
 })
 
 test_that("S1 with roads in different CRS triggers transform", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1298,6 +1346,7 @@ test_that("S1 with roads in different CRS triggers transform", {
 # --- S2: indicateur_s2_bati ---
 
 test_that("S2 with layers having lidar_mnt only and buildings", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1352,6 +1401,7 @@ test_that("S2 with layers having lidar_mnt only and buildings", {
 })
 
 test_that("S2 with lang = 'fr' returns valid result (NA case)", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
@@ -1362,6 +1412,7 @@ test_that("S2 with lang = 'fr' returns valid result (NA case)", {
 })
 
 test_that("S2 with buildings in different CRS triggers transform", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
   skip_if_not_installed("exactextractr")
@@ -1414,6 +1465,7 @@ test_that("S2 with buildings in different CRS triggers transform", {
 # --- S3: indicateur_s3_population ---
 
 test_that("S3 buffer area calculation with different sized units", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Small unit: 10m x 10m
@@ -1446,6 +1498,7 @@ test_that("S3 buffer area calculation with different sized units", {
 })
 
 test_that("S3 with very small buffer_radii still works", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
@@ -1463,6 +1516,7 @@ test_that("S3 with very small buffer_radii still works", {
 })
 
 test_that("S3 with single feature returns scalar S3", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 1)
@@ -1475,6 +1529,7 @@ test_that("S3 with single feature returns scalar S3", {
 })
 
 test_that("S3 with custom column_name uses that name for primary indicator", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   test_units <- create_test_units(n_features = 2)
@@ -1490,6 +1545,7 @@ test_that("S3 with custom column_name uses that name for primary indicator", {
 })
 
 test_that("S3 msg_info is called with correct median values", {
+  skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
   # Just make sure the function completes without error when msg_info is called

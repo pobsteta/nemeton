@@ -1,4 +1,5 @@
 test_that("nemeton_units creates valid object from sf", {
+  skip_if_not_installed("terra")
   # Create test data
   test_sf <- create_test_units(n_features = 3)
 
@@ -27,6 +28,7 @@ test_that("nemeton_units creates valid object from sf", {
 })
 
 test_that("nemeton_units creates object from file path", {
+  skip_if_not_installed("terra")
   # Get cadastral test file
   cadastral_path <- get_cadastral_test_file()
 
@@ -41,6 +43,7 @@ test_that("nemeton_units creates object from file path", {
 })
 
 test_that("nemeton_units handles custom ID column", {
+  skip_if_not_installed("terra")
   # Create test data
   test_sf <- create_test_units(n_features = 3)
   test_sf$custom_id <- c("A001", "A002", "A003")
@@ -53,6 +56,7 @@ test_that("nemeton_units handles custom ID column", {
 })
 
 test_that("nemeton_units handles metadata", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
 
   # Create with metadata
@@ -73,6 +77,7 @@ test_that("nemeton_units handles metadata", {
 })
 
 test_that("nemeton_units rejects invalid inputs", {
+  skip_if_not_installed("terra")
   # Non-existent file
   expect_error(
     nemeton_units("non_existent_file.gpkg"),
@@ -94,6 +99,7 @@ test_that("nemeton_units rejects invalid inputs", {
 })
 
 test_that("nemeton_units detects duplicate IDs", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 3)
   test_sf$dup_id <- c("ID1", "ID1", "ID2") # Duplicates!
 
@@ -104,6 +110,7 @@ test_that("nemeton_units detects duplicate IDs", {
 })
 
 test_that("nemeton_layers creates valid catalog", {
+  skip_if_not_installed("terra")
   # Create temp test files
   temp_files <- create_temp_test_files()
 
@@ -138,6 +145,7 @@ test_that("nemeton_layers creates valid catalog", {
 })
 
 test_that("nemeton_layers validates file existence", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(
       rasters = list(fake = "/non/existent/file.tif")
@@ -147,6 +155,7 @@ test_that("nemeton_layers validates file existence", {
 })
 
 test_that("nemeton_layers requires named lists", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   # Unnamed list should fail
@@ -159,6 +168,7 @@ test_that("nemeton_layers requires named lists", {
 })
 
 test_that("nemeton_layers requires at least one layer type", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(),
     "At least one"
@@ -166,6 +176,7 @@ test_that("nemeton_layers requires at least one layer type", {
 })
 
 test_that("nemeton_layers can skip validation", {
+  skip_if_not_installed("terra")
   # Should not error even with non-existent files
   layers <- nemeton_layers(
     rasters = list(fake = "/fake/path.tif"),
@@ -176,6 +187,7 @@ test_that("nemeton_layers can skip validation", {
 })
 
 test_that("print methods work for nemeton classes", {
+  skip_if_not_installed("terra")
   # Test units print
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(
@@ -199,6 +211,7 @@ test_that("print methods work for nemeton classes", {
 })
 
 test_that("summary methods work for nemeton classes", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(
     test_sf,
@@ -223,6 +236,7 @@ test_that("summary methods work for nemeton classes", {
 # --- nemeton_units: from file path ---
 
 test_that("nemeton_units loads from file path (gpkg)", {
+  skip_if_not_installed("terra")
   withr::with_tempdir({
     test_sf <- create_test_units(n_features = 3)
     path <- file.path(getwd(), "test_units.gpkg")
@@ -240,6 +254,7 @@ test_that("nemeton_units loads from file path (gpkg)", {
 # --- nemeton_units: with id_col parameter ---
 
 test_that("nemeton_units uses id_col to set nemeton_id", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 3)
 
   # The helper creates an "id" column: unit_001, unit_002, unit_003
@@ -251,6 +266,7 @@ test_that("nemeton_units uses id_col to set nemeton_id", {
 # --- nemeton_units: duplicate IDs error ---
 
 test_that("nemeton_units errors on duplicate IDs", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 3)
   test_sf$dup_col <- c("A", "A", "B")
 
@@ -263,6 +279,7 @@ test_that("nemeton_units errors on duplicate IDs", {
 # --- nemeton_units: non-existent id_col error ---
 
 test_that("nemeton_units errors on non-existent id_col", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
 
   expect_error(
@@ -274,6 +291,7 @@ test_that("nemeton_units errors on non-existent id_col", {
 # --- print.nemeton_units: output with site_name, year, area ---
 
 test_that("print.nemeton_units outputs site_name, year, units count, area, CRS", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 3)
   units <- nemeton_units(
     test_sf,
@@ -291,6 +309,7 @@ test_that("print.nemeton_units outputs site_name, year, units count, area, CRS",
 })
 
 test_that("print.nemeton_units without site_name omits Site line", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf, metadata = list())
 
@@ -303,6 +322,7 @@ test_that("print.nemeton_units without site_name omits Site line", {
 # --- summary.nemeton_units: full output with metadata ---
 
 test_that("summary.nemeton_units outputs full metadata", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 4)
   units <- nemeton_units(
     test_sf,
@@ -322,6 +342,7 @@ test_that("summary.nemeton_units outputs full metadata", {
 })
 
 test_that("summary.nemeton_units handles missing metadata fields", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf, metadata = list())
 
@@ -333,6 +354,7 @@ test_that("summary.nemeton_units handles missing metadata fields", {
 # --- nemeton_layers: validate=FALSE with non-existent files ---
 
 test_that("nemeton_layers works with validate=FALSE and non-existent files", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/nonexistent/path/dem.tif"),
     vectors = list(roads = "/nonexistent/path/roads.gpkg"),
@@ -349,6 +371,7 @@ test_that("nemeton_layers works with validate=FALSE and non-existent files", {
 # --- nemeton_layers: unnamed rasters error ---
 
 test_that("nemeton_layers errors on unnamed rasters", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(rasters = list("/some/file.tif")),
     "must be a named list"
@@ -358,6 +381,7 @@ test_that("nemeton_layers errors on unnamed rasters", {
 # --- nemeton_layers: unnamed vectors error ---
 
 test_that("nemeton_layers errors on unnamed vectors", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(vectors = list("/some/file.gpkg")),
     "must be a named list"
@@ -367,6 +391,7 @@ test_that("nemeton_layers errors on unnamed vectors", {
 # --- nemeton_layers: partially unnamed rasters error ---
 
 test_that("nemeton_layers errors on partially unnamed rasters", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(rasters = list(dem = "/file1.tif", "/file2.tif")),
     "must be a named list"
@@ -376,6 +401,7 @@ test_that("nemeton_layers errors on partially unnamed rasters", {
 # --- print.nemeton_layers: output with loaded/not loaded status ---
 
 test_that("print.nemeton_layers shows loaded and not loaded status", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif", ndvi = "/fake/ndvi.tif"),
     vectors = list(roads = "/fake/roads.gpkg"),
@@ -394,6 +420,7 @@ test_that("print.nemeton_layers shows loaded and not loaded status", {
 })
 
 test_that("print.nemeton_layers with no vectors shows (none)", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
     validate = FALSE
@@ -405,6 +432,7 @@ test_that("print.nemeton_layers with no vectors shows (none)", {
 })
 
 test_that("print.nemeton_layers with no rasters shows (none)", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     vectors = list(roads = "/fake/roads.gpkg"),
     validate = FALSE
@@ -419,6 +447,7 @@ test_that("print.nemeton_layers with no rasters shows (none)", {
 # --- summary.nemeton_layers: basic output ---
 
 test_that("summary.nemeton_layers shows raster and vector counts", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif", ndvi = "/fake/ndvi.tif"),
     vectors = list(roads = "/fake/roads.gpkg"),
@@ -436,6 +465,7 @@ test_that("summary.nemeton_layers shows raster and vector counts", {
 # --- nemeton_layers: with real temporary files ---
 
 test_that("print.nemeton_layers with real files shows not loaded", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   layers <- nemeton_layers(
@@ -453,6 +483,7 @@ test_that("print.nemeton_layers with real files shows not loaded", {
 # --- nemeton_layers: validate=TRUE with existing files ---
 
 test_that("nemeton_layers validates existing files successfully", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   layers <- nemeton_layers(
@@ -468,6 +499,7 @@ test_that("nemeton_layers validates existing files successfully", {
 # --- nemeton_layers: validate=TRUE with non-existent raster errors ---
 
 test_that("nemeton_layers validate=TRUE errors on non-existent raster", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(
       rasters = list(fake = "/absolutely/nonexistent/file.tif"),
@@ -480,6 +512,7 @@ test_that("nemeton_layers validate=TRUE errors on non-existent raster", {
 # --- nemeton_layers: validate=TRUE with non-existent vector errors ---
 
 test_that("nemeton_layers validate=TRUE errors on non-existent vector", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(
       vectors = list(fake = "/absolutely/nonexistent/file.gpkg"),
@@ -496,6 +529,7 @@ test_that("nemeton_layers validate=TRUE errors on non-existent vector", {
 # --- nemeton_units: validate=FALSE skips sf validation ---
 
 test_that("nemeton_units with validate=FALSE skips geometry validation", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
 
   # validate=FALSE should still create valid object, just skip validation
@@ -510,6 +544,7 @@ test_that("nemeton_units with validate=FALSE skips geometry validation", {
 # --- nemeton_units: generated IDs have correct format ---
 
 test_that("nemeton_units generates IDs with correct format when id_col is NULL", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 5)
 
   units <- nemeton_units(test_sf)
@@ -521,6 +556,7 @@ test_that("nemeton_units generates IDs with correct format when id_col is NULL",
 # --- nemeton_units: metadata merges user and auto fields ---
 
 test_that("nemeton_units merges user metadata with auto-generated metadata", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
 
   units <- nemeton_units(
@@ -547,6 +583,7 @@ test_that("nemeton_units merges user metadata with auto-generated metadata", {
 # --- nemeton_units: id_col coerces to character ---
 
 test_that("nemeton_units coerces id_col values to character", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 3)
   test_sf$numeric_id <- c(10, 20, 30)
 
@@ -559,6 +596,7 @@ test_that("nemeton_units coerces id_col values to character", {
 # --- nemeton_units: single feature ---
 
 test_that("nemeton_units works with a single feature", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 1)
 
   units <- nemeton_units(test_sf)
@@ -571,6 +609,7 @@ test_that("nemeton_units works with a single feature", {
 # --- nemeton_units: from file path with id_col ---
 
 test_that("nemeton_units from file path uses id_col correctly", {
+  skip_if_not_installed("terra")
   withr::with_tempdir({
     test_sf <- create_test_units(n_features = 2)
     test_sf$parcel_id <- c("P001", "P002")
@@ -587,6 +626,7 @@ test_that("nemeton_units from file path uses id_col correctly", {
 # --- nemeton_units: from file with validate=FALSE ---
 
 test_that("nemeton_units from file path with validate=FALSE", {
+  skip_if_not_installed("terra")
   withr::with_tempdir({
     test_sf <- create_test_units(n_features = 2)
     path <- file.path(getwd(), "test.gpkg")
@@ -602,6 +642,7 @@ test_that("nemeton_units from file path with validate=FALSE", {
 # --- nemeton_units: class hierarchy is correct ---
 
 test_that("nemeton_units class includes nemeton_units as first class", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -614,6 +655,7 @@ test_that("nemeton_units class includes nemeton_units as first class", {
 # --- print.nemeton_units: returns invisible(x) ---
 
 test_that("print.nemeton_units returns the object invisibly", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf, metadata = list(site_name = "Invisible Test"))
 
@@ -627,6 +669,7 @@ test_that("print.nemeton_units returns the object invisibly", {
 # --- print.nemeton_units: without year but with site_name ---
 
 test_that("print.nemeton_units with site_name but without year", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf, metadata = list(site_name = "Pine Forest"))
 
@@ -640,6 +683,7 @@ test_that("print.nemeton_units with site_name but without year", {
 # --- print.nemeton_units: with year but without site_name ---
 
 test_that("print.nemeton_units with year but without site_name", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf, metadata = list(year = 2025))
 
@@ -653,6 +697,7 @@ test_that("print.nemeton_units with year but without site_name", {
 # --- print.nemeton_units: without area_total ---
 
 test_that("print.nemeton_units without area_total metadata", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -672,6 +717,7 @@ test_that("print.nemeton_units without area_total metadata", {
 # --- print.nemeton_units: without CRS metadata ---
 
 test_that("print.nemeton_units without crs metadata", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -689,6 +735,7 @@ test_that("print.nemeton_units without crs metadata", {
 # --- print.nemeton_units: with NULL metadata attribute ---
 
 test_that("print.nemeton_units with NULL metadata attribute", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -705,6 +752,7 @@ test_that("print.nemeton_units with NULL metadata attribute", {
 # --- summary.nemeton_units: returns invisible(object) ---
 
 test_that("summary.nemeton_units returns the object invisibly", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -718,6 +766,7 @@ test_that("summary.nemeton_units returns the object invisibly", {
 # --- summary.nemeton_units: with no CRS ---
 
 test_that("summary.nemeton_units shows Unknown when CRS is NULL", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -733,6 +782,7 @@ test_that("summary.nemeton_units shows Unknown when CRS is NULL", {
 # --- summary.nemeton_units: without area_total ---
 
 test_that("summary.nemeton_units without area_total omits area lines", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -750,6 +800,7 @@ test_that("summary.nemeton_units without area_total omits area lines", {
 # --- summary.nemeton_units: with NULL metadata ---
 
 test_that("summary.nemeton_units with NULL metadata", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
 
@@ -766,6 +817,7 @@ test_that("summary.nemeton_units with NULL metadata", {
 # --- print.nemeton_layers: with loaded=TRUE status ---
 
 test_that("print.nemeton_layers shows [loaded] for loaded layers", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
     vectors = list(roads = "/fake/roads.gpkg"),
@@ -789,6 +841,7 @@ test_that("print.nemeton_layers shows [loaded] for loaded layers", {
 # --- print.nemeton_layers: mix of loaded and not loaded ---
 
 test_that("print.nemeton_layers shows mixed loaded/not loaded status", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif", ndvi = "/fake/ndvi.tif"),
     validate = FALSE
@@ -812,6 +865,7 @@ test_that("print.nemeton_layers shows mixed loaded/not loaded status", {
 # --- print.nemeton_layers: returns invisible(x) ---
 
 test_that("print.nemeton_layers returns the object invisibly", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
     validate = FALSE
@@ -827,6 +881,7 @@ test_that("print.nemeton_layers returns the object invisibly", {
 # --- summary.nemeton_layers: returns invisible(object) ---
 
 test_that("summary.nemeton_layers returns the object invisibly", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
     validate = FALSE
@@ -842,6 +897,7 @@ test_that("summary.nemeton_layers returns the object invisibly", {
 # --- nemeton_layers: rasters only (no vectors) ---
 
 test_that("nemeton_layers with rasters only stores correct metadata", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   layers <- nemeton_layers(
@@ -857,6 +913,7 @@ test_that("nemeton_layers with rasters only stores correct metadata", {
 # --- nemeton_layers: vectors only (no rasters) ---
 
 test_that("nemeton_layers with vectors only stores correct metadata", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   layers <- nemeton_layers(
@@ -872,6 +929,7 @@ test_that("nemeton_layers with vectors only stores correct metadata", {
 # --- nemeton_layers: paths are normalized ---
 
 test_that("nemeton_layers normalizes file paths", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   layers <- nemeton_layers(
@@ -888,6 +946,7 @@ test_that("nemeton_layers normalizes file paths", {
 # --- nemeton_layers: object field is NULL (not loaded) ---
 
 test_that("nemeton_layers stores NULL object for each layer initially", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
     vectors = list(roads = "/fake/roads.gpkg"),
@@ -903,6 +962,7 @@ test_that("nemeton_layers stores NULL object for each layer initially", {
 # --- nemeton_layers: partially unnamed vectors error ---
 
 test_that("nemeton_layers errors on partially unnamed vectors", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton_layers(vectors = list(roads = "/file1.gpkg", "/file2.gpkg")),
     "must be a named list"
@@ -912,6 +972,7 @@ test_that("nemeton_layers errors on partially unnamed vectors", {
 # --- nemeton_layers: validate=TRUE checks each raster file ---
 
 test_that("nemeton_layers validate=TRUE errors on second non-existent raster", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   # First raster exists, second does not
@@ -930,6 +991,7 @@ test_that("nemeton_layers validate=TRUE errors on second non-existent raster", {
 # --- nemeton_layers: validate=TRUE checks each vector file ---
 
 test_that("nemeton_layers validate=TRUE errors on second non-existent vector", {
+  skip_if_not_installed("terra")
   temp_files <- create_temp_test_files()
 
   # First vector exists, second does not
@@ -948,6 +1010,7 @@ test_that("nemeton_layers validate=TRUE errors on second non-existent vector", {
 # --- summary.nemeton_layers: with zero rasters ---
 
 test_that("summary.nemeton_layers shows zero rasters", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     vectors = list(roads = "/fake/roads.gpkg"),
     validate = FALSE
@@ -962,6 +1025,7 @@ test_that("summary.nemeton_layers shows zero rasters", {
 # --- summary.nemeton_layers: with zero vectors ---
 
 test_that("summary.nemeton_layers shows zero vectors", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
     validate = FALSE
@@ -976,6 +1040,7 @@ test_that("summary.nemeton_layers shows zero vectors", {
 # --- nemeton_units: metadata created_at is a POSIXct timestamp ---
 
 test_that("nemeton_units metadata created_at is a recent timestamp", {
+  skip_if_not_installed("terra")
   before <- Sys.time()
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf)
@@ -991,6 +1056,7 @@ test_that("nemeton_units metadata created_at is a recent timestamp", {
 # --- nemeton_layers: created_at timestamp in metadata ---
 
 test_that("nemeton_layers metadata created_at is a recent timestamp", {
+  skip_if_not_installed("terra")
   before <- Sys.time()
   layers <- nemeton_layers(
     rasters = list(dem = "/fake/dem.tif"),
@@ -1006,6 +1072,7 @@ test_that("nemeton_layers metadata created_at is a recent timestamp", {
 # --- nemeton_units: area_total is a units object ---
 
 test_that("nemeton_units metadata area_total is a units object", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 3)
   units <- nemeton_units(test_sf)
 
@@ -1019,6 +1086,7 @@ test_that("nemeton_units metadata area_total is a units object", {
 # --- nemeton_units: empty metadata list is valid ---
 
 test_that("nemeton_units with empty metadata list adds auto fields only", {
+  skip_if_not_installed("terra")
   test_sf <- create_test_units(n_features = 2)
   units <- nemeton_units(test_sf, metadata = list())
 
@@ -1037,6 +1105,7 @@ test_that("nemeton_units with empty metadata list adds auto fields only", {
 # --- nemeton_layers: many rasters and vectors ---
 
 test_that("nemeton_layers handles multiple rasters and vectors", {
+  skip_if_not_installed("terra")
   layers <- nemeton_layers(
     rasters = list(
       dem = "/fake/dem.tif",
@@ -1075,6 +1144,7 @@ test_that("nemeton_layers handles multiple rasters and vectors", {
 # --- nemeton_units() ---
 
 test_that("nemeton_units() from sf object creates valid nemeton_units", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
 
   nu <- nemeton::nemeton_units(units)
@@ -1094,6 +1164,7 @@ test_that("nemeton_units() from sf object creates valid nemeton_units", {
 })
 
 test_that("nemeton_units() with id_col uses specified column", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$my_id <- c("alpha", "beta", "gamma")
 
@@ -1103,6 +1174,7 @@ test_that("nemeton_units() with id_col uses specified column", {
 })
 
 test_that("nemeton_units() with id_col=NULL auto-generates IDs", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   nu <- nemeton::nemeton_units(units)
@@ -1113,6 +1185,7 @@ test_that("nemeton_units() with id_col=NULL auto-generates IDs", {
 })
 
 test_that("nemeton_units() errors on duplicate IDs", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   units$dup_id <- c("A", "A", "B")
 
@@ -1123,6 +1196,7 @@ test_that("nemeton_units() errors on duplicate IDs", {
 })
 
 test_that("nemeton_units() errors on missing id_col", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   expect_error(
@@ -1132,6 +1206,7 @@ test_that("nemeton_units() errors on missing id_col", {
 })
 
 test_that("nemeton_units() stores metadata correctly", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
 
   nu <- nemeton::nemeton_units(
@@ -1148,6 +1223,7 @@ test_that("nemeton_units() stores metadata correctly", {
 # --- print.nemeton_units() ---
 
 test_that("print.nemeton_units() with site_name and year metadata", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   nu <- nemeton::nemeton_units(
     units,
@@ -1165,6 +1241,7 @@ test_that("print.nemeton_units() with site_name and year metadata", {
 })
 
 test_that("print.nemeton_units() with area_total shows hectares", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   nu <- nemeton::nemeton_units(units)
 
@@ -1178,6 +1255,7 @@ test_that("print.nemeton_units() with area_total shows hectares", {
 # --- summary.nemeton_units() ---
 
 test_that("summary.nemeton_units() outputs complete summary", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 5)
   nu <- nemeton::nemeton_units(
     units,
@@ -1198,6 +1276,7 @@ test_that("summary.nemeton_units() outputs complete summary", {
 })
 
 test_that("summary.nemeton_units() handles missing metadata fields", {
+  skip_if_not_installed("terra")
   units <- create_test_units(n_features = 3)
   nu <- nemeton::nemeton_units(units)
 
@@ -1210,6 +1289,7 @@ test_that("summary.nemeton_units() handles missing metadata fields", {
 # --- nemeton_layers() ---
 
 test_that("nemeton_layers() with rasters and vectors (validate=FALSE)", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/fake_ndvi.tif", dem = "/tmp/fake_dem.tif"),
     vectors = list(rivers = "/tmp/fake_rivers.gpkg"),
@@ -1226,6 +1306,7 @@ test_that("nemeton_layers() with rasters and vectors (validate=FALSE)", {
 })
 
 test_that("nemeton_layers() with only rasters", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/fake.tif"),
     validate = FALSE
@@ -1238,6 +1319,7 @@ test_that("nemeton_layers() with only rasters", {
 })
 
 test_that("nemeton_layers() with only vectors", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     vectors = list(roads = "/tmp/fake.gpkg"),
     validate = FALSE
@@ -1250,6 +1332,7 @@ test_that("nemeton_layers() with only vectors", {
 })
 
 test_that("nemeton_layers() errors when both rasters and vectors are NULL", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::nemeton_layers(rasters = NULL, vectors = NULL),
     "rasters.*vectors"
@@ -1257,6 +1340,7 @@ test_that("nemeton_layers() errors when both rasters and vectors are NULL", {
 })
 
 test_that("nemeton_layers() errors on unnamed rasters list", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::nemeton_layers(
       rasters = list("/tmp/fake.tif"),
@@ -1267,6 +1351,7 @@ test_that("nemeton_layers() errors on unnamed rasters list", {
 })
 
 test_that("nemeton_layers() errors on unnamed vectors list", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::nemeton_layers(
       vectors = list("/tmp/fake.gpkg"),
@@ -1277,6 +1362,7 @@ test_that("nemeton_layers() errors on unnamed vectors list", {
 })
 
 test_that("nemeton_layers() stores path and loaded status", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/test_ndvi.tif"),
     vectors = list(rivers = "/tmp/test_rivers.gpkg"),
@@ -1292,6 +1378,7 @@ test_that("nemeton_layers() stores path and loaded status", {
 # --- print.nemeton_layers() ---
 
 test_that("print.nemeton_layers() shows rasters and vectors", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/test_ndvi.tif", dem = "/tmp/test_dem.tif"),
     vectors = list(rivers = "/tmp/test_rivers.gpkg"),
@@ -1311,6 +1398,7 @@ test_that("print.nemeton_layers() shows rasters and vectors", {
 })
 
 test_that("print.nemeton_layers() shows (none) for empty sections", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/test_ndvi.tif"),
     validate = FALSE
@@ -1325,6 +1413,7 @@ test_that("print.nemeton_layers() shows (none) for empty sections", {
 # --- summary.nemeton_layers() ---
 
 test_that("summary.nemeton_layers() outputs basic info", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/test.tif", dem = "/tmp/test2.tif"),
     vectors = list(roads = "/tmp/test.gpkg"),
@@ -1343,6 +1432,7 @@ test_that("summary.nemeton_layers() outputs basic info", {
 # --- Additional edge cases ---
 
 test_that("nemeton_layers() validates=TRUE errors on nonexistent files", {
+  skip_if_not_installed("terra")
   expect_error(
     nemeton::nemeton_layers(
       rasters = list(ndvi = "/tmp/definitely_nonexistent_file_42.tif"),
@@ -1353,6 +1443,7 @@ test_that("nemeton_layers() validates=TRUE errors on nonexistent files", {
 })
 
 test_that("nemeton_layers() metadata includes created_at and validated", {
+  skip_if_not_installed("terra")
   layers <- nemeton::nemeton_layers(
     rasters = list(ndvi = "/tmp/fake.tif"),
     validate = FALSE
