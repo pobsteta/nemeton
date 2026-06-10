@@ -171,6 +171,18 @@ jobs:
           rp <- tryCatch({ x <- terra::rast(pf); "OK" },
                          error = function(e) paste("ERR:", conditionMessage(e)))
           cat("rast(pkg tif):", rp, "\n")
+          # 4) terra survit-il à load_all() de nemeton (ce que fait test()) ?
+          cat("--- after pkgload::load_all ---\n")
+          rl <- tryCatch({
+            pkgload::load_all(".", quiet = TRUE, helpers = FALSE, attach_testthat = FALSE)
+            if (inherits(terra::rast(pf), "SpatRaster")) "OK" else "not-SpatRaster"
+          }, error = function(e) paste("ERR:", conditionMessage(e)))
+          cat("rast(pkg tif) after load_all:", rl, "\n")
+          cat("terra lib path:", find.package("terra"), "\n")
+          cat("terra ns ver:", as.character(getNamespaceVersion("terra")), "\n")
+          cat("loaded ns of interest:",
+              paste(grep("terra|Rcpp|raster|stars|sp$|fasterRaster|lidR|lidaR",
+                         loadedNamespaces(), value = TRUE), collapse = ", "), "\n")
         shell: Rscript {0}
 
       # Vrais tests, via load_all (comme en local où tout passe), plutôt que
