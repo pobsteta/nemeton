@@ -57,6 +57,14 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      # Le binaire terra RSPM est incompatible ABI avec le Rcpp 1.1.1 servi
+      # plus récemment (terra::rast → « no valid constructor »), ce qui faisait
+      # planter le rendu des articles. On recompile terra depuis les sources
+      # contre le Rcpp installé pour réaligner l'ABI.
+      - name: Rebuild terra from source (Rcpp ABI match)
+        run: install.packages("terra", type = "source", repos = "https://packagemanager.posit.co/cran/latest")
+        shell: Rscript {0}
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}

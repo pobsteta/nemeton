@@ -63,15 +63,21 @@ jobs:
             any::remotes
           needs: check
 
+      # Le binaire terra RSPM (build 2026-05) est incompatible ABI avec le
+      # Rcpp 1.1.1 servi plus récemment : terra::rast() lève « no valid
+      # constructor available for the argument list » (Rcpp module mismatch),
+      # ce qui faisait échouer les exemples/tests/vignettes. On recompile terra
+      # depuis les sources contre le Rcpp installé pour réaligner l'ABI.
+      - name: Rebuild terra from source (Rcpp ABI match)
+        run: install.packages("terra", type = "source", repos = "https://packagemanager.posit.co/cran/latest")
+        shell: Rscript {0}
+
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
         with:
-          # Les vignettes font du calcul spatial réel (terra::rast sur les
-          # rasters de démo). Le binaire terra RSPM ne sait pas construire de
-          # SpatRaster dans le sous-processus de `R CMD build`, alors que le
-          # même chemin passe dans le job `tests`. On saute donc le build des
-          # vignettes ici (intention déjà signalée par --no-build-vignettes au
-          # check) ; la logique de calcul reste couverte par testthat.
+          # On saute le build des vignettes (intention déjà signalée par
+          # --no-build-vignettes au check) : elles font du calcul spatial lourd
+          # et redondant avec les tests testthat exécutés par `R CMD check`.
           args: 'c("--no-manual", "--no-vignettes", "--no-build-vignettes", "--as-cran")'
           build_args: 'c("--no-manual", "--no-build-vignettes")'
           error-on: '"error"'
