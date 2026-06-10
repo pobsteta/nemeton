@@ -8,6 +8,7 @@
 
 skip_if_no_terra <- function() {
   testthat::skip_if_not_installed("terra")
+  skip_if_terra_write_broken()
 }
 
 
