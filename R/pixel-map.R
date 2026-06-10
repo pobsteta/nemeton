@@ -534,10 +534,13 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
       return(na_row(date_i))
     }
 
-    # Use the CRS of B08 as the canonical native CRS. All S2 bands of
-    # the same scene share the same CRS (different resolutions but
-    # same tile projection), so picking any is equivalent.
-    pt_native <- sf::st_transform(pt_in, terra::crs(rs[["B08"]]))
+    # Use the CRS of the first loaded band as the canonical native CRS.
+    # All S2 bands of the same scene share the same CRS (different
+    # resolutions but same tile projection), so any loaded band works —
+    # and the guard just above guarantees they are all non-NULL here.
+    # (Historically B08 was hard-coded, which crashed for NDRE-only
+    # extracts where only B8A/B05 are loaded — spec 022 fix.)
+    pt_native <- sf::st_transform(pt_in, terra::crs(rs[[1L]]))
     pt_vect   <- terra::vect(pt_native)
 
     vals <- vapply(indices, function(idx) {

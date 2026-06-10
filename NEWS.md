@@ -1,3 +1,17 @@
+# nemeton 0.69.1 (2026-06-10)
+
+### Fixed — extraction NDRE-only sans B08 (spec 022)
+
+`extract_pixel_timeseries(..., indices = "NDRE")` plantait quand la requête
+ne portait que sur NDRE : le CRS natif était lu en dur sur `rs[["B08"]]`,
+or seules B8A/B05 sont chargées dans ce cas → `terra::crs(NULL)`. Le CRS de
+référence est désormais pris sur la première bande chargée (toutes les
+bandes d'une scène partagent le même CRS). Les appels mixtes (NDVI/NBR/NDMI,
+qui chargent B08) n'étaient pas affectés. Régression couverte par
+`test-ndre.R` (cache ne contenant que B8A + B05). Merci au reviewer
+automatique Codex.
+
+
 # nemeton 0.69.0 (2026-06-10)
 
 ### Added — mode FAST `trend` : dépérissement chronique (spec 023)
