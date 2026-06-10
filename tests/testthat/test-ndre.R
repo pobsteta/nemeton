@@ -65,6 +65,35 @@ test_that("extract_pixel_timeseries returns an NDRE series", {
 })
 
 
+test_that("extract_pixel_timeseries(NDRE-only) works without B08 in cache", {
+  # Regression (spec 022): the native-CRS reference was hard-coded to
+  # rs[["B08"]], which is NULL for an NDRE-only request (only B8A/B05 are
+  # loaded) -> terra::crs(NULL) crashed before the NDRE calculation. A
+  # cache holding *only* the two red-edge bands must still work.
+  skip_if_not_installed("terra")
+  skip_if_not_installed("withr")
+  cache <- withr::local_tempdir()
+  sid <- "S2_NDREONLY_001"
+  sd  <- file.path(cache, sid)
+  dir.create(sd, recursive = TRUE, showWarnings = FALSE)
+  for (b in c("B8A", "B05")) {
+    val <- if (b == "B8A") 0.5 else 0.1   # NDRE = 0.4 / 0.6
+    r <- terra::rast(nrows = 15, ncols = 15,
+                     xmin = 644000, xmax = 644300,
+                     ymin = 5235000, ymax = 5235300,
+                     crs = "EPSG:2154", vals = rep(val, 225))
+    terra::writeRaster(r, file.path(sd, paste0(b, ".tif")),
+                       filetype = "GTiff", overwrite = TRUE)
+  }
+  sc <- data.frame(scene_id = sid, obs_date = as.Date("2026-01-15"),
+                   stringsAsFactors = FALSE)
+  ts <- extract_pixel_timeseries(cache, sc, c(644150, 5235150),
+                                 crs = 2154, indices = "NDRE")
+  expect_true("NDRE" %in% ts$index)
+  expect_equal(ts$value[ts$index == "NDRE"][1], 0.4 / 0.6, tolerance = 1e-6)
+})
+
+
 test_that(".s2_required_bands maps NDRE to B05 + B8A", {
   expect_setequal(nemeton:::.s2_required_bands("NDRE"), c("B05", "B8A"))
   expect_setequal(nemeton:::.s2_required_bands(c("NDVI", "NDRE")),
