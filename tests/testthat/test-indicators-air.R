@@ -37,6 +37,7 @@ test_that("indicateur_a1_couverture calculates buffer coverage correctly", {
 })
 
 test_that("indicateur_a1_couverture handles different buffer radii", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
 
@@ -56,6 +57,7 @@ test_that("indicateur_a1_couverture handles different buffer radii", {
 })
 
 test_that("indicateur_a1_couverture filters forest classes correctly", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 
@@ -241,6 +243,7 @@ test_that("indicateur_a1_couverture handles missing land_cover", {
 })
 
 test_that("indicateur_a1_couverture works with custom forest classes", {
+  skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:2, ]
 

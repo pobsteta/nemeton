@@ -67,6 +67,7 @@ create_test_raster <- function(extent = c(566400, 567000, 6615100, 6615500),
                                crs = "EPSG:2154",
                                values = "random",
                                res = 10) {
+  skip_if_terra_write_broken()
   # Create raster
   r <- terra::rast(
     extent = terra::ext(extent),
@@ -150,6 +151,7 @@ create_test_vector <- function(crs = 2154, type = "lines") {
 #'
 #' @return Named list with paths to temporary files
 create_temp_test_files <- function() {
+  skip_if_terra_write_broken()
   # Create temp directory
   temp_dir <- tempdir()
 
