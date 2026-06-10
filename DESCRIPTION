@@ -91,7 +91,7 @@ Suggests:
 VignetteBuilder: knitr
 URL: https://pobsteta.github.io/nemeton/, https://github.com/pobsteta/nemeton
 BugReports: https://github.com/pobsteta/nemeton/issues
-Additional_repositories:
-    https://r-lidar.r-universe.dev,
-    https://jmmonnet.r-universe.dev
+Additional_repositories: https://r-lidar.r-universe.dev
+Remotes:
+    git::https://forge.inrae.fr/lidar/lidaRtRee.git
 Config/roxygen2/version: 8.0.0

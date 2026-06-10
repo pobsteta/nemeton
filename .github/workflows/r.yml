@@ -32,9 +32,9 @@ jobs:
         with:
           r-version: 'release'
           use-public-rspm: true
-          # lasR / lidR (r-lidar) and lidaRtRee (jmmonnet) are not on
-          # CRAN/RSPM; declare their r-universe so pak can resolve them.
-          extra-repositories: 'https://r-lidar.r-universe.dev https://jmmonnet.r-universe.dev'
+          # lasR / lidR are not on CRAN; resolve them from r-lidar's
+          # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
+          extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
         run: |
@@ -89,9 +89,9 @@ jobs:
         with:
           r-version: 'release'
           use-public-rspm: true
-          # lasR / lidR (r-lidar) and lidaRtRee (jmmonnet) are not on
-          # CRAN/RSPM; declare their r-universe so pak can resolve them.
-          extra-repositories: 'https://r-lidar.r-universe.dev https://jmmonnet.r-universe.dev'
+          # lasR / lidR are not on CRAN; resolve them from r-lidar's
+          # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
+          extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
         run: |
@@ -133,9 +133,9 @@ jobs:
         with:
           r-version: 'release'
           use-public-rspm: true
-          # lasR / lidR (r-lidar) and lidaRtRee (jmmonnet) are not on
-          # CRAN/RSPM; declare their r-universe so pak can resolve them.
-          extra-repositories: 'https://r-lidar.r-universe.dev https://jmmonnet.r-universe.dev'
+          # lasR / lidR are not on CRAN; resolve them from r-lidar's
+          # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
+          extra-repositories: 'https://r-lidar.r-universe.dev'
 
       - name: Install system dependencies
         run: |
