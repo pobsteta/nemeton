@@ -54,7 +54,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          # rsconnect : requis par pkgdown::package_tutorials() pour découvrir
+          # les tutoriels learnr de inst/tutorials/ (sinon « The package
+          # rsconnect is required to find published tutorials »).
+          extra-packages: any::pkgdown, any::rsconnect, local::.
           needs: website
 
       - name: Build site
