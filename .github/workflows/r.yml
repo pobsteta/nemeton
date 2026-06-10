@@ -118,12 +118,28 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::testthat, any::remotes
+          extra-packages: any::testthat, any::remotes, any::devtools
           needs: check
 
-      - name: Run tests
+      # Diagnostic : terra::rast() peut-il construire un SpatRaster sur ce
+      # runner ? (le sandbox `R CMD check` lève « no valid constructor » ;
+      # on isole si c'est terra-sur-runner ou spécifique au sandbox.)
+      - name: Diagnose terra on runner
         run: |
-          testthat::test_package("nemeton", reporter = "summary")
+          cat("Rcpp:", as.character(packageVersion("Rcpp")),
+              "terra:", as.character(packageVersion("terra")), "\n")
+          cat("GDAL:", terra::gdal(), "\n")
+          r <- tryCatch(terra::rast(nrows = 2, ncols = 2, vals = 1),
+                        error = function(e) conditionMessage(e))
+          cat("rast(in-memory):", if (inherits(r, "SpatRaster")) "OK" else r, "\n")
+          f <- system.file("extdata", "massif_demo_dem.tif", package = "terra")
+          cat("terra demo file:", f, "\n")
+        shell: Rscript {0}
+
+      # Vrais tests, via load_all (comme en local où tout passe), plutôt que
+      # test_package() qui ne trouvait aucun test installé (faux vert).
+      - name: Run tests
+        run: devtools::test(stop_on_failure = TRUE, reporter = "summary")
         shell: Rscript {0}
 
   # ============================================================
