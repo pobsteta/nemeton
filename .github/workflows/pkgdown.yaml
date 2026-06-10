@@ -29,6 +29,9 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+          # lasR / lidR (r-lidar) and lidaRtRee (jmmonnet) are not on
+          # CRAN/RSPM; declare their r-universe so pak can resolve them.
+          extra-repositories: 'https://r-lidar.r-universe.dev https://jmmonnet.r-universe.dev'
 
       - name: Install system dependencies
         run: |
