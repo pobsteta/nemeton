@@ -674,9 +674,12 @@ read_fast_alert_rasters <- function(con, zone_id,
   # `min_obs_per_year` clear (non-NA) observations that year.
   yearly <- lapply(uy, function(y) {
     sub  <- stack[[which(yr == y)]]
-    nok  <- terra::app(sub, fun = function(v) sum(!is.na(v)))
-    med  <- terra::app(sub, fun = function(v)
-      if (all(is.na(v))) NA_real_ else stats::median(v, na.rm = TRUE))
+    # `terra::app(sub, fun)` errors when `sub` has a single layer (a year
+    # with one in-season scene), so use cell-wise terra primitives that are
+    # robust to any layer count: non-NA count via nlyr - countNA, and the
+    # per-cell median via terra::median (all-NA cells -> NaN, masked next).
+    nok  <- terra::nlyr(sub) - terra::countNA(sub)
+    med  <- terra::median(sub, na.rm = TRUE)
     terra::ifel(nok < min_obs_per_year, NA_real_, med)
   })
   yearly <- terra::rast(yearly)

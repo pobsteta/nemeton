@@ -44,12 +44,15 @@ test_that(".mann_kendall flags a monotonic decline and clears flat / short", {
 .trend_stack <- function(dates, cell_values) {
   n <- length(dates)
   layers <- lapply(seq_len(n), function(i) {
-    m <- matrix(0.5, 4, 4)
+    # Assign by terra cell index (row-major), NOT R matrix linear index
+    # (column-major): cell key "k" must mean terra cell k so the per-cell
+    # expectations below (v[1], v[2], v[3]) line up with the input series.
+    r <- terra::rast(nrows = 4, ncols = 4,
+                     xmin = 0, xmax = 4, ymin = 0, ymax = 4,
+                     crs = "EPSG:32631", vals = 0.5)
     for (cell in names(cell_values)) {
-      m[as.integer(cell)] <- cell_values[[cell]][i]
+      r[as.integer(cell)] <- cell_values[[cell]][i]
     }
-    r <- terra::rast(m, crs = "EPSG:32631")
-    terra::ext(r) <- terra::ext(0, 4, 0, 4)
     r
   })
   out <- terra::rast(layers)
@@ -95,7 +98,7 @@ test_that(".fast_raster_trend: noisy non-monotonic series is not flagged", {
   stk <- .trend_stack(dates, list("1" = noise))
   out <- nemeton:::.fast_raster_trend(
     stk, months = 6:9, min_years = 4L, min_obs_per_year = 2L, alpha = 0.05)
-  expect_equal(terra::values(out)[1, 1], 0)
+  expect_equal(unname(terra::values(out)[1, 1]), 0)
 })
 
 
