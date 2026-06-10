@@ -115,14 +115,19 @@ jobs:
           # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
-      - name: Install system dependencies
+      # GDAL noble = 3.8.4. La corruption « no valid constructor » de terra ne
+      # survient que sur le runner (jamais en local sous GDAL 3.11). On aligne
+      # le runner sur une GDAL récente via ubuntugis.
+      - name: Install system dependencies (GDAL 3.11 via ubuntugis)
         run: |
+          sudo add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable
           sudo apt-get update
           sudo apt-get install -y \
             libgdal-dev libgeos-dev libproj-dev libudunits2-dev \
             libssl-dev libcurl4-openssl-dev libxml2-dev \
             libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
             libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+          gdalinfo --version
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
@@ -130,20 +135,15 @@ jobs:
           extra-packages: any::testthat, any::remotes, any::devtools
           needs: check
 
-      # Un paquet `LinkingTo: terra` (p.ex. fasterRaster) installé en binaire
-      # contre un autre terra corrompt le module Rcpp de terra au chargement →
-      # « no valid constructor » sur terra::rast(). On les recompile source.
-      - name: Rebuild terra-linking packages from source (ABI match)
+      # Les binaires RSPM de terra/sf/exactextractr sont liés à la GDAL 3.8.4
+      # de noble : après l'upgrade GDAL il faut les recompiler depuis les
+      # sources contre la nouvelle GDAL, sinon l'ABI diverge.
+      - name: Rebuild spatial packages from source (against upgraded GDAL)
         run: |
-          ip <- installed.packages()
-          lt <- ip[, "LinkingTo"]
-          culprits <- setdiff(rownames(ip)[!is.na(lt) & grepl("terra", lt)], "terra")
-          cat("LinkingTo terra:", paste(culprits, collapse = ", "), "\n")
-          repos <- c("https://r-lidar.r-universe.dev",
-                     "https://packagemanager.posit.co/cran/latest")
-          for (p in culprits) tryCatch(
-            install.packages(p, type = "source", repos = repos),
-            error = function(e) cat("skip", p, ":", conditionMessage(e), "\n"))
+          install.packages(c("terra", "sf", "exactextractr"),
+                           type = "source",
+                           repos = "https://packagemanager.posit.co/cran/latest")
+          cat("terra GDAL:", terra::gdal(), " sf GDAL:", sf::sf_extSoftVersion()[["GDAL"]], "\n")
         shell: Rscript {0}
 
       # Diagnostic : terra::rast() peut-il construire un SpatRaster sur ce
