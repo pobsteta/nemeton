@@ -66,7 +66,14 @@ jobs:
       - name: Check package
         uses: r-lib/actions/check-r-package@v2
         with:
+          # Les vignettes font du calcul spatial réel (terra::rast sur les
+          # rasters de démo). Le binaire terra RSPM ne sait pas construire de
+          # SpatRaster dans le sous-processus de `R CMD build`, alors que le
+          # même chemin passe dans le job `tests`. On saute donc le build des
+          # vignettes ici (intention déjà signalée par --no-build-vignettes au
+          # check) ; la logique de calcul reste couverte par testthat.
           args: 'c("--no-manual", "--no-vignettes", "--no-build-vignettes", "--as-cran")'
+          build_args: 'c("--no-manual", "--no-build-vignettes")'
           error-on: '"error"'
           upload-snapshots: true
 

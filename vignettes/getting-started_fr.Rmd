@@ -18,6 +18,19 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE
 )
+
+# Certains environnements de build (binaire terra RSPM dans le sous-processus
+# de `R CMD build` / pkgdown) ne savent pas construire de SpatRaster, alors que
+# le même code passe dans les tests testthat. On sonde cette capacité une fois ;
+# si elle manque, les chunks de calcul spatial sont rendus sans être évalués
+# (pas de plantage du build). En local et sur un terra sain, tout s'exécute.
+.nemeton_terra_ok <- tryCatch(
+  inherits(
+    terra::rast(system.file("extdata", "massif_demo_dem.tif", package = "nemeton")),
+    "SpatRaster"
+  ),
+  error = function(e) FALSE
+)
 ```
 
 # Introduction
@@ -81,6 +94,13 @@ print(layers)
 Le jeu de données inclut :
 - **Rasters** : biomasse, MNT, occupation du sol, richesse spécifique
 - **Vecteurs** : réseau routier, cours d'eau
+
+```{r gate-spatial, include = FALSE}
+# À partir d'ici, les chunks chargent réellement les rasters via terra.
+# Si l'environnement de build ne peut pas construire de SpatRaster (cf. chunk
+# `setup`), on n'évalue pas ces chunks pour éviter un échec de build.
+knitr::opts_chunk$set(eval = .nemeton_terra_ok)
+```
 
 # Calculer les indicateurs
 
