@@ -118,9 +118,12 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' @param con A `DBIConnection`.
 #' @param zone_id Integer. Existing zone in `monitoring_zone`.
 #' @param start,end Date or character `"YYYY-MM-DD"`.
-#' @param bands Character vector. Subset of `c("NDVI", "NBR", "NDMI")`.
-#'   B11 (needed by NDMI) is also cached best-effort on every ingest
-#'   (spec 019 D3), so NDMI works on future scenes without requesting it.
+#' @param bands Character vector. Subset of
+#'   `c("NDVI", "NBR", "NDMI", "NDRE")`. B11 (needed by NDMI) is also
+#'   cached best-effort on every ingest (spec 019 D3), so NDMI works on
+#'   future scenes without requesting it. `"NDRE"` (spec 022) caches the
+#'   red-edge bands B05 + B8A; request it explicitly when you want the
+#'   FAST trend mode or the NDRE pixel diagnostic.
 #' @param max_cloud Numeric. Maximum scene cloud cover (percent). Default 20.
 #' @param skip_cached Logical. When `TRUE` (default), skip every scene
 #'   whose required band COGs are all already present under `cache_dir`,
@@ -286,7 +289,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
-  bands <- match.arg(bands, c("NDVI", "NBR", "NDMI"), several.ok = TRUE)
+  bands <- match.arg(bands, c("NDVI", "NBR", "NDMI", "NDRE"),
+                     several.ok = TRUE)
 
   # spec 018 — FAST-alert pre-warming is opt-in and needs both a band
   # cache to read from (`cache_dir`) and a destination for the result
@@ -599,6 +603,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
   if ("NDVI" %in% bands) out <- c(out, "B04", "B08")
   if ("NBR"  %in% bands) out <- c(out, "B08", "B12")
   if ("NDMI" %in% bands) out <- c(out, "B08", "B11")
+  if ("NDRE" %in% bands) out <- c(out, "B05", "B8A")   # spec 022 red-edge
   unique(out)
 }
 

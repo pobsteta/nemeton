@@ -1,3 +1,27 @@
+# nemeton 0.68.0 (2026-06-10)
+
+### Added — indice red-edge NDRE (spec 022)
+
+Nouvel indice spectral **NDRE = (B8A − B05) / (B8A + B05)**, marqueur
+red-edge du stress chlorophyllien précoce, ajouté au sous-système FAST.
+C'est le prérequis du mode `trend` (déclin chronique des feuillus).
+
+- `build_index_stack(cache_dir, scenes_df, index = "NDRE")` calcule la
+  pile NDRE. B8A et B05 sont nativement à 20 m et partagent la même
+  grille : l'indice reste à 20 m, sans rééchantillonnage.
+- `extract_pixel_timeseries(..., indices = "NDRE")` renvoie la série
+  red-edge par pixel.
+- `read_s2_band_raster()` accepte désormais `"B05"` et `"B8A"`.
+- `ingest_sentinel2_timeseries(..., bands = "NDRE")` met en cache B05 +
+  B8A (les bandes red-edge ne sont téléchargées que sur demande
+  explicite).
+- Nouveau garde-fou interne `.assert_cache_has_bands()` : demander NDRE
+  sur un cache qui n'a jamais ingéré B05/B8A échoue avec un message `cli`
+  explicite plutôt qu'un raster all-NA silencieux.
+- Les indices existants (NDVI, NBR, NDMI) et leur comportement
+  count/rolling sont strictement inchangés.
+
+
 # nemeton 0.67.0 (2026-06-04)
 
 ### Added — nettoyage des caches de zones orphelines (spec 020)
