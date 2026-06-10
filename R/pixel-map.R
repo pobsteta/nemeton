@@ -32,8 +32,9 @@
 #'   directory name is its sanitized form (cf.
 #'   `nemeton:::.s2_safe_scene_id`).
 #' @param band Character(1). One of `"B04"` (Red, 10 m), `"B08"`
-#'   (NIR, 10 m), `"B12"` (SWIR2, 20 m) or `"B11"` (SWIR1, 20 m, used by
-#'   NDMI).
+#'   (NIR, 10 m), `"B12"` (SWIR2, 20 m), `"B11"` (SWIR1, 20 m, used by
+#'   NDMI), `"B05"` (Red-edge 1, 20 m) or `"B8A"` (NIR narrow, 20 m,
+#'   both used by NDRE, spec 022).
 #'
 #' @return A 1-layer [terra::SpatRaster] in the source CRS (typically
 #'   EPSG:32631 or 32632 — UTM zones over France), or `NULL` if the
@@ -65,7 +66,7 @@ read_s2_band_raster <- function(cache_dir, scene_id, band) {
     stop("`scene_id` must be a single non-empty character.",
          call. = FALSE)
   }
-  band <- match.arg(band, c("B04", "B08", "B12", "B11"))
+  band <- match.arg(band, c("B04", "B08", "B12", "B11", "B05", "B8A"))
 
   path <- file.path(cache_dir, .s2_safe_scene_id(scene_id),
                     paste0(band, ".tif"))
@@ -151,21 +152,28 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' * **NDMI** = (B08 − B11) / (B08 + B11) — vegetation moisture proxy
 #'   (drops under water stress). B11 is natively 20 m, so it is
 #'   resampled to the B08 10 m grid like B12.
+#' * **NDRE** = (B8A − B05) / (B8A + B05) — red-edge proxy of
+#'   chlorophyll content, an early marker of canopy stress (spec 022).
+#'   Both B8A and B05 are natively 20 m and share the same grid, so the
+#'   index is computed at 20 m without resampling.
 #'
 #'   B12 (NBR) is natively 20 m, so it is
 #'   resampled to the B08 10 m grid via [terra::resample()] with
 #'   `method = "bilinear"`.
 #'
 #' Scenes with incomplete cached bands (missing B04, B08, B12 for NBR,
-#' or B11 for NDMI) are skipped silently with a single aggregated
-#' warning. NAs
+#' B11 for NDMI, or B05 / B8A for NDRE) are skipped silently with a
+#' single aggregated warning. For NDRE specifically, a cache that holds
+#' **no** scene with both red-edge bands aborts up front (internal
+#' `.assert_cache_has_bands()` guard) rather than returning a silent
+#' all-NA raster. NAs
 #' propagate naturally through the arithmetic: a NA in any source
 #' pixel yields NA in the index.
 #'
 #' @param cache_dir Character(1). Path to the S2 cache root.
 #' @param scenes_df See [read_s2_band_stack()].
-#' @param index Character(1). One of `"NDVI"` (default), `"NBR"` or
-#'   `"NDMI"`.
+#' @param index Character(1). One of `"NDVI"` (default), `"NBR"`,
+#'   `"NDMI"` or `"NDRE"` (red-edge, spec 022).
 #' @param mask_polygon Optional `sf`/`sfc` polygon. When supplied, pixels
 #'   outside it become NA on every layer.
 #' @param parallel Logical (spec 017 D4). When `TRUE` and \pkg{furrr} is
@@ -205,7 +213,7 @@ read_s2_band_stack <- function(cache_dir, scenes_df, band) {
 #' @seealso [read_s2_band_stack()], [extract_pixel_timeseries()].
 #' @export
 build_index_stack <- function(cache_dir, scenes_df,
-                              index = c("NDVI", "NBR", "NDMI"),
+                              index = c("NDVI", "NBR", "NDMI", "NDRE"),
                               mask_polygon = NULL,
                               parallel = FALSE) {
   index <- match.arg(index)
@@ -214,8 +222,16 @@ build_index_stack <- function(cache_dir, scenes_df,
   bands_needed <- switch(index,
     NDVI = c("B04", "B08"),
     NBR  = c("B08", "B12"),
-    NDMI = c("B08", "B11")
+    NDMI = c("B08", "B11"),
+    NDRE = c("B8A", "B05")
   )
+
+  # spec 022 — NDRE is opt-in (red-edge bands are only cached when an
+  # ingestion explicitly requests them). Fail fast with a clear message
+  # if the cache holds no scene carrying both bands, rather than letting
+  # the per-scene skip below collapse to a silent all-NA / NULL result.
+  # NDVI / NBR / NDMI keep their historical tolerant behaviour.
+  if (index == "NDRE") .assert_cache_has_bands(cache_dir, bands_needed)
 
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
@@ -235,11 +251,16 @@ build_index_stack <- function(cache_dir, scenes_df,
       # B12 at 20 m onto B08's 10 m grid via bilinear resampling.
       b12_10m <- terra::resample(rs$B12, rs$B08, method = "bilinear")
       (rs$B08 - b12_10m) / (rs$B08 + b12_10m)
-    } else {
+    } else if (index == "NDMI") {
       # NDMI = (B08 - B11) / (B08 + B11). B11 is native 20 m, resampled
       # to B08's 10 m grid bilinearly, exactly like B12 for NBR.
       b11_10m <- terra::resample(rs$B11, rs$B08, method = "bilinear")
       (rs$B08 - b11_10m) / (rs$B08 + b11_10m)
+    } else {
+      # NDRE = (B8A - B05) / (B8A + B05). Both bands are native 20 m and
+      # share the same grid, so no resampling is needed — the index is a
+      # 20 m raster (spec 022).
+      (rs$B8A - rs$B05) / (rs$B8A + rs$B05)
     }
   }
 
@@ -415,7 +436,10 @@ build_index_stack <- function(cache_dir, scenes_df,
 #'   PROJ string, a WKT. The transformation to each scene's source CRS
 #'   happens internally on a per-scene basis.
 #' @param indices Character. A non-empty subset of
-#'   `c("NDVI", "NBR", "NDMI")`. Default: `c("NDVI", "NBR")`.
+#'   `c("NDVI", "NBR", "NDMI", "NDRE")`. Default: `c("NDVI", "NBR")`.
+#'   `"NDRE"` (red-edge, spec 022) requires the B05 / B8A bands in the
+#'   cache; a cache holding none aborts (internal
+#'   `.assert_cache_has_bands()` guard).
 #'
 #' @return A `data.frame` with columns `obs_date` (Date), `index`
 #'   (character) and `value` (numeric, possibly NA), sorted by
@@ -444,7 +468,12 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
   if (!is.numeric(xy) || length(xy) != 2L || anyNA(xy)) {
     stop("`xy` must be a length-2 numeric, no NA.", call. = FALSE)
   }
-  indices <- match.arg(indices, c("NDVI", "NBR", "NDMI"), several.ok = TRUE)
+  indices <- match.arg(indices, c("NDVI", "NBR", "NDMI", "NDRE"),
+                       several.ok = TRUE)
+
+  # spec 022 — guard the red-edge index up front: a cache that never
+  # ingested B05 / B8A would otherwise yield a silent all-NA NDRE series.
+  if ("NDRE" %in% indices) .assert_cache_has_bands(cache_dir, c("B05", "B8A"))
 
   scenes_df <- scenes_df[order(as.Date(scenes_df$obs_date)), , drop = FALSE]
 
@@ -480,7 +509,8 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
     switch(idx,
       NDVI = c("B04", "B08"),
       NBR  = c("B08", "B12"),
-      NDMI = c("B08", "B11"))
+      NDMI = c("B08", "B11"),
+      NDRE = c("B8A", "B05"))
   })))
 
   na_row <- function(date_i) {
@@ -522,13 +552,18 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
         b12 <- terra::extract(rs$B12, pt_vect)[1L, 2L]
         if (is.na(b08) || is.na(b12) || (b08 + b12) == 0) return(NA_real_)
         (b08 - b12) / (b08 + b12)
-      } else { # NDMI
+      } else if (idx == "NDMI") {
         b08 <- terra::extract(rs$B08, pt_vect)[1L, 2L]
         # Native 20 m B11 — no resample for a single-point extraction,
         # mirroring the B12 treatment for NBR above.
         b11 <- terra::extract(rs$B11, pt_vect)[1L, 2L]
         if (is.na(b08) || is.na(b11) || (b08 + b11) == 0) return(NA_real_)
         (b08 - b11) / (b08 + b11)
+      } else { # NDRE = (B8A - B05) / (B8A + B05), both native 20 m
+        b8a <- terra::extract(rs$B8A, pt_vect)[1L, 2L]
+        b05 <- terra::extract(rs$B05, pt_vect)[1L, 2L]
+        if (is.na(b8a) || is.na(b05) || (b8a + b05) == 0) return(NA_real_)
+        (b8a - b05) / (b8a + b05)
       }
     }, numeric(1L))
 
@@ -565,4 +600,37 @@ extract_pixel_timeseries <- function(cache_dir, scenes_df, xy,
          call. = FALSE)
   }
   invisible(scenes_df)
+}
+
+# spec 022 — assert the COG cache structurally carries every band in
+# `bands` (i.e. at least one scene directory holds `<band>.tif`). Used by
+# the NDRE path of build_index_stack() / extract_pixel_timeseries() to
+# turn "you never ingested the red-edge bands" into an explicit error
+# instead of a silent all-NA raster. A scene that simply has the band but
+# masked to NA (cloud) is not the target here — that is a legitimate hole
+# the per-scene logic keeps. Aborts when `cache_dir` is missing/empty or
+# when any requested band is absent from every cached scene.
+.assert_cache_has_bands <- function(cache_dir, bands) {
+  if (is.null(cache_dir) || !nzchar(cache_dir) || !dir.exists(cache_dir)) {
+    cli::cli_abort(c(
+      "S2 cache directory not found: {.path {cache_dir %||% '<NULL>'}}.",
+      i = "Run {.fn ingest_sentinel2_timeseries} to populate the cache."
+    ))
+  }
+  scene_dirs <- list.dirs(cache_dir, recursive = FALSE)
+  present <- vapply(bands, function(b) {
+    length(scene_dirs) > 0L &&
+      any(file.exists(file.path(scene_dirs, paste0(b, ".tif"))))
+  }, logical(1))
+  missing <- bands[!present]
+  if (length(missing)) {
+    cli::cli_abort(c(
+      "No cached scene carries the band{?s} {.field {missing}} under \\
+       {.path {cache_dir}}.",
+      i = "These bands feed the requested index but were never ingested.",
+      i = "Re-run {.fn ingest_sentinel2_timeseries} with the index that \\
+           needs them (e.g. {.code bands = \"NDRE\"} for B05 / B8A)."
+    ))
+  }
+  invisible(TRUE)
 }

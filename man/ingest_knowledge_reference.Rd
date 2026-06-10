@@ -51,5 +51,5 @@ which documents are full-text versus reference-only.
 }
 \seealso{
 [ingest_knowledge_document()] (full-text ingestion),
-[retrieve_knowledge()], [format_citations()].
+  [retrieve_knowledge()], [format_citations()].
 }

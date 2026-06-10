@@ -27,8 +27,11 @@ in the CRS specified by `crs`.}
 PROJ string, a WKT. The transformation to each scene's source CRS
 happens internally on a per-scene basis.}
 
-\item{indices}{Character. A non-empty subset of `c("NDVI", "NBR")`.
-Default: both.}
+\item{indices}{Character. A non-empty subset of
+`c("NDVI", "NBR", "NDMI", "NDRE")`. Default: `c("NDVI", "NBR")`.
+`"NDRE"` (red-edge, spec 022) requires the B05 / B8A bands in the
+cache; a cache holding none aborts (internal
+`.assert_cache_has_bands()` guard).}
 }
 \value{
 A `data.frame` with columns `obs_date` (Date), `index`

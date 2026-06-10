@@ -17,6 +17,21 @@
 #'   `deficit_x = max(0, threshold_x - mean_x)`. Value 0 = pixel not in
 #'   alert, value > 0 = magnitude of the alert. Robust to brief noise,
 #'   but insensitive to short shocks.
+#' * **`"trend"`** — multi-year monotonic decline (spec 023). A
+#'   *relative* paradigm: each pixel is its own baseline, no absolute
+#'   `threshold`. Builds a seasonal yearly composite (median of the
+#'   `months` window per year, dropping years with fewer than
+#'   `min_obs_per_year` clear observations), requires at least
+#'   `min_years` valid years, then fits a Theil-Sen slope and a
+#'   Mann-Kendall significance test per pixel. Returns `abs(slope)`
+#'   where the slope is negative **and** the Mann-Kendall p-value is
+#'   below `alpha`, otherwise `0`; pixels with too few valid years are
+#'   `NA`. The output is the same kind of continuous raster as the
+#'   other modes (`0` = no alert, `> 0` = magnitude), so
+#'   [compute_fast_alert_mask()] discretises it unchanged — Mann-Kendall
+#'   plays the gate that the absolute threshold plays for count /
+#'   rolling. Built for chronic dieback (slow multi-year decline, e.g.
+#'   broadleaf oak / beech) that the short-horizon modes cannot see.
 #'
 #' The raster is computed in the native Sentinel-2 CRS (typically
 #' EPSG:32631 for tiles T31xxx) for numerical accuracy, then
@@ -37,20 +52,36 @@
 #'   diagnostic is independent of `obs_pixel` / placettes).
 #' @param zone_id Integer scalar. Existing zone in `monitoring_zone`.
 #' @param index Character scalar. The single spectral index the alert
-#'   map is built from: `"NDVI"` (default), `"NBR"` or `"NDMI"` (moisture,
-#'   spec 019). Spec 017 (v0.55.0) dropped the previous "NDVI OR NBR"
-#'   combination — the map is now mono-index.
+#'   map is built from: `"NDVI"`, `"NBR"`, `"NDMI"` (moisture, spec 019)
+#'   or `"NDRE"` (red-edge, spec 022). The default is **mode-dependent**
+#'   when `index` is not supplied: `"NDVI"` for `count` / `rolling`
+#'   (back-compat), `"NDMI"` for `trend` (moisture decouples first under
+#'   chronic stress). Spec 017 (v0.55.0) dropped the previous "NDVI OR
+#'   NBR" combination — the map is mono-index.
 #' @param threshold Numeric scalar in `(0, 1)`, or `NULL`. Alert if the
 #'   chosen `index` is strictly below this value. When `NULL` (default)
 #'   it resolves to `0.40` for `"NDVI"` and `0.30` otherwise (`"NBR"`,
-#'   `"NDMI"`).
+#'   `"NDMI"`, `"NDRE"`). **Ignored when `mode = "trend"`** (the trend
+#'   paradigm is relative, not threshold-based).
 #' @param date_from,date_to Date (or character `"YYYY-MM-DD"`) bounding
 #'   the analysis window.
-#' @param mode Character scalar. One of `"count"` or `"rolling"`.
-#'   Default `"count"`.
+#' @param mode Character scalar. One of `"count"`, `"rolling"` or
+#'   `"trend"` (spec 023). Default `"count"`.
 #' @param window_days Integer scalar. Length of the trailing window in
-#'   calendar days for `mode = "rolling"`. Ignored in `"count"` mode.
-#'   Default 30.
+#'   calendar days for `mode = "rolling"`. Ignored in `"count"` /
+#'   `"trend"` mode. Default 30.
+#' @param months Integer vector in `1:12`. Trend mode only: the seasonal
+#'   window kept for the yearly composite. Default `6:9` (summer, when
+#'   water stress is most legible).
+#' @param min_years Integer scalar. Trend mode only: minimum number of
+#'   valid composite years a pixel needs, else it is `NA`. Default `4`.
+#' @param min_obs_per_year Integer scalar. Trend mode only: minimum
+#'   number of clear observations a pixel needs within a year for that
+#'   year's median to count (else that year is `NA` for the pixel).
+#'   Default `2`.
+#' @param alpha Numeric scalar in `(0, 1)`. Trend mode only: the
+#'   Mann-Kendall two-sided significance level above which a pixel's
+#'   decline is treated as noise (output `0`). Default `0.05`.
 #' @param cache_dir Character scalar. Path to the COG cache root
 #'   (typically `<project>/cache/layers/sentinel2`). Must exist.
 #' @param cache_result Logical. When `TRUE` (default, spec 017 D6) the
@@ -97,11 +128,15 @@
 #'
 #' @export
 read_fast_alert_raster <- function(con, zone_id,
-                                   index          = c("NDVI", "NBR", "NDMI"),
+                                   index          = c("NDVI", "NBR", "NDMI", "NDRE"),
                                    threshold      = NULL,
                                    date_from, date_to,
-                                   mode           = c("count", "rolling"),
+                                   mode           = c("count", "rolling", "trend"),
                                    window_days    = 30L,
+                                   months           = 6:9,
+                                   min_years        = 4L,
+                                   min_obs_per_year = 2L,
+                                   alpha            = 0.05,
                                    cache_dir,
                                    apply_zone_mask  = TRUE,
                                    mask_polygon     = NULL,
@@ -109,7 +144,14 @@ read_fast_alert_raster <- function(con, zone_id,
                                    result_cache_dir = NULL,
                                    parallel         = FALSE) {
   mode  <- match.arg(mode)
-  index <- match.arg(index)
+  # Mode-dependent default index: NDVI for count/rolling (back-compat),
+  # NDMI for trend (moisture decouples first under chronic stress). An
+  # explicit `index` always wins.
+  if (missing(index)) {
+    index <- if (mode == "trend") "NDMI" else "NDVI"
+  } else {
+    index <- match.arg(index, c("NDVI", "NBR", "NDMI", "NDRE"))
+  }
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -165,6 +207,30 @@ read_fast_alert_raster <- function(con, zone_id,
   }
   wd <- as.integer(window_days)
 
+  # spec 023 — trend mode validates its own parameters; `threshold` and
+  # `window_days` are ignored here (the paradigm is relative).
+  if (mode == "trend") {
+    if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
+        alpha <= 0 || alpha >= 1) {
+      cli::cli_abort("{.arg alpha} must be a single numeric in (0, 1) when {.code mode = \"trend\"}.")
+    }
+    if (!is.numeric(months) || !length(months) || anyNA(months) ||
+        any(months < 1 | months > 12)) {
+      cli::cli_abort("{.arg months} must be integers in 1:12 when {.code mode = \"trend\"}.")
+    }
+    if (!is.numeric(min_years) || length(min_years) != 1L ||
+        is.na(min_years) || min_years < 2) {
+      cli::cli_abort("{.arg min_years} must be a single integer >= 2 when {.code mode = \"trend\"}.")
+    }
+    if (!is.numeric(min_obs_per_year) || length(min_obs_per_year) != 1L ||
+        is.na(min_obs_per_year) || min_obs_per_year < 1) {
+      cli::cli_abort("{.arg min_obs_per_year} must be a single integer >= 1 when {.code mode = \"trend\"}.")
+    }
+  }
+  months           <- sort(unique(as.integer(months)))
+  min_years        <- as.integer(min_years)
+  min_obs_per_year <- as.integer(min_obs_per_year)
+
   # spec 017 (v0.55.0) — enumerate scenes from the COG cache, not from
   # `obs_pixel`. The diagnostic is a per-pixel raster computed before any
   # placette exists, so it must not depend on `obs_pixel` (which is a
@@ -194,14 +260,19 @@ read_fast_alert_raster <- function(con, zone_id,
     tryCatch(sf::st_as_text(sf::st_geometry(poly)[[1L]]),
              error = function(e) NULL) else NULL
   rhash <- .fast_raster_hash(scenes_df$scene_id, index, threshold, mode,
-                             wd, df, dt, mask_wkt)
+                             wd, df, dt, mask_wkt,
+                             alpha = alpha, months = months,
+                             min_years = min_years,
+                             min_obs_per_year = min_obs_per_year)
   cpath <- .fast_raster_cache_path(result_cache_dir, zid, index, mode,
-                                   threshold, df, dt, wd, rhash)
+                                   threshold, df, dt, wd, rhash,
+                                   alpha = alpha, months = months,
+                                   min_years = min_years)
 
   if (isTRUE(cache_result) && file.exists(cpath)) {
     cached <- tryCatch(terra::rast(cpath), error = function(e) NULL)
     if (!is.null(cached)) {
-      names(cached)         <- if (mode == "count") "alert_count" else "alert_deficit"
+      names(cached)         <- .fast_layer_name(mode)
       attr(cached, "mode")  <- mode
       attr(cached, "index") <- index
       attr(cached, "cached") <- TRUE
@@ -243,8 +314,12 @@ read_fast_alert_raster <- function(con, zone_id,
 
     rn <- if (mode == "count") {
       .compute_alert_count(stk, threshold)
-    } else {
+    } else if (mode == "rolling") {
       .compute_alert_rolling(stk, threshold, window_days = wd, date_to = dt)
+    } else {
+      # spec 023 — multi-year monotonic decline (Theil-Sen + Mann-Kendall).
+      .fast_raster_trend(stk, months = months, min_years = min_years,
+                         min_obs_per_year = min_obs_per_year, alpha = alpha)
     }
     if (is.null(rn)) return(NULL)
     terra::project(rn, "EPSG:2154", method = method)
@@ -257,7 +332,7 @@ read_fast_alert_raster <- function(con, zone_id,
   out <- if (length(per_tile) == 1L) per_tile[[1L]] else
     do.call(terra::mosaic, c(per_tile, list(fun = "max")))
 
-  names(out)         <- if (mode == "count") "alert_count" else "alert_deficit"
+  names(out)         <- .fast_layer_name(mode)
   attr(out, "mode")  <- mode
   attr(out, "index") <- index
 
@@ -382,18 +457,37 @@ read_fast_alert_rasters <- function(con, zone_id,
 # dependency. `window_days` only matters in rolling mode; the mask WKT is
 # NA when no mask is applied.
 .fast_raster_hash <- function(scene_ids, index, threshold, mode,
-                              window_days, date_from, date_to, mask_wkt) {
-  rlang::hash(list(
+                              window_days, date_from, date_to, mask_wkt,
+                              alpha = NA_real_, months = NA_integer_,
+                              min_years = NA_integer_,
+                              min_obs_per_year = NA_integer_) {
+  base <- list(
     scenes      = sort(as.character(scene_ids)),
     index       = index,
-    threshold   = round(as.numeric(threshold), 6L),
+    # spec 023 — threshold is meaningless in trend mode; drop it from the
+    # hash there so a threshold change never aliases two trend rasters.
+    threshold   = if (identical(mode, "trend")) NA_real_
+                  else round(as.numeric(threshold), 6L),
     mode        = mode,
     window_days = if (identical(mode, "rolling"))
                     as.integer(window_days) else NA_integer_,
     date_from   = as.character(date_from),
     date_to     = as.character(date_to),
     mask        = if (is.null(mask_wkt)) NA_character_ else mask_wkt
-  ))
+  )
+  # Trend-only parameters are appended ONLY for trend, so the hash of a
+  # count / rolling raster is byte-identical to pre-spec-023 — existing
+  # cached COGs stay valid. Changing alpha / months / min_years /
+  # min_obs_per_year invalidates a trend raster (the content IS the key).
+  if (identical(mode, "trend")) {
+    base <- c(base, list(
+      alpha            = round(as.numeric(alpha), 6L),
+      months           = paste(sort(as.integer(months)), collapse = "-"),
+      min_years        = as.integer(min_years),
+      min_obs_per_year = as.integer(min_obs_per_year)
+    ))
+  }
+  rlang::hash(base)
 }
 
 # Verbose, deterministic cache filename for a FAST alert raster:
@@ -405,15 +499,31 @@ read_fast_alert_rasters <- function(con, zone_id,
 # (changes after a re-ingest) and the mask WKT (changes with the zone).
 # Same parameters -> identical name, so the D6 cache hit is preserved.
 .fast_raster_filename <- function(index, mode, threshold,
-                                  date_from, date_to, window_days, hash) {
-  sprintf(
-    "fast_%s_%s_thr%.2f_%s_%s_w%d_%s.tif",
-    toupper(index), tolower(mode),
-    as.numeric(threshold),
-    format(as.Date(date_from), "%Y-%m-%d"),
-    format(as.Date(date_to),   "%Y-%m-%d"),
-    as.integer(window_days),
-    substr(as.character(hash), 1L, 8L))
+                                  date_from, date_to, window_days, hash,
+                                  alpha = NA_real_, months = NA_integer_,
+                                  min_years = NA_integer_) {
+  h8  <- substr(as.character(hash), 1L, 8L)
+  dff <- format(as.Date(date_from), "%Y-%m-%d")
+  dtt <- format(as.Date(date_to),   "%Y-%m-%d")
+  if (identical(mode, "trend")) {
+    # spec 023 — trend ignores threshold / window_days; encode its own
+    # legible parameters (alpha, season months, min years) instead. The
+    # leading `fast_<INDEX>_` keeps the `^fast_[A-Z]` GC match (continuous
+    # COGs), distinct from the lowercase `fast_alert_` 0-4 masks.
+    sprintf(
+      "fast_%s_trend_a%.3f_m%s_y%d_%s_%s_%s.tif",
+      toupper(index),
+      as.numeric(alpha),
+      paste(sort(as.integer(months)), collapse = ""),
+      as.integer(min_years),
+      dff, dtt, h8)
+  } else {
+    sprintf(
+      "fast_%s_%s_thr%.2f_%s_%s_w%d_%s.tif",
+      toupper(index), tolower(mode),
+      as.numeric(threshold), dff, dtt,
+      as.integer(window_days), h8)
+  }
 }
 
 # Absolute path of the cached COG: <result_cache_dir>/zone_<id>/
@@ -423,10 +533,14 @@ read_fast_alert_rasters <- function(con, zone_id,
 # so the two never collide.
 .fast_raster_cache_path <- function(result_cache_dir, zid, index, mode,
                                     threshold, date_from, date_to,
-                                    window_days, hash) {
+                                    window_days, hash,
+                                    alpha = NA_real_, months = NA_integer_,
+                                    min_years = NA_integer_) {
   file.path(result_cache_dir, sprintf("zone_%d", zid),
             .fast_raster_filename(index, mode, threshold,
-                                  date_from, date_to, window_days, hash))
+                                  date_from, date_to, window_days, hash,
+                                  alpha = alpha, months = months,
+                                  min_years = min_years))
 }
 
 # Keep at most `keep` cached continuous COGs per zone directory (LRU by
@@ -455,6 +569,7 @@ read_fast_alert_rasters <- function(con, zone_id,
                   NDVI = c("B04", "B08"),
                   NBR  = c("B08", "B12"),
                   NDMI = c("B08", "B11"),
+                  NDRE = c("B05", "B8A"),   # spec 022 red-edge
                   cli::cli_abort("Unknown index {.val {index}}."))
   scene_dirs <- list.dirs(cache_dir, recursive = FALSE)
   empty <- data.frame(scene_id = character(0), obs_date = as.Date(character(0)),
@@ -515,6 +630,132 @@ read_fast_alert_rasters <- function(con, zone_id,
   # subset-assignment idiom is fragile in that case and can collapse the
   # SpatRaster to a numeric).
   terra::clamp(threshold - mean_x, lower = 0, values = TRUE)
+}
+
+
+# Layer name for the continuous FAST raster, by mode.
+.fast_layer_name <- function(mode) {
+  switch(mode,
+         count   = "alert_count",
+         rolling = "alert_deficit",
+         trend   = "alert_trend",
+         "alert_deficit")
+}
+
+
+# `"trend"` mode (spec 023) — multi-year monotonic decline magnitude.
+# Builds a seasonal yearly composite from the index stack, then fits a
+# Theil-Sen slope + Mann-Kendall significance test per pixel. Returns a
+# single-layer SpatRaster aligned with the input:
+#   * `NA`  where the pixel has fewer than `min_years` valid composite
+#     years (not enough signal to judge a trend),
+#   * `0`   where the decline is not monotonic / not significant
+#     (slope >= 0 or Mann-Kendall p >= alpha),
+#   * `abs(slope)` (index units per year) where the pixel declines
+#     significantly.
+# This is the same 0 / >0 contract as count & rolling, so
+# `compute_fast_alert_mask()` discretises it unchanged. Returns NULL when
+# no in-season scene exists at all.
+.fast_raster_trend <- function(stack, months, min_years,
+                               min_obs_per_year, alpha) {
+  dates <- terra::time(stack)
+  if (length(dates) == 0L) return(NULL)
+  dates <- as.Date(dates)
+  mo <- as.integer(format(dates, "%m"))
+  yr <- as.integer(format(dates, "%Y"))
+
+  in_season <- mo %in% months
+  if (!any(in_season)) return(NULL)
+  stack <- stack[[which(in_season)]]
+  yr    <- yr[in_season]
+  uy    <- sort(unique(yr))
+
+  # One median composite layer per year, NA where the pixel has fewer than
+  # `min_obs_per_year` clear (non-NA) observations that year.
+  yearly <- lapply(uy, function(y) {
+    sub  <- stack[[which(yr == y)]]
+    nok  <- terra::app(sub, fun = function(v) sum(!is.na(v)))
+    med  <- terra::app(sub, fun = function(v)
+      if (all(is.na(v))) NA_real_ else stats::median(v, na.rm = TRUE))
+    terra::ifel(nok < min_obs_per_year, NA_real_, med)
+  })
+  yearly <- terra::rast(yearly)
+
+  # Even the most-covered pixel can't reach `min_years`: short-circuit to
+  # an all-NA raster (downstream mask will be empty, never an error).
+  if (terra::nlyr(yearly) < min_years) {
+    out <- terra::app(yearly[[1L]], fun = function(v) NA_real_)
+    names(out) <- "alert_trend"
+    return(out)
+  }
+
+  yrs <- uy
+  trend_cell <- function(v) {
+    ok <- !is.na(v)
+    # Too few valid years to judge a trend at all -> NA (no data, not
+    # "no alert"). This is the only NA path.
+    if (sum(ok) < min_years) return(NA_real_)
+    sl <- .theil_sen(yrs[ok], v[ok])
+    if (is.na(sl)) return(NA_real_)             # no computable slope
+    pv <- .mann_kendall(v[ok])$p
+    # Significant monotonic DECLINE -> magnitude. Everything else with
+    # enough years is "no alert" = 0, including a flat series (where the
+    # Mann-Kendall p is undefined because the variance is zero) and a
+    # noisy, non-significant series.
+    if (!is.na(pv) && sl < 0 && pv < alpha) abs(sl) else 0
+  }
+  out <- terra::app(yearly, fun = function(v) trend_cell(v))
+  names(out) <- "alert_trend"
+  out
+}
+
+
+# Theil-Sen slope estimator: the median of the pairwise slopes
+# (y_j - y_i) / (x_j - x_i) over all i < j with x_j != x_i. Robust to
+# outliers, no distributional assumption. Returns NA for < 2 points or
+# when every x pair is tied.
+.theil_sen <- function(x, y) {
+  n <- length(x)
+  if (n < 2L) return(NA_real_)
+  idx <- utils::combn(n, 2L)
+  dx  <- x[idx[2L, ]] - x[idx[1L, ]]
+  dy  <- y[idx[2L, ]] - y[idx[1L, ]]
+  keep <- dx != 0
+  if (!any(keep)) return(NA_real_)
+  stats::median(dy[keep] / dx[keep])
+}
+
+
+# Mann-Kendall trend test (normal approximation, two-sided p-value).
+# Returns the S statistic, Kendall's tau, and the tie-corrected,
+# continuity-corrected p-value. For n < 3 the test is undefined -> NA.
+.mann_kendall <- function(y) {
+  n <- length(y)
+  if (n < 3L) return(list(S = NA_real_, tau = NA_real_, p = NA_real_))
+
+  S <- 0
+  for (k in seq_len(n - 1L)) {
+    S <- S + sum(sign(y[(k + 1L):n] - y[k]))
+  }
+
+  # Variance with correction for tied groups.
+  ties     <- as.numeric(table(y))
+  tie_term <- sum(ties * (ties - 1) * (2 * ties + 5))
+  var_S    <- (n * (n - 1) * (2 * n + 5) - tie_term) / 18
+  if (var_S <= 0) return(list(S = S, tau = NA_real_, p = NA_real_))
+
+  # Continuity-corrected standard normal deviate.
+  Z <- if (S > 0) (S - 1) / sqrt(var_S)
+       else if (S < 0) (S + 1) / sqrt(var_S)
+       else 0
+  p <- 2 * stats::pnorm(-abs(Z))
+
+  n0        <- n * (n - 1) / 2
+  tie_pairs <- sum(ties * (ties - 1) / 2)
+  denom     <- sqrt((n0 - tie_pairs) * n0)
+  tau       <- if (denom > 0) S / denom else NA_real_
+
+  list(S = S, tau = tau, p = min(p, 1))
 }
 
 

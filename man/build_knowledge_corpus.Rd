@@ -31,7 +31,7 @@ only after personally clearing their licenses. Default `FALSE`.}
 \item{fresh}{Logical. Delete every existing document first. Default
 `FALSE`.}
 
-\item{dry_run}{Logical. Parse and plan only -- no DB connection, no
+\item{dry_run}{Logical. Parse and plan only — no DB connection, no
 embedding API calls. Default `FALSE`.}
 
 \item{pdf_dir}{Directory for downloaded PDFs. Default a per-user cache
@@ -52,11 +52,12 @@ A data.frame report, one row per manifest row, with columns
 \description{
 Iterates over the manifest and ingests every eligible document into the
 knowledge base, applying the same license gate (D5), eligibility and
-idempotency rules as `data-raw/build_knowledge_corpus.R` -- which is now
+idempotency rules as `data-raw/build_knowledge_corpus.R` — which is now
 a thin wrapper over this function. Unlike the script it is a plain,
 blocking R function returning a structured report, so an application can
 drive it asynchronously and render progress.
-
+}
+\details{
 A row is eligible when its `ingest_strategy` is known and its `status`
 is `cleared` (or `to_confirm` when `include_to_confirm = TRUE`). `full`
 rows ingest their body via [ingest_knowledge_document()]; `abstract_only`

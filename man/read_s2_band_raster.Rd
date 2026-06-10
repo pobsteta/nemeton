@@ -16,7 +16,9 @@ directory name is its sanitized form (cf.
 `nemeton:::.s2_safe_scene_id`).}
 
 \item{band}{Character(1). One of `"B04"` (Red, 10 m), `"B08"`
-(NIR, 10 m) or `"B12"` (SWIR, 20 m).}
+(NIR, 10 m), `"B12"` (SWIR2, 20 m), `"B11"` (SWIR1, 20 m, used by
+NDMI), `"B05"` (Red-edge 1, 20 m) or `"B8A"` (NIR narrow, 20 m,
+both used by NDRE, spec 022).}
 }
 \value{
 A 1-layer [terra::SpatRaster] in the source CRS (typically

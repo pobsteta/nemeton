@@ -83,9 +83,12 @@ test_that(".cache_scene_bands tolerates a missing optional band", {
 
 
 test_that("default FAST index is still NDVI (back-compat)", {
+  # spec 022 added NDRE to the enum; the count/rolling default stays NDVI
+  # (first element). spec 023 makes the *trend* default NDMI via a
+  # missing(index) branch, not via the formal — so the formal's first
+  # element is still NDVI.
   expect_identical(formals(read_fast_alert_raster)$index,
-                   quote(c("NDVI", "NBR", "NDMI")))
-  # match.arg() takes the first element -> NDVI remains the default.
+                   quote(c("NDVI", "NBR", "NDMI", "NDRE")))
   expect_identical(eval(formals(read_fast_alert_raster)$index)[1], "NDVI")
 })
 

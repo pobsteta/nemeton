@@ -26,16 +26,24 @@
 #'
 #' @param con A `DBIConnection`. Passed to [read_fast_alert_raster()].
 #' @param zone_id Integer scalar.
-#' @param index Character scalar `"NDVI"` (default), `"NBR"` or `"NDMI"`
-#'   — the single index the alert map is built from (spec 017 / 019).
+#' @param index Character scalar `"NDVI"`, `"NBR"`, `"NDMI"` or `"NDRE"`
+#'   — the single index the alert map is built from (spec 017 / 019 /
+#'   022). Default is mode-dependent when omitted: `"NDVI"` for count /
+#'   rolling, `"NDMI"` for trend (mirror of [read_fast_alert_raster()]).
 #' @param threshold Numeric in `(0, 1)` or `NULL`. Passed through to
 #'   [read_fast_alert_raster()]; `NULL` resolves per `index`
-#'   (NDVI 0.40, NBR/NDMI 0.30).
+#'   (NDVI 0.40, NBR/NDMI/NDRE 0.30). Ignored when `mode = "trend"`.
 #' @param date_from,date_to Date (or character `"YYYY-MM-DD"`) bounding
 #'   the analysis window.
-#' @param mode One of `"count"` or `"rolling"`. Default `"count"`.
+#' @param mode One of `"count"`, `"rolling"` or `"trend"` (spec 023).
+#'   Default `"count"`.
 #' @param window_days Integer. Trailing window length, used in
 #'   `"rolling"` mode. Default `30L`.
+#' @param months,min_years,min_obs_per_year,alpha Trend-mode parameters
+#'   (spec 023), passed through to [read_fast_alert_raster()]. Seasonal
+#'   month window (default `6:9`), minimum valid composite years
+#'   (`4L`), minimum clear observations per year (`2L`), and Mann-Kendall
+#'   significance level (`0.05`). Ignored in count / rolling mode.
 #' @param cache_dir Path to the S2 COG cache.
 #' @param mask_cache_dir Path to the FAST mask cache root. The mask is
 #'   written under `<mask_cache_dir>/zone_<id>/fast_alert_<ts>.tif`.
@@ -50,7 +58,9 @@
 #'   **quartiles of the strictly-positive pixels**: class 0 = no alert
 #'   (value 0), classes 1-4 = the quartile bins
 #'   `c(0, q25, q50, q75, Inf)` of pixels with at least one alert. This
-#'   adaptive scheme applies to **both** `"count"` and `"rolling"`.
+#'   adaptive scheme applies to **all** modes (`"count"`, `"rolling"`,
+#'   `"trend"`) — for trend the strictly-positive pixels are the
+#'   significant-decline magnitudes.
 #'   Degenerate distributions (tied quantiles) collapse to fewer
 #'   occupied classes rather than erroring; an all-zero raster maps
 #'   entirely to class 0.
@@ -71,11 +81,15 @@
 #'
 #' @export
 compute_fast_alert_mask <- function(con, zone_id,
-                                    index          = c("NDVI", "NBR", "NDMI"),
+                                    index          = c("NDVI", "NBR", "NDMI", "NDRE"),
                                     threshold      = NULL,
                                     date_from, date_to,
-                                    mode           = c("count", "rolling"),
+                                    mode           = c("count", "rolling", "trend"),
                                     window_days    = 30L,
+                                    months           = 6:9,
+                                    min_years        = 4L,
+                                    min_obs_per_year = 2L,
+                                    alpha            = 0.05,
                                     cache_dir,
                                     mask_cache_dir  = NULL,
                                     breaks          = NULL,
@@ -85,7 +99,13 @@ compute_fast_alert_mask <- function(con, zone_id,
                                     result_cache_dir = NULL,
                                     parallel         = FALSE) {
   mode  <- match.arg(mode)
-  index <- match.arg(index)
+  # Mode-dependent default index (mirror of read_fast_alert_raster):
+  # NDVI for count/rolling, NDMI for trend. Explicit `index` wins.
+  if (missing(index)) {
+    index <- if (mode == "trend") "NDMI" else "NDVI"
+  } else {
+    index <- match.arg(index, c("NDVI", "NBR", "NDMI", "NDRE"))
+  }
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
   }
@@ -127,6 +147,10 @@ compute_fast_alert_mask <- function(con, zone_id,
     date_to         = date_to,
     mode            = mode,
     window_days      = window_days,
+    months           = months,
+    min_years        = min_years,
+    min_obs_per_year = min_obs_per_year,
+    alpha            = alpha,
     cache_dir        = cache_dir,
     apply_zone_mask  = apply_zone_mask,
     mask_polygon     = mask_polygon,

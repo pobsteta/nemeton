@@ -7,7 +7,7 @@
 build_index_stack(
   cache_dir,
   scenes_df,
-  index = c("NDVI", "NBR", "NDMI"),
+  index = c("NDVI", "NBR", "NDMI", "NDRE"),
   mask_polygon = NULL,
   parallel = FALSE
 )
@@ -17,7 +17,8 @@ build_index_stack(
 
 \item{scenes_df}{See [read_s2_band_stack()].}
 
-\item{index}{Character(1). One of `"NDVI"` (default) or `"NBR"`.}
+\item{index}{Character(1). One of `"NDVI"` (default), `"NBR"`,
+`"NDMI"` or `"NDRE"` (red-edge, spec 022).}
 
 \item{mask_polygon}{Optional `sf`/`sfc` polygon. When supplied, pixels
 outside it become NA on every layer.}
@@ -42,13 +43,25 @@ computes the requested spectral index pixel-wise:
 \details{
 * **NDVI** = (B08 − B04) / (B08 + B04) — proxy of vegetation vigour
 * **NBR** = (B08 − B12) / (B08 + B12) — proxy of vegetation /
-  burned-area discrimination. B12 is natively 20 m, so it is
-  resampled to the B08 10 m grid via [terra::resample()] with
-  `method = "bilinear"` — same idiom as the per-plot ingestion path
-  in `.extract_scene_obs()`.
+  burned-area discrimination.
+* **NDMI** = (B08 − B11) / (B08 + B11) — vegetation moisture proxy
+  (drops under water stress). B11 is natively 20 m, so it is
+  resampled to the B08 10 m grid like B12.
+* **NDRE** = (B8A − B05) / (B8A + B05) — red-edge proxy of
+  chlorophyll content, an early marker of canopy stress (spec 022).
+  Both B8A and B05 are natively 20 m and share the same grid, so the
+  index is computed at 20 m without resampling.
 
-Scenes with incomplete cached bands (missing B04, B08, or — for NBR
-— B12) are skipped silently with a single aggregated warning. NAs
+  B12 (NBR) is natively 20 m, so it is
+  resampled to the B08 10 m grid via [terra::resample()] with
+  `method = "bilinear"`.
+
+Scenes with incomplete cached bands (missing B04, B08, B12 for NBR,
+B11 for NDMI, or B05 / B8A for NDRE) are skipped silently with a
+single aggregated warning. For NDRE specifically, a cache that holds
+**no** scene with both red-edge bands aborts up front (internal
+`.assert_cache_has_bands()` guard) rather than returning a silent
+all-NA raster. NAs
 propagate naturally through the arithmetic: a NA in any source
 pixel yields NA in the index.
 }

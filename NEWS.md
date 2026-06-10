@@ -1,3 +1,65 @@
+# nemeton 0.69.0 (2026-06-10)
+
+### Added — mode FAST `trend` : dépérissement chronique (spec 023)
+
+Troisième sémantique du sous-système FAST, à côté de `count` et
+`rolling`. Paradigme **relatif** (chaque pixel est sa propre référence,
+pas de seuil absolu) pour détecter le **déclin lent pluriannuel** des
+feuillus (chêne/hêtre) que les modes court-horizon ne voient pas.
+
+- `read_fast_alert_raster(..., mode = "trend")` : compose une médiane
+  saisonnière annuelle (`months = 6:9`, années à < `min_obs_per_year`
+  observations claires écartées, `min_years` années minimum), puis estime
+  une pente **Theil-Sen** + un test de significativité **Mann-Kendall**
+  par pixel. Sortie = `abs(pente)` là où la pente est négative **et**
+  p_MK < `alpha`, sinon `0` ; pixels à années insuffisantes = `NA`.
+- **Contrat préservé** : la sortie est le même raster continu
+  (`0` = pas d'alerte, `> 0` = magnitude) que count/rolling, donc
+  `compute_fast_alert_mask(..., mode = "trend")` la discrétise en
+  classes 0-4 via les mêmes quartiles, **sans modification** — Mann-Kendall
+  joue le rôle de porte que le seuil absolu joue pour count/rolling.
+- Nouveaux arguments trend-only sur les deux fonctions FAST : `months`,
+  `min_years`, `min_obs_per_year`, `alpha`. `threshold` et `window_days`
+  sont ignorés en mode trend.
+- **Défaut d'indice mode-dépendant** : `NDVI` pour count/rolling
+  (rétro-compat), `NDMI` pour trend (l'humidité décroche en premier).
+  L'indice `NDRE` (spec 022) est sélectionnable dans les deux fonctions.
+- Helpers internes réutilisables `.theil_sen()` et `.mann_kendall()`
+  (variance corrigée des ex-aequo, p-value bilatérale, correction de
+  continuité).
+- Le cache de résultat (COG adressé par contenu) intègre `alpha`,
+  `months`, `min_years`, `min_obs_per_year` dans le hash **et** le nom de
+  fichier (`fast_<INDEX>_trend_a<alpha>_m<mois>_y<min_years>_…`) : un
+  changement de paramètre s'auto-invalide. Le hash count/rolling est
+  **inchangé** (params trend ajoutés seulement en mode trend) — les COG
+  existants restent valides.
+- Modes `count` / `rolling` strictement inchangés (non-régression).
+
+
+# nemeton 0.68.0 (2026-06-10)
+
+### Added — indice red-edge NDRE (spec 022)
+
+Nouvel indice spectral **NDRE = (B8A − B05) / (B8A + B05)**, marqueur
+red-edge du stress chlorophyllien précoce, ajouté au sous-système FAST.
+C'est le prérequis du mode `trend` (déclin chronique des feuillus).
+
+- `build_index_stack(cache_dir, scenes_df, index = "NDRE")` calcule la
+  pile NDRE. B8A et B05 sont nativement à 20 m et partagent la même
+  grille : l'indice reste à 20 m, sans rééchantillonnage.
+- `extract_pixel_timeseries(..., indices = "NDRE")` renvoie la série
+  red-edge par pixel.
+- `read_s2_band_raster()` accepte désormais `"B05"` et `"B8A"`.
+- `ingest_sentinel2_timeseries(..., bands = "NDRE")` met en cache B05 +
+  B8A (les bandes red-edge ne sont téléchargées que sur demande
+  explicite).
+- Nouveau garde-fou interne `.assert_cache_has_bands()` : demander NDRE
+  sur un cache qui n'a jamais ingéré B05/B8A échoue avec un message `cli`
+  explicite plutôt qu'un raster all-NA silencieux.
+- Les indices existants (NDVI, NBR, NDMI) et leur comportement
+  count/rolling sont strictement inchangés.
+
+
 # nemeton 0.67.0 (2026-06-04)
 
 ### Added — nettoyage des caches de zones orphelines (spec 020)

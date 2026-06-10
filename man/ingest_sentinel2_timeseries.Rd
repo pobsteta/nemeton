@@ -26,7 +26,12 @@ ingest_sentinel2_timeseries(
 
 \item{start, end}{Date or character `"YYYY-MM-DD"`.}
 
-\item{bands}{Character vector. Subset of `c("NDVI", "NBR")`.}
+\item{bands}{Character vector. Subset of
+`c("NDVI", "NBR", "NDMI", "NDRE")`. B11 (needed by NDMI) is also
+cached best-effort on every ingest (spec 019 D3), so NDMI works on
+future scenes without requesting it. `"NDRE"` (spec 022) caches the
+red-edge bands B05 + B8A; request it explicitly when you want the
+FAST trend mode or the NDRE pixel diagnostic.}
 
 \item{max_cloud}{Numeric. Maximum scene cloud cover (percent). Default 20.}
 
@@ -130,32 +135,30 @@ cancellation flag file. When `NULL` (default) no polling happens
 and behaviour is identical to before. When a path is given, the
 worker checks `file.exists(cancel_path)` between tiles; if the file
 appears mid-run the loop exits cleanly after the current tile,
-leaving every already-cached tile on disk, and the returned summary
-carries `status = "cancelled"`. A flag already present at entry is
-ignored as a stale leftover — the caller must delete it before each
-call.}
+leaving every already-inserted tile committed (each tile owns its
+own transaction), and the returned summary carries
+`status = "cancelled"`. A flag already present at entry is ignored
+as a stale leftover — the caller must delete it before each call.}
 
 \item{prewarm_alerts}{Logical (spec 018). When `TRUE`, after a
 successful ingestion the worker chains on six
-\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} calls
-— `NDVI`/`NBR`/`NDMI` × `count`/`rolling` (spec 019), default
-threshold (0.40 NDVI / 0.30 NBR / 0.30 NDMI) and `window_days = 30` —
-so the six usual FAST alert maps
-land in the D6 result cache and the app's FAST tab is instant on
-first visit. Each combination is independent: a failure on one (e.g.
-no B12 scene for `NBR`, no B11 for `NDMI`) warns and is skipped,
-never aborting the
-others. The pre-warm polls `cancel_path` between combinations.
-Default `FALSE` (no extra work, identical to the historical
-behaviour). A cancelled ingestion never starts the pre-warm.}
+[read_fast_alert_raster()] calls — `NDVI`/`NBR`/`NDMI` ×
+`count`/`rolling` (spec 019), default threshold (0.40 NDVI /
+0.30 NBR / 0.30 NDMI) and `window_days = 30` — so the six usual
+FAST alert maps land in the D6 result cache and
+the app's FAST tab is instant on first visit. Each combination is
+independent: a failure on one (e.g. no B12 scene for `NBR`, no B11
+for `NDMI`) warns and is skipped, never aborting the others. The pre-warm polls
+`cancel_path` between combinations. Default `FALSE` (no extra work,
+identical to the historical behaviour). A cancelled ingestion never
+starts the pre-warm.}
 
-\item{prewarm_mask_cache_dir}{Character path, \strong{required when
-`prewarm_alerts = TRUE`}. Root of the FAST alert result (D6) cache,
-forwarded to
-\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}} as
-`result_cache_dir`; COGs land under
-`<dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_<from>_<to>_w<window>_<hash8>.tif`. Point it at
-`<project>/cache/layers/fast_alert`. Ignored when
+\item{prewarm_mask_cache_dir}{Character path, **required when
+`prewarm_alerts = TRUE`**. Root of the FAST alert result (D6) cache,
+forwarded to [read_fast_alert_raster()] as `result_cache_dir`;
+COGs land under `<dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_
+<from>_<to>_w<window>_<hash8>.tif`.
+Point it at `<project>/cache/layers/fast_alert`. Ignored when
 `prewarm_alerts = FALSE`.}
 }
 \value{
@@ -170,11 +173,10 @@ Searches Sentinel-2 L2A scenes (CDSE then PC fallback) and downloads
 the COG bands required for the requested indices (B04 / B08 for NDVI,
 B08 / B12 for NBR) into the on-disk band cache. Since spec 017 the
 FAST diagnostic is computed per-pixel straight from this COG cache by
-\code{\link[=read_fast_alert_raster]{read_fast_alert_raster()}}, so this
-pipeline no longer derives any per-plot observation nor writes to the
-database — the `obs_pixel` table was dropped in v0.58.0. It is purely a
-cache-priming step, independent of the validation sampling plan
-(placettes).
+[read_fast_alert_raster()], so this pipeline no longer derives any
+per-plot observation nor writes to the database — the `obs_pixel`
+table was dropped in v0.58.0. It is purely a cache-priming step,
+independent of the validation sampling plan (placettes).
 }
 \examples{
 \dontrun{
@@ -189,7 +191,8 @@ ingest_sentinel2_timeseries(
   cache_dir   = cache
 )
 
-# Subsequent runs: cache hits skip already-primed scenes.
+# Subsequent runs: skip_cached short-circuits at the DB level,
+# cache_dir only kicks in when a genuine re-extraction is needed.
 ingest_sentinel2_timeseries(
   con, zone_id, "2026-01-01", "2026-06-30",
   bands     = c("NDVI", "NBR"),
