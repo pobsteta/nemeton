@@ -18,7 +18,13 @@ d'environnement + bandes + glue vendorisée. Aucune exécution réelle ici
   (indices CRswir/CRre, Apache-2.0, attribuée dans `inst/NOTICE`). La glue
   d'orchestration (download GEODES, cfg IOTA², score) sera vendorisée en
   L2b.2/L2b.3 où elle est câblée.
-- 7 tests (`test-reconfort-python.R`, reticulate mocké). Cadrage complet :
+- La validation des modules (`iota2`, `pygeodes`) passe par un **subprocess**
+  (`conda run -n <env> python -c import …`), représentatif de l'usage IOTA²
+  (piloté par subprocess) et robuste au quirk d'init unique de reticulate et
+  aux effets de bord d'import (bannière OTB). Le binaire `conda` est préféré à
+  `mamba` (dont reticulate mal-parse la sortie sur miniforge).
+- 9 tests mockés (`test-reconfort-python.R`) **+ validation end-to-end contre
+  un env conda réel** (`iota2` + `pygeodes` OK). Cadrage complet :
   `specs/021-suivi-sanitaire-reconfort/L2b-cadrage.md`.
 
 
